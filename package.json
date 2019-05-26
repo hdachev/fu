@@ -1,0 +1,19 @@
+{
+  "name": "fulang",
+  "version": "0.0.1",
+  "description": "",
+  "main": "build/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "build/test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "typescript": "^3.4.5"
+  }
+}
