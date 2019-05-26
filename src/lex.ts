@@ -1,4 +1,5 @@
 import { fail } from './fail';
+import { From } from './helpers';
 
 const OPTOKENS = '{}[]()!?~#$%^&*/-+<=>,.;:|';
 
@@ -7,7 +8,7 @@ const OPERATORS: readonly string[] =
     '+', '++', '-', '--',
     '*', '**', '/', '%',
     '<', '<<', '<<<', '>', '>>', '>>>',
-    '===', '==', '!=', '!==', '<=', '>=', '=>', '->',
+    '===', '==', '!=', '!==', '<=', '>=', '=>', '->', '<=>',
     '!', '!!', '?', '??',
     '.', '..', '...', ':', '::', ',', ';',
     '&', '&&', '|', '||', '^', '~',
@@ -16,75 +17,97 @@ const OPERATORS: readonly string[] =
     '+=', '-=', '*=', '**=', '/=', '%=',
     '&=', '|=', '^=',
     '&&=', '||=',
-    '@', '#', '$',
-];
+    '@', '#', '$'
+] as const;
+
+export type Operator = From<typeof OPERATORS>;
 
 export type TokenKind =
     'id' | 'op' | 'str' | 'int' | 'num' | 'eof' | '?';
 
-type i32 = number;
+export type Source   = string & { K: 'Source' };
+export type Filename = string & { K: 'Filename' };
+
+export type LexValue = Operator | (string & { K: 'LexValue' });
+export type CharIdx  = number & { K: 'CharIdx' };
+export type Line     = number & { K: 'Line' };
+export type Col      = number & { K: 'Col' };
 
 export type Token =
 {
-    kind:   TokenKind;
-    value:  string;
-    idx0:   i32;
-    idx1:   i32;
-    line:   i32;
-    col:    i32;
+    readonly kind:   TokenKind;
+    readonly value:  LexValue;
+
+    readonly fname:  Filename;
+    readonly idx0:   CharIdx;
+    readonly idx1:   CharIdx;
+    readonly line:   Line;
+    readonly col:    Col;
 };
 
 export type LexErr =
 {
-    reason: string;
-    kind:   TokenKind;
-    value:  string;
-    idx0:   i32;
-    idx1:   i32;
-    line:   i32;
-    col:    i32;
+    readonly reason: string;
+    readonly kind:   TokenKind;
+    readonly value:  LexValue;
+
+    readonly fname:  Filename;
+    readonly idx0:   CharIdx;
+    readonly idx1:   CharIdx;
+    readonly line:   Line;
+    readonly col:    Col;
 };
 
 export type LexResult =
 {
+    fname : Filename;
     errors: LexErr[];
     tokens: Token[];
 };
 
-export function lex(src: string): LexResult
+export function lex(src: Source, fname: Filename): LexResult
 {
     const end   = src.length;
     let line    = 1;
     let lidx    = -1;
     let idx     = 0;
 
-    let out: LexResult = { errors: [], tokens: [] };
+    let out: LexResult = { fname: fname as Filename, errors: [], tokens: [] };
 
-    function token(kind: TokenKind, value: string, idx0: i32, idx1: i32, line: i32, col: i32)
+    function token(kind: TokenKind, value: string, idx0: number, idx1: number)
     {
+        const col = idx0 - lidx;
+
         out.tokens.push({
-            kind, value,
-            idx0, idx1,
-            line, col,
+            kind,
+            value: value as LexValue,
+            idx0:  idx0  as CharIdx,
+            idx1:  idx1  as CharIdx,
+            fname: fname as Filename,
+            line:  line  as Line,
+            col:   col   as Col,
         });
     }
 
-    function err(kind: TokenKind, idx0: i32, reason: string|number)
+    function err(kind: TokenKind, idx0: number, reason: string|number)
     {
         // exit to nearest whitespace
         while (idx < end && src[idx] > ' ')
             idx++;
 
-        const col = idx - lidx;
+        const col = idx0 - lidx;
 
         if (typeof reason === 'number')
             reason = src[reason];
 
         out.errors.push({
-            reason,
-            kind,   value: src.slice(idx0, idx),
-            idx0,   idx1: idx,
-            line,   col,
+            reason, kind,
+            value: src.slice(idx0, idx),
+            idx0:  idx0  as CharIdx,
+            idx1:  idx   as CharIdx,
+            fname: fname as Filename,
+            line:  line  as Line,
+            col:   col   as Col,
         });
     }
 
@@ -96,7 +119,7 @@ export function lex(src: string): LexResult
         return kind;
     }
 
-    function unescapeStr(src: string, idx0: i32, idx1: i32)
+    function unescapeStr(src: string, idx0: number, idx1: number)
     {
         let out = '';
 
@@ -161,8 +184,7 @@ export function lex(src: string): LexResult
 
             token(
                 'id', src.slice(idx0, idx1),
-                idx0, idx1,
-                line, idx0 - lidx);
+                idx0, idx1);
         }
 
         // numeric literals
@@ -236,8 +258,7 @@ export function lex(src: string): LexResult
 
                 token(
                     checkNum(!dot && !exp ? 'num' : 'int', str), str,
-                    idx0, idx1,
-                    line, idx0 - lidx)
+                    idx0, idx1);
             }
         }
 
@@ -274,8 +295,7 @@ export function lex(src: string): LexResult
 
                 token(
                     'str', str,
-                    idx0, idx1,
-                    line, idx0 - lidx);
+                    idx0, idx1);
             }
         }
 
@@ -350,8 +370,7 @@ export function lex(src: string): LexResult
                     {
                         token(
                             'op', candidate,
-                            begin, end,
-                            line, begin - lidx);
+                            begin, end);
                     }
 
                     begin = end;
@@ -370,8 +389,7 @@ export function lex(src: string): LexResult
     // end of file token
     token(
         'eof', 'eof',
-        idx, idx,
-        line, idx - lidx);
+        idx, idx);
 
     // err, data
     return out;
