@@ -165,9 +165,15 @@ export function parse(opts: Options)
     return parseRoot();
 }
 
-export function fail(msg: string, ...rest: unknown[])
+export function fail(...rest: unknown[])
 {
-    Fail.fail(_fname + ' at ' + _loc.line + ':' + _loc.col + ':\n\t' + msg, ...rest);
+    const msg   = rest.length
+                ? rest
+                : [ 'Unexpected `' + _tokens[_idx].value + '`.' ];
+
+    return Fail.fail(
+        _fname + ' at ' + _loc.line + ':' + _loc.col
+            + ':\n\t', ...msg);
 }
 
 
@@ -259,7 +265,7 @@ function parseBlock(): Node
             'Bad indent, expecting more than ' + col00
                 + '. Block starts on line ' + line0 + '.');
 
-        const expr = parseExpression();
+        const expr = parseStatement();
         expr.kind !== 'call' || ((expr.flags & (F_ID | F_METHOD)) === 0) || expr.items && expr.items.length > 1 || fail_Lint(
             'Orphan pure-looking expression.');
 
@@ -276,6 +282,29 @@ function createBlock(items: Nodes)
 
 
 //
+
+function parseStatement(): Node
+{
+    const expr = parseDeclaration();
+    consume('op', ';');
+    return expr;
+}
+
+function parseDeclaration(): Node
+{
+    const head = parseExpression(P_RESET);
+
+    return head;
+
+    // // Semi?
+    // const peek = _tokens[_idx];
+    // if (peek.kind === 'op' && peek.value === ';')
+    // {
+    //     const tail = parseExpression(P_RESET);
+
+    //     // Identifier?
+    // }
+}
 
 function parseExpression(p1 = _precedence): Node
 {
