@@ -7,13 +7,17 @@
     "lib": "lib"
   },
   "scripts": {
-    "dev": "tsc --watch",
+    "start": "tsc-watch --onSuccess \"node build/test.js\"",
+    "watch": "tsc --watch",
     "build": "tsc",
-    "test": "build/test.js"
+    "test": "node build/test.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "typescript": "^3.4.5"
+  },
+  "devDependencies": {
+    "tsc-watch": "^2.2.1"
   }
 }
