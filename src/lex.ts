@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { From } from './helpers';
 
-const OPTOKENS = '{}[]()!?~#$%^&*/-+<=>,.;:|';
+const OPTOKENS = '{}[]()!?~@#$%^&*/-+<=>,.;:|';
 
 const OPERATORS: readonly string[] =
 [

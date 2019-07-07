@@ -7,13 +7,24 @@ type Options =
     tokens:     Token[];
 };
 
-type Nodes = Node[]|null;
+type Nodes = (Node|null)[];
+
+type Flags = number;
 
 type Node =
 {
     kind:       string;
-    flags:      number;
+    flags:      Flags;
     value:      LexValue|null;
+    items:      Nodes|null;
+    token:      Token;
+};
+
+type FullNode<TKind = string> =
+{
+    kind:       TKind,
+    flags:      Flags;
+    value:      LexValue;
     items:      Nodes;
     token:      Token;
 };
@@ -30,7 +41,7 @@ type Node =
 
 export function Node(
     kind:       string,
-    items:      Nodes           = null,
+    items:      Nodes|null      = null,
     flags:      number          = 0,
     value:      LexValue|null   = null,
     token:      Token|null      = null): Node
@@ -48,12 +59,16 @@ export function Node(
 // Calltypes, probably an enum is better for the 4 kinds,
 //  can't be mixed and matched.
 
-const F_METHOD          =  1;
-const F_INFIX           =  2;
-// const F_PREFIX          =  4;
-// const F_POSTFIX         =  8;
-// const F_ACCESS          = 16;
-const F_ID              = 32;
+const F_METHOD          = 1 << 0;
+const F_INFIX           = 1 << 1;
+// const F_PREFIX          = 1 << 2;
+// const F_POSTFIX         = 1 << 3;
+// const F_ACCESS          = 1 << 4;
+const F_ID              = 1 << 5;
+
+const F_LOCAL           = 1 << 6;
+const F_IMPLICIT        = 1 << 7;
+const F_UNTYPED_ARGS    = 1 << 8;
 
 
 // Operator precedence table.
@@ -85,7 +100,7 @@ function setupOperators()
     let rightToLeft     = false;
     let isAssign        = false;
 
-    function binop(ops: string[]): void
+    function binop(...ops: string[]): void
     {
         precedence++
         out.RIGHT_TO_LEFT[precedence] = rightToLeft
@@ -101,33 +116,33 @@ function setupOperators()
         }
     }
 
-    binop([ 'as', 'is' ]);
+    binop( 'as', 'is' );
 
     rightToLeft = true;
-    binop([ '**' ]);
+    binop( '**' );
 
     rightToLeft = false;
-    binop([ '*', '/', '%' ]);
-    binop([ '+', '-' ]);
-    binop([ '<<', '>>' ]);
-    binop([ '&' ]); // Notice this is not js/c precedence, it's just never useful.
-    binop([ '^' ]); // We're doing the rust thing here.
-    binop([ '|' ]);
-    binop([ '<', '<=', '>', '>=' ]);
-    binop([ '==', '!=', '<=>' ]);
-    binop([ '&&' ]);
-    binop([ '||' ]);
+    binop( '*', '/', '%' );
+    binop( '+', '-' );
+    binop( '<<', '>>' );
+    binop( '&' ); // Notice this is not js/c precedence, it's just never useful.
+    binop( '^' ); // We're doing the rust thing here.
+    binop( '|' );
+    binop( '<', '<=', '>', '>=' );
+    binop( '==', '!=', '<=>' );
+    binop( '&&' );
+    binop( '||' );
 
-    binop([ '->' ]);
+    binop( '->' );
 
     rightToLeft = true;
-    binop([ '?' ]);
+    binop( '?' );
     isAssign = true;
-    binop([ '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=' ]);
+    binop( '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=' );
     isAssign = false;
 
     rightToLeft = false;
-    binop([ ',' ]);
+    binop( ',' );
 
     //
     return out;
@@ -136,6 +151,12 @@ function setupOperators()
 const BINOP     = setupOperators();
 // const P_COMMA   = BINOP.PRECEDENCE[','] || fail();
 // const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
+
+
+// Commons.
+
+export const LET_TYPE = 0;
+export const LET_INIT = 1;
 
 
 //
@@ -179,12 +200,25 @@ export function fail(...rest: unknown[])
 
 //
 
-function consume(kind: TokenKind, value: LexValue)
+function consume(kind: TokenKind, value?: LexValue)
 {
-    const peek = _tokens[_idx++];
+    const token = _tokens[_idx++];
+    token.kind === kind && (value === undefined || token.value === value)
+        || fail('Expecting `' + value + '`, got `' + token.value + '`');
 
-    peek.kind === kind && peek.value === value
-        || fail('Expecting `' + value + '`, got `' + peek.value + '`');
+    return token;
+}
+
+function tryConsume(kind: TokenKind, value?: LexValue): Token|null
+{
+    const peek = _tokens[_idx];
+    if (peek.kind === kind && (value === undefined || peek.value === value))
+    {
+        _idx++;
+        return peek;
+    }
+
+    return null;
 }
 
 
@@ -285,25 +319,103 @@ function createBlock(items: Nodes)
 
 function parseStatement(): Node
 {
-    const expr = parseDeclaration();
+    const loc0 = _loc;
+    const stmt = tryParseNonExprStmt();
+    _loc = loc0;
+
+    if (stmt)
+        return stmt;
+
+    // Expression statement, followed by a semi.
+    const expr = parseExpression(P_RESET);
     consume('op', ';');
     return expr;
 }
 
-function parseDeclaration(): Node
+function tryParseNonExprStmt(): Node|null
 {
-    const head = parseExpression(P_RESET);
+    const token = _tokens[_idx++];
+    switch (token.value)
+    {
+        case 'fn': return parseFnDecl();
+    }
 
-    return head;
+    _idx--;
+    return null;
+}
 
-    // // Semi?
-    // const peek = _tokens[_idx];
-    // if (peek.kind === 'op' && peek.value === ';')
-    // {
-    //     const tail = parseExpression(P_RESET);
+function parseFnDecl(): Node
+{
+    // fn hello(), fn +()
+    const name = tryConsume('id')
+              || tryConsume('op');
 
-    //     // Identifier?
-    // }
+    // Opening parens.
+    consume('op', '(');
+
+    const items: Nodes = [];
+    const flags = parseArgsDecl(items, 'op', ')');
+
+    items.push(
+        tryPopTypeAnnot(),
+         parseStatement());
+
+    return Node('fn', items, flags, name && name.value);
+}
+
+function tryPopTypeAnnot()
+{
+    return tryConsume('op', ':')
+        && parseExpression();
+}
+
+function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
+{
+    let first = true;
+    let outFlags = 0;
+
+    for (;;)
+    {
+        if (tryConsume(endk, endv))
+            break;
+
+        if (!first)
+            consume('op', ',');
+
+        first = false;
+
+        let arg = parseLet();
+        if (!arg.items[LET_TYPE])
+            outFlags |= F_UNTYPED_ARGS;
+
+        if (arg.items[LET_INIT])
+            fail('TODO default arguments');
+
+        arg.flags &= ~F_LOCAL;
+        outArgs.push(arg);
+    }
+
+    return outFlags;
+}
+
+function parseLet()
+{
+    let flags   = F_LOCAL;
+    if (tryConsume('id', 'implicit'))
+        flags  |= F_IMPLICIT;
+
+    const id    = consume('id').value;
+    const type  = tryPopTypeAnnot();
+    const init  = tryConsume('op', '=') && parseExpression();
+
+    return createLet(id, flags, type, init);
+}
+
+function createLet(
+    id: LexValue, flags: Flags,
+    type: Node|null, init: Node|null)
+{
+    return Node('let', [ type, init ], flags, id) as FullNode<'let'>;
 }
 
 function parseExpression(p1 = _precedence): Node
@@ -364,35 +476,27 @@ function tryParseBinary(left: Node, op: LexValue, p1: Precedence): Node|null
 
 function tryParseExpressionTail(head: Node): Node|null
 {
-    const token = _tokens[_idx];
-    const p1 = BINOP.PRECEDENCE[token.value];
-    if (token.kind !== 'op' && !(p1 && token.kind === 'id'))
-        return null;
-
-    if (p1)
-        return tryParseBinary(head, token.value, p1);
-
     // Consume.
-    _idx++;
-    // const v = token.value;
+    const token = _tokens[_idx++];
+    const v = token.value;
 
-    // if (v === ';')
-    //     return null;
+    switch (v)
+    {
+        case ';': return _idx--, null;
+        // case '.': return parseAccessExpression(head);
+        // case '(': return parseCallExpression(head);
+        // case '[': return parseIndexExpression(head);
+    }
 
-    // if (v === '.')
-    //     return parseAccessExpression(head);
-
-    // if (v === '(' || v === '[') && noLeadingWhitespace()
-    //     return v === '('
-    //          ? parseCallExpression(head)
-    //          : parseIndexExpression(head)
+    const p1 = BINOP.PRECEDENCE[v];
+    if (p1)
+        return tryParseBinary(head, v, p1);
 
     // if (POSTFIX.indexOf(token.value) >= 0)
     //     return parsePostfix(head, token.value);
 
     // Backtrack.
-    _idx--;
-    return null;
+    return _idx--, null;
 }
 
 function parseExpressionHead(): Node
