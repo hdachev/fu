@@ -150,7 +150,7 @@ function setupOperators()
 
 const BINOP     = setupOperators();
 // const P_COMMA   = BINOP.PRECEDENCE[','] || fail();
-// const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
+const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
 
 
 // Commons.
@@ -249,7 +249,7 @@ function parseRoot(): Node
             break;
 
         _col0 = token.col;
-        items.push(parseExpression());
+        items.push(parseStatement());
     }
 
     //
@@ -258,12 +258,6 @@ function parseRoot(): Node
 
     //
     return Node('root', items);
-}
-
-function fail_Lint(...args: unknown[])
-{
-    // TODO allow opt out
-    fail('Lint:', ...args);
 }
 
 function parseBlock(): Node
@@ -312,6 +306,12 @@ function parseBlock(): Node
 function createBlock(items: Nodes)
 {
     return Node('block', items);
+}
+
+function fail_Lint(...args: unknown[])
+{
+    // TODO allow opt out
+    fail('Lint:', ...args);
 }
 
 
@@ -366,7 +366,12 @@ function parseFnDecl(): Node
 function tryPopTypeAnnot()
 {
     return tryConsume('op', ':')
-        && parseExpression();
+        && popType();
+}
+
+function popType()
+{
+    return parseExpression(P_QMARK);
 }
 
 function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
@@ -451,9 +456,6 @@ function tryParseBinary(left: Node, op: LexValue, p1: Precedence): Node|null
     if (p1 > _precedence || p1 === _precedence && !BINOP.RIGHT_TO_LEFT[p1])
         return null;
 
-    if (PREFIX.indexOf(op) >= 0)
-        return null;
-
     // consume
     _idx++;
 
@@ -490,7 +492,7 @@ function tryParseExpressionTail(head: Node): Node|null
 
     const p1 = BINOP.PRECEDENCE[v];
     if (p1)
-        return tryParseBinary(head, v, p1);
+        return _idx--, tryParseBinary(head, v, p1);
 
     // if (POSTFIX.indexOf(token.value) >= 0)
     //     return parsePostfix(head, token.value);
