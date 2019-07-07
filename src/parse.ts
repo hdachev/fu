@@ -63,7 +63,7 @@ const F_METHOD          = 1 << 0;
 const F_INFIX           = 1 << 1;
 // const F_PREFIX          = 1 << 2;
 // const F_POSTFIX         = 1 << 3;
-// const F_ACCESS          = 1 << 4;
+const F_ACCESS          = 1 << 4;
 const F_ID              = 1 << 5;
 
 const F_LOCAL           = 1 << 6;
@@ -78,7 +78,7 @@ export type Precedence  = number & { K: 'Precedence' };
 const P_RESET           = 1000 as Precedence;
 const P_PREFIX_UNARY    = 3    as Precedence;
 
-const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
+// const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
 // const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
@@ -149,7 +149,7 @@ function setupOperators()
 }
 
 const BINOP     = setupOperators();
-// const P_COMMA   = BINOP.PRECEDENCE[','] || fail();
+const P_COMMA   = BINOP.PRECEDENCE[','] || fail();
 const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
 
 
@@ -486,7 +486,7 @@ function tryParseExpressionTail(head: Node): Node|null
     {
         case ';': return _idx--, null;
         // case '.': return parseAccessExpression(head);
-        // case '(': return parseCallExpression(head);
+        case '(': return parseCallExpression(head);
         // case '[': return parseIndexExpression(head);
     }
 
@@ -552,6 +552,50 @@ function parseExpressionHead(): Node
 
     return fail(
         'Unexpected `' + token.value + '`.');
+}
+
+
+//
+
+function parseArgs(endop: string, outArgs: Node[])
+{
+    let first = true;
+    for (;;)
+    {
+        if (tryConsume('op', endop))
+            break;
+
+        if (!first)
+            consume('op', ',');
+
+        first = false;
+        outArgs.push(parseExpression(P_COMMA));
+    }
+
+    return outArgs;
+}
+
+function parseCallExpression(expr: Node)
+{
+    const args = parseArgs(')', []);
+
+    // Uniform call syntax.
+    if (expr.kind === 'call' && (expr.flags & F_ACCESS))
+    {
+        const head = expr.items
+                && expr.items.length === 1
+                && expr.items[0] || fail();
+
+        return createCall(
+            expr.value || fail(), F_METHOD,
+            [ head ].concat(args));
+    }
+
+    if (expr.kind === 'call' && (expr.flags & F_ID))
+        return createCall(
+            expr.value || fail(), 0, args);
+
+    return fail('TODO dynamic call');
 }
 
 function createLeaf(kind: TokenKind, value: LexValue)
