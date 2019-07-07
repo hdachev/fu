@@ -61,7 +61,7 @@ export function Node(
 
 const F_METHOD          = 1 << 0;
 const F_INFIX           = 1 << 1;
-// const F_PREFIX          = 1 << 2;
+const F_PREFIX          = 1 << 2;
 // const F_POSTFIX         = 1 << 3;
 const F_ACCESS          = 1 << 4;
 const F_ID              = 1 << 5;
@@ -78,7 +78,7 @@ export type Precedence  = number & { K: 'Precedence' };
 const P_RESET           = 1000 as Precedence;
 const P_PREFIX_UNARY    = 3    as Precedence;
 
-// const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
+const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
 // const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
@@ -532,7 +532,7 @@ function parseExpressionHead(): Node
             // case '(': return parseParens()
             // case '$': return parseTypeParam()
             // case '[': return parseArrayLiteral()
-            // default:  return parsePrefix(token.value)
+            default:  return parsePrefix(token.value)
         }
     }
 
@@ -554,10 +554,20 @@ function parseExpressionHead(): Node
         'Unexpected `' + token.value + '`.');
 }
 
+function parsePrefix(op: string)
+{
+    PREFIX.indexOf(op) >= 0 || fail(
+        'Unexpected `' + op + '`.');
+
+    return createCall(
+        op, F_PREFIX,
+        [ parseExpression(P_PREFIX_UNARY) ]);
+}
+
 
 //
 
-function parseArgs(endop: string, outArgs: Node[])
+function parseCallArgs(endop: string, outArgs: Node[])
 {
     let first = true;
     for (;;)
@@ -577,7 +587,7 @@ function parseArgs(endop: string, outArgs: Node[])
 
 function parseCallExpression(expr: Node)
 {
-    const args = parseArgs(')', []);
+    const args = parseCallArgs(')', []);
 
     // Uniform call syntax.
     if (expr.kind === 'call' && (expr.flags & F_ACCESS))
