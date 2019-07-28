@@ -1,21 +1,35 @@
 import { lex, Source, Filename } from './lex';
 import { fail } from './fail';
 import { parse } from './parse';
+import { solve } from './solve';
+import { cpp_codegen } from './codegen_cpp';
 
 let TEST_ID = 0;
 
 function ZERO(src: string)
 {
-    const fname = 'test.' + (TEST_ID++) as Filename;
-    const lexer = lex(src as Source, fname);
+    src = 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
 
-    if (lexer.errors.length)
-        fail('Lex fail:', lexer.errors);
+    const fname     = 'test_' + (TEST_ID++) as Filename;
+    const r_lex     = lex(src as Source, fname);
 
-    parse(lexer) || fail('Parse fail.');
+    if (r_lex.errors.length)
+        fail('Lex fail:', r_lex.errors);
+
+    const r_parse   = parse(r_lex) || fail('Parse fail.');
+    const r_solve   = solve(r_parse) || fail('Solve fail.');
+    const r_cppcg   = cpp_codegen(r_solve) || fail('C++ Codegen fail.');
+
+    r_cppcg;
 }
 
 ZERO(`
-    fn add(a: i32, b: i32) a + b;
-    return add(1, -1);
+    return 1 - 1;
 `);
+
+// ZERO(`
+//     fn sum(a: i32, b: i32) a + b;
+//     return sum(1, -1);
+// `);
+
+console.log('ALL GOOD @', new Date());

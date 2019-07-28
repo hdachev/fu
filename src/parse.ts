@@ -1,5 +1,6 @@
 import * as Fail from './fail';
 import { Token, TokenKind, LexValue } from './lex';
+import { ModuleID } from './commons';
 
 type Options =
 {
@@ -39,7 +40,7 @@ type FullNode<TKind = string> =
 //         node.token);
 // }
 
-export function Node(
+function Node(
     kind:       string,
     items:      Nodes|null      = null,
     flags:      number          = 0,
@@ -163,10 +164,17 @@ export const LET_INIT = 1;
 
 let _fname: string      = '';
 let _tokens: Token[]    = null as any;
-let _idx                = 0;
+let _idx                = -1111;
 let _loc: Token         = null as any;
-let _col0               = 0;
-let _precedence         = 0;
+let _col0               = -1111;
+let _precedence         = -1111;
+let _fnDepth            = -1111;
+
+export type ParseResult =
+{
+    imports: ModuleID[];
+    root: Node;
+};
 
 export function parse(opts: Options)
 {
@@ -177,23 +185,38 @@ export function parse(opts: Options)
     _loc        = _tokens[0] || fail();
     _col0       = 0;
     _precedence = P_RESET;
+    _fnDepth    = 0;
 
     // Check EOF.
     _tokens[_tokens.length - 1].kind === 'eof' || fail(
         'Missing `eof` token.');
 
     //
-    return parseRoot();
+    return {
+        imports: [],
+        root: parseRoot(),
+    };
 }
 
-export function fail(...rest: unknown[])
+function fail(...rest: unknown[])
 {
+    const here  = _tokens[_idx];
     const msg   = rest.length
                 ? rest
-                : [ 'Unexpected `' + _tokens[_idx].value + '`.' ];
+                : [ 'Unexpected `' + here.value + '`.' ];
+
+    const l0 = _loc.line;
+    const c0 = _loc.col;
+
+    const l1 = here.line;
+    const c1 = here.col;
+
+    const addr = l1 === l0
+        ? '@' + l1 + ':' + c1
+        : '@' + l0 + ':' + c0 + '..' + l1 + ':' + c1;
 
     return Fail.fail(
-        _fname + ' at ' + _loc.line + ':' + _loc.col
+        _fname + ' ' + addr
             + ':\n\t', ...msg);
 }
 
@@ -204,7 +227,7 @@ function consume(kind: TokenKind, value?: LexValue)
 {
     const token = _tokens[_idx++];
     token.kind === kind && (value === undefined || token.value === value)
-        || fail('Expecting `' + value + '`, got `' + token.value + '`');
+        || (_idx--, fail('Expected `' + value + '`, got `' + token.value + '`.'));
 
     return token;
 }
@@ -253,8 +276,7 @@ function parseRoot(): Node
     }
 
     //
-    const token = _tokens[_idx];
-    token.kind === 'eof' || fail();
+    consume('eof');
 
     //
     return Node('root', items);
@@ -319,29 +341,41 @@ function fail_Lint(...args: unknown[])
 
 function parseStatement(): Node
 {
-    const loc0 = _loc;
-    const stmt = tryParseNonExprStmt();
-    _loc = loc0;
+    ///////////////////////////////////////////////
+    const loc0  = _loc;
+    const token = _loc = _tokens[_idx++] || fail();
+    ///////////////////////////////////////////////
 
-    if (stmt)
-        return stmt;
+    if (token.kind === 'op' || token.kind === 'id')
+    {
+        switch (token.value)
+        {
+            case '{':
+                return parseBlock();
+
+            case 'fn':
+                return parseFnDecl();
+
+            case 'ret':
+            case 'return':
+                return parseReturn();
+        }
+    }
+
+    ////////////
+    _idx--;
+    _loc = loc0;
+    ////////////
 
     // Expression statement, followed by a semi.
+    return parseExpressionStatement();
+}
+
+function parseExpressionStatement(): Node
+{
     const expr = parseExpression(P_RESET);
     consume('op', ';');
     return expr;
-}
-
-function tryParseNonExprStmt(): Node|null
-{
-    const token = _tokens[_idx++];
-    switch (token.value)
-    {
-        case 'fn': return parseFnDecl();
-    }
-
-    _idx--;
-    return null;
 }
 
 function parseFnDecl(): Node
@@ -356,9 +390,17 @@ function parseFnDecl(): Node
     const items: Nodes = [];
     const flags = parseArgsDecl(items, 'op', ')');
 
+    ///////////
+    _fnDepth++;
+    ///////////
+
     items.push(
         tryPopTypeAnnot(),
          parseStatement());
+
+    ///////////
+    _fnDepth--;
+    ///////////
 
     return Node('fn', items, flags, name && name.value);
 }
@@ -507,57 +549,46 @@ function parseExpressionHead(): Node
     const token = _tokens[_idx++];
     //////////////////////////////
 
-    // Keywords.
-    if (token.kind === 'id')
-    {
-        switch (token.value)
-        {
-            case 'ret':
-            case 'return':
-                return createReturn(
-                    parseExpression());
-        }
-
-        // Identifier expression.
-        return createCall(
-            token.value, F_ID, null);
-    }
-
-    // Blocks & other nonsense.
-    if (token.kind === 'op')
-    {
-        switch (token.value)
-        {
-            case '{': return parseBlock();
-            // case '(': return parseParens()
-            // case '$': return parseTypeParam()
-            // case '[': return parseArrayLiteral()
-            default:  return parsePrefix(token.value)
-        }
-    }
-
-    //
     switch (token.kind)
     {
+        // Literals.
         case 'int':
         case 'num':
         case 'str':
             return createLeaf(
                 token.kind, token.value);
+
+        // Calls & co.
+        case 'id':
+
+            // Identifier expression.
+            return createCall(
+                token.value, F_ID, null);
+
+        // Operators.
+        case 'op':
+
+            // TODO blocks should stick to being statements for the time being.
+            switch (token.value)
+            {
+                // case '(': return parseParens();
+                // case '$': return parseTypeParam();
+                // case '[': return parseArrayLiteral();
+            }
+
+            return parsePrefix(token.value);
     }
 
     ///////
     _idx--;
     ///////
 
-    return fail(
-        'Unexpected `' + token.value + '`.');
+    return fail();
 }
 
 function parsePrefix(op: string)
 {
-    PREFIX.indexOf(op) >= 0 || fail(
-        'Unexpected `' + op + '`.');
+    PREFIX.indexOf(op) >= 0 || (_idx--, fail());
 
     return createCall(
         op, F_PREFIX,
@@ -618,10 +649,28 @@ function createCall(id: LexValue, flags: number, args: Node[]|null)
     return Node('call', args, flags, id);
 }
 
-function createReturn(node: Node)
+
+//
+
+function parseReturn()
 {
-    return Node('return', [ node ]);
+    _fnDepth > 0 || (_idx--, fail());
+
+    const peek = _tokens[_idx];
+    if (peek.kind === 'op' && peek.value === ';')
+        return createReturn(null);
+
+    return createReturn(
+        parseExpressionStatement());
 }
+
+function createReturn(node: Node|null)
+{
+    return Node('return', node && [ node ]);
+}
+
+
+//
 
 function createIf(cond: Node, cons: Node, alt: Node)
 {
