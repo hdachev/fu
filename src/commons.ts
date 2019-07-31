@@ -40,7 +40,8 @@ export type TypeKind    = Primitive | Compound;
 
 export type Type        =
 {
-    kind: TypeKind;
+    readonly kind: TypeKind;
 };
 
 export const t_void: Type = { kind: 'void' };
+export const t_i32:  Type = { kind: 'i32'  };
