@@ -8,7 +8,7 @@ type Options =
     tokens:     Token[];
 };
 
-type Nodes = (Node|null)[];
+export type Nodes = (Node|null)[];
 
 type Flags = number;
 

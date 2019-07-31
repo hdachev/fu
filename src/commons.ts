@@ -1,6 +1,5 @@
 
-export type ModuleID =
-    string & { K: 'ModuleID' };
+export type ModuleID = string & { K: 'ModuleID' };
 
 
 // Scope chain basics.
@@ -24,11 +23,10 @@ export type Overloads   = {};
 
 export type Primitive   = 'i8'  | 'i16' | 'i32' | 'i64'
                         | 'u8'  | 'u16' | 'u32' | 'u64'
+                        | 'f32' | 'f64'
+                        | 'bool'
+                        | 'null' | 'void'
 
-                        // | 'f32' | 'f64'
-                        // | 'bool'
-
-                        // | 'null' | 'void'
                         // | 'type'
 
                         // | 'true' | 'false'
@@ -38,9 +36,11 @@ export type Primitive   = 'i8'  | 'i16' | 'i32' | 'i64'
 
 export type Compound    = 'struct' | 'array';
 
-export type TypeKind    = Primitive;
+export type TypeKind    = Primitive | Compound;
 
 export type Type        =
 {
     kind: TypeKind;
 };
+
+export const t_void: Type = { kind: 'void' };
