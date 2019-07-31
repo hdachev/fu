@@ -1,12 +1,34 @@
-import { Token, LexValue } from './lex';
+import { Node } from './parse';
 
-export type NodeKind = 'node';
+export type Node = Node;
 
-export type Node =
+export function deepClone_Node(node: Node): Node;
+export function deepClone_Node(node: null): null;
+export function deepClone_Node(node: Node|null): Node|null
 {
-    kind:   NodeKind;
-    token:  Token;
+    const mapping = new WeakMap<Node, Node>();
 
-    value:  LexValue;
-    flags:  number;
-};
+    function visit_Node(node: Node|null): Node|null
+    {
+        if (!node)
+            return node;
+
+        let ret = mapping.get(node as Node);
+        if (!ret)
+        {
+            ret = {
+                kind:   node.kind,
+                flags:  node.flags,
+                value:  node.value,
+                items:  node.items && node.items.map(visit_Node),
+                token:  node.token,
+            };
+
+            mapping.set(node, ret);
+        }
+
+        return ret;
+    }
+
+    return visit_Node(node);
+}

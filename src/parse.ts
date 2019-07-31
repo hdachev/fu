@@ -12,7 +12,7 @@ type Nodes = (Node|null)[];
 
 type Flags = number;
 
-type Node =
+export type Node =
 {
     kind:       string;
     flags:      Flags;
@@ -29,16 +29,6 @@ type FullNode<TKind = string> =
     items:      Nodes;
     token:      Token;
 };
-
-// function shallowClone(node: Node): Node
-// {
-//     return Node(
-//         node.kind,
-//         node.items && node.items.slice(),
-//         node.flags,
-//         node.value,
-//         node.token);
-// }
 
 function Node(
     kind:       string,
