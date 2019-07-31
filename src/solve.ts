@@ -1,10 +1,15 @@
-import { ParseResult } from './parse';
-import { Scope } from './commons';
+import { ParseResult, Node } from './parse';
+import { Scope, Type } from './commons';
 
 export type SolveResult =
 {
     parse:      ParseResult;
     exports:    Scope;
+};
+
+export type SolvedNode = Node &
+{
+    type:       Type;
 };
 
 function solveRoot(

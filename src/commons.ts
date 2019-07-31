@@ -22,14 +22,25 @@ export type Overloads   = {};
 
 // Type system basics.
 
-export type Primitive   = 'i8' | 'i16' | 'i32' | 'i64'
-                        | 'u8' | 'u16' | 'u32' | 'u64';
+export type Primitive   = 'i8'  | 'i16' | 'i32' | 'i64'
+                        | 'u8'  | 'u16' | 'u32' | 'u64'
+
+                        // | 'f32' | 'f64'
+                        // | 'bool'
+
+                        // | 'null' | 'void'
+                        // | 'type'
+
+                        // | 'true' | 'false'
+                        // | '0' | '1' | '""' | '[]' | '{}'
+
+                        ;
 
 export type Compound    = 'struct' | 'array';
 
-export type TypeKind    = Primitive | Compound;
+export type TypeKind    = Primitive;
 
-export type Type =
+export type Type        =
 {
-    kind: TypeKind,
+    kind: TypeKind;
 };
