@@ -4,6 +4,8 @@ import { fail } from './fail';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
+export type Type = Type;
+
 export type SolvedNode = Node &
 {
     type:       Type;
@@ -210,7 +212,8 @@ function solveInt(node: Node): SolvedNode
     if (v >= i32_min && v <= i32_max)
         return SolvedNode(node, null, t_i32);
 
-    fail('Out of range for an i32 literal.');
+    return fail(
+        'Out of range for an i32 literal.');
 }
 
 

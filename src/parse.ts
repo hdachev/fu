@@ -151,6 +151,7 @@ export const LET_INIT       = 1;
 
 export const FN_RET_BACK    = -2;
 export const FN_BODY_BACK   = -1;
+export const FN_ARGS_BACK   = FN_RET_BACK;
 
 
 //
@@ -389,13 +390,18 @@ function parseFnDecl(): Node
     _fnDepth++;
     ///////////
 
-    items.push(
-        tryPopTypeAnnot(),
-         parseStatement());
+    const type = tryPopTypeAnnot();
+    const body = parseStatement();
 
     ///////////
     _fnDepth--;
     ///////////
+
+    items.push(
+        type,
+        body.kind === 'block'
+            ? body
+            : createReturn(body));
 
     return Node('fn', items, flags, name && name.value);
 }
