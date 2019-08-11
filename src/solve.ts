@@ -8,6 +8,7 @@ export type SolvedNode = Node &
 {
     type:       Type;
     items:      SolvedNodes|null;
+    target:     Overload|null;
 };
 
 export type SolveResult =
@@ -24,6 +25,106 @@ let _prelude_solved:    SolveResult|null    = null;
 
 //
 
+type Overload =
+{
+    kind: 'fn'|'var'|'type';
+    node: SolvedNode;
+    type: Type;
+
+    // Arity.
+    min: number;
+    max: number;
+    args: Type[]|null;
+};
+
+function Binding(node: SolvedNode, type: Type): Overload
+{
+    return { kind: 'var', node, type, min: 0, max: 0, args: null };
+}
+
+type Scope =
+{
+    [id: string]: Overload[];
+};
+
+
+//
+
+let _scope: Scope|null = null;
+
+function scope_push()
+{
+    const scope = _scope;
+    _scope = Object.create(scope);
+    return scope;
+}
+
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function scope_add(id: string, overload: Overload)
+{
+    const scope = _scope || fail();
+
+    const prev  = scope[id];
+    const next  =
+        hasOwnProperty.call(scope, id)
+            ? prev
+            : scope[id] = prev ? prev.slice() : [];
+
+    if (overload.min)
+        next.push(overload);
+    else
+        next.unshift(overload);
+}
+
+function scope_match(id: string, args: SolvedNodes|null): Overload
+{
+    const scope = _scope || fail();
+    const overloads = scope[id] || fail(
+        '`' + id + '` is not defined.');
+
+    // Arity 0 - blind head match.
+    // Allows simple redefinition of variables and such.
+    if (!args || !args.length)
+    {
+        const head = overloads[0];
+        head.min === 0 || fail(
+            '`' + id + '` expects ' + head.min + ' arguments, none provided.');
+
+        return head;
+    }
+
+    const arity = args.length;
+
+    //
+    let matched: Overload|null = null;
+
+    for (let i = 0; i < overloads.length; i++)
+    {
+        const overload = overloads[i];
+        if (overload.min > arity || overload.max < arity)
+            continue;
+
+        const expect = overload.args || fail();
+        for (let i = 0; i < expect.length; i++)
+        {
+            if (expect[i] !== args[i])
+                continue;
+        }
+
+        if (matched)
+            fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
+
+        matched = overload;
+    }
+
+    return matched || fail(
+        'No overload of `' + id + '` matches call signature.');
+}
+
+
+//
+
 type Solver = (node: Node) => SolvedNode;
 
 const SOLVE: { [nodeKind: string]: Solver } =
@@ -32,11 +133,15 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'fn':       solveBlock,
 
     'let':      solveLet,
+    'call':     solveCall,
 };
 
 function solveBlock(node: Node): SolvedNode
 {
-    return SolvedNode(node, solveNodes(node.items), t_void);
+    const scope0 = scope_push();
+    const out = SolvedNode(node, solveNodes(node.items), t_void);
+    _scope = scope0;
+    return out;
 }
 
 function solveLet(node: Node): SolvedNode
@@ -56,7 +161,12 @@ function solveLet(node: Node): SolvedNode
     annot && init && fail(
         'TODO validate init assigns to annot.');
 
-    return SolvedNode(node, [s_annot, s_init], t_let);
+    //
+    const out       = SolvedNode(node, [s_annot, s_init], t_let);
+    const id        = node.value || fail();
+
+    scope_add(id, Binding(out, t_let));
+    return out;
 }
 
 function evalTypeAnnot(node: Node): SolvedNode
@@ -71,8 +181,21 @@ function evalTypeAnnot(node: Node): SolvedNode
 
 //
 
+function solveCall(node: Node): SolvedNode
+{
+    const id        = node.value || fail();
+    const args      = solveNodes(node.items);
+    const callTarg  = scope_match(id, args);
+
+    return SolvedNode(
+        node, args, callTarg.type, callTarg);
+}
+
+
+//
+
 function SolvedNode(
-    node: Node, items: SolvedNodes|null, type: Type)
+    node: Node, items: SolvedNodes|null, type: Type, target?: Overload)
         : SolvedNode
 {
     return {
@@ -83,6 +206,7 @@ function SolvedNode(
         items,
         token: node.token,
         type,
+        target: target || null,
     };
 }
 
@@ -139,6 +263,8 @@ export function solve(parse: ParseResult): SolveResult
 {
     // TODO merge in all imports + prelude.
     _prelude_solved;
+
+    _scope = null;
 
     //
     const root = solveNode(parse.root);

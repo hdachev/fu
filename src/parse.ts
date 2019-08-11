@@ -146,8 +146,11 @@ const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
 
 // Commons.
 
-export const LET_TYPE = 0;
-export const LET_INIT = 1;
+export const LET_TYPE       = 0;
+export const LET_INIT       = 1;
+
+export const FN_RET_BACK    = 1;
+export const FN_BODY_BACK   = 0;
 
 
 //

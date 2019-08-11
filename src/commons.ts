@@ -3,6 +3,7 @@ export type ModuleID = string & { K: 'ModuleID' };
 
 
 // Scope chain basics.
+// OBSOLETE
 
 export type ScopeKind =
     'root' | 'module' | 'exports' | 'node' | 'struct';
