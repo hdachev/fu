@@ -149,8 +149,8 @@ const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
 export const LET_TYPE       = 0;
 export const LET_INIT       = 1;
 
-export const FN_RET_BACK    = 1;
-export const FN_BODY_BACK   = 0;
+export const FN_RET_BACK    = -2;
+export const FN_BODY_BACK   = -1;
 
 
 //

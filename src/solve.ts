@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK } from './parse';
 import { Type, t_void, t_i32 } from './commons';
 import { fail } from './fail';
 
@@ -14,13 +14,8 @@ export type SolvedNode = Node &
 export type SolveResult =
 {
     root:       SolvedNode;
+    scope:      Scope;
 };
-
-
-//
-
-let _here:              Node|null           = null;
-let _prelude_solved:    SolveResult|null    = null;
 
 
 //
@@ -28,7 +23,7 @@ let _prelude_solved:    SolveResult|null    = null;
 type Overload =
 {
     kind: 'fn'|'var'|'type';
-    node: SolvedNode;
+    node: SolvedNode|null;
     type: Type;
 
     // Arity.
@@ -39,7 +34,27 @@ type Overload =
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
+    node && node.items || fail();
+
     return { kind: 'var', node, type, min: 0, max: 0, args: null };
+}
+
+function Typedef(type: Type): Overload
+{
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null };
+}
+
+function FnDecl(node: SolvedNode): Overload
+{
+    node && node.items || fail();
+
+    const items: SolvedNodes = node.items || fail();
+    const rnode = items[items.length + FN_RET_BACK];
+    const ret   = rnode && rnode.type || fail();
+    const arity = items.length + FN_RET_BACK;
+    const args  = items.slice(0, arity).map(i => i && i.type || fail());
+
+    return { kind: 'fn', node, type: ret, min: arity, max: arity, args };
 }
 
 type Scope =
@@ -50,7 +65,13 @@ type Scope =
 
 //
 
-let _scope: Scope|null = null;
+let _here:              Node|null           = null;
+let _prelude_solved:    Scope|null          = null;
+let _scope:             Scope|null          = null;
+let _current_fn:        SolvedNode|null     = null;
+
+
+//
 
 function scope_push()
 {
@@ -80,8 +101,7 @@ function scope_add(id: string, overload: Overload)
 function scope_match(id: string, args: SolvedNodes|null): Overload
 {
     const scope = _scope || fail();
-    const overloads = scope[id] || fail(
-        '`' + id + '` is not defined.');
+    const overloads = scope[id] || notDefined(id);
 
     // Arity 0 - blind head match.
     // Allows simple redefinition of variables and such.
@@ -123,6 +143,31 @@ function scope_match(id: string, args: SolvedNodes|null): Overload
 }
 
 
+// Pseudo-keywords.
+
+function notDefined(id: string): Overload[]
+{
+    switch (id)
+    {
+        case '__native_pure':
+            return [ __native_pure() ];
+    }
+
+    return fail('`' + id + '` is not defined.');
+}
+
+function __native_pure()
+{
+    preludeOnly();
+
+    const fn    = _current_fn   || fail();
+    const items = fn.items      || fail();
+    const rnode = items[items.length + FN_RET_BACK] || fail();
+
+    return Binding(fn, rnode.type || fail());
+}
+
+
 //
 
 type Solver = (node: Node) => SolvedNode;
@@ -130,19 +175,63 @@ type Solver = (node: Node) => SolvedNode;
 const SOLVE: { [nodeKind: string]: Solver } =
 {
     'root':     solveBlock,
-    'fn':       solveBlock,
+    'block':    solveBlock,
+
+    'fn':       solveFn,
+
+    'return':   solveBlock,     // TODO FIX
 
     'let':      solveLet,
     'call':     solveCall,
+
+    'num':      solveNum,
 };
 
 function solveBlock(node: Node): SolvedNode
 {
-    const scope0 = scope_push();
+    const scope0 = node.kind === 'root'
+        ? _scope
+        : scope_push();
+
     const out = SolvedNode(node, solveNodes(node.items), t_void);
     _scope = scope0;
     return out;
 }
+
+function solveNum(node: Node): SolvedNode
+{
+    return SolvedNode(node, null, t_i32);
+}
+
+
+//
+
+function solveFn(node: Node): SolvedNode
+{
+    const out           = SolvedNode(node, null, t_void);
+
+    //////////////////////////
+    const current_fn0   = _current_fn;
+    const scope0        = scope_push();
+
+    _current_fn         = out;
+
+    solveNodes(
+        node.items,
+        out.items = (node.items || fail()).map(() => null));
+
+    _current_fn         = current_fn0;
+    _scope              = scope0;
+    //////////////////////////
+
+    const id = node.value || fail();
+    scope_add(id, FnDecl(out));
+
+    return out;
+}
+
+
+//
 
 function solveLet(node: Node): SolvedNode
 {
@@ -224,13 +313,13 @@ function solveNode(node: Node): SolvedNode
     return result;
 }
 
-function solveNodes(nodes: Nodes|null): SolvedNodes|null
+function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
 {
     if (!nodes)
         return null;
 
-    const here0 = _here;
-    const result: SolvedNodes = [];
+    const here0                 = _here;
+    const result: SolvedNodes   = output || [];
 
     for (let i = 0, n = nodes.length; i < n; i++)
     {
@@ -257,17 +346,37 @@ import { parse } from './parse';
 import { prelude_src } from './prelude';
 
 _prelude_solved = solve(
-    parse(lex(prelude_src as Source, '__prelude' as Filename)));
+    parse(lex(prelude_src as Source, '__prelude' as Filename)))
+        .scope;
+
+function preludeOnly()
+{
+    if (_prelude_solved)
+        fail('Only allowable in prelude.');
+}
 
 export function solve(parse: ParseResult): SolveResult
 {
-    // TODO merge in all imports + prelude.
-    _prelude_solved;
+    // Globals.
+    if (!_prelude_solved)
+        _scope = listGlobals();
+    else
+        _scope = Object.create(_prelude_solved);
 
+    const scope = _scope || fail();
+    const root  = solveNode(parse.root);
     _scope = null;
 
-    //
-    const root = solveNode(parse.root);
+    return { root, scope };
+}
 
-    return { root };
+
+//
+
+function listGlobals(): Scope
+{
+    return {
+        'i32':  [ Typedef(t_i32 ) ],
+        'void': [ Typedef(t_void) ],
+    };
 }
