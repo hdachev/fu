@@ -257,7 +257,7 @@ export function lex(src: Source, fname: Filename): LexResult
                 let str = src.slice(idx0, idx1);
 
                 token(
-                    checkNum(!dot && !exp ? 'num' : 'int', str), str,
+                    checkNum(dot || exp ? 'num' : 'int', str), str,
                     idx0, idx1);
             }
         }

@@ -128,7 +128,7 @@ function scope_match(id: string, args: SolvedNodes|null): Overload
         const expect = overload.args || fail();
         for (let i = 0; i < expect.length; i++)
         {
-            if (expect[i] !== args[i])
+            if (expect[i] !== (args[i] || fail()).type)
                 continue;
         }
 
@@ -184,7 +184,7 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'let':      solveLet,
     'call':     solveCall,
 
-    'num':      solveNum,
+    'int':      solveInt,
 };
 
 function solveBlock(node: Node): SolvedNode
@@ -198,9 +198,19 @@ function solveBlock(node: Node): SolvedNode
     return out;
 }
 
-function solveNum(node: Node): SolvedNode
+
+//
+
+const i32_min = 0xffffffff|0;
+const i32_max = 0x7fffffff|0;
+
+function solveInt(node: Node): SolvedNode
 {
-    return SolvedNode(node, null, t_i32);
+    const v = Number(node.value);
+    if (v >= i32_min && v <= i32_max)
+        return SolvedNode(node, null, t_i32);
+
+    fail('Out of range for an i32 literal.');
 }
 
 
