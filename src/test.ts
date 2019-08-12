@@ -2,7 +2,9 @@ import { lex, Source, Filename } from './lex';
 import { fail } from './fail';
 import { parse } from './parse';
 import { solve } from './solve';
-import { cpp_codegen } from './codegen_cpp';
+
+import { cpp_codegen } from './cpp_codegen';
+import * as cpp_builder from './cpp_builder';
 
 let TEST_ID = 0;
 
@@ -22,6 +24,27 @@ function ZERO(src: string)
 
     // TODO: compile & eval.
     console.log(r_cppcg.src);
+
+    cpp_builder.build(r_cppcg.src, result =>
+    {
+        if (result.err)
+            fail('BUILD', result.err);
+
+        else cpp_builder.link([ result.data ], result =>
+        {
+            if (result.err)
+                fail('LINK', result.err);
+
+            else cpp_builder.run(result.data, result =>
+            {
+                if (result.err)
+                    fail('RUN', result.err);
+
+                if (result.data !== 0)
+                    fail('BADRES', result.data);
+            });
+        });
+    });
 }
 
 ZERO(`

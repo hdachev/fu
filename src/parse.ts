@@ -399,7 +399,7 @@ function parseFnDecl(): Node
 
     items.push(
         type,
-        body.kind === 'block'
+        body.kind === 'block' || body.kind === 'return'
             ? body
             : createReturn(body));
 
