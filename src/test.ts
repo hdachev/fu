@@ -22,29 +22,35 @@ function ZERO(src: string)
     const r_solve   = solve(r_parse)            || fail('Solve fail.');
     const r_cppcg   = cpp_codegen(r_solve.root) || fail('C++ Codegen fail.');
 
-    // TODO: compile & eval.
-    console.log(r_cppcg.src);
-
-    cpp_builder.build(r_cppcg.src, result =>
+    //
+    const FAIL = fail;
     {
-        if (result.err)
-            fail('BUILD', result.err);
+        const fail = (...args: unknown[]) =>
+        {
+            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + r_cppcg.src.replace(/\n/g, '\n\t'));
+        };
 
-        else cpp_builder.link([ result.data ], result =>
+        cpp_builder.build(r_cppcg.src, result =>
         {
             if (result.err)
-                fail('LINK', result.err);
+                fail('BUILD', result.err);
 
-            else cpp_builder.run(result.data, result =>
+            else cpp_builder.link([ result.data ], result =>
             {
                 if (result.err)
-                    fail('RUN', result.err);
+                    fail('LINK', result.err);
 
-                if (result.data !== 0)
-                    fail('BADRES', result.data);
+                else cpp_builder.run(result.data, result =>
+                {
+                    if (result.err)
+                        fail('RUN', result.err);
+
+                    if (result.data !== 0)
+                        fail('EXIT CODE != 0:', result.data);
+                });
             });
         });
-    });
+    }
 }
 
 ZERO(`

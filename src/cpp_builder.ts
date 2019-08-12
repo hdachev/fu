@@ -41,12 +41,13 @@ function exec(cmd: string, cb: Callback<true>)
 {
     child_process.exec(cmd, {}, (err: any, stdout: any, stderr: any) =>
     {
-        const exitCode = err && err.code;
-        if (exitCode)
+        if (err !== null)
         {
-            console.log('\nCMD:\n\t' + cmd + '\n\nEXIT:\n\t' + exitCode + '\n\nSTDERR:\n' + stderr + '\n\nSTDOUT:\n' + stdout + '\n');
+            const code = err.code;
 
-            cb({ err: { cmd, err, stdout, stderr } });
+            console.log('\nCMD:\n\t' + cmd + '\n\nEXIT CODE:\n\t' + code + '\n\nSTDERR:\n' + stderr + '\n\nSTDOUT:\n' + stdout + '\n');
+
+            cb({ err: { cmd, err, code, stdout, stderr } });
             return;
         }
 
@@ -105,6 +106,8 @@ export function build(src: string, cb: Callback<Unit>)
     });
 }
 
+const NOT_WIN = !/^win\d+$/.test(process.platform);
+
 export function link(units: Unit[], cb: Callback<Binary>)
 {
     const hash = crypto.createHash('md5')
@@ -136,12 +139,23 @@ export function link(units: Unit[], cb: Callback<Binary>)
             return;
         }
 
+        if (NOT_WIN)
+            fs.chmodSync(tmp, 0o755);
+
         fs.renameSync(tmp, exe);
+
         cb({ data: ok });
     });
 }
 
 export function run(binary: Binary, cb: Callback<number>)
 {
-    binary; cb;
+    exec(binary.exe, result =>
+    {
+        const code = result.err
+            ? result.err.code || 10099001
+            : 0;
+
+        cb({ data: code });
+    });
 }

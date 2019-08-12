@@ -37,7 +37,7 @@ function exitScope(s: CppScope)
 
 function cgRoot(root: SolvedNode)
 {
-    const src = cgNodes(root.items).join(';\n' + _indent) + ';\n\n';
+    const src = cgNodes(root.items).join(';\n' + _indent) + ';\n';
 
     let includes = '';
     for (const key in _libs)
