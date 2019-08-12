@@ -29,13 +29,30 @@ export type Unit =
 
 export type Binary =
 {
-    path:   string;
+    exe:    string;
 };
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+const fs            = require('fs');
+const path          = require('path');
+const crypto        = require('crypto');
 const child_process = require('child_process');
+
+function exec(cmd: string, cb: Callback<true>)
+{
+    child_process.exec(cmd, {}, (err: any, stdout: any, stderr: any) =>
+    {
+        const exitCode = err && err.code;
+        if (exitCode)
+        {
+            console.log('\nCMD:\n\t' + cmd + '\n\nEXIT:\n\t' + exitCode + '\n\nSTDERR:\n' + stderr + '\n\nSTDOUT:\n' + stdout + '\n');
+
+            cb({ err: { cmd, err, stdout, stderr } });
+            return;
+        }
+
+        cb({ data: true });
+    });
+}
 
 
 //
@@ -50,45 +67,78 @@ catch (o_O) {};
 
 //
 
-const GCC = 'g++ -std=c++2a';
+const GCC       = 'g++ -std=c++2a';
+const GCC_BUILD = GCC + ' -c -o';
+const GCC_LINK  = GCC + ' -o';
 
 export function build(src: string, cb: Callback<Unit>)
 {
-    const hash      = crypto.createHash('md5').update(src).digest('hex');
+    const hash      = crypto.createHash('md5')
+        .update(GCC_BUILD)
+        .update(src)
+        .digest('hex');
+
     const cpp       = path.join(DIR, hash + '.cpp');
-
     const o         = cpp + '.o';
-    const u: Unit   = { o, hash, cpp };
+    const ok: Unit  = { o, hash, cpp };
 
-    if (!fs.existsSync(o))
+    if (fs.existsSync(o))
     {
-        const tmp = o + '.tmp';
-        fs.writeFileSync(cpp, src);
-        const cmd = GCC + ' -o "' + tmp + '" "' + cpp + '"';
-
-        child_process.exec(cmd, {}, (err: any, stdout: any, stderr: any) =>
-        {
-            console.log('BUILD >', err, stdout, stderr);
-
-            const exitCode = err && err.code;
-            if (exitCode)
-            {
-                cb({ err: { cmd, err, stdout, stderr } });
-                return;
-            }
-
-            // Done.
-            fs.renameSync(tmp, o);
-            cb({ data: u });
-        });
+        cb({ data: ok });
+        return;
     }
 
-    cb({ data: u });
+    const tmp = o + '.tmp';
+    fs.writeFileSync(cpp, src);
+    const cmd = GCC_BUILD + ' "' + tmp + '" "' + cpp + '"';
+
+    exec(cmd, result =>
+    {
+        if (result.err)
+        {
+            cb(result);
+            return;
+        }
+
+        fs.renameSync(tmp, o);
+        cb({ data: ok });
+    });
 }
 
 export function link(units: Unit[], cb: Callback<Binary>)
 {
-    units; cb;
+    const hash = crypto.createHash('md5')
+        .update(GCC_LINK);
+
+    const files = units.map(u =>
+    {
+        hash.update(u.hash + '-' + u.o + '-' + u.cpp);
+        return '"' + u.o + '"';
+    });
+
+    const exe = path.join(DIR, hash.digest('hex') + '.exe');
+    const ok: Binary = { exe };
+
+    if (fs.existsSync(exe))
+    {
+        cb({ data: ok });
+        return;
+    }
+
+    const tmp = exe + '.tmp';
+    const cmd = GCC_LINK + ' "' + tmp + '" ' + files;
+
+    exec(cmd, result =>
+    {
+        if (result.err)
+        {
+            cb(result);
+            return;
+        }
+
+        fs.renameSync(tmp, exe);
+        cb({ data: ok });
+    });
 }
 
 export function run(binary: Binary, cb: Callback<number>)
