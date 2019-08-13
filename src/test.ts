@@ -23,6 +23,10 @@ function ZERO(src: string)
     const r_cppcg   = cpp_codegen(r_solve.root) || fail('C++ Codegen fail.');
 
     //
+    if (!cpp_builder.available)
+        return;
+
+    //
     const FAIL = fail;
     {
         const fail = (...args: unknown[]) =>

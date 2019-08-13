@@ -59,6 +59,9 @@ function exec(cmd: string, cb: Callback<true>)
 //
 
 const DIR = path.join(__dirname, '../', 'build.cpp');
+
+export const available = !!fs.mkdirSync;
+
 try
 {
     fs.mkdirSync(DIR);
