@@ -181,7 +181,7 @@ const SOLVE: { [nodeKind: string]: Solver } =
 
     'fn':       solveFn,
 
-    'return':   solveBlock,     // TODO FIX
+    'return':   solveReturn,
 
     'let':      solveLet,
     'call':     solveCall,
@@ -241,6 +241,39 @@ function solveFn(node: Node): SolvedNode
     scope_add(id, FnDecl(out));
 
     return out;
+}
+
+function solveReturn(node: Node): SolvedNode
+{
+    const out = SolvedNode(node, solveNodes(node.items), t_void);
+
+    // Either use the return expression,
+    //  or the void-returning return statement itself,
+    //   so we always have a node to rely on.
+
+    const nextExpr  = out.items && out.items[0] || out;
+    const nextType  = nextExpr.type || fail();
+
+    const fn        = _current_fn || fail();
+    const items     = fn.items || fail();
+    const retIdx    = items.length + FN_RET_BACK;
+    const prevExpr  = items[retIdx];
+    const prevType  = prevExpr ? prevExpr.type || fail() : null;
+
+    if (prevType)
+        testAssignable(
+            nextType, prevType,
+                'Non-assignable return types.');
+    else
+        items[retIdx] = nextExpr || fail();
+
+    return out;
+}
+
+function testAssignable(target: Type, assignee: Type, error: string)
+{
+    // TODO we can work with the AST nodes directly here.
+    target === assignee || fail(error);
 }
 
 

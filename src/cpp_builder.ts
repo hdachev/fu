@@ -71,7 +71,7 @@ catch (o_O) {};
 
 //
 
-const GCC       = 'g++ -std=c++2a';
+const GCC       = 'g++ -std=c++1z';
 const GCC_BUILD = GCC + ' -c -o';
 const GCC_LINK  = GCC + ' -o';
 
