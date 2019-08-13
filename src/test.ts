@@ -62,7 +62,16 @@ ZERO(`
 `);
 
 ZERO(`
-    fn sum(a: i32, b: i32): i32 a + b;
+    fn sum(a: i32, b: i32): i32
+        a + b;
+
+    return sum(1, -1);
+`);
+
+ZERO(`
+    fn sum(a: i32, b: i32)
+        a + b;
+
     return sum(1, -1);
 `);
 

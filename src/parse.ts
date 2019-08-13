@@ -316,9 +316,7 @@ function parseBlock(): Node
         items.push(expr);
     }
 
-    return items.length === 1
-         ? items[0]
-         : createBlock(items);
+    return createBlock(items);
 }
 
 function createBlock(items: Nodes)
