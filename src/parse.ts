@@ -344,15 +344,10 @@ function parseStatement(): Node
     {
         switch (token.value)
         {
-            case '{':
-                return parseBlock();
-
-            case 'fn':
-                return parseFnDecl();
-
-            case 'ret':
-            case 'return':
-                return parseReturn();
+            case '{':       return parseBlock();
+            case 'if':      return parseIf();
+            case 'fn':      return parseFnDecl();
+            case 'return':  return parseReturn();
         }
     }
 
@@ -671,7 +666,22 @@ function createReturn(node: Node|null)
 
 //
 
-function createIf(cond: Node, cons: Node, alt: Node)
+function parseIf()
+{
+    consume('op', '(');
+    const cond = parseExpression();
+    consume('op', ')');
+
+    const cons = parseStatement();
+
+    const alt = tryConsume('id', 'else')
+        ? parseStatement()
+        : null;
+
+    return createIf(cond, cons, alt);
+}
+
+function createIf(cond: Node, cons: Node, alt: Node|null)
 {
     return Node('if', [ cond, cons, alt ]);
 }

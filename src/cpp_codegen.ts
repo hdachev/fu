@@ -61,6 +61,14 @@ function blockWrap(nodes: Nodes)
     return src;
 }
 
+function blockWrapOne(node: SolvedNode)
+{
+    if (node.kind === 'block')
+        return cgBlock(node);
+
+    return blockWrap([ node ]);
+}
+
 function cgBlock(block: SolvedNode)
 {
     const s0 = enterScope();
@@ -172,12 +180,16 @@ function typeAnnot(type: Type)
 
 function cgIf(node: SolvedNode)
 {
-    const nodes = cgNodes(node.items) || fail('TODO');
+    const [n0, n1, n2] = node.items || fail();
 
-    if (!_exprN)
-        fail('TODO');
+    const stmt = _exprN === 0;
 
-    const [cond, cons, alt] = nodes;
+    const cond = n0 && cgNode(n0);
+    const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
+    const alt  = n2 && (stmt ? blockWrapOne(n2) : cgNode(n2));
+
+    if (stmt)
+        return 'if (' + cond + ') ' + cons + (alt ? _indent + 'else ' + alt : '');
 
     if (cons && alt)
         return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
@@ -205,13 +217,13 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'int':      cgLiteral,
 };
 
-function cgNodes(nodes: Nodes, allowStatements: 'stmt'|null = null)
+function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
 {
     const result: string[] = [];
 
     //////////////////////
     const exprN0 = _exprN;
-    if (allowStatements)
+    if (statements)
         _exprN = 0;
     else
         _exprN++;
@@ -232,17 +244,21 @@ function cgNodes(nodes: Nodes, allowStatements: 'stmt'|null = null)
     return result;
 }
 
-function cgNode(node: SolvedNode)
+function cgNode(node: SolvedNode, statement: boolean = false)
 {
     /////////
-    _exprN++;
+    const exprN0 = _exprN;
+    if (statement)
+        _exprN = 0;
+    else
+        _exprN++;
     /////////
 
     const out = CODEGEN[node.kind](node);
 
-    /////////
-    _exprN--;
-    /////////
+    ////////////////
+    _exprN = exprN0;
+    ////////////////
 
     return out;
 }
