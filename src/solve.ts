@@ -181,11 +181,13 @@ const SOLVE: { [nodeKind: string]: Solver } =
 
     'fn':       solveFn,
     'return':   solveReturn,
+    'empty':    solveEmpty,
 
     'let':      solveLet,
     'call':     solveCall,
 
     'if':       solveIf,
+    'loop':     solveBlock, // TODO
 
     'int':      solveInt,
 };
@@ -215,6 +217,11 @@ function solveInt(node: Node): SolvedNode
 
     return fail(
         'Out of range for an i32 literal.');
+}
+
+function solveEmpty(node: Node): SolvedNode
+{
+    return SolvedNode(node, null, t_void);
 }
 
 
@@ -298,7 +305,7 @@ function solveLet(node: Node): SolvedNode
         'TODO validate init assigns to annot.');
 
     //
-    const out       = SolvedNode(node, [s_annot, s_init], t_let);
+    const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
     const id        = node.value || fail();
 
     scope_add(id, Binding(out, t_let));

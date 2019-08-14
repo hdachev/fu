@@ -1,6 +1,6 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK } from './parse';
+import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX } from './parse';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -156,7 +156,10 @@ function cgCall(node: SolvedNode)
     {
         switch (items.length)
         {
-            case 1: return id + items[0];
+            case 1: return node.flags & F_POSTFIX
+                            ? items[0] + id
+                            : id + items[0];
+
             case 2: return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
         }
     }
@@ -170,6 +173,11 @@ function cgCall(node: SolvedNode)
 function cgLiteral(node: SolvedNode)
 {
     return node.value || 'void';
+}
+
+function cgEmpty()
+{
+    return '';
 }
 
 function typeAnnot(type: Type)
@@ -203,6 +211,36 @@ function cgIf(node: SolvedNode)
     return fail('TODO');
 }
 
+function cgLoop(node: SolvedNode)
+{
+    const items = node.items || fail();
+
+    const n_init = items[LOOP_INIT];
+    const n_cond = items[LOOP_COND];
+    const n_post = items[LOOP_POST];
+    const n_body = items[LOOP_BODY];
+    const n_pcnd = items[LOOP_POST_COND];
+
+    const init = n_init && cgNode(n_init);
+    const cond = n_cond && cgNode(n_cond);
+    const post = n_post && cgNode(n_post);
+    const body = n_body && blockWrapOne(n_body);
+    const pcnd = n_pcnd && cgNode(n_pcnd);
+
+    if (pcnd)
+    {
+        if (init || post || cond)
+            fail('TODO extended loop.');
+
+        return 'do' + body + _indent + 'while (' + cond + ')';
+    }
+
+    if (init || post || !cond)
+        return 'for (' + init + '; ' + cond + '; ' + post + ')' + body;
+
+    return 'while (' + cond + ')' + body;
+}
+
 
 //
 
@@ -213,8 +251,11 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'fn':       cgFn,
     'return':   cgReturn,
     'call':     cgCall,
+    'let':      cgLet,
     'if':       cgIf,
+    'loop':     cgLoop,
     'int':      cgLiteral,
+    'empty':    cgEmpty,
 };
 
 function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)

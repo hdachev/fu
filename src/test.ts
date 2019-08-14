@@ -104,4 +104,20 @@ ZERO(`
     return sign(10) * 2 + sign(-5);
 `);
 
+ZERO(`
+    let sum = 0;
+    for (let i = 0; i < 10; i++)
+        sum++;
+
+    return sum * 2 - 20;
+`);
+
+ZERO(`
+    let sum = 0;
+    for (let i = 10; i --> 0; )
+        sum--;
+
+    return sum * 2 + 20;
+`);
+
 console.log('ALL GOOD @', new Date());

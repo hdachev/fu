@@ -50,16 +50,16 @@ function Node(
 // Calltypes, probably an enum is better for the 4 kinds,
 //  can't be mixed and matched.
 
-const F_METHOD          = 1 << 0;
-const F_INFIX           = 1 << 1;
-const F_PREFIX          = 1 << 2;
-// const F_POSTFIX         = 1 << 3;
-const F_ACCESS          = 1 << 4;
-const F_ID              = 1 << 5;
+export const F_METHOD       = 1 << 0;
+export const F_INFIX        = 1 << 1;
+export const F_PREFIX       = 1 << 2;
+export const F_POSTFIX      = 1 << 3;
+export const F_ACCESS       = 1 << 4;
+export const F_ID           = 1 << 5;
 
-const F_LOCAL           = 1 << 6;
-const F_IMPLICIT        = 1 << 7;
-const F_UNTYPED_ARGS    = 1 << 8;
+export const F_LOCAL        = 1 << 6;
+export const F_IMPLICIT     = 1 << 7;
+export const F_UNTYPED_ARGS = 1 << 8;
 
 
 // Operator precedence table.
@@ -70,7 +70,7 @@ const P_RESET           = 1000 as Precedence;
 const P_PREFIX_UNARY    = 3    as Precedence;
 
 const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
-// const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
+const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
     ASSIGNMENT:     { [op: string]: string };
@@ -152,6 +152,12 @@ export const LET_INIT       = 1;
 export const FN_RET_BACK    = -2;
 export const FN_BODY_BACK   = -1;
 export const FN_ARGS_BACK   = FN_RET_BACK;
+
+export const LOOP_INIT      = 0;
+export const LOOP_COND      = 1;
+export const LOOP_POST      = 2;
+export const LOOP_BODY      = 3;
+export const LOOP_POST_COND = 4;
 
 
 //
@@ -345,9 +351,12 @@ function parseStatement(): Node
         switch (token.value)
         {
             case '{':       return parseBlock();
+            case 'let':     return parseLetStmt();
             case 'if':      return parseIf();
+            case 'for':     return parseFor();
             case 'fn':      return parseFnDecl();
             case 'return':  return parseReturn();
+            case ';':       return parseEmpty();
         }
     }
 
@@ -358,6 +367,11 @@ function parseStatement(): Node
 
     // Expression statement, followed by a semi.
     return parseExpressionStatement();
+}
+
+function parseEmpty(): Node
+{
+    return Node('empty');
 }
 
 function parseExpressionStatement(): Node
@@ -437,6 +451,13 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
     }
 
     return outFlags;
+}
+
+function parseLetStmt()
+{
+    const ret = parseLet();
+    consume('op', ';');
+    return ret;
 }
 
 function parseLet()
@@ -530,8 +551,8 @@ function tryParseExpressionTail(head: Node): Node|null
     if (p1)
         return _idx--, tryParseBinary(head, v, p1);
 
-    // if (POSTFIX.indexOf(token.value) >= 0)
-    //     return parsePostfix(head, token.value);
+    if (POSTFIX.indexOf(token.value) >= 0)
+        return createCall(token.value, F_POSTFIX, [ head ]);
 
     // Backtrack.
     return _idx--, null;
@@ -684,4 +705,29 @@ function parseIf()
 function createIf(cond: Node, cons: Node, alt: Node|null)
 {
     return Node('if', [ cond, cons, alt ]);
+}
+
+
+//
+
+function parseFor()
+{
+    consume('op', '(');
+
+    consume('id', 'let');
+    const init = parseLetStmt();
+    const cond = parseExpressionStatement();
+    const post = _tokens[_idx].value === ')'
+        ? parseEmpty()
+        : parseExpression();
+
+    consume('op', ')');
+    const body = parseStatement();
+
+    return createLoop(init, cond, post, body, null);
+}
+
+function createLoop(init: Node|null, cond: Node|null, post: Node|null, body: Node|null, postcond: Node|null)
+{
+    return Node('loop', [ init, cond, post, body, postcond ]);
 }
