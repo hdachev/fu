@@ -82,4 +82,15 @@ ZERO(`
     return sign(7) + sign(-3) + sign(0);
 `);
 
+ZERO(`
+    fn sign(a: i32) {
+        if (a > 0)
+            return 1;
+
+        return -2;
+    }
+
+    return sign(10) * 2 + sign(-5);
+`);
+
 console.log('ALL GOOD @', new Date());
