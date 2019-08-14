@@ -75,4 +75,11 @@ ZERO(`
     return sum(1, -1);
 `);
 
+ZERO(`
+    fn sign(a: i32)
+        a > 0 ? 1 : a < 0 ? -1 : 0;
+
+    return sign(7) + sign(-3) + sign(0);
+`);
+
 console.log('ALL GOOD @', new Date());

@@ -10,6 +10,7 @@ let _indent: string     = null as any;
 let _ids: CppScope      = null as any;
 let _libs: StdLibs      = null as any;
 let _fnMode: boolean    = false;
+let _exprN: number      = 0;
 
 function RESET()
 {
@@ -17,6 +18,7 @@ function RESET()
     _ids    = Object.create(null);
     _libs   = Object.create(null);
     _fnMode = false;
+    _exprN  = 0;
 }
 
 function enterScope(): CppScope
@@ -37,7 +39,7 @@ function exitScope(s: CppScope)
 
 function cgRoot(root: SolvedNode)
 {
-    const src = cgNodes(root.items).join(';\n' + _indent) + ';\n';
+    const src = cgNodes(root.items, 'stmt').join(';\n' + _indent) + ';\n';
 
     let includes = '';
     for (const key in _libs)
@@ -53,7 +55,7 @@ function blockWrap(nodes: Nodes)
 {
     const indent0 = _indent;
     _indent += '    ';
-    const src = indent0 + '{' + _indent + cgNodes(nodes).join(';' + _indent) + ';' + indent0 + '}';
+    const src = indent0 + '{' + _indent + cgNodes(nodes, 'stmt').join(';' + _indent) + ';' + indent0 + '}';
     _indent = indent0;
 
     return src;
@@ -147,7 +149,7 @@ function cgCall(node: SolvedNode)
         switch (items.length)
         {
             case 1: return id + items[0];
-            case 2: return items[0] + ' ' + id + ' ' + items[1];
+            case 2: return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
         }
     }
 
@@ -168,6 +170,27 @@ function typeAnnot(type: Type)
     return 'int';
 }
 
+function cgIf(node: SolvedNode)
+{
+    const nodes = cgNodes(node.items) || fail('TODO');
+
+    if (!_exprN)
+        fail('TODO');
+
+    const [cond, cons, alt] = nodes;
+
+    if (cons && alt)
+        return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
+
+    if (cons)
+        return '(' + cond + ' && ' + cons + ')';
+
+    if (alt)
+        return '(' + cond + ' || ' + alt + ')';
+
+    return fail('TODO');
+}
+
 
 //
 
@@ -178,12 +201,21 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'fn':       cgFn,
     'return':   cgReturn,
     'call':     cgCall,
+    'if':       cgIf,
     'int':      cgLiteral,
 };
 
-function cgNodes(nodes: Nodes)
+function cgNodes(nodes: Nodes, allowStatements: 'stmt'|null = null)
 {
     const result: string[] = [];
+
+    //////////////////////
+    const exprN0 = _exprN;
+    if (allowStatements)
+        _exprN = 0;
+    else
+        _exprN++;
+    //////////////////////
 
     if (nodes)
         for (let i = 0; i < nodes.length; i++)
@@ -193,12 +225,26 @@ function cgNodes(nodes: Nodes)
             result[i]   = src;
         }
 
+    ////////////////
+    _exprN = exprN0;
+    ////////////////
+
     return result;
 }
 
 function cgNode(node: SolvedNode)
 {
-    return CODEGEN[node.kind](node);
+    /////////
+    _exprN++;
+    /////////
+
+    const out = CODEGEN[node.kind](node);
+
+    /////////
+    _exprN--;
+    /////////
+
+    return out;
 }
 
 

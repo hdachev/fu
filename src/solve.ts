@@ -1,5 +1,5 @@
 import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK } from './parse';
-import { Type, t_void, t_i32 } from './commons';
+import { Type, t_void, t_i32, t_bool } from './commons';
 import { fail } from './fail';
 
 export type SolvedNodes = (SolvedNode|null)[];
@@ -180,11 +180,12 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'block':    solveBlock,
 
     'fn':       solveFn,
-
     'return':   solveReturn,
 
     'let':      solveLet,
     'call':     solveCall,
+
+    'if':       solveIf,
 
     'int':      solveInt,
 };
@@ -329,6 +330,26 @@ function solveCall(node: Node): SolvedNode
 
 //
 
+function solveIf(node: Node): SolvedNode
+{
+    const items   = solveNodes(node.items) || fail();
+    const [, cons, alt] = items;
+
+    const priExpr = cons || alt || fail();
+    const secExpr = cons && alt ? alt : cons;
+
+    const priType = priExpr.type;
+    const secType = secExpr && secExpr.type;
+
+    if (secType)
+        testAssignable(priType, secType, "TODO");
+
+    return SolvedNode(node, items, priType);
+}
+
+
+//
+
 function SolvedNode(
     node: Node, items: SolvedNodes|null, type: Type, target?: Overload)
         : SolvedNode
@@ -423,6 +444,7 @@ function listGlobals(): Scope
 {
     return {
         'i32':  [ Typedef(t_i32 ) ],
+        'bool': [ Typedef(t_bool) ],
         'void': [ Typedef(t_void) ],
     };
 }

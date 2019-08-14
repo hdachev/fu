@@ -45,4 +45,5 @@ export type Type        =
 };
 
 export const t_void: Type = { kind: 'void' };
+export const t_bool: Type = { kind: 'bool' };
 export const t_i32:  Type = { kind: 'i32'  };
