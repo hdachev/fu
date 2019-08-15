@@ -128,4 +128,12 @@ ZERO(`
     return sum - 15;
 `);
 
+ZERO(`
+    let sum = 0;
+    while (sum < 15)
+        sum += 2;
+
+    return sum - 16;
+`);
+
 console.log('ALL GOOD @', new Date());
