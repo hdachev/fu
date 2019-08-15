@@ -120,4 +120,12 @@ ZERO(`
     return sum * 2 + 20;
 `);
 
+ZERO(`
+    let sum = 0;
+    while (sum < 15)
+        sum++;
+
+    return sum - 15;
+`);
+
 console.log('ALL GOOD @', new Date());

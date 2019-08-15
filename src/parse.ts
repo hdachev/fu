@@ -353,9 +353,10 @@ function parseStatement(): Node
             case '{':       return parseBlock();
             case 'let':     return parseLetStmt();
             case 'if':      return parseIf();
-            case 'for':     return parseFor();
-            case 'fn':      return parseFnDecl();
             case 'return':  return parseReturn();
+            case 'fn':      return parseFnDecl();
+            case 'for':     return parseFor();
+            case 'while':   return parseWhile();
             case ';':       return parseEmpty();
         }
     }
@@ -725,6 +726,16 @@ function parseFor()
     const body = parseStatement();
 
     return createLoop(init, cond, post, body, null);
+}
+
+function parseWhile()
+{
+    consume('op', '(');
+    const cond = parseExpression();
+    consume('op', ')');
+    const body = parseStatement();
+
+    return createLoop(null, cond, null, body, null);
 }
 
 function createLoop(init: Node|null, cond: Node|null, post: Node|null, body: Node|null, postcond: Node|null)
