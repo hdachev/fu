@@ -182,7 +182,7 @@ function cgEmpty()
 
 function typeAnnot(type: Type)
 {
-    type.kind === 'i32' || fail('TODO');
+    type.canon === 'i32' || fail('TODO');
     return 'int';
 }
 

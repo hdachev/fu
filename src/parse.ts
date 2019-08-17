@@ -69,7 +69,7 @@ export type Precedence  = number & { K: 'Precedence' };
 const P_RESET           = 1000 as Precedence;
 const P_PREFIX_UNARY    = 3    as Precedence;
 
-const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*' ];
+const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*', '&', 'mut' ];
 const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
@@ -577,6 +577,13 @@ function parseExpressionHead(): Node
         // Calls & co.
         case 'id':
 
+            // Keyword expressions.
+            switch (token.value)
+            {
+                case 'mut':
+                    return parsePrefix(token.value);
+            }
+
             // Identifier expression.
             return createCall(
                 token.value, F_ID, null);
@@ -584,12 +591,16 @@ function parseExpressionHead(): Node
         // Operators.
         case 'op':
 
-            // TODO blocks should stick to being statements for the time being.
             switch (token.value)
             {
                 // case '(': return parseParens();
-                // case '$': return parseTypeParam();
                 // case '[': return parseArrayLiteral();
+
+                // case '{': ...    either c++/js implict construction -
+                //                  can actually work with `[`s too.
+                //           ...    or block expressions and/or $0, $1 / $i, $j / $x, $y, $z, $w
+                //                  swift-style auto lambdas.
+                // case '$': return parseTypeParam();
             }
 
             return parsePrefix(token.value);

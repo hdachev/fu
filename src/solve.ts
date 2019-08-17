@@ -1,6 +1,7 @@
 import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK } from './parse';
-import { Type, t_void, t_i32, t_bool } from './commons';
 import { fail } from './fail';
+
+import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -278,10 +279,9 @@ function solveReturn(node: Node): SolvedNode
     return out;
 }
 
-function testAssignable(target: Type, assignee: Type, error: string)
+function testAssignable(host: Type, guest: Type, error: string)
 {
-    // TODO we can work with the AST nodes directly here.
-    target === assignee || fail(error);
+    isAssignable(host, guest) || fail(error);
 }
 
 
@@ -314,11 +314,31 @@ function solveLet(node: Node): SolvedNode
 
 function evalTypeAnnot(node: Node): SolvedNode
 {
-    node.kind === 'call' && node.value === 'i32' || fail(
-        'TODO evalTypeAnnot', node);
+    if (node.kind === 'call')
+    {
+        const items = node.items;
+        if (items)
+        {
+            if (items.length === 1)
+            {
+                const T = evalTypeAnnot(items[0] || fail()) || fail();
+                const t = T.type || fail();
 
-    return node
-        && SolvedNode(node, null, t_i32);
+                if (node.value === '&')
+                    return SolvedNode(node, null, add_ref(t));
+
+                if (node.value === 'mut')
+                    return SolvedNode(node, null, add_mut(t));
+            }
+        }
+        else
+        {
+            if (node.value === 'i32')
+                return SolvedNode(node, null, t_i32);
+        }
+    }
+
+    return fail('TODO');
 }
 
 
