@@ -50,7 +50,7 @@ function ZERO(src: string)
                         fail('RUN', result.err);
 
                     if (result.data !== 0)
-                        fail('EXIT CODE != 0:', result.data);
+                        fail('EXIT CODE', result.data);
                 });
             });
         });
@@ -143,6 +143,13 @@ ZERO(`
         sum += 2;
 
     return sum - 16;
+`);
+
+ZERO(`
+    fn named(a: i32, b: i32)
+        a - b * 2;
+
+    return named(b: 3, 6);
 `);
 
 console.log('ALL GOOD @', new Date());
