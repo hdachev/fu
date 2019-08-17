@@ -58,6 +58,15 @@ function ZERO(src: string)
 }
 
 ZERO(`
+    fn decr(num: &mut i32)
+        num--;
+
+    let res = 1;
+    decr(res);
+    return res;
+`);
+
+ZERO(`
     return 1 - 1;
 `);
 

@@ -122,18 +122,16 @@ function scope_match(id: string, args: SolvedNodes|null): Overload
     //
     let matched: Overload|null = null;
 
-    for (let i = 0; i < overloads.length; i++)
+    NEXT: for (let i = 0; i < overloads.length; i++)
     {
         const overload = overloads[i];
         if (overload.min > arity || overload.max < arity)
-            continue;
+            continue NEXT;
 
         const expect = overload.args || fail();
         for (let i = 0; i < expect.length; i++)
-        {
-            if (expect[i] !== (args[i] || fail()).type)
-                continue;
-        }
+            if (!isAssignable(expect[i], (args[i] || fail()).type))
+                continue NEXT;
 
         if (matched)
             fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
@@ -271,7 +269,7 @@ function solveReturn(node: Node): SolvedNode
 
     if (prevType)
         testAssignable(
-            nextType, prevType,
+            prevType, nextType,
                 'Non-assignable return types.');
     else
         items[retIdx] = nextExpr || fail();
@@ -308,7 +306,7 @@ function solveLet(node: Node): SolvedNode
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
     const id        = node.value || fail();
 
-    scope_add(id, Binding(out, t_let));
+    scope_add(id, Binding(out, add_mut(add_ref(t_let))));
     return out;
 }
 
