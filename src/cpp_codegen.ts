@@ -182,8 +182,16 @@ function cgEmpty()
 
 function typeAnnot(type: Type)
 {
-    type.canon === 'i32' || fail('TODO');
-    return 'int';
+    if (type.canon === 'i32')
+    {
+        switch (type.quals)
+        {
+            case '':   return 'int' ;
+            case 'mr': return 'int&';
+        }
+    }
+
+    return fail('TODO');
 }
 
 function cgIf(node: SolvedNode)
