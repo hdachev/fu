@@ -60,6 +60,7 @@ export const F_ID           = 1 << 5;
 export const F_LOCAL        = 1 << 6;
 export const F_IMPLICIT     = 1 << 7;
 export const F_UNTYPED_ARGS = 1 << 8;
+export const F_NAMED_ARGS   = 1 << 9;
 
 
 // Operator precedence table.
@@ -625,27 +626,53 @@ function parsePrefix(op: string)
 
 //
 
-function parseCallArgs(endop: string, outArgs: Node[])
+function parseCallArgs(endop: string, out_args: Node[])
 {
+    let flags = 0;
+
     let first = true;
     for (;;)
     {
         if (tryConsume('op', endop))
             break;
 
+        // Comma juggle.
         if (!first)
             consume('op', ',');
 
         first = false;
-        outArgs.push(parseExpression(P_COMMA));
+
+        // Named arguments.
+        let name: LexValue|null = null;
+
+        if (_tokens[_idx    ] .kind === 'id' &&
+            _tokens[_idx + 1].value === ':')
+        {
+            name = _tokens[_idx].value;
+            _idx += 2;
+
+            flags |= F_NAMED_ARGS;
+        }
+
+        const expr = parseExpression(P_COMMA);
+
+        out_args.push(
+            name    ? createLabel(name, expr)
+                    : expr);
     }
 
-    return outArgs;
+    return flags;
+}
+
+function createLabel(id: LexValue, value: Node)
+{
+    return Node('label', [ value ], 0, id);
 }
 
 function parseCallExpression(expr: Node)
 {
-    const args = parseCallArgs(')', []);
+    const args: Node[] = [];
+    const argFlags = parseCallArgs(')', args);
 
     // Uniform call syntax.
     if (expr.kind === 'call' && (expr.flags & F_ACCESS))
@@ -655,13 +682,13 @@ function parseCallExpression(expr: Node)
                 && expr.items[0] || fail();
 
         return createCall(
-            expr.value || fail(), F_METHOD,
+            expr.value || fail(), F_METHOD & argFlags,
             [ head ].concat(args));
     }
 
     if (expr.kind === 'call' && (expr.flags & F_ID))
         return createCall(
-            expr.value || fail(), 0, args);
+            expr.value || fail(), argFlags, args);
 
     return fail('TODO dynamic call');
 }
