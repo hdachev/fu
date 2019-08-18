@@ -208,7 +208,7 @@ ZERO(`
         using pos: Pos;
 
         fn dist(other: Player)
-            return x - other.x;
+            x - other.x;
     }
 
     let a = Player(Pos(10));

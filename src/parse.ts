@@ -578,7 +578,7 @@ function tryParseExpressionTail(head: Node): Node|null
     switch (v)
     {
         case ';': return _idx--, null;
-        // case '.': return parseAccessExpression(head);
+        case '.': return parseAccessExpression(head);
         case '(': return parseCallExpression(head);
         // case '[': return parseIndexExpression(head);
     }
@@ -655,6 +655,13 @@ function parsePrefix(op: string)
     return createCall(
         op, F_PREFIX,
         [ parseExpression(P_PREFIX_UNARY) ]);
+}
+
+function parseAccessExpression(expr: Node)
+{
+    return createCall(
+        consume('id').value,
+        F_ACCESS, [ expr ]);
 }
 
 
