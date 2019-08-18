@@ -152,4 +152,69 @@ ZERO(`
     return named(b: 3, 6);
 `);
 
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
+
+    fn size(r: Range)
+        r.max - r.min;
+
+    return size(Range(14, 21)) - 7;
+`);
+
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
+
+    let r = Range(1, 2);
+    r.min++;
+    return r.max - r.min;
+`);
+
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
+
+    fn size(using r: Range)
+        max - min;
+
+    return size(Range(14, 21)) - 7;
+`);
+
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+
+        fn size()
+            max - min;
+    }
+
+    return size(Range(14, 21)) - 7;
+`);
+
+ZERO(`
+    struct Pos {
+        x: i32;
+    }
+
+    struct Player {
+        using pos: Pos;
+
+        fn dist(other: Player)
+            return x - other.x;
+    }
+
+    let a = Player(Pos(10));
+    let b = Player(Pos( 4));
+
+    return dist(a, b) - 6;
+`);
+
 console.log('ALL GOOD @', new Date());
