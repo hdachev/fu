@@ -78,6 +78,18 @@ function cgBlock(block: SolvedNode)
     return src;
 }
 
+function cgParens(node: SolvedNode)
+{
+    const items = cgNodes(node.items);
+    if (!items || !items.length)
+        return '(false /*empty parens*/)';
+
+    if (items.length === 1)
+        return items[0];
+
+    return '(' + items.join(', ') + ')';
+}
+
 function cgFn(fn: SolvedNode)
 {
     ///////////////////////////
@@ -264,6 +276,10 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'loop':     cgLoop,
     'int':      cgLiteral,
     'empty':    cgEmpty,
+
+    'comma':    cgParens,
+    'parens':   cgParens,
+    'label':    cgParens,
 };
 
 function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
