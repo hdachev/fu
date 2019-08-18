@@ -57,10 +57,16 @@ export const F_POSTFIX      = 1 << 3;
 export const F_ACCESS       = 1 << 4;
 export const F_ID           = 1 << 5;
 
-export const F_LOCAL        = 1 << 6;
-export const F_IMPLICIT     = 1 << 7;
-export const F_UNTYPED_ARGS = 1 << 8;
-export const F_NAMED_ARGS   = 1 << 9;
+export const F_LOCAL        = 1 << 8;
+export const F_ARG          = 1 << 9;
+export const F_FIELD        = 1 << 10;
+
+export const F_MUT          = 1 << 16;
+export const F_IMPLICIT     = 1 << 17;
+export const F_USING        = 1 << 18;
+
+export const F_UNTYPED_ARGS = 1 << 24;
+export const F_NAMED_ARGS   = 1 << 25;
 
 
 // Operator precedence table.
@@ -285,6 +291,32 @@ function createBlock(items: Nodes)
 
 //
 
+function parseStructDecl(): Node
+{
+    const name = tryConsume('id');
+
+    consume('op', '{');
+
+    const items = parseBlockLike('op', '}',
+        parseStructItem);
+
+    return Node(
+        'struct', items, 0,
+            name && name.value);
+}
+
+function parseStructItem(): Node
+{
+    const member = parseLet();
+    member.flags |= F_FIELD;
+
+    consume('op', ';');
+    return member;
+}
+
+
+//
+
 function parseBlockLike(
     endKind: TokenKind, endVal: LexValue,
         parseItem: () => Node): Node[]
@@ -358,6 +390,7 @@ function parseStatement(): Node
             case 'for':     return parseFor();
             case 'while':   return parseWhile();
             case ';':       return parseEmpty();
+            case 'struct':  return parseStructDecl();
         }
     }
 
@@ -448,6 +481,8 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
             fail('TODO default arguments');
 
         arg.flags &= ~F_LOCAL;
+        arg.flags |= F_ARG;
+
         outArgs.push(arg);
     }
 
