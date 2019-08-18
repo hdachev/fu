@@ -1,5 +1,7 @@
 import * as tagset from './tagset';
 import { fail } from './fail';
+import { LexValue } from './lex';
+import { CONTEXT } from './context';
 
 export type Primitive   =
     'i8'  | 'u8'  |
@@ -56,7 +58,7 @@ export function isAssignable(host: Type, guest: Type)
 const TYPES: { [canon: string]: Type }                      = {};
 const QUALS: { [canon: string]: { [quals: string]: Type } } = {};
 
-export function create(canon: Canon, quals: Quals|null): Type
+export function createType(canon: Canon, quals: Quals|null): Type
 {
     if (!quals)
         return TYPES[canon] || (TYPES[canon] = Type(canon, q_EMPTY));
@@ -72,7 +74,7 @@ function qadd(type: Type, q: tagset.Tag)
 {
     return type.quals.indexOf(q) >= 0
          ? type
-         : create(type.canon, tagset.union(type.quals, q));
+         : createType(type.canon, tagset.union(type.quals, q));
 }
 
 export function add_mut(type: Type)
@@ -96,6 +98,50 @@ export function serialize(type: Type)
 
 //
 
-export const t_i32  = create('i32' , null);
-export const t_void = create('void', null);
-export const t_bool = create('bool', null);
+export const t_i32  = createType('i32' , null);
+export const t_void = createType('void', null);
+export const t_bool = createType('bool', null);
+
+
+//
+
+export type Struct =
+{
+    kind:   'struct';
+    id:     string;
+    fields: StructField[];
+};
+
+export type StructField =
+{
+    id:     LexValue;
+    type:   Type;
+};
+
+export function registerStruct(id: string, fields: StructField[])
+{
+    // TODO struct data goes on compile context.
+    // TODO use module id.
+
+    const canon     = 's_' + id as Canon;
+    const type      = createType(canon, null);
+
+    const def: Struct =
+    {
+        kind:   'struct',
+        id:     id      || fail(),
+        fields: fields  || fail(),
+    };
+
+    CONTEXT.TYPES[canon] = def;
+
+    return type;
+}
+
+export type LookupType = Struct;
+
+export function lookupType(canon: Canon): LookupType|null
+{
+    return CONTEXT.TYPES[canon]
+        || null;
+}

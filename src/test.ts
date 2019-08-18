@@ -2,6 +2,7 @@ import { lex, Source, Filename } from './lex';
 import { fail } from './fail';
 import { parse } from './parse';
 import { solve } from './solve';
+import { resetContext } from './context';
 
 import { cpp_codegen } from './cpp_codegen';
 import * as cpp_builder from './cpp_builder';
@@ -10,6 +11,9 @@ let TEST_ID = 0;
 
 function ZERO(src: string)
 {
+    resetContext();
+
+    //
     src = 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
 
     const fname     = 'test_' + (TEST_ID++) as Filename;
@@ -175,46 +179,46 @@ ZERO(`
     return r.max - r.min;
 `);
 
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
-    }
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
+//     }
 
-    fn size(using r: Range)
-        max - min;
+//     fn size(using r: Range)
+//         max - min;
 
-    return size(Range(14, 21)) - 7;
-`);
+//     return size(Range(14, 21)) - 7;
+// `);
 
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
 
-        fn size()
-            max - min;
-    }
+//         fn size()
+//             max - min;
+//     }
 
-    return size(Range(14, 21)) - 7;
-`);
+//     return size(Range(14, 21)) - 7;
+// `);
 
-ZERO(`
-    struct Pos {
-        x: i32;
-    }
+// ZERO(`
+//     struct Pos {
+//         x: i32;
+//     }
 
-    struct Player {
-        using pos: Pos;
+//     struct Player {
+//         using pos: Pos;
 
-        fn dist(other: Player)
-            x - other.x;
-    }
+//         fn dist(other: Player)
+//             x - other.x;
+//     }
 
-    let a = Player(Pos(10));
-    let b = Player(Pos( 4));
+//     let a = Player(Pos(10));
+//     let b = Player(Pos( 4));
 
-    return dist(a, b) - 6;
-`);
+//     return dist(a, b) - 6;
+// `);
 
 console.log('ALL GOOD @', new Date());

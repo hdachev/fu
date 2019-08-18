@@ -509,7 +509,7 @@ function parseLet()
     return createLet(id, flags, type, init);
 }
 
-function createLet(
+export function createLet(
     id: LexValue, flags: Flags,
     type: Node|null, init: Node|null)
 {

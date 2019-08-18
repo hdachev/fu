@@ -1,25 +1,42 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
 import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX } from './parse';
+import { lookupType, Struct } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
-type StdLibs            = { [id: string]: boolean };
+type Dedupes            = { [id: string]: string };
+
+
+//
+
+let _libs: Dedupes      = null as any; // includes
+let _tfwd: Dedupes      = null as any; // type fwd decls
+let _ffwd: Dedupes      = null as any; // fn fwd decls
+let _tdef: string       = null as any; // type decls
+let _fdef: string       = null as any; // fn decls
 
 let _indent: string     = null as any;
 let _ids: CppScope      = null as any;
-let _libs: StdLibs      = null as any;
 let _fnMode: boolean    = false;
 let _exprN: number      = 0;
 
 function RESET()
 {
+    _libs   = Object.create(null);
+    _tfwd   = Object.create(null);
+    _ffwd   = Object.create(null);
+    _tdef   = '';
+    _fdef   = '';
+
     _indent = '\n';
     _ids    = Object.create(null);
-    _libs   = Object.create(null);
     _fnMode = false;
     _exprN  = 0;
 }
+
+
+//
 
 function enterScope(): CppScope
 {
@@ -37,18 +54,96 @@ function exitScope(s: CppScope)
 
 //
 
+function typeAnnot(type: Type)
+{
+    const fwd = typeAnnotBase(type);
+
+    switch (type.quals)
+    {
+        case '':   return fwd;
+        case 'mr': return fwd + '&';
+    }
+
+    return fail('TODO');
+}
+
+function typeAnnotBase(type: Type): string|null
+{
+    switch (type.canon)
+    {
+        case 'i32': return 'int';
+    }
+
+    const tdef = lookupType(type.canon) || fail('TODO', type.canon);
+
+    switch (tdef.kind)
+    {
+        case 'struct':
+            if (!_tfwd[type.canon])
+            {
+                _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
+                _tdef += declareStruct(type, tdef);
+            }
+
+            return type.canon;
+    }
+
+    fail('TODO', tdef.kind);
+}
+
+function declareStruct(t: Type, s: Struct)
+{
+    let def = '\nstruct ' + t.canon + '\n{';
+
+    const fields = s.fields;
+    for (let i = 0; i < fields.length; i++)
+    {
+        const field = fields[i];
+        def += '\n    ' + typeAnnot(field.type) + ' ' + field.id + ';';
+    }
+
+    return def + '\n};\n';
+}
+
+
+//
+
+function collectDedupes(_d: Dedupes|string)
+{
+    let out = '';
+
+    if (typeof _d === 'string')
+    {
+        out = _d;
+    }
+    else
+    {
+        const keys = Object.keys(_d).sort();
+        for (let i = 0; i < keys.length; i++)
+            out += _d[keys[i]];
+    }
+
+    if (out)
+        out += '\n';
+
+    return out;
+}
+
+
+//
+
 function cgRoot(root: SolvedNode)
 {
     const src = cgNodes(root.items, 'stmt').join(';\n' + _indent) + ';\n';
 
-    let includes = '';
-    for (const key in _libs)
-        includes += '\n#include ' + key;
+    let header = collectDedupes(_libs)
+               + collectDedupes(_tfwd)
+               + collectDedupes(_ffwd)
+               + collectDedupes(_tdef)
+               + collectDedupes(_fdef)
+               ;
 
-    if (includes)
-        includes += '\n';
-
-    return includes + src;
+    return header + src;
 }
 
 function blockWrap(nodes: Nodes)
@@ -164,7 +259,7 @@ function cgCall(node: SolvedNode)
     const id = node.value || fail();
     const items = cgNodes(node.items);
 
-    if (items && /[^a-z0-9_]/.test(id))
+    if (items && /[^a-zA-Z0-9_]/.test(id))
     {
         switch (items.length)
         {
@@ -179,6 +274,12 @@ function cgCall(node: SolvedNode)
     if (node.target && node.target.kind === 'var')
         return id;
 
+    if (node.target && node.target.kind === 'field')
+        return items[0] + '.' + id;
+
+    if (node.target && node.target.kind === 'defctor')
+        return (node.target.type || fail()).canon + ' { ' + items.join(', ') + ' }';
+
     return id + '(' + items.join(', ') + ')';
 }
 
@@ -192,19 +293,8 @@ function cgEmpty()
     return '';
 }
 
-function typeAnnot(type: Type)
-{
-    if (type.canon === 'i32')
-    {
-        switch (type.quals)
-        {
-            case '':   return 'int' ;
-            case 'mr': return 'int&';
-        }
-    }
 
-    return fail('TODO');
-}
+//
 
 function cgIf(node: SolvedNode)
 {
@@ -280,6 +370,7 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'comma':    cgParens,
     'parens':   cgParens,
     'label':    cgParens,
+    'struct':   cgEmpty,
 };
 
 function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)

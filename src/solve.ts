@@ -1,7 +1,7 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_FIELD } from './parse';
 import { fail } from './fail';
 
-import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut } from './types';
+import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -25,7 +25,7 @@ export type SolveResult =
 
 type Overload =
 {
-    kind: 'fn'|'var'|'type';
+    kind: 'fn'|'var'|'field'|'type'|'defctor';
     node: SolvedNode|null;
     type: Type;
 
@@ -39,8 +39,18 @@ type Overload =
 function Binding(node: SolvedNode, type: Type): Overload
 {
     node && node.items || fail();
-
     return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null };
+}
+
+function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
+{
+    node && node.items || fail();
+
+    // const thisArg = SolvedNode(
+    //     createLet('this' as any, F_IMPLICIT, null, null),
+    //         null, structType);
+
+    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ] };
 }
 
 function Typedef(type: Type): Overload
@@ -64,6 +74,16 @@ function FnDecl(node: SolvedNode): Overload
     return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n };
 }
 
+function DefaultCtor(type: Type, members: SolvedNode[]): Overload
+{
+    const arg_t = members.map(i => i && i.type  || fail());
+    const arg_n = members.map(i => i && i.value || fail());
+
+    const arity = members.length;
+
+    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n };
+}
+
 type Scope =
 {
     [id: string]: Overload[];
@@ -76,6 +96,8 @@ let _here:              Node|null           = null;
 let _prelude_solved:    Scope|null          = null;
 let _scope:             Scope|null          = null;
 let _current_fn:        SolvedNode|null     = null;
+let _current_str:       SolvedNode|null     = null;
+let _current_strt:      Type|null           = null;
 
 
 //
@@ -257,17 +279,18 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'block':    solveBlock,
     'label':    solveComma,
 
-    'fn':       solveFn,
-    'return':   solveReturn,
-    'empty':    solveEmpty,
-
     'let':      solveLet,
     'call':     solveCall,
-
     'if':       solveIf,
     'loop':     solveBlock, // TODO
 
+    'fn':       solveFn,
+    'return':   solveReturn,
+
+    'struct':   solveStruct,
+
     'int':      solveInt,
+    'empty':    solveEmpty,
 };
 
 function solveBlock(node: Node): SolvedNode
@@ -318,24 +341,84 @@ function solveFn(node: Node): SolvedNode
     const out           = SolvedNode(node, null, t_void);
 
     //////////////////////////
-    const current_fn0   = _current_fn;
-    const scope0        = scope_push();
+    {
+        const current_fn0   = _current_fn;
+        const scope0        = scope_push();
 
-    _current_fn         = out;
+        _current_fn         = out;
 
-    solveNodes(
-        node.items,
-        out.items = (node.items || fail()).map(() => null));
+        solveNodes(
+            node.items,
+            out.items = (node.items || fail()).map(() => null));
 
-    _current_fn         = current_fn0;
-    _scope              = scope0;
+        _current_fn         = current_fn0;
+        _scope              = scope0;
+    }
     //////////////////////////
 
-    const id = node.value || fail();
+    const id = node.value || fail('TODO anonymous fns');
     scope_add(id, FnDecl(out));
 
     return out;
 }
+
+
+//
+
+function solveStruct(node: Node): SolvedNode
+{
+    const out           = SolvedNode(node, null, t_void);
+
+    const fields: StructField[] = [];
+
+    const id            = node.value || fail('TODO anonymous structs');
+    const type          = registerStruct(id, fields);
+
+    // Add the arity-0 type entry.
+    scope_add(id, Typedef(type));
+
+    //////////////////////////
+    {
+        const current_str0  = _current_str;
+        const current_strt0 = _current_strt;
+
+        _current_str        = out;
+        _current_strt       = type;
+
+        solveNodes(
+            node.items,
+            out.items = (node.items || fail()).map(() => null));
+
+        _current_str        = current_str0;
+        _current_strt       = current_strt0;
+    }
+    //////////////////////////
+
+    // Add a default constructor.
+    {
+        const members: SolvedNode[] = [];
+        const items = out.items || fail();
+        for (let i = 0; i < items.length; i++)
+        {
+            const item = items[i];
+            if (item && item.kind === 'let' && (item.flags & F_FIELD))
+            {
+                members.push(item);
+                fields.push({
+                    id:   item.value || fail(),
+                    type: item.type  || fail(),
+                });
+            }
+        }
+
+        scope_add(id, DefaultCtor(type, members));
+    }
+
+    return out;
+}
+
+
+//
 
 function solveReturn(node: Node): SolvedNode
 {
@@ -393,7 +476,13 @@ function solveLet(node: Node): SolvedNode
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
     const id        = node.value || fail();
 
-    scope_add(id, Binding(out, add_mut(add_ref(t_let))));
+    const type      = add_mut(add_ref(t_let));
+
+    if (node.flags & F_FIELD)
+        scope_add(id, Field(out, _current_strt || fail(), type));
+    else
+        scope_add(id, Binding(out, type));
+
     return out;
 }
 
