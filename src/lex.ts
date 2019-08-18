@@ -141,6 +141,12 @@ export function lex(src: Source, fname: Filename): LexResult
             }
             else
             {
+                if (c === '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
+                }
+
                 out += c;
             }
         }
@@ -387,6 +393,9 @@ export function lex(src: Source, fname: Filename): LexResult
     }
 
     // end of file token
+    line++;
+    lidx = idx;
+
     token(
         'eof', 'eof',
         idx, idx);

@@ -252,9 +252,6 @@ function parseRoot(): Node
 {
     _loc = _tokens[_idx];
 
-    //
-    let items: Node[] = [];
-
     // Imports only ok on top of files.
     // for (;;) {
     //     if (!peek('id', 'import'))
@@ -265,25 +262,32 @@ function parseRoot(): Node
     //     items += parseImport()
     // }
 
-    //
-    for (;;)
-    {
-        const token = _tokens[_idx];
-        if (token.kind === 'eof')
-            break;
-
-        _col0 = token.col;
-        items.push(parseStatement());
-    }
-
-    //
-    consume('eof');
-
-    //
-    return Node('root', items);
+    return Node('root',
+        parseBlockLike('eof', 'eof',
+            parseStatement));
 }
 
+
+//
+
 function parseBlock(): Node
+{
+    return createBlock(
+        parseBlockLike('op', '}',
+            parseStatement));
+}
+
+function createBlock(items: Nodes)
+{
+    return Node('block', items);
+}
+
+
+//
+
+function parseBlockLike(
+    endKind: TokenKind, endVal: LexValue,
+        parseItem: () => Node): Node[]
 {
     const line0 = _tokens[_idx].line;
     const col00 = _col0;
@@ -292,7 +296,7 @@ function parseBlock(): Node
     for (;;)
     {
         const token = _tokens[_idx];
-        if (token.kind === 'op' && token.value === '}')
+        if (token.kind === endKind && token.value === endVal)
         {
             // Done.
             _col0 = col00;
@@ -303,7 +307,7 @@ function parseBlock(): Node
             const col1  = token.col;
 
             line1 === line0 || col1 === _col0 || fail_Lint(
-                'Bad closing `}` indent, expecting ' + (_col0 - 1)
+                'Bad closing `' + token.value + '` indent, expecting ' + (_col0 - 1)
                     + ', got ' + (col1 - 1)
                     + '. Block starts on line ' + line0 + '.');
 
@@ -316,19 +320,14 @@ function parseBlock(): Node
             'Bad indent, expecting more than ' + col00
                 + '. Block starts on line ' + line0 + '.');
 
-        const expr = parseStatement();
+        const expr = parseItem();
         expr.kind !== 'call' || ((expr.flags & (F_ID | F_METHOD)) === 0) || expr.items && expr.items.length > 1 || fail_Lint(
             'Orphan pure-looking expression.');
 
         items.push(expr);
     }
 
-    return createBlock(items);
-}
-
-function createBlock(items: Nodes)
-{
-    return Node('block', items);
+    return items;
 }
 
 function fail_Lint(...args: unknown[])
