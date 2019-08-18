@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut } from './types';
@@ -33,18 +33,19 @@ type Overload =
     min: number;
     max: number;
     args: Type[]|null;
+    names: string[]|null;
 };
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
     node && node.items || fail();
 
-    return { kind: 'var', node, type, min: 0, max: 0, args: null };
+    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null };
 }
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -55,9 +56,12 @@ function FnDecl(node: SolvedNode): Overload
     const rnode = items[items.length + FN_RET_BACK];
     const ret   = rnode && rnode.type || fail();
     const arity = items.length + FN_RET_BACK;
-    const args  = items.slice(0, arity).map(i => i && i.type || fail());
+    const args  = items.slice(0, arity);
 
-    return { kind: 'fn', node, type: ret, min: arity, max: arity, args };
+    const arg_t = args.map(i => i && i.type  || fail());
+    const arg_n = args.map(i => i && i.value || fail());
+
+    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n };
 }
 
 type Scope =
@@ -101,13 +105,13 @@ function scope_add(id: string, overload: Overload)
         next.unshift(overload);
 }
 
-function scope_match(id: string, args: SolvedNodes|null): Overload
+function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
 {
     const scope = _scope || fail();
     const overloads = scope[id] || notDefined(id);
 
     // Arity 0 - blind head match.
-    // Allows simple redefinition of variables and such.
+    // Allows simple shadowing of variables and such, latest wins.
     if (!args || !args.length)
     {
         const head = overloads[0];
@@ -119,8 +123,28 @@ function scope_match(id: string, args: SolvedNodes|null): Overload
 
     const arity = args.length;
 
+    // Prep labelled args for remap.
+    let names: (string|null)[]|null = null;
+    if (flags & F_NAMED_ARGS)
+    {
+        names = [];
+        let some = false;
+
+        for (let i = 0; i < arity; i++)
+        {
+            const arg = args[i];
+            names[i] =
+                arg && arg.kind === 'label'
+                    ? (some = true, arg.value) || fail()
+                    : null;
+        }
+
+        some || fail();
+    }
+
     //
-    let matched: Overload|null = null;
+    let matched: Overload|null  = null;
+    let mut_args                = args;
 
     NEXT: for (let i = 0; i < overloads.length; i++)
     {
@@ -128,17 +152,71 @@ function scope_match(id: string, args: SolvedNodes|null): Overload
         if (overload.min > arity || overload.max < arity)
             continue NEXT;
 
-        const expect = overload.args || fail();
-        for (let i = 0; i < expect.length; i++)
-            if (!isAssignable(expect[i], (args[i] || fail()).type))
+        // Remap named arguments.
+        let actual: SolvedNodes = args;
+        if (names)
+        {
+            const overloadNames = overload.names;
+            if (!overloadNames)
                 continue NEXT;
 
+            // Move named arguments around.
+            for (let i = 0; i < names.length; i++)
+            {
+                const id = names[i];
+                if (!id)
+                    continue;
+
+                const idx = overloadNames.indexOf(id);
+                if (idx < 0)
+                    continue NEXT;
+
+                if (actual === args)
+                    actual = args.map(() => null);
+
+                actual[idx] = args[i];
+            }
+
+            // Fill the rest.
+            actual === args && fail();
+            {
+                let i = 0;
+                let j = 0;
+
+                while (i < args.length && j < actual.length)
+                {
+                    if (actual[j]) { j++; continue; }
+                    if (names [i]) { i++; continue; }
+
+                    actual[j++] = args[i++];
+                }
+            }
+        }
+
+        // Type check args.
+        const expect = overload.args || fail();
+        for (let i = 0; i < expect.length; i++)
+            if (!isAssignable(expect[i], (actual[i] || fail()).type))
+                continue NEXT;
+
+        // Forbid ambiguity.
         if (matched)
             fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
 
-        matched = overload;
+        // Done!
+        matched     = overload;
+        mut_args    = actual;
     }
 
+    // Mutate call args last thing.
+    if (matched && mut_args !== args)
+    {
+        mut_args.length === args.length || fail();
+        for (let i = 0; i < mut_args.length; i++)
+            args[i] = mut_args[i];
+    }
+
+    // Done.
     return matched || fail(
         'No overload of `' + id + '` matches call signature.');
 }
@@ -177,6 +255,7 @@ const SOLVE: { [nodeKind: string]: Solver } =
 {
     'root':     solveBlock,
     'block':    solveBlock,
+    'label':    solveComma,
 
     'fn':       solveFn,
     'return':   solveReturn,
@@ -200,6 +279,14 @@ function solveBlock(node: Node): SolvedNode
     const out = SolvedNode(node, solveNodes(node.items), t_void);
     _scope = scope0;
     return out;
+}
+
+function solveComma(node: Node): SolvedNode
+{
+    const items = solveNodes(node.items);
+    const last = items && items[items.length - 1] || fail();
+
+    return SolvedNode(node, items, last.type || fail());
 }
 
 
@@ -346,7 +433,7 @@ function solveCall(node: Node): SolvedNode
 {
     const id        = node.value || fail();
     const args      = solveNodes(node.items);
-    const callTarg  = scope_match(id, args);
+    const callTarg  = scope_match__mutargs(id, args, node.flags);
 
     return SolvedNode(
         node, args, callTarg.type, callTarg);
