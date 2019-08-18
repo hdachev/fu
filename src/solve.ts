@@ -402,7 +402,7 @@ function evalTypeAnnot(node: Node): SolvedNode
     if (node.kind === 'call')
     {
         const items = node.items;
-        if (items)
+        if (items && items.length)
         {
             if (items.length === 1)
             {
@@ -418,8 +418,18 @@ function evalTypeAnnot(node: Node): SolvedNode
         }
         else
         {
-            if (node.value === 'i32')
-                return SolvedNode(node, null, t_i32);
+            const id        = node.value || fail();
+            const scope     = _scope || fail();
+            const overloads = scope[id] || notDefined(id);
+
+            for (let i = 0; i < overloads.length; i++)
+            {
+                const maybe = overloads[i];
+                if (maybe.kind === 'type')
+                    return SolvedNode(node, null, maybe.type);
+            }
+
+            fail('No type `' + id + '` in scope.');
         }
     }
 
