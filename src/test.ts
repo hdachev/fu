@@ -179,17 +179,17 @@ ZERO(`
     return r.max - r.min;
 `);
 
-// ZERO(`
-//     struct Range {
-//         min: i32;
-//         max: i32;
-//     }
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
 
-//     fn size(using r: Range)
-//         max - min;
+    fn size(using r: Range)
+        max - min;
 
-//     return size(Range(14, 21)) - 7;
-// `);
+    return size(Range(14, 21)) - 7;
+`);
 
 // ZERO(`
 //     struct Range {

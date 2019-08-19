@@ -234,7 +234,7 @@ function consume(kind: TokenKind, value?: LexValue)
 {
     const token = _tokens[_idx++];
     token.kind === kind && (value === undefined || token.value === value)
-        || (_idx--, fail('Expected `' + value + '`, got `' + token.value + '`.'));
+        || (_idx--, fail('Expected `' + (value || kind) + '`, got `' + token.value + '`.'));
 
     return token;
 }
@@ -499,8 +499,8 @@ function parseLetStmt()
 function parseLet()
 {
     let flags   = F_LOCAL;
-    if (tryConsume('id', 'implicit'))
-        flags  |= F_IMPLICIT;
+    if (tryConsume('id', 'using'   )) flags |= F_USING;
+    if (tryConsume('id', 'implicit')) flags |= F_IMPLICIT;
 
     const id    = consume('id').value;
     const type  = tryPopTypeAnnot();

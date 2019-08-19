@@ -127,9 +127,12 @@ function scope_add(id: string, overload: Overload)
         next.unshift(overload);
 }
 
+const NO_ARGS: SolvedNodes = [];
+Object.freeze(NO_ARGS);
+
 function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
 {
-    const scope = _scope || fail();
+    const scope     = _scope || fail();
     const overloads = scope[id] || notDefined(id);
 
     // Arity 0 - blind head match.
@@ -137,11 +140,12 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
     if (!args || !args.length)
     {
         const head = overloads[0];
-        head.min === 0 || fail(
-            '`' + id + '` expects ' + head.min + ' arguments, none provided.');
-
-        return head;
+        if (head.min === 0)
+            return head;
     }
+
+    if (!args)
+        args = NO_ARGS;
 
     const arity = args.length;
 
