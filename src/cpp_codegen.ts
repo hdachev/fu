@@ -82,7 +82,8 @@ function typeAnnotBase(type: Type): string|null
             if (!_tfwd[type.canon])
             {
                 _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
-                _tdef += declareStruct(type, tdef);
+                const def = declareStruct(type, tdef);
+                _tdef += def;
             }
 
             return type.canon;
