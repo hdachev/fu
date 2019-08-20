@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, createCall } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -25,7 +25,7 @@ export type SolveResult =
 
 type Overload =
 {
-    kind: 'fn'|'var'|'field'|'type'|'defctor'|'partial';
+    kind: 'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
     node: SolvedNode|null;
     type: Type;
 
@@ -87,17 +87,38 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 
 function Partial(via: Overload, overload: Overload): Overload
 {
-    const min = overload.min - 1;
-    const max = overload.max - 1;
+    let kind: 'p-unshift'|'p-wrap' = 'p-unshift';
+    let min = overload.min - 1;
+    let max = overload.max - 1;
     min >= 0 && max >= min || fail();
 
     const o_args  = overload.args || fail();
     const o_names = overload.names;
 
-    const args  = o_args  && o_args .length > 1 ? o_args .slice(0, -1) : null;
-    const names = o_names && o_names.length > 1 ? o_names.slice(0, -1) : null;
+    let args  = o_args  && o_args .length > 1 ? o_args .slice(0, -1) : null;
+    let names = o_names && o_names.length > 1 ? o_names.slice(0, -1) : null;
 
-    return { kind: 'partial', node: null, type: overload.type, min, max, args, names, partial: [ via, overload ] };
+    // Everything that's not a local/namespace/static/constant
+    //  needs a value through which to activate.
+    if (via.kind !== 'var')
+    {
+        kind = 'p-wrap';
+        min++;
+        max++;
+
+        const via_t = via.args && via.args[0] || fail();
+
+        //
+        if (!args)
+            args = [];
+
+        args.unshift(via_t);
+        if (names)
+            names.unshift('using');
+    }
+
+    //
+    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ] };
 }
 
 type Scope =
@@ -591,26 +612,37 @@ function solveCall(node: Node): SolvedNode
     let args        = solveNodes(node.items);
     let callTarg    = scope_match__mutargs(id, args, node.flags);
 
-    // Using.
-    while (callTarg.kind === 'partial')
+    // Using codegen.
+    while (callTarg.partial)
     {
+        const unshift   = callTarg.kind === 'p-unshift';
+
         const partial   = callTarg.partial  || fail();
         const via       = partial[0]        || fail();
         callTarg        = partial[1]        || fail();
 
-        // Generate the head call.
-        const id        = via.node  && via.node.kind === 'let'
-                                    && via.node.value
-                                    || fail();
+        // There's two things we can do here -
+        //  -   either we're injecting an implicitly used local,
+        //          e.g. the this pointer, or another `using` variable,
+        //  -   or we're wrapping the head argument
+        //          with another derefence or method call or whatever.
 
-        const head      = SolvedNode(
-            createCall(id, F_ID, null),
-                null, via.type, via);
+        // And that's all there is to `using`.
+        const argNode   = SolvedNode(
+            createCall('__partial' as any, 0, null),
+            unshift ? null
+                    : [ (args && args[0]) || fail() ],
+            via.type,
+            via);
 
+        //
         if (!args)
-            args = [ head ];
+            args = [];
+
+        if (unshift)
+            args.unshift(argNode);
         else
-            args.unshift(head);
+            args[0] = argNode;
     }
 
     //

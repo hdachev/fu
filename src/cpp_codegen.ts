@@ -257,8 +257,13 @@ function cgReturn(node: SolvedNode)
 
 function cgCall(node: SolvedNode)
 {
-    const id = node.value || fail();
-    const items = cgNodes(node.items);
+    const target = node.target || fail();
+    const items  = cgNodes(node.items);
+
+    if (target.kind === 'defctor')
+        return (target.type || fail()).canon + ' { ' + items.join(', ') + ' }';
+
+    const id = target.node && target.node.value || fail();
 
     if (items && /[^a-zA-Z0-9_]/.test(id))
     {
@@ -272,14 +277,11 @@ function cgCall(node: SolvedNode)
         }
     }
 
-    if (node.target && node.target.kind === 'var')
+    if (target.kind === 'var')
         return id;
 
-    if (node.target && node.target.kind === 'field')
+    if (target.kind === 'field')
         return items[0] + '.' + id;
-
-    if (node.target && node.target.kind === 'defctor')
-        return (node.target.type || fail()).canon + ' { ' + items.join(', ') + ' }';
 
     return id + '(' + items.join(', ') + ')';
 }

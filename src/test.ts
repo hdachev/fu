@@ -62,6 +62,24 @@ function ZERO(src: string)
 }
 
 ZERO(`
+    struct Pos {
+        x: i32;
+    }
+
+    struct Player {
+        using pos: Pos;
+    }
+
+    fn dist(using p: Player, other: Player)
+        x - other.x;
+
+    let a = Player(Pos(10));
+    let b = Player(Pos( 4));
+
+    return dist(a, b) - 6;
+`);
+
+ZERO(`
     fn decr(num: &mut i32)
         num--;
 
@@ -191,17 +209,17 @@ ZERO(`
     return size(Range(14, 21)) - 7;
 `);
 
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
 
-        fn size()
-            max - min;
-    }
+//         fn size()
+//             max - min;
+//     }
 
-    return size(Range(14, 21)) - 7;
-`);
+//     return size(Range(14, 21)) - 7;
+// `);
 
 // ZERO(`
 //     struct Range {
