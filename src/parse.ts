@@ -739,7 +739,7 @@ function createLeaf(kind: TokenKind, value: LexValue)
     return Node(kind, null, 0, value);
 }
 
-function createCall(id: LexValue, flags: number, args: Node[]|null)
+export function createCall(id: LexValue, flags: number, args: Node[]|null)
 {
     return Node('call', args, flags, id);
 }

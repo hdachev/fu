@@ -204,6 +204,23 @@ ZERO(`
 // `);
 
 // ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
+//     }
+
+//     fn size(using implicit r: Range)
+//         max - min;
+
+//     fn test()
+//         size();
+
+//     let implicit r: Range = Range(14, 21);
+
+//     return r - 7;
+// `);
+
+// ZERO(`
 //     struct Pos {
 //         x: i32;
 //     }

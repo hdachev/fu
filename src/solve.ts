@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_FIELD } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, createCall } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -25,7 +25,7 @@ export type SolveResult =
 
 type Overload =
 {
-    kind: 'fn'|'var'|'field'|'type'|'defctor';
+    kind: 'fn'|'var'|'field'|'type'|'defctor'|'partial';
     node: SolvedNode|null;
     type: Type;
 
@@ -34,12 +34,13 @@ type Overload =
     max: number;
     args: Type[]|null;
     names: string[]|null;
+    partial: Overload[]|null;
 };
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
     node && node.items || fail();
-    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null };
+    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null };
 }
 
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
@@ -50,12 +51,12 @@ function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
     //     createLet('this' as any, F_IMPLICIT, null, null),
     //         null, structType);
 
-    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ] };
+    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null };
 }
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -71,7 +72,7 @@ function FnDecl(node: SolvedNode): Overload
     const arg_t = args.map(i => i && i.type  || fail());
     const arg_n = args.map(i => i && i.value || fail());
 
-    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n };
+    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n, partial: null };
 }
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -81,7 +82,22 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 
     const arity = members.length;
 
-    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n };
+    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null };
+}
+
+function Partial(via: Overload, overload: Overload): Overload
+{
+    const min = overload.min - 1;
+    const max = overload.max - 1;
+    min >= 0 && max >= min || fail();
+
+    const o_args  = overload.args || fail();
+    const o_names = overload.names;
+
+    const args  = o_args  && o_args .length > 1 ? o_args .slice(0, -1) : null;
+    const names = o_names && o_names.length > 1 ? o_names.slice(0, -1) : null;
+
+    return { kind: 'partial', node: null, type: overload.type, min, max, args, names, partial: [ via, overload ] };
 }
 
 type Scope =
@@ -125,6 +141,40 @@ function scope_add(id: string, overload: Overload)
         next.push(overload);
     else
         next.unshift(overload);
+}
+
+function scope_using(via: Overload)
+{
+    const scope = _scope || fail();
+    const actual = via.type || fail();
+
+    for (const id in scope)
+    {
+        const overloads = scope[id];
+        if (!Array.isArray(overloads))
+            continue;
+
+        let arity0 = false;
+        for (let i = 0, MUT_n0 = overloads.length; i < MUT_n0; i++)
+        {
+            const overload = overloads[i];
+            if (overload.min < 1)
+            {
+                arity0 = true;
+                continue;
+            }
+
+            const expect = (overload.args || fail())[0] || fail();
+            if (!isAssignable(expect, actual))
+                continue;
+
+            if (overload.min < 2 && arity0)
+                fail('`using` arity-0 conflict: `' + id + '`.');
+
+            // MUT DURING ITER!
+            scope_add(id, Partial(via, overload));
+        }
+    }
 }
 
 const NO_ARGS: SolvedNodes = [];
@@ -482,10 +532,13 @@ function solveLet(node: Node): SolvedNode
 
     const type      = add_mut(add_ref(t_let));
 
-    if (node.flags & F_FIELD)
-        scope_add(id, Field(out, _current_strt || fail(), type));
-    else
-        scope_add(id, Binding(out, type));
+    const overload  = out.flags & F_FIELD
+        ? Field(out, _current_strt || fail(), type)
+        : Binding(out, type);
+
+    scope_add(id, overload);
+    if (out.flags & F_USING)
+        scope_using(overload);
 
     return out;
 }
@@ -535,9 +588,32 @@ function evalTypeAnnot(node: Node): SolvedNode
 function solveCall(node: Node): SolvedNode
 {
     const id        = node.value || fail();
-    const args      = solveNodes(node.items);
-    const callTarg  = scope_match__mutargs(id, args, node.flags);
+    let args        = solveNodes(node.items);
+    let callTarg    = scope_match__mutargs(id, args, node.flags);
 
+    // Using.
+    while (callTarg.kind === 'partial')
+    {
+        const partial   = callTarg.partial  || fail();
+        const via       = partial[0]        || fail();
+        callTarg        = partial[1]        || fail();
+
+        // Generate the head call.
+        const id        = via.node  && via.node.kind === 'let'
+                                    && via.node.value
+                                    || fail();
+
+        const head      = SolvedNode(
+            createCall(id, F_ID, null),
+                null, via.type, via);
+
+        if (!args)
+            args = [ head ];
+        else
+            args.unshift(head);
+    }
+
+    //
     return SolvedNode(
         node, args, callTarg.type, callTarg);
 }
