@@ -1,6 +1,6 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX } from './parse';
+import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE } from './parse';
 import { lookupType, Struct } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
@@ -161,7 +161,7 @@ function blockWrap(nodes: Nodes)
 {
     const indent0 = _indent;
     _indent += '    ';
-    const src = indent0 + '{' + _indent + cgNodes(nodes, 'stmt').join(';' + _indent) + ';' + indent0 + '}';
+    const src = indent0 + '{' + _indent + cgNodes(nodes, 'stmt').filter(i => i).join(';' + _indent) + ';' + indent0 + '}';
     _indent = indent0;
 
     return src;
@@ -201,6 +201,7 @@ function cgFn(fn: SolvedNode)
     ///////////////////////////
     const s0    = enterScope();
     const f0    = _fnMode;
+    const indent0 = _indent;
     _fnMode     = true;
     ///////////////////////////
 
@@ -213,8 +214,12 @@ function cgFn(fn: SolvedNode)
     //  Notice basic lambdas don't do recursions,
     //   but they can be cheated into it via this trick -
     //    http://pedromelendez.com/blog/2015/07/16/recursive-lambdas-in-c14/
+    const closure = !!(fn.flags & F_CLOSURE);
 
-    let src = f0
+    if (!closure)
+        _indent = '\n';
+
+    let src = closure
             ? 'const auto& ' + fn.value + ' = [&]('
             : annot + ' ' + fn.value + '(';
 
@@ -226,17 +231,28 @@ function cgFn(fn: SolvedNode)
         src += cgLet(items[i] || fail());
     }
 
-    src += f0
+    src += closure
          ? ') -> ' + annot
          : ')';
+
+    if (!closure && src !== 'int main()')
+        _ffwd[src] = '\n' + src + ';';
 
     if (body.kind === 'block')
         src += cgBlock(body);
     else
         src += blockWrap([ body ]);
 
+    if (!closure)
+    {
+        _fdef += '\n' + src + '\n';
+        src = '';
+    }
+
+
     //////////////
     _fnMode = f0;
+    _indent = indent0;
     exitScope(s0);
     //////////////
 

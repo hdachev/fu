@@ -243,7 +243,7 @@ ZERO(`
 
 ZERO(`
     fn inner(i: i32): i32
-        i > 0 ? outer(i--) : 0;
+        i > 0 ? outer(i - 1) : 0;
 
     fn outer(i: i32): i32
         2 * inner(i);
