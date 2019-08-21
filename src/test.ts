@@ -27,6 +27,10 @@ function ZERO(src: string)
     const r_cppcg   = cpp_codegen(r_solve.root) || fail('C++ Codegen fail.');
 
     //
+    const gensrc = r_cppcg.src;
+    testCodegen(src, gensrc);
+
+    //
     if (!cpp_builder.available)
         return;
 
@@ -38,7 +42,7 @@ function ZERO(src: string)
             FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + r_cppcg.src.replace(/\n/g, '\n\t'));
         };
 
-        cpp_builder.build(r_cppcg.src, result =>
+        cpp_builder.build(gensrc, result =>
         {
             if (result.err)
                 fail('BUILD', result.err);
@@ -60,6 +64,14 @@ function ZERO(src: string)
         });
     }
 }
+
+function testCodegen(src: string, cpp: string)
+{
+    /expect_lambda/.test(src) === /\[&]/.test(cpp) || fail('LAMBDA');
+}
+
+
+//
 
 ZERO(`
     return 1 - 1;
@@ -130,6 +142,15 @@ ZERO(`
 
     let res = 1;
     decr(res);
+    return res;
+`);
+
+ZERO(`
+    let res = 1;
+    fn decr() // expect_lambda
+        res--;
+
+    decr();
     return res;
 `);
 
