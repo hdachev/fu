@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall, F_FULLY_TYPED } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -370,7 +370,7 @@ type UnorderedSolver = (node: Node, solved: SolvedNode|null) => SolvedNode;
 
 const UNORDERED_PREP: { [nodeKind: string]: UnorderedPreper } =
 {
-    'fn':       uPrep_TODO,
+    'fn':       uPrepFn,
     'struct':   uPrep_TODO,
 };
 
@@ -428,12 +428,33 @@ function solveEmpty(node: Node): SolvedNode
 
 //
 
-function uSolveFn(node: Node): SolvedNode
+function uPrepFn(node: Node): SolvedNode|null
 {
-    const out = SolvedNode(node, null, t_void);
+    return __solveFn(false, node, null);
+}
 
-    const items = node.items || fail();
-    items.length >= FN_RET_BACK || fail();
+function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
+{
+    return __solveFn(true, node, prep) || fail();
+}
+
+function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNode|null
+{
+    // Prep reject.
+    if (!solve && !(node.flags & F_FULLY_TYPED))
+        return null;
+
+    let items       = node.items    || fail();
+    items.length   >= FN_RET_BACK   || fail();
+
+    const out       = prep || SolvedNode(node, null, t_void);
+
+    // Skip over body during prep.
+    if (!solve)
+    {
+        items = items.slice();
+        items[items.length + FN_BODY_BACK] = null;
+    }
 
     //////////////////////////
     {
@@ -451,8 +472,11 @@ function uSolveFn(node: Node): SolvedNode
     }
     //////////////////////////
 
-    const id = node.value || fail('TODO anonymous fns');
-    scope_add(id, FnDecl(out));
+    if (!prep)
+    {
+        const id = node.value || fail('TODO anonymous fns');
+        scope_add(id, FnDecl(out));
+    }
 
     return out;
 }

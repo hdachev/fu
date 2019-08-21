@@ -67,6 +67,7 @@ export const F_USING        = 1 << 18;
 
 export const F_UNTYPED_ARGS = 1 << 24;
 export const F_NAMED_ARGS   = 1 << 25;
+export const F_FULLY_TYPED  = 1 << 26;
 
 
 // Operator precedence table.
@@ -497,13 +498,16 @@ function parseFnDecl(): Node
     consume('op', '(');
 
     const items: Nodes = [];
-    const flags = parseArgsDecl(items, 'op', ')');
+    let flags = parseArgsDecl(items, 'op', ')');
 
     ///////////
     _fnDepth++;
     ///////////
 
     const type = tryPopTypeAnnot();
+    if (type)
+        flags |= F_FULLY_TYPED;
+
     const body = parseStatement();
 
     ///////////
