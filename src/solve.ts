@@ -214,118 +214,130 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
     const closureDetect = !_closure_detected && _closure_detect && _closure_detect[id] || null;
     const rootScope     = closureDetect && _scope_root && _scope_root[id] || null;
 
+    let matched: Overload|null  = null;
+
     // Arity 0 - blind head match.
     // Allows simple shadowing of variables and such, latest wins.
     if (!args || !args.length)
     {
         const head = overloads[0];
         if (head.min === 0)
-            return head;
+            matched = head;
     }
 
-    if (!args)
-        args = NO_ARGS;
-
-    const arity = args.length;
-
-    // Prep labelled args for remap.
-    let names: (string|null)[]|null = null;
-    if (flags & F_NAMED_ARGS)
+    if (!matched)
     {
-        names = [];
-        let some = false;
+        if (!args)
+            args = NO_ARGS;
 
-        for (let i = 0; i < arity; i++)
+        //
+        const arity = args.length;
+
+        // Prep labelled args for remap.
+        let names: (string|null)[]|null = null;
+        if (flags & F_NAMED_ARGS)
         {
-            const arg = args[i];
-            names[i] =
-                arg && arg.kind === 'label'
-                    ? (some = true, arg.value) || fail()
-                    : null;
+            names = [];
+            let some = false;
+
+            for (let i = 0; i < arity; i++)
+            {
+                const arg = args[i];
+                names[i] =
+                    arg && arg.kind === 'label'
+                        ? (some = true, arg.value) || fail()
+                        : null;
+            }
+
+            some || fail();
         }
 
-        some || fail();
-    }
+        //
+        let mut_args = args;
 
-    //
-    let matched: Overload|null  = null;
-    let mut_args                = args;
-
-    NEXT: for (let i = 0; i < overloads.length; i++)
-    {
-        const overload = overloads[i];
-        if (overload.min > arity || overload.max < arity)
-            continue NEXT;
-
-        // Remap named arguments.
-        let actual: SolvedNodes = args;
-        if (names)
+        NEXT: for (let i = 0; i < overloads.length; i++)
         {
-            const overloadNames = overload.names;
-            if (!overloadNames)
+            const overload = overloads[i];
+            if (overload.min > arity || overload.max < arity)
                 continue NEXT;
 
-            // Move named arguments around.
-            for (let i = 0; i < names.length; i++)
+            // Remap named arguments.
+            let actual: SolvedNodes = args;
+            if (names)
             {
-                const id = names[i];
-                if (!id)
-                    continue;
-
-                const idx = overloadNames.indexOf(id);
-                if (idx < 0)
+                const overloadNames = overload.names;
+                if (!overloadNames)
                     continue NEXT;
 
-                if (actual === args)
-                    actual = args.map(() => null);
-
-                actual[idx] = args[i];
-            }
-
-            // Fill the rest.
-            actual === args && fail();
-            {
-                let i = 0;
-                let j = 0;
-
-                while (i < args.length && j < actual.length)
+                // Move named arguments around.
+                for (let i = 0; i < names.length; i++)
                 {
-                    if (actual[j]) { j++; continue; }
-                    if (names [i]) { i++; continue; }
+                    const id = names[i];
+                    if (!id)
+                        continue;
 
-                    actual[j++] = args[i++];
+                    const idx = overloadNames.indexOf(id);
+                    if (idx < 0)
+                        continue NEXT;
+
+                    if (actual === args)
+                        actual = args.map(() => null);
+
+                    actual[idx] = args[i];
+                }
+
+                // Fill the rest.
+                actual === args && fail();
+                {
+                    let i = 0;
+                    let j = 0;
+
+                    while (i < args.length && j < actual.length)
+                    {
+                        if (actual[j]) { j++; continue; }
+                        if (names [i]) { i++; continue; }
+
+                        actual[j++] = args[i++];
+                    }
                 }
             }
+
+            // Type check args.
+            const expect = overload.args || fail();
+            for (let i = 0; i < expect.length; i++)
+                if (!isAssignable(expect[i], (actual[i] || fail()).type))
+                    continue NEXT;
+
+            // Forbid ambiguity.
+            if (matched)
+                fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
+
+            // Done!
+            matched     = overload;
+            mut_args    = actual;
         }
 
-        // Type check args.
-        const expect = overload.args || fail();
-        for (let i = 0; i < expect.length; i++)
-            if (!isAssignable(expect[i], (actual[i] || fail()).type))
-                continue NEXT;
-
-        // Forbid ambiguity.
-        if (matched)
-            fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
-
-        // Done!
-        matched     = overload;
-        mut_args    = actual;
-
-        if (closureDetect
-            && closureDetect.indexOf(matched) >= 0
-            && !(rootScope && rootScope.indexOf(matched) >= 0))
+        // Mutate call args last thing.
+        if (matched && mut_args !== args)
         {
-            _closure_detected = true;
+            mut_args.length === args.length || fail();
+            for (let i = 0; i < mut_args.length; i++)
+                args[i] = mut_args[i];
         }
     }
 
-    // Mutate call args last thing.
-    if (matched && mut_args !== args)
+    // Closure detector:
+    //  -   for something to be a closure,
+    //      it has to close over something from a parent scope
+    //      that is not the root scope.
+    if (matched
+        && closureDetect
+        && closureDetect !== rootScope // opti
+        && (!rootScope ||
+            closureDetect.indexOf(matched) >= 0
+            &&  rootScope.indexOf(matched)  < 0))
     {
-        mut_args.length === args.length || fail();
-        for (let i = 0; i < mut_args.length; i++)
-            args[i] = mut_args[i];
+        _closure_detected = true;
     }
 
     // Done.
