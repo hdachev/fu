@@ -68,6 +68,7 @@ export const F_USING        = 1 << 18;
 export const F_UNTYPED_ARGS = 1 << 24;
 export const F_NAMED_ARGS   = 1 << 25;
 export const F_FULLY_TYPED  = 1 << 26;
+export const F_CLOSURE      = 1 << 27;
 
 
 // Operator precedence table.

@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall, F_FULLY_TYPED } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall, F_FULLY_TYPED, F_CLOSURE } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -132,9 +132,13 @@ type Scope =
 let _here:              Node|null           = null;
 let _prelude_solved:    Scope|null          = null;
 let _scope:             Scope|null          = null;
+let _scope_root:        Scope|null          = null;
 let _current_fn:        SolvedNode|null     = null;
 let _current_str:       SolvedNode|null     = null;
 let _current_strt:      Type|null           = null;
+
+let _closure_detect:    Scope|null          = null;
+let _closure_detected:  boolean             = false;
 
 
 //
@@ -205,6 +209,10 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
 {
     const scope     = _scope || fail();
     const overloads = scope[id] || notDefined(id);
+
+    // Closure detector.
+    const closureDetect = !_closure_detected && _closure_detect && _closure_detect[id] || null;
+    const rootScope     = closureDetect && _scope_root && _scope_root[id] || null;
 
     // Arity 0 - blind head match.
     // Allows simple shadowing of variables and such, latest wins.
@@ -303,6 +311,13 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
         // Done!
         matched     = overload;
         mut_args    = actual;
+
+        if (closureDetect
+            && closureDetect.indexOf(matched) >= 0
+            && !(rootScope && rootScope.indexOf(matched) >= 0))
+        {
+            _closure_detected = true;
+        }
     }
 
     // Mutate call args last thing.
@@ -350,7 +365,7 @@ type Solver = (node: Node) => SolvedNode;
 
 const SOLVE: { [nodeKind: string]: Solver } =
 {
-    'root':     solveBlock,
+    'root':     solveRoot,
     'block':    solveBlock,
     'label':    solveComma,
 
@@ -385,12 +400,14 @@ function uPrep_TODO()
     return null;
 }
 
+function solveRoot(node: Node): SolvedNode
+{
+    return SolvedNode(node, solveNodes(node.items), t_void);
+}
+
 function solveBlock(node: Node): SolvedNode
 {
-    const scope0 = node.kind === 'root'
-        ? _scope
-        : scope_push();
-
+    const scope0 = scope_push();
     const out = SolvedNode(node, solveNodes(node.items), t_void);
     _scope = scope0;
     return out;
@@ -779,6 +796,20 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         const i0 = i;
         let   i1 = n;
 
+        // CLOSURE DETECTOR ////////////////////////////
+        const cd0           = _closure_detect;
+        const cds0          = _closure_detected;
+        _closure_detect     = _scope;
+        _closure_detected   = false;
+
+        // Forward rootness, this is getting awkward.
+        {
+            const barrier       = scope_push();
+            if (_scope_root === barrier)
+                _scope_root = _scope;
+        }
+        ////////////////////////////////////////////////
+
         // First pass, expose stuff in scope
         //  without doing type checking when possible.
         for (let i = i0; i < n; i++)
@@ -806,6 +837,20 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
             if (node)
                 result[i] = UNORDERED_SOLVE[node.kind](node, result[i]);
         }
+
+        // Propagate closure detector results.
+        if (_closure_detected)
+            for (let i = i0; i < i1; i++)
+            {
+                const node = result[i];
+                if (node)
+                    node.flags |= F_CLOSURE;
+            }
+
+        // CLOSURE DETECTOR ////////////////////////////
+        _closure_detect     = cd0;
+        _closure_detected   = cds0;
+        ////////////////////////////////////////////////
 
         // Continue from group end.
         i1 > i0 || fail();
@@ -841,9 +886,12 @@ export function solve(parse: ParseResult): SolveResult
     else
         _scope = Object.create(_prelude_solved);
 
-    const scope = _scope || fail();
+    // Closure detection.
+    _scope_root = _scope;
+
+    //
     const root = solveNode(parse.root);
-    _scope = null;
+    const scope = _scope || fail();
 
     return { root, scope };
 }
