@@ -241,6 +241,13 @@ ZERO(`
     return dist(a, b) - 6;
 `);
 
+ZERO(`
+    fn inner(i: i32) i > 0 ? outer(i--) : 0;
+    fn outer(i: i32) 2 * inner(i);
+
+    return outer(1);
+`);
+
 // ZERO(`
 //     struct Range {
 //         min: i32;
