@@ -272,6 +272,30 @@ ZERO(`
     return outer(1);
 `);
 
+ZERO(`
+    fn inner(i: i32): i32
+        outer(i - 1);
+
+    fn outer(implicit x: i32, i: i32): i32
+        i > 0   ? inner(i)
+                : x + i;
+
+    let implicit x: i32 = 7;
+    return outer(1) - 14;
+`);
+
+ZERO(`
+    fn inner(implicit x: i32, i: i32): i32
+        outer(i - 2 * x);
+
+    fn outer(i: i32): i32
+        i > 0   ? inner(i)
+                : 2 * (i + 7);
+
+    let implicit x: i32 = 3;
+    return outer(6) - 14;
+`);
+
 // ZERO(`
 //     struct Range {
 //         min: i32;
