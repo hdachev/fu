@@ -359,14 +359,31 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'if':       solveIf,
     'loop':     solveBlock, // TODO
 
-    'fn':       solveFn,
     'return':   solveReturn,
-
-    'struct':   solveStruct,
 
     'int':      solveInt,
     'empty':    solveEmpty,
 };
+
+type UnorderedPreper = (node: Node) => SolvedNode|null;
+type UnorderedSolver = (node: Node, solved: SolvedNode|null) => SolvedNode;
+
+const UNORDERED_PREP: { [nodeKind: string]: UnorderedPreper } =
+{
+    'fn':       uPrep_TODO,
+    'struct':   uPrep_TODO,
+};
+
+const UNORDERED_SOLVE: { [nodeKind: string]: UnorderedSolver } =
+{
+    'fn':       uSolveFn,
+    'struct':   uSolveStruct,
+};
+
+function uPrep_TODO()
+{
+    return null;
+}
 
 function solveBlock(node: Node): SolvedNode
 {
@@ -411,9 +428,12 @@ function solveEmpty(node: Node): SolvedNode
 
 //
 
-function solveFn(node: Node): SolvedNode
+function uSolveFn(node: Node): SolvedNode
 {
-    const out           = SolvedNode(node, null, t_void);
+    const out = SolvedNode(node, null, t_void);
+
+    const items = node.items || fail();
+    items.length >= FN_RET_BACK || fail();
 
     //////////////////////////
     {
@@ -423,8 +443,8 @@ function solveFn(node: Node): SolvedNode
         _current_fn         = out;
 
         solveNodes(
-            node.items,
-            out.items = (node.items || fail()).map(() => null));
+            items,
+            out.items = items.map(() => null));
 
         _current_fn         = current_fn0;
         _scope              = scope0;
@@ -440,7 +460,7 @@ function solveFn(node: Node): SolvedNode
 
 //
 
-function solveStruct(node: Node): SolvedNode
+function uSolveStruct(node: Node): SolvedNode
 {
     const out           = SolvedNode(node, null, t_void);
 
@@ -694,13 +714,9 @@ function SolvedNode(
 
 function solveNode(node: Node): SolvedNode
 {
-    const here0 = _here;
-
-    _here = node;
-    const result = SOLVE[node.kind](node /*, expect, allowGuards*/ );
-
-    _here = here0;
-    return result;
+    const _in = [ node ];
+    const out = solveNodes(_in);
+    return out && out[0] || fail();
 }
 
 function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
@@ -720,8 +736,56 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
             continue;
         }
 
-        _here = node;
-        result[i] = SOLVE[node.kind](node);
+        // Regular solve.
+        const solver    = SOLVE[node.kind] || null;
+        if (solver)
+        {
+            _here       = node;
+            result[i]   = solver(node);
+            continue;
+        }
+
+        // Unordered solve -
+        //  batches multiple potentially recursive declarations,
+        //   so we can expose them all in scope prior to solving types.
+
+        // This allows us to have groups of mutually recursive types & functions,
+        //  without risking stuff depending on constants & variables
+        //   introduced halfway through.
+        const i0 = i;
+        let   i1 = n;
+
+        // First pass, expose stuff in scope
+        //  without doing type checking when possible.
+        for (let i = i0; i < n; i++)
+        {
+            const node = nodes[i];
+            if (!node)
+            {
+                result[i] = node;
+                continue;
+            }
+
+            if (SOLVE[node.kind])
+            {
+                i1 = i;
+                break;
+            }
+
+            result[i] = UNORDERED_PREP[node.kind](node);
+        }
+
+        // Second pass, do the remaining work.
+        for (let i = i0; i < i1; i++)
+        {
+            const node = nodes[i];
+            if (node)
+                result[i] = UNORDERED_SOLVE[node.kind](node, result[i]);
+        }
+
+        // Continue from group end.
+        i1 > i0 || fail();
+        i = i1 - 1; // <- loop++
     }
 
     _here = here0;
@@ -754,7 +818,7 @@ export function solve(parse: ParseResult): SolveResult
         _scope = Object.create(_prelude_solved);
 
     const scope = _scope || fail();
-    const root  = solveNode(parse.root);
+    const root = solveNode(parse.root);
     _scope = null;
 
     return { root, scope };
