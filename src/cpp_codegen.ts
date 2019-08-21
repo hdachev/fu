@@ -100,7 +100,7 @@ function declareStruct(t: Type, s: Struct)
     for (let i = 0; i < fields.length; i++)
     {
         const field = fields[i];
-        def += '\n    ' + typeAnnot(field.type) + ' ' + field.id + ';';
+        def += '\n    ' + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
     }
 
     return def + '\n};\n';
@@ -130,9 +130,6 @@ function collectDedupes(_d: Dedupes|string)
     return out;
 }
 
-
-//
-
 function cgRoot(root: SolvedNode)
 {
     const src = cgNodes(root.items, 'stmt').join(';\n' + _indent) + ';\n';
@@ -145,6 +142,19 @@ function cgRoot(root: SolvedNode)
                ;
 
     return header + src;
+}
+
+
+//
+
+function ID(id: string)
+{
+    switch (id)
+    {
+        case 'this':    return '_';
+    }
+
+    return id;
 }
 
 function blockWrap(nodes: Nodes)
@@ -239,7 +249,7 @@ function cgLet(node: SolvedNode)
     const id    = node.value || fail();
 
     const annot = typeAnnot((items[LET_TYPE] || fail()).type) || fail();
-    const head  = annot + ' ' + id;
+    const head  = annot + ' ' + ID(id);
     const init  = items[LET_INIT];
     if (init)
         return head + ' = ' + cgNode(init);
@@ -278,12 +288,12 @@ function cgCall(node: SolvedNode)
     }
 
     if (target.kind === 'var')
-        return id;
+        return ID(id);
 
     if (target.kind === 'field')
-        return items[0] + '.' + id;
+        return items[0] + '.' + ID(id);
 
-    return id + '(' + items.join(', ') + ')';
+    return ID(id) + '(' + items.join(', ') + ')';
 }
 
 function cgLiteral(node: SolvedNode)

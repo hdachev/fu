@@ -291,14 +291,24 @@ function createBlock(items: Nodes)
 
 //
 
+let _structName: LexValue|null = null;
+
 function parseStructDecl(): Node
 {
     const name = tryConsume('id');
+    const id = name && name.value || fail('Anon structs.');
+
+    ////////////////////////////////
+    const structName0 = _structName;
+    _structName = id;
 
     consume('op', '{');
 
     const items = parseBlockLike('op', '}',
         parseStructItem);
+
+    _structName = structName0;
+    //////////////////////////
 
     return Node(
         'struct', items, 0,
@@ -307,11 +317,52 @@ function parseStructDecl(): Node
 
 function parseStructItem(): Node
 {
+    //////////////////////////////
+    const token = _tokens[_idx++];
+
+    if (token.kind === 'op' || token.kind === 'id')
+    {
+        switch (token.value)
+        {
+            case 'fn': return parseStructMethod();
+        }
+    }
+
+    _idx--;
+    //////////////////////////////
+
     const member = parseLet();
     member.flags |= F_FIELD;
 
     consume('op', ';');
     return member;
+}
+
+function parseStructMethod()
+{
+    const fn        = parseFnDecl();
+
+    // `this` arg annotation -
+    //  -----------------------------------
+    //  Now what the fuck is happening here -
+    //      how do we deal with const/mut here?
+    //  --------------------------------------------------------
+    //  We dont want cpp-style double definitions for everything,
+    //      so how do we go about this?
+
+    const typeAnnot =
+        createPrefix('&',
+            createPrefix('mut',
+                createRead(_structName || fail())));
+
+    if (!fn.items)
+        fn.items = [];
+
+    fn.items.unshift(
+        createLet('this' as LexValue, F_USING, typeAnnot, null));
+
+    fn.flags |= F_METHOD;
+    return fn;
 }
 
 
@@ -357,6 +408,13 @@ function parseBlockLike(
             'Orphan pure-looking expression.');
 
         items.push(expr);
+
+        // Unpacking & ungrouping node types.
+        switch (expr.kind)
+        {
+            case 'struct':
+                moveNodesInto(items, 'fn', expr);
+        }
     }
 
     return items;
@@ -366,6 +424,20 @@ function fail_Lint(...args: unknown[])
 {
     // TODO allow opt out
     fail('Lint:', ...args);
+}
+
+function moveNodesInto(out: Node[], kind: string, from: Node)
+{
+    const items = from.items || fail();
+    for (let i = 0; i < items.length; i++)
+    {
+        const item = items[i];
+        if (item && item.kind === kind)
+        {
+            items.splice(i--, 1);
+            out.push(item);
+        }
+    }
 }
 
 
@@ -573,22 +645,25 @@ function tryParseExpressionTail(head: Node): Node|null
 {
     // Consume.
     const token = _tokens[_idx++];
-    const v = token.value;
-
-    switch (v)
+    if (token.kind === 'op')
     {
-        case ';': return _idx--, null;
-        case '.': return parseAccessExpression(head);
-        case '(': return parseCallExpression(head);
-        // case '[': return parseIndexExpression(head);
+        const v = token.value;
+
+        switch (v)
+        {
+            case ';': return _idx--, null;
+            case '.': return parseAccessExpression(head);
+            case '(': return parseCallExpression(head);
+            // case '[': return parseIndexExpression(head);
+        }
+
+        const p1 = BINOP.PRECEDENCE[v];
+        if (p1)
+            return _idx--, tryParseBinary(head, v, p1);
+
+        if (POSTFIX.indexOf(v) >= 0)
+            return createCall(v, F_POSTFIX, [ head ]);
     }
-
-    const p1 = BINOP.PRECEDENCE[v];
-    if (p1)
-        return _idx--, tryParseBinary(head, v, p1);
-
-    if (POSTFIX.indexOf(token.value) >= 0)
-        return createCall(token.value, F_POSTFIX, [ head ]);
 
     // Backtrack.
     return _idx--, null;
@@ -620,8 +695,7 @@ function parseExpressionHead(): Node
             }
 
             // Identifier expression.
-            return createCall(
-                token.value, F_ID, null);
+            return createRead(token.value);
 
         // Operators.
         case 'op':
@@ -648,13 +722,16 @@ function parseExpressionHead(): Node
     return fail();
 }
 
-function parsePrefix(op: string)
+function parsePrefix(op: LexValue)
+{
+    return createPrefix(
+        op, parseExpression(P_PREFIX_UNARY));
+}
+
+function createPrefix(op: LexValue, expr: Node)
 {
     PREFIX.indexOf(op) >= 0 || (_idx--, fail());
-
-    return createCall(
-        op, F_PREFIX,
-        [ parseExpression(P_PREFIX_UNARY) ]);
+    return createCall(op, F_PREFIX, [ expr ]);
 }
 
 function parseAccessExpression(expr: Node)
@@ -744,6 +821,11 @@ export function createCall(id: LexValue, flags: number, args: Node[]|null)
     return Node('call', args, flags, id);
 }
 
+export function createRead(id: LexValue)
+{
+    return createCall(id || fail(), F_ID, null);
+}
+
 
 //
 
@@ -797,7 +879,9 @@ function parseFor()
     consume('id', 'let');
     const init = parseLetStmt();
     const cond = parseExpressionStatement();
-    const post = _tokens[_idx].value === ')'
+
+    const token = _tokens[_idx];
+    const post = token.kind === 'op' && token.value === ')'
         ? parseEmpty()
         : parseExpression();
 

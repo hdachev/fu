@@ -200,7 +200,9 @@ ZERO(`
             max - min;
     }
 
-    return size(Range(14, 21)) - 7;
+    let r = Range(14, 21);
+
+    return size(r) - 7;
 `);
 
 ZERO(`

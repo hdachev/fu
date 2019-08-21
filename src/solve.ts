@@ -612,7 +612,7 @@ function solveCall(node: Node): SolvedNode
     let args        = solveNodes(node.items);
     let callTarg    = scope_match__mutargs(id, args, node.flags);
 
-    // Using codegen.
+    // `using` codegen.
     while (callTarg.partial)
     {
         const unshift   = callTarg.kind === 'p-unshift';
