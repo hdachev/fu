@@ -37,7 +37,7 @@ const path          = require('path');
 const crypto        = require('crypto');
 const child_process = require('child_process');
 
-function exec(cmd: string, cb: Callback<true>)
+function exec(cmd: string, awaitPath: string|null, cb: Callback<true>)
 {
     child_process.exec(cmd, {}, (err: any, stdout: any, stderr: any) =>
     {
@@ -48,10 +48,41 @@ function exec(cmd: string, cb: Callback<true>)
             console.log('\nCMD:\n\t' + cmd + '\n\nEXIT CODE:\n\t' + code + '\n\nSTDERR:\n' + stderr + '\n\nSTDOUT:\n' + stdout + '\n');
 
             cb({ err: { cmd, err, code, stdout, stderr } });
+            cb = null as any;
+
             return;
         }
 
-        cb({ data: true });
+        {
+            const INIT = 50;
+            let delay = INIT;
+            function check()
+            {
+                if (!awaitPath || fs.existsSync(awaitPath))
+                {
+                    cb({ data: true });
+                    cb = null as any;
+
+                    if (awaitPath && delay > INIT)
+                        console.log(awaitPath + ' DELAY ' + delay);
+
+                    return;
+                }
+
+                delay *= 2;
+                if (delay > 1000)
+                {
+                    cb({ err: { timeout: awaitPath } });
+                    cb = null as any;
+
+                    return;
+                }
+
+                setTimeout(check, delay);
+            }
+
+            check();
+        }
     });
 }
 
@@ -96,7 +127,7 @@ export function build(src: string, cb: Callback<Unit>)
     fs.writeFileSync(cpp, src);
     const cmd = GCC_BUILD + ' "' + tmp + '" "' + cpp + '"';
 
-    exec(cmd, result =>
+    exec(cmd, tmp, result =>
     {
         if (result.err)
         {
@@ -134,7 +165,7 @@ export function link(units: Unit[], cb: Callback<Binary>)
     const tmp = exe + '.tmp';
     const cmd = GCC_LINK + ' "' + tmp + '" ' + files;
 
-    exec(cmd, result =>
+    exec(cmd, tmp, result =>
     {
         if (result.err)
         {
@@ -153,7 +184,7 @@ export function link(units: Unit[], cb: Callback<Binary>)
 
 export function run(binary: Binary, cb: Callback<number>)
 {
-    exec(binary.exe, result =>
+    exec(binary.exe, null, result =>
     {
         const code = result.err
             ? result.err.code || 10099001
