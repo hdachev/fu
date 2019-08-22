@@ -23,24 +23,71 @@ export type SolveResult =
 
 //
 
+let _here:              Node|null           = null;
+let _scope:             Scope|null          = null;
+let _scope_root:        Scope|null          = null;
+let _current_fn:        SolvedNode|null     = null;
+let _current_str:       SolvedNode|null     = null;
+let _current_strt:      Type|null           = null;
+
+let _closure_detect:    Scope|null          = null;
+let _closure_detected:  boolean             = false;
+
+function RESET()
+{
+    _here               = null;
+    _scope              = null;
+    _scope_root         = null;
+    _current_fn         = null;
+    _current_str        = null;
+    _current_strt       = null;
+
+    _closure_detect     = null;
+    _closure_detected   = false;
+}
+
+
+//
+
 type Overload =
 {
-    kind: 'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
-    node: SolvedNode|null;
-    type: Type;
+    readonly kind: 'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
+    readonly node: SolvedNode|null;
+    readonly type: Type;
 
     // Arity.
-    min: number;
-    max: number;
-    args: Type[]|null;
-    names: string[]|null;
-    partial: Overload[]|null;
+    readonly min: number;
+    readonly max: number;
+    readonly args: Type[]|null;
+    readonly names: string[]|null;
+    readonly partial: Overload[]|null;
+
+    // Usage.
+    callsites: (SolvedNode|Scope)[]|null;
+    // Actual type is Pair<CallerNode, CallerScope>.
 };
+
+function resetCallsites(o: Overload): Overload
+{
+    return {
+        kind:       o.kind,
+        node:       o.node,
+        type:       o.type,
+
+        min:        o.min,
+        max:        o.max,
+        args:       o.args,
+        names:      o.names,
+        partial:    o.partial,
+
+        callsites:  null,
+    };
+}
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
     node && node.items || fail();
-    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null };
+    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null };
 }
 
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
@@ -51,12 +98,12 @@ function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
     //     createLet('this' as any, F_IMPLICIT, null, null),
     //         null, structType);
 
-    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null };
+    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null, callsites: null };
 }
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -72,7 +119,7 @@ function FnDecl(node: SolvedNode): Overload
     const arg_t = args.map(i => i && i.type  || fail());
     const arg_n = args.map(i => i && i.value || fail());
 
-    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n, partial: null };
+    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null };
 }
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -82,7 +129,7 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 
     const arity = members.length;
 
-    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null };
+    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null };
 }
 
 function Partial(via: Overload, overload: Overload): Overload
@@ -118,27 +165,13 @@ function Partial(via: Overload, overload: Overload): Overload
     }
 
     //
-    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ] };
+    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ], callsites: null };
 }
 
 type Scope =
 {
     [id: string]: Overload[];
 };
-
-
-//
-
-let _here:              Node|null           = null;
-let _prelude_solved:    Scope|null          = null;
-let _scope:             Scope|null          = null;
-let _scope_root:        Scope|null          = null;
-let _current_fn:        SolvedNode|null     = null;
-let _current_str:       SolvedNode|null     = null;
-let _current_strt:      Type|null           = null;
-
-let _closure_detect:    Scope|null          = null;
-let _closure_detected:  boolean             = false;
 
 
 //
@@ -467,6 +500,8 @@ function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
     return __solveFn(true, node, prep) || fail();
 }
 
+const SCOPE_CURFN = '.fn';
+
 function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNode|null
 {
     // Prep reject.
@@ -485,10 +520,13 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
         items[items.length + FN_BODY_BACK] = null;
     }
 
+    let fnScope: Scope;
+
     //////////////////////////
     {
         const current_fn0   = _current_fn;
         const scope0        = scope_push();
+        fnScope             = _scope || fail();
 
         _current_fn         = out;
 
@@ -504,7 +542,12 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
     if (!prep)
     {
         const id = node.value || fail('TODO anonymous fns');
-        scope_add(id, FnDecl(out));
+
+        const fnDecl = FnDecl(out);
+        scope_add(id, fnDecl);
+
+        //
+        fnScope[SCOPE_CURFN] = [ fnDecl ];
     }
 
     return out;
@@ -701,7 +744,7 @@ function solveCall(node: Node): SolvedNode
         //          with another derefence or method call or whatever.
 
         // And that's all there is to `using`.
-        const argNode   = SolvedNode(
+        const argNode   = CallerNode(
             createCall('__partial' as any, 0, null),
             unshift ? null
                     : [ (args && args[0]) || fail() ],
@@ -719,8 +762,9 @@ function solveCall(node: Node): SolvedNode
     }
 
     //
-    return SolvedNode(
-        node, args, callTarg.type, callTarg);
+    return CallerNode(
+        node, args, callTarg.type,
+        callTarg);
 }
 
 
@@ -747,7 +791,7 @@ function solveIf(node: Node): SolvedNode
 //
 
 function SolvedNode(
-    node: Node, items: SolvedNodes|null, type: Type, target?: Overload)
+    node: Node, items: SolvedNodes|null, type: Type)
         : SolvedNode
 {
     return {
@@ -758,8 +802,27 @@ function SolvedNode(
         items,
         token: node.token,
         type,
-        target: target || null,
+        target: null,
     };
+}
+
+function CallerNode(
+    node: Node, items: SolvedNodes|null, type: Type, target: Overload)
+        : SolvedNode
+{
+    const out = SolvedNode(node, items, type);
+
+    // Register callsite.
+    {
+        out.target = target;
+        if (!target.callsites)
+            target.callsites = [];
+
+        // Pair<CallerNode, CallerScope>
+        target.callsites.push(out, _scope || fail());
+    }
+
+    return out;
 }
 
 
@@ -880,32 +943,50 @@ import { lex, Source, Filename } from './lex';
 import { parse } from './parse';
 import { prelude_src } from './prelude';
 
-_prelude_solved = solve(
+let PRELUDE_SOLVED: Scope|null = null;
+
+PRELUDE_SOLVED = solve(
     parse(lex(prelude_src as Source, '__prelude' as Filename)))
         .scope;
 
 function preludeOnly()
 {
-    if (_prelude_solved)
+    if (PRELUDE_SOLVED)
         fail('Only allowable in prelude.');
 }
 
 export function solve(parse: ParseResult): SolveResult
 {
+    RESET();
+
     // Globals.
-    if (!_prelude_solved)
+    if (!PRELUDE_SOLVED)
         _scope = listGlobals();
     else
-        _scope = Object.create(_prelude_solved);
+        _scope = Object.create(PRELUDE_SOLVED);
 
-    // Closure detection.
+    // Clone globals, we need this to track callsites for:
+    //  - import usage (TODO)
+    //  - implicit argument propagation
+    {
+        const scope = _scope;
+        for (const key in scope)
+            scope[key] = scope[key].map(
+                resetCallsites);
+    }
+
+    // Root scope used for closure detection.
     _scope_root = _scope;
 
     //
-    const root = solveNode(parse.root);
+    const root  = solveNode(parse.root);
     const scope = _scope || fail();
+    const ret   = { root, scope };
 
-    return { root, scope };
+    //
+    RESET();
+
+    return ret;
 }
 
 
