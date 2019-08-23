@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, createCall, F_FULLY_TYPED, F_CLOSURE } from './parse';
+import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -46,6 +46,49 @@ function RESET()
     _closure_detected   = false;
 }
 
+type Callsite =
+{
+    node:               SolvedNode;
+
+    _scope:             Scope|null;
+    _closure_detect:    Scope|null;
+    _current_fn:        SolvedNode|null;
+    _current_str:       SolvedNode|null;
+    _current_strt:      Type|null;
+};
+
+function Callsite(node: SolvedNode): Callsite
+{
+    return { node, _scope, _closure_detect, _current_fn, _current_str, _current_strt };
+}
+
+function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
+{
+    ////////////////////////////////////////
+    const scope0            = _scope;
+    const closure_detect0   = _closure_detect;
+    const current_fn0       = _current_fn;
+    const current_str0      = _current_str;
+    const current_strt0     = _current_strt;
+    ////////////////////////////////////////
+
+    _scope                  = callsite._scope;
+    _closure_detect         = callsite._closure_detect;
+    _current_fn             = callsite._current_fn;
+    _current_str            = callsite._current_str;
+    _current_strt           = callsite._current_strt;
+
+    action(callsite.node);
+
+    ////////////////////////////////////////
+    _scope          = scope0;
+    _closure_detect = closure_detect0;
+    _current_fn     = current_fn0;
+    _current_str    = current_str0;
+    _current_strt   = current_strt0;
+    ////////////////////////////////////////
+}
+
 
 //
 
@@ -56,15 +99,15 @@ type Overload =
     readonly type: Type;
 
     // Arity.
-    readonly min: number;
-    readonly max: number;
-    readonly args: Type[]|null;
-    readonly names: string[]|null;
+    min: number;
+    max: number;
+    args: Type[]|null;
+    names: string[]|null;
+
     readonly partial: Overload[]|null;
 
     // Usage.
-    callsites: (SolvedNode|Scope)[]|null;
-    // Actual type is Pair<CallerNode, CallerScope>.
+    callsites: Callsite[]|null;
 };
 
 function resetCallsites(o: Overload): Overload
@@ -86,7 +129,6 @@ function resetCallsites(o: Overload): Overload
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
-    node && node.items || fail();
     return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null };
 }
 
@@ -113,13 +155,27 @@ function FnDecl(node: SolvedNode): Overload
     const items: SolvedNodes = node.items || fail();
     const rnode = items[items.length + FN_RET_BACK];
     const ret   = rnode && rnode.type || fail();
-    const arity = items.length + FN_RET_BACK;
-    const args  = items.slice(0, arity);
 
-    const arg_t = args.map(i => i && i.type  || fail());
-    const arg_n = args.map(i => i && i.value || fail());
+    const max   = items.length + FN_RET_BACK;
+    const args  = items.slice(0, max);
 
-    return { kind: 'fn', node, type: ret, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null };
+    const arg_t: Type[]   = [];
+    const arg_n: string[] = [];
+
+    let min = 0;
+    for (let i = 0; i < max; i++)
+    {
+        const arg = args[i]  || fail();
+        arg.kind === 'let'   || fail();
+        arg_t[i] = arg.type  || fail();
+        arg_n[i] = arg.value || fail();
+
+        // Non-implicit, non-defaulted argument?
+        if (!(arg.flags & F_IMPLICIT) && !(arg.items && arg.items[LET_INIT]))
+            min++;
+    }
+
+    return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, partial: null, callsites: null };
 }
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -238,10 +294,12 @@ function scope_using(via: Overload)
 const NO_ARGS: SolvedNodes = [];
 Object.freeze(NO_ARGS);
 
-function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
+function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Type|null, flags: number): Overload|null
 {
     const scope     = _scope || fail();
-    const overloads = scope[id] || notDefined(id);
+    const overloads = scope[id];
+    if (!overloads)
+        return null;
 
     // Closure detector.
     const closureDetect = !_closure_detected && _closure_detect && _closure_detect[id] || null;
@@ -294,6 +352,10 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
             if (overload.min > arity || overload.max < arity)
                 continue NEXT;
 
+            // Match by return.
+            if (retType && !isAssignable(retType, overload.type))
+                continue NEXT;
+
             // Remap named arguments.
             let actual: SolvedNodes = args;
             if (names)
@@ -337,7 +399,7 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
 
             // Type check args.
             const expect = overload.args || fail();
-            for (let i = 0; i < expect.length; i++)
+            for (let i = 0; i < actual.length; i++)
                 if (!isAssignable(expect[i], (actual[i] || fail()).type))
                     continue NEXT;
 
@@ -359,34 +421,50 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
         }
     }
 
-    // Closure detector:
-    //  -   for something to be a closure,
-    //      it has to close over something from a parent scope
-    //      that is not the root scope.
-    if (matched
-        && closureDetect
-        && closureDetect !== rootScope // opti
-        && (!rootScope ||
-            closureDetect.indexOf(matched) >= 0
-            &&  rootScope.indexOf(matched)  < 0))
+    if (matched)
     {
-        _closure_detected = true;
+        // Closure detector:
+        //  -   for something to be a closure,
+        //      it has to close over something from a parent scope
+        //      that is not the root scope.
+        if (closureDetect
+            && closureDetect !== rootScope // opti
+            && (!rootScope ||
+                closureDetect.indexOf(matched) >= 0
+                &&  rootScope.indexOf(matched)  < 0))
+        {
+            _closure_detected = true;
+        }
+
+        // Implicit argument injection.
+        const args_t = matched.args;
+        if (args && args_t && args.length < args_t.length)
+        {
+            const args_n = matched.names || fail();
+            for (let i = args.length; i < args_t.length; i++)
+            {
+                const id   = args_n[i];
+                const type = args_t[i];
+                bindImplicitArg(args, i, id, type);
+            }
+        }
     }
 
-    // Done.
-    return matched || fail(
-        'No overload of `' + id + '` matches call signature.');
+    return matched;
 }
 
+function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
+{
+    return scope_tryMatch__mutargs(id, args, null, flags)
+        || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.')
+        || notDefined(id);
+}
 
-// Pseudo-keywords.
-
-function notDefined(id: string): Overload[]
+function notDefined(id: string): Overload
 {
     switch (id)
     {
-        case '__native_pure':
-            return [ __native_pure() ];
+        case '__native_pure': return __native_pure();
     }
 
     return fail('`' + id + '` is not defined.');
@@ -500,8 +578,6 @@ function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
     return __solveFn(true, node, prep) || fail();
 }
 
-const SCOPE_CURFN = '.fn';
-
 function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNode|null
 {
     // Prep reject.
@@ -520,13 +596,10 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
         items[items.length + FN_BODY_BACK] = null;
     }
 
-    let fnScope: Scope;
-
     //////////////////////////
     {
         const current_fn0   = _current_fn;
         const scope0        = scope_push();
-        fnScope             = _scope || fail();
 
         _current_fn         = out;
 
@@ -544,10 +617,11 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
         const id = node.value || fail('TODO anonymous fns');
 
         const fnDecl = FnDecl(out);
+        out.target && fail();
+        out.target = fnDecl;
+
         scope_add(id, fnDecl);
 
-        //
-        fnScope[SCOPE_CURFN] = [ fnDecl ];
     }
 
     return out;
@@ -725,7 +799,7 @@ function evalTypeAnnot(node: Node): SolvedNode
 function solveCall(node: Node): SolvedNode
 {
     const id        = node.value || fail();
-    let args        = solveNodes(node.items);
+    let args        = solveNodes(node.items) || [];
     let callTarg    = scope_match__mutargs(id, args, node.flags);
 
     // `using` codegen.
@@ -745,7 +819,7 @@ function solveCall(node: Node): SolvedNode
 
         // And that's all there is to `using`.
         const argNode   = CallerNode(
-            createCall('__partial' as any, 0, null),
+            createRead('__partial' as any),
             unshift ? null
                     : [ (args && args[0]) || fail() ],
             via.type,
@@ -763,8 +837,106 @@ function solveCall(node: Node): SolvedNode
 
     //
     return CallerNode(
-        node, args, callTarg.type,
+        node,
+        args && args.length ? args : null,
+        callTarg.type,
         callTarg);
+}
+
+
+// This is a weird one,
+//  in case this is the current fn we're solving,
+//   we wont have overload yet, but we do have the node,
+//    otherwise we have the overload and get the node from there.
+
+function injectImplicitArg__mutfn(
+    node: SolvedNode|null, fn: Overload|null,
+    id: string, type: Type)
+{
+    if (!node)
+        node = fn && fn.node || fail();
+
+    const mut_argNodes = node.items || fail();
+    const newArgIdx = mut_argNodes.length + FN_RET_BACK;
+
+    // The new argnode.
+    const newArgNode = SolvedNode(
+        createLet(id, F_IMPLICIT, null, null),
+            null, type);
+
+    mut_argNodes.splice(newArgIdx, 0, newArgNode);
+
+    // If we dont have the overload yet,
+    //  there's nothing else to do here.
+
+    // TODO argname check should come first -
+    //  the one below is too late,
+    //   wont catch an argname dupe here.
+    if (fn)
+    {
+        // We'll be mutating the overload.
+        fn.kind === 'fn' || fail();
+        const mut_args = fn.args || [];
+        const mut_names = fn.names || [];
+        mut_names.length === mut_args.length || fail();
+
+        // We'll also mutate the fn SolvedNode.
+        const node = fn.node || fail();
+        node.kind === 'fn' && node.type || fail(); // isSolvedFnNode
+
+        //
+        mut_names.indexOf(id) < 0 || fail(
+            'Implicit argument name collision.');
+
+        mut_args .push(type);
+        mut_names.push(id);
+
+        fn.args  = mut_args;
+        fn.names = mut_names;
+
+        // Propagate to all callsites.
+        const callsites = fn.callsites;
+        if (callsites)
+            for (let i = 0; i < callsites.length; i++)
+            {
+                atCallsite(callsites[i], callNode =>
+                {
+                    const args = callNode.items || [];
+                    callNode.items = args;
+                    bindImplicitArg(args, newArgIdx, id, type);
+                });
+            }
+    }
+
+    // TODO put in the original scope!
+    return Binding(newArgNode, type);
+}
+
+function bindImplicitArg(
+    args: SolvedNodes, argIdx: number,
+    id: string, type: Type)
+{
+    args.length >= argIdx || fail();
+
+    args[argIdx] = CallerNode(
+        createRead(id), null, type,
+        getImplicit(id, type));
+}
+
+function getImplicit(id: string, type: Type): Overload
+{
+    let matched = scope_tryMatch__mutargs(id, null, type, 0);
+    if (!matched)
+    {
+        if (!_current_fn)
+            return fail('No implicit `' + id + '` in scope.');
+
+        const fnDecl = _current_fn.target || null;
+        const fnNode = fnDecl ? fnDecl.node : _current_fn;
+        matched = injectImplicitArg__mutfn(fnNode, fnDecl, id, type) || fail();
+    }
+
+    return matched;
 }
 
 
@@ -819,7 +991,8 @@ function CallerNode(
             target.callsites = [];
 
         // Pair<CallerNode, CallerScope>
-        target.callsites.push(out, _scope || fail());
+        target.callsites.push(
+            Callsite(out));
     }
 
     return out;
@@ -843,7 +1016,9 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
     const here0                 = _here;
     const result: SolvedNodes   = output || [];
 
-    for (let i = 0, n = nodes.length; i < n; i++)
+    let offset = 0;
+
+    for (let i = 0; i < nodes.length; i++)
     {
         const node = nodes[i];
         if (!node)
@@ -857,7 +1032,20 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         if (solver)
         {
             _here       = node;
-            result[i]   = solver(node);
+
+            // MUT DURING ITER ////////////
+            // E.g. implicit arg injection.
+            //
+            result[i + offset] && fail();
+
+            const res = solver(node);
+
+            while (result[i + offset])
+                offset++;
+
+            result[i + offset] = res;
+            //
+            // MUT DURING ITER ////////////
             continue;
         }
 
@@ -869,7 +1057,7 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         //  without risking stuff depending on constants & variables
         //   introduced halfway through.
         const i0 = i;
-        let   i1 = n;
+        let   i1 = nodes.length;
 
         // CLOSURE DETECTOR ////////////////////////////
         const cd0           = _closure_detect;
@@ -887,7 +1075,7 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
 
         // First pass, expose stuff in scope
         //  without doing type checking when possible.
-        for (let i = i0; i < n; i++)
+        for (let i = i0; i < nodes.length; i++)
         {
             const node = nodes[i];
             if (!node)
@@ -931,6 +1119,8 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         i1 > i0 || fail();
         i = i1 - 1; // <- loop++
     }
+
+    result.length === nodes.length + offset || fail();
 
     _here = here0;
     return result;

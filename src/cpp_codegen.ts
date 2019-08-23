@@ -1,6 +1,6 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_TYPE, LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE } from './parse';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE } from './parse';
 import { lookupType, Struct } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
@@ -235,7 +235,7 @@ function cgFn(fn: SolvedNode)
          ? ') -> ' + annot
          : ')';
 
-    if (!closure && src !== 'int main()')
+    if (!closure && src !== 'int main()' && _fdef.indexOf(fn.value || fail()) >= 0)
         _ffwd[src] = '\n' + src + ';';
 
     if (body.kind === 'block')
@@ -261,12 +261,11 @@ function cgFn(fn: SolvedNode)
 
 function cgLet(node: SolvedNode)
 {
-    const items = node.items || fail();
     const id    = node.value || fail();
 
-    const annot = typeAnnot((items[LET_TYPE] || fail()).type) || fail();
+    const annot = typeAnnot(node.type) || fail();
     const head  = annot + ' ' + ID(id);
-    const init  = items[LET_INIT];
+    const init  = node.items && node.items[LET_INIT];
     if (init)
         return head + ' = ' + cgNode(init);
 

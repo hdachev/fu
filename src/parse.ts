@@ -540,6 +540,8 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
     let first = true;
     let outFlags = 0;
 
+    let implicit: Nodes|null = null;
+
     for (;;)
     {
         if (tryConsume(endk, endv))
@@ -560,8 +562,23 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
         arg.flags &= ~F_LOCAL;
         arg.flags |= F_ARG;
 
-        outArgs.push(arg);
+        if (arg.flags & F_IMPLICIT)
+        {
+            if (!implicit)
+                implicit = [];
+
+            implicit.push(arg);
+        }
+        else
+        {
+            outArgs.push(arg);
+        }
     }
+
+    // Ensures implicit arguments always come last.
+    if (implicit)
+        for (let i = 0; i < implicit.length; i++)
+            outArgs.push(implicit[i]);
 
     return outFlags;
 }

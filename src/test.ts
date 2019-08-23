@@ -73,228 +73,109 @@ function testCodegen(src: string, cpp: string)
 
 //
 
-ZERO(`
-    return 1 - 1;
-`);
+// ZERO(`
+//     return 1 - 1;
+// `);
 
-ZERO(`
-    fn sum(a: i32, b: i32): i32
-        a + b;
+// ZERO(`
+//     fn sum(a: i32, b: i32): i32
+//         a + b;
 
-    return sum(1, -1);
-`);
+//     return sum(1, -1);
+// `);
 
-ZERO(`
-    fn sum(a: i32, b: i32)
-        a + b;
+// ZERO(`
+//     fn sum(a: i32, b: i32)
+//         a + b;
 
-    return sum(1, -1);
-`);
+//     return sum(1, -1);
+// `);
 
-ZERO(`
-    fn sign(a: i32)
-        a > 0 ? 1 : a < 0 ? -1 : 0;
+// ZERO(`
+//     fn sign(a: i32)
+//         a > 0 ? 1 : a < 0 ? -1 : 0;
 
-    return sign(7) + sign(-3) + sign(0);
-`);
+//     return sign(7) + sign(-3) + sign(0);
+// `);
 
-ZERO(`
-    fn sign(a: i32) {
-        if (a > 0)
-            return 1;
+// ZERO(`
+//     fn sign(a: i32) {
+//         if (a > 0)
+//             return 1;
 
-        return -2;
-    }
+//         return -2;
+//     }
 
-    return sign(10) * 2 + sign(-5);
-`);
+//     return sign(10) * 2 + sign(-5);
+// `);
 
-ZERO(`
-    fn sign(a: i32) {
-        if (a > 0)
-            return 1;
-        else
-            return -2;
-    }
+// ZERO(`
+//     fn sign(a: i32) {
+//         if (a > 0)
+//             return 1;
+//         else
+//             return -2;
+//     }
 
-    return sign(10) * 2 + sign(-5);
-`);
+//     return sign(10) * 2 + sign(-5);
+// `);
 
-ZERO(`
-    let sum = 0;
-    for (let i = 0; i < 10; i++)
-        sum++;
+// ZERO(`
+//     let sum = 0;
+//     for (let i = 0; i < 10; i++)
+//         sum++;
 
-    return sum * 2 - 20;
-`);
+//     return sum * 2 - 20;
+// `);
 
-ZERO(`
-    let sum = 0;
-    for (let i = 10; i --> 0; )
-        sum--;
+// ZERO(`
+//     let sum = 0;
+//     for (let i = 10; i --> 0; )
+//         sum--;
 
-    return sum * 2 + 20;
-`);
+//     return sum * 2 + 20;
+// `);
 
-ZERO(`
-    fn decr(num: &mut i32)
-        num--;
+// ZERO(`
+//     fn decr(num: &mut i32)
+//         num--;
 
-    let res = 1;
-    decr(res);
-    return res;
-`);
+//     let res = 1;
+//     decr(res);
+//     return res;
+// `);
 
-ZERO(`
-    let res = 1;
-    fn decr() // expect_lambda
-        res--;
+// ZERO(`
+//     let res = 1;
+//     fn decr() // expect_lambda
+//         res--;
 
-    decr();
-    return res;
-`);
+//     decr();
+//     return res;
+// `);
 
-ZERO(`
-    let sum = 0;
-    while (sum < 15)
-        sum++;
+// ZERO(`
+//     let sum = 0;
+//     while (sum < 15)
+//         sum++;
 
-    return sum - 15;
-`);
+//     return sum - 15;
+// `);
 
-ZERO(`
-    let sum = 0;
-    while (sum < 15)
-        sum += 2;
+// ZERO(`
+//     let sum = 0;
+//     while (sum < 15)
+//         sum += 2;
 
-    return sum - 16;
-`);
+//     return sum - 16;
+// `);
 
-ZERO(`
-    fn named(a: i32, b: i32)
-        a - b * 2;
+// ZERO(`
+//     fn named(a: i32, b: i32)
+//         a - b * 2;
 
-    return named(b: 3, 6);
-`);
-
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
-    }
-
-    fn size(r: Range)
-        r.max - r.min;
-
-    return size(Range(14, 21)) - 7;
-`);
-
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
-    }
-
-    let r = Range(1, 2);
-    r.min++;
-    return r.max - r.min;
-`);
-
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
-    }
-
-    fn size(using r: Range)
-        max - min;
-
-    return size(Range(14, 21)) - 7;
-`);
-
-ZERO(`
-    struct Range {
-        min: i32;
-        max: i32;
-
-        fn size()
-            max - min;
-    }
-
-    let r = Range(14, 21);
-
-    return size(r) - 7;
-`);
-
-ZERO(`
-    struct Pos {
-        x: i32;
-    }
-
-    struct Player {
-        using pos: Pos;
-    }
-
-    fn dist(using p: Player, other: Player)
-        x - other.x;
-
-    let a = Player(Pos(10));
-    let b = Player(Pos( 4));
-
-    return dist(a, b) - 6;
-`);
-
-ZERO(`
-    struct Pos {
-        x: i32;
-    }
-
-    struct Player {
-        using pos: Pos;
-
-        fn dist(other: Player)
-            x - other.x;
-    }
-
-    let a = Player(Pos(10));
-    let b = Player(Pos( 4));
-
-    return dist(a, b) - 6;
-`);
-
-ZERO(`
-    fn inner(i: i32): i32
-        i > 0 ? outer(i - 1) : 0;
-
-    fn outer(i: i32): i32
-        2 * inner(i);
-
-    return outer(1);
-`);
-
-ZERO(`
-    fn inner(i: i32): i32
-        outer(i - 1);
-
-    fn outer(implicit x: i32, i: i32): i32
-        i > 0   ? inner(i)
-                : x + i;
-
-    let implicit x: i32 = 7;
-    return outer(1) - 14;
-`);
-
-ZERO(`
-    fn inner(implicit x: i32, i: i32): i32
-        outer(i - 2 * x);
-
-    fn outer(i: i32): i32
-        i > 0   ? inner(i)
-                : 2 * (i + 7);
-
-    let implicit x: i32 = 3;
-    return outer(6) - 14;
-`);
+//     return named(b: 3, 6);
+// `);
 
 // ZERO(`
 //     struct Range {
@@ -302,15 +183,134 @@ ZERO(`
 //         max: i32;
 //     }
 
-//     fn size(using implicit r: Range)
+//     fn size(r: Range)
+//         r.max - r.min;
+
+//     return size(Range(14, 21)) - 7;
+// `);
+
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
+//     }
+
+//     let r = Range(1, 2);
+//     r.min++;
+//     return r.max - r.min;
+// `);
+
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
+//     }
+
+//     fn size(using r: Range)
 //         max - min;
 
-//     fn test()
-//         size();
-
-//     let implicit r: Range = Range(14, 21);
-
-//     return r - 7;
+//     return size(Range(14, 21)) - 7;
 // `);
+
+// ZERO(`
+//     struct Range {
+//         min: i32;
+//         max: i32;
+
+//         fn size()
+//             max - min;
+//     }
+
+//     let r = Range(14, 21);
+
+//     return size(r) - 7;
+// `);
+
+// ZERO(`
+//     struct Pos {
+//         x: i32;
+//     }
+
+//     struct Player {
+//         using pos: Pos;
+//     }
+
+//     fn dist(using p: Player, other: Player)
+//         x - other.x;
+
+//     let a = Player(Pos(10));
+//     let b = Player(Pos( 4));
+
+//     return dist(a, b) - 6;
+// `);
+
+// ZERO(`
+//     struct Pos {
+//         x: i32;
+//     }
+
+//     struct Player {
+//         using pos: Pos;
+
+//         fn dist(other: Player)
+//             x - other.x;
+//     }
+
+//     let a = Player(Pos(10));
+//     let b = Player(Pos( 4));
+
+//     return dist(a, b) - 6;
+// `);
+
+// ZERO(`
+//     fn inner(i: i32): i32
+//         i > 0 ? outer(i - 1) : 0;
+
+//     fn outer(i: i32): i32
+//         2 * inner(i);
+
+//     return outer(1);
+// `);
+
+// ZERO(`
+//     fn inner(i: i32): i32
+//         outer(i - 1);
+
+//     fn outer(implicit x: i32, i: i32): i32
+//         i > 0   ? inner(i)
+//                 : x + i;
+
+//     let implicit x = 7;
+//     return outer(1) - 14;
+// `);
+
+// ZERO(`
+//     fn inner(implicit x: i32, i: i32): i32
+//         outer(i - 2 * x);
+
+//     fn outer(i: i32): i32
+//         i > 0   ? inner(i)
+//                 : 2 * i;
+
+//     let implicit x = 3;
+//     return outer(6);
+// `);
+
+ZERO(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
+
+    fn size(using implicit r: Range)
+        max - min;
+
+    fn test()
+        size();
+
+    let implicit r = Range(14, 21);
+
+    return test() - 7;
+`);
 
 console.log('ALL GOOD @', new Date());
