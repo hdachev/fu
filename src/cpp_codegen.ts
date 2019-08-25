@@ -79,9 +79,12 @@ function typeAnnotBase(type: Type): string|null
     switch (tdef.kind)
     {
         case 'struct':
-            if (!_tfwd[type.canon])
+            if (!(type.canon in _tfwd))
             {
-                _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
+                _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
+                    ? '\nstruct ' + type.canon + ';'
+                    : '';
+
                 const def = declareStruct(type, tdef);
                 _tdef += def;
             }
@@ -124,15 +127,12 @@ function collectDedupes(_d: Dedupes|string)
             out += _d[keys[i]];
     }
 
-    if (out)
-        out += '\n';
-
     return out;
 }
 
 function cgRoot(root: SolvedNode)
 {
-    const src = cgNodes(root.items, 'stmt').join(';\n' + _indent) + ';\n';
+    const src = cgStatements(root.items);
 
     let header = collectDedupes(_libs)
                + collectDedupes(_tfwd)
@@ -157,13 +157,29 @@ function ID(id: string)
     return id;
 }
 
+function cgStatements(nodes: Nodes)
+{
+    let src = '';
+
+    const lines = cgNodes(nodes, 'stmt');
+    for (let i = 0; i < lines.length; i++)
+    {
+        const line = lines[i];
+        if (line)
+            src += _indent + line + ';';
+    }
+
+    return src;
+}
+
 function blockWrap(nodes: Nodes)
 {
     const indent0 = _indent;
     _indent += '    ';
-    const src = indent0 + '{' + _indent + cgNodes(nodes, 'stmt').filter(i => i).join(';' + _indent) + ';' + indent0 + '}';
-    _indent = indent0;
 
+    const src = indent0 + '{' + cgStatements(nodes) + indent0 + '}';
+
+    _indent = indent0;
     return src;
 }
 
