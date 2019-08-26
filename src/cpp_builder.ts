@@ -102,7 +102,7 @@ catch (o_O) {};
 
 //
 
-const GCC       = 'g++ -std=c++1z';
+const GCC       = 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror';
 const GCC_BUILD = GCC + ' -c -o';
 const GCC_LINK  = GCC + ' -o';
 
