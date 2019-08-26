@@ -73,6 +73,44 @@ function testCodegen(src: string, cpp: string)
 
 //
 
+function FAIL(src: string)
+{
+    const errors: string[][] = [];
+    src.replace(/\/\/ERR(.+)/g, (_, keywords) =>
+    {
+        const kw = keywords.trim().split(/\s+/).filter((i: string) => !!i);
+        kw.length || fail();
+        errors.push(kw);
+        return _;
+    });
+
+    errors.length || fail();
+
+    let ok = false;
+
+    try {
+        ZERO(src);
+    }
+    catch (e)
+    {
+        const msg = e.message || fail();
+        for (let i = 0; i < errors.length; i++)
+        {
+            const kw = errors[i];
+            for (let i = 0; i < kw.length; i++)
+                msg.indexOf(kw[i]) >= 0 || fail(
+                    'Missing error keyword:', kw, 'in message', e)
+        }
+
+        ok = true;
+    }
+
+    ok || fail('Did not error.');
+}
+
+
+//
+
 ZERO(`
     return 1 - 1;
 `);
@@ -162,6 +200,14 @@ ZERO(`
     return sum - 15;
 `);
 
+FAIL(`
+    let sum = 0;
+    while (sum < 15)
+        sum++; //ERR ++ overload
+
+    return sum - 15;
+`);
+
 ZERO(`
     mut sum = 0;
     while (sum < 15)
@@ -197,6 +243,17 @@ ZERO(`
 
     mut r = Range(1, 2);
     r.min++;
+    return r.max - r.min;
+`);
+
+FAIL(`
+    struct Range {
+        min: i32;
+        max: i32;
+    }
+
+    let r = Range(1, 2);
+    r.min++; //ERR ++ overload
     return r.max - r.min;
 `);
 
