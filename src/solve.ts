@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT } from './parse';
+import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField } from './types';
@@ -581,23 +581,19 @@ function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
     return __solveFn(true, node, prep) || fail();
 }
 
-function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNode|null
+function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNode|null
 {
     // Prep reject.
-    if (!solve && !(node.flags & F_FULLY_TYPED))
+    if (!solve && !(n_fn.flags & F_FULLY_TYPED))
         return null;
 
-    let items       = node.items    || fail();
-    items.length   >= FN_RET_BACK   || fail();
+    const inItems   = n_fn.items || fail();
+    inItems.length >= FN_RET_BACK || fail();
 
-    const out       = prep || SolvedNode(node, null, t_void);
+    const out       = prep || SolvedNode(n_fn, null, t_void);
 
-    // Skip over body during prep.
-    if (!solve)
-    {
-        items = items.slice();
-        items[items.length + FN_BODY_BACK] = null;
-    }
+    const outItems: SolvedNodes = inItems.map(() => null);
+    out.items       = outItems;
 
     //////////////////////////
     {
@@ -606,9 +602,39 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
 
         _current_fn         = out;
 
-        solveNodes(
-            items,
-            out.items = items.map(() => null));
+        // Arg decls.
+        for (let i = 0; i < inItems.length + FN_ARGS_BACK; i++)
+        {
+            const n_arg = inItems[i] || fail();
+            n_arg.kind === 'let' || fail();
+            outItems[i] = solveLet(n_arg);
+        }
+
+        /////////////////////////////////////////////////////
+        //
+        // Return type annot.
+        {
+            const n_ret = inItems[inItems.length + FN_RET_BACK];
+            const s_ret = n_ret && evalTypeAnnot(n_ret) || null;
+
+            // MUT DURING SOLVE,
+            //  implicit args splice in
+            outItems[outItems.length + FN_RET_BACK] = s_ret;
+        }
+
+        // Only if actually solving the fn, the fn body.
+        if (solve)
+        {
+            const n_body = inItems[inItems.length + FN_BODY_BACK] || fail();
+            const s_body = solveNode(n_body) || fail();
+
+            // MUT DURING SOLVE,
+            //  implicit args splice in
+            outItems[outItems.length + FN_BODY_BACK] = s_body;
+        }
+
+        //
+        /////////////////////////////////////////////////////
 
         _current_fn         = current_fn0;
         _scope              = scope0;
@@ -617,15 +643,16 @@ function __solveFn(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNod
 
     if (!prep)
     {
-        const id = node.value || fail('TODO anonymous fns');
+        const id = n_fn.value || fail('TODO anonymous fns');
 
         const fnDecl = FnDecl(out);
         out.target && fail();
         out.target = fnDecl;
 
         scope_add(id, fnDecl);
-
     }
+
+    !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
 
     return out;
 }
@@ -1018,9 +1045,8 @@ function CallerNode(
 
 function solveNode(node: Node): SolvedNode
 {
-    const _in = [ node ];
-    const out = solveNodes(_in);
-    return out && out[0] || fail();
+    return SOLVE[node.kind](node)
+        || fail();
 }
 
 function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
@@ -1047,20 +1073,7 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         if (solver)
         {
             _here       = node;
-
-            // MUT DURING ITER ////////////
-            // E.g. implicit arg injection.
-            //
-            result[i + offset] && fail();
-
-            const res = solver(node);
-
-            while (result[i + offset])
-                offset++;
-
-            result[i + offset] = res;
-            //
-            // MUT DURING ITER ////////////
+            result[i]   = solver(node);
             continue;
         }
 
@@ -1105,7 +1118,8 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
                 break;
             }
 
-            result[i] = UNORDERED_PREP[node.kind](node);
+            _here       = node;
+            result[i]   = UNORDERED_PREP[node.kind](node);
         }
 
         // Second pass, do the remaining work.
@@ -1113,7 +1127,10 @@ function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
         {
             const node = nodes[i];
             if (node)
-                result[i] = UNORDERED_SOLVE[node.kind](node, result[i]);
+            {
+                _here       = node;
+                result[i]   = UNORDERED_SOLVE[node.kind](node, result[i]);
+            }
         }
 
         // Propagate closure detector results.

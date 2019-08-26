@@ -393,7 +393,7 @@ ZERO(`
 ZERO(`
     let x = 1;
 
-    fn test(): &i32
+    fn test(): &i32 // expect_lambda
         x;
 
     return test - 1;
