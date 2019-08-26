@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT } from './parse';
+import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT } from './parse';
 import { fail } from './fail';
 
 import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
@@ -741,8 +741,14 @@ function solveLet(node: Node): SolvedNode
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
     const id        = node.value || fail();
 
-    const type      = add_mut(add_ref(t_let));
+    //
+    let type        = t_let;
+    if (node.flags & F_MUT)
+        type        = add_mut(type);
 
+    type            = add_ref(type);
+
+    //
     const overload  = out.flags & F_FIELD
         ? Field(out, _current_strt || fail(), type)
         : Binding(out, type);

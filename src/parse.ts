@@ -334,7 +334,7 @@ function parseStructItem(): Node
     //////////////////////////////
 
     const member = parseLet();
-    member.flags |= F_FIELD;
+    member.flags |= F_MUT | F_FIELD;
 
     consume('op', ';');
     return member;
@@ -354,8 +354,8 @@ function parseStructMethod()
 
     const typeAnnot =
         createPrefix('&',
-            createPrefix('mut',
-                createRead(_structName || fail())));
+            // createPrefix('mut',
+                createRead(_structName || fail()));
 
     if (!fn.items)
         fn.items = [];
@@ -458,6 +458,7 @@ function parseStatement(): Node
         {
             case '{':       return parseBlock();
             case 'let':     return parseLetStmt();
+            case 'mut':     return _idx--, parseLetStmt();
             case 'if':      return parseIf();
             case 'return':  return parseReturn();
             case 'fn':      return parseFnDecl();
@@ -593,8 +594,10 @@ function parseLetStmt()
 function parseLet()
 {
     let flags   = F_LOCAL;
+
     if (tryConsume('id', 'using'   )) flags |= F_USING;
     if (tryConsume('id', 'implicit')) flags |= F_IMPLICIT;
+    if (tryConsume('id', 'mut'     )) flags |= F_MUT;
 
     const id    = consume('id').value;
     const type  = tryPopTypeAnnot();
@@ -898,7 +901,7 @@ function parseFor()
 {
     consume('op', '(');
 
-    consume('id', 'let');
+    tryConsume('id', 'let');
     const init = parseLetStmt();
     const cond = parseExpressionStatement();
 

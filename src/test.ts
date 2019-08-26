@@ -121,16 +121,16 @@ ZERO(`
 `);
 
 ZERO(`
-    let sum = 0;
-    for (let i = 0; i < 10; i++)
+    mut sum = 0;
+    for (mut i = 0; i < 10; i++)
         sum++;
 
     return sum * 2 - 20;
 `);
 
 ZERO(`
-    let sum = 0;
-    for (let i = 10; i --> 0; )
+    mut sum = 0;
+    for (mut i = 10; i --> 0; )
         sum--;
 
     return sum * 2 + 20;
@@ -140,13 +140,13 @@ ZERO(`
     fn decr(num: &mut i32)
         num--;
 
-    let res = 1;
+    mut res = 1;
     decr(res);
     return res;
 `);
 
 ZERO(`
-    let res = 1;
+    mut res = 1;
     fn decr() // expect_lambda
         res--;
 
@@ -155,7 +155,7 @@ ZERO(`
 `);
 
 ZERO(`
-    let sum = 0;
+    mut sum = 0;
     while (sum < 15)
         sum++;
 
@@ -163,7 +163,7 @@ ZERO(`
 `);
 
 ZERO(`
-    let sum = 0;
+    mut sum = 0;
     while (sum < 15)
         sum += 2;
 
@@ -195,7 +195,7 @@ ZERO(`
         max: i32;
     }
 
-    let r = Range(1, 2);
+    mut r = Range(1, 2);
     r.min++;
     return r.max - r.min;
 `);

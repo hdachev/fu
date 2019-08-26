@@ -61,6 +61,7 @@ function typeAnnot(type: Type)
     switch (type.quals)
     {
         case '':   return fwd;
+        case 'r':  return 'const ' + fwd + '&';
         case 'mr': return fwd + '&';
     }
 
