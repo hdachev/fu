@@ -390,4 +390,13 @@ ZERO(`
     return outer() - 7;
 `);
 
+ZERO(`
+    let x = 1;
+
+    fn test(): &i32
+        x;
+
+    return test - 1;
+`);
+
 console.log('ALL GOOD @', new Date());
