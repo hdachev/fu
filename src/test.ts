@@ -402,6 +402,35 @@ ZERO(`
     return test - 1;
 `);
 
+ZERO(`
+    let a = 1;
+    let x: &i32 = a;
+
+    return a - x;
+`);
+
+FAIL(`
+    let a = 1;
+    mut x: &i32 = a;
+    {
+        let b = 2;
+        x = b; //ERR outlive
+    }
+
+    return a - x;
+`);
+
+ZERO(`
+    struct Test {
+        x: &i32;
+    }
+
+    let a = 1;
+    let test = Test(a);
+
+    return test.x - 1;
+`);
+
 FAIL(`
     fn test(): &i32 {
         let x = 1;
@@ -409,6 +438,21 @@ FAIL(`
     }
 
     return test - 1;
+`);
+
+FAIL(`
+    struct Test {
+        x: &i32;
+    }
+
+    let a = 1;
+    mut test = Test(a);
+    {
+        let b = 2;
+        test = Test(b); //ERR outlive
+    }
+
+    return a + test.x - 3;
 `);
 
 console.log('ALL GOOD @', new Date());
