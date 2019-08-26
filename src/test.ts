@@ -9,7 +9,7 @@ import * as cpp_builder from './cpp_builder';
 
 let TEST_ID = 0;
 
-function ZERO(src: string)
+function ZERO(src: string): string
 {
     resetContext();
 
@@ -32,14 +32,14 @@ function ZERO(src: string)
 
     //
     if (!cpp_builder.available)
-        return;
+        return gensrc;
 
     //
     const FAIL = fail;
     {
         const fail = (...args: unknown[]) =>
         {
-            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + r_cppcg.src.replace(/\n/g, '\n\t'));
+            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + gensrc.replace(/\n/g, '\n\t'));
         };
 
         cpp_builder.build(gensrc, result =>
@@ -63,6 +63,8 @@ function ZERO(src: string)
             });
         });
     }
+
+    return gensrc;
 }
 
 function testCodegen(src: string, cpp: string)
@@ -87,9 +89,10 @@ function FAIL(src: string)
     errors.length || fail();
 
     let ok = false;
+    let cpp: string = '';
 
     try {
-        ZERO(src);
+        cpp = ZERO(src);
     }
     catch (e)
     {
@@ -99,13 +102,13 @@ function FAIL(src: string)
             const kw = errors[i];
             for (let i = 0; i < kw.length; i++)
                 msg.indexOf(kw[i]) >= 0 || fail(
-                    'Missing error keyword:', kw, 'in message', e)
+                    'Missing error keyword:', kw, 'in message', e.message);
         }
 
         ok = true;
     }
 
-    ok || fail('Did not error.');
+    ok || fail('Did not error. Generated cpp:\n\n\t' + cpp.replace(/\n/g, '\n\t'));
 }
 
 
@@ -395,6 +398,15 @@ ZERO(`
 
     fn test(): &i32 // expect_lambda
         x;
+
+    return test - 1;
+`);
+
+FAIL(`
+    fn test(): &i32 {
+        let x = 1;
+        return x; //ERR outlive
+    }
 
     return test - 1;
 `);
