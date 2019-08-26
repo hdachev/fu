@@ -78,7 +78,7 @@ export type Precedence  = number & { K: 'Precedence' };
 const P_RESET           = 1000 as Precedence;
 const P_PREFIX_UNARY    = 3    as Precedence;
 
-const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*', '&', 'mut' ];
+const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*', '&', '&mut' ];
 const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
@@ -334,7 +334,7 @@ function parseStructItem(): Node
     //////////////////////////////
 
     const member = parseLet();
-    member.flags |= F_MUT | F_FIELD;
+    member.flags |= F_FIELD;
 
     consume('op', ';');
     return member;
@@ -712,13 +712,6 @@ function parseExpressionHead(): Node
         // Calls & co.
         case 'id':
 
-            // Keyword expressions.
-            switch (token.value)
-            {
-                case 'mut':
-                    return parsePrefix(token.value);
-            }
-
             // Identifier expression.
             return createRead(token.value);
 
@@ -749,6 +742,9 @@ function parseExpressionHead(): Node
 
 function parsePrefix(op: LexValue)
 {
+    if (op === '&' && tryConsume('id', 'mut'))
+        op = '&mut' as LexValue;
+
     return createPrefix(
         op, parseExpression(P_PREFIX_UNARY));
 }

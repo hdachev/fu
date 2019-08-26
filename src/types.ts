@@ -13,7 +13,7 @@ export type Canon       = (string & { K: 'Canon' }) | Primitive;
 export type Quals       = tagset.TagSet;
 
 export const q_EMPTY    = tagset.EMPTY;
-export const q_mut      = tagset.intern('mut');
+export const q_mutref   = tagset.intern('mutref');
 export const q_ref      = tagset.intern('ref');
 
 export type Type =
@@ -77,14 +77,24 @@ function qadd(type: Type, q: tagset.Tag)
          : createType(type.canon, tagset.union(type.quals, q));
 }
 
-export function add_mut(type: Type)
+export function add_mutref(type: Type)
 {
-    return qadd(type, q_mut);
+    return qadd(add_ref(type), q_mutref);
 }
 
 export function add_ref(type: Type)
 {
     return qadd(type, q_ref);
+}
+
+export function add_refs_from(src: Type, dest: Type)
+{
+    if (src.quals.indexOf(q_mutref) >= 0)
+        dest = add_mutref(dest);
+    else if (src.quals.indexOf(q_ref) >= 0)
+        dest = add_ref(dest);
+
+    return dest;
 }
 
 export function serialize(type: Type)

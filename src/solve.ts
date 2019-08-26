@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT } from './parse';
 import { fail } from './fail';
 
-import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mut, registerStruct, StructField } from './types';
+import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -135,10 +135,6 @@ function Binding(node: SolvedNode, type: Type): Overload
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
 {
     node && node.items || fail();
-
-    // const thisArg = SolvedNode(
-    //     createLet('this' as any, F_IMPLICIT, null, null),
-    //         null, structType);
 
     return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null, callsites: null };
 }
@@ -289,6 +285,13 @@ function scope_using(via: Overload)
             scope_add(id, Partial(via, overload));
         }
     }
+}
+
+function scope_resetAllCallsites(scope: Scope)
+{
+    for (const key in scope)
+        scope[key] = scope[key].map(
+            resetCallsites);
 }
 
 const NO_ARGS: SolvedNodes = [];
@@ -742,16 +745,11 @@ function solveLet(node: Node): SolvedNode
     const id        = node.value || fail();
 
     //
-    let type        = t_let;
-    if (node.flags & F_MUT)
-        type        = add_mut(type);
-
-    type            = add_ref(type);
-
-    //
     const overload  = out.flags & F_FIELD
-        ? Field(out, _current_strt || fail(), type)
-        : Binding(out, type);
+        ? Field(out, _current_strt || fail(), t_let)
+        : Binding(out, node.flags & F_MUT
+            ? add_mutref(t_let)
+            : add_ref(t_let));
 
     scope_add(id, overload);
     if (out.flags & F_USING)
@@ -775,8 +773,8 @@ function evalTypeAnnot(node: Node): SolvedNode
                 if (node.value === '&')
                     return SolvedNode(node, null, add_ref(t));
 
-                if (node.value === 'mut')
-                    return SolvedNode(node, null, add_mut(t));
+                if (node.value === '&mut')
+                    return SolvedNode(node, null, add_mutref(t));
             }
         }
         else
@@ -988,6 +986,17 @@ function CallerNode(
     node: Node, items: SolvedNodes|null, type: Type, target: Overload)
         : SolvedNode
 {
+    // HACK -
+    // TBD how we make this stuff work in real life.
+    if (target.kind === 'field')
+    {
+        const head = items && items.length === 1 && items[0] || fail();
+        const headType = head.type || fail();
+
+        type = add_refs_from(headType, type);
+    }
+
+    //
     const out = SolvedNode(node, items, type);
 
     // Register callsite.
@@ -1156,19 +1165,18 @@ export function solve(parse: ParseResult): SolveResult
     RESET();
 
     // Globals.
-    if (!PRELUDE_SOLVED)
-        _scope = listGlobals();
-    else
-        _scope = Object.create(PRELUDE_SOLVED);
-
-    // Clone globals, we need this to track callsites for:
-    //  - import usage (TODO)
-    //  - implicit argument propagation
     {
-        const scope = _scope;
-        for (const key in scope)
-            scope[key] = scope[key].map(
-                resetCallsites);
+        const scope = !PRELUDE_SOLVED
+            ? listGlobals()
+            : Object.create(PRELUDE_SOLVED);
+
+        // Clone globals, we need this to track callsites for:
+        //  - import usage (TODO)
+        //  - implicit argument propagation
+        scope_resetAllCallsites(scope);
+
+        //
+        _scope = scope;
     }
 
     // Root scope used for closure detection.
