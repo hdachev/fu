@@ -720,14 +720,17 @@ function parseExpressionHead(): Node
 
             switch (token.value)
             {
-                // case '(': return parseParens();
+                case '(': return parseParens();
+
                 // case '[': return parseArrayLiteral();
 
                 // case '{': ...    either c++/js implict construction -
                 //                  can actually work with `[`s too.
                 //           ...    or block expressions and/or $0, $1 / $i, $j / $x, $y, $z, $w
                 //                  swift-style auto lambdas.
-                // case '$': return parseTypeParam();
+
+                case '$': return parseTypeParam();
+                case '@': return parseTypeTag();
             }
 
             return parsePrefix(token.value);
@@ -738,6 +741,30 @@ function parseExpressionHead(): Node
     ///////
 
     return fail();
+}
+
+function parseParens()
+{
+    const expr = parseExpression(P_RESET);
+    consume('op', ')');
+    return expr;
+}
+
+function parseTypeParam()
+{
+    return createTypeParam(
+        consume('id').value);
+}
+
+function parseTypeTag()
+{
+    return createTypeParam(
+        consume('id').value);
+}
+
+function createTypeParam(id: LexValue)
+{
+    return Node('typeparam', null, 0, id);
 }
 
 function parsePrefix(op: LexValue)
