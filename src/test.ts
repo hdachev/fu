@@ -28,6 +28,9 @@ function ZERO(src: string): string
 
     //
     const gensrc = r_cppcg.src;
+    if (gensrc.indexOf('//PRINT') >= 0)
+        console.log('PRINT ' + fname + ':\n\n\t' + gensrc.replace(/\n/g, '\n\t'));
+
     testCodegen(src, gensrc);
 
     //
@@ -403,6 +406,7 @@ ZERO(`
 `);
 
 ZERO(`
+    //PRINT
     let a = 1;
     let x: &i32 = a;
 

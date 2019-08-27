@@ -733,18 +733,12 @@ function solveReturn(node: Node): SolvedNode
     const prevType  = prevExpr ? prevExpr.type || fail() : null;
 
     if (prevType)
-        testAssignable(
-            prevType, nextType,
-                'Non-assignable return types.');
+        isAssignable(prevType, nextType)
+            || fail('Non-assignable return types.');
     else
         items[retIdx] = nextExpr || fail();
 
     return out;
-}
-
-function testAssignable(host: Type, guest: Type, error: string)
-{
-    isAssignable(host, guest) || fail(error);
 }
 
 
@@ -764,8 +758,9 @@ function solveLet(node: Node): SolvedNode
     const t_let     = t_annot || t_init || fail(
         'Variable declarations without explicit type annotations must be initialized.');
 
-    annot && init && fail(
-        'TODO validate init assigns to annot.');
+    if (t_annot && t_init)
+        isAssignable(t_annot, t_init) || fail(
+            'Type annotation does not match init expression.');
 
     //
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
@@ -985,7 +980,8 @@ function solveIf(node: Node): SolvedNode
     const secType = secExpr && secExpr.type;
 
     if (secType)
-        testAssignable(priType, secType, "TODO");
+        isAssignable(priType, secType) || fail(
+            'TODO two way type union for conditionals');
 
     return SolvedNode(node, items, priType);
 }
