@@ -69,6 +69,7 @@ export const F_UNTYPED_ARGS = 1 << 24;
 export const F_NAMED_ARGS   = 1 << 25;
 export const F_FULLY_TYPED  = 1 << 26;
 export const F_CLOSURE      = 1 << 27;
+export const F_PATTERN      = 1 << 28;
 
 
 // Operator precedence table.
@@ -150,7 +151,6 @@ function setupOperators()
 
 const BINOP     = setupOperators();
 const P_COMMA   = BINOP.PRECEDENCE[','] || fail();
-const P_QMARK   = BINOP.PRECEDENCE['?'] || fail();
 
 
 // Commons.
@@ -506,34 +506,76 @@ function parseFnDecl(): Node
     _fnDepth++;
     ///////////
 
+    // Return type annot.
     const type = tryPopTypeAnnot();
     if (type)
         flags |= F_FULLY_TYPED;
 
-    const body = parseStatement();
+    items.push(type);
+
+    // Body or pattern (case/case).
+    flags |= parseFnBodyOrPattern(items);
 
     ///////////
     _fnDepth--;
     ///////////
 
-    items.push(
-        type,
-        body.kind === 'block' || body.kind === 'return'
-            ? body
-            : createReturn(body));
-
     return Node('fn', items, flags, name && name.value);
+}
+
+function parseFnBodyOrPattern(out_push_body: Nodes)
+{
+    let flags = 0;
+    let body: Node;
+    //
+
+    if (tryConsume('id', 'case'))
+    {
+        const branches: Node[] = [];
+
+        flags |= F_PATTERN;
+
+        do
+        {
+            const cond = parseUnaryExpression();
+            const type = tryPopTypeAnnot();
+            const body = parseFnBodyBranch();
+
+            branches.push(
+                Node('fnbranch', [ cond, type, body ]));
+        }
+        while (tryConsume('id', 'case'));
+
+        body = Node('pattern', branches);
+    }
+    else
+    {
+        body = parseFnBodyBranch();
+    }
+
+    //
+    out_push_body.push(body);
+    return flags;
+}
+
+function parseFnBodyBranch()
+{
+    const body = parseStatement();
+
+    return body.kind === 'block' || body.kind === 'return'
+         ? body
+         : createReturn(body);
 }
 
 function tryPopTypeAnnot()
 {
     return tryConsume('op', ':')
-        && popType();
+        && parseTypeAnnot();
 }
 
-function popType()
+function parseTypeAnnot()
 {
-    return parseExpression(P_QMARK);
+    return parseUnaryExpression();
 }
 
 function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
@@ -773,7 +815,12 @@ function parsePrefix(op: LexValue)
         op = '&mut' as LexValue;
 
     return createPrefix(
-        op, parseExpression(P_PREFIX_UNARY));
+        op, parseUnaryExpression());
+}
+
+function parseUnaryExpression()
+{
+    return parseExpression(P_PREFIX_UNARY);
 }
 
 function createPrefix(op: LexValue, expr: Node)
