@@ -2,6 +2,7 @@ export const prelude_src = `
 
 //*
 
+fn +(a: $T)                 case ($T & @arithmetic):    $T __native_pure;
 fn +(a: i32, b: i32):       i32 __native_pure;
 
 fn -(a: i32)        :       i32 __native_pure;

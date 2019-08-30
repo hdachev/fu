@@ -70,6 +70,7 @@ export const F_NAMED_ARGS   = 1 << 25;
 export const F_FULLY_TYPED  = 1 << 26;
 export const F_CLOSURE      = 1 << 27;
 export const F_PATTERN      = 1 << 28;
+export const F_TEMPLATE     = 1 << 29;
 
 
 // Operator precedence table.
@@ -178,6 +179,7 @@ let _loc: Token         = null as any;
 let _col0               = -1111;
 let _precedence         = -1111;
 let _fnDepth            = -1111;
+let _numDollars         = -1111;
 
 export type ParseResult =
 {
@@ -195,6 +197,7 @@ export function parse(opts: Options)
     _col0       = 0;
     _precedence = P_RESET;
     _fnDepth    = 0;
+    _numDollars = 0;
 
     // Check EOF.
     _tokens[_tokens.length - 1].kind === 'eof' || fail(
@@ -492,6 +495,10 @@ function parseExpressionStatement(): Node
 
 function parseFnDecl(): Node
 {
+    ////////////////////////////////
+    const numDollars0 = _numDollars;
+    ////////////////////////////////
+
     // fn hello(), fn +()
     const name = tryConsume('id')
               || tryConsume('op');
@@ -519,6 +526,15 @@ function parseFnDecl(): Node
     ///////////
     _fnDepth--;
     ///////////
+
+    ////////////////////////////////
+    {
+        const numDollars1 = _numDollars;
+        _numDollars = numDollars0;
+        if (numDollars1 !== numDollars0)
+            flags |= F_TEMPLATE;
+    }
+    ////////////////////////////////
 
     return Node('fn', items, flags, name && name.value);
 }
@@ -637,6 +653,8 @@ function parseLet()
 {
     let flags   = F_LOCAL;
 
+    const numDollars0 = _numDollars;
+
     if (tryConsume('id', 'using'   )) flags |= F_USING;
     if (tryConsume('id', 'implicit')) flags |= F_IMPLICIT;
     if (tryConsume('id', 'mut'     )) flags |= F_MUT;
@@ -644,6 +662,9 @@ function parseLet()
     const id    = consume('id').value;
     const type  = tryPopTypeAnnot();
     const init  = tryConsume('op', '=') && parseExpression();
+
+    if (numDollars0 !== _numDollars)
+        flags |= F_TEMPLATE;
 
     return createLet(id, flags, type, init);
 }
@@ -794,6 +815,8 @@ function parseParens()
 
 function parseTypeParam()
 {
+    _numDollars++;
+
     return createTypeParam(
         consume('id').value);
 }
