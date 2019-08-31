@@ -7,7 +7,7 @@ export type Primitive   =
     'i8'  | 'u8'  |
     'i16' | 'u16' |
     'i32' | 'u32' |
-    'i64' | 'u64' | 'bool' | 'void';
+    'i64' | 'u64' | 'bool' | 'void' | 'never' | 'template';
 
 export type Canon       = (string & { K: 'Canon' }) | Primitive;
 export type Quals       = tagset.TagSet;
@@ -108,9 +108,11 @@ export function serialize(type: Type)
 
 //
 
-export const t_i32  = createType('i32' , null);
+export const t_i32 = createType('i32', null);
 export const t_void = createType('void', null);
 export const t_bool = createType('bool', null);
+export const t_never = createType('never', null);
+export const t_template = createType('template', null);
 
 
 //

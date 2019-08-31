@@ -1,7 +1,7 @@
-import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT } from './parse';
+import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
 import { fail } from './fail';
 
-import { Type, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -109,7 +109,7 @@ function Template(node: Node)
 
 type Overload =
 {
-    readonly kind: 'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
+    readonly kind: 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
     readonly node: SolvedNode|null;
     readonly type: Type|null;
 
@@ -160,6 +160,21 @@ function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
 function Typedef(type: Type): Overload
 {
     return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null, template: null };
+}
+
+function TemplateDecl(node: Node): Overload
+{
+    const min = node.kind === 'fn'
+        ? (node.items || fail()).length + FN_ARGS_BACK
+        : fail('TODO');
+
+    const max = node.kind === 'fn'
+        ? 0xffffff // implicit args etc, dunno whats happening, allow it all
+        : min;
+
+    const template = Template(node);
+
+    return { kind: 'template', node: null, type: t_template, min, max, args: null, names: null, partial: null, callsites: null, template };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -600,6 +615,18 @@ function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
 
 function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNode|null
 {
+    const id = n_fn.value || fail('TODO anonymous fns');
+
+    // Template early exit.
+    if (n_fn.flags & F_TEMPLATE)
+    {
+        if (solve)
+            return prep || fail();
+
+        scope_add(id, TemplateDecl(n_fn));
+        return SolvedNode(n_fn, null, t_void);
+    }
+
     // Prep reject.
     if (!solve && !(n_fn.flags & F_FULLY_TYPED))
         return null;
@@ -660,8 +687,6 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
 
     if (!prep)
     {
-        const id = n_fn.value || fail('TODO anonymous fns');
-
         const fnDecl = FnDecl(out);
         out.target && fail();
         out.target = fnDecl;
