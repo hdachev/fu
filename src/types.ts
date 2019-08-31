@@ -97,7 +97,7 @@ export function add_refs_from(src: Type, dest: Type)
     return dest;
 }
 
-export function serialize(type: Type)
+export function serializeType(type: Type)
 {
     if (type.quals)
         return '(' + type.canon + '{' + type.quals + '})';

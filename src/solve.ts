@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -96,7 +96,7 @@ type Template =
 {
     readonly node: Node;
     readonly specializations:
-        { [mangle: string]: Overload };
+        { [mangle: string]: Overload|null };
 };
 
 function Template(node: Node)
@@ -174,7 +174,22 @@ function TemplateDecl(node: Node): Overload
 
     const template = Template(node);
 
-    return { kind: 'template', node: null, type: t_template, min, max, args: null, names: null, partial: null, callsites: null, template };
+    let names: string[]|null = null;
+    if (node.kind === 'fn')
+    {
+        names = [];
+
+        const items = node.items || fail();
+        for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+        {
+            const arg = items[i] || fail();
+            arg.kind === 'let' || fail();
+            const name = arg.value || fail();
+            names[i] = name;
+        }
+    }
+
+    return { kind: 'template', node: null, type: t_template, min, max, args: null, names, partial: null, callsites: null, template };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -383,7 +398,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
 
         NEXT: for (let i = 0; i < overloads.length; i++)
         {
-            const overload = overloads[i];
+            let overload = overloads[i];
             if (overload.min > arity || overload.max < arity)
                 continue NEXT;
 
@@ -430,6 +445,16 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                         actual[j++] = args[i++];
                     }
                 }
+            }
+
+            // Specialize.
+            while (overload.template)
+            {
+                const spec = trySpecialize(overload.template, args);
+                if (!spec)
+                    continue NEXT;
+
+                overload = spec;
             }
 
             // Type check args.
@@ -697,6 +722,34 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
     !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
 
     return out;
+}
+
+
+//
+
+function trySpecialize(
+    template: Template, args: SolvedNodes)
+        : Overload|null
+{
+    let mangle = '';
+    for (let i = 0; i < args.length; i++)
+        mangle += '\v' + serializeType((args[i] || fail()).type);
+
+    //
+    let match = template.specializations[mangle];
+    if (match === undefined)
+        match = template.specializations[mangle] = doTrySpecialize(template, args) || null;
+
+    return match;
+}
+
+function doTrySpecialize(
+    template: Template, args: SolvedNodes)
+        : Overload|null
+{
+    template; args;
+
+    return null;
 }
 
 
