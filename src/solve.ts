@@ -308,6 +308,10 @@ function scope_using(via: Overload)
 
     for (const id in scope)
     {
+        // Skip over operators.
+        if (!/[a-zA-Z_]/.test(id))
+            continue;
+
         const overloads = scope[id];
         if (!Array.isArray(overloads))
             continue;
