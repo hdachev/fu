@@ -92,11 +92,26 @@ function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
 
 //
 
+type Template =
+{
+    readonly node: Node;
+    readonly specializations:
+        { [mangle: string]: Overload };
+};
+
+function Template(node: Node)
+{
+    return { node, specializations: Object.create(null) };
+}
+
+
+//
+
 type Overload =
 {
     readonly kind: 'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
     readonly node: SolvedNode|null;
-    readonly type: Type;
+    readonly type: Type|null;
 
     // Arity.
     min: number;
@@ -108,9 +123,10 @@ type Overload =
 
     // Usage.
     callsites: Callsite[]|null;
+    template: Template|null;
 };
 
-function resetCallsites(o: Overload): Overload
+function resetUsage(o: Overload): Overload
 {
     return {
         kind:       o.kind,
@@ -123,25 +139,27 @@ function resetCallsites(o: Overload): Overload
         names:      o.names,
         partial:    o.partial,
 
+        // Reset usage.
         callsites:  null,
+        template:   o.template && Template(o.template.node) || null,
     };
 }
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
-    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null };
+    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null, template: null };
 }
 
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
 {
     node && node.items || fail();
 
-    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null, callsites: null };
+    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null, callsites: null, template: null };
 }
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null, template: null };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -171,7 +189,7 @@ function FnDecl(node: SolvedNode): Overload
             min++;
     }
 
-    return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, partial: null, callsites: null };
+    return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, partial: null, callsites: null, template: null };
 }
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -181,7 +199,7 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 
     const arity = members.length;
 
-    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null };
+    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null, template: null };
 }
 
 function Partial(via: Overload, overload: Overload): Overload
@@ -217,7 +235,7 @@ function Partial(via: Overload, overload: Overload): Overload
     }
 
     //
-    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ], callsites: null };
+    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ], callsites: null, template: null };
 }
 
 type Scope =
@@ -287,11 +305,10 @@ function scope_using(via: Overload)
     }
 }
 
-function scope_resetAllCallsites(scope: Scope)
+function scope_resetUsage(scope: Scope)
 {
     for (const key in scope)
-        scope[key] = scope[key].map(
-            resetCallsites);
+        scope[key] = scope[key].map(resetUsage);
 }
 
 const NO_ARGS: SolvedNodes = [];
@@ -356,7 +373,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                 continue NEXT;
 
             // Match by return.
-            if (retType && !isAssignable(retType, overload.type))
+            if (retType && !isAssignable(retType, overload.type || fail()))
                 continue NEXT;
 
             // Remap named arguments.
@@ -809,7 +826,7 @@ function evalTypeAnnot(node: Node): SolvedNode
             {
                 const maybe = overloads[i];
                 if (maybe.kind === 'type')
-                    return SolvedNode(node, null, maybe.type);
+                    return SolvedNode(node, null, maybe.type || fail());
             }
 
             fail('No type `' + id + '` in scope.');
@@ -848,7 +865,7 @@ function solveCall(node: Node): SolvedNode
             createRead('__partial' as any),
             unshift ? null
                     : [ (args && args[0]) || fail() ],
-            via.type,
+            via.type || fail(),
             via);
 
         //
@@ -865,7 +882,7 @@ function solveCall(node: Node): SolvedNode
     return CallerNode(
         node,
         args && args.length ? args : null,
-        callTarg.type,
+        callTarg.type || fail(),
         callTarg);
 }
 
@@ -1186,7 +1203,7 @@ export function solve(parse: ParseResult): SolveResult
         // Clone globals, we need this to track callsites for:
         //  - import usage (TODO)
         //  - implicit argument propagation
-        scope_resetAllCallsites(scope);
+        scope_resetUsage(scope);
 
         //
         _scope = scope;
