@@ -423,6 +423,15 @@ ZERO(`
     return test.x - 1;
 `);
 
+ZERO(`
+    mut a = 0;
+    mut b = a;
+    b++;
+    let c = a = b;
+
+    return a - c;
+`);
+
 
 // TODO assignment operator & lifetimes.
 
