@@ -1125,19 +1125,32 @@ function trySolveTypeParams(
 function evalTypePattern(node: Node, typeParams: TypeParams): boolean
 {
     const items = node.items;
-    if (node.kind === 'call' && node.value === '&' && items && items.length === 2)
+    if (node.kind === 'call' && items && items.length === 2)
     {
-        const left = items[0];
-        const right = items[1];
+        const left  = items[0] || fail();
+        const right = items[1] || fail();
 
-        if (left  && left.kind  === 'typeparam' &&
-            right && right.kind === 'typetag')
+        if (node.value === '&')
         {
-            const type  = left.value && typeParams[left.value];
-            const tag   = right.value;
+            if (left.kind  === 'typeparam' &&
+                right.kind === 'typetag')
+            {
+                const type  = left.value && typeParams[left.value];
+                const tag   = right.value;
 
-            if (type && tag)
-                return type_has(type, tag);
+                if (type && tag)
+                    return type_has(type, tag);
+            }
+        }
+        else if (node.value === '&&')
+        {
+            return evalTypePattern(left,  typeParams)
+                && evalTypePattern(right, typeParams);
+        }
+        else if (node.value === '||')
+        {
+            return evalTypePattern(left,  typeParams)
+                && evalTypePattern(right, typeParams);
         }
     }
 
