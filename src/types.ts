@@ -77,6 +77,18 @@ function qadd(type: Type, q: tagset.Tag)
          : createType(type.canon, tagset.union(type.quals, q));
 }
 
+function tryClear(type: Type|null, q: tagset.Tag)
+{
+    if (!type)
+        return null;
+
+    const sub = tagset.sub(type.quals, q);
+
+    return sub !== type.quals
+         ? createType(type.canon, sub)
+         : null;
+}
+
 export function add_mutref(type: Type)
 {
     return qadd(add_ref(type), q_mutref);
@@ -85,6 +97,24 @@ export function add_mutref(type: Type)
 export function add_ref(type: Type)
 {
     return qadd(type, q_ref);
+}
+
+export function tryClear_mutref(type: Type)
+{
+    return tryClear(tryClear(type, q_ref), q_mutref);
+}
+
+export function tryClear_ref(type: Type)
+{
+    const t = tryClear(type, q_ref);
+    return t && createType(type.canon, tagset.sub(type.quals, q_mutref));
+}
+
+export function clear_refs(type: Type)
+{
+    return createType(
+        type.canon, tagset.sub(
+            tagset.sub(type.quals, q_mutref), q_ref));
 }
 
 export function add_refs_from(src: Type, dest: Type)
@@ -105,14 +135,26 @@ export function serializeType(type: Type)
     return '(' + type.canon + ')';
 }
 
+export function type_has(type: Type, tag: LexValue)
+{
+    return type.quals.indexOf(tagset.intern(tag)) >= 0;
+}
+
 
 //
 
-export const t_i32 = createType('i32', null);
-export const t_void = createType('void', null);
-export const t_bool = createType('bool', null);
-export const t_never = createType('never', null);
-export const t_template = createType('template', null);
+export const t_copy         = tagset.intern('copy');
+export const t_primitive    = tagset.intern('primitive');
+export const t_arithmetic   = tagset.intern('arithmetic');
+
+export const Primitive      = tagset.union(t_copy, t_primitive);
+export const Arithmetic     = tagset.union(Primitive, t_arithmetic);
+
+export const t_i32          = createType('i32', Arithmetic);
+export const t_void         = createType('void', null);
+export const t_bool         = createType('bool', Primitive);
+export const t_never        = createType('never', null);
+export const t_template     = createType('template', null);
 
 
 //

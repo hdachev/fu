@@ -58,14 +58,12 @@ function typeAnnot(type: Type)
 {
     const fwd = typeAnnotBase(type);
 
-    switch (type.quals)
-    {
-        case '':   return fwd;
-        case 'r':  return 'const ' + fwd + '&';
-        case 'mr': return fwd + '&';
-    }
+    if (type.quals.indexOf('m') > 0)
+        return fwd + '&';
+    if (type.quals.indexOf('r') > 0)
+        return 'const ' + fwd + '&';
 
-    return fail('TODO');
+    return fwd;
 }
 
 function typeAnnotBase(type: Type): string|null

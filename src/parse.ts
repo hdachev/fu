@@ -816,20 +816,22 @@ function parseParens()
 function parseTypeParam()
 {
     _numDollars++;
-
-    return createTypeParam(
-        consume('id').value);
-}
-
-function parseTypeTag()
-{
-    return createTypeParam(
-        consume('id').value);
+    return createTypeParam(consume('id').value);
 }
 
 function createTypeParam(id: LexValue)
 {
     return Node('typeparam', null, 0, id);
+}
+
+function parseTypeTag()
+{
+    return createTypeTag(consume('id').value);
+}
+
+function createTypeTag(id: LexValue)
+{
+    return Node('typetag', null, 0, id);
 }
 
 function parsePrefix(op: LexValue)

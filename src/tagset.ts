@@ -85,13 +85,89 @@ export function inter(a: TagSet, b: TagSet): TagSet
     return fail('TODO');
 }
 
+function test(a: TagSet): TagSet
+{
+    for (let i = 1; i < a.length; i++)
+    {
+        const p = a[i - 1];
+        const n = a[i];
+        p < n || fail();
+    }
+
+    return a;
+}
+
 export function union(a: TagSet|Tag, b: TagSet|Tag): TagSet
 {
     if (a === b || !a || !b)
-        return (a || b) as TagSet;
+        return test((a || b) as TagSet);
 
-    if (a.length <= 1 && b.length <= 1)
-        return (a > b ? b + a : a + b) as TagSet;
+    if (a.length === 1)
+    {
+        if (a < b)
+            return test((a + b) as TagSet);
+        if (b.length === 1)
+            return test((b + a) as TagSet);
+        if (a > b[b.length - 1])
+            return test((b + a) as TagSet);
+    }
+    if (b.length === 1)
+    {
+        if (b < a)
+            return test((b + a) as TagSet);
+        if (b > a[a.length - 1])
+            return test((a + b) as TagSet);
+    }
 
-    return fail('TODO');
+    // General.
+    if (b.length > a.length)
+    {
+        const c = b; b = a; a = c;
+    }
+
+    let offset = 0;
+    for (let i = 0; i < b.length; i++)
+    {
+        i < 1000 || fail();
+
+        const c = b[i];
+        const idx = a.indexOf(c, offset);
+        if (idx >= 0)
+        {
+            offset = idx + 1;
+            continue;
+        }
+
+        for (let j = offset; j < a.length; j++)
+        {
+            j < 1000 || fail();
+
+            if (a[j] > c)
+            {
+                offset = j;
+                a = (a.slice(0, offset) + c + a.slice(offset)) as TagSet;
+
+                offset++;
+                break;
+            }
+        }
+    }
+
+    return test(a as TagSet);
+}
+
+export function sub(a: TagSet|Tag, b: TagSet|Tag): TagSet
+{
+    let offset = 0;
+    for (let i = 0; i < b.length; i++)
+    {
+        const idx = a.indexOf(b[i], offset);
+        if (idx >= 0)
+        {
+            offset = idx;
+            a = (a.slice(0, idx) + a.slice(idx + 1)) as TagSet;
+        }
+    }
+
+    return a as TagSet;
 }

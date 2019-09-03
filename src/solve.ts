@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -32,6 +32,7 @@ let _current_strt:      Type|null           = null;
 
 let _closure_detect:    Scope|null          = null;
 let _closure_detected:  boolean             = false;
+let _typeParams:        TypeParams|null     = null;
 
 function RESET()
 {
@@ -95,13 +96,14 @@ function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
 type Template =
 {
     readonly node: Node;
+    readonly scope: Scope;
     readonly specializations:
         { [mangle: string]: Overload|null };
 };
 
-function Template(node: Node)
+function Template(node: Node, scope: Scope)
 {
-    return { node, specializations: Object.create(null) };
+    return { node, scope, specializations: Object.create(null) };
 }
 
 
@@ -141,7 +143,7 @@ function resetUsage(o: Overload): Overload
 
         // Reset usage.
         callsites:  null,
-        template:   o.template && Template(o.template.node) || null,
+        template:   o.template && Template(o.template.node, o.template.scope) || null,
     };
 }
 
@@ -172,7 +174,7 @@ function TemplateDecl(node: Node): Overload
         ? 0xffffff // implicit args etc, dunno whats happening, allow it all
         : min;
 
-    const template = Template(node);
+    const template = Template(node, _scope || fail());
 
     let names: string[]|null = null;
     if (node.kind === 'fn')
@@ -403,62 +405,73 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
         NEXT: for (let i = 0; i < overloads.length; i++)
         {
             let overload = overloads[i];
-            if (overload.min > arity || overload.max < arity)
-                continue NEXT;
-
-            // Match by return.
-            if (retType && !isAssignable(retType, overload.type || fail()))
-                continue NEXT;
-
-            // Remap named arguments.
             let actual: SolvedNodes = args;
-            if (names)
+
+            TEST_AGAIN: for (;;)
             {
-                const overloadNames = overload.names;
-                if (!overloadNames)
+                if (overload.min > arity || overload.max < arity)
                     continue NEXT;
 
-                // Move named arguments around.
-                for (let i = 0; i < names.length; i++)
-                {
-                    const id = names[i];
-                    if (!id)
-                        continue;
+                // Match by return.
+                if (retType && !isAssignable(retType, overload.type || fail()))
+                    continue NEXT;
 
-                    const idx = overloadNames.indexOf(id);
-                    if (idx < 0)
+                // Remap named arguments.
+                actual = args;
+                if (names)
+                {
+                    const overloadNames = overload.names;
+                    if (!overloadNames)
                         continue NEXT;
 
-                    if (actual === args)
-                        actual = args.map(() => null);
-
-                    actual[idx] = args[i];
-                }
-
-                // Fill the rest.
-                actual === args && fail();
-                {
-                    let i = 0;
-                    let j = 0;
-
-                    while (i < args.length && j < actual.length)
+                    // Move named arguments around.
+                    for (let i = 0; i < names.length; i++)
                     {
-                        if (actual[j]) { j++; continue; }
-                        if (names [i]) { i++; continue; }
+                        const id = names[i];
+                        if (!id)
+                            continue;
 
-                        actual[j++] = args[i++];
+                        const idx = overloadNames.indexOf(id);
+                        if (idx < 0)
+                            continue NEXT;
+
+                        if (actual === args)
+                            actual = args.map(() => null);
+
+                        actual[idx] = args[i];
+                    }
+
+                    // Fill the rest.
+                    actual === args && fail();
+                    {
+                        let i = 0;
+                        let j = 0;
+
+                        while (i < args.length && j < actual.length)
+                        {
+                            if (actual[j]) { j++; continue; }
+                            if (names [i]) { i++; continue; }
+
+                            actual[j++] = args[i++];
+                        }
                     }
                 }
-            }
 
-            // Specialize.
-            while (overload.template)
-            {
-                const spec = trySpecialize(overload.template, args);
-                if (!spec)
-                    continue NEXT;
+                // Specialize.
+                if (overload.template)
+                {
+                    const spec = trySpecialize(overload.template, args);
+                    if (!spec)
+                        continue NEXT;
 
-                overload = spec;
+                    overload = spec;
+
+                    // Repeat arity checks and such.
+                    continue TEST_AGAIN;
+                }
+
+                // Done here.
+                break TEST_AGAIN;
             }
 
             // Type check args.
@@ -536,8 +549,6 @@ function notDefined(id: string): Overload
 
 function __native_pure()
 {
-    preludeOnly();
-
     const fn    = _current_fn   || fail();
     const items = fn.items      || fail();
     const rnode = items[items.length + FN_RET_BACK] || fail();
@@ -634,20 +645,24 @@ function solveEmpty(node: Node): SolvedNode
 
 function uPrepFn(node: Node): SolvedNode|null
 {
-    return __solveFn(false, node, null);
+    return __solveFn(false, false, node, null, -1);
 }
 
 function uSolveFn(node: Node, prep: SolvedNode|null): SolvedNode
 {
-    return __solveFn(true, node, prep) || fail();
+    return __solveFn(true, false, node, prep, -1) || fail();
 }
 
-function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNode|null
+function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|null, caseIdx: number): SolvedNode|null
 {
     const id = n_fn.value || fail('TODO anonymous fns');
 
     // Template early exit.
-    if (n_fn.flags & F_TEMPLATE)
+    if (spec)
+    {
+        solve || fail();
+    }
+    else if (n_fn.flags & F_TEMPLATE)
     {
         if (solve)
             return prep || fail();
@@ -684,10 +699,22 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
         }
 
         /////////////////////////////////////////////////////
-        //
+        let n_ret   = inItems[inItems.length + FN_RET_BACK];
+        let n_body  = inItems[inItems.length + FN_BODY_BACK] || fail();
+
+        // Pattern descent.
+        if (caseIdx >= 0)
+        {
+            n_body.kind === 'pattern' || fail();
+            const branch = n_body.items && n_body.items[caseIdx] || fail();
+            const items = branch.items || fail();
+
+            n_ret   = items[items.length + FN_RET_BACK]  || n_ret || null;
+            n_body  = items[items.length + FN_BODY_BACK] || fail();
+        }
+
         // Return type annot.
         {
-            const n_ret = inItems[inItems.length + FN_RET_BACK];
             const s_ret = n_ret && evalTypeAnnot(n_ret) || null;
 
             // MUT DURING SOLVE,
@@ -698,7 +725,6 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
         // Only if actually solving the fn, the fn body.
         if (solve)
         {
-            const n_body = inItems[inItems.length + FN_BODY_BACK] || fail();
             const s_body = solveNode(n_body) || fail();
 
             // MUT DURING SOLVE,
@@ -720,7 +746,8 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
         out.target && fail();
         out.target = fnDecl;
 
-        scope_add(id, fnDecl);
+        if (!spec)
+            scope_add(id, fnDecl);
     }
 
     !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
@@ -731,13 +758,31 @@ function __solveFn(solve: boolean, n_fn: Node, prep: SolvedNode|null): SolvedNod
 
 //
 
+let mangler_lastIn : SolvedNodes|null;
+let mangler_lastOut: string = '';
+
+function mangler(args: SolvedNodes): string
+{
+    if (args === mangler_lastIn)
+        return mangler_lastOut;
+
+    let mangle = '';
+    for (let i = 0; i < args.length; i++)
+        mangle += '\v' + serializeType((args[i] || fail()).type);
+
+    return (
+        mangler_lastIn  = args,
+        mangler_lastOut = mangle);
+}
+
+
+//
+
 function trySpecialize(
     template: Template, args: SolvedNodes)
         : Overload|null
 {
-    let mangle = '';
-    for (let i = 0; i < args.length; i++)
-        mangle += '\v' + serializeType((args[i] || fail()).type);
+    const mangle = mangler(args);
 
     //
     let match = template.specializations[mangle];
@@ -747,13 +792,101 @@ function trySpecialize(
     return match;
 }
 
+type TypeParams = { [id: string]: Type };
+
 function doTrySpecialize(
     template: Template, args: SolvedNodes)
         : Overload|null
 {
-    template; args;
+    const typeParams: TypeParams = {};
 
-    return null;
+    ///////////////////////////////////////
+    const scope0 = _scope;
+    _scope = Object.create(template.scope);
+    ///////////////////////////////////////
+
+    const node = template.node;
+
+    const result = node.kind === 'fn'
+        ? trySpecializeFn(node, args, typeParams)
+        : fail('TODO');
+
+    ///////////////////////////////////////
+    _scope = scope0;
+    ///////////////////////////////////////
+
+    return result;
+}
+
+
+//
+
+function trySpecializeFn(
+    node: Node, args: SolvedNodes, typeParams: TypeParams)
+        : Overload|null
+{
+    const items = node.items || fail();
+
+    // First off, solve type params.
+    for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+    {
+        const argNode = items[i] || fail();
+        argNode.kind === 'let'   || fail();
+
+        if (argNode.flags & F_TEMPLATE)
+        {
+            const annot = argNode.items && argNode.items[LET_TYPE];
+            if (annot)
+            {
+                const argValue = args && args[i];
+                const inType = argValue && argValue.type;
+                const ok = inType && trySolveTypeParams(
+                    annot, inType, typeParams);
+
+                if (!ok)
+                    return null;
+            }
+        }
+    }
+
+    // Match pattern arm here.
+    let caseIdx = -1;
+
+    const pattern = items[items.length + FN_BODY_BACK] || fail();
+    if (pattern.kind === 'pattern')
+    {
+        const branches = pattern.items || fail();
+
+        for (let i = 0; i < branches.length; i++)
+        {
+            const branch = branches[i];
+            const items = branch && branch.items || fail();
+            const cond = items[0] || fail();
+
+            if (evalTypePattern(cond, typeParams))
+            {
+                caseIdx = i;
+                break;
+            }
+        }
+
+        // All branches mismatch?
+        if (caseIdx < 0)
+            return null;
+    }
+
+    ////////////////////////////////
+    const typeParams0 = _typeParams;
+    _typeParams = typeParams;
+    ////////////////////////////////
+
+    const specialized = __solveFn(true, true, node, null, caseIdx) || fail();
+
+    ////////////////////////////////
+    _typeParams = typeParams0;
+    ////////////////////////////////
+
+    return specialized.target || fail();
 }
 
 
@@ -879,6 +1012,9 @@ function solveLet(node: Node): SolvedNode
     return out;
 }
 
+
+//
+
 function evalTypeAnnot(node: Node): SolvedNode
 {
     if (node.kind === 'call')
@@ -912,6 +1048,96 @@ function evalTypeAnnot(node: Node): SolvedNode
             }
 
             fail('No type `' + id + '` in scope.');
+        }
+    }
+    else if (node.kind === 'typeparam')
+    {
+        const id = node.value || fail();
+        _typeParams || fail(
+            'Unexpected type param: `$' + id + '`.');
+
+        const type = _typeParams && _typeParams[id] || fail(
+            'No type param `$' + id + '` in scope.');
+
+        return SolvedNode(node, null, type);
+    }
+
+    return fail('TODO');
+}
+
+function trySolveTypeParams(
+    node: Node, type: Type, typeParams: TypeParams): boolean
+{
+    if (node.kind === 'call')
+    {
+        const items = node.items;
+        if (items && items.length)
+        {
+            if (items.length === 1)
+            {
+                const t = node.value === '&'    ? tryClear_ref(type)
+                        : node.value === '&mut' ? tryClear_mutref(type)
+                        : fail('TODO');
+
+                if (!t)
+                    return false;
+
+                return trySolveTypeParams(
+                    items[0] || fail(), t, typeParams);
+            }
+        }
+        else
+        {
+            const id        = node.value || fail();
+            const scope     = _scope || fail();
+            const overloads = scope[id] || notDefined(id);
+
+            for (let i = 0; i < overloads.length; i++)
+            {
+                const maybe = overloads[i];
+                if (maybe.kind === 'type')
+                    return isAssignable(maybe.type || fail(), type);
+            }
+
+            fail('No type `' + id + '` in scope.');
+        }
+    }
+    else if (node.kind === 'typeparam')
+    {
+        const id = node.value || fail();
+        const prev = typeParams[id];
+        if (prev)
+        {
+            if (isAssignable(prev, type))
+                return true;
+
+            if (!isAssignable(type, prev))
+                return false;
+        }
+
+        typeParams[id] = clear_refs(type);
+        return true;
+    }
+
+    return fail('TODO');
+}
+
+function evalTypePattern(node: Node, typeParams: TypeParams): boolean
+{
+    const items = node.items;
+    if (node.kind === 'call' && node.value === '&' && items && items.length === 2)
+    {
+        const left = items[0];
+        const right = items[1];
+
+        if (left  && left.kind  === 'typeparam' &&
+            right && right.kind === 'typetag')
+        {
+            const type  = left.value && typeParams[left.value];
+            const tag   = right.value;
+
+            if (type && tag)
+                return type_has(type, tag);
         }
     }
 
@@ -1265,12 +1491,6 @@ let PRELUDE_SOLVED: Scope|null = null;
 PRELUDE_SOLVED = solve(
     parse(lex(prelude_src as Source, '__prelude' as Filename)))
         .scope;
-
-function preludeOnly()
-{
-    if (PRELUDE_SOLVED)
-        fail('Only allowable in prelude.');
-}
 
 export function solve(parse: ParseResult): SolveResult
 {

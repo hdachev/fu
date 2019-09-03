@@ -5,18 +5,20 @@ export const prelude_src = `
 fn +(a: $T)                 case ($T & @arithmetic):    $T __native_pure;
 fn +(a: $T, b: $T)          case ($T & @arithmetic):    $T __native_pure;
 
-fn -(a: i32)        :       i32 __native_pure;
-fn -(a: i32, b: i32):       i32 __native_pure;
-fn *(a: i32, b: i32):       i32 __native_pure;
-fn /(a: i32, b: i32):       i32 __native_pure;
+fn -(a: $T)                 case ($T & @arithmetic):    $T __native_pure;
+fn -(a: $T, b: $T)          case ($T & @arithmetic):    $T __native_pure;
+fn *(a: $T, b: $T)          case ($T & @arithmetic):    $T __native_pure;
+fn /(a: $T, b: $T)
+    case ($T & @floating_point):                        $T __native_pure;
+    case ($T & @integral && b.typeof & @non_zero):      $T __native_pure;
 
-fn >(a: i32, b: i32):       bool __native_pure;
-fn <(a: i32, b: i32):       bool __native_pure;
+fn >(a: $T, b: $T)          case ($T & @arithmetic):    bool __native_pure;
+fn <(a: $T, b: $T)          case ($T & @arithmetic):    bool __native_pure;
 
-fn ++(a: &mut i32):         i32 __native_pure;
-fn --(a: &mut i32):         i32 __native_pure;
-fn +=(a: &mut i32, b: i32): i32 __native_pure;
-fn -=(a: &mut i32, b: i32): i32 __native_pure;
+fn ++(a: &mut $T)           case ($T & @arithmetic):    $T __native_pure;
+fn --(a: &mut $T)           case ($T & @arithmetic):    $T __native_pure;
+fn +=(a: &mut $T, b: $T)    case ($T & @arithmetic):    $T __native_pure;
+fn -=(a: &mut $T, b: $T)    case ($T & @arithmetic):    $T __native_pure;
 
 /*/
 
