@@ -146,11 +146,15 @@ export function type_has(type: Type, tag: LexValue)
 export const t_copy         = tagset.intern('copy');
 export const t_primitive    = tagset.intern('primitive');
 export const t_arithmetic   = tagset.intern('arithmetic');
+export const t_integral     = tagset.intern('integral');
+export const t_signed       = tagset.intern('signed');
 
 export const Primitive      = tagset.union(t_copy, t_primitive);
 export const Arithmetic     = tagset.union(Primitive, t_arithmetic);
+export const Integral       = tagset.union(Arithmetic, t_integral);
+export const SignedInt      = tagset.union(Integral, t_signed);
 
-export const t_i32          = createType('i32', Arithmetic);
+export const t_i32          = createType('i32', SignedInt);
 export const t_void         = createType('void', null);
 export const t_bool         = createType('bool', Primitive);
 export const t_never        = createType('never', null);
