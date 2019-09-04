@@ -673,8 +673,12 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
         if (solve)
             return prep || fail();
 
-        scope_add(id, TemplateDecl(n_fn));
-        return SolvedNode(n_fn, null, t_void);
+        const tDecl = TemplateDecl(n_fn);
+        const out   = SolvedNode(n_fn, null, t_void);
+        out.target  = tDecl;
+
+        scope_add(id, tDecl);
+        return out;
     }
 
     // Prep reject.
