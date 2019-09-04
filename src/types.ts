@@ -70,7 +70,7 @@ export function createType(canon: Canon, quals: Quals|null): Type
 
 //
 
-function qadd(type: Type, q: tagset.Tag)
+export function qadd(type: Type, q: tagset.Tag)
 {
     return type.quals.indexOf(q) >= 0
          ? type
@@ -159,6 +159,8 @@ export const t_void         = createType('void', null);
 export const t_bool         = createType('bool', Primitive);
 export const t_never        = createType('never', null);
 export const t_template     = createType('template', null);
+
+export const q_non_zero     = tagset.intern('non_zero');
 
 
 //

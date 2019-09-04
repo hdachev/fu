@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -629,7 +629,13 @@ function solveInt(node: Node): SolvedNode
 {
     const v = Number(node.value);
     if (v >= i32_min && v <= i32_max)
-        return SolvedNode(node, null, t_i32);
+    {
+        let type = t_i32;
+        if (v !== 0)
+            type = qadd(type, q_non_zero);
+
+        return SolvedNode(node, null, type);
+    }
 
     return fail(
         'Out of range for an i32 literal.');
@@ -836,9 +842,12 @@ function trySpecializeFn(
         const argValue = args && args[i];
         const inType = argValue && argValue.type;
 
-        const argName = argNode.value || fail();
-        if (!typeParams[argName])
-            typeParams[argName] = inType;
+        if (inType)
+        {
+            const argName = argNode.value || fail();
+            if (!typeParams[argName])
+                typeParams[argName] = inType;
+        }
 
         if (argNode.flags & F_TEMPLATE)
         {
