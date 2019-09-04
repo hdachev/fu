@@ -220,6 +220,24 @@ function cgFn(fn: SolvedNode)
     _fnMode     = true;
     ///////////////////////////
 
+    // Template emit.
+    if (!fn.items)
+    {
+        let src = '';
+
+        const template = fn.target && fn.target.template || fail();
+        const specs = template.specializations;
+        for (const key in specs)
+        {
+            const s = specs[key];
+            const node = s && s.node;
+            if (node)
+                src += cgNode(node);
+        }
+
+        return src;
+    }
+
     const items = fn.items || fail();
     const body  = items[items.length + FN_BODY_BACK] || fail();
     const ret   = items[items.length + FN_RET_BACK ] || fail();
