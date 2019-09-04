@@ -460,6 +460,64 @@ ZERO(`
 // `);
 
 
+// RAII & move.
+
+const RAII = `
+    let mut i = 0;
+    struct S {
+        j: &mut i32;
+        fn free()
+            j += j + 1;
+    }
+`;
+
+ZERO(RAII + `
+    let s = S(i);
+    return i;
+    // <-destructor here
+`);
+
+ZERO(RAII + `
+    { let s = S(i); } // <-destructor here
+    return i - 1;
+`);
+
+ZERO(RAII + `
+    fn test(s: S) {} // <-destructor here
+    test(S(i));
+    return i - 1;
+`);
+
+ZERO(RAII + `
+    fn test(s: S&) {}
+    test(S(i)); // <-destructor here
+    return i - 1;
+`);
+
+ZERO(RAII + `
+    fn test(s: S&) {}
+    let s = S(i);
+    test(s);
+    return i;
+    // <-destructor here
+`);
+
+ZERO(RAII + `
+    fn test(s: S) {} // <-destructor here
+    let s = S(i);
+    test(s); // s is moved in
+    return i - 1;
+`);
+
+FAIL(RAII + `
+    fn test(s: S) {} // <-destructor here
+    let s = S(i);
+    test(s); // s is moved in
+    test(s); //ERR moved
+    return i - 1;
+`);
+
+
 // TODO lifetimes.
 
 /*
