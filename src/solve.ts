@@ -833,13 +833,18 @@ function trySpecializeFn(
         const argNode = items[i] || fail();
         argNode.kind === 'let'   || fail();
 
+        const argValue = args && args[i];
+        const inType = argValue && argValue.type;
+
+        const argName = argNode.value || fail();
+        if (!typeParams[argName])
+            typeParams[argName] = inType;
+
         if (argNode.flags & F_TEMPLATE)
         {
             const annot = argNode.items && argNode.items[LET_TYPE];
             if (annot)
             {
-                const argValue = args && args[i];
-                const inType = argValue && argValue.type;
                 const ok = inType && trySolveTypeParams(
                     annot, inType, typeParams);
 
@@ -1135,8 +1140,9 @@ function evalTypePattern(node: Node, typeParams: TypeParams): boolean
             if (left.kind  === 'typeparam' &&
                 right.kind === 'typetag')
             {
-                const type  = left.value && typeParams[left.value];
                 const tag   = right.value;
+                const type  = left.value && typeParams[left.value] || fail(
+                    'No type param `$' + left.value + '` in scope.');
 
                 if (type && tag)
                     return type_has(type, tag);
