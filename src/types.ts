@@ -140,6 +140,16 @@ export function type_has(type: Type, tag: LexValue)
     return type.quals.indexOf(tagset.intern(tag)) >= 0;
 }
 
+export function type_tryInter(a: Type, b: Type)
+{
+    if (a.canon !== b.canon)
+        return null;
+
+    return createType(
+        a.canon,
+        tagset.inter(a.quals, b.quals) as Quals);
+}
+
 
 //
 

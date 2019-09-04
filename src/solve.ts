@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -1122,14 +1122,23 @@ function trySolveTypeParams(
         const prev = typeParams[id];
         if (prev)
         {
-            if (isAssignable(prev, type))
-                return true;
-
-            if (!isAssignable(type, prev))
+            const inter = type_tryInter(prev, type);
+            if (!inter)
                 return false;
+
+            type = inter;
         }
 
+        // TODO not here:
+        //  we want to clear everything non-canonical from
+        //   type params AFTER we solve & match the args,
+        //    during the matching it shouldn't be necessary.
+        //
+        // After the match we need this to e.g. lift `non_zero`
+        //  from integral results, etc.
+        //
         typeParams[id] = clear_refs(type);
+
         return true;
     }
 
@@ -1329,14 +1338,14 @@ function solveIf(node: Node): SolvedNode
     const priExpr = cons || alt || fail();
     const secExpr = cons && alt ? alt : cons;
 
-    const priType = priExpr.type;
-    const secType = secExpr && secExpr.type;
+    const priType = priExpr.type || fail();
+    const secType = secExpr && (secExpr.type || fail());
 
-    if (secType)
-        isAssignable(priType, secType) || fail(
-            'TODO two way type union for conditionals');
+    const outType: Type = !secType ? priType
+        : type_tryInter(priType, secType) || fail(
+            'No common supertype:', priType, secType);
 
-    return SolvedNode(node, items, priType);
+    return SolvedNode(node, items, outType || fail());
 }
 
 

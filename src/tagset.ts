@@ -82,7 +82,37 @@ export function inter(a: TagSet, b: TagSet): TagSet
     if (b.length === 1)
         return a.indexOf(b) >= 0 ? b : EMPTY;
 
-    return fail('TODO');
+    // General.
+    if (b.length < a.length)
+    {
+        const c = b; b = a; a = c;
+    }
+
+    let offset = 0;
+    for (let i = 0; i < a.length; i++)
+    {
+        const aa = a[i];
+        const bi = i + offset;
+        if (bi === b.length)
+        {
+            a = a.slice(0, i) as TagSet;
+            break;
+        }
+
+        const bb = b[bi];
+        if (aa > bb)
+        {
+            offset++;
+            i--;
+        }
+        else if (aa < bb)
+        {
+            a = (a.slice(0, i) + a.slice(i + 1)) as TagSet;
+            i--;
+        }
+    }
+
+    return test(a);
 }
 
 function test(a: TagSet): TagSet
