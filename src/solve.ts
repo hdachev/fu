@@ -1207,6 +1207,15 @@ function solveCall(node: Node): SolvedNode
 {
     const id        = node.value || fail();
     let args        = solveNodes(node.items) || [];
+
+    // Implicit temporaries, all args are referable.
+    for (let i = 0; i < args.length; i++)
+    {
+        const arg = args[i] || fail();
+        arg.type = add_ref(arg.type);
+    }
+
+    //
     let callTarg    = scope_match__mutargs(id, args, node.flags);
 
     // `using` codegen.
