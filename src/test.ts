@@ -115,7 +115,7 @@ function FAIL(src: string)
 }
 
 
-//
+// Basics.
 
 ZERO(`
     return 1 - 1;
@@ -163,6 +163,9 @@ ZERO(`
 
     return sign(10) * 2 + sign(-5);
 `);
+
+
+// Mutation & references.
 
 ZERO(`
     mut sum = 0;
@@ -236,6 +239,9 @@ ZERO(`
 
     return named(b: 3, 6);
 `);
+
+
+// Structs & using.
 
 ZERO(`
     struct Range {
@@ -333,6 +339,9 @@ ZERO(`
     return dist(a, b) - 6;
 `);
 
+
+// Recursion & implicit args.
+
 ZERO(`
     fn inner(i: i32): i32
         i > 0 ? outer(i - 1) : 0;
@@ -403,6 +412,9 @@ ZERO(`
 
     return outer() - 7;
 `);
+
+
+//
 
 ZERO(`
     let x = 1;
@@ -526,45 +538,67 @@ FAIL(RAII + `
 `);
 
 
-// TODO lifetimes.
+// Borrow checker.
 
-/*
-
-FAIL(`
-    let a = 1;
-    mut x: &i32 = a;
-    {
-        let b = 2;
-        x = b; //ERR outlive
-    }
-
-    return a - x;
-`);
-
-FAIL(`
-    fn test(): &i32 {
-        let x = 1;
-        return x; //ERR outlive
-    }
-
-    return test - 1;
-`);
-
-FAIL(`
-    struct Test {
+const BORROW = `
+    struct Borrow {
         x: &i32;
     }
+`;
 
-    let a = 1;
-    mut test = Test(a);
-    {
-        let b = 2;
-        test = Test(b); //ERR outlive
-    }
-
-    return a + test.x - 3;
+FAIL(BORROW + `
+    let mut b: Borrow;
+    return b.x; //ERR initialize
 `);
 
-// */
+ZERO(BORROW + `
+    let mut b: Borrow;
+    let i = 0;
+    b = Borrow(i);
+    return b.x;
+`);
+
+FAIL(BORROW + `
+    let b = Borrow(0); //ERR outlive
+    return b.x;
+`);
+
+ZERO(BORROW + `
+    let i = -1;
+    let b = Borrow(i);
+    b.x++;
+    return i;
+`);
+
+FAIL(BORROW + `
+    let b: Borrow;
+    {
+        let i = -1;
+        b = Borrow(i); //ERR outlive
+    }
+    return ++b.x;
+`);
+
+FAIL(BORROW + `
+    let b: Borrow;
+
+    fn test() {
+        let i = -1;
+        b = Borrow(i); //ERR outlive
+    }
+
+    test();
+    return ++b.x;
+`);
+
+FAIL(BORROW + `
+    fn test() {
+        let i = -1;
+        return Borrow(i); //ERR outlive
+    }
+
+    let b = test();
+    return ++b.x;
+`);
 
 console.log('ALL GOOD @', new Date());
