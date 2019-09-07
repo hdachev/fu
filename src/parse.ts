@@ -180,6 +180,7 @@ let _col0               = -1111;
 let _precedence         = -1111;
 let _fnDepth            = -1111;
 let _numDollars         = -1111;
+let _numReturns         = -1111;
 
 export type ParseResult =
 {
@@ -497,6 +498,7 @@ function parseFnDecl(): Node
 {
     ////////////////////////////////
     const numDollars0 = _numDollars;
+    const numReturns0 = _numReturns;
     ////////////////////////////////
 
     // fn hello(), fn +()
@@ -509,26 +511,32 @@ function parseFnDecl(): Node
     const items: Nodes = [];
     let flags = parseArgsDecl(items, 'op', ')');
 
-    ///////////
+    ////////////////////////////////
     _fnDepth++;
-    ///////////
+    ////////////////////////////////
 
     // Return type annot.
-    const type = tryPopTypeAnnot();
-    if (type)
-        flags |= F_FULLY_TYPED;
-
+    let type = tryPopTypeAnnot();
+    const retIdx = items.length;
     items.push(type);
 
     // Body or pattern (case/case).
     flags |= parseFnBodyOrPattern(items);
 
-    ///////////
-    _fnDepth--;
-    ///////////
+    // Inject `: void` annot here, easy,
+    //  one less thing to deal with later.
+    if (!type && _numReturns === numReturns0)
+        items[retIdx] = type =
+            createRead('void' as LexValue);
+
+    if (type)
+        flags |= F_FULLY_TYPED;
 
     ////////////////////////////////
     {
+        _fnDepth--;
+        _numReturns = numReturns0;
+
         const numDollars1 = _numDollars;
         _numDollars = numDollars0;
         if (numDollars1 !== numDollars0)
@@ -580,7 +588,7 @@ function parseFnBodyBranch()
 
     return body.kind === 'block' || body.kind === 'return'
          ? body
-         : createReturn(body);
+         : (_numReturns++, createReturn(body));
 }
 
 function tryPopTypeAnnot()
@@ -952,6 +960,7 @@ export function createRead(id: LexValue)
 function parseReturn()
 {
     _fnDepth > 0 || (_idx--, fail());
+    _numReturns++;
 
     const peek = _tokens[_idx];
     if (peek.kind === 'op' && peek.value === ';')

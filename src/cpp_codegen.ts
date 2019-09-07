@@ -71,6 +71,7 @@ function typeAnnotBase(type: Type): string|null
     switch (type.canon)
     {
         case 'i32': return 'int';
+        case 'void': return 'void';
     }
 
     const tdef = lookupType(type.canon) || fail('TODO', type.canon);

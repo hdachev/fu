@@ -199,6 +199,14 @@ ZERO(`
 `);
 
 ZERO(`
+    mut res = 1;
+    fn decr(num: &mut i32) { num--; } // ret void
+
+    decr(res);
+    return res;
+`);
+
+ZERO(`
     mut sum = 0;
     while (sum < 15)
         sum++;
