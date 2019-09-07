@@ -497,13 +497,13 @@ ZERO(RAII + `
 `);
 
 ZERO(RAII + `
-    fn test(s: S&) {}
+    fn test(s: &S) {}
     test(S(i)); // <-destructor here
     return i - 1;
 `);
 
 ZERO(RAII + `
-    fn test(s: S&) {}
+    fn test(s: &S) {}
     let s = S(i);
     test(s);
     return i;

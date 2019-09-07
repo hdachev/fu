@@ -584,7 +584,7 @@ type UnorderedSolver = (node: Node, solved: SolvedNode|null) => SolvedNode;
 const UNORDERED_PREP: { [nodeKind: string]: UnorderedPreper } =
 {
     'fn':       uPrepFn,
-    'struct':   uPrep_TODO,
+    'struct':   uPrepStruct,
 };
 
 const UNORDERED_SOLVE: { [nodeKind: string]: UnorderedSolver } =
@@ -592,11 +592,6 @@ const UNORDERED_SOLVE: { [nodeKind: string]: UnorderedSolver } =
     'fn':       uSolveFn,
     'struct':   uSolveStruct,
 };
-
-function uPrep_TODO()
-{
-    return null;
-}
 
 function solveRoot(node: Node): SolvedNode
 {
@@ -910,9 +905,19 @@ function trySpecializeFn(
 
 //
 
-function uSolveStruct(node: Node): SolvedNode
+function uPrepStruct(node: Node): SolvedNode
 {
-    const out           = SolvedNode(node, null, t_void);
+    return __solveStruct(false, node, null);
+}
+
+function uSolveStruct(node: Node, prep: SolvedNode|null): SolvedNode
+{
+    return __solveStruct(true, node, prep);
+}
+
+function __solveStruct(solve: boolean, node: Node, prep: SolvedNode|null): SolvedNode
+{
+    const out           = prep || SolvedNode(node, null, t_void);
 
     const fields: StructField[] = [];
 
@@ -920,7 +925,17 @@ function uSolveStruct(node: Node): SolvedNode
     const type          = registerStruct(id, fields);
 
     // Add the arity-0 type entry.
-    scope_add(id, Typedef(type));
+    if (!prep)
+    {
+        const decl = Typedef(type);
+        out.target && fail();
+        out.target = decl;
+
+        scope_add(id, decl);
+    }
+
+    if (!solve)
+        return out;
 
     //////////////////////////
     {
