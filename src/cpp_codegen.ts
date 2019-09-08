@@ -1,6 +1,6 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE } from './parse';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR } from './parse';
 import { lookupType, Struct } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
@@ -58,9 +58,9 @@ function typeAnnot(type: Type)
 {
     const fwd = typeAnnotBase(type);
 
-    if (type.quals.indexOf('m') > 0)
+    if (type.quals.indexOf('m') >= 0)
         return fwd + '&';
-    if (type.quals.indexOf('r') > 0)
+    if (type.quals.indexOf('r') >= 0)
         return 'const ' + fwd + '&';
 
     return fwd;
@@ -104,6 +104,16 @@ function declareStruct(t: Type, s: Struct)
     {
         const field = fields[i];
         def += '\n    ' + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
+    }
+
+    if (s.flags & F_DESTRUCTOR)
+    {
+        def += '\n';
+        def += '\n    ~' + t.canon + '();';
+        def += '\n    ' + t.canon + '(const ' + t.canon + '&) = delete;';
+        def += '\n    void operator=(const ' + t.canon + '&) = delete;';
+        def += '\n    ' + t.canon + '(' + t.canon + '&&) = default;';
+        def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) = default;';
     }
 
     return def + '\n};\n';

@@ -71,6 +71,7 @@ export const F_FULLY_TYPED  = 1 << 26;
 export const F_CLOSURE      = 1 << 27;
 export const F_PATTERN      = 1 << 28;
 export const F_TEMPLATE     = 1 << 29;
+export const F_DESTRUCTOR   = 1 << 30;
 
 
 // Operator precedence table.
@@ -419,7 +420,7 @@ function parseBlockLike(
         switch (expr.kind)
         {
             case 'struct':
-                moveNodesInto(items, 'fn', expr);
+                unwrapStructMethods(items, expr);
         }
     }
 
@@ -432,14 +433,17 @@ function fail_Lint(...args: unknown[])
     fail('Lint:', ...args);
 }
 
-function moveNodesInto(out: Node[], kind: string, from: Node)
+function unwrapStructMethods(out: Node[], struct: Node)
 {
-    const items = from.items || fail();
+    const items = struct.items || fail();
     for (let i = 0; i < items.length; i++)
     {
         const item = items[i];
-        if (item && item.kind === kind)
+        if (item && item.kind === 'fn')
         {
+            if (item.value === 'free')
+                struct.flags |= F_DESTRUCTOR;
+
             items.splice(i--, 1);
             out.push(item);
         }

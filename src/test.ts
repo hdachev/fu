@@ -497,25 +497,27 @@ ZERO(RAII + `
     // <-destructor here
 `);
 
+/*
+
 ZERO(RAII + `
     { let s = S(i); } // <-destructor here
     return i - 1;
 `);
 
 ZERO(RAII + `
-    fn test(s: S) {} // <-destructor here
+    fn test(s: S) { return s.j; } // <-destructor here
     test(S(i));
     return i - 1;
 `);
 
 ZERO(RAII + `
-    fn test(s: &S) {}
+    fn test(s: &S) { return s.j; }
     test(S(i)); // <-destructor here
     return i - 1;
 `);
 
 ZERO(RAII + `
-    fn test(s: &S) {}
+    fn test(s: &S) { return s.j; }
     let s = S(i);
     test(s);
     return i;
@@ -523,11 +525,13 @@ ZERO(RAII + `
 `);
 
 ZERO(RAII + `
-    fn test(s: S) {} // <-destructor here
+    fn test(s: S) { return s.j; } // <-destructor here
     let s = S(i);
     test(s); // s is moved in
     return i - 1;
 `);
+
+/*
 
 FAIL(RAII + `
     fn test(s: S) {} // <-destructor here
@@ -600,5 +604,7 @@ FAIL(BORROW + `
     let b = test();
     return ++b.x;
 `);
+
+// */
 
 console.log('ALL GOOD @', new Date());

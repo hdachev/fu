@@ -180,6 +180,7 @@ export type Struct =
     kind:   'struct';
     id:     string;
     fields: StructField[];
+    flags:  number;
 };
 
 export type StructField =
@@ -188,7 +189,7 @@ export type StructField =
     type:   Type;
 };
 
-export function registerStruct(id: string, fields: StructField[])
+export function registerStruct(id: string, fields: StructField[], flags: number)
 {
     // TODO struct data goes on compile context.
     // TODO use module id.
@@ -201,6 +202,7 @@ export function registerStruct(id: string, fields: StructField[])
         kind:   'struct',
         id:     id      || fail(),
         fields: fields  || fail(),
+        flags:  flags|0,
     };
 
     CONTEXT.TYPES[canon] = def;

@@ -922,7 +922,7 @@ function __solveStruct(solve: boolean, node: Node, prep: SolvedNode|null): Solve
     const fields: StructField[] = [];
 
     const id            = node.value || fail('TODO anonymous structs');
-    const type          = registerStruct(id, fields);
+    const type          = registerStruct(id, fields, node.flags);
 
     // Add the arity-0 type entry.
     if (!prep)
