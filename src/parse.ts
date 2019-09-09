@@ -442,7 +442,10 @@ function unwrapStructMethods(out: Node[], struct: Node)
         if (item && item.kind === 'fn')
         {
             if (item.value === 'free')
+            {
                 struct.flags |= F_DESTRUCTOR;
+                item.flags |= F_DESTRUCTOR;
+            }
 
             items.splice(i--, 1);
             out.push(item);

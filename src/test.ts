@@ -480,7 +480,7 @@ ZERO(`
 // `);
 
 
-// RAII & move.
+// Destructor basics.
 
 const RAII = `
     let mut i = 0;
@@ -497,12 +497,13 @@ ZERO(RAII + `
     // <-destructor here
 `);
 
-/*
-
 ZERO(RAII + `
     { let s = S(i); } // <-destructor here
     return i - 1;
 `);
+
+
+/* Move semantics.
 
 ZERO(RAII + `
     fn test(s: S) { return s.j; } // <-destructor here
@@ -530,8 +531,6 @@ ZERO(RAII + `
     test(s); // s is moved in
     return i - 1;
 `);
-
-/*
 
 FAIL(RAII + `
     fn test(s: S) {} // <-destructor here

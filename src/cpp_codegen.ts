@@ -287,6 +287,14 @@ function cgFn(fn: SolvedNode)
     else
         src += blockWrap([ body ]);
 
+    if (fn.flags & F_DESTRUCTOR)
+    {
+        const head = items[0] || fail();
+
+        src += '\n' + head.type.canon + '::~' + head.type.canon + '()';
+        src += '\n{\n    free(*this);\n}\n';
+    }
+
     if (!closure)
     {
         _fdef += '\n' + src + '\n';
