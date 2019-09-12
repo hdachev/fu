@@ -291,8 +291,8 @@ function cgFn(fn: SolvedNode)
     {
         const head = items[0] || fail();
 
-        src += '\n' + head.type.canon + '::~' + head.type.canon + '()';
-        src += '\n{\n    free(*this);\n}\n';
+        src += '\n\n' + head.type.canon + '::~' + head.type.canon + '()';
+        src += '\n{\n    free(*this);\n}';
     }
 
     if (!closure)

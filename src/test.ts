@@ -502,15 +502,6 @@ ZERO(RAII + `
     return i - 1;
 `);
 
-
-/* Move semantics.
-
-ZERO(RAII + `
-    fn test(s: S) { return s.j; } // <-destructor here
-    test(S(i));
-    return i - 1;
-`);
-
 ZERO(RAII + `
     fn test(s: &S) { return s.j; }
     test(S(i)); // <-destructor here
@@ -523,6 +514,15 @@ ZERO(RAII + `
     test(s);
     return i;
     // <-destructor here
+`);
+
+
+/* Move semantics.
+
+ZERO(RAII + `
+    fn test(s: S) { return s.j; } // <-destructor here
+    test(S(i));
+    return i - 1;
 `);
 
 ZERO(RAII + `
