@@ -517,7 +517,7 @@ ZERO(RAII + `
 `);
 
 
-/* Move semantics.
+// Move semantics.
 
 ZERO(RAII + `
     fn test(s: S) { return s.j; } // <-destructor here
@@ -531,6 +531,8 @@ ZERO(RAII + `
     test(s); // s is moved in
     return i - 1;
 `);
+
+/*
 
 FAIL(RAII + `
     fn test(s: S) {} // <-destructor here
