@@ -1,7 +1,7 @@
-import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE } from './parse';
+import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -1212,7 +1212,8 @@ function solveCall(node: Node): SolvedNode
     for (let i = 0; i < args.length; i++)
     {
         const arg = args[i] || fail();
-        arg.type = add_ref(arg.type);
+        if (arg.type.quals.indexOf(q_ref) < 0)
+            arg.type = add_prvalue_ref(arg.type);
     }
 
     //
@@ -1395,6 +1396,20 @@ function SolvedNode(
     };
 }
 
+function wrap(kind: string, node: SolvedNode, flags: number)
+{
+    return {
+        kind,
+        flags:  flags,
+        value:  null,
+
+        items:  [ node ],
+        token:  node.token,
+        type:   node.type,
+        target: null,
+    };
+}
+
 function CallerNode(
     node: Node, items: SolvedNodes|null, type: Type, target: Overload)
         : SolvedNode
@@ -1407,6 +1422,35 @@ function CallerNode(
         const headType = head.type || fail();
 
         type = add_refs_from(headType, type);
+    }
+
+    // Tag copies and moves.
+    else if (items)
+    {
+        const args = target.args || fail();
+        for (let i = 0; i < items.length; i++)
+        {
+            const item  = items[i] || fail();
+            const q     = args[i].quals;
+
+            if (q.indexOf(q_ref) < 0)
+            {
+                let op: 'move'|'copy' = 'copy';
+
+                if (q.indexOf(q_copy) < 0)
+                {
+                    if (q.indexOf(q_move) < 0)
+                        fail('Non-copy/non-move?');
+
+                    op = 'move';
+                }
+
+                items[i] = wrap(op, item,
+                    item.type.quals.indexOf(q_prvalue) >= 0
+                        ? F_ELISION
+                        : 0);
+            }
+        }
     }
 
     //

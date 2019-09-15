@@ -521,14 +521,18 @@ ZERO(RAII + `
 
 ZERO(RAII + `
     fn test(s: S) { return s.j; } // <-destructor here
-    test(S(i));
+    {
+        test(S(i));
+    }
     return i - 1;
 `);
 
 ZERO(RAII + `
     fn test(s: S) { return s.j; } // <-destructor here
-    let s = S(i);
-    test(s); // s is moved in
+    {
+        let s = S(i);
+        test(s); // s is moved in
+    }
     return i - 1;
 `);
 

@@ -10,8 +10,15 @@ let next = 256; // starting somewhere past ascii
 function _generate(id: string): Tag
 {
     let c = id[0] || fail();
-    while (exist[c])
-        c = String.fromCharCode(next++);
+    if (exist[c])
+    {
+        c = /^[a-z]$/.test(c)
+            ? c.toUpperCase()
+            : c.toLowerCase();
+
+        while (exist[c])
+            c = String.fromCharCode(next++);
+    }
 
     exist[c] = id;
     return (tags[id] = c as Tag);

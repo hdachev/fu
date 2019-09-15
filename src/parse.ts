@@ -72,6 +72,7 @@ export const F_CLOSURE      = 1 << 27;
 export const F_PATTERN      = 1 << 28;
 export const F_TEMPLATE     = 1 << 29;
 export const F_DESTRUCTOR   = 1 << 30;
+export const F_ELISION      = 1 << 31;
 
 
 // Operator precedence table.

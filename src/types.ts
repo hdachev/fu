@@ -2,6 +2,7 @@ import * as tagset from './tagset';
 import { fail } from './fail';
 import { LexValue } from './lex';
 import { CONTEXT } from './context';
+import { F_DESTRUCTOR } from './parse';
 
 export type Primitive   =
     'i8'  | 'u8'  |
@@ -15,6 +16,7 @@ export type Quals       = tagset.TagSet;
 export const q_EMPTY    = tagset.EMPTY;
 export const q_mutref   = tagset.intern('mutref');
 export const q_ref      = tagset.intern('ref');
+export const q_prvalue  = tagset.intern('prvalue');
 
 export type Type =
 {
@@ -89,14 +91,19 @@ function tryClear(type: Type|null, q: tagset.Tag)
          : null;
 }
 
+export function add_ref(type: Type)
+{
+    return qadd(type, q_ref);
+}
+
 export function add_mutref(type: Type)
 {
     return qadd(add_ref(type), q_mutref);
 }
 
-export function add_ref(type: Type)
+export function add_prvalue_ref(type: Type)
 {
-    return qadd(type, q_ref);
+    return qadd(add_ref(type), q_prvalue);
 }
 
 export function tryClear_mutref(type: Type)
@@ -153,16 +160,18 @@ export function type_tryInter(a: Type, b: Type)
 
 //
 
-export const t_copy         = tagset.intern('copy');
-export const t_primitive    = tagset.intern('primitive');
-export const t_arithmetic   = tagset.intern('arithmetic');
-export const t_integral     = tagset.intern('integral');
-export const t_signed       = tagset.intern('signed');
+export const q_copy         = tagset.intern('copy');
+export const q_move         = tagset.intern('move');
 
-export const Primitive      = tagset.union(t_copy, t_primitive);
-export const Arithmetic     = tagset.union(Primitive, t_arithmetic);
-export const Integral       = tagset.union(Arithmetic, t_integral);
-export const SignedInt      = tagset.union(Integral, t_signed);
+export const q_primitive    = tagset.intern('primitive');
+export const q_arithmetic   = tagset.intern('arithmetic');
+export const q_integral     = tagset.intern('integral');
+export const q_signed       = tagset.intern('signed');
+
+export const Primitive      = tagset.union(q_copy, q_primitive);
+export const Arithmetic     = tagset.union(Primitive, q_arithmetic);
+export const Integral       = tagset.union(Arithmetic, q_integral);
+export const SignedInt      = tagset.union(Integral, q_signed);
 
 export const t_i32          = createType('i32', SignedInt);
 export const t_void         = createType('void', null);
@@ -194,8 +203,12 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
     // TODO struct data goes on compile context.
     // TODO use module id.
 
+    const quals     = (flags & F_DESTRUCTOR) || someFieldNonCopy(fields)
+        ? q_move
+        : q_copy;
+
     const canon     = 's_' + id as Canon;
-    const type      = createType(canon, null);
+    const type      = createType(canon, quals as any);
 
     const def: Struct =
     {
@@ -208,6 +221,15 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
     CONTEXT.TYPES[canon] = def;
 
     return type;
+}
+
+function someFieldNonCopy(fields: StructField[])
+{
+    for (let i = 0; i < fields.length; i++)
+        if (fields[i].type.quals.indexOf(q_copy) < 0)
+            return true;
+
+    return false;
 }
 
 export type LookupType = Struct;

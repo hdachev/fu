@@ -1,6 +1,6 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR } from './parse';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
 import { lookupType, Struct } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
@@ -51,6 +51,12 @@ function exitScope(s: CppScope)
     _ids = s;
 }
 
+function include(lib: string)
+{
+    if (!_libs[lib])
+        _libs[lib] = '#include ' + lib + '\n';
+}
+
 
 //
 
@@ -98,22 +104,34 @@ function typeAnnotBase(type: Type): string|null
 function declareStruct(t: Type, s: Struct)
 {
     let def = '\nstruct ' + t.canon + '\n{';
+    let indent = '\n    ';
+
+    if (s.flags & F_DESTRUCTOR)
+    {
+        def += '\n    struct Data\n    {';
+        indent += '    ';
+    }
 
     const fields = s.fields;
     for (let i = 0; i < fields.length; i++)
     {
         const field = fields[i];
-        def += '\n    ' + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
+        def += indent + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
     }
 
     if (s.flags & F_DESTRUCTOR)
     {
+        def += '\n    };';
         def += '\n';
-        def += '\n    ~' + t.canon + '();';
+        def += '\n    Data data;';
+        def += '\n    bool dtor = false;';
+        def += '\n';
+        def += '\n    ~' + t.canon + '() noexcept;';
+        def += '\n    inline ' + t.canon + '(Data data) noexcept : data(data) {};';
         def += '\n    ' + t.canon + '(const ' + t.canon + '&) = delete;';
-        def += '\n    void operator=(const ' + t.canon + '&) = delete;';
-        def += '\n    ' + t.canon + '(' + t.canon + '&&) = default;';
-        def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) = default;';
+        def += '\n    ' + t.canon + '& operator=(const ' + t.canon + '&) = delete;';
+        def += '\n    ' + t.canon + '(' + t.canon + '&&) noexcept;';
+        def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
     }
 
     return def + '\n};\n';
@@ -277,7 +295,7 @@ function cgFn(fn: SolvedNode)
 
     src += closure
          ? ') -> ' + annot
-         : ')';
+         : ') noexcept';
 
     if (!closure && src !== 'int main()' && _fdef.indexOf(fn.value || fail()) >= 0)
         _ffwd[src] = '\n' + src + ';';
@@ -290,9 +308,42 @@ function cgFn(fn: SolvedNode)
     if (fn.flags & F_DESTRUCTOR)
     {
         const head = items[0] || fail();
+        const name = head.type.canon;
 
-        src += '\n\n' + head.type.canon + '::~' + head.type.canon + '()';
-        src += '\n{\n    free(*this);\n}';
+        src += '\n\n' + name + '::~' + name + '() noexcept';
+        src += '\n{';
+        src += '\n    if (!dtor)';
+        src += '\n    {';
+        src += '\n        dtor = true;';
+        src += '\n        free(*this);';
+        src += '\n    }';
+        src += '\n}';
+
+        include('<cassert>');
+        include('<utility>');
+
+        src += '\n\n' + name + '::' + name + '(' + name + '&& src) noexcept';
+        src += '\n    : data(std::move(src.data))';
+        src += '\n{';
+        src += '\n    assert(!src.dtor);';
+        src += '\n    dtor = src.dtor;';
+        src += '\n    src.dtor = true;';
+        src += '\n}';
+
+        include('<cstring>');
+
+        src += '\n\n' + name + '& ' + name + '::operator=(' + name + '&& src) noexcept';
+        src += '\n{';
+        src += '\n    if (&src != this)';
+        src += '\n    {';
+        src += '\n        char temp[sizeof(' + name + ')];';
+        src += '\n        std::memcpy(temp, this, sizeof(' + name + '));';
+        src += '\n        std::memcpy(this, &src, sizeof(' + name + '));';
+        src += '\n        std::memcpy(&src, temp, sizeof(' + name + '));';
+        src += '\n    }';
+        src += '\n';
+        src += '\n    return *this;';
+        src += '\n}';
     }
 
     if (!closure)
@@ -338,7 +389,20 @@ function cgCall(node: SolvedNode)
     const items  = cgNodes(node.items);
 
     if (target.kind === 'defctor')
-        return (target.type || fail()).canon + ' { ' + items.join(', ') + ' }';
+    {
+        let head = (target.type || fail()).canon;
+
+        let open = ' { ';
+        let close = ' }';
+        const type = lookupType(head) || fail();
+        if (type.flags & F_DESTRUCTOR)
+        {
+            open = ' { ' + head + '::Data { ';
+            close = ' }}';
+        }
+
+        return head + open + items.join(', ') + close;
+    }
 
     const id = target.node && target.node.value || fail();
 
@@ -358,7 +422,17 @@ function cgCall(node: SolvedNode)
         return ID(id);
 
     if (target.kind === 'field')
-        return items[0] + '.' + ID(id);
+    {
+        let sep = '.';
+        const parent = lookupType(
+            (node.items && node.items[0] || fail())
+                .type.canon) || fail();
+
+        if (parent.flags & F_DESTRUCTOR)
+            sep = '.data.';
+
+        return items[0] + sep + ID(id);
+    }
 
     return ID(id) + '(' + items.join(', ') + ')';
 }
@@ -451,7 +525,23 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'parens':   cgParens,
     'label':    cgParens,
     'struct':   cgEmpty,
+
+    'copy':     cgCopyMove,
+    'move':     cgCopyMove,
 };
+
+function cgCopyMove(node: SolvedNode)
+{
+    const a = cgNode(node.items && node.items[0] || fail());
+
+    if (node.kind === 'move' && !(node.flags & F_ELISION))
+    {
+        include('<utility>');
+        return 'std::move(' + a + ')';
+    }
+
+    return a;
+}
 
 function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
 {
