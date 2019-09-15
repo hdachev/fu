@@ -96,6 +96,13 @@ function typeAnnotBase(type: Type): string|null
             }
 
             return type.canon;
+
+        case 'array':
+            const item = typeAnnot(tdef.fields[0].type);
+
+            include('<vector>');
+
+            return 'std::vector<(' + item + ')>';
     }
 
     fail('TODO', tdef.kind);

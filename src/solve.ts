@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -569,6 +569,7 @@ const SOLVE: { [nodeKind: string]: Solver } =
 
     'let':      solveLet,
     'call':     solveCall,
+    'arrlit':   solveArrayLiteral,
     'if':       solveIf,
     'loop':     solveBlock, // TODO
 
@@ -1258,6 +1259,24 @@ function solveCall(node: Node): SolvedNode
         args && args.length ? args : null,
         callTarg.type || fail(),
         callTarg);
+}
+
+
+// I feel this should be a fncall instead of this here.
+//  It's varargs - so is it a template or what?
+
+function solveArrayLiteral(node: Node)
+{
+    const items = solveNodes(node.items) || fail();
+    const head  = items[0] || fail('TODO empty array literals');
+
+    let itemType = head.type;
+    for (let i = 1; i < items.length; i++)
+        itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
+            '[array literal] No common supertype:', itemType, items[i]);
+
+    return SolvedNode(node, items,
+        createArray(itemType) || fail());
 }
 
 

@@ -56,6 +56,7 @@ export const F_PREFIX       = 1 << 2;
 export const F_POSTFIX      = 1 << 3;
 export const F_ACCESS       = 1 << 4;
 export const F_ID           = 1 << 5;
+export const F_INDEX        = 1 << 6;
 
 export const F_LOCAL        = 1 << 8;
 export const F_ARG          = 1 << 9;
@@ -758,7 +759,7 @@ function tryParseExpressionTail(head: Node): Node|null
             case ';': return _idx--, null;
             case '.': return parseAccessExpression(head);
             case '(': return parseCallExpression(head);
-            // case '[': return parseIndexExpression(head);
+            case '[': return parseIndexExpression(head);
         }
 
         const p1 = BINOP.PRECEDENCE[v];
@@ -800,8 +801,7 @@ function parseExpressionHead(): Node
             switch (token.value)
             {
                 case '(': return parseParens();
-
-                // case '[': return parseArrayLiteral();
+                case '[': return parseArrayLiteral();
 
                 // case '{': ...    either c++/js implict construction -
                 //                  can actually work with `[`s too.
@@ -852,6 +852,8 @@ function createTypeTag(id: LexValue)
 
 function parsePrefix(op: LexValue)
 {
+    PREFIX.indexOf(op) >= 0 || (_idx--, fail());
+
     if (op === '&' && tryConsume('id', 'mut'))
         op = '&mut' as LexValue;
 
@@ -866,7 +868,6 @@ function parseUnaryExpression()
 
 function createPrefix(op: LexValue, expr: Node)
 {
-    PREFIX.indexOf(op) >= 0 || (_idx--, fail());
     return createCall(op, F_PREFIX, [ expr ]);
 }
 
@@ -945,6 +946,28 @@ function parseCallExpression(expr: Node)
             expr.value || fail(), argFlags, args);
 
     return fail('TODO dynamic call');
+}
+
+function parseArrayLiteral()
+{
+    const args: Node[] = [];
+    const argFlags = parseCallArgs(']', args);
+
+    return createArrayLiteral(argFlags, args);
+}
+
+function createArrayLiteral(argFlags: number, items: Node[])
+{
+    return Node('arrlit', items, argFlags);
+}
+
+function parseIndexExpression(expr: Node)
+{
+    const args: Node[] = [];
+    const argFlags = parseCallArgs(']', args);
+
+    return createCall('[]', F_INDEX & argFlags,
+        [ expr ].concat(args));
 }
 
 function createLeaf(kind: TokenKind, value: LexValue)

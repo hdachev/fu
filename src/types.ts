@@ -186,10 +186,15 @@ export const q_non_zero     = tagset.intern('non_zero');
 
 export type Struct =
 {
-    kind:   'struct';
+    kind:   'struct'|'array';
     id:     string;
     fields: StructField[];
     flags:  number;
+
+    // Min/max len and delta.
+    min:    number;
+    max:    number;
+    step:   number;
 };
 
 export type StructField =
@@ -203,24 +208,27 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
     // TODO struct data goes on compile context.
     // TODO use module id.
 
-    const quals     = (flags & F_DESTRUCTOR) || someFieldNonCopy(fields)
+    const quals = (flags & F_DESTRUCTOR) || someFieldNonCopy(fields)
         ? q_move
         : q_copy;
 
-    const canon     = 's_' + id as Canon;
-    const type      = createType(canon, quals as any);
+    const canon = 's_' + id as Canon;
 
     const def: Struct =
     {
         kind:   'struct',
         id:     id      || fail(),
         fields: fields  || fail(),
+
         flags:  flags|0,
+        min:    1,
+        max:    1,
+        step:   1,
     };
 
     CONTEXT.TYPES[canon] = def;
 
-    return type;
+    return createType(canon, quals as any);
 }
 
 function someFieldNonCopy(fields: StructField[])
@@ -238,4 +246,34 @@ export function lookupType(canon: Canon): LookupType|null
 {
     return CONTEXT.TYPES[canon]
         || null;
+}
+
+
+//
+
+export function createArray(item: Type): Type
+{
+    const canon = serializeType(item) + '[]' as Canon;
+    const quals = q_move as any as Quals;
+
+    if (!CONTEXT.TYPES[canon])
+        CONTEXT.TYPES[canon] =
+        {
+            kind:   'array',
+            id:     canon as any as LexValue,
+            fields:
+            [
+                {
+                    id:  'item' as LexValue,
+                    type: item,
+                },
+            ],
+
+            flags:  0,
+            min:    0,
+            max:    2147483647,
+            step:   1,
+        };
+
+    return createType(canon, quals);
 }
