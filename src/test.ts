@@ -612,4 +612,29 @@ FAIL(BORROW + `
 
 // */
 
+// Arrays.
+
+ZERO(`
+    mut arr = [1, 2, 3, 4];
+    arr.push(5);
+
+    fn test(arr: &i32[]) {
+        mut sum = -15;
+        for (mut i = 0; i < arr.len; i++)
+            sum += arr[i];
+
+        return sum - 15;
+    }
+
+    return test(arr);
+`);
+
+// Maps.
+
+// TODO //
+
+// Strings.
+
+// TODO //
+
 console.log('ALL GOOD @', new Date());
