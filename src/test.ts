@@ -615,15 +615,15 @@ FAIL(BORROW + `
 // Arrays.
 
 ZERO(`
-    mut arr = [1, 2, 3, 4];
+    mut arr = [0, 1, 2, 3, 4];
     arr.push(5);
 
-    fn test(arr: &i32[]) {
+    fn test(view: &i32[]): i32 {
         mut sum = -15;
-        for (mut i = 0; i < arr.len; i++)
-            sum += arr[i];
+        for (mut i = 0; i < view.len; i++)
+            sum += view[i];
 
-        return sum - 15;
+        return sum;
     }
 
     return test(arr);

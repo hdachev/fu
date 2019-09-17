@@ -277,3 +277,16 @@ export function createArray(item: Type): Type
 
     return createType(canon, quals);
 }
+
+export function tryClear_array(type: Type): Type|null
+{
+    const def = CONTEXT.TYPES[type.canon];
+    if (!def)
+        return null;
+
+    if (def.kind !== 'array')
+        return null;
+
+    return def.fields[0].type
+        || fail();
+}

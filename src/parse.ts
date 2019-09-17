@@ -135,10 +135,9 @@ function setupOperators()
     binop( '|' );
     binop( '<', '<=', '>', '>=' );
     binop( '==', '!=', '<=>' );
+    binop( '->' );
     binop( '&&' );
     binop( '||' );
-
-    binop( '->' );
 
     rightToLeft = true;
     binop( '?' );

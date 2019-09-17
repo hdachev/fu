@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -327,6 +327,10 @@ function scope_using(via: Overload)
                 arity0 = true;
                 continue;
             }
+
+            // TODO using + templates, the fuck do we do?
+            if (overload.template)
+                continue;
 
             const expect = (overload.args || fail())[0] || fail();
             if (!isAssignable(expect, actual))
@@ -1066,6 +1070,9 @@ function evalTypeAnnot(node: Node): SolvedNode
 
                 if (node.value === '&mut')
                     return SolvedNode(node, null, add_mutref(t));
+
+                if (node.value === '[]')
+                    return SolvedNode(node, null, createArray(t));
             }
         }
         else
@@ -1111,6 +1118,7 @@ function trySolveTypeParams(
             {
                 const t = node.value === '&'    ? tryClear_ref(type)
                         : node.value === '&mut' ? tryClear_mutref(type)
+                        : node.value === '[]'   ? tryClear_array(type)
                         : fail('TODO');
 
                 if (!t)
@@ -1173,17 +1181,32 @@ function evalTypePattern(node: Node, typeParams: TypeParams): boolean
         const left  = items[0] || fail();
         const right = items[1] || fail();
 
-        if (node.value === '&')
+        if (node.value === '->')
         {
             if (left.kind  === 'typeparam' &&
                 right.kind === 'typetag')
             {
-                const tag   = right.value;
+                const tag   = right.value || fail();
                 const type  = left.value && typeParams[left.value] || fail(
                     'No type param `$' + left.value + '` in scope.');
 
-                if (type && tag)
-                    return type_has(type, tag);
+                return type_has(type, tag);
+            }
+            else
+            {
+                ////////////////////////////////
+                const typeParams0 = _typeParams;
+                _typeParams       = typeParams;
+                ////////////////////////////////
+
+                const expect = evalTypeAnnot(left ).type;
+                const actual = evalTypeAnnot(right).type;
+
+                ////////////////////////////////
+                _typeParams = typeParams0;
+                ////////////////////////////////
+
+                return isAssignable(expect, actual);
             }
         }
         else if (node.value === '&&')

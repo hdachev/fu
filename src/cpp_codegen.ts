@@ -102,7 +102,7 @@ function typeAnnotBase(type: Type): string|null
 
             include('<vector>');
 
-            return 'std::vector<(' + item + ')>';
+            return 'std::vector<' + item + '>';
     }
 
     fail('TODO', tdef.kind);
@@ -390,6 +390,15 @@ function cgReturn(node: SolvedNode)
     return 'return';
 }
 
+function cgArrayLiteral(node: SolvedNode)
+{
+    const items = cgNodes(node.items);
+
+    include('<vector>');
+
+    return typeAnnot(node.type) + ' { ' + items.join(', ') + ' }';
+}
+
 function cgCall(node: SolvedNode)
 {
     const target = node.target || fail();
@@ -421,7 +430,11 @@ function cgCall(node: SolvedNode)
                             ? items[0] + id
                             : id + items[0];
 
-            case 2: return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+            case 2:
+                if (id === '[]')
+                    return items[0] + '[' + items[1] + ']';
+
+                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
         }
     }
 
@@ -440,6 +453,12 @@ function cgCall(node: SolvedNode)
 
         return items[0] + sep + ID(id);
     }
+
+    if (id === 'len' && items.length === 1)
+        return 'int(' + items[0] + '.size())';
+
+    if (id === 'push' && items.length === 2)
+        return items[0] + '.push_back(' + items[1] + ')';
 
     return ID(id) + '(' + items.join(', ') + ')';
 }
@@ -526,6 +545,7 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'if':       cgIf,
     'loop':     cgLoop,
     'int':      cgLiteral,
+    'arrlit':   cgArrayLiteral,
     'empty':    cgEmpty,
 
     'comma':    cgParens,
