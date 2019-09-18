@@ -76,8 +76,11 @@ function typeAnnotBase(type: Type): string|null
 {
     switch (type.canon)
     {
-        case 'i32': return 'int';
-        case 'void': return 'void';
+        case 'i32':     return 'int';
+        case 'void':    return 'void';
+        case 'string':
+            include('<string>');
+            return 'std::string';
     }
 
     const tdef = lookupType(type.canon) || fail('TODO', type.canon);
@@ -390,6 +393,11 @@ function cgReturn(node: SolvedNode)
     return 'return';
 }
 
+function cgStringLiteral(node: SolvedNode)
+{
+    return 'std::string(' + JSON.stringify(node.value) + ')';
+}
+
 function cgArrayLiteral(node: SolvedNode)
 {
     const items = cgNodes(node.items);
@@ -545,6 +553,7 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'if':       cgIf,
     'loop':     cgLoop,
     'int':      cgLiteral,
+    'str':      cgStringLiteral,
     'arrlit':   cgArrayLiteral,
     'empty':    cgEmpty,
 

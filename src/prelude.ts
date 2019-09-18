@@ -43,4 +43,13 @@ fn push(a: &mut $T[], b: $T)
     case ($b -> @copy):     &mut $T[] __native_pure;
     case ($b -> @move):     &mut $T[] __native_pure;
 
+
+// Strings.
+
+fn len(a: &string):                 i32         __native_pure;
+fn [](a: &string, i: i32):          string      __native_pure;
+fn +=(a: &mut string, b: &string):  &mut string __native_pure;
+fn + (a: &string, b: &string):      &string     __native_pure;
+fn ==(a: &string, b: &string):      bool        __native_pure;
+
 `;

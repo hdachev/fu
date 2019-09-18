@@ -8,7 +8,9 @@ export type Primitive   =
     'i8'  | 'u8'  |
     'i16' | 'u16' |
     'i32' | 'u32' |
-    'i64' | 'u64' | 'bool' | 'void' | 'never' | 'template';
+    'i64' | 'u64' | 'bool' | 'void' | 'never'
+                  | 'template'
+                  | 'string';
 
 export type Canon       = (string & { K: 'Canon' }) | Primitive;
 export type Quals       = tagset.TagSet;
@@ -178,6 +180,7 @@ export const t_void         = createType('void', null);
 export const t_bool         = createType('bool', Primitive);
 export const t_never        = createType('never', null);
 export const t_template     = createType('template', null);
+export const t_string       = createType('string', q_move as any);
 
 export const q_non_zero     = tagset.intern('non_zero');
 
