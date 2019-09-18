@@ -629,12 +629,33 @@ ZERO(`
     return test(arr);
 `);
 
-// Maps.
-
-// TODO //
 
 // Strings.
 
-// TODO //
+ZERO(`
+    mut str = 'hello ';
+    str += 'world';
 
-console.log('ALL GOOD @', new Date());
+    return str.len - 11;
+`);
+
+ZERO(`
+    let str = 'hello ' + 'world';
+
+    return str.len - 11;
+`);
+
+ZERO(`
+    let str = 'hello world';
+    mut cpy = '';
+    for (mut i = 0; i < str.len; i++)
+        cpy += str[i];
+
+    return (cpy.len - 11) + (cpy == str ? 0 : 1);
+`);
+
+
+//
+
+process.on('exit',
+    () => console.log('ALL GOOD @', new Date()));
