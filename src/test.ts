@@ -187,26 +187,26 @@ ZERO(`
     fn decr(num: &mut i32)
         num--;
 
-    mut res = 1;
+    mut res = 0;
     decr(res);
-    return res;
+    return res + 1;
 `);
 
 ZERO(`
-    mut res = 1;
+    mut res = 0;
     fn decr() // expect_lambda
         res--;
 
     decr();
-    return res;
+    return res + 1;
 `);
 
 ZERO(`
-    mut res = 1;
+    mut res = 0;
     fn decr(num: &mut i32) { num--; } // ret void
 
     decr(res);
-    return res;
+    return res + 1;
 `);
 
 ZERO(`
@@ -619,11 +619,11 @@ ZERO(`
     arr.push(5);
 
     fn test(view: &i32[]): i32 {
-        mut sum = -15;
+        mut sum = 0;
         for (mut i = 0; i < view.len; i++)
             sum += view[i];
 
-        return sum;
+        return sum - 15;
     }
 
     return test(arr);

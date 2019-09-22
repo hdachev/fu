@@ -47,12 +47,25 @@ function Type(canon: Canon, quals: Quals = q_EMPTY)
     return Object.freeze({ canon, quals });
 }
 
+
+// https://doc.rust-lang.org/nomicon/subtyping.html:
+
+// Re: covariance of `T` in `Box<T>`:
+//
+// As it turns out, the argument for why it's ok for Box
+//  (and Vec, Hashmap, etc.) to be covariant is pretty similar
+//   to the argument for why it's ok for lifetimes to be covariant:
+//    as soon as you try to stuff them in something like a mutable
+//     reference, they inherit invariance and you're prevented
+//      from doing anything bad.
+
 export function isAssignable(host: Type, guest: Type)
 {
     return host === guest ||
         (host.canon === guest.canon &&
             (   host.quals      === guest.quals ||
-                host.quals.length < guest.quals.length &&
+                host.quals.length < guest.quals.length      &&
+                host.quals.indexOf(q_mutref) < 0            && // mut invariance
                 tagset.contains(guest.quals, host.quals)));
 }
 
