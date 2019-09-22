@@ -655,6 +655,44 @@ ZERO(`
 `);
 
 
+// Maps.
+
+ZERO(`
+    mut x: Map(string, i32);
+
+    x['hello'] = 1;
+    x['world'] = 2;
+
+    return x['hello'] - x['world'] + 1;
+`);
+
+ZERO(`
+    mut x: Map(string, i32);
+
+    x['hello'] = 1;
+    x['world'] = 2;
+
+    let b = 'hello world';
+    mut offset = 0;
+
+    fn pop() {
+        mut a = '';
+
+        while (offset < b.length) {
+            let c = b[offset++];
+            if (c === ' ')
+                break;
+
+            a += c;
+        }
+
+        return a;
+    }
+
+    return x[pop()] - x[pop()] + 1;
+`);
+
+
 //
 
 process.on('exit',
