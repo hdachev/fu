@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
 import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
-import { lookupType, Struct } from './types';
+import { lookupType, Struct, type_isMap } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -445,6 +445,9 @@ function cgCall(node: SolvedNode)
 
     if (items && /[^a-zA-Z0-9_]/.test(id))
     {
+        const nodes  = node.items  || fail();
+        const head   = nodes[0]    || fail();
+
         switch (items.length)
         {
             case 1: return node.flags & F_POSTFIX
@@ -454,10 +457,28 @@ function cgCall(node: SolvedNode)
             case 2:
                 if (id === '[]')
                 {
-                    if (((node.items || fail())[0] || fail()).type.canon === 'string')
+                    if (head.type.canon === 'string')
                         return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
 
+                    // One does not simply index into a map.
+                    if (type_isMap(head.type))
+                        return items[0] + '.at(' + items[1] + ')';
+
                     return items[0] + '[' + items[1] + ']';
+                }
+
+                // This is hellish but should cover our asses for a little while -
+                //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
+                if (id === '=')
+                {
+                    const index = head.kind === 'call' && head.value === '[]'
+                               && head.items && head.items.length === 2
+                                ? head.items : null;
+
+                    if (index && type_isMap((index[0] || fail()).type))
+                        return '(' + cgNode(index[0] || fail()) +
+                            '[' + cgNode(index[1] || fail()) + '] = ' +
+                                items[1] + ')';
                 }
 
                 return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';

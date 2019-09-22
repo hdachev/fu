@@ -297,6 +297,12 @@ export function tryClear_array(type: Type): Type|null
 
 //
 
+export function type_isMap(type: Type): boolean
+{
+    const def = CONTEXT.TYPES[type.canon];
+    return def && def.kind === 'map';
+}
+
 export function createMap(key: Type, value: Type): Type
 {
     const canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')' as Canon;
