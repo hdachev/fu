@@ -399,6 +399,13 @@ function cgReturn(node: SolvedNode)
     return 'return';
 }
 
+function cgJump(node: SolvedNode)
+{
+    node.value && fail('TODO');
+
+    return node.kind;
+}
+
 function cgStringLiteral(node: SolvedNode)
 {
     return 'std::string(' + JSON.stringify(node.value) + ')';
@@ -446,7 +453,12 @@ function cgCall(node: SolvedNode)
 
             case 2:
                 if (id === '[]')
+                {
+                    if (((node.items || fail())[0] || fail()).type.canon === 'string')
+                        return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
+
                     return items[0] + '[' + items[1] + ']';
+                }
 
                 return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
         }
@@ -554,6 +566,8 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'block':    cgBlock,
     'fn':       cgFn,
     'return':   cgReturn,
+    'break':    cgJump,
+    'continue': cgJump,
     'call':     cgCall,
     'let':      cgLet,
     'if':       cgIf,

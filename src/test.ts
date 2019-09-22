@@ -675,7 +675,7 @@ ZERO(`
     let b = 'hello world';
     mut offset = 0;
 
-    fn pop() {
+    fn pop(): string { // expect_lambda
         mut a = '';
 
         while (offset < b.len) {

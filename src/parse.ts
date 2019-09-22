@@ -468,16 +468,21 @@ function parseStatement(): Node
     {
         switch (token.value)
         {
-            case '{':       return parseBlock();
-            case 'let':     return parseLetStmt();
-            case 'mut':     return _idx--, parseLetStmt();
-            case 'if':      return parseIf();
-            case 'return':  return parseReturn();
-            case 'fn':      return parseFnDecl();
-            case 'for':     return parseFor();
-            case 'while':   return parseWhile();
-            case ';':       return parseEmpty();
-            case 'struct':  return parseStructDecl();
+            case '{':           return parseBlock();
+            case 'let':         return parseLetStmt();
+            case 'mut':         return _idx--, parseLetStmt();
+
+            case 'if':          return parseIf();
+            case 'return':      return parseReturn();
+
+            case 'for':         return parseFor();
+            case 'while':       return parseWhile();
+            case 'break':       return parseJump('break');
+            case 'continue':    return parseJump('continue');
+
+            case ';':           return parseEmpty();
+            case 'fn':          return parseFnDecl();
+            case 'struct':      return parseStructDecl();
         }
     }
 
@@ -1003,6 +1008,25 @@ function parseReturn()
 function createReturn(node: Node|null)
 {
     return Node('return', node && [ node ]);
+}
+
+function parseJump(kind: 'break'|'continue')
+{
+    let label: LexValue|null = null;
+
+    const peek = _tokens[_idx];
+    if (peek.kind === 'id')
+    {
+        _idx++;
+        label = peek.value;
+    }
+
+    return createJump(kind, label);
+}
+
+function createJump(kind: 'break'|'continue', label: LexValue|null)
+{
+    return Node(kind, null, 0, label);
 }
 
 

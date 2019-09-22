@@ -578,6 +578,8 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'loop':     solveBlock, // TODO
 
     'return':   solveReturn,
+    'break':    solveJump,
+    'continue': solveJump,
 
     'int':      solveInt,
     'str':      solveStr,
@@ -1018,6 +1020,11 @@ function solveReturn(node: Node): SolvedNode
         items[retIdx] = nextExpr || fail();
 
     return out;
+}
+
+function solveJump(node: Node): SolvedNode
+{
+    return SolvedNode(node, null, t_void);
 }
 
 
