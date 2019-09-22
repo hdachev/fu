@@ -104,8 +104,14 @@ function typeAnnotBase(type: Type): string|null
             const item = typeAnnot(tdef.fields[0].type);
 
             include('<vector>');
-
             return 'std::vector<' + item + '>';
+
+        case 'map':
+            const k = typeAnnot(tdef.fields[0].type);
+            const v = typeAnnot(tdef.fields[1].type);
+
+            include('<unordered_map>');
+            return 'std::unordered_map<' + k + ', ' + v + '>';
     }
 
     fail('TODO', tdef.kind);

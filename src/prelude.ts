@@ -52,4 +52,11 @@ fn +=(a: &mut string, b: &string):  &mut string __native_pure;
 fn + (a: &string, b: &string):      &string     __native_pure;
 fn ==(a: &string, b: &string):      bool        __native_pure;
 
+
+// Maps.
+
+fn [](a: &Map($K, $V), b: &$K)
+    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
+    case ($a -> &    Map($K, $V)): &    $V __native_pure;
+
 `;

@@ -202,15 +202,10 @@ export const q_non_zero     = tagset.intern('non_zero');
 
 export type Struct =
 {
-    kind:   'struct'|'array';
+    kind:   'struct'|'array'|'map';
     id:     string;
     fields: StructField[];
     flags:  number;
-
-    // Min/max len and delta.
-    min:    number;
-    max:    number;
-    step:   number;
 };
 
 export type StructField =
@@ -235,11 +230,7 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
         kind:   'struct',
         id:     id      || fail(),
         fields: fields  || fail(),
-
         flags:  flags|0,
-        min:    1,
-        max:    1,
-        step:   1,
     };
 
     CONTEXT.TYPES[canon] = def;
@@ -280,15 +271,11 @@ export function createArray(item: Type): Type
             fields:
             [
                 {
-                    id:  'item' as LexValue,
+                    id:  'Item' as LexValue,
                     type: item,
                 },
             ],
-
             flags:  0,
-            min:    0,
-            max:    2147483647,
-            step:   1,
         };
 
     return createType(canon, quals);
@@ -305,4 +292,47 @@ export function tryClear_array(type: Type): Type|null
 
     return def.fields[0].type
         || fail();
+}
+
+
+//
+
+export function createMap(key: Type, value: Type): Type
+{
+    const canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')' as Canon;
+    const quals = q_move as any as Quals;
+
+    if (!CONTEXT.TYPES[canon])
+        CONTEXT.TYPES[canon] =
+        {
+            kind:   'map',
+            id:     canon as any as LexValue,
+            fields:
+            [
+                {
+                    id:  'Key' as LexValue,
+                    type: key,
+                },
+                {
+                    id:  'Value' as LexValue,
+                    type: value,
+                },
+            ],
+            flags:  0,
+        };
+
+    return createType(canon, quals);
+}
+
+export function tryClear_map(type: Type): [Type, Type]|null
+{
+    const def = CONTEXT.TYPES[type.canon];
+    if (!def)
+        return null;
+
+    if (def.kind !== 'map')
+        return null;
+
+    return [ def.fields[0].type || fail(),
+             def.fields[1].type || fail() ];
 }

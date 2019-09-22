@@ -678,9 +678,9 @@ ZERO(`
     fn pop() {
         mut a = '';
 
-        while (offset < b.length) {
+        while (offset < b.len) {
             let c = b[offset++];
-            if (c === ' ')
+            if (c == ' ')
                 break;
 
             a += c;

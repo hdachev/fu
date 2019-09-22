@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import { fail } from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -1083,6 +1083,14 @@ function evalTypeAnnot(node: Node): SolvedNode
                 if (node.value === '[]')
                     return SolvedNode(node, null, createArray(t));
             }
+            else if (items.length === 2)
+            {
+                const a = evalTypeAnnot(items[0] || fail()).type || fail();
+                const b = evalTypeAnnot(items[1] || fail()).type || fail();
+
+                if (node.value === 'Map')
+                    return SolvedNode(node, null, createMap(a, b));
+            }
         }
         else
         {
@@ -1135,6 +1143,18 @@ function trySolveTypeParams(
 
                 return trySolveTypeParams(
                     items[0] || fail(), t, typeParams);
+            }
+            else if (items.length === 2)
+            {
+                if (node.value === 'Map')
+                {
+                    const kv = tryClear_map(type);
+                    if (!kv)
+                        return false;
+
+                    return trySolveTypeParams(items[0] || fail(), kv[0], typeParams)
+                        && trySolveTypeParams(items[1] || fail(), kv[1], typeParams);
+                }
             }
         }
         else
