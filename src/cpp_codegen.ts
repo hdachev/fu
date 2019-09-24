@@ -508,7 +508,13 @@ function cgCall(node: SolvedNode)
         return items[0] + '.push_back(' + items[1] + ')';
 
     if (id === 'unshift' && items.length === 2)
-        return '([&](auto& vec) { vec.insert(vec.begin(), ' + items[1] + '); } (' + items[0] + '))';
+        return '([&](auto& _) { _.insert(_.begin(), ' + items[1] + '); } (' + items[0] + '))';
+
+    if (id === 'insert' && items.length === 3)
+        return '([&](auto& _) { _.insert(_.begin() + ' + items[1] + ', ' + items[2] + '); } (' + items[0] + '))';
+
+    if (id === 'splice' && items.length === 3)
+        return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
 
     return ID(id) + '(' + items.join(', ') + ')';
 }

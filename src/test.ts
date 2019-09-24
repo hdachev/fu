@@ -636,6 +636,20 @@ ZERO(`
     return arr[2] + arr[5] - arr[0];
 `);
 
+ZERO(`
+    mut arr = [0, 1, 2, 3, 4];
+    arr.insert(1, 5); // expect_lambda
+
+    return arr[2] + arr[5] - arr[1];
+`);
+
+ZERO(`
+    mut arr = [0, 1, 2, 3, 100];
+    arr.splice(1, 3); // expect_lambda
+
+    return arr.len() + arr[0] + arr[1] - 102;
+`);
+
 
 // Strings.
 
