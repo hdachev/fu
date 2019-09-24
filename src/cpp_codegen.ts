@@ -507,6 +507,9 @@ function cgCall(node: SolvedNode)
     if (id === 'push' && items.length === 2)
         return items[0] + '.push_back(' + items[1] + ')';
 
+    if (id === 'unshift' && items.length === 2)
+        return '([&](auto& vec) { vec.insert(vec.begin(), ' + items[1] + '); } (' + items[0] + '))';
+
     return ID(id) + '(' + items.join(', ') + ')';
 }
 

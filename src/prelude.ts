@@ -43,6 +43,10 @@ fn push(a: &mut $T[], b: $T)
     case ($b -> @copy):     &mut $T[] __native_pure;
     case ($b -> @move):     &mut $T[] __native_pure;
 
+fn unshift(a: &mut $T[], b: $T)
+    case ($b -> @copy):     &mut $T[] __native_pure;
+    case ($b -> @move):     &mut $T[] __native_pure;
+
 
 // Strings.
 

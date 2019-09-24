@@ -629,6 +629,13 @@ ZERO(`
     return test(arr);
 `);
 
+ZERO(`
+    mut arr = [0, 1, 2, 3, 4];
+    arr.unshift(5); // expect_lambda
+
+    return arr[2] + arr[5] - arr[0];
+`);
+
 
 // Strings.
 
