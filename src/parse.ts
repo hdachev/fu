@@ -87,7 +87,6 @@ const PREFIX:  readonly string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', 
 const POSTFIX: readonly string[] = [ '++', '--', '[]' ];
 
 type BINOP = {
-    ASSIGNMENT:     { [op: string]: string };
     PRECEDENCE:     { [op: string]: Precedence };
     RIGHT_TO_LEFT:  { [precedence: number]: boolean };
 };
@@ -96,14 +95,12 @@ function setupOperators()
 {
     const out: BINOP =
     {
-        ASSIGNMENT:     {},
         PRECEDENCE:     {},
         RIGHT_TO_LEFT:  {},
     };
 
     let precedence      = P_PREFIX_UNARY;
     let rightToLeft     = false;
-    let isAssign        = false;
 
     function binop(...ops: string[]): void
     {
@@ -111,14 +108,8 @@ function setupOperators()
         out.RIGHT_TO_LEFT[precedence] = rightToLeft
 
         for (let i = 0; i < ops.length; i++)
-        {
-            const op = ops[i];
-            out.PRECEDENCE[op] =
+            out.PRECEDENCE[ops[i]] =
                 precedence as Precedence;
-
-            if (isAssign)
-                out.ASSIGNMENT[op] = op.slice(0, -1);
-        }
     }
 
     binop( 'as', 'is' );
@@ -141,9 +132,7 @@ function setupOperators()
 
     rightToLeft = true;
     binop( '?' );
-    isAssign = true;
     binop( '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=' );
-    isAssign = false;
 
     rightToLeft = false;
     binop( ',' );
