@@ -18,7 +18,7 @@ let _fdef: string       = null as any; // fn decls
 
 let _indent: string     = null as any;
 let _ids: CppScope      = null as any;
-let _fnMode: boolean    = false;
+let _fnN: number        = 0;
 let _exprN: number      = 0;
 
 function RESET()
@@ -31,7 +31,7 @@ function RESET()
 
     _indent = '\n';
     _ids    = Object.create(null);
-    _fnMode = false;
+    _fnN    = 0;
     _exprN  = 0;
 }
 
@@ -260,9 +260,9 @@ function cgFn(fn: SolvedNode)
 {
     ///////////////////////////
     const s0    = enterScope();
-    const f0    = _fnMode;
+    const f0    = _fnN;
     const indent0 = _indent;
-    _fnMode     = true;
+    _fnN++;
     ///////////////////////////
 
     // Template emit.
@@ -321,6 +321,12 @@ function cgFn(fn: SolvedNode)
     else
         src += blockWrap([ body ]);
 
+    //////////////
+    _fnN    = f0;
+    _indent = indent0;
+    exitScope(s0);
+    //////////////
+
     if (fn.flags & F_DESTRUCTOR)
     {
         const head = items[0] || fail();
@@ -362,18 +368,11 @@ function cgFn(fn: SolvedNode)
         src += '\n}';
     }
 
-    if (!closure)
+    if (!closure && _fnN)
     {
         _fdef += '\n' + src + '\n';
         src = '';
     }
-
-
-    //////////////
-    _fnMode = f0;
-    _indent = indent0;
-    exitScope(s0);
-    //////////////
 
     return src;
 }
