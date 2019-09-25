@@ -53,6 +53,9 @@ fn insert(a: &mut $T[], i: i32, b: $T)
     case ($b -> @copy): void __native_pure;
     case ($b -> @move): void __native_pure;
 
+fn idx(a: &$T[], b: &$T): i32  __native_pure;
+fn has(a: &$T[], b: &$T): bool __native_pure;
+
 
 // Strings.
 
@@ -61,6 +64,9 @@ fn [](a: &string, i: i32):          string      __native_pure;
 fn +=(a: &mut string, b: &string):  &mut string __native_pure;
 fn + (a: &string, b: &string):      &string     __native_pure;
 fn ==(a: &string, b: &string):      bool        __native_pure;
+
+fn idx(a: &string, b: &string):     i32         __native_pure;
+fn has(a: &string, b: &string):     bool        __native_pure;
 
 
 // Maps.

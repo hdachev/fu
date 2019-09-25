@@ -684,6 +684,17 @@ ZERO(`
     return (cpy.len - 11) + (cpy == str ? 0 : 1);
 `);
 
+ZERO(`
+    return 'hello world'.idx('world')
+         - 2 * [1, 7, 13, 14, 19].idx(14); // expect_lambda
+`);
+
+ZERO(`
+    return ('hello world'.has('world') ? 1 : 0) // expect_lambda
+         + ([1, 14, 96, 2].has(14)     ? 2 : 0)
+         - 3;
+`);
+
 
 // Maps.
 

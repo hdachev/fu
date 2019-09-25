@@ -60,7 +60,7 @@ function include(lib: string)
 
 //
 
-function typeAnnot(type: Type)
+function typeAnnot(type: Type): string
 {
     const fwd = typeAnnotBase(type);
 
@@ -72,7 +72,7 @@ function typeAnnot(type: Type)
     return fwd;
 }
 
-function typeAnnotBase(type: Type): string|null
+function typeAnnotBase(type: Type): string
 {
     switch (type.canon)
     {
@@ -114,7 +114,7 @@ function typeAnnotBase(type: Type): string|null
             return 'std::unordered_map<' + k + ', ' + v + '>';
     }
 
-    fail('TODO', tdef.kind);
+    return fail('TODO', tdef.kind);
 }
 
 function declareStruct(t: Type, s: Struct)
@@ -407,16 +407,16 @@ function cgJump(node: SolvedNode)
 
 function cgStringLiteral(node: SolvedNode)
 {
+    include('<string>');
     return 'std::string(' + JSON.stringify(node.value) + ')';
 }
 
 function cgArrayLiteral(node: SolvedNode)
 {
     const items = cgNodes(node.items);
+    const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
 
-    include('<vector>');
-
-    return typeAnnot(node.type) + ' { ' + items.join(', ') + ' }';
+    return annot + ' { ' + items.join(', ') + ' }';
 }
 
 function cgCall(node: SolvedNode)
@@ -444,8 +444,8 @@ function cgCall(node: SolvedNode)
 
     if (items && /[^a-zA-Z0-9_]/.test(id))
     {
-        const nodes  = node.items  || fail();
-        const head   = nodes[0]    || fail();
+        const nodes = node.items  || fail();
+        const head  = nodes[0]    || fail();
 
         switch (items.length)
         {
@@ -514,6 +514,26 @@ function cgCall(node: SolvedNode)
 
     if (id === 'splice' && items.length === 3)
         return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
+
+    if (id === 'idx' && items.length === 2)
+    {
+        const head = node.items && node.items[0] || fail();
+        if (head.type.canon === 'string')
+            return 'int(' + items[0] + '.find(' + items[1] + '))';
+
+        include('<algorithm>');
+        return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
+    }
+
+    if (id === 'has' && items.length === 2)
+    {
+        const head = node.items && node.items[0] || fail();
+        if (head.type.canon === 'string')
+            return '(' + items[0] + '.find(' + items[1] + ') >= 0)';
+
+        include('<algorithm>');
+        return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
+    }
 
     return ID(id) + '(' + items.join(', ') + ')';
 }
