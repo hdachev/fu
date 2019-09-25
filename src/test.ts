@@ -14,7 +14,9 @@ function ZERO(src: string): string
     resetContext();
 
     //
-    src = 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
+    src = src.indexOf('fn ZERO()') >= 0
+        ? src + '\nfn main(): i32 ZERO();\n'
+        : 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
 
     const fname     = 'test_' + (TEST_ID++) as Filename;
     const r_lex     = lex(src as Source, fname);
@@ -648,6 +650,13 @@ ZERO(`
     arr.splice(1, 3); // expect_lambda
 
     return arr.len() + arr[0] + arr[1] - 102;
+`);
+
+ZERO(`
+    let OPERATORS = [ '+', '-', '*', '/' ];
+
+    fn ZERO()
+        OPERATORS[2] == '*' ? 0 : 1;
 `);
 
 
