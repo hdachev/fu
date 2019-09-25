@@ -1052,6 +1052,10 @@ function solveLet(node: Node): SolvedNode
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
     const id        = node.value || fail();
 
+    if (node.flags & F_MUT)
+        _current_fn || fail(
+            'Mutable statics are not currently allowed.');
+
     //
     const overload  = out.flags & F_FIELD
         ? Field(out, _current_strt || fail(), t_let)
