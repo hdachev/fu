@@ -892,8 +892,10 @@ function parseCallArgs(endop: string, out_args: Node[])
 
         // Named arguments.
         let name: LexValue|null = null;
+        let autoName = false;
 
         if (_tokens[_idx    ] .kind === 'id' &&
+            _tokens[_idx + 1] .kind === 'op' &&
             _tokens[_idx + 1].value === ':')
         {
             name = _tokens[_idx].value;
@@ -901,8 +903,24 @@ function parseCallArgs(endop: string, out_args: Node[])
 
             flags |= F_NAMED_ARGS;
         }
+        else if (_tokens[_idx].kind === 'op'
+              && _tokens[_idx].value === ':')
+        {
+            autoName = true;
+            _idx++;
+
+            flags |= F_NAMED_ARGS;
+        }
 
         const expr = parseExpression(P_COMMA);
+
+        if (autoName)
+        {
+            expr.kind === 'call' && (expr.flags & F_ID)
+                || fail('Can\'t :auto_name this expression.');
+
+            name = expr.value;
+        }
 
         out_args.push(
             name    ? createLabel(name, expr)

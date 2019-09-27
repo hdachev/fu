@@ -242,6 +242,16 @@ ZERO(`
     return named(b: 3, 6);
 `);
 
+ZERO(`
+    fn named(a: i32, b: i32)
+        a - b * 2;
+
+    fn other(a: i32, b: i32)
+        named(:b, :a);
+
+    return named(b: 3, 6);
+`);
+
 
 // Structs & using.
 
