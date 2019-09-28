@@ -642,6 +642,21 @@ ZERO(`
 `);
 
 ZERO(`
+    mut arr: i32[] = [1, 2, 3, 4];
+    arr.push(5);
+
+    fn test(view: &i32[]): i32 {
+        mut sum = 0;
+        for (mut i = 0; i < view.len; i++)
+            sum += view[i];
+
+        return sum - 15;
+    }
+
+    return test(arr);
+`);
+
+ZERO(`
     mut arr = [0, 1, 2, 3, 4];
     arr.unshift(5); // expect_lambda
 
