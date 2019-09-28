@@ -669,6 +669,16 @@ ZERO(`
         OPERATORS[2] == '*' ? 0 : 1;
 `);
 
+ZERO(`
+    struct Y { b: bool; }
+    struct X { y: Y[]; }
+
+    mut x: X[];
+    x.push( X([ Y(true) ]) );
+
+    return x.len + x[0].y.len * 2 - 3;
+`);
+
 
 // Strings.
 

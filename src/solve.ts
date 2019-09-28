@@ -1,5 +1,5 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
-import { fail } from './fail';
+import * as Fail from './fail';
 
 import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
 
@@ -46,6 +46,29 @@ function RESET()
     _closure_detect     = null;
     _closure_detected   = false;
 }
+
+function fail(...rest: unknown[])
+{
+    if (!_here)
+        return Fail.fail(...rest);
+
+    const msg   = rest.length
+                ? rest
+                : [ 'Unexpected `' + _here.value + '`.' ];
+
+    const fname = _here.token && _here.token.fname;
+    const l0    = _here.token && _here.token.line;
+    const c0    = _here.token && _here.token.col;
+
+    const addr = '@' + l0 + ':' + c0;
+
+    return Fail.fail(
+        fname + ' ' + addr
+            + ':\n\t', ...msg);
+}
+
+
+//
 
 type Callsite =
 {

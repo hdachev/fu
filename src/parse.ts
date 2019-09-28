@@ -425,7 +425,7 @@ function fail_Lint(...args: unknown[])
 
 function unwrapStructMethods(out: Node[], struct: Node)
 {
-    const items = struct.items || fail();
+    const items = struct.items || fail('TODO empty struct (not now)');
     for (let i = 0; i < items.length; i++)
     {
         const item = items[i];
