@@ -134,9 +134,10 @@ export function tryClear_ref(type: Type)
 
 export function clear_refs(type: Type)
 {
-    return createType(
-        type.canon, tagset.sub(
-            tagset.sub(type.quals, q_mutref), q_ref));
+    return createType(type.canon,
+        tagset.sub(tagset.sub(tagset.sub(
+            type.quals,
+            q_mutref), q_ref), q_prvalue));
 }
 
 export function add_refs_from(src: Type, dest: Type)

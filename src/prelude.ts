@@ -11,13 +11,16 @@ fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn /(a: $T, b: $T)
     case ($T -> @floating_point):                       $T __native_pure;
-    case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
+    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
+    case ($T -> @integral):          $T __native_pure;
 
 fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
 fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   $T __native_pure;
 fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   $T __native_pure;
 
+fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
@@ -31,6 +34,7 @@ fn false(): bool __native_pure;
 
 fn &&(a: bool, b: bool): bool __native_pure;
 fn ||(a: bool, b: bool): bool __native_pure;
+fn !(a: bool): bool __native_pure;
 
 
 // Assignment.
@@ -72,13 +76,20 @@ fn len(a: &string):                 i32         __native_pure;
 fn [](a: &string, i: i32):          string      __native_pure;
 fn +=(a: &mut string, b: &string):  &mut string __native_pure;
 fn + (a: &string, b: &string):      &string     __native_pure;
+
 fn ==(a: &string, b: &string):      bool        __native_pure;
+fn !=(a: &string, b: &string):      bool        __native_pure;
+fn  >(a: &string, b: &string):      bool        __native_pure;
+fn  <(a: &string, b: &string):      bool        __native_pure;
+fn >=(a: &string, b: &string):      bool        __native_pure;
+fn <=(a: &string, b: &string):      bool        __native_pure;
 
 fn idx(a: &string, b: &string):     i32         __native_pure;
 fn has(a: &string, b: &string):     bool        __native_pure;
 
-fn slice(a: &string, i0: i32, i1: i32): string  __native_pure;
+fn slice (a: &string, i0: i32, i1: i32): string  __native_pure;
 fn substr(a: &string, i0: i32, i1: i32): string __native_pure;
+fn char  (a: &string, i0: i32): i32 __native_pure;
 
 
 // Maps.

@@ -1,7 +1,7 @@
 import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import * as Fail from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has, q_non_zero, qadd, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -560,7 +560,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
 function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
 {
     return scope_tryMatch__mutargs(id, args, null, flags)
-        || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.')
+        || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.', args && args.map(i => i && i.type), args && args.map(i => i && i.kind + ':' + i.value))
         || notDefined(id);
 }
 
@@ -657,8 +657,8 @@ function solveInt(node: Node): SolvedNode
     if (v >= i32_min && v <= i32_max)
     {
         let type = t_i32;
-        if (v !== 0)
-            type = qadd(type, q_non_zero);
+        // if (v !== 0)
+        //     type = qadd(type, q_non_zero);
 
         return SolvedNode(node, null, type);
     }
@@ -1064,8 +1064,8 @@ function solveLet(node: Node): SolvedNode
     const t_annot   = s_annot && s_annot.type;
     const t_init    = s_init  &&  s_init.type;
 
-    const t_let     = t_annot || t_init || fail(
-        'Variable declarations without explicit type annotations must be initialized.');
+    const t_let     = t_annot || clear_refs(t_init || fail(
+        'Variable declarations without explicit type annotations must be initialized.'));
 
     if (t_annot && t_init)
         isAssignable(t_annot, t_init) || fail(

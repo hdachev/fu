@@ -77,6 +77,7 @@ function typeAnnotBase(type: Type): string
     switch (type.canon)
     {
         case 'i32':     return 'int';
+        case 'bool':    return 'bool';
         case 'void':    return 'void';
         case 'string':
             include('<string>');
@@ -548,6 +549,16 @@ function cgCall(node: SolvedNode)
         if (head.type.canon === 'string')
             return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
     }
+
+    if (id === 'char' && items.length === 2)
+    {
+        const head = node.items && node.items[0] || fail();
+        if (head.type.canon === 'string')
+            return 'int(' + items[0] + '[' + items[1] + '])';
+    }
+
+    if ((id === 'true' || id === 'false') && !(items && items.length))
+        return id;
 
     return ID(id) + '(' + items.join(', ') + ')';
 }

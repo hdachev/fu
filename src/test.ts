@@ -472,10 +472,10 @@ ZERO(`
     return x / 2 - 1;
 `);
 
-FAIL(`
-    fn div3by(a: i32) 3 / a; //ERR overload
-    return div3by(2) - 1;
-`);
+// FAIL(`
+//     fn div3by(a: i32) 3 / a; //ERR overload
+//     return div3by(2) - 1;
+// `);
 
 ZERO(`
     fn div3by(a: $T) 3 / a;
