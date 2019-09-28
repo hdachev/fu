@@ -1,0 +1,417 @@
+// expect_lambda
+
+// Lets try this out, our good ol' lexer,
+//  ported for the third time now.
+
+let OPTOKENS = '{}[]()!?~@#$%^&*/-+<=>,.;:|';
+
+let OPERATORS =
+[
+    '+', '++', '-', '--',
+    '*', '**', '/', '%',
+    '<', '<<', '<<<', '>', '>>', '>>>',
+    '===', '==', '!=', '!==', '<=', '>=', '=>', '->', '<=>',
+    '!', '!!', '?', '??',
+    '.', '..', '...', ':', '::', ',', ';',
+    '&', '&&', '|', '||', '^', '~',
+    '{', '}', '[', ']', '(', ')', '[]',
+    '=',
+    '+=', '-=', '*=', '**=', '/=', '%=',
+    '&=', '|=', '^=',
+    '&&=', '||=',
+    '@', '#', '$'
+];
+
+struct Token
+{
+    kind:   string;
+    value:  string;
+    fname:  string;
+
+    idx0:   i32;
+    idx1:   i32;
+    line:   i32;
+    col:    i32;
+};
+
+struct LexErr
+{
+    reason: string;
+    kind:   string;
+    value:  string;
+    fname:  string;
+
+    idx0:   i32;
+    idx1:   i32;
+    line:   i32;
+    col:    i32;
+};
+
+struct LexResult
+{
+    fname:  string;
+    errors: LexErr[];
+    tokens: Token[];
+};
+
+fn lex(src: &string, fname: &string): LexResult
+{
+    let end     = src.len;
+    mut line    = 1;
+    mut lidx    = -1;
+    mut idx     = 0;
+
+    mut errors: LexErr[];
+    mut tokens: Token[];
+
+    fn token(kind: &string, value: &string, idx0: i32, idx1: i32)
+    {
+        let col = idx0 - lidx;
+
+        tokens.push(
+            Token(  :kind, :value, :idx0, :idx1,
+                    :fname, :line, :col ));
+    }
+
+    fn err_str(kind: &string, idx0: i32, reason: &string)
+    {
+        // exit to nearest whitespace
+        while (idx < end && src[idx] > ' ')
+            idx++;
+
+        let col = idx0 - lidx;
+        let value = src.slice(idx0, idx);
+
+        errors.push(
+            LexErr( :reason, :kind, :value, :idx0, idx,
+                    :fname, :line, :col ));
+    }
+
+    fn err(kind: &string, idx0: i32, reason: i32)
+    {
+        err_str(kind, idx0, src[reason]);
+    }
+
+    fn checkNum(kind: &string, src: string): string
+    {
+        ////////////
+        //  TODO  //
+        ////////////
+
+        if (kind == 'int')
+        {}
+        else
+        {}
+
+        return src;
+    }
+
+    fn unescapeStr(src: &string, idx0: i32, idx1: i32): string
+    {
+        mut out = '';
+
+        mut n = idx1 - 1;
+        for (mut i = idx0 + 1; i < n; i++)
+        {
+            let c = src[i];
+            if (c == '\\')
+            {
+                let c1 = src[++i];
+
+                if      (c1 == 'n') out += '\n';
+                else if (c1 == 'r') out += '\r';
+                else if (c1 == 't') out += '\t';
+                else if (c1 == 'v') out += '\v';
+                else                out += c1;
+            }
+            else
+            {
+                if (c == '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
+                }
+
+                out += c;
+            }
+        }
+
+        return out;
+    }
+
+    while (idx < end)
+    {
+        let idx0 = idx;
+        let c = src[idx++];
+
+        // whitespace
+        if (c <= ' ')
+        {
+            if (c == '\n')
+            {
+                line++;
+                lidx = idx - 1;
+            }
+        }
+
+        // identifiers & keywords
+        else if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_')
+        {
+            while (idx < end)
+            {
+                let c = src[idx++];
+                if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || c >= '0' && c <= '9')
+                {
+                    //
+                }
+                else
+                {
+                    idx--;
+                    break;
+                }
+            }
+
+            let idx1 = idx;
+
+            token(
+                'id', src.slice(idx0, idx1),
+                idx0, idx1);
+        }
+
+        // numeric literals
+        else if (c >= '0' && c <= '9')
+        {
+            mut hex = false;
+            mut dot = false;
+            mut exp = false;
+
+            if (c == '0' && idx < end && src[idx] == 'x')
+            {
+                hex = true;
+                idx++;
+            }
+
+            while (idx < end)
+            {
+                let c = src[idx++];
+
+                if (c >= '0' && c <= '9')
+                {
+                    //
+                }
+                else if (c == '.')
+                {
+                    if (hex || dot || exp)
+                    {
+                        err('num', idx0, idx - 1);
+                        break;
+                    }
+
+                    dot = true;
+                }
+                else if ((c == 'e' || c == 'E') && !hex)
+                {
+                    if (hex || exp)
+                    {
+                        err('num', idx0, idx - 1);
+                        break;
+                    }
+
+                    if (idx < end && (src[idx] == '-' || src[idx] == '+'))
+                        idx++;
+
+                    exp = true;
+                }
+                else if (c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
+                {
+                    if (!hex)
+                    {
+                        err('num', idx0, idx - 1);
+                        break;
+                    }
+                }
+                else
+                {
+                    idx--;
+                    break;
+                }
+            }
+
+            let trail = src[idx - 1];
+            if (trail < '0' || trail > '9')
+            {
+                err('num', idx0, idx - 1);
+            }
+            else
+            {
+                let idx1 = idx;
+                let str = src.slice(idx0, idx1);
+
+                token(
+                    checkNum(dot || exp ? 'num' : 'int', str), str,
+                    idx0, idx1);
+            }
+        }
+
+        // string literals
+        else if (c == '\'' || c == '"' || c == '`')
+        {
+            mut esc = false;
+            mut ok  = false;
+
+            while (idx < end)
+            {
+                let c1 = src[idx++];
+                if (c1 == c)
+                {
+                    ok = true;
+                    break;
+                }
+                else if (c1 == '\\')
+                {
+                    esc = true;
+                    idx++;
+                }
+            }
+
+            if (!ok)
+            {
+                err_str('str', idx0, 'Unterminated string literal.');
+            }
+            else
+            {
+                let idx1 = idx;
+                let str  = esc  ? unescapeStr(src, idx0, idx1)
+                                : src.slice(idx0 + 1, idx1 - 1);
+
+                token(
+                    'str', str,
+                    idx0, idx1);
+            }
+        }
+
+        // comments
+        else if (c == '/' && idx < end && src[idx] == '/')
+        {
+            idx++;
+            while (idx < end)
+            {
+                let c1 = src[idx++];
+                if (c1 == '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
+                    break;
+                }
+            }
+        }
+
+        // multiline comments
+        else if (c == '/' && idx < end && src[idx] == '*')
+        {
+            idx++;
+            while (idx < end)
+            {
+                let c = src[idx++];
+                if (c == '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
+                }
+                else if (c == '*' && idx < end && src[idx] == '/')
+                {
+                    idx++;
+                    break;
+                }
+            }
+        }
+
+        // operators
+        else if (OPTOKENS.has(c))
+        {
+            while (idx < end)
+            {
+                let c = src[idx++];
+                if (!OPTOKENS.has(c))
+                {
+                    idx--;
+                    break;
+                }
+            }
+
+            // split off adjacent operators
+            {
+                mut begin   = idx0;
+                mut end     = idx;
+                while (begin < end)
+                {
+                    let candidate = src.slice(begin, end);
+                    let ok = OPERATORS.has(candidate);
+                    if (end > begin + 1 && !ok)
+                    {
+                        end--;
+                        continue;
+                    }
+
+                    if (!ok)
+                    {
+                        err('op', begin, end);
+                    }
+                    else
+                    {
+                        token(
+                            'op', candidate,
+                            begin, end);
+                    }
+
+                    begin = end;
+                    end = idx;
+                }
+            }
+        }
+
+        // dunno
+        else
+        {
+            err('?', idx0, idx0);
+        }
+    }
+
+    // end of file token
+    line++;
+    lidx = idx + 0;
+
+    token(
+        'eof', 'eof',
+        idx, idx);
+
+    // err, data
+    return LexResult( :fname, :errors, :tokens );
+}
+
+
+// A very quick test.
+
+fn ZERO(): i32
+{
+    let res = lex(
+        fname: 'filename',
+        src: '"hello\\nworld"');
+
+    if (res.tokens.len != 2)
+        return 10;
+
+    if (res.tokens[0].kind != 'str')
+        return 20;
+
+    if (res.tokens[0].value != 'hello\nworld')
+        return 30;
+
+    if (res.tokens[0].value.char(5) != 10)
+        return 40;
+
+    if (res.tokens[1].kind != 'eof')
+        return 50;
+
+    return 0;
+}

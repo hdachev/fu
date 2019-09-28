@@ -7,9 +7,12 @@ import { resetContext } from './context';
 import { cpp_codegen } from './cpp_codegen';
 import * as cpp_builder from './cpp_builder';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 let TEST_ID = 0;
 
-function ZERO(src: string): string
+function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename): string
 {
     resetContext();
 
@@ -18,8 +21,9 @@ function ZERO(src: string): string
         ? src + '\nfn main(): i32 ZERO();\n'
         : 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
 
-    const fname     = 'test_' + (TEST_ID++) as Filename;
-    const r_lex     = lex(src as Source, fname);
+    const r_lex     = lex(
+        src as Source,
+        fname);
 
     if (r_lex.errors.length)
         fail('Lex fail:', r_lex.errors);
@@ -44,7 +48,11 @@ function ZERO(src: string): string
     {
         const fail = (...args: unknown[]) =>
         {
-            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + gensrc.replace(/\n/g, '\n\t'));
+            let src = gensrc.replace(/\n/g, '\n\t');
+            if (src.length > 1024)
+                src = '[ TOO LONG ]';
+
+            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + src);
         };
 
         cpp_builder.build(gensrc, result =>
@@ -63,7 +71,13 @@ function ZERO(src: string): string
                         fail('RUN', result.err);
 
                     if (result.data !== 0)
+                    {
+                        fs.writeFileSync(
+                            path.join(__dirname, '../build.cpp/fail.cpp'),
+                            gensrc);
+
                         fail('EXIT CODE', result.data);
+                    }
                 });
             });
         });
@@ -114,6 +128,25 @@ function FAIL(src: string)
     }
 
     ok || fail('Did not error. Generated cpp:\n\n\t' + cpp.replace(/\n/g, '\n\t'));
+}
+
+
+//
+
+function FILE(fname: string)
+{
+    fname = path.join(
+        __dirname, '../src/fu', fname);
+
+    fs.readFile(fname, 'utf8', (err, src) =>
+    {
+        !err && src || fail(fname, err, src);
+
+        if (src.indexOf('fn ZERO') < 0)
+            src += '\n\nfn ZERO() 0;\n';
+
+        ZERO(src, fname as Filename);
+    });
 }
 
 
@@ -774,6 +807,11 @@ ZERO(`
 
     return x[pop()] - x[pop()] + 1;
 `);
+
+
+// Let's get going.
+
+FILE('lex.fu');
 
 
 //

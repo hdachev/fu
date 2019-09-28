@@ -4,3 +4,6 @@ build.cpp
 package-lock.json
 *.sublime-workspace
 .DS_Store
+
+# the xcode setup
+fulang
