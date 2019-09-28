@@ -535,6 +535,20 @@ function cgCall(node: SolvedNode)
         return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
     }
 
+    if (id === 'slice' && items.length === 3)
+    {
+        const head = node.items && node.items[0] || fail();
+        if (head.type.canon === 'string')
+            return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, _0 + ' + items[2] + '); } ())';
+    }
+
+    if (id === 'substr' && items.length === 3)
+    {
+        const head = node.items && node.items[0] || fail();
+        if (head.type.canon === 'string')
+            return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
+    }
+
     return ID(id) + '(' + items.join(', ') + ')';
 }
 

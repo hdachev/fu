@@ -705,6 +705,13 @@ ZERO(`
          - 3;
 `);
 
+ZERO(`
+    let hw = 'hello world';
+    let a = hw.slice(6, 6 + 5); // expect_lambda
+    let b = hw.substr(6, 5);
+    return a == b && a == 'world' ? a.len - 5 : 1;
+`);
+
 
 // Maps.
 
