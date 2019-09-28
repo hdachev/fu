@@ -219,12 +219,7 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
     // TODO struct data goes on compile context.
     // TODO use module id.
 
-    const quals = (flags & F_DESTRUCTOR) || someFieldNonCopy(fields)
-        ? q_move
-        : q_copy;
-
     const canon = 's_' + id as Canon;
-
     const def: Struct =
     {
         kind:   'struct',
@@ -234,8 +229,16 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
     };
 
     CONTEXT.TYPES[canon] = def;
+    return createType(canon,
+        copyOrMove(flags, fields));
+}
 
-    return createType(canon, quals as any);
+function copyOrMove(flags: number, fields: StructField[]): Quals
+{
+    if ((flags & F_DESTRUCTOR) || someFieldNonCopy(fields))
+        return q_move as any;
+
+    return q_copy as any;
 }
 
 function someFieldNonCopy(fields: StructField[])
@@ -260,25 +263,27 @@ export function lookupType(canon: Canon): LookupType|null
 
 export function createArray(item: Type): Type
 {
-    const canon = serializeType(item) + '[]' as Canon;
-    const quals = q_move as any as Quals;
+    const flags = 0;
+    const fields: StructField[] =
+    [
+        {
+            id:  'Item' as LexValue,
+            type: item,
+        },
+    ];
 
+    const canon = serializeType(item) + '[]' as Canon;
     if (!CONTEXT.TYPES[canon])
         CONTEXT.TYPES[canon] =
         {
             kind:   'array',
             id:     canon as any as LexValue,
-            fields:
-            [
-                {
-                    id:  'Item' as LexValue,
-                    type: item,
-                },
-            ],
-            flags:  0,
+            fields,
+            flags,
         };
 
-    return createType(canon, quals);
+    return createType(canon,
+        copyOrMove(flags, fields));
 }
 
 export function tryClear_array(type: Type): Type|null
@@ -305,29 +310,31 @@ export function type_isMap(type: Type): boolean
 
 export function createMap(key: Type, value: Type): Type
 {
-    const canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')' as Canon;
-    const quals = q_move as any as Quals;
+    const flags = 0;
+    const fields: StructField[] =
+    [
+        {
+            id:  'Key' as LexValue,
+            type: key,
+        },
+        {
+            id:  'Value' as LexValue,
+            type: value,
+        },
+    ];
 
+    const canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')' as Canon;
     if (!CONTEXT.TYPES[canon])
         CONTEXT.TYPES[canon] =
         {
             kind:   'map',
             id:     canon as any as LexValue,
-            fields:
-            [
-                {
-                    id:  'Key' as LexValue,
-                    type: key,
-                },
-                {
-                    id:  'Value' as LexValue,
-                    type: value,
-                },
-            ],
-            flags:  0,
+            fields,
+            flags,
         };
 
-    return createType(canon, quals);
+    return createType(canon,
+        copyOrMove(flags, fields));
 }
 
 export function tryClear_map(type: Type): [Type, Type]|null
