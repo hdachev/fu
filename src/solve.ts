@@ -1059,7 +1059,7 @@ function solveLet(node: Node): SolvedNode
     const init      = node.items && node.items[LET_INIT];
 
     const s_annot   = annot && evalTypeAnnot(annot);
-    const s_init    = init  && solveNode(init);
+    let   s_init    = init  && solveNode(init);
 
     const t_annot   = s_annot && s_annot.type;
     const t_init    = s_init  &&  s_init.type;
@@ -1070,6 +1070,9 @@ function solveLet(node: Node): SolvedNode
     if (t_annot && t_init)
         isAssignable(t_annot, t_init) || fail(
             'Type annotation does not match init expression.');
+
+    s_init = s_init && maybeCopyOrMove(
+        maybePRValue(s_init), t_let);
 
     //
     const out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
@@ -1297,11 +1300,7 @@ function solveCall(node: Node): SolvedNode
 
     // Implicit temporaries, all args are referable.
     for (let i = 0; i < args.length; i++)
-    {
-        const arg = args[i] || fail();
-        if (arg.type.quals.indexOf(q_ref) < 0)
-            arg.type = add_prvalue_ref(arg.type);
-    }
+        args[i] = maybePRValue(args[i] || fail());
 
     //
     let callTarg    = scope_match__mutargs(id, args, node.flags);
@@ -1345,6 +1344,14 @@ function solveCall(node: Node): SolvedNode
         args && args.length ? args : null,
         callTarg.type || fail(),
         callTarg);
+}
+
+function maybePRValue(node: SolvedNode)
+{
+    if (node.type.quals.indexOf(q_ref) < 0)
+        node.type = add_prvalue_ref(node.type);
+
+    return node;
 }
 
 
@@ -1534,28 +1541,8 @@ function CallerNode(
     {
         const args = target.args || fail();
         for (let i = 0; i < items.length; i++)
-        {
-            const item  = items[i] || fail();
-            const q     = args[i].quals;
-
-            if (q.indexOf(q_ref) < 0)
-            {
-                let op: 'move'|'copy' = 'copy';
-
-                if (q.indexOf(q_copy) < 0)
-                {
-                    if (q.indexOf(q_move) < 0)
-                        fail('Non-copy/non-move?');
-
-                    op = 'move';
-                }
-
-                items[i] = wrap(op, item,
-                    item.type.quals.indexOf(q_prvalue) >= 0
-                        ? F_ELISION
-                        : 0);
-            }
-        }
+            items[i] = maybeCopyOrMove(
+                items[i] || fail(), args[i]);
     }
 
     //
@@ -1573,6 +1560,29 @@ function CallerNode(
     }
 
     return out;
+}
+
+function maybeCopyOrMove(
+    node: SolvedNode, slot: Type): SolvedNode
+{
+    const q = slot.quals;
+    if (q.indexOf(q_ref) >= 0)
+        return node;
+
+    let op: 'move'|'copy' = 'copy';
+
+    if (q.indexOf(q_copy) < 0)
+    {
+        if (q.indexOf(q_move) < 0)
+            fail('Non-copy/non-move?');
+
+        op = 'move';
+    }
+
+    return wrap(op, node,
+        node.type.quals.indexOf(q_prvalue) >= 0
+            ? F_ELISION
+            : 0);
 }
 
 
