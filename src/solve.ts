@@ -143,6 +143,7 @@ type Overload =
     max: number;
     args: Type[]|null;
     names: string[]|null;
+    defaults: SolvedNodes|null;
 
     readonly partial: Overload[]|null;
 
@@ -162,6 +163,7 @@ function resetUsage(o: Overload): Overload
         max:        o.max,
         args:       o.args,
         names:      o.names,
+        defaults:   o.defaults,
         partial:    o.partial,
 
         // Reset usage.
@@ -172,19 +174,19 @@ function resetUsage(o: Overload): Overload
 
 function Binding(node: SolvedNode, type: Type): Overload
 {
-    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null, template: null };
+    return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, callsites: null, template: null };
 }
 
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
 {
     node && node.items || fail();
 
-    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], partial: null, callsites: null, template: null };
+    return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, callsites: null, template: null };
 }
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, partial: null, callsites: null, template: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, callsites: null, template: null };
 }
 
 function TemplateDecl(node: Node): Overload
@@ -214,7 +216,7 @@ function TemplateDecl(node: Node): Overload
         }
     }
 
-    return { kind: 'template', node: null, type: t_template, min, max, args: null, names, partial: null, callsites: null, template };
+    return { kind: 'template', node: null, type: t_template, min, max, args: null, names, defaults: null, partial: null, callsites: null, template };
 }
 
 function FnDecl(node: SolvedNode): Overload
@@ -228,8 +230,9 @@ function FnDecl(node: SolvedNode): Overload
     const max   = items.length + FN_RET_BACK;
     const args  = items.slice(0, max);
 
-    const arg_t: Type[]   = [];
-    const arg_n: string[] = [];
+    const arg_t: Type[]      = [];
+    const arg_n: string[]    = [];
+    const arg_d: SolvedNodes = [];
 
     let min = 0;
     for (let i = 0; i < max; i++)
@@ -238,23 +241,25 @@ function FnDecl(node: SolvedNode): Overload
         arg.kind === 'let'   || fail();
         arg_t[i] = arg.type  || fail();
         arg_n[i] = arg.value || fail();
+        arg_d[i] = arg.items && arg.items[LET_INIT] || null;
 
         // Non-implicit, non-defaulted argument?
         if (!(arg.flags & F_IMPLICIT) && !(arg.items && arg.items[LET_INIT]))
             min++;
     }
 
-    return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, partial: null, callsites: null, template: null };
+    return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, callsites: null, template: null };
 }
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 {
     const arg_t = members.map(i => i && i.type  || fail());
     const arg_n = members.map(i => i && i.value || fail());
+    const arg_d = members.map(i => i && i.items && i.items[LET_INIT] || null);
 
     const arity = members.length;
 
-    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, names: arg_n, partial: null, callsites: null, template: null };
+    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, defaults: arg_d, names: arg_n, partial: null, callsites: null, template: null };
 }
 
 function Partial(via: Overload, overload: Overload): Overload
@@ -264,11 +269,15 @@ function Partial(via: Overload, overload: Overload): Overload
     let max = overload.max - 1;
     min >= 0 && max >= min || fail();
 
-    const o_args  = overload.args || fail();
-    const o_names = overload.names;
+    const o_args     = overload.args || fail();
+    const o_names    = overload.names;
+    const o_defaults = overload.defaults;
 
-    let args  = o_args  && o_args .length > 1 ? o_args .slice(0, -1) : null;
-    let names = o_names && o_names.length > 1 ? o_names.slice(0, -1) : null;
+    // TODO WTF? The .slices() look off, chop off tail, not head?
+    //  Why does this work? What's this about?
+    let args     = o_args     && o_args    .length > 1 ? o_args    .slice(0, -1) : null;
+    let names    = o_names    && o_names   .length > 1 ? o_names   .slice(0, -1) : null;
+    let defaults = o_defaults && o_defaults.length > 1 ? o_defaults.slice(0, -1) : null;
 
     // Everything that's not a local/namespace/static/constant
     //  needs a value through which to activate.
@@ -287,10 +296,12 @@ function Partial(via: Overload, overload: Overload): Overload
         args.unshift(via_t);
         if (names)
             names.unshift('using');
+        if (defaults)
+            defaults.unshift(null);
     }
 
     //
-    return { kind, node: null, type: overload.type, min, max, args, names, partial: [ via, overload ], callsites: null, template: null };
+    return { kind, node: null, type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], callsites: null, template: null };
 }
 
 type Scope =
@@ -541,15 +552,25 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
         }
 
         // Implicit argument injection.
-        const args_t = matched.args;
-        if (args && args_t && args.length < args_t.length)
+        const arg_t = matched.args;
+        const arg_d = matched.defaults;
+
+        if (args && arg_t && args.length < arg_t.length)
         {
-            const args_n = matched.names || fail();
-            for (let i = args.length; i < args_t.length; i++)
+            const arg_n = matched.names || fail();
+            for (let i = args.length; i < arg_t.length; i++)
             {
-                const id   = args_n[i];
-                const type = args_t[i];
-                bindImplicitArg(args, i, id, type);
+                const id   = arg_n[i];
+                const type = arg_t[i];
+                const def  = arg_d && arg_d[i];
+
+                // Inject default ...
+                if (def)
+                    args[i] = def;
+
+                // ... or propagate implicit.
+                else
+                    bindImplicitArg(args, i, id, type);
             }
         }
     }

@@ -610,6 +610,7 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
     let outFlags = 0;
 
     let implicit: Nodes|null = null;
+    let defaults: boolean = false;
 
     for (;;)
     {
@@ -626,7 +627,16 @@ function parseArgsDecl(outArgs: Nodes, endk: TokenKind, endv: LexValue)
             outFlags |= F_UNTYPED_ARGS;
 
         if (arg.items[LET_INIT])
-            fail('TODO default arguments');
+        {
+            if (arg.flags & F_IMPLICIT)
+                fail('TODO default implicit arguments');
+
+            defaults = true;
+        }
+        else if (defaults)
+        {
+            fail('TODO non-trailing default arguments');
+        }
 
         arg.flags &= ~F_LOCAL;
         arg.flags |= F_ARG;
@@ -671,7 +681,7 @@ function parseLet()
 
     const id    = consume('id').value;
     const type  = tryPopTypeAnnot();
-    const init  = tryConsume('op', '=') && parseExpression();
+    const init  = tryConsume('op', '=') && parseExpression(P_COMMA);
 
     if (numDollars0 !== _numDollars)
         flags |= F_TEMPLATE;
