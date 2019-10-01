@@ -16,8 +16,8 @@ fn /(a: $T, b: $T)
 
 fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
-fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   $T __native_pure;
-fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   $T __native_pure;
+fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
+fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
 
 fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
@@ -25,6 +25,20 @@ fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
 fn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+
+
+// Bitwise.
+
+fn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;
+fn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
+fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
+
+fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
 
 
 // Logic.
