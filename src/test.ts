@@ -809,6 +809,14 @@ ZERO(`
 `);
 
 
+// Default arguments.
+
+ZERO(`
+    fn test(a = 1, b = 2) a + b;
+    return test() - 3;
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');
