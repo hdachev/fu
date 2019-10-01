@@ -349,6 +349,26 @@ ZERO(`
 `);
 
 ZERO(`
+    struct X {
+        a: i32;
+        fn test(b: i32) a + b;
+    }
+
+    return X(1).test(-1);
+`);
+
+ZERO(`
+    struct X {
+        a: i32;
+        fn test(b: i32) a + b;
+    }
+
+    fn hey(using x: X) test(-1);
+
+    return X(1).hey;
+`);
+
+ZERO(`
     struct Pos {
         x: i32;
     }
