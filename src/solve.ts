@@ -273,11 +273,10 @@ function Partial(via: Overload, overload: Overload): Overload
     const o_names    = overload.names;
     const o_defaults = overload.defaults;
 
-    // TODO WTF? The .slices() look off, chop off tail, not head?
-    //  Why does this work? What's this about?
-    let args     = o_args     && o_args    .length > 1 ? o_args    .slice(0, -1) : null;
-    let names    = o_names    && o_names   .length > 1 ? o_names   .slice(0, -1) : null;
-    let defaults = o_defaults && o_defaults.length > 1 ? o_defaults.slice(0, -1) : null;
+    // Fixed.
+    let args     = o_args     && o_args    .length > 1 ? o_args    .slice(1) : null;
+    let names    = o_names    && o_names   .length > 1 ? o_names   .slice(1) : null;
+    let defaults = o_defaults && o_defaults.length > 1 ? o_defaults.slice(1) : null;
 
     // Everything that's not a local/namespace/static/constant
     //  needs a value through which to activate.
