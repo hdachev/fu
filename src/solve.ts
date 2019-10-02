@@ -512,10 +512,20 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
             }
 
             // Type check args.
-            const expect = overload.args || fail();
+            const arg_t = overload.args || fail();
+            const arg_d = overload.defaults;
             for (let i = 0; i < actual.length; i++)
-                if (!isAssignable(expect[i], (actual[i] || fail()).type))
+            {
+                const arg = actual[i];
+                if (!arg)
+                {
+                    arg_d && arg_d[i] || fail();
+                    continue;
+                }
+
+                if (!isAssignable(arg_t[i], (actual[i] || fail()).type))
                     continue NEXT;
+            }
 
             // Forbid ambiguity.
             if (matched)
@@ -529,9 +539,11 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
         // Mutate call args last thing.
         if (matched && mut_args !== args)
         {
-            mut_args.length === args.length || fail();
+            const arg_d = matched.defaults;
+
+            mut_args.length >= args.length || fail();
             for (let i = 0; i < mut_args.length; i++)
-                args[i] = mut_args[i];
+                args[i] = mut_args[i] || arg_d && arg_d[i] || fail();
         }
     }
 

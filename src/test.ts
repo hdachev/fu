@@ -836,6 +836,11 @@ ZERO(`
     return test() - 3;
 `);
 
+ZERO(`
+    fn test(a = 1, b = 2) a + b;
+    return test(b: -1);
+`);
+
 
 // Let's get going.
 
