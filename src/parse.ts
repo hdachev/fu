@@ -1,6 +1,5 @@
 import * as Fail from './fail';
 import { Token, TokenKind, LexValue } from './lex';
-import { ModuleID } from './commons';
 
 type Options =
 {
@@ -10,23 +9,12 @@ type Options =
 
 export type Nodes = (Node|null)[];
 
-type Flags = number;
-
 export type Node =
 {
     kind:       string;
-    flags:      Flags;
+    flags:      number;
     value:      LexValue|null;
     items:      Nodes|null;
-    token:      Token;
-};
-
-type FullNode<TKind = string> =
-{
-    kind:       TKind,
-    flags:      Flags;
-    value:      LexValue;
-    items:      Nodes;
     token:      Token;
 };
 
@@ -86,7 +74,7 @@ function setupOperators()
     let precedence      = P_PREFIX_UNARY;
     let rightToLeft     = false;
 
-    function binop(...ops: string[]): void
+    function binop(ops: string[]): void
     {
         precedence++
         out.RIGHT_TO_LEFT[precedence] = rightToLeft
@@ -96,30 +84,30 @@ function setupOperators()
                 precedence as Precedence;
     }
 
-    binop( 'as', 'is' );
+    binop([ 'as', 'is' ]);
 
     rightToLeft = true;
-    binop( '**' );
+    binop([ '**' ]);
 
     rightToLeft = false;
-    binop( '*', '/', '%' );
-    binop( '+', '-' );
-    binop( '<<', '>>' );
-    binop( '&' ); // Notice this is not js/c precedence, it's just never useful.
-    binop( '^' ); // We're doing the rust thing here.
-    binop( '|' );
-    binop( '<', '<=', '>', '>=' );
-    binop( '==', '!=', '<=>' );
-    binop( '->' );
-    binop( '&&' );
-    binop( '||' );
+    binop([ '*', '/', '%' ]);
+    binop([ '+', '-' ]);
+    binop([ '<<', '>>' ]);
+    binop([ '&' ]); // Notice this is not js/c precedence, it's just never usefu]l.
+    binop([ '^' ]); // We're doing the rust thing her]e.
+    binop([ '|' ]);
+    binop([ '<', '<=', '>', '>=' ]);
+    binop([ '==', '!=', '<=>' ]);
+    binop([ '->' ]);
+    binop([ '&&' ]);
+    binop([ '||' ]);
 
     rightToLeft = true;
-    binop( '?' );
-    binop( '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=' );
+    binop([ '?' ]);
+    binop([ '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=' ]);
 
     rightToLeft = false;
-    binop( ',' );
+    binop([ ',' ]);
 
     //
     return out;
@@ -146,12 +134,6 @@ export const LOOP_POST_COND = 4;
 
 
 //
-
-export type ParseResult =
-{
-    imports: ModuleID[];
-    root: Node;
-};
 
 export function parse(opts: Options)
 {
@@ -605,11 +587,13 @@ export function parse(opts: Options)
 
             first = false;
 
-            let arg = parseLet();
-            if (!arg.items[LET_TYPE])
+            const arg = parseLet();
+            const items = arg.items || fail();
+
+            if (!items[LET_TYPE])
                 outFlags |= F_UNTYPED_ARGS;
 
-            if (arg.items[LET_INIT])
+            if (items[LET_INIT])
             {
                 if (arg.flags & F_IMPLICIT)
                     fail('TODO default implicit arguments');
@@ -673,10 +657,10 @@ export function parse(opts: Options)
     }
 
     function createLet(
-        id: LexValue, flags: Flags,
+        id: LexValue, flags: number,
         type: Node|null, init: Node|null)
     {
-        return Node('let', [ type, init ], flags, id) as FullNode<'let'>;
+        return Node('let', [ type, init ], flags, id);
     }
 
     function parseExpression(p1 = _precedence): Node
@@ -1097,8 +1081,5 @@ export function parse(opts: Options)
         'Missing `eof` token.');
 
     //
-    return {
-        imports: [],
-        root: parseRoot(),
-    };
+    return parseRoot();
 }
