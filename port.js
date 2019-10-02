@@ -1,5 +1,5 @@
 const fs = require('fs');
-const FILES = [ 'parse', 'solve' ];
+const FILES = [ 'parse', 'solve', 'cpp_codegen' ];
 
 function port(file)
 {
