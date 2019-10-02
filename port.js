@@ -32,6 +32,11 @@ src = src
     .replace(/\b([a-zA-Z]+): number/g,  (_, id) => id + ': i32')
     .replace(/\bboolean\b/g,  'bool')
     .replace(/\bexport\b/g, 'pub')
+
+    .replace(/\bTokenKind\b/, 'string')
+    .replace(/\bLexValue\b/, 'string')
+    .replace(/\bNodes\b/, 'Node[]')
+
     ;
 
 

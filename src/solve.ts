@@ -1,4 +1,4 @@
-import { ParseResult, Node, Nodes, createRead, createLet, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
+import { ParseResult, Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import * as Fail from './fail';
 
 import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
@@ -1313,6 +1313,17 @@ function evalTypePattern(node: Node, typeParams: TypeParams): boolean
 
 //
 
+function createRead(id: string): Node
+{
+    return {
+        kind:   'call',
+        flags:  F_ID,
+        value:  id,
+        items:  null,
+        token:  (_here || fail()).token,
+    };
+}
+
 function solveCall(node: Node): SolvedNode
 {
     const id        = node.value || fail();
@@ -1398,6 +1409,20 @@ function solveArrayLiteral(node: Node)
 //   we wont have overload yet, but we do have the node,
 //    otherwise we have the overload and get the node from there.
 
+function createLet(id: string, type: Type, flags: number = 0): SolvedNode
+{
+    return {
+        kind:   'let',
+        flags:  flags|0,
+        value:  id,
+
+        items:  null,
+        token:  (_here || fail()).token,
+        type:   type,
+        target: null,
+    };
+}
+
 function injectImplicitArg__mutfn(
     node: SolvedNode|null, fn: Overload|null,
     id: string, type: Type)
@@ -1409,9 +1434,7 @@ function injectImplicitArg__mutfn(
     const newArgIdx = mut_argNodes.length + FN_RET_BACK;
 
     // The new argnode.
-    const newArgNode = SolvedNode(
-        createLet(id, F_IMPLICIT, null, null),
-            null, type);
+    const newArgNode = createLet(id, type, F_IMPLICIT);
 
     mut_argNodes.splice(newArgIdx, 0, newArgNode);
 
