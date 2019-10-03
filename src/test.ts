@@ -842,6 +842,52 @@ ZERO(`
 `);
 
 
+// Truth tests.
+
+ZERO(`
+    let s = 7;
+    return s ? 0 : 1;
+`);
+
+ZERO(`
+    let s = 0;
+    return s ? 1 : 0;
+`);
+
+ZERO(`
+    let s = 'hello';
+    return s ? 0 : 1;
+`);
+
+ZERO(`
+    let s = '';
+    return s ? 1 : 0;
+`);
+
+ZERO(`
+    let s = [ 4 ];
+    return s ? 0 : 1;
+`);
+
+ZERO(`
+    mut s = [ 4 ];
+    s.pop();
+    return s ? 1 : 0;
+`);
+
+ZERO(`
+    struct S { x: i32; }
+    let s: S = S(1);
+    return s ? 0 : 1;
+`);
+
+ZERO(`
+    struct S { x: i32; }
+    let s: S;
+    return s ? 1 : 0;
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');

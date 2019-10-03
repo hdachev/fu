@@ -79,6 +79,7 @@ fn insert(a: &mut $T[], i: i32, b: $T)
     case ($b -> @move): void __native_pure;
 
 fn splice(a: &mut $T, i: i32, count: i32): void __native_pure;
+fn pop(a: &mut $T): void __native_pure;
 
 fn idx(a: &$T[], b: &$T): i32  __native_pure;
 fn has(a: &$T[], b: &$T): bool __native_pure;
