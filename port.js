@@ -46,7 +46,7 @@ function port(file)
         .replace(/\bLexValue\b/g, 'string')
         .replace(/\bNodes\b/g, 'Node[]')
 
-        .replace(/\b([a-zA-Z]+)(\[\])?\|null\b/g, (_, id) => id)
+        .replace(/\b([a-zA-Z]+(\[\])?)\|null\b/g, (_, id) => id)
 
         ;
 
