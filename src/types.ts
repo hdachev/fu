@@ -273,7 +273,7 @@ export function createArray(item: Type): Type
         },
     ];
 
-    const canon = serializeType(item) + '[]' as Canon;
+    const canon = 'Array(' + serializeType(item) + ')' as Canon;
     if (!CONTEXT.TYPES[canon])
         CONTEXT.TYPES[canon] =
         {

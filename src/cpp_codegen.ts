@@ -151,6 +151,19 @@ function declareStruct(t: Type, s: Struct)
         def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
     }
 
+    def += '\n    explicit operator bool() const noexcept';
+    def += '\n    {';
+    def += '\n        return false';
+
+    for (let i = 0; i < fields.length; i++)
+        def += '\n            || '
+            + bool(fields[i].type,
+                (s.flags & F_DESTRUCTOR ? 'data.' : '')
+                    + ID(fields[i].id));
+
+    def += '\n        ;';
+    def += '\n    }';
+
     return def + '\n};\n';
 }
 
@@ -307,7 +320,7 @@ function cgFn(fn: SolvedNode)
         if (i)
             src += ', ';
 
-        src += cgLet(items[i] || fail());
+        src += binding(items[i] || fail(), false);
     }
 
     src += closure
@@ -378,17 +391,25 @@ function cgFn(fn: SolvedNode)
     return src;
 }
 
-function cgLet(node: SolvedNode)
+function binding(node: SolvedNode, doInit: boolean)
 {
     const id    = node.value || fail();
-
     const annot = typeAnnot(node.type) || fail();
     const head  = annot + ' ' + ID(id);
     const init  = node.items && node.items[LET_INIT];
+
+    if (!doInit)
+        return head;
+
     if (init)
         return head + ' = ' + cgNode(init);
 
-    return head;
+    return head + ' {}';
+}
+
+function cgLet(node: SolvedNode)
+{
+    return binding(node, true);
 }
 
 function cgReturn(node: SolvedNode)
@@ -507,6 +528,9 @@ function cgCall(node: SolvedNode)
     if (id === 'push' && items.length === 2)
         return items[0] + '.push_back(' + items[1] + ')';
 
+    if (id === 'pop' && items.length === 1)
+        return items[0] + '.pop_back()';
+
     if (id === 'unshift' && items.length === 2)
         return '([&](auto& _) { _.insert(_.begin(), ' + items[1] + '); } (' + items[0] + '))';
 
@@ -582,7 +606,7 @@ function cgIf(node: SolvedNode)
 
     const stmt = _exprN === 0;
 
-    const cond = n0 && cgNode(n0);
+    const cond = n0 && bool(n0.type, cgNode(n0));
     const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
     const alt  = n2 && (stmt ? blockWrapOne(n2) : cgNode(n2));
 
@@ -601,6 +625,14 @@ function cgIf(node: SolvedNode)
     return fail('TODO');
 }
 
+function bool(type: Type, src: string): string
+{
+    if (/^(Array|Map)\(/.test(type.canon) || type.canon === 'string')
+        return src + '.size()';
+
+    return src;
+}
+
 function cgLoop(node: SolvedNode)
 {
     const items = node.items || fail();
@@ -612,17 +644,17 @@ function cgLoop(node: SolvedNode)
     const n_pcnd = items[LOOP_POST_COND];
 
     const init = n_init && cgNode(n_init);
-    const cond = n_cond && cgNode(n_cond);
+    const cond = n_cond && bool(n_cond.type, cgNode(n_cond));
     const post = n_post && cgNode(n_post);
     const body = n_body && blockWrapOne(n_body);
-    const pcnd = n_pcnd && cgNode(n_pcnd);
+    const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd));
 
     if (pcnd)
     {
         if (init || post || cond)
             fail('TODO extended loop.');
 
-        return 'do' + body + _indent + 'while (' + cond + ')';
+        return 'do' + body + _indent + 'while (' + pcnd + ')';
     }
 
     if (init || post || !cond)

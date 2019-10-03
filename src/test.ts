@@ -49,7 +49,7 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
         const fail = (...args: unknown[]) =>
         {
             let src = gensrc.replace(/\n/g, '\n\t');
-            if (src.length > 1024)
+            if (src.length > 2048)
                 src = '[ TOO LONG ]';
 
             FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + src);
