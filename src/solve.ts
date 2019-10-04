@@ -255,12 +255,60 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 {
     const arg_t = members.map(i => i && i.type  || fail());
     const arg_n = members.map(i => i && i.value || fail());
-    const arg_d = members.map(i => i && i.items && i.items[LET_INIT] || null);
 
-    const arity = members.length;
+    //
+    const max   = members.length;
+    let   min   = 0;
+    let   arg_d: SolvedNode[]|null = null;
 
-    return { kind: 'defctor', node: null, type, min: arity, max: arity, args: arg_t, defaults: arg_d, names: arg_n, partial: null, callsites: null, template: null };
+    {
+        const defaults: SolvedNode[] = [];
+        arg_d = defaults;
+        for (let i = 0; i < members.length; i++)
+        {
+            const member = members[i];
+            const init   = (member.items || fail())[LET_INIT] || tryDefaultInit(member.type);
+
+            // Disable defaulting if any member is non-defaulted.
+            if (!init)
+            {
+                arg_d = null;
+                min   = max;
+                break;
+            }
+
+            defaults[i] = init;
+        }
+    }
+
+    return { kind: 'defctor', node: null, type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, callsites: null, template: null };
 }
+
+function tryDefaultInit(type: Type): SolvedNode|null
+{
+    // Reference? No init, else default.
+    if (type.quals.indexOf(q_ref) >= 0)
+        return null;
+
+    return createDefaultInit(type);
+}
+
+function createDefaultInit(type: Type): SolvedNode
+{
+    return {
+        kind:   'definit',
+        flags:  0,
+        value:  null,
+
+        items:  null,
+        token:  (_here || fail()).token,
+        type,
+        target: null,
+    };
+}
+
+
+//
 
 function Partial(via: Overload, overload: Overload): Overload
 {

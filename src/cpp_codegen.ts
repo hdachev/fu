@@ -438,7 +438,15 @@ function cgArrayLiteral(node: SolvedNode)
     const items = cgNodes(node.items);
     const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
 
+    if (!items)
+        return annot + ' {}';
+
     return annot + ' { ' + items.join(', ') + ' }';
+}
+
+function cgDefaultInit(node: SolvedNode)
+{
+    return cgArrayLiteral(node);
 }
 
 function cgCall(node: SolvedNode)
@@ -681,6 +689,7 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'int':      cgLiteral,
     'str':      cgStringLiteral,
     'arrlit':   cgArrayLiteral,
+    'definit':  cgDefaultInit,
     'empty':    cgEmpty,
 
     'comma':    cgParens,
