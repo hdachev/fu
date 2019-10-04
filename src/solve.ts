@@ -646,10 +646,8 @@ function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number)
 
 function notDefined(id: string): Overload
 {
-    switch (id)
-    {
-        case '__native_pure': return __native_pure();
-    }
+    if (id === '__native_pure')
+        return __native_pure();
 
     return fail('`' + id + '` is not defined.');
 }
@@ -1697,13 +1695,12 @@ function solveNode(node: Node): SolvedNode
         || fail();
 }
 
-function solveNodes(nodes: Nodes|null, output?: SolvedNodes): SolvedNodes|null
+function solveNodes(nodes: Nodes|null, result: SolvedNodes = []): SolvedNodes|null
 {
     if (!nodes)
         return null;
 
-    const here0                 = _here;
-    const result: SolvedNodes   = output || [];
+    const here0 = _here;
 
     let offset = 0;
 
