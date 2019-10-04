@@ -841,6 +841,35 @@ ZERO(`
     return test(b: -1);
 `);
 
+ZERO(`
+    fn test(a = 1, b = 2) a + b;
+    return test(-2);
+`);
+
+ZERO(`
+    struct Test { a: i32; b: i32; }
+    let t = Test(1);
+    return t.a - 1 + t.b * 7;
+`);
+
+ZERO(`
+    struct Test { a: i32; b: i32; }
+    let t = Test(1);
+    return t.b;
+`);
+
+ZERO(`
+    struct Test { a: i32; b: i32; }
+    let t = Test(a: 1);
+    return t.a - 1 + t.b * 7;
+`);
+
+ZERO(`
+    struct Test { a: i32; b: i32; }
+    let t = Test(b: 1);
+    return t.b - 1 + t.a * 7;
+`);
+
 
 // Truth tests.
 
