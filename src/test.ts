@@ -870,6 +870,21 @@ ZERO(`
     return t.b - 1 + t.a * 7;
 `);
 
+ZERO(`
+    struct Test { x: i32; };
+    fn hey() Test(); // expect_lambda private type, technically ok, technically ok though not needed
+    return hey.x;
+`);
+
+ZERO(`
+    struct Test { x: i32; };
+    fn hey(y: i32 = 0) // expect_lambda private type, technically ok though not needed
+        y   ? Test(1)
+            : Test();
+
+    return hey.x;
+`);
+
 
 // Truth tests.
 

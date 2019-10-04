@@ -438,8 +438,8 @@ function cgArrayLiteral(node: SolvedNode)
     const items = cgNodes(node.items);
     const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
 
-    if (!items)
-        return annot + ' {}';
+    if (!items || !items.length)
+        return annot + '{}';
 
     return annot + ' { ' + items.join(', ') + ' }';
 }
@@ -456,11 +456,12 @@ function cgCall(node: SolvedNode)
 
     if (target.kind === 'defctor')
     {
-        let head = (target.type || fail()).canon;
+        const head = (target.type || fail()).canon;
+        const type = lookupType(head) || fail();
 
+        //
         let open = ' { ';
         let close = ' }';
-        const type = lookupType(head) || fail();
         if (type.flags & F_DESTRUCTOR)
         {
             open = ' { ' + head + '::Data { ';
