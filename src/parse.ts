@@ -167,11 +167,11 @@ export function parse(opts: Options)
         };
     }
 
-    function fail(...rest: unknown[])
+    function fail(reason: string = '')
     {
         const here  = _tokens[_idx];
-        const msg   = rest.length
-                    ? rest
+        const msg   = reason
+                    ? [ reason ]
                     : [ 'Unexpected `' + here.value + '`.' ];
 
         const l0 = _loc.line;
@@ -184,30 +184,31 @@ export function parse(opts: Options)
             ? '@' + l1 + ':' + c1
             : '@' + l0 + ':' + c0 + '..' + l1 + ':' + c1;
 
-        return Fail.fail(
-            _fname + ' ' + addr
-                + ':\n\t', ...msg);
+        return Fail.fail(_fname + ' ' + addr + ':\n\t' + msg);
     }
 
 
     //
 
-    function consume(kind: TokenKind, value?: LexValue)
+    function consume(kind: TokenKind, value: LexValue|null = null)
     {
-        const token = _tokens[_idx++];
-        token.kind === kind && (value === undefined || token.value === value)
-            || (_idx--, fail('Expected `' + (value || kind) + '`, got `' + token.value + '`.'));
-
-        return token;
-    }
-
-    function tryConsume(kind: TokenKind, value?: LexValue): Token|null
-    {
-        const peek = _tokens[_idx];
-        if (peek.kind === kind && (value === undefined || peek.value === value))
+        const token = _tokens[_idx];
+        if (token.kind === kind && (!value || token.value === value))
         {
             _idx++;
-            return peek;
+            return token;
+        }
+
+        return fail('Expected `' + (value || kind) + '`, got `' + token.value + '`.');
+    }
+
+    function tryConsume(kind: TokenKind, value: LexValue|null = null): Token|null
+    {
+        const token = _tokens[_idx];
+        if (token.kind === kind && (!value || token.value === value))
+        {
+            _idx++;
+            return token;
         }
 
         return null;
@@ -283,12 +284,8 @@ export function parse(opts: Options)
         const token = _tokens[_idx++];
 
         if (token.kind === 'op' || token.kind === 'id')
-        {
-            switch (token.value)
-            {
-                case 'fn': return parseStructMethod();
-            }
-        }
+            if (token.value === 'fn')
+                return parseStructMethod();
 
         _idx--;
         //////////////////////////////
@@ -372,20 +369,17 @@ export function parse(opts: Options)
             items.push(expr);
 
             // Unpacking & ungrouping node types.
-            switch (expr.kind)
-            {
-                case 'struct':
-                    unwrapStructMethods(items, expr);
-            }
+            if (expr.kind === 'struct')
+                unwrapStructMethods(items, expr);
         }
 
         return items;
     }
 
-    function fail_Lint(...args: unknown[])
+    function fail_Lint(reason: string)
     {
         // TODO allow opt out
-        fail('Lint:', ...args);
+        fail('Lint: ' + reason);
     }
 
     function unwrapStructMethods(out: Node[], struct: Node)
@@ -420,24 +414,23 @@ export function parse(opts: Options)
 
         if (token.kind === 'op' || token.kind === 'id')
         {
-            switch (token.value)
-            {
-                case '{':           return parseBlock();
-                case 'let':         return parseLetStmt();
-                case 'mut':         return _idx--, parseLetStmt();
+            const v = token.value;
 
-                case 'if':          return parseIf();
-                case 'return':      return parseReturn();
+            if (v === '{')          return parseBlock();
+            if (v === 'let')        return parseLetStmt();
+            if (v === 'mut')        return _idx--, parseLetStmt();
 
-                case 'for':         return parseFor();
-                case 'while':       return parseWhile();
-                case 'break':       return parseJump('break');
-                case 'continue':    return parseJump('continue');
+            if (v === 'if')         return parseIf();
+            if (v === 'return')     return parseReturn();
 
-                case ';':           return parseEmpty();
-                case 'fn':          return parseFnDecl();
-                case 'struct':      return parseStructDecl();
-            }
+            if (v === 'for')        return parseFor();
+            if (v === 'while')      return parseWhile();
+            if (v === 'break')      return parseJump('break');
+            if (v === 'continue')   return parseJump('continue');
+
+            if (v === ';')          return parseEmpty();
+            if (v === 'fn')         return parseFnDecl();
+            if (v === 'struct')     return parseStructDecl();
         }
 
         ////////////
@@ -724,13 +717,10 @@ export function parse(opts: Options)
         {
             const v = token.value;
 
-            switch (v)
-            {
-                case ';': return _idx--, null;
-                case '.': return parseAccessExpression(head);
-                case '(': return parseCallExpression(head);
-                case '[': return parseIndexExpression(head);
-            }
+            if (v === ';') return _idx--, null;
+            if (v === '.') return parseAccessExpression(head);
+            if (v === '(') return parseCallExpression(head);
+            if (v === '[') return parseIndexExpression(head);
 
             const p1 = BINOP.PRECEDENCE[v];
             if (p1)
@@ -750,39 +740,30 @@ export function parse(opts: Options)
         const token = _tokens[_idx++];
         //////////////////////////////
 
-        switch (token.kind)
         {
+            const k = token.kind;
+
             // Literals.
-            case 'int':
-            case 'num':
-            case 'str':
+            if (k === 'int' || k === 'num' || k === 'str')
                 return createLeaf(
                     token.kind, token.value);
 
-            // Calls & co.
-            case 'id':
-
-                // Identifier expression.
+            // Identifier expression.
+            if (k === 'id')
                 return createRead(token.value);
 
             // Operators.
-            case 'op':
+            if (k === 'op')
+            {
+                const v = token.value;
 
-                switch (token.value)
-                {
-                    case '(': return parseParens();
-                    case '[': return parseArrayLiteral();
-
-                    // case '{': ...    either c++/js implict construction -
-                    //                  can actually work with `[`s too.
-                    //           ...    or block expressions and/or $0, $1 / $i, $j / $x, $y, $z, $w
-                    //                  swift-style auto lambdas.
-
-                    case '$': return parseTypeParam();
-                    case '@': return parseTypeTag();
-                }
+                if (v === '(') return parseParens();
+                if (v === '[') return parseArrayLiteral();
+                if (v === '$') return parseTypeParam();
+                if (v === '@') return parseTypeTag();
 
                 return parsePrefix(token.value);
+            }
         }
 
         ///////
