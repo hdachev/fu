@@ -542,7 +542,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                     }
 
                     // Fill the rest.
-                    actual === args && fail();
+                    actual !== args || fail();
                     {
                         let i = 0;
                         let j = 0;
@@ -560,7 +560,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                 // Specialize.
                 if (overload.template)
                 {
-                    const spec = trySpecialize(overload.template, args);
+                    const spec = trySpecialize(overload.template, actual);
                     if (!spec)
                         continue NEXT;
 
