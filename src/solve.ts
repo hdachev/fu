@@ -260,8 +260,16 @@ function FnDecl(node: SolvedNode): Overload
 
 function DefaultCtor(type: Type, members: SolvedNode[]): Overload
 {
-    const arg_t = members.map(i => i && i.type  || fail());
-    const arg_n = members.map(i => i && i.value || fail());
+    const arg_t:   Type[] = [];
+    const arg_n: string[] = [];
+
+    for (let i = 0; i < members.length; i++)
+    {
+        const member = members[i];
+
+        arg_t[i] = member && member.type  || fail();
+        arg_n[i] = member && member.value || fail();
+    }
 
     //
     const max   = members.length;
@@ -528,7 +536,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                             continue NEXT;
 
                         if (actual === args)
-                            actual = args.map(() => null);
+                            actual = repeat(null, args.length);
 
                         actual[idx] = args[i];
                     }
@@ -642,6 +650,15 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
     }
 
     return matched;
+}
+
+function repeat<T>(value: T, len: number): T[]
+{
+    const result = [];
+    for (let i = 0; i < len; i++)
+        result[i] = value;
+
+    return result;
 }
 
 function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
@@ -809,7 +826,7 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
 
     const out       = prep || SolvedNode(n_fn, null, t_void);
 
-    const outItems: SolvedNodes = inItems.map(() => null);
+    const outItems: SolvedNodes = repeat(null, inItems.length);
     out.items       = outItems;
 
     //////////////////////////
@@ -1071,7 +1088,7 @@ function __solveStruct(solve: boolean, node: Node, prep: SolvedNode|null): Solve
 
         solveNodes(
             node.items,
-            out.items = (node.items || fail()).map(() => null));
+            out.items = repeat(null, (node.items || fail()).length));
 
         _current_str        = current_str0;
         _current_strt       = current_strt0;
