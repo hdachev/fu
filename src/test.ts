@@ -115,7 +115,7 @@ function FAIL(src: string)
     }
     catch (e)
     {
-        const msg = e.message || fail();
+        const msg = (e.message || fail()).toLowerCase();
         for (let i = 0; i < errors.length; i++)
         {
             const kw = errors[i];
@@ -957,6 +957,25 @@ ZERO(`
 ZERO(`
     mut a = 0;
     return (a++, a - 1);
+`);
+
+
+// Lint.
+
+ZERO(`
+    struct Test { x: i32; }
+    fn test(t: &mut Test) t.x++;
+    mut t = Test();
+    t.test();
+    return t.x - 1;
+`);
+
+FAIL(`
+    struct Test { x: i32; }
+    fn test(t: &mut Test) t.x++;
+    mut t = Test();
+    t.test; //ERR orphan
+    return t.x - 1;
 `);
 
 

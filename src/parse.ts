@@ -363,7 +363,7 @@ export function parse(opts: Options)
                     + '. Block starts on line ' + line0 + '.');
 
             const expr = parseItem();
-            expr.kind !== 'call' || ((expr.flags & (F_ID | F_METHOD)) === 0) || expr.items && expr.items.length > 1 || fail_Lint(
+            expr.kind !== 'call' || ((expr.flags & (F_ID | F_ACCESS)) === 0) || expr.items && expr.items.length > 1 || fail_Lint(
                 'Orphan pure-looking expression.');
 
             items.push(expr);
@@ -938,7 +938,7 @@ export function parse(opts: Options)
                     && expr.items[0] || fail();
 
             return createCall(
-                expr.value || fail(), F_METHOD & argFlags,
+                expr.value || fail(), F_METHOD | argFlags,
                 [ head ].concat(args));
         }
 
