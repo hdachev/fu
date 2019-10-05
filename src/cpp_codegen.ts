@@ -243,10 +243,9 @@ function blockWrap(nodes: Nodes)
 
 function blockWrapOne(node: SolvedNode)
 {
-    if (node.kind === 'block')
-        return cgBlock(node);
-
-    return blockWrap([ node ]);
+    return node.kind === 'block'
+        ? cgBlock(node)
+        : blockWrap([ node ]);
 }
 
 function cgBlock(block: SolvedNode)
@@ -422,7 +421,8 @@ function cgReturn(node: SolvedNode)
 
 function cgJump(node: SolvedNode)
 {
-    node.value && fail('TODO');
+    if (node.value)
+        return 'goto L_' + node.value + '_' + node.kind[0];
 
     return node.kind;
 }
@@ -642,6 +642,12 @@ function bool(type: Type, src: string): string
     return src;
 }
 
+function postfixBlock(src: string, postfix: string): string
+{
+    src[src.length - 1] === '}' || fail();
+    return src.slice(0, src.length - 1) + postfix + '}';
+}
+
 function cgLoop(node: SolvedNode)
 {
     const items = node.items || fail();
@@ -655,21 +661,33 @@ function cgLoop(node: SolvedNode)
     const init = n_init && cgNode(n_init);
     const cond = n_cond && bool(n_cond.type, cgNode(n_cond));
     const post = n_post && cgNode(n_post);
-    const body = n_body && blockWrapOne(n_body);
+    let   body = n_body && blockWrapOne(n_body);
     const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd));
+    let   breakLabel = '';
+
+    if (body && node.value)
+    {
+        const brk = 'L_' + node.value + '_b';
+        const cnt = 'L_' + node.value + '_c';
+
+        if (body.indexOf(cnt) >= 0)
+            body = postfixBlock(body, _indent +     '    ' + cnt + ':;');
+        if (body.indexOf(brk) >= 0)
+            breakLabel = _indent + '    ' + brk + ':;';
+    }
 
     if (pcnd)
     {
         if (init || post || cond)
             fail('TODO extended loop.');
 
-        return 'do' + body + _indent + 'while (' + pcnd + ')';
+        return 'do' + body + _indent + 'while (' + pcnd + ')' + breakLabel;
     }
 
     if (init || post || !cond)
-        return 'for (' + init + '; ' + cond + '; ' + post + ')' + body;
+        return 'for (' + init + '; ' + cond + '; ' + post + ')' + body + breakLabel;
 
-    return 'while (' + cond + ')' + body;
+    return 'while (' + cond + ')' + body + breakLabel;
 }
 
 

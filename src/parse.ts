@@ -431,6 +431,8 @@ export function parse(opts: Options)
             if (v === ';')          return parseEmpty();
             if (v === 'fn')         return parseFnDecl();
             if (v === 'struct')     return parseStructDecl();
+
+            if (v === ':')          return parseLabelledStatement();
         }
 
         ////////////
@@ -440,6 +442,21 @@ export function parse(opts: Options)
 
         // Expression statement, followed by a semi.
         return parseExpressionStatement();
+    }
+
+    function parseLabelledStatement(): Node
+    {
+        const label = consume('id');
+        const stmt  = parseStatement();
+
+        if (stmt.kind === 'loop')
+        {
+            stmt.value && fail();
+            stmt.value = label.value || fail();
+            return stmt;
+        }
+
+        return fail();
     }
 
     function parseEmpty(): Node
@@ -962,8 +979,7 @@ export function parse(opts: Options)
         _fnDepth > 0 || (_idx--, fail());
         _numReturns++;
 
-        const peek = _tokens[_idx];
-        if (peek.kind === 'op' && peek.value === ';')
+        if (tryConsume('op', ';'))
             return createReturn(null);
 
         return createReturn(
@@ -979,14 +995,12 @@ export function parse(opts: Options)
     {
         let label: LexValue|null = null;
 
-        const peek = _tokens[_idx];
-        if (peek.kind === 'id')
-        {
-            _idx++;
-            label = peek.value;
-        }
+        let jump = tryConsume('op', ':')
+            ? createJump(kind, consume('id').value)
+            : createJump(kind, label);
 
-        return createJump(kind, label);
+        consume('op', ';');
+        return jump;
     }
 
     function createJump(kind: 'break'|'continue', label: LexValue|null)
