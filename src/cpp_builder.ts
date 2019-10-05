@@ -102,7 +102,12 @@ catch (o_O) {};
 
 //
 
-const GCC       = 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror';
+const NOT_WIN = !/^win\d+$/.test(process.platform);
+
+const GCC       = NOT_WIN
+    ? 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror'
+    : 'g++ -std=c++1z -Wall -Wextra -Werror -static';
+
 const GCC_BUILD = GCC + ' -c -o';
 const GCC_LINK  = GCC + ' -o';
 
@@ -139,8 +144,6 @@ export function build(src: string, cb: Callback<Unit>)
         cb({ data: ok });
     });
 }
-
-const NOT_WIN = !/^win\d+$/.test(process.platform);
 
 export function link(units: Unit[], cb: Callback<Binary>)
 {
