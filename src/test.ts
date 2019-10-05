@@ -932,6 +932,32 @@ ZERO(`
 `);
 
 
+// Loop labels.
+
+ZERO(`
+    mut sum = 0;
+
+    :outer for (let y = 1; y < 10; y++)
+    {
+        sum += y * 10;
+        for (let x = 1; x < 10; x++)
+        {
+            sum += x;
+            if (y == 1) continue :outer;
+            if (x == 2) break    :outer;
+        }
+    }
+
+    // 10
+    //  1
+    // 20
+    //  1
+    //  2
+
+    return sum - 33;
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');
