@@ -10,8 +10,23 @@ function port(file)
 
     // Warn.
 
-    if (/\.(map|filter|sort)\(/.test(src))
-        console.error('\tHAS higher order fns');
+    if (/\.map\b/.test(src))
+        console.error('\tHAS .map');
+
+    if (/\.filter\b/.test(src))
+        console.error('\tHAS .filter');
+
+    if (/\.reduce\b/.test(src))
+        console.error('\tHAS .reduce');
+
+    if (/\.find\b/.test(src))
+        console.error('\tHAS .find');
+
+    if (/\.some\b/.test(src))
+        console.error('\tHAS .some');
+
+    if (/\.sort\b/.test(src))
+        console.error('\tHAS .sort');
 
     if (/undefined/.test(src))
         console.error('\tHAS undefined');

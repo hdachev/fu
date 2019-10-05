@@ -170,9 +170,9 @@ export function parse(opts: Options)
     function fail(reason: string = '')
     {
         const here  = _tokens[_idx];
-        const msg   = reason
-                    ? [ reason ]
-                    : [ 'Unexpected `' + here.value + '`.' ];
+
+        if (!reason)
+            reason = 'Unexpected `' + here.value + '`.';
 
         const l0 = _loc.line;
         const c0 = _loc.col;
@@ -184,7 +184,7 @@ export function parse(opts: Options)
             ? '@' + l1 + ':' + c1
             : '@' + l0 + ':' + c0 + '..' + l1 + ':' + c1;
 
-        return Fail.fail(_fname + ' ' + addr + ':\n\t' + msg);
+        return Fail.fail(_fname + ' ' + addr + ':\n\t' + reason);
     }
 
 

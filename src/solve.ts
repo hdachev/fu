@@ -47,14 +47,23 @@ function RESET()
     _closure_detected   = false;
 }
 
-function fail(...rest: unknown[])
+function fail(reason: string = '', nodes: SolvedNodes|null = null)
 {
     if (!_here)
-        return Fail.fail(...rest);
+        return Fail.fail(reason);
 
-    const msg   = rest.length
-                ? rest
-                : [ 'Unexpected `' + _here.value + '`.' ];
+    if (!reason)
+        reason = 'Unexpected `' + _here.value + '`.';
+
+    if (nodes)
+        for (let i = 0; i < nodes.length; i++)
+        {
+            const node = nodes[i];
+            if (node)
+                reason += ' <' + serializeType(node.type) + ' ' + node.kind + ':' + node.value + '>';
+            else
+                reason += ' <null>';
+        }
 
     const fname = _here.token && _here.token.fname;
     const l0    = _here.token && _here.token.line;
@@ -62,9 +71,7 @@ function fail(...rest: unknown[])
 
     const addr = '@' + l0 + ':' + c0;
 
-    return Fail.fail(
-        fname + ' ' + addr
-            + ':\n\t', ...msg);
+    return Fail.fail(fname + ' ' + addr + ':\n\t' + reason);
 }
 
 
@@ -623,11 +630,11 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
                 const type = arg_t[i];
                 const def  = arg_d && arg_d[i];
 
-                // Inject default ...
+                // Inject default..
                 if (def)
                     args[i] = def;
 
-                // ... or propagate implicit.
+                // ..or propagate implicit.
                 else
                     bindImplicitArg(args, i, id, type);
             }
@@ -640,7 +647,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
 function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
 {
     return scope_tryMatch__mutargs(id, args, null, flags)
-        || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.', args && args.map(i => i && i.type), args && args.map(i => i && i.kind + ':' + i.value))
+        || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.', args)
         || notDefined(id);
 }
 
@@ -1455,7 +1462,7 @@ function solveArrayLiteral(node: Node)
     let itemType = head.type;
     for (let i = 1; i < items.length; i++)
         itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
-            '[array literal] No common supertype:', itemType, items[i]);
+            '[array literal] No common supertype:', items);
 
     return SolvedNode(node, items,
         createArray(itemType) || fail());
@@ -1585,7 +1592,7 @@ function solveIf(node: Node): SolvedNode
 
     const outType: Type = !secType ? priType
         : type_tryInter(priType, secType) || fail(
-            'No common supertype:', priType, secType);
+            'No common supertype:', [ priExpr, secExpr ]);
 
     return SolvedNode(node, items, outType || fail());
 }
