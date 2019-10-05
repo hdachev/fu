@@ -418,7 +418,7 @@ export function parse(opts: Options)
 
             if (v === '{')          return parseBlock();
             if (v === 'let')        return parseLetStmt();
-            if (v === 'mut')        return _idx--, parseLetStmt();
+            if (v === 'mut')        return (_idx--, parseLetStmt());
 
             if (v === 'if')         return parseIf();
             if (v === 'return')     return parseReturn();
@@ -734,21 +734,21 @@ export function parse(opts: Options)
         {
             const v = token.value;
 
-            if (v === ';') return _idx--, null;
+            if (v === ';') return (_idx--, null);
             if (v === '.') return parseAccessExpression(head);
             if (v === '(') return parseCallExpression(head);
             if (v === '[') return parseIndexExpression(head);
 
             const p1 = BINOP.PRECEDENCE[v];
             if (p1)
-                return _idx--, tryParseBinary(head, v, p1);
+                return (_idx--, tryParseBinary(head, v, p1));
 
             if (POSTFIX.indexOf(v) >= 0)
                 return createCall(v, F_POSTFIX, [ head ]);
         }
 
         // Backtrack.
-        return _idx--, null;
+        return (_idx--, null);
     }
 
     function parseExpressionHead(): Node
