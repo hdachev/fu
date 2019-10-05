@@ -952,6 +952,14 @@ ZERO(`
 `);
 
 
+// Comma operator.
+
+ZERO(`
+    mut a = 0;
+    return (a++, a - 1);
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');

@@ -695,6 +695,7 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'root':     solveRoot,
     'block':    solveBlock,
     'label':    solveComma,
+    'comma':    solveComma,
 
     'let':      solveLet,
     'call':     solveCall,

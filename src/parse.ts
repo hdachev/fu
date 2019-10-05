@@ -792,9 +792,24 @@ export function parse(opts: Options)
 
     function parseParens()
     {
-        const expr = parseExpression(P_RESET);
+        const items: Node[] = [];
+
+        do
+        {
+            items.push(parseExpression(P_COMMA));
+        }
+        while (tryConsume('op', ','));
+
         consume('op', ')');
-        return expr;
+
+        return items.length > 1
+             ? createComma(items)
+             : items[0];
+    }
+
+    function createComma(nodes: Node[]): Node
+    {
+        return Node('comma', nodes);
     }
 
     function parseTypeParam()
