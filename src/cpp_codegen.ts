@@ -260,7 +260,7 @@ function cgBlock(block: SolvedNode)
 function cgParens(node: SolvedNode)
 {
     const items = cgNodes(node.items);
-    if (!items || !items.length)
+    if (!items.length)
         return '(false /*empty parens*/)';
 
     if (items.length === 1)
@@ -296,7 +296,7 @@ function cgFn(fn: SolvedNode)
         return src;
     }
 
-    const items = fn.items || fail();
+    const items = fn.items;
     const body  = items[items.length + FN_BODY_BACK] || fail();
     const ret   = items[items.length + FN_RET_BACK ] || fail();
     const annot = typeAnnot(ret.type || fail());
@@ -438,7 +438,7 @@ function cgArrayLiteral(node: SolvedNode)
     const items = cgNodes(node.items);
     const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
 
-    if (!items || !items.length)
+    if (!items.length)
         return annot + '{}';
 
     return annot + ' { ' + items.join(', ') + ' }';
@@ -649,7 +649,7 @@ function cgEmpty()
 
 function cgIf(node: SolvedNode)
 {
-    const [n0, n1, n2] = node.items || fail();
+    const [n0, n1, n2] = node.items;
 
     const stmt = _exprN === 0;
 
@@ -770,7 +770,7 @@ function postfixBlock(src: string, postfix: string): string
 
 function cgLoop(node: SolvedNode)
 {
-    const items = node.items || fail();
+    const items = node.items;
 
     const n_init = items[LOOP_INIT];
     const n_cond = items[LOOP_COND];

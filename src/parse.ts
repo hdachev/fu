@@ -381,7 +381,7 @@ export function parse(opts: Options)
 
     function unwrapStructMethods(out: Node[], struct: Node)
     {
-        const items = struct.items || fail('TODO empty struct (not now)');
+        const items = struct.items;
         for (let i = 0; i < items.length; i++)
         {
             const item = items[i];
@@ -595,7 +595,7 @@ export function parse(opts: Options)
             first = false;
 
             const arg = parseLet();
-            const items = arg.items || fail();
+            const items = arg.items;
 
             if (!items[LET_TYPE])
                 outFlags |= F_UNTYPED_ARGS;

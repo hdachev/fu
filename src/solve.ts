@@ -186,8 +186,6 @@ function Binding(node: SolvedNode, type: Type): Overload
 
 function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
 {
-    node && node.items || fail();
-
     return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, callsites: null, template: null };
 }
 
@@ -199,7 +197,7 @@ function Typedef(type: Type): Overload
 function TemplateDecl(node: Node): Overload
 {
     const min = node.kind === 'fn'
-        ? (node.items || fail()).length + FN_ARGS_BACK
+        ? node.items.length + FN_ARGS_BACK
         : fail('TODO');
 
     const max = node.kind === 'fn'
@@ -213,7 +211,7 @@ function TemplateDecl(node: Node): Overload
     {
         names = [];
 
-        const items = node.items || fail();
+        const items = node.items;
         for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
         {
             const arg = items[i] || fail();
@@ -228,9 +226,7 @@ function TemplateDecl(node: Node): Overload
 
 function FnDecl(node: SolvedNode): Overload
 {
-    node && node.items || fail();
-
-    const items: SolvedNodes = node.items || fail();
+    const items: SolvedNodes = node.items;
     const rnode = items[items.length + FN_RET_BACK];
     const ret   = rnode && rnode.type || fail();
 
@@ -282,7 +278,7 @@ function DefaultCtor(type: Type, members: SolvedNode[]): Overload
         for (let i = 0; i < members.length; i++)
         {
             const member = members[i];
-            const init   = (member.items || fail())[LET_INIT] || tryDefaultInit(member.type);
+            const init   = member.items[LET_INIT] || tryDefaultInit(member.type);
 
             // Disable defaulting if any member is non-defaulted.
             if (!init)
@@ -817,7 +813,7 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
     if (!solve && !(n_fn.flags & F_FULLY_TYPED))
         return null;
 
-    const inItems   = n_fn.items || fail();
+    const inItems   = n_fn.items;
     inItems.length >= FN_RET_BACK || fail();
 
     const out       = prep || SolvedNode(n_fn, null, t_void);
@@ -849,7 +845,7 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
         {
             n_body.kind === 'pattern' || fail();
             const branch = n_body.items[caseIdx] || fail();
-            const items = branch.items || fail();
+            const items = branch.items;
 
             n_ret   = items[items.length + FN_RET_BACK]  || n_ret || null;
             n_body  = items[items.length + FN_BODY_BACK] || fail();
@@ -967,7 +963,7 @@ function trySpecializeFn(
     node: Node, args: SolvedNodes, typeParams: TypeParams)
         : Overload|null
 {
-    const items = node.items || fail();
+    const items = node.items;
 
     // First off, solve type params.
     for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
@@ -1005,12 +1001,11 @@ function trySpecializeFn(
     const pattern = items[items.length + FN_BODY_BACK] || fail();
     if (pattern.kind === 'pattern')
     {
-        const branches = pattern.items || fail();
-
+        const branches = pattern.items;
         for (let i = 0; i < branches.length; i++)
         {
             const branch = branches[i];
-            const items = branch && branch.items || fail();
+            const items = (branch || fail()).items;
             const cond = items[0] || fail();
 
             if (evalTypePattern(cond, typeParams))
@@ -1084,7 +1079,7 @@ function __solveStruct(solve: boolean, node: Node, prep: SolvedNode|null): Solve
 
         solveNodes(
             node.items,
-            out.items = repeat(null, (node.items || fail()).length));
+            out.items = repeat(null, node.items.length));
 
         _current_str        = current_str0;
         _current_strt       = current_strt0;
@@ -1094,7 +1089,7 @@ function __solveStruct(solve: boolean, node: Node, prep: SolvedNode|null): Solve
     // Add a default constructor.
     {
         const members: SolvedNode[] = [];
-        const items = out.items || fail();
+        const items = out.items;
         for (let i = 0; i < items.length; i++)
         {
             const item = items[i];
@@ -1129,7 +1124,7 @@ function solveReturn(node: Node): SolvedNode
     const nextType  = nextExpr.type || fail();
 
     const fn        = _current_fn || fail();
-    const items     = fn.items || fail();
+    const items     = fn.items;
     const retIdx    = items.length + FN_RET_BACK;
     const prevExpr  = items[retIdx];
     const prevType  = prevExpr ? prevExpr.type || fail() : null;
@@ -1507,7 +1502,7 @@ function injectImplicitArg__mutfn(
     if (!node)
         node = fn && fn.node || fail();
 
-    const mut_argNodes = node.items || fail();
+    const mut_argNodes = node.items;
     const newArgIdx = mut_argNodes.length + FN_RET_BACK;
 
     // The new argnode.
@@ -1550,7 +1545,7 @@ function injectImplicitArg__mutfn(
             {
                 atCallsite(callsites[i], callNode =>
                 {
-                    const args = callNode.items || [];
+                    const args = callNode.items;
                     callNode.items = args;
                     bindImplicitArg(args, newArgIdx, id, type);
                 });
