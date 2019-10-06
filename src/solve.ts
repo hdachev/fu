@@ -1609,16 +1609,49 @@ function solveIf(node: Node): SolvedNode
     return SolvedNode(node, items, outType || fail());
 }
 
+function sumType_logic(items: SolvedNodes): Type
+{
+    // All args refs?
+    if (items.length)
+    {
+        let sumType: Type|null = (items[0] || fail()).type;
+        for (let i = 1; i < items.length; i++)
+        {
+            sumType = type_tryInter(
+                sumType, (items[i] || fail()).type);
+
+            if (!sumType)
+            {
+                sumType = null;
+                break;
+            }
+        }
+
+        if (sumType && sumType.quals.indexOf(q_ref))
+            return sumType;
+    }
+
+    return t_bool;
+}
+
 function solveAnd(node: Node): SolvedNode
 {
     const items = solveNodes(node.items);
-    return SolvedNode(node, items, t_bool);
+
+    return SolvedNode(
+        node, items,
+        sumType_logic(items));
 }
 
 function solveOr(node: Node): SolvedNode
 {
     const items = solveNodes(node.items);
-    return SolvedNode(node, items, t_bool);
+
+    // TODO (misc && T) || T.
+
+    return SolvedNode(
+        node, items,
+        sumType_logic(items));
 }
 
 

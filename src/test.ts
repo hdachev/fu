@@ -979,6 +979,25 @@ FAIL(`
 `);
 
 
+// Logical selectors.
+
+ZERO(`
+    let x = 'hello';
+    let y = 'world';
+    let w = x || y;
+
+    return w == 'hello' ? 0 : 1;
+`);
+
+ZERO(`
+    let x = 'hello';
+    let y = 'world';
+    let w = x && y;
+
+    return w == 'world' ? 0 : 1;
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');
