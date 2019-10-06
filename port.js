@@ -46,6 +46,14 @@ function port(file)
 
     //
 
+    function rpad(src)
+    {
+        while (src.length < 24)
+            src += ' ';
+
+        return src;
+    }
+
     function checkOpArgs(regex, op, ok)
     {
         let m;
@@ -56,50 +64,56 @@ function port(file)
         {
             const l = m[1];
             const r = m[2];
-            if (ok.indexOf(l) < 0) bad[l] = true;
-            if (ok.indexOf(r) < 0) bad[r] = true;
+            if (ok.indexOf(l) < 0) bad[l] = m[0];
+            if (ok.indexOf(r) < 0) bad[r] = m[0];
         }
 
         Object.keys(bad).forEach(
-            arg => console.error('\tHAS ' + op + ' ' + arg));
+            arg => console.error('\tHAS ' + op + ' ' + rpad(arg) + '\t' + bad[arg]));
     }
 
+    const eqOk =
+    [
+        // --------------------------------------------------
+        // Parser.
+        // --------------------------------------------------
+
+        // The usual suspects.
+        'length', 'i',
+
+        // These look all good.
+        'kind', 'value',
+        'endKind', 'endVal',
+        'l0', 'l1', 'line0', 'line1',
+        'col1', '_col0',
+
+        // Should be good.
+        '_precedence', 'p1',
+
+        // Counters.
+        '_numReturns', 'numReturns0',
+        '_numDollars', 'numDollars0', 'numDollars1',
+
+        // Node kinds.
+        'k_left', 'k_right',
+
+        // --------------------------------------------------
+        // Solver.
+        // --------------------------------------------------
+
+        // Types - should be fine.
+        'type',
+        't_bool', 't_never',
+        't_or', 'sumType',
+    ];
+
     checkOpArgs(
-        /(\b[a-zA-Z_][a-zA-Z0-9_]*\b)\s*[!=]==?\s*(\b[a-zA-Z_][a-zA-Z0-9_]*\b)/g, '==',
-        [
-            // --------------------------------------------------
-            // Parser.
-            // --------------------------------------------------
+        /(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)\s*(?:\s*\))*===?\s*(?:\(\s*)*(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)/g,
+        '==', eqOk);
 
-            // The usual suspects.
-            'length', 'i',
-
-            // These look all good.
-            'kind', 'value',
-            'endKind', 'endVal',
-            'l0', 'l1', 'line0', 'line1',
-            'col1', '_col0',
-
-            // Should be good.
-            '_precedence', 'p1',
-
-            // Counters.
-            '_numReturns', 'numReturns0',
-            '_numDollars', 'numDollars0', 'numDollars1',
-
-            // Node kinds.
-            'k_left', 'k_right',
-
-            // --------------------------------------------------
-            // Solver.
-            // --------------------------------------------------
-
-            // Types - should be fine.
-            // These ok ???????????????
-            'type',
-            't_bool', 't_never',
-            't_or', 'sumType',
-        ]);
+    checkOpArgs(
+        /(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)\s*(?:\s*\))*!==?\s*(?:\(\s*)*(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)/g,
+        '!=', eqOk);
 
 
     // Common replacers.
