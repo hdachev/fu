@@ -313,7 +313,7 @@ function createDefaultInit(type: Type): SolvedNode
     return {
         kind:   'definit',
         flags:  0,
-        value:  null,
+        value:  '',
 
         items:  [],
         token:  (_here || fail()).token,
@@ -1626,12 +1626,12 @@ function SolvedNode(
     };
 }
 
-function wrap(kind: string, node: SolvedNode, flags: number)
+function wrap(kind: string, node: SolvedNode, flags: number): SolvedNode
 {
     return {
         kind,
         flags:  flags,
-        value:  null,
+        value:  '',
 
         items:  [ node ],
         token:  node.token,

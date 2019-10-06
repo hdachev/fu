@@ -13,7 +13,7 @@ export type Node =
 {
     kind:       string;
     flags:      number;
-    value:      LexValue|null;
+    value:      LexValue;
     items:      Nodes;
     token:      Token;
 };
@@ -160,7 +160,7 @@ export function parse(opts: Options)
     {
         return {
             kind:       kind  || fail(),
-            value:      value,
+            value:      value || '',
             flags:      flags >>> 0,
             items:      items || [],
             token:      token || _loc || fail(),
