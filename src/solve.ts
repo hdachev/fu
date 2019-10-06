@@ -248,10 +248,10 @@ function FnDecl(node: SolvedNode): Overload
         arg.kind === 'let'   || fail();
         arg_t[i] = arg.type  || fail();
         arg_n[i] = arg.value || fail();
-        arg_d[i] = arg.items && arg.items[LET_INIT] || null;
+        arg_d[i] = arg.items[LET_INIT] || null;
 
         // Non-implicit, non-defaulted argument?
-        if (!(arg.flags & F_IMPLICIT) && !(arg.items && arg.items[LET_INIT]))
+        if (!(arg.flags & F_IMPLICIT) && !arg.items[LET_INIT])
             min++;
     }
 
@@ -315,7 +315,7 @@ function createDefaultInit(type: Type): SolvedNode
         flags:  0,
         value:  null,
 
-        items:  null,
+        items:  [],
         token:  (_here || fail()).token,
         type,
         target: null,
@@ -447,10 +447,7 @@ function scope_resetUsage(scope: Scope)
         scope[key] = scope[key].map(resetUsage);
 }
 
-const NO_ARGS: SolvedNodes = [];
-Object.freeze(NO_ARGS);
-
-function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Type|null, flags: number): Overload|null
+function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|null, flags: number): Overload|null
 {
     const scope     = _scope || fail();
     const overloads = scope[id];
@@ -465,7 +462,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
 
     // Arity 0 - blind head match.
     // Allows simple shadowing of variables and such, latest wins.
-    if (!args || !args.length)
+    if (!args.length)
     {
         const head = overloads[0];
         if (head.min === 0)
@@ -474,10 +471,6 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
 
     if (!matched)
     {
-        if (!args)
-            args = NO_ARGS;
-
-        //
         const arity = args.length;
 
         // Prep labelled args for remap.
@@ -629,7 +622,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes|null, retType: Ty
         const arg_t = matched.args;
         const arg_d = matched.defaults;
 
-        if (args && arg_t && args.length < arg_t.length)
+        if (arg_t && args.length < arg_t.length)
         {
             const arg_n = matched.names || fail();
             for (let i = args.length; i < arg_t.length; i++)
@@ -661,7 +654,7 @@ function repeat<T>(value: T, len: number): T[]
     return result;
 }
 
-function scope_match__mutargs(id: string, args: SolvedNodes|null, flags: number): Overload
+function scope_match__mutargs(id: string, args: SolvedNodes, flags: number): Overload
 {
     return scope_tryMatch__mutargs(id, args, null, flags)
         || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.', args)
@@ -743,7 +736,7 @@ function solveBlock(node: Node): SolvedNode
 function solveComma(node: Node): SolvedNode
 {
     const items = solveNodes(node.items);
-    const last = items && items[items.length - 1] || fail();
+    const last = items[items.length - 1] || fail();
 
     return SolvedNode(node, items, last.type || fail());
 }
@@ -853,7 +846,7 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
         if (caseIdx >= 0)
         {
             n_body.kind === 'pattern' || fail();
-            const branch = n_body.items && n_body.items[caseIdx] || fail();
+            const branch = n_body.items[caseIdx] || fail();
             const items = branch.items || fail();
 
             n_ret   = items[items.length + FN_RET_BACK]  || n_ret || null;
@@ -992,7 +985,7 @@ function trySpecializeFn(
 
         if (argNode.flags & F_TEMPLATE)
         {
-            const annot = argNode.items && argNode.items[LET_TYPE];
+            const annot = argNode.items[LET_TYPE];
             if (annot)
             {
                 const ok = inType && trySolveTypeParams(
@@ -1130,7 +1123,7 @@ function solveReturn(node: Node): SolvedNode
     //  or the void-returning return statement itself,
     //   so we always have a node to rely on.
 
-    const nextExpr  = out.items && out.items[0] || out;
+    const nextExpr  = out.items[0] || out;
     const nextType  = nextExpr.type || fail();
 
     const fn        = _current_fn || fail();
@@ -1158,8 +1151,8 @@ function solveJump(node: Node): SolvedNode
 
 function solveLet(node: Node): SolvedNode
 {
-    const annot     = node.items && node.items[LET_TYPE];
-    const init      = node.items && node.items[LET_INIT];
+    const annot     = node.items[LET_TYPE];
+    const init      = node.items[LET_INIT];
 
     const s_annot   = annot && evalTypeAnnot(annot);
     let   s_init    = init  && solveNode(init);
@@ -1207,7 +1200,7 @@ function evalTypeAnnot(node: Node): SolvedNode
     if (node.kind === 'call')
     {
         const items = node.items;
-        if (items && items.length)
+        if (items.length)
         {
             if (items.length === 1)
             {
@@ -1269,7 +1262,7 @@ function trySolveTypeParams(
     if (node.kind === 'call')
     {
         const items = node.items;
-        if (items && items.length)
+        if (items.length)
         {
             if (items.length === 1)
             {
@@ -1345,7 +1338,7 @@ function trySolveTypeParams(
 function evalTypePattern(node: Node, typeParams: TypeParams): boolean
 {
     const items = node.items;
-    if (node.kind === 'call' && items && items.length === 2)
+    if (node.kind === 'call' && items.length === 2)
     {
         const left  = items[0] || fail();
         const right = items[1] || fail();
@@ -1402,7 +1395,7 @@ function createRead(id: string): Node
         kind:   'call',
         flags:  F_ID,
         value:  id,
-        items:  null,
+        items:  [],
         token:  (_here || fail()).token,
     };
 }
@@ -1437,8 +1430,7 @@ function solveCall(node: Node): SolvedNode
         // And that's all there is to `using`.
         const argNode   = CallerNode(
             createRead('__partial' as any),
-            unshift ? null
-                    : [ (args && args[0]) || fail() ],
+            unshift ? [] : [ args[0] || fail() ],
             via.type || fail(),
             via);
 
@@ -1455,7 +1447,7 @@ function solveCall(node: Node): SolvedNode
     //
     return CallerNode(
         node,
-        args && args.length ? args : null,
+        args,
         callTarg.type || fail(),
         callTarg);
 }
@@ -1499,7 +1491,7 @@ function createLet(id: string, type: Type, flags: number = 0): SolvedNode
         flags:  flags|0,
         value:  id,
 
-        items:  null,
+        items:  [],
         token:  (_here || fail()).token,
         type:   type,
         target: null,
@@ -1574,13 +1566,13 @@ function bindImplicitArg(
     args.length >= argIdx || fail();
 
     args[argIdx] = CallerNode(
-        createRead(id), null, type,
+        createRead(id), [], type,
         getImplicit(id, type));
 }
 
 function getImplicit(id: string, type: Type): Overload
 {
-    let matched = scope_tryMatch__mutargs(id, null, type, 0);
+    let matched = scope_tryMatch__mutargs(id, [], type, 0);
     if (!matched)
     {
         if (!_current_fn)
@@ -1627,7 +1619,7 @@ function SolvedNode(
         flags: node.flags,
         value: node.value,
 
-        items,
+        items: items || [],
         token: node.token,
         type,
         target: null,
@@ -1649,21 +1641,21 @@ function wrap(kind: string, node: SolvedNode, flags: number)
 }
 
 function CallerNode(
-    node: Node, items: SolvedNodes|null, type: Type, target: Overload)
+    node: Node, items: SolvedNodes, type: Type, target: Overload)
         : SolvedNode
 {
     // HACK -
     // TBD how we make this stuff work in real life.
     if (target.kind === 'field')
     {
-        const head = items && items.length === 1 && items[0] || fail();
+        const head = items.length === 1 && items[0] || fail();
         const headType = head.type || fail();
 
         type = add_refs_from(headType, type);
     }
 
     // Tag copies and moves.
-    else if (items)
+    else if (items.length)
     {
         const args = target.args || fail();
         for (let i = 0; i < items.length; i++)
@@ -1720,11 +1712,8 @@ function solveNode(node: Node): SolvedNode
         || fail();
 }
 
-function solveNodes(nodes: Nodes|null, result: SolvedNodes = []): SolvedNodes|null
+function solveNodes(nodes: Nodes, result: SolvedNodes = []): SolvedNodes
 {
-    if (!nodes)
-        return null;
-
     const here0 = _here;
 
     let offset = 0;

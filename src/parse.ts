@@ -14,7 +14,7 @@ export type Node =
     kind:       string;
     flags:      number;
     value:      LexValue|null;
-    items:      Nodes|null;
+    items:      Nodes;
     token:      Token;
 };
 
@@ -162,7 +162,7 @@ export function parse(opts: Options)
             kind:       kind  || fail(),
             value:      value,
             flags:      flags >>> 0,
-            items:      items && items.length && items || null,
+            items:      items || [],
             token:      token || _loc || fail(),
         };
     }
@@ -314,9 +314,6 @@ export function parse(opts: Options)
                 // createPrefix('mut',
                     createRead(_structName || fail()));
 
-        if (!fn.items)
-            fn.items = [];
-
         fn.items.unshift(
             createLet('this' as LexValue, F_USING, typeAnnot, null));
 
@@ -363,7 +360,7 @@ export function parse(opts: Options)
                     + '. Block starts on line ' + line0 + '.');
 
             const expr = parseItem();
-            expr.kind !== 'call' || ((expr.flags & (F_ID | F_ACCESS)) === 0) || expr.items && expr.items.length > 1 || fail_Lint(
+            expr.kind !== 'call' || ((expr.flags & (F_ID | F_ACCESS)) === 0) || expr.items.length > 1 || fail_Lint(
                 'Orphan pure-looking expression.');
 
             items.push(expr);

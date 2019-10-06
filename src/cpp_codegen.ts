@@ -279,7 +279,7 @@ function cgFn(fn: SolvedNode)
     ///////////////////////////
 
     // Template emit.
-    if (!fn.items)
+    if (!fn.items.length)
     {
         let src = '';
 
@@ -395,7 +395,7 @@ function binding(node: SolvedNode, doInit: boolean)
     const id    = node.value || fail();
     const annot = typeAnnot(node.type) || fail();
     const head  = annot + ' ' + ID(id);
-    const init  = node.items && node.items[LET_INIT];
+    const init  = node.items[LET_INIT];
 
     if (!doInit)
         return head;
@@ -473,7 +473,7 @@ function cgCall(node: SolvedNode)
 
     const id = target.node && target.node.value || fail();
 
-    if (items && /[^a-zA-Z0-9_]/.test(id))
+    if (/[^a-zA-Z0-9_]/.test(id))
     {
         const nodes = node.items  || fail();
         const head  = nodes[0]    || fail();
@@ -502,7 +502,7 @@ function cgCall(node: SolvedNode)
                 if (id === '=')
                 {
                     const index = head.kind === 'call' && head.value === '[]'
-                               && head.items && head.items.length === 2
+                               && head.items.length === 2
                                 ? head.items : null;
 
                     if (index && type_isMap((index[0] || fail()).type))
@@ -522,7 +522,7 @@ function cgCall(node: SolvedNode)
     {
         let sep = '.';
         const parent = lookupType(
-            (node.items && node.items[0] || fail())
+            (node.items[0] || fail())
                 .type.canon) || fail();
 
         if (parent.flags & F_DESTRUCTOR)
@@ -551,7 +551,7 @@ function cgCall(node: SolvedNode)
 
     if (id === 'idx' && items.length === 2)
     {
-        const head = node.items && node.items[0] || fail();
+        const head = node.items[0] || fail();
         if (head.type.canon === 'string')
             return 'int(' + items[0] + '.find(' + items[1] + '))';
 
@@ -561,7 +561,7 @@ function cgCall(node: SolvedNode)
 
     if (id === 'has' && items.length === 2)
     {
-        const head = node.items && node.items[0] || fail();
+        const head = node.items[0] || fail();
         if (head.type.canon === 'string')
             return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
 
@@ -571,26 +571,26 @@ function cgCall(node: SolvedNode)
 
     if (id === 'slice' && items.length === 3)
     {
-        const head = node.items && node.items[0] || fail();
+        const head = node.items[0] || fail();
         if (head.type.canon === 'string')
             return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, _0 + ' + items[2] + '); } ())';
     }
 
     if (id === 'substr' && items.length === 3)
     {
-        const head = node.items && node.items[0] || fail();
+        const head = node.items[0] || fail();
         if (head.type.canon === 'string')
             return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
     }
 
     if (id === 'char' && items.length === 2)
     {
-        const head = node.items && node.items[0] || fail();
+        const head = node.items[0] || fail();
         if (head.type.canon === 'string')
             return 'int(' + items[0] + '[' + items[1] + '])';
     }
 
-    if ((id === 'true' || id === 'false') && !(items && items.length))
+    if ((id === 'true' || id === 'false') && !items.length)
         return id;
 
     return ID(id) + '(' + items.join(', ') + ')';
@@ -722,7 +722,7 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
 
 function cgCopyMove(node: SolvedNode)
 {
-    const a = cgNode(node.items && node.items[0] || fail());
+    const a = cgNode(node.items[0] || fail());
 
     if (node.kind === 'move' && !(node.flags & F_ELISION))
     {
