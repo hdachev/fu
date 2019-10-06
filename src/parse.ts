@@ -719,6 +719,10 @@ export function parse(opts: Options)
 
         let flags = F_INFIX;
 
+        if (op === '||') return createOr (left, right);
+        if (op === '&&') return createAnd(left, right);
+
+
         return createCall(
             op, flags, [left, right])
     }
@@ -1038,9 +1042,39 @@ export function parse(opts: Options)
         return createIf(cond, cons, alt);
     }
 
+
+    //
+
     function createIf(cond: Node, cons: Node, alt: Node|null)
     {
         return Node('if', [ cond, cons, alt ]);
+    }
+
+    function createOr(left: Node, right: Node)
+    {
+        return flattenIfSame('or', left, right);
+    }
+
+    function createAnd(left: Node, right: Node)
+    {
+        return flattenIfSame('and', left, right);
+    }
+
+    function flattenIfSame(kind: string, left: Node, right: Node)
+    {
+        const l =  left.kind;
+        const r = right.kind;
+
+        const items =
+            l === kind && r === kind
+                ? left.items.concat(right.items)
+                : l === kind
+                    ? left.items.concat(right)
+                    : r === kind
+                        ? [ left ].concat(right)
+                        : [ left, right ];
+
+        return Node(kind, items);
     }
 
 

@@ -642,6 +642,19 @@ function bool(type: Type, src: string): string
     return src;
 }
 
+function cgOr(node: SolvedNode)
+{
+    return '(' + cgNodes(node.items).join(' || ') + ')';
+}
+
+function cgAnd(node: SolvedNode)
+{
+    return '(' + cgNodes(node.items).join(' && ') + ')';
+}
+
+
+//
+
 function postfixBlock(src: string, postfix: string): string
 {
     src[src.length - 1] === '}' || fail();
@@ -704,6 +717,8 @@ const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
     'call':     cgCall,
     'let':      cgLet,
     'if':       cgIf,
+    'or':       cgOr,
+    'and':      cgAnd,
     'loop':     cgLoop,
     'int':      cgLiteral,
     'str':      cgStringLiteral,

@@ -694,6 +694,8 @@ const SOLVE: { [nodeKind: string]: Solver } =
     'call':     solveCall,
     'arrlit':   solveArrayLiteral,
     'if':       solveIf,
+    'or':       solveOr,
+    'and':      solveAnd,
     'loop':     solveBlock, // TODO
 
     'return':   solveReturn,
@@ -1591,7 +1593,7 @@ function getImplicit(id: string, type: Type): Overload
 
 function solveIf(node: Node): SolvedNode
 {
-    const items   = solveNodes(node.items) || fail();
+    const items   = solveNodes(node.items);
     const [, cons, alt] = items;
 
     const priExpr = cons || alt || fail();
@@ -1605,6 +1607,18 @@ function solveIf(node: Node): SolvedNode
             'No common supertype:', [ priExpr, secExpr ]);
 
     return SolvedNode(node, items, outType || fail());
+}
+
+function solveAnd(node: Node): SolvedNode
+{
+    const items = solveNodes(node.items);
+    return SolvedNode(node, items, t_bool);
+}
+
+function solveOr(node: Node): SolvedNode
+{
+    const items = solveNodes(node.items);
+    return SolvedNode(node, items, t_bool);
 }
 
 
