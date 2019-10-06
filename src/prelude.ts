@@ -46,14 +46,17 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
 fn true (): bool __native_pure;
 fn false(): bool __native_pure;
 
-fn &&(a: bool, b: bool): bool __native_pure;
-fn ||(a: bool, b: bool): bool __native_pure;
-fn !(a: bool): bool __native_pure;
+fn  !(a: &$T): bool __native_pure;
+fn !!(a: &$T): bool __native_pure;
 
 
 // Assignment.
 
 fn =(a: &mut $T, b: $T)
+    case ($b -> @copy):     &mut $T __native_pure;
+    case ($b -> @move):     &mut $T __native_pure;
+
+fn ||=(a: &mut $T, b: $T)
     case ($b -> @copy):     &mut $T __native_pure;
     case ($b -> @move):     &mut $T __native_pure;
 
@@ -118,8 +121,8 @@ fn [](a: &Map($K, $V), b: &$K)
 
 fn throw(reason: string): never __native_pure;
 
-fn assert(): never __native_pure;
-fn assert(cond: $T): void __native_pure;
+fn assert()             : never __native_pure;
+fn assert(cond: &$T)    :  void __native_pure;
 
 
 `;

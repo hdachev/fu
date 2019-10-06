@@ -511,6 +511,26 @@ function cgCall(node: SolvedNode)
                                 items[1] + ')';
                 }
 
+                // Conditional lazy assignment,
+                //  notice again the special casing for std::maps.
+                if (id === '||=')
+                {
+                    let left  = items[0];
+                    let right = items[1];
+
+                    const index = head.kind === 'call' && head.value === '[]'
+                               && head.items.length === 2
+                                ? head.items : null;
+
+                    if (index && type_isMap((index[0] || fail()).type))
+                        left = cgNode(index[0] || fail()) +
+                            '[' + cgNode(index[1] || fail()) + ']';
+
+                    return '([&](auto& _) { if (!' +
+                        bool(head.type, '_') + ') _ = ' +
+                            right + '; } (' + left + '))';
+                }
+
                 return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
         }
     }

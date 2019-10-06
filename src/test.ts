@@ -1024,6 +1024,47 @@ ZERO(`
 `);
 
 
+// Short-circuit assignment, esp. useful for maps
+//  and the cpp `map[k] = v`,
+//   which doesn't decompose safely.
+
+ZERO(`
+    mut i = 7;
+    i ||= 11; // expect_lambda
+    return i - 7;
+`);
+
+ZERO(`
+    mut i = 0;
+    i ||= 11; // expect_lambda
+    return i - 11;
+`);
+
+ZERO(`
+    mut m: Map(string, string);
+    mut g = 0;
+
+    m['hello'] = 'world';
+    fn f() (
+        g++, 'cruel world'); // expect_lambda
+
+    m['hello'] ||= f();
+    return g;
+`);
+
+ZERO(`
+    mut m: Map(string, string);
+    mut g = 0;
+
+    m['_not_hello_'] = 'world';
+    fn f() (
+        g++, 'cruel world'); // expect_lambda
+
+    m['hello'] ||= f();
+    return g - 1;
+`);
+
+
 // Let's get going.
 
 FILE('lex.fu');
