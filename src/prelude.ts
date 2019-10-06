@@ -113,4 +113,13 @@ fn [](a: &Map($K, $V), b: &$K)
     case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
     case ($a -> &    Map($K, $V)): &    $V __native_pure;
 
+
+// Assertions, bugs & fails.
+
+fn throw(reason: string): never __native_pure;
+
+fn assert(): never __native_pure;
+fn assert(cond: $T): void __native_pure;
+
+
 `;

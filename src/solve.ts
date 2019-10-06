@@ -1,7 +1,7 @@
 import { Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import * as Fail from './fail';
 
-import { Type, t_template, t_void, t_i32, t_bool, t_string, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
+import { Type, t_template, t_void, t_i32, t_bool, t_string, t_never, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -1617,15 +1617,25 @@ function sumType_logic(items: SolvedNodes): Type
         let sumType: Type|null = (items[0] || fail()).type;
         for (let i = 1; i < items.length; i++)
         {
-            sumType = type_tryInter(
-                sumType, (items[i] || fail()).type);
+            const type = (items[i] || fail()).type;
+            if (type === t_never)
+            {
+                i === items.length - 1 || fail(
+                    'Dead code following never [A].');
 
+                continue;
+            }
+
+            sumType = type_tryInter(sumType, type);
             if (!sumType)
             {
                 sumType = null;
                 break;
             }
         }
+
+        sumType !== t_never || fail(
+            'Dead code following never [B].');
 
         if (sumType && sumType.quals.indexOf(q_ref))
             return sumType;
@@ -1647,11 +1657,31 @@ function solveOr(node: Node): SolvedNode
 {
     const items = solveNodes(node.items);
 
-    // TODO (misc && T) || T.
+    let t_or = sumType_logic(items);
+    if (t_or === t_bool)
+    {
+        let change = false;
+
+        // Look for the `(a && b) || c` pattern -
+        //  With correct codegen, only `b` and `c` need to intersect,
+        //   `a` is simply another condition for using `b`.
+        const alts = items.slice();
+        for (let i = 0; i < alts.length - 1; i++)
+        {
+            const alt = alts[i] || fail();
+            if (alt.kind === 'and')
+            {
+                alts[i] = alt.items[alt.items.length - 1];
+                change = true;
+            }
+        }
+
+        if (change)
+            t_or = sumType_logic(alts);
+    }
 
     return SolvedNode(
-        node, items,
-        sumType_logic(items));
+        node, items, t_or);
 }
 
 
@@ -1920,5 +1950,6 @@ function listGlobals(): Scope
         'bool':     [ Typedef(t_bool  ) ],
         'void':     [ Typedef(t_void  ) ],
         'string':   [ Typedef(t_string) ],
+        'never':    [ Typedef(t_never)  ],
     };
 }

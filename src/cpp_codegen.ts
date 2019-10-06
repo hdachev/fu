@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
 import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
-import { lookupType, Struct, type_isMap } from './types';
+import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -64,9 +64,9 @@ function typeAnnot(type: Type): string
 {
     const fwd = typeAnnotBase(type);
 
-    if (type.quals.indexOf('m') >= 0)
+    if (type.quals.indexOf(q_mutref) >= 0)
         return fwd + '&';
-    if (type.quals.indexOf('r') >= 0)
+    if (type.quals.indexOf(q_ref) >= 0)
         return 'const ' + fwd + '&';
 
     return fwd;
@@ -593,7 +593,45 @@ function cgCall(node: SolvedNode)
     if ((id === 'true' || id === 'false') && !items.length)
         return id;
 
+    if (id === 'throw' && items.length === 1)
+        return cgThrow(id, items[0]);
+
     return ID(id) + '(' + items.join(', ') + ')';
+}
+
+function cgThrow(kind: string, item: string): string
+{
+    const THROW = '::throw';
+    if (!_tfwd[THROW])
+    {
+        include('<stdexcept>');
+
+        _tfwd[THROW] =
+////////////////////////////////////
+`
+struct fu_NEVER
+{
+    fu_NEVER(const fu_NEVER&) = delete;
+    void operator=(const fu_NEVER&) = delete;
+
+    template<typename T>
+    [[noreturn]] operator T() const
+    {
+        throw std::runtime_error("fu_NEVER cast");
+    }
+};
+
+template <typename T>
+[[noreturn]] fu_NEVER fu_THROW(const T& what)
+{
+    throw std::runtime_error(what);
+}
+`
+////////////////////////////////////
+        ;
+    }
+
+    return 'fu_' + kind.toUpperCase() + '(' + item + ')';
 }
 
 function cgLiteral(node: SolvedNode)
@@ -642,14 +680,83 @@ function bool(type: Type, src: string): string
     return src;
 }
 
-function cgOr(node: SolvedNode)
-{
-    return '(' + cgNodes(node.items).join(' || ') + ')';
-}
+
+//
 
 function cgAnd(node: SolvedNode)
 {
+    const type = node.type;
+    if (type.quals.indexOf(q_ref) >= 0)
+    {
+        const annot = typeAnnot(type);
+
+        let src = '([&]() -> ' + annot + ' {';
+
+        const items = node.items;
+        for (let i = 0; i < items.length - 1; i++)
+        {
+            const item = items[i] || fail();
+            src += ' { ' + annot + ' _ = ' + cgNode(item) + '; if (!' + bool(item.type, '_') + ') return _; }';
+        }
+
+        const tail = items[items.length - 1] || fail();
+        if (tail.type !== t_never)
+            src += ' return';
+
+        src += ' ' + cgNode(tail) + '; }())';
+        return src;
+    }
+
     return '(' + cgNodes(node.items).join(' && ') + ')';
+}
+
+function cgOr(node: SolvedNode)
+{
+    const type = node.type;
+    if (type.quals.indexOf(q_ref) >= 0)
+    {
+        const annot = typeAnnot(type);
+
+        let src = '([&]() -> ' + annot + ' {';
+
+        const items = node.items;
+        for (let i = 0; i < items.length - 1; i++)
+        {
+            const item = items[i] || fail();
+            let tail = item;
+
+            // Here's the `a && b || c` pattern,
+            //  actually works quite well.
+            if (item.kind === 'and')
+            {
+                const items = item.items;
+                tail = items[items.length - 1] || fail();
+
+                src += ' if (';
+                for (let i = 0; i < items.length - 1; i++)
+                {
+                    if (i)
+                        src += ' && ';
+
+                    const item = items[i] || fail();
+                    src += bool(item.type, cgNode(item));
+                }
+
+                src += ')';
+            }
+
+            src += ' { ' + annot + ' _ = ' + cgNode(tail) + '; if (' + bool(tail.type, '_') + ') return _; }';
+        }
+
+        const tail = items[items.length - 1] || fail();
+        if (tail.type !== t_never)
+            src += ' return';
+
+        src += ' ' + cgNode(tail) + '; }())';
+        return src;
+    }
+
+    return '(' + cgNodes(node.items).join(' || ') + ')';
 }
 
 

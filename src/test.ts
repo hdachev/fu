@@ -986,13 +986,39 @@ ZERO(`
     let y = 'world';
     let w = x || y;
 
+    return w == 'hello' ? 0 : 1; // expect_lambda
+`);
+
+ZERO(`
+    let x = 'hello';
+    let y = 'world';
+    let w = x && y; // expect_lambda
+
+    return w == 'world' ? 0 : 1;
+`);
+
+ZERO(`
+    let x = 'hello';
+    let y = 'world';
+    let w = 3 && x || y; // expect_lambda
+
     return w == 'hello' ? 0 : 1;
 `);
 
 ZERO(`
     let x = 'hello';
     let y = 'world';
-    let w = x && y;
+    let arr: i32[];
+    let w = arr && x || y; // expect_lambda
+
+    return w == 'world' ? 0 : 1;
+`);
+
+ZERO(`
+    let x = 'hello';
+    let y = 'world';
+    let arr: i32[];
+    let w = arr && x || y || throw("Nope."); // expect_lambda
 
     return w == 'world' ? 0 : 1;
 `);
