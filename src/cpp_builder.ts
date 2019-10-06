@@ -105,7 +105,7 @@ catch (o_O) {};
 const NOT_WIN = !/^win\d+$/.test(process.platform);
 
 const GCC       = NOT_WIN
-    ? 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror'
+    ? 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality'
     : 'g++ -std=c++1z -Wall -Wextra -Werror -static';
 
 const GCC_BUILD = GCC + ' -c -o';
