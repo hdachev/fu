@@ -1062,15 +1062,15 @@ export function parse(opts: Options)
 
     function flattenIfSame(kind: string, left: Node, right: Node)
     {
-        const l =  left.kind;
-        const r = right.kind;
+        const k_left  =  left.kind;
+        const k_right = right.kind;
 
         const items =
-            l === kind && r === kind
+            k_left === kind && k_right === kind
                 ? left.items.concat(right.items)
-                : l === kind
+                : k_left === kind
                     ? left.items.concat(right)
-                    : r === kind
+                    : k_right === kind
                         ? [ left ].concat(right)
                         : [ left, right ];
 

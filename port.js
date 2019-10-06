@@ -44,6 +44,64 @@ function port(file)
         console.error('\tHAS ...rest');
 
 
+    //
+
+    function checkOpArgs(regex, op, ok)
+    {
+        let m;
+
+        const bad = {};
+
+        while ((m = regex.exec(src)))
+        {
+            const l = m[1];
+            const r = m[2];
+            if (ok.indexOf(l) < 0) bad[l] = true;
+            if (ok.indexOf(r) < 0) bad[r] = true;
+        }
+
+        Object.keys(bad).forEach(
+            arg => console.error('\tHAS ' + op + ' ' + arg));
+    }
+
+    checkOpArgs(
+        /(\b[a-zA-Z_][a-zA-Z0-9_]*\b)\s*[!=]==?\s*(\b[a-zA-Z_][a-zA-Z0-9_]*\b)/g, '==',
+        [
+            // --------------------------------------------------
+            // Parser.
+            // --------------------------------------------------
+
+            // The usual suspects.
+            'length', 'i',
+
+            // These look all good.
+            'kind', 'value',
+            'endKind', 'endVal',
+            'l0', 'l1', 'line0', 'line1',
+            'col1', '_col0',
+
+            // Should be good.
+            '_precedence', 'p1',
+
+            // Counters.
+            '_numReturns', 'numReturns0',
+            '_numDollars', 'numDollars0', 'numDollars1',
+
+            // Node kinds.
+            'k_left', 'k_right',
+
+            // --------------------------------------------------
+            // Solver.
+            // --------------------------------------------------
+
+            // Types - should be fine.
+            // These ok ???????????????
+            'type',
+            't_bool', 't_never',
+            't_or', 'sumType',
+        ]);
+
+
     // Common replacers.
 
     src = src
