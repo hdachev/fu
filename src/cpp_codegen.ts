@@ -526,9 +526,11 @@ function cgCall(node: SolvedNode)
                         left = cgNode(index[0] || fail()) +
                             '[' + cgNode(index[1] || fail()) + ']';
 
-                    return '([&](auto& _) { if (!' +
+                    const annot = typeAnnot(head.type);
+
+                    return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
                         bool(head.type, '_') + ') _ = ' +
-                            right + '; } (' + left + '))';
+                            right + '; return _; } (' + left + '))';
                 }
 
                 return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
