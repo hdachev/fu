@@ -896,21 +896,13 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
 
 //
 
-let mangler_lastIn : SolvedNodes|null;
-let mangler_lastOut: string = '';
-
-function mangler(args: SolvedNodes): string
+function TODO_memoize_mangler(args: SolvedNodes): string
 {
-    if (args === mangler_lastIn)
-        return mangler_lastOut;
-
     let mangle = '';
     for (let i = 0; i < args.length; i++)
         mangle += '\v' + serializeType((args[i] || fail()).type);
 
-    return (
-        mangler_lastIn  = args,
-        mangler_lastOut = mangle);
+    return mangle;
 }
 
 
@@ -920,7 +912,7 @@ function trySpecialize(
     template: Template, args: SolvedNodes)
         : Overload|null
 {
-    const mangle = mangler(args);
+    const mangle = TODO_memoize_mangler(args);
 
     //
     let match = template.specializations[mangle];
