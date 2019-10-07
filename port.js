@@ -43,11 +43,17 @@ function port(file)
     if (/\.\.\./.test(src))
         console.error('\tHAS ...rest');
 
-    if (/\bObject\.create\b/.test(src))
-        console.error('\tHAS Object.create');
+    {
+        const calls = {};
+        const re = /\b(Object(\s*\.[a-zA-Z0-9_]+)?\b|\bArray\s*\.[a-zA-Z0-9_]+)\b/g;
 
-    if (/\bObject\b/.test(src))
-        console.error('\tHAS Object');
+        let m;
+        while ((m = re.exec(src)))
+            calls[m[0]] = true;
+
+        Object.keys(calls).forEach(call =>
+            console.error('\tHAS ' + call));
+    }
 
 
     //
