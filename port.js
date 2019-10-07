@@ -43,6 +43,12 @@ function port(file)
     if (/\.\.\./.test(src))
         console.error('\tHAS ...rest');
 
+    if (/\bObject\.create\b/.test(src))
+        console.error('\tHAS Object.create');
+
+    if (/\bObject\b/.test(src))
+        console.error('\tHAS Object');
+
 
     //
 
