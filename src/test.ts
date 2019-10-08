@@ -17,10 +17,12 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
     resetContext();
 
     //
-    src = src.indexOf('fn ZERO()') >= 0
-        ? src + '\nfn main(): i32 ZERO();\n'
-        : 'fn main(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
+    if (src.indexOf('fn ZERO()') < 0)
+        src = 'fn ZERO(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
 
+    src += '\nfn main(): i32 ZERO();\n';
+
+    //
     const r_lex     = lex(
         src as Source,
         fname);
@@ -229,7 +231,7 @@ ZERO(`
 
 ZERO(`
     mut res = 0;
-    fn decr() // expect_lambda
+    fn decr()
         res--;
 
     decr();
@@ -429,10 +431,10 @@ ZERO(`
         fn outer(i: i32): i32
             two * inner(i);
 
-        return outer(one);
+        return outer(one) + (two - one) * 17;
     }
 
-    return test(1);
+    fn ZERO() test(1) - 17;
 `);
 
 ZERO(`
@@ -502,7 +504,7 @@ ZERO(`
 ZERO(`
     let x = 1;
 
-    fn test(): &i32 // expect_lambda
+    fn test(): &i32
         x;
 
     return test - 1;

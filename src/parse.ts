@@ -38,10 +38,11 @@ export const F_MUT          = 1 << 16;
 export const F_IMPLICIT     = 1 << 17;
 export const F_USING        = 1 << 18;
 
-export const F_UNTYPED_ARGS = 1 << 24;
-export const F_NAMED_ARGS   = 1 << 25;
-export const F_FULLY_TYPED  = 1 << 26;
-export const F_CLOSURE      = 1 << 27;
+export const F_UNTYPED_ARGS = 1 << 23;
+export const F_NAMED_ARGS   = 1 << 24;
+export const F_FULLY_TYPED  = 1 << 25;
+export const F_CLOSURE      = 1 << 26;
+export const F_HAS_CLOSURE  = 1 << 27;
 export const F_PATTERN      = 1 << 28;
 export const F_TEMPLATE     = 1 << 29;
 export const F_DESTRUCTOR   = 1 << 30;

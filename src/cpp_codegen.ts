@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
-import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never } from './types';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
+import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -19,6 +19,8 @@ let _fdef: string       = null as any; // fn decls
 let _indent: string     = null as any;
 let _ids: CppScope      = null as any;
 let _fnN: number        = 0;
+let _clsrN: number      = 0;
+let _faasN: number      = 0;
 let _exprN: number      = 0;
 
 function RESET()
@@ -32,6 +34,8 @@ function RESET()
     _indent = '\n';
     _ids    = Object.create(null);
     _fnN    = 0;
+    _clsrN  = 0;
+    _faasN  = 0;
     _exprN  = 0;
 }
 
@@ -269,15 +273,101 @@ function cgParens(node: SolvedNode)
     return '(' + items.join(', ') + ')';
 }
 
+
+// This is kinda weird - it's an auto-refactor:
+//  it converts a function that contains closures
+//   into a struct, with its args and leading "lets"
+//    converted into fields, and then leading closures
+//     converted into struct members.
+
+// The tail of the function remains in an "EVAL" function,
+//  and currently to limit the damage we emit a macro
+//   that remaps the invocation.
+
+// TODO this can do more -
+//  we could collect most of the top-level stuff on the struct.
+
+function try_cgFnAsStruct(fn: SolvedNode): string|null
+{
+    const body = fn.items[fn.items.length + FN_BODY_BACK];
+    if (!body || body.kind !== 'block')
+        return null;
+
+    const items = body.items as SolvedNode[];
+
+    // We need at least one closure
+    //  in the function "header"
+    //   for all of this to make sense.
+    let hasClosuresInHeader = false;
+    let end = 0;
+    for (let i = 0; i < items.length; i++)
+    {
+        end = i;
+
+        const item = items[i];
+        if (item.kind === 'fn' && (item.flags & F_CLOSURE))
+            hasClosuresInHeader = true;
+        else if (item.kind !== 'let' && item.kind !== 'struct')
+            break;
+    }
+
+    if (!hasClosuresInHeader)
+        return null;
+
+    // Ok - refactor time.
+    const evalName = fn.value + '_EVAL';
+
+    const restFn: SolvedNode =
+    {
+        kind: 'fn', type: t_void,
+        flags: fn.flags | F_CLOSURE,
+        token: fn.token,
+        value: evalName,
+        target: null,
+
+        items:
+        [
+            fn.items[fn.items.length - 2], // retval
+            {
+                kind: 'block', type: t_void,
+                flags: 0,
+                token: fn.token,
+                value: '',
+                target: null,
+
+                items: items.slice(
+                    end, items.length),
+            },
+        ],
+    };
+
+    const head: SolvedNode[] =
+        (fn.items.slice(0, fn.items.length + FN_ARGS_BACK) as SolvedNode[])
+            .concat(items.slice(0, end))
+            .concat(restFn);
+
+    //////////////////////
+    _clsrN === 0 || fail();
+    _clsrN--; // -1, so root closures come up at 0.
+    //////////////////////
+
+    const structName = 'sf_' + fn.value;
+    let src = '\nstruct ' + structName
+            + blockWrap(head) + ';'
+            + '\n\n#define ' + fn.value + '(...) ((' + structName + ' { __VA_ARGS__ }).' + evalName + '())\n';
+
+    //////////////////////
+    _clsrN++;
+    //////////////////////
+
+    return src;
+}
+
+
+//
+
 function cgFn(fn: SolvedNode)
 {
-    ///////////////////////////
-    const s0    = enterScope();
-    const f0    = _fnN;
-    const indent0 = _indent;
-    _fnN++;
-    ///////////////////////////
-
     // Template emit.
     if (!fn.items.length)
     {
@@ -296,18 +386,48 @@ function cgFn(fn: SolvedNode)
         return src;
     }
 
+    // Use like-struct output for top-level functions with closures -
+    //  We'll try to "close over" a root-level struct.
+    if (_faasN === 0 && (fn.flags & F_HAS_CLOSURE))
+    {
+        /////////
+        _faasN++;
+        /////////
+
+        const src = try_cgFnAsStruct(fn);
+
+        /////////
+        _faasN--;
+        /////////
+
+        if (src)
+        {
+            _fdef += src;
+            return '';
+        }
+    }
+
+    ///////////////////////////
+    const s0    = enterScope();
+    const f0    = _fnN;
+    const c0    = _clsrN;
+    const indent0 = _indent;
+
+    _fnN++;
+    if (fn.flags & F_CLOSURE) _clsrN++;
+    ///////////////////////////
+
+    //
     const items = fn.items;
     const body  = items[items.length + FN_BODY_BACK] || fail();
     const ret   = items[items.length + FN_RET_BACK ] || fail();
     const annot = typeAnnot(ret.type || fail());
 
-    // Chosing between lambda and regular fn.
-    //  Notice basic lambdas don't do recursions,
-    //   but they can be cheated into it via this trick -
-    //    http://pedromelendez.com/blog/2015/07/16/recursive-lambdas-in-c14/
-    const closure = !!(fn.flags & F_CLOSURE);
+    //
+    const closure = !!_clsrN;
 
-    if (!closure)
+    // Both closures and try_cgFnAsStruct
+    if (!(fn.flags & F_CLOSURE))
         _indent = '\n';
 
     let src = closure
@@ -336,6 +456,7 @@ function cgFn(fn: SolvedNode)
 
     //////////////
     _fnN    = f0;
+    _clsrN  = c0;
     _indent = indent0;
     exitScope(s0);
     //////////////
@@ -381,13 +502,12 @@ function cgFn(fn: SolvedNode)
         src += '\n}';
     }
 
-    if (!closure && _fnN)
-    {
-        _fdef += '\n' + src + '\n';
-        src = '';
-    }
+    // This covers both closures & try_cgTryFnAsStruct:
+    if (fn.flags & F_CLOSURE)
+        return src;
 
-    return src;
+    _fdef += '\n' + src + '\n';
+    return '';
 }
 
 function binding(node: SolvedNode, doInit: boolean)
@@ -408,7 +528,12 @@ function binding(node: SolvedNode, doInit: boolean)
 
 function cgLet(node: SolvedNode)
 {
-    return binding(node, true);
+    const src = binding(node, true);
+    if (_fnN || _faasN)
+        return src;
+
+    _fdef += src + ';\n';
+    return '';
 }
 
 function cgReturn(node: SolvedNode)

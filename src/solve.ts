@@ -1,4 +1,4 @@
-import { Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, F_FULLY_TYPED, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
+import { Node, Nodes, LET_TYPE, LET_INIT, FN_RET_BACK, FN_BODY_BACK, FN_ARGS_BACK, F_NAMED_ARGS, F_ID, F_FIELD, F_USING, F_FULLY_TYPED, F_HAS_CLOSURE, F_CLOSURE, F_IMPLICIT, F_MUT, F_TEMPLATE, F_ELISION } from './parse';
 import * as Fail from './fail';
 
 import { Type, t_template, t_void, t_i32, t_bool, t_string, t_never, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
@@ -1858,12 +1858,17 @@ function solveNodes(nodes: Nodes, result: SolvedNodes = []): SolvedNodes
 
         // Propagate closure detector results.
         if (_closure_detected)
+        {
             for (let i = i0; i < i1; i++)
             {
                 const node = result[i];
                 if (node)
                     node.flags |= F_CLOSURE;
             }
+
+            if (_current_fn)
+                _current_fn.flags |= F_HAS_CLOSURE;
+        }
 
         // CLOSURE DETECTOR ////////////////////////////
         _closure_detect     = cd0;
