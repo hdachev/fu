@@ -405,7 +405,7 @@ ZERO(`
 `);
 
 
-// Recursion & implicit args.
+// Recursion, closures & implicit args.
 
 ZERO(`
     fn inner(i: i32): i32
@@ -415,6 +415,24 @@ ZERO(`
         2 * inner(i);
 
     return outer(1);
+`);
+
+ZERO(`
+    fn test(one: i32)
+    {
+        let zero = one - 1;
+        let two  = one * 2;
+
+        fn inner(i: i32): i32
+            i > zero ? outer(i - one) : zero;
+
+        fn outer(i: i32): i32
+            two * inner(i);
+
+        return outer(one);
+    }
+
+    return test(1);
 `);
 
 ZERO(`
