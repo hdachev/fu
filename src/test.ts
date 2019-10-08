@@ -282,7 +282,7 @@ ZERO(`
     fn other(a: i32, b: i32)
         named(:b, :a);
 
-    return named(b: 3, 6);
+    return other(b: 3, 6);
 `);
 
 
