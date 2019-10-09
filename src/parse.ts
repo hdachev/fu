@@ -148,6 +148,7 @@ export function parse(opts: Options)
     let _fnDepth    = 0;
     let _numDollars = 0;
     let _numReturns = 0;
+    let _implicits  = 0;
 
 
     //
@@ -232,9 +233,14 @@ export function parse(opts: Options)
         //     items += parseImport()
         // }
 
-        return Node('root',
+        const out = Node('root',
             parseBlockLike('eof', 'eof',
                 parseStatement));
+
+        if (_implicits)
+            out.flags |= F_IMPLICIT;
+
+        return out;
     }
 
 
@@ -660,6 +666,9 @@ export function parse(opts: Options)
 
         if (numDollars0 !== _numDollars)
             flags |= F_TEMPLATE;
+
+        if (flags & F_IMPLICIT)
+            _implicits++;
 
         return createLet(id, flags, type, init);
     }

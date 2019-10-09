@@ -32,6 +32,9 @@ let _current_strt:      Type|null           = null;
 
 let _typeParams:        TypeParams|null     = null;
 
+let TEST_expectImplicits: boolean = false;
+
+
 function RESET()
 {
     _here               = null;
@@ -697,6 +700,8 @@ const UNORDERED_SOLVE: { [nodeKind: string]: UnorderedSolver } =
 
 function solveRoot(node: Node): SolvedNode
 {
+    TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
+
     return SolvedNode(node, solveNodes(node.items), t_void);
 }
 
@@ -1536,6 +1541,9 @@ function bindImplicitArg(
     args: SolvedNodes, argIdx: number,
     id: string, type: Type)
 {
+    TEST_expectImplicits || fail(
+        'Attempting to propagate implicit arguments.');
+
     args.length >= argIdx || fail();
 
     args[argIdx] = CallerNode(
