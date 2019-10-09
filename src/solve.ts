@@ -44,13 +44,19 @@ type Template =
     readonly node: Node;
     readonly scope: Scope;
     readonly specializations:
-        { [mangle: string]: Overload|null };
+        { [mangle: string]: Specialization };
+};
+
+type Specialization =
+{
+    readonly node:     SolvedNode|null;
+    readonly overload: Overload  |null;
 };
 
 type Overload =
 {
     readonly kind: 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
-    readonly node: SolvedNode|null;
+    readonly name: string;
     readonly type: Type|null;
 
     // Arity.
@@ -71,7 +77,7 @@ type Overload =
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
+    return { kind: 'type', name: '', type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
 }
 
 function listGlobals(): Scope
@@ -145,12 +151,12 @@ export function solve(parse: Node): SolveResult
 
     function Binding(node: SolvedNode, type: Type): Overload
     {
-        return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
+        return { kind: 'var', name: node.value, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
     }
 
     function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
     {
-        return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, template: null };
+        return { kind: 'field', name: node.value, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, template: null };
     }
 
     function TemplateDecl(node: Node): Overload
@@ -180,7 +186,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'template', node: null, type: t_template, min, max, args: null, names, defaults: null, partial: null, template };
+        return { kind: 'template', name: node.value, type: t_template, min, max, args: null, names, defaults: null, partial: null, template };
     }
 
     function FnDecl(node: SolvedNode): Overload
@@ -219,7 +225,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, template: null };
+        return { kind: 'fn', name: node.value, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, template: null };
     }
 
     function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -260,7 +266,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'defctor', node: null, type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, template: null };
+        return { kind: 'defctor', name: '', type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, template: null };
     }
 
     function tryDefaultInit(type: Type): SolvedNode|null
@@ -327,7 +333,7 @@ export function solve(parse: Node): SolveResult
         }
 
         //
-        return { kind, node: null, type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], template: null };
+        return { kind, name: '', type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], template: null };
     }
 
 
@@ -848,18 +854,26 @@ export function solve(parse: Node): SolveResult
         const mangle = TODO_memoize_mangler(args);
 
         //
-        let match = template.specializations[mangle];
-        if (match === undefined)
-            match = template.specializations[mangle] = doTrySpecialize(template, args) || null;
+        let spec = template.specializations[mangle];
+        if (!spec)
+        {
+            const node = doTrySpecialize(template, args) || null;
 
-        return match;
+            spec = template.specializations[mangle] =
+            {
+                node:     node,
+                overload: node ? node.target || fail() : null,
+            };
+        }
+
+        return spec.overload;
     }
 
     type TypeParams = { [id: string]: Type };
 
     function doTrySpecialize(
         template: Template, args: SolvedNodes)
-            : Overload|null
+            : SolvedNode|null
     {
         const typeParams: TypeParams = {};
 
@@ -886,7 +900,7 @@ export function solve(parse: Node): SolveResult
 
     function trySpecializeFn(
         node: Node, args: SolvedNodes, typeParams: TypeParams)
-            : Overload|null
+            : SolvedNode|null
     {
         const items = node.items;
 
@@ -956,7 +970,7 @@ export function solve(parse: Node): SolveResult
         _typeParams = typeParams0;
         ////////////////////////////////
 
-        return specialized.target || fail();
+        return specialized;
     }
 
 
@@ -1421,12 +1435,9 @@ export function solve(parse: Node): SolveResult
     }
 
     function injectImplicitArg__mutfn(
-        node: SolvedNode|null, fn: Overload|null,
+        node: SolvedNode,
         id: string, type: Type)
     {
-        if (!node)
-            node = fn && fn.node || fail();
-
         const mut_argNodes = node.items;
         const newArgIdx = mut_argNodes.length + FN_RET_BACK;
 
@@ -1441,19 +1452,15 @@ export function solve(parse: Node): SolveResult
         // TODO argname check should come first -
         //  the one below is too late,
         //   wont catch an argname dupe here.
+        const fn = node.target;
         if (fn)
         {
             // We'll be mutating the overload.
             fn.kind === 'fn' || fail();
             const mut_args = fn.args || [];
             const mut_names = fn.names || [];
+
             mut_names.length === mut_args.length || fail();
-
-            // We'll also mutate the fn SolvedNode.
-            const node = fn.node || fail();
-            node.kind === 'fn' && node.type || fail(); // isSolvedFnNode
-
-            //
             mut_names.indexOf(id) < 0 || fail(
                 'Implicit argument name collision.');
 
@@ -1490,9 +1497,8 @@ export function solve(parse: Node): SolveResult
             if (!_current_fn)
                 return fail('No implicit `' + id + '` in scope.');
 
-            const fnDecl = _current_fn.target || null;
-            const fnNode = fnDecl ? fnDecl.node : _current_fn;
-            matched = injectImplicitArg__mutfn(fnNode, fnDecl, id, type) || fail();
+            matched = injectImplicitArg__mutfn(
+                _current_fn, id, type) || fail();
         }
 
         return matched;

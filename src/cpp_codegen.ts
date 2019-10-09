@@ -596,7 +596,7 @@ function cgCall(node: SolvedNode)
         return head + open + items.join(', ') + close;
     }
 
-    const id = target.node && target.node.value || fail();
+    const id = target.name || fail();
 
     if (/[^a-zA-Z0-9_]/.test(id))
     {
