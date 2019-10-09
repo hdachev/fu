@@ -240,11 +240,20 @@ function FnDecl(node: SolvedNode): Overload
         arg.kind === 'let'   || fail();
         arg_t[i] = arg.type  || fail();
         arg_n[i] = arg.value || fail();
-        arg_d[i] = arg.items[LET_INIT] || null;
+
+        //
+        const implicit = !!(arg.flags & F_IMPLICIT);
 
         // Non-implicit, non-defaulted argument?
-        if (!(arg.flags & F_IMPLICIT) && !arg.items[LET_INIT])
-            min++;
+        if (!implicit)
+        {
+            arg_d.length >= i || fail();
+
+            const def = arg.items[LET_INIT] || null;
+            arg_d[i] = def;
+            if (!def)
+                min++;
+        }
     }
 
     return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, callsites: null, template: null };
@@ -439,6 +448,22 @@ function scope_resetUsage(scope: Scope)
         scope[key] = scope[key].map(resetUsage);
 }
 
+function arr_slide<T>(arr: T[], from: number, to: number)
+{
+    // memcpy, memmove, mempcy.
+    const pivot = arr[from];
+
+    if (from < to)
+        for (let i = from; i < to; i++)
+            arr[i] = arr[i + 1];
+
+    if (from > to)
+        for (let i = from; i > to; i--)
+            arr[i] = arr[i - 1];
+
+    arr[to] = pivot;
+}
+
 function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|null, flags: number): Overload|null
 {
     const scope     = _scope || fail();
@@ -482,12 +507,9 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
         }
 
         //
-        let mut_args = args;
-
         NEXT: for (let i = 0; i < overloads.length; i++)
         {
             let overload = overloads[i];
-            let actual: SolvedNodes = args;
 
             TEST_AGAIN: for (;;)
             {
@@ -499,7 +521,6 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
                     continue NEXT;
 
                 // Remap named arguments.
-                actual = args;
                 if (names)
                 {
                     const overloadNames = overload.names;
@@ -517,32 +538,15 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
                         if (idx < 0)
                             continue NEXT;
 
-                        if (actual === args)
-                            actual = repeat(null, args.length);
-
-                        actual[idx] = args[i];
-                    }
-
-                    // Fill the rest.
-                    actual !== args || fail();
-                    {
-                        let i = 0;
-                        let j = 0;
-
-                        while (i < args.length && j < actual.length)
-                        {
-                            if (actual[j]) { j++; continue; }
-                            if (names [i]) { i++; continue; }
-
-                            actual[j++] = args[i++];
-                        }
+                        arr_slide(args, i, idx);
+                        arr_slide(names, i, idx);
                     }
                 }
 
                 // Specialize.
                 if (overload.template)
                 {
-                    const spec = trySpecialize(overload.template, actual);
+                    const spec = trySpecialize(overload.template, args);
                     if (!spec)
                         continue NEXT;
 
@@ -559,16 +563,16 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
             // Type check args.
             const arg_t = overload.args || fail();
             const arg_d = overload.defaults;
-            for (let i = 0; i < actual.length; i++)
+            for (let i = 0; i < args.length; i++)
             {
-                const arg = actual[i];
+                const arg = args[i];
                 if (!arg)
                 {
                     arg_d && arg_d[i] || fail();
                     continue;
                 }
 
-                if (!isAssignable(arg_t[i], (actual[i] || fail()).type))
+                if (!isAssignable(arg_t[i], (args[i] || fail()).type))
                     continue NEXT;
             }
 
@@ -577,26 +581,20 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
                 fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
 
             // Done!
-            matched     = overload;
-            mut_args    = actual;
-        }
-
-        // Mutate call args last thing.
-        if (matched && mut_args !== args)
-        {
-            const arg_d = matched.defaults;
-
-            mut_args.length >= args.length || fail();
-            for (let i = 0; i < mut_args.length; i++)
-                args[i] = mut_args[i] || arg_d && arg_d[i] || fail();
+            matched = overload;
         }
     }
 
     if (matched)
     {
+        // Mutate call args last thing.
+        const arg_d = matched && matched.defaults;
+        if (arg_d)
+            for (let i = 0; i < arg_d.length; i++)
+                args[i] = args[i] || arg_d && arg_d[i] || fail();
+
         // Implicit argument injection.
         const arg_t = matched.args;
-        const arg_d = matched.defaults;
 
         if (arg_t && args.length < arg_t.length)
         {
@@ -605,15 +603,9 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
             {
                 const id   = arg_n[i];
                 const type = arg_t[i];
-                const def  = arg_d && arg_d[i];
 
-                // Inject default..
-                if (def)
-                    args[i] = def;
-
-                // ..or propagate implicit.
-                else
-                    bindImplicitArg(args, i, id, type);
+                // Propagate implicit.
+                bindImplicitArg(args, i, id, type);
             }
         }
     }

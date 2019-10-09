@@ -18,9 +18,11 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
 
     //
     if (src.indexOf('fn ZERO()') < 0)
-        src = 'fn ZERO(): i32 {' + src.replace(/\n/g, '\n') + '\n}\n';
+        src = '\n\nfn ZERO(): i32 {' + src + '}\n';
+    else
+        src = '\n' + src;
 
-    src += '\nfn main(): i32 ZERO();\n';
+    src += '\nfn main(): i32 ZERO();\n\n';
 
     //
     const r_lex     = lex(
@@ -50,11 +52,11 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
     {
         const fail = (...args: unknown[]) =>
         {
-            let src = gensrc.replace(/\n/g, '\n\t');
-            if (src.length > 2048)
-                src = '[ TOO LONG ]';
+            let s = src + '\n======================\n' + gensrc;
+            // if (s.length > 1024 * 4)
+            //     s = '[ TOO LONG ]';
 
-            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + src);
+            FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + s);
         };
 
         cpp_builder.build(gensrc, result =>
