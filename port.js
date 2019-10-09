@@ -1,14 +1,11 @@
 const fs = require('fs');
 const FILES = [ 'parse', 'solve', 'cpp_codegen' ];
 
-function port(file)
+function warn(src)
 {
-    console.log('\n' + file + ':');
-
-    let src = fs.readFileSync('src/' + file + '.ts', 'utf8');
-
-
-    // Warn.
+    src = src.replace(
+        /"[^\n"]+"|'[^\n']+'|`[^\n`]`/g,
+        '');
 
     if (/\.map\b/.test(src))
         console.error('\tHAS .map');
@@ -129,6 +126,15 @@ function port(file)
     checkOpArgs(
         /(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)\s*(?:\s*\))*!==?\s*(?:\(\s*)*(?:\b[a-zA-Z_][a-zA-Z0-9_]*\.)*([a-zA-Z_][a-zA-Z0-9_]*\b)/g,
         '!=', eqOk);
+}
+
+function port(file)
+{
+    console.log('\n' + file + ':');
+
+    let src = fs.readFileSync('src/' + file + '.ts', 'utf8');
+
+    warn(src);
 
 
     // Common replacers.
