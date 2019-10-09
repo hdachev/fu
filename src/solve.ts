@@ -25,26 +25,23 @@ export type SolveResult =
 
 let _here:              Node|null           = null;
 let _scope:             Scope|null          = null;
-let _scope_root:        Scope|null          = null;
+
 let _current_fn:        SolvedNode|null     = null;
 let _current_str:       SolvedNode|null     = null;
 let _current_strt:      Type|null           = null;
 
-let _closure_detect:    Scope|null          = null;
-let _closure_detected:  boolean             = false;
 let _typeParams:        TypeParams|null     = null;
 
 function RESET()
 {
     _here               = null;
     _scope              = null;
-    _scope_root         = null;
+
     _current_fn         = null;
     _current_str        = null;
     _current_strt       = null;
 
-    _closure_detect     = null;
-    _closure_detected   = false;
+    _typeParams         = null;
 }
 
 function fail(reason: string = '', nodes: SolvedNodes|null = null)
@@ -82,7 +79,6 @@ type Callsite =
     node:               SolvedNode;
 
     _scope:             Scope|null;
-    _closure_detect:    Scope|null;
     _current_fn:        SolvedNode|null;
     _current_str:       SolvedNode|null;
     _current_strt:      Type|null;
@@ -90,21 +86,19 @@ type Callsite =
 
 function Callsite(node: SolvedNode): Callsite
 {
-    return { node, _scope, _closure_detect, _current_fn, _current_str, _current_strt };
+    return { node, _scope, _current_fn, _current_str, _current_strt };
 }
 
 function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
 {
     ////////////////////////////////////////
     const scope0            = _scope;
-    const closure_detect0   = _closure_detect;
     const current_fn0       = _current_fn;
     const current_str0      = _current_str;
     const current_strt0     = _current_strt;
     ////////////////////////////////////////
 
     _scope                  = callsite._scope;
-    _closure_detect         = callsite._closure_detect;
     _current_fn             = callsite._current_fn;
     _current_str            = callsite._current_str;
     _current_strt           = callsite._current_strt;
@@ -113,7 +107,6 @@ function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
 
     ////////////////////////////////////////
     _scope          = scope0;
-    _closure_detect = closure_detect0;
     _current_fn     = current_fn0;
     _current_str    = current_str0;
     _current_strt   = current_strt0;
@@ -450,10 +443,7 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
     if (!overloads)
         return null;
 
-    // Closure detector.
-    const closureDetect = !_closure_detected && _closure_detect && _closure_detect[id] || null;
-    const rootScope     = closureDetect && _scope_root && _scope_root[id] || null;
-
+    //
     let matched: Overload|null  = null;
 
     // Arity 0 - blind head match.
@@ -601,19 +591,6 @@ function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|nu
 
     if (matched)
     {
-        // Closure detector:
-        //  -   for something to be a closure,
-        //      it has to close over something from a parent scope
-        //      that is not the root scope.
-        if (closureDetect
-            && closureDetect !== rootScope // opti
-            && (!rootScope ||
-                closureDetect.indexOf(matched) >= 0
-                &&  rootScope.indexOf(matched)  < 0))
-        {
-            _closure_detected = true;
-        }
-
         // Implicit argument injection.
         const arg_t = matched.args;
         const arg_d = matched.defaults;
@@ -820,6 +797,13 @@ function __solveFn(solve: boolean, spec: boolean, n_fn: Node, prep: SolvedNode|n
 
     const outItems: SolvedNodes = repeat(null, inItems.length);
     out.items       = outItems;
+
+    //
+    if (_current_fn && id !== 'free')
+    {
+        _current_fn.flags |= F_HAS_CLOSURE;
+        out.flags |= F_CLOSURE;
+    }
 
     //////////////////////////
     {
@@ -1810,20 +1794,6 @@ function solveNodes(nodes: Nodes, result: SolvedNodes = []): SolvedNodes
         const i0 = i;
         let   i1 = nodes.length;
 
-        // CLOSURE DETECTOR ////////////////////////////
-        const cd0           = _closure_detect;
-        const cds0          = _closure_detected;
-        _closure_detect     = _scope;
-        _closure_detected   = false;
-
-        // Forward rootness, this is getting awkward.
-        {
-            const barrier       = scope_push();
-            if (_scope_root === barrier)
-                _scope_root = _scope;
-        }
-        ////////////////////////////////////////////////
-
         // First pass, expose stuff in scope
         //  without doing type checking when possible.
         for (let i = i0; i < nodes.length; i++)
@@ -1855,25 +1825,6 @@ function solveNodes(nodes: Nodes, result: SolvedNodes = []): SolvedNodes
                 result[i]   = UNORDERED_SOLVE[node.kind](node, result[i]);
             }
         }
-
-        // Propagate closure detector results.
-        if (_closure_detected)
-        {
-            for (let i = i0; i < i1; i++)
-            {
-                const node = result[i];
-                if (node)
-                    node.flags |= F_CLOSURE;
-            }
-
-            if (_current_fn)
-                _current_fn.flags |= F_HAS_CLOSURE;
-        }
-
-        // CLOSURE DETECTOR ////////////////////////////
-        _closure_detect     = cd0;
-        _closure_detected   = cds0;
-        ////////////////////////////////////////////////
 
         // Continue from group end.
         i1 > i0 || fail();
@@ -1917,9 +1868,6 @@ export function solve(parse: Node): SolveResult
         //
         _scope = scope;
     }
-
-    // Root scope used for closure detection.
-    _scope_root = _scope;
 
     //
     const root  = solveNode(parse);
