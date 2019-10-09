@@ -98,20 +98,12 @@ export function solve(parse: Node): SolveResult
 
     let TEST_expectImplicits: boolean = false;
 
-    // Globals.
-    {
-        const scope = !PRELUDE_SOLVED
-            ? listGlobals()
-            : Object.create(PRELUDE_SOLVED);
 
-        // Clone globals, we need this to track callsites for:
-        //  - import usage (TODO)
-        //  - implicit argument propagation
-        scope_resetUsage(scope);
+    // Builtins vs prelude.
 
-        //
-        _scope = scope;
-    }
+    _scope = !PRELUDE_SOLVED
+        ? listGlobals()
+        : Object.create(PRELUDE_SOLVED);
 
 
     //
@@ -149,28 +141,6 @@ export function solve(parse: Node): SolveResult
     function Template(node: Node, scope: Scope)
     {
         return { node, scope, specializations: Object.create(null) };
-    }
-
-
-    //
-
-    function resetUsage(o: Overload): Overload
-    {
-        return {
-            kind:       o.kind,
-            node:       o.node,
-            type:       o.type,
-
-            min:        o.min,
-            max:        o.max,
-            args:       o.args,
-            names:      o.names,
-            defaults:   o.defaults,
-            partial:    o.partial,
-
-            // Reset usage.
-            template:   o.template && Template(o.template.node, o.template.scope) || null,
-        };
     }
 
     function Binding(node: SolvedNode, type: Type): Overload
@@ -428,12 +398,6 @@ export function solve(parse: Node): SolveResult
                 scope_add(id, Partial(via, overload));
             }
         }
-    }
-
-    function scope_resetUsage(scope: Scope)
-    {
-        for (const key in scope)
-            scope[key] = scope[key].map(resetUsage);
     }
 
     function arr_slide<T>(arr: T[], from: number, to: number)
