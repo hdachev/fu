@@ -28,6 +28,9 @@ function port(file)
     if (/\.sort\b/.test(src))
         console.error('\tHAS .sort');
 
+    if (/=>/.test(src))
+        console.error('\tHAS =>');
+
     if (/undefined/.test(src))
         console.error('\tHAS undefined');
 
