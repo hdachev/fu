@@ -453,12 +453,12 @@ ZERO(`
 `);
 
 ZERO(`
-    fn inner(implicit x: i32, i: i32): i32
-        outer(i - 2 * x);
-
     fn outer(i: i32): i32
         i > 0   ? inner(i)
                 : 2 * i;
+
+    fn inner(implicit x: i32, i: i32): i32
+        outer(i - 2 * x);
 
     let implicit x = 3;
     return outer(6);

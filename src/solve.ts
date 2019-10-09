@@ -39,16 +39,6 @@ export type SolveResult =
     scope:      Scope;
 };
 
-type Callsite =
-{
-    node:               SolvedNode;
-
-    _scope:             Scope|null;
-    _current_fn:        SolvedNode|null;
-    _current_str:       SolvedNode|null;
-    _current_strt:      Type|null;
-};
-
 type Template =
 {
     readonly node: Node;
@@ -73,7 +63,6 @@ type Overload =
     readonly partial: Overload[]|null;
 
     // Usage.
-    callsites: Callsite[]|null;
     template: Template|null;
 };
 
@@ -82,7 +71,7 @@ type Overload =
 
 function Typedef(type: Type): Overload
 {
-    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, callsites: null, template: null };
+    return { kind: 'type', node: null, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
 }
 
 function listGlobals(): Scope
@@ -157,38 +146,6 @@ export function solve(parse: Node): SolveResult
 
     //
 
-    function Callsite(node: SolvedNode): Callsite
-    {
-        return { node, _scope, _current_fn, _current_str, _current_strt };
-    }
-
-    function atCallsite(callsite: Callsite, action: (node: SolvedNode) => void)
-    {
-        ////////////////////////////////////////
-        const scope0            = _scope;
-        const current_fn0       = _current_fn;
-        const current_str0      = _current_str;
-        const current_strt0     = _current_strt;
-        ////////////////////////////////////////
-
-        _scope                  = callsite._scope;
-        _current_fn             = callsite._current_fn;
-        _current_str            = callsite._current_str;
-        _current_strt           = callsite._current_strt;
-
-        action(callsite.node);
-
-        ////////////////////////////////////////
-        _scope          = scope0;
-        _current_fn     = current_fn0;
-        _current_str    = current_str0;
-        _current_strt   = current_strt0;
-        ////////////////////////////////////////
-    }
-
-
-    //
-
     function Template(node: Node, scope: Scope)
     {
         return { node, scope, specializations: Object.create(null) };
@@ -212,19 +169,18 @@ export function solve(parse: Node): SolveResult
             partial:    o.partial,
 
             // Reset usage.
-            callsites:  null,
             template:   o.template && Template(o.template.node, o.template.scope) || null,
         };
     }
 
     function Binding(node: SolvedNode, type: Type): Overload
     {
-        return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, callsites: null, template: null };
+        return { kind: 'var', node, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
     }
 
     function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
     {
-        return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, callsites: null, template: null };
+        return { kind: 'field', node, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, template: null };
     }
 
     function TemplateDecl(node: Node): Overload
@@ -254,7 +210,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'template', node: null, type: t_template, min, max, args: null, names, defaults: null, partial: null, callsites: null, template };
+        return { kind: 'template', node: null, type: t_template, min, max, args: null, names, defaults: null, partial: null, template };
     }
 
     function FnDecl(node: SolvedNode): Overload
@@ -293,7 +249,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, callsites: null, template: null };
+        return { kind: 'fn', node, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, template: null };
     }
 
     function DefaultCtor(type: Type, members: SolvedNode[]): Overload
@@ -334,7 +290,7 @@ export function solve(parse: Node): SolveResult
             }
         }
 
-        return { kind: 'defctor', node: null, type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, callsites: null, template: null };
+        return { kind: 'defctor', node: null, type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, template: null };
     }
 
     function tryDefaultInit(type: Type): SolvedNode|null
@@ -401,7 +357,7 @@ export function solve(parse: Node): SolveResult
         }
 
         //
-        return { kind, node: null, type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], callsites: null, template: null };
+        return { kind, node: null, type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], template: null };
     }
 
 
@@ -1542,19 +1498,6 @@ export function solve(parse: Node): SolveResult
 
             fn.args  = mut_args;
             fn.names = mut_names;
-
-            // Propagate to all callsites.
-            const callsites = fn.callsites;
-            if (callsites)
-                for (let i = 0; i < callsites.length; i++)
-                {
-                    atCallsite(callsites[i], callNode =>
-                    {
-                        const args = callNode.items;
-                        callNode.items = args;
-                        bindImplicitArg(args, newArgIdx, id, type);
-                    });
-                }
         }
 
         // TODO put in the original scope!
@@ -1745,18 +1688,7 @@ export function solve(parse: Node): SolveResult
 
         //
         const out = SolvedNode(node, items, type);
-
-        // Register callsite.
-        {
-            out.target = target;
-            if (!target.callsites)
-                target.callsites = [];
-
-            // Pair<CallerNode, CallerScope>
-            target.callsites.push(
-                Callsite(out));
-        }
-
+        out.target = target;
         return out;
     }
 
