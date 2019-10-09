@@ -376,7 +376,7 @@ export function solve(parse: Node): SolveResult
                 continue;
 
             const overloads = scope[id];
-            if (!Array.isArray(overloads))
+            if (!overloads)
                 continue;
 
             let arity0 = false;
