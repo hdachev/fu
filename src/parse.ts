@@ -234,8 +234,7 @@ export function parse(opts: Options)
         // }
 
         const out = Node('root',
-            parseBlockLike('eof', 'eof',
-                parseStatement));
+            parseBlockLike('eof', 'eof'));
 
         if (_implicits)
             out.flags |= F_IMPLICIT;
@@ -249,8 +248,7 @@ export function parse(opts: Options)
     function parseBlock(): Node
     {
         return createBlock(
-            parseBlockLike('op', '}',
-                parseStatement));
+            parseBlockLike('op', '}'));
     }
 
     function createBlock(items: Nodes)
@@ -273,9 +271,8 @@ export function parse(opts: Options)
         _structName = id;
 
         consume('op', '{');
-
-        const items = parseBlockLike('op', '}',
-            parseStructItem);
+        const items = parseBlockLike(
+            'op', '}', 'struct');
 
         _structName = structName0;
         //////////////////////////
@@ -333,7 +330,7 @@ export function parse(opts: Options)
 
     function parseBlockLike(
         endKind: TokenKind, endVal: LexValue,
-            parseItem: () => Node): Node[]
+        mode: 'struct'|null = null): Node[]
     {
         const line0 = _tokens[_idx].line;
         const col00 = _col0;
@@ -366,7 +363,10 @@ export function parse(opts: Options)
                 'Bad indent, expecting more than ' + col00
                     + '. Block starts on line ' + line0 + '.');
 
-            const expr = parseItem();
+            const expr = mode === 'struct'
+                ? parseStructItem()
+                : parseStatement();
+
             expr.kind !== 'call' || ((expr.flags & (F_ID | F_ACCESS)) === 0) || expr.items.length > 1 || fail_Lint(
                 'Orphan pure-looking expression.');
 
