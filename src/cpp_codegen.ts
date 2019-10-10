@@ -7,6 +7,8 @@ type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
 type Dedupes            = { [id: string]: string };
 
+const M_STMT            = 1 << 0;
+
 
 //
 
@@ -23,7 +25,6 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     let _fnN: number        = 0;
     let _clsrN: number      = 0;
     let _faasN: number      = 0;
-    let _exprN: number      = 0;
 
 
     //
@@ -214,7 +215,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     {
         let src = '';
 
-        const lines = cgNodes(nodes, 'stmt');
+        const lines = cgNodes(nodes, M_STMT);
         for (let i = 0; i < lines.length; i++)
         {
             const line = lines[i];
@@ -246,7 +247,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     function blockWrapOne_unlessSilly(node: SolvedNode)
     {
         if (node.kind === 'if')
-            return cgNode(node, true);
+            return cgNode(node, M_STMT);
 
         return blockWrapOne(node);
     }
@@ -795,11 +796,11 @@ template <typename T>
 
     //
 
-    function cgIf(node: SolvedNode)
+    function cgIf(node: SolvedNode, mode: number)
     {
         const [n0, n1, n2] = node.items;
 
-        const stmt = _exprN === 0;
+        const stmt = !!(mode & M_STMT);
 
         const cond = n0 && bool(n0.type, cgNode(n0));
         const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
@@ -961,34 +962,38 @@ template <typename T>
 
     //
 
-    const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
+    function cgNode(node: SolvedNode, mode: number = 0): string
     {
-        'root':     cgRoot,
-        'block':    cgBlock,
-        'fn':       cgFn,
-        'return':   cgReturn,
-        'break':    cgJump,
-        'continue': cgJump,
-        'call':     cgCall,
-        'let':      cgLet,
-        'if':       cgIf,
-        'or':       cgOr,
-        'and':      cgAnd,
-        'loop':     cgLoop,
-        'int':      cgLiteral,
-        'str':      cgStringLiteral,
-        'arrlit':   cgArrayLiteral,
-        'definit':  cgDefaultInit,
-        'empty':    cgEmpty,
+        const k = node.kind;
 
-        'comma':    cgParens,
-        'parens':   cgParens,
-        'label':    cgParens,
-        'struct':   cgEmpty,
+        if (k === 'root')       return cgRoot(node);
+        if (k === 'block')      return cgBlock(node);
+        if (k === 'fn')         return cgFn(node);
+        if (k === 'return')     return cgReturn(node);
+        if (k === 'break')      return cgJump(node);
+        if (k === 'continue')   return cgJump(node);
+        if (k === 'call')       return cgCall(node);
+        if (k === 'let')        return cgLet(node);
+        if (k === 'if')         return cgIf(node, mode);
+        if (k === 'or')         return cgOr(node);
+        if (k === 'and')        return cgAnd(node);
+        if (k === 'loop')       return cgLoop(node);
+        if (k === 'int')        return cgLiteral(node);
+        if (k === 'str')        return cgStringLiteral(node);
+        if (k === 'arrlit')     return cgArrayLiteral(node);
+        if (k === 'definit')    return cgDefaultInit(node);
+        if (k === 'empty')      return cgEmpty();
 
-        'copy':     cgCopyMove,
-        'move':     cgCopyMove,
-    };
+        if (k === 'comma')      return cgParens(node);
+        if (k === 'parens')     return cgParens(node);
+        if (k === 'label')      return cgParens(node);
+        if (k === 'struct')     return cgEmpty();
+
+        if (k === 'copy')       return cgCopyMove(node);
+        if (k === 'move')       return cgCopyMove(node);
+
+        return fail('TODO: ' + k);
+    }
 
     function cgCopyMove(node: SolvedNode)
     {
@@ -1003,50 +1008,19 @@ template <typename T>
         return a;
     }
 
-    function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
+    function cgNodes(nodes: Nodes, mode: number = 0)
     {
         const result: string[] = [];
-
-        //////////////////////
-        const exprN0 = _exprN;
-        if (statements)
-            _exprN = 0;
-        else
-            _exprN++;
-        //////////////////////
 
         if (nodes)
             for (let i = 0; i < nodes.length; i++)
             {
                 const node  = nodes[i];
-                const src   = node ? CODEGEN[node.kind](node) : '';
+                const src   = node ? cgNode(node, mode) : '';
                 result[i]   = src;
             }
 
-        ////////////////
-        _exprN = exprN0;
-        ////////////////
-
         return result;
-    }
-
-    function cgNode(node: SolvedNode, statement: boolean = false)
-    {
-        /////////
-        const exprN0 = _exprN;
-        if (statement)
-            _exprN = 0;
-        else
-            _exprN++;
-        /////////
-
-        const out = CODEGEN[node.kind](node);
-
-        ////////////////
-        _exprN = exprN0;
-        ////////////////
-
-        return out;
     }
 
 
@@ -1054,6 +1028,6 @@ template <typename T>
 
     root.kind === 'root' || fail();
 
-    const src = CODEGEN[root.kind](root);
+    const src = cgNode(root);
     return { src };
 }
