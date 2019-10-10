@@ -8,6 +8,7 @@ type CppScope           = { [id: string]: number };
 type Dedupes            = { [id: string]: string };
 
 const M_STMT            = 1 << 0;
+const M_RETBOOL         = 1 << 1;
 
 
 //
@@ -802,7 +803,7 @@ template <typename T>
 
         const stmt = !!(mode & M_STMT);
 
-        const cond = n0 && bool(n0.type, cgNode(n0));
+        const cond = n0 && bool(n0.type, cgNode(n0, M_RETBOOL));
         const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
         const alt  = n2 && (stmt ? blockWrapOne_unlessSilly(n2) : cgNode(n2));
 
@@ -832,10 +833,10 @@ template <typename T>
 
     //
 
-    function cgAnd(node: SolvedNode)
+    function cgAnd(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if (type.quals.indexOf(q_ref) >= 0)
+        if (type.quals.indexOf(q_ref) >= 0 && !(mode & M_RETBOOL))
         {
             const annot = typeAnnot(type);
 
@@ -859,10 +860,10 @@ template <typename T>
         return '(' + cgNodes(node.items).join(' && ') + ')';
     }
 
-    function cgOr(node: SolvedNode)
+    function cgOr(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if (type.quals.indexOf(q_ref) >= 0)
+        if (type.quals.indexOf(q_ref) >= 0 && !(mode & M_RETBOOL))
         {
             const annot = typeAnnot(type);
 
@@ -888,7 +889,7 @@ template <typename T>
                             src += ' && ';
 
                         const item = items[i] || fail();
-                        src += bool(item.type, cgNode(item));
+                        src += bool(item.type, cgNode(item, M_RETBOOL));
                     }
 
                     src += ')';
@@ -928,10 +929,10 @@ template <typename T>
         const n_pcnd = items[LOOP_POST_COND];
 
         const init = n_init && cgNode(n_init);
-        const cond = n_cond && bool(n_cond.type, cgNode(n_cond));
+        const cond = n_cond && bool(n_cond.type, cgNode(n_cond, M_RETBOOL));
         const post = n_post && cgNode(n_post);
         let   body = n_body && blockWrapOne(n_body);
-        const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd));
+        const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
         let   breakLabel = '';
 
         if (body && node.value)
@@ -975,8 +976,8 @@ template <typename T>
         if (k === 'call')       return cgCall(node);
         if (k === 'let')        return cgLet(node);
         if (k === 'if')         return cgIf(node, mode);
-        if (k === 'or')         return cgOr(node);
-        if (k === 'and')        return cgAnd(node);
+        if (k === 'or')         return cgOr(node, mode);
+        if (k === 'and')        return cgAnd(node, mode);
         if (k === 'loop')       return cgLoop(node);
         if (k === 'int')        return cgLiteral(node);
         if (k === 'str')        return cgStringLiteral(node);
