@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { SolvedNode, Type } from './solve';
-import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION } from './parse';
-import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void } from './types';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION, F_MUT } from './parse';
+import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void, q_trivial } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -64,7 +64,7 @@ function include(lib: string)
 
 //
 
-function typeAnnot(type: Type): string
+function typeAnnot(type: Type, isConst: boolean = false): string
 {
     const fwd = typeAnnotBase(type);
 
@@ -72,6 +72,12 @@ function typeAnnot(type: Type): string
         return fwd + '&';
     if (type.quals.indexOf(q_ref) >= 0)
         return 'const ' + fwd + '&';
+
+    // Const members cannot be moved from -
+    //  So let's only do this for trivial types -
+    //   Currently this is more of a way to validate the codegen.
+    if (isConst && type.quals.indexOf(q_trivial) >= 0)
+        return 'const ' + fwd;
 
     return fwd;
 }
@@ -250,6 +256,14 @@ function blockWrapOne(node: SolvedNode)
     return node.kind === 'block'
         ? cgBlock(node)
         : blockWrap([ node ]);
+}
+
+function blockWrapOne_unlessSilly(node: SolvedNode)
+{
+    if (node.kind === 'if')
+        return cgNode(node, true);
+
+    return blockWrapOne(node);
 }
 
 function cgBlock(block: SolvedNode)
@@ -513,7 +527,7 @@ function cgFn(fn: SolvedNode)
 function binding(node: SolvedNode, doInit: boolean)
 {
     const id    = node.value || fail();
-    const annot = typeAnnot(node.type) || fail();
+    const annot = typeAnnot(node.type, (node.flags & F_MUT) == 0) || fail();
     const head  = annot + ' ' + ID(id);
     const init  = node.items[LET_INIT];
 
@@ -802,7 +816,7 @@ function cgIf(node: SolvedNode)
 
     const cond = n0 && bool(n0.type, cgNode(n0));
     const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
-    const alt  = n2 && (stmt ? blockWrapOne(n2) : cgNode(n2));
+    const alt  = n2 && (stmt ? blockWrapOne_unlessSilly(n2) : cgNode(n2));
 
     if (stmt)
         return 'if (' + cond + ') ' + cons + (alt ? _indent + 'else ' + alt : '');

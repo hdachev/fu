@@ -179,12 +179,14 @@ export function type_tryInter(a: Type, b: Type)
 export const q_copy         = tagset.intern('copy');
 export const q_move         = tagset.intern('move');
 
+export const q_trivial      = tagset.intern('trivial');
 export const q_primitive    = tagset.intern('primitive');
 export const q_arithmetic   = tagset.intern('arithmetic');
 export const q_integral     = tagset.intern('integral');
 export const q_signed       = tagset.intern('signed');
 
-export const Primitive      = tagset.union(q_copy, q_primitive);
+export const Trivial        = tagset.union(q_copy, q_trivial);
+export const Primitive      = tagset.union(Trivial, q_primitive);
 export const Arithmetic     = tagset.union(Primitive, q_arithmetic);
 export const Integral       = tagset.union(Arithmetic, q_integral);
 export const SignedInt      = tagset.union(Integral, q_signed);
@@ -231,13 +233,19 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
 
     CONTEXT.TYPES[canon] = def;
     return createType(canon,
-        copyOrMove(flags, fields));
+        copyOrMove(flags, fields, true));
 }
 
-function copyOrMove(flags: number, fields: StructField[]): Quals
+function copyOrMove(
+    flags: number,
+    fields: StructField[],
+    tryTrivial: boolean = false): Quals
 {
     if ((flags & F_DESTRUCTOR) || someFieldNonCopy(fields))
         return q_move as any;
+
+    if (tryTrivial && !someFieldNotTrivial(fields))
+        return Trivial;
 
     return q_copy as any;
 }
@@ -246,6 +254,15 @@ function someFieldNonCopy(fields: StructField[])
 {
     for (let i = 0; i < fields.length; i++)
         if (fields[i].type.quals.indexOf(q_copy) < 0)
+            return true;
+
+    return false;
+}
+
+function someFieldNotTrivial(fields: StructField[])
+{
+    for (let i = 0; i < fields.length; i++)
+        if (fields[i].type.quals.indexOf(q_trivial) < 0)
             return true;
 
     return false;
