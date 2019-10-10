@@ -106,8 +106,8 @@ const NOT_WIN   = !/^win\d+$/.test(process.platform);
 const IS_CLANG  = process.platform === 'darwin';
 
 const GCC       = IS_CLANG
-    ? 'g++ -std=c++1z -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality'
-    : 'g++ -std=c++1z -Wall -Wextra -Werror' + (NOT_WIN ? '' : ' -static');
+    ? 'g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality'
+    : 'g++ -std=c++1z -O3 -Wall -Wextra -Werror' + (NOT_WIN ? '' : ' -static');
 
 const GCC_BUILD = GCC + ' -c -o';
 const GCC_LINK  = GCC + ' -o';

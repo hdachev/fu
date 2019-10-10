@@ -10,764 +10,750 @@ type Dedupes            = { [id: string]: string };
 
 //
 
-let _libs: Dedupes      = null as any; // includes
-let _tfwd: Dedupes      = null as any; // type fwd decls
-let _ffwd: Dedupes      = null as any; // fn fwd decls
-let _tdef: string       = null as any; // type decls
-let _fdef: string       = null as any; // fn decls
-
-let _indent: string     = null as any;
-let _ids: CppScope      = null as any;
-let _fnN: number        = 0;
-let _clsrN: number      = 0;
-let _faasN: number      = 0;
-let _exprN: number      = 0;
-
-function RESET()
+export function cpp_codegen(root: SolvedNode): { src: string }
 {
-    _libs   = Object.create(null);
-    _tfwd   = Object.create(null);
-    _ffwd   = Object.create(null);
-    _tdef   = '';
-    _fdef   = '';
+    let _libs: Dedupes      = Object.create(null);
+    let _tfwd: Dedupes      = Object.create(null);
+    let _ffwd: Dedupes      = Object.create(null);
+    let _tdef: string       = '';
+    let _fdef: string       = '';
 
-    _indent = '\n';
-    _ids    = Object.create(null);
-    _fnN    = 0;
-    _clsrN  = 0;
-    _faasN  = 0;
-    _exprN  = 0;
-}
-
-
-//
-
-function enterScope(): CppScope
-{
-    const ret   = _ids;
-    _ids        = Object.create(_ids);
-
-    return ret;
-}
-
-function exitScope(s: CppScope)
-{
-    _ids = s;
-}
-
-function include(lib: string)
-{
-    if (!_libs[lib])
-        _libs[lib] = '#include ' + lib + '\n';
-}
+    let _indent: string     = '\n';
+    let _ids: CppScope      = Object.create(null);
+    let _fnN: number        = 0;
+    let _clsrN: number      = 0;
+    let _faasN: number      = 0;
+    let _exprN: number      = 0;
 
 
-//
+    //
 
-function typeAnnot(type: Type, isConst: boolean = false): string
-{
-    const fwd = typeAnnotBase(type);
-
-    if (type.quals.indexOf(q_mutref) >= 0)
-        return fwd + '&';
-    if (type.quals.indexOf(q_ref) >= 0)
-        return 'const ' + fwd + '&';
-
-    // Const members cannot be moved from -
-    //  So let's only do this for trivial types -
-    //   Currently this is more of a way to validate the codegen.
-    if (isConst && type.quals.indexOf(q_trivial) >= 0)
-        return 'const ' + fwd;
-
-    return fwd;
-}
-
-function typeAnnotBase(type: Type): string
-{
-    switch (type.canon)
+    function enterScope(): CppScope
     {
-        case 'i32':     return 'int';
-        case 'bool':    return 'bool';
-        case 'void':    return 'void';
-        case 'string':
-            include('<string>');
-            return 'std::string';
+        const ret   = _ids;
+        _ids        = Object.create(_ids);
+
+        return ret;
     }
 
-    const tdef = lookupType(type.canon) || fail('TODO', type.canon);
-
-    switch (tdef.kind)
+    function exitScope(s: CppScope)
     {
-        case 'struct':
-            if (!(type.canon in _tfwd))
-            {
-                _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
-                    ? '\nstruct ' + type.canon + ';'
-                    : '';
-
-                const def = declareStruct(type, tdef);
-                _tdef += def;
-            }
-
-            return type.canon;
-
-        case 'array':
-            const item = typeAnnot(tdef.fields[0].type);
-
-            include('<vector>');
-            return 'std::vector<' + item + '>';
-
-        case 'map':
-            const k = typeAnnot(tdef.fields[0].type);
-            const v = typeAnnot(tdef.fields[1].type);
-
-            include('<unordered_map>');
-            return 'std::unordered_map<' + k + ', ' + v + '>';
+        _ids = s;
     }
 
-    return fail('TODO', tdef.kind);
-}
-
-function declareStruct(t: Type, s: Struct)
-{
-    let def = '\nstruct ' + t.canon + '\n{';
-    let indent = '\n    ';
-
-    if (s.flags & F_DESTRUCTOR)
+    function include(lib: string)
     {
-        def += '\n    struct Data\n    {';
-        indent += '    ';
+        if (!_libs[lib])
+            _libs[lib] = '#include ' + lib + '\n';
     }
 
-    const fields = s.fields;
-    for (let i = 0; i < fields.length; i++)
+
+    //
+
+    function typeAnnot(type: Type, isConst: boolean = false): string
     {
-        const field = fields[i];
-        def += indent + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
+        const fwd = typeAnnotBase(type);
+
+        if (type.quals.indexOf(q_mutref) >= 0)
+            return fwd + '&';
+        if (type.quals.indexOf(q_ref) >= 0)
+            return 'const ' + fwd + '&';
+
+        // Const members cannot be moved from -
+        //  So let's only do this for trivial types -
+        //   Currently this is more of a way to validate the codegen.
+        if (isConst && type.quals.indexOf(q_trivial) >= 0)
+            return 'const ' + fwd;
+
+        return fwd;
     }
 
-    if (s.flags & F_DESTRUCTOR)
+    function typeAnnotBase(type: Type): string
     {
-        def += '\n    };';
-        def += '\n';
-        def += '\n    Data data;';
-        def += '\n    bool dtor = false;';
-        def += '\n';
-        def += '\n    ~' + t.canon + '() noexcept;';
-        def += '\n    inline ' + t.canon + '(Data data) noexcept : data(data) {};';
-        def += '\n    ' + t.canon + '(const ' + t.canon + '&) = delete;';
-        def += '\n    ' + t.canon + '& operator=(const ' + t.canon + '&) = delete;';
-        def += '\n    ' + t.canon + '(' + t.canon + '&&) noexcept;';
-        def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
+        switch (type.canon)
+        {
+            case 'i32':     return 'int';
+            case 'bool':    return 'bool';
+            case 'void':    return 'void';
+            case 'string':
+                include('<string>');
+                return 'std::string';
+        }
+
+        const tdef = lookupType(type.canon) || fail('TODO', type.canon);
+
+        switch (tdef.kind)
+        {
+            case 'struct':
+                if (!(type.canon in _tfwd))
+                {
+                    _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
+                        ? '\nstruct ' + type.canon + ';'
+                        : '';
+
+                    const def = declareStruct(type, tdef);
+                    _tdef += def;
+                }
+
+                return type.canon;
+
+            case 'array':
+                const item = typeAnnot(tdef.fields[0].type);
+
+                include('<vector>');
+                return 'std::vector<' + item + '>';
+
+            case 'map':
+                const k = typeAnnot(tdef.fields[0].type);
+                const v = typeAnnot(tdef.fields[1].type);
+
+                include('<unordered_map>');
+                return 'std::unordered_map<' + k + ', ' + v + '>';
+        }
+
+        return fail('TODO', tdef.kind);
     }
 
-    def += '\n    explicit operator bool() const noexcept';
-    def += '\n    {';
-    def += '\n        return false';
-
-    for (let i = 0; i < fields.length; i++)
-        def += '\n            || '
-            + bool(fields[i].type,
-                (s.flags & F_DESTRUCTOR ? 'data.' : '')
-                    + ID(fields[i].id));
-
-    def += '\n        ;';
-    def += '\n    }';
-
-    return def + '\n};\n';
-}
-
-
-//
-
-function collectDedupes(_d: Dedupes|string)
-{
-    let out = '';
-
-    if (typeof _d === 'string')
+    function declareStruct(t: Type, s: Struct)
     {
-        out = _d;
-    }
-    else
-    {
-        const keys = Object.keys(_d).sort();
-        for (let i = 0; i < keys.length; i++)
-            out += _d[keys[i]];
-    }
+        let def = '\nstruct ' + t.canon + '\n{';
+        let indent = '\n    ';
 
-    return out;
-}
+        if (s.flags & F_DESTRUCTOR)
+        {
+            def += '\n    struct Data\n    {';
+            indent += '    ';
+        }
 
-function cgRoot(root: SolvedNode)
-{
-    const src = cgStatements(root.items);
+        const fields = s.fields;
+        for (let i = 0; i < fields.length; i++)
+        {
+            const field = fields[i];
+            def += indent + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
+        }
 
-    let header = collectDedupes(_libs)
-               + collectDedupes(_tfwd)
-               + collectDedupes(_ffwd)
-               + collectDedupes(_tdef)
-               + collectDedupes(_fdef)
-               ;
+        if (s.flags & F_DESTRUCTOR)
+        {
+            def += '\n    };';
+            def += '\n';
+            def += '\n    Data data;';
+            def += '\n    bool dtor = false;';
+            def += '\n';
+            def += '\n    ~' + t.canon + '() noexcept;';
+            def += '\n    inline ' + t.canon + '(Data data) noexcept : data(data) {};';
+            def += '\n    ' + t.canon + '(const ' + t.canon + '&) = delete;';
+            def += '\n    ' + t.canon + '& operator=(const ' + t.canon + '&) = delete;';
+            def += '\n    ' + t.canon + '(' + t.canon + '&&) noexcept;';
+            def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
+        }
 
-    return header + src;
-}
+        def += '\n    explicit operator bool() const noexcept';
+        def += '\n    {';
+        def += '\n        return false';
 
+        for (let i = 0; i < fields.length; i++)
+            def += '\n            || '
+                + bool(fields[i].type,
+                    (s.flags & F_DESTRUCTOR ? 'data.' : '')
+                        + ID(fields[i].id));
 
-//
+        def += '\n        ;';
+        def += '\n    }';
 
-function ID(id: string)
-{
-    switch (id)
-    {
-        case 'this':    return '_';
+        return def + '\n};\n';
     }
 
-    return id;
-}
 
-function cgStatements(nodes: Nodes)
-{
-    let src = '';
+    //
 
-    const lines = cgNodes(nodes, 'stmt');
-    for (let i = 0; i < lines.length; i++)
+    function collectDedupes(_d: Dedupes|string)
     {
-        const line = lines[i];
-        if (line)
-            src += _indent + line + ';';
+        let out = '';
+
+        if (typeof _d === 'string')
+        {
+            out = _d;
+        }
+        else
+        {
+            const keys = Object.keys(_d).sort();
+            for (let i = 0; i < keys.length; i++)
+                out += _d[keys[i]];
+        }
+
+        return out;
     }
 
-    return src;
-}
-
-function blockWrap(nodes: Nodes)
-{
-    const indent0 = _indent;
-    _indent += '    ';
-
-    const src = indent0 + '{' + cgStatements(nodes) + indent0 + '}';
-
-    _indent = indent0;
-    return src;
-}
-
-function blockWrapOne(node: SolvedNode)
-{
-    return node.kind === 'block'
-        ? cgBlock(node)
-        : blockWrap([ node ]);
-}
-
-function blockWrapOne_unlessSilly(node: SolvedNode)
-{
-    if (node.kind === 'if')
-        return cgNode(node, true);
-
-    return blockWrapOne(node);
-}
-
-function cgBlock(block: SolvedNode)
-{
-    const s0 = enterScope();
-    const src = blockWrap(block.items);
-    exitScope(s0);
-
-    return src;
-}
-
-function cgParens(node: SolvedNode)
-{
-    const items = cgNodes(node.items);
-    if (!items.length)
-        return '(false /*empty parens*/)';
-
-    if (items.length === 1)
-        return items[0];
-
-    return '(' + items.join(', ') + ')';
-}
-
-
-// This is kinda weird - it's an auto-refactor:
-//  it converts a function that contains closures
-//   into a struct, with its args and leading "lets"
-//    converted into fields, and then leading closures
-//     converted into struct members.
-
-// The tail of the function remains in an "EVAL" function,
-//  and currently to limit the damage we emit a macro
-//   that remaps the invocation.
-
-// TODO this can do more -
-//  we could collect most of the top-level stuff on the struct.
-
-function try_cgFnAsStruct(fn: SolvedNode): string|null
-{
-    const body = fn.items[fn.items.length + FN_BODY_BACK];
-    if (!body || body.kind !== 'block')
-        return null;
-
-    const items = body.items as SolvedNode[];
-
-    // We need at least one closure
-    //  in the function "header"
-    //   for all of this to make sense.
-    let hasClosuresInHeader = false;
-    let end = 0;
-    for (let i = 0; i < items.length; i++)
+    function cgRoot(root: SolvedNode)
     {
-        end = i;
+        const src = cgStatements(root.items);
 
-        const item = items[i];
-        if (item.kind === 'fn' && (item.flags & F_CLOSURE))
-            hasClosuresInHeader = true;
-        else if (item.kind !== 'let' && item.kind !== 'struct')
-            break;
+        let header = collectDedupes(_libs)
+                   + collectDedupes(_tfwd)
+                   + collectDedupes(_ffwd)
+                   + collectDedupes(_tdef)
+                   + collectDedupes(_fdef)
+                   ;
+
+        return header + src;
     }
 
-    if (!hasClosuresInHeader)
-        return null;
 
-    // Ok - refactor time.
-    const evalName = fn.value + '_EVAL';
+    //
 
-    const restFn: SolvedNode =
+    function ID(id: string)
     {
-        kind: 'fn', type: t_void,
-        flags: fn.flags | F_CLOSURE,
-        token: fn.token,
-        value: evalName,
-        target: null,
+        switch (id)
+        {
+            case 'this':    return '_';
+        }
 
-        items:
-        [
-            fn.items[fn.items.length - 2], // retval
-            {
-                kind: 'block', type: t_void,
-                flags: 0,
-                token: fn.token,
-                value: '',
-                target: null,
+        return id;
+    }
 
-                items: items.slice(
-                    end, items.length),
-            },
-        ],
-    };
-
-    const head: SolvedNode[] =
-        (fn.items.slice(0, fn.items.length + FN_ARGS_BACK) as SolvedNode[])
-            .concat(items.slice(0, end))
-            .concat(restFn);
-
-    //////////////////////
-    _clsrN === 0 || fail();
-    _clsrN--; // -1, so root closures come up at 0.
-    //////////////////////
-
-    const structName = 'sf_' + fn.value;
-    let src = '\nstruct ' + structName
-            + blockWrap(head) + ';'
-            + '\n\n#define ' + fn.value + '(...) ((' + structName + ' { __VA_ARGS__ }).' + evalName + '())\n';
-
-    //////////////////////
-    _clsrN++;
-    //////////////////////
-
-    return src;
-}
-
-
-//
-
-function cgFn(fn: SolvedNode)
-{
-    // Template emit.
-    if (!fn.items.length)
+    function cgStatements(nodes: Nodes)
     {
         let src = '';
 
-        const template = fn.target && fn.target.template || fail();
-        const specs = template.specializations;
-        for (const key in specs)
+        const lines = cgNodes(nodes, 'stmt');
+        for (let i = 0; i < lines.length; i++)
         {
-            const s = specs[key];
-            const node = s && s.node;
-            if (node)
-                src += cgNode(node);
+            const line = lines[i];
+            if (line)
+                src += _indent + line + ';';
         }
 
         return src;
     }
 
-    // Use like-struct output for top-level functions with closures -
-    //  We'll try to "close over" a root-level struct.
-    if (_faasN === 0 && (fn.flags & F_HAS_CLOSURE))
+    function blockWrap(nodes: Nodes)
     {
-        /////////
-        _faasN++;
-        /////////
+        const indent0 = _indent;
+        _indent += '    ';
 
-        const src = try_cgFnAsStruct(fn);
+        const src = indent0 + '{' + cgStatements(nodes) + indent0 + '}';
 
-        /////////
-        _faasN--;
-        /////////
+        _indent = indent0;
+        return src;
+    }
 
-        if (src)
+    function blockWrapOne(node: SolvedNode)
+    {
+        return node.kind === 'block'
+            ? cgBlock(node)
+            : blockWrap([ node ]);
+    }
+
+    function blockWrapOne_unlessSilly(node: SolvedNode)
+    {
+        if (node.kind === 'if')
+            return cgNode(node, true);
+
+        return blockWrapOne(node);
+    }
+
+    function cgBlock(block: SolvedNode)
+    {
+        const s0 = enterScope();
+        const src = blockWrap(block.items);
+        exitScope(s0);
+
+        return src;
+    }
+
+    function cgParens(node: SolvedNode)
+    {
+        const items = cgNodes(node.items);
+        if (!items.length)
+            return '(false /*empty parens*/)';
+
+        if (items.length === 1)
+            return items[0];
+
+        return '(' + items.join(', ') + ')';
+    }
+
+
+    // This is kinda weird - it's an auto-refactor:
+    //  it converts a function that contains closures
+    //   into a struct, with its args and leading "lets"
+    //    converted into fields, and then leading closures
+    //     converted into struct members.
+
+    // The tail of the function remains in an "EVAL" function,
+    //  and currently to limit the damage we emit a macro
+    //   that remaps the invocation.
+
+    // TODO this can do more -
+    //  we could collect most of the top-level stuff on the struct.
+
+    function try_cgFnAsStruct(fn: SolvedNode): string|null
+    {
+        const body = fn.items[fn.items.length + FN_BODY_BACK];
+        if (!body || body.kind !== 'block')
+            return null;
+
+        const items = body.items as SolvedNode[];
+
+        // We need at least one closure
+        //  in the function "header"
+        //   for all of this to make sense.
+        let hasClosuresInHeader = false;
+        let end = 0;
+        for (let i = 0; i < items.length; i++)
         {
-            _fdef += src;
-            return '';
+            end = i;
+
+            const item = items[i];
+            if (item.kind === 'fn' && (item.flags & F_CLOSURE))
+                hasClosuresInHeader = true;
+            else if (item.kind !== 'let' && item.kind !== 'struct')
+                break;
         }
+
+        if (!hasClosuresInHeader)
+            return null;
+
+        // Ok - refactor time.
+        const evalName = fn.value + '_EVAL';
+
+        const restFn: SolvedNode =
+        {
+            kind: 'fn', type: t_void,
+            flags: fn.flags | F_CLOSURE,
+            token: fn.token,
+            value: evalName,
+            target: null,
+
+            items:
+            [
+                fn.items[fn.items.length - 2], // retval
+                {
+                    kind: 'block', type: t_void,
+                    flags: 0,
+                    token: fn.token,
+                    value: '',
+                    target: null,
+
+                    items: items.slice(
+                        end, items.length),
+                },
+            ],
+        };
+
+        const head: SolvedNode[] =
+            (fn.items.slice(0, fn.items.length + FN_ARGS_BACK) as SolvedNode[])
+                .concat(items.slice(0, end))
+                .concat(restFn);
+
+        //////////////////////
+        _clsrN === 0 || fail();
+        _clsrN--; // -1, so root closures come up at 0.
+        //////////////////////
+
+        const structName = 'sf_' + fn.value;
+        let src = '\nstruct ' + structName
+                + blockWrap(head) + ';'
+                + '\n\n#define ' + fn.value + '(...) ((' + structName + ' { __VA_ARGS__ }).' + evalName + '())\n';
+
+        //////////////////////
+        _clsrN++;
+        //////////////////////
+
+        return src;
     }
 
-    ///////////////////////////
-    const s0    = enterScope();
-    const f0    = _fnN;
-    const c0    = _clsrN;
-    const indent0 = _indent;
-
-    _fnN++;
-    if (fn.flags & F_CLOSURE) _clsrN++;
-    ///////////////////////////
 
     //
-    const items = fn.items;
-    const body  = items[items.length + FN_BODY_BACK] || fail();
-    const ret   = items[items.length + FN_RET_BACK ] || fail();
-    const annot = typeAnnot(ret.type || fail());
 
-    //
-    const closure = !!_clsrN;
-
-    // Both closures and try_cgFnAsStruct
-    if (!(fn.flags & F_CLOSURE))
-        _indent = '\n';
-
-    let src = closure
-            ? 'const auto& ' + fn.value + ' = [&]('
-            : annot + ' ' + fn.value + '(';
-
-    for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+    function cgFn(fn: SolvedNode)
     {
-        if (i)
-            src += ', ';
+        // Template emit.
+        if (!fn.items.length)
+        {
+            let src = '';
 
-        src += binding(items[i] || fail(), false);
-    }
+            const template = fn.target && fn.target.template || fail();
+            const specs = template.specializations;
+            for (const key in specs)
+            {
+                const s = specs[key];
+                const node = s && s.node;
+                if (node)
+                    src += cgNode(node);
+            }
 
-    src += closure
-         ? ') -> ' + annot
-         : ') noexcept';
+            return src;
+        }
 
-    if (!closure && src !== 'int main()' && _fdef.indexOf(fn.value || fail()) >= 0)
-        _ffwd[src] = '\n' + src + ';';
+        // Use like-struct output for top-level functions with closures -
+        //  We'll try to "close over" a root-level struct.
+        if (_faasN === 0 && (fn.flags & F_HAS_CLOSURE))
+        {
+            /////////
+            _faasN++;
+            /////////
 
-    if (body.kind === 'block')
-        src += cgBlock(body);
-    else
-        src += blockWrap([ body ]);
+            const src = try_cgFnAsStruct(fn);
 
-    //////////////
-    _fnN    = f0;
-    _clsrN  = c0;
-    _indent = indent0;
-    exitScope(s0);
-    //////////////
+            /////////
+            _faasN--;
+            /////////
 
-    if (fn.flags & F_DESTRUCTOR)
-    {
-        const head = items[0] || fail();
-        const name = head.type.canon;
+            if (src)
+            {
+                _fdef += src;
+                return '';
+            }
+        }
 
-        src += '\n\n' + name + '::~' + name + '() noexcept';
-        src += '\n{';
-        src += '\n    if (!dtor)';
-        src += '\n    {';
-        src += '\n        dtor = true;';
-        src += '\n        free(*this);';
-        src += '\n    }';
-        src += '\n}';
+        ///////////////////////////
+        const s0    = enterScope();
+        const f0    = _fnN;
+        const c0    = _clsrN;
+        const indent0 = _indent;
 
-        include('<cassert>');
-        include('<utility>');
-
-        src += '\n\n' + name + '::' + name + '(' + name + '&& src) noexcept';
-        src += '\n    : data(std::move(src.data))';
-        src += '\n{';
-        src += '\n    assert(!src.dtor);';
-        src += '\n    dtor = src.dtor;';
-        src += '\n    src.dtor = true;';
-        src += '\n}';
-
-        include('<cstring>');
-
-        src += '\n\n' + name + '& ' + name + '::operator=(' + name + '&& src) noexcept';
-        src += '\n{';
-        src += '\n    if (&src != this)';
-        src += '\n    {';
-        src += '\n        char temp[sizeof(' + name + ')];';
-        src += '\n        std::memcpy(temp, this, sizeof(' + name + '));';
-        src += '\n        std::memcpy(this, &src, sizeof(' + name + '));';
-        src += '\n        std::memcpy(&src, temp, sizeof(' + name + '));';
-        src += '\n    }';
-        src += '\n';
-        src += '\n    return *this;';
-        src += '\n}';
-    }
-
-    // This covers both closures & try_cgTryFnAsStruct:
-    if (fn.flags & F_CLOSURE)
-        return src;
-
-    _fdef += '\n' + src + '\n';
-    return '';
-}
-
-function binding(node: SolvedNode, doInit: boolean)
-{
-    const id    = node.value || fail();
-    const annot = typeAnnot(node.type, (node.flags & F_MUT) == 0) || fail();
-    const head  = annot + ' ' + ID(id);
-    const init  = node.items[LET_INIT];
-
-    if (!doInit)
-        return head;
-
-    if (init)
-        return head + ' = ' + cgNode(init);
-
-    return head + ' {}';
-}
-
-function cgLet(node: SolvedNode)
-{
-    const src = binding(node, true);
-    if (_fnN || _faasN)
-        return src;
-
-    _fdef += src + ';\n';
-    return '';
-}
-
-function cgReturn(node: SolvedNode)
-{
-    if (node.items)
-        return 'return ' + cgNode(node.items[0] || fail());
-
-    return 'return';
-}
-
-function cgJump(node: SolvedNode)
-{
-    if (node.value)
-        return 'goto L_' + node.value + '_' + node.kind[0];
-
-    return node.kind;
-}
-
-function cgStringLiteral(node: SolvedNode)
-{
-    include('<string>');
-    return 'std::string(' + JSON.stringify(node.value) + ')';
-}
-
-function cgArrayLiteral(node: SolvedNode)
-{
-    const items = cgNodes(node.items);
-    const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
-
-    if (!items.length)
-        return annot + '{}';
-
-    return annot + ' { ' + items.join(', ') + ' }';
-}
-
-function cgDefaultInit(node: SolvedNode)
-{
-    return cgArrayLiteral(node);
-}
-
-function cgCall(node: SolvedNode)
-{
-    const target = node.target || fail();
-    const items  = cgNodes(node.items);
-
-    if (target.kind === 'defctor')
-    {
-        const head = (target.type || fail()).canon;
-        const type = lookupType(head) || fail();
+        _fnN++;
+        if (fn.flags & F_CLOSURE) _clsrN++;
+        ///////////////////////////
 
         //
-        let open = ' { ';
-        let close = ' }';
-        if (type.flags & F_DESTRUCTOR)
+        const items = fn.items;
+        const body  = items[items.length + FN_BODY_BACK] || fail();
+        const ret   = items[items.length + FN_RET_BACK ] || fail();
+        const annot = typeAnnot(ret.type || fail());
+
+        //
+        const closure = !!_clsrN;
+
+        // Both closures and try_cgFnAsStruct
+        if (!(fn.flags & F_CLOSURE))
+            _indent = '\n';
+
+        let src = closure
+                ? 'const auto& ' + fn.value + ' = [&]('
+                : annot + ' ' + fn.value + '(';
+
+        for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
         {
-            open = ' { ' + head + '::Data { ';
-            close = ' }}';
+            if (i)
+                src += ', ';
+
+            src += binding(items[i] || fail(), false);
         }
 
-        return head + open + items.join(', ') + close;
-    }
+        src += closure
+             ? ') -> ' + annot
+             : ') noexcept';
 
-    const id = target.name || fail();
+        if (!closure && src !== 'int main()' && _fdef.indexOf(fn.value || fail()) >= 0)
+            _ffwd[src] = '\n' + src + ';';
 
-    if (/[^a-zA-Z0-9_]/.test(id))
-    {
-        const nodes = node.items  || fail();
-        const head  = nodes[0]    || fail();
+        if (body.kind === 'block')
+            src += cgBlock(body);
+        else
+            src += blockWrap([ body ]);
 
-        switch (items.length)
+        //////////////
+        _fnN    = f0;
+        _clsrN  = c0;
+        _indent = indent0;
+        exitScope(s0);
+        //////////////
+
+        if (fn.flags & F_DESTRUCTOR)
         {
-            case 1: return node.flags & F_POSTFIX
-                            ? items[0] + id
-                            : id + items[0];
+            const head = items[0] || fail();
+            const name = head.type.canon;
 
-            case 2:
-                if (id === '[]')
-                {
-                    if (head.type.canon === 'string')
-                        return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
+            src += '\n\n' + name + '::~' + name + '() noexcept';
+            src += '\n{';
+            src += '\n    if (!dtor)';
+            src += '\n    {';
+            src += '\n        dtor = true;';
+            src += '\n        free(*this);';
+            src += '\n    }';
+            src += '\n}';
 
-                    // One does not simply index into a map.
-                    if (type_isMap(head.type))
-                        return items[0] + '.at(' + items[1] + ')';
+            include('<cassert>');
+            include('<utility>');
 
-                    return items[0] + '[' + items[1] + ']';
-                }
+            src += '\n\n' + name + '::' + name + '(' + name + '&& src) noexcept';
+            src += '\n    : data(std::move(src.data))';
+            src += '\n{';
+            src += '\n    assert(!src.dtor);';
+            src += '\n    dtor = src.dtor;';
+            src += '\n    src.dtor = true;';
+            src += '\n}';
 
-                // This is hellish but should cover our asses for a little while -
-                //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
-                if (id === '=')
-                {
-                    const index = head.kind === 'call' && head.value === '[]'
-                               && head.items.length === 2
-                                ? head.items : null;
+            include('<cstring>');
 
-                    if (index && type_isMap((index[0] || fail()).type))
-                        return '(' + cgNode(index[0] || fail()) +
-                            '[' + cgNode(index[1] || fail()) + '] = ' +
-                                items[1] + ')';
-                }
-
-                // Conditional lazy assignment,
-                //  notice again the special casing for std::maps.
-                if (id === '||=')
-                {
-                    let left  = items[0];
-                    let right = items[1];
-
-                    const index = head.kind === 'call' && head.value === '[]'
-                               && head.items.length === 2
-                                ? head.items : null;
-
-                    if (index && type_isMap((index[0] || fail()).type))
-                        left = cgNode(index[0] || fail()) +
-                            '[' + cgNode(index[1] || fail()) + ']';
-
-                    const annot = typeAnnot(head.type);
-
-                    return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
-                        bool(head.type, '_') + ') _ = ' +
-                            right + '; return _; } (' + left + '))';
-                }
-
-                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+            src += '\n\n' + name + '& ' + name + '::operator=(' + name + '&& src) noexcept';
+            src += '\n{';
+            src += '\n    if (&src != this)';
+            src += '\n    {';
+            src += '\n        char temp[sizeof(' + name + ')];';
+            src += '\n        std::memcpy(temp, this, sizeof(' + name + '));';
+            src += '\n        std::memcpy(this, &src, sizeof(' + name + '));';
+            src += '\n        std::memcpy(&src, temp, sizeof(' + name + '));';
+            src += '\n    }';
+            src += '\n';
+            src += '\n    return *this;';
+            src += '\n}';
         }
+
+        // This covers both closures & try_cgTryFnAsStruct:
+        if (fn.flags & F_CLOSURE)
+            return src;
+
+        _fdef += '\n' + src + '\n';
+        return '';
     }
 
-    if (target.kind === 'var')
-        return ID(id);
-
-    if (target.kind === 'field')
+    function binding(node: SolvedNode, doInit: boolean)
     {
-        let sep = '.';
-        const parent = lookupType(
-            (node.items[0] || fail())
-                .type.canon) || fail();
+        const id    = node.value || fail();
+        const annot = typeAnnot(node.type, (node.flags & F_MUT) == 0) || fail();
+        const head  = annot + ' ' + ID(id);
+        const init  = node.items[LET_INIT];
 
-        if (parent.flags & F_DESTRUCTOR)
-            sep = '.data.';
+        if (!doInit)
+            return head;
 
-        return items[0] + sep + ID(id);
+        if (init)
+            return head + ' = ' + cgNode(init);
+
+        return head + ' {}';
     }
 
-    if (id === 'len' && items.length === 1)
-        return 'int(' + items[0] + '.size())';
-
-    if (id === 'push' && items.length === 2)
-        return items[0] + '.push_back(' + items[1] + ')';
-
-    if (id === 'pop' && items.length === 1)
-        return items[0] + '.pop_back()';
-
-    if (id === 'unshift' && items.length === 2)
-        return '([&](auto& _) { _.insert(_.begin(), ' + items[1] + '); } (' + items[0] + '))';
-
-    if (id === 'insert' && items.length === 3)
-        return '([&](auto& _) { _.insert(_.begin() + ' + items[1] + ', ' + items[2] + '); } (' + items[0] + '))';
-
-    if (id === 'splice' && items.length === 3)
-        return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
-
-    if (id === 'idx' && items.length === 2)
+    function cgLet(node: SolvedNode)
     {
-        const head = node.items[0] || fail();
-        if (head.type.canon === 'string')
-            return 'int(' + items[0] + '.find(' + items[1] + '))';
+        const src = binding(node, true);
+        if (_fnN || _faasN)
+            return src;
 
-        include('<algorithm>');
-        return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
+        _fdef += src + ';\n';
+        return '';
     }
 
-    if (id === 'has' && items.length === 2)
+    function cgReturn(node: SolvedNode)
     {
-        const head = node.items[0] || fail();
-        if (head.type.canon === 'string')
-            return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
+        if (node.items)
+            return 'return ' + cgNode(node.items[0] || fail());
 
-        include('<algorithm>');
-        return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
+        return 'return';
     }
 
-    if (id === 'slice' && items.length === 3)
+    function cgJump(node: SolvedNode)
     {
-        const head = node.items[0] || fail();
-        if (head.type.canon === 'string')
-            return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, _0 + ' + items[2] + '); } ())';
+        if (node.value)
+            return 'goto L_' + node.value + '_' + node.kind[0];
+
+        return node.kind;
     }
 
-    if (id === 'substr' && items.length === 3)
+    function cgStringLiteral(node: SolvedNode)
     {
-        const head = node.items[0] || fail();
-        if (head.type.canon === 'string')
-            return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
+        include('<string>');
+        return 'std::string(' + JSON.stringify(node.value) + ')';
     }
 
-    if (id === 'char' && items.length === 2)
+    function cgArrayLiteral(node: SolvedNode)
     {
-        const head = node.items[0] || fail();
-        if (head.type.canon === 'string')
-            return 'int(' + items[0] + '[' + items[1] + '])';
+        const items = cgNodes(node.items);
+        const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
+
+        if (!items.length)
+            return annot + '{}';
+
+        return annot + ' { ' + items.join(', ') + ' }';
     }
 
-    if ((id === 'true' || id === 'false') && !items.length)
-        return id;
-
-    if (id === 'throw' && items.length === 1)
-        return cgThrow(id, items[0]);
-
-    return ID(id) + '(' + items.join(', ') + ')';
-}
-
-function cgThrow(kind: string, item: string): string
-{
-    const THROW = '::throw';
-    if (!_tfwd[THROW])
+    function cgDefaultInit(node: SolvedNode)
     {
-        include('<stdexcept>');
+        return cgArrayLiteral(node);
+    }
 
-        _tfwd[THROW] =
+    function cgCall(node: SolvedNode)
+    {
+        const target = node.target || fail();
+        const items  = cgNodes(node.items);
+
+        if (target.kind === 'defctor')
+        {
+            const head = (target.type || fail()).canon;
+            const type = lookupType(head) || fail();
+
+            //
+            let open = ' { ';
+            let close = ' }';
+            if (type.flags & F_DESTRUCTOR)
+            {
+                open = ' { ' + head + '::Data { ';
+                close = ' }}';
+            }
+
+            return head + open + items.join(', ') + close;
+        }
+
+        const id = target.name || fail();
+
+        if (/[^a-zA-Z0-9_]/.test(id))
+        {
+            const nodes = node.items  || fail();
+            const head  = nodes[0]    || fail();
+
+            switch (items.length)
+            {
+                case 1: return node.flags & F_POSTFIX
+                                ? items[0] + id
+                                : id + items[0];
+
+                case 2:
+                    if (id === '[]')
+                    {
+                        if (head.type.canon === 'string')
+                            return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
+
+                        // One does not simply index into a map.
+                        if (type_isMap(head.type))
+                            return items[0] + '.at(' + items[1] + ')';
+
+                        return items[0] + '[' + items[1] + ']';
+                    }
+
+                    // This is hellish but should cover our asses for a little while -
+                    //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
+                    if (id === '=')
+                    {
+                        const index = head.kind === 'call' && head.value === '[]'
+                                   && head.items.length === 2
+                                    ? head.items : null;
+
+                        if (index && type_isMap((index[0] || fail()).type))
+                            return '(' + cgNode(index[0] || fail()) +
+                                '[' + cgNode(index[1] || fail()) + '] = ' +
+                                    items[1] + ')';
+                    }
+
+                    // Conditional lazy assignment,
+                    //  notice again the special casing for std::maps.
+                    if (id === '||=')
+                    {
+                        let left  = items[0];
+                        let right = items[1];
+
+                        const index = head.kind === 'call' && head.value === '[]'
+                                   && head.items.length === 2
+                                    ? head.items : null;
+
+                        if (index && type_isMap((index[0] || fail()).type))
+                            left = cgNode(index[0] || fail()) +
+                                '[' + cgNode(index[1] || fail()) + ']';
+
+                        const annot = typeAnnot(head.type);
+
+                        return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
+                            bool(head.type, '_') + ') _ = ' +
+                                right + '; return _; } (' + left + '))';
+                    }
+
+                    return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+            }
+        }
+
+        if (target.kind === 'var')
+            return ID(id);
+
+        if (target.kind === 'field')
+        {
+            let sep = '.';
+            const parent = lookupType(
+                (node.items[0] || fail())
+                    .type.canon) || fail();
+
+            if (parent.flags & F_DESTRUCTOR)
+                sep = '.data.';
+
+            return items[0] + sep + ID(id);
+        }
+
+        if (id === 'len' && items.length === 1)
+            return 'int(' + items[0] + '.size())';
+
+        if (id === 'push' && items.length === 2)
+            return items[0] + '.push_back(' + items[1] + ')';
+
+        if (id === 'pop' && items.length === 1)
+            return items[0] + '.pop_back()';
+
+        if (id === 'unshift' && items.length === 2)
+            return '([&](auto& _) { _.insert(_.begin(), ' + items[1] + '); } (' + items[0] + '))';
+
+        if (id === 'insert' && items.length === 3)
+            return '([&](auto& _) { _.insert(_.begin() + ' + items[1] + ', ' + items[2] + '); } (' + items[0] + '))';
+
+        if (id === 'splice' && items.length === 3)
+            return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
+
+        if (id === 'idx' && items.length === 2)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return 'int(' + items[0] + '.find(' + items[1] + '))';
+
+            include('<algorithm>');
+            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
+        }
+
+        if (id === 'has' && items.length === 2)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
+
+            include('<algorithm>');
+            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
+        }
+
+        if (id === 'slice' && items.length === 3)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, _0 + ' + items[2] + '); } ())';
+        }
+
+        if (id === 'substr' && items.length === 3)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
+        }
+
+        if (id === 'char' && items.length === 2)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return 'int(' + items[0] + '[' + items[1] + '])';
+        }
+
+        if ((id === 'true' || id === 'false') && !items.length)
+            return id;
+
+        if (id === 'throw' && items.length === 1)
+            return cgThrow(id, items[0]);
+
+        return ID(id) + '(' + items.join(', ') + ')';
+    }
+
+    function cgThrow(kind: string, item: string): string
+    {
+        const THROW = '::throw';
+        if (!_tfwd[THROW])
+        {
+            include('<stdexcept>');
+
+            _tfwd[THROW] =
 ////////////////////////////////////
 `
 struct fu_NEVER
@@ -789,285 +775,281 @@ template <typename T>
 }
 `
 ////////////////////////////////////
-        ;
-    }
-
-    return 'fu_' + kind.toUpperCase() + '(' + item + ')';
-}
-
-function cgLiteral(node: SolvedNode)
-{
-    return node.value || 'void';
-}
-
-function cgEmpty()
-{
-    return '';
-}
-
-
-//
-
-function cgIf(node: SolvedNode)
-{
-    const [n0, n1, n2] = node.items;
-
-    const stmt = _exprN === 0;
-
-    const cond = n0 && bool(n0.type, cgNode(n0));
-    const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
-    const alt  = n2 && (stmt ? blockWrapOne_unlessSilly(n2) : cgNode(n2));
-
-    if (stmt)
-        return 'if (' + cond + ') ' + cons + (alt ? _indent + 'else ' + alt : '');
-
-    if (cons && alt)
-        return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
-
-    if (cons)
-        return '(' + cond + ' && ' + cons + ')';
-
-    if (alt)
-        return '(' + cond + ' || ' + alt + ')';
-
-    return fail('TODO');
-}
-
-function bool(type: Type, src: string): string
-{
-    if (/^(Array|Map)\(/.test(type.canon) || type.canon === 'string')
-        return src + '.size()';
-
-    return src;
-}
-
-
-//
-
-function cgAnd(node: SolvedNode)
-{
-    const type = node.type;
-    if (type.quals.indexOf(q_ref) >= 0)
-    {
-        const annot = typeAnnot(type);
-
-        let src = '([&]() -> ' + annot + ' {';
-
-        const items = node.items;
-        for (let i = 0; i < items.length - 1; i++)
-        {
-            const item = items[i] || fail();
-            src += ' { ' + annot + ' _ = ' + cgNode(item) + '; if (!' + bool(item.type, '_') + ') return _; }';
+            ;
         }
 
-        const tail = items[items.length - 1] || fail();
-        if (tail.type !== t_never)
-            src += ' return';
+        return 'fu_' + kind.toUpperCase() + '(' + item + ')';
+    }
 
-        src += ' ' + cgNode(tail) + '; }())';
+    function cgLiteral(node: SolvedNode)
+    {
+        return node.value || 'void';
+    }
+
+    function cgEmpty()
+    {
+        return '';
+    }
+
+
+    //
+
+    function cgIf(node: SolvedNode)
+    {
+        const [n0, n1, n2] = node.items;
+
+        const stmt = _exprN === 0;
+
+        const cond = n0 && bool(n0.type, cgNode(n0));
+        const cons = n1 && (stmt ? blockWrapOne(n1) : cgNode(n1));
+        const alt  = n2 && (stmt ? blockWrapOne_unlessSilly(n2) : cgNode(n2));
+
+        if (stmt)
+            return 'if (' + cond + ') ' + cons + (alt ? _indent + 'else ' + alt : '');
+
+        if (cons && alt)
+            return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
+
+        if (cons)
+            return '(' + cond + ' && ' + cons + ')';
+
+        if (alt)
+            return '(' + cond + ' || ' + alt + ')';
+
+        return fail('TODO');
+    }
+
+    function bool(type: Type, src: string): string
+    {
+        if (/^(Array|Map)\(/.test(type.canon) || type.canon === 'string')
+            return src + '.size()';
+
         return src;
     }
 
-    return '(' + cgNodes(node.items).join(' && ') + ')';
-}
 
-function cgOr(node: SolvedNode)
-{
-    const type = node.type;
-    if (type.quals.indexOf(q_ref) >= 0)
+    //
+
+    function cgAnd(node: SolvedNode)
     {
-        const annot = typeAnnot(type);
-
-        let src = '([&]() -> ' + annot + ' {';
-
-        const items = node.items;
-        for (let i = 0; i < items.length - 1; i++)
+        const type = node.type;
+        if (type.quals.indexOf(q_ref) >= 0)
         {
-            const item = items[i] || fail();
-            let tail = item;
+            const annot = typeAnnot(type);
 
-            // Here's the `a && b || c` pattern,
-            //  actually works quite well.
-            if (item.kind === 'and')
+            let src = '([&]() -> ' + annot + ' {';
+
+            const items = node.items;
+            for (let i = 0; i < items.length - 1; i++)
             {
-                const items = item.items;
-                tail = items[items.length - 1] || fail();
-
-                src += ' if (';
-                for (let i = 0; i < items.length - 1; i++)
-                {
-                    if (i)
-                        src += ' && ';
-
-                    const item = items[i] || fail();
-                    src += bool(item.type, cgNode(item));
-                }
-
-                src += ')';
+                const item = items[i] || fail();
+                src += ' { ' + annot + ' _ = ' + cgNode(item) + '; if (!' + bool(item.type, '_') + ') return _; }';
             }
 
-            src += ' { ' + annot + ' _ = ' + cgNode(tail) + '; if (' + bool(tail.type, '_') + ') return _; }';
+            const tail = items[items.length - 1] || fail();
+            if (tail.type !== t_never)
+                src += ' return';
+
+            src += ' ' + cgNode(tail) + '; }())';
+            return src;
         }
 
-        const tail = items[items.length - 1] || fail();
-        if (tail.type !== t_never)
-            src += ' return';
-
-        src += ' ' + cgNode(tail) + '; }())';
-        return src;
+        return '(' + cgNodes(node.items).join(' && ') + ')';
     }
 
-    return '(' + cgNodes(node.items).join(' || ') + ')';
-}
-
-
-//
-
-function postfixBlock(src: string, postfix: string): string
-{
-    src[src.length - 1] === '}' || fail();
-    return src.slice(0, src.length - 1) + postfix + '}';
-}
-
-function cgLoop(node: SolvedNode)
-{
-    const items = node.items;
-
-    const n_init = items[LOOP_INIT];
-    const n_cond = items[LOOP_COND];
-    const n_post = items[LOOP_POST];
-    const n_body = items[LOOP_BODY];
-    const n_pcnd = items[LOOP_POST_COND];
-
-    const init = n_init && cgNode(n_init);
-    const cond = n_cond && bool(n_cond.type, cgNode(n_cond));
-    const post = n_post && cgNode(n_post);
-    let   body = n_body && blockWrapOne(n_body);
-    const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd));
-    let   breakLabel = '';
-
-    if (body && node.value)
+    function cgOr(node: SolvedNode)
     {
-        const brk = 'L_' + node.value + '_b';
-        const cnt = 'L_' + node.value + '_c';
-
-        if (body.indexOf(cnt) >= 0)
-            body = postfixBlock(body, _indent +     '    ' + cnt + ':;');
-        if (body.indexOf(brk) >= 0)
-            breakLabel = _indent + '    ' + brk + ':;';
-    }
-
-    if (pcnd)
-    {
-        if (init || post || cond)
-            fail('TODO extended loop.');
-
-        return 'do' + body + _indent + 'while (' + pcnd + ')' + breakLabel;
-    }
-
-    if (init || post || !cond)
-        return 'for (' + init + '; ' + cond + '; ' + post + ')' + body + breakLabel;
-
-    return 'while (' + cond + ')' + body + breakLabel;
-}
-
-
-//
-
-const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
-{
-    'root':     cgRoot,
-    'block':    cgBlock,
-    'fn':       cgFn,
-    'return':   cgReturn,
-    'break':    cgJump,
-    'continue': cgJump,
-    'call':     cgCall,
-    'let':      cgLet,
-    'if':       cgIf,
-    'or':       cgOr,
-    'and':      cgAnd,
-    'loop':     cgLoop,
-    'int':      cgLiteral,
-    'str':      cgStringLiteral,
-    'arrlit':   cgArrayLiteral,
-    'definit':  cgDefaultInit,
-    'empty':    cgEmpty,
-
-    'comma':    cgParens,
-    'parens':   cgParens,
-    'label':    cgParens,
-    'struct':   cgEmpty,
-
-    'copy':     cgCopyMove,
-    'move':     cgCopyMove,
-};
-
-function cgCopyMove(node: SolvedNode)
-{
-    const a = cgNode(node.items[0] || fail());
-
-    if (node.kind === 'move' && !(node.flags & F_ELISION))
-    {
-        include('<utility>');
-        return 'std::move(' + a + ')';
-    }
-
-    return a;
-}
-
-function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
-{
-    const result: string[] = [];
-
-    //////////////////////
-    const exprN0 = _exprN;
-    if (statements)
-        _exprN = 0;
-    else
-        _exprN++;
-    //////////////////////
-
-    if (nodes)
-        for (let i = 0; i < nodes.length; i++)
+        const type = node.type;
+        if (type.quals.indexOf(q_ref) >= 0)
         {
-            const node  = nodes[i];
-            const src   = node ? CODEGEN[node.kind](node) : '';
-            result[i]   = src;
+            const annot = typeAnnot(type);
+
+            let src = '([&]() -> ' + annot + ' {';
+
+            const items = node.items;
+            for (let i = 0; i < items.length - 1; i++)
+            {
+                const item = items[i] || fail();
+                let tail = item;
+
+                // Here's the `a && b || c` pattern,
+                //  actually works quite well.
+                if (item.kind === 'and')
+                {
+                    const items = item.items;
+                    tail = items[items.length - 1] || fail();
+
+                    src += ' if (';
+                    for (let i = 0; i < items.length - 1; i++)
+                    {
+                        if (i)
+                            src += ' && ';
+
+                        const item = items[i] || fail();
+                        src += bool(item.type, cgNode(item));
+                    }
+
+                    src += ')';
+                }
+
+                src += ' { ' + annot + ' _ = ' + cgNode(tail) + '; if (' + bool(tail.type, '_') + ') return _; }';
+            }
+
+            const tail = items[items.length - 1] || fail();
+            if (tail.type !== t_never)
+                src += ' return';
+
+            src += ' ' + cgNode(tail) + '; }())';
+            return src;
         }
 
-    ////////////////
-    _exprN = exprN0;
-    ////////////////
-
-    return result;
-}
-
-function cgNode(node: SolvedNode, statement: boolean = false)
-{
-    /////////
-    const exprN0 = _exprN;
-    if (statement)
-        _exprN = 0;
-    else
-        _exprN++;
-    /////////
-
-    const out = CODEGEN[node.kind](node);
-
-    ////////////////
-    _exprN = exprN0;
-    ////////////////
-
-    return out;
-}
+        return '(' + cgNodes(node.items).join(' || ') + ')';
+    }
 
 
-//
+    //
 
-export function cpp_codegen(root: SolvedNode): { src: string }
-{
-    RESET();
+    function postfixBlock(src: string, postfix: string): string
+    {
+        src[src.length - 1] === '}' || fail();
+        return src.slice(0, src.length - 1) + postfix + '}';
+    }
+
+    function cgLoop(node: SolvedNode)
+    {
+        const items = node.items;
+
+        const n_init = items[LOOP_INIT];
+        const n_cond = items[LOOP_COND];
+        const n_post = items[LOOP_POST];
+        const n_body = items[LOOP_BODY];
+        const n_pcnd = items[LOOP_POST_COND];
+
+        const init = n_init && cgNode(n_init);
+        const cond = n_cond && bool(n_cond.type, cgNode(n_cond));
+        const post = n_post && cgNode(n_post);
+        let   body = n_body && blockWrapOne(n_body);
+        const pcnd = n_pcnd && bool(n_pcnd.type, cgNode(n_pcnd));
+        let   breakLabel = '';
+
+        if (body && node.value)
+        {
+            const brk = 'L_' + node.value + '_b';
+            const cnt = 'L_' + node.value + '_c';
+
+            if (body.indexOf(cnt) >= 0)
+                body = postfixBlock(body, _indent +     '    ' + cnt + ':;');
+            if (body.indexOf(brk) >= 0)
+                breakLabel = _indent + '    ' + brk + ':;';
+        }
+
+        if (pcnd)
+        {
+            if (init || post || cond)
+                fail('TODO extended loop.');
+
+            return 'do' + body + _indent + 'while (' + pcnd + ')' + breakLabel;
+        }
+
+        if (init || post || !cond)
+            return 'for (' + init + '; ' + cond + '; ' + post + ')' + body + breakLabel;
+
+        return 'while (' + cond + ')' + body + breakLabel;
+    }
+
+
+    //
+
+    const CODEGEN: { [k: string]: (node: SolvedNode) => string } =
+    {
+        'root':     cgRoot,
+        'block':    cgBlock,
+        'fn':       cgFn,
+        'return':   cgReturn,
+        'break':    cgJump,
+        'continue': cgJump,
+        'call':     cgCall,
+        'let':      cgLet,
+        'if':       cgIf,
+        'or':       cgOr,
+        'and':      cgAnd,
+        'loop':     cgLoop,
+        'int':      cgLiteral,
+        'str':      cgStringLiteral,
+        'arrlit':   cgArrayLiteral,
+        'definit':  cgDefaultInit,
+        'empty':    cgEmpty,
+
+        'comma':    cgParens,
+        'parens':   cgParens,
+        'label':    cgParens,
+        'struct':   cgEmpty,
+
+        'copy':     cgCopyMove,
+        'move':     cgCopyMove,
+    };
+
+    function cgCopyMove(node: SolvedNode)
+    {
+        const a = cgNode(node.items[0] || fail());
+
+        if (node.kind === 'move' && !(node.flags & F_ELISION))
+        {
+            include('<utility>');
+            return 'std::move(' + a + ')';
+        }
+
+        return a;
+    }
+
+    function cgNodes(nodes: Nodes, statements: 'stmt'|null = null)
+    {
+        const result: string[] = [];
+
+        //////////////////////
+        const exprN0 = _exprN;
+        if (statements)
+            _exprN = 0;
+        else
+            _exprN++;
+        //////////////////////
+
+        if (nodes)
+            for (let i = 0; i < nodes.length; i++)
+            {
+                const node  = nodes[i];
+                const src   = node ? CODEGEN[node.kind](node) : '';
+                result[i]   = src;
+            }
+
+        ////////////////
+        _exprN = exprN0;
+        ////////////////
+
+        return result;
+    }
+
+    function cgNode(node: SolvedNode, statement: boolean = false)
+    {
+        /////////
+        const exprN0 = _exprN;
+        if (statement)
+            _exprN = 0;
+        else
+            _exprN++;
+        /////////
+
+        const out = CODEGEN[node.kind](node);
+
+        ////////////////
+        _exprN = exprN0;
+        ////////////////
+
+        return out;
+    }
+
+
+    //
 
     root.kind === 'root' || fail();
 
