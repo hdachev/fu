@@ -62,7 +62,13 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
         cpp_builder.build(gensrc, result =>
         {
             if (result.err)
+            {
+                fs.writeFileSync(
+                    path.join(__dirname, '../build.cpp/fail.cpp'),
+                    gensrc);
+
                 fail('BUILD', result.err);
+            }
 
             else cpp_builder.link([ result.data ], result =>
             {

@@ -3,19 +3,12 @@ import * as Fail from './fail';
 
 import { Type, t_template, t_void, t_i32, t_bool, t_string, t_never, isAssignable, add_ref, add_prvalue_ref, add_mutref, add_refs_from, registerStruct, StructField, serializeType, tryClear_ref, tryClear_mutref, clear_refs, type_has/*, q_non_zero, qadd*/, type_tryInter, q_copy, q_move, q_ref, q_prvalue, createArray, tryClear_array, createMap, tryClear_map } from './types';
 
-
-// Solve & cache the prelude.
-
-import { lex, Source, Filename } from './lex';
+import { lex, Source, Filename, Token } from './lex';
 import { parse } from './parse';
 import { prelude_src } from './prelude';
 
-let PRELUDE_SOLVED: Scope|null = null;
 
-PRELUDE_SOLVED = solve(
-    parse(lex(prelude_src as Source, '__prelude' as Filename)))
-        .scope;
-
+//
 
 export type SolvedNodes = (SolvedNode|null)[];
 
@@ -80,36 +73,16 @@ function Typedef(type: Type): Overload
     return { kind: 'type', name: '', type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
 }
 
-function listGlobals(): Scope
+function runSolver(parse: Node, globals: Scope): SolveResult
 {
-    return {
-        'i32':      [ Typedef(t_i32   ) ],
-        'bool':     [ Typedef(t_bool  ) ],
-        'void':     [ Typedef(t_void  ) ],
-        'string':   [ Typedef(t_string) ],
-        'never':    [ Typedef(t_never)  ],
-    };
-}
+    let _scope:             Scope|null          = globals;
 
-export function solve(parse: Node): SolveResult
-{
-    let _here:              Node|null           = null;
-    let _scope:             Scope|null          = null;
-
+    let _here:              Token|null          = null;
     let _current_fn:        SolvedNode|null     = null;
-    let _current_str:       SolvedNode|null     = null;
     let _current_strt:      Type|null           = null;
-
     let _typeParams:        TypeParams|null     = null;
 
     let TEST_expectImplicits: boolean = false;
-
-
-    // Builtins vs prelude.
-
-    _scope = !PRELUDE_SOLVED
-        ? listGlobals()
-        : Object.create(PRELUDE_SOLVED);
 
 
     //
@@ -132,9 +105,9 @@ export function solve(parse: Node): SolveResult
                     reason += ' <null>';
             }
 
-        const fname = _here.token && _here.token.fname;
-        const l0    = _here.token && _here.token.line;
-        const c0    = _here.token && _here.token.col;
+        const fname = _here.fname;
+        const l0    = _here.line;
+        const c0    = _here.col;
 
         const addr = '@' + l0 + ':' + c0;
 
@@ -286,7 +259,7 @@ export function solve(parse: Node): SolveResult
             value:  '',
 
             items:  [],
-            token:  (_here || fail()).token,
+            token:  (_here || fail()),
             type,
             target: null,
         };
@@ -1010,17 +983,13 @@ export function solve(parse: Node): SolveResult
 
         //////////////////////////
         {
-            const current_str0  = _current_str;
             const current_strt0 = _current_strt;
-
-            _current_str        = out;
             _current_strt       = type;
 
             solveNodes(
                 node.items,
                 out.items = repeat(null, node.items.length));
 
-            _current_str        = current_str0;
             _current_strt       = current_strt0;
         }
         //////////////////////////
@@ -1332,7 +1301,7 @@ export function solve(parse: Node): SolveResult
             flags:  F_ID,
             value:  id,
             items:  [],
-            token:  (_here || fail()).token,
+            token:  (_here || fail()),
         };
     }
 
@@ -1428,7 +1397,7 @@ export function solve(parse: Node): SolveResult
             value:  id,
 
             items:  [],
-            token:  (_here || fail()).token,
+            token:  (_here || fail()),
             type:   type,
             target: null,
         };
@@ -1713,7 +1682,7 @@ export function solve(parse: Node): SolveResult
             const solver    = SOLVE[node.kind] || null;
             if (solver)
             {
-                _here       = node;
+                _here       = node.token || _here;
                 result[i]   = solver(node);
                 continue;
             }
@@ -1745,7 +1714,7 @@ export function solve(parse: Node): SolveResult
                     break;
                 }
 
-                _here       = node;
+                _here       = node.token || _here;
                 result[i]   = UNORDERED_PREP[node.kind](node);
             }
 
@@ -1755,7 +1724,7 @@ export function solve(parse: Node): SolveResult
                 const node = nodes[i];
                 if (node)
                 {
-                    _here       = node;
+                    _here       = node.token || _here;
                     result[i]   = UNORDERED_SOLVE[node.kind](node, result[i]);
                 }
             }
@@ -1779,4 +1748,29 @@ export function solve(parse: Node): SolveResult
     const ret   = { root, scope };
 
     return ret;
+}
+
+
+// Solve & cache the prelude.
+
+function listGlobals(): Scope
+{
+    return {
+        'i32':      [ Typedef(t_i32   ) ],
+        'bool':     [ Typedef(t_bool  ) ],
+        'void':     [ Typedef(t_void  ) ],
+        'string':   [ Typedef(t_string) ],
+        'never':    [ Typedef(t_never)  ],
+    };
+}
+
+const PRELUDE: Scope = runSolver(
+    parse(lex(prelude_src as Source, '__prelude' as Filename)),
+        listGlobals())
+            .scope;
+
+export function solve(parse: Node)
+{
+    return runSolver(
+        parse, Object.create(PRELUDE));
 }
