@@ -70,45 +70,46 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
     function typeAnnotBase(type: Type): string
     {
-        switch (type.canon)
-        {
-            case 'i32':     return 'int';
-            case 'bool':    return 'bool';
-            case 'void':    return 'void';
-            case 'string':
-                include('<string>');
-                return 'std::string';
-        }
+        const c = type.canon;
+
+        if (c === 'i32')    return 'int';
+        if (c === 'bool')   return 'bool';
+        if (c === 'void')   return 'void';
+        if (c === 'string') return (include('<string>'), 'std::string');
 
         const tdef = lookupType(type.canon) || fail('TODO', type.canon);
+        const k = tdef.kind;
 
-        switch (tdef.kind)
+        if (k === 'struct')
         {
-            case 'struct':
-                if (!(type.canon in _tfwd))
-                {
-                    _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
-                        ? '\nstruct ' + type.canon + ';'
-                        : '';
+            if (!(type.canon in _tfwd))
+            {
+                _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
+                    ? '\nstruct ' + type.canon + ';'
+                    : '';
 
-                    const def = declareStruct(type, tdef);
-                    _tdef += def;
-                }
+                const def = declareStruct(type, tdef);
+                _tdef += def;
+            }
 
-                return type.canon;
+            return type.canon;
+        }
 
-            case 'array':
-                const item = typeAnnot(tdef.fields[0].type);
+        if (k === 'array')
+        {
+            const item = typeAnnot(tdef.fields[0].type);
 
-                include('<vector>');
-                return 'std::vector<' + item + '>';
+            include('<vector>');
+            return 'std::vector<' + item + '>';
+        }
 
-            case 'map':
-                const k = typeAnnot(tdef.fields[0].type);
-                const v = typeAnnot(tdef.fields[1].type);
+        if (k === 'map')
+        {
+            const k = typeAnnot(tdef.fields[0].type);
+            const v = typeAnnot(tdef.fields[1].type);
 
-                include('<unordered_map>');
-                return 'std::unordered_map<' + k + ', ' + v + '>';
+            include('<unordered_map>');
+            return 'std::unordered_map<' + k + ', ' + v + '>';
         }
 
         return fail('TODO', tdef.kind);
@@ -203,10 +204,8 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
     function ID(id: string)
     {
-        switch (id)
-        {
-            case 'this':    return '_';
-        }
+        if (id === 'this')
+            return '_';
 
         return id;
     }
@@ -603,62 +602,64 @@ export function cpp_codegen(root: SolvedNode): { src: string }
             const nodes = node.items  || fail();
             const head  = nodes[0]    || fail();
 
-            switch (items.length)
+            if (items.length === 1)
             {
-                case 1: return node.flags & F_POSTFIX
-                                ? items[0] + id
-                                : id + items[0];
+                return node.flags & F_POSTFIX
+                     ? items[0] + id
+                     : id + items[0];
+            }
 
-                case 2:
-                    if (id === '[]')
-                    {
-                        if (head.type.canon === 'string')
-                            return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
+            if (items.length === 2)
+            {
+                if (id === '[]')
+                {
+                    if (head.type.canon === 'string')
+                        return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
 
-                        // One does not simply index into a map.
-                        if (type_isMap(head.type))
-                            return items[0] + '.at(' + items[1] + ')';
+                    // One does not simply index into a map.
+                    if (type_isMap(head.type))
+                        return items[0] + '.at(' + items[1] + ')';
 
-                        return items[0] + '[' + items[1] + ']';
-                    }
+                    return items[0] + '[' + items[1] + ']';
+                }
 
-                    // This is hellish but should cover our asses for a little while -
-                    //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
-                    if (id === '=')
-                    {
-                        const index = head.kind === 'call' && head.value === '[]'
-                                   && head.items.length === 2
-                                    ? head.items : null;
+                // This is hellish but should cover our asses for a little while -
+                //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
+                if (id === '=')
+                {
+                    const index = head.kind === 'call' && head.value === '[]'
+                               && head.items.length === 2
+                                ? head.items : null;
 
-                        if (index && type_isMap((index[0] || fail()).type))
-                            return '(' + cgNode(index[0] || fail()) +
-                                '[' + cgNode(index[1] || fail()) + '] = ' +
-                                    items[1] + ')';
-                    }
+                    if (index && type_isMap((index[0] || fail()).type))
+                        return '(' + cgNode(index[0] || fail()) +
+                            '[' + cgNode(index[1] || fail()) + '] = ' +
+                                items[1] + ')';
+                }
 
-                    // Conditional lazy assignment,
-                    //  notice again the special casing for std::maps.
-                    if (id === '||=')
-                    {
-                        let left  = items[0];
-                        let right = items[1];
+                // Conditional lazy assignment,
+                //  notice again the special casing for std::maps.
+                if (id === '||=')
+                {
+                    let left  = items[0];
+                    let right = items[1];
 
-                        const index = head.kind === 'call' && head.value === '[]'
-                                   && head.items.length === 2
-                                    ? head.items : null;
+                    const index = head.kind === 'call' && head.value === '[]'
+                               && head.items.length === 2
+                                ? head.items : null;
 
-                        if (index && type_isMap((index[0] || fail()).type))
-                            left = cgNode(index[0] || fail()) +
-                                '[' + cgNode(index[1] || fail()) + ']';
+                    if (index && type_isMap((index[0] || fail()).type))
+                        left = cgNode(index[0] || fail()) +
+                            '[' + cgNode(index[1] || fail()) + ']';
 
-                        const annot = typeAnnot(head.type);
+                    const annot = typeAnnot(head.type);
 
-                        return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
-                            bool(head.type, '_') + ') _ = ' +
-                                right + '; return _; } (' + left + '))';
-                    }
+                    return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
+                        bool(head.type, '_') + ') _ = ' +
+                            right + '; return _; } (' + left + '))';
+                }
 
-                    return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
             }
         }
 
