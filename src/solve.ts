@@ -46,6 +46,8 @@ type Specialization =
     readonly overload: Overload  |null;
 };
 
+type TypeParams = { [id: string]: Type };
+
 type Overload =
 {
     readonly kind: 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
@@ -577,49 +579,62 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         return Binding(fn, rnode.type || fail());
     }
 
+    function solveNode(node: Node): SolvedNode
+    {
+        const k = node.kind;
+
+        if (k === 'root')       return solveRoot(node);
+        if (k === 'block')      return solveBlock(node);
+        if (k === 'label')      return solveComma(node);
+        if (k === 'comma')      return solveComma(node);
+
+        if (k === 'let')        return solveLet(node);
+        if (k === 'call')       return solveCall(node);
+        if (k === 'arrlit')     return solveArrayLiteral(node);
+        if (k === 'if')         return solveIf(node);
+        if (k === 'or')         return solveOr(node);
+        if (k === 'and')        return solveAnd(node);
+        if (k === 'loop')       return solveBlock(node);
+
+        if (k === 'return')     return solveReturn(node);
+        if (k === 'break')      return solveJump(node);
+        if (k === 'continue')   return solveJump(node);
+
+        if (k === 'int')        return solveInt(node);
+        if (k === 'str')        return solveStr(node);
+        if (k === 'empty')      return solveEmpty(node);
+
+        return fail('TODO: ' + k);
+    }
+
+    function isUnordered(kind: string)
+    {
+        return kind === 'fn'
+            || kind === 'struct';
+    }
+
+    function unorderedPrep(node: Node): SolvedNode|null
+    {
+        const k = node.kind;
+
+        if (k === 'fn')         return uPrepFn(node);
+        if (k === 'struct')     return uPrepStruct(node);
+
+        return fail('TODO: ' + k);
+    }
+
+    function unorderedSolve(node: Node, prep: SolvedNode|null)
+    {
+        const k = node.kind;
+
+        if (k === 'fn')         return uSolveFn(node, prep);
+        if (k === 'struct')     return uSolveStruct(node, prep);
+
+        return fail('TODO: ' + k);
+    }
+
 
     //
-
-    type Solver = (node: Node) => SolvedNode;
-
-    const SOLVE: { [nodeKind: string]: Solver } =
-    {
-        'root':     solveRoot,
-        'block':    solveBlock,
-        'label':    solveComma,
-        'comma':    solveComma,
-
-        'let':      solveLet,
-        'call':     solveCall,
-        'arrlit':   solveArrayLiteral,
-        'if':       solveIf,
-        'or':       solveOr,
-        'and':      solveAnd,
-        'loop':     solveBlock, // TODO
-
-        'return':   solveReturn,
-        'break':    solveJump,
-        'continue': solveJump,
-
-        'int':      solveInt,
-        'str':      solveStr,
-        'empty':    solveEmpty,
-    };
-
-    type UnorderedPreper = (node: Node) => SolvedNode|null;
-    type UnorderedSolver = (node: Node, solved: SolvedNode|null) => SolvedNode;
-
-    const UNORDERED_PREP: { [nodeKind: string]: UnorderedPreper } =
-    {
-        'fn':       uPrepFn,
-        'struct':   uPrepStruct,
-    };
-
-    const UNORDERED_SOLVE: { [nodeKind: string]: UnorderedSolver } =
-    {
-        'fn':       uSolveFn,
-        'struct':   uSolveStruct,
-    };
 
     function solveRoot(node: Node): SolvedNode
     {
@@ -841,8 +856,6 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         return spec.overload;
     }
-
-    type TypeParams = { [id: string]: Type };
 
     function doTrySpecialize(
         template: Template, args: SolvedNodes)
@@ -1657,12 +1670,6 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     //
 
-    function solveNode(node: Node): SolvedNode
-    {
-        return SOLVE[node.kind](node)
-            || fail();
-    }
-
     function solveNodes(nodes: Nodes, result: SolvedNodes = []): SolvedNodes
     {
         const here0 = _here;
@@ -1679,11 +1686,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             }
 
             // Regular solve.
-            const solver    = SOLVE[node.kind] || null;
-            if (solver)
+            if (!isUnordered(node.kind))
             {
                 _here       = node.token || _here;
-                result[i]   = solver(node);
+                result[i]   = solveNode(node);
                 continue;
             }
 
@@ -1708,14 +1714,14 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     continue;
                 }
 
-                if (SOLVE[node.kind])
+                if (!isUnordered(node.kind))
                 {
                     i1 = i;
                     break;
                 }
 
                 _here       = node.token || _here;
-                result[i]   = UNORDERED_PREP[node.kind](node);
+                result[i]   = unorderedPrep(node);
             }
 
             // Second pass, do the remaining work.
@@ -1725,7 +1731,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 if (node)
                 {
                     _here       = node.token || _here;
-                    result[i]   = UNORDERED_SOLVE[node.kind](node, result[i]);
+                    result[i]   = unorderedSolve(node, result[i]);
                 }
             }
 
@@ -1743,11 +1749,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     // So lets go.
 
-    const root  = solveNode(parse);
-    const scope = _scope || fail();
-    const ret   = { root, scope };
-
-    return ret;
+    return {
+        root: solveNode(parse),
+        scope: _scope || fail(),
+    };
 }
 
 
