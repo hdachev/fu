@@ -699,7 +699,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (id === 'splice' && items.length === 3)
             return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
 
-        if (id === 'idx' && items.length === 2)
+        if (id === 'find' && items.length === 2)
         {
             const head = node.items[0] || fail();
             if (head.type.canon === 'string')
@@ -752,7 +752,47 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (id === 'throw' && items.length === 1)
             return cgThrow(id, items[0]);
 
+        if (id === 'move' && items.length === 3)
+            return '([&]() { auto* _ = ' + items[0] + '.data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
+
         return ID(id) + '(' + items.join(', ') + ')';
+    }
+
+    function cgSlide(destExpr: string, srcExpr: string, numBytesExpr: string)
+    {
+        const SLIDE = '::slide';
+        if (!_tfwd[SLIDE])
+        {
+            include('<cstring>');
+
+            _tfwd[SLIDE] =
+////////////////////////////////////
+`
+inline void fu_MEMSLIDE(void* dest, void* source, size_t N)
+{
+    char swap_buffer[N];
+
+    std::memcpy(
+        swap_buffer, source, N);
+
+    if (source < dest)
+        std::memmove(
+            source, (char*)source + N,
+            (char*)dest - (char*)source);
+    else
+        std::memmove(
+            (char*)dest + N, dest,
+            (char*)source - (char*)dest);
+
+    std::memcpy(
+        dest, swap_buffer, N);
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_MEMSLIDE(' + destExpr + ', ' + srcExpr + ', ' + numBytesExpr + ')';
     }
 
     function cgThrow(kind: string, item: string): string

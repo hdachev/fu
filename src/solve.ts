@@ -381,7 +381,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         }
     }
 
-    function arr_slide<T>(arr: T[], from: number, to: number)
+    function arr_move<T>(arr: T[], from: number, to: number)
     {
         // memcpy, memmove, mempcy.
         const pivot = arr[from];
@@ -471,8 +471,8 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                             if (idx < 0)
                                 continue NEXT;
 
-                            arr_slide(args, i, idx);
-                            arr_slide(names, i, idx);
+                            arr_move(args, i, idx);
+                            arr_move(names, i, idx);
                         }
                     }
 

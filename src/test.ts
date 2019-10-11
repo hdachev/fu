@@ -777,9 +777,21 @@ ZERO(`
 `);
 
 ZERO(`
-    mut a = [7, 1, 5, 3, 99, -13];
+    mut a = [7, 1, 5, 3, 99, -13]; // [-13, 1, 3, 5, 7, 99]
     a.sort();
     return a[0] + a[1] + a[3] + a[4];
+`);
+
+ZERO(`
+    mut a = [0, 1, 2, 3, 4]; // [2, 0, 1, 3, 4]
+    a.move(2, 0);
+    return a[0] + a[3] - a[2] - a[4];
+`);
+
+ZERO(`
+    mut a = [2, 0, 1, 3, 4]; // [0, 1, 2, 3, 4]
+    a.move(0, 2);
+    return a[1] + a[4] - a[2] - a[3];
 `);
 
 
@@ -808,8 +820,8 @@ ZERO(`
 `);
 
 ZERO(`
-    return 'hello world'.idx('world')
-         - 2 * [1, 7, 13, 14, 19].idx(14); // expect_lambda
+    return 'hello world'.find('world')
+         - 2 * [1, 7, 13, 14, 19].find(14); // expect_lambda
 `);
 
 ZERO(`
@@ -1101,6 +1113,8 @@ ZERO(`
 
 
 // Let's get going.
+
+FILE;
 
 FILE('lex.fu');
 // FILE('parse.fu');
