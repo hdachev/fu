@@ -87,6 +87,9 @@ fn pop(a: &mut $T): void __native_pure;
 fn idx(a: &$T[], b: &$T): i32  __native_pure;
 fn has(a: &$T[], b: &$T): bool __native_pure;
 
+fn slide(a: &mut $T, from: i32, to: i32): void __native_pure;
+fn sort(a: &mut $T): void __native_pure;
+
 
 // Strings.
 

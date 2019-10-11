@@ -776,6 +776,12 @@ ZERO(`
     return x.len + x[0].y.len * 2 - 3;
 `);
 
+ZERO(`
+    mut a = [7, 1, 5, 3, 99, -13];
+    a.sort();
+    return a[0] + a[1] + a[3] + a[4];
+`);
+
 
 // Strings.
 

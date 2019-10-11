@@ -726,6 +726,12 @@ export function cpp_codegen(root: SolvedNode): { src: string }
                 return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, _0 + ' + items[2] + '); } ())';
         }
 
+        if (id === 'sort' && items.length === 1)
+        {
+            include('<algorithm>');
+            return '([&](auto& _) { std::sort(_.begin(), _.end()); } (' + items[0] + '))';
+        }
+
         if (id === 'substr' && items.length === 3)
         {
             const head = node.items[0] || fail();
