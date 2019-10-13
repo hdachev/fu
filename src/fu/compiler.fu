@@ -502,8 +502,7 @@ fn setupOperators()
         out.RIGHT_TO_LEFT[precedence] = rightToLeft;
 
         for (mut i = 0; i < ops.length; i++)
-            out.PRECEDENCE[ops[i]] =
-                precedence as Precedence;
+            out.PRECEDENCE[ops[i]] = precedence;
     }
 
     binop([ 'as', 'is' ]);
@@ -715,7 +714,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseStructMethod(): Node
     {
-        mut fn = parseFnDecl();
+        mut fnNode = parseFnDecl();
 
         // `this` arg annotation -
         //  -----------------------------------
@@ -727,14 +726,13 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         let typeAnnot =
             createPrefix('&',
-                // createPrefix('mut',
-                    createRead(_structName || fail()));
+                createRead(_structName || fail()));
 
-        fn.items.unshift(
-            createLet('this' as string, F_USING, typeAnnot, null));
+        fnNode.items.unshift(
+            createLet('this', F_USING, typeAnnot, Node()));
 
-        fn.flags |= F_METHOD;
-        return fn;
+        fnNode.flags |= F_METHOD;
+        return fnNode;
     }
 
 
@@ -748,7 +746,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         mut col00 = _col0;
 
         mut items: Node[] = [];
-        for (;;)
+        while (true)
         {
             let token = _tokens[_idx];
             if (token.kind == endKind && token.value == endVal)
@@ -799,9 +797,9 @@ pub fn parse(_fname: string, _tokens: Token[])
     }
 
     fn unwrapStructMethods(
-        out: &mut Node[], &mut struct: Node): void
+        out: &mut Node[], structNode: &mut Node): void
     {
-        mut items = struct.items;
+        mut items = structNode.items;
         for (mut i = 0; i < items.length; i++)
         {
             let item = items[i];
@@ -809,7 +807,7 @@ pub fn parse(_fname: string, _tokens: Token[])
             {
                 if (item.value == 'free')
                 {
-                    struct.flags |= F_DESTRUCTOR;
+                    structNode.flags |= F_DESTRUCTOR;
                     item.flags   |= F_DESTRUCTOR;
                 }
 
@@ -842,6 +840,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
             if (v == 'for')         return parseFor();
             if (v == 'while')       return parseWhile();
+            if (v == 'do')          return parseDoWhile();
             if (v == 'break')       return parseJump('break');
             if (v == 'continue')    return parseJump('continue');
 
@@ -923,8 +922,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         // Inject `: void` annot here, easy,
         //  one less thing to deal with later.
         if (!type && _numReturns == numReturns0)
-            items[retIdx] = type =
-                createRead('void' as string);
+            items[retIdx] = type = createRead('void');
 
         if (type)
             flags |= F_FULLY_TYPED;
@@ -1011,7 +1009,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         mut implicit: Node[];
         mut defaults = false;
 
-        for (;;)
+        while (true)
         {
             if (tryConsume(endk, endv))
                 break;
@@ -1148,7 +1146,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         //
         return createCall(
-            op, flags, [left, right])
+            op, flags, [ left, right ]);
     }
 
     fn tryParseExpressionTail(head: &Node): Node
@@ -1203,6 +1201,7 @@ pub fn parse(_fname: string, _tokens: Token[])
                 if (v == '[') return parseArrayLiteral();
                 if (v == '$') return parseTypeParam();
                 if (v == '@') return parseTypeTag();
+                if (v == '[]') return Node('definit');
 
                 return parsePrefix(token.value);
             }
@@ -1263,7 +1262,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         PREFIX.indexOf(op) >= 0 || (_idx--, fail());
 
         if (op == '&' && tryConsume('id', 'mut'))
-            op = '&mut' as string;
+            op = '&mut';
 
         return createPrefix(
             op, parseUnaryExpression());
@@ -1294,7 +1293,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         mut flags = 0;
 
         mut first = true;
-        for (;;)
+        while (true)
         {
             if (tryConsume('op', endop))
                 break;
@@ -1442,7 +1441,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         return jump;
     }
 
-    fn createJump(kind: /*'break'|'continue'*/, label: string): Node
+    fn createJump(kind: string/*'break'|'continue'*/, label: string): Node
     {
         return Node(kind, value: label);
     }
@@ -1530,6 +1529,18 @@ pub fn parse(_fname: string, _tokens: Token[])
         let body = parseStatement();
 
         return createLoop(null, cond, null, body, null);
+    }
+
+    fn parseDoWhile(): Node
+    {
+        let body = parseStatement();
+        consume('id', 'while');
+        consume('op', '(');
+        let cond = parseExpression();
+        consume('op', ')');
+        consume('op', ';');
+
+        return createLoop(null, null, null, body, cond);
     }
 
     fn createLoop(init: Node, cond: Node, post: Node, body: Node, postcond: Node): Node

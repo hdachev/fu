@@ -149,15 +149,23 @@ function FILE(fname: string)
     fname = path.join(
         __dirname, '../src/fu', fname);
 
-    fs.readFile(fname, 'utf8', (err, src) =>
+    function run()
     {
-        !err && src || fail(fname, err, src);
+        const src = fs.readFileSync(fname, 'utf8');
+        src || fail(fname, src);
 
-        if (src.indexOf('fn ZERO') < 0)
-            src += '\n\nfn ZERO() 0;\n';
+        try
+        {
+            ZERO(src, fname as Filename);
+        }
+        catch (e)
+        {
+            console.log(e.message);
+        }
+    }
 
-        ZERO(src, fname as Filename);
-    });
+    fs.watchFile(fname, run);
+    run();
 }
 
 
@@ -1116,7 +1124,7 @@ ZERO(`
 
 FILE;
 
-FILE(     'lex.fu');
+// FILE(     'lex.fu');
 FILE('compiler.fu');
 
 

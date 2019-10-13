@@ -429,6 +429,7 @@ export function parse(opts: Options)
 
             if (v === 'for')        return parseFor();
             if (v === 'while')      return parseWhile();
+            if (v === 'do')         return parseDoWhile();
             if (v === 'break')      return parseJump('break');
             if (v === 'continue')   return parseJump('continue');
 
@@ -792,6 +793,7 @@ export function parse(opts: Options)
                 if (v === '[') return parseArrayLiteral();
                 if (v === '$') return parseTypeParam();
                 if (v === '@') return parseTypeTag();
+                if (v === '[]') return Node('definit');
 
                 return parsePrefix(token.value);
             }
@@ -1120,6 +1122,18 @@ export function parse(opts: Options)
         const body = parseStatement();
 
         return createLoop(null, cond, null, body, null);
+    }
+
+    function parseDoWhile()
+    {
+        const body = parseStatement();
+        consume('id', 'while');
+        consume('op', '(');
+        const cond = parseExpression();
+        consume('op', ')');
+        consume('op', ';');
+
+        return createLoop(null, null, null, body, cond);
     }
 
     function createLoop(init: Node|null, cond: Node|null, post: Node|null, body: Node|null, postcond: Node|null)
