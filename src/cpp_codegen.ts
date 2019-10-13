@@ -768,7 +768,8 @@ export function cpp_codegen(root: SolvedNode): { src: string }
             _tfwd[SLIDE] =
 ////////////////////////////////////
 `
-inline void fu_MEMSLIDE(void* dest, void* source, size_t N)
+template <size_t N>
+inline void fu_MEMSLIDE(void* dest, void* source)
 {
     char swap_buffer[N];
 
@@ -792,7 +793,7 @@ inline void fu_MEMSLIDE(void* dest, void* source, size_t N)
             ;
         }
 
-        return 'fu_MEMSLIDE(' + destExpr + ', ' + srcExpr + ', ' + numBytesExpr + ')';
+        return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
     }
 
     function cgThrow(kind: string, item: string): string
