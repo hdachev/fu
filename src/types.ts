@@ -66,7 +66,8 @@ export function isAssignable(host: Type, guest: Type)
             (   host.quals      === guest.quals ||
                 host.quals.length < guest.quals.length      &&
                 host.quals.indexOf(q_mutref) < 0            && // mut invariance
-                tagset.contains(guest.quals, host.quals)));
+                tagset.contains(guest.quals, host.quals)))
+                    || guest === t_never;
 }
 
 
