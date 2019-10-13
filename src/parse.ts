@@ -437,6 +437,9 @@ export function parse(opts: Options)
             if (v === 'struct')     return parseStructDecl();
 
             if (v === ':')          return parseLabelledStatement();
+
+            // Ignore pubs for now.
+            if (v === 'pub')        return parseStatement();
         }
 
         ////////////

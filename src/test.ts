@@ -1116,8 +1116,8 @@ ZERO(`
 
 FILE;
 
-FILE('lex.fu');
-// FILE('parse.fu');
+FILE(     'lex.fu');
+FILE('compiler.fu');
 
 
 //
