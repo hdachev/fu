@@ -398,33 +398,6 @@ fn lex(src: &string, fname: &string): LexResult
 }
 
 
-// A very quick test.
-
-fn ZERO(): i32
-{
-    let res = lex(
-        fname: 'filename',
-        src: '"hello\\nworld"');
-
-    if (res.tokens.len != 2)
-        return 10;
-
-    if (res.tokens[0].kind != 'str')
-        return 20;
-
-    if (res.tokens[0].value != 'hello\nworld')
-        return 30;
-
-    if (res.tokens[0].value.char(5) != 10)
-        return 40;
-
-    if (res.tokens[1].kind != 'eof')
-        return 50;
-
-    return 0;
-}
-
-
 
 
 ///////////////////////////////////////
@@ -501,7 +474,7 @@ fn setupOperators()
         precedence++;
         out.RIGHT_TO_LEFT[precedence] = rightToLeft;
 
-        for (mut i = 0; i < ops.length; i++)
+        for (mut i = 0; i < ops.len; i++)
             out.PRECEDENCE[ops[i]] = precedence;
     }
 
@@ -535,7 +508,7 @@ fn setupOperators()
 }
 
 let BINOP     = setupOperators();
-let P_COMMA   = BINOP.PRECEDENCE[','] || Fail.fail();
+let P_COMMA   = BINOP.PRECEDENCE[','] || assert();
 
 
 // Commons.
@@ -559,7 +532,7 @@ pub let LOOP_POST_COND = 4;
 pub fn parse(_fname: string, _tokens: Token[])
 {
     mut _idx        = 0;
-    mut _loc: Token = _tokens[0] || fail();
+    mut _loc: Token = _tokens[0];
     mut _col0       = 0;
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
@@ -591,7 +564,13 @@ pub fn parse(_fname: string, _tokens: Token[])
         return throw(_fname + ' ' + addr + ':\n\t' + reason);
     }
 
-    fn Node(
+    fn fail_Lint(reason: string)
+    {
+        // TODO allow opt out
+        return fail('Lint: ' + reason);
+    }
+
+    fn make(
         kind:  string,
         items: Node[] = [],
         flags: i32    =  0,
@@ -601,6 +580,8 @@ pub fn parse(_fname: string, _tokens: Token[])
             :kind, :flags, :value, :items,
                 token: _loc || throw('no loc'));
     };
+
+    fn miss() Node();
 
 
     //
@@ -646,7 +627,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         //     items += parseImport()
         // }
 
-        mut out = Node('root',
+        mut out = make('root',
             parseBlockLike('eof', 'eof'));
 
         if (_implicits)
@@ -666,7 +647,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createBlock(items: &Node[]): Node
     {
-        return Node('block', items);
+        return make('block', items);
     }
 
 
@@ -688,9 +669,9 @@ pub fn parse(_fname: string, _tokens: Token[])
         _structName = structName0;
         //////////////////////////
 
-        return Node(
+        return make(
             'struct', items, 0,
-                name && name.value);
+                name ? name.value : '');
     }
 
     fn parseStructItem(): Node
@@ -705,7 +686,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         _idx--;
         //////////////////////////////
 
-        let member = parseLet();
+        mut member = parseLet();
         member.flags |= F_FIELD;
 
         consume('op', ';');
@@ -729,7 +710,7 @@ pub fn parse(_fname: string, _tokens: Token[])
                 createRead(_structName || fail()));
 
         fnNode.items.unshift(
-            createLet('this', F_USING, typeAnnot, Node()));
+            createLet('this', F_USING, typeAnnot, miss));
 
         fnNode.flags |= F_METHOD;
         return fnNode;
@@ -773,12 +754,14 @@ pub fn parse(_fname: string, _tokens: Token[])
                 'Bad indent, expecting more than ' + col00
                     + '. Block starts on line ' + line0 + '.');
 
-            let expr = mode /*== 'struct'*/
+            mut expr = mode /*== 'struct'*/
                 ? parseStructItem()
                 : parseStatement();
 
-            expr.kind != 'call' || ((expr.flags & (F_ID | F_ACCESS)) == 0) || expr.items.length > 1 || fail_Lint(
-                'Orphan pure-looking expression.');
+            expr.kind != 'call'
+                || ((expr.flags & (F_ID | F_ACCESS)) == 0)
+                || expr.items.len > 1
+                || fail_Lint('Orphan pure-looking expression.');
 
             // Filter out excess semicolons.
             if (expr.kind != 'empty')
@@ -792,25 +775,19 @@ pub fn parse(_fname: string, _tokens: Token[])
         return items;
     }
 
-    fn fail_Lint(reason: string)
-    {
-        // TODO allow opt out
-        return fail('Lint: ' + reason);
-    }
-
     fn unwrapStructMethods(
         out: &mut Node[], structNode: &mut Node): void
     {
         mut items = structNode.items;
-        for (mut i = 0; i < items.length; i++)
+        for (mut i = 0; i < items.len; i++)
         {
-            let item = items[i];
+            mut item = items[i];
             if (item && item.kind == 'fn')
             {
                 if (item.value == 'free')
                 {
                     structNode.flags |= F_DESTRUCTOR;
-                    item.flags   |= F_DESTRUCTOR;
+                    item.flags |= F_DESTRUCTOR;
                 }
 
                 items.splice(i--, 1);
@@ -882,7 +859,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseEmpty(): Node
     {
-        return Node('empty');
+        return make('empty');
     }
 
     fn parseExpressionStatement(): Node
@@ -900,8 +877,8 @@ pub fn parse(_fname: string, _tokens: Token[])
         ////////////////////////////////
 
         // fn hello(), fn +()
-        let name = tryConsume('id');
-        name   ||= tryConsume('op');
+        mut name = tryConsume('id');
+        name ||= tryConsume('op');
 
         // Opening parens.
         consume('op', '(');
@@ -915,7 +892,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         // Return type annot.
         mut type = tryPopTypeAnnot();
-        let retIdx = items.length;
+        let retIdx = items.len;
         items.push(type);
 
         // Body or pattern (case/case).
@@ -941,11 +918,11 @@ pub fn parse(_fname: string, _tokens: Token[])
         }
         ////////////////////////////////
 
-        return Node('fn', items, flags, name.value);
+        return make('fn', items, flags, name.value);
     }
 
     fn parseFnBodyOrPattern(
-        out_push_body: &mut Node[]): Node
+        out_push_body: &mut Node[]): i32
     {
         mut flags = 0;
         mut body: Node;
@@ -953,7 +930,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         if (tryConsume('id', 'case'))
         {
-            let branches: Node[] = [];
+            mut branches: Node[] = [];
 
             flags |= F_PATTERN;
 
@@ -964,11 +941,11 @@ pub fn parse(_fname: string, _tokens: Token[])
                 let body = parseFnBodyBranch();
 
                 branches.push(
-                    Node('fnbranch', [ cond, type, body ]));
+                    make('fnbranch', [ cond, type, body ]));
             }
             while (tryConsume('id', 'case'));
 
-            body = Node('pattern', branches);
+            body = make('pattern', branches);
         }
         else
         {
@@ -993,7 +970,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     {
         return tryConsume('op', ':')
              ? parseTypeAnnot()
-             : Node();
+             : miss;
     }
 
     fn parseTypeAnnot(): Node
@@ -1049,7 +1026,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         // Ensures implicit arguments always come last.
         if (implicit)
-            for (mut i = 0; i < implicit.length; i++)
+            for (mut i = 0; i < implicit.len; i++)
                 outArgs.push(implicit[i]);
 
         return outFlags;
@@ -1072,9 +1049,11 @@ pub fn parse(_fname: string, _tokens: Token[])
         if (tryConsume('id', 'implicit')) flags |= F_IMPLICIT;
         if (tryConsume('id', 'mut'     )) flags |= F_MUT;
 
-        let id    = consume('id').value;
-        let type  = tryPopTypeAnnot();
-        let init  = tryConsume('op', '=') && parseExpression(P_COMMA);
+        let id      = consume('id').value;
+        let type    = tryPopTypeAnnot();
+        let init    = tryConsume('op', '=')
+                    ? parseExpression(P_COMMA)
+                    : Node();
 
         if (numDollars0 != _numDollars)
             flags |= F_TEMPLATE;
@@ -1089,7 +1068,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         id: string, flags: i32,
         type: Node, init: Node): Node
     {
-        return Node('let', [ type, init ], flags, id);
+        return make('let', [ type, init ], flags, id);
     }
 
     fn parseExpression(p1 = _precedence): Node
@@ -1123,7 +1102,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     fn tryParseBinary(left: Node, op: string, p1: i32): Node
     {
         if (p1 > _precedence || p1 == _precedence && !BINOP.RIGHT_TO_LEFT[p1])
-            return Node();
+            return miss;
 
         // consume
         _idx++;
@@ -1159,7 +1138,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         {
             let v = token.value;
 
-            if (v == ';') return (_idx--, Node());
+            if (v == ';') return (_idx--, miss);
             if (v == '.') return parseAccessExpression(head);
             if (v == '(') return parseCallExpression(head);
             if (v == '[') return parseIndexExpression(head);
@@ -1168,12 +1147,12 @@ pub fn parse(_fname: string, _tokens: Token[])
             if (p1)
                 return (_idx--, tryParseBinary(head, v, p1));
 
-            if (POSTFIX.indexOf(v) >= 0)
+            if (POSTFIX.has(v))
                 return createCall(v, F_POSTFIX, [ head ]);
         }
 
         // Backtrack.
-        return (_idx--, Node());
+        return (_idx--, miss);
     }
 
     fn parseExpressionHead(): Node
@@ -1199,11 +1178,11 @@ pub fn parse(_fname: string, _tokens: Token[])
             {
                 let v = token.value;
 
-                if (v == '(') return parseParens();
-                if (v == '[') return parseArrayLiteral();
-                if (v == '$') return parseTypeParam();
-                if (v == '@') return parseTypeTag();
-                if (v == '[]') return Node('definit');
+                if (v ==  '(') return parseParens();
+                if (v ==  '[') return parseArrayLiteral();
+                if (v ==  '$') return parseTypeParam();
+                if (v ==  '@') return parseTypeTag();
+                if (v == '[]') return make('definit');
 
                 return parsePrefix(token.value);
             }
@@ -1216,9 +1195,9 @@ pub fn parse(_fname: string, _tokens: Token[])
         return fail();
     }
 
-    fn parseParens()
+    fn parseParens(): Node
     {
-        let items: Node[] = [];
+        mut items: Node[] = [];
 
         do
         {
@@ -1228,14 +1207,14 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         consume('op', ')');
 
-        return items.length > 1
+        return items.len > 1
              ? createComma(items)
              : items[0];
     }
 
     fn createComma(nodes: &Node[]): Node
     {
-        return Node('comma', nodes);
+        return make('comma', nodes);
     }
 
     fn parseTypeParam(): Node
@@ -1246,7 +1225,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createTypeParam(value: string): Node
     {
-        return Node('typeparam', :value);
+        return make('typeparam', :value);
     }
 
     fn parseTypeTag(): Node
@@ -1256,12 +1235,12 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createTypeTag(value: string): Node
     {
-        return Node('typetag', :value);
+        return make('typetag', :value);
     }
 
-    fn parsePrefix(op: string): Node
+    fn parsePrefix(mut op: string): Node
     {
-        PREFIX.indexOf(op) >= 0 || (_idx--, fail());
+        PREFIX.has(op) || (_idx--, fail());
 
         if (op == '&' && tryConsume('id', 'mut'))
             op = '&mut';
@@ -1347,24 +1326,26 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createLabel(id: string, value: &Node): Node
     {
-        return Node('label', [ value ], 0, id);
+        return make('label', [ value ], 0, id);
     }
 
     fn parseCallExpression(expr: &Node): Node
     {
-        let args: Node[] = [];
+        mut args: Node[] = [];
         let argFlags = parseCallArgs(')', args);
 
         // Uniform call syntax.
         if (expr.kind == 'call' && (expr.flags & F_ACCESS))
         {
             let head = expr.items
-                    && expr.items.length == 1
+                    && expr.items.len == 1
                     && expr.items[0] || fail();
+
+            args.unshift(head);
 
             return createCall(
                 expr.value || fail(), F_METHOD | argFlags,
-                [ head ].concat(args));
+                args);
         }
 
         if (expr.kind == 'call' && (expr.flags & F_ID))
@@ -1376,7 +1357,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseArrayLiteral(): Node
     {
-        let args: Node[] = [];
+        mut args: Node[] = [];
         let argFlags = parseCallArgs(']', args);
 
         return createArrayLiteral(argFlags, args);
@@ -1384,31 +1365,33 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createArrayLiteral(argFlags: i32, items: Node[]): Node
     {
-        return Node('arrlit', items, argFlags);
+        return make('arrlit', items, argFlags);
     }
 
     fn parseIndexExpression(expr: Node): Node
     {
-        let args: Node[] = [];
+        mut args: Node[] = [];
         let argFlags = parseCallArgs(']', args);
 
-        return createCall('[]', F_INDEX & argFlags,
-            [ expr ].concat(args));
+        args.unshift(expr);
+
+        return createCall('[]',
+            F_INDEX & argFlags, args);
     }
 
     fn createLeaf(kind: string, value: string): Node
     {
-        return Node(kind, null, 0, value);
+        return make(kind, :value);
     }
 
-    fn createCall(id: string, flags: i32, args: Node[]): Node
+    fn createCall(id: string, flags: i32, args: Node[] = []): Node
     {
-        return Node('call', args, flags, id);
+        return make('call', args, flags, id);
     }
 
     fn createRead(id: string): Node
     {
-        return createCall(id || fail(), F_ID, null);
+        return createCall(id || fail(), F_ID);
     }
 
 
@@ -1420,15 +1403,18 @@ pub fn parse(_fname: string, _tokens: Token[])
         _numReturns++;
 
         if (tryConsume('op', ';'))
-            return createReturn(null);
+            return createReturn();
 
         return createReturn(
             parseExpressionStatement());
     }
 
-    fn createReturn(node: Node): Node
+    fn createReturn(node: Node = Node()): Node
     {
-        return Node('return', node && [ node ]);
+        if (!node)
+            return make('return');
+
+        return make('return', [ node ]);
     }
 
     fn parseJump(kind: string /*'break'|'continue'*/): Node
@@ -1445,7 +1431,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createJump(kind: string/*'break'|'continue'*/, label: string): Node
     {
-        return Node(kind, value: label);
+        return make(kind, value: label);
     }
 
 
@@ -1461,7 +1447,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         let alt: Node = tryConsume('id', 'else')
             ? parseStatement()
-            : Node();
+            : miss;
 
         return createIf(cond, cons, alt);
     }
@@ -1471,7 +1457,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createIf(cond: Node, cons: Node, alt: Node): Node
     {
-        return Node('if', [ cond, cons, alt ]);
+        return make('if', [ cond, cons, alt ]);
     }
 
     fn createOr(left: Node, right: Node): Node
@@ -1493,12 +1479,12 @@ pub fn parse(_fname: string, _tokens: Token[])
             k_left == kind && k_right == kind
                 ? left.items.concat(right.items)
                 : k_left == kind
-                    ? left.items.concat(right)
+                    ? left.items.concat([ right ])
                     : k_right == kind
-                        ? [ left ].concat(right)
+                        ? [ left ].concat(right.items)
                         : [ left, right ];
 
-        return Node(kind, items);
+        return make(kind, items);
     }
 
 
@@ -1520,7 +1506,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         consume('op', ')');
         let body = parseStatement();
 
-        return createLoop(init, cond, post, body, null);
+        return createLoop(init, cond, post, body, miss);
     }
 
     fn parseWhile(): Node
@@ -1530,7 +1516,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         consume('op', ')');
         let body = parseStatement();
 
-        return createLoop(null, cond, null, body, null);
+        return createLoop(miss, cond, miss, body, miss);
     }
 
     fn parseDoWhile(): Node
@@ -1542,21 +1528,38 @@ pub fn parse(_fname: string, _tokens: Token[])
         consume('op', ')');
         consume('op', ';');
 
-        return createLoop(null, null, null, body, cond);
+        return createLoop(miss, miss, miss, body, cond);
     }
 
     fn createLoop(init: Node, cond: Node, post: Node, body: Node, postcond: Node): Node
     {
-        return Node('loop', [ init, cond, post, body, postcond ]);
+        return make('loop', [ init, cond, post, body, postcond ]);
     }
 
     // -------------------------------
     // Good to go.
 
     // Check EOF.
-    _tokens[_tokens.length - 1].kind == 'eof' || fail(
+    _tokens[_tokens.len - 1].kind == 'eof' || fail(
         'Missing `eof` token.');
 
     //
     return parseRoot();
+}
+
+
+
+
+// A very quick test.
+
+fn ZERO(): i32
+{
+    let res_lex = lex(
+        fname: 'filename',
+        src: 'let hw = "hello\\nworld";');
+
+    let res_parse = parse(
+        'filename', res_lex.tokens);
+
+    return res_parse.kind == 'root' ? 0 : 101;
 }
