@@ -267,6 +267,16 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         };
     }
 
+    function solveDefinit(type: Type|null): SolvedNode
+    {
+        if (!type)
+            return fail(
+                'Cannot solve definit, no inferred type.');
+
+        return tryDefaultInit(type)
+            || fail('Cannot definit: ' + serializeType(type));
+    }
+
 
     //
 
@@ -579,7 +589,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         return Binding(fn, rnode.type || fail());
     }
 
-    function solveNode(node: Node): SolvedNode
+    function solveNode(node: Node, type: Type|null = null): SolvedNode
     {
         const k = node.kind;
 
@@ -603,6 +613,8 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         if (k === 'int')        return solveInt(node);
         if (k === 'str')        return solveStr(node);
         if (k === 'empty')      return solveEmpty(node);
+
+        if (k === 'definit')    return solveDefinit(type);
 
         return fail('TODO: ' + k);
     }
@@ -1073,10 +1085,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         const init      = node.items[LET_INIT];
 
         const s_annot   = annot && evalTypeAnnot(annot);
-        let   s_init    = init  && solveNode(init);
-
         const t_annot   = s_annot && s_annot.type;
-        const t_init    = s_init  &&  s_init.type;
+
+        let   s_init    = init && solveNode(init, t_annot);
+        const t_init    = s_init && s_init.type;
 
         const t_let     = t_annot || clear_refs(t_init || fail(
             'Variable declarations without explicit type annotations must be initialized.'));
