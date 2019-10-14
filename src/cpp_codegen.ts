@@ -78,6 +78,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (c === 'bool')   return 'bool';
         if (c === 'void')   return 'void';
         if (c === 'string') return (include('<string>'), 'std::string');
+        if (c === 'never')  return annotateNever();
 
         const tdef = lookupType(type.canon) || fail('TODO', type.canon);
         const k = tdef.kind;
@@ -796,14 +797,14 @@ inline void fu_MEMSLIDE(void* dest, void* source)
         return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
     }
 
-    function cgThrow(kind: string, item: string): string
+    function annotateNever(): string
     {
-        const THROW = '::throw';
-        if (!_tfwd[THROW])
+        const NEVER = '::never';
+        if (!_tfwd[NEVER])
         {
             include('<stdexcept>');
 
-            _tfwd[THROW] =
+            _tfwd[NEVER] =
 ////////////////////////////////////
 `
 struct fu_NEVER
@@ -817,7 +818,25 @@ struct fu_NEVER
         throw std::runtime_error("fu_NEVER cast");
     }
 };
+`
+////////////////////////////////////
+            ;
+        }
 
+        return 'fu_NEVER';
+    }
+
+    function cgThrow(kind: string, item: string): string
+    {
+        const THROW = '::throw';
+        if (!_tfwd[THROW])
+        {
+            annotateNever();
+            include('<stdexcept>');
+
+            _tfwd[THROW] =
+////////////////////////////////////
+`
 template <typename T>
 [[noreturn]] fu_NEVER fu_THROW(const T& what)
 {
