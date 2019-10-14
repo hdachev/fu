@@ -307,10 +307,15 @@ export function cpp_codegen(root: SolvedNode): { src: string }
             end = i;
 
             const item = items[i];
-            if (item.kind === 'fn' && (item.flags & F_CLOSURE))
-                hasClosuresInHeader = true;
+            if (item.kind === 'fn')
+            {
+                if (item.flags & F_CLOSURE)
+                    hasClosuresInHeader = true;
+            }
             else if (item.kind !== 'let' && item.kind !== 'struct')
+            {
                 break;
+            }
         }
 
         if (!hasClosuresInHeader)
@@ -426,7 +431,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         const annot = typeAnnot(ret.type || fail());
 
         //
-        const closure = !!_clsrN;
+        const closure = !!_clsrN && (fn.flags & F_CLOSURE);
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
