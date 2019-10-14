@@ -600,7 +600,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         if (k === 'let')        return solveLet(node);
         if (k === 'call')       return solveCall(node);
-        if (k === 'arrlit')     return solveArrayLiteral(node);
+        if (k === 'arrlit')     return solveArrayLiteral(node, type);
         if (k === 'if')         return solveIf(node);
         if (k === 'or')         return solveOr(node);
         if (k === 'and')        return solveAnd(node);
@@ -1394,13 +1394,22 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     // I feel this should be a fncall instead of this here.
     //  It's varargs - so is it a template or what?
 
-    function solveArrayLiteral(node: Node)
+    function solveArrayLiteral(node: Node, type: Type|null)
     {
         const items = solveNodes(node.items) || fail();
-        const head  = items[0] || fail('TODO empty array literals');
 
-        let itemType = head.type;
-        for (let i = 1; i < items.length; i++)
+        let itemType = type && tryClear_array(type) || null;
+        let startAt = 0;
+        if (!itemType && items.length)
+        {
+            const head = items[startAt++] || fail();
+            itemType = clear_refs(head.type);
+        }
+
+        if (!itemType)
+            return fail('Cannot infer empty arraylit.');
+
+        for (let i = startAt; i < items.length; i++)
             itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
                 '[array literal] No common supertype:', items);
 
