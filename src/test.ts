@@ -53,8 +53,8 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
         const fail = (...args: unknown[]) =>
         {
             let s = src + '\n======================\n' + gensrc;
-            // if (s.length > 1024 * 4)
-            //     s = '[ TOO LONG ]';
+            if (s.length > 1024 * 4)
+                s = '[ TOO LONG ]';
 
             FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + s);
         };
@@ -1117,6 +1117,34 @@ ZERO(`
 
     m['hello'] ||= f();
     return g - 1;
+`);
+
+
+// Stuff that isn't working out quite right.
+
+ZERO(`
+
+struct BINOP {
+    P: Map(string, i32);
+};
+
+fn setupOperators()
+{
+    mut out: BINOP;
+
+    fn binop(op: string)
+        out.P[op] = 0;
+
+    binop(',');
+
+    return out;
+}
+
+let BINOP   = setupOperators();
+let P_COMMA = BINOP.P[','] || assert();
+
+fn ZERO() P_COMMA;
+
 `);
 
 
