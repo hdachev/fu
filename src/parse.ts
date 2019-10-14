@@ -370,7 +370,9 @@ export function parse(opts: Options)
             expr.kind !== 'call' || ((expr.flags & (F_ID | F_ACCESS)) === 0) || expr.items.length > 1 || fail_Lint(
                 'Orphan pure-looking expression.');
 
-            items.push(expr);
+            // Filter out excess semicolons.
+            if (expr.kind !== 'empty')
+                items.push(expr);
 
             // Unpacking & ungrouping node types.
             if (expr.kind === 'struct')
