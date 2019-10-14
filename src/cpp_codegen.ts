@@ -535,9 +535,12 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
     function cgLet(node: SolvedNode)
     {
-        const src = binding(node, true);
+        let src = binding(node, true);
         if (_fnN || _faasN)
             return src;
+
+        // Nasty tempfix - can't have [&] in global space.
+        src = src.replace('([&]', '([]');
 
         _fdef += src + ';\n';
         return '';
