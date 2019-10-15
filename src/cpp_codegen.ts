@@ -761,6 +761,9 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (id === 'throw' && items.length === 1)
             return cgThrow(id, items[0]);
 
+        if (id === 'assert' && items.length === 0)
+            return cgThrow(id, '"Assertion failed."');
+
         if (id === 'move' && items.length === 3)
             return '([&]() { auto* _ = ' + items[0] + '.data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
 
@@ -855,7 +858,9 @@ template <typename T>
             ;
         }
 
-        return 'fu_' + kind.toUpperCase() + '(' + item + ')';
+        kind;
+
+        return 'fu_THROW(' + item + ')';
     }
 
     function cgLiteral(node: SolvedNode)

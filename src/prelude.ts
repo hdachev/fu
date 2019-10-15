@@ -123,9 +123,7 @@ fn [](a: &Map($K, $V), b: &$K)
 // Assertions, bugs & fails.
 
 fn throw(reason: string): never __native_pure;
-
 fn assert()             : never __native_pure;
-fn assert(cond: &$T)    :  void __native_pure;
 
 
 `;
