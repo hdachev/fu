@@ -1291,8 +1291,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     _typeParams       = typeParams;
                     ////////////////////////////////
 
-                    const expect = evalTypeAnnot(left ).type;
-                    const actual = evalTypeAnnot(right).type;
+                    //               is                //
+                    // (actual) left -> right (expect) //
+                    const expect = evalTypeAnnot(right).type;
+                    const actual = evalTypeAnnot(left ).type;
 
                     ////////////////////////////////
                     _typeParams = typeParams0;

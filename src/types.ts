@@ -130,7 +130,7 @@ export function tryClear_mutref(type: Type)
 export function tryClear_ref(type: Type)
 {
     const t = tryClear(type, q_ref);
-    return t && createType(type.canon, tagset.sub(type.quals, q_mutref));
+    return t && createType(t.canon, tagset.sub(t.quals, q_mutref));
 }
 
 export function clear_refs(type: Type)
