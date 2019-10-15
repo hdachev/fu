@@ -782,6 +782,9 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (id === 'move' && items.length === 3)
             return '([&]() { auto* _ = ' + items[0] + '.data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
 
+        if (id === 'concat' && items.length === 2)
+            return cgConcat(items);
+
         return ID(id) + '(' + items.join(', ') + ')';
     }
 
@@ -877,12 +880,12 @@ struct fu_NEVER
     function cgThrow(kind: string, item: string): string
     {
         const THROW = '::throw';
-        if (!_tfwd[THROW])
+        if (!_ffwd[THROW])
         {
             annotateNever();
             include('<stdexcept>');
 
-            _tfwd[THROW] =
+            _ffwd[THROW] =
 ////////////////////////////////////
 `
 template <typename T>
@@ -898,6 +901,38 @@ template <typename T>
         kind;
 
         return 'fu_THROW(' + item + ')';
+    }
+
+    function cgConcat(items: string[]): string
+    {
+        const CONCAT = '::concat';
+        if (!_ffwd[CONCAT])
+        {
+            annotateNever();
+            include('<vector>');
+
+            _ffwd[CONCAT] =
+////////////////////////////////////
+`
+template <typename T>
+std::vector<T> fu_CONCAT(
+    const std::vector<T>& a,
+    const std::vector<T>& b)
+{
+    std::vector<T> result;
+    result.reserve(a.size() + b.size());
+
+    for (auto& i : a) result.push_back(i);
+    for (auto& i : b) result.push_back(i);
+
+    return result;
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_CONCAT(' + items.join(', ') + ')';
     }
 
     function cgLiteral(node: SolvedNode)
