@@ -1133,7 +1133,7 @@ fn setupOperators()
     mut out: BINOP;
 
     fn binop(op: string)
-        out.P[op] = 0;
+        out.P[op] = 7;
 
     binop(',');
 
@@ -1143,7 +1143,7 @@ fn setupOperators()
 let BINOP   = setupOperators();
 let P_COMMA = BINOP.P[','] || assert();
 
-fn ZERO() P_COMMA;
+fn ZERO() P_COMMA - 7;
 
 `);
 

@@ -9,6 +9,8 @@ type Dedupes            = { [id: string]: string };
 
 const M_STMT            = 1 << 0;
 const M_RETBOOL         = 1 << 1;
+const M_CONST           = 1 << 2;
+const M_RETVAL          = 1 << 3;
 
 
 //
@@ -52,9 +54,12 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
     //
 
-    function typeAnnot(type: Type, isConst: boolean = false): string
+    function typeAnnot(type: Type, mode: number = 0): string
     {
         const fwd = typeAnnotBase(type);
+
+        if ((mode & M_RETVAL) && type.canon === 'never')
+            return '[[noreturn]] ' + fwd;
 
         if (type.quals.indexOf(q_mutref) >= 0)
             return fwd + '&';
@@ -64,7 +69,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
         //   Currently this is more of a way to validate the codegen.
-        if (isConst && type.quals.indexOf(q_trivial) >= 0)
+        if ((mode & M_CONST) && type.quals.indexOf(q_trivial) >= 0)
             return 'const ' + fwd;
 
         return fwd;
@@ -77,7 +82,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         if (c === 'i32')    return 'int';
         if (c === 'bool')   return 'bool';
         if (c === 'void')   return 'void';
-        if (c === 'string') return (include('<string>'), 'std::string');
+        if (c === 'string') return annotateString();
         if (c === 'never')  return annotateNever();
 
         const tdef = lookupType(type.canon) || fail('TODO', type.canon);
@@ -428,7 +433,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         const items = fn.items;
         const body  = items[items.length + FN_BODY_BACK] || fail();
         const ret   = items[items.length + FN_RET_BACK ] || fail();
-        const annot = typeAnnot(ret.type || fail());
+        const annot = typeAnnot(ret.type || fail(), M_RETVAL);
 
         //
         const closure = !!_clsrN && (fn.flags & F_CLOSURE);
@@ -520,7 +525,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     function binding(node: SolvedNode, doInit: boolean)
     {
         const id    = node.value || fail();
-        const annot = typeAnnot(node.type, (node.flags & F_MUT) == 0) || fail();
+        const annot = typeAnnot(node.type, (node.flags & F_MUT) == 0 ? M_CONST : 0) || fail();
         const head  = annot + ' ' + ID(id);
         const init  = node.items[LET_INIT];
 
@@ -549,7 +554,14 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     function cgReturn(node: SolvedNode)
     {
         if (node.items)
-            return 'return ' + cgNode(node.items[0] || fail());
+        {
+            const head = node.items[0] || fail();
+            const src = cgNode(head);
+            if (head.type === t_never)
+                return src;
+
+            return 'return ' + src;
+        }
 
         return 'return';
     }
@@ -615,6 +627,9 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
             if (items.length === 1)
             {
+                if (id === '!')
+                    return '!' + bool(head.type, items[0]);
+
                 return node.flags & F_POSTFIX
                      ? items[0] + id
                      : id + items[0];
@@ -806,6 +821,28 @@ inline void fu_MEMSLIDE(void* dest, void* source)
         }
 
         return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
+    }
+
+    function annotateString(): string
+    {
+        const STRING = '::string';
+        if (!_ffwd[STRING])
+        {
+            include('<string>');
+
+            _ffwd[STRING] =
+////////////////////////////////////
+`
+inline std::string operator+(const std::string& a, double b)
+{
+    return a + std::to_string(b);
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'std::string';
     }
 
     function annotateNever(): string
