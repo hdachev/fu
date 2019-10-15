@@ -547,7 +547,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         // Nasty tempfix - can't have [&] in global space.
         src = src.replace('([&]', '([]');
 
-        _fdef += src + ';\n';
+        _fdef += src.replace(/^(const )?/, 'inline const ') + ';\n';
         return '';
     }
 
