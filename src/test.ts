@@ -88,6 +88,9 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
 
                         fail('EXIT CODE', result.data);
                     }
+
+                    if (/\.fu$/.test(fname))
+                        console.log('\t[ OK ]\t' + fname);
                 });
             });
         });
@@ -839,7 +842,7 @@ ZERO(`
 `);
 
 ZERO(`
-    let hw = 'hello world';
+    let hw = 'hello world!';
     let a = hw.slice(6, 6 + 5); // expect_lambda
     let b = hw.substr(6, 5);
     return a == b && a == 'world' ? a.len - 5 : 1;
@@ -1152,7 +1155,7 @@ fn ZERO() P_COMMA - 7;
 
 FILE;
 
-// FILE(     'lex.fu');
+FILE(     'lex.fu');
 FILE('compiler.fu');
 
 
