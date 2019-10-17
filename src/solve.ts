@@ -32,7 +32,6 @@ export type SolveResult =
 type Template =
 {
     readonly node: Node;
-    readonly scope: Scope;
     readonly specializations:
         { [mangle: string]: Specialization };
 };
@@ -116,9 +115,9 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     //
 
-    function Template(node: Node, scope: Scope)
+    function Template(node: Node)
     {
-        return { node, scope, specializations: Object.create(null) };
+        return { node, specializations: Object.create(null) };
     }
 
     function Binding(node: SolvedNode, type: Type): Overload
@@ -141,7 +140,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             ? 0xffffff // implicit args etc, dunno whats happening, allow it all
             : min;
 
-        const template = Template(node, _scope);
+        const template = Template(node);
 
         let names: string[]|null = null;
         if (node.kind === 'fn')
@@ -845,20 +844,11 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     {
         const typeParams: TypeParams = {};
 
-        ///////////////////////////////////////
-        // const scope0 = _scope;
-        // _scope = Scope_create(template.scope);
-        ///////////////////////////////////////
-
         const node = template.node;
 
         const result = node.kind === 'fn'
             ? trySpecializeFn(node, args, typeParams)
             : fail('TODO');
-
-        ///////////////////////////////////////
-        // _scope = scope0;
-        ///////////////////////////////////////
 
         return result;
     }
