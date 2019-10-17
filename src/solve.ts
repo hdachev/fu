@@ -7,7 +7,7 @@ import { lex, Source, Filename, Token } from './lex';
 import { parse } from './parse';
 import { prelude_src } from './prelude';
 
-import { Scope, Scope_createRoot, Scope_create, Scope_lookup, Scope_add, Scope_keys } from './scope';
+import { Scope, Scope_createRoot, Scope_create, Scope_lookup, Scope_add, Scope_keys, Scope_push, Scope_pop } from './scope';
 
 
 //
@@ -74,7 +74,7 @@ function Typedef(type: Type): Overload
 
 function runSolver(parse: Node, globals: Scope): SolveResult
 {
-    let _scope:             Scope               = globals;
+    const _scope:           Scope               = globals;
 
     let _here:              Token|null          = null;
     let _current_fn:        SolvedNode|null     = null;
@@ -320,13 +320,6 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
 
     //
-
-    function scope_push()
-    {
-        const scope = _scope;
-        _scope = Scope_create(scope);
-        return scope;
-    }
 
     function scope_using(via: Overload)
     {
@@ -634,9 +627,9 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     function solveBlock(node: Node): SolvedNode
     {
-        const scope0 = scope_push();
+        const scope0 = Scope_push(_scope);
         const out = SolvedNode(node, solveNodes(node.items), t_void);
-        _scope = scope0;
+        Scope_pop(_scope, scope0);
         return out;
     }
 
@@ -740,7 +733,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         //////////////////////////
         {
             const current_fn0   = _current_fn;
-            const scope0        = scope_push();
+            const scope0        = Scope_push(_scope);
 
             _current_fn         = out;
 
@@ -790,7 +783,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             /////////////////////////////////////////////////////
 
             _current_fn         = current_fn0;
-            _scope              = scope0;
+            Scope_pop(_scope, scope0);
         }
         //////////////////////////
 
@@ -853,8 +846,8 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         const typeParams: TypeParams = {};
 
         ///////////////////////////////////////
-        const scope0 = _scope;
-        _scope = Scope_create(template.scope);
+        // const scope0 = _scope;
+        // _scope = Scope_create(template.scope);
         ///////////////////////////////////////
 
         const node = template.node;
@@ -864,7 +857,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             : fail('TODO');
 
         ///////////////////////////////////////
-        _scope = scope0;
+        // _scope = scope0;
         ///////////////////////////////////////
 
         return result;

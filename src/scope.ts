@@ -1,76 +1,92 @@
 import { Overload } from './solve';
 
-let nextId = 1;
+type Item =
+{
+    id:         string;
+    index:      number;
+};
 
 export type Scope =
 {
-    readonly scopeId: number;
-    readonly parent: Scope|null;
-
-    items: Map<string, Overload[]>,
+    items:      Item[];
+    overloads:  Overload[];
 };
 
 export function Scope_create(parent: Scope|null): Scope
 {
-    return {
-        scopeId: nextId++,
-        parent: parent,
-        items: new Map(),
-    };
+    if (parent)
+        return {
+            items:      parent.items.slice(),
+            overloads:  parent.overloads.slice(),
+        };
+
+    return { items: [], overloads: [] };
 }
 
 export function Scope_createRoot(pairs: [string, Overload[]][]): Scope
 {
-    return {
-        scopeId: nextId++,
-        parent: null,
-        items: new Map(pairs),
-    };
-}
+    const scope = Scope_create(null);
 
-export function Scope_lookup(scope: Scope|null, key: string): Overload[]|null
-{
-    while (scope)
+    for (let i = 0; i < pairs.length; i++)
     {
-        const items = scope.items.get(key);
-        if (items)
-            return items;
-
-        scope = scope.parent;
+        const pair = pairs[i];
+        const id = pair[0];
+        const o = pair[1];
+        for (let i = 0; i < o.length; i++)
+        {
+            scope.items.push({ id, index: scope.overloads.length });
+            scope.overloads.push(o[i]);
+        }
     }
 
-    return null;
+    return scope;
 }
 
-export function Scope_add(scope: Scope, key: string, item: Overload): void
+export function Scope_lookup(scope: Scope, id: string): Overload[]|null
 {
-    let items = scope.items.get(key) || null;
-    if (!items)
-    {
-        items = Scope_lookup(scope.parent, key);
-        items = items ? items.slice() : [];
+    const results: Overload[] = [];
 
-        scope.items.set(key, items);
+    const items = scope.items;
+    for (let i = items.length; i --> 0; )
+    {
+        const item = items[i];
+        if (item.id === id)
+            results.push(scope.overloads[item.index]);
     }
 
-    if (item.min)
-        items.push(item);
-    else
-        items.unshift(item);
+    return results.length ? results : null;
 }
 
-export function Scope_keys(scope: Scope|null): string[]
+export function Scope_add(scope: Scope, id: string, item: Overload): void
+{
+    scope.items.push({ id, index: scope.overloads.length });
+    scope.overloads.push(item);
+}
+
+export function Scope_keys(scope: Scope): string[]
 {
     const keys: string[] = [];
 
-    while (scope)
+    const items = scope.items;
+    for (let i = items.length; i --> 0; )
     {
-        for (const key of scope.items.keys())
-            if (keys.indexOf(key) < 0)
-                keys.push(key);
-
-        scope = scope.parent;
+        const id = items[i].id;
+        if (keys.indexOf(id) < 0)
+            keys.push(id);
     }
 
     return keys;
+}
+
+
+////////////////////////////////
+
+export function Scope_push(scope: Scope): number
+{
+    return scope.items.length;
+}
+
+export function Scope_pop(scope: Scope, memo: number): void
+{
+    scope.items.length = memo;
 }
