@@ -1,25 +1,34 @@
+import { Overload } from './solve';
 
 let nextId = 1;
 
-export type Scope<T> =
+export type Scope =
 {
     readonly scopeId: number;
-    readonly parent: Scope<T>|null;
+    readonly parent: Scope|null;
 
-    items: Map<string, T[]>,
+    items: Map<string, Overload[]>,
 };
 
-export function create<T>(parent: Scope<T>|null)
+export function Scope_create(parent: Scope|null): Scope
 {
     return {
         scopeId: nextId++,
         parent: parent,
-
         items: new Map(),
     };
 }
 
-export function lookup<T>(scope: Scope<T>|null, key: string): T[]|null
+export function Scope_createRoot(pairs: [string, Overload[]][]): Scope
+{
+    return {
+        scopeId: nextId++,
+        parent: null,
+        items: new Map(pairs),
+    };
+}
+
+export function Scope_lookup(scope: Scope|null, key: string): Overload[]|null
 {
     while (scope)
     {
@@ -33,30 +42,35 @@ export function lookup<T>(scope: Scope<T>|null, key: string): T[]|null
     return null;
 }
 
-export function prepend<T>(scope: Scope<T>, key: string, item: T)
+export function Scope_add(scope: Scope, key: string, item: Overload): void
 {
     let items = scope.items.get(key) || null;
     if (!items)
     {
-        items = lookup(scope.parent, key);
+        items = Scope_lookup(scope.parent, key);
         items = items ? items.slice() : [];
 
         scope.items.set(key, items);
     }
 
-    items.unshift(item);
+    if (item.min)
+        items.push(item);
+    else
+        items.unshift(item);
 }
 
-export function append<T>(scope: Scope<T>, key: string, item: T)
+export function Scope_keys(scope: Scope|null): string[]
 {
-    let items = scope.items.get(key) || null;
-    if (!items)
-    {
-        items = lookup(scope.parent, key);
-        items = items ? items.slice() : [];
+    const keys: string[] = [];
 
-        scope.items.set(key, items);
+    while (scope)
+    {
+        for (const key of scope.items.keys())
+            if (keys.indexOf(key) < 0)
+                keys.push(key);
+
+        scope = scope.parent;
     }
 
-    items.push(item);
+    return keys;
 }

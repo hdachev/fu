@@ -7,6 +7,8 @@ import { lex, Source, Filename, Token } from './lex';
 import { parse } from './parse';
 import { prelude_src } from './prelude';
 
+import { Scope, Scope_createRoot, Scope_create, Scope_lookup, Scope_add, Scope_keys } from './scope';
+
 
 //
 
@@ -19,11 +21,6 @@ export type SolvedNode = Node &
     type:       Type;
     items:      SolvedNodes|null;
     target:     Overload|null;
-};
-
-type Scope =
-{
-    [id: string]: Overload[];
 };
 
 export type SolveResult =
@@ -48,7 +45,7 @@ type Specialization =
 
 type TypeParams = { [id: string]: Type };
 
-type Overload =
+export type Overload =
 {
     readonly kind: 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
     readonly name: string;
@@ -77,7 +74,7 @@ function Typedef(type: Type): Overload
 
 function runSolver(parse: Node, globals: Scope): SolveResult
 {
-    let _scope:             Scope|null          = globals;
+    let _scope:             Scope               = globals;
 
     let _here:              Token|null          = null;
     let _current_fn:        SolvedNode|null     = null;
@@ -144,7 +141,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             ? 0xffffff // implicit args etc, dunno whats happening, allow it all
             : min;
 
-        const template = Template(node, _scope || fail());
+        const template = Template(node, _scope);
 
         let names: string[]|null = null;
         if (node.kind === 'fn')
@@ -327,40 +324,21 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     function scope_push()
     {
         const scope = _scope;
-        _scope = Object.create(scope);
+        _scope = Scope_create(scope);
         return scope;
-    }
-
-    const hasOwnProperty = Object.prototype.hasOwnProperty;
-
-    function scope_add(id: string, overload: Overload)
-    {
-        const scope = _scope || fail();
-
-        const prev  = scope[id];
-        const next  =
-            hasOwnProperty.call(scope, id)
-                ? prev
-                : scope[id] = prev ? prev.slice() : [];
-
-        if (overload.min)
-            next.push(overload);
-        else
-            next.unshift(overload);
     }
 
     function scope_using(via: Overload)
     {
-        const scope = _scope || fail();
         const actual = via.type || fail();
 
-        for (const id in scope)
+        for (const id of Scope_keys(_scope))
         {
             // Skip over operators.
             if (!/[a-zA-Z_]/.test(id))
                 continue;
 
-            const overloads = scope[id];
+            const overloads = Scope_lookup(_scope, id);
             if (!overloads)
                 continue;
 
@@ -386,7 +364,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     fail('`using` arity-0 conflict: `' + id + '`.');
 
                 // MUT DURING ITER!
-                scope_add(id, Partial(via, overload));
+                Scope_add(_scope, id, Partial(via, overload));
             }
         }
     }
@@ -409,8 +387,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|null, flags: number): Overload|null
     {
-        const scope     = _scope || fail();
-        const overloads = scope[id];
+        const overloads = Scope_lookup(_scope, id);
         if (!overloads)
             return null;
 
@@ -568,7 +545,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     function scope_match__mutargs(id: string, args: SolvedNodes, flags: number): Overload
     {
         return scope_tryMatch__mutargs(id, args, null, flags)
-            || _scope && _scope[id] && fail('No overload of `' + id + '` matches call signature.', args)
+            || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
             || notDefined(id);
     }
 
@@ -737,7 +714,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             const out   = SolvedNode(n_fn, null, t_void);
             out.target  = tDecl;
 
-            scope_add(id, tDecl);
+            Scope_add(_scope, id, tDecl);
             return out;
         }
 
@@ -824,7 +801,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             out.target = fnDecl;
 
             if (!spec)
-                scope_add(id, fnDecl);
+                Scope_add(_scope, id, fnDecl);
         }
 
         !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
@@ -877,7 +854,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         ///////////////////////////////////////
         const scope0 = _scope;
-        _scope = Object.create(template.scope);
+        _scope = Scope_create(template.scope);
         ///////////////////////////////////////
 
         const node = template.node;
@@ -1000,7 +977,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             out.target && fail();
             out.target = decl;
 
-            scope_add(id, decl);
+            Scope_add(_scope, id, decl);
         }
 
         if (!solve)
@@ -1036,7 +1013,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 }
             }
 
-            scope_add(id, DefaultCtor(type, members));
+            Scope_add(_scope, id, DefaultCtor(type, members));
         }
 
         return out;
@@ -1115,7 +1092,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 ? add_mutref(t_let)
                 : add_ref(t_let));
 
-        scope_add(id, overload);
+        Scope_add(_scope, id, overload);
         if (out.flags & F_USING)
             scope_using(overload);
 
@@ -1158,15 +1135,15 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             else
             {
                 const id        = node.value || fail();
-                const scope     = _scope || fail();
-                const overloads = scope[id] || notDefined(id);
+                const overloads = Scope_lookup(_scope, id);
 
-                for (let i = 0; i < overloads.length; i++)
-                {
-                    const maybe = overloads[i];
-                    if (maybe.kind === 'type')
-                        return SolvedNode(node, null, maybe.type || fail());
-                }
+                if (overloads)
+                    for (let i = 0; i < overloads.length; i++)
+                    {
+                        const maybe = overloads[i];
+                        if (maybe.kind === 'type')
+                            return SolvedNode(node, null, maybe.type || fail());
+                    }
 
                 fail('No type `' + id + '` in scope.');
             }
@@ -1223,15 +1200,15 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             else
             {
                 const id        = node.value || fail();
-                const scope     = _scope || fail();
-                const overloads = scope[id] || notDefined(id);
+                const overloads = Scope_lookup(_scope, id);
 
-                for (let i = 0; i < overloads.length; i++)
-                {
-                    const maybe = overloads[i];
-                    if (maybe.kind === 'type')
-                        return isAssignable(maybe.type || fail(), type);
-                }
+                if (overloads)
+                    for (let i = 0; i < overloads.length; i++)
+                    {
+                        const maybe = overloads[i];
+                        if (maybe.kind === 'type')
+                            return isAssignable(maybe.type || fail(), type);
+                    }
 
                 fail('No type `' + id + '` in scope.');
             }
@@ -1783,13 +1760,14 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
 function listGlobals(): Scope
 {
-    return {
-        'i32':      [ Typedef(t_i32   ) ],
-        'bool':     [ Typedef(t_bool  ) ],
-        'void':     [ Typedef(t_void  ) ],
-        'string':   [ Typedef(t_string) ],
-        'never':    [ Typedef(t_never)  ],
-    };
+    return Scope_createRoot(
+    [
+        ['i32',    [ Typedef(t_i32   ) ]],
+        ['bool',   [ Typedef(t_bool  ) ]],
+        ['void',   [ Typedef(t_void  ) ]],
+        ['string', [ Typedef(t_string) ]],
+        ['never',  [ Typedef(t_never)  ]],
+    ]);
 }
 
 const PRELUDE: Scope = runSolver(
@@ -1800,5 +1778,5 @@ const PRELUDE: Scope = runSolver(
 export function solve(parse: Node)
 {
     return runSolver(
-        parse, Object.create(PRELUDE));
+        parse, Scope_create(PRELUDE));
 }
