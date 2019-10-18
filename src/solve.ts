@@ -271,7 +271,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     function tryDefaultInit(type: Type): SolvedNode|null
     {
         // Reference? No init, else default.
-        if (type.quals.indexOf(q_ref) >= 0)
+        if (type.quals & q_ref)
             return null;
 
         return createDefaultInit(type);
@@ -1362,7 +1362,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     function maybePRValue(node: SolvedNode)
     {
-        if (node.type.quals.indexOf(q_ref) < 0)
+        if (!(node.type.quals & q_ref))
             node.type = add_prvalue_ref(node.type);
 
         return node;
@@ -1538,7 +1538,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             sumType !== t_never || fail(
                 'Dead code following never [B].');
 
-            if (sumType && sumType.quals.indexOf(q_ref))
+            if (sumType && (sumType.quals & q_ref))
                 return sumType;
         }
 
@@ -1653,21 +1653,21 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         node: SolvedNode, slot: Type): SolvedNode
     {
         const q = slot.quals;
-        if (q.indexOf(q_ref) >= 0)
+        if (q & q_ref)
             return node;
 
         let op: 'move'|'copy' = 'copy';
 
-        if (q.indexOf(q_copy) < 0)
+        if (!(q & q_copy))
         {
-            if (q.indexOf(q_move) < 0)
+            if (!(q & q_move))
                 fail('Non-copy/non-move?');
 
             op = 'move';
         }
 
         return wrap(op, node,
-            node.type.quals.indexOf(q_prvalue) >= 0
+            node.type.quals & q_prvalue
                 ? F_ELISION
                 : 0);
     }

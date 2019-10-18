@@ -67,15 +67,15 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if ((mode & M_RETVAL) && type.canon === 'never')
             return '[[noreturn]] ' + fwd;
 
-        if (type.quals.indexOf(q_mutref) >= 0)
+        if (type.quals & q_mutref)
             return fwd + '&';
-        if (type.quals.indexOf(q_ref) >= 0)
+        if (type.quals & q_ref)
             return 'const ' + fwd + '&';
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
         //   Currently this is more of a way to validate the codegen.
-        if ((mode & M_CONST) && type.quals.indexOf(q_trivial) >= 0)
+        if ((mode & M_CONST) && (type.quals & q_trivial))
             return 'const ' + fwd;
 
         return fwd;
@@ -993,7 +993,7 @@ std::vector<T> fu_CONCAT(
     function cgAnd(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if (type.quals.indexOf(q_ref) >= 0 && !(mode & M_RETBOOL))
+        if ((type.quals & q_ref) && !(mode & M_RETBOOL))
         {
             const annot = typeAnnot(type);
 
@@ -1020,7 +1020,7 @@ std::vector<T> fu_CONCAT(
     function cgOr(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if (type.quals.indexOf(q_ref) >= 0 && !(mode & M_RETBOOL))
+        if ((type.quals & q_ref) && !(mode & M_RETBOOL))
         {
             const annot = typeAnnot(type);
 

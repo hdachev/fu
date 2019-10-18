@@ -15,7 +15,7 @@ fn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
 fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn /(a: $T, b: $T)
-    case ($T -> @floating_point):                       $T __native_pure;
+    // case ($T -> @floating_point):                       $T __native_pure;
     // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
     case ($T -> @integral):          $T __native_pure;
 

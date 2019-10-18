@@ -1,10 +1,9 @@
-import * as tagset from './tagset';
 import { fail } from './fail';
 import { LexValue } from './lex';
 import { CONTEXT } from './context';
 import { F_DESTRUCTOR } from './parse';
 
-export type Primitive   =
+export type Primitive =
     'i8'  | 'u8'  |
     'i16' | 'u16' |
     'i32' | 'u32' |
@@ -12,37 +11,45 @@ export type Primitive   =
                   | 'template'
                   | 'string';
 
-export type Canon       = (string & { K: 'Canon' }) | Primitive;
-export type Quals       = tagset.TagSet;
+export type Canon = (string & { K: 'Canon' }) | Primitive;
 
-export const q_EMPTY    = tagset.EMPTY;
-export const q_mutref   = tagset.intern('mutref');
-export const q_ref      = tagset.intern('ref');
-export const q_prvalue  = tagset.intern('prvalue');
+export const q_mutref       = 1 << 0;
+export const q_ref          = 1 << 1;
+export const q_prvalue      = 1 << 2;
+export const q_copy         = 1 << 3;
+export const q_move         = 1 << 4;
+
+export const q_trivial      = 1 << 5;
+export const q_primitive    = 1 << 6;
+export const q_arithmetic   = 1 << 7;
+export const q_integral     = 1 << 8;
+export const q_signed       = 1 << 9;
+
+const TAGS =
+[
+    'mutref',
+    'ref',
+    'prvalue',
+    'copy',
+    'move',
+
+    'trivial',
+    'primitive',
+    'arithmetic',
+    'integral',
+    'signed',
+];
 
 export type Type =
 {
-    // Qualified type ID:
-    //  Should trivialize assignability checks.
-    //   We're gonna keep the typesystem real trivial this time,
-    //    at least till we get everything going.
-    readonly canon: Canon; // `i32`, `f32`, `kind module name index`
-
-    // Qualities, union drops quality:
-    readonly quals: Quals; // ' mut non0 unit cc pure nn '
-
-    // Defects, union spreads defect:
-    // ...
-
-    // Having these as strings should trivialize
-    //  various types of trivial caching,
-    //   type interning & quality transitions.
+    readonly canon: Canon;
+    readonly quals: number;
 };
 
-function Type(canon: Canon, quals: Quals = q_EMPTY)
+function Type(canon: Canon, quals: number = 0)
 {
     typeof canon === 'string' && canon || fail();
-    typeof quals === 'string' || fail();
+    typeof quals === 'number' || fail();
 
     return Object.freeze({ canon, quals });
 }
@@ -61,25 +68,24 @@ function Type(canon: Canon, quals: Quals = q_EMPTY)
 
 export function isAssignable(host: Type, guest: Type)
 {
-    return host === guest ||
-        (host.canon === guest.canon &&
-            (   host.quals      === guest.quals ||
-                host.quals.length < guest.quals.length      &&
-                host.quals.indexOf(q_mutref) < 0            && // mut invariance
-                tagset.contains(guest.quals, host.quals)))
-                    || guest === t_never;
+    return host === guest
+        || host.canon === guest.canon
+            && (host.quals === guest.quals ||
+                  !(host.quals & q_mutref) // mut invariance
+                    && (host.quals & guest.quals) === host.quals)
+        || guest === t_never;
 }
 
 
 //
 
 const TYPES: { [canon: string]: Type }                      = {};
-const QUALS: { [canon: string]: { [quals: string]: Type } } = {};
+const QUALS: { [canon: string]: { [quals: number]: Type } } = {};
 
-export function createType(canon: Canon, quals: Quals|null): Type
+export function createType(canon: Canon, quals: number): Type
 {
     if (!quals)
-        return TYPES[canon] || (TYPES[canon] = Type(canon, q_EMPTY));
+        return TYPES[canon] || (TYPES[canon] = Type(canon, 0));
 
     const c = QUALS[canon] || (QUALS[canon] = {});
     return c[quals] || (c[quals] = Type(canon, quals));
@@ -88,23 +94,20 @@ export function createType(canon: Canon, quals: Quals|null): Type
 
 //
 
-export function qadd(type: Type, q: tagset.Tag)
+export function qadd(type: Type, q: number)
 {
-    return type.quals.indexOf(q) >= 0
-         ? type
-         : createType(type.canon, tagset.union(type.quals, q));
+    return type.quals & q   ? type
+                            : createType(
+                                type.canon,
+                                type.quals | q);
 }
 
-function tryClear(type: Type|null, q: tagset.Tag)
+function tryClear(type: Type|null, q: number)
 {
-    if (!type)
+    if (!type || (type.quals & q) !== q)
         return null;
 
-    const sub = tagset.sub(type.quals, q);
-
-    return sub !== type.quals
-         ? createType(type.canon, sub)
-         : null;
+    return createType(type.canon, type.quals &~ q);
 }
 
 export function add_ref(type: Type)
@@ -130,22 +133,21 @@ export function tryClear_mutref(type: Type)
 export function tryClear_ref(type: Type)
 {
     const t = tryClear(type, q_ref);
-    return t && createType(t.canon, tagset.sub(t.quals, q_mutref));
+    return t && createType(t.canon, t.quals &~ q_mutref);
 }
 
 export function clear_refs(type: Type)
 {
-    return createType(type.canon,
-        tagset.sub(tagset.sub(tagset.sub(
-            type.quals,
-            q_mutref), q_ref), q_prvalue));
+    return createType(
+        type.canon,
+        type.quals &~ (q_mutref | q_ref | q_prvalue));
 }
 
 export function add_refs_from(src: Type, dest: Type)
 {
-    if (src.quals.indexOf(q_mutref) >= 0)
+    if (src.quals & q_mutref)
         dest = add_mutref(dest);
-    else if (src.quals.indexOf(q_ref) >= 0)
+    else if (src.quals & q_ref)
         dest = add_ref(dest);
 
     return dest;
@@ -161,7 +163,10 @@ export function serializeType(type: Type)
 
 export function type_has(type: Type, tag: LexValue)
 {
-    return type.quals.indexOf(tagset.intern(tag)) >= 0;
+    const idx = TAGS.indexOf(tag);
+    idx >= 0 || fail('Unknown type tag: `' + tag + '`.');
+    const mask = 1 << idx;
+    return (type.quals & mask) === mask;
 }
 
 export function type_tryInter(a: Type, b: Type)
@@ -171,35 +176,24 @@ export function type_tryInter(a: Type, b: Type)
 
     return createType(
         a.canon,
-        tagset.inter(a.quals, b.quals) as Quals);
+        a.quals & b.quals);
 }
 
 
 //
 
-export const q_copy         = tagset.intern('copy');
-export const q_move         = tagset.intern('move');
-
-export const q_trivial      = tagset.intern('trivial');
-export const q_primitive    = tagset.intern('primitive');
-export const q_arithmetic   = tagset.intern('arithmetic');
-export const q_integral     = tagset.intern('integral');
-export const q_signed       = tagset.intern('signed');
-
-export const Trivial        = tagset.union(q_copy, q_trivial);
-export const Primitive      = tagset.union(Trivial, q_primitive);
-export const Arithmetic     = tagset.union(Primitive, q_arithmetic);
-export const Integral       = tagset.union(Arithmetic, q_integral);
-export const SignedInt      = tagset.union(Integral, q_signed);
+export const Trivial        = q_copy | q_trivial;
+export const Primitive      = Trivial | q_primitive;
+export const Arithmetic     = Primitive | q_arithmetic;
+export const Integral       = Arithmetic | q_integral;
+export const SignedInt      = Integral | q_signed;
 
 export const t_i32          = createType('i32', SignedInt);
-export const t_void         = createType('void', null);
+export const t_void         = createType('void', 0);
 export const t_bool         = createType('bool', Primitive);
-export const t_never        = createType('never', null);
-export const t_template     = createType('template', null);
-export const t_string       = createType('string', q_copy as any);
-
-export const q_non_zero     = tagset.intern('non_zero');
+export const t_never        = createType('never', 0);
+export const t_template     = createType('template', 0);
+export const t_string       = createType('string', q_copy);
 
 
 //
@@ -240,21 +234,21 @@ export function registerStruct(id: string, fields: StructField[], flags: number)
 function copyOrMove(
     flags: number,
     fields: StructField[],
-    tryTrivial: boolean = false): Quals
+    tryTrivial: boolean = false): number
 {
     if ((flags & F_DESTRUCTOR) || someFieldNonCopy(fields))
-        return q_move as any;
+        return q_move;
 
     if (tryTrivial && !someFieldNotTrivial(fields))
         return Trivial;
 
-    return q_copy as any;
+    return q_copy;
 }
 
 function someFieldNonCopy(fields: StructField[])
 {
     for (let i = 0; i < fields.length; i++)
-        if (fields[i].type.quals.indexOf(q_copy) < 0)
+        if (!(fields[i].type.quals & q_copy))
             return true;
 
     return false;
@@ -263,7 +257,7 @@ function someFieldNonCopy(fields: StructField[])
 function someFieldNotTrivial(fields: StructField[])
 {
     for (let i = 0; i < fields.length; i++)
-        if (fields[i].type.quals.indexOf(q_trivial) < 0)
+        if (!(fields[i].type.quals & q_trivial))
             return true;
 
     return false;
