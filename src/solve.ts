@@ -538,24 +538,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     {
         return scope_tryMatch__mutargs(id, args, null, flags)
             || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
-            || notDefined(id);
-    }
-
-    function notDefined(id: string): Overload
-    {
-        if (id === '__native_pure')
-            return __native_pure();
-
-        return fail('`' + id + '` is not defined.');
-    }
-
-    function __native_pure()
-    {
-        const fn    = _current_fn   || fail();
-        const items = fn.items      || fail();
-        const rnode = items[items.length + FN_RET_BACK] || fail();
-
-        return Binding(fn, rnode.type || fail());
+            || fail('`' + id + '` is not defined.');
     }
 
     function solveNode(node: Node, type: Type|null = null): SolvedNode
@@ -1024,7 +1007,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         if (prevType)
             isAssignable(prevType, nextType)
-                || fail('Non-assignable return types.');
+                || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
         else
             items[retIdx] = nextExpr || fail();
 

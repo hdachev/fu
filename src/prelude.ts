@@ -1,6 +1,11 @@
 export const prelude_src = `
 
 
+// Some lolcode.
+
+fn __native_pure(): never never;
+
+
 // Arithmetics.
 
 fn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
