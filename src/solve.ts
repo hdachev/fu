@@ -7,7 +7,7 @@ import { lex, Source, Filename, Token } from './lex';
 import { parse } from './parse';
 import { prelude_src } from './prelude';
 
-import { Scope, Scope_createRoot, Scope_create, Scope_lookup, Scope_add, Scope_keys, Scope_push, Scope_pop } from './scope';
+import { Scope, Scope_lookup, Scope_keys, Scope_push, Scope_pop, Scope_add, Scope_get, ScopeIdx } from './scope';
 
 
 //
@@ -20,7 +20,7 @@ export type SolvedNode = Node &
 {
     type:       Type;
     items:      SolvedNodes|null;
-    target:     Overload|null;
+    target:     ScopeIdx;
 };
 
 export type SolveResult =
@@ -29,26 +29,27 @@ export type SolveResult =
     scope:      Scope;
 };
 
-type Template =
+export type Template =
 {
     readonly node: Node;
-    readonly specializations:
-        { [mangle: string]: Specialization };
+    specializations: { [mangle: string]: Specialization };
 };
 
 type Specialization =
 {
-    readonly node:     SolvedNode|null;
-    readonly overload: Overload  |null;
+    readonly node:  SolvedNode|null;
+    readonly index: ScopeIdx;
 };
 
 type TypeParams = { [id: string]: Type };
 
+export type OverloadKind = 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
+
 export type Overload =
 {
-    readonly kind: 'template'|'fn'|'var'|'field'|'type'|'defctor'|'p-unshift'|'p-wrap';
+    readonly kind: OverloadKind;
     readonly name: string;
-    readonly type: Type|null;
+    readonly type: Type;
 
     // Arity.
     min: number;
@@ -57,19 +58,19 @@ export type Overload =
     names: string[]|null;
     defaults: SolvedNodes|null;
 
-    readonly partial: Overload[]|null;
+    readonly partial: [ScopeIdx, ScopeIdx]|null;
 
     // Usage.
     template: Template|null;
 };
 
+function Scope_Typedef(scope: Scope, id: string, type: Type)
+{
+    return Scope_add(scope, 'type', id, type);
+}
+
 
 //
-
-function Typedef(type: Type): Overload
-{
-    return { kind: 'type', name: '', type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
-}
 
 function runSolver(parse: Node, globals: Scope): SolveResult
 {
@@ -81,6 +82,14 @@ function runSolver(parse: Node, globals: Scope): SolveResult
     let _typeParams:        TypeParams|null     = null;
 
     let TEST_expectImplicits: boolean = false;
+
+
+    //
+
+    function GET(idx: ScopeIdx): Overload
+    {
+        return Scope_get(_scope, idx);
+    }
 
 
     //
@@ -115,23 +124,28 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     //
 
-    function Template(node: Node)
+    function Template(node: Node): Template
     {
         return { node, specializations: Object.create(null) };
     }
 
-    function Binding(node: SolvedNode, type: Type): Overload
+    function Binding(id: string, type: Type)
     {
-        return { kind: 'var', name: node.value, type, min: 0, max: 0, args: null, names: null, defaults: null, partial: null, template: null };
+        return Scope_add(_scope, 'var', id, type);
     }
 
-    function Field(node: SolvedNode, structType: Type, fieldType: Type): Overload
+    function Field(id: string, structType: Type, fieldType: Type)
     {
-        return { kind: 'field', name: node.value, type: fieldType, min: 1, max: 1, args: [ structType ], names: [ 'this' ], defaults: null, partial: null, template: null };
+        return Scope_add(
+            _scope,
+            'field', id, fieldType,
+            1, 1, [ 'this' ], [ structType ]);
     }
 
-    function TemplateDecl(node: Node): Overload
+    function TemplateDecl(node: Node)
     {
+        const id = node.value;
+
         const min = node.kind === 'fn'
             ? node.items.length + FN_ARGS_BACK
             : fail('TODO');
@@ -142,10 +156,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         const template = Template(node);
 
-        let names: string[]|null = null;
+        let arg_n: string[]|null = null;
         if (node.kind === 'fn')
         {
-            names = [];
+            arg_n = [];
 
             const items = node.items;
             for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
@@ -153,14 +167,18 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 const arg = items[i] || fail();
                 arg.kind === 'let' || fail();
                 const name = arg.value || fail();
-                names[i] = name;
+                arg_n[i] = name;
             }
         }
 
-        return { kind: 'template', name: node.value, type: t_template, min, max, args: null, names, defaults: null, partial: null, template };
+        return Scope_add(
+            _scope,
+            'template', id, t_template,
+            min, max, arg_n, null, null,
+            template);
     }
 
-    function FnDecl(node: SolvedNode): Overload
+    function FnDecl(id: string, node: SolvedNode)
     {
         const items: SolvedNodes = node.items;
         const rnode = items[items.length + FN_RET_BACK];
@@ -196,10 +214,17 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             }
         }
 
-        return { kind: 'fn', name: node.value, type: ret, min, max, args: arg_t, names: arg_n, defaults: arg_d, partial: null, template: null };
+        const overload = Scope_add(
+            _scope,
+            'fn', id, ret,
+            min, max, arg_n, arg_t, arg_d);
+
+        node.target = overload;
+
+        return overload;
     }
 
-    function DefaultCtor(type: Type, members: SolvedNode[]): Overload
+    function DefaultCtor(id: string, type: Type, members: SolvedNode[])
     {
         const arg_t:   Type[] = [];
         const arg_n: string[] = [];
@@ -237,7 +262,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             }
         }
 
-        return { kind: 'defctor', name: '', type, min, max, args: arg_t, defaults: arg_d, names: arg_n, partial: null, template: null };
+        return Scope_add(
+            _scope,
+            'defctor', id, type,
+            min, max, arg_n, arg_t, arg_d);
     }
 
     function tryDefaultInit(type: Type): SolvedNode|null
@@ -259,7 +287,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             items:  [],
             token:  (_here || fail()),
             type,
-            target: null,
+            target: 0,
         };
     }
 
@@ -276,8 +304,11 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     //
 
-    function Partial(via: Overload, overload: Overload): Overload
+    function Partial(id: string, viaIdx: ScopeIdx, overloadIdx: ScopeIdx)
     {
+        const via      = GET(viaIdx);
+        const overload = GET(overloadIdx);
+
         let kind: 'p-unshift'|'p-wrap' = 'p-unshift';
         let min = overload.min - 1;
         let max = overload.max - 1;
@@ -288,9 +319,9 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         const o_defaults = overload.defaults;
 
         // Fixed.
-        let args     = o_args     && o_args    .length > 1 ? o_args    .slice(1) : null;
-        let names    = o_names    && o_names   .length > 1 ? o_names   .slice(1) : null;
-        let defaults = o_defaults && o_defaults.length > 1 ? o_defaults.slice(1) : null;
+        let arg_t = o_args     && o_args    .length > 1 ? o_args    .slice(1) : null;
+        let arg_n = o_names    && o_names   .length > 1 ? o_names   .slice(1) : null;
+        let arg_d = o_defaults && o_defaults.length > 1 ? o_defaults.slice(1) : null;
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
@@ -303,25 +334,29 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             const via_t = via.args && via.args[0] || fail();
 
             //
-            if (!args)
-                args = [];
+            if (!arg_t)
+                arg_t = [];
 
-            args.unshift(via_t);
-            if (names)
-                names.unshift('using');
-            if (defaults)
-                defaults.unshift(null);
+            arg_t.unshift(via_t);
+            if (arg_n)
+                arg_n.unshift('using');
+            if (arg_d)
+                arg_d.unshift(null);
         }
 
-        //
-        return { kind, name: '', type: overload.type, min, max, args, names, defaults, partial: [ via, overload ], template: null };
+        return Scope_add(
+            _scope,
+            kind, id, overload.type,
+            min, max, arg_n, arg_t, arg_d,
+            null, [ viaIdx, overloadIdx ]);
     }
 
 
     //
 
-    function scope_using(via: Overload)
+    function scope_using(viaIdx: ScopeIdx)
     {
+        const via = GET(viaIdx);
         const actual = via.type || fail();
 
         for (const id of Scope_keys(_scope))
@@ -337,7 +372,9 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             let arity0 = false;
             for (let i = 0, MUT_n0 = overloads.length; i < MUT_n0; i++)
             {
-                const overload = overloads[i];
+                const overloadIdx = overloads[i];
+                const overload = GET(overloadIdx);
+
                 if (overload.min < 1)
                 {
                     arity0 = true;
@@ -356,7 +393,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     fail('`using` arity-0 conflict: `' + id + '`.');
 
                 // MUT DURING ITER!
-                Scope_add(_scope, id, Partial(via, overload));
+                Partial(id, viaIdx, overloadIdx);
             }
         }
     }
@@ -377,25 +414,27 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         arr[to] = pivot;
     }
 
-    function scope_tryMatch__mutargs(id: string, args: SolvedNodes, retType: Type|null, flags: number): Overload|null
+    function scope_tryMatch__mutargs(
+        id: string, args: SolvedNodes,
+        retType: Type|null, flags: number): ScopeIdx
     {
         const overloads = Scope_lookup(_scope, id);
         if (!overloads)
-            return null;
+            return 0;
 
         //
-        let matched: Overload|null  = null;
+        let matchIdx: ScopeIdx = 0;
 
         // Arity 0 - blind head match.
         // Allows simple shadowing of variables and such, latest wins.
         if (!args.length)
         {
-            const head = overloads[0];
-            if (head.min === 0)
-                matched = head;
+            const headIdx = overloads[0];
+            if (GET(headIdx).min === 0)
+                matchIdx = headIdx;
         }
 
-        if (!matched)
+        if (!matchIdx)
         {
             const arity = args.length;
 
@@ -421,7 +460,8 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             //
             NEXT: for (let i = 0; i < overloads.length; i++)
             {
-                let overload = overloads[i];
+                let overloadIdx = overloads[i];
+                let overload = GET(overloadIdx);
 
                 TEST_AGAIN: for (;;)
                 {
@@ -458,11 +498,12 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     // Specialize.
                     if (overload.template)
                     {
-                        const spec = trySpecialize(overload.template, args);
-                        if (!spec)
+                        const specIdx = trySpecialize(overload.template, args);
+                        if (!specIdx)
                             continue NEXT;
 
-                        overload = spec;
+                        overloadIdx = specIdx;
+                        overload = GET(specIdx);
 
                         // Repeat arity checks and such.
                         continue TEST_AGAIN;
@@ -489,16 +530,18 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 }
 
                 // Forbid ambiguity.
-                if (matched)
+                if (matchIdx)
                     fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
 
                 // Done!
-                matched = overload;
+                matchIdx = overloadIdx;
             }
         }
 
-        if (matched)
+        if (matchIdx)
         {
+            const matched = GET(matchIdx);
+
             // Mutate call args last thing.
             const arg_d = matched && matched.defaults;
             if (arg_d)
@@ -522,7 +565,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             }
         }
 
-        return matched;
+        return matchIdx;
     }
 
     function repeat<T>(value: T, len: number): T[]
@@ -534,7 +577,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         return result;
     }
 
-    function scope_match__mutargs(id: string, args: SolvedNodes, flags: number): Overload
+    function scope_match__mutargs(id: string, args: SolvedNodes, flags: number): ScopeIdx
     {
         return scope_tryMatch__mutargs(id, args, null, flags)
             || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
@@ -688,8 +731,6 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             const tDecl = TemplateDecl(n_fn);
             const out   = SolvedNode(n_fn, null, t_void);
             out.target  = tDecl;
-
-            Scope_add(_scope, id, tDecl);
             return out;
         }
 
@@ -770,14 +811,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         //////////////////////////
 
         if (!prep)
-        {
-            const fnDecl = FnDecl(out);
-            out.target && fail();
-            out.target = fnDecl;
-
-            if (!spec)
-                Scope_add(_scope, id, fnDecl);
-        }
+            FnDecl(id, out);
 
         !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
 
@@ -801,7 +835,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
     function trySpecialize(
         template: Template, args: SolvedNodes)
-            : Overload|null
+            : ScopeIdx
     {
         const mangle = TODO_memoize_mangler(args);
 
@@ -813,12 +847,12 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
             spec = template.specializations[mangle] =
             {
-                node:     node,
-                overload: node ? node.target || fail() : null,
+                node:   node,
+                index:  node ? node.target || fail() : 0,
             };
         }
 
-        return spec.overload;
+        return spec.index;
     }
 
     function doTrySpecialize(
@@ -901,14 +935,16 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         }
 
         ////////////////////////////////
-        const typeParams0 = _typeParams;
         _typeParams = typeParams;
+        const typeParams0 = _typeParams;
+        const scope0 = Scope_push(_scope);
         ////////////////////////////////
 
         const specialized = __solveFn(true, true, node, null, caseIdx) || fail();
 
         ////////////////////////////////
         _typeParams = typeParams0;
+        Scope_pop(_scope, scope0);
         ////////////////////////////////
 
         return specialized;
@@ -938,13 +974,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         // Add the arity-0 type entry.
         if (!prep)
-        {
-            const decl = Typedef(type);
-            out.target && fail();
-            out.target = decl;
-
-            Scope_add(_scope, id, decl);
-        }
+            out.target = Scope_Typedef(_scope, id, type);
 
         if (!solve)
             return out;
@@ -979,7 +1009,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 }
             }
 
-            Scope_add(_scope, id, DefaultCtor(type, members));
+            DefaultCtor(id, type, members);
         }
 
         return out;
@@ -1053,12 +1083,11 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
         //
         const overload  = out.flags & F_FIELD
-            ? Field(out, _current_strt || fail(), t_let)
-            : Binding(out, node.flags & F_MUT
+            ? Field  (id, _current_strt || fail(), t_let)
+            : Binding(id, node.flags & F_MUT
                 ? add_mutref(t_let)
                 : add_ref(t_let));
 
-        Scope_add(_scope, id, overload);
         if (out.flags & F_USING)
             scope_using(overload);
 
@@ -1106,7 +1135,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 if (overloads)
                     for (let i = 0; i < overloads.length; i++)
                     {
-                        const maybe = overloads[i];
+                        const maybe = GET(overloads[i]);
                         if (maybe.kind === 'type')
                             return SolvedNode(node, null, maybe.type || fail());
                     }
@@ -1171,7 +1200,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 if (overloads)
                     for (let i = 0; i < overloads.length; i++)
                     {
-                        const maybe = overloads[i];
+                        const maybe = GET(overloads[i]);
                         if (maybe.kind === 'type')
                             return isAssignable(maybe.type || fail(), type);
                     }
@@ -1285,7 +1314,8 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             args[i] = maybePRValue(args[i] || fail());
 
         //
-        let callTarg    = scope_match__mutargs(id, args, node.flags);
+        let callTargIdx = scope_match__mutargs(id, args, node.flags);
+        let callTarg    = GET(callTargIdx);
 
         // `using` codegen.
         while (callTarg.partial)
@@ -1293,8 +1323,11 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             const unshift   = callTarg.kind === 'p-unshift';
 
             const partial   = callTarg.partial  || fail();
-            const via       = partial[0]        || fail();
-            callTarg        = partial[1]        || fail();
+            const viaIdx    = partial[0]        || fail();
+            callTargIdx     = partial[1]        || fail();
+
+            const via       = GET(viaIdx);
+            callTarg        = GET(callTargIdx);
 
             // There's two things we can do here -
             //  -   either we're injecting an implicitly used local,
@@ -1307,7 +1340,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 createRead('__partial' as any),
                 unshift ? [] : [ args[0] || fail() ],
                 via.type || fail(),
-                via);
+                viaIdx);
 
             //
             if (!args)
@@ -1324,7 +1357,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             node,
             args,
             callTarg.type || fail(),
-            callTarg);
+            callTargIdx);
     }
 
     function maybePRValue(node: SolvedNode)
@@ -1378,13 +1411,13 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             items:  [],
             token:  (_here || fail()),
             type:   type,
-            target: null,
+            target: 0,
         };
     }
 
     function injectImplicitArg__mutfn(
         node: SolvedNode,
-        id: string, type: Type)
+        id: string, type: Type): ScopeIdx
     {
         const mut_argNodes = node.items;
         const newArgIdx = mut_argNodes.length + FN_RET_BACK;
@@ -1400,9 +1433,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         // TODO argname check should come first -
         //  the one below is too late,
         //   wont catch an argname dupe here.
-        const fn = node.target;
-        if (fn)
+        if (node.target)
         {
+            const fn = GET(node.target);
+
             // We'll be mutating the overload.
             fn.kind === 'fn' || fail();
             const mut_args = fn.args || [];
@@ -1420,7 +1454,10 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         }
 
         // TODO put in the original scope!
-        return Binding(newArgNode, type);
+        const scope0   =    Scope_push(_scope);
+        const overload =    Binding(id, type);
+                            Scope_pop(_scope, scope0);
+        return overload;
     }
 
     function bindImplicitArg(
@@ -1437,7 +1474,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             getImplicit(id, type));
     }
 
-    function getImplicit(id: string, type: Type): Overload
+    function getImplicit(id: string, type: Type): ScopeIdx
     {
         let matched = scope_tryMatch__mutargs(id, [], type, 0);
         if (!matched)
@@ -1563,7 +1600,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             items: items || [],
             token: node.token,
             type,
-            target: null,
+            target: 0,
         };
     }
 
@@ -1577,17 +1614,19 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             items:  [ node ],
             token:  node.token,
             type:   node.type,
-            target: null,
+            target: 0,
         };
     }
 
     function CallerNode(
-        node: Node, items: SolvedNodes, type: Type, target: Overload)
+        node: Node, items: SolvedNodes, type: Type, target: ScopeIdx)
             : SolvedNode
     {
+        const overload = GET(target);
+
         // HACK -
         // TBD how we make this stuff work in real life.
-        if (target.kind === 'field')
+        if (overload.kind === 'field')
         {
             const head = items.length === 1 && items[0] || fail();
             const headType = head.type || fail();
@@ -1598,7 +1637,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         // Tag copies and moves.
         else if (items.length)
         {
-            const args = target.args || fail();
+            const args = overload.args || fail();
             for (let i = 0; i < items.length; i++)
                 items[i] = maybeCopyOrMove(
                     items[i] || fail(), args[i]);
@@ -1726,14 +1765,15 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
 function listGlobals(): Scope
 {
-    return Scope_createRoot(
-    [
-        ['i32',    [ Typedef(t_i32   ) ]],
-        ['bool',   [ Typedef(t_bool  ) ]],
-        ['void',   [ Typedef(t_void  ) ]],
-        ['string', [ Typedef(t_string) ]],
-        ['never',  [ Typedef(t_never)  ]],
-    ]);
+    const scope = Scope(null);
+
+    Scope_Typedef(scope, 'i32',    t_i32   );
+    Scope_Typedef(scope, 'bool',   t_bool  );
+    Scope_Typedef(scope, 'void',   t_void  );
+    Scope_Typedef(scope, 'string', t_string);
+    Scope_Typedef(scope, 'never',  t_never );
+
+    return scope;
 }
 
 const PRELUDE: Scope = runSolver(
@@ -1744,5 +1784,5 @@ const PRELUDE: Scope = runSolver(
 export function solve(parse: Node)
 {
     return runSolver(
-        parse, Scope_create(PRELUDE));
+        parse, Scope(PRELUDE));
 }

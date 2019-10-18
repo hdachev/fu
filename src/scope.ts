@@ -1,66 +1,59 @@
+import { fail } from './fail';
 import { Overload } from './solve';
+import { Type } from './types';
+
+export type ScopeIdx = (number & 'ScopeIdx')|0;
 
 type Item =
 {
     id:         string;
-    index:      number;
+    index:      ScopeIdx;
 };
+
+type IndexedOverload = Overload & { index: ScopeIdx };
+
+function copy(o: IndexedOverload)
+{
+    if (o.template)
+    {
+        o = Object.assign({}, o);
+        o.template = Object.assign({}, o.template);
+        o.template.specializations = {};
+    }
+
+    return o;
+}
 
 export type Scope =
 {
     items:      Item[];
-    overloads:  Overload[];
+    overloads:  IndexedOverload[];
 };
 
-export function Scope_create(parent: Scope|null): Scope
+export function Scope(parent: Scope|null): Scope
 {
     if (parent)
         return {
             items:      parent.items.slice(),
-            overloads:  parent.overloads.slice(),
+            overloads:  parent.overloads.map(copy),
         };
 
     return { items: [], overloads: [] };
 }
 
-export function Scope_createRoot(pairs: [string, Overload[]][]): Scope
+export function Scope_lookup(scope: Scope, id: string): ScopeIdx[]|null
 {
-    const scope = Scope_create(null);
-
-    for (let i = 0; i < pairs.length; i++)
-    {
-        const pair = pairs[i];
-        const id = pair[0];
-        const o = pair[1];
-        for (let i = 0; i < o.length; i++)
-        {
-            scope.items.push({ id, index: scope.overloads.length });
-            scope.overloads.push(o[i]);
-        }
-    }
-
-    return scope;
-}
-
-export function Scope_lookup(scope: Scope, id: string): Overload[]|null
-{
-    const results: Overload[] = [];
+    const results: ScopeIdx[] = [];
 
     const items = scope.items;
     for (let i = items.length; i --> 0; )
     {
         const item = items[i];
         if (item.id === id)
-            results.push(scope.overloads[item.index]);
+            results.push(item.index);
     }
 
     return results.length ? results : null;
-}
-
-export function Scope_add(scope: Scope, id: string, item: Overload): void
-{
-    scope.items.push({ id, index: scope.overloads.length });
-    scope.overloads.push(item);
 }
 
 export function Scope_keys(scope: Scope): string[]
@@ -78,6 +71,13 @@ export function Scope_keys(scope: Scope): string[]
     return keys;
 }
 
+export function Scope_get(scope: Scope, idx: ScopeIdx): Overload
+{
+    const o = scope.overloads[idx - 1];
+    o.index === idx || fail('Overload indexing breakage.');
+    return o;
+}
+
 
 ////////////////////////////////
 
@@ -89,4 +89,38 @@ export function Scope_push(scope: Scope): number
 export function Scope_pop(scope: Scope, memo: number): void
 {
     scope.items.length = memo;
+}
+
+
+////////////////////////////////
+
+import { SolvedNodes, Template, OverloadKind } from './solve';
+
+export function Scope_add(
+    scope: Scope,
+    kind: OverloadKind, id: string, type: Type,
+
+    min: number = 0, max: number = 0,
+    arg_n: string[]|null = null,
+    arg_t: Type[]|null = null,
+    arg_d: SolvedNodes|null = null,
+
+    template: Template|null = null,
+    partial: [ScopeIdx, ScopeIdx]|null = null): ScopeIdx
+{
+    const index = (scope.overloads.length + 1) as ScopeIdx;
+
+    const item: IndexedOverload =
+    {
+        index, kind,
+
+        name: id, type,
+        min, max, args: arg_t,
+        names: arg_n, defaults: arg_d,
+        partial, template,
+    };
+
+    scope.items.push({ id, index });
+    scope.overloads.push(item);
+    return index;
 }

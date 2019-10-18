@@ -1,5 +1,6 @@
 import { fail } from './fail';
-import { SolvedNode, Type } from './solve';
+import { ScopeIdx, Scope_get } from './scope';
+import { SolveResult, SolvedNode, Type } from './solve';
 import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION, F_MUT } from './parse';
 import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void, q_trivial } from './types';
 
@@ -15,7 +16,7 @@ const M_RETVAL          = 1 << 3;
 
 //
 
-export function cpp_codegen(root: SolvedNode): { src: string }
+export function cpp_codegen({ root, scope }: SolveResult): { src: string }
 {
     let _libs: Dedupes      = Object.create(null);
     let _tfwd: Dedupes      = Object.create(null);
@@ -28,6 +29,11 @@ export function cpp_codegen(root: SolvedNode): { src: string }
     let _fnN: number        = 0;
     let _clsrN: number      = 0;
     let _faasN: number      = 0;
+
+    function GET(idx: ScopeIdx)
+    {
+        return Scope_get(scope, idx);
+    }
 
 
     //
@@ -335,7 +341,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
             flags: fn.flags | F_CLOSURE,
             token: fn.token,
             value: evalName,
-            target: null,
+            target: 0,
 
             items:
             [
@@ -345,7 +351,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
                     flags: 0,
                     token: fn.token,
                     value: '',
-                    target: null,
+                    target: 0,
 
                     items: items.slice(
                         end, items.length),
@@ -385,7 +391,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
         {
             let src = '';
 
-            const template = fn.target && fn.target.template || fail();
+            const template = GET(fn.target).template || fail();
             const specs = template.specializations;
             for (const key in specs)
             {
@@ -598,7 +604,7 @@ export function cpp_codegen(root: SolvedNode): { src: string }
 
     function cgCall(node: SolvedNode)
     {
-        const target = node.target || fail();
+        const target = GET(node.target) || fail();
         const items  = cgNodes(node.items);
 
         if (target.kind === 'defctor')

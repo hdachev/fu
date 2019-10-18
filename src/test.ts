@@ -32,9 +32,9 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
     if (r_lex.errors.length)
         fail('Lex fail:', r_lex.errors);
 
-    const r_parse   = parse(r_lex)              || fail('Parse fail.');
-    const r_solve   = solve(r_parse)            || fail('Solve fail.');
-    const r_cppcg   = cpp_codegen(r_solve.root) || fail('C++ Codegen fail.');
+    const r_parse   = parse(r_lex)          || fail('Parse fail.');
+    const r_solve   = solve(r_parse)        || fail('Solve fail.');
+    const r_cppcg   = cpp_codegen(r_solve)  || fail('C++ Codegen fail.');
 
     //
     const gensrc = r_cppcg.src;
