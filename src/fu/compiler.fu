@@ -1550,6 +1550,533 @@ pub fn parse(_fname: string, _tokens: Token[])
 
 
 
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Types.
+
+// pub struct Primitive
+//     'i8'  | 'u8'  |
+//     'i16' | 'u16' |
+//     'i32' | 'u32' |
+//     'i64' | 'u64' | 'bool' | 'void' | 'never'
+//                   | 'template'
+//                   | 'string';
+
+pub let q_mutref       = 1 << 0;
+pub let q_ref          = 1 << 1;
+pub let q_prvalue      = 1 << 2;
+pub let q_copy         = 1 << 3;
+pub let q_move         = 1 << 4;
+
+pub let q_trivial      = 1 << 5;
+pub let q_primitive    = 1 << 6;
+pub let q_arithmetic   = 1 << 7;
+pub let q_integral     = 1 << 8;
+pub let q_signed       = 1 << 9;
+
+let TAGS =
+[
+    'mutref',
+    'ref',
+    'prvalue',
+    'copy',
+    'move',
+
+    'trivial',
+    'primitive',
+    'arithmetic',
+    'integral',
+    'signed'
+];
+
+pub struct Type
+{
+    canon: string;
+    quals: i32;
+};
+
+
+//
+
+pub let Trivial        = q_copy | q_trivial;
+pub let Primitive      = Trivial | q_primitive;
+pub let Arithmetic     = Primitive | q_arithmetic;
+pub let Integral       = Arithmetic | q_integral;
+pub let SignedInt      = Integral | q_signed;
+
+pub let t_i32          = Type('i32', SignedInt);
+pub let t_void         = Type('void', 0);
+pub let t_bool         = Type('bool', Primitive);
+pub let t_never        = Type('never', 0);
+pub let t_template     = Type('template', 0);
+pub let t_string       = Type('string', q_copy);
+
+
+// https://doc.rust-lang.org/nomicon/subtyping.html:
+
+// Re: covariance of `T` in `Box<T>`:
+//
+// As it turns out, the argument for why it's ok for Box
+//  (and Vec, Hashmap, etc.) to be covariant is pretty similar
+//   to the argument for why it's ok for lifetimes to be covariant:
+//    as soon as you try to stuff them in something like a mutable
+//     reference, they inherit invariance and you're prevented
+//      from doing anything bad.
+
+pub fn isAssignable(host: Type, guest: Type)
+{
+    return host.canon == guest.canon
+            && (host.quals == guest.quals ||
+                  !(host.quals & q_mutref) // mut invariance
+                    && (host.quals & guest.quals) == host.quals)
+        || guest.canon == t_never.canon
+            && guest.quals == 0;
+}
+
+
+//
+
+pub fn qadd(type: Type, q: i32)
+{
+    return Type(type.canon, type.canon ? type.quals | q : 0);
+}
+
+pub fn qsub(type: Type, q: i32)
+{
+    return Type(type.canon, type.quals &~ q);
+}
+
+pub fn qhas(type: Type, q: i32)
+{
+    return type.quals & q == q;
+}
+
+fn tryClear(type: Type, q: i32): Type
+{
+    if (!type || !qhas(type, q))
+        return Type();
+
+    return qsub(type, q);
+}
+
+
+//
+
+pub fn add_ref(type: Type)
+{
+    return qadd(type, q_ref);
+}
+
+pub fn add_mutref(type: Type)
+{
+    return qadd(type, q_ref | q_mutref);
+}
+
+pub fn add_prvalue_ref(type: Type)
+{
+    return qadd(type, q_ref | q_prvalue);
+}
+
+
+//
+
+pub fn tryClear_mutref(type: Type)
+{
+    return tryClear(type, q_ref | q_mutref);
+}
+
+pub fn tryClear_ref(type: Type)
+{
+    let t = tryClear(type, q_ref);
+
+    return t
+         ? qsub(t, q_mutref)
+         : t;
+}
+
+pub fn clear_refs(type: Type)
+{
+    return qsub(type, q_ref | q_mutref | q_prvalue);
+}
+
+pub fn add_refs_from(src: Type, dest: Type)
+{
+    return qadd(dest, src.quals & (q_ref | q_mutref));
+}
+
+
+//
+
+pub fn serializeType(type: Type)
+{
+    if (type.quals)
+        return '(' + type.canon + '{' + type.quals + '})';
+
+    return '(' + type.canon + ')';
+}
+
+pub fn type_has(type: Type, tag: string)
+{
+    let idx = TAGS.find(tag);
+    idx >= 0 || throw('Unknown type tag: `' + tag + '`.');
+    let mask = 1 << idx;
+    return (type.quals & mask) == mask;
+}
+
+
+//
+
+pub fn type_tryInter(a: Type, b: Type)
+{
+    if (a.canon != b.canon)
+        return Type();
+
+    return Type(
+        a.canon,
+        a.quals & b.quals);
+}
+
+
+//
+
+pub struct Struct
+{
+    kind:   string; // 'struct'|'array'|'map';
+    id:     string;
+    fields: StructField[];
+    flags:  i32;
+};
+
+pub struct StructField
+{
+    id:     string;
+    type:   Type;
+};
+
+
+// The temp context -
+//  TBD what this will look like in the end -
+//   we'll likely need a typespace per module,
+//    so everyone can read from immut shared concurrently,
+//     and write into their own without having to sync.
+
+pub struct TEMP_Context
+{
+    types:  Map(string, Struct);
+};
+
+pub fn registerType(
+    implicit ctx: &mut TEMP_Context,
+    canon: string, def: Struct): void
+{
+    ctx.types[canon] = def;
+}
+
+pub fn lookupType(
+    implicit ctx: &mut TEMP_Context,
+    canon: string): Struct
+{
+    return ctx.types[canon] || assert();
+}
+
+
+//
+
+pub fn registerStruct(id: string, fields: StructField[], flags: i32)
+{
+    // TODO struct data goes on compile context.
+    // TODO use module id.
+
+    let canon = 's_' + id;
+    let def = Struct(
+        kind:   'struct',
+        id:     id      || assert(),
+        fields: fields  || assert(),
+        flags:  flags|0
+    );
+
+    registerType(canon, def);
+
+    return Type(canon,
+        copyOrMove(flags, fields, true));
+}
+
+fn copyOrMove(
+    flags: i32,
+    fields: StructField[],
+    tryTrivial: bool = false): i32
+{
+    if ((flags & F_DESTRUCTOR) || someFieldNonCopy(fields))
+        return q_move;
+
+    if (tryTrivial && !someFieldNotTrivial(fields))
+        return Trivial;
+
+    return q_copy;
+}
+
+fn someFieldNonCopy(fields: StructField[]): bool
+{
+    for (mut i = 0; i < fields.len; i++)
+        if (!(fields[i].type.quals & q_copy))
+            return true;
+
+    return false;
+}
+
+fn someFieldNotTrivial(fields: StructField[]): bool
+{
+    for (mut i = 0; i < fields.len; i++)
+        if (!(fields[i].type.quals & q_trivial))
+            return true;
+
+    return false;
+}
+
+
+//
+
+pub fn createArray(item: Type): Type
+{
+    let flags = 0;
+    let fields: StructField[] =
+    [
+        StructField(
+            id:  'Item',
+            type: item)
+    ];
+
+    let canon = 'Array(' + serializeType(item) + ')';
+
+    registerType(canon, Struct(
+        kind:   'array',
+        id:     canon,
+        :fields,
+        :flags));
+
+    return Type(canon,
+        copyOrMove(flags, fields));
+}
+
+pub fn isArray(type: Type): bool
+{
+    return type.canon.starts(with: 'Array(');
+}
+
+pub fn tryClear_array(type: Type): Type
+{
+    if (!isArray(type))
+        return Type();
+
+    let def = lookupType(type.canon);
+
+    return def.kind == 'array'
+        && def.fields[0].type
+        || assert();
+}
+
+
+//
+
+pub fn type_isMap(type: Type): bool
+{
+    return type.canon.starts(with: 'Map(');
+}
+
+pub fn createMap(key: Type, value: Type): Type
+{
+    let flags  = 0;
+    let fields =
+    [
+        StructField(id:  'Key',   type: key  ),
+        StructField(id:  'Value', type: value)
+    ];
+
+    let canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')';
+
+    registerType(canon, Struct(
+        kind:   'map',
+        id:     canon,
+        :fields,
+        :flags
+    ));
+
+    return Type(canon,
+        copyOrMove(flags, fields));
+}
+
+pub struct MapFields
+{
+    key:   Type;
+    value: Type;
+}
+
+pub fn tryClear_map(type: Type): MapFields
+{
+    if (!type_isMap(type))
+        return MapFields();
+
+    let def = lookupType(type.canon);
+    def.kind == 'map' || assert();
+
+    return MapFields(
+        key:   def.fields[0].type || assert(),
+        value: def.fields[1].type || assert());
+}
+
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Scope.
+
+struct SolvedNode
+{
+    TODO: i32;
+};
+
+struct ScopeIdx { raw: i32; };
+
+struct Specialization
+{
+    node: SolvedNode;
+    index: ScopeIdx;
+};
+
+struct Template
+{
+    node: Node;
+    specializations: Map(string, Specialization); // mangle -> spec
+};
+
+struct Partial
+{
+    via: ScopeIdx;
+    target: ScopeIdx;
+};
+
+struct Overload
+{
+    kind: string;
+    name: string;
+    type: Type;
+
+    // Arity.
+    min: i32;
+    max: i32;
+    args: Type[];
+    names: string[];
+    defaults: SolvedNode[];
+
+    // Amazing stuff.
+    partial: Partial;
+    template: Template;
+};
+
+struct ScopeItem
+{
+    id:         string;
+    index:      ScopeIdx;
+};
+
+pub struct Scope
+{
+    items:      ScopeItem[];
+    overloads:  Overload[];
+};
+
+pub fn Scope_lookup(scope: &Scope, id: string): ScopeIdx[]
+{
+    mut results: ScopeIdx[] = [];
+
+    let items = scope.items;
+    for (mut i = items.len; i --> 0; )
+    {
+        let item = items[i];
+        if (item.id == id)
+            results.push(item.index);
+    }
+
+    return results;
+}
+
+pub fn Scope_keys(scope: &Scope): string[]
+{
+    mut keys: string[] = [];
+
+    let items = scope.items;
+    for (mut i = items.len; i --> 0; )
+    {
+        let id = items[i].id;
+        if (!keys.has(id))
+            keys.push(id);
+    }
+
+    return keys;
+}
+
+pub fn Scope_get(scope: &Scope, idx: ScopeIdx): Overload
+{
+    return scope.overloads[idx.raw - 1];
+}
+
+
+////////////////////////////////
+
+pub fn Scope_push(scope: &mut Scope): i32
+{
+    return scope.items.len;
+}
+
+pub fn Scope_pop(scope: &mut Scope, memo: i32): void
+{
+    scope.items.shrink(memo);
+}
+
+
+////////////////////////////////
+
+pub fn Scope_add(
+    scope: &mut Scope,
+    kind: string, id: string, type: Type,
+
+    min: i32 = 0,
+    max: i32 = 0,
+    arg_n: string[]     = [],
+    arg_t: Type[]       = [],
+    arg_d: SolvedNode[] = [],
+    template: Template  = [],
+    partial: Partial    = []): ScopeIdx
+{
+    let index = ScopeIdx(scope.overloads.len + 1);
+
+    let item = Overload(
+        :kind,
+        name: id, :type,
+        :min, :max, args: arg_t,
+        names: arg_n, defaults: arg_d,
+        :partial, :template);
+
+    scope.items.push(ScopeItem( :id, :index ));
+    scope.overloads.push(item);
+
+    return index;
+}
+
+
+
+
 // A very quick test.
 
 fn ZERO(): i32

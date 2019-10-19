@@ -98,9 +98,7 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         {
             if (!(type.canon in _tfwd))
             {
-                _tfwd[type.canon] = _tdef.indexOf(type.canon) >= 0
-                    ? '\nstruct ' + type.canon + ';'
-                    : '';
+                _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
 
                 const def = declareStruct(type, tdef);
                 _tdef += def;
@@ -218,8 +216,8 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
 
     function ID(id: string)
     {
-        if (id === 'this')
-            return '_';
+        if (id === 'this')     return '_';
+        if (id === 'template') return 'tempalt';
 
         return id;
     }
@@ -729,6 +727,9 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if (id === 'splice' && items.length === 3)
             return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
 
+        if (id === 'shrink' && items.length === 2)
+            return items[0] + '.resize(' + items[1] + ')';
+
         if (id === 'find' && items.length === 2)
         {
             const head = node.items[0] || fail();
@@ -739,7 +740,7 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
             return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
         }
 
-        if (id === 'startsWith' && items.length === 2)
+        if (id === 'starts' && items.length === 2)
         {
             const head = node.items[0] || fail();
             if (head.type.canon === 'string')

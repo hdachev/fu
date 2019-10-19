@@ -286,10 +286,9 @@ function someFieldNotTrivial(fields: StructField[])
 
 export type LookupType = Struct;
 
-export function lookupType(canon: Canon): LookupType|null
+export function lookupType(canon: Canon): LookupType
 {
-    return CONTEXT.TYPES[canon]
-        || null;
+    return CONTEXT.TYPES[canon] || fail();
 }
 
 
