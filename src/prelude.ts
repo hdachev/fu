@@ -99,6 +99,7 @@ fn <=(a: &string, b: &string):      bool        __native_pure;
 
 fn find(a: &string, b: &string):    i32         __native_pure;
 fn has(a: &string, b: &string):     bool        __native_pure;
+fn startsWith(a: &string, b: &string): bool     __native_pure;
 
 fn slice (a: &string, i0: i32, i1: i32): string __native_pure;
 fn substr(a: &string, i0: i32, i1: i32): string __native_pure;

@@ -739,6 +739,13 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
             return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
         }
 
+        if (id === 'startsWith' && items.length === 2)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return '(' + items[0] + '.rfind(' + items[1] + ', 0) == 0)';
+        }
+
         if (id === 'has' && items.length === 2)
         {
             const head = node.items[0] || fail();
