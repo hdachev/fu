@@ -102,13 +102,29 @@ export function qadd(type: Type, q: number)
                                 type.quals | q);
 }
 
+export function qsub(type: Type, q: number)
+{
+    return type.quals & q   ? createType(
+                                type.canon,
+                                type.quals &~ q)
+                            : type;
+}
+
+export function qhas(type: Type, q: number)
+{
+    return (type.quals & q) === q;
+}
+
 function tryClear(type: Type|null, q: number)
 {
-    if (!type || (type.quals & q) !== q)
+    if (!type || !qhas(type, q))
         return null;
 
-    return createType(type.canon, type.quals &~ q);
+    return qsub(type, q);
 }
+
+
+//
 
 export function add_ref(type: Type)
 {
@@ -117,41 +133,43 @@ export function add_ref(type: Type)
 
 export function add_mutref(type: Type)
 {
-    return qadd(add_ref(type), q_mutref);
+    return qadd(type, q_ref | q_mutref);
 }
 
 export function add_prvalue_ref(type: Type)
 {
-    return qadd(add_ref(type), q_prvalue);
+    return qadd(type, q_ref | q_prvalue);
 }
+
+
+//
 
 export function tryClear_mutref(type: Type)
 {
-    return tryClear(tryClear(type, q_ref), q_mutref);
+    return tryClear(type, q_ref | q_mutref);
 }
 
-export function tryClear_ref(type: Type)
+export function tryClear_ref(type: Type|null)
 {
-    const t = tryClear(type, q_ref);
-    return t && createType(t.canon, t.quals &~ q_mutref);
+    type = tryClear(type, q_ref);
+
+    return type
+         ? qsub(type, q_mutref)
+         : type;
 }
 
 export function clear_refs(type: Type)
 {
-    return createType(
-        type.canon,
-        type.quals &~ (q_mutref | q_ref | q_prvalue));
+    return qsub(type, q_ref | q_mutref | q_prvalue);
 }
 
 export function add_refs_from(src: Type, dest: Type)
 {
-    if (src.quals & q_mutref)
-        dest = add_mutref(dest);
-    else if (src.quals & q_ref)
-        dest = add_ref(dest);
-
-    return dest;
+    return qadd(dest, src.quals & (q_ref | q_mutref));
 }
+
+
+//
 
 export function serializeType(type: Type)
 {
@@ -168,6 +186,9 @@ export function type_has(type: Type, tag: LexValue)
     const mask = 1 << idx;
     return (type.quals & mask) === mask;
 }
+
+
+//
 
 export function type_tryInter(a: Type, b: Type)
 {
