@@ -2099,7 +2099,7 @@ pub struct SolveResult
     scope:      Scope;
 };
 
-fn Scope_Typedef(scope: Scope, id: string, type: Type)
+fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 {
     return Scope_add(scope, 'type', id, type);
 }
@@ -2129,7 +2129,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    fn fail(mut reason: string = '')
+    fn fail(mut reason: string = ''): never
     {
         if (!reason)
             reason = 'Unexpected `' + _here.value + '`.';
@@ -2140,16 +2140,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         let addr = '@' + l0 + ':' + c0;
 
-        return Fail.fail(fname + ' ' + addr + ':\n\t' + reason);
+        return throw(fname + ' ' + addr + ':\n\t' + reason);
     }
 
 
     //
-
-    fn Template(node: Node): Template
-    {
-        return Template( :node );
-    }
 
     fn Binding(id: string, type: Type)
     {
@@ -2168,9 +2163,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     {
         let id = node.value;
 
-        let min = node.kind == 'fn'
-            ? node.items.len + FN_ARGS_BACK
-            : fail('TODO');
+        node.kind == 'fn' || fail('TODO');
+        let min = node.items.len + FN_ARGS_BACK;
 
         let max = node.kind == 'fn'
             ? 0xffffff // implicit args etc, dunno whats happening, allow it all
@@ -2178,11 +2172,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         let template = Template(node);
 
-        mut arg_n: string[] = null;
+        mut arg_n: string[];
         if (node.kind == 'fn')
         {
-            arg_n = [];
-
             let items = node.items;
             let numArgs = items.len + FN_ARGS_BACK;
             for (mut i = 0; i < numArgs; i++)
@@ -2197,22 +2189,21 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return Scope_add(
             _scope,
             'template', id, t_template,
-            min, max, arg_n, null, null,
-            template);
+            min, max, arg_n, :template);
     }
 
-    fn FnDecl(id: string, node: SolvedNode)
+    fn FnDecl(id: string, node: &mut SolvedNode)
     {
-        let items: SolvedNodes = node.items;
+        let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
         let ret   = rnode && rnode.type || fail();
 
         let max   = items.len + FN_RET_BACK;
         let args  = items.slice(0, max);
 
-        let arg_t: Type[]      = [];
-        let arg_n: string[]    = [];
-        let arg_d: SolvedNodes = [];
+        mut arg_t: Type[]       = [];
+        mut arg_n: string[]     = [];
+        mut arg_d: SolvedNode[] = [];
 
         mut min = 0;
         for (mut i = 0; i < max; i++)
@@ -2230,7 +2221,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             {
                 arg_d.len >= i || fail();
 
-                let def = arg.items[LET_INIT] || null;
+                let def = arg.items[LET_INIT];
                 arg_d[i] = def;
                 if (!def)
                     min++;
@@ -2249,8 +2240,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn DefaultCtor(id: string, type: Type, members: SolvedNode[])
     {
-        let arg_t:   Type[] = [];
-        let arg_n: string[] = [];
+        mut arg_t:   Type[] = [];
+        mut arg_n: string[] = [];
 
         for (mut i = 0; i < members.len; i++)
         {
@@ -2262,26 +2253,26 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         //
         let max   = members.len;
-        let   min   = 0;
-        let   arg_d: SolvedNode[] = null;
+        mut min   = 0;
+        mut arg_d: SolvedNode[];
 
         {
-            let defaults: SolvedNode[] = [];
-            arg_d = defaults;
             for (mut i = 0; i < members.len; i++)
             {
                 let member = members[i];
-                let init   = member.items[LET_INIT] || tryDefaultInit(member.type);
+
+                mut init = member.items[LET_INIT];
+                init ||= tryDefaultInit(member.type);
 
                 // Disable defaulting if any member is non-defaulted.
                 if (!init)
                 {
-                    arg_d = null;
-                    min   = max;
+                    min = max;
+                    arg_d.clear();
                     break;
                 }
 
-                defaults[i] = init;
+                arg_d.push(init);
             }
         }
 
@@ -2295,7 +2286,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     {
         // Reference? No init, else default.
         if (type.quals & q_ref)
-            return null;
+            return SolvedNode();
 
         return createDefaultInit(type);
     }
@@ -2435,7 +2426,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     }
 
     fn scope_tryMatch__mutargs(
-        id: string, args: SolvedNodes,
+        id: string, args: SolvedNode[],
         retType: Type, flags: i32): ScopeIdx
     {
         let overloads = Scope_lookup(_scope, id);
@@ -2588,14 +2579,14 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return matchIdx;
     }
 
-    fn scope_match__mutargs(id: string, args: SolvedNodes, flags: i32): ScopeIdx
+    fn scope_match__mutargs(id: string, args: SolvedNode[], flags: i32): ScopeIdx
     {
         return scope_tryMatch__mutargs(id, args, null, flags)
             || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
             || fail('`' + id + '` is not defined.');
     }
 
-    fn solveNode(node: Node, type: Type = null): SolvedNode
+    fn solveNode(node: Node, type: Type = []): SolvedNode
     {
         let k = node.kind;
 
@@ -2751,7 +2742,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         let out       = prep || SolvedNode(n_fn, null, t_void);
 
-        let outItems: SolvedNodes = repeat(null, inItems.len);
+        mut outItems: SolvedNode[];
+        outItems.resize(inItems.len);
+
         out.items       = outItems;
 
         //
@@ -2829,7 +2822,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    fn TODO_memoize_mangler(args: SolvedNodes): string
+    fn TODO_memoize_mangler(args: SolvedNode[]): string
     {
         mut mangle = '';
         for (mut i = 0; i < args.len; i++)
@@ -2842,7 +2835,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecialize(
-        template: Template, args: SolvedNodes)
+        template: Template, args: SolvedNode[])
             : ScopeIdx
     {
         let mangle = TODO_memoize_mangler(args);
@@ -2861,7 +2854,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     }
 
     fn doTrySpecialize(
-        template: Template, args: SolvedNodes)
+        template: Template, args: SolvedNode[])
             : SolvedNode
     {
         mut typeParams: Map(string, Type);
@@ -2878,7 +2871,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecializeFn(
-        node: Node, args: SolvedNodes, mut typeParams: TypeParams)
+        node: Node, args: SolvedNode[], mut typeParams: TypeParams)
             : SolvedNode
     {
         let items = node.items;
@@ -3459,7 +3452,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     }
 
     fn bindImplicitArg(
-        args: SolvedNodes, argIdx: i32,
+        args: SolvedNode[], argIdx: i32,
         id: string, type: Type)
     {
         TEST_expectImplicits || fail(
@@ -3510,7 +3503,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return SolvedNode(node, items, outType || fail());
     }
 
-    fn sumType_logic(items: SolvedNodes): Type
+    fn sumType_logic(items: SolvedNode[]): Type
     {
         // All args refs?
         if (items.len)
@@ -3600,7 +3593,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     }
 
     fn CallerNode(
-        node: Node, items: SolvedNodes, type: Type, target: ScopeIdx)
+        node: Node, items: SolvedNode[], type: Type, target: ScopeIdx)
             : SolvedNode
     {
         let overload = GET(target);
@@ -3656,7 +3649,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    fn solveNodes(nodes: Node[], result: SolvedNodes = []): SolvedNodes
+    fn solveNodes(nodes: Node[], result: SolvedNode[] = []): SolvedNode[]
     {
         let here0 = _here;
 

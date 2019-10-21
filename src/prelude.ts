@@ -74,10 +74,15 @@ fn [](a: &$T[], i: i32)
 fn push   (a: &mut $T[], b: $T):              void __native_pure;
 fn unshift(a: &mut $T[], b: $T):              void __native_pure;
 fn insert (a: &mut $T[], i: i32, b: $T):      void __native_pure;
-fn concat (a: $T[], b: $T[]):                 $T[] __native_pure;
+
+fn concat (a: &$T[], b: &$T[]):               $T[] __native_pure;
+fn slice  (a: &$T[], i0: i32, i1: i32):       $T[] __native_pure;
 
 fn splice (a: &mut $T[], i: i32, count: i32): void __native_pure;
 fn pop    (a: &mut $T[]):                     void __native_pure;
+
+fn clear  (a: &mut $T[]):                     void __native_pure;
+fn resize (a: &mut $T[], len: i32):           void __native_pure;
 fn shrink (a: &mut $T[], len: i32):           void __native_pure;
 
 fn move   (a: &mut $T[], from: i32, to: i32): void __native_pure;
