@@ -3138,6 +3138,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let overloads = Scope_lookup(_scope, id);
 
                 if (overloads)
+                {
                     for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
@@ -3145,6 +3146,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                             return SolvedNode(
                                 node, null, maybe.type || fail());
                     }
+                }
 
                 fail('No type `' + id + '` in scope.');
             }
@@ -3204,12 +3206,14 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let overloads = Scope_lookup(_scope, id);
 
                 if (overloads)
+                {
                     for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
                         if (maybe.kind == 'type')
                             return isAssignable(maybe.type || fail(), type);
                     }
+                }
 
                 fail('No type `' + id + '` in scope.');
             }
@@ -3301,13 +3305,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn createRead(id: string): Node
     {
-        return {
+        return Node(
             kind:   'call',
             flags:  F_ID,
             value:  id,
-            items:  [],
-            token:  (_here || fail()),
-        };
+            token:  (_here || fail()));
     }
 
     fn solveCall(node: Node): SolvedNode
@@ -3343,7 +3345,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
             // And that's all there is to `using`.
             let argNode   = CallerNode(
-                createRead('__partial' as any),
+                createRead('__partial'),
                 unshift ? [] : [ args[0] || fail() ],
                 via.type || fail(),
                 viaIdx);
@@ -3409,16 +3411,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn createLet(id: string, type: Type, flags: i32 = 0): SolvedNode
     {
-        return {
+        return SolvedNode(
             kind:   'let',
-            flags:  flags|0,
+            flags:  flags,
             value:  id,
-
-            items:  [],
-            token:  (_here || fail()),
-            type:   type,
-            target: 0,
-        };
+            token:  _here || fail(), :type);
     }
 
     fn injectImplicitArg__mutfn(
@@ -3441,22 +3438,17 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         //   wont catch an argname dupe here.
         if (node.target)
         {
-            let fn = GET(node.target);
+            let o: &mut Overload = GET(node.target);
 
             // We'll be mutating the overload.
-            fn.kind == 'fn' || fail();
-            let mut_args = fn.args || [];
-            let mut_names = fn.names || [];
+            o.kind == 'fn' || fail();
 
-            mut_names.len == mut_args.len || fail();
-            mut_names.indexOf(id) < 0 || fail(
+            o.names.len == o.args.len || fail();
+            o.names.indexOf(id) < 0 || fail(
                 'Implicit argument name collision.');
 
-            mut_args .push(type);
-            mut_names.push(id);
-
-            fn.args  = mut_args;
-            fn.names = mut_names;
+            o.args .push(type);
+            o.names.push(id);
         }
 
         // TODO put in the original scope!
@@ -3501,7 +3493,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     fn solveIf(node: Node): SolvedNode
     {
         let items   = solveNodes(node.items);
-        const [, cons, alt] = items;
+        let cond    = items[0];
+        let cons    = items[1];
+        let alt     = items[2];
 
         let priExpr = cons || alt || fail();
         let secExpr = cons && alt ? alt : cons;
@@ -3594,34 +3588,15 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    fn SolvedNode(
-        node: Node, items: SolvedNodes, type: Type)
-            : SolvedNode
-    {
-        return {
-            kind:  node.kind ,
-            flags: node.flags,
-            value: node.value,
-
-            items: items || [],
-            token: node.token,
-            type,
-            target: 0,
-        };
-    }
-
     fn wrap(kind: string, node: SolvedNode, flags: i32): SolvedNode
     {
-        return {
-            kind,
-            flags:  flags,
-            value:  '',
+        return SolvedNode(
+            :kind,
+            :flags,
 
             items:  [ node ],
             token:  node.token,
-            type:   node.type,
-            target: 0,
-        };
+            type:   node.type);
     }
 
     fn CallerNode(
@@ -3662,7 +3637,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         if (q & q_ref)
             return node;
 
-        mut op: 'move'|'copy' = 'copy';
+        mut op = 'copy';
 
         if (!(q & q_copy))
         {
@@ -3760,10 +3735,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     // So lets go.
 
-    return {
+    return SolveResult(
         root: solveNode(parse),
-        scope: _scope || fail(),
-    };
+        scope: _scope);
 }
 
 
@@ -3783,7 +3757,7 @@ fn listGlobals(): Scope
 }
 
 let PRELUDE: Scope = runSolver(
-    parse(lex(prelude_src as Source, '__prelude' as Filename)),
+    parse(lex(prelude_src, '__prelude')),
         listGlobals())
             .scope;
 
