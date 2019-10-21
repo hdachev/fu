@@ -101,8 +101,8 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
 
 function testCodegen(src: string, cpp: string)
 {
-    src; cpp;
-    // /expect_lambda/.test(src) === /\[&]/.test(cpp) || fail('LAMBDA');
+    if (/-no-lambda/.test(src))
+        /\]\(/.test(cpp) && fail('Unexpected lambda.');
 }
 
 
@@ -1152,6 +1152,7 @@ fn ZERO() P_COMMA - 7;
 
 ZERO(`
 
+    // -no-lambda
     // This converted to a ref-returning
     // logical chain for some reason.
     let hex = true;

@@ -2,7 +2,7 @@ import { fail } from './fail';
 import { ScopeIdx, Scope_get } from './scope';
 import { SolveResult, SolvedNode, Type } from './solve';
 import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION, F_MUT } from './parse';
-import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void, q_trivial } from './types';
+import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void, q_trivial, q_prvalue } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
 type CppScope           = { [id: string]: number };
@@ -998,10 +998,16 @@ std::vector<T> fu_CONCAT(
 
     //
 
+    function isRefLogical(type: Type, mode: number)
+    {
+        return (type.quals & (q_ref | q_prvalue)) == q_ref
+            && !(mode & M_RETBOOL);
+    }
+
     function cgAnd(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if ((type.quals & q_ref) && !(mode & M_RETBOOL))
+        if (isRefLogical(type, mode))
         {
             const annot = typeAnnot(type);
 
@@ -1028,7 +1034,7 @@ std::vector<T> fu_CONCAT(
     function cgOr(node: SolvedNode, mode: number)
     {
         const type = node.type;
-        if ((type.quals & q_ref) && !(mode & M_RETBOOL))
+        if (isRefLogical(type, mode))
         {
             const annot = typeAnnot(type);
 
