@@ -1941,12 +1941,19 @@ pub fn tryClear_map(type: Type): MapFields
 ////////
 ////////     Scope.
 
+struct ScopeIdx { raw: i32; };
+
 struct SolvedNode
 {
-    TODO: i32;
-};
+    kind:       string;
+    flags:      i32;
+    value:      string;
+    items:      SolvedNode[];
+    token:      Token;
 
-struct ScopeIdx { raw: i32; };
+    type:       Type;
+    target:     ScopeIdx;
+};
 
 struct Specialization
 {
@@ -2073,6 +2080,1738 @@ pub fn Scope_add(
 
     return index;
 }
+
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Solver.
+
+pub struct SolveResult
+{
+    root:       SolvedNode;
+    scope:      Scope;
+};
+
+fn Scope_Typedef(scope: Scope, id: string, type: Type)
+{
+    return Scope_add(scope, 'type', id, type);
+}
+
+
+//
+
+fn runSolver(parse: &Node, globals: &Scope): SolveResult
+{
+    mut _scope:         Scope       = globals;
+
+    mut _here:          Token;
+    mut _current_fn:    SolvedNode;
+    mut _current_strt:  Type;
+    mut _typeParams:    Map(string, Type);
+
+    mut TEST_expectImplicits: bool = false;
+
+
+    //
+
+    fn GET(idx: ScopeIdx): Overload
+    {
+        return Scope_get(_scope, idx);
+    }
+
+
+    //
+
+    fn fail(mut reason: string = '')
+    {
+        if (!reason)
+            reason = 'Unexpected `' + _here.value + '`.';
+
+        let fname = _here.fname;
+        let l0    = _here.line;
+        let c0    = _here.col;
+
+        let addr = '@' + l0 + ':' + c0;
+
+        return Fail.fail(fname + ' ' + addr + ':\n\t' + reason);
+    }
+
+
+    //
+
+    fn Template(node: Node): Template
+    {
+        return Template( :node );
+    }
+
+    fn Binding(id: string, type: Type)
+    {
+        return Scope_add(_scope, 'var', id, type);
+    }
+
+    fn Field(id: string, structType: Type, fieldType: Type)
+    {
+        return Scope_add(
+            _scope,
+            'field', id, fieldType,
+            1, 1, [ 'this' ], [ structType ]);
+    }
+
+    fn TemplateDecl(node: Node)
+    {
+        let id = node.value;
+
+        let min = node.kind == 'fn'
+            ? node.items.length + FN_ARGS_BACK
+            : fail('TODO');
+
+        let max = node.kind == 'fn'
+            ? 0xffffff // implicit args etc, dunno whats happening, allow it all
+            : min;
+
+        let template = Template(node);
+
+        mut arg_n: string[] = null;
+        if (node.kind == 'fn')
+        {
+            arg_n = [];
+
+            let items = node.items;
+            for (mut i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+            {
+                let arg = items[i] || fail();
+                arg.kind == 'let' || fail();
+                let name = arg.value || fail();
+                arg_n[i] = name;
+            }
+        }
+
+        return Scope_add(
+            _scope,
+            'template', id, t_template,
+            min, max, arg_n, null, null,
+            template);
+    }
+
+    fn FnDecl(id: string, node: SolvedNode)
+    {
+        let items: SolvedNodes = node.items;
+        let rnode = items[items.length + FN_RET_BACK];
+        let ret   = rnode && rnode.type || fail();
+
+        let max   = items.length + FN_RET_BACK;
+        let args  = items.slice(0, max);
+
+        let arg_t: Type[]      = [];
+        let arg_n: string[]    = [];
+        let arg_d: SolvedNodes = [];
+
+        mut min = 0;
+        for (mut i = 0; i < max; i++)
+        {
+            let arg = args[i]  || fail();
+            arg.kind == 'let'   || fail();
+            arg_t[i] = arg.type  || fail();
+            arg_n[i] = arg.value || fail();
+
+            //
+            let implicit = !!(arg.flags & F_IMPLICIT);
+
+            // Non-implicit, non-defaulted argument?
+            if (!implicit)
+            {
+                arg_d.length >= i || fail();
+
+                let def = arg.items[LET_INIT] || null;
+                arg_d[i] = def;
+                if (!def)
+                    min++;
+            }
+        }
+
+        let overload = Scope_add(
+            _scope,
+            'fn', id, ret,
+            min, max, arg_n, arg_t, arg_d);
+
+        node.target = overload;
+
+        return overload;
+    }
+
+    fn DefaultCtor(id: string, type: Type, members: SolvedNode[])
+    {
+        let arg_t:   Type[] = [];
+        let arg_n: string[] = [];
+
+        for (mut i = 0; i < members.length; i++)
+        {
+            let member = members[i];
+
+            arg_t[i] = member && member.type  || fail();
+            arg_n[i] = member && member.value || fail();
+        }
+
+        //
+        let max   = members.length;
+        let   min   = 0;
+        let   arg_d: SolvedNode[] = null;
+
+        {
+            let defaults: SolvedNode[] = [];
+            arg_d = defaults;
+            for (mut i = 0; i < members.length; i++)
+            {
+                let member = members[i];
+                let init   = member.items[LET_INIT] || tryDefaultInit(member.type);
+
+                // Disable defaulting if any member is non-defaulted.
+                if (!init)
+                {
+                    arg_d = null;
+                    min   = max;
+                    break;
+                }
+
+                defaults[i] = init;
+            }
+        }
+
+        return Scope_add(
+            _scope,
+            'defctor', id, type,
+            min, max, arg_n, arg_t, arg_d);
+    }
+
+    fn tryDefaultInit(type: Type): SolvedNode
+    {
+        // Reference? No init, else default.
+        if (type.quals & q_ref)
+            return null;
+
+        return createDefaultInit(type);
+    }
+
+    fn createDefaultInit(type: Type): SolvedNode
+    {
+        return {
+            kind:   'definit',
+            flags:  0,
+            value:  '',
+
+            items:  [],
+            token:  (_here || fail()),
+            type,
+            target: 0,
+        };
+    }
+
+    fn solveDefinit(type: Type): SolvedNode
+    {
+        if (!type)
+            return fail(
+                'Cannot solve definit, no inferred type.');
+
+        return tryDefaultInit(type)
+            || fail('Cannot definit: ' + serializeType(type));
+    }
+
+
+    //
+
+    fn Partial(id: string, viaIdx: ScopeIdx, overloadIdx: ScopeIdx)
+    {
+        let via      = GET(viaIdx);
+        let overload = GET(overloadIdx);
+
+        mut kind: 'p-unshift'|'p-wrap' = 'p-unshift';
+        mut min = overload.min - 1;
+        mut max = overload.max - 1;
+        min >= 0 && max >= min || fail();
+
+        let o_args     = overload.args || fail();
+        let o_names    = overload.names;
+        let o_defaults = overload.defaults;
+
+        // Fixed.
+        mut arg_t = o_args     && o_args    .length > 1 ? o_args    .slice(1) : null;
+        mut arg_n = o_names    && o_names   .length > 1 ? o_names   .slice(1) : null;
+        mut arg_d = o_defaults && o_defaults.length > 1 ? o_defaults.slice(1) : null;
+
+        // Everything that's not a local/namespace/static/constant
+        //  needs a value through which to activate.
+        if (via.kind != 'var')
+        {
+            kind = 'p-wrap';
+            min++;
+            max++;
+
+            let via_t = via.args && via.args[0] || fail();
+
+            //
+            if (!arg_t)
+                arg_t = [];
+
+            arg_t.unshift(via_t);
+            if (arg_n)
+                arg_n.unshift('using');
+            if (arg_d)
+                arg_d.unshift(null);
+        }
+
+        return Scope_add(
+            _scope,
+            kind, id, overload.type,
+            min, max, arg_n, arg_t, arg_d,
+            null, [ viaIdx, overloadIdx ]);
+    }
+
+
+    //
+
+    function scope_using(viaIdx: ScopeIdx)
+    {
+        let via = GET(viaIdx);
+        let actual = via.type || fail();
+
+        for (let id of Scope_keys(_scope))
+        {
+            // Skip over operators.
+            if (!/[a-zA-Z_]/.test(id))
+                continue;
+
+            let overloads = Scope_lookup(_scope, id);
+            if (!overloads)
+                continue;
+
+            mut arity0 = false;
+            for (mut i = 0, MUT_n0 = overloads.length; i < MUT_n0; i++)
+            {
+                let overloadIdx = overloads[i];
+                let overload = GET(overloadIdx);
+
+                if (overload.min < 1)
+                {
+                    arity0 = true;
+                    continue;
+                }
+
+                // TODO using + templates, the fuck do we do?
+                if (overload.template)
+                    continue;
+
+                let expect = (overload.args || fail())[0] || fail();
+                if (!isAssignable(expect, actual))
+                    continue;
+
+                if (overload.min < 2 && arity0)
+                    fail('`using` arity-0 conflict: `' + id + '`.');
+
+                // MUT DURING ITER!
+                Partial(id, viaIdx, overloadIdx);
+            }
+        }
+    }
+
+    function arr_move<T>(arr: T[], from: i32, to: i32)
+    {
+        // memcpy, memmove, mempcy.
+        let pivot = arr[from];
+
+        if (from < to)
+            for (mut i = from; i < to; i++)
+                arr[i] = arr[i + 1];
+
+        if (from > to)
+            for (mut i = from; i > to; i--)
+                arr[i] = arr[i - 1];
+
+        arr[to] = pivot;
+    }
+
+    function scope_tryMatch__mutargs(
+        id: string, args: SolvedNodes,
+        retType: Type, flags: i32): ScopeIdx
+    {
+        let overloads = Scope_lookup(_scope, id);
+        if (!overloads)
+            return 0;
+
+        //
+        mut matchIdx: ScopeIdx = 0;
+
+        // Arity 0 - blind head match.
+        // Allows simple shadowing of variables and such, latest wins.
+        if (!args.length)
+        {
+            let headIdx = overloads[0];
+            if (GET(headIdx).min == 0)
+                matchIdx = headIdx;
+        }
+
+        if (!matchIdx)
+        {
+            let arity = args.length;
+
+            // Prep labelled args for remap.
+            mut names: (string)[]|null = null;
+            if (flags & F_NAMED_ARGS)
+            {
+                names = [];
+                mut some = false;
+
+                for (mut i = 0; i < arity; i++)
+                {
+                    let arg = args[i];
+                    names[i] =
+                        arg && arg.kind == 'label'
+                            ? (some = true, arg.value) || fail()
+                            : null;
+                }
+
+                some || fail();
+            }
+
+            //
+            NEXT: for (mut i = 0; i < overloads.length; i++)
+            {
+                mut overloadIdx = overloads[i];
+                mut overload = GET(overloadIdx);
+
+                TEST_AGAIN: for (;;)
+                {
+                    if (overload.min > arity || overload.max < arity)
+                        continue NEXT;
+
+                    // Match by return.
+                    if (retType && !isAssignable(retType, overload.type || fail()))
+                        continue NEXT;
+
+                    // Remap named arguments.
+                    if (names)
+                    {
+                        let overloadNames = overload.names;
+                        if (!overloadNames)
+                            continue NEXT;
+
+                        // Move named arguments around.
+                        for (mut i = 0; i < names.length; i++)
+                        {
+                            let id = names[i];
+                            if (!id)
+                                continue;
+
+                            let idx = overloadNames.indexOf(id);
+                            if (idx < 0)
+                                continue NEXT;
+
+                            arr_move(args, i, idx);
+                            arr_move(names, i, idx);
+                        }
+                    }
+
+                    // Specialize.
+                    if (overload.template)
+                    {
+                        let specIdx = trySpecialize(overload.template, args);
+                        if (!specIdx)
+                            continue NEXT;
+
+                        overloadIdx = specIdx;
+                        overload = GET(specIdx);
+
+                        // Repeat arity checks and such.
+                        continue TEST_AGAIN;
+                    }
+
+                    // Done here.
+                    break TEST_AGAIN;
+                }
+
+                // Type check args.
+                let arg_t = overload.args || fail();
+                let arg_d = overload.defaults;
+                for (mut i = 0; i < args.length; i++)
+                {
+                    let arg = args[i];
+                    if (!arg)
+                    {
+                        arg_d && arg_d[i] || fail();
+                        continue;
+                    }
+
+                    if (!isAssignable(arg_t[i], (args[i] || fail()).type))
+                        continue NEXT;
+                }
+
+                // Forbid ambiguity.
+                if (matchIdx)
+                    fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
+
+                // Done!
+                matchIdx = overloadIdx;
+            }
+        }
+
+        if (matchIdx)
+        {
+            let matched = GET(matchIdx);
+
+            // Mutate call args last thing.
+            let arg_d = matched && matched.defaults;
+            if (arg_d)
+                for (mut i = 0; i < arg_d.length; i++)
+                    args[i] = args[i] || arg_d && arg_d[i] || fail();
+
+            // Implicit argument injection.
+            let arg_t = matched.args;
+
+            if (arg_t && args.length < arg_t.length)
+            {
+                let arg_n = matched.names || fail();
+                for (mut i = args.length; i < arg_t.length; i++)
+                {
+                    let id   = arg_n[i];
+                    let type = arg_t[i];
+
+                    // Propagate implicit.
+                    bindImplicitArg(args, i, id, type);
+                }
+            }
+        }
+
+        return matchIdx;
+    }
+
+    fn repeat<T>(value: T, len: i32): T[]
+    {
+        let result = [];
+        for (mut i = 0; i < len; i++)
+            result[i] = value;
+
+        return result;
+    }
+
+    function scope_match__mutargs(id: string, args: SolvedNodes, flags: i32): ScopeIdx
+    {
+        return scope_tryMatch__mutargs(id, args, null, flags)
+            || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
+            || fail('`' + id + '` is not defined.');
+    }
+
+    fn solveNode(node: Node, type: Type = null): SolvedNode
+    {
+        let k = node.kind;
+
+        if (k == 'root')       return solveRoot(node);
+        if (k == 'block')      return solveBlock(node);
+        if (k == 'label')      return solveComma(node);
+        if (k == 'comma')      return solveComma(node);
+
+        if (k == 'let')        return solveLet(node);
+        if (k == 'call')       return solveCall(node);
+        if (k == 'arrlit')     return solveArrayLiteral(node, type);
+        if (k == 'if')         return solveIf(node);
+        if (k == 'or')         return solveOr(node);
+        if (k == 'and')        return solveAnd(node);
+        if (k == 'loop')       return solveBlock(node);
+
+        if (k == 'return')     return solveReturn(node);
+        if (k == 'break')      return solveJump(node);
+        if (k == 'continue')   return solveJump(node);
+
+        if (k == 'int')        return solveInt(node);
+        if (k == 'str')        return solveStr(node);
+        if (k == 'empty')      return solveEmpty(node);
+
+        if (k == 'definit')    return solveDefinit(type);
+
+        return fail('TODO: ' + k);
+    }
+
+    fn isUnordered(kind: string)
+    {
+        return kind == 'fn'
+            || kind == 'struct';
+    }
+
+    fn unorderedPrep(node: Node): SolvedNode
+    {
+        let k = node.kind;
+
+        if (k == 'fn')         return uPrepFn(node);
+        if (k == 'struct')     return uPrepStruct(node);
+
+        return fail('TODO: ' + k);
+    }
+
+    fn unorderedSolve(node: Node, prep: SolvedNode)
+    {
+        let k = node.kind;
+
+        if (k == 'fn')         return uSolveFn(node, prep);
+        if (k == 'struct')     return uSolveStruct(node, prep);
+
+        return fail('TODO: ' + k);
+    }
+
+
+    //
+
+    fn solveRoot(node: Node): SolvedNode
+    {
+        TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
+
+        return SolvedNode(node, solveNodes(node.items), t_void);
+    }
+
+    fn solveBlock(node: Node): SolvedNode
+    {
+        let scope0 = Scope_push(_scope);
+        let out = SolvedNode(node, solveNodes(node.items), t_void);
+        Scope_pop(_scope, scope0);
+        return out;
+    }
+
+    fn solveComma(node: Node): SolvedNode
+    {
+        let items = solveNodes(node.items);
+        let last = items[items.length - 1] || fail();
+
+        return SolvedNode(node, items, last.type || fail());
+    }
+
+
+    //
+
+    let i32_min = 0xffffffff|0;
+    let i32_max = 0x7fffffff|0;
+
+    fn solveInt(node: Node): SolvedNode
+    {
+        let v = Number(node.value);
+        if (v >= i32_min && v <= i32_max)
+        {
+            mut type = t_i32;
+            // if (v != 0)
+            //     type = qadd(type, q_non_zero);
+
+            return SolvedNode(node, null, type);
+        }
+
+        return fail(
+            'Out of range for an i32 literal.');
+    }
+
+    fn solveStr(node: Node): SolvedNode
+    {
+        let v = node.value;
+        typeof v == 'string' || fail();
+
+        return SolvedNode(node, null, t_string);
+    }
+
+    fn solveEmpty(node: Node): SolvedNode
+    {
+        return SolvedNode(node, null, t_void);
+    }
+
+
+    //
+
+    fn uPrepFn(node: Node): SolvedNode
+    {
+        return __solveFn(false, false, node, null, -1);
+    }
+
+    fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
+    {
+        return __solveFn(true, false, node, prep, -1) || fail();
+    }
+
+    function __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
+    {
+        let id = n_fn.value || fail('TODO anonymous fns');
+
+        // Template early exit.
+        if (spec)
+        {
+            solve || fail();
+        }
+        else if (n_fn.flags & F_TEMPLATE)
+        {
+            if (solve)
+                return prep || fail();
+
+            let tDecl = TemplateDecl(n_fn);
+            let out   = SolvedNode(n_fn, null, t_void);
+            out.target  = tDecl;
+            return out;
+        }
+
+        // Prep reject.
+        if (!solve && !(n_fn.flags & F_FULLY_TYPED))
+            return null;
+
+        let inItems   = n_fn.items;
+        inItems.length >= FN_RET_BACK || fail();
+
+        let out       = prep || SolvedNode(n_fn, null, t_void);
+
+        let outItems: SolvedNodes = repeat(null, inItems.length);
+        out.items       = outItems;
+
+        //
+        if (_current_fn && id != 'free')
+        {
+            _current_fn.flags |= F_HAS_CLOSURE;
+            out.flags |= F_CLOSURE;
+        }
+
+        //////////////////////////
+        {
+            let current_fn0   = _current_fn;
+            let scope0        = Scope_push(_scope);
+
+            _current_fn         = out;
+
+            // Arg decls.
+            for (mut i = 0; i < inItems.length + FN_ARGS_BACK; i++)
+            {
+                let n_arg = inItems[i] || fail();
+                n_arg.kind == 'let' || fail();
+                outItems[i] = solveLet(n_arg);
+            }
+
+            /////////////////////////////////////////////////////
+            mut n_ret   = inItems[inItems.length + FN_RET_BACK];
+            mut n_body  = inItems[inItems.length + FN_BODY_BACK] || fail();
+
+            // Pattern descent.
+            if (caseIdx >= 0)
+            {
+                n_body.kind == 'pattern' || fail();
+                let branch = n_body.items[caseIdx] || fail();
+                let items = branch.items;
+
+                n_ret   = items[items.length + FN_RET_BACK]  || n_ret || null;
+                n_body  = items[items.length + FN_BODY_BACK] || fail();
+            }
+
+            // Return type annot.
+            {
+                let s_ret = n_ret && evalTypeAnnot(n_ret) || null;
+
+                // MUT DURING SOLVE,
+                //  implicit args splice in
+                outItems[outItems.length + FN_RET_BACK] = s_ret;
+            }
+
+            // Only if actually solving the fn, the fn body.
+            if (solve)
+            {
+                let s_body = solveNode(n_body) || fail();
+
+                // MUT DURING SOLVE,
+                //  implicit args splice in
+                outItems[outItems.length + FN_BODY_BACK] = s_body;
+            }
+
+            //
+            /////////////////////////////////////////////////////
+
+            _current_fn         = current_fn0;
+            Scope_pop(_scope, scope0);
+        }
+        //////////////////////////
+
+        if (!prep)
+            FnDecl(id, out);
+
+        !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
+
+        return out;
+    }
+
+
+    //
+
+    function TODO_memoize_mangler(args: SolvedNodes): string
+    {
+        mut mangle = '';
+        for (mut i = 0; i < args.length; i++)
+            mangle += '\v' + serializeType((args[i] || fail()).type);
+
+        return mangle;
+    }
+
+
+    //
+
+    fn trySpecialize(
+        template: Template, args: SolvedNodes)
+            : ScopeIdx
+    {
+        let mangle = TODO_memoize_mangler(args);
+
+        //
+        mut spec = template.specializations[mangle];
+        if (!spec)
+        {
+            let node = doTrySpecialize(template, args) || null;
+
+            spec = template.specializations[mangle] =
+            {
+                node:   node,
+                index:  node ? node.target || fail() : 0,
+            };
+        }
+
+        return spec.index;
+    }
+
+    fn doTrySpecialize(
+        template: Template, args: SolvedNodes)
+            : SolvedNode
+    {
+        let typeParams: TypeParams = {};
+
+        let node = template.node;
+
+        let result = node.kind == 'fn'
+            ? trySpecializeFn(node, args, typeParams)
+            : fail('TODO');
+
+        return result;
+    }
+
+
+    //
+
+    fn trySpecializeFn(
+        node: Node, args: SolvedNodes, typeParams: TypeParams)
+            : SolvedNode
+    {
+        let items = node.items;
+
+        // First off, solve type params.
+        for (mut i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+        {
+            let argNode = items[i] || fail();
+            argNode.kind == 'let'   || fail();
+
+            let argValue = args && args[i];
+            let inType = argValue && argValue.type;
+
+            if (inType)
+            {
+                let argName = argNode.value || fail();
+                if (!typeParams[argName])
+                    typeParams[argName] = inType;
+            }
+
+            if (argNode.flags & F_TEMPLATE)
+            {
+                let annot = argNode.items[LET_TYPE];
+                if (annot)
+                {
+                    let ok = inType && trySolveTypeParams(
+                        annot, inType, typeParams);
+
+                    if (!ok)
+                        return null;
+                }
+            }
+        }
+
+        // Match pattern arm here.
+        mut caseIdx = -1;
+
+        let pattern = items[items.length + FN_BODY_BACK] || fail();
+        if (pattern.kind == 'pattern')
+        {
+            let branches = pattern.items;
+            for (mut i = 0; i < branches.length; i++)
+            {
+                let branch = branches[i];
+                let items = (branch || fail()).items;
+                let cond = items[0] || fail();
+
+                if (evalTypePattern(cond, typeParams))
+                {
+                    caseIdx = i;
+                    break;
+                }
+            }
+
+            // All branches mismatch?
+            if (caseIdx < 0)
+                return null;
+        }
+
+        ////////////////////////////////
+        _typeParams = typeParams;
+        let typeParams0 = _typeParams;
+        let scope0 = Scope_push(_scope);
+        ////////////////////////////////
+
+        let specialized = __solveFn(true, true, node, null, caseIdx) || fail();
+
+        ////////////////////////////////
+        _typeParams = typeParams0;
+        Scope_pop(_scope, scope0);
+        ////////////////////////////////
+
+        return specialized;
+    }
+
+
+    //
+
+    fn uPrepStruct(node: Node): SolvedNode
+    {
+        return __solveStruct(false, node, null);
+    }
+
+    fn uSolveStruct(node: Node, prep: SolvedNode): SolvedNode
+    {
+        return __solveStruct(true, node, prep);
+    }
+
+    function __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
+    {
+        let out     = prep || SolvedNode(node, null, t_void);
+
+        let fields: StructField[];
+
+        let id      = node.value || fail('TODO anonymous structs');
+        let type    = registerStruct(id, fields, node.flags);
+
+        // Add the arity-0 type entry.
+        if (!prep)
+            out.target = Scope_Typedef(_scope, id, type);
+
+        if (!solve)
+            return out;
+
+        //////////////////////////
+        {
+            let current_strt0   = _current_strt;
+            _current_strt       = type;
+
+            out.items.resize(node.items.length);
+            solveNodes(node.items, out.items);
+
+            _current_strt       = current_strt0;
+        }
+        //////////////////////////
+
+        // Add a default constructor.
+        {
+            let members: SolvedNode[];
+            let items = out.items;
+
+            for (mut i = 0; i < items.length; i++)
+            {
+                let item = items[i];
+                if (item && item.kind == 'let' && (item.flags & F_FIELD))
+                {
+                    members.push(item);
+                    fields.push({
+                        id:   item.value || fail(),
+                        type: item.type  || fail(),
+                    });
+                }
+            }
+
+            DefaultCtor(id, type, members);
+        }
+
+        return out;
+    }
+
+
+    //
+
+    fn solveReturn(node: Node): SolvedNode
+    {
+        let out = SolvedNode(node, solveNodes(node.items), t_void);
+
+        // Either use the return expression,
+        //  or the void-returning return statement itself,
+        //   so we always have a node to rely on.
+
+        let nextExpr  = out.items[0] || out;
+        let nextType  = nextExpr.type || fail();
+
+        let fn        = _current_fn || fail();
+        let items     = fn.items;
+        let retIdx    = items.length + FN_RET_BACK;
+        let prevExpr  = items[retIdx];
+        let prevType  = prevExpr ? prevExpr.type || fail() : null;
+
+        if (prevType)
+            isAssignable(prevType, nextType)
+                || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
+        else
+            items[retIdx] = nextExpr || fail();
+
+        return out;
+    }
+
+    fn solveJump(node: Node): SolvedNode
+    {
+        return SolvedNode(node, null, t_void);
+    }
+
+
+    //
+
+    fn solveLet(node: Node): SolvedNode
+    {
+        let annot     = node.items[LET_TYPE];
+        let init      = node.items[LET_INIT];
+
+        let s_annot   = annot && evalTypeAnnot(annot);
+        let t_annot   = s_annot && s_annot.type;
+
+        let   s_init    = init && solveNode(init, t_annot);
+        let t_init    = s_init && s_init.type;
+
+        let t_let     = t_annot || clear_refs(t_init || fail(
+            'Variable declarations without explicit type annotations must be initialized.'));
+
+        if (t_annot && t_init)
+            isAssignable(t_annot, t_init) || fail(
+                'Type annotation does not match init expression.');
+
+        s_init = s_init && maybeCopyOrMove(
+            maybePRValue(s_init), t_let);
+
+        //
+        let out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
+        let id        = node.value || fail();
+
+        if (node.flags & F_MUT)
+            _current_fn || fail(
+                'Mutable statics are not currently allowed.');
+
+        //
+        let overload  = out.flags & F_FIELD
+            ? Field  (id, _current_strt || fail(), t_let)
+            : Binding(id, node.flags & F_MUT
+                ? add_mutref(t_let)
+                : add_ref(t_let));
+
+        if (out.flags & F_USING)
+            scope_using(overload);
+
+        return out;
+    }
+
+
+    //
+
+    fn evalTypeAnnot(node: Node): SolvedNode
+    {
+        if (node.kind == 'call')
+        {
+            let items = node.items;
+            if (items.length)
+            {
+                if (items.length == 1)
+                {
+                    let T = evalTypeAnnot(items[0] || fail()) || fail();
+                    let t = T.type || fail();
+
+                    if (node.value == '&')
+                        return SolvedNode(node, null, add_ref(t));
+
+                    if (node.value == '&mut')
+                        return SolvedNode(node, null, add_mutref(t));
+
+                    if (node.value == '[]')
+                        return SolvedNode(node, null, createArray(t));
+                }
+                else if (items.length == 2)
+                {
+                    let a = evalTypeAnnot(items[0] || fail()).type || fail();
+                    let b = evalTypeAnnot(items[1] || fail()).type || fail();
+
+                    if (node.value == 'Map')
+                        return SolvedNode(node, null, createMap(a, b));
+                }
+            }
+            else
+            {
+                let id        = node.value || fail();
+                let overloads = Scope_lookup(_scope, id);
+
+                if (overloads)
+                    for (mut i = 0; i < overloads.length; i++)
+                    {
+                        let maybe = GET(overloads[i]);
+                        if (maybe.kind == 'type')
+                            return SolvedNode(node, null, maybe.type || fail());
+                    }
+
+                fail('No type `' + id + '` in scope.');
+            }
+        }
+        else if (node.kind == 'typeparam')
+        {
+            let id = node.value || fail();
+            _typeParams || fail(
+                'Unexpected type param: `$' + id + '`.');
+
+            let type = _typeParams && _typeParams[id] || fail(
+                'No type param `$' + id + '` in scope.');
+
+            return SolvedNode(node, null, type);
+        }
+
+        return fail('TODO');
+    }
+
+    fn trySolveTypeParams(
+        node: Node, type: Type, typeParams: TypeParams): bool
+    {
+        if (node.kind == 'call')
+        {
+            let items = node.items;
+            if (items.length)
+            {
+                if (items.length == 1)
+                {
+                    let t = node.value == '&'    ? tryClear_ref(type)
+                            : node.value == '&mut' ? tryClear_mutref(type)
+                            : node.value == '[]'   ? tryClear_array(type)
+                            : fail('TODO');
+
+                    if (!t)
+                        return false;
+
+                    return trySolveTypeParams(
+                        items[0] || fail(), t, typeParams);
+                }
+                else if (items.length == 2)
+                {
+                    if (node.value == 'Map')
+                    {
+                        let kv = tryClear_map(type);
+                        if (!kv)
+                            return false;
+
+                        return trySolveTypeParams(items[0] || fail(), kv[0], typeParams)
+                            && trySolveTypeParams(items[1] || fail(), kv[1], typeParams);
+                    }
+                }
+            }
+            else
+            {
+                let id        = node.value || fail();
+                let overloads = Scope_lookup(_scope, id);
+
+                if (overloads)
+                    for (mut i = 0; i < overloads.length; i++)
+                    {
+                        let maybe = GET(overloads[i]);
+                        if (maybe.kind == 'type')
+                            return isAssignable(maybe.type || fail(), type);
+                    }
+
+                fail('No type `' + id + '` in scope.');
+            }
+        }
+        else if (node.kind == 'typeparam')
+        {
+            let id = node.value || fail();
+            let prev = typeParams[id];
+            if (prev)
+            {
+                let inter = type_tryInter(prev, type);
+                if (!inter)
+                    return false;
+
+                type = inter;
+            }
+
+            // TODO not here:
+            //  we want to clear everything non-canonical from
+            //   type params AFTER we solve & match the args,
+            //    during the matching it shouldn't be necessary.
+            //
+            // After the match we need this to e.g. lift `non_zero`
+            //  from integral results, etc.
+            //
+            typeParams[id] = clear_refs(type);
+
+            return true;
+        }
+
+        return fail('TODO');
+    }
+
+    fn evalTypePattern(node: Node, typeParams: TypeParams): bool
+    {
+        let items = node.items;
+        if (node.kind == 'call' && items.length == 2)
+        {
+            let left  = items[0] || fail();
+            let right = items[1] || fail();
+
+            if (node.value == '->')
+            {
+                if (left.kind  == 'typeparam' &&
+                    right.kind == 'typetag')
+                {
+                    let tag   = right.value || fail();
+                    let type  = left.value && typeParams[left.value] || fail(
+                        'No type param `$' + left.value + '` in scope.');
+
+                    return type_has(type, tag);
+                }
+                else
+                {
+                    ////////////////////////////////
+                    let typeParams0 = _typeParams;
+                    _typeParams       = typeParams;
+                    ////////////////////////////////
+
+                    //               is                //
+                    // (actual) left -> right (expect) //
+                    let expect = evalTypeAnnot(right).type;
+                    let actual = evalTypeAnnot(left ).type;
+
+                    ////////////////////////////////
+                    _typeParams = typeParams0;
+                    ////////////////////////////////
+
+                    return isAssignable(expect, actual);
+                }
+            }
+            else if (node.value == '&&')
+            {
+                return evalTypePattern(left,  typeParams)
+                    && evalTypePattern(right, typeParams);
+            }
+            else if (node.value == '||')
+            {
+                return evalTypePattern(left,  typeParams)
+                    && evalTypePattern(right, typeParams);
+            }
+        }
+
+        return fail('TODO');
+    }
+
+
+    //
+
+    fn createRead(id: string): Node
+    {
+        return {
+            kind:   'call',
+            flags:  F_ID,
+            value:  id,
+            items:  [],
+            token:  (_here || fail()),
+        };
+    }
+
+    fn solveCall(node: Node): SolvedNode
+    {
+        let id        = node.value || fail();
+        mut args        = solveNodes(node.items) || [];
+
+        // Implicit temporaries, all args are referable.
+        for (mut i = 0; i < args.length; i++)
+            args[i] = maybePRValue(args[i] || fail());
+
+        //
+        mut callTargIdx = scope_match__mutargs(id, args, node.flags);
+        mut callTarg    = GET(callTargIdx);
+
+        // `using` codegen.
+        while (callTarg.partial)
+        {
+            let unshift   = callTarg.kind == 'p-unshift';
+
+            let partial   = callTarg.partial  || fail();
+            let viaIdx    = partial[0]        || fail();
+            callTargIdx     = partial[1]        || fail();
+
+            let via       = GET(viaIdx);
+            callTarg        = GET(callTargIdx);
+
+            // There's two things we can do here -
+            //  -   either we're injecting an implicitly used local,
+            //          e.g. the this pointer, or another `using` variable,
+            //  -   or we're wrapping the head argument
+            //          with another derefence or method call or whatever.
+
+            // And that's all there is to `using`.
+            let argNode   = CallerNode(
+                createRead('__partial' as any),
+                unshift ? [] : [ args[0] || fail() ],
+                via.type || fail(),
+                viaIdx);
+
+            //
+            if (!args)
+                args = [];
+
+            if (unshift)
+                args.unshift(argNode);
+            else
+                args[0] = argNode;
+        }
+
+        //
+        return CallerNode(
+            node,
+            args,
+            callTarg.type || fail(),
+            callTargIdx);
+    }
+
+    fn maybePRValue(node: SolvedNode)
+    {
+        if (!(node.type.quals & q_ref))
+            node.type = add_prvalue_ref(node.type);
+
+        return node;
+    }
+
+
+    // I feel this should be a fncall instead of this here.
+    //  It's varargs - so is it a template or what?
+
+    fn solveArrayLiteral(node: Node, type: Type)
+    {
+        let items = solveNodes(node.items) || fail();
+
+        mut itemType = type && tryClear_array(type) || null;
+        mut startAt = 0;
+        if (!itemType && items.length)
+        {
+            let head = items[startAt++] || fail();
+            itemType = clear_refs(head.type);
+        }
+
+        if (!itemType)
+            return fail('Cannot infer empty arraylit.');
+
+        for (mut i = startAt; i < items.length; i++)
+            itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
+                '[array literal] No common supertype:', items);
+
+        return SolvedNode(node, items,
+            createArray(itemType) || fail());
+    }
+
+
+    // This is a weird one,
+    //  in case this is the current fn we're solving,
+    //   we wont have overload yet, but we do have the node,
+    //    otherwise we have the overload and get the node from there.
+
+    fn createLet(id: string, type: Type, flags: i32 = 0): SolvedNode
+    {
+        return {
+            kind:   'let',
+            flags:  flags|0,
+            value:  id,
+
+            items:  [],
+            token:  (_here || fail()),
+            type:   type,
+            target: 0,
+        };
+    }
+
+    function injectImplicitArg__mutfn(
+        node: SolvedNode,
+        id: string, type: Type): ScopeIdx
+    {
+        let mut_argNodes = node.items;
+        let newArgIdx = mut_argNodes.length + FN_RET_BACK;
+
+        // The new argnode.
+        let newArgNode = createLet(id, type, F_IMPLICIT);
+
+        mut_argNodes.splice(newArgIdx, 0, newArgNode);
+
+        // If we dont have the overload yet,
+        //  there's nothing else to do here.
+
+        // TODO argname check should come first -
+        //  the one below is too late,
+        //   wont catch an argname dupe here.
+        if (node.target)
+        {
+            let fn = GET(node.target);
+
+            // We'll be mutating the overload.
+            fn.kind == 'fn' || fail();
+            let mut_args = fn.args || [];
+            let mut_names = fn.names || [];
+
+            mut_names.length == mut_args.length || fail();
+            mut_names.indexOf(id) < 0 || fail(
+                'Implicit argument name collision.');
+
+            mut_args .push(type);
+            mut_names.push(id);
+
+            fn.args  = mut_args;
+            fn.names = mut_names;
+        }
+
+        // TODO put in the original scope!
+        let scope0   =    Scope_push(_scope);
+        let overload =    Binding(id, type);
+                            Scope_pop(_scope, scope0);
+        return overload;
+    }
+
+    fn bindImplicitArg(
+        args: SolvedNodes, argIdx: i32,
+        id: string, type: Type)
+    {
+        TEST_expectImplicits || fail(
+            'Attempting to propagate implicit arguments.');
+
+        args.length >= argIdx || fail();
+
+        args[argIdx] = CallerNode(
+            createRead(id), [], type,
+            getImplicit(id, type));
+    }
+
+    fn getImplicit(id: string, type: Type): ScopeIdx
+    {
+        mut matched = scope_tryMatch__mutargs(id, [], type, 0);
+        if (!matched)
+        {
+            if (!_current_fn)
+                return fail('No implicit `' + id + '` in scope.');
+
+            matched = injectImplicitArg__mutfn(
+                _current_fn, id, type) || fail();
+        }
+
+        return matched;
+    }
+
+
+    //
+
+    fn solveIf(node: Node): SolvedNode
+    {
+        let items   = solveNodes(node.items);
+        const [, cons, alt] = items;
+
+        let priExpr = cons || alt || fail();
+        let secExpr = cons && alt ? alt : cons;
+
+        let priType = priExpr.type || fail();
+        let secType = secExpr && (secExpr.type || fail());
+
+        let outType: Type = !secType ? priType
+            : type_tryInter(priType, secType) || fail(
+                'No common supertype:', [ priExpr, secExpr ]);
+
+        return SolvedNode(node, items, outType || fail());
+    }
+
+    function sumType_logic(items: SolvedNodes): Type
+    {
+        // All args refs?
+        if (items.length)
+        {
+            mut sumType: Type = (items[0] || fail()).type;
+            for (mut i = 1; i < items.length; i++)
+            {
+                let type = (items[i] || fail()).type;
+                if (type == t_never)
+                {
+                    i == items.length - 1 || fail(
+                        'Dead code following never [A].');
+
+                    continue;
+                }
+
+                sumType = type_tryInter(sumType, type);
+                if (!sumType)
+                {
+                    sumType = null;
+                    break;
+                }
+            }
+
+            sumType != t_never || fail(
+                'Dead code following never [B].');
+
+            if (sumType && (sumType.quals & q_ref))
+                return sumType;
+        }
+
+        return t_bool;
+    }
+
+    fn solveAnd(node: Node): SolvedNode
+    {
+        let items = solveNodes(node.items);
+
+        return SolvedNode(
+            node, items,
+            sumType_logic(items));
+    }
+
+    fn solveOr(node: Node): SolvedNode
+    {
+        let items = solveNodes(node.items);
+
+        mut t_or = sumType_logic(items);
+        if (t_or == t_bool)
+        {
+            mut change = false;
+
+            // Look for the `(a && b) || c` pattern -
+            //  With correct codegen, only `b` and `c` need to intersect,
+            //   `a` is simply another condition for using `b`.
+            let alts = items.slice();
+            for (mut i = 0; i < alts.length - 1; i++)
+            {
+                let alt = alts[i] || fail();
+                if (alt.kind == 'and')
+                {
+                    alts[i] = alt.items[alt.items.length - 1];
+                    change = true;
+                }
+            }
+
+            if (change)
+                t_or = sumType_logic(alts);
+        }
+
+        return SolvedNode(
+            node, items, t_or);
+    }
+
+
+    //
+
+    fn SolvedNode(
+        node: Node, items: SolvedNodes, type: Type)
+            : SolvedNode
+    {
+        return {
+            kind:  node.kind ,
+            flags: node.flags,
+            value: node.value,
+
+            items: items || [],
+            token: node.token,
+            type,
+            target: 0,
+        };
+    }
+
+    fn wrap(kind: string, node: SolvedNode, flags: i32): SolvedNode
+    {
+        return {
+            kind,
+            flags:  flags,
+            value:  '',
+
+            items:  [ node ],
+            token:  node.token,
+            type:   node.type,
+            target: 0,
+        };
+    }
+
+    fn CallerNode(
+        node: Node, items: SolvedNodes, type: Type, target: ScopeIdx)
+            : SolvedNode
+    {
+        let overload = GET(target);
+
+        // HACK -
+        // TBD how we make this stuff work in real life.
+        if (overload.kind == 'field')
+        {
+            let head = items.length == 1 && items[0] || fail();
+            let headType = head.type || fail();
+
+            type = add_refs_from(headType, type);
+        }
+
+        // Tag copies and moves.
+        else if (items.length)
+        {
+            let args = overload.args || fail();
+            for (mut i = 0; i < items.length; i++)
+                items[i] = maybeCopyOrMove(
+                    items[i] || fail(), args[i]);
+        }
+
+        //
+        let out = SolvedNode(node, items, type);
+        out.target = target;
+        return out;
+    }
+
+    fn maybeCopyOrMove(
+        node: SolvedNode, slot: Type): SolvedNode
+    {
+        let q = slot.quals;
+        if (q & q_ref)
+            return node;
+
+        mut op: 'move'|'copy' = 'copy';
+
+        if (!(q & q_copy))
+        {
+            if (!(q & q_move))
+                fail('Non-copy/non-move?');
+
+            op = 'move';
+        }
+
+        return wrap(op, node,
+            node.type.quals & q_prvalue
+                ? F_ELISION
+                : 0);
+    }
+
+
+    //
+
+    fn solveNodes(nodes: Node[], result: SolvedNodes = []): SolvedNodes
+    {
+        let here0 = _here;
+
+        mut offset = 0;
+
+        for (mut i = 0; i < nodes.length; i++)
+        {
+            let node = nodes[i];
+            if (!node)
+            {
+                result[i] = node;
+                continue;
+            }
+
+            // Regular solve.
+            if (!isUnordered(node.kind))
+            {
+                _here       = node.token || _here;
+                result[i]   = solveNode(node);
+                continue;
+            }
+
+            // Unordered solve -
+            //  batches multiple potentially recursive declarations,
+            //   so we can expose them all in scope prior to solving types.
+
+            // This allows us to have groups of mutually recursive types & functions,
+            //  without risking stuff depending on constants & variables
+            //   introduced halfway through.
+            let i0 = i;
+            let   i1 = nodes.length;
+
+            // First pass, expose stuff in scope
+            //  without doing type checking when possible.
+            for (mut i = i0; i < nodes.length; i++)
+            {
+                let node = nodes[i];
+                if (!node)
+                {
+                    result[i] = node;
+                    continue;
+                }
+
+                if (!isUnordered(node.kind))
+                {
+                    i1 = i;
+                    break;
+                }
+
+                _here       = node.token || _here;
+                result[i]   = unorderedPrep(node);
+            }
+
+            // Second pass, do the remaining work.
+            for (mut i = i0; i < i1; i++)
+            {
+                let node = nodes[i];
+                if (node)
+                {
+                    _here       = node.token || _here;
+                    result[i]   = unorderedSolve(node, result[i]);
+                }
+            }
+
+            // Continue from group end.
+            i1 > i0 || fail();
+            i = i1 - 1; // <- loop++
+        }
+
+        result.length == nodes.length + offset || fail();
+
+        _here = here0;
+        return result;
+    }
+
+
+    // So lets go.
+
+    return {
+        root: solveNode(parse),
+        scope: _scope || fail(),
+    };
+}
+
+
+// Solve & cache the prelude.
+
+fn listGlobals(): Scope
+{
+    let scope = Scope(null);
+
+    Scope_Typedef(scope, 'i32',    t_i32   );
+    Scope_Typedef(scope, 'bool',   t_bool  );
+    Scope_Typedef(scope, 'void',   t_void  );
+    Scope_Typedef(scope, 'string', t_string);
+    Scope_Typedef(scope, 'never',  t_never );
+
+    return scope;
+}
+
+let PRELUDE: Scope = runSolver(
+    parse(lex(prelude_src as Source, '__prelude' as Filename)),
+        listGlobals())
+            .scope;
+
+pub fn solve(parse: Node)
+{
+    return runSolver(
+        parse, Scope(PRELUDE));
+}
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const FILES = [ 'scope', 'types', 'solve', 'cpp_codegen' ];
+const FILES = [ 'solve', 'cpp_codegen' ];
 
 function warn(src)
 {

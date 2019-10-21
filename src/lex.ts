@@ -100,6 +100,8 @@ export function lex(src: Source, fname: Filename): LexResult
         if (typeof reason === 'number')
             reason = src[reason];
 
+        fail('Lex error: ' + reason + ' @' + fname + ':' + line + ':' + col);
+
         out.errors.push({
             reason, kind,
             value: src.slice(idx0, idx),
@@ -253,7 +255,9 @@ export function lex(src: Source, fname: Filename): LexResult
             }
 
             let trail = src[idx - 1];
-            if (trail < '0' || trail > '9')
+            if (!(trail >= '0' && trail <= '9') &&
+                !(hex && (trail >= 'a' && trail <= 'f'
+                       || trail >= 'A' && trail <= 'F')))
             {
                 err('num', idx0, idx - 1);
             }

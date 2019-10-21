@@ -1150,6 +1150,23 @@ fn ZERO() P_COMMA - 7;
 
 `);
 
+ZERO(`
+
+    // This converted to a ref-returning
+    // logical chain for some reason.
+    let hex = true;
+    let trail = 'x';
+    if (!(trail >= '0' && trail <= '9') &&
+        !(hex && (trail >= 'a' && trail <= 'f'
+               || trail >= 'A' && trail <= 'F')))
+    {
+        return 0;
+    }
+
+    return 1;
+
+`);
+
 
 // Let's get going.
 
