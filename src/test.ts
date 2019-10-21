@@ -1169,6 +1169,43 @@ ZERO(`
 `);
 
 
+// Lint checks.
+
+ZERO(`
+    {
+        {
+            return 0;
+        }
+    }
+`);
+
+FAIL(`
+    {
+    {
+        return 0; //ERR block
+    }
+    }
+`);
+
+ZERO(`
+    {
+        return 0;
+    }
+`);
+
+FAIL(`
+    {
+        return 0; //ERR block
+   }
+`);
+
+FAIL(`
+    {
+        return 0; //ERR block
+     }
+`);
+
+
 // Let's get going.
 
 FILE;
