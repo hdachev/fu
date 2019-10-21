@@ -1123,7 +1123,46 @@ ZERO(`
 `);
 
 
-// Stuff that isn't working out quite right.
+// Lint checks.
+
+ZERO(`
+    {
+        {
+            return 0;
+        }
+    }
+`);
+
+FAIL(`
+    {
+    {
+        return 0; //ERR block
+    }
+    }
+`);
+
+ZERO(`
+    {
+        return 0;
+    }
+`);
+
+FAIL(`
+    {
+        return 0; //ERR block
+   }
+`);
+
+FAIL(`
+    {
+        return 0; //ERR block
+     }
+`);
+
+
+// Stuff that isn't working out quite right -
+//  Keep those around, there's no principle to these tests,
+//   they just stressed our stuff in weird ways.
 
 ZERO(`
 
@@ -1168,41 +1207,35 @@ ZERO(`
 
 `);
 
-
-// Lint checks.
-
 ZERO(`
-    {
-        {
-            return 0;
-        }
-    }
-`);
+    struct Type     { i: i32; };
+    struct Token    { i: i32; };
+    struct ScopeIdx { i: i32; };
 
-FAIL(`
+    struct SolvedNode
     {
-    {
-        return 0; //ERR block
-    }
-    }
-`);
+        kind:       string;
+        flags:      i32;
+        value:      string;
+        items:      SolvedNode[];
+        token:      Token;
 
-ZERO(`
+        type:       Type;
+        target:     ScopeIdx;
+    };
+
+    let _here: Token;
+
+    fn createDefaultInit(type: Type): SolvedNode
     {
-        return 0;
+        // Broken arg re-arrange.
+        return SolvedNode(
+            kind: 'definit',
+            token: _here,
+            :type);
     }
-`);
 
-FAIL(`
-    {
-        return 0; //ERR block
-   }
-`);
-
-FAIL(`
-    {
-        return 0; //ERR block
-     }
+    return createDefaultInit(Type()).target.i;
 `);
 
 
