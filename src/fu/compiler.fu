@@ -2169,7 +2169,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let id = node.value;
 
         let min = node.kind == 'fn'
-            ? node.items.length + FN_ARGS_BACK
+            ? node.items.len + FN_ARGS_BACK
             : fail('TODO');
 
         let max = node.kind == 'fn'
@@ -2184,7 +2184,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             arg_n = [];
 
             let items = node.items;
-            for (mut i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+            let numArgs = items.len + FN_ARGS_BACK;
+            for (mut i = 0; i < numArgs; i++)
             {
                 let arg = items[i] || fail();
                 arg.kind == 'let' || fail();
@@ -2203,10 +2204,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     fn FnDecl(id: string, node: SolvedNode)
     {
         let items: SolvedNodes = node.items;
-        let rnode = items[items.length + FN_RET_BACK];
+        let rnode = items[items.len + FN_RET_BACK];
         let ret   = rnode && rnode.type || fail();
 
-        let max   = items.length + FN_RET_BACK;
+        let max   = items.len + FN_RET_BACK;
         let args  = items.slice(0, max);
 
         let arg_t: Type[]      = [];
@@ -2222,12 +2223,12 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             arg_n[i] = arg.value || fail();
 
             //
-            let implicit = !!(arg.flags & F_IMPLICIT);
+            let isImplicit = !!(arg.flags & F_IMPLICIT);
 
             // Non-implicit, non-defaulted argument?
-            if (!implicit)
+            if (!isImplicit)
             {
-                arg_d.length >= i || fail();
+                arg_d.len >= i || fail();
 
                 let def = arg.items[LET_INIT] || null;
                 arg_d[i] = def;
@@ -2251,7 +2252,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let arg_t:   Type[] = [];
         let arg_n: string[] = [];
 
-        for (mut i = 0; i < members.length; i++)
+        for (mut i = 0; i < members.len; i++)
         {
             let member = members[i];
 
@@ -2260,14 +2261,14 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         }
 
         //
-        let max   = members.length;
+        let max   = members.len;
         let   min   = 0;
         let   arg_d: SolvedNode[] = null;
 
         {
             let defaults: SolvedNode[] = [];
             arg_d = defaults;
-            for (mut i = 0; i < members.length; i++)
+            for (mut i = 0; i < members.len; i++)
             {
                 let member = members[i];
                 let init   = member.items[LET_INIT] || tryDefaultInit(member.type);
@@ -2301,16 +2302,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn createDefaultInit(type: Type): SolvedNode
     {
-        return {
-            kind:   'definit',
-            flags:  0,
-            value:  '',
-
-            items:  [],
-            token:  (_here || fail()),
-            type,
-            target: 0,
-        };
+        return SolvedNode(
+            kind: 'definit',
+            token: _here || fail(),
+            :type);
     }
 
     fn solveDefinit(type: Type): SolvedNode
@@ -2331,7 +2326,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let via      = GET(viaIdx);
         let overload = GET(overloadIdx);
 
-        mut kind: 'p-unshift'|'p-wrap' = 'p-unshift';
+        mut kind = 'p-unshift';
         mut min = overload.min - 1;
         mut max = overload.max - 1;
         min >= 0 && max >= min || fail();
@@ -2341,9 +2336,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let o_defaults = overload.defaults;
 
         // Fixed.
-        mut arg_t = o_args     && o_args    .length > 1 ? o_args    .slice(1) : null;
-        mut arg_n = o_names    && o_names   .length > 1 ? o_names   .slice(1) : null;
-        mut arg_d = o_defaults && o_defaults.length > 1 ? o_defaults.slice(1) : null;
+        mut arg_t = o_args     && o_args    .len > 1 ? o_args    .slice(1) : null;
+        mut arg_n = o_names    && o_names   .len > 1 ? o_names   .slice(1) : null;
+        mut arg_d = o_defaults && o_defaults.len > 1 ? o_defaults.slice(1) : null;
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
@@ -2376,15 +2371,33 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    function scope_using(viaIdx: ScopeIdx)
+    fn hasIdentifierChars(id: string)
+    {
+        for (let i = 0; i < id.len; i++)
+        {
+            let c = id[i];
+            if (c == '_' || c >= 'a' && c <= 'z'
+                         || c >= 'A' && c <= 'Z')
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    fn scope_using(viaIdx: ScopeIdx)
     {
         let via = GET(viaIdx);
         let actual = via.type || fail();
 
-        for (let id of Scope_keys(_scope))
+        let keys = Scope_keys(_scope);
+        for (mut i = 0; i < keys.len; i++)
         {
+            let key = keys[i];
+
             // Skip over operators.
-            if (!/[a-zA-Z_]/.test(id))
+            if (!hasIdentifierChars(id))
                 continue;
 
             let overloads = Scope_lookup(_scope, id);
@@ -2392,7 +2405,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 continue;
 
             mut arity0 = false;
-            for (mut i = 0, MUT_n0 = overloads.length; i < MUT_n0; i++)
+            let MUT_n0 = overloads.len;
+            for (mut i = 0; i < MUT_n0; i++)
             {
                 let overloadIdx = overloads[i];
                 let overload = GET(overloadIdx);
@@ -2420,23 +2434,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         }
     }
 
-    function arr_move<T>(arr: T[], from: i32, to: i32)
-    {
-        // memcpy, memmove, mempcy.
-        let pivot = arr[from];
-
-        if (from < to)
-            for (mut i = from; i < to; i++)
-                arr[i] = arr[i + 1];
-
-        if (from > to)
-            for (mut i = from; i > to; i--)
-                arr[i] = arr[i - 1];
-
-        arr[to] = pivot;
-    }
-
-    function scope_tryMatch__mutargs(
+    fn scope_tryMatch__mutargs(
         id: string, args: SolvedNodes,
         retType: Type, flags: i32): ScopeIdx
     {
@@ -2449,7 +2447,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         // Arity 0 - blind head match.
         // Allows simple shadowing of variables and such, latest wins.
-        if (!args.length)
+        if (!args.len)
         {
             let headIdx = overloads[0];
             if (GET(headIdx).min == 0)
@@ -2458,51 +2456,51 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         if (!matchIdx)
         {
-            let arity = args.length;
+            let arity = args.len;
 
             // Prep labelled args for remap.
-            mut names: (string)[]|null = null;
+            mut names: string[];
             if (flags & F_NAMED_ARGS)
             {
-                names = [];
                 mut some = false;
 
                 for (mut i = 0; i < arity; i++)
                 {
-                    let arg = args[i];
-                    names[i] =
-                        arg && arg.kind == 'label'
-                            ? (some = true, arg.value) || fail()
-                            : null;
+                    let arg     = args[i];
+                    names[i]    = arg.kind == 'label'
+                                ? (some = true, arg.value) || fail()
+                                : null;
                 }
 
                 some || fail();
             }
 
             //
-            NEXT: for (mut i = 0; i < overloads.length; i++)
+            :NEXT
+            for (mut i = 0; i < overloads.len; i++)
             {
                 mut overloadIdx = overloads[i];
                 mut overload = GET(overloadIdx);
 
-                TEST_AGAIN: for (;;)
+                :TEST_AGAIN
+                while (true)
                 {
                     if (overload.min > arity || overload.max < arity)
-                        continue NEXT;
+                        continue :NEXT;
 
                     // Match by return.
                     if (retType && !isAssignable(retType, overload.type || fail()))
-                        continue NEXT;
+                        continue :NEXT;
 
                     // Remap named arguments.
                     if (names)
                     {
                         let overloadNames = overload.names;
                         if (!overloadNames)
-                            continue NEXT;
+                            continue :NEXT;
 
                         // Move named arguments around.
-                        for (mut i = 0; i < names.length; i++)
+                        for (mut i = 0; i < names.len; i++)
                         {
                             let id = names[i];
                             if (!id)
@@ -2510,10 +2508,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
                             let idx = overloadNames.indexOf(id);
                             if (idx < 0)
-                                continue NEXT;
+                                continue :NEXT;
 
-                            arr_move(args, i, idx);
-                            arr_move(names, i, idx);
+                            args .move(i, idx);
+                            names.move(i, idx);
                         }
                     }
 
@@ -2522,23 +2520,23 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     {
                         let specIdx = trySpecialize(overload.template, args);
                         if (!specIdx)
-                            continue NEXT;
+                            continue :NEXT;
 
                         overloadIdx = specIdx;
                         overload = GET(specIdx);
 
                         // Repeat arity checks and such.
-                        continue TEST_AGAIN;
+                        continue :TEST_AGAIN;
                     }
 
                     // Done here.
-                    break TEST_AGAIN;
+                    break :TEST_AGAIN;
                 }
 
                 // Type check args.
                 let arg_t = overload.args || fail();
                 let arg_d = overload.defaults;
-                for (mut i = 0; i < args.length; i++)
+                for (mut i = 0; i < args.len; i++)
                 {
                     let arg = args[i];
                     if (!arg)
@@ -2548,7 +2546,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     }
 
                     if (!isAssignable(arg_t[i], (args[i] || fail()).type))
-                        continue NEXT;
+                        continue :NEXT;
                 }
 
                 // Forbid ambiguity.
@@ -2567,16 +2565,16 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             // Mutate call args last thing.
             let arg_d = matched && matched.defaults;
             if (arg_d)
-                for (mut i = 0; i < arg_d.length; i++)
+                for (mut i = 0; i < arg_d.len; i++)
                     args[i] = args[i] || arg_d && arg_d[i] || fail();
 
             // Implicit argument injection.
             let arg_t = matched.args;
 
-            if (arg_t && args.length < arg_t.length)
+            if (arg_t && args.len < arg_t.len)
             {
                 let arg_n = matched.names || fail();
-                for (mut i = args.length; i < arg_t.length; i++)
+                for (mut i = args.len; i < arg_t.len; i++)
                 {
                     let id   = arg_n[i];
                     let type = arg_t[i];
@@ -2590,16 +2588,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return matchIdx;
     }
 
-    fn repeat<T>(value: T, len: i32): T[]
-    {
-        let result = [];
-        for (mut i = 0; i < len; i++)
-            result[i] = value;
-
-        return result;
-    }
-
-    function scope_match__mutargs(id: string, args: SolvedNodes, flags: i32): ScopeIdx
+    fn scope_match__mutargs(id: string, args: SolvedNodes, flags: i32): ScopeIdx
     {
         return scope_tryMatch__mutargs(id, args, null, flags)
             || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
@@ -2683,7 +2672,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     fn solveComma(node: Node): SolvedNode
     {
         let items = solveNodes(node.items);
-        let last = items[items.length - 1] || fail();
+        let last = items[items.len - 1] || fail();
 
         return SolvedNode(node, items, last.type || fail());
     }
@@ -2712,9 +2701,6 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn solveStr(node: Node): SolvedNode
     {
-        let v = node.value;
-        typeof v == 'string' || fail();
-
         return SolvedNode(node, null, t_string);
     }
 
@@ -2736,7 +2722,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return __solveFn(true, false, node, prep, -1) || fail();
     }
 
-    function __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
+    fn __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
     {
         let id = n_fn.value || fail('TODO anonymous fns');
 
@@ -2761,11 +2747,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             return null;
 
         let inItems   = n_fn.items;
-        inItems.length >= FN_RET_BACK || fail();
+        inItems.len >= FN_RET_BACK || fail();
 
         let out       = prep || SolvedNode(n_fn, null, t_void);
 
-        let outItems: SolvedNodes = repeat(null, inItems.length);
+        let outItems: SolvedNodes = repeat(null, inItems.len);
         out.items       = outItems;
 
         //
@@ -2783,7 +2769,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             _current_fn         = out;
 
             // Arg decls.
-            for (mut i = 0; i < inItems.length + FN_ARGS_BACK; i++)
+            for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == 'let' || fail();
@@ -2791,8 +2777,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             }
 
             /////////////////////////////////////////////////////
-            mut n_ret   = inItems[inItems.length + FN_RET_BACK];
-            mut n_body  = inItems[inItems.length + FN_BODY_BACK] || fail();
+            mut n_ret   = inItems[inItems.len + FN_RET_BACK];
+            mut n_body  = inItems[inItems.len + FN_BODY_BACK] || fail();
 
             // Pattern descent.
             if (caseIdx >= 0)
@@ -2801,8 +2787,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let branch = n_body.items[caseIdx] || fail();
                 let items = branch.items;
 
-                n_ret   = items[items.length + FN_RET_BACK]  || n_ret || null;
-                n_body  = items[items.length + FN_BODY_BACK] || fail();
+                n_ret   = items[items.len + FN_RET_BACK]  || n_ret || null;
+                n_body  = items[items.len + FN_BODY_BACK] || fail();
             }
 
             // Return type annot.
@@ -2811,7 +2797,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.length + FN_RET_BACK] = s_ret;
+                outItems[outItems.len + FN_RET_BACK] = s_ret;
             }
 
             // Only if actually solving the fn, the fn body.
@@ -2821,7 +2807,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.length + FN_BODY_BACK] = s_body;
+                outItems[outItems.len + FN_BODY_BACK] = s_body;
             }
 
             //
@@ -2835,7 +2821,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         if (!prep)
             FnDecl(id, out);
 
-        !solve || out.items[out.items.length + FN_BODY_BACK] || fail();
+        !solve || out.items[out.items.len + FN_BODY_BACK] || fail();
 
         return out;
     }
@@ -2843,10 +2829,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
-    function TODO_memoize_mangler(args: SolvedNodes): string
+    fn TODO_memoize_mangler(args: SolvedNodes): string
     {
         mut mangle = '';
-        for (mut i = 0; i < args.length; i++)
+        for (mut i = 0; i < args.len; i++)
             mangle += '\v' + serializeType((args[i] || fail()).type);
 
         return mangle;
@@ -2868,10 +2854,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let node = doTrySpecialize(template, args) || null;
 
             spec = template.specializations[mangle] =
-            {
-                node:   node,
-                index:  node ? node.target || fail() : 0,
-            };
+                Specilization(:node, index: node.target);
         }
 
         return spec.index;
@@ -2881,10 +2864,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         template: Template, args: SolvedNodes)
             : SolvedNode
     {
-        let typeParams: TypeParams = {};
+        mut typeParams: Map(string, Type);
 
         let node = template.node;
-
         let result = node.kind == 'fn'
             ? trySpecializeFn(node, args, typeParams)
             : fail('TODO');
@@ -2896,16 +2878,17 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecializeFn(
-        node: Node, args: SolvedNodes, typeParams: TypeParams)
+        node: Node, args: SolvedNodes, mut typeParams: TypeParams)
             : SolvedNode
     {
         let items = node.items;
 
         // First off, solve type params.
-        for (mut i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
+        let numArgs = items.len + FN_ARGS_BACK;
+        for (mut i = 0; i < numArgs; i++)
         {
             let argNode = items[i] || fail();
-            argNode.kind == 'let'   || fail();
+            argNode.kind == 'let'  || fail();
 
             let argValue = args && args[i];
             let inType = argValue && argValue.type;
@@ -2934,11 +2917,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         // Match pattern arm here.
         mut caseIdx = -1;
 
-        let pattern = items[items.length + FN_BODY_BACK] || fail();
+        let pattern = items[items.len + FN_BODY_BACK] || fail();
         if (pattern.kind == 'pattern')
         {
             let branches = pattern.items;
-            for (mut i = 0; i < branches.length; i++)
+            for (mut i = 0; i < branches.len; i++)
             {
                 let branch = branches[i];
                 let items = (branch || fail()).items;
@@ -2985,11 +2968,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return __solveStruct(true, node, prep);
     }
 
-    function __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
+    fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
     {
-        let out     = prep || SolvedNode(node, null, t_void);
+        mut out     = prep || SolvedNode(node, null, t_void);
 
-        let fields: StructField[];
+        mut fields: StructField[];
 
         let id      = node.value || fail('TODO anonymous structs');
         let type    = registerStruct(id, fields, node.flags);
@@ -3006,7 +2989,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let current_strt0   = _current_strt;
             _current_strt       = type;
 
-            out.items.resize(node.items.length);
+            out.items.resize(node.items.len);
             solveNodes(node.items, out.items);
 
             _current_strt       = current_strt0;
@@ -3018,16 +3001,16 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let members: SolvedNode[];
             let items = out.items;
 
-            for (mut i = 0; i < items.length; i++)
+            for (mut i = 0; i < items.len; i++)
             {
                 let item = items[i];
                 if (item && item.kind == 'let' && (item.flags & F_FIELD))
                 {
                     members.push(item);
-                    fields.push({
-                        id:   item.value || fail(),
-                        type: item.type  || fail(),
-                    });
+                    fields.push(
+                        StructField(
+                            id:   item.value || fail(),
+                            type: item.type  || fail()));
                 }
             }
 
@@ -3053,7 +3036,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         let fn        = _current_fn || fail();
         let items     = fn.items;
-        let retIdx    = items.length + FN_RET_BACK;
+        let retIdx    = items.len + FN_RET_BACK;
         let prevExpr  = items[retIdx];
         let prevType  = prevExpr ? prevExpr.type || fail() : null;
 
@@ -3124,9 +3107,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         if (node.kind == 'call')
         {
             let items = node.items;
-            if (items.length)
+            if (items.len)
             {
-                if (items.length == 1)
+                if (items.len == 1)
                 {
                     let T = evalTypeAnnot(items[0] || fail()) || fail();
                     let t = T.type || fail();
@@ -3140,7 +3123,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     if (node.value == '[]')
                         return SolvedNode(node, null, createArray(t));
                 }
-                else if (items.length == 2)
+                else if (items.len == 2)
                 {
                     let a = evalTypeAnnot(items[0] || fail()).type || fail();
                     let b = evalTypeAnnot(items[1] || fail()).type || fail();
@@ -3155,11 +3138,12 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let overloads = Scope_lookup(_scope, id);
 
                 if (overloads)
-                    for (mut i = 0; i < overloads.length; i++)
+                    for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
                         if (maybe.kind == 'type')
-                            return SolvedNode(node, null, maybe.type || fail());
+                            return SolvedNode(
+                                node, null, maybe.type || fail());
                     }
 
                 fail('No type `' + id + '` in scope.');
@@ -3186,9 +3170,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         if (node.kind == 'call')
         {
             let items = node.items;
-            if (items.length)
+            if (items.len)
             {
-                if (items.length == 1)
+                if (items.len == 1)
                 {
                     let t = node.value == '&'    ? tryClear_ref(type)
                             : node.value == '&mut' ? tryClear_mutref(type)
@@ -3201,7 +3185,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     return trySolveTypeParams(
                         items[0] || fail(), t, typeParams);
                 }
-                else if (items.length == 2)
+                else if (items.len == 2)
                 {
                     if (node.value == 'Map')
                     {
@@ -3220,7 +3204,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let overloads = Scope_lookup(_scope, id);
 
                 if (overloads)
-                    for (mut i = 0; i < overloads.length; i++)
+                    for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
                         if (maybe.kind == 'type')
@@ -3262,7 +3246,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     fn evalTypePattern(node: Node, typeParams: TypeParams): bool
     {
         let items = node.items;
-        if (node.kind == 'call' && items.length == 2)
+        if (node.kind == 'call' && items.len == 2)
         {
             let left  = items[0] || fail();
             let right = items[1] || fail();
@@ -3332,7 +3316,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         mut args        = solveNodes(node.items) || [];
 
         // Implicit temporaries, all args are referable.
-        for (mut i = 0; i < args.length; i++)
+        for (mut i = 0; i < args.len; i++)
             args[i] = maybePRValue(args[i] || fail());
 
         //
@@ -3400,7 +3384,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         mut itemType = type && tryClear_array(type) || null;
         mut startAt = 0;
-        if (!itemType && items.length)
+        if (!itemType && items.len)
         {
             let head = items[startAt++] || fail();
             itemType = clear_refs(head.type);
@@ -3409,7 +3393,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         if (!itemType)
             return fail('Cannot infer empty arraylit.');
 
-        for (mut i = startAt; i < items.length; i++)
+        for (mut i = startAt; i < items.len; i++)
             itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
                 '[array literal] No common supertype:', items);
 
@@ -3437,12 +3421,12 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         };
     }
 
-    function injectImplicitArg__mutfn(
+    fn injectImplicitArg__mutfn(
         node: SolvedNode,
         id: string, type: Type): ScopeIdx
     {
         let mut_argNodes = node.items;
-        let newArgIdx = mut_argNodes.length + FN_RET_BACK;
+        let newArgIdx = mut_argNodes.len + FN_RET_BACK;
 
         // The new argnode.
         let newArgNode = createLet(id, type, F_IMPLICIT);
@@ -3464,7 +3448,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let mut_args = fn.args || [];
             let mut_names = fn.names || [];
 
-            mut_names.length == mut_args.length || fail();
+            mut_names.len == mut_args.len || fail();
             mut_names.indexOf(id) < 0 || fail(
                 'Implicit argument name collision.');
 
@@ -3489,7 +3473,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         TEST_expectImplicits || fail(
             'Attempting to propagate implicit arguments.');
 
-        args.length >= argIdx || fail();
+        args.len >= argIdx || fail();
 
         args[argIdx] = CallerNode(
             createRead(id), [], type,
@@ -3532,18 +3516,18 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return SolvedNode(node, items, outType || fail());
     }
 
-    function sumType_logic(items: SolvedNodes): Type
+    fn sumType_logic(items: SolvedNodes): Type
     {
         // All args refs?
-        if (items.length)
+        if (items.len)
         {
             mut sumType: Type = (items[0] || fail()).type;
-            for (mut i = 1; i < items.length; i++)
+            for (mut i = 1; i < items.len; i++)
             {
                 let type = (items[i] || fail()).type;
                 if (type == t_never)
                 {
-                    i == items.length - 1 || fail(
+                    i == items.len - 1 || fail(
                         'Dead code following never [A].');
 
                     continue;
@@ -3589,12 +3573,12 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             //  With correct codegen, only `b` and `c` need to intersect,
             //   `a` is simply another condition for using `b`.
             let alts = items.slice();
-            for (mut i = 0; i < alts.length - 1; i++)
+            for (mut i = 0; i < alts.len - 1; i++)
             {
                 let alt = alts[i] || fail();
                 if (alt.kind == 'and')
                 {
-                    alts[i] = alt.items[alt.items.length - 1];
+                    alts[i] = alt.items[alt.items.len - 1];
                     change = true;
                 }
             }
@@ -3650,17 +3634,17 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         // TBD how we make this stuff work in real life.
         if (overload.kind == 'field')
         {
-            let head = items.length == 1 && items[0] || fail();
+            let head = items.len == 1 && items[0] || fail();
             let headType = head.type || fail();
 
             type = add_refs_from(headType, type);
         }
 
         // Tag copies and moves.
-        else if (items.length)
+        else if (items.len)
         {
             let args = overload.args || fail();
-            for (mut i = 0; i < items.length; i++)
+            for (mut i = 0; i < items.len; i++)
                 items[i] = maybeCopyOrMove(
                     items[i] || fail(), args[i]);
         }
@@ -3703,7 +3687,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         mut offset = 0;
 
-        for (mut i = 0; i < nodes.length; i++)
+        for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
             if (!node)
@@ -3728,11 +3712,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             //  without risking stuff depending on constants & variables
             //   introduced halfway through.
             let i0 = i;
-            let   i1 = nodes.length;
+            let   i1 = nodes.len;
 
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
-            for (mut i = i0; i < nodes.length; i++)
+            for (mut i = i0; i < nodes.len; i++)
             {
                 let node = nodes[i];
                 if (!node)
@@ -3767,7 +3751,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             i = i1 - 1; // <- loop++
         }
 
-        result.length == nodes.length + offset || fail();
+        result.len == nodes.len + offset || fail();
 
         _here = here0;
         return result;
