@@ -159,7 +159,7 @@ function FILE(fname: string)
 
         try
         {
-            ZERO(src, fname as Filename);
+            ZERO(src, fname.replace(/.*\//, '') as Filename);
         }
         catch (e)
         {
@@ -1276,6 +1276,13 @@ ZERO(`
         '', id, t_template,
         min, max, arg_n,
         :template);
+`);
+
+ZERO(`
+    let i = 0;
+    let items = [ '' ];
+    i == items.len - 1 || throw('what?');
+    return i;
 `);
 
 

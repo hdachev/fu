@@ -1779,6 +1779,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             i = i1 - 1; // <- loop++
         }
 
+        offset == 0 || fail();
         result.length === nodes.length + offset || fail();
 
         _here = here0;

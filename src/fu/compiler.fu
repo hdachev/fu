@@ -1600,6 +1600,10 @@ pub struct Type
     quals: i32;
 };
 
+fn ==(a: &Type, b: &Type)
+    a.canon == b.canon &&
+    a.quals == b.quals;
+
 
 //
 
@@ -1634,7 +1638,7 @@ pub fn isAssignable(host: Type, guest: Type)
             && (host.quals == guest.quals ||
                   !(host.quals & q_mutref) // mut invariance
                     && (host.quals & guest.quals) == host.quals)
-        || guest.canon == t_never.canon
+        || guest == t_never
             && guest.quals == 0;
 }
 
@@ -2027,7 +2031,9 @@ pub fn Scope_keys(scope: &Scope): string[]
     return keys;
 }
 
-pub fn Scope_get(scope: &Scope, idx: ScopeIdx): Overload
+pub fn Scope_get(
+    scope: &mut Scope, idx: ScopeIdx)
+         : &mut Overload
 {
     return scope.overloads[idx.raw - 1];
 }
@@ -2115,7 +2121,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     //
 
-    fn GET(idx: ScopeIdx): Overload
+    fn GET(idx: ScopeIdx): &mut Overload
     {
         return Scope_get(_scope, idx);
     }
@@ -3387,31 +3393,36 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             //          with another derefence or method call or whatever.
 
             // And that's all there is to `using`.
-            let argNode   = CallerNode(
+            mut innerArgs: SolvedNode[];
+            if (!unshift)
+                innerArgs = [ args[0] || fail() ];
+
+            let argNode     = CallerNode(
                 createRead('__partial'),
-                unshift ? [] : [ args[0] || fail() ],
                 via.type || fail(),
-                viaIdx);
+                viaIdx,
+                innerArgs);
 
             //
-            if (!args)
-                args = [];
-
             if (unshift)
+            {
                 args.unshift(argNode);
+            }
             else
+            {
                 args[0] = argNode;
+            }
         }
 
         //
         return CallerNode(
             node,
-            args,
             callTarg.type || fail(),
-            callTargIdx);
+            callTargIdx,
+            args);
     }
 
-    fn maybePRValue(node: SolvedNode): SolvedNode
+    fn maybePRValue(mut node: SolvedNode): SolvedNode
     {
         if (!(node.type.quals & q_ref))
             node.type = add_prvalue_ref(node.type);
@@ -3425,10 +3436,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn solveArrayLiteral(node: Node, type: Type): SolvedNode
     {
-        let items = solveNodes(node.items) || fail();
+        let items = solveNodes(node.items);
 
-        mut itemType = type && tryClear_array(type) || null;
+        mut itemType = type
+            ? tryClear_array(type)
+            : Type;
+
         mut startAt = 0;
+
         if (!itemType && items.len)
         {
             let head = items[startAt++] || fail();
@@ -3439,10 +3454,15 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             return fail('Cannot infer empty arraylit.');
 
         for (mut i = startAt; i < items.len; i++)
-            itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
-                '[array literal] No common supertype:', items);
+        {
+            itemType = type_tryInter(
+                itemType, (items[i] || fail()).type);
 
-        return solved(node, createArray(itemType) || fail(), items);
+            itemType || fail(
+                '[array literal] No common supertype.');
+        }
+
+        return solved(node, createArray(itemType), items);
     }
 
 
@@ -3461,16 +3481,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     }
 
     fn injectImplicitArg__mutfn(
-        node: SolvedNode,
+        fnNode: &mut SolvedNode,
         id: string, type: Type): ScopeIdx
     {
-        let mut_argNodes = node.items;
-        let newArgIdx = mut_argNodes.len + FN_RET_BACK;
+        let newArgIdx = fnNode.items.len + FN_RET_BACK;
 
         // The new argnode.
         let newArgNode = createLet(id, type, F_IMPLICIT);
-
-        mut_argNodes.splice(newArgIdx, 0, newArgNode);
+        fnNode.items.insert(newArgIdx, newArgNode);
 
         // If we dont have the overload yet,
         //  there's nothing else to do here.
@@ -3478,9 +3496,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         // TODO argname check should come first -
         //  the one below is too late,
         //   wont catch an argname dupe here.
-        if (node.target)
+        if (fnNode.target)
         {
-            let o: &mut Overload = GET(node.target);
+            let o: &mut Overload = GET(fnNode.target);
 
             // We'll be mutating the overload.
             o.kind == 'fn' || fail();
@@ -3501,8 +3519,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     }
 
     fn bindImplicitArg(
-        args: SolvedNode[], argIdx: i32,
-        id: string, type: Type)
+        mut args: SolvedNode[],
+        argIdx: i32, id: string, type: Type)
     {
         TEST_expectImplicits || fail(
             'Attempting to propagate implicit arguments.');
@@ -3510,21 +3528,25 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         args.len >= argIdx || fail();
 
         args[argIdx] = CallerNode(
-            createRead(id), [], type,
-            getImplicit(id, type));
+            createRead(id), :type,
+            target: getImplicit(id, type));
     }
 
     fn getImplicit(id: string, type: Type): ScopeIdx
     {
         mut args: SolvedNode[];
-        mut matched = scope_tryMatch__mutargs(:id, :args, retType: type);
+        mut matched = scope_tryMatch__mutargs(
+            :id, :args, retType: type);
+
         if (!matched)
         {
             if (!_current_fn)
                 return fail('No implicit `' + id + '` in scope.');
 
             matched = injectImplicitArg__mutfn(
-                _current_fn, id, type) || fail();
+                _current_fn, id, type);
+
+            matched || fail();
         }
 
         return matched;
@@ -3543,12 +3565,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let priExpr = cons || alt || fail();
         let secExpr = cons && alt ? alt : cons;
 
-        let priType = priExpr.type || fail();
-        let secType = secExpr && (secExpr.type || fail());
+        let priType = priExpr.type;
+        let secType = secExpr ? secExpr.type : Type;
 
-        let outType: Type = !secType ? priType
-            : type_tryInter(priType, secType) || fail(
-                'No common supertype:', [ priExpr, secExpr ]);
+        let outType: Type = !secType
+            ? priType
+            : type_tryInter(priType, secType);
+
+        outType || fail('No common supertype.');
 
         return solved(node, outType || fail(), items);
     }
@@ -3572,13 +3596,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
                 sumType = type_tryInter(sumType, type);
                 if (!sumType)
-                {
-                    sumType = null;
                     break;
-                }
             }
 
-            sumType != t_never || fail(
+            sumType == t_never && fail(
                 'Dead code following never [B].');
 
             if (sumType && (sumType.quals & q_ref))
@@ -3592,9 +3613,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     {
         let items = solveNodes(node.items);
 
-        return SolvedNode(
-            node, items,
-            sumType_logic(items));
+        return solved(node, sumType_logic(items), items);
     }
 
     fn solveOr(node: Node): SolvedNode
@@ -3609,7 +3628,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             // Look for the `(a && b) || c` pattern -
             //  With correct codegen, only `b` and `c` need to intersect,
             //   `a` is simply another condition for using `b`.
-            let alts = items.slice();
+            mut alts = items;
             for (mut i = 0; i < alts.len - 1; i++)
             {
                 let alt = alts[i] || fail();
@@ -3624,8 +3643,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 t_or = sumType_logic(alts);
         }
 
-        return SolvedNode(
-            node, items, t_or);
+        return solved(node, t_or, items);
     }
 
 
@@ -3656,7 +3674,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     }
 
     fn CallerNode(
-        node: Node, items: SolvedNode[], type: Type, target: ScopeIdx)
+        node: Node, mut type: Type, target: ScopeIdx, mut args: SolvedNode[] = [])
             : SolvedNode
     {
         let overload = GET(target);
@@ -3665,23 +3683,23 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         // TBD how we make this stuff work in real life.
         if (overload.kind == 'field')
         {
-            let head = items.len == 1 && items[0] || fail();
+            let head = args.len == 1 && args[0] || fail();
             let headType = head.type || fail();
 
             type = add_refs_from(headType, type);
         }
 
         // Tag copies and moves.
-        else if (items.len)
+        else if (args.len)
         {
-            let args = overload.args || fail();
-            for (mut i = 0; i < items.len; i++)
-                items[i] = maybeCopyOrMove(
-                    items[i] || fail(), args[i]);
+            let arg_t = overload.args || fail();
+            for (mut i = 0; i < args.len; i++)
+                args[i] = maybeCopyOrMove(
+                    args[i] || fail(), arg_t[i]);
         }
 
         //
-        let out = solved(node, items, type);
+        mut out = solved(node, type, args);
         out.target = target;
         return out;
     }
@@ -3712,20 +3730,26 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     //
 
-    fn solveNodes(nodes: Node[], result: SolvedNode[] = []): SolvedNode[]
+    fn solveNodes(nodes: Node[]): SolvedNode[]
+    {
+        mut result: SolvedNode[];
+        solveNodes(nodes, result);
+        return result;
+    }
+
+    fn solveNodes(nodes: Node[], result: &mut SolvedNode[]): void
     {
         let here0 = _here;
 
         mut offset = 0;
 
+        result.resize(nodes.len);
+
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
             if (!node)
-            {
-                result[i] = node;
                 continue;
-            }
 
             // Regular solve.
             if (!isUnordered(node.kind))
@@ -3743,7 +3767,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             //  without risking stuff depending on constants & variables
             //   introduced halfway through.
             let i0 = i;
-            let   i1 = nodes.len;
+            mut i1 = nodes.len;
 
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
@@ -3751,10 +3775,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             {
                 let node = nodes[i];
                 if (!node)
-                {
-                    result[i] = node;
                     continue;
-                }
 
                 if (!isUnordered(node.kind))
                 {
@@ -3782,10 +3803,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             i = i1 - 1; // <- loop++
         }
 
+        offset == 0 || fail();
         result.len == nodes.len + offset || fail();
 
         _here = here0;
-        return result;
     }
 
 
@@ -3801,7 +3822,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
 fn listGlobals(): Scope
 {
-    let scope = Scope(null);
+    mut scope: Scope;
 
     Scope_Typedef(scope, 'i32',    t_i32   );
     Scope_Typedef(scope, 'bool',   t_bool  );
@@ -3812,20 +3833,175 @@ fn listGlobals(): Scope
     return scope;
 }
 
-let PRELUDE: Scope = runSolver(
-    parse(lex(prelude_src, '__prelude')),
-        listGlobals())
-            .scope;
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Prelude.
+
+let prelude_src = `
+
+
+// Some lolcode.
+
+fn __native_pure(): never never;
+
+
+// Arithmetics.
+
+fn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
+fn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+
+fn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
+fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+fn /(a: $T, b: $T)
+    // case ($T -> @floating_point):                       $T __native_pure;
+    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
+    case ($T -> @integral):          $T __native_pure;
+
+fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
+fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
+fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
+fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
+
+fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+
+
+// Bitwise.
+
+fn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;
+fn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
+fn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
+fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
+
+fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+
+
+// Logic.
+
+fn true (): bool __native_pure;
+fn false(): bool __native_pure;
+
+fn  !(a: &$T): bool __native_pure;
+fn !!(a: &$T): bool __native_pure;
+
+
+// Assignment.
+
+fn   =(a: &mut $T, b: $T): &mut $T __native_pure;
+fn ||=(a: &mut $T, b: $T): &mut $T __native_pure;
+
+
+// Arrays.
+
+fn len (a: &$T[]):         i32  __native_pure;
+fn find(a: &$T[], b: &$T): i32  __native_pure;
+fn has (a: &$T[], b: &$T): bool __native_pure;
+
+fn [](a: &$T[], i: i32)
+    case ($a -> &mut $T[]): &mut $T __native_pure;
+    case ($a -> &    $T[]): &    $T __native_pure;
+
+fn push   (a: &mut $T[], b: $T):              void __native_pure;
+fn unshift(a: &mut $T[], b: $T):              void __native_pure;
+fn insert (a: &mut $T[], i: i32, b: $T):      void __native_pure;
+
+fn concat (a: &$T[], b: &$T[]):               $T[] __native_pure;
+fn slice  (a: &$T[], i0: i32, i1: i32):       $T[] __native_pure;
+fn slice  (a: &$T[], i0: i32):                $T[] __native_pure;
+
+fn splice (a: &mut $T[], i: i32, count: i32): void __native_pure;
+fn pop    (a: &mut $T[]):                     void __native_pure;
+
+fn clear  (a: &mut $T[]):                     void __native_pure;
+fn resize (a: &mut $T[], len: i32):           void __native_pure;
+fn shrink (a: &mut $T[], len: i32):           void __native_pure;
+
+fn move   (a: &mut $T[], from: i32, to: i32): void __native_pure;
+fn sort   (a: &mut $T[]):                     void __native_pure;
+
+
+// Strings.
+
+fn len(a: &string):                 i32         __native_pure;
+fn [](a: &string, i: i32):          string      __native_pure;
+fn +=(a: &mut string, b: &string):  &mut string __native_pure;
+fn + (a: &string, b: &string):      string      __native_pure;
+
+fn ==(a: &string, b: &string):      bool        __native_pure;
+fn !=(a: &string, b: &string):      bool        __native_pure;
+fn  >(a: &string, b: &string):      bool        __native_pure;
+fn  <(a: &string, b: &string):      bool        __native_pure;
+fn >=(a: &string, b: &string):      bool        __native_pure;
+fn <=(a: &string, b: &string):      bool        __native_pure;
+
+fn find(a: &string, b: &string):    i32         __native_pure;
+fn has(a: &string, b: &string):     bool        __native_pure;
+fn starts(a: &string, with: &string): bool      __native_pure;
+
+fn slice (a: &string, i0: i32, i1: i32): string __native_pure;
+fn substr(a: &string, i0: i32, i1: i32): string __native_pure;
+fn char  (a: &string, i0: i32): i32 __native_pure;
+
+
+// Maps.
+
+fn [](a: &Map($K, $V), b: &$K)
+    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
+    case ($a -> &    Map($K, $V)): &    $V __native_pure;
+
+
+// Assertions, bugs & fails.
+
+fn throw(reason: string): never __native_pure;
+fn assert()             : never __native_pure;
+
+
+// Butt plugs.
+
+// TODO we should go for an any $B -> call stringify(b) macro.
+fn + (a: &string, b: i32): &string __native_pure;
+
+`;
+
+fn solvePrelude(): Scope
+{
+    let lexed = lex(prelude_src, '__prelude');
+    lexed.errors || !lexed.tokens && throw(
+        'Failure to lex prelude.');
+
+    let root = parse(
+        '__prelude', lexed.tokens);
+
+    let implicit mut ctx: TEMP_Context;
+    let scope = listGlobals();
+    let solved = runSolver(root, scope);
+
+    return solved.scope;
+}
+
+let PRELUDE: Scope = solvePrelude();
 
 pub fn solve(parse: Node)
 {
-    return runSolver(
-        parse, Scope(PRELUDE));
+    return runSolver(parse, PRELUDE);
 }
-
-
-
-
 
 
 
