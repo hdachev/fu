@@ -2423,16 +2423,48 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         }
     }
 
-    fn scope_tryMatch__mutargs(
-        id: string, args: SolvedNode[],
-        retType: Type, flags: i32): ScopeIdx
+
+    //
+
+    fn getNamedArgReorder(
+        callsite:    &string[],
+        declaration: &string[]): i32[]
     {
-        let overloads = Scope_lookup(_scope, id);
-        if (!overloads)
-            return 0;
+        mut result: i32[] = [];
+
+        mut offset = 0;
+        for (mut i = 0; i < declaration.len; i++)
+        {
+            mut idx = callsite.find(declaration[i]);
+            if (idx < 0)
+            {
+                for (mut i = offset; i < callsite.len; i++)
+                {
+                    offset++;
+                    if (!callsite[i])
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+            }
+
+            result.push(idx);
+        }
+
+        return result;
+    }
+
+    fn scope_tryMatch__mutargs(
+        id: string, args: &mut SolvedNode[],
+        flags: i32 = 0, retType: Type = []): ScopeIdx
+    {
+        mut matchIdx: ScopeIdx;
 
         //
-        mut matchIdx: ScopeIdx = 0;
+        let overloads = Scope_lookup(_scope, id);
+        if (!overloads)
+            return matchIdx;
 
         // Arity 0 - blind head match.
         // Allows simple shadowing of variables and such, latest wins.
@@ -2455,14 +2487,17 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
                 for (mut i = 0; i < arity; i++)
                 {
-                    let arg     = args[i];
-                    names[i]    = arg.kind == 'label'
-                                ? (some = true, arg.value) || fail()
-                                : null;
+                    let arg = args[i];
+                    names[i] =
+                        arg && arg.kind == 'label'
+                            ? (some = true, arg.value) || fail()
+                            : '';
                 }
 
                 some || fail();
             }
+
+            mut reorder: i32[];
 
             //
             :NEXT
@@ -2481,33 +2516,26 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     if (retType && !isAssignable(retType, overload.type || fail()))
                         continue :NEXT;
 
-                    // Remap named arguments.
-                    if (names)
+                    //
+                    if (names && overload.names)
                     {
-                        let overloadNames = overload.names;
-                        if (!overloadNames)
-                            continue :NEXT;
-
-                        // Move named arguments around.
-                        for (mut i = 0; i < names.len; i++)
-                        {
-                            let id = names[i];
-                            if (!id)
-                                continue;
-
-                            let idx = overloadNames.indexOf(id);
-                            if (idx < 0)
-                                continue :NEXT;
-
-                            args .move(i, idx);
-                            names.move(i, idx);
-                        }
+                        reorder = getNamedArgReorder(
+                            names, overload.names);
+                    }
+                    else
+                    {
+                        reorder.clear();
                     }
 
                     // Specialize.
                     if (overload.template)
                     {
-                        let specIdx = trySpecialize(overload.template, args);
+                        if (reorder)
+                            fail('TODO handle argument reorder in template specialization.');
+
+                        let specIdx = trySpecialize(
+                            overload.template, args);
+
                         if (!specIdx)
                             continue :NEXT;
 
@@ -2525,16 +2553,27 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 // Type check args.
                 let arg_t = overload.args || fail();
                 let arg_d = overload.defaults;
-                for (mut i = 0; i < args.len; i++)
+
+                let N = reorder ? reorder.len
+                                : args.len;
+
+                for (mut i = 0; i < N; i++)
                 {
-                    let arg = args[i];
-                    if (!arg)
+                    let callsiteIndex = reorder ? reorder[i]
+                                                : i;
+                    if (callsiteIndex < 0)
                     {
-                        arg_d && arg_d[i] || fail();
+                        // Argument may not be defaulted -
+                        //  we might be supplying defaults via names
+                        //   before we've actually exhausted
+                        //    all the non-defaulted stuff.
+                        if (!(arg_d && arg_d[i]))
+                            continue :NEXT;
+
                         continue;
                     }
 
-                    if (!isAssignable(arg_t[i], (args[i] || fail()).type))
+                    if (!isAssignable(arg_t[i], (args[callsiteIndex] || fail()).type))
                         continue :NEXT;
                 }
 
@@ -2544,6 +2583,25 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
                 // Done!
                 matchIdx = overloadIdx;
+
+                // Do reorder.
+                if (reorder)
+                {
+                    // TODO:
+                    // I shouldn't need this pass, just swaps must do.
+                    mut new_args: SolvedNode[];
+                    new_args.resize(reorder.len);
+
+                    for (mut i = 0; i < reorder.len; i++)
+                    {
+                        let idx = reorder[i];
+                        if (idx >= 0)
+                            new_args[i] = args[idx];
+                    }
+
+                    for (mut i = 0; i < new_args.len; i++)
+                        args[i] = new_args[i];
+                }
             }
         }
 
@@ -2552,7 +2610,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let matched = GET(matchIdx);
 
             // Mutate call args last thing.
-            let arg_d = matched && matched.defaults;
+            let arg_d = matched.defaults;
             if (arg_d)
                 for (mut i = 0; i < arg_d.len; i++)
                     args[i] = args[i] || arg_d && arg_d[i] || fail();
@@ -2577,11 +2635,18 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return matchIdx;
     }
 
-    fn scope_match__mutargs(id: string, args: SolvedNode[], flags: i32): ScopeIdx
+
+    //
+
+    fn scope_match__mutargs(id: string, args: &mut SolvedNode[], flags: i32): ScopeIdx
     {
-        return scope_tryMatch__mutargs(id, args, null, flags)
-            || Scope_lookup(_scope, id) && fail('No overload of `' + id + '` matches call signature.', args)
-            || fail('`' + id + '` is not defined.');
+        let ret = scope_tryMatch__mutargs(:id, :args, :flags);
+        if (ret)
+            return ret;
+
+        return Scope_lookup(_scope, id)
+             ? fail('No overload of `' + id + '` matches call signature.')
+             : fail('`' + id + '` is not defined.');
     }
 
     fn solveNode(node: Node, type: Type = []): SolvedNode
@@ -2647,13 +2712,13 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     {
         TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
 
-        return SolvedNode(node, solveNodes(node.items), t_void);
+        return solved(node, t_void, solveNodes(node.items));
     }
 
     fn solveBlock(node: Node): SolvedNode
     {
         let scope0 = Scope_push(_scope);
-        let out = SolvedNode(node, solveNodes(node.items), t_void);
+        let out = solved(node, t_void, solveNodes(node.items));
         Scope_pop(_scope, scope0);
         return out;
     }
@@ -2663,39 +2728,25 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let items = solveNodes(node.items);
         let last = items[items.len - 1] || fail();
 
-        return SolvedNode(node, items, last.type || fail());
+        return solved(node, last.type || fail(), items);
     }
 
 
     //
 
-    let i32_min = 0xffffffff|0;
-    let i32_max = 0x7fffffff|0;
-
     fn solveInt(node: Node): SolvedNode
     {
-        let v = Number(node.value);
-        if (v >= i32_min && v <= i32_max)
-        {
-            mut type = t_i32;
-            // if (v != 0)
-            //     type = qadd(type, q_non_zero);
-
-            return SolvedNode(node, null, type);
-        }
-
-        return fail(
-            'Out of range for an i32 literal.');
+        return solved(node, t_i32);
     }
 
     fn solveStr(node: Node): SolvedNode
     {
-        return SolvedNode(node, null, t_string);
+        return solved(node, t_string);
     }
 
     fn solveEmpty(node: Node): SolvedNode
     {
-        return SolvedNode(node, null, t_void);
+        return solved(node, t_void);
     }
 
 
@@ -2703,12 +2754,12 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn uPrepFn(node: Node): SolvedNode
     {
-        return __solveFn(false, false, node, null, -1);
+        return __solveFn(false, false, node, SolvedNode, -1);
     }
 
     fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
     {
-        return __solveFn(true, false, node, prep, -1) || fail();
+        return __solveFn(true, false, node, prep, -1);
     }
 
     fn __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
@@ -2726,7 +2777,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 return prep || fail();
 
             let tDecl = TemplateDecl(n_fn);
-            let out   = SolvedNode(n_fn, null, t_void);
+            let out   = solved(n_fn, t_void);
             out.target  = tDecl;
             return out;
         }
@@ -2869,7 +2920,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecializeFn(
-        node: Node, args: SolvedNode[], mut typeParams: TypeParams)
+        node: Node, args: SolvedNode[], mut typeParams: Map(string, Type))
             : SolvedNode
     {
         let items = node.items;
@@ -2961,7 +3012,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
     {
-        mut out     = prep || SolvedNode(node, null, t_void);
+        mut out     = prep || solved(node, t_void);
 
         mut fields: StructField[];
 
@@ -3016,7 +3067,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn solveReturn(node: Node): SolvedNode
     {
-        let out = SolvedNode(node, solveNodes(node.items), t_void);
+        let out = solved(node, t_void, solveNodes(node.items));
 
         // Either use the return expression,
         //  or the void-returning return statement itself,
@@ -3042,7 +3093,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn solveJump(node: Node): SolvedNode
     {
-        return SolvedNode(node, null, t_void);
+        return solved(node, t_void);
     }
 
 
@@ -3070,7 +3121,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             maybePRValue(s_init), t_let);
 
         //
-        let out       = SolvedNode(node, [s_annot || s_init, s_init], t_let);
+        let out       = solved(node, t_let, [s_annot || s_init, s_init]);
         let id        = node.value || fail();
 
         if (node.flags & F_MUT)
@@ -3106,13 +3157,13 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     let t = T.type || fail();
 
                     if (node.value == '&')
-                        return SolvedNode(node, null, add_ref(t));
+                        return solved(node, add_ref(t));
 
                     if (node.value == '&mut')
-                        return SolvedNode(node, null, add_mutref(t));
+                        return solved(node, add_mutref(t));
 
                     if (node.value == '[]')
-                        return SolvedNode(node, null, createArray(t));
+                        return solved(node, createArray(t));
                 }
                 else if (items.len == 2)
                 {
@@ -3120,7 +3171,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     let b = evalTypeAnnot(items[1] || fail()).type || fail();
 
                     if (node.value == 'Map')
-                        return SolvedNode(node, null, createMap(a, b));
+                        return solved(node, createMap(a, b));
                 }
             }
             else
@@ -3151,14 +3202,14 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let type = _typeParams && _typeParams[id] || fail(
                 'No type param `$' + id + '` in scope.');
 
-            return SolvedNode(node, null, type);
+            return solved(node, type);
         }
 
         return fail('TODO');
     }
 
     fn trySolveTypeParams(
-        node: Node, type: Type, typeParams: TypeParams): bool
+        node: Node, type: Type, typeParams: Map(string, Type)): bool
     {
         if (node.kind == 'call')
         {
@@ -3238,7 +3289,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         return fail('TODO');
     }
 
-    fn evalTypePattern(node: Node, typeParams: TypeParams): bool
+    fn evalTypePattern(node: Node, typeParams: Map(string, Type)): bool
     {
         let items = node.items;
         if (node.kind == 'call' && items.len == 2)
@@ -3371,7 +3422,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     // I feel this should be a fncall instead of this here.
     //  It's varargs - so is it a template or what?
 
-    fn solveArrayLiteral(node: Node, type: Type)
+    fn solveArrayLiteral(node: Node, type: Type): SolvedNode
     {
         let items = solveNodes(node.items) || fail();
 
@@ -3390,8 +3441,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             itemType = type_tryInter(itemType, (items[i] || fail()).type) || fail(
                 '[array literal] No common supertype:', items);
 
-        return SolvedNode(node, items,
-            createArray(itemType) || fail());
+        return solved(node, createArray(itemType) || fail(), items);
     }
 
 
@@ -3435,7 +3485,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             o.kind == 'fn' || fail();
 
             o.names.len == o.args.len || fail();
-            o.names.indexOf(id) < 0 || fail(
+            o.names.find(id) < 0 || fail(
                 'Implicit argument name collision.');
 
             o.args .push(type);
@@ -3465,7 +3515,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn getImplicit(id: string, type: Type): ScopeIdx
     {
-        mut matched = scope_tryMatch__mutargs(id, [], type, 0);
+        mut args: SolvedNode[];
+        mut matched = scope_tryMatch__mutargs(:id, :args, retType: type);
         if (!matched)
         {
             if (!_current_fn)
@@ -3498,7 +3549,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             : type_tryInter(priType, secType) || fail(
                 'No common supertype:', [ priExpr, secExpr ]);
 
-        return SolvedNode(node, items, outType || fail());
+        return solved(node, outType || fail(), items);
     }
 
     fn sumType_logic(items: SolvedNode[]): Type
@@ -3579,6 +3630,19 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     //
 
+    fn solved(
+        node: &Node, type: Type, items: SolvedNode[] = [])
+            : SolvedNode
+    {
+        return SolvedNode(
+            kind:  node.kind ,
+            flags: node.flags,
+            value: node.value,
+            token: node.token,
+
+            :items, :type);
+    }
+
     fn wrap(kind: string, node: SolvedNode, flags: i32): SolvedNode
     {
         return SolvedNode(
@@ -3616,7 +3680,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         }
 
         //
-        let out = SolvedNode(node, items, type);
+        let out = solved(node, items, type);
         out.target = target;
         return out;
     }
