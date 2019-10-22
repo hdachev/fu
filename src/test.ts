@@ -1255,9 +1255,12 @@ ZERO(`
         arg_t: Type[]       = [],
         arg_d: SolvedNode[] = [],
         template: Template  = [],
-        partial: Partial    = [])
+        partial: Partial    = []): i32
     {
-        return min;
+        return scope.i
+             + kind.len + id.len + type.i
+             + min + max + arg_n.len + arg_t.len + arg_d.len
+             + template.i + partial.i;
     }
 
     mut _scope: Scope;
@@ -1270,7 +1273,7 @@ ZERO(`
 
     return Scope_add(
         _scope,
-        'template', id, t_template,
+        '', id, t_template,
         min, max, arg_n,
         :template);
 `);
