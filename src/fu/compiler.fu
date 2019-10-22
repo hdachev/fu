@@ -2101,7 +2101,7 @@ fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-fn runSolver(parse: &Node, globals: &Scope): SolveResult
+fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): SolveResult
 {
     mut _scope:         Scope       = globals;
 
@@ -2899,12 +2899,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         template: &mut Template, args: SolvedNode[])
             : SolvedNode
     {
-        mut typeParams: Map(string, Type);
-
         let node = template.node;
 
         node.kind == 'fn' || fail('TODO');
-        mut result = trySpecializeFn(node, args, typeParams);
+        mut result = trySpecializeFn(node, args);
         if (!result)
             result.kind = 'spec-fail';
 
@@ -2915,10 +2913,11 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecializeFn(
-        node: Node, args: SolvedNode[], mut typeParams: Map(string, Type))
+        node: Node, args: SolvedNode[])
             : SolvedNode
     {
         let items = node.items;
+        mut typeParams: Map(string, Type);
 
         // First off, solve type params.
         let numArgs = items.len + FN_ARGS_BACK;
@@ -3188,8 +3187,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                     {
                         let maybe = GET(overloads[i]);
                         if (maybe.kind == 'type')
-                            return SolvedNode(
-                                node, null, maybe.type || fail());
+                            return solved(node, maybe.type || fail());
                     }
                 }
 
@@ -3212,7 +3210,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     }
 
     fn trySolveTypeParams(
-        node: Node, type: Type, typeParams: Map(string, Type)): bool
+        node: Node, mut type: Type, typeParams: &mut Map(string, Type)): bool
     {
         if (node.kind == 'call')
         {
@@ -3221,10 +3219,10 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             {
                 if (items.len == 1)
                 {
-                    let t = node.value == '&'    ? tryClear_ref(type)
+                    let t   = node.value == '&'    ? tryClear_ref(type)
                             : node.value == '&mut' ? tryClear_mutref(type)
                             : node.value == '[]'   ? tryClear_array(type)
-                            : fail('TODO');
+                            : (fail('TODO'), Type);
 
                     if (!t)
                         return false;
@@ -3240,8 +3238,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                         if (!kv)
                             return false;
 
-                        return trySolveTypeParams(items[0] || fail(), kv[0], typeParams)
-                            && trySolveTypeParams(items[1] || fail(), kv[1], typeParams);
+                        return trySolveTypeParams(items[0] || fail(), kv.key  , typeParams)
+                            && trySolveTypeParams(items[1] || fail(), kv.value, typeParams);
                     }
                 }
             }
@@ -3359,8 +3357,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn solveCall(node: Node): SolvedNode
     {
-        let id        = node.value || fail();
-        mut args        = solveNodes(node.items) || [];
+        let id          = node.value; id || fail();
+        mut args        = solveNodes(node.items);
 
         // Implicit temporaries, all args are referable.
         for (mut i = 0; i < args.len; i++)
@@ -3373,13 +3371,13 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         // `using` codegen.
         while (callTarg.partial)
         {
-            let unshift   = callTarg.kind == 'p-unshift';
+            let unshift     = callTarg.kind == 'p-unshift';
 
-            let partial   = callTarg.partial  || fail();
-            let viaIdx    = partial[0]        || fail();
-            callTargIdx     = partial[1]        || fail();
+            let partial     = callTarg.partial  || fail();
+            let viaIdx      = partial.via       || fail();
+            callTargIdx     = partial.target    || fail();
 
-            let via       = GET(viaIdx);
+            let via         = GET(viaIdx);
             callTarg        = GET(callTargIdx);
 
             // There's two things we can do here -
