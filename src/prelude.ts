@@ -77,6 +77,7 @@ fn insert (a: &mut $T[], i: i32, b: $T):      void __native_pure;
 
 fn concat (a: &$T[], b: &$T[]):               $T[] __native_pure;
 fn slice  (a: &$T[], i0: i32, i1: i32):       $T[] __native_pure;
+fn slice  (a: &$T[], i0: i32):                $T[] __native_pure;
 
 fn splice (a: &mut $T[], i: i32, count: i32): void __native_pure;
 fn pop    (a: &mut $T[]):                     void __native_pure;

@@ -2305,8 +2305,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             return fail(
                 'Cannot solve definit, no inferred type.');
 
-        return tryDefaultInit(type)
-            || fail('Cannot definit: ' + serializeType(type));
+        let init = tryDefaultInit(type);
+        init || fail('Cannot definit: ' + serializeType(type));
+        return init;
     }
 
 
@@ -2327,9 +2328,9 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let o_defaults = overload.defaults;
 
         // Fixed.
-        mut arg_t = o_args     && o_args    .len > 1 ? o_args    .slice(1) : null;
-        mut arg_n = o_names    && o_names   .len > 1 ? o_names   .slice(1) : null;
-        mut arg_d = o_defaults && o_defaults.len > 1 ? o_defaults.slice(1) : null;
+        mut arg_t = o_args    .len > 1 ? o_args    .slice(1) : o_args;
+        mut arg_n = o_names   .len > 1 ? o_names   .slice(1) : o_names;
+        mut arg_d = o_defaults.len > 1 ? o_defaults.slice(1) : o_defaults;
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
@@ -2342,21 +2343,18 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let via_t = via.args && via.args[0] || fail();
 
             //
-            if (!arg_t)
-                arg_t = [];
-
             arg_t.unshift(via_t);
             if (arg_n)
                 arg_n.unshift('using');
             if (arg_d)
-                arg_d.unshift(null);
+                arg_d.unshift(SolvedNode());
         }
 
         return Scope_add(
             _scope,
             kind, id, overload.type,
             min, max, arg_n, arg_t, arg_d,
-            null, [ viaIdx, overloadIdx ]);
+            partial: Partial(viaIdx, overloadIdx));
     }
 
 
@@ -2364,7 +2362,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn hasIdentifierChars(id: string)
     {
-        for (let i = 0; i < id.len; i++)
+        for (mut i = 0; i < id.len; i++)
         {
             let c = id[i];
             if (c == '_' || c >= 'a' && c <= 'z'
@@ -2385,7 +2383,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let keys = Scope_keys(_scope);
         for (mut i = 0; i < keys.len; i++)
         {
-            let key = keys[i];
+            let id = keys[i];
 
             // Skip over operators.
             if (!hasIdentifierChars(id))
