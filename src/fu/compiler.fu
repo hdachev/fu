@@ -1955,16 +1955,10 @@ struct SolvedNode
     target:     ScopeIdx;
 };
 
-struct Specialization
-{
-    node: SolvedNode;
-    index: ScopeIdx;
-};
-
 struct Template
 {
     node: Node;
-    specializations: Map(string, Specialization); // mangle -> spec
+    specializations: Map(string, SolvedNode); // mangle -> spec
 };
 
 struct Partial
@@ -2776,20 +2770,21 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             if (solve)
                 return prep || fail();
 
-            let tDecl = TemplateDecl(n_fn);
-            let out   = solved(n_fn, t_void);
+            let tDecl   = TemplateDecl(n_fn);
+            mut out     = solved(n_fn, t_void);
             out.target  = tDecl;
             return out;
         }
 
         // Prep reject.
         if (!solve && !(n_fn.flags & F_FULLY_TYPED))
-            return null;
+            return SolvedNode();
 
-        let inItems   = n_fn.items;
+        let inItems = n_fn.items;
         inItems.len >= FN_RET_BACK || fail();
 
-        let out       = prep || SolvedNode(n_fn, null, t_void);
+        mut out = prep;
+        out ||= solved(n_fn, t_void);
 
         mut outItems: SolvedNode[];
         outItems.resize(inItems.len);
@@ -2829,13 +2824,15 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 let branch = n_body.items[caseIdx] || fail();
                 let items = branch.items;
 
-                n_ret   = items[items.len + FN_RET_BACK]  || n_ret || null;
-                n_body  = items[items.len + FN_BODY_BACK] || fail();
+                n_ret   = items[items.len + FN_RET_BACK]  || n_ret;
+                n_body  = items[items.len + FN_BODY_BACK];
             }
 
             // Return type annot.
             {
-                let s_ret = n_ret && evalTypeAnnot(n_ret) || null;
+                let s_ret = n_ret
+                    ? evalTypeAnnot(n_ret)
+                    : SolvedNode();
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2845,7 +2842,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             // Only if actually solving the fn, the fn body.
             if (solve)
             {
-                let s_body = solveNode(n_body) || fail();
+                let s_body = solveNode(n_body);
+                s_body || fail();
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2884,34 +2882,31 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
     //
 
     fn trySpecialize(
-        template: Template, args: SolvedNode[])
+        template: &mut Template, args: SolvedNode[])
             : ScopeIdx
     {
         let mangle = TODO_memoize_mangler(args);
 
         //
-        mut spec = template.specializations[mangle];
-        if (!spec)
-        {
-            let node = doTrySpecialize(template, args) || null;
+        let spec =
+            (template.specializations[mangle] ||=
+                doTrySpecialize(template, args));
 
-            spec = template.specializations[mangle] =
-                Specilization(:node, index: node.target);
-        }
-
-        return spec.index;
+        return spec.target;
     }
 
     fn doTrySpecialize(
-        template: Template, args: SolvedNode[])
+        template: &mut Template, args: SolvedNode[])
             : SolvedNode
     {
         mut typeParams: Map(string, Type);
 
         let node = template.node;
-        let result = node.kind == 'fn'
-            ? trySpecializeFn(node, args, typeParams)
-            : fail('TODO');
+
+        node.kind == 'fn' || fail('TODO');
+        mut result = trySpecializeFn(node, args, typeParams);
+        if (!result)
+            result.kind = 'spec-fail';
 
         return result;
     }
@@ -2932,9 +2927,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
             let argNode = items[i] || fail();
             argNode.kind == 'let'  || fail();
 
-            let argValue = args && args[i];
-            let inType = argValue && argValue.type;
-
+            let inType = args.len > i ? args[i].type : Type();
             if (inType)
             {
                 let argName = argNode.value || fail();
@@ -2951,7 +2944,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                         annot, inType, typeParams);
 
                     if (!ok)
-                        return null;
+                        return SolvedNode();
                 }
             }
         }
@@ -2978,7 +2971,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
             // All branches mismatch?
             if (caseIdx < 0)
-                return null;
+                return SolvedNode();
         }
 
         ////////////////////////////////
@@ -2987,7 +2980,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let scope0 = Scope_push(_scope);
         ////////////////////////////////
 
-        let specialized = __solveFn(true, true, node, null, caseIdx) || fail();
+        let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
+        specialized || fail();
 
         ////////////////////////////////
         _typeParams = typeParams0;
@@ -3002,7 +2996,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn uPrepStruct(node: Node): SolvedNode
     {
-        return __solveStruct(false, node, null);
+        return __solveStruct(false, node, SolvedNode());
     }
 
     fn uSolveStruct(node: Node, prep: SolvedNode): SolvedNode
@@ -3012,7 +3006,8 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
     fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
     {
-        mut out     = prep || solved(node, t_void);
+        mut out     = prep;
+        out ||= solved(node, t_void);
 
         mut fields: StructField[];
 
@@ -3040,7 +3035,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
 
         // Add a default constructor.
         {
-            let members: SolvedNode[];
+            mut members: SolvedNode[];
             let items = out.items;
 
             for (mut i = 0; i < items.len; i++)
@@ -3049,6 +3044,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
                 if (item && item.kind == 'let' && (item.flags & F_FIELD))
                 {
                     members.push(item);
+
                     fields.push(
                         StructField(
                             id:   item.value || fail(),
@@ -3076,17 +3072,22 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let nextExpr  = out.items[0] || out;
         let nextType  = nextExpr.type || fail();
 
-        let fn        = _current_fn || fail();
-        let items     = fn.items;
-        let retIdx    = items.len + FN_RET_BACK;
-        let prevExpr  = items[retIdx];
-        let prevType  = prevExpr ? prevExpr.type || fail() : null;
+        let retIdx    = _current_fn.items.len + FN_RET_BACK;
+        let prevExpr  = _current_fn.items[retIdx];
+
+        mut prevType: Type;
+        if (prevExpr)
+            prevType = prevExpr.type || fail();
 
         if (prevType)
+        {
             isAssignable(prevType, nextType)
                 || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
+        }
         else
-            items[retIdx] = nextExpr || fail();
+        {
+            _current_fn.items[retIdx] = nextExpr || fail();
+        }
 
         return out;
     }
@@ -3107,7 +3108,7 @@ fn runSolver(parse: &Node, globals: &Scope): SolveResult
         let s_annot   = annot && evalTypeAnnot(annot);
         let t_annot   = s_annot && s_annot.type;
 
-        let   s_init    = init && solveNode(init, t_annot);
+        let s_init    = init && solveNode(init, t_annot);
         let t_init    = s_init && s_init.type;
 
         let t_let     = t_annot || clear_refs(t_init || fail(
