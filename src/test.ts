@@ -1238,6 +1238,43 @@ ZERO(`
     return createDefaultInit(Type()).target.i;
 `);
 
+ZERO(`
+    struct Type         { i: i32; };
+    struct Scope        { i: i32; };
+    struct Partial      { i: i32; };
+    struct Template     { i: i32; };
+    struct SolvedNode   { i: i32; };
+
+    pub fn Scope_add(
+        scope: &mut Scope,
+        kind: string, id: string, type: Type,
+
+        min: i32 = 0,
+        max: i32 = 0,
+        arg_n: string[]     = [],
+        arg_t: Type[]       = [],
+        arg_d: SolvedNode[] = [],
+        template: Template  = [],
+        partial: Partial    = [])
+    {
+        return min;
+    }
+
+    mut _scope: Scope;
+    let id: string;
+    let t_template: Type;
+    let min: i32;
+    let max: i32;
+    let arg_n: string[];
+    let template: Template;
+
+    return Scope_add(
+        _scope,
+        'template', id, t_template,
+        min, max, arg_n,
+        :template);
+`);
+
 
 // Let's get going.
 

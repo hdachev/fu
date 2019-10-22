@@ -398,21 +398,38 @@ function runSolver(parse: Node, globals: Scope): SolveResult
         }
     }
 
-    function arr_move<T>(arr: T[], from: number, to: number)
+
+    //
+
+    function getNamedArgReorder(callsite: string[], declaration: string[]): number[]
     {
-        // memcpy, memmove, mempcy.
-        const pivot = arr[from];
+        const result: number[] = [];
 
-        if (from < to)
-            for (let i = from; i < to; i++)
-                arr[i] = arr[i + 1];
+        let offset = 0;
+        for (let i = 0; i < declaration.length; i++)
+        {
+            let idx = callsite.indexOf(declaration[i]);
+            if (idx < 0)
+            {
+                for (let i = offset; i < callsite.length; i++)
+                {
+                    offset++;
+                    if (!callsite[i])
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+            }
 
-        if (from > to)
-            for (let i = from; i > to; i--)
-                arr[i] = arr[i - 1];
+            result.push(idx);
+        }
 
-        arr[to] = pivot;
+        return result;
     }
+
+
+    //
 
     function scope_tryMatch__mutargs(
         id: string, args: SolvedNodes,
@@ -439,7 +456,7 @@ function runSolver(parse: Node, globals: Scope): SolveResult
             const arity = args.length;
 
             // Prep labelled args for remap.
-            let names: (string|null)[]|null = null;
+            let names: string[]|null = null;
             if (flags & F_NAMED_ARGS)
             {
                 names = [];
@@ -451,11 +468,13 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     names[i] =
                         arg && arg.kind === 'label'
                             ? (some = true, arg.value) || fail()
-                            : null;
+                            : '';
                 }
 
                 some || fail();
             }
+
+            let reorder: number[]|null = null;
 
             //
             NEXT: for (let i = 0; i < overloads.length; i++)
@@ -472,33 +491,20 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                     if (retType && !isAssignable(retType, overload.type || fail()))
                         continue NEXT;
 
-                    // Remap named arguments.
                     if (names)
-                    {
-                        const overloadNames = overload.names;
-                        if (!overloadNames)
-                            continue NEXT;
-
-                        // Move named arguments around.
-                        for (let i = 0; i < names.length; i++)
-                        {
-                            const id = names[i];
-                            if (!id)
-                                continue;
-
-                            const idx = overloadNames.indexOf(id);
-                            if (idx < 0)
-                                continue NEXT;
-
-                            arr_move(args, i, idx);
-                            arr_move(names, i, idx);
-                        }
-                    }
+                        reorder = overload.names
+                            ? getNamedArgReorder(names, overload.names)
+                            : null;
 
                     // Specialize.
                     if (overload.template)
                     {
-                        const specIdx = trySpecialize(overload.template, args);
+                        if (reorder)
+                            fail('TODO handle argument reorder in template specialization.');
+
+                        const specIdx = trySpecialize(
+                            overload.template, args);
+
                         if (!specIdx)
                             continue NEXT;
 
@@ -516,16 +522,27 @@ function runSolver(parse: Node, globals: Scope): SolveResult
                 // Type check args.
                 const arg_t = overload.args || fail();
                 const arg_d = overload.defaults;
-                for (let i = 0; i < args.length; i++)
+
+                const N = reorder   ? reorder.length
+                                    : args.length;
+
+                for (let i = 0; i < N; i++)
                 {
-                    const arg = args[i];
-                    if (!arg)
+                    const callsiteIndex = reorder   ? reorder[i]
+                                                    : i;
+                    if (callsiteIndex < 0)
                     {
-                        arg_d && arg_d[i] || fail();
+                        // Argument may not be defaulted -
+                        //  we might be supplying defaults via names
+                        //   before we've actually exhausted
+                        //    all the non-defaulted stuff.
+                        if (!(arg_d && arg_d[i]))
+                            continue NEXT;
+
                         continue;
                     }
 
-                    if (!isAssignable(arg_t[i], (args[i] || fail()).type))
+                    if (!isAssignable(arg_t[i], (args[callsiteIndex] || fail()).type))
                         continue NEXT;
                 }
 
@@ -535,6 +552,23 @@ function runSolver(parse: Node, globals: Scope): SolveResult
 
                 // Done!
                 matchIdx = overloadIdx;
+
+                // Do reorder.
+                if (reorder)
+                {
+                    // TODO:
+                    // I shouldn't need this pass, just swaps must do.
+                    const new_args: SolvedNodes = [];
+                    for (let i = 0; i < reorder.length; i++)
+                    {
+                        const idx = reorder[i];
+                        new_args[i] = idx < 0   ? null
+                                                : args[idx];
+                    }
+
+                    for (let i = 0; i < new_args.length; i++)
+                        args[i] = new_args[i];
+                }
             }
         }
 
