@@ -1,7 +1,7 @@
 import { fail } from './fail';
 import { ScopeIdx, Scope_get } from './scope';
 import { SolveResult, SolvedNode, Type } from './solve';
-import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION, F_MUT } from './parse';
+import { LET_INIT, FN_BODY_BACK, FN_RET_BACK, FN_ARGS_BACK, LOOP_INIT, LOOP_COND, LOOP_POST, LOOP_BODY, LOOP_POST_COND, F_POSTFIX, F_HAS_CLOSURE, F_CLOSURE, F_DESTRUCTOR, F_ELISION, F_MUT, F_ARG } from './parse';
 import { lookupType, Struct, type_isMap, q_ref, q_mutref, t_never, t_void, q_trivial, q_prvalue } from './types';
 
 type Nodes              = (SolvedNode|null)[]|null;
@@ -440,7 +440,8 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         const annot = typeAnnot(ret.type || fail(), M_RETVAL);
 
         //
-        const closure = !!_clsrN && (fn.flags & F_CLOSURE);
+        const closure = !!_clsrN && (fn.flags & F_CLOSURE)
+            && fn.value !== '==';
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
@@ -449,6 +450,9 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         let src = closure
                 ? 'const auto& ' + fn.value + ' = [&]('
                 : annot + ' ' + fn.value + '(';
+
+        if (fn.value === '==')
+            src = annot + ' operator' + fn.value + '(';
 
         for (let i = 0, n = items.length + FN_ARGS_BACK; i < n; i++)
         {
@@ -533,7 +537,7 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         const head  = annot + ' ' + ID(id);
         const init  = node.items[LET_INIT];
 
-        if (!doInit)
+        if (!doInit || (node.flags & F_ARG))
             return head;
 
         if (init)
