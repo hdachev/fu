@@ -2800,17 +2800,18 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
         //////////////////////////
         {
-            let current_fn0   = _current_fn;
-            let scope0        = Scope_push(_scope);
+            let current_fn0     = _current_fn;
+            let scope0          = Scope_push(_scope);
 
-            _current_fn         = out;
+            _current_fn = out;
+            let outItems: &mut SolvedNode[] = _current_fn.items;
 
             // Arg decls.
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == 'let' || fail();
-                out.items[i] = solveLet(n_arg);
+                outItems[i] = solveLet(n_arg);
             }
 
             /////////////////////////////////////////////////////
@@ -2836,7 +2837,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                out.items[out.items.len + FN_RET_BACK] = s_ret;
+                outItems[outItems.len + FN_RET_BACK] = s_ret;
             }
 
             // Only if actually solving the fn, the fn body.
@@ -2847,12 +2848,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                out.items[out.items.len + FN_BODY_BACK] = s_body;
+                outItems[outItems.len + FN_BODY_BACK] = s_body;
             }
 
             //
             /////////////////////////////////////////////////////
 
+            out                 = _current_fn;
             _current_fn         = current_fn0;
             Scope_pop(_scope, scope0);
         }
