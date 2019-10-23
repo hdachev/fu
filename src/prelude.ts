@@ -119,6 +119,9 @@ fn [](a: &Map($K, $V), b: &$K)
     case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
     case ($a -> &    Map($K, $V)): &    $V __native_pure;
 
+fn keys  (a: &Map($K, $V)): $K[] __native_pure;
+fn values(a: &Map($K, $V)): $V[] __native_pure;
+
 
 // Assertions, bugs & fails.
 
