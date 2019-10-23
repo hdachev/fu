@@ -651,13 +651,13 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
                 if (id === '[]')
                 {
                     if (head.type.canon === 'string')
-                        return 'std::string(1, ' + items[0] + '[' + items[1] + '])';
+                        return 'std::string(1, ' + items[0] + '.at(' + items[1] + '))';
 
                     // One does not simply index into a map.
                     if (type_isMap(head.type))
                         return items[0] + '.at(' + items[1] + ')';
 
-                    return items[0] + '[' + items[1] + ']';
+                    return items[0] + '.at(' + items[1] + ')';
                 }
 
                 // This is hellish but should cover our asses for a little while -
