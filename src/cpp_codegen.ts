@@ -67,10 +67,13 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if ((mode & M_RETVAL) && type.canon === 'never')
             return '[[noreturn]] ' + fwd;
 
-        if (type.quals & q_mutref)
-            return fwd + '&';
-        if (type.quals & q_ref)
-            return 'const ' + fwd + '&';
+        if (!(type.quals & q_prvalue))
+        {
+            if (type.quals & q_mutref)
+                return fwd + '&';
+            if (type.quals & q_ref)
+                return 'const ' + fwd + '&';
+        }
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
@@ -731,8 +734,17 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if (id === 'splice' && items.length === 3)
             return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
 
+        if (id === 'grow' && items.length === 2)
+            return items[0] + '.resize(' + items[1] + ')';
+
         if (id === 'shrink' && items.length === 2)
             return items[0] + '.resize(' + items[1] + ')';
+
+        if (id === 'resize' && items.length === 2)
+            return items[0] + '.resize(' + items[1] + ')';
+
+        if (id === 'clear' && items.length === 1)
+            return items[0] + '.clear()';
 
         if (id === 'find' && items.length === 2)
         {
@@ -768,6 +780,15 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
                 return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, ' + items[2] + ' - _0); } ())';
 
             return '([&](const auto& _) { const auto& _0 = _.begin() + ' + items[1] +'; const auto& _1 = _.begin() + ' + items[2] + '; return ' + typeAnnot(node.type) + '(_0, _1); } (' + items[0] + '))';
+        }
+
+        if (id === 'slice' && items.length === 2)
+        {
+            const head = node.items[0] || fail();
+            if (head.type.canon === 'string')
+                return items[0] + '.substr(' + items[1] + ')';
+
+            return '([&](const auto& _) { return ' + typeAnnot(node.type) + '(_.begin() + ' + items[1] + ', _.end()); } (' + items[0] + '))';
         }
 
         if (id === 'sort' && items.length === 1)
