@@ -655,7 +655,12 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
 
                     // One does not simply index into a map.
                     if (type_isMap(head.type))
+                    {
+                        if (!(head.type.quals & q_mutref))
+                            return cgMapConstGet(items[0], items[1]);
+
                         return items[0] + '.at(' + items[1] + ')';
+                    }
 
                     return items[0] + '.at(' + items[1] + ')';
                 }
@@ -891,7 +896,7 @@ inline std::string operator+(const std::string& a, double b)
 
     function annotateNever(): string
     {
-        const NEVER = '::never';
+        const NEVER = '::NEVER';
         if (!_tfwd[NEVER])
         {
             include('<stdexcept>');
@@ -920,7 +925,7 @@ struct fu_NEVER
 
     function cgThrow(kind: string, item: string): string
     {
-        const THROW = '::throw';
+        const THROW = '::THROW';
         if (!_ffwd[THROW])
         {
             annotateNever();
@@ -946,7 +951,7 @@ template <typename T>
 
     function cgConcat(items: string[]): string
     {
-        const CONCAT = '::concat';
+        const CONCAT = '::CONCAT';
         if (!_ffwd[CONCAT])
         {
             annotateNever();
@@ -974,6 +979,38 @@ std::vector<T> fu_CONCAT(
         }
 
         return 'fu_CONCAT(' + items.join(', ') + ')';
+    }
+
+    function cgMapConstGet(map: string, key: string)
+    {
+        const MAP_CONST_GET = '::MAP_CONST_GET';
+        if (!_ffwd[MAP_CONST_GET])
+        {
+            include('<unordered_map>');
+
+            _ffwd[MAP_CONST_GET] =
+////////////////////////////////////
+`
+template <typename K, typename V>
+const V& fu_MAP_CONST_GET(
+    const std::unordered_map<K, V>& map,
+    const K& key)
+{
+    const auto& it = map.find(key);
+    if (it == map.end() )
+    {
+        static const V def {};
+        return def;
+    }
+
+    return it->second;
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_MAP_CONST_GET(' + map + ', ' + key + ')';
     }
 
     function cgLiteral(node: SolvedNode)
