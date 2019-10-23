@@ -1025,16 +1025,15 @@ std::vector<T> fu_CONCAT(
 
     //
 
-    function isRefLogical(type: Type, mode: number)
+    function isRefLogical(type: Type)
     {
-        return (type.quals & (q_ref | q_prvalue)) == q_ref
-            && !(mode & M_RETBOOL);
+        return (type.quals & (q_ref | q_prvalue)) == q_ref;
     }
 
-    function cgAnd(node: SolvedNode, mode: number)
+    function cgAnd(node: SolvedNode)
     {
         const type = node.type;
-        if (isRefLogical(type, mode))
+        if (isRefLogical(type))
         {
             const annot = typeAnnot(type);
 
@@ -1055,13 +1054,26 @@ std::vector<T> fu_CONCAT(
             return src;
         }
 
-        return '(' + cgNodes(node.items).join(' && ') + ')';
+        let src = '(';
+        const items = cgNodes(node.items);
+        for (let i = 0; i < items.length; i++)
+        {
+            const item = items[i];
+            const type = (node.items[i] || fail())  .type;
+
+            if (i)
+                src += ' && ';
+
+            src += bool(type, item);
+        }
+
+        return src + ')';
     }
 
-    function cgOr(node: SolvedNode, mode: number)
+    function cgOr(node: SolvedNode)
     {
         const type = node.type;
-        if (isRefLogical(type, mode))
+        if (isRefLogical(type))
         {
             const annot = typeAnnot(type);
 
@@ -1104,7 +1116,20 @@ std::vector<T> fu_CONCAT(
             return src;
         }
 
-        return '(' + cgNodes(node.items).join(' || ') + ')';
+        let src = '(';
+        const items = cgNodes(node.items);
+        for (let i = 0; i < items.length; i++)
+        {
+            const item = items[i];
+            const type = (node.items[i] || fail())  .type;
+
+            if (i)
+                src += ' || ';
+
+            src += bool(type, item);
+        }
+
+        return src + ')';
     }
 
 
@@ -1139,7 +1164,7 @@ std::vector<T> fu_CONCAT(
             const cnt = 'L_' + node.value + '_c';
 
             if (body.indexOf(cnt) >= 0)
-                body = postfixBlock(body, _indent +     '    ' + cnt + ':;');
+                body = '{' + postfixBlock(body, _indent +     '    }' + cnt + ':;');
             if (body.indexOf(brk) >= 0)
                 breakLabel = _indent + '    ' + brk + ':;';
         }
@@ -1174,8 +1199,8 @@ std::vector<T> fu_CONCAT(
         if (k === 'call')       return cgCall(node);
         if (k === 'let')        return cgLet(node);
         if (k === 'if')         return cgIf(node, mode);
-        if (k === 'or')         return cgOr(node, mode);
-        if (k === 'and')        return cgAnd(node, mode);
+        if (k === 'or')         return cgOr(node);
+        if (k === 'and')        return cgAnd(node);
         if (k === 'loop')       return cgLoop(node);
         if (k === 'int')        return cgLiteral(node);
         if (k === 'str')        return cgStringLiteral(node);

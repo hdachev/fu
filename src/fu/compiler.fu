@@ -2192,7 +2192,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             min, max, arg_n, :template);
     }
 
-    fn FnDecl(id: string, node: &mut SolvedNode)
+    fn FnDecl(id: string, node: &mut SolvedNode): ScopeIdx
     {
         let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
