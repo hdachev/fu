@@ -2930,8 +2930,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             if (inType)
             {
                 let argName = argNode.value || fail();
-                if (!typeParams[argName])
-                    typeParams[argName] = inType;
+                typeParams[argName] ||= inType;
             }
 
             if (argNode.flags & F_TEMPLATE)
