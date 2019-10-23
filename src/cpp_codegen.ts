@@ -882,7 +882,7 @@ inline void fu_MEMSLIDE(void* dest, void* source)
             _ffwd[STRING] =
 ////////////////////////////////////
 `
-inline std::string operator+(const std::string& a, double b)
+inline std::string operator+(const std::string& a, long long b)
 {
     return a + std::to_string(b);
 }

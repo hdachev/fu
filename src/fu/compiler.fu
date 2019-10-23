@@ -2182,7 +2182,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 let arg = items[i] || fail();
                 arg.kind == 'let' || fail();
                 let name = arg.value || fail();
-                arg_n[i] = name;
+                arg_n.push(name);
             }
         }
 
@@ -2208,10 +2208,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         mut min = 0;
         for (mut i = 0; i < max; i++)
         {
-            let arg = args[i]  || fail();
-            arg.kind == 'let'   || fail();
-            arg_t[i] = arg.type  || fail();
-            arg_n[i] = arg.value || fail();
+            let arg = args[i]    || fail();
+            arg.kind == 'let'    || fail();
+            arg_t.push(arg.type  || fail());
+            arg_n.push(arg.value || fail());
 
             //
             let isImplicit = !!(arg.flags & F_IMPLICIT);
@@ -2222,7 +2222,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 arg_d.len >= i || fail();
 
                 let def = arg.items[LET_INIT];
-                arg_d[i] = def;
+                arg_d.push(def);
                 if (!def)
                     min++;
             }
@@ -2792,10 +2792,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         mut out = prep;
         out ||= solved(n_fn, t_void);
 
-        mut outItems: SolvedNode[];
-        outItems.resize(inItems.len);
-
-        out.items       = outItems;
+        out.items.resize(inItems.len);
 
         //
         if (_current_fn && id != 'free')
@@ -2816,7 +2813,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             {
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == 'let' || fail();
-                outItems[i] = solveLet(n_arg);
+                out.items[i] = solveLet(n_arg);
             }
 
             /////////////////////////////////////////////////////
@@ -2842,7 +2839,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.len + FN_RET_BACK] = s_ret;
+                out.items[out.items.len + FN_RET_BACK] = s_ret;
             }
 
             // Only if actually solving the fn, the fn body.
@@ -2853,7 +2850,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.len + FN_BODY_BACK] = s_body;
+                out.items[out.items.len + FN_BODY_BACK] = s_body;
             }
 
             //
