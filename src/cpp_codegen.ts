@@ -766,6 +766,8 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
             const head = node.items[0] || fail();
             if (head.type.canon === 'string')
                 return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, ' + items[2] + ' - _0); } ())';
+
+            return '([&](const auto& _) { const auto& _0 = _.begin() + ' + items[1] +'; const auto& _1 = _.begin() + ' + items[2] + '; return ' + typeAnnot(node.type) + '(_0, _1); } (' + items[0] + '))';
         }
 
         if (id === 'sort' && items.length === 1)

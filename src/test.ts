@@ -103,6 +103,9 @@ function testCodegen(src: string, cpp: string)
 {
     if (/-no-lambda/.test(src))
         /\]\(/.test(cpp) && fail('Unexpected lambda.');
+
+    if (/return const/.test(cpp))
+        fail('Return const.', src, cpp);
 }
 
 
@@ -803,6 +806,18 @@ ZERO(`
     mut a = [2, 0, 1, 3, 4]; // [0, 1, 2, 3, 4]
     a.move(0, 2);
     return a[1] + a[4] - a[2] - a[3];
+`);
+
+ZERO(`
+    let a = [0, 1, 2, 3];
+    let b = a.slice(1, 3);
+    return b.len - b[1];
+`);
+
+ZERO(`
+    let a = [0, 1, 2, 3];
+    let b = a.slice(1);
+    return b.len - b[2];
 `);
 
 
