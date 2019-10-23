@@ -106,12 +106,9 @@ fn lex(src: &string, fname: &string): LexResult
         //  TODO  //
         ////////////
 
-        if (kind == 'int')
-        {}
-        else
-        {}
+        if (src) {} // unused
 
-        return src;
+        return kind;
     }
 
     fn unescapeStr(src: &string, idx0: i32, idx1: i32): string
@@ -4005,14 +4002,40 @@ pub fn solve(parse: Node)
 
 // A very quick test.
 
+let TEST_SRC = `
+
+    fn test(one: i32)
+    {
+        let zero = one - 1;
+        let two  = one * 2;
+
+        fn inner(i: i32): i32
+            i > zero ? outer(i - one) : zero;
+
+        fn outer(i: i32): i32
+            two * inner(i);
+
+        return outer(one) + (two - one) * 17;
+    }
+
+    fn ZERO(): i32
+    {
+        return test(1) - 17;
+    }
+
+`;
+
 fn ZERO(): i32
 {
     let res_lex = lex(
         fname: 'filename',
-        src: 'let hw = "hello\\nworld";');
+        src: TEST_SRC);
 
     let res_parse = parse(
         'filename', res_lex.tokens);
 
-    return res_parse.kind == 'root' ? 0 : 101;
+    let implicit mut ctx: TEMP_Context;
+    let res_solve = solve(res_parse);
+
+    return res_solve.root.kind == 'root' ? 0 : 101;
 }

@@ -59,6 +59,9 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
             FAIL(...args, '\n\t... in ' + fname + ':\n\n\t' + s);
         };
 
+        if (/\.fu$/.test(fname))
+            console.log('Building', fname, '...');
+
         cpp_builder.build(gensrc, result =>
         {
             if (result.err)
