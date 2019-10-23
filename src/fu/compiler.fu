@@ -3263,10 +3263,15 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         else if (node.kind == 'typeparam')
         {
             let id = node.value || fail();
-            let prev = typeParams[id];
-            if (prev)
+
+            // What is happening here?
+            // This is crazy, no?
+            let _param: &mut Type =
+                (typeParams[id] ||= Type);
+
+            if (_param)
             {
-                let inter = type_tryInter(prev, type);
+                let inter = type_tryInter(_param, type);
                 if (!inter)
                     return false;
 
@@ -3281,7 +3286,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             // After the match we need this to e.g. lift `non_zero`
             //  from integral results, etc.
             //
-            typeParams[id] = clear_refs(type);
+            _param = clear_refs(type);
 
             return true;
         }
