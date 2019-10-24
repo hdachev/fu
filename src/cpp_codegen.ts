@@ -594,7 +594,7 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
     function cgArrayLiteral(node: SolvedNode)
     {
         const items = cgNodes(node.items);
-        const annot = typeAnnot(node.type).replace(/^const |&$/g, '');
+        const annot = typeAnnot(node.type);
 
         if (!items.length)
             return annot + '{}';
@@ -1015,7 +1015,7 @@ const V& fu_MAP_CONST_GET(
 
     function cgLiteral(node: SolvedNode)
     {
-        return node.value || 'void';
+        return node.value || fail();
     }
 
     function cgEmpty()

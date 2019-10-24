@@ -109,8 +109,12 @@ fn has(a: &string, b: &string):     bool        __native_pure;
 fn starts(a: &string, with: &string): bool      __native_pure;
 
 fn slice (a: &string, i0: i32, i1: i32): string __native_pure;
+fn slice (a: &string, i0: i32)         : string __native_pure;
+
 fn substr(a: &string, i0: i32, i1: i32): string __native_pure;
 fn char  (a: &string, i0: i32): i32 __native_pure;
+
+fn replace(in: &string, all: &string, with: &string): string __native_pure;
 
 
 // Maps.
@@ -121,6 +125,7 @@ fn [](a: &Map($K, $V), b: &$K)
 
 fn keys  (a: &Map($K, $V)): $K[] __native_pure;
 fn values(a: &Map($K, $V)): $V[] __native_pure;
+fn has   (a: &Map($K, $V), b: &$K): bool __native_pure;
 
 
 // Assertions, bugs & fails.
@@ -132,6 +137,7 @@ fn assert()             : never __native_pure;
 // Butt plugs.
 
 // TODO we should go for an any $B -> call stringify(b) macro.
-fn + (a: &string, b: i32): &string __native_pure;
+fn +(a: &string, b: i32): string __native_pure;
+fn join(a: &string[], sep: &string): string __native_pure;
 
 `;
