@@ -114,7 +114,7 @@ fn slice (a: &string, i0: i32)         : string __native_pure;
 fn substr(a: &string, i0: i32, i1: i32): string __native_pure;
 fn char  (a: &string, i0: i32): i32 __native_pure;
 
-fn replace(in: &string, all: &string, with: &string): string __native_pure;
+fn split(str: &string, sep: &string): string[] __native_pure;
 
 
 // Maps.

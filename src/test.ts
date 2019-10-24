@@ -866,6 +866,32 @@ ZERO(`
     return a == b && a == 'world' ? a.len - 5 : 1;
 `);
 
+ZERO(`
+    let tests =
+    [
+        '',
+        ' ',
+        '  ',
+        'hey you duders',
+        ' hey you duders',
+        'hey you duders ',
+        '  hey you duders ',
+        '  hey you  duders ',
+        '  hey you  duders  '
+    ];
+
+    fn test(item: string)
+        item == item.split(' ').join(' ')
+            ? 0
+            : item.len;
+
+    mut sum = 0;
+    for (mut i = 0; i < tests.len; i++)
+        sum += test(tests[i]);
+
+    return sum;
+`);
+
 
 // Maps.
 

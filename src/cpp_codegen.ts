@@ -469,7 +469,7 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
              ? ') -> ' + annot
              : ') noexcept';
 
-        if (!closure && src !== 'int main()' && _fdef.indexOf(fn.value || fail()) >= 0)
+        if (!closure && src !== 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.indexOf(fn.value || fail()) >= 0)
             _ffwd[src] = '\n' + src + ';';
 
         if (body.kind === 'block')
@@ -831,6 +831,18 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if (id === 'concat' && items.length === 2)
             return cgConcat(items);
 
+        if (id === 'split' && items.length === 2)
+            return cgSplit(items);
+
+        if (id === 'join' && items.length === 2)
+            return cgJoin(items);
+
+        if (id === 'join' && items.length === 2)
+            return cgJoin(items);
+
+        if (id === 'keys' && items.length === 1)
+            return cgKeys(items);
+
         return ID(id) + '(' + items.join(', ') + ')';
     }
 
@@ -954,7 +966,6 @@ template <typename T>
         const CONCAT = '::CONCAT';
         if (!_ffwd[CONCAT])
         {
-            annotateNever();
             include('<vector>');
 
             _ffwd[CONCAT] =
@@ -979,6 +990,116 @@ std::vector<T> fu_CONCAT(
         }
 
         return 'fu_CONCAT(' + items.join(', ') + ')';
+    }
+
+    function cgJoin(items: string[]): string
+    {
+        const JOIN = '::JOIN';
+        if (!_ffwd[JOIN])
+        {
+            include('<string>');
+            include('<vector>');
+
+            _ffwd[JOIN] =
+////////////////////////////////////
+`
+inline std::string fu_JOIN(
+    const std::vector<std::string>& vec,
+    const std::string& sep)
+{
+    size_t len = 0;
+    for (size_t i = 0; i < vec.size(); i++)
+    {
+        if (i)
+            len += sep.size();
+
+        len += vec[i].size();
+    }
+
+    std::string result;
+    result.reserve(len);
+    for (size_t i = 0; i < vec.size(); i++)
+    {
+        if (i)
+            result += sep;
+
+        result += vec[i];
+    }
+
+    return result;
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_JOIN(' + items.join(', ') + ')';
+    }
+
+    function cgSplit(items: string[]): string
+    {
+        const SPLIT = '::SPLIT';
+        if (!_ffwd[SPLIT])
+        {
+            include('<string>');
+            include('<vector>');
+
+            _ffwd[SPLIT] =
+////////////////////////////////////
+`
+inline std::vector<std::string> fu_SPLIT(
+    std::string s,
+    const std::string& sep)
+{
+    std::vector<std::string> result;
+
+    size_t next;
+    while (int(next = s.find(sep)) >= 0)
+    {
+        result.push_back(s.substr(0, next));
+        s = s.substr(next + sep.size());
+    }
+
+    result.push_back(s);
+    return result;
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_SPLIT(' + items.join(', ') + ')';
+    }
+
+    function cgKeys(items: string[]): string
+    {
+        const KEYS = '::KEYS';
+        if (!_ffwd[KEYS])
+        {
+            include('<unordered_map>');
+            include('<vector>');
+
+            _ffwd[KEYS] =
+////////////////////////////////////
+`
+template <typename K, typename V>
+std::vector<K> fu_KEYS(
+    const std::unordered_map<K, V>& map)
+{
+    std::vector<K> keys;
+    keys.reserve(map.size());
+
+    for (auto& kv : map)
+        keys.push_back(kv.first);
+
+    return keys;
+}
+`
+////////////////////////////////////
+            ;
+        }
+
+        return 'fu_KEYS(' + items.join(', ') + ')';
     }
 
     function cgMapConstGet(map: string, key: string)
