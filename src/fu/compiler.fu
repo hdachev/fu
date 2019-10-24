@@ -4047,7 +4047,7 @@ pub fn cpp_codegen(
 
     fn include(lib: string)
     {
-        if (!_libs[lib])
+        if (!_libs.has(lib))
             _libs[lib] = '#include ' + lib + '\n';
     }
 
@@ -4796,6 +4796,9 @@ pub fn cpp_codegen(
             if (head.type.canon == 'string')
                 return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
 
+            if (type_isMap(head.type))
+                return '(' + items[0] + '.count(' + items[1] + ') != 0)';
+
             include('<algorithm>');
             return '([&](let auto& _) { let auto& _0 = _.begin(); let auto& _N = _.end(); let auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
         }
@@ -4871,7 +4874,7 @@ pub fn cpp_codegen(
     fn cgSlide(destExpr: string, srcExpr: string, numBytesExpr: string): string
     {
         let SLIDE = '::slide';
-        if (!_tfwd[SLIDE])
+        if (!_tfwd.has(SLIDE))
         {
             include('<cstring>');
 
@@ -4909,7 +4912,7 @@ inline void fu_MEMSLIDE(void* dest, void* source)
     fn annotateString(): string
     {
         let STRING = '::string';
-        if (!_ffwd[STRING])
+        if (!_ffwd.has(STRING))
         {
             include('<string>');
 
@@ -4931,7 +4934,7 @@ inline std::string operator+(let std::string& a, long long b)
     fn annotateNever(): string
     {
         let NEVER = '::NEVER';
-        if (!_tfwd[NEVER])
+        if (!_tfwd.has(NEVER))
         {
             include('<stdexcept>');
 
@@ -4960,7 +4963,7 @@ struct fu_NEVER
     fn cgThrow(kind: string, item: string): string
     {
         let THROW = '::THROW';
-        if (!_ffwd[THROW])
+        if (!_ffwd.has(THROW))
         {
             annotateNever();
             include('<stdexcept>');
@@ -4989,7 +4992,7 @@ template <typename T>
     fn cgConcat(items: string[]): string
     {
         let CONCAT = '::CONCAT';
-        if (!_ffwd[CONCAT])
+        if (!_ffwd.has(CONCAT))
         {
             include('<vector>');
 
@@ -5020,7 +5023,7 @@ std::vector<T> fu_CONCAT(
     fn cgJoin(items: string[]): string
     {
         let JOIN = '::JOIN';
-        if (!_ffwd[JOIN])
+        if (!_ffwd.has(JOIN))
         {
             include('<string>');
             include('<vector>');
@@ -5064,7 +5067,7 @@ inline std::string fu_JOIN(
     fn cgSplit(items: string[]): string
     {
         let SPLIT = '::SPLIT';
-        if (!_ffwd[SPLIT])
+        if (!_ffwd.has(SPLIT))
         {
             include('<string>');
             include('<vector>');
@@ -5099,7 +5102,7 @@ inline std::vector<std::string> fu_SPLIT(
     fn cgKeys(items: string[]): string
     {
         let KEYS = '::KEYS';
-        if (!_ffwd[KEYS])
+        if (!_ffwd.has(KEYS))
         {
             include('<unordered_map>');
             include('<vector>');
@@ -5130,7 +5133,7 @@ std::vector<K> fu_KEYS(
     fn cgMapConstGet(map: string, key: string): string
     {
         let MAP_CONST_GET = '::MAP_CONST_GET';
-        if (!_ffwd[MAP_CONST_GET])
+        if (!_ffwd.has(MAP_CONST_GET))
         {
             include('<unordered_map>');
 

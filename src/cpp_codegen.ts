@@ -774,6 +774,9 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
             if (head.type.canon === 'string')
                 return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
 
+            if (type_isMap(head.type))
+                return '(' + items[0] + '.count(' + items[1] + ') != 0)';
+
             include('<algorithm>');
             return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
         }
