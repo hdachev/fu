@@ -143,12 +143,6 @@ export function lex(src: Source, fname: Filename): LexResult
             }
             else
             {
-                if (c === '\n')
-                {
-                    line++;
-                    lidx = idx - 1;
-                }
-
                 out += c;
             }
         }
@@ -290,6 +284,11 @@ export function lex(src: Source, fname: Filename): LexResult
                 {
                     esc = true;
                     idx++;
+                }
+                else if (c1 === '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
                 }
             }
 

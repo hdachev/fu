@@ -131,12 +131,6 @@ fn lex(src: &string, fname: &string): LexResult
             }
             else
             {
-                if (c == '\n')
-                {
-                    line++;
-                    lidx = idx - 1;
-                }
-
                 out += c;
             }
         }
@@ -276,6 +270,11 @@ fn lex(src: &string, fname: &string): LexResult
                 {
                     esc = true;
                     idx++;
+                }
+                else if (c == '\n')
+                {
+                    line++;
+                    lidx = idx - 1;
                 }
             }
 
