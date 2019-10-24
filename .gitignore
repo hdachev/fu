@@ -6,4 +6,4 @@ package-lock.json
 .DS_Store
 
 # the xcode setup
-fulang
+fulang/fulang.xcodeproj

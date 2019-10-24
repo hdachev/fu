@@ -86,14 +86,28 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
                     if (result.data !== 0)
                     {
                         fs.writeFileSync(
-                            path.join(__dirname, '../build.cpp/fail.cpp'),
+                            path.join(__dirname, '../build.cpp/' + fname + '.cpp'),
                             gensrc);
 
                         fail('EXIT CODE', result.data);
                     }
 
                     if (/\.fu$/.test(fname))
-                        console.log('\t[ OK ]\t' + fname);
+                    {
+                        const f = path.join(__dirname, '../build.cpp/' + fname + '.cpp');
+                        const s = gensrc.replace(/int main\(\) noexcept/g, 'int auto_main() noexcept');
+
+                        let ok = false;
+                        try {
+                            ok = s === fs.readFileSync(f, 'utf8');
+                        }
+                        catch (o_O) {}
+
+                        if (!ok)
+                            fs.writeFileSync(f, s);
+
+                        console.log('\t[ OK ]\t' + fname + (ok ? '\t[ same ]' : '\t[ change ]'));
+                    }
                 });
             });
         });
@@ -1332,9 +1346,6 @@ ZERO(`
 
 // Let's get going.
 
-FILE;
-
-FILE(     'lex.fu');
 FILE('compiler.fu');
 
 
