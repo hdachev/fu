@@ -19,8 +19,6 @@ function ZERO(src: string, fname: Filename = 'test_' + (TEST_ID++) as Filename):
     //
     if (src.indexOf('fn ZERO()') < 0)
         src = '\n\nfn ZERO(): i32 {' + src + '}\n';
-    else
-        src = '\n' + src;
 
     src += '\nfn main(): i32 ZERO();\n\n';
 

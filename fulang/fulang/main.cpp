@@ -12,12 +12,19 @@
 
 #include <iostream>
 
+void RUN();
+
 int main(int argc, const char * argv[])
 {
     auto_main();
 
     // insert code here...
     std::cout << "Hello, World!\n";
+
+    // getting ready
+    RUN();
+
+    //
     return 0;
 }
 
@@ -26,6 +33,8 @@ int main(int argc, const char * argv[])
 
 void ZERO(const std::string& src)
 {
+    auto cpp = compile_testcase(src);
+
     // ...
 }
 

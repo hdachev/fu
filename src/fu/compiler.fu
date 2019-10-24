@@ -5459,7 +5459,9 @@ let V& fu_MAP_CONST_GET(
 ////////
 ////////     The whole thing in one go.
 
-fn compile(fname: string, src: string): string
+fn compile(
+    implicit ctx: &mut TEMP_Context,
+    fname: string, src: string): string
 {
     let res_lex = lex(
         :fname, :src);
@@ -5467,7 +5469,6 @@ fn compile(fname: string, src: string): string
     let res_parse = parse(
         fname, res_lex.tokens);
 
-    let implicit mut ctx: TEMP_Context;
     let res_solve = solve(
         res_parse);
 
@@ -5475,6 +5476,22 @@ fn compile(fname: string, src: string): string
         res_solve.root, res_solve.scope);
 
     return cpp;
+}
+
+fn compile_testcase(mut src: string): string
+{
+    let fname = 'testcase';
+
+    //
+    if (!src.has('fn ZERO()'))
+        src = '\n\nfn ZERO(): i32 {\n' + src + '\n}\n';
+
+    src += '\nfn main(): i32 ZERO();\n\n';
+
+    //
+    let implicit mut ctx: TEMP_Context;
+
+    return compile(:fname, :src, :ctx);
 }
 
 
@@ -5508,9 +5525,7 @@ let TEST_SRC = `
 
 fn ZERO(): i32
 {
-    let cpp = compile(
-        fname: 'the-default-test',
-        src: TEST_SRC);
+    let cpp = compile_testcase(TEST_SRC);
 
     return cpp.find('main()') ? 0 : 101;
 }
