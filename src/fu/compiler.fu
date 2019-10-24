@@ -5450,6 +5450,37 @@ let V& fu_MAP_CONST_GET(
 
 
 
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     The whole thing in one go.
+
+fn compile(fname: string, src: string): string
+{
+    let res_lex = lex(
+        :fname, :src);
+
+    let res_parse = parse(
+        fname, res_lex.tokens);
+
+    let implicit mut ctx: TEMP_Context;
+    let res_solve = solve(
+        res_parse);
+
+    let cpp = cpp_codegen(
+        res_solve.root, res_solve.scope);
+
+    return cpp;
+}
+
+
+
+
+
 // A very quick test.
 
 let TEST_SRC = `
@@ -5477,15 +5508,9 @@ let TEST_SRC = `
 
 fn ZERO(): i32
 {
-    let res_lex = lex(
-        fname: 'filename',
+    let cpp = compile(
+        fname: 'the-default-test',
         src: TEST_SRC);
 
-    let res_parse = parse(
-        'filename', res_lex.tokens);
-
-    let implicit mut ctx: TEMP_Context;
-    let res_solve = solve(res_parse);
-
-    return res_solve.root.kind == 'root' ? 0 : 101;
+    return cpp.find('main()') ? 0 : 101;
 }
