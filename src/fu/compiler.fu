@@ -759,25 +759,29 @@ pub fn parse(_fname: string, _tokens: Token[])
                 || expr.items.len > 1
                 || fail_Lint('Orphan pure-looking expression.');
 
+            let exprIdx = items.len;
+
             // Filter out excess semicolons.
             if (expr.kind != 'empty')
                 items.push(expr);
 
             // Unpacking & ungrouping node types.
             if (expr.kind == 'struct')
-                unwrapStructMethods(items, expr);
+                unwrapStructMethods(items, exprIdx);
         }
 
         return items;
     }
 
     fn unwrapStructMethods(
-        out: &mut Node[], structNode: &mut Node): void
+        out: &mut Node[], structNodeIdx: i32): void
     {
-        mut items = structNode.items;
+        mut structNode = out[structNodeIdx];
+
+        let items: &mut Node[] = structNode.items;
         for (mut i = 0; i < items.len; i++)
         {
-            mut item = items[i];
+            let item: &mut Node = items[i];
             if (item && item.kind == 'fn')
             {
                 if (item.value == 'free')
@@ -786,10 +790,14 @@ pub fn parse(_fname: string, _tokens: Token[])
                     item.flags |= F_DESTRUCTOR;
                 }
 
+                item.items.len >= 2 || fail();
+
                 items.splice(i--, 1);
                 out.push(item);
             }
         }
+
+        out[structNodeIdx] = structNode;
     }
 
 

@@ -60,6 +60,8 @@ fn !!(a: &$T): bool __native_pure;
 fn   =(a: &mut $T, b: $T): &mut $T __native_pure;
 fn ||=(a: &mut $T, b: $T): &mut $T __native_pure;
 
+fn swap(a: &mut $T, b: &mut $T): void __native_pure;
+
 
 // Arrays.
 

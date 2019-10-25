@@ -751,6 +751,12 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
         if (id === 'clear' && items.length === 1)
             return items[0] + '.clear()';
 
+        if (id === 'swap' && items.length === 2)
+        {
+            include('<utility>');
+            return 'std::swap(' + items[0] + ', ' + items[1] + ')';
+        }
+
         if (id === 'find' && items.length === 2)
         {
             const head = node.items[0] || fail();
