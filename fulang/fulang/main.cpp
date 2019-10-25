@@ -1,3 +1,158 @@
+#include <stdio.h>
+#include <errno.h>
+#include <string>
+
+class fu_EXEC
+{
+    FILE* m_pipe = nullptr;
+    std::string output;
+    int code = 0;
+
+    void run(const char* cmd)
+    {
+        close();
+        code = -1;
+        m_pipe = popen(cmd, "r");
+    }
+
+public:
+    fu_EXEC(const fu_EXEC&) = delete;
+    void operator=(const fu_EXEC&) = delete;
+
+    fu_EXEC(fu_EXEC&& v)
+    {
+        output = std::move(v.output);
+        code = v.code;
+        m_pipe = v.m_pipe; v.m_pipe = nullptr;
+    };
+
+    fu_EXEC& operator=(fu_EXEC&& v)
+    {
+        output = std::move(v.output);
+        code = v.code;
+        m_pipe = v.m_pipe; v.m_pipe = nullptr;
+        return *this;
+    }
+
+    fu_EXEC() = default;
+
+    fu_EXEC(const std::string& cmd)
+    {
+        run(cmd.c_str());
+    }
+
+    fu_EXEC(const char* cmd)
+    {
+        run(cmd);
+    }
+
+    ~fu_EXEC()
+    {
+        close();
+    }
+
+    int close()
+    {
+        auto f = m_pipe;
+        m_pipe = nullptr;
+        if (f) code = pclose(f);
+        return code;
+    }
+
+    std::string&& wait(int& code)
+    {
+        if (m_pipe)
+        {
+            char buffer[256];
+            while (fgets(buffer, 256, m_pipe) != nullptr)
+                output += buffer;
+        }
+
+        code = close();
+        return std::move(output);
+    }
+};
+
+std::string HOME()
+{
+    std::string result = getenv("HOME");
+    if (result.empty())
+        exit(1);
+
+    if (result[result.size() - 1] != '/')
+        result += '/';
+
+    return result;
+}
+
+bool writeFile(std::string path, const std::string& src)
+{
+    auto ok = false;
+
+    if (path[0] == '~')
+    {
+        static std::string home = HOME();
+        path = home + path.substr(1);
+    }
+
+    errno = 0;
+    FILE* file = fopen(path.c_str(), "w");
+    auto code = strerror(errno);
+
+    if (file)
+    {
+        size_t expect = src.size();
+        size_t actual = fwrite(src.data(), 1, expect, file);
+
+        ok = actual == expect;
+
+        fclose(file);
+    }
+    else
+    {
+
+        // So?
+    }
+
+    return ok;
+}
+
+
+//
+
+#define GCC_CMD "g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality "
+
+std::string build_and_run(const std::string& cpp)
+{
+    int code = 0;
+    std::string out;
+
+    const auto& ERROR = [&]()
+    {
+        if (out.empty())
+            out = "[ EXIT CODE " + std::to_string(code) + "]";
+
+        return std::move(out);
+    };
+
+    writeFile("~/test.cpp", cpp);
+
+    out = fu_EXEC(GCC_CMD "-c -o ~/test.o ~/test.cpp 2>&1").wait(code);
+    if (code) return ERROR();
+
+    out = fu_EXEC(GCC_CMD "-o ~/test.exe ~/test.o 2>&1").wait(code);
+    if (code) return ERROR();
+
+    out = fu_EXEC("chmod 755 ~/test.exe").wait(code);
+    if (code) return ERROR();
+
+    out = fu_EXEC("~/test.exe").wait(code);
+    if (code) return ERROR();
+
+    return "";
+}
+
+
 // #define MUTE
 
 #ifdef MUTE
@@ -21,6 +176,10 @@ int main(int argc, const char * argv[])
     // insert code here...
     std::cout << "Hello, World!\n";
 
+    // do some bs
+    int code;
+    auto output = fu_EXEC("gcc -v").wait(code);
+
     // getting ready
     RUN();
 
@@ -36,6 +195,14 @@ void ZERO(const std::string& src)
     auto cpp = compile_testcase(src);
 
     // ...
+    auto result = build_and_run(cpp);
+    if (result.size())
+    {
+        std::cout << result << std::endl;
+        exit(1);
+    }
+
+    std::cout << "PASS" << std::endl;
 }
 
 void FAIL(const std::string& src)
