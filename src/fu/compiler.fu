@@ -2338,14 +2338,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         mut max = overload.max - 1;
         min >= 0 && max >= min || fail();
 
-        let o_args     = overload.args || fail();
-        let o_names    = overload.names;
-        let o_defaults = overload.defaults;
-
-        // Fixed.
-        mut arg_t = o_args    .len > 1 ? o_args    .slice(1) : o_args;
-        mut arg_n = o_names   .len > 1 ? o_names   .slice(1) : o_names;
-        mut arg_d = o_defaults.len > 1 ? o_defaults.slice(1) : o_defaults;
+        mut arg_t = overload.args     ? overload.args    .slice(1) : overload.args;
+        mut arg_n = overload.names    ? overload.names   .slice(1) : overload.names;
+        mut arg_d = overload.defaults ? overload.defaults.slice(1) : overload.defaults;
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
