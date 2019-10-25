@@ -2117,6 +2117,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn GET(idx: ScopeIdx): &mut Overload
     {
+        idx.raw > 0 || assert();
         return _scope.overloads[idx.raw - 1];
     }
 
@@ -2482,10 +2483,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 for (mut i = 0; i < arity; i++)
                 {
                     let arg = args[i];
-                    names[i] =
-                        arg && arg.kind == 'label'
-                            ? (some = true, arg.value) || fail()
-                            : '';
+                    names.push(arg.kind == 'label'
+                        ? (some = true, arg.value) || fail()
+                        : '');
                 }
 
                 some || fail();
@@ -4037,6 +4037,7 @@ pub fn cpp_codegen(
 
     fn GET(idx: ScopeIdx): &Overload
     {
+        idx.raw > 0 || assert();
         return scope.overloads[idx.raw - 1];
     }
 
