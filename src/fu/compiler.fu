@@ -1784,10 +1784,17 @@ pub fn lookupType(
     return ctx.types[canon] || assert();
 }
 
+pub fn lookupType_mut(
+    implicit ctx: &mut TEMP_Context,
+    canon: string): &mut Struct
+{
+    return ctx.types[canon] || assert();
+}
+
 
 //
 
-pub fn registerStruct(id: string, fields: StructField[], flags: i32)
+pub fn initStruct(id: string, flags: i32)
 {
     // TODO struct data goes on compile context.
     // TODO use module id.
@@ -1795,16 +1802,29 @@ pub fn registerStruct(id: string, fields: StructField[], flags: i32)
     let canon = 's_' + id;
     let def = Struct(
         kind:   'struct',
-        id:     id      || assert(),
-        fields: fields  || assert(),
+        id:     id      || throw('TODO anonymous structs?'),
         flags:  flags|0
     );
 
     registerType(canon, def);
 
-    return Type(canon,
-        copyOrMove(flags, fields, true));
+    // TODO copyOrMove
+    return Type(canon, q_copy);
 }
+
+pub fn finalizeStruct(id: string, fields: StructField[])
+{
+    // TODO struct data goes on compile context.
+    // TODO use module id.
+
+    let canon = 's_' + id;
+    let def: &mut Struct = lookupType_mut(canon);
+
+    def.fields = fields || throw('TODO empty structs?');
+}
+
+
+//
 
 fn copyOrMove(
     flags: i32,
@@ -2242,8 +2262,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         {
             let member = members[i];
 
-            arg_t[i] = member && member.type  || fail();
-            arg_n[i] = member && member.value || fail();
+            arg_t.push(member.type  || fail());
+            arg_n.push(member.value || fail());
         }
 
         //
@@ -3006,10 +3026,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         mut out     = prep;
         out ||= solved(node, t_void);
 
-        mut fields: StructField[];
-
         let id      = node.value || fail('TODO anonymous structs');
-        let type    = registerStruct(id, fields, node.flags);
+        let type    = initStruct(id, node.flags);
 
         // Add the arity-0 type entry.
         if (!prep)
@@ -3035,6 +3053,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             mut members: SolvedNode[];
             let items = out.items;
 
+            mut fields: StructField[];
+
             for (mut i = 0; i < items.len; i++)
             {
                 let item = items[i];
@@ -3048,6 +3068,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                             type: item.type  || fail()));
                 }
             }
+
+            finalizeStruct(id, fields);
 
             DefaultCtor(id, type, members);
         }
@@ -4103,6 +4125,8 @@ pub fn cpp_codegen(
             }
 
             _tfwd[type.canon] ||= emitStructDecls();
+
+            return type.canon;
         }
 
         if (k == 'array')
@@ -4158,7 +4182,7 @@ pub fn cpp_codegen(
             def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
         }
 
-        def += '\n    explicit operator bool() let noexcept';
+        def += '\n    explicit operator bool() noexcept';
         def += '\n    {';
         def += '\n        return false';
 
