@@ -778,11 +778,11 @@ pub fn parse(_fname: string, _tokens: Token[])
     {
         mut structNode = out[structNodeIdx];
 
-        let items: &mut Node[] = structNode.items;
-        for (mut i = 0; i < items.len; i++)
+        let members: &mut Node[] = structNode.items;
+        for (mut i = 0; i < members.len; i++)
         {
-            let item: &mut Node = items[i];
-            if (item && item.kind == 'fn')
+            let item: &mut Node = members[i];
+            if (item.kind == 'fn')
             {
                 if (item.value == 'free')
                 {
@@ -791,9 +791,9 @@ pub fn parse(_fname: string, _tokens: Token[])
                 }
 
                 item.items.len >= 2 || fail();
-
-                items.splice(i--, 1);
                 out.push(item);
+
+                members.splice(i--, 1);
             }
         }
 
