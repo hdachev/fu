@@ -467,7 +467,12 @@ export function cpp_codegen({ root, scope }: SolveResult): { src: string }
 
         src += closure
              ? ') -> ' + annot
-             : ') noexcept';
+             : ')';
+
+        // This is only so that the /int main()
+        //  noexcept/g regex works, temp shit.
+        if (!closure && fn.value === 'main')
+            src += ' noexcept';
 
         if (!closure && src !== 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.indexOf(fn.value || fail()) >= 0)
             _ffwd[src] = '\n' + src + ';';

@@ -207,7 +207,16 @@ void ZERO(const std::string& src)
 
 void FAIL(const std::string& src)
 {
-    // ...
+    try {
+        auto cpp = compile_testcase(src);
+    }
+    catch (const std::exception& e) {
+        // TODO check error message.
+        return;
+    }
+
+    std::cout << "DID NOT THROW" << std::endl;
+    exit(1);
 }
 
 
