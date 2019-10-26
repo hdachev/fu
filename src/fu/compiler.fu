@@ -3044,8 +3044,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             let current_strt0   = _current_strt;
             _current_strt       = type;
 
-            out.items.resize(node.items.len);
-            solveNodes(node.items, out.items);
+            out.items = solveNodes(node.items);
 
             _current_strt       = current_strt0;
         }
@@ -3541,7 +3540,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     }
 
     fn bindImplicitArg(
-        mut args: SolvedNode[],
+        mut args: &mut SolvedNode[],
         argIdx: i32, id: string, type: Type)
     {
         TEST_expectImplicits || fail(
@@ -3549,9 +3548,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
         args.len >= argIdx || fail();
 
-        args[argIdx] = CallerNode(
+        args.insert(argIdx, CallerNode(
             createRead(id), :type,
-            target: getImplicit(id, type));
+            target: getImplicit(id, type)));
     }
 
     fn getImplicit(id: string, type: Type): ScopeIdx
@@ -3755,15 +3754,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     fn solveNodes(nodes: Node[]): SolvedNode[]
     {
         mut result: SolvedNode[];
-        solveNodes(nodes, result);
-        return result;
-    }
 
-    fn solveNodes(nodes: Node[], result: &mut SolvedNode[]): void
-    {
         let here0 = _here;
-
-        mut offset = 0;
 
         result.resize(nodes.len);
 
@@ -3825,10 +3817,11 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             i = i1 - 1; // <- loop++
         }
 
-        offset == 0 || fail();
-        result.len == nodes.len + offset || fail();
+        result.len == nodes.len || fail();
 
         _here = here0;
+
+        return result;
     }
 
 
@@ -4559,7 +4552,7 @@ pub fn cpp_codegen(
         let id    = node.value || fail();
         let annot = typeAnnot(node.type, (node.flags & F_MUT) == 0 ? M_CONST : 0);
         let head  = (annot || fail()) + ' ' + ID(id);
-        let init  = node.items[LET_INIT];
+        let init  = node.items ? node.items[LET_INIT] : SolvedNode;
 
         if (!doInit || (node.flags & F_ARG))
             return head;
