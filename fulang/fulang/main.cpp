@@ -1,6 +1,169 @@
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+#include <iostream>
 #include <string>
+
+
+//
+
+struct TEA
+{
+    unsigned int v0 = 0;
+    unsigned int v1 = 0;
+
+    void encrypt()
+    {
+        unsigned int sum    = 0u;
+        unsigned int delta  = 0x9e3779b9u;
+
+        for (int i = 0; i < 16; i++)
+        {
+            sum += delta;
+            v0 += ((v1<<4) + 0xA341316Cu) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4u);
+            v1 += ((v0<<4) + 0xAD90777Du) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761Eu);
+        }
+    }
+};
+
+TEA hash_src(const std::string& src)
+{
+    TEA result;
+
+    for (size_t i = 0; i < src.size(); i++)
+    {
+        result.v0 ^= src[i];
+        result.encrypt();
+    }
+
+    return result;
+}
+
+
+//
+
+template <typename F>
+struct fu_DEFER
+{
+    F fn;
+    ~fu_DEFER() { fn(); }
+
+    fu_DEFER(F fn) : fn(fn) {}
+    fu_DEFER(const fu_DEFER&) = delete;
+    void operator=(const fu_DEFER&) = delete;
+};
+
+
+//
+
+int getFileSize(const std::string& path)
+{
+    struct stat sb;
+    if (stat(path.c_str(), &sb) == 0)
+        return int(sb.st_size);
+
+    return -1;
+}
+
+std::string readFile(const std::string& path)
+{
+    errno = 0;
+
+    FILE* file = fopen(path.c_str(), "r");
+    fu_DEFER _file { [&]() { fclose(file); } };
+
+    auto code = strerror(errno);
+
+    std::string output;
+    if (file)
+    {
+        char buffer[256];
+        while (fgets(buffer, 256, file) != nullptr)
+            output += buffer;
+    }
+
+    return output;
+}
+
+bool writeFile(const std::string& path, const std::string& src)
+{
+    auto ok = false;
+
+    errno = 0;
+    FILE* file = fopen(path.c_str(), "w");
+    auto code = strerror(errno);
+
+    if (file)
+    {
+        size_t expect = src.size();
+        size_t actual = fwrite(src.data(), 1, expect, file);
+
+        ok = actual == expect;
+
+        fclose(file);
+    }
+    else
+    {
+
+        // So?
+    }
+
+    return ok;
+}
+
+
+//
+
+void ensure_trailing_slash(std::string& path)
+{
+    if (!path.size() || path[0] != '/')
+    {
+        std::cout << "Bad path: `" << path << "`." << std::endl;
+        exit(1);
+    }
+
+    if (path.size() && path[path.size() - 1] != '/')
+        path += '/';
+}
+
+std::string get_HOME()
+{
+    std::string result = "/Users/hdachev";
+
+    const char* home = getenv("HOME");
+    if (home)
+        result = home;
+
+    ensure_trailing_slash(result);
+    return result;
+}
+
+static const std::string HOME = get_HOME();
+
+
+//
+
+std::string get_PRJDIR()
+{
+    std::string path = HOME;
+    path += "fu/";
+
+    auto bytes = getFileSize(path + "src/fu/compiler.fu");
+    if (bytes < 10000)
+    {
+        std::cout << "Bad compiler.fu: " << bytes << std::endl;
+        exit(1);
+    }
+
+    return path;
+}
+
+static const std::string PRJDIR = get_PRJDIR();
+
+
+//
 
 class fu_EXEC
 {
@@ -73,54 +236,10 @@ public:
     }
 };
 
-std::string HOME()
-{
-    std::string result = getenv("HOME");
-    if (result.empty())
-        exit(1);
-
-    if (result[result.size() - 1] != '/')
-        result += '/';
-
-    return result;
-}
-
-bool writeFile(std::string path, const std::string& src)
-{
-    auto ok = false;
-
-    if (path[0] == '~')
-    {
-        static std::string home = HOME();
-        path = home + path.substr(1);
-    }
-
-    errno = 0;
-    FILE* file = fopen(path.c_str(), "w");
-    auto code = strerror(errno);
-
-    if (file)
-    {
-        size_t expect = src.size();
-        size_t actual = fwrite(src.data(), 1, expect, file);
-
-        ok = actual == expect;
-
-        fclose(file);
-    }
-    else
-    {
-
-        // So?
-    }
-
-    return ok;
-}
-
 
 //
 
-#define GCC_CMD "g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality "
+static const std::string GCC_CMD = "g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality ";
 
 std::string build_and_run(const std::string& cpp)
 {
@@ -130,23 +249,38 @@ std::string build_and_run(const std::string& cpp)
     const auto& ERROR = [&]()
     {
         if (out.empty())
-            out = "[ EXIT CODE " + std::to_string(code) + "]";
+            out = "[ EXIT CODE " + std::to_string(code) + " ]";
 
         return std::move(out);
     };
 
-    writeFile("~/test.cpp", cpp);
+    auto hash = hash_src(cpp);
+    std::string F = PRJDIR
+        + "build.cpp/tea-"  + std::to_string(hash.v0)
+        + "-"               + std::to_string(hash.v1)
+        + "-"               + std::to_string(cpp.size());
 
-    out = fu_EXEC(GCC_CMD "-c -o ~/test.o ~/test.cpp 2>&1").wait(code);
-    if (code) return ERROR();
+    if (getFileSize(F + ".exe") <= 0)
+    {
+        writeFile((F + ".cpp").c_str(), cpp);
 
-    out = fu_EXEC(GCC_CMD "-o ~/test.exe ~/test.o 2>&1").wait(code);
-    if (code) return ERROR();
+        out = fu_EXEC(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1").wait(code);
+        if (code) return ERROR();
 
-    out = fu_EXEC("chmod 755 ~/test.exe").wait(code);
-    if (code) return ERROR();
+        out = fu_EXEC(GCC_CMD + "-o " + F + ".tmp " + F + ".o 2>&1").wait(code);
+        if (code) return ERROR();
 
-    out = fu_EXEC("~/test.exe").wait(code);
+        out = fu_EXEC("chmod 755 " + F + ".tmp").wait(code);
+        if (code) return ERROR();
+
+        out = fu_EXEC("mv " + F + ".tmp " + F + ".exe").wait(code);
+        if (code) return ERROR();
+
+        out = fu_EXEC("rm " + F + ".o").wait(code);
+        if (code) return ERROR();
+    }
+
+    out = fu_EXEC(F + ".exe").wait(code);
     if (code) return ERROR();
 
     return "";
@@ -165,8 +299,6 @@ std::string build_and_run(const std::string& cpp)
 
 // So lets go.
 
-#include <iostream>
-
 void RUN();
 
 int main(int argc, const char * argv[])
@@ -174,7 +306,11 @@ int main(int argc, const char * argv[])
     auto_main();
 
     // insert code here...
-    std::cout << "Hello, World!\n";
+    std::cout << "SO LETS GO!"      << std::endl;
+    std::cout << PRJDIR             << std::endl;
+
+    // insert code here...
+    std::cout << "Hello, World!\n"  << std::endl;
 
     // do some bs
     int code;
