@@ -1817,7 +1817,7 @@ pub fn initStruct(id: string, flags: i32)
     registerType(canon, def);
 
     // TODO copyOrMove
-    return Type(canon, q_copy);
+    return Type(canon, copyOrMove(flags, def.fields));
 }
 
 pub fn finalizeStruct(id: string, fields: StructField[])
@@ -2384,7 +2384,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         {
             let c = id[i];
             if (c == '_' || c >= 'a' && c <= 'z'
-                         || c >= 'A' && c <= 'Z')
+                         || c >= 'A' && c <= 'Z'
+                         || c >= '0' && c <= '9')
             {
                 return true;
             }
@@ -2550,8 +2551,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                         if (reorder)
                             fail('TODO handle argument reorder in template specialization.');
 
+                        let o_mut: &mut Overload = GET(overloadIdx);
                         let specIdx = trySpecialize(
-                            overload.template, args);
+                            o_mut.template, args);
 
                         if (!specIdx)
                             continue :NEXT;
@@ -2616,8 +2618,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                             new_args[i] = args[idx];
                     }
 
-                    for (mut i = 0; i < new_args.len; i++)
-                        args[i] = new_args[i];
+                    args = new_args;
                 }
             }
         }
@@ -2629,8 +2630,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             // Mutate call args last thing.
             let arg_d = matched.defaults;
             if (arg_d)
+            {
+                if (args.len < arg_d.len)
+                    args.resize(arg_d.len);
+
                 for (mut i = 0; i < arg_d.len; i++)
                     args[i] = args[i] || arg_d && arg_d[i] || fail();
+            }
 
             // Implicit argument injection.
             let arg_t = matched.args;
@@ -3922,6 +3928,8 @@ fn !!(a: &$T): bool __native_pure;
 fn   =(a: &mut $T, b: $T): &mut $T __native_pure;
 fn ||=(a: &mut $T, b: $T): &mut $T __native_pure;
 
+fn swap(a: &mut $T, b: &mut $T): void __native_pure;
+
 
 // Arrays.
 
@@ -3971,8 +3979,12 @@ fn has(a: &string, b: &string):     bool        __native_pure;
 fn starts(a: &string, with: &string): bool      __native_pure;
 
 fn slice (a: &string, i0: i32, i1: i32): string __native_pure;
+fn slice (a: &string, i0: i32)         : string __native_pure;
+
 fn substr(a: &string, i0: i32, i1: i32): string __native_pure;
 fn char  (a: &string, i0: i32): i32 __native_pure;
+
+fn split(str: &string, sep: &string): string[] __native_pure;
 
 
 // Maps.
@@ -3980,6 +3992,10 @@ fn char  (a: &string, i0: i32): i32 __native_pure;
 fn [](a: &Map($K, $V), b: &$K)
     case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
     case ($a -> &    Map($K, $V)): &    $V __native_pure;
+
+fn keys  (a: &Map($K, $V)): $K[] __native_pure;
+fn values(a: &Map($K, $V)): $V[] __native_pure;
+fn has   (a: &Map($K, $V), b: &$K): bool __native_pure;
 
 
 // Assertions, bugs & fails.
@@ -3991,7 +4007,8 @@ fn assert()             : never __native_pure;
 // Butt plugs.
 
 // TODO we should go for an any $B -> call stringify(b) macro.
-fn + (a: &string, b: i32): &string __native_pure;
+fn +(a: &string, b: i32): string __native_pure;
+fn join(a: &string[], sep: &string): string __native_pure;
 
 `;
 
@@ -4112,15 +4129,12 @@ pub fn cpp_codegen(
 
         if (k == 'struct')
         {
-            fn emitStructDecls()
+            if (!_tfwd.has(type.canon))
             {
-                let def = declareStruct(type, tdef);
-                _tdef += def;
+                _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
 
-                return '\nstruct ' + type.canon + ';';
+                _tdef += declareStruct(type, tdef);
             }
-
-            _tfwd[type.canon] ||= emitStructDecls();
 
             return type.canon;
         }
@@ -4466,7 +4480,7 @@ pub fn cpp_codegen(
             _indent = '\n';
 
         mut src = closure
-                ? 'let auto& ' + fn.value + ' = [&]('
+                ? 'const auto& ' + fn.value + ' = [&]('
                 : annot + ' ' + fn.value + '(';
 
         if (fn.value == '==')
@@ -4577,9 +4591,8 @@ pub fn cpp_codegen(
         if (src.starts(with: 'const '))
             src = src.slice(6);
 
-        src = 'inline const ' + src;
-
         //
+        _fdef += src = 'inline const ' + src + ';\n';
         return '';
     }
 
@@ -4637,7 +4650,8 @@ pub fn cpp_codegen(
         {
             let c = id[i];
             if (c == '_' || c >= 'a' && c <= 'z'
-                         || c >= 'A' && c <= 'Z')
+                         || c >= 'A' && c <= 'Z'
+                         || c >= '0' && c <= '9')
             {
                 //
             }
@@ -4780,7 +4794,7 @@ pub fn cpp_codegen(
             return '([&](auto& _) { _.insert(_.begin() + ' + items[1] + ', ' + items[2] + '); } (' + items[0] + '))';
 
         if (id == 'splice' && items.len == 3)
-            return '([&](auto& _) { let auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
+            return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
 
         if (id == 'grow' && items.len == 2)
             return items[0] + '.resize(' + items[1] + ')';
@@ -4801,7 +4815,7 @@ pub fn cpp_codegen(
                 return 'int(' + items[0] + '.find(' + items[1] + '))';
 
             include('<algorithm>');
-            return '([&](let auto& _) { let auto& _0 = _.begin(); let auto& _N = _.end(); let auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
+            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
         }
 
         if (id == 'starts' && items.len == 2)
@@ -4821,7 +4835,7 @@ pub fn cpp_codegen(
                 return '(' + items[0] + '.count(' + items[1] + ') != 0)';
 
             include('<algorithm>');
-            return '([&](let auto& _) { let auto& _0 = _.begin(); let auto& _N = _.end(); let auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
+            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
         }
 
         if (id == 'slice' && items.len == 3)
@@ -4830,7 +4844,7 @@ pub fn cpp_codegen(
             if (head.type.canon == 'string')
                 return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, ' + items[2] + ' - _0); } ())';
 
-            return '([&](let auto& _) { let auto& _0 = _.begin() + ' + items[1] +'; let auto& _1 = _.begin() + ' + items[2] + '; return ' + typeAnnot(node.type) + '(_0, _1); } (' + items[0] + '))';
+            return '([&](const auto& _) { const auto& _0 = _.begin() + ' + items[1] +'; const auto& _1 = _.begin() + ' + items[2] + '; return ' + typeAnnot(node.type) + '(_0, _1); } (' + items[0] + '))';
         }
 
         if (id == 'slice' && items.len == 2)
@@ -4839,7 +4853,7 @@ pub fn cpp_codegen(
             if (head.type.canon == 'string')
                 return items[0] + '.substr(' + items[1] + ')';
 
-            return '([&](let auto& _) { return ' + typeAnnot(node.type) + '(_.begin() + ' + items[1] + ', _.end()); } (' + items[0] + '))';
+            return '([&](const auto& _) { return ' + typeAnnot(node.type) + '(_.begin() + ' + items[1] + ', _.end()); } (' + items[0] + '))';
         }
 
         if (id == 'sort' && items.len == 1)
@@ -4940,7 +4954,7 @@ inline void fu_MEMSLIDE(void* dest, void* source)
             _ffwd[STRING] =
 ////////////////////////////////////
 `
-inline std::string operator+(let std::string& a, long long b)
+inline std::string operator+(const std::string& a, long long b)
 {
     return a + std::to_string(b);
 }
@@ -4964,8 +4978,8 @@ inline std::string operator+(let std::string& a, long long b)
 `
 struct fu_NEVER
 {
-    fu_NEVER(let fu_NEVER&) = delete;
-    void operator=(let fu_NEVER&) = delete;
+    fu_NEVER(const fu_NEVER&) = delete;
+    void operator=(const fu_NEVER&) = delete;
 
     template<typename T>
     [[noreturn]] operator T() const
@@ -4993,7 +5007,7 @@ struct fu_NEVER
 ////////////////////////////////////
 `
 template <typename T>
-[[noreturn]] fu_NEVER fu_THROW(let T& what)
+[[noreturn]] fu_NEVER fu_THROW(const T& what)
 {
     throw std::runtime_error(what);
 }
@@ -5022,14 +5036,14 @@ template <typename T>
 `
 template <typename T>
 std::vector<T> fu_CONCAT(
-    let std::vector<T>& a,
-    let std::vector<T>& b)
+    const std::vector<T>& a,
+    const std::vector<T>& b)
 {
     std::vector<T> result;
     result.reserve(a.size() + b.size());
 
-    for (auto& i : a) result.push_back(i);
-    for (auto& i : b) result.push_back(i);
+    for (const auto& i : a) result.push_back(i);
+    for (const auto& i : b) result.push_back(i);
 
     return result;
 }
@@ -5162,14 +5176,14 @@ std::vector<K> fu_KEYS(
 ////////////////////////////////////
 `
 template <typename K, typename V>
-let V& fu_MAP_CONST_GET(
-    let std::unordered_map<K, V>& map,
-    let K& key)
+const V& fu_MAP_CONST_GET(
+    const std::unordered_map<K, V>& map,
+    const K& key)
 {
-    let auto& it = map.find(key);
+    const auto& it = map.find(key);
     if (it == map.end() )
     {
-        static let V def {};
+        static const V def {};
         return def;
     }
 
