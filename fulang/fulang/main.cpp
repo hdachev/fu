@@ -307,7 +307,7 @@ std::string build_and_run(const std::string& cpp)
 #endif
 
 #ifndef MUTE
-#include "../../build.cpp/compiler.fu.cpp"
+#include "../../src/fu/compiler.fu.cpp"
 
 
 // So lets go.

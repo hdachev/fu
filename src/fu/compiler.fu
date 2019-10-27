@@ -2,6 +2,14 @@
 
 
 
+// std candidates
+
+fn last(s: &string)
+    s.len   ? s[s.len - 1]
+            : '';
+
+
+
 ///////////////////////////////////////
 ///////////////////////////////////////
 ///////////////////////////////////////
@@ -4263,36 +4271,30 @@ pub fn cpp_codegen(
         {
             let line = lines[i];
             if (line)
-                src += _indent + line + ';';
+                src += _indent + line + (line.last == ';' ? '\n' : ';');
         }
 
         return src;
     }
 
-    fn blockWrap(nodes: SolvedNode[]): string
+    fn blockWrap(nodes: SolvedNode[], skipCurlies: bool = false): string
     {
         let indent0 = _indent;
         _indent += '    ';
 
-        let src = indent0 + '{' + cgStatements(nodes) + indent0 + '}';
+        mut src = cgStatements(nodes);
+        if (!skipCurlies || nodes.len != 1 || nodes[0].kind != 'return' && nodes[0].kind != 'call')
+            src = indent0 + '{' + src + indent0 + '}';
 
         _indent = indent0;
         return src;
     }
 
-    fn blockWrapOne(node: SolvedNode): string
+    fn blockWrapSubstatement(node: SolvedNode): string
     {
-        return node.kind == 'block'
-            ? cgBlock(node)
-            : blockWrap([ node ]);
-    }
-
-    fn blockWrapOne_unlessSilly(node: SolvedNode): string
-    {
-        if (node.kind == 'if')
-            return cgNode(node, M_STMT);
-
-        return blockWrapOne(node);
+        return node.kind != 'block' ? blockWrap([ node ], true)
+             : node.items.len == 1  ? blockWrapSubstatement(node.items[0])
+                                    : cgBlock(node);
     }
 
     fn cgBlock(block: SolvedNode): string
@@ -4682,7 +4684,7 @@ pub fn cpp_codegen(
         return false;
     }
 
-    fn cgCall(node: SolvedNode): string
+    fn cgCall(node: SolvedNode, mode: i32): string
     {
         let target = GET(node.target) || fail();
         let items  = cgNodes(node.items);
@@ -4776,7 +4778,11 @@ pub fn cpp_codegen(
                             right + '; return _; } (' + left + '))';
                 }
 
-                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+                // Skip some of the ridiculous parens.
+                if (mode & M_STMT)
+                    return items[0] + ' ' + id + ' ' + items[1];
+                else
+                    return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
             }
         }
 
@@ -5236,12 +5242,17 @@ const V& fu_MAP_CONST_GET(
 
         let stmt = !!(mode & M_STMT);
 
+        fn blockWrap_unlessIf(node: SolvedNode)
+            node.kind == 'if'
+                ? ' ' + cgNode(node, M_STMT)
+                : blockWrapSubstatement(node);
+
         let cond = !n0 ? '' : boolWrap(n0.type, cgNode(n0, M_RETBOOL));
-        let cons = !n1 ? '' : (stmt ? blockWrapOne(n1) : cgNode(n1));
-        let alt  = !n2 ? '' : (stmt ? blockWrapOne_unlessSilly(n2) : cgNode(n2));
+        let cons = !n1 ? '' : (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
+        let alt  = !n2 ? '' : (stmt ? blockWrap_unlessIf(n2) : cgNode(n2));
 
         if (stmt)
-            return 'if (' + cond + ') ' + cons + (alt ? _indent + 'else ' + alt : '');
+            return 'if (' + cond + ')' + cons + (alt ? _indent + 'else' + alt : '');
 
         if (cons && alt)
             return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
@@ -5395,7 +5406,7 @@ const V& fu_MAP_CONST_GET(
         let init = !n_init ? '' : cgNode(n_init);
         let cond = !n_cond ? '' : boolWrap(n_cond.type, cgNode(n_cond, M_RETBOOL));
         let post = !n_post ? '' : cgNode(n_post);
-        mut body = !n_body ? '' : blockWrapOne(n_body);
+        mut body = !n_body ? '' : blockWrapSubstatement(n_body);
         let pcnd = !n_pcnd ? '' : boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
         mut breakLabel = '';
 
@@ -5437,7 +5448,7 @@ const V& fu_MAP_CONST_GET(
         if (k == 'return')     return cgReturn(node);
         if (k == 'break')      return cgJump(node);
         if (k == 'continue')   return cgJump(node);
-        if (k == 'call')       return cgCall(node);
+        if (k == 'call')       return cgCall(node, mode);
         if (k == 'let')        return cgLet(node);
         if (k == 'if')         return cgIf(node, mode);
         if (k == 'or')         return cgOr(node);
