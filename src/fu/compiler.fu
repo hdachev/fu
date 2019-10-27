@@ -3141,17 +3141,19 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn solveLet(node: Node): SolvedNode
     {
-        let annot     = node.items[LET_TYPE];
-        let init      = node.items[LET_INIT];
+        let annot       = node.items[LET_TYPE];
+        let init        = node.items[LET_INIT];
 
-        let s_annot   = annot ? evalTypeAnnot(annot) : SolvedNode;
-        let t_annot   = s_annot ? s_annot.type : Type;
+        let s_annot     = annot ? evalTypeAnnot(annot) : SolvedNode;
+        let t_annot     = s_annot ? s_annot.type : Type;
 
-        mut s_init    = init ? solveNode(init, t_annot) : SolvedNode;
-        let t_init    = s_init ? s_init.type : Type;
+        mut s_init      = init ? solveNode(init, t_annot) : SolvedNode;
+        let t_init      = s_init ? s_init.type : Type;
 
-        let t_let     = t_annot ? t_annot : clear_refs(t_init || fail(
-            'Variable declarations without explicit type annotations must be initialized.'));
+        let t_let       = t_annot ? t_annot
+                        : t_init.quals & q_mutref || node.flags & F_MUT
+                            ? clear_refs(t_init)
+                            : t_init || fail('Variable declarations without explicit type annotations must be initialized.');
 
         if (t_annot && t_init)
             isAssignable(t_annot, t_init) || fail(
@@ -3597,7 +3599,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     fn solveIf(node: Node): SolvedNode
     {
         let items   = solveNodes(node.items);
-        let cond    = items[0];
         let cons    = items[1];
         let alt     = items[2];
 
