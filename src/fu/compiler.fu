@@ -4196,7 +4196,7 @@ pub fn cpp_codegen(
             def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
         }
 
-        def += '\n    explicit operator bool() noexcept';
+        def += '\n    explicit operator bool() const noexcept';
         def += '\n    {';
         def += '\n        return false';
 
@@ -4627,9 +4627,23 @@ pub fn cpp_codegen(
     {
         include('<string>');
 
-        // TODO!
-        // return 'std::string(' + JSON.stringify(node.value) + ')';
-        return 'std::string("' + node.value + '")';
+        // TODO FIX
+        mut esc = '';
+        for (mut i = 0; i < node.value.len; i++)
+        {
+            let c = node.value[i];
+
+                 if (c == '\n') esc += '\\n';
+            else if (c == '\r') esc += '\\r';
+            else if (c == '\t') esc += '\\t';
+            else if (c == '\v') esc += '\\v';
+            else if (c == '\\') esc += '\\\\';
+            else if (c ==  '"') esc += '\\"';
+
+            else                esc += c;
+        }
+
+        return 'std::string("' + esc + '")';
     }
 
     fn cgArrayLiteral(node: SolvedNode): string

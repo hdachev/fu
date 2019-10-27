@@ -326,8 +326,8 @@ int main(int argc, const char * argv[])
     std::cout << "Hello, World!\n"  << std::endl;
 
     // do some bs
-    int code;
-    auto output = fu_EXEC("gcc -v").wait(code);
+    // int code;
+    // auto output = fu_EXEC("gcc -v").wait(code);
 
     // getting ready
     RUN();
@@ -351,7 +351,7 @@ std::string ZERO(const std::string& src)
         exit(1);
     }
 
-    std::cout << "PASS" << std::endl;
+    // std::cout << "PASS" << std::endl;
     return cpp;
 }
 
@@ -373,6 +373,8 @@ void FU_FILE(const std::string& fname)
 {
     std::string path = PRJDIR;
     path += "src/fu/" + fname;
+
+    std::cout << "COMPILE " << fname << std::endl;
 
     auto fu = readFile(path);
     if (!fu.size())
