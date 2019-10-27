@@ -1550,6 +1550,14 @@ void RUN()
         return i;
     )");
 
+    ZERO(R"(
+
+        return false /* test */
+             ? 0xffffff // what is this
+             : 0 // madness
+             ;
+    )");
+
 
     //
 
