@@ -4496,7 +4496,7 @@ pub fn cpp_codegen(
 
         src += closure
              ? ') -> ' + annot
-             : ') noexcept';
+             : ')';
 
         if (!closure && src != 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
             _ffwd[src] = '\n' + src + ';';

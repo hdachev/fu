@@ -116,6 +116,19 @@ bool writeFile(const std::string& path, const std::string& src)
 
 //
 
+void str_replace_all(
+    std::string& subject,
+    const std::string search,
+    const std::string replace)
+{
+    size_t pos = 0;
+    while (int(pos = subject.find(search, pos)) >= 0)
+        subject.replace(pos, search.size(), replace);
+}
+
+
+//
+
 void ensure_trailing_slash(std::string& path)
 {
     if (!path.size() || path[0] != '/')
@@ -326,7 +339,7 @@ int main(int argc, const char * argv[])
 
 // Tests.
 
-void ZERO(const std::string& src)
+std::string ZERO(const std::string& src)
 {
     auto cpp = compile_testcase(src);
 
@@ -339,6 +352,7 @@ void ZERO(const std::string& src)
     }
 
     std::cout << "PASS" << std::endl;
+    return cpp;
 }
 
 void FAIL(const std::string& src)
@@ -353,6 +367,32 @@ void FAIL(const std::string& src)
 
     std::cout << "DID NOT THROW" << std::endl;
     exit(1);
+}
+
+void FU_FILE(const std::string& fname)
+{
+    std::string path = PRJDIR;
+    path += "src/fu/" + fname;
+
+    auto fu = readFile(path);
+    if (!fu.size())
+    {
+        std::cout << "BAD FILE: " << path << std::endl;
+        exit(1);
+    }
+
+    auto cpp = ZERO(fu);
+
+    str_replace_all(cpp,
+        "int main()", "int auto_main()");
+
+    auto out_fname = path + ".cpp";
+
+    if (readFile(out_fname) != cpp)
+    {
+        writeFile(out_fname, cpp);
+        std::cout << "WROTE " << out_fname << std::endl;
+    }
 }
 
 
@@ -1510,6 +1550,10 @@ void RUN()
         return i;
     )");
 
+
+    //
+
+    FU_FILE("compiler.fu");
 }
 
 
