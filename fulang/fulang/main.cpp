@@ -1561,6 +1561,20 @@ void RUN()
     )");
 
 
+    // Let's move on to some cooler quality of life shit.
+
+    ZERO(R"(
+        struct S { i: i32; }
+
+        let a = S(0);
+        let b = S(3);
+
+        return a.i
+            || (b || S(4)).i * 2 - (a || S(6)).i
+            && throw('woot');
+    )");
+
+
     //
 
     std::cout << "LOOKING GOOD TODAY!" << std::endl;
