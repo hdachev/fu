@@ -90,6 +90,8 @@ fn lex(src: &string, fname: &string): LexResult
         let col = idx0 - lidx;
         let value = src.slice(idx0, idx);
 
+        throw('Lex Error: ' + fname + '@' + line + ':' + col + ':\n\t' + reason + ' (' + value + ')');
+
         errors.push(
             LexErr( :reason, :kind, :value, :idx0, idx,
                     :fname, :line, :col ));
@@ -237,7 +239,9 @@ fn lex(src: &string, fname: &string): LexResult
             }
 
             let trail = src[idx - 1];
-            if (trail < '0' || trail > '9')
+            if (!(trail >= '0' && trail <= '9') &&
+                !(hex && (trail >= 'a' && trail <= 'f'
+                       || trail >= 'A' && trail <= 'F')))
             {
                 err('num', idx0, idx - 1);
             }
