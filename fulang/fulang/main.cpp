@@ -1563,6 +1563,8 @@ void RUN()
 
     //
 
+    std::cout << "LOOKING GOOD TODAY!" << std::endl;
+
     FU_FILE("compiler.fu");
 }
 
