@@ -548,7 +548,7 @@ struct sf_lex
                     }
                     else if ((c == std::string(".")))
                     {
-                        if (([&]() -> bool& { { bool& _ = hex; if (_) return _; } { bool& _ = dot; if (_) return _; } return exp; }()))
+                        if ((hex || dot || exp))
                         {
                             err(std::string("num"), idx0, (idx - 1));
                             break;
@@ -557,7 +557,7 @@ struct sf_lex
                     }
                     else if ((((c == std::string("e")) || (c == std::string("E"))) && !hex))
                     {
-                        if (([&]() -> bool& { { bool& _ = hex; if (_) return _; } return exp; }()))
+                        if ((hex || exp))
                         {
                             err(std::string("num"), idx0, (idx - 1));
                             break;
@@ -588,7 +588,7 @@ struct sf_lex
                 {
                     const int idx1 = idx;
                     std::string str = ([&]() { size_t _0 = idx0; return src.substr(_0, idx1 - _0); } ());
-                    token(checkNum((([&]() -> bool& { { bool& _ = dot; if (_) return _; } return exp; }()) ? std::string("num") : std::string("int")), str), str, idx0, idx1);
+                    token(checkNum(((dot || exp) ? std::string("num") : std::string("int")), str), str, idx0, idx1);
                 };
             }
             else if (((c == std::string("'")) || (c == std::string("\"")) || (c == std::string("`"))))
@@ -2222,7 +2222,7 @@ struct sf_runSolver
             return solveIf(node);
 
         if ((k == std::string("or")))
-            return solveOr(node);
+            return solveOr(node, type);
 
         if ((k == std::string("!")))
             return solveNot(node);
@@ -2230,11 +2230,11 @@ struct sf_runSolver
         if ((k == std::string("and")))
             return solveAnd(node, type);
 
-        if ((k == std::string("loop")))
-            return solveBlock(node);
-
         if ((k == std::string("return")))
             return solveReturn(node);
+
+        if ((k == std::string("loop")))
+            return solveBlock(node);
 
         if ((k == std::string("break")))
             return solveJump(node);
@@ -2285,18 +2285,18 @@ struct sf_runSolver
     s_SolvedNode solveRoot(const s_Node& node)
     {
         TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
-        return solved(node, t_void, solveNodes(node.items));
+        return solved(node, t_void, solveNodes(node.items, s_Type{}));
     };
     s_SolvedNode solveBlock(const s_Node& node)
     {
         const int scope0 = Scope_push(_scope);
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         Scope_pop(_scope, scope0);
         return out;
     };
     s_SolvedNode solveComma(const s_Node& node)
     {
-        std::vector<s_SolvedNode> items = solveNodes(node.items);
+        std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items.at((int(items.size()) - 1)); if (_) return _; } fail(std::string("")); }());
         return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = last.type; if (_) return _; } fail(std::string("")); }()), items);
     };
@@ -2497,7 +2497,7 @@ struct sf_runSolver
         {
             s_Type current_strt0 = _current_strt;
             _current_strt = type;
-            out.items = solveNodes(node.items);
+            out.items = solveNodes(node.items, s_Type{});
             _current_strt = current_strt0;
         };
         
@@ -2521,7 +2521,7 @@ struct sf_runSolver
     };
     s_SolvedNode solveReturn(const s_Node& node)
     {
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         const s_SolvedNode& nextExpr = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = out.items.at(0); if (_) return _; } return out; }());
         const s_Type& nextType = ([&]() -> const s_Type& { { const s_Type& _ = nextExpr.type; if (_) return _; } fail(std::string("")); }());
         const int retIdx = (int(_current_fn.items.size()) + FN_RET_BACK);
@@ -2730,7 +2730,7 @@ struct sf_runSolver
     {
         const std::string& id = node.value;
         ([&]() -> const std::string& { { const std::string& _ = id; if (_.size()) return _; } fail(std::string("")); }());
-        std::vector<s_SolvedNode> args = solveNodes(node.items);
+        std::vector<s_SolvedNode> args = solveNodes(node.items, s_Type{});
         for (int i = 0; (i < int(args.size())); i++)
             args.at(i) = maybePRValue(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.at(i); if (_) return _; } fail(std::string("")); }()), true);
 
@@ -2766,7 +2766,7 @@ struct sf_runSolver
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
-        std::vector<s_SolvedNode> items = solveNodes(node.items);
+        std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         s_Type itemType = (type ? tryClear_array(type, ctx) : s_Type { std::string{}, int{} });
         int startAt = 0;
         if ((!itemType && int(items.size())))
@@ -2875,7 +2875,7 @@ struct sf_runSolver
     };
     s_SolvedNode solveAnd(const s_Node& node, s_Type type)
     {
-        std::vector<s_SolvedNode> items = solveNodes(node.items);
+        std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         if (!(type == t_bool))
         {
             type = clear_mutref(items.at((int(items.size()) - 1)).type);
@@ -2885,28 +2885,13 @@ struct sf_runSolver
         };
         return solved(node, type, items);
     };
-    s_SolvedNode solveOr(const s_Node& node)
+    s_SolvedNode solveOr(const s_Node& node, s_Type type)
     {
-        std::vector<s_SolvedNode> items = solveNodes(node.items);
-        s_Type t_or = sumType_logic(items);
-        if ((t_or == t_bool))
-        {
-            bool change = false;
-            std::vector<s_SolvedNode> alts = items;
-            for (int i = 0; (i < (int(alts.size()) - 1)); i++)
-            {
-                s_SolvedNode alt = ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = alts.at(i); if (_) return _; } fail(std::string("")); }());
-                if ((alt.kind == std::string("and")))
-                {
-                    alts.at(i) = alt.items.at((int(alt.items.size()) - 1));
-                    change = true;
-                };
-            };
-            if (change)
-                t_or = sumType_logic(alts);
+        std::vector<s_SolvedNode> items = solveNodes(node.items, type);
+        if (!(type == t_bool))
+            type = sumType_logic(items);
 
-        };
-        return solved(node, t_or, items);
+        return solved(node, type, items);
     };
     s_SolvedNode solved(const s_Node& node, const s_Type& type, const std::vector<s_SolvedNode>& items)
     {
@@ -2952,7 +2937,7 @@ struct sf_runSolver
         };
         return wrap(op, node, ((node.type.quals & q_prvalue) ? F_ELISION : 0));
     };
-    std::vector<s_SolvedNode> solveNodes(const std::vector<s_Node>& nodes)
+    std::vector<s_SolvedNode> solveNodes(const std::vector<s_Node>& nodes, const s_Type& type)
     {
         std::vector<s_SolvedNode> result {};
         s_Token here0 = _here;
@@ -2967,7 +2952,7 @@ struct sf_runSolver
             if (!isUnordered(node.kind))
             {
                 _here = ([&]() -> const s_Token& { { const s_Token& _ = node.token; if (_) return _; } return _here; }());
-                result.at(i) = solveNode(node, s_Type{});
+                result.at(i) = solveNode(node, type);
                 continue;
             };
             const int i0 = i;
@@ -3419,7 +3404,7 @@ struct sf_cpp_codegen
     std::string cgLet(const s_SolvedNode& node)
     {
         std::string src = binding(node, true);
-        if (([&]() -> int& { { int& _ = _fnN; if (_) return _; } return _faasN; }()))
+        if ((_fnN || _faasN))
             return src;
 
         src = fu_JOIN(fu_SPLIT(src, std::string("([&](")), std::string("([]("));
@@ -3983,7 +3968,7 @@ struct sf_cpp_codegen
         };
         if (pcnd.size())
         {
-            if (([&]() -> const std::string& { { const std::string& _ = init; if (_.size()) return _; } { const std::string& _ = post; if (_.size()) return _; } return cond; }()).size())
+            if ((init.size() || post.size() || cond.size()))
                 fail(std::string("TODO extended loop."));
 
             return ((((((std::string("do") + body) + _indent) + std::string("while (")) + pcnd) + std::string(")")) + breakLabel);

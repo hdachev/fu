@@ -2707,13 +2707,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if (k == 'let')        return solveLet(node);
         if (k == 'call')       return solveCall(node);
         if (k == 'arrlit')     return solveArrayLiteral(node, type);
+
         if (k == 'if')         return solveIf(node);
-        if (k == 'or')         return solveOr(node);
+        if (k == 'or')         return solveOr(node, type);
         if (k == '!')          return solveNot(node);
         if (k == 'and')        return solveAnd(node, type);
-        if (k == 'loop')       return solveBlock(node);
 
         if (k == 'return')     return solveReturn(node);
+        if (k == 'loop')       return solveBlock(node);
         if (k == 'break')      return solveJump(node);
         if (k == 'continue')   return solveJump(node);
 
@@ -3690,34 +3691,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         return solved(node, type, items);
     }
 
-    fn solveOr(node: Node): SolvedNode
+    fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items);
+        let items = solveNodes(node.items, type);
 
-        mut t_or = sumType_logic(items);
-        if (t_or == t_bool)
-        {
-            mut change = false;
+        if (!(type == t_bool))
+            type = sumType_logic(items);
 
-            // Look for the `(a && b) || c` pattern -
-            //  With correct codegen, only `b` and `c` need to intersect,
-            //   `a` is simply another condition for using `b`.
-            mut alts = items;
-            for (mut i = 0; i < alts.len - 1; i++)
-            {
-                let alt = alts[i] || fail();
-                if (alt.kind == 'and')
-                {
-                    alts[i] = alt.items[alt.items.len - 1];
-                    change = true;
-                }
-            }
-
-            if (change)
-                t_or = sumType_logic(alts);
-        }
-
-        return solved(node, t_or, items);
+        return solved(node, type, items);
     }
 
 
@@ -3804,7 +3785,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     //
 
-    fn solveNodes(nodes: Node[]): SolvedNode[]
+    fn solveNodes(nodes: Node[], type: Type = []): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -3822,7 +3803,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             if (!isUnordered(node.kind))
             {
                 _here       = node.token || _here;
-                result[i]   = solveNode(node);
+                result[i]   = solveNode(node, type);
                 continue;
             }
 
