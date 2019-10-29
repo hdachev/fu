@@ -1697,9 +1697,13 @@ pub fn add_mutref(type: Type)
     return qadd(type, q_ref | q_mutref);
 }
 
-pub fn add_prvalue_ref(type: Type)
+pub fn add_prvalue_ref(type: Type, addRef: bool)
 {
-    return qadd(type, q_ref | q_prvalue);
+    mut q = q_prvalue;
+    if (addRef)
+        q |= q_ref;
+
+    return qadd(type, q);
 }
 
 
@@ -1722,6 +1726,11 @@ pub fn tryClear_ref(type: Type)
 pub fn clear_refs(type: Type)
 {
     return qsub(type, q_ref | q_mutref | q_prvalue);
+}
+
+pub fn clear_mutref(type: Type)
+{
+    return qsub(type, q_mutref | q_prvalue);
 }
 
 pub fn add_refs_from(src: Type, dest: Type)
@@ -2698,7 +2707,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if (k == 'arrlit')     return solveArrayLiteral(node, type);
         if (k == 'if')         return solveIf(node);
         if (k == 'or')         return solveOr(node);
-        if (k == 'and')        return solveAnd(node);
+        if (k == 'and')        return solveAnd(node, type);
         if (k == 'loop')       return solveBlock(node);
 
         if (k == 'return')     return solveReturn(node);
@@ -3412,7 +3421,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
         // Implicit temporaries, all args are referable.
         for (mut i = 0; i < args.len; i++)
-            args[i] = maybePRValue(args[i] || fail());
+            args[i] = maybePRValue(
+                args[i] || fail(), true);
 
         //
         mut callTargIdx = scope_match__mutargs(id, args, node.flags);
@@ -3466,10 +3476,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             args);
     }
 
-    fn maybePRValue(mut node: SolvedNode): SolvedNode
+    fn maybePRValue(mut node: SolvedNode, addRef: bool = false): SolvedNode
     {
         if (!(node.type.quals & q_ref))
-            node.type = add_prvalue_ref(node.type);
+            node.type = add_prvalue_ref(node.type, addRef);
 
         return node;
     }
@@ -3601,9 +3611,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn solveIf(node: Node): SolvedNode
     {
-        let items   = solveNodes(node.items);
-        let cons    = items[1];
-        let alt     = items[2];
+        let n0      = node.items[0];
+        let n1      = node.items[1];
+        let n2      = node.items[2];
+
+        let cond    = solveNode(n0, t_bool);
+        let cons    = n1 ? solveNode(n1)            : SolvedNode;
+        let alt     = n2 ? solveNode(n2, cons.type) : SolvedNode;
 
         let priExpr = cons || alt || fail();
         let secExpr = cons && alt || cons;
@@ -3611,13 +3625,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let priType = priExpr.type;
         let secType = secExpr.type;
 
-        let outType: Type = !secType
+        let outType = !secType
             ? priType
             : type_tryInter(priType, secType);
 
         outType || fail('No common supertype.');
 
-        return solved(node, outType || fail(), items);
+        return solved(node, outType || fail(), [ cond, cons, alt ]);
     }
 
     fn sumType_logic(items: SolvedNode[]): Type
@@ -3652,11 +3666,18 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         return t_bool;
     }
 
-    fn solveAnd(node: Node): SolvedNode
+    fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
         let items = solveNodes(node.items);
 
-        return solved(node, sumType_logic(items), items);
+        if (!(type == t_bool))
+        {
+            type = clear_mutref(items[items.len - 1].type);
+            if (type == t_never)
+                type = t_bool;
+        }
+
+        return solved(node, type, items);
     }
 
     fn solveOr(node: Node): SolvedNode
@@ -4655,11 +4676,10 @@ pub fn cpp_codegen(
     fn cgArrayLiteral(node: SolvedNode): string
     {
         let items = cgNodes(node.items);
-        let annot = typeAnnot(node.type);
-
         if (!items.len)
-            return annot + '{}';
+            return cgDefault(node.type);
 
+        let annot = typeAnnot(node.type);
         return annot + ' { ' + items.join(', ') + ' }';
     }
 
@@ -5281,6 +5301,29 @@ const V& fu_MAP_CONST_GET(
 
     //
 
+    fn cgDefault(type: Type): string
+    {
+        if (type.quals & q_ref && !(type.quals & q_mutref))
+        {
+            let DEFAULT = '::DEFAULT';
+            if (!_ffwd.has(DEFAULT))
+            {
+                _ffwd[DEFAULT] =
+////////////////////////////////////
+`
+template <typename T>
+struct fu_DEFAULT { static inline const T value {}; };
+`
+////////////////////////////////////
+                ;
+            }
+
+            return 'fu_DEFAULT<' + typeAnnot(clear_refs(type)) + '>::value';
+        }
+
+        return typeAnnot(type) + '{}';
+    }
+
     fn isRefLogical(type: Type): bool
     {
         return (type.quals & (q_ref | q_prvalue)) == q_ref;
@@ -5289,38 +5332,41 @@ const V& fu_MAP_CONST_GET(
     fn cgAnd(node: SolvedNode): string
     {
         let type = node.type;
-        if (isRefLogical(type))
+        if (!(type == t_bool))
         {
             let annot = typeAnnot(type);
 
-            mut src = '([&]() -> ' + annot + ' {';
+            mut src = '([&]() -> ' + annot + ' { if (';
 
             let items = node.items;
             for (mut i = 0; i < items.len - 1; i++)
             {
-                let item = items[i] || fail();
-                src += ' { ' + annot + ' _ = ' + cgNode(item) + '; if (!' + boolWrap(item.type, '_') + ') return _; }';
+                let item = items[i];
+                if (i) src += ' && ';
+                src += boolWrap(item.type, cgNode(item, M_RETBOOL));
             }
 
-            let tail = items[items.len - 1] || fail();
-            if (!(tail.type == t_never))
-                src += ' return';
+            src += ') ';
 
-            src += ' ' + cgNode(tail) + '; }())';
-            return src;
+            let tail = items[items.len - 1] || fail();
+            let item = cgNode(tail);
+
+            if (tail.type == t_never)
+                src += item;
+            else
+                src += 'return ' + item + '; else return ' + cgDefault(type);
+
+            return src + '; }())';
         }
 
         mut src = '(';
-        let items = cgNodes(node.items);
+        let items = node.items;
         for (mut i = 0; i < items.len; i++)
         {
             let item = items[i];
-            let type = (node.items[i] || fail())  .type;
 
-            if (i)
-                src += ' && ';
-
-            src += boolWrap(type, item);
+            if (i) src += ' && ';
+            src += boolWrap(item.type, cgNode(item, M_RETBOOL));
         }
 
         return src + ')';
@@ -5373,16 +5419,12 @@ const V& fu_MAP_CONST_GET(
         }
 
         mut src = '(';
-        let items = cgNodes(node.items);
+        let items = node.items;
         for (mut i = 0; i < items.len; i++)
         {
             let item = items[i];
-            let type = (node.items[i] || fail())  .type;
-
-            if (i)
-                src += ' || ';
-
-            src += boolWrap(type, item);
+            if (i) src += ' || ';
+            src += boolWrap(item.type, cgNode(item, M_RETBOOL));
         }
 
         return src + ')';
