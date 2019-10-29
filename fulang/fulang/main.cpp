@@ -1607,6 +1607,12 @@ void RUN()
 
     // Let's move on to some cooler quality of life shit.
 
+    ZERO(R"(
+        let a = 7;
+        let b = a && 3;
+        return b - 3;
+    )");
+
     // ZERO(R"(
     //     struct S { i: i32; }
 
