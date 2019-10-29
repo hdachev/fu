@@ -27,7 +27,7 @@ let OPERATORS =
     '*', '**', '/', '%',
     '<', '<<', '<<<', '>', '>>', '>>>',
     '===', '==', '!=', '!==', '<=', '>=', '=>', '->', '<=>',
-    '!', '!!', '?', '??',
+    '!', '?', '??',
     '.', '..', '...', ':', '::', ',', ';',
     '&', '&&', '|', '||', '^', '~',
     '{', '}', '[', ']', '(', ')', '[]',
@@ -462,7 +462,7 @@ pub let F_ELISION      = 1 << 31;
 let P_RESET           = 1000;
 let P_PREFIX_UNARY    = 3   ;
 
-let PREFIX:  string[] = [ '++', '+', '--', '-', '!', '!!', '~', '?', '*', '&', '&mut' ];
+let PREFIX:  string[] = [ '++', '+', '--', '-', '!', '~', '?', '*', '&', '&mut' ];
 let POSTFIX: string[] = [ '++', '--', '[]' ];
 
 struct BINOP {
@@ -1272,7 +1272,9 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn createPrefix(op: string, expr: &Node): Node
     {
-        return createCall(op, F_PREFIX, [ expr ]);
+        if (op ==  '!') return make('!' , [ expr ]);
+
+        return createCall(op,   F_PREFIX, [ expr ]);
     }
 
     fn parseAccessExpression(expr: &Node): Node
@@ -2707,6 +2709,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if (k == 'arrlit')     return solveArrayLiteral(node, type);
         if (k == 'if')         return solveIf(node);
         if (k == 'or')         return solveOr(node);
+        if (k == '!')          return solveNot(node);
         if (k == 'and')        return solveAnd(node, type);
         if (k == 'loop')       return solveBlock(node);
 
@@ -3666,6 +3669,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         return t_bool;
     }
 
+    fn solveNot(node: Node): SolvedNode
+    {
+        return solved(
+            node, t_bool,
+                [ solveNode(node.items[0], t_bool) ]);
+    }
+
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
         let items = solveNodes(node.items);
@@ -3955,9 +3965,6 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
 
 fn true (): bool __native_pure;
 fn false(): bool __native_pure;
-
-fn  !(a: &$T): bool __native_pure;
-fn !!(a: &$T): bool __native_pure;
 
 
 // Assignment.
@@ -4739,9 +4746,6 @@ pub fn cpp_codegen(
 
             if (items.len == 1)
             {
-                if (id == '!')
-                    return '!' + boolWrap(head.type, items[0]);
-
                 return node.flags & F_POSTFIX
                      ? items[0] + id
                      : id + items[0];
@@ -5372,6 +5376,13 @@ struct fu_DEFAULT { static inline const T value {}; };
         return src + ')';
     }
 
+    fn cgNot(node: SolvedNode): string
+    {
+        let item = node.items[0];
+        return '!' + boolWrap(
+            item.type, cgNode(item, M_RETBOOL));
+    }
+
     fn cgOr(node: SolvedNode): string
     {
         let type = node.type;
@@ -5497,6 +5508,7 @@ struct fu_DEFAULT { static inline const T value {}; };
         if (k == 'call')       return cgCall(node, mode);
         if (k == 'let')        return cgLet(node);
         if (k == 'if')         return cgIf(node, mode);
+        if (k == '!')          return cgNot(node);
         if (k == 'or')         return cgOr(node);
         if (k == 'and')        return cgAnd(node);
         if (k == 'loop')       return cgLoop(node);

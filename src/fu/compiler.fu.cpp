@@ -48,9 +48,6 @@ std::vector<T> fu_CONCAT(
     return result;
 }
 
-template <typename T>
-struct fu_DEFAULT { static inline const T value {}; };
-
 inline std::string fu_JOIN(
     const std::vector<std::string>& vec,
     const std::string& sep)
@@ -436,7 +433,7 @@ std::string last(const std::string& s)
     return (int(s.size()) ? std::string(1, s.at((int(s.size()) - 1))) : std::string(""));
 }
 inline const std::string OPTOKENS = std::string("{}[]()!?~@#$%^&*/-+<=>,.;:|");
-inline const std::vector<std::string> OPERATORS = std::vector<std::string> { std::string("+"), std::string("++"), std::string("-"), std::string("--"), std::string("*"), std::string("**"), std::string("/"), std::string("%"), std::string("<"), std::string("<<"), std::string("<<<"), std::string(">"), std::string(">>"), std::string(">>>"), std::string("==="), std::string("=="), std::string("!="), std::string("!=="), std::string("<="), std::string(">="), std::string("=>"), std::string("->"), std::string("<=>"), std::string("!"), std::string("!!"), std::string("?"), std::string("??"), std::string("."), std::string(".."), std::string("..."), std::string(":"), std::string("::"), std::string(","), std::string(";"), std::string("&"), std::string("&&"), std::string("|"), std::string("||"), std::string("^"), std::string("~"), std::string("{"), std::string("}"), std::string("["), std::string("]"), std::string("("), std::string(")"), std::string("[]"), std::string("="), std::string("+="), std::string("-="), std::string("*="), std::string("**="), std::string("/="), std::string("%="), std::string("&="), std::string("|="), std::string("^="), std::string("&&="), std::string("||="), std::string("@"), std::string("#"), std::string("$") };
+inline const std::vector<std::string> OPERATORS = std::vector<std::string> { std::string("+"), std::string("++"), std::string("-"), std::string("--"), std::string("*"), std::string("**"), std::string("/"), std::string("%"), std::string("<"), std::string("<<"), std::string("<<<"), std::string(">"), std::string(">>"), std::string(">>>"), std::string("==="), std::string("=="), std::string("!="), std::string("!=="), std::string("<="), std::string(">="), std::string("=>"), std::string("->"), std::string("<=>"), std::string("!"), std::string("?"), std::string("??"), std::string("."), std::string(".."), std::string("..."), std::string(":"), std::string("::"), std::string(","), std::string(";"), std::string("&"), std::string("&&"), std::string("|"), std::string("||"), std::string("^"), std::string("~"), std::string("{"), std::string("}"), std::string("["), std::string("]"), std::string("("), std::string(")"), std::string("[]"), std::string("="), std::string("+="), std::string("-="), std::string("*="), std::string("**="), std::string("/="), std::string("%="), std::string("&="), std::string("|="), std::string("^="), std::string("&&="), std::string("||="), std::string("@"), std::string("#"), std::string("$") };
 
 struct sf_lex
 {
@@ -585,7 +582,7 @@ struct sf_lex
                     };
                 };
                 std::string trail = std::string(1, src.at((idx - 1)));
-                if ((!([&]() -> bool { if ((trail >= std::string("0"))) return (trail <= std::string("9")); else return fu_DEFAULT<bool>::value; }()) && !([&]() -> bool { if (hex) return (((trail >= std::string("a")) && (trail <= std::string("f"))) || ((trail >= std::string("A")) && (trail <= std::string("F")))); else return fu_DEFAULT<bool>::value; }())))
+                if ((!((trail >= std::string("0")) && (trail <= std::string("9"))) && !(hex && (((trail >= std::string("a")) && (trail <= std::string("f"))) || ((trail >= std::string("A")) && (trail <= std::string("F")))))))
                     err(std::string("num"), idx0, (idx - 1));
                 else
                 {
@@ -728,7 +725,7 @@ inline const int F_DESTRUCTOR = (1 << 30);
 inline const int F_ELISION = (1 << 31);
 inline const int P_RESET = 1000;
 inline const int P_PREFIX_UNARY = 3;
-inline const std::vector<std::string> PREFIX = std::vector<std::string> { std::string("++"), std::string("+"), std::string("--"), std::string("-"), std::string("!"), std::string("!!"), std::string("~"), std::string("?"), std::string("*"), std::string("&"), std::string("&mut") };
+inline const std::vector<std::string> PREFIX = std::vector<std::string> { std::string("++"), std::string("+"), std::string("--"), std::string("-"), std::string("!"), std::string("~"), std::string("?"), std::string("*"), std::string("&"), std::string("&mut") };
 inline const std::vector<std::string> POSTFIX = std::vector<std::string> { std::string("++"), std::string("--"), std::string("[]") };
 
 struct sf_setupOperators
@@ -1326,6 +1323,9 @@ struct sf_parse
     };
     s_Node createPrefix(const std::string& op, const s_Node& expr)
     {
+        if ((op == std::string("!")))
+            return make(std::string("!"), std::vector<s_Node> { expr }, 0, std::string(""));
+
         return createCall(op, F_PREFIX, std::vector<s_Node> { expr });
     };
     s_Node parseAccessExpression(const s_Node& expr)
@@ -2128,7 +2128,7 @@ struct sf_runSolver
                     const int callsiteIndex = (reorder.size() ? reorder.at(i) : i);
                     if ((callsiteIndex < 0))
                     {
-                        if (!([&]() -> const s_SolvedNode& { if (arg_d.size()) return arg_d.at(i); else return fu_DEFAULT<s_SolvedNode>::value; }()))
+                        if (!(arg_d.size() && arg_d.at(i)))
                         {
                             goto L_NEXT_c;
                         };
@@ -2223,6 +2223,9 @@ struct sf_runSolver
 
         if ((k == std::string("or")))
             return solveOr(node);
+
+        if ((k == std::string("!")))
+            return solveNot(node);
 
         if ((k == std::string("and")))
             return solveAnd(node, type);
@@ -2866,6 +2869,10 @@ struct sf_runSolver
         };
         return t_bool;
     };
+    s_SolvedNode solveNot(const s_Node& node)
+    {
+        return solved(node, t_bool, std::vector<s_SolvedNode> { solveNode(node.items.at(0), t_bool) });
+    };
     s_SolvedNode solveAnd(const s_Node& node, s_Type type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items);
@@ -3014,7 +3021,7 @@ s_Scope listGlobals()
     Scope_Typedef(scope, std::string("never"), t_never);
     return scope;
 }
-inline const std::string prelude_src = std::string("\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @integral):          $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\nfn  !(a: &$T): bool __native_pure;\nfn !!(a: &$T): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn swap(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: &$T[]):         i32  __native_pure;\nfn find(a: &$T[], b: &$T): i32  __native_pure;\nfn has (a: &$T[], b: &$T): bool __native_pure;\n\nfn [](a: &$T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn push   (a: &mut $T[], b: $T):              void __native_pure;\nfn unshift(a: &mut $T[], b: $T):              void __native_pure;\nfn insert (a: &mut $T[], i: i32, b: $T):      void __native_pure;\n\nfn concat (a: &$T[], b: &$T[]):               $T[] __native_pure;\nfn slice  (a: &$T[], i0: i32, i1: i32):       $T[] __native_pure;\nfn slice  (a: &$T[], i0: i32):                $T[] __native_pure;\n\nfn splice (a: &mut $T[], i: i32, count: i32): void __native_pure;\nfn pop    (a: &mut $T[]):                     void __native_pure;\n\nfn clear  (a: &mut $T[]):                     void __native_pure;\nfn resize (a: &mut $T[], len: i32):           void __native_pure;\nfn shrink (a: &mut $T[], len: i32):           void __native_pure;\n\nfn move   (a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort   (a: &mut $T[]):                     void __native_pure;\n\n\n// Strings.\n\nfn len(a: &string):                 i32         __native_pure;\nfn [](a: &string, i: i32):          string      __native_pure;\nfn +=(a: &mut string, b: &string):  &mut string __native_pure;\nfn + (a: &string, b: &string):      string      __native_pure;\n\nfn ==(a: &string, b: &string):      bool        __native_pure;\nfn !=(a: &string, b: &string):      bool        __native_pure;\nfn  >(a: &string, b: &string):      bool        __native_pure;\nfn  <(a: &string, b: &string):      bool        __native_pure;\nfn >=(a: &string, b: &string):      bool        __native_pure;\nfn <=(a: &string, b: &string):      bool        __native_pure;\n\nfn find(a: &string, b: &string):    i32         __native_pure;\nfn has(a: &string, b: &string):     bool        __native_pure;\nfn starts(a: &string, with: &string): bool      __native_pure;\n\nfn slice (a: &string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: &string, i0: i32)         : string __native_pure;\n\nfn substr(a: &string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: &string, i0: i32): i32 __native_pure;\n\nfn split(str: &string, sep: &string): string[] __native_pure;\n\n\n// Maps.\n\nfn [](a: &Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: &Map($K, $V)): $K[] __native_pure;\nfn values(a: &Map($K, $V)): $V[] __native_pure;\nfn has   (a: &Map($K, $V), b: &$K): bool __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert()             : never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: &string, b: i32): string __native_pure;\nfn join(a: &string[], sep: &string): string __native_pure;\n\n");
+inline const std::string prelude_src = std::string("\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @integral):          $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn swap(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: &$T[]):         i32  __native_pure;\nfn find(a: &$T[], b: &$T): i32  __native_pure;\nfn has (a: &$T[], b: &$T): bool __native_pure;\n\nfn [](a: &$T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn push   (a: &mut $T[], b: $T):              void __native_pure;\nfn unshift(a: &mut $T[], b: $T):              void __native_pure;\nfn insert (a: &mut $T[], i: i32, b: $T):      void __native_pure;\n\nfn concat (a: &$T[], b: &$T[]):               $T[] __native_pure;\nfn slice  (a: &$T[], i0: i32, i1: i32):       $T[] __native_pure;\nfn slice  (a: &$T[], i0: i32):                $T[] __native_pure;\n\nfn splice (a: &mut $T[], i: i32, count: i32): void __native_pure;\nfn pop    (a: &mut $T[]):                     void __native_pure;\n\nfn clear  (a: &mut $T[]):                     void __native_pure;\nfn resize (a: &mut $T[], len: i32):           void __native_pure;\nfn shrink (a: &mut $T[], len: i32):           void __native_pure;\n\nfn move   (a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort   (a: &mut $T[]):                     void __native_pure;\n\n\n// Strings.\n\nfn len(a: &string):                 i32         __native_pure;\nfn [](a: &string, i: i32):          string      __native_pure;\nfn +=(a: &mut string, b: &string):  &mut string __native_pure;\nfn + (a: &string, b: &string):      string      __native_pure;\n\nfn ==(a: &string, b: &string):      bool        __native_pure;\nfn !=(a: &string, b: &string):      bool        __native_pure;\nfn  >(a: &string, b: &string):      bool        __native_pure;\nfn  <(a: &string, b: &string):      bool        __native_pure;\nfn >=(a: &string, b: &string):      bool        __native_pure;\nfn <=(a: &string, b: &string):      bool        __native_pure;\n\nfn find(a: &string, b: &string):    i32         __native_pure;\nfn has(a: &string, b: &string):     bool        __native_pure;\nfn starts(a: &string, with: &string): bool      __native_pure;\n\nfn slice (a: &string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: &string, i0: i32)         : string __native_pure;\n\nfn substr(a: &string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: &string, i0: i32): i32 __native_pure;\n\nfn split(str: &string, sep: &string): string[] __native_pure;\n\n\n// Maps.\n\nfn [](a: &Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: &Map($K, $V)): $K[] __native_pure;\nfn values(a: &Map($K, $V)): $V[] __native_pure;\nfn has   (a: &Map($K, $V), b: &$K): bool __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert()             : never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: &string, b: i32): string __native_pure;\nfn join(a: &string[], sep: &string): string __native_pure;\n\n");
 
 s_Scope solvePrelude()
 {
@@ -3517,12 +3524,8 @@ struct sf_cpp_codegen
             const std::vector<s_SolvedNode>& nodes = ([&]() -> const std::vector<s_SolvedNode>& { { const std::vector<s_SolvedNode>& _ = node.items; if (_.size()) return _; } fail(std::string("")); }());
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = nodes.at(0); if (_) return _; } fail(std::string("")); }());
             if ((int(items.size()) == 1))
-            {
-                if ((id == std::string("!")))
-                    return (std::string("!") + boolWrap(head.type, items.at(0)));
-
                 return ((node.flags & F_POSTFIX) ? (items.at(0) + id) : (id + items.at(0)));
-            };
+
             if ((int(items.size()) == 2))
             {
                 if ((id == std::string("[]")))
@@ -3895,6 +3898,11 @@ struct sf_cpp_codegen
         };
         return (src + std::string(")"));
     };
+    std::string cgNot(const s_SolvedNode& node)
+    {
+        const s_SolvedNode& item = node.items.at(0);
+        return (std::string("!") + boolWrap(item.type, cgNode(item, M_RETBOOL)));
+    };
     std::string cgOr(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
@@ -4014,6 +4022,9 @@ struct sf_cpp_codegen
 
         if ((k == std::string("if")))
             return cgIf(node, mode);
+
+        if ((k == std::string("!")))
+            return cgNot(node);
 
         if ((k == std::string("or")))
             return cgOr(node);
