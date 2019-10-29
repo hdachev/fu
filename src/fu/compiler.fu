@@ -731,8 +731,8 @@ pub fn parse(_fname: string, _tokens: Token[])
         endKind: string, endVal: string,
         mode: string = ''): Node[]
     {
-        mut line0 = _tokens[_idx].line;
-        mut col00 = _col0;
+        let line0 = _tokens[_idx].line;
+        let col00 = _col0;
 
         mut items: Node[] = [];
         while (true)
@@ -762,7 +762,7 @@ pub fn parse(_fname: string, _tokens: Token[])
                 'Bad indent, expecting more than ' + col00
                     + '. Block starts on line ' + line0 + '.');
 
-            mut expr = mode /*== 'struct'*/
+            let expr = mode /*== 'struct'*/
                 ? parseStructItem()
                 : parseStatement();
 
@@ -3145,10 +3145,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let init        = node.items[LET_INIT];
 
         let s_annot     = annot ? evalTypeAnnot(annot) : SolvedNode;
-        let t_annot     = s_annot ? s_annot.type : Type;
+        let t_annot     = s_annot.type;
 
         mut s_init      = init ? solveNode(init, t_annot) : SolvedNode;
-        let t_init      = s_init ? s_init.type : Type;
+        let t_init      = s_init.type;
 
         let t_let       = t_annot
                             ? node.flags & F_ARG && !(node.flags & F_MUT)
@@ -3606,10 +3606,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let alt     = items[2];
 
         let priExpr = cons || alt || fail();
-        let secExpr = cons && alt ? alt : cons;
+        let secExpr = cons && alt || cons;
 
         let priType = priExpr.type;
-        let secType = secExpr ? secExpr.type : Type;
+        let secType = secExpr.type;
 
         let outType: Type = !secType
             ? priType
