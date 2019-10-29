@@ -892,8 +892,8 @@ struct sf_parse
     };
     std::vector<s_Node> parseBlockLike(const std::string& endKind, const std::string& endVal, const std::string& mode)
     {
-        int line0 = _tokens.at(_idx).line;
-        int col00 = _col0;
+        const int& line0 = _tokens.at(_idx).line;
+        const int col00 = _col0;
         std::vector<s_Node> items = std::vector<s_Node>{};
         while (true)
         {
@@ -2533,9 +2533,9 @@ struct sf_runSolver
         const s_Node& annot = node.items.at(LET_TYPE);
         const s_Node& init = node.items.at(LET_INIT);
         s_SolvedNode s_annot = (annot ? evalTypeAnnot(annot) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
-        s_Type t_annot = (s_annot ? s_annot.type : s_Type { std::string{}, int{} });
+        const s_Type& t_annot = s_annot.type;
         s_SolvedNode s_init = (init ? solveNode(init, t_annot) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
-        s_Type t_init = (s_init ? s_init.type : s_Type { std::string{}, int{} });
+        s_Type t_init = s_init.type;
         s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : t_annot) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : ([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail(std::string("Variable declarations without explicit type annotations must be initialized.")); }())));
         if (([&]() -> const s_Type& { { const s_Type& _ = t_annot; if (!_) return _; } return t_init; }()))
         {
@@ -2818,9 +2818,9 @@ struct sf_runSolver
         const s_SolvedNode& cons = items.at(1);
         const s_SolvedNode& alt = items.at(2);
         const s_SolvedNode& priExpr = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = cons; if (_) return _; } { const s_SolvedNode& _ = alt; if (_) return _; } fail(std::string("")); }());
-        const s_SolvedNode& secExpr = (([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = cons; if (!_) return _; } return alt; }()) ? alt : cons);
+        const s_SolvedNode& secExpr = ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }());
         const s_Type& priType = priExpr.type;
-        s_Type secType = (secExpr ? secExpr.type : s_Type { std::string{}, int{} });
+        const s_Type& secType = secExpr.type;
         s_Type outType = (!secType ? priType : type_tryInter(priType, secType));
         ([&]() -> const s_Type& { { const s_Type& _ = outType; if (_) return _; } fail(std::string("No common supertype.")); }());
         return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = outType; if (_) return _; } fail(std::string("")); }()), items);

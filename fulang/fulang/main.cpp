@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 
+#include <time.h>
+
 
 //
 
@@ -254,6 +256,8 @@ public:
 
 static const std::string GCC_CMD = "g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality ";
 
+static bool NEW_STUFF = false;
+
 std::string build_and_run(const std::string& cpp)
 {
     int code = 0;
@@ -275,6 +279,8 @@ std::string build_and_run(const std::string& cpp)
 
     if (getFileSize(F + ".exe") <= 0)
     {
+        NEW_STUFF = true;
+
         writeFile((F + ".cpp").c_str(), cpp);
 
         out = fu_EXEC(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1").wait(code);
@@ -334,6 +340,44 @@ int main(int argc, const char * argv[])
 
     //
     return 0;
+}
+
+void saySomethingNice()
+{
+    auto sec = time(nullptr);
+
+    if (sec % 5 && !NEW_STUFF)
+    {
+        for (int i = 0; i < 3; i++)
+            if (sec & (1 << i))
+                std::cout << "🍒";
+            else
+                std::cout << "🍊";
+    }
+    else switch ((sec >> 6) & 0xf)
+    {
+        case 0x0: std::cout << "LOOKING GOOD TODAY !" << std::endl; break;
+        case 0x1: std::cout << "PASSING TESTS LIKE A BOSS !" << std::endl; break;
+        case 0x2: std::cout << "THIS IS SOME TOP NOTCH SHIT !" << std::endl; break;
+        case 0x3: std::cout << "VALUE ADDED !" << std::endl; break;
+
+        case 0x4: std::cout << "GOING STRONG !" << std::endl; break;
+        case 0x5: std::cout << "KILLIN IT !" << std::endl; break;
+        case 0x6: std::cout << "POWER LEVEL INCREASED !" << std::endl; break;
+        case 0x7: std::cout << "NOW MAKE ME BETTER AGAIN !" << std::endl; break;
+
+        case 0x8: std::cout << "NOW MAKE ME EVEN MORE BETTER !" << std::endl; break;
+        case 0x9: std::cout << "ALL CLEAR !" << std::endl; break;
+        case 0xa: std::cout << "UPGRADE ACCEPTED !" << std::endl; break;
+        case 0xb: std::cout << "YOU'RE THE BEST MAN !" << std::endl; break;
+
+        case 0xc: std::cout << "I LOVE YOU YOU !" << std::endl; break;
+        case 0xd: std::cout << "MORE IS MORE !" << std::endl; break;
+        case 0xe: std::cout << "THIS IS AWESOME !" << std::endl; break;
+        case 0xf: std::cout << "THIS IS AWESOME !" << std::endl; break;
+    }
+
+    std::cout << std::endl;
 }
 
 
@@ -1563,21 +1607,21 @@ void RUN()
 
     // Let's move on to some cooler quality of life shit.
 
-    ZERO(R"(
-        struct S { i: i32; }
+    // ZERO(R"(
+    //     struct S { i: i32; }
 
-        let a = S(0);
-        let b = S(3);
+    //     let a = S(0);
+    //     let b = S(3);
 
-        return a.i
-            || (b || S(4)).i * 2 - (a || S(6)).i
-            && throw('woot');
-    )");
+    //     return a.i
+    //         || (b || S(4)).i * 2 - (a || S(6)).i
+    //         && throw('woot');
+    // )");
 
 
     //
 
-    std::cout << "LOOKING GOOD TODAY!" << std::endl;
+    saySomethingNice();
 
     FU_FILE("compiler.fu");
 }
