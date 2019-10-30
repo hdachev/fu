@@ -1613,16 +1613,16 @@ void RUN()
         return b - 3;
     )");
 
-    // ZERO(R"(
-    //     struct S { i: i32; }
+    ZERO(R"(
+        struct S { i: i32; }
 
-    //     let a = S(0);
-    //     let b = S(3);
+        let a = S(0);
+        let b = S(3);
 
-    //     return a.i
-    //         || (b || S(4)).i * 2 - (a || S(6)).i
-    //         && throw('woot');
-    // )");
+        return a.i
+            || (b || S(4)).i * 2 - (a || S(6)).i
+            && throw('woot');
+    )");
 
 
     //

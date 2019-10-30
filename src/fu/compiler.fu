@@ -3638,37 +3638,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         return solved(node, outType || fail(), [ cond, cons, alt ]);
     }
 
-    fn sumType_logic(items: SolvedNode[]): Type
-    {
-        // All args refs?
-        if (items.len)
-        {
-            mut sumType: Type = (items[0] || fail()).type;
-            for (mut i = 1; i < items.len; i++)
-            {
-                let type = (items[i] || fail()).type;
-                if (type == t_never)
-                {
-                    i == items.len - 1 || fail(
-                        'Dead code following never [A].');
 
-                    continue;
-                }
-
-                sumType = type_tryInter(sumType, type);
-                if (!sumType)
-                    break;
-            }
-
-            sumType == t_never && fail(
-                'Dead code following never [B].');
-
-            if (sumType && (sumType.quals & q_ref))
-                return sumType;
-        }
-
-        return t_bool;
-    }
+    //////////////////////////////////////////////////
+    // Logic                  .                     //
+    //////////////////////////////////////////////////
 
     fn solveNot(node: Node): SolvedNode
     {
@@ -3677,27 +3650,113 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 [ solveNode(node.items[0], t_bool) ]);
     }
 
-    fn solveAnd(node: Node, mut type: Type): SolvedNode
+    fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items);
+        mut items = solveNodes(node.items, type);
 
+        // Unless this is an explicit bool context:
         if (!(type == t_bool))
         {
-            type = clear_mutref(items[items.len - 1].type);
-            if (type == t_never)
+            mut sumType: Type;
+
+            // Sum types, ignoring never.
+            for (mut i = 0; i < items.len; i++)
+            {
+                let item = items[i];
+                if (item.type == t_never)
+                    continue;
+
+                if (sumType)
+                {
+                    sumType = type_tryInter(sumType, item.type);
+                    if (!sumType)
+                        break;
+                }
+                else
+                {
+                    sumType = item.type;
+                }
+            }
+
+            if (sumType)
+            {
+                // If we do have an intersection,
+                //  and if the sum type is not a reference,
+                //   some shit may need copying here.
+                if (!(sumType.quals & q_ref))
+                    for (mut i = 0; i < items.len; i++)
+                        if (items[i].type.quals & q_ref)
+                            items[i] = maybeCopyOrMove(
+                                items[i], sumType);
+
+                type = sumType;
+            }
+            else
+            {
                 type = t_bool;
+            }
         }
 
         return solved(node, type, items);
     }
 
-    fn solveOr(node: Node, mut type: Type): SolvedNode
+    fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, type);
+        let items = solveNodes(node.items);
 
+        // Unless this is an explicit bool context:
         if (!(type == t_bool))
-            type = sumType_logic(items);
+        {
+            mut sumType: Type;
 
+            // Last item type wins -
+            //  unless it's never, which we can safely ignore.
+            for (mut i = items.len; i --> 0; )
+            {
+                let item = items[i];
+                if (item.type == t_never)
+                    continue;
+
+                if (sumType)
+                {
+                    sumType = type_tryInter(sumType, item.type);
+                    if (!sumType)
+                        break;
+                }
+                else
+                {
+                    type = item.type;
+
+                    // Don't bother scanning back and summing types
+                    //  if we can't return a mutref, default will do.
+                    if (!(type.quals & q_mutref))
+                        break;
+
+                    sumType = item.type;
+                }
+
+                break;
+            }
+
+            if (sumType)
+            {
+                // All the types sum up -
+                //  so this is an ok way to get a mutref:
+                //   e.g. `mut &x = mut_expectFalsy && throw("someone already set this");`
+                type = sumType;
+            }
+            else
+            {
+                // Nope, that didn't work.
+                //  We can generate falsy values and refs,
+                //   but not mutrefs - can't allocate
+                //    a static mut and expect it to remain falsy.
+                type = clear_mutref(type);
+            }
+        }
+
+        // Because values remain values and refs remain refs,
+        //  there's no copying/moving involved in an && chain.
         return solved(node, type, items);
     }
 
@@ -5314,34 +5373,57 @@ struct fu_DEFAULT { static inline const T value {}; };
         return (type.quals & (q_ref | q_prvalue)) == q_ref;
     }
 
-    fn cgAnd(node: SolvedNode): string
+    fn cgAnd(node: SolvedNode, mode: i32): string
     {
         let type = node.type;
-        if (!(type == t_bool))
+        if (!(type == t_bool) || mode & M_STMT)
         {
-            let annot = typeAnnot(type);
-
-            mut src = '([&]() -> ' + annot + ' { if (';
-
             let items = node.items;
-            for (mut i = 0; i < items.len - 1; i++)
+
+            let retSecondLast =
+                items[items.len - 1].type == t_never
+                   && !(mode & M_STMT);
+
+            let condEnd = retSecondLast
+                        ? items.len - 2
+                        : items.len - 1;
+
+            mut src = '';
+
+            if (condEnd)
             {
-                let item = items[i];
-                if (i) src += ' && ';
-                src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+                src += 'if (';
+
+                for (mut i = 0; i < condEnd; i++)
+                {
+                    let item = items[i];
+                    if (i) src += ' && ';
+                    src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+                }
+
+                src += ') ';
             }
 
-            src += ') ';
+            let tail = cgNode(items[condEnd]);
 
-            let tail = items[items.len - 1] || fail();
-            let item = cgNode(tail);
-
-            if (tail.type == t_never)
-                src += item;
+            if (retSecondLast)
+            {
+                src += '{ ' + typeAnnot(type) + ' _ = ' + tail + '; ';
+                src += 'if (!' + boolWrap(type, '_') + ') return _; } ';
+                src += cgNode(items[items.len - 1]) + ';'; //FAIL
+            }
             else
-                src += 'return ' + item + '; else return ' + cgDefault(type);
+            {
+                src += 'return ' + tail + ';'; //TRUTHY
 
-            return src + '; }())';
+                if (!(mode & M_STMT)) //FALSY
+                    src += ' else return ' + cgDefault(type) + ';';
+            }
+
+            if (!(mode & M_STMT))
+                src = '([&]() -> ' + typeAnnot(type) + ' { ' + src + ' }())';
+
+            return src;
         }
 
         mut src = '(';
@@ -5364,10 +5446,10 @@ struct fu_DEFAULT { static inline const T value {}; };
             item.type, cgNode(item, M_RETBOOL));
     }
 
-    fn cgOr(node: SolvedNode): string
+    fn cgOr(node: SolvedNode, mode: i32): string
     {
         let type = node.type;
-        if (isRefLogical(type))
+        if (!(type == t_bool) && !(mode & M_STMT))
         {
             let annot = typeAnnot(type);
 
@@ -5490,8 +5572,8 @@ struct fu_DEFAULT { static inline const T value {}; };
         if (k == 'let')        return cgLet(node);
         if (k == 'if')         return cgIf(node, mode);
         if (k == '!')          return cgNot(node);
-        if (k == 'or')         return cgOr(node);
-        if (k == 'and')        return cgAnd(node);
+        if (k == 'or')         return cgOr(node, mode);
+        if (k == 'and')        return cgAnd(node, mode);
         if (k == 'loop')       return cgLoop(node);
         if (k == 'int')        return cgLiteral(node);
         if (k == 'str')        return cgStringLiteral(node);
