@@ -2800,6 +2800,12 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     //
 
+    fn createTypeParam(value: string): Node
+    {
+        return Node(kind: 'typeparam',
+            :value, token: _here || fail());
+    }
+
     fn uPrepFn(node: Node): SolvedNode
     {
         return __solveFn(false, false, node, SolvedNode, -1);
@@ -2862,7 +2868,18 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             {
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == 'let' || fail();
-                outItems[i] = solveLet(n_arg);
+
+                if (spec)
+                {
+                    // Specialize with actuals.
+                    mut mut_arg = n_arg;
+                    mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
+                    outItems[i] = solveLet(mut_arg);
+                }
+                else
+                {
+                    outItems[i] = solveLet(n_arg);
+                }
             }
 
             /////////////////////////////////////////////////////
@@ -2983,7 +3000,14 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             if (inType)
             {
                 let argName = argNode.value || fail();
-                typeParams[argName] ||= inType;
+
+                // Same pattern - grabs a mutref.
+                let argName_typeParam: &mut Type =
+                    typeParams[argName] ||= Type;
+
+                argName_typeParam && fail(
+                    'Type param name collision with argument: `' + argName + '`.')
+                        = inType;
             }
 
             if (argNode.flags & F_TEMPLATE)

@@ -2316,6 +2316,10 @@ struct sf_runSolver
     {
         return solved(node, t_void, std::vector<s_SolvedNode>{});
     };
+    s_Node createTypeParam(const std::string& value)
+    {
+        return s_Node { std::string("typeparam"), int{}, value, std::vector<s_Node>{}, ([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(std::string("")); }()) };
+    };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
         return __solveFn(false, false, node, s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} }, -1);
@@ -2364,7 +2368,15 @@ struct sf_runSolver
             {
                 const s_Node& n_arg = ([&]() -> const s_Node& { { const s_Node& _ = inItems.at(i); if (_) return _; } fail(std::string("")); }());
                 ((n_arg.kind == std::string("let")) || fail(std::string("")));
-                outItems.at(i) = solveLet(n_arg);
+                if (spec)
+                {
+                    s_Node mut_arg = n_arg;
+                    mut_arg.items.at(LET_TYPE) = createTypeParam(mut_arg.value);
+                    outItems.at(i) = solveLet(mut_arg);
+                }
+                else
+                    outItems.at(i) = solveLet(n_arg);
+
             };
             s_Node n_ret = inItems.at((int(inItems.size()) + FN_RET_BACK));
             s_Node n_body = ([&]() -> const s_Node& { { const s_Node& _ = inItems.at((int(inItems.size()) + FN_BODY_BACK)); if (_) return _; } fail(std::string("")); }());
@@ -2434,7 +2446,8 @@ struct sf_runSolver
             if (inType)
             {
                 const std::string& argName = ([&]() -> const std::string& { { const std::string& _ = argNode.value; if (_.size()) return _; } fail(std::string("")); }());
-                ([&](s_Type& _) -> s_Type& { if (!_) _ = inType; return _; } (typeParams[argName]));
+                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { std::string{}, int{} }; return _; } (typeParams[argName]));
+                ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail(((std::string("Type param name collision with argument: `") + argName) + std::string("`."))); }()) = inType;
             };
             if ((argNode.flags & F_TEMPLATE))
             {

@@ -1624,6 +1624,18 @@ void RUN()
             && throw('woot');
     )");
 
+    ZERO(R"(
+        fn ARR_LAST(a: &$T[])
+            case ($a -> &mut $T[]): &mut $T a[a.len - 1];
+            case ($a -> &    $T[]): &    $T a[a.len - 1];
+
+        let a = [1];
+        mut b = [2];
+
+        b.ARR_LAST += a.ARR_LAST;
+        return b.ARR_LAST - [3].ARR_LAST;
+    )");
+
 
     //
 
