@@ -2924,10 +2924,6 @@ struct sf_runSolver
                 else
                 {
                     type = item.type;
-                    if (!(type.quals & q_mutref))
-                    {
-                        break;
-                    };
                     sumType = item.type;
                 };
                 break;

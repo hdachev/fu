@@ -3750,12 +3750,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 else
                 {
                     type = item.type;
-
-                    // Don't bother scanning back and summing types
-                    //  if we can't return a mutref, default will do.
-                    if (!(type.quals & q_mutref))
-                        break;
-
                     sumType = item.type;
                 }
 
