@@ -2760,13 +2760,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     {
         TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
 
-        return solved(node, t_void, solveNodes(node.items));
+        return solved(node, t_void, solveNodes(node.items, t_void));
     }
 
     fn solveBlock(node: Node): SolvedNode
     {
         let scope0 = Scope_push(_scope);
-        let out = solved(node, t_void, solveNodes(node.items));
+        let out = solved(node, t_void, solveNodes(node.items, t_void));
         Scope_pop(_scope, scope0);
         return out;
     }
@@ -3678,6 +3678,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     {
         mut items = solveNodes(node.items, type);
 
+        // Statement mode.
+        if (type == t_void)
+            type = t_bool;
+
         // Unless this is an explicit bool context:
         if (!(type == t_bool))
         {
@@ -3727,6 +3731,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
         let items = solveNodes(node.items);
+
+        // Statement mode.
+        if (type == t_void)
+            type = t_bool;
 
         // Unless this is an explicit bool context:
         if (!(type == t_bool))

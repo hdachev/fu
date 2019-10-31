@@ -48,9 +48,6 @@ std::vector<T> fu_CONCAT(
     return result;
 }
 
-template <typename T>
-struct fu_DEFAULT { static inline const T value {}; };
-
 inline std::string fu_JOIN(
     const std::vector<std::string>& vec,
     const std::string& sep)
@@ -1367,7 +1364,7 @@ struct sf_parse
             s_Node expr = parseExpression(P_COMMA);
             if (autoName)
             {
-                (([&]() -> int { if ((expr.kind == std::string("call"))) return (expr.flags & F_ID); else return int{}; }()) || fail(std::string("Can't :auto_name this expression.")));
+                (((expr.kind == std::string("call")) && (expr.flags & F_ID)) || fail(std::string("Can't :auto_name this expression.")));
                 name = expr.value;
             };
             out_args.push_back((name.size() ? createLabel(name, expr) : expr));
@@ -2082,7 +2079,7 @@ struct sf_runSolver
                     s_SolvedNode arg = args.at(i);
                     names.push_back(((arg.kind == std::string("label")) ? ([&]() -> const std::string& { { const std::string& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(std::string("")); }()) : std::string("")));
                 };
-                ([&]() -> bool& { { bool& _ = some; if (_) return _; } fail(std::string("")); }());
+                (some || fail(std::string("")));
             };
             std::vector<int> reorder {};
             for (int i = 0; (i < int(overloads.size())); i++){
@@ -2289,12 +2286,12 @@ struct sf_runSolver
     s_SolvedNode solveRoot(const s_Node& node)
     {
         TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
-        return solved(node, t_void, solveNodes(node.items, s_Type{}));
+        return solved(node, t_void, solveNodes(node.items, t_void));
     };
     s_SolvedNode solveBlock(const s_Node& node)
     {
         const int scope0 = Scope_push(_scope);
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, t_void));
         Scope_pop(_scope, scope0);
         return out;
     };
@@ -2613,7 +2610,7 @@ struct sf_runSolver
                 {
                     const s_Type& a = evalTypeAnnot(items.at(0)).type;
                     const s_Type& b = evalTypeAnnot(items.at(1)).type;
-                    (([&]() -> const s_Type& { if (a) return b; else return fu_DEFAULT<s_Type>::value; }()) || fail(std::string("")));
+                    ((a && b) || fail(std::string("")));
                     if ((node.value == std::string("Map")))
                         return solved(node, createMap(a, b, ctx), std::vector<s_SolvedNode>{});
 
@@ -2639,7 +2636,7 @@ struct sf_runSolver
         else if ((node.kind == std::string("typeparam")))
         {
             const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
-            ([&]() -> std::unordered_map<std::string, s_Type>& { { std::unordered_map<std::string, s_Type>& _ = _typeParams; if (_.size()) return _; } fail(((std::string("Unexpected type param: `$") + id) + std::string("`."))); }());
+            (_typeParams.size() || fail(((std::string("Unexpected type param: `$") + id) + std::string("`."))));
             s_Type type = ([&]() -> s_Type& { if (_typeParams.size()) { s_Type& _ = _typeParams.at(id); if (_) return _; } fail(((std::string("No type param `$") + id) + std::string("` in scope."))); }());
             return solved(node, type, std::vector<s_SolvedNode>{});
         };
@@ -2797,7 +2794,7 @@ struct sf_runSolver
         for (int i = startAt; (i < int(items.size())); i++)
         {
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items.at(i); if (_) return _; } fail(std::string("")); }()).type);
-            ([&]() -> s_Type& { { s_Type& _ = itemType; if (_) return _; } fail(std::string("[array literal] No common supertype.")); }());
+            (itemType || fail(std::string("[array literal] No common supertype.")));
         };
         return solved(node, createArray(itemType, ctx), items);
     };
@@ -2826,7 +2823,7 @@ struct sf_runSolver
     };
     void bindImplicitArg(std::vector<s_SolvedNode>& args, const int& argIdx, const std::string& id, const s_Type& type)
     {
-        ([&]() -> bool& { { bool& _ = TEST_expectImplicits; if (_) return _; } fail(std::string("Attempting to propagate implicit arguments.")); }());
+        (TEST_expectImplicits || fail(std::string("Attempting to propagate implicit arguments.")));
         ((int(args.size()) >= argIdx) || fail(std::string("")));
         ([&](auto& _) { _.insert(_.begin() + argIdx, CallerNode(createRead(id), type, getImplicit(id, type), std::vector<s_SolvedNode>{})); } (args));
     };
@@ -2840,7 +2837,7 @@ struct sf_runSolver
                 fail(((std::string("No implicit `") + id) + std::string("` in scope.")));
 
             matched = injectImplicitArg__mutfn(_current_fn, id, type);
-            ([&]() -> s_ScopeIdx& { { s_ScopeIdx& _ = matched; if (_) return _; } fail(std::string("")); }());
+            (matched || fail(std::string("")));
         };
         return matched;
     };
@@ -2867,6 +2864,9 @@ struct sf_runSolver
     s_SolvedNode solveOr(const s_Node& node, s_Type type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items, type);
+        if ((type == t_void))
+            type = t_bool;
+
         if (!(type == t_bool))
         {
             s_Type sumType {};
@@ -2911,6 +2911,9 @@ struct sf_runSolver
     s_SolvedNode solveAnd(const s_Node& node, s_Type type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
+        if ((type == t_void))
+            type = t_bool;
+
         if (!(type == t_bool))
         {
             s_Type sumType {};
