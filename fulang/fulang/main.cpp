@@ -1625,16 +1625,33 @@ void RUN()
     )");
 
     ZERO(R"(
-        fn ARR_LAST(a: &$T[])
-            case ($a -> &mut $T[]): &mut $T a[a.len - 1];
-            case ($a -> &    $T[]): &    $T a[a.len - 1];
 
-        let a = [1];
-        mut b = [2];
+        struct TrueStory { kind: string; value: string; };
 
-        b.ARR_LAST += a.ARR_LAST;
-        return b.ARR_LAST - [3].ARR_LAST;
+        mut specialized = TrueStory(kind: 'fn', value: 'val');
+
+        specialized.kind == 'fn' && specialized.value || throw('nope');
+
+        let v: &mut string = specialized.kind == 'fn'
+                          && specialized.value
+                          || throw('nope');
+        v += 'ue';
+
+        return specialized.value == 'value' ? 0 : 1;
+
     )");
+
+    // ZERO(R"(
+    //     fn ARR_LAST(a: &$T[])
+    //         case ($a -> &mut $T[]): &mut $T a[a.len - 1];
+    //         case ($a -> &    $T[]): &    $T a[a.len - 1];
+
+    //     let a = [1];
+    //     mut b = [2];
+
+    //     b.ARR_LAST += a.ARR_LAST;
+    //     return b.ARR_LAST - [3].ARR_LAST;
+    // )");
 
 
     //
