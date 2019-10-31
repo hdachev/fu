@@ -5473,7 +5473,7 @@ struct fu_DEFAULT { static inline const T value {}; };
     fn cgOr(node: SolvedNode, mode: i32): string
     {
         let type = node.type;
-        if (!(type == t_bool) && !(mode & M_STMT))
+        if (!(type == t_bool) && (!(mode & M_STMT) || type.quals & q_mutref))
         {
             let annot = typeAnnot(type);
 

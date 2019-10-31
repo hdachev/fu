@@ -2082,7 +2082,7 @@ struct sf_runSolver
                     s_SolvedNode arg = args.at(i);
                     names.push_back(((arg.kind == std::string("label")) ? ([&]() -> const std::string& { { const std::string& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(std::string("")); }()) : std::string("")));
                 };
-                (some || fail(std::string("")));
+                ([&]() -> bool& { { bool& _ = some; if (_) return _; } fail(std::string("")); }());
             };
             std::vector<int> reorder {};
             for (int i = 0; (i < int(overloads.size())); i++){
@@ -2580,7 +2580,7 @@ struct sf_runSolver
         const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
         if ((node.flags & F_MUT))
         {
-            (_current_fn || fail(std::string("Mutable statics are not currently allowed.")));
+            ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = _current_fn; if (_) return _; } fail(std::string("Mutable statics are not currently allowed.")); }());
         };
         s_ScopeIdx overload = ((out.flags & F_FIELD) ? Field(id, ([&]() -> s_Type& { { s_Type& _ = _current_strt; if (_) return _; } fail(std::string("")); }()), t_let) : Binding(id, ((node.flags & F_MUT) ? add_mutref(t_let) : add_ref(t_let))));
         if ((out.flags & F_USING))
@@ -2639,7 +2639,7 @@ struct sf_runSolver
         else if ((node.kind == std::string("typeparam")))
         {
             const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
-            (_typeParams.size() || fail(((std::string("Unexpected type param: `$") + id) + std::string("`."))));
+            ([&]() -> std::unordered_map<std::string, s_Type>& { { std::unordered_map<std::string, s_Type>& _ = _typeParams; if (_.size()) return _; } fail(((std::string("Unexpected type param: `$") + id) + std::string("`."))); }());
             s_Type type = ([&]() -> s_Type& { if (_typeParams.size()) { s_Type& _ = _typeParams.at(id); if (_) return _; } fail(((std::string("No type param `$") + id) + std::string("` in scope."))); }());
             return solved(node, type, std::vector<s_SolvedNode>{});
         };
@@ -2797,7 +2797,7 @@ struct sf_runSolver
         for (int i = startAt; (i < int(items.size())); i++)
         {
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items.at(i); if (_) return _; } fail(std::string("")); }()).type);
-            (itemType || fail(std::string("[array literal] No common supertype.")));
+            ([&]() -> s_Type& { { s_Type& _ = itemType; if (_) return _; } fail(std::string("[array literal] No common supertype.")); }());
         };
         return solved(node, createArray(itemType, ctx), items);
     };
@@ -2826,7 +2826,7 @@ struct sf_runSolver
     };
     void bindImplicitArg(std::vector<s_SolvedNode>& args, const int& argIdx, const std::string& id, const s_Type& type)
     {
-        (TEST_expectImplicits || fail(std::string("Attempting to propagate implicit arguments.")));
+        ([&]() -> bool& { { bool& _ = TEST_expectImplicits; if (_) return _; } fail(std::string("Attempting to propagate implicit arguments.")); }());
         ((int(args.size()) >= argIdx) || fail(std::string("")));
         ([&](auto& _) { _.insert(_.begin() + argIdx, CallerNode(createRead(id), type, getImplicit(id, type), std::vector<s_SolvedNode>{})); } (args));
     };
@@ -2840,7 +2840,7 @@ struct sf_runSolver
                 fail(((std::string("No implicit `") + id) + std::string("` in scope.")));
 
             matched = injectImplicitArg__mutfn(_current_fn, id, type);
-            (matched || fail(std::string("")));
+            ([&]() -> s_ScopeIdx& { { s_ScopeIdx& _ = matched; if (_) return _; } fail(std::string("")); }());
         };
         return matched;
     };
@@ -3961,7 +3961,7 @@ struct sf_cpp_codegen
     std::string cgOr(const s_SolvedNode& node, const int& mode)
     {
         const s_Type& type = node.type;
-        if ((!(type == t_bool) && !(mode & M_STMT)))
+        if ((!(type == t_bool) && (!(mode & M_STMT) || (type.quals & q_mutref))))
         {
             std::string annot = typeAnnot(type, 0);
             std::string src = ((std::string("([&]() -> ") + annot) + std::string(" {"));
