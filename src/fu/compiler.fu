@@ -125,7 +125,7 @@ fn lex(src: &string, fname: &string): LexResult
     {
         mut out = '';
 
-        mut n = idx1 - 1;
+        let n = idx1 - 1;
         for (mut i = idx0 + 1; i < n; i++)
         {
             let c = src[i];
@@ -893,8 +893,8 @@ pub fn parse(_fname: string, _tokens: Token[])
         ////////////////////////////////
 
         // fn hello(), fn +()
-        mut name = tryConsume('id');
-        name ||= tryConsume('op');
+        let name = tryConsume('id')
+                || tryConsume('op');
 
         // Opening parens.
         consume('op', '(');
@@ -1130,11 +1130,9 @@ pub fn parse(_fname: string, _tokens: Token[])
             consume('op', ':');
         }
 
-        mut right = parseExpression(p1);
+        let right = parseExpression(p1);
         if (mid)
             return createIf(left, mid, right);
-
-        mut flags = F_INFIX;
 
         // We'll treat these two differently,
         //  no operator overloading for those guys.
@@ -1143,7 +1141,7 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         //
         return createCall(
-            op, flags, [ left, right ]);
+            op, F_INFIX, [ left, right ]);
     }
 
     fn tryParseExpressionTail(head: &Node): Node
@@ -1439,7 +1437,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     {
         mut label = '';
 
-        mut jump = tryConsume('op', ':')
+        let jump = tryConsume('op', ':')
             ? createJump(kind, consume('id').value)
             : createJump(kind, label);
 
@@ -2307,8 +2305,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             {
                 let member = members[i];
 
-                mut init = member.items[LET_INIT];
-                init ||= tryDefaultInit(member.type);
+                let init = member.items[LET_INIT]
+                        || tryDefaultInit(member.type);
 
                 // Disable defaulting if any member is non-defaulted.
                 if (!init)
@@ -2351,9 +2349,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             return fail(
                 'Cannot solve definit, no inferred type.');
 
-        let init = tryDefaultInit(type);
-        init || fail('Cannot definit: ' + serializeType(type));
-        return init;
+        return tryDefaultInit(type)
+            || fail('Cannot definit: ' + serializeType(type));
     }
 
 
@@ -2843,8 +2840,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let inItems = n_fn.items;
         inItems.len >= FN_RET_BACK || fail();
 
-        mut out = prep;
-        out ||= solved(n_fn, t_void);
+        mut out = prep || solved(n_fn, t_void);
 
         out.items.resize(inItems.len);
 
@@ -3081,8 +3077,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
     {
-        mut out     = prep;
-        out ||= solved(node, t_void);
+        mut out     = prep || solved(node, t_void);
 
         let id      = node.value || fail('TODO anonymous structs');
         let type    = initStruct(id, node.flags);
@@ -3145,15 +3140,12 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         //  or the void-returning return statement itself,
         //   so we always have a node to rely on.
 
-        let nextExpr  = out.items[0] || out;
-        let nextType  = nextExpr.type || fail();
+        let nextExpr    = out.items[0] || out;
+        let nextType    = nextExpr.type || fail();
 
-        let retIdx    = _current_fn.items.len + FN_RET_BACK;
-        let prevExpr  = _current_fn.items[retIdx];
-
-        mut prevType: Type;
-        if (prevExpr)
-            prevType = prevExpr.type || fail();
+        let retIdx      = _current_fn.items.len + FN_RET_BACK;
+        let prevExpr    = _current_fn.items[retIdx];
+        let prevType    = prevExpr.type;
 
         if (prevType)
         {
@@ -3181,10 +3173,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let annot       = node.items[LET_TYPE];
         let init        = node.items[LET_INIT];
 
-        let s_annot     = annot ? evalTypeAnnot(annot) : SolvedNode;
+        let s_annot     = annot && evalTypeAnnot(annot);
         let t_annot     = s_annot.type;
 
-        mut s_init      = init ? solveNode(init, t_annot) : SolvedNode;
+        mut s_init      = init && solveNode(init, t_annot);
         let t_init      = s_init.type;
 
         let t_let       = t_annot
@@ -5550,11 +5542,11 @@ struct fu_DEFAULT { static inline const T value {}; };
         let n_body = items[LOOP_BODY];
         let n_pcnd = items[LOOP_POST_COND];
 
-        let init = !n_init ? '' : cgNode(n_init);
-        let cond = !n_cond ? '' : boolWrap(n_cond.type, cgNode(n_cond, M_RETBOOL));
-        let post = !n_post ? '' : cgNode(n_post);
-        mut body = !n_body ? '' : blockWrapSubstatement(n_body);
-        let pcnd = !n_pcnd ? '' : boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
+        let init = n_init && cgNode(n_init);
+        let cond = n_cond && boolWrap(n_cond.type, cgNode(n_cond, M_RETBOOL));
+        let post = n_post && cgNode(n_post);
+        mut body = n_body && blockWrapSubstatement(n_body);
+        let pcnd = n_pcnd && boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
         mut breakLabel = '';
 
         if (body && node.value)
