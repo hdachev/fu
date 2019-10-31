@@ -899,7 +899,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         // Opening parens.
         consume('op', '(');
 
-        mut items: Node[] = [];
+        mut items: Node[];
         mut flags = parseArgsDecl(items, 'op', ')');
 
         ////////////////////////////////
@@ -1435,12 +1435,10 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseJump(kind: string /*'break'|'continue'*/): Node
     {
-        mut label = '';
+        let label = tryConsume('op', ':')
+                 && consume('id');
 
-        let jump = tryConsume('op', ':')
-            ? createJump(kind, consume('id').value)
-            : createJump(kind, label);
-
+        let jump = createJump(kind, label.value);
         consume('op', ';');
         return jump;
     }
@@ -1459,11 +1457,9 @@ pub fn parse(_fname: string, _tokens: Token[])
         let cond = parseExpression();
         consume('op', ')');
 
-        let cons: Node = parseStatement();
-
-        let alt: Node = tryConsume('id', 'else')
-            ? parseStatement()
-            : miss;
+        let cons = parseStatement();
+        let alt  = tryConsume('id', 'else')
+                && parseStatement();
 
         return createIf(cond, cons, alt);
     }
@@ -5333,9 +5329,9 @@ const V& fu_MAP_CONST_GET(
                 ? ' ' + cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
-        let cond = !n0 ? '' : boolWrap(n0.type, cgNode(n0, M_RETBOOL));
-        let cons = !n1 ? '' : (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
-        let alt  = !n2 ? '' : (stmt ? blockWrap_unlessIf(n2) : cgNode(n2));
+        let cond = n0 && boolWrap(n0.type, cgNode(n0, M_RETBOOL));
+        let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
+        let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
         if (stmt)
             return 'if (' + cond + ')' + cons + (alt ? _indent + 'else' + alt : '');
@@ -5622,15 +5618,12 @@ struct fu_DEFAULT { static inline const T value {}; };
     {
         mut result: string[] = [];
 
-        if (nodes)
+        for (mut i = 0; i < nodes.len; i++)
         {
-            for (mut i = 0; i < nodes.len; i++)
-            {
-                let node  = nodes[i];
-                let src   = node ? cgNode(node, mode) : '';
+            let node  = nodes[i];
+            let src   = node ? cgNode(node, mode) : '';
 
-                result.push(src);
-            }
+            result.push(src);
         }
 
         return result;

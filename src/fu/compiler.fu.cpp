@@ -1027,7 +1027,7 @@ struct sf_parse
         const int numReturns0 = _numReturns;
         s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume(std::string("id"), std::string("")); if (_) return _; } return tryConsume(std::string("op"), std::string("")); }());
         consume(std::string("op"), std::string("("));
-        std::vector<s_Node> items = std::vector<s_Node>{};
+        std::vector<s_Node> items {};
         int flags = parseArgsDecl(items, std::string("op"), std::string(")"));
         _fnDepth++;
         s_Node type = tryPopTypeAnnot();
@@ -1434,8 +1434,8 @@ struct sf_parse
     };
     s_Node parseJump(const std::string& kind)
     {
-        std::string label = std::string("");
-        s_Node jump = (tryConsume(std::string("op"), std::string(":")) ? createJump(kind, consume(std::string("id"), std::string("")).value) : createJump(kind, label));
+        s_Token label = ([&]() -> s_Token { if (tryConsume(std::string("op"), std::string(":"))) return consume(std::string("id"), std::string("")); else return s_Token{}; }());
+        s_Node jump = createJump(kind, label.value);
         consume(std::string("op"), std::string(";"));
         return jump;
     };
@@ -1449,7 +1449,7 @@ struct sf_parse
         s_Node cond = parseExpression(_precedence);
         consume(std::string("op"), std::string(")"));
         s_Node cons = parseStatement();
-        s_Node alt = (tryConsume(std::string("id"), std::string("else")) ? parseStatement() : miss());
+        s_Node alt = ([&]() -> s_Node { if (tryConsume(std::string("id"), std::string("else"))) return parseStatement(); else return s_Node{}; }());
         return createIf(cond, cons, alt);
     };
     s_Node createIf(const s_Node& cond, const s_Node& cons, const s_Node& alt)
@@ -3848,9 +3848,9 @@ struct sf_cpp_codegen
         {
             return ((node.kind == std::string("if")) ? (std::string(" ") + cgNode(node, M_STMT)) : blockWrapSubstatement(node));
         };
-        std::string cond = (!n0 ? std::string("") : boolWrap(n0.type, cgNode(n0, M_RETBOOL)));
-        std::string cons = (!n1 ? std::string("") : (stmt ? blockWrapSubstatement(n1) : cgNode(n1, 0)));
-        std::string alt = (!n2 ? std::string("") : (stmt ? blockWrap_unlessIf(n2) : cgNode(n2, 0)));
+        std::string cond = ([&]() -> std::string { if (n0) return boolWrap(n0.type, cgNode(n0, M_RETBOOL)); else return std::string{}; }());
+        std::string cons = ([&]() -> std::string { if (n1) return (stmt ? blockWrapSubstatement(n1) : cgNode(n1, 0)); else return std::string{}; }());
+        std::string alt = ([&]() -> std::string { if (n2) return (stmt ? blockWrap_unlessIf(n2) : cgNode(n2, 0)); else return std::string{}; }());
         if (stmt)
             return ((((std::string("if (") + cond) + std::string(")")) + cons) + (alt.size() ? ((_indent + std::string("else")) + alt) : std::string("")));
 
@@ -4122,14 +4122,11 @@ struct sf_cpp_codegen
     std::vector<std::string> cgNodes(const std::vector<s_SolvedNode>& nodes, const int& mode)
     {
         std::vector<std::string> result = std::vector<std::string>{};
-        if (nodes.size())
+        for (int i = 0; (i < int(nodes.size())); i++)
         {
-            for (int i = 0; (i < int(nodes.size())); i++)
-            {
-                const s_SolvedNode& node = nodes.at(i);
-                std::string src = (node ? cgNode(node, mode) : std::string(""));
-                result.push_back(src);
-            };
+            const s_SolvedNode& node = nodes.at(i);
+            std::string src = (node ? cgNode(node, mode) : std::string(""));
+            result.push_back(src);
         };
         return result;
     };
