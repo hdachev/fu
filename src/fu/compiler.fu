@@ -5405,16 +5405,14 @@ struct fu_DEFAULT { static inline const T value {}; };
         return (type.quals & (q_ref | q_prvalue)) == q_ref;
     }
 
-    fn cgAnd(node: SolvedNode, mode: i32): string
+    fn cgAnd(node: SolvedNode): string
     {
         let type = node.type;
-        if (!(type == t_bool) || mode & M_STMT)
+        if (!(type == t_bool))
         {
             let items = node.items;
 
-            let retSecondLast =
-                items[items.len - 1].type == t_never
-                   && !(mode & M_STMT);
+            let retSecondLast = items[items.len - 1].type == t_never;
 
             let condEnd = retSecondLast
                         ? items.len - 2
@@ -5447,13 +5445,10 @@ struct fu_DEFAULT { static inline const T value {}; };
             else
             {
                 src += 'return ' + tail + ';'; //TRUTHY
-
-                if (!(mode & M_STMT)) //FALSY
-                    src += ' else return ' + cgDefault(type) + ';';
+                src += ' else return ' + cgDefault(type) + ';';
             }
 
-            if (!(mode & M_STMT))
-                src = '([&]() -> ' + typeAnnot(type) + ' { ' + src + ' }())';
+            src = '([&]() -> ' + typeAnnot(type) + ' { ' + src + ' }())';
 
             return src;
         }
@@ -5478,10 +5473,10 @@ struct fu_DEFAULT { static inline const T value {}; };
             item.type, cgNode(item, M_RETBOOL));
     }
 
-    fn cgOr(node: SolvedNode, mode: i32): string
+    fn cgOr(node: SolvedNode): string
     {
         let type = node.type;
-        if (!(type == t_bool) && (!(mode & M_STMT) || type.quals & q_mutref))
+        if (!(type == t_bool))
         {
             let annot = typeAnnot(type);
 
@@ -5604,8 +5599,8 @@ struct fu_DEFAULT { static inline const T value {}; };
         if (k == 'let')        return cgLet(node);
         if (k == 'if')         return cgIf(node, mode);
         if (k == '!')          return cgNot(node);
-        if (k == 'or')         return cgOr(node, mode);
-        if (k == 'and')        return cgAnd(node, mode);
+        if (k == 'or')         return cgOr(node);
+        if (k == 'and')        return cgAnd(node);
         if (k == 'loop')       return cgLoop(node);
         if (k == 'int')        return cgLiteral(node);
         if (k == 'str')        return cgStringLiteral(node);

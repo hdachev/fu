@@ -1005,8 +1005,7 @@ struct sf_parse
         s_Node stmt = parseStatement();
         if ((stmt.kind == std::string("loop")))
         {
-            if (stmt.value.size()) return fail(std::string(""));
-
+            (stmt.value.size() && fail(std::string("")));
             stmt.value = ([&]() -> const std::string& { { const std::string& _ = label.value; if (_.size()) return _; } fail(std::string("")); }());
             return stmt;
         };
@@ -3903,13 +3902,13 @@ struct sf_cpp_codegen
     {
         return ((type.quals & (q_ref | q_prvalue)) == q_ref);
     };
-    std::string cgAnd(const s_SolvedNode& node, const int& mode)
+    std::string cgAnd(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
-        if ((!(type == t_bool) || (mode & M_STMT)))
+        if (!(type == t_bool))
         {
             const std::vector<s_SolvedNode>& items = node.items;
-            const bool retSecondLast = ([&]() -> bool { if ((items.at((int(items.size()) - 1)).type == t_never)) return !(mode & M_STMT); else return bool{}; }());
+            const bool retSecondLast = (items.at((int(items.size()) - 1)).type == t_never);
             const int condEnd = (retSecondLast ? (int(items.size()) - 2) : (int(items.size()) - 1));
             std::string src = std::string("");
             if (condEnd)
@@ -3935,13 +3934,9 @@ struct sf_cpp_codegen
             else
             {
                 src += ((std::string("return ") + tail) + std::string(";"));
-                if (!(mode & M_STMT))
-                    src += ((std::string(" else return ") + cgDefault(type)) + std::string(";"));
-
+                src += ((std::string(" else return ") + cgDefault(type)) + std::string(";"));
             };
-            if (!(mode & M_STMT))
-                src = ((((std::string("([&]() -> ") + typeAnnot(type, 0)) + std::string(" { ")) + src) + std::string(" }())"));
-
+            src = ((((std::string("([&]() -> ") + typeAnnot(type, 0)) + std::string(" { ")) + src) + std::string(" }())"));
             return src;
         };
         std::string src = std::string("(");
@@ -3961,10 +3956,10 @@ struct sf_cpp_codegen
         const s_SolvedNode& item = node.items.at(0);
         return (std::string("!") + boolWrap(item.type, cgNode(item, M_RETBOOL)));
     };
-    std::string cgOr(const s_SolvedNode& node, const int& mode)
+    std::string cgOr(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
-        if ((!(type == t_bool) && (!(mode & M_STMT) || (type.quals & q_mutref))))
+        if (!(type == t_bool))
         {
             std::string annot = typeAnnot(type, 0);
             std::string src = ((std::string("([&]() -> ") + annot) + std::string(" {"));
@@ -4085,10 +4080,10 @@ struct sf_cpp_codegen
             return cgNot(node);
 
         if ((k == std::string("or")))
-            return cgOr(node, mode);
+            return cgOr(node);
 
         if ((k == std::string("and")))
-            return cgAnd(node, mode);
+            return cgAnd(node);
 
         if ((k == std::string("loop")))
             return cgLoop(node);
