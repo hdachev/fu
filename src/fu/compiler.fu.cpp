@@ -1514,15 +1514,14 @@ struct sf_parse
 #define parse(...) ((sf_parse { __VA_ARGS__ }).parse_EVAL())
 inline const int q_mutref = (1 << 0);
 inline const int q_ref = (1 << 1);
-inline const int q_prvalue = (1 << 2);
-inline const int q_copy = (1 << 3);
-inline const int q_move = (1 << 4);
-inline const int q_trivial = (1 << 5);
-inline const int q_primitive = (1 << 6);
-inline const int q_arithmetic = (1 << 7);
-inline const int q_integral = (1 << 8);
-inline const int q_signed = (1 << 9);
-inline const std::vector<std::string> TAGS = std::vector<std::string> { std::string("mutref"), std::string("ref"), std::string("prvalue"), std::string("copy"), std::string("move"), std::string("trivial"), std::string("primitive"), std::string("arithmetic"), std::string("integral"), std::string("signed") };
+inline const int q_copy = (1 << 2);
+inline const int q_move = (1 << 3);
+inline const int q_trivial = (1 << 4);
+inline const int q_primitive = (1 << 5);
+inline const int q_arithmetic = (1 << 6);
+inline const int q_integral = (1 << 7);
+inline const int q_signed = (1 << 8);
+inline const std::vector<std::string> TAGS = std::vector<std::string> { std::string("mutref"), std::string("ref"), std::string("copy"), std::string("move"), std::string("trivial"), std::string("primitive"), std::string("arithmetic"), std::string("integral"), std::string("signed") };
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
@@ -1543,6 +1542,12 @@ inline const s_Type t_string = s_Type { std::string("string"), q_copy };
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
     return (((host.canon == guest.canon) && ((host.quals == guest.quals) || (!(host.quals & q_mutref) && ((host.quals & guest.quals) == host.quals)))) || ((guest == t_never) && (guest.quals == 0)));
+}
+
+bool isAssignableAsArgument(const s_Type& host, s_Type guest)
+{
+    guest.quals |= q_ref;
+    return isAssignable(host, guest);
 }
 
 s_Type qadd(const s_Type& type, const int& q)
@@ -2003,7 +2008,7 @@ struct sf_runSolver
                     continue;
                 };
                 const s_Type& expect = ([&]() -> const s_Type& { { const s_Type& _ = ([&]() -> const std::vector<s_Type>& { { const std::vector<s_Type>& _ = overload.args; if (_.size()) return _; } fail(std::string("")); }()).at(0); if (_) return _; } fail(std::string("")); }());
-                if (!isAssignable(expect, actual))
+                if (!isAssignableAsArgument(expect, actual))
                 {
                     continue;
                 };
@@ -2119,7 +2124,7 @@ struct sf_runSolver
                         };
                         continue;
                     };
-                    if (!isAssignable(arg_t.at(i), ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.at(callsiteIndex); if (_) return _; } fail(std::string("")); }()).type))
+                    if (!isAssignableAsArgument(arg_t.at(i), ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.at(callsiteIndex); if (_) return _; } fail(std::string("")); }()).type))
                     {
                         goto L_NEXT_c;
                     };
@@ -2429,6 +2434,7 @@ struct sf_runSolver
                 s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { std::string{}, int{} }; return _; } (typeParams[argName]));
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail(((std::string("Type param name collision with argument: `") + argName) + std::string("`."))); }()) = inType;
             };
+            inType.quals |= q_ref;
             if ((argNode.flags & F_TEMPLATE))
             {
                 const s_Node& annot = argNode.items.at(LET_TYPE);
@@ -2724,19 +2730,7 @@ struct sf_runSolver
         const std::string& id = node.value;
         (id.size() || fail(std::string("")));
         std::vector<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        for (int i = 0; (i < int(args.size())); i++)
-        {
-            if (!(args.at(i).type.quals & q_ref))
-                args.at(i).type.quals |= (q_ref | q_prvalue);
-
-        };
         s_ScopeIdx callTargIdx = scope_match__mutargs(id, args, node.flags);
-        for (int i = 0; (i < int(args.size())); i++)
-        {
-            if ((args.at(i).type.quals & q_prvalue))
-                args.at(i).type.quals &= ~(q_ref | q_prvalue);
-
-        };
         s_Overload callTarg = GET(callTargIdx);
         while (callTarg.partial)
         {
@@ -2962,7 +2956,7 @@ struct sf_runSolver
         if ((q & q_ref))
             return node;
 
-        if ((!(node.type.quals & q_ref) || (node.type.quals & q_prvalue)))
+        if (!(node.type.quals & q_ref))
             return node;
 
         std::string op = ((q & q_copy) ? std::string("copy") : ((q & q_move) ? std::string("move") : ((void)fail(std::string("Non-copy/non-move?")), std::string(""))));

@@ -1580,21 +1580,19 @@ pub fn parse(_fname: string, _tokens: Token[])
 
 pub let q_mutref       = 1 << 0;
 pub let q_ref          = 1 << 1;
-pub let q_prvalue      = 1 << 2;
-pub let q_copy         = 1 << 3;
-pub let q_move         = 1 << 4;
+pub let q_copy         = 1 << 2;
+pub let q_move         = 1 << 3;
 
-pub let q_trivial      = 1 << 5;
-pub let q_primitive    = 1 << 6;
-pub let q_arithmetic   = 1 << 7;
-pub let q_integral     = 1 << 8;
-pub let q_signed       = 1 << 9;
+pub let q_trivial      = 1 << 4;
+pub let q_primitive    = 1 << 5;
+pub let q_arithmetic   = 1 << 6;
+pub let q_integral     = 1 << 7;
+pub let q_signed       = 1 << 8;
 
 let TAGS =
 [
     'mutref',
     'ref',
-    'prvalue',
     'copy',
     'move',
 
@@ -1618,11 +1616,11 @@ fn ==(a: &Type, b: &Type)
 
 //
 
-pub let Trivial        = q_copy | q_trivial;
-pub let Primitive      = Trivial | q_primitive;
-pub let Arithmetic     = Primitive | q_arithmetic;
-pub let Integral       = Arithmetic | q_integral;
-pub let SignedInt      = Integral | q_signed;
+pub let Trivial        = q_copy     | q_trivial    ;
+pub let Primitive      = Trivial    | q_primitive  ;
+pub let Arithmetic     = Primitive  | q_arithmetic ;
+pub let Integral       = Arithmetic | q_integral   ;
+pub let SignedInt      = Integral   | q_signed     ;
 
 pub let t_i32          = Type('i32', SignedInt);
 pub let t_void         = Type('void', 0);
@@ -1651,6 +1649,16 @@ pub fn isAssignable(host: Type, guest: Type)
                     && (host.quals & guest.quals) == host.quals)
         || guest == t_never
             && guest.quals == 0;
+}
+
+
+//
+
+pub fn isAssignableAsArgument(
+    host: Type, mut guest: Type)
+{
+    guest.quals |= q_ref;
+    return isAssignable(host, guest);
 }
 
 
@@ -2436,7 +2444,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                     continue;
 
                 let expect = (overload.args || fail())[0] || fail();
-                if (!isAssignable(expect, actual))
+                if (!isAssignableAsArgument(expect, actual))
                     continue;
 
                 if (overload.min < 2 && arity0)
@@ -2598,7 +2606,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                         continue;
                     }
 
-                    if (!isAssignable(arg_t[i], (args[callsiteIndex] || fail()).type))
+                    if (!isAssignableAsArgument(arg_t[i], (args[callsiteIndex] || fail()).type))
                         continue :NEXT;
                 }
 
@@ -2978,7 +2986,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             let argNode = items[i] || fail();
             argNode.kind == 'let'  || fail();
 
-            let inType = args.len > i ? args[i].type : Type();
+            mut inType = args.len > i ? args[i].type : Type();
             if (inType)
             {
                 let argName = argNode.value || fail();
@@ -2991,6 +2999,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                     'Type param name collision with argument: `' + argName + '`.')
                         = inType;
             }
+
+            // All fnargs are refereable.
+            inType.quals |= q_ref;
 
             if (argNode.flags & F_TEMPLATE)
             {
@@ -3424,20 +3435,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let id          = node.value; id || fail();
         mut args        = solveNodes(node.items);
 
-        // PRVALUE #1:
-        // Implicit temporaries, all args are referable.
-        for (mut i = 0; i < args.len; i++)
-            if (!(args[i].type.quals & q_ref))
-                args[i].type.quals |= q_ref | q_prvalue;
-
         mut callTargIdx = scope_match__mutargs(id, args, node.flags);
-
-        // PRVALUE #2:
-        // Undo the damage.
-        for (mut i = 0; i < args.len; i++)
-            if (args[i].type.quals & q_prvalue)
-                args[i].type.quals &=~ (q_ref | q_prvalue);
-
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.
@@ -3828,7 +3826,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             return node;
 
         // Also, no copy needed when the expression is a value.
-        if (!(node.type.quals & q_ref) || node.type.quals & q_prvalue)
+        if (!(node.type.quals & q_ref))
             return node;
 
         let op  = q & q_copy ? 'copy'
