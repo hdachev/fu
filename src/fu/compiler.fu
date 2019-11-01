@@ -5382,11 +5382,6 @@ struct fu_DEFAULT { static inline const T value {}; };
         return typeAnnot(type) + '{}';
     }
 
-    fn isRefLogical(type: Type): bool
-    {
-        return (type.quals & (q_ref | q_prvalue)) == q_ref;
-    }
-
     fn cgAnd(node: SolvedNode): string
     {
         let type = node.type;

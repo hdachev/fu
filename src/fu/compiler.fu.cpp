@@ -3884,10 +3884,6 @@ struct sf_cpp_codegen
         };
         return (typeAnnot(type, 0) + std::string("{}"));
     };
-    bool isRefLogical(const s_Type& type)
-    {
-        return ((type.quals & (q_ref | q_prvalue)) == q_ref);
-    };
     std::string cgAnd(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
