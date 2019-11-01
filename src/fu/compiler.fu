@@ -2149,10 +2149,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     mut _scope:         Scope       = globals;
 
     mut _here:          Token;
+
+    // Needs template reset.
     mut _current_fn:    SolvedNode;
     mut _current_strt:  Type;
     mut _typeParams:    Map(string, Type);
 
+    //
     mut TEST_expectImplicits: bool = false;
 
 
@@ -3043,16 +3046,20 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         }
 
         ////////////////////////////////
-        _typeParams = typeParams;
+        let scope0      = Scope_push(_scope);
         let typeParams0 = _typeParams;
-        let scope0 = Scope_push(_scope);
+        let current_fn0 = _current_fn;
+
+        _typeParams     = typeParams;
+        _current_fn     = SolvedNode;
         ////////////////////////////////
 
         let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
         specialized || fail();
 
         ////////////////////////////////
-        _typeParams = typeParams0;
+        _current_fn     = current_fn0;
+        _typeParams     = typeParams0;
         Scope_pop(_scope, scope0);
         ////////////////////////////////
 

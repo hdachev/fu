@@ -2467,11 +2467,14 @@ struct sf_runSolver
                 return s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
 
         };
-        _typeParams = typeParams;
-        std::unordered_map<std::string, s_Type> typeParams0 = _typeParams;
         const int scope0 = Scope_push(_scope);
+        std::unordered_map<std::string, s_Type> typeParams0 = _typeParams;
+        s_SolvedNode current_fn0 = _current_fn;
+        _typeParams = typeParams;
+        _current_fn = s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
         s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} }, caseIdx);
         (specialized || fail(std::string("")));
+        _current_fn = current_fn0;
         _typeParams = typeParams0;
         Scope_pop(_scope, scope0);
         return specialized;
