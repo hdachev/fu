@@ -446,15 +446,14 @@ pub let F_MUT          = 1 << 16;
 pub let F_IMPLICIT     = 1 << 17;
 pub let F_USING        = 1 << 18;
 
-pub let F_UNTYPED_ARGS = 1 << 23;
-pub let F_NAMED_ARGS   = 1 << 24;
-pub let F_FULLY_TYPED  = 1 << 25;
-pub let F_CLOSURE      = 1 << 26;
-pub let F_HAS_CLOSURE  = 1 << 27;
-pub let F_PATTERN      = 1 << 28;
-pub let F_TEMPLATE     = 1 << 29;
-pub let F_DESTRUCTOR   = 1 << 30;
-pub let F_ELISION      = 1 << 31;
+pub let F_UNTYPED_ARGS = 1 << 24;
+pub let F_NAMED_ARGS   = 1 << 25;
+pub let F_FULLY_TYPED  = 1 << 26;
+pub let F_CLOSURE      = 1 << 27;
+pub let F_HAS_CLOSURE  = 1 << 28;
+pub let F_PATTERN      = 1 << 29;
+pub let F_TEMPLATE     = 1 << 30;
+pub let F_DESTRUCTOR   = 1 << 31;
 
 
 // Operator precedence table.
@@ -3790,11 +3789,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             :items, :type);
     }
 
-    fn wrap(kind: string, node: SolvedNode, flags: i32): SolvedNode
+    fn wrap(kind: string, node: SolvedNode): SolvedNode
     {
         return SolvedNode(
             :kind,
-            :flags,
 
             items:  [ node ],
             token:  node.token,
@@ -3835,24 +3833,20 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     fn maybeCopyOrMove(
         node: SolvedNode, slot: Type): SolvedNode
     {
+        // No copy needed when the slot is a reference.
         let q = slot.quals;
         if (q & q_ref)
             return node;
 
-        mut op = 'copy';
+        // Also, no copy needed when the expression is a value.
+        if (!(node.type.quals & q_ref) || node.type.quals & q_prvalue)
+            return node;
 
-        if (!(q & q_copy))
-        {
-            if (!(q & q_move))
-                fail('Non-copy/non-move?');
+        let op  = q & q_copy ? 'copy'
+                : q & q_move ? 'move'
+                : (fail('Non-copy/non-move?'), '');
 
-            op = 'move';
-        }
-
-        return wrap(op, node,
-            node.type.quals & q_prvalue
-                ? F_ELISION
-                : 0);
+        return wrap(op, node);
     }
 
 
@@ -5600,7 +5594,7 @@ struct fu_DEFAULT { static inline const T value {}; };
     {
         let a = cgNode(node.items[0] || fail());
 
-        if (node.kind == 'move' && !(node.flags & F_ELISION))
+        if (node.kind == 'move')
         {
             include('<utility>');
             return 'std::move(' + a + ')';

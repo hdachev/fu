@@ -714,15 +714,14 @@ inline const int F_FIELD = (1 << 10);
 inline const int F_MUT = (1 << 16);
 inline const int F_IMPLICIT = (1 << 17);
 inline const int F_USING = (1 << 18);
-inline const int F_UNTYPED_ARGS = (1 << 23);
-inline const int F_NAMED_ARGS = (1 << 24);
-inline const int F_FULLY_TYPED = (1 << 25);
-inline const int F_CLOSURE = (1 << 26);
-inline const int F_HAS_CLOSURE = (1 << 27);
-inline const int F_PATTERN = (1 << 28);
-inline const int F_TEMPLATE = (1 << 29);
-inline const int F_DESTRUCTOR = (1 << 30);
-inline const int F_ELISION = (1 << 31);
+inline const int F_UNTYPED_ARGS = (1 << 24);
+inline const int F_NAMED_ARGS = (1 << 25);
+inline const int F_FULLY_TYPED = (1 << 26);
+inline const int F_CLOSURE = (1 << 27);
+inline const int F_HAS_CLOSURE = (1 << 28);
+inline const int F_PATTERN = (1 << 29);
+inline const int F_TEMPLATE = (1 << 30);
+inline const int F_DESTRUCTOR = (1 << 31);
 inline const int P_RESET = 1000;
 inline const int P_PREFIX_UNARY = 3;
 inline const std::vector<std::string> PREFIX = std::vector<std::string> { std::string("++"), std::string("+"), std::string("--"), std::string("-"), std::string("!"), std::string("~"), std::string("?"), std::string("*"), std::string("&"), std::string("&mut") };
@@ -2940,9 +2939,9 @@ struct sf_runSolver
     {
         return s_SolvedNode { node.kind, node.flags, node.value, items, node.token, type, s_ScopeIdx{} };
     };
-    s_SolvedNode wrap(const std::string& kind, const s_SolvedNode& node, const int& flags)
+    s_SolvedNode wrap(const std::string& kind, const s_SolvedNode& node)
     {
-        return s_SolvedNode { kind, flags, std::string{}, std::vector<s_SolvedNode> { node }, node.token, node.type, s_ScopeIdx{} };
+        return s_SolvedNode { kind, int{}, std::string{}, std::vector<s_SolvedNode> { node }, node.token, node.type, s_ScopeIdx{} };
     };
     s_SolvedNode CallerNode(const s_Node& node, s_Type type, const s_ScopeIdx& target, std::vector<s_SolvedNode> args)
     {
@@ -2970,15 +2969,11 @@ struct sf_runSolver
         if ((q & q_ref))
             return node;
 
-        std::string op = std::string("copy");
-        if (!(q & q_copy))
-        {
-            if (!(q & q_move))
-                fail(std::string("Non-copy/non-move?"));
+        if ((!(node.type.quals & q_ref) || (node.type.quals & q_prvalue)))
+            return node;
 
-            op = std::string("move");
-        };
-        return wrap(op, node, ((node.type.quals & q_prvalue) ? F_ELISION : 0));
+        std::string op = ((q & q_copy) ? std::string("copy") : ((q & q_move) ? std::string("move") : ((void)fail(std::string("Non-copy/non-move?")), std::string(""))));
+        return wrap(op, node);
     };
     std::vector<s_SolvedNode> solveNodes(const std::vector<s_Node>& nodes, const s_Type& type)
     {
@@ -4108,7 +4103,7 @@ struct sf_cpp_codegen
     std::string cgCopyMove(const s_SolvedNode& node)
     {
         std::string a = cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items.at(0); if (_) return _; } fail(std::string("")); }()), 0);
-        if (((node.kind == std::string("move")) && !(node.flags & F_ELISION)))
+        if ((node.kind == std::string("move")))
         {
             include(std::string("<utility>"));
             return ((std::string("std::move(") + a) + std::string(")"));
