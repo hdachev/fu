@@ -3187,8 +3187,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                 'Type annotation does not match init expression.');
 
         if (s_init)
-            s_init = maybeCopyOrMove(
-                maybePRValue(s_init), t_let);
+            s_init = maybeCopyOrMove(s_init, t_let);
 
         //
         let out       = solved(node, t_let, [s_annot || s_init, s_init]);

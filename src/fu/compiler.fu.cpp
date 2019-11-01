@@ -2443,7 +2443,7 @@ struct sf_runSolver
                 const s_Node& annot = argNode.items.at(LET_TYPE);
                 if (annot)
                 {
-                    const bool ok = ([&]() -> bool { if (inType) return trySolveTypeParams(annot, inType, typeParams); else return bool{}; }());
+                    const bool ok = (inType && trySolveTypeParams(annot, inType, typeParams));
                     if (!ok)
                         return s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
 
@@ -2559,7 +2559,7 @@ struct sf_runSolver
             (isAssignable(t_annot, t_init) || fail(std::string("Type annotation does not match init expression.")));
         };
         if (s_init)
-            s_init = maybeCopyOrMove(maybePRValue(s_init, false), t_let);
+            s_init = maybeCopyOrMove(s_init, t_let);
 
         s_SolvedNode out = solved(node, t_let, std::vector<s_SolvedNode> { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = s_annot; if (_) return _; } return s_init; }()), s_init });
         const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
@@ -3357,7 +3357,7 @@ struct sf_cpp_codegen
         const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items.at((int(items.size()) + FN_BODY_BACK)); if (_) return _; } fail(std::string("")); }());
         const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items.at((int(items.size()) + FN_RET_BACK)); if (_) return _; } fail(std::string("")); }());
         std::string annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(std::string("")); }()), M_RETVAL);
-        const bool closure = ([&]() -> bool { if (!!_clsrN && (fn.flags & F_CLOSURE)) return (fn.value != std::string("==")); else return bool{}; }());
+        const bool closure = (!!_clsrN && (fn.flags & F_CLOSURE) && (fn.value != std::string("==")));
         if (!(fn.flags & F_CLOSURE))
             _indent = std::string("\n");
 
