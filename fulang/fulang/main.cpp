@@ -1641,21 +1641,21 @@ void RUN()
 
     )");
 
-    // ZERO(R"(
-    //     struct Token {
-    //         value: string;
-    //     };
+    ZERO(R"(
+        struct Token {
+            value: string;
+        };
 
-    //     fn consume(): Token {
-    //         return Token('hey');
-    //     };
+        fn consume(): Token {
+            return Token('hey');
+        };
 
-    //     fn ZERO(): i32 {
-    //         let a = 3;
-    //         let v = a && consume().value;
-    //         return v.len - a;
-    //     };
-    // )");
+        fn ZERO(): i32 {
+            let a = 3;
+            let v = a && consume().value;
+            return v.len - a;
+        };
+    )");
 
     // ZERO(R"(
     //     fn ARR_LAST(a: &$T[])
