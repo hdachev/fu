@@ -1153,7 +1153,7 @@ struct sf_parse
         if (tryConsume(std::string("id"), std::string("mut")))
             flags |= F_MUT;
 
-        const std::string& id = consume(std::string("id"), std::string("")).value;
+        std::string id = consume(std::string("id"), std::string("")).value;
         s_Node type = tryPopTypeAnnot();
         s_Node init = (tryConsume(std::string("op"), std::string("=")) ? parseExpression(P_COMMA) : s_Node { std::string{}, int{}, std::string{}, std::vector<s_Node>{}, s_Token{} });
         if ((numDollars0 != _numDollars))
@@ -2582,7 +2582,7 @@ struct sf_runSolver
             {
                 if ((int(items.size()) == 1))
                 {
-                    const s_Type& t = evalTypeAnnot(items.at(0)).type;
+                    s_Type t = evalTypeAnnot(items.at(0)).type;
                     (t || fail(std::string("")));
                     if ((node.value == std::string("&")))
                         return solved(node, add_ref(t), std::vector<s_SolvedNode>{});
@@ -2596,8 +2596,8 @@ struct sf_runSolver
                 }
                 else if ((int(items.size()) == 2))
                 {
-                    const s_Type& a = evalTypeAnnot(items.at(0)).type;
-                    const s_Type& b = evalTypeAnnot(items.at(1)).type;
+                    s_Type a = evalTypeAnnot(items.at(0)).type;
+                    s_Type b = evalTypeAnnot(items.at(1)).type;
                     ((a && b) || fail(std::string("")));
                     if ((node.value == std::string("Map")))
                         return solved(node, createMap(a, b, ctx), std::vector<s_SolvedNode>{});
@@ -2710,8 +2710,8 @@ struct sf_runSolver
                 {
                     std::unordered_map<std::string, s_Type> typeParams0 = _typeParams;
                     _typeParams = typeParams;
-                    const s_Type& expect = evalTypeAnnot(right).type;
-                    const s_Type& actual = evalTypeAnnot(left).type;
+                    s_Type expect = evalTypeAnnot(right).type;
+                    s_Type actual = evalTypeAnnot(left).type;
                     _typeParams = typeParams0;
                     return isAssignable(expect, actual);
                 };
@@ -2734,9 +2734,18 @@ struct sf_runSolver
         (id.size() || fail(std::string("")));
         std::vector<s_SolvedNode> args = solveNodes(node.items, s_Type{});
         for (int i = 0; (i < int(args.size())); i++)
-            args.at(i) = maybePRValue(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.at(i); if (_) return _; } fail(std::string("")); }()), true);
+        {
+            if (!(args.at(i).type.quals & q_ref))
+                args.at(i).type.quals |= (q_ref | q_prvalue);
 
+        };
         s_ScopeIdx callTargIdx = scope_match__mutargs(id, args, node.flags);
+        for (int i = 0; (i < int(args.size())); i++)
+        {
+            if ((args.at(i).type.quals & q_prvalue))
+                args.at(i).type.quals &= ~(q_ref | q_prvalue);
+
+        };
         s_Overload callTarg = GET(callTargIdx);
         while (callTarg.partial)
         {

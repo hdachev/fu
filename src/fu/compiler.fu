@@ -3433,13 +3433,20 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         let id          = node.value; id || fail();
         mut args        = solveNodes(node.items);
 
+        // PRVALUE #1:
         // Implicit temporaries, all args are referable.
         for (mut i = 0; i < args.len; i++)
-            args[i] = maybePRValue(
-                args[i] || fail(), true);
+            if (!(args[i].type.quals & q_ref))
+                args[i].type.quals |= q_ref | q_prvalue;
 
-        //
         mut callTargIdx = scope_match__mutargs(id, args, node.flags);
+
+        // PRVALUE #2:
+        // Undo the damage.
+        for (mut i = 0; i < args.len; i++)
+            if (args[i].type.quals & q_prvalue)
+                args[i].type.quals &=~ (q_ref | q_prvalue);
+
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.
