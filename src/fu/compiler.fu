@@ -1692,15 +1692,6 @@ pub fn add_mutref(type: Type)
     return qadd(type, q_ref | q_mutref);
 }
 
-pub fn add_prvalue_ref(type: Type, addRef: bool)
-{
-    mut q = q_prvalue;
-    if (addRef)
-        q |= q_ref;
-
-    return qadd(type, q);
-}
-
 
 //
 
@@ -1720,12 +1711,12 @@ pub fn tryClear_ref(type: Type)
 
 pub fn clear_refs(type: Type)
 {
-    return qsub(type, q_ref | q_mutref | q_prvalue);
+    return qsub(type, q_ref | q_mutref);
 }
 
 pub fn clear_mutref(type: Type)
 {
-    return qsub(type, q_mutref | q_prvalue);
+    return qsub(type, q_mutref);
 }
 
 pub fn add_refs_from(src: Type, dest: Type)
@@ -3497,14 +3488,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             args);
     }
 
-    fn maybePRValue(mut node: SolvedNode, addRef: bool = false): SolvedNode
-    {
-        if (!(node.type.quals & q_ref))
-            node.type = add_prvalue_ref(node.type, addRef);
-
-        return node;
-    }
-
 
     // I feel this should be a fncall instead of this here.
     //  It's varargs - so is it a template or what?
@@ -4195,13 +4178,10 @@ pub fn cpp_codegen(
         if ((mode & M_RETVAL) && type.canon == 'never')
             return '[[noreturn]] ' + fwd;
 
-        if (!(type.quals & q_prvalue))
-        {
-            if (type.quals & q_mutref)
-                return fwd + '&';
-            if (type.quals & q_ref)
-                return 'const ' + fwd + '&';
-        }
+        if (type.quals & q_mutref)
+            return fwd + '&';
+        if (type.quals & q_ref)
+            return 'const ' + fwd + '&';
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -

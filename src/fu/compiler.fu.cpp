@@ -1578,15 +1578,6 @@ s_Type add_mutref(const s_Type& type)
     return qadd(type, (q_ref | q_mutref));
 }
 
-s_Type add_prvalue_ref(const s_Type& type, const bool& addRef)
-{
-    int q = q_prvalue;
-    if (addRef)
-        q |= q_ref;
-
-    return qadd(type, q);
-}
-
 s_Type tryClear_mutref(const s_Type& type)
 {
     return tryClear(type, (q_ref | q_mutref));
@@ -1600,12 +1591,12 @@ s_Type tryClear_ref(const s_Type& type)
 
 s_Type clear_refs(const s_Type& type)
 {
-    return qsub(type, ((q_ref | q_mutref) | q_prvalue));
+    return qsub(type, (q_ref | q_mutref));
 }
 
 s_Type clear_mutref(const s_Type& type)
 {
-    return qsub(type, (q_mutref | q_prvalue));
+    return qsub(type, q_mutref);
 }
 
 s_Type add_refs_from(const s_Type& src, const s_Type& dest)
@@ -2768,13 +2759,6 @@ struct sf_runSolver
         };
         return CallerNode(node, ([&]() -> s_Type& { { s_Type& _ = callTarg.type; if (_) return _; } fail(std::string("")); }()), callTargIdx, args);
     };
-    s_SolvedNode maybePRValue(s_SolvedNode node, const bool& addRef)
-    {
-        if (!(node.type.quals & q_ref))
-            node.type = add_prvalue_ref(node.type, addRef);
-
-        return node;
-    };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
@@ -3111,15 +3095,12 @@ struct sf_cpp_codegen
         if (((mode & M_RETVAL) && (type.canon == std::string("never"))))
             return (std::string("[[noreturn]] ") + fwd);
 
-        if (!(type.quals & q_prvalue))
-        {
-            if ((type.quals & q_mutref))
-                return (fwd + std::string("&"));
+        if ((type.quals & q_mutref))
+            return (fwd + std::string("&"));
 
-            if ((type.quals & q_ref))
-                return ((std::string("const ") + fwd) + std::string("&"));
+        if ((type.quals & q_ref))
+            return ((std::string("const ") + fwd) + std::string("&"));
 
-        };
         if (((mode & M_CONST) && (type.quals & q_trivial)))
             return (std::string("const ") + fwd);
 
