@@ -2968,6 +2968,9 @@ struct sf_runSolver
         if (!(node.type.quals & q_ref))
             return node;
 
+        if (!(q & q_copy))
+            fail(std::string("Needs an explicit STEAL or CLONE."));
+
         std::string op = ((q & q_copy) ? std::string("copy") : ((q & q_move) ? std::string("move") : ((void)fail(std::string("Non-copy/non-move?")), std::string(""))));
         return wrap(op, node);
     };

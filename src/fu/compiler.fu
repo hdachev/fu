@@ -3836,6 +3836,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if (!(node.type.quals & q_ref))
             return node;
 
+        if (!(q & q_copy))
+            fail('Needs an explicit STEAL or CLONE.');
+
         let op  = q & q_copy ? 'copy'
                 : q & q_move ? 'move'
                 : (fail('Non-copy/non-move?'), '');

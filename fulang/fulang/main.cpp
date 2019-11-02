@@ -905,18 +905,25 @@ void RUN()
 
     ZERO(RAII + R"(
         fn test(s: S) { return s.j; } // <-destructor here
-        {
-            test(S(i));
-        }
+        test(S(i));
+        return i - 1;
+    )");
+
+    FAIL(RAII + R"(
+        fn test(mut s: S) { return s.j; } // <-destructor here
+
+        mut s = S(i);
+        test( s ); //ERR explicit
+
         return i - 1;
     )");
 
     ZERO(RAII + R"(
-        fn test(s: S) { return s.j; } // <-destructor here
-        {
-            let s = S(i);
-            test(s); // s is moved in
-        }
+        fn test(mut s: S) { return s.j; } // <-destructor here
+
+        mut s = S(i);
+        test( STEAL(s) );
+
         return i - 1;
     )");
 
