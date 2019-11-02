@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <chrono>
 
 #include <time.h>
 
@@ -427,7 +428,12 @@ void FU_FILE(const std::string& fname)
         exit(1);
     }
 
+    auto t0 = std::chrono::high_resolution_clock::now();
     auto cpp = ZERO(fu);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto tt = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+
+    std::cout << "        " << tt << " µs\n" << std::endl;
 
     str_replace_all(cpp,
         "int main()", "int auto_main()");
