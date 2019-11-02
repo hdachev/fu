@@ -1866,14 +1866,10 @@ pub fn finalizeStruct(id: string, fields: StructField[])
 
 fn copyOrMove(
     flags: i32,
-    fields: StructField[],
-    tryTrivial: bool = false): i32
+    fields: StructField[]): i32
 {
     if (flags & F_DESTRUCTOR || someFieldNonCopy(fields))
         return q_move;
-
-    if (tryTrivial && !someFieldNotTrivial(fields))
-        return Trivial;
 
     return q_copy;
 }

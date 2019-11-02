@@ -138,9 +138,8 @@ inline std::string operator+(const std::string& a, long long b)
 
 bool operator==(const s_Type& a, const s_Type& b);
 bool someFieldNonCopy(const std::vector<s_StructField>& fields);
-bool someFieldNotTrivial(const std::vector<s_StructField>& fields);
 int ZERO();
-int copyOrMove(const int& flags, const std::vector<s_StructField>& fields, const bool& tryTrivial);
+int copyOrMove(const int& flags, const std::vector<s_StructField>& fields);
 int auto_main();
 s_SolveResult solve(const s_Node& parse, s_TEMP_Context& ctx);
 s_Type createArray(const s_Type& item, s_TEMP_Context& ctx);
@@ -1667,7 +1666,7 @@ s_Type initStruct(const std::string& id, const int& flags, s_TEMP_Context& ctx)
     std::string canon = (std::string("s_") + id);
     s_Struct def = s_Struct { std::string("struct"), fu_CLONE(([&]() -> const std::string& { { const std::string& _ = id; if (_.size()) return _; } fu_THROW(std::string("TODO anonymous structs?")); }())), std::vector<s_StructField>{}, (flags | 0) };
     registerType(canon, def, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, def.fields, false) };
+    return s_Type { fu_CLONE(canon), copyOrMove(flags, def.fields) };
 }
 
 void finalizeStruct(const std::string& id, const std::vector<s_StructField>& fields, s_TEMP_Context& ctx)
@@ -1677,13 +1676,10 @@ void finalizeStruct(const std::string& id, const std::vector<s_StructField>& fie
     def.fields = ([&]() -> const std::vector<s_StructField>& { { const std::vector<s_StructField>& _ = fields; if (_.size()) return _; } fu_THROW(std::string("TODO empty structs?")); }());
 }
 
-int copyOrMove(const int& flags, const std::vector<s_StructField>& fields, const bool& tryTrivial)
+int copyOrMove(const int& flags, const std::vector<s_StructField>& fields)
 {
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
         return q_move;
-
-    if ((tryTrivial && !someFieldNotTrivial(fields)))
-        return Trivial;
 
     return q_copy;
 }
@@ -1716,7 +1712,7 @@ s_Type createArray(const s_Type& item, s_TEMP_Context& ctx)
     std::vector<s_StructField> fields = std::vector<s_StructField> { s_StructField { std::string("Item"), fu_CLONE(item) } };
     std::string canon = ((std::string("Array(") + serializeType(item)) + std::string(")"));
     registerType(canon, s_Struct { std::string("array"), fu_CLONE(canon), fu_CLONE(fields), fu_CLONE(flags) }, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields, false) };
+    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields) };
 }
 
 bool type_isString(const s_Type& type)
@@ -1749,7 +1745,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_TEMP_Context& ctx)
     std::vector<s_StructField> fields = std::vector<s_StructField> { s_StructField { std::string("Key"), fu_CLONE(key) }, s_StructField { std::string("Value"), fu_CLONE(value) } };
     std::string canon = ((((std::string("Map(") + serializeType(key)) + std::string(",")) + serializeType(value)) + std::string(")"));
     registerType(canon, s_Struct { std::string("map"), fu_CLONE(canon), fu_CLONE(fields), fu_CLONE(flags) }, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields, false) };
+    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields) };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_TEMP_Context& ctx)
