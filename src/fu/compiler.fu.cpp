@@ -1203,7 +1203,7 @@ struct sf_parse
         s_Node mid {};
         if ((op == std::string("?")))
         {
-            mid = parseExpression(fu_CLONE(fu_CLONE(_precedence)));
+            mid = parseExpression(fu_CLONE(_precedence));
             consume(std::string("op"), std::string(":"));
         };
         s_Node right = parseExpression(fu_CLONE(p1));
@@ -1451,7 +1451,7 @@ struct sf_parse
     s_Node parseIf()
     {
         consume(std::string("op"), std::string("("));
-        s_Node cond = parseExpression(fu_CLONE(fu_CLONE(_precedence)));
+        s_Node cond = parseExpression(fu_CLONE(_precedence));
         consume(std::string("op"), std::string(")"));
         s_Node cons = parseStatement();
         s_Node alt = ([&]() -> s_Node { if (tryConsume(std::string("id"), std::string("else"))) return parseStatement(); else return s_Node{}; }());
@@ -1483,7 +1483,7 @@ struct sf_parse
         s_Node init = parseLetStmt();
         s_Node cond = parseExpressionStatement();
         const s_Token& token = _tokens.at(_idx);
-        s_Node post = (((token.kind == std::string("op")) && (token.value == std::string(")"))) ? parseEmpty() : parseExpression(fu_CLONE(fu_CLONE(_precedence))));
+        s_Node post = (((token.kind == std::string("op")) && (token.value == std::string(")"))) ? parseEmpty() : parseExpression(fu_CLONE(_precedence)));
         consume(std::string("op"), std::string(")"));
         s_Node body = parseStatement();
         return createLoop(init, cond, post, body, miss());
@@ -1491,7 +1491,7 @@ struct sf_parse
     s_Node parseWhile()
     {
         consume(std::string("op"), std::string("("));
-        s_Node cond = parseExpression(fu_CLONE(fu_CLONE(_precedence)));
+        s_Node cond = parseExpression(fu_CLONE(_precedence));
         consume(std::string("op"), std::string(")"));
         s_Node body = parseStatement();
         return createLoop(miss(), cond, miss(), body, miss());
@@ -1501,7 +1501,7 @@ struct sf_parse
         s_Node body = parseStatement();
         consume(std::string("id"), std::string("while"));
         consume(std::string("op"), std::string("("));
-        s_Node cond = parseExpression(fu_CLONE(fu_CLONE(_precedence)));
+        s_Node cond = parseExpression(fu_CLONE(_precedence));
         consume(std::string("op"), std::string(")"));
         consume(std::string("op"), std::string(";"));
         return createLoop(miss(), miss(), miss(), body, cond);
@@ -2935,10 +2935,6 @@ struct sf_runSolver
     {
         return s_SolvedNode { fu_CLONE(node.kind), fu_CLONE(node.flags), fu_CLONE(node.value), fu_CLONE(items), fu_CLONE(node.token), fu_CLONE(type), s_ScopeIdx{} };
     };
-    s_SolvedNode wrap(const std::string& kind, const s_SolvedNode& node)
-    {
-        return s_SolvedNode { fu_CLONE(kind), int{}, std::string{}, std::vector<s_SolvedNode> { node }, fu_CLONE(node.token), fu_CLONE(node.type), s_ScopeIdx{} };
-    };
     s_SolvedNode CallerNode(const s_Node& node, s_Type type, const s_ScopeIdx& target, std::vector<s_SolvedNode> args)
     {
         s_Overload overload = fu_CLONE(GET(target));
@@ -2971,8 +2967,7 @@ struct sf_runSolver
         if (!(q & q_copy))
             fail(std::string("Needs an explicit STEAL or CLONE."));
 
-        std::string op = ((q & q_copy) ? std::string("copy") : ((q & q_move) ? std::string("move") : ((void)fail(std::string("Non-copy/non-move?")), std::string(""))));
-        return wrap(op, node);
+        return s_SolvedNode { std::string("copy"), int{}, std::string{}, std::vector<s_SolvedNode> { node }, fu_CLONE(node.token), clear_refs(node.type), s_ScopeIdx{} };
     };
     std::vector<s_SolvedNode> solveNodes(const std::vector<s_Node>& nodes, const s_Type& type)
     {

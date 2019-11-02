@@ -3783,16 +3783,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             :items, :type);
     }
 
-    fn wrap(kind: string, node: SolvedNode): SolvedNode
-    {
-        return SolvedNode(
-            :kind,
-
-            items:  [ node ],
-            token:  node.token,
-            type:   node.type);
-    }
-
     fn CallerNode(
         node: Node, mut type: Type, target: ScopeIdx, mut args: SolvedNode[] = [])
             : SolvedNode
@@ -3839,11 +3829,13 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if (!(q & q_copy))
             fail('Needs an explicit STEAL or CLONE.');
 
-        let op  = q & q_copy ? 'copy'
-                : q & q_move ? 'move'
-                : (fail('Non-copy/non-move?'), '');
+        // Here we go.
+        return SolvedNode(
+            kind: 'copy',
 
-        return wrap(op, node);
+            items:  [ node ],
+            token:  node.token,
+            type:   clear_refs(node.type));
     }
 
 
