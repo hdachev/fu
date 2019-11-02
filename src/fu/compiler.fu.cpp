@@ -390,7 +390,7 @@ struct s_Overload
     std::vector<std::string> names;
     std::vector<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template tempalt;
+    s_Template tempatle;
     explicit operator bool() const noexcept
     {
         return false
@@ -403,7 +403,7 @@ struct s_Overload
             || names.size()
             || defaults.size()
             || partial
-            || tempalt
+            || tempatle
         ;
     }
 };
@@ -1327,9 +1327,13 @@ struct sf_parse
     s_Node createPrefix(const std::string& op, const s_Node& expr)
     {
         if ((op == std::string("!")))
-            return make(std::string("!"), std::vector<s_Node> { expr }, 0, std::string(""));
+            return createNot(expr);
 
         return createCall(op, F_PREFIX, std::vector<s_Node> { expr });
+    };
+    s_Node createNot(const s_Node& expr)
+    {
+        return make(std::string("!"), std::vector<s_Node> { expr }, 0, std::string(""));
     };
     s_Node parseAccessExpression(const s_Node& expr)
     {
@@ -1450,8 +1454,12 @@ struct sf_parse
     };
     s_Node parseIf()
     {
+        s_Token nott = tryConsume(std::string("op"), std::string("!"));
         consume(std::string("op"), std::string("("));
         s_Node cond = parseExpression(fu_CLONE(_precedence));
+        if (nott)
+            cond = createNot(cond);
+
         consume(std::string("op"), std::string(")"));
         s_Node cons = parseStatement();
         s_Node alt = ([&]() -> s_Node { if (tryConsume(std::string("id"), std::string("else"))) return parseStatement(); else return s_Node{}; }());
@@ -1792,10 +1800,10 @@ void Scope_pop(s_Scope& scope, const int& memo)
     scope.items.resize(memo);
 }
 
-s_ScopeIdx Scope_add(s_Scope& scope, const std::string& kind, const std::string& id, const s_Type& type, const int& min, const int& max, const std::vector<std::string>& arg_n, const std::vector<s_Type>& arg_t, const std::vector<s_SolvedNode>& arg_d, const s_Template& tempalt, const s_Partial& partial)
+s_ScopeIdx Scope_add(s_Scope& scope, const std::string& kind, const std::string& id, const s_Type& type, const int& min, const int& max, const std::vector<std::string>& arg_n, const std::vector<s_Type>& arg_t, const std::vector<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial)
 {
     s_ScopeIdx index = s_ScopeIdx { (int(scope.overloads.size()) + 1) };
-    s_Overload item = s_Overload { fu_CLONE(kind), fu_CLONE(id), fu_CLONE(type), fu_CLONE(min), fu_CLONE(max), fu_CLONE(arg_t), fu_CLONE(arg_n), fu_CLONE(arg_d), fu_CLONE(partial), fu_CLONE(tempalt) };
+    s_Overload item = s_Overload { fu_CLONE(kind), fu_CLONE(id), fu_CLONE(type), fu_CLONE(min), fu_CLONE(max), fu_CLONE(arg_t), fu_CLONE(arg_n), fu_CLONE(arg_d), fu_CLONE(partial), fu_CLONE(tempatle) };
     scope.items.push_back(s_ScopeItem { fu_CLONE(id), fu_CLONE(index) });
     scope.overloads.push_back(item);
     return index;
@@ -1847,7 +1855,7 @@ struct sf_runSolver
         ((node.kind == std::string("fn")) || fail(std::string("TODO")));
         const int min = (int(node.items.size()) + FN_ARGS_BACK);
         const int max = ((node.kind == std::string("fn")) ? 0xffffff : min);
-        s_Template tempalt = s_Template { fu_CLONE(node), std::unordered_map<std::string, s_SolvedNode>{} };
+        s_Template tempatle = s_Template { fu_CLONE(node), std::unordered_map<std::string, s_SolvedNode>{} };
         std::vector<std::string> arg_n {};
         if ((node.kind == std::string("fn")))
         {
@@ -1861,7 +1869,7 @@ struct sf_runSolver
                 arg_n.push_back(name);
             };
         };
-        return Scope_add(_scope, std::string("template"), id, t_template, min, max, arg_n, std::vector<s_Type>{}, std::vector<s_SolvedNode>{}, tempalt, s_Partial{});
+        return Scope_add(_scope, std::string("template"), id, t_template, min, max, arg_n, std::vector<s_Type>{}, std::vector<s_SolvedNode>{}, tempatle, s_Partial{});
     };
     s_ScopeIdx FnDecl(const std::string& id, s_SolvedNode& node)
     {
@@ -2009,7 +2017,7 @@ struct sf_runSolver
                     arity0 = true;
                     continue;
                 };
-                if (overload.tempalt)
+                if (overload.tempatle)
                 {
                     continue;
                 };
@@ -2096,13 +2104,13 @@ struct sf_runSolver
                     else
                         reorder.clear();
 
-                    if (overload.tempalt)
+                    if (overload.tempatle)
                     {
                         if (reorder.size())
                             fail(std::string("TODO handle argument reorder in template specialization."));
 
                         s_Overload& o_mut = GET(overloadIdx);
-                        s_ScopeIdx specIdx = trySpecialize(o_mut.tempalt, args);
+                        s_ScopeIdx specIdx = trySpecialize(o_mut.tempatle, args);
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -2408,15 +2416,15 @@ struct sf_runSolver
 
         return mangle;
     };
-    s_ScopeIdx trySpecialize(s_Template& tempalt, const std::vector<s_SolvedNode>& args)
+    s_ScopeIdx trySpecialize(s_Template& tempatle, const std::vector<s_SolvedNode>& args)
     {
         std::string mangle = TODO_memoize_mangler(args);
-        s_SolvedNode spec = fu_CLONE(([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempalt, args); return _; } (tempalt.specializations[mangle])));
+        s_SolvedNode spec = fu_CLONE(([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempatle, args); return _; } (tempatle.specializations[mangle])));
         return spec.target;
     };
-    s_SolvedNode doTrySpecialize(s_Template& tempalt, const std::vector<s_SolvedNode>& args)
+    s_SolvedNode doTrySpecialize(s_Template& tempatle, const std::vector<s_SolvedNode>& args)
     {
-        s_Node node = fu_CLONE(tempalt.node);
+        s_Node node = fu_CLONE(tempatle.node);
         ((node.kind == std::string("fn")) || fail(std::string("TODO")));
         s_SolvedNode result = trySpecializeFn(node, args);
         if (!result)
@@ -3212,7 +3220,16 @@ struct sf_cpp_codegen
             return std::string("_");
 
         if ((id == std::string("template")))
-            return std::string("tempalt");
+            return std::string("tempatle");
+
+        if ((id == std::string("not")))
+            return std::string("nott");
+
+        if ((id == std::string("and")))
+            return std::string("andd");
+
+        if ((id == std::string("or")))
+            return std::string("orr");
 
         return id;
     };
@@ -3312,8 +3329,8 @@ struct sf_cpp_codegen
         if (!int(fn.items.size()))
         {
             std::string src = std::string("");
-            const s_Template& tempalt = ([&]() -> const s_Template& { { const s_Template& _ = GET(fn.target).tempalt; if (_) return _; } fail(std::string("")); }());
-            const std::unordered_map<std::string, s_SolvedNode>& specs = tempalt.specializations;
+            const s_Template& tempatle = ([&]() -> const s_Template& { { const s_Template& _ = GET(fn.target).tempatle; if (_) return _; } fail(std::string("")); }());
+            const std::unordered_map<std::string, s_SolvedNode>& specs = tempatle.specializations;
             std::vector<std::string> keys = fu_KEYS(specs);
             ([&](auto& _) { std::sort(_.begin(), _.end()); } (keys));
             for (int i = 0; (i < int(keys.size())); i++)

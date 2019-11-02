@@ -1267,11 +1267,17 @@ pub fn parse(_fname: string, _tokens: Token[])
         return parseExpression(P_PREFIX_UNARY);
     }
 
-    fn createPrefix(op: string, expr: &Node): Node
+    fn createPrefix(op: string, expr: Node): Node
     {
-        if (op ==  '!') return make('!' , [ expr ]);
+        if (op == '!')
+            return createNot(expr);
 
-        return createCall(op,   F_PREFIX, [ expr ]);
+        return createCall(op, F_PREFIX, [ expr ]);
+    }
+
+    fn createNot(expr: Node): Node
+    {
+        return make('!', [ expr ]);
     }
 
     fn parseAccessExpression(expr: &Node): Node
@@ -1452,8 +1458,17 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseIf(): Node
     {
+        // A little bit of syntactic sugar -
+        //  TBD if this is good or not, i'm 50/50.
+        //   At least it's unambiguous.
+        let not = tryConsume('op', '!');
+
         consume('op', '(');
-        let cond = parseExpression();
+
+        mut cond = parseExpression();
+        if (not)
+            cond = createNot(cond);
+
         consume('op', ')');
 
         let cons = parseStatement();
@@ -1854,7 +1869,7 @@ fn copyOrMove(
     fields: StructField[],
     tryTrivial: bool = false): i32
 {
-    if ((flags & F_DESTRUCTOR) || someFieldNonCopy(fields))
+    if (flags & F_DESTRUCTOR || someFieldNonCopy(fields))
         return q_move;
 
     if (tryTrivial && !someFieldNotTrivial(fields))
@@ -1866,7 +1881,7 @@ fn copyOrMove(
 fn someFieldNonCopy(fields: StructField[]): bool
 {
     for (mut i = 0; i < fields.len; i++)
-        if (!(fields[i].type.quals & q_copy))
+        if !(fields[i].type.quals & q_copy)
             return true;
 
     return false;
@@ -1875,7 +1890,7 @@ fn someFieldNonCopy(fields: StructField[]): bool
 fn someFieldNotTrivial(fields: StructField[]): bool
 {
     for (mut i = 0; i < fields.len; i++)
-        if (!(fields[i].type.quals & q_trivial))
+        if !(fields[i].type.quals & q_trivial)
             return true;
 
     return false;
@@ -2603,7 +2618,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                         //  we might be supplying defaults via names
                         //   before we've actually exhausted
                         //    all the non-defaulted stuff.
-                        if (!(arg_d && arg_d[i]))
+                        if !(arg_d && arg_d[i])
                             continue :NEXT;
 
                         continue;
@@ -4325,8 +4340,11 @@ pub fn cpp_codegen(
 
     fn ID(id: string): string
     {
-        if (id == 'this')     return '_';
-        if (id == 'template') return 'tempalt';
+        if (id == 'this')       return '_';
+        if (id == 'template')   return 'tempatle';
+        if (id == 'not')        return 'nott';
+        if (id == 'and')        return 'andd';
+        if (id == 'or')         return 'orr';
 
         return id;
     }
