@@ -3962,6 +3962,9 @@ let prelude_src = `
 
 fn __native_pure(): never never;
 
+fn STEAL (a: &mut $T): $T __native_pure;
+fn CLONE (a: &    $T): $T __native_pure;
+
 
 // Arithmetics.
 
@@ -4994,6 +4997,12 @@ pub fn cpp_codegen(
         if (id == 'keys' && items.len == 1)
             return cgKeys(items);
 
+        if (id == 'CLONE' && items.len == 1)
+            return cgClone(items[0]);
+
+        if (id == 'STEAL' && items.len == 1)
+            return cgSteal(items[0]);
+
         return ID(id) + '(' + items.join(', ') + ')';
     }
 
@@ -5581,18 +5590,48 @@ struct fu_DEFAULT { static inline const T value {}; };
         return fail('TODO: ' + k);
     }
 
+
+    //
+
     fn cgCopyMove(node: SolvedNode): string
     {
         let a = cgNode(node.items[0] || fail());
 
         if (node.kind == 'move')
+            return cgSteal(a);
+
+        return cgClone(a);
+    }
+
+    fn cgSteal(src: string): string
+    {
+        include('<utility>');
+        return 'std::move(' + src + ')';
+    }
+
+    fn cgClone(src: string): string
+    {
+        let CLONE = '::CLONE';
+        if (!_ffwd.has(CLONE))
         {
-            include('<utility>');
-            return 'std::move(' + a + ')';
+            _ffwd[CLONE] =
+////////////////////////////////////
+`
+template <typename T>
+inline T fu_CLONE(const T& source)
+{
+    return source;
+}
+`
+////////////////////////////////////
+            ;
         }
 
-        return a;
+        return 'fu_CLONE(' + src + ')';
     }
+
+
+    //
 
     fn cgNodes(nodes: SolvedNode[], mode: i32 = 0): string[]
     {
