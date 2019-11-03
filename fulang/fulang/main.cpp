@@ -1707,6 +1707,12 @@ void RUN()
         return b.ARR_LAST - 3;
     )");
 
+    ZERO(R"(
+        struct S { i: i32; }
+        fn test(mut x: S) x.i += 1;
+        return S(-1).test;
+    )");
+
     // ZERO(R"(
     //     fn ARR_LAST(a: &$T[])
     //         case ($a -> &mut $T[]): &mut $T a[a.len - 1];
