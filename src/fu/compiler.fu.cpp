@@ -2374,6 +2374,10 @@ struct sf_runSolver
                 {
                     s_Node mut_arg = fu_CLONE(n_arg);
                     mut_arg.items.at(LET_TYPE) = createTypeParam(mut_arg.value);
+                    s_Type type = fu_CLONE(_typeParams.at(mut_arg.value));
+                    if (!(type.quals & q_ref))
+                        mut_arg.flags |= F_MUT;
+
                     outItems.at(i) = solveLet(mut_arg);
                 }
                 else

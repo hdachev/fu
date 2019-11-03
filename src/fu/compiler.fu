@@ -2887,6 +2887,12 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
                     // Specialize with actuals.
                     mut mut_arg = n_arg;
                     mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
+
+                    // Emit value-taking specializations.
+                    let type = _typeParams[mut_arg.value];
+                    if !(type.quals & q_ref)
+                        mut_arg.flags |= F_MUT;
+
                     outItems[i] = solveLet(mut_arg);
                 }
                 else
