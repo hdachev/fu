@@ -37,7 +37,7 @@ let OPERATORS =
     '+=', '-=', '*=', '**=', '/=', '%=',
     '&=', '|=', '^=',
     '&&=', '||=',
-    '@', '#', '$'
+    '@', '#', '$',
 ];
 
 struct Token
@@ -1304,7 +1304,14 @@ pub fn parse(_fname: string, _tokens: Token[])
 
             // Comma juggle.
             if (!first)
+            {
                 consume('op', ',');
+
+                // Trailing comma -
+                //  array literals, fncalls, etc.
+                if (tryConsume('op', endop))
+                    break;
+            }
 
             first = false;
 
@@ -1617,7 +1624,7 @@ let TAGS =
     'primitive',
     'arithmetic',
     'integral',
-    'signed'
+    'signed',
 ];
 
 pub struct Type
@@ -1843,7 +1850,7 @@ pub fn initStruct(id: string, flags: i32)
     let def = Struct(
         kind:   'struct',
         id:     id      || throw('TODO anonymous structs?'),
-        flags:  flags|0
+        flags:  flags|0,
     );
 
     registerType(canon, def);
@@ -1904,7 +1911,7 @@ pub fn createArray(item: Type): Type
     [
         StructField(
             id:  'Item',
-            type: item)
+            type: item),
     ];
 
     let canon = 'Array(' + serializeType(item) + ')';
@@ -1955,7 +1962,7 @@ pub fn createMap(key: Type, value: Type): Type
     let fields =
     [
         StructField(id:  'Key',   type: key  ),
-        StructField(id:  'Value', type: value)
+        StructField(id:  'Value', type: value),
     ];
 
     let canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')';
@@ -1964,7 +1971,7 @@ pub fn createMap(key: Type, value: Type): Type
         kind:   'map',
         id:     canon,
         :fields,
-        :flags
+        :flags,
     ));
 
     return Type(canon,
@@ -4488,7 +4495,7 @@ pub fn cpp_codegen(
                     kind: 'block', type: t_void,
                     token: fn.token,
                     items: items.slice(
-                        end, items.len))
+                        end, items.len)),
             ]);
 
         let head: SolvedNode[] =

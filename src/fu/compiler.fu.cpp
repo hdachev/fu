@@ -1351,8 +1351,13 @@ struct sf_parse
                 break;
             };
             if (!first)
+            {
                 consume(std::string("op"), std::string(","));
-
+                if (tryConsume(std::string("op"), endop))
+                {
+                    break;
+                };
+            };
             first = false;
             std::string name = std::string("");
             bool autoName = false;
