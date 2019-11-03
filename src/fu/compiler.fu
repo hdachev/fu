@@ -355,15 +355,11 @@ fn lex(src: string, fname: string): LexResult
                     }
 
                     if (!ok)
-                    {
                         err('op', begin, end);
-                    }
                     else
-                    {
                         token(
                             'op', candidate,
                             begin, end);
-                    }
 
                     begin = end;
                     end = idx;
@@ -1614,6 +1610,9 @@ pub struct Type
     quals: i32;
 };
 
+
+//
+
 fn ==(a: Type, b: Type)
     a.canon == b.canon &&
     a.quals == b.quals;
@@ -2548,14 +2547,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
                     //
                     if (names && overload.names)
-                    {
                         reorder = getNamedArgReorder(
                             names, overload.names);
-                    }
                     else
-                    {
                         reorder.clear();
-                    }
 
                     // Specialize.
                     if (overload.template)
@@ -2697,7 +2692,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         if (k == 'call')       return solveCall(node);
         if (k == 'arrlit')     return solveArrayLiteral(node, type);
 
-        if (k == 'if')         return solveIf(node);
+        if (k == 'if')         return solveIf(node, type);
         if (k == 'or')         return solveOr(node, type);
         if (k == '!')          return solveNot(node);
         if (k == 'and')        return solveAnd(node, type);
@@ -3135,13 +3130,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         {
             let node = members[i];
             if (node.kind == 'let')
-            {
                 out.push(solveField(:node, :structType));
-            }
             else
-            {
                 fail('TODO: ' + node.kind);
-            }
         }
 
         return out;
@@ -3166,14 +3157,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         let prevType    = prevExpr.type;
 
         if (prevType)
-        {
             isAssignable(prevType, nextType)
                 || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
-        }
         else
-        {
             _current_fn.items[retIdx] = nextExpr || fail();
-        }
 
         return out;
     }
@@ -3507,13 +3494,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
             //
             if (unshift)
-            {
                 args.unshift(argNode);
-            }
             else
-            {
                 args[0] = argNode;
-            }
         }
 
         //
@@ -3649,15 +3632,15 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
     //
 
-    fn solveIf(node: Node): SolvedNode
+    fn solveIf(node: Node, mut type: Type): SolvedNode
     {
         let n0      = node.items[0];
         let n1      = node.items[1];
         let n2      = node.items[2];
 
         let cond    = solveNode(n0, t_bool);
-        let cons    = n1 ? solveNode(n1)            : SolvedNode;
-        let alt     = n2 ? solveNode(n2, cons.type) : SolvedNode;
+        mut cons    = n1 ? solveNode(n1)            : SolvedNode;
+        mut alt     = n2 ? solveNode(n2, cons.type) : SolvedNode;
 
         let priExpr = cons || alt || fail();
         let secExpr = cons && alt || cons;
@@ -3665,13 +3648,20 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         let priType = priExpr.type;
         let secType = secExpr.type;
 
-        let outType = !secType
-            ? priType
-            : type_tryInter(priType, secType);
+        if !(type == t_void || type == t_bool)
+        {
+            type = !secType ? priType
+                            : type_tryInter(priType, secType);
 
-        outType || fail('No common supertype.');
+            type || fail('No common supertype.');
 
-        return solved(node, outType || fail(), [ cond, cons, alt ]);
+            if (cons)
+                cons = maybeCopyOrMove(cons, type);
+            if (alt)
+                alt  = maybeCopyOrMove(alt, type);
+        }
+
+        return solved(node, type || fail(), [ cond, cons, alt ]);
     }
 
 
@@ -3723,11 +3713,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
                 // If we do have an intersection,
                 //  and if the sum type is not a reference,
                 //   some shit may need copying here.
-                if (!(sumType.quals & q_ref))
-                    for (mut i = 0; i < items.len; i++)
-                        if (items[i].type.quals & q_ref)
-                            items[i] = maybeCopyOrMove(
-                                items[i], sumType);
+                for (mut i = 0; i < items.len; i++)
+                    items[i] = maybeCopyOrMove(
+                        items[i], sumType);
 
                 type = sumType;
             }

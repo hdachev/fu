@@ -841,7 +841,7 @@ struct sf_parse
         consume(std::string("op"), std::string("{"));
         std::vector<s_Node> items = parseBlockLike(std::string("op"), std::string("}"), std::string("struct"));
         _structName = structName0;
-        return make(std::string("struct"), items, 0, (name ? name.value : std::string("")));
+        return make(std::string("struct"), items, 0, (name ? fu_CLONE(name.value) : std::string("")));
     };
     s_Node parseStructItem()
     {
@@ -1055,7 +1055,7 @@ struct sf_parse
     s_Node parseFnBodyBranch()
     {
         s_Node body = parseStatement();
-        return (((body.kind == std::string("block")) || (body.kind == std::string("return"))) ? body : ((void)_numReturns++, createReturn(body)));
+        return (((body.kind == std::string("block")) || (body.kind == std::string("return"))) ? fu_CLONE(body) : ((void)_numReturns++, createReturn(body)));
     };
     s_Node tryPopTypeAnnot()
     {
@@ -1260,7 +1260,7 @@ struct sf_parse
             items.push_back(parseExpression(fu_CLONE(P_COMMA)));
         while (tryConsume(std::string("op"), std::string(",")));
         consume(std::string("op"), std::string(")"));
-        return ((int(items.size()) > 1) ? createComma(items) : items.at(0));
+        return ((int(items.size()) > 1) ? createComma(items) : fu_CLONE(items.at(0)));
     };
     s_Node createComma(const std::vector<s_Node>& nodes)
     {
@@ -1349,7 +1349,7 @@ struct sf_parse
                 (((expr.kind == std::string("call")) && (expr.flags & F_ID)) || fail(std::string("Can't :auto_name this expression.")));
                 name = expr.value;
             };
-            out_args.push_back((name.size() ? createLabel(name, expr) : expr));
+            out_args.push_back((name.size() ? createLabel(name, expr) : fu_CLONE(expr)));
         };
         return flags;
     };
@@ -1580,7 +1580,7 @@ s_Type tryClear_mutref(const s_Type& type)
 s_Type tryClear_ref(const s_Type& type)
 {
     s_Type t = tryClear(type, q_ref);
-    return (t ? qsub(t, q_mutref) : t);
+    return (t ? qsub(t, q_mutref) : fu_CLONE(t));
 }
 
 s_Type clear_refs(const s_Type& type)
@@ -1825,7 +1825,7 @@ struct sf_runSolver
         const std::string& id = node.value;
         ((node.kind == std::string("fn")) || fail(std::string("TODO")));
         const int min = (int(node.items.size()) + FN_ARGS_BACK);
-        const int max = ((node.kind == std::string("fn")) ? 0xffffff : min);
+        const int max = ((node.kind == std::string("fn")) ? 0xffffff : fu_CLONE(min));
         s_Template tempatle = s_Template { fu_CLONE(node), std::unordered_map<std::string, s_SolvedNode>{} };
         std::vector<std::string> arg_n {};
         if ((node.kind == std::string("fn")))
@@ -1930,9 +1930,9 @@ struct sf_runSolver
         int min = (overload.min - 1);
         int max = (overload.max - 1);
         (((min >= 0) && (max >= min)) || fail(std::string("")));
-        std::vector<s_Type> arg_t = (overload.args.size() ? ([&](const auto& _) { return std::vector<s_Type>(_.begin() + 1, _.end()); } (overload.args)) : overload.args);
-        std::vector<std::string> arg_n = (overload.names.size() ? ([&](const auto& _) { return std::vector<std::string>(_.begin() + 1, _.end()); } (overload.names)) : overload.names);
-        std::vector<s_SolvedNode> arg_d = (overload.defaults.size() ? ([&](const auto& _) { return std::vector<s_SolvedNode>(_.begin() + 1, _.end()); } (overload.defaults)) : overload.defaults);
+        std::vector<s_Type> arg_t = (overload.args.size() ? ([&](const auto& _) { return std::vector<s_Type>(_.begin() + 1, _.end()); } (overload.args)) : fu_CLONE(overload.args));
+        std::vector<std::string> arg_n = (overload.names.size() ? ([&](const auto& _) { return std::vector<std::string>(_.begin() + 1, _.end()); } (overload.names)) : fu_CLONE(overload.names));
+        std::vector<s_SolvedNode> arg_d = (overload.defaults.size() ? ([&](const auto& _) { return std::vector<s_SolvedNode>(_.begin() + 1, _.end()); } (overload.defaults)) : fu_CLONE(overload.defaults));
         if ((via.kind != std::string("var")))
         {
             kind = std::string("p-wrap");
@@ -2051,7 +2051,7 @@ struct sf_runSolver
                 for (int i = 0; (i < arity); i++)
                 {
                     s_SolvedNode arg = fu_CLONE(args.at(i));
-                    names.push_back(((arg.kind == std::string("label")) ? ([&]() -> const std::string& { { const std::string& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(std::string("")); }()) : std::string("")));
+                    names.push_back(((arg.kind == std::string("label")) ? fu_CLONE(([&]() -> const std::string& { { const std::string& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(std::string("")); }())) : std::string("")));
                 };
                 (some || fail(std::string("")));
             };
@@ -2194,7 +2194,7 @@ struct sf_runSolver
             return solveArrayLiteral(node, type);
 
         if ((k == std::string("if")))
-            return solveIf(node);
+            return solveIf(node, fu_CLONE(type));
 
         if ((k == std::string("or")))
             return solveOr(node, fu_CLONE(type));
@@ -2416,7 +2416,7 @@ struct sf_runSolver
         {
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items.at(i); if (_) return _; } fail(std::string("")); }());
             ((argNode.kind == std::string("let")) || fail(std::string("")));
-            s_Type inType = ((int(args.size()) > i) ? args.at(i).type : s_Type { std::string{}, int{} });
+            s_Type inType = ((int(args.size()) > i) ? fu_CLONE(args.at(i).type) : s_Type { std::string{}, int{} });
             if (inType)
             {
                 const std::string& argName = ([&]() -> const std::string& { { const std::string& _ = argNode.value; if (_.size()) return _; } fail(std::string("")); }());
@@ -2550,7 +2550,7 @@ struct sf_runSolver
         const s_Type& t_annot = s_annot.type;
         s_SolvedNode s_init = ([&]() -> s_SolvedNode { if (init) return solveNode(init, t_annot); else return s_SolvedNode{}; }());
         s_Type t_init = fu_CLONE(s_init.type);
-        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : t_annot) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : ([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail(std::string("Variable declarations without explicit type annotations must be initialized.")); }())));
+        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : fu_CLONE(t_annot)) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail(std::string("Variable declarations without explicit type annotations must be initialized.")); }()))));
         if ((t_annot && t_init))
         {
             (isAssignable(t_annot, t_init) || fail(std::string("Type annotation does not match init expression.")));
@@ -2829,7 +2829,7 @@ struct sf_runSolver
         };
         return matched;
     };
-    s_SolvedNode solveIf(const s_Node& node)
+    s_SolvedNode solveIf(const s_Node& node, s_Type&& type)
     {
         const s_Node& n0 = node.items.at(0);
         const s_Node& n1 = node.items.at(1);
@@ -2837,13 +2837,22 @@ struct sf_runSolver
         s_SolvedNode cond = solveNode(n0, t_bool);
         s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
-        const s_SolvedNode& priExpr = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = cons; if (_) return _; } { const s_SolvedNode& _ = alt; if (_) return _; } fail(std::string("")); }());
-        const s_SolvedNode& secExpr = ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }());
+        s_SolvedNode priExpr = fu_CLONE(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(std::string("")); }()));
+        s_SolvedNode secExpr = fu_CLONE(([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()));
         const s_Type& priType = priExpr.type;
         const s_Type& secType = secExpr.type;
-        s_Type outType = (!secType ? priType : type_tryInter(priType, secType));
-        (outType || fail(std::string("No common supertype.")));
-        return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = outType; if (_) return _; } fail(std::string("")); }()), std::vector<s_SolvedNode> { cond, cons, alt });
+        if (!((type == t_void) || (type == t_bool)))
+        {
+            type = (!secType ? fu_CLONE(priType) : type_tryInter(priType, secType));
+            (type || fail(std::string("No common supertype.")));
+            if (cons)
+                cons = maybeCopyOrMove(cons, type);
+
+            if (alt)
+                alt = maybeCopyOrMove(alt, type);
+
+        };
+        return solved(node, ([&]() -> s_Type& { { s_Type& _ = type; if (_) return _; } fail(std::string("")); }()), std::vector<s_SolvedNode> { cond, cons, alt });
     };
     s_SolvedNode solveNot(const s_Node& node)
     {
@@ -2879,15 +2888,9 @@ struct sf_runSolver
             };
             if (sumType)
             {
-                if (!(sumType.quals & q_ref))
-                {
-                    for (int i = 0; (i < int(items.size())); i++)
-                    {
-                        if ((items.at(i).type.quals & q_ref))
-                            items.at(i) = maybeCopyOrMove(items.at(i), sumType);
+                for (int i = 0; (i < int(items.size())); i++)
+                    items.at(i) = maybeCopyOrMove(items.at(i), sumType);
 
-                    };
-                };
                 type = sumType;
             }
             else
@@ -3441,9 +3444,9 @@ struct sf_cpp_codegen
     std::string binding(const s_SolvedNode& node, const bool& doInit)
     {
         const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
-        std::string annot = typeAnnot(node.type, ((((node.flags & F_MUT) == 0) ? M_CONST : 0) | (((node.flags & F_ARG) == 0) ? 0 : M_ARGUMENT)));
+        std::string annot = typeAnnot(node.type, ((((node.flags & F_MUT) == 0) ? fu_CLONE(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : fu_CLONE(M_ARGUMENT))));
         std::string head = ((([&]() -> const std::string& { { const std::string& _ = annot; if (_.size()) return _; } fail(std::string("")); }()) + std::string(" ")) + ID(id));
-        s_SolvedNode init = (node.items.size() ? node.items.at(LET_INIT) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+        s_SolvedNode init = (node.items.size() ? fu_CLONE(node.items.at(LET_INIT)) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
