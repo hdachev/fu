@@ -1675,6 +1675,10 @@ void RUN()
 
 
     // Various templating fallacies.
+    //
+    // TODO figure these out -
+    //  These are problematic in a bunch of ways here.
+    //   But mostly, the case patterns for this kind of thing are outright moronic.
 
     ZERO(R"(
         fn ARR_LAST(a: &$T[])
@@ -1707,10 +1711,10 @@ void RUN()
     //     fn ARR_LAST(a: &$T[])
     //         case ($a -> &mut $T[]): &mut $T a[a.len - 1];
     //         case ($a -> &    $T[]): &    $T a[a.len - 1];
-
+    //
     //     let a = [1];
     //     mut b = [2];
-
+    //
     //     b.ARR_LAST += a.ARR_LAST;
     //     return b.ARR_LAST - [3].ARR_LAST;
     // )");

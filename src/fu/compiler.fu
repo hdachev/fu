@@ -1,5 +1,7 @@
 // expect_lambda
 
+let WARN_ON_IMPLICIT_COPY = false;
+
 
 
 // std candidates
@@ -3840,8 +3842,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
         if !(q & q_copy)
             fail('Needs an explicit STEAL or CLONE.');
 
-        if !(node.type.quals & q_trivial)
-            print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
+        if (WARN_ON_IMPLICIT_COPY)
+            if !(node.type.quals & q_trivial)
+                print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
 
         // Here we go.
         return SolvedNode(

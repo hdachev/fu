@@ -433,6 +433,7 @@ struct s_SolveResult
         ;
     }
 };
+inline const bool WARN_ON_IMPLICIT_COPY = false;
 
 std::string last(const std::string& s)
 {
@@ -2972,9 +2973,12 @@ struct sf_runSolver
         if (!(q & q_copy))
             fail(std::string("Needs an explicit STEAL or CLONE."));
 
-        if (!(node.type.quals & q_trivial))
-            (std::cout << std::string("WARN ") << _here.line << std::string(":") << _here.col << std::string(":\timplicit copy ") << node.type.canon << std::endl);
+        if (WARN_ON_IMPLICIT_COPY)
+        {
+            if (!(node.type.quals & q_trivial))
+                (std::cout << std::string("WARN ") << _here.line << std::string(":") << _here.col << std::string(":\timplicit copy ") << node.type.canon << std::endl);
 
+        };
         return s_SolvedNode { std::string("copy"), int{}, std::string{}, std::vector<s_SolvedNode> { node }, fu_CLONE(node.token), clear_refs(node.type), s_ScopeIdx{} };
     };
     std::vector<s_SolvedNode> solveNodes(const std::vector<s_Node>& nodes, const s_Type& type)
