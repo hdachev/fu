@@ -18,7 +18,6 @@ struct fu_NEVER
 };
 
 struct s_BINOP;
-struct s_LexErr;
 struct s_LexResult;
 struct s_MapFields;
 struct s_Node;
@@ -144,31 +143,6 @@ int copyOrMove(const int& flags, const std::vector<s_StructField>& fields);
 int auto_main();
 s_SolveResult solve(const s_Node& parse, s_TEMP_Context& ctx);
 s_Type createArray(const s_Type& item, s_TEMP_Context& ctx);
-struct s_LexErr
-{
-    std::string reason;
-    std::string kind;
-    std::string value;
-    std::string fname;
-    int idx0;
-    int idx1;
-    int line;
-    int col;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reason.size()
-            || kind.size()
-            || value.size()
-            || fname.size()
-            || idx0
-            || idx1
-            || line
-            || col
-        ;
-    }
-};
-
 struct s_Token
 {
     std::string kind;
@@ -195,13 +169,11 @@ struct s_Token
 struct s_LexResult
 {
     std::string fname;
-    std::vector<s_LexErr> errors;
     std::vector<s_Token> tokens;
     explicit operator bool() const noexcept
     {
         return false
             || fname.size()
-            || errors.size()
             || tokens.size()
         ;
     }
@@ -450,7 +422,6 @@ struct sf_lex
     int line = 1;
     int lidx = -1;
     int idx = 0;
-    std::vector<s_LexErr> errors {};
     std::vector<s_Token> tokens {};
     void token(const std::string& kind, const std::string& value, const int& idx0, const int& idx1)
     {
@@ -464,8 +435,7 @@ struct sf_lex
 
         const int col = (idx0 - lidx);
         std::string value = ([&]() { size_t _0 = idx0; return src.substr(_0, idx - _0); } ());
-        fu_THROW(((((((((((std::string("Lex Error: ") + fname) + std::string("@")) + line) + std::string(":")) + col) + std::string(":\n\t")) + reason) + std::string(" (")) + value) + std::string(")")));
-        errors.push_back(s_LexErr { fu_CLONE(reason), fu_CLONE(kind), fu_CLONE(value), fu_CLONE(fname), fu_CLONE(idx0), fu_CLONE(idx), fu_CLONE(line), fu_CLONE(col) });
+        fu_THROW(((((((((((((std::string("LEX ERROR: ") + fname) + std::string("@")) + line) + std::string(":")) + col) + std::string(":\n\t")) + reason) + std::string("\n\t")) + kind) + std::string(": `")) + value) + std::string("`")));
     };
     void err(const std::string& kind, const int& idx0, const int& reason)
     {
@@ -703,7 +673,7 @@ struct sf_lex
         line++;
         lidx = (idx + 0);
         token(std::string("eof"), std::string("eof"), idx, idx);
-        return s_LexResult { fu_CLONE(fname), fu_CLONE(errors), fu_CLONE(tokens) };
+        return s_LexResult { fu_CLONE(fname), fu_CLONE(tokens) };
     };
 };
 
@@ -3083,7 +3053,6 @@ inline const std::string prelude_src = std::string("\n\n\n// Some lolcode.\n\nfn
 s_Scope solvePrelude()
 {
     s_LexResult lexed = lex(prelude_src, std::string("__prelude"));
-    (lexed.errors.size() || (!lexed.tokens.size() && fu_THROW(std::string("Failure to lex prelude."))));
     s_Node root = parse(std::string("__prelude"), lexed.tokens);
     s_TEMP_Context ctx {};
     s_Scope scope = listGlobals();

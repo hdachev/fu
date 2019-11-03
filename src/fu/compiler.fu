@@ -52,34 +52,19 @@ struct Token
     col:    i32;
 };
 
-struct LexErr
-{
-    reason: string;
-    kind:   string;
-    value:  string;
-    fname:  string;
-
-    idx0:   i32;
-    idx1:   i32;
-    line:   i32;
-    col:    i32;
-};
-
 struct LexResult
 {
     fname:  string;
-    errors: LexErr[];
     tokens: Token[];
 };
 
-fn lex(src: &string, fname: &string): LexResult
+fn lex(src: string, fname: string): LexResult
 {
     let end     = src.len;
     mut line    = 1;
     mut lidx    = -1;
     mut idx     = 0;
 
-    mut errors: LexErr[];
     mut tokens: Token[];
 
     fn token(kind: string, value: string, idx0: i32, idx1: i32)
@@ -100,19 +85,17 @@ fn lex(src: &string, fname: &string): LexResult
         let col = idx0 - lidx;
         let value = src.slice(idx0, idx);
 
-        throw('Lex Error: ' + fname + '@' + line + ':' + col + ':\n\t' + reason + ' (' + value + ')');
-
-        errors.push(
-            LexErr( :reason, :kind, :value, :idx0, idx,
-                    :fname, :line, :col ));
+        throw('LEX ERROR: ' + fname + '@' + line + ':' + col
+            + ':\n\t' + reason
+            + '\n\t' + kind + ': `' + value + '`');
     }
 
-    fn err(kind: &string, idx0: i32, reason: i32)
+    fn err(kind: string, idx0: i32, reason: i32)
     {
         err_str(kind, idx0, src[reason]);
     }
 
-    fn checkNum(kind: &string, src: string): string
+    fn checkNum(kind: string, src: string): string
     {
         ////////////
         //  TODO  //
@@ -123,7 +106,7 @@ fn lex(src: &string, fname: &string): LexResult
         return kind;
     }
 
-    fn unescapeStr(src: &string, idx0: i32, idx1: i32): string
+    fn unescapeStr(src: string, idx0: i32, idx1: i32): string
     {
         mut out = '';
 
@@ -404,7 +387,7 @@ fn lex(src: &string, fname: &string): LexResult
         idx, idx);
 
     // err, data
-    return LexResult( :fname, :errors, :tokens );
+    return LexResult( :fname, :tokens );
 }
 
 
@@ -654,7 +637,7 @@ pub fn parse(_fname: string, _tokens: Token[])
             parseBlockLike('op', '}'));
     }
 
-    fn createBlock(items: &Node[]): Node
+    fn createBlock(items: Node[]): Node
     {
         return make('block', items);
     }
@@ -1145,7 +1128,7 @@ pub fn parse(_fname: string, _tokens: Token[])
             op, F_INFIX, [ left, right ]);
     }
 
-    fn tryParseExpressionTail(head: &Node): Node
+    fn tryParseExpressionTail(head: Node): Node
     {
         // Consume.
         let token = _tokens[_idx++];
@@ -1227,7 +1210,7 @@ pub fn parse(_fname: string, _tokens: Token[])
              : items[0];
     }
 
-    fn createComma(nodes: &Node[]): Node
+    fn createComma(nodes: Node[]): Node
     {
         return make('comma', nodes);
     }
@@ -1282,7 +1265,7 @@ pub fn parse(_fname: string, _tokens: Token[])
         return make('!', [ expr ]);
     }
 
-    fn parseAccessExpression(expr: &Node): Node
+    fn parseAccessExpression(expr: Node): Node
     {
         return createCall(
             consume('id').value,
@@ -1354,12 +1337,12 @@ pub fn parse(_fname: string, _tokens: Token[])
         return flags;
     }
 
-    fn createLabel(id: string, value: &Node): Node
+    fn createLabel(id: string, value: Node): Node
     {
         return make('label', [ value ], 0, id);
     }
 
-    fn parseCallExpression(expr: &Node): Node
+    fn parseCallExpression(expr: Node): Node
     {
         mut args: Node[] = [];
         let argFlags = parseCallArgs(')', args);
@@ -1631,7 +1614,7 @@ pub struct Type
     quals: i32;
 };
 
-fn ==(a: &Type, b: &Type)
+fn ==(a: Type, b: Type)
     a.canon == b.canon &&
     a.quals == b.quals;
 
@@ -2056,7 +2039,7 @@ pub struct Scope
     overloads:  Overload[];
 };
 
-pub fn Scope_lookup(scope: &Scope, id: string): ScopeIdx[]
+pub fn Scope_lookup(scope: Scope, id: string): ScopeIdx[]
 {
     mut results: ScopeIdx[] = [];
 
@@ -2071,7 +2054,7 @@ pub fn Scope_lookup(scope: &Scope, id: string): ScopeIdx[]
     return results;
 }
 
-pub fn Scope_keys(scope: &Scope): string[]
+pub fn Scope_keys(scope: Scope): string[]
 {
     mut keys: string[] = [];
 
@@ -2155,7 +2138,7 @@ fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): SolveResult
+fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): SolveResult
 {
     mut _scope:         Scope       = globals;
 
@@ -2475,8 +2458,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     //
 
     fn getNamedArgReorder(
-        callsite:    &string[],
-        declaration: &string[]): i32[]
+        callsite:    string[],
+        declaration: string[]): i32[]
     {
         mut result: i32[] = [];
 
@@ -3819,7 +3802,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
     //
 
     fn solved(
-        node: &Node, type: Type, items: SolvedNode[] = [])
+        node: Node, type: Type, items: SolvedNode[] = [])
             : SolvedNode
     {
         return SolvedNode(
@@ -4157,16 +4140,12 @@ fn join(a: &string[], sep: &string): string __native_pure;
 
 fn solvePrelude(): Scope
 {
-    let lexed = lex(prelude_src, '__prelude');
-    lexed.errors || !lexed.tokens && throw(
-        'Failure to lex prelude.');
-
-    let root = parse(
-        '__prelude', lexed.tokens);
+    let lexed   = lex(prelude_src, '__prelude');
+    let root    = parse('__prelude', lexed.tokens);
 
     let implicit mut ctx: TEMP_Context;
-    let scope = listGlobals();
-    let solved = runSolver(root, scope);
+    let scope   = listGlobals();
+    let solved  = runSolver(root, scope);
 
     return solved.scope;
 }
@@ -4201,7 +4180,7 @@ let M_ARGUMENT          = 1 << 4;
 
 pub fn cpp_codegen(
     implicit ctx: &TEMP_Context,
-    root: &SolvedNode, scope: &Scope): string
+    root: SolvedNode, scope: Scope): string
 {
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
