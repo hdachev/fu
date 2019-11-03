@@ -1721,7 +1721,7 @@ void RUN()
         mut b = [2];
 
         b.ARR_LAST += a.ARR_LAST;
-        return b.ARR_LAST - [3].ARR_LAST - 1;
+        return b.ARR_LAST - [3].ARR_LAST;
     )");
 
 

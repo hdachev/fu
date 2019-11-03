@@ -1825,7 +1825,6 @@ struct sf_runSolver
     s_Scope _scope = fu_CLONE(globals);
     s_Token _here {};
     s_SolvedNode _current_fn {};
-    s_Type _current_strt {};
     std::unordered_map<std::string, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
     s_Overload& GET(const s_ScopeIdx& idx)
@@ -1846,11 +1845,11 @@ struct sf_runSolver
     };
     s_ScopeIdx Binding(const std::string& id, const s_Type& type)
     {
-        return Scope_add(_scope, std::string("var"), id, type, 0, 0, std::vector<std::string>{}, std::vector<s_Type>{}, std::vector<s_SolvedNode>{}, s_Template{}, s_Partial{});
+        return Scope_add(_scope, std::string("var"), ([&]() -> const std::string& { { const std::string& _ = id; if (_.size()) return _; } fail(std::string("")); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(std::string("")); }()), 0, 0, std::vector<std::string>{}, std::vector<s_Type>{}, std::vector<s_SolvedNode>{}, s_Template{}, s_Partial{});
     };
     s_ScopeIdx Field(const std::string& id, const s_Type& structType, const s_Type& fieldType)
     {
-        return Scope_add(_scope, std::string("field"), id, fieldType, 1, 1, std::vector<std::string> { std::string("this") }, std::vector<s_Type> { structType }, std::vector<s_SolvedNode>{}, s_Template{}, s_Partial{});
+        return Scope_add(_scope, std::string("field"), ([&]() -> const std::string& { { const std::string& _ = id; if (_.size()) return _; } fail(std::string("")); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(std::string("")); }()), 1, 1, std::vector<std::string> { std::string("this") }, std::vector<s_Type> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(std::string("")); }()) }, std::vector<s_SolvedNode>{}, s_Template{}, s_Partial{});
     };
     s_ScopeIdx TemplateDecl(const s_Node& node)
     {
@@ -2512,20 +2511,14 @@ struct sf_runSolver
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = fu_CLONE(prep); if (_) return _; } return solved(node, t_void, std::vector<s_SolvedNode>{}); }());
         const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("TODO anonymous structs")); }());
-        s_Type type = initStruct(id, node.flags, ctx);
+        s_Type structType = initStruct(id, node.flags, ctx);
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, type);
+            out.target = Scope_Typedef(_scope, id, structType);
 
         if (!solve)
             return out;
 
-        
-        {
-            s_Type current_strt0 = fu_CLONE(_current_strt);
-            _current_strt = type;
-            out.items = solveNodes(node.items, s_Type{});
-            _current_strt = current_strt0;
-        };
+        out.items = solveStructMembers(node.items, structType);
         
         {
             std::vector<s_SolvedNode> members {};
@@ -2541,7 +2534,21 @@ struct sf_runSolver
                 };
             };
             finalizeStruct(id, fields, ctx);
-            DefaultCtor(id, type, members);
+            DefaultCtor(id, structType, members);
+        };
+        return out;
+    };
+    std::vector<s_SolvedNode> solveStructMembers(const std::vector<s_Node>& members, const s_Type& structType)
+    {
+        std::vector<s_SolvedNode> out {};
+        for (int i = 0; (i < int(members.size())); i++)
+        {
+            const s_Node& node = members.at(i);
+            if ((node.kind == std::string("let")))
+                out.push_back(solveField(structType, node));
+            else
+                fail((std::string("TODO: ") + node.kind));
+
         };
         return out;
     };
@@ -2566,7 +2573,7 @@ struct sf_runSolver
     {
         return solved(node, t_void, std::vector<s_SolvedNode>{});
     };
-    s_SolvedNode solveLet(const s_Node& node)
+    s_SolvedNode solveBinding(const s_Node& node)
     {
         const s_Node& annot = node.items.at(LET_TYPE);
         const s_Node& init = node.items.at(LET_INIT);
@@ -2583,12 +2590,25 @@ struct sf_runSolver
             s_init = maybeCopyOrMove(s_init, t_let);
 
         s_SolvedNode out = solved(node, t_let, std::vector<s_SolvedNode> { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = s_annot; if (_) return _; } return s_init; }()), s_init });
-        const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
         if ((node.flags & F_MUT))
         {
             ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = _current_fn; if (_) return _; } fail(std::string("Mutable statics are not currently allowed.")); }());
         };
-        s_ScopeIdx overload = ((out.flags & F_FIELD) ? Field(id, ([&]() -> s_Type& { { s_Type& _ = _current_strt; if (_) return _; } fail(std::string("")); }()), t_let) : Binding(id, ((node.flags & F_MUT) ? add_mutref(t_let) : add_ref(t_let))));
+        return out;
+    };
+    s_SolvedNode solveLet(const s_Node& node)
+    {
+        s_SolvedNode out = solveBinding(node);
+        s_ScopeIdx overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)));
+        if ((out.flags & F_USING))
+            scope_using(overload);
+
+        return out;
+    };
+    s_SolvedNode solveField(const s_Type& structType, const s_Node& node)
+    {
+        s_SolvedNode out = solveBinding(node);
+        s_ScopeIdx overload = Field(out.value, structType, out.type);
         if ((out.flags & F_USING))
             scope_using(overload);
 

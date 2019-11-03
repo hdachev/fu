@@ -2172,7 +2172,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     // Needs template reset.
     mut _current_fn:    SolvedNode;
-    mut _current_strt:  Type;
     mut _typeParams:    Map(string, Type);
 
     //
@@ -2209,15 +2208,17 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn Binding(id: string, type: Type)
     {
-        return Scope_add(_scope, 'var', id, type);
+        return Scope_add(
+            _scope, 'var',
+            id || fail(), type || fail());
     }
 
     fn Field(id: string, structType: Type, fieldType: Type)
     {
         return Scope_add(
-            _scope,
-            'field', id, fieldType,
-            1, 1, [ 'this' ], [ structType ]);
+            _scope, 'field',
+            id || fail(), fieldType || fail(),
+            1, 1, [ 'this' ], [ structType || fail() ]);
     }
 
     fn TemplateDecl(node: Node)
@@ -3107,28 +3108,21 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
     {
-        mut out     = prep || solved(node, t_void);
+        mut out         = prep || solved(node, t_void);
 
-        let id      = node.value || fail('TODO anonymous structs');
-        let type    = initStruct(id, node.flags);
+        let id          = node.value || fail('TODO anonymous structs');
+        let structType  = initStruct(id, node.flags);
 
         // Add the arity-0 type entry.
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, type);
+            out.target  = Scope_Typedef(_scope, id, structType);
 
         if (!solve)
             return out;
 
-        //////////////////////////
-        {
-            let current_strt0   = _current_strt;
-            _current_strt       = type;
-
-            out.items = solveNodes(node.items);
-
-            _current_strt       = current_strt0;
-        }
-        //////////////////////////
+        // Struct fields only.
+        out.items = solveStructMembers(
+            node.items, :structType);
 
         // Add a default constructor.
         {
@@ -3153,7 +3147,27 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
             finalizeStruct(id, fields);
 
-            DefaultCtor(id, type, members);
+            DefaultCtor(id, structType, members);
+        }
+
+        return out;
+    }
+
+    fn solveStructMembers(members: Node[], structType: Type): SolvedNode[]
+    {
+        mut out: SolvedNode[];
+
+        for (mut i = 0; i < members.len; i++)
+        {
+            let node = members[i];
+            if (node.kind == 'let')
+            {
+                out.push(solveField(:node, :structType));
+            }
+            else
+            {
+                fail('TODO: ' + node.kind);
+            }
         }
 
         return out;
@@ -3198,7 +3212,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
 
     //
 
-    fn solveLet(node: Node): SolvedNode
+    fn solveBinding(node: Node): SolvedNode
     {
         let annot       = node.items[LET_TYPE];
         let init        = node.items[LET_INIT];
@@ -3225,19 +3239,36 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: &Node, globals: &Scope): So
             s_init = maybeCopyOrMove(s_init, t_let);
 
         //
-        let out       = solved(node, t_let, [s_annot || s_init, s_init]);
-        let id        = node.value || fail();
+        let out = solved(node, t_let, [s_annot || s_init, s_init]);
 
         if (node.flags & F_MUT)
             _current_fn || fail(
                 'Mutable statics are not currently allowed.');
 
-        //
-        let overload  = out.flags & F_FIELD
-            ? Field  (id, _current_strt || fail(), t_let)
-            : Binding(id, node.flags & F_MUT
-                ? add_mutref(t_let)
-                : add_ref(t_let));
+        return out;
+    }
+
+    fn solveLet(node: Node): SolvedNode
+    {
+        let out = solveBinding(node);
+        let overload = Binding(
+            id: out.value,
+            node.flags & F_MUT
+                ? add_mutref(out.type)
+                : add_ref(out.type));
+
+        if (out.flags & F_USING)
+            scope_using(overload);
+
+        return out;
+    }
+
+    fn solveField(structType: Type, node: Node): SolvedNode
+    {
+        let out = solveBinding(node);
+        let overload = Field(
+            id: out.value,
+            :structType, fieldType: out.type);
 
         if (out.flags & F_USING)
             scope_using(overload);
