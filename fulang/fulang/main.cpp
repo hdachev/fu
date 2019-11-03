@@ -386,7 +386,7 @@ void saySomethingNice()
 
 std::string ZERO(const std::string& src)
 {
-    auto cpp = compile_testcase(src);
+    auto cpp = compile_testcase( std::string(src) );
 
     // ...
     auto result = build_and_run(cpp);
@@ -403,7 +403,7 @@ std::string ZERO(const std::string& src)
 void FAIL(const std::string& src)
 {
     try {
-        auto cpp = compile_testcase(src);
+        auto cpp = compile_testcase( std::string(src) );
     }
     catch (const std::exception& e) {
         // TODO check error message.
@@ -919,7 +919,10 @@ void RUN()
     )");
 
     ZERO(RAII + R"(
-        fn test(mut s: S) { return s.j; } // <-destructor here
+        fn test(mut s: S) {
+            let x = STEAL (s);
+            return x.j; // <-destructor here
+        }
 
         mut s = S(i);
         test( STEAL(s) );

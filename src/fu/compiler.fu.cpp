@@ -799,7 +799,7 @@ struct sf_parse
     int _numReturns = 0;
     int _implicits = 0;
     std::string _structName = std::string("");
-    [[noreturn]] fu_NEVER fail(std::string reason)
+    [[noreturn]] fu_NEVER fail(std::string&& reason)
     {
         const s_Token& here = _tokens.at(_idx);
         if (!reason.size())
@@ -1312,7 +1312,7 @@ struct sf_parse
     {
         return make(std::string("typetag"), std::vector<s_Node>{}, 0, value);
     };
-    s_Node parsePrefix(std::string op)
+    s_Node parsePrefix(std::string&& op)
     {
         (([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, op); return _1 != _N; } (PREFIX)) || ((void)_idx--, fail(std::string(""))));
         if (((op == std::string("&")) && tryConsume(std::string("id"), std::string("mut"))))
@@ -1558,7 +1558,7 @@ bool isAssignable(const s_Type& host, const s_Type& guest)
     return (((host.canon == guest.canon) && ((host.quals == guest.quals) || (!(host.quals & q_mutref) && ((host.quals & guest.quals) == host.quals)))) || ((guest == t_never) && (guest.quals == 0)));
 }
 
-bool isAssignableAsArgument(const s_Type& host, s_Type guest)
+bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 {
     guest.quals |= q_ref;
     return isAssignable(host, guest);
@@ -1827,7 +1827,7 @@ struct sf_runSolver
         ((idx.raw > 0) || fu_THROW("Assertion failed."));
         return _scope.overloads.at((idx.raw - 1));
     };
-    [[noreturn]] fu_NEVER fail(std::string reason)
+    [[noreturn]] fu_NEVER fail(std::string&& reason)
     {
         if (!reason.size())
             reason = ((std::string("Unexpected `") + _here.value) + std::string("`."));
@@ -2641,7 +2641,7 @@ struct sf_runSolver
         };
         fail(std::string("TODO"));
     };
-    bool trySolveTypeParams(const s_Node& node, s_Type type, std::unordered_map<std::string, s_Type>& typeParams)
+    bool trySolveTypeParams(const s_Node& node, s_Type&& type, std::unordered_map<std::string, s_Type>& typeParams)
     {
         if ((node.kind == std::string("call")))
         {
@@ -2850,7 +2850,7 @@ struct sf_runSolver
     {
         return solved(node, t_bool, std::vector<s_SolvedNode> { solveNode(node.items.at(0), t_bool) });
     };
-    s_SolvedNode solveOr(const s_Node& node, s_Type type)
+    s_SolvedNode solveOr(const s_Node& node, s_Type&& type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items, type);
         if ((type == t_void))
@@ -2897,7 +2897,7 @@ struct sf_runSolver
         };
         return solved(node, type, items);
     };
-    s_SolvedNode solveAnd(const s_Node& node, s_Type type)
+    s_SolvedNode solveAnd(const s_Node& node, s_Type&& type)
     {
         std::vector<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         if ((type == t_void))
@@ -2940,7 +2940,7 @@ struct sf_runSolver
     {
         return s_SolvedNode { fu_CLONE(node.kind), fu_CLONE(node.flags), fu_CLONE(node.value), fu_CLONE(items), fu_CLONE(node.token), fu_CLONE(type), s_ScopeIdx{} };
     };
-    s_SolvedNode CallerNode(const s_Node& node, s_Type type, const s_ScopeIdx& target, std::vector<s_SolvedNode> args)
+    s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_ScopeIdx& target, std::vector<s_SolvedNode>&& args)
     {
         s_Overload overload = fu_CLONE(GET(target));
         if ((overload.kind == std::string("field")))
@@ -3068,6 +3068,7 @@ inline const int M_STMT = (1 << 0);
 inline const int M_RETBOOL = (1 << 1);
 inline const int M_CONST = (1 << 2);
 inline const int M_RETVAL = (1 << 3);
+inline const int M_ARGUMENT = (1 << 4);
 
 struct sf_cpp_codegen
 {
@@ -3088,7 +3089,7 @@ struct sf_cpp_codegen
         ((idx.raw > 0) || fu_THROW("Assertion failed."));
         return scope.overloads.at((idx.raw - 1));
     };
-    [[noreturn]] fu_NEVER fail(std::string reason)
+    [[noreturn]] fu_NEVER fail(std::string&& reason)
     {
         fu_THROW(reason);
     };
@@ -3112,6 +3113,9 @@ struct sf_cpp_codegen
 
         if (((mode & M_CONST) && (type.quals & q_trivial)))
             return (std::string("const ") + fwd);
+
+        if (((mode & M_ARGUMENT) && !(type.quals & q_trivial)))
+            return (fwd + std::string("&&"));
 
         return fwd;
     };
@@ -3436,7 +3440,7 @@ struct sf_cpp_codegen
     std::string binding(const s_SolvedNode& node, const bool& doInit)
     {
         const std::string& id = ([&]() -> const std::string& { { const std::string& _ = node.value; if (_.size()) return _; } fail(std::string("")); }());
-        std::string annot = typeAnnot(node.type, (((node.flags & F_MUT) == 0) ? M_CONST : 0));
+        std::string annot = typeAnnot(node.type, ((((node.flags & F_MUT) == 0) ? M_CONST : 0) | (((node.flags & F_ARG) == 0) ? 0 : M_ARGUMENT)));
         std::string head = ((([&]() -> const std::string& { { const std::string& _ = annot; if (_.size()) return _; } fail(std::string("")); }()) + std::string(" ")) + ID(id));
         s_SolvedNode init = (node.items.size() ? node.items.at(LET_INIT) : s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         if ((!doInit || (node.flags & F_ARG)))
@@ -4178,7 +4182,7 @@ std::string compile(const std::string& fname, const std::string& src, s_TEMP_Con
     return cpp;
 }
 
-std::string compile_testcase(std::string src)
+std::string compile_testcase(std::string&& src)
 {
     std::string fname = std::string("testcase");
     if (!(int(src.find(std::string("fn ZERO()"))) >= 0))
