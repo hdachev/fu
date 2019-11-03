@@ -1535,13 +1535,12 @@ struct sf_parse
 inline const int q_mutref = (1 << 0);
 inline const int q_ref = (1 << 1);
 inline const int q_copy = (1 << 2);
-inline const int q_move = (1 << 3);
-inline const int q_trivial = (1 << 4);
-inline const int q_primitive = (1 << 5);
-inline const int q_arithmetic = (1 << 6);
-inline const int q_integral = (1 << 7);
-inline const int q_signed = (1 << 8);
-inline const std::vector<std::string> TAGS = std::vector<std::string> { std::string("mutref"), std::string("ref"), std::string("copy"), std::string("move"), std::string("trivial"), std::string("primitive"), std::string("arithmetic"), std::string("integral"), std::string("signed") };
+inline const int q_trivial = (1 << 3);
+inline const int q_primitive = (1 << 4);
+inline const int q_arithmetic = (1 << 5);
+inline const int q_integral = (1 << 6);
+inline const int q_signed = (1 << 7);
+inline const std::vector<std::string> TAGS = std::vector<std::string> { std::string("mutref"), std::string("ref"), std::string("copy"), std::string("trivial"), std::string("primitive"), std::string("arithmetic"), std::string("integral"), std::string("signed") };
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
@@ -1686,7 +1685,7 @@ void finalizeStruct(const std::string& id, const std::vector<s_StructField>& fie
 int copyOrMove(const int& flags, const std::vector<s_StructField>& fields)
 {
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
-        return q_move;
+        return 0;
 
     return q_copy;
 }
