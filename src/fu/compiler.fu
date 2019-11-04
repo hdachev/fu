@@ -524,10 +524,10 @@ pub fn parse(_fname: string, _tokens: Token[])
     mut _col0       = 0;
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
-    mut _numDollars = 0;
     mut _numReturns = 0;
     mut _implicits  = 0;
     mut _structName = '';
+    mut _dollars    : string[];
 
 
     //
@@ -868,7 +868,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     fn parseFnDecl(): Node
     {
         ////////////////////////////////
-        let numDollars0 = _numDollars;
+        let dollars0    = _dollars;
         let numReturns0 = _numReturns;
         ////////////////////////////////
 
@@ -907,10 +907,10 @@ pub fn parse(_fname: string, _tokens: Token[])
             _fnDepth--;
             _numReturns = numReturns0;
 
-            let numDollars1 = _numDollars;
-            _numDollars = numDollars0;
-            if (numDollars1 != numDollars0)
+            if (_dollars.len > dollars0.len)
                 flags |= F_TEMPLATE;
+
+            _dollars = dollars0;
         }
         ////////////////////////////////
 
@@ -1039,7 +1039,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     {
         mut flags = F_LOCAL;
 
-        let numDollars0 = _numDollars;
+        let numDollars0 = _dollars.len;
 
         if (tryConsume('id', 'using'   )) flags |= F_USING;
         if (tryConsume('id', 'implicit')) flags |= F_IMPLICIT;
@@ -1051,7 +1051,7 @@ pub fn parse(_fname: string, _tokens: Token[])
                     ? parseExpression(P_COMMA)
                     : Node();
 
-        if (numDollars0 != _numDollars)
+        if (numDollars0 != _dollars.len)
             flags |= F_TEMPLATE;
 
         if (flags & F_IMPLICIT)
@@ -1213,8 +1213,11 @@ pub fn parse(_fname: string, _tokens: Token[])
 
     fn parseTypeParam(): Node
     {
-        _numDollars++;
-        return createTypeParam(consume('id').value);
+        let value = consume('id').value;
+        if (!_dollars.has(value))
+            _dollars.push(value);
+
+        return createTypeParam(value);
     }
 
     fn createTypeParam(value: string): Node

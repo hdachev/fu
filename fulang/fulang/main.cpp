@@ -1725,6 +1725,46 @@ void RUN()
     )");
 
 
+    // Let's try something new.
+
+    ZERO(R"(
+
+        struct SolvedNode {
+            value: i32;
+            items: SolvedNode[];
+        };
+
+        fn visitNodes(_v: &mut $V, _n: SolvedNode) {
+
+            fn traverse(v: &mut $V, n: SolvedNode) {
+                v.visit(n);
+                for (mut i = 0; i < n.items.len; i++)
+                    traverse(v, n.items[i]);
+            }
+
+            traverse(_v, _n);
+        };
+
+        struct Visitor {
+            sum: i32;
+        };
+
+        fn visit(using v: &mut Visitor, node: SolvedNode) {
+            sum += node.value;
+        };
+
+        fn ZERO(): i32 {
+            let tree = SolvedNode(3,
+                [ SolvedNode(5), SolvedNode(7) ]);
+
+            mut myVisitor: Visitor;
+            myVisitor.visitNodes(tree);
+            return myVisitor.sum - 15;
+        };
+
+    )");
+
+
     //
 
     saySomethingNice();

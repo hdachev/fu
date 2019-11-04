@@ -767,10 +767,10 @@ struct sf_parse
     int _col0 = 0;
     int _precedence = fu_CLONE(P_RESET);
     int _fnDepth = 0;
-    int _numDollars = 0;
     int _numReturns = 0;
     int _implicits = 0;
     std::string _structName = std::string("");
+    std::vector<std::string> _dollars {};
     [[noreturn]] fu_NEVER fail(std::string&& reason)
     {
         const s_Token& here = _tokens.at(_idx);
@@ -1000,7 +1000,7 @@ struct sf_parse
     };
     s_Node parseFnDecl()
     {
-        const int numDollars0 = fu_CLONE(_numDollars);
+        std::vector<std::string> dollars0 = fu_CLONE(_dollars);
         const int numReturns0 = fu_CLONE(_numReturns);
         s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume(std::string("id"), std::string("")); if (_) return _; } return tryConsume(std::string("op"), std::string("")); }());
         consume(std::string("op"), std::string("("));
@@ -1021,11 +1021,10 @@ struct sf_parse
         {
             _fnDepth--;
             _numReturns = numReturns0;
-            const int numDollars1 = fu_CLONE(_numDollars);
-            _numDollars = numDollars0;
-            if ((numDollars1 != numDollars0))
+            if ((int(_dollars.size()) > int(dollars0.size())))
                 flags |= F_TEMPLATE;
 
+            _dollars = dollars0;
         };
         return make(std::string("fn"), items, flags, name.value);
     };
@@ -1121,7 +1120,7 @@ struct sf_parse
     s_Node parseLet()
     {
         int flags = fu_CLONE(F_LOCAL);
-        const int numDollars0 = fu_CLONE(_numDollars);
+        const int numDollars0 = int(_dollars.size());
         if (tryConsume(std::string("id"), std::string("using")))
             flags |= F_USING;
 
@@ -1134,7 +1133,7 @@ struct sf_parse
         std::string id = consume(std::string("id"), std::string("")).value;
         s_Node type = tryPopTypeAnnot();
         s_Node init = (tryConsume(std::string("op"), std::string("=")) ? parseExpression(fu_CLONE(P_COMMA)) : s_Node { std::string{}, int{}, std::string{}, std::vector<s_Node>{}, s_Token{} });
-        if ((numDollars0 != _numDollars))
+        if ((numDollars0 != int(_dollars.size())))
             flags |= F_TEMPLATE;
 
         if ((flags & F_IMPLICIT))
@@ -1269,8 +1268,11 @@ struct sf_parse
     };
     s_Node parseTypeParam()
     {
-        _numDollars++;
-        return createTypeParam(consume(std::string("id"), std::string("")).value);
+        std::string value = consume(std::string("id"), std::string("")).value;
+        if (!([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, value); return _1 != _N; } (_dollars)))
+            _dollars.push_back(value);
+
+        return createTypeParam(value);
     };
     s_Node createTypeParam(const std::string& value)
     {
