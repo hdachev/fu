@@ -2840,10 +2840,9 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
         //////////////////////////
         {
-            let current_fn0     = _current_fn;
-            let scope0          = Scope_push(_scope);
+            let scope0 = Scope_push(_scope);
 
-            _current_fn = out;
+            SWAP(_current_fn, out);
             let outItems: &mut SolvedNode[] = _current_fn.items;
 
             // Arg decls.
@@ -2911,8 +2910,8 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             //
             /////////////////////////////////////////////////////
 
-            out                 = _current_fn;
-            _current_fn         = current_fn0;
+            SWAP(_current_fn, out);
+
             Scope_pop(_scope, scope0);
         }
         //////////////////////////
@@ -3042,20 +3041,21 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         }
 
         ////////////////////////////////
-        let scope0      = Scope_push(_scope);
-        let typeParams0 = _typeParams;
-        let current_fn0 = _current_fn;
+        mut current_fn0: SolvedNode;
 
-        _typeParams     = typeParams;
-        _current_fn     = SolvedNode;
+        SWAP(_current_fn, current_fn0);
+        SWAP(_typeParams, typeParams);
+
+        let scope0 = Scope_push(_scope);
         ////////////////////////////////
 
         let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
         specialized || fail();
 
         ////////////////////////////////
-        _current_fn     = current_fn0;
-        _typeParams     = typeParams0;
+        SWAP(_current_fn, current_fn0);
+        SWAP(_typeParams, typeParams);
+
         Scope_pop(_scope, scope0);
         ////////////////////////////////
 
@@ -4042,7 +4042,7 @@ fn false(): bool __native_pure;
 fn   =(a: &mut $T, b: $T): &mut $T __native_pure;
 fn ||=(a: &mut $T, b: $T): &mut $T __native_pure;
 
-fn swap(a: &mut $T, b: &mut $T): void __native_pure;
+fn SWAP(a: &mut $T, b: &mut $T): void __native_pure;
 
 
 // Arrays.
@@ -5034,6 +5034,9 @@ pub fn cpp_codegen(
         if (id == 'STEAL' && items.len == 1)
             return cgSteal(items[0]);
 
+        if (id == 'SWAP' && items.len == 2)
+            return cgSwap(items);
+
         if (id == 'print')
             return cgPrint(items);
 
@@ -5653,6 +5656,12 @@ struct fu_DEFAULT { static inline const T value {}; };
     {
         include('<utility>');
         return 'std::move(' + src + ')';
+    }
+
+    fn cgSwap(items: string[]): string
+    {
+        include('<utility>');
+        return 'std::swap(' + items.join(', ') + ')';
     }
 
     fn cgClone(src: string): string
