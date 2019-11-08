@@ -1673,6 +1673,20 @@ void RUN()
         };
     )");
 
+    FAIL(R"(
+        struct ScopeIdx { raw: i32; };
+        fn thing(x: i32) x;
+        mut _return_scope: ScopeIdx;
+
+        fn hey(x: i32) {
+            let scope0 = thing(x);
+            _return_scope = scope0; //overload
+            return _return_scope.raw;
+        }
+
+        return hey(0);
+    )");
+
 
     // Various templating fallacies.
     //
