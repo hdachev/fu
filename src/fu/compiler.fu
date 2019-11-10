@@ -3004,17 +3004,15 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             // All fnargs are refereable.
             inType.quals |= q_ref;
 
-            if (argNode.flags & F_TEMPLATE)
+            // Type check.
+            let annot = argNode.items[LET_TYPE];
+            if (annot)
             {
-                let annot = argNode.items[LET_TYPE];
-                if (annot)
-                {
-                    let ok = inType && trySolveTypeParams(
-                        annot, inType, typeParams);
+                let ok = inType && trySolveTypeParams(
+                    annot, inType, typeParams);
 
-                    if (!ok)
-                        return SolvedNode();
-                }
+                if (!ok)
+                    return SolvedNode();
             }
         }
 

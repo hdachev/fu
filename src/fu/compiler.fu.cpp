@@ -2425,16 +2425,13 @@ struct sf_runSolver
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail(((std::string("Type param name collision with argument: `") + argName) + std::string("`."))); }()) = inType;
             };
             inType.quals |= q_ref;
-            if ((argNode.flags & F_TEMPLATE))
+            const s_Node& annot = argNode.items.at(LET_TYPE);
+            if (annot)
             {
-                const s_Node& annot = argNode.items.at(LET_TYPE);
-                if (annot)
-                {
-                    const bool ok = (inType && trySolveTypeParams(annot, fu_CLONE(inType), typeParams));
-                    if (!ok)
-                        return s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
+                const bool ok = (inType && trySolveTypeParams(annot, fu_CLONE(inType), typeParams));
+                if (!ok)
+                    return s_SolvedNode { std::string{}, int{}, std::string{}, std::vector<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
 
-                };
             };
         };
         int caseIdx = -1;
