@@ -48,6 +48,26 @@ void cow_vec_test(int cap0, int cap1)
         && v2.m_size == cap1 - 1);
 
     //
+    v2 = v1;
+    assert(v2[1] == v1[1]);
+    assert(v2.m_data == v1.m_data);
+
+    v2.insert(1, 99);
+    assert(v2[1] != v1[1]);
+    assert(v2.m_size == v1.m_size + 1);
+    assert(v2.m_data != v1.m_data + 1);
+
+    v1.insert(1, 99);
+    assert(v2[1] == v1[1] && v1[1] == 99);
+    assert(v2.m_size == v1.m_size);
+
+    //
+    v2 = v1;
+    v2.pop();
+    assert(v2.m_size == v1.m_size - 1);
+
+    v1.pop();
+    assert(v1.m_size == v2.m_size);
 }
 
 struct NonTriv
@@ -57,6 +77,16 @@ struct NonTriv
     NonTriv(int x)
         : x (x)
     {}
+
+    bool operator==(const NonTriv& other) const
+    {
+        return x == other.x;
+    }
+
+    bool operator!=(const NonTriv& other) const
+    {
+        return x != other.x;
+    }
 
     ~NonTriv() {}
 };

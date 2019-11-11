@@ -261,7 +261,7 @@ struct fu_COW_VEC
         }
     }
 
-    void _mut__erase_range(int from, int to, int num_uninit)
+    void _mut__non_empty__erase_range(int from, int to, int num_uninit)
     {
         int old_size = m_size;
         int new_size = old_size - (from - to) + num_uninit;
@@ -285,7 +285,7 @@ struct fu_COW_VEC
             {
                 // MOVE_BY_MEMCPY
                 std::memmove(start + num_uninit, end,
-                    size_t(old_size - end) * sizeof(T));
+                    size_t(old_size - to) * sizeof(T));
 
                 m_size = new_size;
             }
@@ -469,6 +469,22 @@ struct fu_COW_VEC
         m_size += 4;
     }
 
+    inline void resize(int new_size)
+    {
+        if (new_size > m_size)
+        {
+            _mut__grow_if_needed(new_size - m_size);
+
+            T* end = m_data + new_size;
+            for (T* i = m_data + m_size; i < end; i++)
+                new (i) T();
+        }
+        else
+        {
+            shrink(new_size);
+        }
+    }
+
 
     // Public, shrinking.
 
@@ -494,7 +510,7 @@ struct fu_COW_VEC
         if (end <= start)
             return; // m_data:null & dont-detach on noop.
 
-        _mut__erase_range(start, end, 0);
+        _mut__non_empty__erase_range(start, end, 0);
     }
 
     inline void erase_range_insert(int start, int end, T&& item)
@@ -504,9 +520,9 @@ struct fu_COW_VEC
         start = start > 0     ? start : 0;
         end   = end <= m_size ? end   : m_size;
         if (end <= start)
-            return push(item);
+            return push(std::move(item));
 
-        _mut__erase_range(start, end, 1);
+        _mut__non_empty__erase_range(start, end, 1);
 
         new (m_data + start) T(item);
     }
@@ -517,18 +533,28 @@ struct fu_COW_VEC
 
         idx = idx > 0 ? idx : 0;
         if (idx >= m_size)
-            return push(item);
+            return push(std::move(item));
 
-        _mut__erase_range(idx, idx, 1);
+        _mut__non_empty__erase_range(idx, idx, 1);
 
         new (m_data + idx) T(item);
+    }
+
+    inline void unshift(T&& item)
+    {
+        if (m_size <= 0)
+            return push(std::move(item));
+
+        _mut__non_empty__erase_range(0, 0, 1);
+        new (m_data) T(item);
     }
 
     inline void shift()
     {
         assert(m_size > 0);
 
-        _mut__erase_range(0, 1, 0);
+        if (m_size > 0)
+            _mut__non_empty__erase_range(0, 1, 0);
     }
 
 
