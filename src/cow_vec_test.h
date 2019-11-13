@@ -62,6 +62,13 @@ void cow_vec_test(int cap0, int cap1)
     assert(v2.m_size == v1.m_size);
 
     //
+    v2 = { v1.begin(), v1.end() };
+
+    assert(v1.m_size == v2.m_size && v1.m_data != v2.m_data);
+    for (int i = 0; i < v1.m_size; i++)
+        assert(v1[i] == v2[i]);
+
+    //
     v2 = v1;
     v2.pop();
     assert(v2.m_size == v1.m_size - 1);

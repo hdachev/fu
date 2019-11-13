@@ -98,6 +98,25 @@ struct fu_COW_VEC
 
     fu_COW_VEC() = default;
 
+    template <typename U>
+    fu_COW_VEC(const U* begin, const U* end)
+    {
+        size_t len = end - begin;
+        int new_size = int(len);
+        assert(end >= begin && begin + len == end && size_t(new_size) == len);
+
+        int new_capa = new_size;
+
+        T* new_data;
+        fu_ARC::alloc(new_data, new_capa);
+
+        _copy_construct_range(new_data, begin, new_size);
+
+        m_data = new_data;
+        m_size = new_size;
+        m_capa = new_capa;
+    }
+
 
     // Deallocation.
 
