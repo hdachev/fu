@@ -1043,26 +1043,94 @@ void RUN()
         return test(arr);
     )");
 
-    ZERO(R"(
-        mut arr = [0, 1, 2, 3, 4];
-        arr.unshift(5); // expect_lambda
 
-        return arr[2] + arr[5] - arr[0];
-    )");
+    // A basic testing setup for array ops,
+    //  that can be flipped around for making sure
+    //   e.g. copy-on-write behaves as expected.
 
-    ZERO(R"(
-        mut arr = [0, 1, 2, 3, 4];
-        arr.insert(1, 5); // expect_lambda
+    const auto& ARROPS = [&](
+        std::string literal,
+        std::string operation,
+        std::string assertion)
+    {
+        assertion = "(" + assertion + ")";
 
-        return arr[2] + arr[5] - arr[1];
-    )");
+        const auto& EXPR = [&](std::string varname) -> std::string
+        {
+            std::string ret = assertion;
+            str_replace_all(ret, "@", varname);
+            return ret;
+        };
 
-    ZERO(R"(
-        mut arr = [0, 1, 2, 3, 100];
-        arr.splice(1, 3); // expect_lambda
+        std::string src;
 
-        return arr.len() + arr[0] + arr[1] - 102;
-    )");
+        src += "\n";
+        src += "\n    {";
+        src += "\n        mut arr0 = [" + literal + "];";
+        src += "\n        arr0." + operation + "; // expect_lambda";
+        src += "\n        if (" + EXPR("arr0") + " != 0) return 13;";
+        src += "\n    }";
+        src += "\n";
+        src += "\n    mut orig = [" + literal + "];";
+        src += "\n";
+        src += "\n    {";
+        src += "\n        mut arr1 = CLONE(orig);";
+        src += "\n        arr1." + operation + "; // expect_lambda";
+        src += "\n        if (" + EXPR("arr1") + " != 0) return 17;";
+        src += "\n    }";
+        src += "\n";
+        src += "\n    {";
+        src += "\n        mut arr2 = STEAL(orig);";
+        src += "\n        if (orig.len) return 19;";
+        src += "\n        arr2." + operation + "; // expect_lambda";
+        src += "\n        if (" + EXPR("arr2") + " != 0) return 23;";
+        src += "\n    }";
+        src += "\n";
+        src += "\n    return 0;";
+        src += "\n";
+
+        ZERO(src);
+    };
+
+    ARROPS( "0,1,2,3,4",
+            "push(5)",
+            "@[1] + @[4] - @[5]");
+
+    ARROPS( "0,1,2,3,4",
+            "insert(5, 5)",
+            "@[1] + @[4] - @[5]");
+
+    ARROPS( "0,1,2,3,4",
+            "pop()",
+            "@[1] + @[3] - @.len");
+
+    ARROPS( "0,1,2,3,4",
+            "splice(4, 1)",
+            "@[1] + @[3] - @.len");
+
+    ARROPS( "0,1,2,3,4",
+            "unshift(5)",
+            "@[2] + @[5] - @[0]");
+
+    ARROPS( "0,1,2,3,4",
+            "insert(0, 5)",
+            "@[2] + @[5] - @[0]");
+
+    // We don't seem to have shifting yet.
+    // ARROPS( "0,1,2,3,4",
+    //         "shift()",
+    //         "@[0] + @[2] - @[3]");
+
+    ARROPS( "0,1,2,3,4",
+            "insert(1, 5)",
+            "@[2] + @[5] - @[1]");
+
+    ARROPS( "0,1,2,3,100",
+            "splice(1, 3)",
+            "@.len + @[0] + @[1] - 102");
+
+
+    //
 
     ZERO(R"(
         let OPERATORS = [ '+', '-', '*', '/' ];
