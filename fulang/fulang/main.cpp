@@ -166,7 +166,7 @@ std::string get_PRJDIR()
     std::string path = HOME;
     path += "fu/";
 
-    auto bytes = getFileSize(path + "src/fu/compiler.fu");
+    auto bytes = getFileSize(path + "src/compiler.fu");
     if (bytes < 10000)
     {
         std::cout << "Bad compiler.fu: " << bytes << std::endl;
@@ -314,9 +314,9 @@ std::string build_and_run(const std::string& cpp)
 #endif
 
 #ifndef MUTE
-#include "../../src/fu/compiler.fu.cpp"
+#include "../../src/compiler.fu.cpp"
 
-#include "../../src/cow_vec_test.h"
+#include "../../lib/cow_vec_test.h"
 
 
 // So lets go.
@@ -422,7 +422,7 @@ void FAIL(const std::string& src)
 void FU_FILE(const std::string& fname)
 {
     std::string path = PRJDIR;
-    path += "src/fu/" + fname;
+    path += "src/" + fname;
 
     std::cout << "COMPILE " << fname << std::endl;
 
