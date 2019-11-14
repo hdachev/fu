@@ -255,7 +255,13 @@ public:
 
 //
 
-static const std::string GCC_CMD = "g++ -std=c++1z -O3 -pedantic-errors -Wall -Wextra -Werror -Wno-parentheses-equality ";
+static const std::string GCC_CMD = "g++ -std=c++1z -O3 "
+
+        // Opt-in.
+        "-pedantic-errors -Wall -Wextra -Werror "
+
+        // Opt-out.
+        "-Wno-parentheses-equality ";
 
 static bool NEW_STUFF = false;
 
@@ -264,19 +270,21 @@ std::string build_and_run(const std::string& cpp)
     int code = 0;
     std::string out;
 
-    const auto& ERROR = [&]()
-    {
-        if (out.empty())
-            out = "[ EXIT CODE " + std::to_string(code) + " ]";
-
-        return std::move(out);
-    };
-
     auto hash = hash_src(cpp);
     std::string F = PRJDIR
         + "build.cpp/tea-"  + std::to_string(hash.v0)
         + "-"               + std::to_string(hash.v1)
         + "-"               + std::to_string(cpp.size());
+
+    const auto& ERROR = [&]()
+    {
+        writeFile((PRJDIR + "build.cpp/failing-testcase.cpp").c_str(), cpp);
+
+        if (out.empty())
+            out = "[ EXIT CODE " + std::to_string(code) + " ]";
+
+        return std::move(out);
+    };
 
     if (getFileSize(F + ".exe") <= 0)
     {
@@ -307,13 +315,13 @@ std::string build_and_run(const std::string& cpp)
 }
 
 
-// #define MUTE
+// #define ISOLATE_FAILING_TESTCASE
 
-#ifdef MUTE
-#include "../../build.cpp/fail.cpp"
+#ifdef ISOLATE_FAILING_TESTCASE
+#include "../../build.cpp/failing-testcase.cpp"
 #endif
 
-#ifndef MUTE
+#ifndef ISOLATE_FAILING_TESTCASE
 #include "../../src/compiler.fu.cpp"
 
 #include "../../lib/cow_vec_test.h"
@@ -1041,6 +1049,13 @@ void RUN()
         }
 
         return test(arr);
+    )");
+
+    ZERO(R"(
+        let x = 5;
+        mut arr = [ -5 ];
+        arr.push(x);
+        return arr[0] + arr[1];
     )");
 
 

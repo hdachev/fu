@@ -1,3 +1,4 @@
+#include <new>
 #include <atomic>
 #include <type_traits>
 #include <cstdlib>
@@ -18,7 +19,7 @@ struct alignas(16) fu_ARC
 
     void dealloc(size_t bytes)
     {
-        assert((int)bytes == DEBUG_bytes
+        assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
 
         std::free((void*)this);
@@ -97,25 +98,6 @@ struct fu_COW_VEC
     int m_capa = 0;
 
     fu_COW_VEC() = default;
-
-    template <typename U>
-    fu_COW_VEC(const U* begin, const U* end)
-    {
-        size_t len = end - begin;
-        int new_size = int(len);
-        assert(end >= begin && begin + len == end && size_t(new_size) == len);
-
-        int new_capa = new_size;
-
-        T* new_data;
-        fu_ARC::alloc(new_data, new_capa);
-
-        _copy_construct_range(new_data, begin, new_size);
-
-        m_data = new_data;
-        m_size = new_size;
-        m_capa = new_capa;
-    }
 
 
     // Deallocation.
@@ -283,7 +265,7 @@ struct fu_COW_VEC
     void _mut__non_empty__erase_range(int from, int to, int num_uninit)
     {
         int old_size = m_size;
-        int new_size = old_size - (from - to) + num_uninit;
+        int new_size = old_size - to + from + num_uninit;
 
         assert(m_data && old_size > 0);
 
@@ -348,7 +330,7 @@ struct fu_COW_VEC
                 _copy_construct_range(
                     new_data, m_data, from);
 
-            int rest = to + num_uninit;
+            int rest = from + num_uninit;
             if (rest < new_size)
                 _copy_construct_range(
                     new_data + rest, m_data + to, new_size - rest);
@@ -439,6 +421,16 @@ struct fu_COW_VEC
     inline const T* begin() const { return m_data;          }
     inline const T* end()   const { return m_data + m_size; }
 
+    inline int find(const T& item) const
+    {
+        const T* end = m_data + m_size;
+        for (const T* i = m_data; i < end; i++)
+            if (*i == item)
+                return int(i - m_data);
+
+        return -1;
+    }
+
 
     // Public, mutating.
 
@@ -520,6 +512,11 @@ struct fu_COW_VEC
 
     // Public, splice variants.
 
+    inline void splice(int start, int count)
+    {
+        return erase_range(start, start + count);
+    }
+
     inline void erase_range(int start, int end)
     {
         assert(start >= 0 && end >= start && end <= m_size);
@@ -548,7 +545,7 @@ struct fu_COW_VEC
 
     inline void insert(int idx, T&& item)
     {
-        assert(idx >= 0 && idx < m_size);
+        assert(idx >= 0 && idx <= m_size);
 
         idx = idx > 0 ? idx : 0;
         if (idx >= m_size)
@@ -579,17 +576,16 @@ struct fu_COW_VEC
 
     //
 
-    inline T* mut_data()
+    inline T* mut_begin()
     {
         _mut__ensure_unique();
         return m_data;
     }
 
-    inline T* mut_begin()
+    inline T* mut_end()
     {
-        return mut_data();
+        return m_data + m_size;
     }
-
 
 
     //
@@ -601,11 +597,63 @@ struct fu_COW_VEC
         return m_data[idx];
     }
 
-    inline T& mut_ref(int idx)
+    inline T& mutref(int idx)
     {
         assert(idx >= 0 && idx < m_size);
 
         _mut__ensure_unique();
         return m_data[idx];
+    }
+
+
+    // ------------------------------------------------
+
+    template <int new_size>
+    struct INIT
+    {
+        T data[new_size];
+
+        INIT(const INIT&) = delete;
+        INIT(INIT&&) = default;
+    };
+
+    template <int new_size>
+    inline fu_COW_VEC(INIT<new_size>&& array) noexcept
+    {
+        int new_capa = new_size;
+
+        T* new_data;
+        fu_ARC::alloc(new_data, new_capa);
+
+        // Move over.
+        new ((INIT<new_size>*)new_data)
+            INIT<new_size>(static_cast<INIT<new_size>&&>(array));
+
+        m_data = new_data;
+        m_size = new_size;
+        m_capa = new_capa;
+    }
+
+
+    // A lame ass copy constructor to meet the current fu_SLICE impl,
+    //  we really don't want to slice like this,
+    //   pretty terrible.
+
+    fu_COW_VEC(const T* begin, const T* end)
+    {
+        size_t len = end - begin;
+        int new_size = int(len);
+        assert(end >= begin && begin + len == end && size_t(new_size) == len);
+
+        int new_capa = new_size;
+
+        T* new_data;
+        fu_ARC::alloc(new_data, new_capa);
+
+        _copy_construct_range(new_data, begin, new_size);
+
+        m_data = new_data;
+        m_size = new_size;
+        m_capa = new_capa;
     }
 };

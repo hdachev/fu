@@ -4253,10 +4253,10 @@ pub fn cpp_codegen(
 
         if (k == 'array')
         {
-            let item = typeAnnot(tdef.fields[0].type);
+            annotateVector();
 
-            include('<vector>');
-            return 'std::vector<' + item + '>';
+            let item = typeAnnot(tdef.fields[0].type);
+            return 'fu_COW_VEC<' + item + '>';
         }
 
         if (k == 'map')
@@ -4760,8 +4760,13 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        let annot = typeAnnot(node.type);
-        return annot + ' { ' + items.join(', ') + ' }';
+        let itemType = tryClear_array(node.type) || fail();
+        let itemAnnot = typeAnnot(itemType);
+
+        let arrayAnnot = typeAnnot(node.type);
+        return arrayAnnot + ' { ' + arrayAnnot
+            + '::INIT<' + items.len + '> { '
+                + items.join(', ') + ' } }';
     }
 
     fn cgDefaultInit(node: SolvedNode): string
@@ -4841,7 +4846,11 @@ pub fn cpp_codegen(
                         return items[0] + '.at(' + items[1] + ')';
                     }
 
-                    return items[0] + '.at(' + items[1] + ')';
+                    // The new cow_vec is here.
+                    if (head.type.quals & q_mutref)
+                        return items[0] + '.mutref(' + items[1] + ')';
+
+                    return items[0] + '[' + items[1] + ']';
                 }
 
                 // This is hellish but should cover our asses for a little while -
@@ -4905,28 +4914,34 @@ pub fn cpp_codegen(
         }
 
         if (id == 'len' && items.len == 1)
+        {
+            // No point in the extra fn.
+            if (type_isArray(node.items[0].type))
+                return 'int(' + items[0] + '.m_size)';
+
             return 'int(' + items[0] + '.size())';
+        }
 
         if (id == 'push' && items.len == 2)
-            return items[0] + '.push_back(' + items[1] + ')';
+            return items[0] + '.push(' + items[1] + ')';
 
         if (id == 'pop' && items.len == 1)
-            return items[0] + '.pop_back()';
+            return items[0] + '.pop()';
 
         if (id == 'unshift' && items.len == 2)
-            return '([&](auto& _) { _.insert(_.begin(), ' + items[1] + '); } (' + items[0] + '))';
+            return items[0] + '.unshift(' + items[1] + ')';
 
         if (id == 'insert' && items.len == 3)
-            return '([&](auto& _) { _.insert(_.begin() + ' + items[1] + ', ' + items[2] + '); } (' + items[0] + '))';
+            return items[0] + '.insert(' + items[1] + ', ' + items[2] + ')';
 
         if (id == 'splice' && items.len == 3)
-            return '([&](auto& _) { const auto& _0 = _.begin() + ' + items[1] + '; _.erase(_0, _0 + ' + items[2] + '); } (' + items[0] + '))';
+            return items[0] + '.splice(' + items[1] + ', ' + items[2] + ')';
 
         if (id == 'grow' && items.len == 2)
-            return items[0] + '.resize(' + items[1] + ')';
+            return items[0] + '.grow(' + items[1] + ')';
 
         if (id == 'shrink' && items.len == 2)
-            return items[0] + '.resize(' + items[1] + ')';
+            return items[0] + '.shrink(' + items[1] + ')';
 
         if (id == 'resize' && items.len == 2)
             return items[0] + '.resize(' + items[1] + ')';
@@ -4941,7 +4956,7 @@ pub fn cpp_codegen(
                 return 'int(' + items[0] + '.find(' + items[1] + '))';
 
             include('<algorithm>');
-            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N ? int(_1 - _0) : -1; } (' + items[0] + '))';
+            return items[0] + '.find(' + items[1] + ')';
         }
 
         if (id == 'starts' && items.len == 2)
@@ -4960,8 +4975,7 @@ pub fn cpp_codegen(
             if (type_isMap(head.type))
                 return '(' + items[0] + '.count(' + items[1] + ') != 0)';
 
-            include('<algorithm>');
-            return '([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ' + items[1] + '); return _1 != _N; } (' + items[0] + '))';
+            return '(' + items[0] + '.find(' + items[1] + ') != -1)';
         }
 
         if (id == 'slice' && items.len == 3)
@@ -4985,7 +4999,7 @@ pub fn cpp_codegen(
         if (id == 'sort' && items.len == 1)
         {
             include('<algorithm>');
-            return '([&](auto& _) { std::sort(_.begin(), _.end()); } (' + items[0] + '))';
+            return '([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (' + items[0] + '))';
         }
 
         if (id == 'substr' && items.len == 3)
@@ -5094,6 +5108,11 @@ inline void fu_MEMSLIDE(void* dest, void* source)
         return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
     }
 
+    fn annotateVector(): void
+    {
+        include('"../lib/cow_vec.h"');
+    }
+
     fn annotateString(): string
     {
         let STRING = '::string';
@@ -5179,21 +5198,21 @@ template <typename T>
         let CONCAT = '::CONCAT';
         if (!_ffwd.has(CONCAT))
         {
-            include('<vector>');
+            annotateVector();
 
             _ffwd[CONCAT] =
 ////////////////////////////////////
 `
 template <typename T>
-std::vector<T> fu_CONCAT(
-    const std::vector<T>& a,
-    const std::vector<T>& b)
+fu_COW_VEC<T> fu_CONCAT(
+    const fu_COW_VEC<T>& a,
+    const fu_COW_VEC<T>& b)
 {
-    std::vector<T> result;
+    fu_COW_VEC<T> result;
     result.reserve(a.size() + b.size());
 
-    for (const auto& i : a) result.push_back(i);
-    for (const auto& i : b) result.push_back(i);
+    for (const auto& i : a) result.push(i);
+    for (const auto& i : b) result.push(i);
 
     return result;
 }
@@ -5211,13 +5230,13 @@ std::vector<T> fu_CONCAT(
         if (!_ffwd.has(JOIN))
         {
             include('<string>');
-            include('<vector>');
+            annotateVector();
 
             _ffwd[JOIN] =
 ////////////////////////////////////
 `
 inline std::string fu_JOIN(
-    const std::vector<std::string>& vec,
+    const fu_COW_VEC<std::string>& vec,
     const std::string& sep)
 {
     size_t len = 0;
@@ -5255,25 +5274,25 @@ inline std::string fu_JOIN(
         if (!_ffwd.has(SPLIT))
         {
             include('<string>');
-            include('<vector>');
+            annotateVector();
 
             _ffwd[SPLIT] =
 ////////////////////////////////////
 `
-inline std::vector<std::string> fu_SPLIT(
+inline fu_COW_VEC<std::string> fu_SPLIT(
     std::string s,
     const std::string& sep)
 {
-    std::vector<std::string> result;
+    fu_COW_VEC<std::string> result;
 
     size_t next;
     while (int(next = s.find(sep)) >= 0)
     {
-        result.push_back(s.substr(0, next));
+        result.push(s.substr(0, next));
         s = s.substr(next + sep.size());
     }
 
-    result.push_back(s);
+    result.push(static_cast<std::string&&>(s));
     return result;
 }
 `
@@ -5290,20 +5309,20 @@ inline std::vector<std::string> fu_SPLIT(
         if (!_ffwd.has(KEYS))
         {
             include('<unordered_map>');
-            include('<vector>');
+            annotateVector();
 
             _ffwd[KEYS] =
 ////////////////////////////////////
 `
 template <typename K, typename V>
-std::vector<K> fu_KEYS(
+fu_COW_VEC<K> fu_KEYS(
     const std::unordered_map<K, V>& map)
 {
-    std::vector<K> keys;
+    fu_COW_VEC<K> keys;
     keys.reserve(map.size());
 
     for (auto& kv : map)
-        keys.push_back(kv.first);
+        keys.push(kv.first);
 
     return keys;
 }
