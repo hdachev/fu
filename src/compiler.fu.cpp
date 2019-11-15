@@ -3151,9 +3151,9 @@ struct sf_cpp_codegen
         };
         if ((k == std::string("array")))
         {
+            annotateVector();
             std::string item = typeAnnot(tdef.fields.at(0).type, 0);
-            include(std::string("<vector>"));
-            return ((std::string("std::vector<") + item) + std::string(">"));
+            return ((std::string("fu_COW_VEC<") + item) + std::string(">"));
         };
         if ((k == std::string("map")))
         {
@@ -3516,8 +3516,10 @@ struct sf_cpp_codegen
         if (!int(items.size()))
             return cgDefault(node.type);
 
-        std::string annot = typeAnnot(node.type, 0);
-        return (((annot + std::string(" { ")) + fu_JOIN(items, std::string(", "))) + std::string(" }"));
+        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, ctx); if (_) return _; } fail(std::string("")); }());
+        std::string itemAnnot = typeAnnot(itemType, 0);
+        std::string arrayAnnot = typeAnnot(node.type, 0);
+        return (((((((arrayAnnot + std::string(" { ")) + arrayAnnot) + std::string("::INIT<")) + int(items.size())) + std::string("> { ")) + fu_JOIN(items, std::string(", "))) + std::string(" } }"));
     };
     std::string cgDefaultInit(const s_SolvedNode& node)
     {
@@ -3576,7 +3578,10 @@ struct sf_cpp_codegen
 
                         return (((items.at(0) + std::string(".at(")) + items.at(1)) + std::string(")"));
                     };
-                    return (((items.at(0) + std::string(".at(")) + items.at(1)) + std::string(")"));
+                    if ((head.type.quals & q_mutref))
+                        return (((items.at(0) + std::string(".mutref(")) + items.at(1)) + std::string(")"));
+
+                    return (((items.at(0) + std::string("[")) + items.at(1)) + std::string("]"));
                 };
                 if ((id == std::string("=")))
                 {
@@ -3620,28 +3625,32 @@ struct sf_cpp_codegen
             return ((items.at(0) + sep) + ID(id));
         };
         if (((id == std::string("len")) && (int(items.size()) == 1)))
-            return ((std::string("int(") + items.at(0)) + std::string(".size())"));
+        {
+            if (type_isArray(node.items.at(0).type))
+                return ((std::string("int(") + items.at(0)) + std::string(".m_size)"));
 
+            return ((std::string("int(") + items.at(0)) + std::string(".size())"));
+        };
         if (((id == std::string("push")) && (int(items.size()) == 2)))
-            return (((items.at(0) + std::string(".push_back(")) + items.at(1)) + std::string(")"));
+            return (((items.at(0) + std::string(".push(")) + items.at(1)) + std::string(")"));
 
         if (((id == std::string("pop")) && (int(items.size()) == 1)))
-            return (items.at(0) + std::string(".pop_back()"));
+            return (items.at(0) + std::string(".pop()"));
 
         if (((id == std::string("unshift")) && (int(items.size()) == 2)))
-            return ((((std::string("([&](auto& _) { _.insert(_.begin(), ") + items.at(1)) + std::string("); } (")) + items.at(0)) + std::string("))"));
+            return (((items.at(0) + std::string(".unshift(")) + items.at(1)) + std::string(")"));
 
         if (((id == std::string("insert")) && (int(items.size()) == 3)))
-            return ((((((std::string("([&](auto& _) { _.insert(_.begin() + ") + items.at(1)) + std::string(", ")) + items.at(2)) + std::string("); } (")) + items.at(0)) + std::string("))"));
+            return (((((items.at(0) + std::string(".insert(")) + items.at(1)) + std::string(", ")) + items.at(2)) + std::string(")"));
 
         if (((id == std::string("splice")) && (int(items.size()) == 3)))
-            return ((((((std::string("([&](auto& _) { const auto& _0 = _.begin() + ") + items.at(1)) + std::string("; _.erase(_0, _0 + ")) + items.at(2)) + std::string("); } (")) + items.at(0)) + std::string("))"));
+            return (((((items.at(0) + std::string(".splice(")) + items.at(1)) + std::string(", ")) + items.at(2)) + std::string(")"));
 
         if (((id == std::string("grow")) && (int(items.size()) == 2)))
-            return (((items.at(0) + std::string(".resize(")) + items.at(1)) + std::string(")"));
+            return (((items.at(0) + std::string(".grow(")) + items.at(1)) + std::string(")"));
 
         if (((id == std::string("shrink")) && (int(items.size()) == 2)))
-            return (((items.at(0) + std::string(".resize(")) + items.at(1)) + std::string(")"));
+            return (((items.at(0) + std::string(".shrink(")) + items.at(1)) + std::string(")"));
 
         if (((id == std::string("resize")) && (int(items.size()) == 2)))
             return (((items.at(0) + std::string(".resize(")) + items.at(1)) + std::string(")"));
@@ -3656,7 +3665,7 @@ struct sf_cpp_codegen
                 return ((((std::string("int(") + items.at(0)) + std::string(".find(")) + items.at(1)) + std::string("))"));
 
             include(std::string("<algorithm>"));
-            return ((((std::string("([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ") + items.at(1)) + std::string("); return _1 != _N ? int(_1 - _0) : -1; } (")) + items.at(0)) + std::string("))"));
+            return (((items.at(0) + std::string(".find(")) + items.at(1)) + std::string(")"));
         };
         if (((id == std::string("starts")) && (int(items.size()) == 2)))
         {
@@ -3674,8 +3683,7 @@ struct sf_cpp_codegen
             if (type_isMap(head.type))
                 return ((((std::string("(") + items.at(0)) + std::string(".count(")) + items.at(1)) + std::string(") != 0)"));
 
-            include(std::string("<algorithm>"));
-            return ((((std::string("([&](const auto& _) { const auto& _0 = _.begin(); const auto& _N = _.end(); const auto& _1 = std::find(_0, _N, ") + items.at(1)) + std::string("); return _1 != _N; } (")) + items.at(0)) + std::string("))"));
+            return ((((std::string("(") + items.at(0)) + std::string(".find(")) + items.at(1)) + std::string(") != -1)"));
         };
         if (((id == std::string("slice")) && (int(items.size()) == 3)))
         {
@@ -3696,7 +3704,7 @@ struct sf_cpp_codegen
         if (((id == std::string("sort")) && (int(items.size()) == 1)))
         {
             include(std::string("<algorithm>"));
-            return ((std::string("([&](auto& _) { std::sort(_.begin(), _.end()); } (") + items.at(0)) + std::string("))"));
+            return ((std::string("([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (") + items.at(0)) + std::string("))"));
         };
         if (((id == std::string("substr")) && (int(items.size()) == 3)))
         {
@@ -3773,6 +3781,10 @@ struct sf_cpp_codegen
         };
         return ((((((std::string("fu_MEMSLIDE<") + numBytesExpr) + std::string(">(")) + destExpr) + std::string(", ")) + srcExpr) + std::string(")"));
     };
+    void annotateVector()
+    {
+        include(std::string("\"../lib/cow_vec.h\""));
+    };
     std::string annotateString()
     {
         std::string STRING = std::string("::string");
@@ -3812,8 +3824,8 @@ struct sf_cpp_codegen
         std::string CONCAT = std::string("::CONCAT");
         if (!(_ffwd.count(CONCAT) != 0))
         {
-            include(std::string("<vector>"));
-            (_ffwd[CONCAT] = std::string("\ntemplate <typename T>\nstd::vector<T> fu_CONCAT(\n    const std::vector<T>& a,\n    const std::vector<T>& b)\n{\n    std::vector<T> result;\n    result.reserve(a.size() + b.size());\n\n    for (const auto& i : a) result.push_back(i);\n    for (const auto& i : b) result.push_back(i);\n\n    return result;\n}\n"));
+            annotateVector();
+            (_ffwd[CONCAT] = std::string("\ntemplate <typename T>\nfu_COW_VEC<T> fu_CONCAT(\n    const fu_COW_VEC<T>& a,\n    const fu_COW_VEC<T>& b)\n{\n    fu_COW_VEC<T> result;\n    result.reserve(a.size() + b.size());\n\n    for (const auto& i : a) result.push(i);\n    for (const auto& i : b) result.push(i);\n\n    return result;\n}\n"));
         };
         return ((std::string("fu_CONCAT(") + fu_JOIN(items, std::string(", "))) + std::string(")"));
     };
@@ -3823,8 +3835,8 @@ struct sf_cpp_codegen
         if (!(_ffwd.count(JOIN) != 0))
         {
             include(std::string("<string>"));
-            include(std::string("<vector>"));
-            (_ffwd[JOIN] = std::string("\ninline std::string fu_JOIN(\n    const std::vector<std::string>& vec,\n    const std::string& sep)\n{\n    size_t len = 0;\n    for (size_t i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            len += sep.size();\n\n        len += vec[i].size();\n    }\n\n    std::string result;\n    result.reserve(len);\n    for (size_t i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            result += sep;\n\n        result += vec[i];\n    }\n\n    return result;\n}\n"));
+            annotateVector();
+            (_ffwd[JOIN] = std::string("\ninline std::string fu_JOIN(\n    const fu_COW_VEC<std::string>& vec,\n    const std::string& sep)\n{\n    size_t len = 0;\n    for (size_t i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            len += sep.size();\n\n        len += vec[i].size();\n    }\n\n    std::string result;\n    result.reserve(len);\n    for (size_t i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            result += sep;\n\n        result += vec[i];\n    }\n\n    return result;\n}\n"));
         };
         return ((std::string("fu_JOIN(") + fu_JOIN(items, std::string(", "))) + std::string(")"));
     };
@@ -3834,8 +3846,8 @@ struct sf_cpp_codegen
         if (!(_ffwd.count(SPLIT) != 0))
         {
             include(std::string("<string>"));
-            include(std::string("<vector>"));
-            (_ffwd[SPLIT] = std::string("\ninline std::vector<std::string> fu_SPLIT(\n    std::string s,\n    const std::string& sep)\n{\n    std::vector<std::string> result;\n\n    size_t next;\n    while (int(next = s.find(sep)) >= 0)\n    {\n        result.push_back(s.substr(0, next));\n        s = s.substr(next + sep.size());\n    }\n\n    result.push_back(s);\n    return result;\n}\n"));
+            annotateVector();
+            (_ffwd[SPLIT] = std::string("\ninline fu_COW_VEC<std::string> fu_SPLIT(\n    std::string s,\n    const std::string& sep)\n{\n    fu_COW_VEC<std::string> result;\n\n    size_t next;\n    while (int(next = s.find(sep)) >= 0)\n    {\n        result.push(s.substr(0, next));\n        s = s.substr(next + sep.size());\n    }\n\n    result.push(static_cast<std::string&&>(s));\n    return result;\n}\n"));
         };
         return ((std::string("fu_SPLIT(") + fu_JOIN(items, std::string(", "))) + std::string(")"));
     };
@@ -3845,8 +3857,8 @@ struct sf_cpp_codegen
         if (!(_ffwd.count(KEYS) != 0))
         {
             include(std::string("<unordered_map>"));
-            include(std::string("<vector>"));
-            (_ffwd[KEYS] = std::string("\ntemplate <typename K, typename V>\nstd::vector<K> fu_KEYS(\n    const std::unordered_map<K, V>& map)\n{\n    std::vector<K> keys;\n    keys.reserve(map.size());\n\n    for (auto& kv : map)\n        keys.push_back(kv.first);\n\n    return keys;\n}\n"));
+            annotateVector();
+            (_ffwd[KEYS] = std::string("\ntemplate <typename K, typename V>\nfu_COW_VEC<K> fu_KEYS(\n    const std::unordered_map<K, V>& map)\n{\n    fu_COW_VEC<K> keys;\n    keys.reserve(map.size());\n\n    for (auto& kv : map)\n        keys.push(kv.first);\n\n    return keys;\n}\n"));
         };
         return ((std::string("fu_KEYS(") + fu_JOIN(items, std::string(", "))) + std::string(")"));
     };
