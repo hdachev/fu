@@ -130,11 +130,11 @@ struct fu_COW_VEC
                 arc->dealloc(
                     size_t(m_capa) * sizeof(T));
             }
-
-            #ifndef NDEBUG
-            m_data = (T*)1;
-            #endif
         }
+
+        #ifndef NDEBUG
+        m_data = (T*)1;
+        #endif
     }
 
     fu_ARC* _unsafe_arc() noexcept
@@ -387,6 +387,9 @@ struct fu_COW_VEC
         , m_size(x.m_size)
         , m_capa(x.m_capa)
     {
+        assert( x.m_data &&  x.m_size &&  x.m_capa
+            || !x.m_data && !x.m_size && !x.m_capa);
+
         x.m_data = nullptr;
         x.m_size = 0;
         x.m_capa = 0;
@@ -394,6 +397,9 @@ struct fu_COW_VEC
 
     inline fu_COW_VEC& operator=(fu_COW_VEC&& x) noexcept
     {
+        assert( x.m_data &&  x.m_size &&  x.m_capa
+            || !x.m_data && !x.m_size && !x.m_capa);
+
         if (&x != this)
         {
             this->~fu_COW_VEC();
@@ -415,11 +421,17 @@ struct fu_COW_VEC
         , m_size(c.m_size)
         , m_capa(c.m_capa)
     {
+        assert( c.m_data &&  c.m_size &&  c.m_capa
+            || !c.m_data && !c.m_size && !c.m_capa);
+
         _arc_incr();
     }
 
     inline fu_COW_VEC& operator=(const fu_COW_VEC& c) noexcept
     {
+        assert( c.m_data &&  c.m_size &&  c.m_capa
+            || !c.m_data && !c.m_size && !c.m_capa);
+
         if (&c != this)
         {
             this->~fu_COW_VEC();
