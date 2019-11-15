@@ -85,8 +85,12 @@ struct alignas(16) fu_ARC
 
     bool decr()
     {
-        return 0 == m_arc.fetch_add(
+        int prev = m_arc.fetch_add(
             -1, std::memory_order_acq_rel );
+
+        assert(prev >= 0);
+
+        return 0 == prev;
     }
 
     bool unique()
@@ -464,6 +468,11 @@ struct fu_COW_VEC
         return -1;
     }
 
+    inline explicit operator bool() const
+    {
+        return m_size > 0;
+    }
+
 
     // Public, mutating.
 
@@ -720,5 +729,78 @@ struct fu_COW_VEC
     inline void insert(int idx, const T& a)
     {
         return insert(idx, T(a));
+    }
+};
+
+
+//
+
+template <typename K, typename V>
+struct fu_COW_MAP
+{
+    fu_COW_VEC<K> m_keys;
+    fu_COW_VEC<V> m_values;
+
+
+    // Const API.
+
+    int find(const K& key) const
+    {
+        for (int i = 0; i < m_keys.m_size; i++)
+            if (m_keys[i] == key)
+                return i;
+
+        return -1;
+    }
+
+    const V& operator[](const K& key) const
+    {
+        for (int i = 0; i < m_keys.m_size; i++)
+            if (m_keys[i] == key)
+                return m_values[i];
+
+        static const V def {};
+        return def;
+    }
+
+    inline size_t size() const
+    {
+        return m_keys.size();
+    }
+
+    inline explicit operator bool() const
+    {
+        return m_keys.m_size > 0;
+    }
+
+
+    // Mut API.
+
+    V& upsert(const K& key)
+    {
+        // Update?
+        for (int i = 0; i < m_keys.m_size; i++)
+            if (m_keys[i] == key)
+                return m_values.mutref(i);
+
+        // Insert.
+        {
+            int i = m_values.m_size;
+
+            m_keys  .push(key);
+            m_values.push(V {});
+
+            return m_values.mutref(i);
+        }
+    }
+
+    V& mutref(const K& key)
+    {
+        for (int i = 0; i < m_keys.m_size; i++)
+            if (m_keys[i] == key)
+                return m_values.mutref(i);
+
+        assert(false);
+        return *((V*)1);
     }
 };

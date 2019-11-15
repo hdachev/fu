@@ -4264,8 +4264,8 @@ pub fn cpp_codegen(
             let k = typeAnnot(tdef.fields[0].type);
             let v = typeAnnot(tdef.fields[1].type);
 
-            include('<unordered_map>');
-            return 'std::unordered_map<' + k + ', ' + v + '>';
+            annotateMap();
+            return 'fu_COW_MAP<' + k + ', ' + v + '>';
         }
 
         return fail('TODO: ' + tdef.kind);
@@ -4837,15 +4837,6 @@ pub fn cpp_codegen(
                     if (head.type.canon == 'string')
                         return 'std::string(1, ' + items[0] + '.at(' + items[1] + '))';
 
-                    // One does not simply index into a map.
-                    if (type_isMap(head.type))
-                    {
-                        if (!(head.type.quals & q_mutref))
-                            return cgMapConstGet(items[0], items[1]);
-
-                        return items[0] + '.at(' + items[1] + ')';
-                    }
-
                     // The new cow_vec is here.
                     if (head.type.quals & q_mutref)
                         return items[0] + '.mutref(' + items[1] + ')';
@@ -4862,7 +4853,7 @@ pub fn cpp_codegen(
                         if (type_isMap((head.items[0] || fail()).type))
                         {
                             return '(' + cgNode(head.items[0] || fail()) +
-                                '[' + cgNode(head.items[1] || fail()) + '] = ' +
+                                '.upsert(' + cgNode(head.items[1] || fail()) + ') = ' +
                                     items[1] + ')';
                         }
                     }
@@ -4879,7 +4870,7 @@ pub fn cpp_codegen(
                     {
                         if (type_isMap((head.items[0] || fail()).type))
                             left = cgNode(head.items[0] || fail()) +
-                                '[' + cgNode(head.items[1] || fail()) + ']';
+                                '.upsert(' + cgNode(head.items[1] || fail()) + ')';
                     }
 
                     let annot = typeAnnot(head.type);
@@ -4971,9 +4962,6 @@ pub fn cpp_codegen(
             let head = node.items[0] || fail();
             if (head.type.canon == 'string')
                 return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
-
-            if (type_isMap(head.type))
-                return '(' + items[0] + '.count(' + items[1] + ') != 0)';
 
             return '(' + items[0] + '.find(' + items[1] + ') != -1)';
         }
@@ -5106,6 +5094,11 @@ inline void fu_MEMSLIDE(void* dest, void* source)
         }
 
         return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
+    }
+
+    fn annotateMap(): void
+    {
+        include('"../lib/cow_vec.h"');
     }
 
     fn annotateVector(): void
@@ -5308,7 +5301,7 @@ inline fu_COW_VEC<std::string> fu_SPLIT(
         let KEYS = '::KEYS';
         if (!_ffwd.has(KEYS))
         {
-            include('<unordered_map>');
+            annotateMap();
             annotateVector();
 
             _ffwd[KEYS] =
@@ -5316,15 +5309,9 @@ inline fu_COW_VEC<std::string> fu_SPLIT(
 `
 template <typename K, typename V>
 fu_COW_VEC<K> fu_KEYS(
-    const std::unordered_map<K, V>& map)
+    const fu_COW_VEC<K, V>& map)
 {
-    fu_COW_VEC<K> keys;
-    keys.reserve(map.size());
-
-    for (auto& kv : map)
-        keys.push(kv.first);
-
-    return keys;
+    return map.m_keys;
 }
 `
 ////////////////////////////////////
@@ -5332,38 +5319,6 @@ fu_COW_VEC<K> fu_KEYS(
         }
 
         return 'fu_KEYS(' + items.join(', ') + ')';
-    }
-
-    fn cgMapConstGet(map: string, key: string): string
-    {
-        let MAP_CONST_GET = '::MAP_CONST_GET';
-        if (!_ffwd.has(MAP_CONST_GET))
-        {
-            include('<unordered_map>');
-
-            _ffwd[MAP_CONST_GET] =
-////////////////////////////////////
-`
-template <typename K, typename V>
-const V& fu_MAP_CONST_GET(
-    const std::unordered_map<K, V>& map,
-    const K& key)
-{
-    const auto& it = map.find(key);
-    if (it == map.end() )
-    {
-        static const V def {};
-        return def;
-    }
-
-    return it->second;
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_MAP_CONST_GET(' + map + ', ' + key + ')';
     }
 
     fn cgLiteral(node: SolvedNode): string
@@ -5413,7 +5368,7 @@ const V& fu_MAP_CONST_GET(
 
     fn boolWrap(type: Type, src: string): string
     {
-        if (type_isArray(type) || type_isString(type) || type_isMap(type))
+        if (type_isString(type))
             return src + '.size()';
 
         return src;
