@@ -237,13 +237,13 @@ struct fu_COW_VEC
                     if (new_size <= 0)
                     {
                         new_data = nullptr;
+                        new_size = 0;
                         new_capa = 0;
                     }
                     else
                     {
                         new_capa = new_size;
 
-                        T* new_data;
                         fu_ARC::alloc(new_data, new_capa);
 
                         _copy_construct_range(new_data, m_data, new_size);
