@@ -1,3 +1,5 @@
+#pragma once
+
 #include <new>
 #include <atomic>
 #include <type_traits>
@@ -22,8 +24,14 @@ struct alignas(16) fu_ARC
         assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
 
-        DEBUG_bytes = -1;
+        #ifndef NDEBUG
+        DEBUG_bytes = -11;
         DEBUG_self  = nullptr;
+
+        char* start = ((char*)this) + sizeof(fu_ARC);
+        char* end   = start + bytes;
+        for (char* i = start; i < end; i++) *i = 0xfe;
+        #endif
 
         std::free((void*)this);
     }
@@ -122,6 +130,10 @@ struct fu_COW_VEC
                 arc->dealloc(
                     size_t(m_capa) * sizeof(T));
             }
+
+            #ifndef NDEBUG
+            m_data = (T*)1;
+            #endif
         }
     }
 
@@ -382,15 +394,18 @@ struct fu_COW_VEC
 
     inline fu_COW_VEC& operator=(fu_COW_VEC&& x) noexcept
     {
-        this->~fu_COW_VEC();
+        if (&x != this)
+        {
+            this->~fu_COW_VEC();
 
-        m_data = x.m_data;
-        m_size = x.m_size;
-        m_capa = x.m_capa;
+            m_data = x.m_data;
+            m_size = x.m_size;
+            m_capa = x.m_capa;
 
-        x.m_data = nullptr;
-        x.m_size = 0;
-        x.m_capa = 0;
+            x.m_data = nullptr;
+            x.m_size = 0;
+            x.m_capa = 0;
+        }
 
         return *this;
     }
@@ -405,13 +420,16 @@ struct fu_COW_VEC
 
     inline fu_COW_VEC& operator=(const fu_COW_VEC& c) noexcept
     {
-        this->~fu_COW_VEC();
+        if (&c != this)
+        {
+            this->~fu_COW_VEC();
 
-        m_data = c.m_data;
-        m_size = c.m_size;
-        m_capa = c.m_capa;
+            m_data = c.m_data;
+            m_size = c.m_size;
+            m_capa = c.m_capa;
 
-        _arc_incr();
+            _arc_incr();
+        }
 
         return *this;
     }

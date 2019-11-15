@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./cow_vec.h"
 
 template <typename T>
