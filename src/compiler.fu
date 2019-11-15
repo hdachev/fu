@@ -5309,7 +5309,7 @@ inline fu_COW_VEC<std::string> fu_SPLIT(
 `
 template <typename K, typename V>
 fu_COW_VEC<K> fu_KEYS(
-    const fu_COW_VEC<K, V>& map)
+    const fu_COW_MAP<K, V>& map)
 {
     return map.m_keys;
 }
