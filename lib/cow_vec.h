@@ -656,4 +656,25 @@ struct fu_COW_VEC
         m_size = new_size;
         m_capa = new_capa;
     }
+
+
+    // TEMP !!!!
+    // Get rid of this, we shouldn't need this
+    //  but we're broken by the way we do templating now,
+    //   remove to see where shit goes wrong.
+
+    inline void push(const T& a)
+    {
+        return push(T(a));
+    }
+
+    inline void unshift(const T& a)
+    {
+        return unshift(T(a));
+    }
+
+    inline void insert(int idx, const T& a)
+    {
+        return insert(idx, T(a));
+    }
 };
