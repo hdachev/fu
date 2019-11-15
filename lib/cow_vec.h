@@ -22,6 +22,9 @@ struct alignas(16) fu_ARC
         assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
 
+        DEBUG_bytes = -1;
+        DEBUG_self  = nullptr;
+
         std::free((void*)this);
     }
 
@@ -489,6 +492,8 @@ struct fu_COW_VEC
             T* end = m_data + new_size;
             for (T* i = m_data + m_size; i < end; i++)
                 new (i) T();
+
+            m_size = new_size;
         }
         else
         {
@@ -611,15 +616,21 @@ struct fu_COW_VEC
     template <int new_size>
     struct INIT
     {
+        static_assert(new_size > 0);
+
         T data[new_size];
 
         INIT(const INIT&) = delete;
-        INIT(INIT&&) = default;
+        INIT(INIT&&) /* -MOV-CTOR- */ = default;
+
+        INIT& operator=(const INIT&) = delete;
+        INIT& operator=(INIT&&) = delete;
     };
 
     template <int new_size>
     inline fu_COW_VEC(INIT<new_size>&& array) noexcept
     {
+        static_assert(new_size > 0);
         int new_capa = new_size;
 
         T* new_data;
@@ -645,16 +656,19 @@ struct fu_COW_VEC
         int new_size = int(len);
         assert(end >= begin && begin + len == end && size_t(new_size) == len);
 
-        int new_capa = new_size;
+        if (new_size > 0)
+        {
+            int new_capa = new_size;
 
-        T* new_data;
-        fu_ARC::alloc(new_data, new_capa);
+            T* new_data;
+            fu_ARC::alloc(new_data, new_capa);
 
-        _copy_construct_range(new_data, begin, new_size);
+            _copy_construct_range(new_data, begin, new_size);
 
-        m_data = new_data;
-        m_size = new_size;
-        m_capa = new_capa;
+            m_data = new_data;
+            m_size = new_size;
+            m_capa = new_capa;
+        }
     }
 
 
