@@ -3850,8 +3850,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             fail('Needs an explicit STEAL or CLONE.');
 
         if (WARN_ON_IMPLICIT_COPY)
-            if !(node.type.quals & q_trivial)
-                print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
+        {
+            // if !(node.type.quals & q_trivial)
+            //     print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
+        }
 
         // Here we go.
         return SolvedNode(
@@ -4733,7 +4735,7 @@ pub fn cpp_codegen(
 
     fn cgStringLiteral(node: SolvedNode): string
     {
-        include('<string>');
+        annotateString();
 
         // TODO FIX
         mut esc = '';
@@ -4751,7 +4753,7 @@ pub fn cpp_codegen(
             else                esc += c;
         }
 
-        return 'std::string("' + esc + '")';
+        return 'fu_STRING("' + esc + '")';
     }
 
     fn cgArrayLiteral(node: SolvedNode): string
@@ -4835,7 +4837,7 @@ pub fn cpp_codegen(
                 if (id == '[]')
                 {
                     if (head.type.canon == 'string')
-                        return 'std::string(1, ' + items[0] + '.at(' + items[1] + '))';
+                        return 'fu_STRING(' + items[0] + '[' + items[1] + '])';
 
                     // The new cow_vec is here.
                     if (head.type.quals & q_mutref)
@@ -4954,7 +4956,7 @@ pub fn cpp_codegen(
         {
             let head = node.items[0] || fail();
             if (head.type.canon == 'string')
-                return '(' + items[0] + '.rfind(' + items[1] + ', 0) == 0)';
+                return items[0] + '.starts_with(' + items[1] + ')';
         }
 
         if (id == 'has' && items.len == 2)
@@ -4966,35 +4968,19 @@ pub fn cpp_codegen(
             return '(' + items[0] + '.find(' + items[1] + ') != -1)';
         }
 
-        if (id == 'slice' && items.len == 3)
-        {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return '([&]() { size_t _0 = ' + items[1] + '; return ' + items[0] + '.substr(_0, ' + items[2] + ' - _0); } ())';
-
-            return '([&](const auto& _) { const auto& _0 = _.begin() + ' + items[1] +'; const auto& _1 = _.begin() + ' + items[2] + '; return ' + typeAnnot(node.type) + '(_0, _1); } (' + items[0] + '))';
-        }
-
         if (id == 'slice' && items.len == 2)
-        {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return items[0] + '.substr(' + items[1] + ')';
+            return items[0] + '.slice(' + items[1] + ')';
 
-            return '([&](const auto& _) { return ' + typeAnnot(node.type) + '(_.begin() + ' + items[1] + ', _.end()); } (' + items[0] + '))';
-        }
+        if (id == 'slice' && items.len == 3)
+            return items[0] + '.slice(' + items[1] + ', ' + items[2] + ')';
+
+        if (id == 'substr' && items.len == 3)
+            return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
 
         if (id == 'sort' && items.len == 1)
         {
             include('<algorithm>');
             return '([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (' + items[0] + '))';
-        }
-
-        if (id == 'substr' && items.len == 3)
-        {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
         }
 
         if (id == 'char' && items.len == 2)
@@ -5108,24 +5094,9 @@ inline void fu_MEMSLIDE(void* dest, void* source)
 
     fn annotateString(): string
     {
-        let STRING = '::string';
-        if (!_ffwd.has(STRING))
-        {
-            include('<string>');
+        include('"../lib/cow_vec.h"');
 
-            _ffwd[STRING] =
-////////////////////////////////////
-`
-inline std::string operator+(const std::string& a, long long b)
-{
-    return a + std::to_string(b);
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'std::string';
+        return 'fu_COW_STR';
     }
 
     fn annotateNever(): string
@@ -5164,14 +5135,22 @@ struct fu_NEVER
         {
             annotateNever();
             include('<stdexcept>');
+            include('<string>');
 
             _ffwd[THROW] =
 ////////////////////////////////////
 `
+[[noreturn]] fu_NEVER fu_THROW(const char* what)
+{
+    throw std::runtime_error(what);
+}
+
 template <typename T>
 [[noreturn]] fu_NEVER fu_THROW(const T& what)
 {
-    throw std::runtime_error(what);
+    throw std::runtime_error(
+        std::string(
+            what.m_data, size_t(what.m_size)));
 }
 `
 ////////////////////////////////////
@@ -5222,15 +5201,15 @@ fu_COW_VEC<T> fu_CONCAT(
         let JOIN = '::JOIN';
         if (!_ffwd.has(JOIN))
         {
-            include('<string>');
+            annotateString();
             annotateVector();
 
             _ffwd[JOIN] =
 ////////////////////////////////////
 `
-inline std::string fu_JOIN(
-    const fu_COW_VEC<std::string>& vec,
-    const std::string& sep)
+inline fu_COW_STR fu_JOIN(
+    const fu_COW_VEC<fu_COW_STR>& vec,
+    const fu_COW_STR& sep)
 {
     size_t len = 0;
     for (size_t i = 0; i < vec.size(); i++)
@@ -5241,7 +5220,7 @@ inline std::string fu_JOIN(
         len += vec[i].size();
     }
 
-    std::string result;
+    fu_COW_STR result;
     result.reserve(len);
     for (size_t i = 0; i < vec.size(); i++)
     {
@@ -5266,26 +5245,26 @@ inline std::string fu_JOIN(
         let SPLIT = '::SPLIT';
         if (!_ffwd.has(SPLIT))
         {
-            include('<string>');
+            annotateString();
             annotateVector();
 
             _ffwd[SPLIT] =
 ////////////////////////////////////
 `
-inline fu_COW_VEC<std::string> fu_SPLIT(
-    std::string s,
-    const std::string& sep)
+inline fu_COW_VEC<fu_COW_STR> fu_SPLIT(
+    fu_COW_STR s,
+    const fu_COW_STR& sep)
 {
-    fu_COW_VEC<std::string> result;
+    fu_COW_VEC<fu_COW_STR> result;
 
     size_t next;
     while (int(next = s.find(sep)) >= 0)
     {
-        result.push(s.substr(0, next));
-        s = s.substr(next + sep.size());
+        result.push(s.slice(0, next));
+        s = s.slice(next + sep.size());
     }
 
-    result.push(static_cast<std::string&&>(s));
+    result.push(static_cast<fu_COW_STR&&>(s));
     return result;
 }
 `

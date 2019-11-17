@@ -383,6 +383,19 @@ struct fu_COW_VEC
         }
     }
 
+    void _unsafe_first_uninit(int new_size)
+    {
+        assert(m_data == nullptr && m_capa == 0 && m_size == 0);
+
+        T* new_data;
+        int new_capa = new_size;
+        fu_ARC::alloc(new_data, new_capa);
+
+        m_data = new_data;
+        m_size = new_size;
+        m_capa = new_capa;
+    }
+
 
     // Copy & move.
 
@@ -458,6 +471,11 @@ struct fu_COW_VEC
     inline const T* begin() const { return m_data;          }
     inline const T* end()   const { return m_data + m_size; }
 
+    inline explicit operator bool() const
+    {
+        return m_size > 0;
+    }
+
     inline int find(const T& item) const
     {
         const T* end = m_data + m_size;
@@ -468,9 +486,112 @@ struct fu_COW_VEC
         return -1;
     }
 
-    inline explicit operator bool() const
+    inline int find(const fu_COW_VEC<T>& substr) const
     {
-        return m_size > 0;
+        const T* i0 = substr.m_data;
+        const int s = substr.m_size;
+        const T* i1 = substr.m_data + s;
+
+        if (i1 <= i0 || s > m_size)
+            return i1 == i0 ? 0 : -1;
+
+        const T* last = m_data + (m_size - s);
+        const T& head = *i0;
+
+        const T* back = 0;
+
+        for (const T* i = m_data; i <= last; i++)
+        {
+            if (*i != head)
+                continue;
+
+            // Head matches, search rest.
+            back = i++;
+
+            for (const T* search = i0 + 1; search < i1; i++, search++)
+            {
+                if (*i != *search)
+                {
+                    i = back;
+                    goto HEAD_SEARCH;
+                }
+            }
+
+            // Found.
+            return int(back - m_data);
+
+            HEAD_SEARCH:;
+        }
+
+        return -1;
+    }
+
+    inline bool starts_with(const fu_COW_VEC<T>& substr) const
+    {
+        const T* i0 = substr.m_data;
+        const int s = substr.m_size;
+        const T* i1 = substr.m_data + s;
+
+        if (i1 <= i0 || s > m_size)
+            return i1 == i0 ? 0 : -1;
+
+        for (const T* i = m_data; i0 < i1; i++, i0++)
+            if (*i != *i0)
+                return false;
+
+        return true;
+    }
+
+
+    // Equality & comparison.
+
+    inline int memcmp(const fu_COW_VEC<T>& other) const
+    {
+        static_assert(T(1),
+            "memcmp for primitives & numerics only.");
+
+        // Empty/broken/refequal ?
+        int size = m_size > other.m_size ? m_size : other.m_size;
+        if (size <= 0 || m_data == other.m_data)
+            return 0;
+
+        //
+        int cmp = std::memcmp(
+            m_data, other.m_data,
+            size_t(size) * sizeof(T));
+
+        int sdiff = m_size - other.m_size;
+        return cmp ? cmp : sdiff;
+    }
+
+    inline bool operator>(const fu_COW_VEC<T>& other) const
+    {
+        return memcmp(other) > 0;
+    }
+
+    inline bool operator<(const fu_COW_VEC<T>& other) const
+    {
+        return memcmp(other) < 0;
+    }
+
+    inline bool operator>=(const fu_COW_VEC<T>& other) const
+    {
+        return memcmp(other) >= 0;
+    }
+
+    inline bool operator<=(const fu_COW_VEC<T>& other) const
+    {
+        return memcmp(other) <= 0;
+    }
+
+    inline bool operator==(const fu_COW_VEC<T>& other) const
+    {
+        return other.m_size == m_size && memcmp(other) == 0;
+    }
+
+    inline bool operator!=(const fu_COW_VEC<T>& other) const
+    {
+        return other.m_size != m_size || memcmp(other) != 0;
     }
 
 
@@ -617,6 +738,26 @@ struct fu_COW_VEC
             _mut__non_empty__erase_range(0, 1, 0);
     }
 
+    inline void append(const fu_COW_VEC& v)
+    {
+        if (v.m_size <= 0)
+            return;
+
+        _mut__grow_if_needed(v.m_size);
+        _copy_construct_range(m_data + m_size, v.m_data, v.m_size);
+
+        m_size += v.m_size;
+    }
+
+    // inline void append(fu_COW_VEC&& v)
+    // {
+    //     if (v.m_size <= 0)
+    //         return;
+
+    //     // TODO here we should move-by-memcpy instead
+    //     assert(false);
+    // }
+
 
     //
 
@@ -685,29 +826,62 @@ struct fu_COW_VEC
     }
 
 
-    // A lame ass copy constructor to meet the current fu_SLICE impl,
-    //  we really don't want to slice like this,
-    //   pretty terrible.
+    //
 
-    fu_COW_VEC(const T* begin, const T* end)
+    inline fu_COW_VEC<T> slice(int start, int end) const
     {
-        size_t len = end - begin;
-        int new_size = int(len);
-        assert(end >= begin && begin + len == end && size_t(new_size) == len);
+        assert(start >= 0 && end >= start && end <= m_size);
 
-        if (new_size > 0)
+        start = start > 0      ? start : 0;
+        end   = end   < m_size ? end   : m_size;
+
+        fu_COW_VEC<T> res;
+
+        // Empty.
+        if (end <= start)
+            return res;
+
+        // Trivial slices.
+        if constexpr (std::is_trivially_destructible<T>::value)
         {
-            int new_capa = new_size;
-
-            T* new_data;
-            fu_ARC::alloc(new_data, new_capa);
-
-            _copy_construct_range(new_data, begin, new_size);
-
-            m_data = new_data;
-            m_size = new_size;
-            m_capa = new_capa;
+            if (start == 0)
+            {
+                res = *this;
+                res.m_size = end;
+                return res;
+            }
         }
+
+        // Non-slices.
+        else if (start == 0 && end == m_size)
+        {
+            res = *this;
+            res.m_size = end;
+            return res;
+        }
+
+        // Copy.
+        int new_size = end - start;
+
+        res._unsafe_first_uninit(new_size);
+        res._copy_construct_range(res.m_data, m_data + start, new_size);
+
+        return res;
+    }
+
+    inline fu_COW_VEC<T> slice(int start) const
+    {
+        return slice(start, m_size);
+    }
+
+    inline fu_COW_VEC<T> slice() const
+    {
+        return *this;
+    }
+
+    inline fu_COW_VEC<T> substr(int start, int count) const
+    {
+        return slice(start, start + count);
     }
 
 
@@ -804,3 +978,85 @@ struct fu_COW_MAP
         return *((V*)1);
     }
 };
+
+
+// Strings.
+
+typedef fu_COW_VEC<char> fu_COW_STR;
+
+inline fu_COW_STR fu_STRING(const char* cstr)
+{
+    fu_COW_STR vec;
+
+    auto u_size = strlen(cstr);
+    if (u_size)
+    {
+        vec._unsafe_first_uninit(int(u_size));
+        std::memcpy(vec.m_data, cstr, u_size);
+    }
+
+    return vec;
+}
+
+inline fu_COW_STR fu_STRING(char chr)
+{
+    fu_COW_STR vec;
+
+    vec._unsafe_first_uninit(1);
+    vec.m_data[0] = chr;
+
+    return vec;
+}
+
+inline const fu_COW_STR& fu_STRING(const fu_COW_STR& str)
+{
+    return str;
+}
+
+inline fu_COW_STR fu_STRING(long long num)
+{
+    fu_COW_STR vec;
+
+    if (num < 0)
+    {
+        vec.push('-');
+        num = -num;
+    }
+
+    // TODO FIX this is terrible
+    do
+    {
+        int d = num % 10; num /= 10;
+        vec.unshift(char(d + '0'));
+    }
+    while (num);
+
+    return vec;
+}
+
+inline fu_COW_STR fu_STRING(int num)
+{
+    return fu_STRING((long long)num);
+}
+
+template <typename T>
+inline fu_COW_STR operator+(fu_COW_STR&& a, T b)
+{
+    a.append( fu_STRING(b) );
+    return static_cast<fu_COW_STR&&>(a);
+}
+
+template <typename T>
+inline fu_COW_STR operator+(const fu_COW_STR& a0, T b)
+{
+    auto a = a0;
+    a.append( fu_STRING(b) );
+    return a;
+}
+
+template <typename T>
+inline fu_COW_STR& operator+=(fu_COW_STR& a, T b)
+{
+    a.append( fu_STRING(b) );
+    return a;
+}

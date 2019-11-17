@@ -324,7 +324,7 @@ std::string build_and_run(const std::string& cpp)
 #ifndef ISOLATE_FAILING_TESTCASE
 #include "../../src/compiler.fu.cpp"
 
-#include "../../lib/cow_vec_test.h"
+// #include "../../lib/cow_vec_test.h"
 
 
 // So lets go.
@@ -333,7 +333,7 @@ void RUN();
 
 int main(int argc, const char * argv[])
 {
-    cow_vec_tests();
+    // cow_vec_tests();
 
     //
     auto_main();
@@ -399,7 +399,9 @@ void saySomethingNice()
 
 std::string ZERO(const std::string& src)
 {
-    auto cpp = compile_testcase( std::string(src) );
+    auto cpp_fu = compile_testcase( fu_STRING(src.c_str()) );
+
+    auto cpp = std::string(cpp_fu.m_data, size_t(cpp_fu.m_size));
 
     // ...
     auto result = build_and_run(cpp);
@@ -416,7 +418,7 @@ std::string ZERO(const std::string& src)
 void FAIL(const std::string& src)
 {
     try {
-        auto cpp = compile_testcase( std::string(src) );
+        auto cpp = compile_testcase( fu_STRING(src.c_str()) );
     }
     catch (const std::exception& e) {
         // TODO check error message.
@@ -1207,7 +1209,16 @@ void RUN()
     ZERO(R"(
         let str = 'hello ' + 'world';
 
-        return str.len - 11;
+        return str.starts(with: 'hel')
+             ? str.len - 11
+             : 171;
+    )");
+
+    ZERO(R"(
+        let str = 'a' + 1710010;
+
+        return str == 'a1710010'
+             ? 0 : 101;
     )");
 
     ZERO(R"(
