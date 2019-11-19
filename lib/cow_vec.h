@@ -1039,17 +1039,19 @@ inline fu_COW_STR fu_STRING(long long num)
 {
     fu_COW_STR vec;
 
+    // TODO FIX this doesnt work on min-int + its slow
+    int at = 0;
     if (num < 0)
     {
         vec.push('-');
         num = -num;
+        at = 1;
     }
 
-    // TODO FIX this is terrible
     do
     {
         int d = num % 10; num /= 10;
-        vec.unshift(char(d + '0'));
+        vec.insert(at, char(d + '0'));
     }
     while (num);
 
