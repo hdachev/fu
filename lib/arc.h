@@ -8,7 +8,7 @@
 #include <cassert>
 
 
-// Force inliner ... as per Wikipedia!
+// Strong inline directive.
 
 #ifdef _MSC_VER
     #define fu_INLINE __forceinline
@@ -22,6 +22,23 @@
     #endif
 #else
     #define fu_INLINE inline
+#endif
+
+
+// Anti-bloat.
+
+#ifdef _MSC_VER
+    #define fu_NO_INL __declspec(noinline)
+#elif defined(__GNUC__)
+    #define fu_NO_INL __attribute__((noinline))
+#elif defined(__CLANG__)
+    #if __has_attribute(noinline)
+        #define fu_NO_INL __attribute__((noinline))
+    #else
+        #define fu_NO_INL
+    #endif
+#else
+    #define fu_NO_INL
 #endif
 
 
@@ -54,7 +71,7 @@ struct alignas(16) fu_ARC
     inline static fu_DEBUG_CNTDWN DEBUG_total;
     #endif
 
-    void dealloc(size_t bytes)
+    fu_NO_INL void dealloc(size_t bytes)
     {
         assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
@@ -73,7 +90,7 @@ struct alignas(16) fu_ARC
         std::free((void*)this);
     }
 
-    static char* alloc(size_t& inout_bytes)
+    fu_NO_INL static char* alloc(size_t& inout_bytes)
     {
         size_t bytes = inout_bytes;
 
@@ -116,26 +133,22 @@ struct alignas(16) fu_ARC
         inout_count     = bytes / sizeof(T);
     }
 
-    void incr()
-    {
+    void incr() {
         m_arc.fetch_add(
             +1, std::memory_order_relaxed );
     }
 
-    bool decr()
-    {
+    bool decr() {
         int prev = m_arc.fetch_add(
             -1, std::memory_order_acq_rel );
 
         assert(prev >= 0);
-
         return 0 == prev;
     }
 
-    bool unique()
-    {
+    fu_INLINE bool unique() const {
         return 0 == m_arc.load(
-            std::memory_order_relaxed);
+            std::memory_order_relaxed );
     }
 };
 
