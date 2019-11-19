@@ -8,6 +8,22 @@
 #include <cassert>
 
 
+//
+
+#ifndef NDEBUG
+
+struct fu_DEBUG_CNTDWN
+{
+    std::atomic_int m_cnt;
+
+    ~fu_DEBUG_CNTDWN() {
+        assert(m_cnt == 0);
+    }
+};
+
+#endif
+
+
 // Putting the nasty shit here.
 
 struct alignas(16) fu_ARC
@@ -17,6 +33,8 @@ struct alignas(16) fu_ARC
     #ifndef NDEBUG
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
+
+    inline static fu_DEBUG_CNTDWN DEBUG_total;
     #endif
 
     void dealloc(size_t bytes)
@@ -25,6 +43,8 @@ struct alignas(16) fu_ARC
                   && this == DEBUG_self);
 
         #ifndef NDEBUG
+        DEBUG_total.m_cnt -= (int)DEBUG_bytes;
+
         DEBUG_bytes = -11;
         DEBUG_self  = nullptr;
 
@@ -58,6 +78,8 @@ struct alignas(16) fu_ARC
         #ifndef NDEBUG
         header->DEBUG_bytes = (int)bytes;
         header->DEBUG_self  = mem;
+
+        DEBUG_total.m_cnt  += (int)bytes;
         #endif
 
         inout_bytes = bytes;
