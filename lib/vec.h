@@ -29,36 +29,36 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    fu_INLINE bool big() const {
+    fu_INL bool big() const {
         if constexpr (small_capa) return big_capa & 0x7000000;
         else                      return big_data;
     }
 
-    fu_INLINE i32 size() const {
+    fu_INL i32 size() const {
         i32 small_size = big_capa >> 27;
         return big() ? big_size : small_size;
     }
 
-    fu_INLINE const T* data() const { return big() ? big_data : (T*)this; }
-    fu_INLINE       T* data()       { return big() ? big_data : (T*)this; }
+    fu_INL const T* data() const { return big() ? big_data : (T*)this; }
+    fu_INL       T* data()       { return big() ? big_data : (T*)this; }
 
     /////////////////////////////////////////////
 
-    fu_INLINE i32 unique_capa() const {
+    fu_INL i32 unique_capa() const {
         return big() ? big_capa : small_capa;
     }
 
-    fu_INLINE i32 shared_capa() const {
+    fu_INL i32 shared_capa() const {
         i32 shared_capa = big_capa & 0x7fffffff;
         return big() ? shared_capa : small_capa;
     }
 
-    fu_INLINE void _mark_unique() {
+    fu_INL void _MarkUnique() {
         assert(big());
         big_capa &= 0x7fffffff;
     }
 
-    fu_INLINE void _mark_shared() const {
+    fu_INL void _MarkShared() const {
         assert(big());
         big_capa |= 0x80000000;
     }
@@ -91,7 +91,7 @@ struct fu_VEC
         #endif
     }
 
-    fu_INLINE fu_ARC* UNSAFE__arc() noexcept {
+    fu_INL fu_ARC* UNSAFE__arc() noexcept {
         return (fu_ARC*)big_data - 1;
     }
 
@@ -100,52 +100,97 @@ struct fu_VEC
     //
     // Allocation, copies & moves.
 
-    fu_INLINE void reserve()
-    {
-        i32 current_capa = shared_capa();
-        if (current_capa > unique_capa())
-            MUT__force__realloc(current_capa);
+    fu_INL void reserve() {
+        if (unique_capa() < 0)
+            _Realloc(current_capa);
     }
 
-    fu_INLINE void reserve(i32 new_capa)
-    {
+    fu_INL void reserve(i32 new_capa) {
         if (new_capa > unique_capa())
-            MUT__force__realloc(new_capa);
+            _Realloc(new_capa);
     }
 
-    fu_INLINE void res_extra(i32 extra_capa)
-    {
-        assert(extra_capa > 0);
+    /////////////////////////////////////////////
 
-        // This can mean two things -
-        //  1. Either we're out of capacity;
-        //  2. Or we're sharing ownership of the COW buffer.
-        //      We catch both cases here with the same check.
+    fu_INL void res_right(i32 extra_capa) {
+        assert(extra_capa > 0);
 
         i32 min_capa = size() + extra_capa;
         if (unique_capa() < min_capa)
-            _RES_extra(min_capa);
+            _ResRight(min_capa);
     }
 
-    fu_NO_INL void _RES_extra(i32 new_capa)
-    {
+    fu_NEVER_INLINE
+    void _ResRight(i32 new_capa) {
         i32 current_capa = shared_capa();
         if (current_capa >= new_capa && UNSAFE__arc()->unique())
-        {
-            // All other owners have died out.
-            _mark_unique();
-        }
+            _MarkUnique();
         else
-        {
-            // 2x growth is delegated to the allocator.
-            i32 new_capa    = current_capa > new_capa
-                            ? current_capa
-                            : new_capa;
-
-            MUT__force__realloc(new_capa);
-        }
+            _Realloc(new_capa);
     }
 
+    /////////////////////////////////////////////
+    //
+    // Let's try to power all basic ops from here.
+
+    template <  typename R,
+                typename F0, typename F1,
+                typename B0, typename B1,
+                typename I,
+                typename D0, typename D1  >
+
+    fu_INL /* new_size */ i32 _Realloc(
+
+         R reserve  = 0,
+        F0 f_push   = 0, F1 f_pop  = 0,
+        B0 b_push   = 0, B1 b_pop  = 0,
+
+         I insert   = 0,
+        D0 del_from = 0, D1 del_to = 0)
+    {
+        i32 old_size = size();
+
+        assert(f_pop    >= 0 && b_pop  >= 0
+            && f_push   >= 0 && b_push >= 0
+            && insert   >= 0
+            && del_from >= 0 && del_to >= del_from && del_to <= old_size);
+
+        // Sanitize.
+        f_push = f_push > 0 ? f_push : 0;
+        f_pop  = f_pop  > 0 ? f_pop  : 0;
+        b_push = b_push > 0 ? b_push : 0;
+        b_pop  = b_pop  > 0 ? b_pop  : 0;
+        insert = insert > 0 ? insert : 0;
+
+        del_from = del_from > 0        ? del_from : 0;
+        del_from = del_from < old_size ? del_from : old_size;
+        del_to   = del_to   > del_from ? del_to   : del_from;
+        del_to   = del_to   < old_size ? del_to   : old_size;
+
+        //
+        i32 size_change = f_push - f_pop
+                        + b_push - b_pop
+                        + insert - (del_to - del_from);
+
+        i32 new_size = old_size + size_change;
+        i32 new_capa = new_size > reserve ? new_size : reserve;
+
+
+
+
+        //
+        if (new_capa > small_capa) {
+
+            fu_ARC::alloc(new_data, new_capa);
+        }
+
+        // Else
+        else {
+            // ...
+        }
+
+        assert(false);
+    }
 
 };
 

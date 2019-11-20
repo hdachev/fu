@@ -7,39 +7,7 @@
 #include <cstring>
 #include <cassert>
 
-
-// Strong inline directive.
-
-#ifdef _MSC_VER
-    #define fu_INLINE __forceinline
-#elif defined(__GNUC__)
-    #define fu_INLINE inline __attribute__((__always_inline__))
-#elif defined(__CLANG__)
-    #if __has_attribute(__always_inline__)
-        #define fu_INLINE inline __attribute__((__always_inline__))
-    #else
-        #define fu_INLINE inline
-    #endif
-#else
-    #define fu_INLINE inline
-#endif
-
-
-// Anti-bloat.
-
-#ifdef _MSC_VER
-    #define fu_NO_INL __declspec(noinline)
-#elif defined(__GNUC__)
-    #define fu_NO_INL __attribute__((noinline))
-#elif defined(__CLANG__)
-    #if __has_attribute(noinline)
-        #define fu_NO_INL __attribute__((noinline))
-    #else
-        #define fu_NO_INL
-    #endif
-#else
-    #define fu_NO_INL
-#endif
+#include "inline.h"
 
 
 //
@@ -71,7 +39,7 @@ struct alignas(16) fu_ARC
     inline static fu_DEBUG_CNTDWN DEBUG_total;
     #endif
 
-    fu_NO_INL void dealloc(size_t bytes)
+    fu_NEVER_INLINE void dealloc(size_t bytes)
     {
         assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
@@ -90,7 +58,7 @@ struct alignas(16) fu_ARC
         std::free((void*)this);
     }
 
-    fu_NO_INL static char* alloc(size_t& inout_bytes)
+    fu_NEVER_INLINE static char* alloc(size_t& inout_bytes)
     {
         size_t bytes = inout_bytes;
 
@@ -146,7 +114,7 @@ struct alignas(16) fu_ARC
         return 0 == prev;
     }
 
-    fu_INLINE bool unique() const {
+    fu_INL bool unique() const {
         return 0 == m_arc.load(
             std::memory_order_relaxed );
     }
