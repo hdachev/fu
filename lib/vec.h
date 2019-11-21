@@ -24,15 +24,50 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-            T*  _big_data;
-            i32 _big_size;
-    mutable i32 _big_capa;
+            T*  _big_data = nullptr;
+            i32 _big_size = 0;
+    mutable i32 _big_capa = 0;
+
+    /////////////////////////////////////////////
+
+    // TODO FIX this is little endian only -
+    //  We tell big from small by the 4 least significant bits of the capacity -
+    //   which is the last byte in the vector struct -
+    //    we say it's small if all are zero.
+    #define UNSAFE__PackedLooksBig(packed) (packed & 0xf000000);
+
+    // TODO force
+    static const bool must_pack = small_capa && sizeof(T) < 4;
+
+    fu_INL static i32 UNSAFE__UnpackCapa(i32 packed) noexcept {
+        if constexpr (must_pack) return (packed << 8) | (u32(packed) >> 24);
+        else                     return  packed;
+    }
+
+    fu_INL static i32 UNSAFE__PackCapa(i32 actual) noexcept {
+        if constexpr (must_pack) return (actual << 24) | (u32(actual) >> 8);
+        else                     return  actual;
+    }
+
+    fu_INL static i32 UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
+    {
+        // We might need to waste a slot to be able to later tell
+        //  the difference between small & big strings/vectors,
+        //   shouldn't happen too often in practice because of the allocation headers -
+        //    for ^2 sized things it should never happen if allocations are ^2.
+        if constexpr (must_pack)
+            if ( !UNSAFE__PackedLooksBig( UNSAFE__PackCapa(actual)))
+                actual--;
+    }
+
+    static const i32 SMALL_SIZE_OFFSET  = 28;
+    static const i32 SMALL_SIZE_MASK    = 0xf;
 
     /////////////////////////////////////////////
 
     fu_INL bool big() const {
-        if constexpr (small_capa) return _big_capa & 0x7000000;
-        else                      return _big_data;
+        if constexpr (small_capa) return UNSAFE__PackedLooksBig(_big_capa);
+        else                      return _big_data != nullptr;
     }
 
     #define UNSAFE__MarkUnique() (assert(big()), _big_capa &= 0x7fffffff)
@@ -40,10 +75,8 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    static const i32 SMALL_SIZE_OFFSET = 27;
-
     fu_INL i32 size() const {
-        i32 small_size = _big_capa >> SMALL_SIZE_OFFSET;
+        i32 small_size = i32(((unsigned int)_big_capa) >> SMALL_SIZE_OFFSET);
         return big() ? _big_size : small_size;
     }
 
@@ -159,6 +192,7 @@ struct fu_VEC
 
     ) noexcept
     {
+        const bool old_big      = big();
         const i32 old_size      = size();
         const i32 old_capa      = shared_capa();
         const T* const old_data = data();
@@ -181,8 +215,6 @@ struct fu_VEC
             && pop >= 0
             && pop + to <= old_size);
 
-        /////////////////////////////////////////////
-        //
         // Sanitize.
 
         from =       from >= 0              ? from : {};
@@ -212,12 +244,10 @@ struct fu_VEC
                 // Explicit compile away for clears & inits.
                 if constexpr (!Clear && !Init)
                 {
-                    // The & 0xf hopefully help the compiler optimize the memmove.
-                    static_assert(0xf == (vec_size - 1), "o_O");
-
-                    const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
-                    const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
-                    const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
+                    // The mask is intended to help this to compile better.
+                    const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & SMALL_SIZE_MASK;
+                    const size_t b_left  = (u32(from)           * sizeof(T)) & SMALL_SIZE_MASK;
+                    const size_t b_right = (u32(old_size - pop) * sizeof(T)) & SMALL_SIZE_MASK;
 
                     // Move by memmove -
                     //  Here we're optimizing for the `small -> small` case,
@@ -255,16 +285,24 @@ struct fu_VEC
 
         /////////////////////////////////////////////
         //
-        // Big strings.
+        // Big vectors.
+
+        bool is_unique_arc = old_big && UNSAFE__unique();
 
         T* new_data = old_data;
 
-        bool is_unique = UNSAFE__unique();
-
-        if (new_capa > old_capa || !is_unique)
+        if (new_capa > old_capa || !is_unique_arc)
         {
             fu_ARC::alloc(new_data, new_capa);
+            UNSAFE__EnsureActualLooksBig(new_capa);
 
+            if constexpr (small_capa)
+            {
+                if (!UNSAFE__PackedLooksBig( _PackCapa(new_capa)))
+                    new_capa--;
+            }
+
+            //
 
         }
         else
