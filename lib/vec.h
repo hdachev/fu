@@ -47,6 +47,10 @@ struct fu_VEC
         return big() ? _big_size : small_size;
     }
 
+    #define UNSAFE__SetSmallSize(new_size) (((volatile char*)this)[vec_size - 1] = char(new_size << SMALL_SIZE_OFFSET))
+
+    /////////////////////////////////////////////
+
     fu_INL const T* data() const { return big() ? _big_data : (T*)this; }
     fu_INL       T* data()       { return big() ? _big_data : (T*)this; }
 
@@ -99,12 +103,12 @@ struct fu_VEC
 
     fu_INL void reserve() noexcept {
         if (unique_capa() < 0)
-            _Realloc(current_capa);
+            _Realloc<false, false> (current_capa);
     }
 
     fu_INL void reserve(i32 new_capa) noexcept {
         if (new_capa > unique_capa())
-            _Realloc(new_capa);
+            _Realloc<false, false> (new_capa);
     }
 
     /////////////////////////////////////////////
@@ -123,15 +127,17 @@ struct fu_VEC
         if (current_capa >= new_capa && UNSAFE__unique())
             UNSAFE__MarkUnique();
         else
-            _Realloc(new_capa);
+            _Realloc<false, false> (new_capa);
     }
 
     /////////////////////////////////////////////
     //
     // Let's try to power all basic ops from here.
 
-    template <  typename R,  typename L,
+    template <  bool Init,
+                bool Clear,
 
+                typename R,  typename L,
                 typename M0, typename M1, typename M2,
                 typename P  >
 
@@ -153,7 +159,8 @@ struct fu_VEC
 
     ) noexcept
     {
-        const i32 old_size = size();
+        const i32 old_size      = size();
+        const i32 old_capa      = shared_capa();
         const T* const old_data = data();
 
         /////////////////////////////////////////////
@@ -200,40 +207,46 @@ struct fu_VEC
         if constexpr (small_capa)
         {
             // `small -> small` and `big -> small`.
-            if (new_capa <= small_capa)
+            if (new_capa <= small_capa || Clear)
             {
-                // The & 0xf hopefully help the compiler optimize the memmove.
-                static_assert(0xf == (vec_size - 1), "o_O");
-
-                const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
-                const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
-                const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
-
-                // Move by memmove -
-                //  Here we're optimizing for the `small -> small` case,
-                //   `big -> small` is the exception to the rule.
-                if (fu_MAYBE_POSITIVE(from))
-                    std::memmove(
-                        this,
-                        old_data,
-                        b_left);
-
-                std::memmove(
-                    (char*)this + b_dest,
-                    old_data + to,
-                    b_right);
-
-                // Big -> small.
-                if (old_data != (T*)this)
+                // Explicit compile away for clears & inits.
+                if constexpr (!Clear && !Init)
                 {
-                    fu_ARC* arc = UNSAFE__arc(old_data);
-                    if (arc->decr())
-                        arc->dealloc();
+                    // The & 0xf hopefully help the compiler optimize the memmove.
+                    static_assert(0xf == (vec_size - 1), "o_O");
+
+                    const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
+                    const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
+                    const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
+
+                    // Move by memmove -
+                    //  Here we're optimizing for the `small -> small` case,
+                    //   `big -> small` is the exception to the rule.
+                    if (fu_MAYBE_POSITIVE(from))
+                        std::memmove(
+                            this,
+                            old_data,
+                            b_left);
+
+                    std::memmove(
+                        (char*)this + b_dest,
+                        old_data + to,
+                        b_right);
                 }
 
-                // New size.
-                ((char*)this)[vec_size - 1] =
-                    char(new_size << SMALL_SIZE_OFFSET);
+                // `big -> small`
+                if (old_data != (T*)this)
+                {
+                    // Ensure we have a small tag,
+                    //  notice the size here isn't necessarily correct,
+                    //   that's up to the higher level writer.
+                    UNSAFE__SetSmallSize(old_size);
+
+                    // Free.
+                    fu_ARC* arc = UNSAFE__arc(old_data);
+                    if (arc->decr())
+                        arc->dealloc(old_capa * sizeof(T));
+                }
 
                 // Done.
                 return;
@@ -244,11 +257,21 @@ struct fu_VEC
         //
         // Big strings.
 
+        T* new_data = old_data;
+
+        bool is_unique = UNSAFE__unique();
+
+        if (new_capa > old_capa || !is_unique)
         {
-            // ...
+            fu_ARC::alloc(new_data, new_capa);
+
+
+        }
+        else
+        {
+
         }
     }
-
 };
 
 int test(vec<char>& hey)
