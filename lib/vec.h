@@ -284,17 +284,18 @@ struct fu_VEC
                 }
 
                 // `big -> small`
-                if (old_data != (T*)this)
+                if constexpr (!Init)
                 {
-                    // Ensure we have a small tag,
-                    //  notice the size here isn't necessarily correct,
-                    //   that's up to the higher level writer.
-                    UNSAFE__WriteSmallSize(old_size);
+                    if (old_data != (T*)this)
+                    {
+                        // Ensure we have a valid small-tag.
+                        UNSAFE__WriteSmallSize(new_size);
 
-                    // Free.
-                    fu_ARC* arc = UNSAFE__arc(old_data);
-                    if (arc->decr())
-                        arc->dealloc(old_capa * sizeof(T));
+                        // Free.
+                        fu_ARC* arc = UNSAFE__arc(old_data);
+                        if (arc->decr())
+                            arc->dealloc(old_capa * sizeof(T));
+                    }
                 }
 
                 // Done.
