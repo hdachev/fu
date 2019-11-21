@@ -10,6 +10,7 @@ struct fu_VEC
     // Primitives.
 
     using i32 = int;
+    using u32 = int;
 
     static const bool triv_copy     = std::is_trivially_copyable<T>;
     static const bool triv_destr    = std::is_trivially_destructible<T>;
@@ -23,44 +24,44 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-            T*  big_data;
-            i32 big_size;
-    mutable i32 big_capa;
+            T*  _big_data;
+            i32 _big_size;
+    mutable i32 _big_capa;
 
     /////////////////////////////////////////////
 
     fu_INL bool big() const {
-        if constexpr (small_capa) return big_capa & 0x7000000;
-        else                      return big_data;
+        if constexpr (small_capa) return _big_capa & 0x7000000;
+        else                      return _big_data;
     }
 
     fu_INL i32 size() const {
-        i32 small_size = big_capa >> 27;
-        return big() ? big_size : small_size;
+        i32 small_size = _big_capa >> 27;
+        return big() ? _big_size : small_size;
     }
 
-    fu_INL const T* data() const { return big() ? big_data : (T*)this; }
-    fu_INL       T* data()       { return big() ? big_data : (T*)this; }
+    fu_INL const T* data() const { return big() ? _big_data : (T*)this; }
+    fu_INL       T* data()       { return big() ? _big_data : (T*)this; }
 
     /////////////////////////////////////////////
 
     fu_INL i32 unique_capa() const {
-        return big() ? big_capa : small_capa;
+        return big() ? _big_capa : small_capa;
     }
 
     fu_INL i32 shared_capa() const {
-        i32 shared_capa = big_capa & 0x7fffffff;
+        i32 shared_capa = _big_capa & 0x7fffffff;
         return big() ? shared_capa : small_capa;
     }
 
     fu_INL void _MarkUnique() {
         assert(big());
-        big_capa &= 0x7fffffff;
+        _big_capa &= 0x7fffffff;
     }
 
     fu_INL void _MarkShared() const {
         assert(big());
-        big_capa |= 0x80000000;
+        _big_capa |= 0x80000000;
     }
 
     /////////////////////////////////////////////
@@ -92,7 +93,7 @@ struct fu_VEC
     }
 
     fu_INL fu_ARC* UNSAFE__arc() noexcept {
-        return (fu_ARC*)big_data - 1;
+        return (fu_ARC*)_big_data - 1;
     }
 
 
@@ -117,7 +118,7 @@ struct fu_VEC
 
         i32 min_capa = size() + extra_capa;
         if (unique_capa() < min_capa)
-            _ResRight(min_capa);
+            [[unlikely]] _ResRight(min_capa);
     }
 
     fu_NEVER_INLINE
@@ -133,47 +134,63 @@ struct fu_VEC
     //
     // Let's try to power all basic ops from here.
 
-    template <  typename R,
-                typename F0, typename F1,
-                typename B0, typename B1,
-                typename I,
-                typename D0, typename D1  >
+    template <  typename R,  typename L,
+
+                typename M0, typename M1, typename M2,
+                typename T0, typename T1  >
 
     fu_INL /* new_size */ i32 _Realloc(
 
-         R reserve  = 0,
-        F0 f_push   = 0, F1 f_pop  = 0,
-        B0 b_push   = 0, B1 b_pop  = 0,
+        /////////////////////////////////////////////
 
-         I insert   = 0,
-        D0 del_from = 0, D1 del_to = 0)
+        // Reserve capacity.
+        R min_capa = {}, L try_leftroom = {},
+
+        // Insert/delete at index.
+        M0 mid_start = {}, M1 mid_end = {}, M2 mid_add = {},
+
+        // Pop/push at tail.
+        T0 tail_pop = {}, T1 = tail_push = {})
+
+        /////////////////////////////////////////////
     {
-        i32 old_size = size();
+        const i32 old_size = size();
 
-        assert(f_pop    >= 0 && b_pop  >= 0
-            && f_push   >= 0 && b_push >= 0
-            && insert   >= 0
-            && del_from >= 0 && del_to >= del_from && del_to <= old_size);
+        // Most of this stuff should compile away -
+        //  The pointless looking (u32) casts are intended
+        //   to make condition-always-true setups extra obvious.
+
+        assert(min_capa >= 0 && (try_leftroom == 0 || try_leftroom == 1)
+
+            // Splice operator -
+            // Erase/insert/splice/shift/unshift and slice(l).
+            && mid_start >= 0 && mid_end >= mid_start && mid_end <= old_size
+            && mid_add >= 0
+
+            // Tail operator -
+            // Push/pop and slice(r).
+            && tail_pop >= 0 && tail_push >= 0
+            && old_size >= mid_end + tail_pop);
 
         // Sanitize.
-        f_push = f_push > 0 ? f_push : 0;
-        f_pop  = f_pop  > 0 ? f_pop  : 0;
-        b_push = b_push > 0 ? b_push : 0;
-        b_pop  = b_pop  > 0 ? b_pop  : 0;
-        insert = insert > 0 ? insert : 0;
+        mid_start =       mid_start >= 0              ? mid_start : {};
+        mid_start = (u32) mid_start <= (u32) old_size ? mid_start : old_size;
 
-        del_from = del_from > 0        ? del_from : 0;
-        del_from = del_from < old_size ? del_from : old_size;
-        del_to   = del_to   > del_from ? del_to   : del_from;
-        del_to   = del_to   < old_size ? del_to   : old_size;
+        mid_end =       mid_end >=       mid_start ? mid_end : mid_start;
+        mid_end = (u32) mid_end <= (u32) old_size  ? mid_end : old_size;
 
-        //
-        i32 size_change = f_push - f_pop
-                        + b_push - b_pop
-                        + insert - (del_to - del_from);
+        i32 tp_max = old_size - mid_end;
+        tail_pop = (u32) tail_pop <= (u32) tp_max ? tail_pop : tp_max;
 
-        i32 new_size = old_size + size_change;
-        i32 new_capa = new_size > reserve ? new_size : reserve;
+        mid_add   = mid_add   >= 0 ? mid_add   : 0;
+        tail_push = tail_push >= 0 ? tail_push : 0;
+
+        // Alloc size.
+        i32 new_size = old_size
+                     + mid_start - mid_end + mid_add
+                     + tail_push - tail_pop;
+
+        i32 new_capa = new_size > min_capa ? new_size : min-capa;
 
 
 
