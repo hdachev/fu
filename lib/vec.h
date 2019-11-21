@@ -202,13 +202,9 @@ struct fu_VEC
             // `small -> small` and `big -> small`.
             if (new_capa <= small_capa)
             {
-                // Move back home / release memory.
-                char SML_TAG = char(new_size << SMALL_SIZE_OFFSET);
-
-                // Head range, this is expected to compile away for from=0.
+                // The & 0xf hopefully help the compiler optimize the memmove.
                 static_assert(0xf == (vec_size - 1), "o_O");
 
-                // The & 0xf hopefully help the compiler optimize the memmove.
                 const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
                 const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
                 const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
@@ -235,18 +231,22 @@ struct fu_VEC
                         arc->dealloc();
                 }
 
+                // New size.
+                ((char*)this)[vec_size - 1] =
+                    char(new_size << SMALL_SIZE_OFFSET);
+
                 // Done.
                 return;
             }
         }
 
         /////////////////////////////////////////////
-
         //
+        // Big strings.
 
-        /////////////////////////////////////////////
-
-        assert(false);
+        {
+            // ...
+        }
     }
 
 };
