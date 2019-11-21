@@ -251,9 +251,14 @@ struct fu_VEC
         i32 new_size = old_size + from - to + uninit - pop;
         i32 new_capa = new_size > min_capa ? new_size : min_capa;
 
+        // Some addressing info.
+        const size_t b_dest  = u32(from + uninit)  * sizeof(T);
+        const size_t b_left  = u32(from)           * sizeof(T);
+        const size_t b_right = u32(old_size - pop) * sizeof(T);
+
         /////////////////////////////////////////////
         //
-        // Small strings.
+        // Small strings, and trivial clear.
 
         if constexpr (SMALL_CAPA)
         {
@@ -263,11 +268,6 @@ struct fu_VEC
                 // Explicit compile away for clears & inits.
                 if constexpr (!Clear && !Init)
                 {
-                    // The mask is intended to help this to compile better.
-                    const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & SMALL_SIZE_MASK;
-                    const size_t b_left  = (u32(from)           * sizeof(T)) & SMALL_SIZE_MASK;
-                    const size_t b_right = (u32(old_size - pop) * sizeof(T)) & SMALL_SIZE_MASK;
-
                     // Move by memmove -
                     //  Here we're optimizing for the `small -> small` case,
                     //   `big -> small` is the exception to the rule.
@@ -275,12 +275,12 @@ struct fu_VEC
                         std::memmove(
                             this,
                             old_data,
-                            b_left);
+                            b_left & SMALL_SIZE_MASK);
 
                     std::memmove(
                         (char*)this + b_dest,
                         old_data + to,
-                        b_right);
+                        b_right & SMALL_SIZE_MASK);
                 }
 
                 // `big -> small`
@@ -307,16 +307,50 @@ struct fu_VEC
         //
         // Big vectors.
 
-        bool is_unique_arc = old_big && UNSAFE__unique();
+        fu_ARC* old_arc = nullptr;
 
-        T* new_data = old_data;
+        const bool old_unique = old_big && (
+            old_arc = UNSAFE__arc(this),
+            old_arc->unique());
 
-        if (new_capa > old_capa || !is_unique_arc)
+        const bool old_shared = old_big && !old_unique;
+
+        // Copy or move.
+        if constexpr (!Clear)
         {
-            fu_ARC::alloc(new_data, new_capa);
-            UNSAFE__EnsureActualLooksBig(new_capa);
+            T* new_data;
+            if (new_capa > old_capa || !old_unique)
+            {
+                fu_ARC::alloc(new_data, new_capa);
+                UNSAFE__EnsureActualLooksBig(new_capa);
 
-            ///////////////////////////////////////
+                // Either one of two things will happen here -
+                //  - either we move-self by memcpy.
+                //  - or we're copying trivial content from somewhere else.
+                if (TRIVIAL || old_unique)
+                {
+                    if (fu_MAYBE_POSITIVE(from))
+                        std::memcpy(
+                            this,
+                            old_data,
+                            b_left & SMALL_SIZE_MASK);
+
+                    std::memcpy(
+                        (char*)this + b_dest,
+                        old_data + to,
+                        b_right & SMALL_SIZE_MASK);
+                }
+                else
+                {
+                    // Non-trivial, we'll copy construct.
+                }
+
+                return;
+            }
+        }
+
+        {
+            // We're
         }
     }
 };
