@@ -123,26 +123,7 @@ struct fu_VEC
 
     ~fu_VEC() noexcept
     {
-        if (big())
-        {
-            fu_ARC* arc = UNSAFE__arc();
-            if (arc->decr())
-            {
-                if constexpr (!triv_destr)
-                {
-                    const T* end = m_data + m_size;
-                    for (T* i = m_data; i < end; i++)
-                        i->~T();
-                }
-
-                arc->dealloc(
-                    size_t(m_capa) * sizeof(T));
-            }
-        }
-
-        #ifndef NDEBUG
-        m_data = (T*)1;
-        #endif
+        assert(false);
     }
 
     #define UNSAFE__arc(data_ptr) ((fu_ARC*)data_ptr - 1)
@@ -271,7 +252,7 @@ struct fu_VEC
                     // Move by memmove -
                     //  Here we're optimizing for the `small -> small` case,
                     //   `big -> small` is the exception to the rule.
-                    if (fu_MAYBE_POSITIVE(from))
+                    if constexpr (fu_MAYBE_POSITIVE(from))
                         std::memmove(
                             this,
                             old_data,
@@ -308,49 +289,74 @@ struct fu_VEC
         // Big vectors.
 
         fu_ARC* old_arc = nullptr;
-
         const bool old_unique = old_big && (
             old_arc = UNSAFE__arc(this),
             old_arc->unique());
 
-        const bool old_shared = old_big && !old_unique;
-
-        // Copy or move.
+        // Growing copy or move.
         if constexpr (!Clear)
         {
-            T* new_data;
+            T* new_data = nullptr;
             if (new_capa > old_capa || !old_unique)
             {
-                fu_ARC::alloc(new_data, new_capa);
-                UNSAFE__EnsureActualLooksBig(new_capa);
+                {
+                    fu_ARC::alloc(new_data, new_capa);
+                    UNSAFE__EnsureActualLooksBig(new_capa);
+
+                    // Writing out the correct size
+                    //  is the responsibility of the caller.
+                    _big_data = new_data;
+                    _big_capa = new_capa;
+                }
 
                 // Either one of two things will happen here -
                 //  - either we move-self by memcpy.
                 //  - or we're copying trivial content from somewhere else.
                 if (TRIVIAL || old_unique)
                 {
-                    if (fu_MAYBE_POSITIVE(from))
+                    if constexpr (fu_MAYBE_POSITIVE(from))
                         std::memcpy(
-                            this,
+                            new_data,
                             old_data,
                             b_left & SMALL_SIZE_MASK);
 
                     std::memcpy(
-                        (char*)this + b_dest,
+                        (char*)new_data + b_dest,
                         old_data + to,
                         b_right & SMALL_SIZE_MASK);
                 }
-                else
+                else if constexpr (!TRIVIAL)
                 {
-                    // Non-trivial, we'll copy construct.
+                    if constexpr (fu_MAYBE_POSITIVE(from))
+                        for (T *src = old_data
+                            ,  *end = old_data + from
+                            , *dest = new_data
+                                    ; src < end; src++, dest++
+                                    ) new (dest) T(*src);
+
+                    for (T *src = old_data + to
+                        ,  *end = old_data + (old_size - pop)
+                        , *dest = new_data + to
+                                ; src < end; src++, dest++
+                                ) new (dest) T(*src);
                 }
 
+                // Free if unique.
+                if (old_arc && old_arc->decr())
+                {
+                    // Destroy if needed.
+                    if constexpr (!TRIVIAL)
+                        for (T *src = old_data
+                            ,  *end = old_data + old_size
+                                    ; src < end; src++
+                                    ) src->~T();
+
+                    old_arc->dealloc(old_capa * sizeof(T));
+                }
+
+                // Done.
                 return;
             }
-        }
-
-        {
-            // We're
         }
     }
 };
