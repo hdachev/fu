@@ -43,7 +43,9 @@ struct fu_VEC
         else                     return  actual;
     }
 
-    static const i32 IS_BIG_MASK = PACK ? 0xf000000 : 0xf;
+    static const i32 IS_BIG_MASK        = PACK_CAPA ? 0xf << 24 : 0xf;
+    static const i32 SMALL_SIZE_OFFSET  = PACK_CAPA ? 24 + 4 : 4;
+    static const i32 SMALL_SIZE_MASK    = 0xf;
 
     fu_INL static i32 UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
     {
@@ -66,7 +68,7 @@ struct fu_VEC
         else                      return _big_data != nullptr;
     }
 
-    static const i32 SIGN_BIT = 0x80000000;
+    static const i32 SIGN_BIT = 1 << 31;
 
     fu_INL void UNSAFE__MarkUnique() noexcept {
         _big_pack = UNSAFE__Pack( // Remove sign bit.
@@ -80,28 +82,23 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    static const i32 SMALL_SIZE_MASK    = 0xf;
-    static const i32 SMALL_SIZE_OFFSET  = PACK_CAPA ? 28 : 4;
-
     fu_INL i32 UNSAFE__ReadSmallSize() const noexcept {
         if constexpr (SMALL_CAPA)   return (_big_pack >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
         else                        return 0;
     }
 
     fu_INL void UNSAFE__WriteSmallSize(i32 actual_size) const noexcept {
-        if constexpr (SMALL_CAPA)
-            _big_pack = (_big_pack & ~(SMALL_SIZE_MASK << SMALL_SIZE_OFFSET))
-                      | ((actual_size & SMALL_SIZE_MASK) << SMALL_SIZE_OFFSET);
-        else
-            assert(false);
+        if constexpr (SMALL_CAPA) {
+            const char s = actual_size << 4;
+            std::memcpy((char*)this + (vec_size - 1), &s, 1);
+        }
+        else assert(false);
     }
 
     fu_INL i32 size() const noexcept {
         i32 small_size = UNSAFE__ReadSmallSize();
         return big() ? _big_size : small_size;
     }
-
-    #define UNSAFE__SetSmallSize(new_size) (((volatile char*)this)[VEC_SIZE - 1] = char(new_size << SMALL_SIZE_OFFSET))
 
     /////////////////////////////////////////////
 
@@ -292,7 +289,7 @@ struct fu_VEC
                     // Ensure we have a small tag,
                     //  notice the size here isn't necessarily correct,
                     //   that's up to the higher level writer.
-                    UNSAFE__SetSmallSize(old_size);
+                    UNSAFE__WriteSmallSize(old_size);
 
                     // Free.
                     fu_ARC* arc = UNSAFE__arc(old_data);
