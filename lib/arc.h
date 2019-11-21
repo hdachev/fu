@@ -101,12 +101,12 @@ struct alignas(16) fu_ARC
         inout_count     = bytes / sizeof(T);
     }
 
-    void incr() {
+    fu_INL void incr() noexcept {
         m_arc.fetch_add(
             +1, std::memory_order_relaxed );
     }
 
-    bool decr() {
+    fu_INL bool decr() noexcept {
         int prev = m_arc.fetch_add(
             -1, std::memory_order_acq_rel );
 
@@ -114,7 +114,7 @@ struct alignas(16) fu_ARC
         return 0 == prev;
     }
 
-    fu_INL bool unique() const {
+    fu_INL bool unique() const noexcept {
         return 0 == m_arc.load(
             std::memory_order_relaxed );
     }

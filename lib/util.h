@@ -41,4 +41,7 @@ struct fu_ZERO
     }
 };
 
+constexpr bool fu_MAYBE_POSITIVE(int)     noexcept const { return true;  };
+constexpr bool fu_MAYBE_POSITIVE(fu_ZERO) noexcept const { return false; };
+
 /////////////////////////////////////////////

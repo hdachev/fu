@@ -35,8 +35,15 @@ struct fu_VEC
         else                      return _big_data;
     }
 
+    #define UNSAFE__MarkUnique() (assert(big()), _big_capa &= 0x7fffffff)
+    #define UNSAFE__MarkShared() (assert(big()), _big_capa |= 0x80000000)
+
+    /////////////////////////////////////////////
+
+    static const i32 SMALL_SIZE_OFFSET = 27;
+
     fu_INL i32 size() const {
-        i32 small_size = _big_capa >> 27;
+        i32 small_size = _big_capa >> SMALL_SIZE_OFFSET;
         return big() ? _big_size : small_size;
     }
 
@@ -52,16 +59,6 @@ struct fu_VEC
     fu_INL i32 shared_capa() const {
         i32 shared_capa = _big_capa & 0x7fffffff;
         return big() ? shared_capa : small_capa;
-    }
-
-    fu_INL void _MarkUnique() {
-        assert(big());
-        _big_capa &= 0x7fffffff;
-    }
-
-    fu_INL void _MarkShared() const {
-        assert(big());
-        _big_capa |= 0x80000000;
     }
 
     /////////////////////////////////////////////
@@ -92,28 +89,27 @@ struct fu_VEC
         #endif
     }
 
-    fu_INL fu_ARC* UNSAFE__arc() noexcept {
-        return (fu_ARC*)_big_data - 1;
-    }
+    #define UNSAFE__arc(data_ptr) ((fu_ARC*)data_ptr - 1)
+    #define UNSAFE__unique() (UNSAFE__arc(_big_data)->unique())
 
 
     /////////////////////////////////////////////
     //
     // Allocation, copies & moves.
 
-    fu_INL void reserve() {
+    fu_INL void reserve() noexcept {
         if (unique_capa() < 0)
             _Realloc(current_capa);
     }
 
-    fu_INL void reserve(i32 new_capa) {
+    fu_INL void reserve(i32 new_capa) noexcept {
         if (new_capa > unique_capa())
             _Realloc(new_capa);
     }
 
     /////////////////////////////////////////////
 
-    fu_INL void res_right(i32 extra_capa) {
+    fu_INL void res_right(i32 extra_capa) noexcept {
         assert(extra_capa > 0);
 
         i32 min_capa = size() + extra_capa;
@@ -122,10 +118,10 @@ struct fu_VEC
     }
 
     fu_NEVER_INLINE
-    void _ResRight(i32 new_capa) {
+    void _ResRight(i32 new_capa) noexcept {
         i32 current_capa = shared_capa();
-        if (current_capa >= new_capa && UNSAFE__arc()->unique())
-            _MarkUnique();
+        if (current_capa >= new_capa && UNSAFE__unique())
+            UNSAFE__MarkUnique();
         else
             _Realloc(new_capa);
     }
@@ -137,25 +133,31 @@ struct fu_VEC
     template <  typename R,  typename L,
 
                 typename M0, typename M1, typename M2,
-                typename T0, typename T1  >
+                typename P  >
 
     fu_INL /* new_size */ i32 _Realloc(
 
         /////////////////////////////////////////////
 
-        // Reserve capacity.
+        // Reserve layout.
         R min_capa = {}, L try_leftroom = {},
 
-        // Insert/delete at index.
-        M0 mid_start = {}, M1 mid_end = {}, M2 mid_add = {},
+        // Replace operator -
+        //  clear from-to range, leaving `uninit` uninitialized memory.
+        M0 from = {}, M1 to = {}, M2 uninit = {},
 
-        // Pop/push at tail.
-        T0 tail_pop = {}, T1 = tail_push = {})
+        // Pop operator.
+        P pop = {}
 
         /////////////////////////////////////////////
+
+    ) noexcept
     {
         const i32 old_size = size();
+        const T* const old_data = data();
 
+        /////////////////////////////////////////////
+        //
         // Most of this stuff should compile away -
         //  The pointless looking (u32) casts are intended
         //   to make condition-always-true setups extra obvious.
@@ -163,48 +165,78 @@ struct fu_VEC
         assert(min_capa >= 0 && (try_leftroom == 0 || try_leftroom == 1)
 
             // Splice operator -
-            // Erase/insert/splice/shift/unshift and slice(l).
-            && mid_start >= 0 && mid_end >= mid_start && mid_end <= old_size
-            && mid_add >= 0
+            //  erase/insert/splice/shift/unshift and slice(l).
+            && from >= 0 && to >= from && to <= old_size
+            && uninit >= 0
 
             // Tail operator -
-            // Push/pop and slice(r).
-            && tail_pop >= 0 && tail_push >= 0
-            && old_size >= mid_end + tail_pop);
+            //  pop and slice(r).
+            && pop >= 0
+            && pop + to <= old_size);
 
         // Sanitize.
-        mid_start =       mid_start >= 0              ? mid_start : {};
-        mid_start = (u32) mid_start <= (u32) old_size ? mid_start : old_size;
+        from =       from >= 0              ? from : {};
+        from = (u32) from <= (u32) old_size ? from : old_size;
 
-        mid_end =       mid_end >=       mid_start ? mid_end : mid_start;
-        mid_end = (u32) mid_end <= (u32) old_size  ? mid_end : old_size;
-
-        i32 tp_max = old_size - mid_end;
-        tail_pop = (u32) tail_pop <= (u32) tp_max ? tail_pop : tp_max;
-
-        mid_add   = mid_add   >= 0 ? mid_add   : 0;
-        tail_push = tail_push >= 0 ? tail_push : 0;
+        to =       to >=       from      ? to : from;
+        to = (u32) to <= (u32) old_size  ? to : old_size;
+        {
+            i32 max = old_size - to;
+            pop = (u32) pop <= (u32) max ? pop : max;
+        }
+        uninit = uninit >= 0 ? uninit : {};
 
         // Alloc size.
-        i32 new_size = old_size
-                     + mid_start - mid_end + mid_add
-                     + tail_push - tail_pop;
+        i32 new_size = old_size + from - to + uninit - pop;
+        i32 new_capa = new_size > min_capa ? new_size : min_capa;
 
-        i32 new_capa = new_size > min_capa ? new_size : min-capa;
+        /////////////////////////////////////////////
 
-        //
+        // `small -> small` and `big -> small`.
+        if (new_capa <= small_capa)
+        {
+            // Small string optis only kick in for trivial types,
+            //  so we can always just memcpy stuff over.
+            assert(triv_copy || new_capa == 0);
 
+            // Move back home / release memory.
+            char SML_TAG = char(new_size << SMALL_SIZE_OFFSET);
 
-        //
-        if (new_capa > small_capa) {
+            // Head range, this is expected to compile away for from=0.
+            static_assert(0xf == (vec_size - 1), "o_O");
 
-            fu_ARC::alloc(new_data, new_capa);
+            // The & 0xf hopefully help the compiler optimize the memmove.
+            const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
+            const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
+            const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
+
+            // Move by memmove -
+            //  Here we're optimizing for the `small -> small` case,
+            //   `big -> small` is the exception to the rule.
+            if (fu_MAYBE_POSITIVE(from))
+                std::memmove(
+                    this,
+                    old_data,
+                    b_left & 0xf);
+
+            std::memmove(
+                (char*)this + b_dest,
+                old_data + to,
+                b_right & 0xf);
+
+            // Big -> small.
+            if (old_data != (T*)this)
+            {
+                fu_ARC* arc = UNSAFE__arc(old_data);
+                if (arc->decr())
+                    arc->dealloc();
+            }
+
+            // Done.
+            return;
         }
 
-        // Else
-        else {
-            // ...
-        }
+        /////////////////////////////////////////////
 
         assert(false);
     }
