@@ -121,13 +121,36 @@ struct fu_VEC
     //
     // Deallocation.
 
-    ~fu_VEC() noexcept
-    {
-        assert(false);
-    }
-
     #define UNSAFE__arc(data_ptr) ((fu_ARC*)data_ptr - 1)
     #define UNSAFE__unique() (UNSAFE__arc(_big_data)->unique())
+
+    ~fu_VEC() noexcept
+    {
+        if (big())
+            UNSAFE__Release(
+                UNSAFE__arc(_big_data), _big_size, _big_capa);
+
+        #ifndef NDEBUG
+        _big_data = (T*)1;
+        #endif
+    }
+
+    fu_INL static void UNSAFE__Release(
+        fu_ARC* old_arc,
+        T* old_data, i32 old_size, i32 old_capa) const noexcept
+    {
+        if (old_arc->decr())
+        {
+            // Destroy if needed.
+            if constexpr (!TRIVIAL)
+                for (T *src = old_data
+                    ,  *end = old_data + old_size
+                            ; src < end; src++
+                            ) src->~T();
+
+            old_arc->dealloc(old_capa * sizeof(T));
+        }
+    }
 
 
     /////////////////////////////////////////////
@@ -318,14 +341,43 @@ struct fu_VEC
                         std::memcpy(
                             new_data,
                             old_data,
-                            b_left & SMALL_SIZE_MASK);
+                            b_left);
 
                     std::memcpy(
                         (char*)new_data + b_dest,
                         old_data + to,
-                        b_right & SMALL_SIZE_MASK);
+                        b_right);
+
+                    // Destroy/release.
+                    if (old_unique)
+                    {
+                        // Destroy leftovers,
+                        //  we've moved over the rest.
+                        if constexpr (!TRIVIAL)
+                        {
+                            for (T *src = old_data + from
+                                ,  *end = old_data + to
+                                        ; src < end; src++
+                                        ) src->~T();
+
+                            for (T *src = old_size - pop
+                                ,  *end = old_size
+                                        ; src < end; src++
+                                        ) src->~T();
+                        }
+
+                        // Cross-check.
+                        assert(old_arc->decr());
+
+                        old_arc->dealloc(old_capa * sizeof(T));
+
+                        // Done.
+                        return;
+                    }
                 }
-                else if constexpr (!TRIVIAL)
+
+                // Copy construct.
+                else
                 {
                     if constexpr (fu_MAYBE_POSITIVE(from))
                         for (T *src = old_data
@@ -341,18 +393,9 @@ struct fu_VEC
                                 ) new (dest) T(*src);
                 }
 
-                // Free if unique.
-                if (old_arc && old_arc->decr())
-                {
-                    // Destroy if needed.
-                    if constexpr (!TRIVIAL)
-                        for (T *src = old_data
-                            ,  *end = old_data + old_size
-                                    ; src < end; src++
-                                    ) src->~T();
-
-                    old_arc->dealloc(old_capa * sizeof(T));
-                }
+                // Here we free if we ended up reacquiring ownership.
+                if (old_arc) UNSAFE__Release(
+                    old_arc, old_data, old_size, old_capa);
 
                 // Done.
                 return;
