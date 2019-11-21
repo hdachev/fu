@@ -12,13 +12,12 @@ struct fu_VEC
     using i32 = int;
     using u32 = unsigned int;
 
-    static const bool TRIVIAL       = std::is_trivially_destructible<T>::value;
+    static const bool TRIVIAL   = std::is_trivially_destructible<T>::value;
 
-    static const i32 VEC_SIZE       = sizeof(vec);
-    static const i32 SMALL_BUF_SIZE = VEC_SIZE - 1;
-    static const i32 SMALL_CAPA     = TRIVIAL
-                                    ? SMALL_BUF_SIZE / sizeof(T)
-                                    : 0;
+    static const i32 VEC_SIZE   = sizeof(vec);
+    static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= 8
+                                ? (VEC_SIZE - 1) / sizeof(T)
+                                : 0;
 
     /////////////////////////////////////////////
 
@@ -29,23 +28,22 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     // On little endian, we need the least significant capacity byte
-    //  to be the rightmost byte of our struct.
+    //  to be the rightmost byte of our struct,
+    //   unless item size is >= 4, in which case we don't need aliasing.
     static const bool PACK_CAPA =
         SMALL_CAPA && sizeof(T) < 4 && fu_LITTLE_ENDIAN;
 
-    fu_INL static i32 UNSAFE__UnpackCapa(i32 packed) noexcept {
+    fu_INL static i32 UNSAFE__Unpack(i32 packed) noexcept {
         if constexpr (PACK_CAPA) return (packed << 8) | (u32(packed) >> 24);
         else                     return  packed;
     }
 
-    fu_INL static i32 UNSAFE__PackCapa(i32 actual) noexcept {
+    fu_INL static i32 UNSAFE__Pack(i32 actual) noexcept {
         if constexpr (PACK_CAPA) return (actual << 24) | (u32(actual) >> 8);
         else                     return  actual;
     }
 
-    fu_INL static i32 UNSAFE__PackedLooksBig(i32 packed) noexcept {
-        return UNSAFE__UnpackCapa(packed) & 0xf;
-    }
+    static const i32 IS_BIG_MASK = PACK ? 0xf000000 : 0xf;
 
     fu_INL static i32 UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
     {
@@ -54,23 +52,30 @@ struct fu_VEC
         //   shouldn't happen too often in practice because of the allocation headers -
         //    for ^2 sized things it should never happen if allocations are ^2.
         if constexpr (PACK_CAPA)
-            if ( !UNSAFE__PackedLooksBig( UNSAFE__PackCapa(actual)))
+            if (!(IS_BIG_MASK & UNSAFE__Pack(actual)))
+            {
                 actual--;
+                assert(actual > 0 && (IS_BIG_MASK & UNSAFE__Pack(actual)));
+            }
     }
 
     /////////////////////////////////////////////
 
     fu_INL bool big() const noexcept {
-        if constexpr (SMALL_CAPA) return UNSAFE__PackedLooksBig(_big_pack);
+        if constexpr (SMALL_CAPA) return _big_pack & IS_BIG_MASK;
         else                      return _big_data != nullptr;
     }
 
+    static const i32 SIGN_BIT = 0x80000000;
+
     fu_INL void UNSAFE__MarkUnique() noexcept {
-        _big_pack = UNSAFE__PackCapa(UNSAFE__UnpackCapa(_big_pack) & 0x7fffffff);
+        _big_pack = UNSAFE__Pack( // Remove sign bit.
+                  UNSAFE__Unpack(_big_pack) &~ SIGN_BIT);
     }
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
-        _big_pack = UNSAFE__PackCapa(UNSAFE__UnpackCapa(_big_pack) & 0x80000000);
+        _big_pack = UNSAFE__Pack( // Make negative.
+                  UNSAFE__Unpack(_big_pack) | SIGN_BIT);
     }
 
     /////////////////////////////////////////////
@@ -105,13 +110,13 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    fu_INL i32 unique_capa() const {
-        i32 unique_capa = UNSAFE__UnpackCapa(_big_pack);
+    fu_INL i32 unique_capa() const { // Negative when sharing.
+        i32 unique_capa = UNSAFE__Unpack(_big_pack);
         return big() ? unique_capa : SMALL_CAPA;
     }
 
-    fu_INL i32 shared_capa() const {
-        i32 shared_capa = UNSAFE__UnpackCapa(_big_pack) & 0x7fffffff;
+    fu_INL i32 shared_capa() const { // Ignore sign bit.
+        i32 shared_capa = UNSAFE__Unpack(_big_pack) &~ SIGN_BIT;
         return big() ? shared_capa : SMALL_CAPA;
     }
 
@@ -313,18 +318,7 @@ struct fu_VEC
             fu_ARC::alloc(new_data, new_capa);
             UNSAFE__EnsureActualLooksBig(new_capa);
 
-            if constexpr (SMALL_CAPA)
-            {
-                if (!UNSAFE__PackedLooksBig( _PackCapa(new_capa)))
-                    new_capa--;
-            }
-
-            //
-
-        }
-        else
-        {
-
+            ///////////////////////////////////////
         }
     }
 };
