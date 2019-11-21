@@ -174,7 +174,10 @@ struct fu_VEC
             && pop >= 0
             && pop + to <= old_size);
 
+        /////////////////////////////////////////////
+        //
         // Sanitize.
+
         from =       from >= 0              ? from : {};
         from = (u32) from <= (u32) old_size ? from : old_size;
 
@@ -191,50 +194,55 @@ struct fu_VEC
         i32 new_capa = new_size > min_capa ? new_size : min_capa;
 
         /////////////////////////////////////////////
+        //
+        // Small strings.
 
-        // `small -> small` and `big -> small`.
-        if (new_capa <= small_capa)
+        if constexpr (small_capa)
         {
-            // Small string optis only kick in for trivial types,
-            //  so we can always just memcpy stuff over.
-            assert(triv_copy || new_capa == 0);
-
-            // Move back home / release memory.
-            char SML_TAG = char(new_size << SMALL_SIZE_OFFSET);
-
-            // Head range, this is expected to compile away for from=0.
-            static_assert(0xf == (vec_size - 1), "o_O");
-
-            // The & 0xf hopefully help the compiler optimize the memmove.
-            const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
-            const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
-            const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
-
-            // Move by memmove -
-            //  Here we're optimizing for the `small -> small` case,
-            //   `big -> small` is the exception to the rule.
-            if (fu_MAYBE_POSITIVE(from))
-                std::memmove(
-                    this,
-                    old_data,
-                    b_left & 0xf);
-
-            std::memmove(
-                (char*)this + b_dest,
-                old_data + to,
-                b_right & 0xf);
-
-            // Big -> small.
-            if (old_data != (T*)this)
+            // `small -> small` and `big -> small`.
+            if (new_capa <= small_capa)
             {
-                fu_ARC* arc = UNSAFE__arc(old_data);
-                if (arc->decr())
-                    arc->dealloc();
-            }
+                // Move back home / release memory.
+                char SML_TAG = char(new_size << SMALL_SIZE_OFFSET);
 
-            // Done.
-            return;
+                // Head range, this is expected to compile away for from=0.
+                static_assert(0xf == (vec_size - 1), "o_O");
+
+                // The & 0xf hopefully help the compiler optimize the memmove.
+                const size_t b_dest  = (u32(from + uninit)  * sizeof(T)) & 0xf;
+                const size_t b_left  = (u32(from)           * sizeof(T)) & 0xf;
+                const size_t b_right = (u32(old_size - pop) * sizeof(T)) & 0xf;
+
+                // Move by memmove -
+                //  Here we're optimizing for the `small -> small` case,
+                //   `big -> small` is the exception to the rule.
+                if (fu_MAYBE_POSITIVE(from))
+                    std::memmove(
+                        this,
+                        old_data,
+                        b_left);
+
+                std::memmove(
+                    (char*)this + b_dest,
+                    old_data + to,
+                    b_right);
+
+                // Big -> small.
+                if (old_data != (T*)this)
+                {
+                    fu_ARC* arc = UNSAFE__arc(old_data);
+                    if (arc->decr())
+                        arc->dealloc();
+                }
+
+                // Done.
+                return;
+            }
         }
+
+        /////////////////////////////////////////////
+
+        //
 
         /////////////////////////////////////////////
 
