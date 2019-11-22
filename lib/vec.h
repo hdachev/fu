@@ -128,7 +128,10 @@ struct fu_VEC
     {
         if (big())
             UNSAFE__Release(
-                UNSAFE__arc(_big_data), _big_size, _big_capa);
+                UNSAFE__arc(_big_data),
+                _big_data,
+                _big_size,
+                _big_capa &~ SIGN_BIT);
 
         #ifndef NDEBUG
         _big_data = (T*)1;
@@ -290,7 +293,7 @@ struct fu_VEC
                 // `big -> small`
                 if constexpr (!Init)
                 {
-                    if (old_data != (T*)this)
+                    if (old_big)
                     {
                         // Ensure we have a valid small-tag.
                         UNSAFE__WriteSmallSize(new_size);
@@ -319,9 +322,9 @@ struct fu_VEC
         // Growing copy or move.
         if constexpr (!Clear)
         {
-            T* new_data = nullptr;
             if (new_capa > old_capa || !old_unique)
             {
+                T* new_data;
                 {
                     fu_ARC::alloc(new_data, new_capa);
                     UNSAFE__EnsureActualLooksBig(new_capa);
@@ -332,9 +335,11 @@ struct fu_VEC
                     _big_capa = new_capa;
                 }
 
-                // Either one of two things will happen here -
-                //  - either we move-self by memcpy.
-                //  - or we're copying trivial content from somewhere else.
+                // Inits end here.
+                if constexpr (Init)
+                    return;
+
+                // Unique move-grow & trivial copy-grow.
                 if (TRIVIAL || old_unique)
                 {
                     if constexpr (fu_MAYBE_POSITIVE(from))
@@ -348,35 +353,33 @@ struct fu_VEC
                         old_data + to,
                         b_right);
 
-                    // Destroy/release.
+                    // Move-grow destroy leftovers.
                     if (old_unique)
                     {
-                        // Destroy leftovers,
-                        //  we've moved over the rest.
                         if constexpr (!TRIVIAL)
                         {
-                            for (T *src = old_data + from
-                                ,  *end = old_data + to
-                                        ; src < end; src++
-                                        ) src->~T();
+                            if constexpr (fu_MAYBE_POSITIVE(to))
+                                for (T *src = old_data + from
+                                    ,  *end = old_data + to
+                                            ; src < end; src++
+                                            ) src->~T();
 
-                            for (T *src = old_size - pop
-                                ,  *end = old_size
-                                        ; src < end; src++
-                                        ) src->~T();
+                            if constexpr (fu_MAYBE_POSITIVE(pop))
+                                for (T *src = old_size - pop
+                                    ,  *end = old_size
+                                            ; src < end; src++
+                                            ) src->~T();
                         }
 
                         // Cross-check.
-                        assert(old_arc->decr());
-
                         old_arc->dealloc(old_capa * sizeof(T));
 
-                        // Done.
+                        // Move grows end here.
                         return;
                     }
                 }
 
-                // Copy construct.
+                // Non-trivial copy-grow.
                 else
                 {
                     if constexpr (fu_MAYBE_POSITIVE(from))
@@ -393,7 +396,9 @@ struct fu_VEC
                                 ) new (dest) T(*src);
                 }
 
-                // Here we free if we ended up reacquiring ownership.
+                // Either copy-grow -
+                //  While copying, we might have ended up
+                //   as the unique owner in the meantime.
                 if (old_arc) UNSAFE__Release(
                     old_arc, old_data, old_size, old_capa);
 
