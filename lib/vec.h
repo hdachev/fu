@@ -103,7 +103,6 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL const T* data() const { return big() ? _big_data : (T*)this; }
-    fu_INL       T* data()       { return big() ? _big_data : (T*)this; }
 
     /////////////////////////////////////////////
 
@@ -406,5 +405,222 @@ struct fu_VEC
                 return;
             }
         }
+    }
+
+    /////////////////////////////////////////////
+    //
+    // High level operator helpers.
+
+    #define FWD(v) static_cast<T&&>(v)
+
+    #define ZERO fu_ZERO()
+
+    #define MUTATE(...) T* new_data; i32 new_size; i32 old_size;\
+        _Mutate<false, false>(\
+            new_data, new_size, old_size,\
+            __VA_ARGS__ )
+
+    #define UNSAFE__MoveConstructOne(dest, item) new (dest) (FWD(item))
+
+    /////////////////////////////////////////////
+    //
+    // Single insertion.
+
+    void push(T&& item) noexcept
+    {
+        MUTATE(
+            ZERO, ZERO, ZERO,
+                  ZERO, 1);
+
+        UNSAFE__MoveConstructOne(
+            new_data + old_size, item);
+    }
+
+    template <typename I>
+    void insert(I i, T&& item) noexcept
+    {
+        MUTATE(
+            i, ZERO, 1,
+               ZERO, ZERO);
+
+        UNSAFE__MoveConstructOne(
+            new_data + i, item);
+    }
+
+    fu_INL void unshift(T&& item) noexcept
+    {
+        insert(ZERO, FWD(item));
+    }
+
+    /////////////////////////////////////////////
+    //
+    // Multiple insertion.
+
+    template <typename I, typename R>
+    auto insert_from(I i, const R& range) noexcept
+        ->  decltype( const_cast<T*>( range.data() + range.size() )
+                    , void() )
+    {
+        return insert_range_copy(
+            i, v.data(), (i32)v.size());
+    }
+
+    template <typename I>
+    void insert_from(I i, fu_VEC&& src) noexcept
+    {
+        // Trivial if we're empty.
+        if (!size()) {
+            assert(i == 0);
+            (*this) = static_cast<T&&>( src );
+        }
+
+        // Unless unique, we copy & free other.
+        //  Other will free itself anyway, but doing it early
+        //   might help someone else become unique in time.
+        if (!v.unique_capa_hard()) {
+            insert_range_copy(
+                i, src.data(), src.size());
+
+            return src._Dealloc();
+        }
+
+        // MOVE-BY-MEMCPY -
+        //  unique, non-trivial owner -
+        //   means we can't be aliasing each other.
+        assert(false && "TODO TEST");
+
+        MUTATE(
+            i, ZERO, src.size(),
+               ZERO, ZERO);
+
+        UNSAFE__MemCopyRange(
+            new_data + i, src.data(),
+            src.size());
+
+        // See above.
+        src._Dealloc_DontRunDtors();
+    }
+
+    template <typename I, typename C>
+    void insert_range_copy(I i, const T* src, C count) noexcept
+    {
+        MUTATE(
+            i, ZERO, count,
+               ZERO, ZERO);
+
+        UNSAFE__CopyConstructRange(
+            new_data + i, src, count);
+    }
+
+    template <typename I, typename C>
+    void insert_range_move(I i, T* src, C count) noexcept
+    {
+        MUTATE(
+            i, ZERO, v.size(),
+               ZERO, ZERO);
+
+        UNSAFE__MoveConstructRange(
+            new_data + i, src, count);
+    }
+
+    /////////////////////////////////////////////
+    //
+    // Resizing.
+
+    fu_NEVER_INLINE void resize(i32 s1) noexcept
+    {
+        i32 s0 = size();
+        if (s1 > s0)    grow(s1);
+        else            shrink(s1);
+    }
+
+    void grow(i32 s1) noexcept
+    {
+        i32 s0 = size();
+
+        MUTATE(
+            ZERO, ZERO, ZERO,
+                  ZERO, s1 - s0);
+
+        // Trivial ranges are not zero-initialized,
+        //  it's such a waste.
+        UNSAFE__DefaultInitRange(
+            new_data + old_size,
+            new_data + new_size);
+    }
+
+    void UNSAFE__DefaultInitRange(T* start, T* end)
+    {
+        if constexpr (!TRIVIAL)
+            for (T* i = start; i < end; i++)
+                new (i) T();
+#ifndef NDEBUG
+        else
+        {
+            // Ensure first X bytes are full of rubbish,
+            //  we'll seed with the pointer
+            //   to get some extra noises going.
+            char* p0 = (char*)start;
+            char* p1 = (char*)end;
+            char* pN = p0 + 256;
+
+            p1  = p1 < pN
+                ? p1 : pN;
+
+            for (char* i = p0; i < p1; i++)
+                *i = (char)(i);
+        }
+#endif
+    }
+
+    /////////////////////////////////////////////
+    //
+    // Deletion.
+
+    void shrink(i32 s1) noexcept
+    {
+        i32 s0 = size();
+
+        MUTATE(
+            ZERO, ZERO,    ZERO,
+                  s0 - s1, ZERO);
+    }
+
+    void pop() noexcept
+    {
+        MUTATE(
+            ZERO, ZERO, ZERO,
+                  1,    ZERO);
+    }
+
+    template <typename I>
+    void erase(i32 I, i32 num) noexcept
+    {
+        MUTATE(
+            i, num,  ZERO,
+               ZERO, ZERO);
+    }
+
+    fu_INL void shift() noexcept
+    {
+        erase(ZERO, 1);
+    }
+
+    /////////////////////////////////////////////
+    //
+    // TODO FIX implicit copies
+    //  The way we stamp out templates erases the rvalue ref,
+    //   needs fixin, won't compile without this
+
+    void push(const T& v) {
+        push( T(v) );
+    }
+
+    void unshift(const T& v) {
+        unshift( T(v) );
+    }
+
+    void insert(idx: i32, const T& v) {
+        insert( idx, T(v) );
     }
 };
