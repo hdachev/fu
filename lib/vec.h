@@ -606,6 +606,18 @@ struct fu_VEC
         erase(ZERO, 1);
     }
 
+    fu_INL void trim(i32 head) noexcept
+    {
+        erase(ZERO, head);
+    }
+
+    fu_INL void trim(i32 head, i32 tail) noexcept
+    {
+        MUTATE(
+            ZERO, head, ZERO,
+                  tail, ZERO);
+    }
+
     /////////////////////////////////////////////
     //
     // TODO FIX implicit copies
@@ -624,3 +636,46 @@ struct fu_VEC
         insert( idx, T(v) );
     }
 };
+
+
+// Slice.
+
+template <typename T>
+fu_VEC<T> fu_SLICE(fu_VEC<T>&& v, i32 start) noexcept
+{
+    v.trim(start);
+    return FWD(v);
+}
+
+template <typename T>
+fu_VEC<T> fu_SLICE(fu_VEC<T>&& v, i32 start, i32 end) noexcept
+{
+    v.trim(start, end);
+    return FWD(v);
+}
+
+template <typename T>
+fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start) noexcept
+{
+    i32 end = v.size();
+    assert(start >= 0 && start <= end);
+
+    const T* src = v.data();
+
+    fu_VEC<T> result;
+    result.insert_range_copy(fu_ZERO(), src + start, src + end);
+    return result;
+}
+
+template <typename T>
+fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept
+{
+    i32 s = v.size();
+    assert(start >= 0 && start <= end && end <= s);
+
+    const T* src = v.data();
+
+    fu_VEC<T> result;
+    result.insert_range_copy(fu_ZERO(), src + start, src + end);
+    return result;
+}
