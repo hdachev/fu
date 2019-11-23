@@ -408,8 +408,3 @@ struct fu_VEC
         }
     }
 };
-
-int test(vec<char>& hey)
-{
-    return hey.unique_capa();
-}
