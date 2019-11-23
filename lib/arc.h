@@ -1,21 +1,13 @@
 #pragma once
 
-#include <new>
-#include <atomic>
-#include <type_traits>
-#include <cstdlib>
-#include <cstring>
-#include <cassert>
-
-#include "inline.h"
+#include "util.h"
 
 
 //
 
 #ifndef NDEBUG
 
-struct fu_DEBUG_CNTDWN
-{
+struct fu_DEBUG_CNTDWN {
     std::atomic_int m_cnt;
 
     ~fu_DEBUG_CNTDWN() {
@@ -24,6 +16,8 @@ struct fu_DEBUG_CNTDWN
 };
 
 #endif
+
+inline const uint8_t MIN_ALLOC = 128;
 
 
 // Putting the nasty shit here.
@@ -36,6 +30,7 @@ struct alignas(16) fu_ARC
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
 
+    inline static fu_DEBUG_CNTDWN DEBUG_count;
     inline static fu_DEBUG_CNTDWN DEBUG_total;
     #endif
 
@@ -45,14 +40,18 @@ struct alignas(16) fu_ARC
                   && this == DEBUG_self);
 
         #ifndef NDEBUG
-        DEBUG_total.m_cnt -= (int)DEBUG_bytes;
+        {
+            DEBUG_total.m_cnt -= 1;
+            DEBUG_total.m_cnt -= (int)DEBUG_bytes;
 
-        DEBUG_bytes = -11;
-        DEBUG_self  = nullptr;
+            DEBUG_bytes = -11;
+            DEBUG_self  = nullptr;
 
-        char* start = ((char*)this) + sizeof(fu_ARC);
-        char* end   = start + bytes;
-        for (char* i = start; i < end; i++) *i = 0xfe;
+            char* start = ((char*)this) + sizeof(fu_ARC);
+            char* end   = start + bytes;
+            for (char* i = start; i < end; i++)
+                *i = 0xfe;
+        }
         #endif
 
         std::free((void*)this);
@@ -61,27 +60,36 @@ struct alignas(16) fu_ARC
     fu_NEVER_INLINE static char* alloc(size_t& inout_bytes)
     {
         size_t bytes = inout_bytes;
+        {
+            uint32_t rnd = fu_NEXT_POW2(
+                uint32_t(bytes
+                    + sizeof(fu_ARC)));
 
-        //////////////////////////////////////////////////
-        // Let's try reporting more mem than requested. //
-        if (bytes < 128 - sizeof(fu_ARC))
-            bytes = 128 - sizeof(fu_ARC);
-        // -------------------------------------------- //
-        //////////////////////////////////////////////////
+            // Node re 0x8: it'll fit in an i32
+            //  after we sub the header size.
+            if (rnd <= bytes || rnd > 0x80000000)
+                std::exit(fu_EXIT_BadAlloc);
 
-        char* mem = (char*)
-            std::malloc(bytes
-                + sizeof(fu_ARC));
+            rnd = rnd > MIN_ALLOC
+                ? rnd : MIN_ALLOC;
 
-        fu_ARC* header = (fu_ARC*)mem;
-        header->m_arc.store(
-            0, std::memory_order_relaxed);
+            bytes = rnd;
+        }
+
+        char*   mem    = (char*) std::malloc(bytes);
+                bytes -= sizeof(fu_ARC);
+
+        fu_ARC* header = (fu_ARC*) mem;
+                header->m_arc.store(0, std::memory_order_relaxed);
 
         #ifndef NDEBUG
-        header->DEBUG_bytes = (int)bytes;
-        header->DEBUG_self  = mem;
+        {
+            header->DEBUG_bytes = (int)bytes;
+            header->DEBUG_self  = mem;
 
-        DEBUG_total.m_cnt  += (int)bytes;
+            DEBUG_total.m_cnt += 1;
+            DEBUG_total.m_cnt += (int)bytes;
+        }
         #endif
 
         inout_bytes = bytes;
@@ -89,16 +97,17 @@ struct alignas(16) fu_ARC
     }
 
     template <typename T>
-    static void alloc(T*& out_ptr, int& inout_count)
+    static void alloc(T*& out_ptr, int& inout_cnt)
     {
-        assert(inout_count > 0);
+        assert(inout_cnt > 0);
 
-        int count       = inout_count;
-            count       = count < 1 ? 1 : count;
+        int cnt = inout_cnt;
+            cnt = cnt > 1
+                ? cnt : 1;
 
-        size_t bytes    = count * sizeof(T);
-        out_ptr         = (T*) alloc(bytes);
-        inout_count     = bytes / sizeof(T);
+        size_t bytes    = cnt * sizeof(T);
+        out_ptr         = (T*)  alloc(bytes);
+        inout_cnt       = (int) bytes / sizeof(T);
     }
 
     fu_INL void incr() noexcept {
@@ -120,4 +129,9 @@ struct alignas(16) fu_ARC
     }
 };
 
+
+//
+
+static_assert(sizeof(int)    == 4);
 static_assert(sizeof(fu_ARC) == 16);
+static_assert(sizeof(fu_ARC) < MIN_ALLOC);
