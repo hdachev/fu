@@ -355,156 +355,28 @@ struct fu_VEC
         }
     }
 
-    /////////////////////////////////////////////
-    //
-    // High level operator helpers.
 
-    #define FWD(v)  static_cast<T&&>(v)
 
-    #define Zero    fu_ZERO()
-    #define One     fu_ONE()
 
-    #define MUTATE(...) T* new_data; i32 new_size; i32 old_size;\
-        _Mutate<false, false>(new_data, new_size, old_size,\
-            __VA_ARGS__ )
 
-    #define UNSAFE__MoveConstructOne(dest, item) (new (dest) T(FWD(item)))
-    #define UNSAFE__CopyConstructOne(dest, item) (new (dest) T(    item ))
+
 
     /////////////////////////////////////////////
     //
-    // Single insertion.
+    // Ctor/dtor utils.
 
-    void push(T&& item) noexcept
-    {
-        MUTATE(
-            Zero, Zero, Zero,
-                  Zero, One);
+    #define MOV_ctor(dest, item) (new (dest) T(FWD(item)))
+    #define CPY_ctor(dest, item) (new (dest) T(    item ))
 
-        UNSAFE__MoveConstructOne(
-            new_data + old_size, item);
-    }
-
-    template <typename I>
-    void insert(I i, T&& item) noexcept
-    {
-        MUTATE(
-            i, Zero, One,
-               Zero, Zero);
-
-        UNSAFE__MoveConstructOne(
-            new_data + i, item);
-    }
-
-    fu_INL void unshift(T&& item) noexcept
-    {
-        insert(Zero, FWD(item));
-    }
-
-    /////////////////////////////////////////////
-    //
-    // Multiple insertion.
-
-    template <typename I, typename D, typename V>
-    auto splice(I idx, D del, const V& r) noexcept
-        ->  decltype( const_cast<T*>( r.data() + r.size() )
-                    , void() )
-    {
-        return splice_copy(idx, del,
-            r.data(), (i32) r.size());
-    }
-
-    template <typename I, typename D>
-    void splice(I idx, D del, fu_VEC&& src) noexcept
-    {
-        // Trivial if we're empty.
-        if (!size()) {
-            assert(!idx && !del);
-            (*this) = static_cast<T&&>( src );
-        }
-
-        // Unless unique, we copy & free other.
-        //  Other will free itself anyway, but doing it early
-        //   might help someone else become unique in time.
-        if (!src.unique_capa_hard()) {
-            splice_copy(idx, del,
-                src.data(), src.size());
-
-            return src._Dealloc();
-        }
-
-        // MOVE-BY-MEMCPY -
-        //  unique, non-trivial owner -
-        //   means we can't be aliasing each other.
-        assert(false && "TODO TEST");
-
-        MUTATE(
-            idx, del,  src.size(),
-                 Zero, Zero);
-
-        UNSAFE__MemCopyRange(
-            new_data + idx, src.data(),
-            src.size());
-
-        // See above.
-        src._Dealloc_DontRunDtors();
-    }
-
-    //
-
-    template <typename I, typename D>
-    void splice_copy(I idx, D del, const T* src, i32 count) noexcept
-    {
-        MUTATE(
-            idx, del,  count,
-                 Zero, Zero);
-
-        return UNSAFE__CopyConstructRange(
-            new_data + idx, src, count);
-    }
-
-    template <typename I, typename D>
-    void splice_move(I idx, D del, T* src, i32 count) noexcept
-    {
-        MUTATE(
-            idx, del,  count,
-                 Zero, Zero);
-
-        return UNSAFE__MoveConstructRange(
-            new_data + idx, src, count);
-    }
-
-    /////////////////////////////////////////////
-    //
-    // Resizing.
-
-    fu_NEVER_INLINE void resize(i32 s1) noexcept
-    {
-        i32 s0 = size();
-        if (s1 > s0)    grow(s1);
-        else            shrink(s1);
-    }
-
-    void grow(i32 s1) noexcept
-    {
-        i32 s0 = size();
-
-        MUTATE(
-            Zero, Zero, Zero,
-                  Zero, s1 - s0);
-
-        // Trivial ranges are not zero-initialized,
-        //  it's such a waste.
-        UNSAFE__DefaultInitRange(
-            new_data + old_size,
-            new_data + new_size);
-    }
-
-    void UNSAFE__DefaultInitRange(T* start, T* end)
+    void DEF_initRange(T* start, T* end) noexcept
     {
         if constexpr (!TRIVIAL)
             for (T* i = start; i < end; i++)
                 new (i) T();
+
+        // We don't default-initialize trivial types,
+        //  it's too stupid.
+
 #ifndef NDEBUG
         else
         {
@@ -524,77 +396,202 @@ struct fu_VEC
 #endif
     }
 
+
+
+
+
+
+
+
     /////////////////////////////////////////////
     //
-    // Deletion.
+    // High level operator helpers.
 
-    void shrink(i32 s1) noexcept
-    {
-        i32 s0 = size();
+    #define FWD(v)  static_cast<T&&>(v)
 
-        MUTATE(
-            Zero, Zero,    Zero,
-                  s0 - s1, Zero);
+    #define Zero    fu_ZERO()
+    #define One     fu_ONE()
+
+    #define MUT_op(Init, Clear, ...) T* new_data; i32 new_size; i32 old_size;\
+        _Mutate<Init, Clear>(new_data, new_size, old_size,\
+            __VA_ARGS__ )
+
+    #define MUT_front(rem, add) MUT_op(false, false, Zero, rem, add, Zero, Zero)
+    #define MUT_back(rem, add) MUT_op(false, false, Zero, Zero, Zero, rem, add)
+    #define MUT_mid(at, rem, add) MUT_op(false, false, at, rem, add, Zero, Zero)
+    #define MUT_trim(shift, pop) MUT_op(false, false, Zero, shift, Zero, pop, Zero)
+    #define MUT_init(size) MUT_op(true, false, Zero, Zero, Zero, Zero, size)
+    #define MUT_clear() MUT_op(false, true, Zero, Zero, Zero, Zero, Zero)
+
+
+    //
+    // Single insertion.
+
+    void push(T&& item) noexcept {
+        MUT_back(Zero, One); MOV_ctor(new_data + old_size, item);
     }
 
-    void pop() noexcept
-    {
-        MUTATE(
-            Zero, Zero, Zero,
-                  One, Zero);
+    void push(const T& item) noexcept {
+        MUT_back(Zero, One); CPY_ctor(new_data + old_size, item);
+    }
+
+    template <typename I>
+    void insert(I i, T&& item) noexcept {
+        MUT_mid(i, Zero, One); MOV_ctor(new_data + i, item);
+    }
+
+    template <typename I>
+    void insert(I i, const T& item) noexcept {
+        MUT_mid(i, Zero, One); CPY_ctor(new_data + i, item);
+    }
+
+    void unshift(T&& item) noexcept {
+        MUT_front(Zero, One); MOV_ctor(new_data, item);
+    }
+
+    void unshift(const T& item) noexcept {
+        MUT_front(Zero, One); CPY_ctor(new_data, item);
+    }
+
+
+    //
+    // Resizing.
+
+    void resize(i32 s1) noexcept {
+        i32 s0  = size();
+        i32 rem = s0 - s1; rem = rem > 0 ? rem : 0;
+        i32 add = s1 - s0; add = add > 0 ? add : 0;
+
+        MUT_back(rem, add);
+        DEF_initRange(new_data + old_size, new_data + new_size);
+    }
+
+    void grow(i32 s1) noexcept {
+        MUT_back(Zero, s1 - size());
+        DEF_initRange(new_data + old_size, new_data + new_size);
+    }
+
+    void clear() noexcept {
+        MUT_clear();
+    }
+
+    void shrink(i32 s1) noexcept {
+        MUT_back(size() - s1, Zero);
+    }
+
+    void pop() noexcept {
+        MUT_back(One, Zero);
     }
 
     template <typename I, typename D>
-    void erase(I i, D num) noexcept
-    {
-        MUTATE(
-            i, num,  Zero,
-               Zero, Zero);
+    void erase(I i, D num) noexcept {
+        MUT_mid(i, num, Zero);
     }
 
-    fu_INL void shift() noexcept
-    {
-        erase(Zero, One);
+    void shift() noexcept {
+        MUT_front(Zero, One);
     }
 
-    fu_INL void trim(i32 head) noexcept
-    {
-        erase(Zero, head);
+    void trim(i32 head) noexcept {
+        MUT_front(Zero, head);
     }
 
-    fu_INL void trim(i32 head, i32 tail) noexcept
-    {
-        MUTATE(
-            Zero, head, Zero,
-                  tail, Zero);
+    void trim(i32 head, i32 tail) noexcept {
+        MUT_trim(head, tail);
     }
 
-    /////////////////////////////////////////////
+
     //
-    // TODO FIX OPTI
-    //  The ones that call T() would perform better
-    //   if they copy-initialized at the final location,
-    //    the once that index @ size() will perform better
-    //     if they use the tail insertion api.
+    // Splices.
 
-    void push(const T& v) {
-        push( T(v) );
+    template <typename I, typename D>
+    void splice(I idx, D del, fu_VEC&& src) noexcept
+    {
+        T*  src_data = src.data();
+        i32 src_size = src.size();
+
+        MUT_mid(idx, del, src_size);
+
+        if (!src.unique_capa_hard()) {
+            CPY_ctor_range(new_data + idx, src_data, src_size);
+            src._Dealloc();
+        }
+        else {
+            UNSAFE__memcpy_range(new_data + idx, src_data, src_size);
+            src._Dealloc_DontRunDtors();
+        }
     }
 
-    void unshift(const T& v) {
-        unshift( T(v) );
+    template <typename I, typename D, typename V>
+    auto splice(I idx, D del, const V& r) noexcept
+        ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
+    {
+        T*  src_data =       src.data();
+        i32 src_size = (i32) src.size();
+
+        MUT_mid(idx, del, src_size);
+        CPY_ctor_range(new_data + idx, src_data, src_size);
     }
 
-    void insert(i32 idx, const T& v) {
-        insert( idx, T(v) );
+    template <typename I, typename D>
+    void splice_copy(I idx, D del, const T* src_data, i32 src_size) noexcept
+    {
+        MUT_mid(idx, del, src_size);
+        CPY_ctor_range(new_data + idx, src_data, src_size);
     }
 
-    fu_INL void append(T&& t) noexcept {
-        return splice(size(), Zero, FWD(t));
+
+    //
+    // Appends, same as splices, but MUT_back.
+
+    template <typename D>
+    void append(D del, fu_VEC&& src) noexcept
+    {
+        T*  src_data = src.data();
+        i32 src_size = src.size();
+
+        MUT_back(del, src_size);
+
+        if (!src.unique_capa_hard()) {
+            CPY_ctor_range(new_data + old_size, src_data, src_size);
+            src._Dealloc();
+        }
+        else {
+            UNSAFE__memcpy_range(new_data + old_size, src_data, src_size);
+            src._Dealloc_DontRunDtors();
+        }
     }
 
-    fu_INL void append(const T& t) noexcept {
-        return splice(size(), Zero, t);
+    template <typename D, typename V>
+    auto append(D del, const V& r) noexcept
+        ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
+    {
+        T*  src_data =       src.data();
+        i32 src_size = (i32) src.size();
+
+        MUT_back(del, src_size);
+        CPY_ctor_range(new_data + old_size, src_data, src_size);
+    }
+
+    template <typename D>
+    void append_copy(D del, const T* src_data, i32 src_size) noexcept
+    {
+        MUT_back(del, src_size);
+        CPY_ctor_range(new_data + old_size, src_data, src_size);
+    }
+
+
+    //
+    // Finally, some stuff to power literals.
+
+    void init_copy(T* src_data, i32 src_size) noexcept {
+        MUT_init(src_size);
+        MOV_ctor_range(new_data, src_data, src_size);
+    }
+
+    void init_move(T* src_data, i32 src_size) noexcept {
+        MUT_init(src_size);
+        MOV_ctor_range(new_data, src_data, src_size);
     }
 };
 
@@ -602,42 +599,42 @@ struct fu_VEC
 // Slice.
 
 template <typename T>
-fu_VEC<T> fu_SLICE(fu_VEC<T>&& v, i32 start) noexcept
+fu_VEC<T> slice(fu_VEC<T>&& v, i32 start) noexcept
 {
     v.trim(start);
     return FWD(v);
 }
 
 template <typename T>
-fu_VEC<T> fu_SLICE(fu_VEC<T>&& v, i32 start, i32 end) noexcept
+fu_VEC<T> slice(fu_VEC<T>&& v, i32 start, i32 end) noexcept
 {
     v.trim(start, end);
     return FWD(v);
 }
 
 template <typename T>
-fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start) noexcept {
+fu_VEC<T> slice(const fu_VEC<T>& v, i32 start) noexcept {
     i32 end = v.size();
     assert(start >= 0 && start <= end);
 
     fu_VEC<T> result;
 
     const T* src = v.data();
-    result.splice_copy(Zero, Zero,
+    result.append_copy(Zero, Zero,
         src + start, src + end);
 
     return result;
 }
 
 template <typename T>
-fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
+fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
     i32 s = v.size();
     assert(start >= 0 && start <= end && end <= s);
 
     fu_VEC<T> result;
 
     const T* src = v.data();
-    result.splice_copy(Zero, Zero,
+    result.append_copy(Zero, Zero,
         src + start, src + end);
 
     return result;
@@ -670,3 +667,11 @@ fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
 #undef FWD
 #undef Zero
 #undef One
+
+#undef MUT_op
+#undef MUT_front
+#undef MUT_back
+#undef MUT_mid
+#undef MUT_trim
+#undef MUT_init
+#undef MUT_clear

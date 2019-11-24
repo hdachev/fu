@@ -19,64 +19,66 @@ void cow_vec_test(int cap0, int cap1)
     //
     vec v1 = v0;
 
-    assert(v1.m_capa == v0.m_capa);
+    assert(v1.shared_capa() == v0.shared_capa()
+        && v1.unique_capa() == 0
+        && v0.unique_capa());
 
     //
     for (int i = 0; i < cap1; i++)
         v1.push( T(i) );
 
-    assert(v1.m_capa == v0.m_capa
-        || v1.m_capa <= v1.m_size * 2);
+    assert(v1.shared_capa() == v0.shared_capa()
+        || v1.shared_capa() <= v1.size() * 2);
 
     //
     vec v2 = v1;
 
-    assert(v2.m_size == v1.m_size
-        && v2.m_data == v1.m_data
-        && v1.m_data != v0.m_data);
+    assert(v2.size() == v1.size()
+        && v2.data() == v1.data()
+        && v1.data() != v0.data());
 
     //
     v2.clear();
 
-    assert(v0.m_size == cap1
-        && v1.m_size == cap1 * 2
-        && v2.m_size == 0);
+    assert(v0.size() == cap1
+        && v1.size() == cap1 * 2
+        && v2.size() == 0);
 
     //
     v2 = v0;
     v2.pop();
 
-    assert(v0.m_size == cap1
-        && v2.m_size == cap1 - 1);
+    assert(v0.size() == cap1
+        && v2.size() == cap1 - 1);
 
     //
     v2 = v1;
     assert(v2[1] == v1[1]);
-    assert(v2.m_data == v1.m_data);
+    assert(v2.data() == v1.data());
 
     v2.insert(1, 99);
     assert(v2[1] != v1[1]);
-    assert(v2.m_size == v1.m_size + 1);
-    assert(v2.m_data != v1.m_data + 1);
+    assert(v2.size() == v1.size() + 1);
+    assert(v2.data() != v1.data() + 1);
 
     v1.insert(1, 99);
     assert(v2[1] == v1[1] && v1[1] == 99);
-    assert(v2.m_size == v1.m_size);
+    assert(v2.size() == v1.size());
 
     //
     v2 = { v1.begin(), v1.end() };
 
-    assert(v1.m_size == v2.m_size && v1.m_data != v2.m_data);
-    for (int i = 0; i < v1.m_size; i++)
+    assert(v1.size() == v2.size() && v1.data() != v2.data());
+    for (int i = 0; i < v1.size(); i++)
         assert(v1[i] == v2[i]);
 
     //
     v2 = v1;
     v2.pop();
-    assert(v2.m_size == v1.m_size - 1);
+    assert(v2.size() == v1.size() - 1);
 
     v1.pop();
-    assert(v1.m_size == v2.m_size);
+    assert(v1.size() == v2.size());
 }
 
 struct NonTriv
