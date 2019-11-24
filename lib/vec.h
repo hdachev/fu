@@ -11,7 +11,7 @@ struct fu_VEC
 
     static const bool TRIVIAL   = std::is_trivially_destructible<T>::value;
 
-    static const i32 VEC_SIZE   = sizeof(fu_VEC);
+    static const i32 VEC_SIZE   = 16;
     static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= 8
                                 ? (VEC_SIZE - 1) / sizeof(T)
                                 : 0;
@@ -122,6 +122,10 @@ struct fu_VEC
 
     ~fu_VEC() noexcept
     {
+        // clang wont allow using sizeof up there,
+        //  incomplete type and all, here works.
+        static_assert(sizeof(fu_VEC) == VEC_SIZE);
+
         if (big())
             UNSAFE__Release(
                 UNSAFE__arc(_big_data),
@@ -199,7 +203,7 @@ struct fu_VEC
 
         // Alloc size.
         i32 new_size = old_size + from - to + insert - pop;
-        i32 new_capa = new_size > min_capa ? new_size : min_capa;
+        i32 new_capa = new_size;
 
         // Some addressing info.
         const size_t b_dest  = u32(from + insert)  * sizeof(T);
@@ -355,17 +359,17 @@ struct fu_VEC
     //
     // High level operator helpers.
 
-    #define FWD(v) static_cast<T&&>(v)
+    #define FWD(v)  static_cast<T&&>(v)
 
-    #define ZERO fu_ZERO()
-
-    #define _One fu_ONE()
+    #define Zero    fu_ZERO()
+    #define One     fu_ONE()
 
     #define MUTATE(...) T* new_data; i32 new_size; i32 old_size;\
         _Mutate<false, false>(new_data, new_size, old_size,\
             __VA_ARGS__ )
 
-    #define UNSAFE__MoveConstructOne(dest, item) new (dest) (FWD(item))
+    #define UNSAFE__MoveConstructOne(dest, item) (new (dest) T(FWD(item)))
+    #define UNSAFE__CopyConstructOne(dest, item) (new (dest) T(    item ))
 
     /////////////////////////////////////////////
     //
@@ -374,8 +378,8 @@ struct fu_VEC
     void push(T&& item) noexcept
     {
         MUTATE(
-            ZERO, ZERO, ZERO,
-                  ZERO, _One);
+            Zero, Zero, Zero,
+                  Zero, One);
 
         UNSAFE__MoveConstructOne(
             new_data + old_size, item);
@@ -385,8 +389,8 @@ struct fu_VEC
     void insert(I i, T&& item) noexcept
     {
         MUTATE(
-            i, ZERO, _One,
-               ZERO, ZERO);
+            i, Zero, One,
+               Zero, Zero);
 
         UNSAFE__MoveConstructOne(
             new_data + i, item);
@@ -394,7 +398,7 @@ struct fu_VEC
 
     fu_INL void unshift(T&& item) noexcept
     {
-        insert(ZERO, FWD(item));
+        insert(Zero, FWD(item));
     }
 
     /////////////////////////////////////////////
@@ -436,7 +440,7 @@ struct fu_VEC
 
         MUTATE(
             idx, del,  src.size(),
-                 ZERO, ZERO);
+                 Zero, Zero);
 
         UNSAFE__MemCopyRange(
             new_data + idx, src.data(),
@@ -453,7 +457,7 @@ struct fu_VEC
     {
         MUTATE(
             idx, del,  count,
-                 ZERO, ZERO);
+                 Zero, Zero);
 
         return UNSAFE__CopyConstructRange(
             new_data + idx, src, count);
@@ -464,7 +468,7 @@ struct fu_VEC
     {
         MUTATE(
             idx, del,  count,
-                 ZERO, ZERO);
+                 Zero, Zero);
 
         return UNSAFE__MoveConstructRange(
             new_data + idx, src, count);
@@ -486,8 +490,8 @@ struct fu_VEC
         i32 s0 = size();
 
         MUTATE(
-            ZERO, ZERO, ZERO,
-                  ZERO, s1 - s0);
+            Zero, Zero, Zero,
+                  Zero, s1 - s0);
 
         // Trivial ranges are not zero-initialized,
         //  it's such a waste.
@@ -529,40 +533,40 @@ struct fu_VEC
         i32 s0 = size();
 
         MUTATE(
-            ZERO, ZERO,    ZERO,
-                  s0 - s1, ZERO);
+            Zero, Zero,    Zero,
+                  s0 - s1, Zero);
     }
 
     void pop() noexcept
     {
         MUTATE(
-            ZERO, ZERO, ZERO,
-                  _One, ZERO);
+            Zero, Zero, Zero,
+                  One, Zero);
     }
 
     template <typename I, typename D>
     void erase(I i, D num) noexcept
     {
         MUTATE(
-            i, num,  ZERO,
-               ZERO, ZERO);
+            i, num,  Zero,
+               Zero, Zero);
     }
 
     fu_INL void shift() noexcept
     {
-        erase(ZERO, _One);
+        erase(Zero, One);
     }
 
     fu_INL void trim(i32 head) noexcept
     {
-        erase(ZERO, head);
+        erase(Zero, head);
     }
 
     fu_INL void trim(i32 head, i32 tail) noexcept
     {
         MUTATE(
-            ZERO, head, ZERO,
-                  tail, ZERO);
+            Zero, head, Zero,
+                  tail, Zero);
     }
 
     /////////////////////////////////////////////
@@ -586,11 +590,11 @@ struct fu_VEC
     }
 
     fu_INL void append(T&& t) noexcept {
-        return splice(size(), ZERO, FWD(t));
+        return splice(size(), Zero, FWD(t));
     }
 
     fu_INL void append(const T& t) noexcept {
-        return splice(size(), ZERO, t);
+        return splice(size(), Zero, t);
     }
 };
 
@@ -619,7 +623,7 @@ fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start) noexcept {
     fu_VEC<T> result;
 
     const T* src = v.data();
-    result.splice_copy(ZERO, ZERO,
+    result.splice_copy(Zero, Zero,
         src + start, src + end);
 
     return result;
@@ -633,7 +637,7 @@ fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
     fu_VEC<T> result;
 
     const T* src = v.data();
-    result.splice_copy(ZERO, ZERO,
+    result.splice_copy(Zero, Zero,
         src + start, src + end);
 
     return result;
@@ -644,18 +648,25 @@ fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, fu_VEC<T>&& b) noexcept {
-    a.append(ZERO, FWD(b));
+    a.append(Zero, FWD(b));
     return FWD(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, const fu_VEC<T>& b) noexcept {
-    a.append(ZERO, b);
+    a.append(Zero, b);
     return FWD(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
-    a.splice(ZERO, ZERO, b);
+    a.splice(Zero, Zero, b);
     return FWD(a);
 }
+
+
+//
+
+#undef FWD
+#undef Zero
+#undef One
