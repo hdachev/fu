@@ -10,32 +10,16 @@ const uint8_t fu_EXIT_BadAlloc = 101;
 
 #ifdef _MSC_VER
     #define fu_INL __forceinline
-#elif defined(__GNUC__)
-    #define fu_INL inline __attribute__((__always_inline__))
-#elif defined(__CLANG__)
-    #if __has_attribute(__always_inline__)
-        #define fu_INL inline __attribute__((__always_inline__))
-    #else
-        #define fu_INL inline
-    #endif
 #else
-    #define fu_INL inline
+    #define fu_INL inline __attribute__((__always_inline__))
 #endif
 
 /////////////////////////////////////////////
 
 #ifdef _MSC_VER
     #define fu_NEVER_INLINE __declspec(noinline)
-#elif defined(__GNUC__)
-    #define fu_NEVER_INLINE __attribute__((noinline))
-#elif defined(__CLANG__)
-    #if __has_attribute(noinline)
-        #define fu_NEVER_INLINE __attribute__((noinline))
-    #else
-        #define fu_NEVER_INLINE
-    #endif
 #else
-    #define fu_NEVER_INLINE
+    #define fu_NEVER_INLINE __attribute__((noinline))
 #endif
 
 /////////////////////////////////////////////
@@ -46,12 +30,22 @@ struct fu_ZERO {
     }
 };
 
-fu_INL constexpr bool fu_MAYBE_POSITIVE(int) noexcept {
-    return true;
-}
+struct fu_ONE {
+    fu_INL constexpr operator int() const noexcept {
+        return 1;
+    }
+};
 
 fu_INL constexpr bool fu_MAYBE_POSITIVE(fu_ZERO) noexcept {
     return false;
+}
+
+fu_INL constexpr bool fu_MAYBE_POSITIVE(fu_ONE) noexcept {
+    return true;
+}
+
+fu_INL constexpr bool fu_MAYBE_POSITIVE(int) noexcept {
+    return true;
 }
 
 /////////////////////////////////////////////

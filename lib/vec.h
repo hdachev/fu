@@ -415,6 +415,8 @@ struct fu_VEC
 
     #define ZERO fu_ZERO()
 
+    #define _One fu_ONE()
+
     #define MUTATE(...) T* new_data; i32 new_size; i32 old_size;\
         _Mutate<false, false>(\
             new_data, new_size, old_size,\
@@ -430,7 +432,7 @@ struct fu_VEC
     {
         MUTATE(
             ZERO, ZERO, ZERO,
-                  ZERO, 1);
+                  ZERO, _One);
 
         UNSAFE__MoveConstructOne(
             new_data + old_size, item);
@@ -440,7 +442,7 @@ struct fu_VEC
     void insert(I i, T&& item) noexcept
     {
         MUTATE(
-            i, ZERO, 1,
+            i, ZERO, _One,
                ZERO, ZERO);
 
         UNSAFE__MoveConstructOne(
@@ -456,21 +458,21 @@ struct fu_VEC
     //
     // Multiple insertion.
 
-    template <typename I, typename R>
-    auto insert_from(I i, const R& range) noexcept
+    template <typename I, typename D, typename R>
+    auto splice(I idx, D del, const R& range) noexcept
         ->  decltype( const_cast<T*>( range.data() + range.size() )
                     , void() )
     {
-        return insert_range_copy(
-            i, v.data(), (i32)v.size());
+        return splice_copy(i, d,
+            v.data(), (i32)v.size());
     }
 
-    template <typename I>
-    void insert_from(I i, fu_VEC&& src) noexcept
+    template <typename I, typename D>
+    void splice(I idx, D del, fu_VEC&& src) noexcept
     {
         // Trivial if we're empty.
         if (!size()) {
-            assert(i == 0);
+            assert(!idx && !del);
             (*this) = static_cast<T&&>( src );
         }
 
@@ -478,8 +480,8 @@ struct fu_VEC
         //  Other will free itself anyway, but doing it early
         //   might help someone else become unique in time.
         if (!v.unique_capa_hard()) {
-            insert_range_copy(
-                i, src.data(), src.size());
+            splice_copy(idx, del,
+                src.data(), src.size());
 
             return src._Dealloc();
         }
@@ -490,37 +492,39 @@ struct fu_VEC
         assert(false && "TODO TEST");
 
         MUTATE(
-            i, ZERO, src.size(),
-               ZERO, ZERO);
+            idx, del,  src.size(),
+                 ZERO, ZERO);
 
         UNSAFE__MemCopyRange(
-            new_data + i, src.data(),
+            new_data + idx, src.data(),
             src.size());
 
         // See above.
         src._Dealloc_DontRunDtors();
     }
 
-    template <typename I, typename C>
-    void insert_range_copy(I i, const T* src, C count) noexcept
+    //
+
+    template <typename I, typename D>
+    void splice_copy(I idx, D del, const T* src, i32 count) noexcept
     {
         MUTATE(
-            i, ZERO, count,
-               ZERO, ZERO);
+            idx, del,  count,
+                 ZERO, ZERO);
 
-        UNSAFE__CopyConstructRange(
-            new_data + i, src, count);
+        return UNSAFE__CopyConstructRange(
+            new_data + idx, src, count);
     }
 
-    template <typename I, typename C>
-    void insert_range_move(I i, T* src, C count) noexcept
+    template <typename I, typename D>
+    void splice_move(I idx, D del, T* src, i32 count) noexcept
     {
         MUTATE(
-            i, ZERO, v.size(),
-               ZERO, ZERO);
+            idx, del,  count,
+                 ZERO, ZERO);
 
-        UNSAFE__MoveConstructRange(
-            new_data + i, src, count);
+        return UNSAFE__MoveConstructRange(
+            new_data + idx, src, count);
     }
 
     /////////////////////////////////////////////
@@ -590,11 +594,11 @@ struct fu_VEC
     {
         MUTATE(
             ZERO, ZERO, ZERO,
-                  1,    ZERO);
+                  _One, ZERO);
     }
 
-    template <typename I>
-    void erase(i32 I, i32 num) noexcept
+    template <typename I, typename D>
+    void erase(I i, D num) noexcept
     {
         MUTATE(
             i, num,  ZERO,
@@ -603,7 +607,7 @@ struct fu_VEC
 
     fu_INL void shift() noexcept
     {
-        erase(ZERO, 1);
+        erase(ZERO, _One);
     }
 
     fu_INL void trim(i32 head) noexcept
@@ -620,9 +624,11 @@ struct fu_VEC
 
     /////////////////////////////////////////////
     //
-    // TODO FIX implicit copies
-    //  The way we stamp out templates erases the rvalue ref,
-    //   needs fixin, won't compile without this
+    // TODO FIX OPTI
+    //  The ones that call T() would perform better
+    //   if they copy-initialized at the final location,
+    //    the once that index @ size() will perform better
+    //     if they use the tail insertion api.
 
     void push(const T& v) {
         push( T(v) );
@@ -634,6 +640,14 @@ struct fu_VEC
 
     void insert(idx: i32, const T& v) {
         insert( idx, T(v) );
+    }
+
+    fu_INL void append(T&& t) noexcept {
+        return splice(size(), ZERO, FWD(t));
+    }
+
+    fu_INL void append(const T& t) noexcept {
+        return splice(size(), ZERO, t);
     }
 };
 
@@ -655,27 +669,50 @@ fu_VEC<T> fu_SLICE(fu_VEC<T>&& v, i32 start, i32 end) noexcept
 }
 
 template <typename T>
-fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start) noexcept
-{
+fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start) noexcept {
     i32 end = v.size();
     assert(start >= 0 && start <= end);
 
-    const T* src = v.data();
-
     fu_VEC<T> result;
-    result.insert_range_copy(fu_ZERO(), src + start, src + end);
+
+    const T* src = v.data();
+    result.splice_copy(ZERO, ZERO,
+        src + start, src + end);
+
     return result;
 }
 
 template <typename T>
-fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept
-{
+fu_VEC<T> fu_SLICE(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
     i32 s = v.size();
     assert(start >= 0 && start <= end && end <= s);
 
-    const T* src = v.data();
-
     fu_VEC<T> result;
-    result.insert_range_copy(fu_ZERO(), src + start, src + end);
+
+    const T* src = v.data();
+    result.splice_copy(ZERO, ZERO,
+        src + start, src + end);
+
     return result;
+}
+
+
+// String & array concat.
+
+template <typename T>
+fu_VEC<T> operator+(fu_VEC<T>&& a, fu_VEC<T>&& b) noexcept {
+    a.append(ZERO, FWD(b));
+    return FWD(a);
+}
+
+template <typename T>
+fu_VEC<T> operator+(fu_VEC<T>&& a, const fu_VEC<T>& b) noexcept {
+    a.append(ZERO, b);
+    return FWD(a);
+}
+
+template <typename T>
+fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
+    a.splice(ZERO, ZERO, b);
+    return FWD(a);
 }
