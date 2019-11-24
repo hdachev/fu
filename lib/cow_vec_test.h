@@ -1,11 +1,11 @@
 #pragma once
 
-#include "./cow_vec.h"
+#include "./vec.h"
 
 template <typename T>
 void cow_vec_test(int cap0, int cap1)
 {
-    using vec = fu_COW_VEC<T>;
+    using vec = fu_VEC<T>;
 
     //
     vec v0;

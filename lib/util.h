@@ -2,6 +2,9 @@
 
 #include "std.h"
 
+using i32 = int;
+using u32 = unsigned int;
+
 /////////////////////////////////////////////
 
 const uint8_t fu_EXIT_BadAlloc = 101;

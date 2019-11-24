@@ -9,12 +9,9 @@ struct fu_VEC
     //
     // Primitives.
 
-    using i32 = int;
-    using u32 = unsigned int;
-
     static const bool TRIVIAL   = std::is_trivially_destructible<T>::value;
 
-    static const i32 VEC_SIZE   = sizeof(vec);
+    static const i32 VEC_SIZE   = sizeof(fu_VEC);
     static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= 8
                                 ? (VEC_SIZE - 1) / sizeof(T)
                                 : 0;
@@ -90,7 +87,7 @@ struct fu_VEC
     fu_INL void UNSAFE__WriteSmallSize(i32 actual_size) const noexcept {
         if constexpr (SMALL_CAPA) {
             const char s = actual_size << 4;
-            std::memcpy((char*)this + (vec_size - 1), &s, 1);
+            std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
         }
         else assert(false);
     }
@@ -130,7 +127,7 @@ struct fu_VEC
                 UNSAFE__arc(_big_data),
                 _big_data,
                 _big_size,
-                _big_capa &~ SIGN_BIT);
+                _big_pack &~ SIGN_BIT);
 
         #ifndef NDEBUG
         _big_data = (T*)1;
@@ -139,7 +136,7 @@ struct fu_VEC
 
     fu_INL static void UNSAFE__Release(
         fu_ARC* old_arc,
-        T* old_data, i32 old_size, i32 old_capa) const noexcept
+        T* old_data, i32 old_size, i32 old_capa) noexcept
     {
         if (old_arc->decr())
         {
@@ -154,66 +151,17 @@ struct fu_VEC
         }
     }
 
-
-    /////////////////////////////////////////////
-    //
-    // Allocation, copies & moves.
-
-    fu_INL void reserve() noexcept {
-        if (unique_capa() < 0)
-            _Realloc<false, false> (current_capa);
-    }
-
-    fu_INL void reserve(i32 new_capa) noexcept {
-        if (new_capa > unique_capa())
-            _Realloc<false, false> (new_capa);
-    }
-
-    /////////////////////////////////////////////
-
-    fu_INL void res_right(i32 extra_capa) noexcept {
-        assert(extra_capa > 0);
-
-        i32 min_capa = size() + extra_capa;
-        if (unique_capa() < min_capa)
-            [[unlikely]] _ResRight(min_capa);
-    }
-
-    fu_NEVER_INLINE
-    void _ResRight(i32 new_capa) noexcept {
-        i32 current_capa = shared_capa();
-        if (current_capa >= new_capa && UNSAFE__unique())
-            UNSAFE__MarkUnique();
-        else
-            _Realloc<false, false> (new_capa);
-    }
-
     /////////////////////////////////////////////
     //
     // Let's try to power all basic ops from here.
 
-    template <  bool Init,
-                bool Clear,
+    template <  bool Init, bool Clear,
+                typename t_from, typename t_to, typename t_insert,
+                typename t_pop, typename t_push >
 
-                typename R,  typename L,
-                typename M0, typename M1, typename M2,
-                typename P  >
-
-    fu_INL /* new_size */ i32 _Realloc(
-
-        /////////////////////////////////////////////
-
-        // Reserve layout.
-        R min_capa = {}, L try_leftroom = {},
-
-        // Replace operator -
-        //  clear from-to range, leaving `uninit` uninitialized memory.
-        M0 from = {}, M1 to = {}, M2 uninit = {},
-
-        // Pop operator.
-        P pop = {}
-
-        /////////////////////////////////////////////
+    fu_INL void _Mutate(
+        t_from from = {}, t_to to = {}, t_insert insert = {},
+        t_pop pop = {}, t_push push = {}
 
     ) noexcept
     {
@@ -228,21 +176,15 @@ struct fu_VEC
         //  The pointless looking (u32) casts are intended
         //   to make condition-always-true setups extra obvious.
 
-        assert(min_capa >= 0 && (try_leftroom == 0 || try_leftroom == 1)
+        assert(from   >= 0 && to >= from && to <= old_size
+            && insert >= 0
 
-            // Splice operator -
-            //  erase/insert/splice/shift/unshift and slice(l).
-            && from >= 0 && to >= from && to <= old_size
-            && uninit >= 0
-
-            // Tail operator -
-            //  pop and slice(r).
-            && pop >= 0
-            && pop + to <= old_size);
+            && pop  >= 0 && pop + to <= old_size
+            && push >= 0);
 
         // Sanitize.
 
-        from =       from >= 0              ? from : {};
+        from =       from >= 0              ? from : t_from();
         from = (u32) from <= (u32) old_size ? from : old_size;
 
         to =       to >=       from      ? to : from;
@@ -251,14 +193,16 @@ struct fu_VEC
             i32 max = old_size - to;
             pop = (u32) pop <= (u32) max ? pop : max;
         }
-        uninit = uninit >= 0 ? uninit : {};
+
+        insert = insert >= 0 ? insert : t_insert();
+        push   =   push >= 0 ? push   :   t_push();
 
         // Alloc size.
-        i32 new_size = old_size + from - to + uninit - pop;
+        i32 new_size = old_size + from - to + insert - pop;
         i32 new_capa = new_size > min_capa ? new_size : min_capa;
 
         // Some addressing info.
-        const size_t b_dest  = u32(from + uninit)  * sizeof(T);
+        const size_t b_dest  = u32(from + insert)  * sizeof(T);
         const size_t b_left  = u32(from)           * sizeof(T);
         const size_t b_right = u32(old_size - pop) * sizeof(T);
 
@@ -331,7 +275,7 @@ struct fu_VEC
                     // Writing out the correct size
                     //  is the responsibility of the caller.
                     _big_data = new_data;
-                    _big_capa = new_capa;
+                    _big_pack = new_capa;
                 }
 
                 // Inits end here.
@@ -418,8 +362,7 @@ struct fu_VEC
     #define _One fu_ONE()
 
     #define MUTATE(...) T* new_data; i32 new_size; i32 old_size;\
-        _Mutate<false, false>(\
-            new_data, new_size, old_size,\
+        _Mutate<false, false>(new_data, new_size, old_size,\
             __VA_ARGS__ )
 
     #define UNSAFE__MoveConstructOne(dest, item) new (dest) (FWD(item))
@@ -458,13 +401,13 @@ struct fu_VEC
     //
     // Multiple insertion.
 
-    template <typename I, typename D, typename R>
-    auto splice(I idx, D del, const R& range) noexcept
-        ->  decltype( const_cast<T*>( range.data() + range.size() )
+    template <typename I, typename D, typename V>
+    auto splice(I idx, D del, const V& r) noexcept
+        ->  decltype( const_cast<T*>( r.data() + r.size() )
                     , void() )
     {
-        return splice_copy(i, d,
-            v.data(), (i32)v.size());
+        return splice_copy(idx, del,
+            r.data(), (i32) r.size());
     }
 
     template <typename I, typename D>
@@ -479,7 +422,7 @@ struct fu_VEC
         // Unless unique, we copy & free other.
         //  Other will free itself anyway, but doing it early
         //   might help someone else become unique in time.
-        if (!v.unique_capa_hard()) {
+        if (!src.unique_capa_hard()) {
             splice_copy(idx, del,
                 src.data(), src.size());
 
@@ -572,7 +515,7 @@ struct fu_VEC
                 ? p1 : pN;
 
             for (char* i = p0; i < p1; i++)
-                *i = (char)(i);
+                *i = (char) (uintptr_t) i;
         }
 #endif
     }
@@ -638,7 +581,7 @@ struct fu_VEC
         unshift( T(v) );
     }
 
-    void insert(idx: i32, const T& v) {
+    void insert(i32 idx, const T& v) {
         insert( idx, T(v) );
     }
 

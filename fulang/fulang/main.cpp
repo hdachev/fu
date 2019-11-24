@@ -324,7 +324,7 @@ std::string build_and_run(const std::string& cpp)
 #ifndef ISOLATE_FAILING_TESTCASE
 #include "../../src/compiler.fu.cpp"
 
-// #include "../../lib/cow_vec_test.h"
+#include "../../lib/cow_vec_test.h"
 
 
 // So lets go.
@@ -333,7 +333,7 @@ void RUN();
 
 int main(int argc, const char * argv[])
 {
-    // cow_vec_tests();
+    cow_vec_tests();
 
     //
     auto_main();
