@@ -368,16 +368,37 @@ struct fu_VEC
     #define MOV_ctor(dest, item) (new (dest) T(FWD(item)))
     #define CPY_ctor(dest, item) (new (dest) T(    item ))
 
-    void DEF_initRange(T* start, T* end) noexcept
+    #define  MEMCPY_range(d, s, n)  std::memcpy(d, s, u32(n) * sizeof(T))
+    #define MEMMOVE_range(d, s, n) std::memmove(d, s, u32(n) * sizeof(T))
+
+    fu_INL void CPY_ctor_range(T* dest, const T* src, i32 count) noexcept
+    {
+        if constexpr (TRIVIAL)
+            MEMCPY_range(dest, src, count);
+        else
+            for (*end = dest + count; i < end; i++)
+                CPY_ctor(dest, src[i]);
+    }
+
+    fu_INL void MOV_ctor_range(T* dest, const T* src, i32 count) noexcept
+    {
+        if constexpr (TRIVIAL)
+            MEMCPY_range(dest, src, count);
+        else
+            for (*end = dest + count; i < end; i++)
+                MOV_ctor(dest, src[i]);
+    }
+
+    fu_INL void DEF_initRange(T* start, T* end) noexcept
     {
         if constexpr (!TRIVIAL)
             for (T* i = start; i < end; i++)
                 new (i) T();
 
+#ifndef NDEBUG
         // We don't default-initialize trivial types,
         //  it's too stupid.
 
-#ifndef NDEBUG
         else
         {
             // Ensure first X bytes are full of rubbish,
@@ -517,7 +538,7 @@ struct fu_VEC
             src._Dealloc();
         }
         else {
-            UNSAFE__memcpy_range(new_data + idx, src_data, src_size);
+            MEMCPY_range(new_data + idx, src_data, src_size);
             src._Dealloc_DontRunDtors();
         }
     }
@@ -526,6 +547,8 @@ struct fu_VEC
     auto splice(I idx, D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
+        assert((void*)&r != (void*)this && "mut alias");
+
         T*  src_data =       src.data();
         i32 src_size = (i32) src.size();
 
@@ -557,7 +580,7 @@ struct fu_VEC
             src._Dealloc();
         }
         else {
-            UNSAFE__memcpy_range(new_data + old_size, src_data, src_size);
+            MEMCPY_range(new_data + old_size, src_data, src_size);
             src._Dealloc_DontRunDtors();
         }
     }
@@ -566,6 +589,8 @@ struct fu_VEC
     auto append(D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
+        assert((void*)&r != (void*)this && "mut alias");
+
         T*  src_data =       src.data();
         i32 src_size = (i32) src.size();
 
@@ -663,6 +688,11 @@ fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
 
 
 //
+
+#undef MOV_ctor
+#undef CPY_ctor
+#undef  MEMCPY_range
+#undef MEMMOVE_range
 
 #undef FWD
 #undef Zero
