@@ -60,9 +60,9 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    fu_INL bool big() const noexcept {
-        if constexpr (SMALL_CAPA) return _big_pack & IS_BIG_MASK;
-        else                      return _big_data != nullptr;
+    fu_INL bool small() const noexcept {
+        if constexpr (SMALL_CAPA) return !(_big_pack & IS_BIG_MASK);
+        else                      return false;
     }
 
     static const i32 SIGN_BIT = 1 << 31;
@@ -75,6 +75,15 @@ struct fu_VEC
     fu_INL void UNSAFE__MarkShared() const noexcept {
         _big_pack = UNSAFE__Pack( // Make negative.
                   UNSAFE__Unpack(_big_pack) | SIGN_BIT);
+    }
+
+    fu_INL i32 capa() const noexcept {
+        if constexpr (SMALL_CAPA) {
+            i32 capa = UNSAFE__Unpack(_big_pack);
+            return small() ? SMALL_CAPA : capa;
+        }
+
+        return _big_pack;
     }
 
     /////////////////////////////////////////////
@@ -93,24 +102,22 @@ struct fu_VEC
     }
 
     fu_INL i32 size() const noexcept {
-        i32 small_size = UNSAFE__ReadSmallSize();
-        return big() ? _big_size : small_size;
+        if constexpr (SMALL_CAPA) {
+            i32 small_size = UNSAFE__ReadSmallSize();
+            return small() ? small_size : _big_size;
+        }
+
+        return _big_pack;
     }
 
     /////////////////////////////////////////////
 
-    fu_INL const T* data() const { return big() ? _big_data : (T*)this; }
+    fu_INL const T* data() const noexcept {
+        if constexpr (SMALL_CAPA) {
+            return small() ? (T*)this : _big_data;
+        }
 
-    /////////////////////////////////////////////
-
-    fu_INL i32 unique_capa() const { // Negative when sharing.
-        i32 unique_capa = UNSAFE__Unpack(_big_pack);
-        return big() ? unique_capa : SMALL_CAPA;
-    }
-
-    fu_INL i32 shared_capa() const { // Ignore sign bit.
-        i32 shared_capa = UNSAFE__Unpack(_big_pack) &~ SIGN_BIT;
-        return big() ? shared_capa : SMALL_CAPA;
+        return _big_data;
     }
 
     /////////////////////////////////////////////
@@ -126,12 +133,13 @@ struct fu_VEC
         //  incomplete type and all, here works.
         static_assert(sizeof(fu_VEC) == VEC_SIZE);
 
-        if (big())
+        i32 old_capa = capa();
+        if (old_capa != SMALL_CAPA)
             UNSAFE__Release(
                 UNSAFE__arc(_big_data),
                 _big_data,
                 _big_size,
-                _big_pack &~ SIGN_BIT);
+                old_capa &~ SIGN_BIT);
 
         #ifndef NDEBUG
         _big_data = (T*)1;
@@ -155,202 +163,133 @@ struct fu_VEC
         }
     }
 
+
+
+
+
+
+
+
+
     /////////////////////////////////////////////
     //
     // Let's try to power all basic ops from here.
 
-    template <  bool Init, bool Clear,
-                typename t_from, typename t_to, typename t_insert,
-                typename t_pop, typename t_push >
+    template <  bool is_Init,
+                bool is_Clear,
 
+                typename t_idx, typename t_del, typename t_insert,
+                                typename t_pop, typename t_push >
     fu_INL void _Mutate(
-        t_from from = {}, t_to to = {}, t_insert insert = {},
-        t_pop pop = {}, t_push push = {}
+        t_idx idx = {}, t_del del = {}, t_insert insert = {},
+                        t_pop pop = {}, t_push   push   = {}
 
     ) noexcept
     {
-        const bool old_big      = big();
-        const i32 old_size      = size();
-        const i32 old_capa      = shared_capa();
-        const T* const old_data = data();
+        // TODO consider inlining these manually,
+        //  there's some risk that common subexpressions
+        //   won't eliminate cleanly for small vectors.
+        const i32  old_size = size();
+              i32  old_capa = capa();
+        const T*   old_data = data();
 
-        /////////////////////////////////////////////
-        //
-        // Most of this stuff should compile away -
-        //  The pointless looking (u32) casts are intended
-        //   to make condition-always-true setups extra obvious.
-
-        assert(from   >= 0 && to >= from && to <= old_size
-            && insert >= 0
-
-            && pop  >= 0 && pop + to <= old_size
-            && push >= 0);
+        assert(idx >= 0 && idx <= old_size
+            && del >= 0 && pop >= 0 && idx + del + pop <= old_size
+            && insert >= 0 && push >= 0);
 
         // Sanitize.
+        idx     = idx    > 0 ? idx    : t_idx();
+        del     = del    > 0 ? del    : t_del();
+        pop     = pop    > 0 ? pop    : t_pop();
+        insert  = insert > 0 ? insert : t_insert();
+        push    = push   > 0 ? push   : t_push();
 
-        from =       from >= 0              ? from : t_from();
-        from = (u32) from <= (u32) old_size ? from : old_size;
+        // <=(u32) hints should compile stuff away.
+        idx     = idx <=(u32) old_size ? idx : old_size;
 
-        to =       to >=       from      ? to : from;
-        to = (u32) to <= (u32) old_size  ? to : old_size;
-        {
-            i32 max = old_size - to;
-            pop = (u32) pop <= (u32) max ? pop : max;
+        if constexpr (fu_MAYBE_POS(del)) {
+            i32 max = old_size - idx;
+            del = del <=(u32) max ? del : max;
         }
 
-        insert = insert >= 0 ? insert : t_insert();
-        push   =   push >= 0 ? push   :   t_push();
+        if constexpr (fu_MAYBE_POS(pop)) {
+            i32 max = old_size - idx - del;
+            pop = pop <=(u32) max ? pop : max;
+        }
 
-        // Alloc size.
-        i32 new_size = old_size + from - to + insert - pop;
-        i32 new_capa = new_size;
-
-        // Some addressing info.
-        const size_t b_dest  = u32(from + insert)  * sizeof(T);
-        const size_t b_left  = u32(from)           * sizeof(T);
-        const size_t b_right = u32(old_size - pop) * sizeof(T);
-
-        /////////////////////////////////////////////
         //
-        // Small strings, and trivial clear.
+        const i32 new_size = is_Clear
+            ? 0
+            : old_size + (insert + push - del - pop);
 
-        if constexpr (SMALL_CAPA)
+        ////////////////////////
+        CONSIDER_HOLDING_GROUND:
+
+        if (new_size <= old_capa)
         {
-            // `small -> small` and `big -> small`.
-            if (new_capa <= SMALL_CAPA || Clear)
+            // Call destructors.
+            if constexpr (!TRIVIAL)
             {
-                // Explicit compile away for clears & inits.
-                if constexpr (!Clear && !Init)
+                if constexpr (is_Clear)
                 {
-                    // Move by memmove -
-                    //  Here we're optimizing for the `small -> small` case,
-                    //   `big -> small` is the exception to the rule.
-                    if constexpr (fu_MAYBE_POSITIVE(from))
-                        std::memmove(
-                            this,
-                            old_data,
-                            b_left & SMALL_SIZE_MASK);
-
-                    std::memmove(
-                        (char*)this + b_dest,
-                        old_data + to,
-                        b_right & SMALL_SIZE_MASK);
+                    DESTROY_range(
+                        old_data,
+                        old_data + old_size);
                 }
-
-                // `big -> small`
-                if constexpr (!Init)
+                else
                 {
-                    if (old_big)
-                    {
-                        // Ensure we have a valid small-tag.
-                        UNSAFE__WriteSmallSize(new_size);
+                    if constexpr (fu_MAYBE_POS(del))
+                        DESTROY_range(
+                            old_data + (idx      ),
+                            old_data + (idx + del));
 
-                        // Free.
-                        fu_ARC* arc = UNSAFE__arc(old_data);
-                        if (arc->decr())
-                            arc->dealloc(old_capa * sizeof(T));
-                    }
+                    if constexpr (fu_MAYBE_POS(pop))
+                        DESTROY_range(
+                            old_data + (old_size - pop),
+                            old_data + (old_size      ));
                 }
+            }
 
-                // Done.
-                return;
+            // Move the middleground around.
+            if constexpr (!is_Clear &&
+                         (fu_MAYBE_POS(del) || fu_MAYBE_POS(insert)))
+            {
+                // Size check kinda protects us from mommoving
+                if (del !== insert && del + pop != old_size)
+                    MEMMOVE_range(
+                        old_data + (idx + del),
+                        old_data + (idx + insert),
+                        old_size - del - pop);
             }
         }
 
-        /////////////////////////////////////////////
+        ///////////////////////////////////////////
         //
-        // Big vectors.
-
-        fu_ARC* old_arc = nullptr;
-        const bool old_unique = old_big && (
-            old_arc = UNSAFE__arc(this),
-            old_arc->unique());
-
-        // Growing copy or move.
-        if constexpr (!Clear)
+        // We appear to be sharing -
+        //  if we could still fit in the old block,
+        //   there's a couple of things we could try.
+        //
+        else if (new_size > SMALL_CAPA
+              && new_size <= (old_capa &~ SIGN_BIT))
         {
-            if (new_capa > old_capa || !old_unique)
+            // Do nothing if this is a TRIVIAL shrink -
+            //  we can right-slice shared TRIVIAL for free.
+            //   Doesn't work for non-TRIVIAL
+            //    because we'd lose track of destructors.
+            if constexpr (TRIVIAL)
             {
-                T* new_data;
+                if (idx + del + pop == old_size)
                 {
-                    fu_ARC::alloc(new_data, new_capa);
-                    UNSAFE__EnsureActualLooksBig(new_capa);
-
-                    // Writing out the correct size
-                    //  is the responsibility of the caller.
-                    _big_data = new_data;
-                    _big_pack = new_capa;
-                }
-
-                // Inits end here.
-                if constexpr (Init)
+                    _big_size = idx;
                     return;
-
-                // Unique move-grow & trivial copy-grow.
-                if (TRIVIAL || old_unique)
-                {
-                    if constexpr (fu_MAYBE_POSITIVE(from))
-                        std::memcpy(
-                            new_data,
-                            old_data,
-                            b_left);
-
-                    std::memcpy(
-                        (char*)new_data + b_dest,
-                        old_data + to,
-                        b_right);
-
-                    // Move-grow destroy leftovers.
-                    if (old_unique)
-                    {
-                        if constexpr (!TRIVIAL)
-                        {
-                            if constexpr (fu_MAYBE_POSITIVE(to))
-                                for (T *src = old_data + from
-                                    ,  *end = old_data + to
-                                            ; src < end; src++
-                                            ) src->~T();
-
-                            if constexpr (fu_MAYBE_POSITIVE(pop))
-                                for (T *src = old_size - pop
-                                    ,  *end = old_size
-                                            ; src < end; src++
-                                            ) src->~T();
-                        }
-
-                        // Cross-check.
-                        old_arc->dealloc(old_capa * sizeof(T));
-
-                        // Move grows end here.
-                        return;
-                    }
                 }
+            }
 
-                // Non-trivial copy-grow.
-                else
-                {
-                    if constexpr (fu_MAYBE_POSITIVE(from))
-                        for (T *src = old_data
-                            ,  *end = old_data + from
-                            , *dest = new_data
-                                    ; src < end; src++, dest++
-                                    ) new (dest) T(*src);
-
-                    for (T *src = old_data + to
-                        ,  *end = old_data + (old_size - pop)
-                        , *dest = new_data + to
-                                ; src < end; src++, dest++
-                                ) new (dest) T(*src);
-                }
-
-                // Either copy-grow -
-                //  While copying, we might have ended up
-                //   as the unique owner in the meantime.
-                if (old_arc) UNSAFE__Release(
-                    old_arc, old_data, old_size, old_capa);
-
-                // Done.
-                return;
+            // Attempt to reacquire ownership.
+            if (hard_check_unique())
+            {
+                old_capa &= ~SIGN_BIT;
+                goto CONSIDER_HOLDING_GROUND;
             }
         }
     }
@@ -505,7 +444,7 @@ struct fu_VEC
     }
 
     template <typename I, typename D>
-    void erase(I i, D num) noexcept {
+    void splice(I i, D num) noexcept {
         MUT_mid(i, num, Zero);
     }
 
@@ -533,7 +472,7 @@ struct fu_VEC
 
         MUT_mid(idx, del, src_size);
 
-        if (!src.unique_capa_hard()) {
+        if (!src.hard_check_unique()) {
             CPY_ctor_range(new_data + idx, src_data, src_size);
             src._Dealloc();
         }
@@ -575,7 +514,7 @@ struct fu_VEC
 
         MUT_back(del, src_size);
 
-        if (!src.unique_capa_hard()) {
+        if (!src.hard_check_unique()) {
             CPY_ctor_range(new_data + old_size, src_data, src_size);
             src._Dealloc();
         }

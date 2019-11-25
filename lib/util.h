@@ -39,15 +39,15 @@ struct fu_ONE {
     }
 };
 
-fu_INL constexpr bool fu_MAYBE_POSITIVE(fu_ZERO) noexcept {
+fu_INL constexpr bool fu_MAYBE_POS(fu_ZERO) noexcept {
     return false;
 }
 
-fu_INL constexpr bool fu_MAYBE_POSITIVE(fu_ONE) noexcept {
+fu_INL constexpr bool fu_MAYBE_POS(fu_ONE) noexcept {
     return true;
 }
 
-fu_INL constexpr bool fu_MAYBE_POSITIVE(int) noexcept {
+fu_INL constexpr bool fu_MAYBE_POS(int) noexcept {
     return true;
 }
 
