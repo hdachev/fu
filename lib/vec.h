@@ -180,7 +180,13 @@ struct fu_VEC
 
                 typename t_idx, typename t_del, typename t_insert,
                                 typename t_pop, typename t_push >
-    fu_INL void _Mutate(
+    fu_INL T* _Mutate(
+
+        // Out params.
+        i32& out_old_size,
+        i32& out_new_size,
+
+        // Cursors.
         t_idx idx = {}, t_del del = {}, t_insert insert = {},
                         t_pop pop = {}, t_push   push   = {}
 
@@ -217,14 +223,17 @@ struct fu_VEC
             pop = pop <=(u32) max ? pop : max;
         }
 
-        //
         const i32 new_size = is_Clear
             ? 0
             : old_size + (insert + push - del - pop);
 
-        ////////////////////////
-        CONSIDER_HOLDING_GROUND:
+        out_old_size = old_size; // Out param! ////
+        out_new_size = new_size; // Out param! ////
 
+        ///////////////////////////////////////////
+        //
+        CONSIDER_HOLDING_GROUND:
+        //
         if (new_size <= old_capa)
         {
             // Call destructors.
@@ -254,13 +263,19 @@ struct fu_VEC
             if constexpr (!is_Clear &&
                          (fu_MAYBE_POS(del) || fu_MAYBE_POS(insert)))
             {
-                // Size check kinda protects us from mommoving
+                // Size check kinda protects us from memmoving nullptr,
+                //  and here we collapse it in the other check anyway.
                 if (del !== insert && del + pop != old_size)
                     MEMMOVE_range(
                         old_data + (idx + del),
                         old_data + (idx + insert),
                         old_size - del - pop);
             }
+
+            // Done.
+            _WriteSize(new_size);
+
+            return old_data;
         }
 
         ///////////////////////////////////////////
@@ -268,9 +283,9 @@ struct fu_VEC
         // We appear to be sharing -
         //  if we could still fit in the old block,
         //   there's a couple of things we could try.
-        //
-        else if (new_size > SMALL_CAPA
-              && new_size <= (old_capa &~ SIGN_BIT))
+
+        if (new_size > SMALL_CAPA &&
+            new_size <= (old_capa &~ SIGN_BIT))
         {
             // Do nothing if this is a TRIVIAL shrink -
             //  we can right-slice shared TRIVIAL for free.
@@ -281,7 +296,7 @@ struct fu_VEC
                 if (idx + del + pop == old_size)
                 {
                     _big_size = idx;
-                    return;
+                    return nullptr;
                 }
             }
 
@@ -372,8 +387,8 @@ struct fu_VEC
     #define Zero    fu_ZERO()
     #define One     fu_ONE()
 
-    #define MUT_op(Init, Clear, ...) T* new_data; i32 new_size; i32 old_size;\
-        _Mutate<Init, Clear>(new_data, new_size, old_size,\
+    #define MUT_op(Init, Clear, ...) i32 old_size; i32 new_size;\
+        T* new_data = _Mutate<Init, Clear>(old_size, new_size,\
             __VA_ARGS__ )
 
     #define MUT_front(rem, add) MUT_op(false, false, Zero, rem, add, Zero, Zero)
