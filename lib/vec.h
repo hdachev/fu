@@ -20,7 +20,7 @@ struct fu_VEC
 
             T*  _big_data = nullptr;
             i32 _big_size = 0;
-    mutable i32 _big_pack = 0;
+    mutable i32 _big_PACK = 0;
 
     /////////////////////////////////////////////
 
@@ -61,44 +61,57 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL bool small() const noexcept {
-        if constexpr (SMALL_CAPA) return !(_big_pack & IS_BIG_MASK);
+        if constexpr (SMALL_CAPA) return !(_big_PACK & IS_BIG_MASK);
         else                      return false;
     }
 
     static const i32 SIGN_BIT = 1 << 31;
 
     fu_INL void UNSAFE__MarkUnique() noexcept {
-        _big_pack = UNSAFE__Pack( // Remove sign bit.
-                  UNSAFE__Unpack(_big_pack) &~ SIGN_BIT);
+        i32  capa = UNSAFE__Unpack(_big_PACK) &~ SIGN_BIT;
+        _big_PACK = UNSAFE__Pack(capa);
+        return capa;
     }
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
-        _big_pack = UNSAFE__Pack( // Make negative.
-                  UNSAFE__Unpack(_big_pack) | SIGN_BIT);
+        _big_PACK = UNSAFE__Pack( // Make negative.
+                  UNSAFE__Unpack(_big_PACK) | SIGN_BIT);
+    }
+
+    fu_INL void UNSAFE__WriteBig(T* data, i32 size, i32 capa) {
+        assert(capa > SMALL_CAPA);
+        _big_data = data;
+        _big_size = size;
+        _big_PACK = UNSAFE__Pack(capa);
     }
 
     fu_INL i32 capa() const noexcept {
         if constexpr (SMALL_CAPA) {
-            i32 capa = UNSAFE__Unpack(_big_pack);
+            i32 capa = UNSAFE__Unpack(_big_PACK);
             return small() ? SMALL_CAPA : capa;
         }
 
-        return _big_pack;
+        return _big_PACK;
     }
 
     /////////////////////////////////////////////
 
     fu_INL i32 UNSAFE__ReadSmallSize() const noexcept {
-        if constexpr (SMALL_CAPA)   return (_big_pack >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
+        if constexpr (SMALL_CAPA)   return (_big_PACK >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
         else                        return 0;
     }
 
-    fu_INL void UNSAFE__WriteSmallSize(i32 actual_size) const noexcept {
+    fu_INL void UNSAFE__WriteSmall(i32 actual_size) noexcept {
         if constexpr (SMALL_CAPA) {
             const char s = actual_size << 4;
             std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
         }
         else assert(false);
+    }
+
+    fu_INL void UNSAFE__WriteSize(i32 actual_size) noexcept {
+        if (small())    UNSAFE__WriteSmall(actual_size);
+        else            _big_size = actual_size;
     }
 
     fu_INL i32 size() const noexcept {
@@ -107,7 +120,7 @@ struct fu_VEC
             return small() ? small_size : _big_size;
         }
 
-        return _big_pack;
+        return _big_size;
     }
 
     /////////////////////////////////////////////
@@ -195,9 +208,9 @@ struct fu_VEC
         // TODO consider inlining these manually,
         //  there's some risk that common subexpressions
         //   won't eliminate cleanly for small vectors.
-        const i32  old_size = size();
-              i32  old_capa = capa();
-        const T*   old_data = data();
+        const i32  old_size = op_Init ? 0          : size();
+              i32  old_capa = op_Init ? SMALL_CAPA : capa();
+        const T*   old_data = op_Init ? (T*)this   : data();
 
         assert(idx >= 0 && idx <= old_size
             && del >= 0 && pop >= 0 && idx + del + pop <= old_size
@@ -230,13 +243,131 @@ struct fu_VEC
         out_old_size = old_size; // Out param! ////
         out_new_size = new_size; // Out param! ////
 
+        if constexpr (!is_Init)
+        {
+            ///////////////////////////////////////////
+            //
+            CONSIDER_HOLDING_GROUND:
+            //
+            if (new_size <= old_capa)
+            {
+                // Call destructors.
+                if constexpr (!TRIVIAL)
+                {
+                    if constexpr (is_Clear)
+                    {
+                        DESTROY_range(
+                            old_data,
+                            old_data + old_size);
+                    }
+                    else
+                    {
+                        if constexpr (fu_MAYBE_POS(del))
+                            DESTROY_range(
+                                old_data + (idx      ),
+                                old_data + (idx + del));
+
+                        if constexpr (fu_MAYBE_POS(pop))
+                            DESTROY_range(
+                                old_data + (old_size - pop),
+                                old_data + (old_size      ));
+                    }
+                }
+
+                // Move the middleground around.
+                if constexpr (!is_Clear &&
+                             (fu_MAYBE_POS(del) || fu_MAYBE_POS(insert)))
+                {
+                    MEMMOVE_range(
+                        old_data + (idx + del),
+                        old_data + (idx + insert),
+                        old_size - del - pop);
+                }
+
+                // Done.
+                UNSAFE__WriteSize(new_size);
+
+                return old_data;
+            }
+
+            ///////////////////////////////////////////
+            //
+            // We appear to be sharing -
+            //  if we could still fit in the old block,
+            //   there's a couple of things we could try.
+            //
+            if (new_size > SMALL_CAPA &&
+                new_size <= (old_capa &~ SIGN_BIT))
+            {
+                // Do nothing if this is a TRIVIAL shrink -
+                //  we can right-slice shared TRIVIAL for free.
+                //   Doesn't work for non-TRIVIAL
+                //    because we'd lose track of destructors.
+                if constexpr (TRIVIAL)
+                {
+                    if (idx + del + pop == old_size)
+                    {
+                        _big_size = idx;
+                        return nullptr;
+                    }
+                }
+
+                // Attempt to reacquire ownership.
+                if (hard_check_unique())
+                {
+                    old_capa = UNSAFE__MarkUnique();
+                    goto CONSIDER_HOLDING_GROUND;
+                }
+            }
+        }
+
         ///////////////////////////////////////////
         //
-        CONSIDER_HOLDING_GROUND:
-        //
-        if (new_size <= old_capa)
+        // We have to reallocate.
+
+        T* new_data;
+        if (new_capa <= SMALL_CAPA)
         {
-            // Call destructors.
+            new_data = (T*)this;
+            UNSAFE__WriteSmall(new_size);
+        }
+        else
+        {
+            i32 new_capa = new_size;
+            fu_ARC::alloc(new_data, new_capa);
+            UNSAFE__EnsureActualLooksBig(new_capa);
+
+            assert(new_capa >= new_size);
+            UNSAFE__WriteBig(new_data, new_size, new_capa);
+        }
+
+        // Init ends here (no free, no realloc).
+        if (is_Init)
+            return new_data;
+
+        // Can we relocate the content?
+        const i32 shared_capa = old_capa &~ SIGN_BIT;
+        if (old_capa    > 0 ||
+           (shared_capa > 0 && shared_capa < new_size && hard_check_unique()))
+        {
+            assert(new_data != old_data);
+
+            // Cheap move by memcpy.
+            if constexpr (!is_Clear)
+            {
+                if constexpr (fu_MAYBE_POS(idx))
+                    MEMCPY_range(
+                        new_data,
+                        old_data,
+                        idx);
+
+                MEMCPY_range(
+                    new_data + (idx + insert),
+                    old_data + (idx + del),
+                    old_size - (idx - del - pop));
+            }
+
+            // Call destructors (copy-paste from above).
             if constexpr (!TRIVIAL)
             {
                 if constexpr (is_Clear)
@@ -259,54 +390,36 @@ struct fu_VEC
                 }
             }
 
-            // Move the middleground around.
-            if constexpr (!is_Clear &&
-                         (fu_MAYBE_POS(del) || fu_MAYBE_POS(insert)))
-            {
-                // Size check kinda protects us from memmoving nullptr,
-                //  and here we collapse it in the other check anyway.
-                if (del !== insert && del + pop != old_size)
-                    MEMMOVE_range(
-                        old_data + (idx + del),
-                        old_data + (idx + insert),
-                        old_size - del - pop);
-            }
+            // Free old.
+            if (old_capa > SMALL_CAPA)
+                UNSAFE__Dealloc_DontRunDtors(
+                    old_data, old_capa);
 
-            // Done.
-            _WriteSize(new_size);
-
-            return old_data;
+            return new_data;
         }
 
-        ///////////////////////////////////////////
-        //
-        // We appear to be sharing -
-        //  if we could still fit in the old block,
-        //   there's a couple of things we could try.
-
-        if (new_size > SMALL_CAPA &&
-            new_size <= (old_capa &~ SIGN_BIT))
+        // Finally, the expensive copy-construct.
+        if constexpr (!is_Clear)
         {
-            // Do nothing if this is a TRIVIAL shrink -
-            //  we can right-slice shared TRIVIAL for free.
-            //   Doesn't work for non-TRIVIAL
-            //    because we'd lose track of destructors.
-            if constexpr (TRIVIAL)
-            {
-                if (idx + del + pop == old_size)
-                {
-                    _big_size = idx;
-                    return nullptr;
-                }
-            }
+            if constexpr (fu_MAYBE_POS(idx))
+                CPY_ctor_range(
+                    new_data,
+                    old_data,
+                    idx);
 
-            // Attempt to reacquire ownership.
-            if (hard_check_unique())
-            {
-                old_capa &= ~SIGN_BIT;
-                goto CONSIDER_HOLDING_GROUND;
-            }
+            CPY_ctor_range(
+                new_data + (idx + insert),
+                old_data + (idx + del),
+                old_size - (idx - del - pop));
         }
+
+        // Release the old mem, running destructors
+        //  if we somehow ended up as the unique owner in the meantime.
+        if (old_capa > SMALL_CAPA)
+            UNSAFE__Dealloc(
+                old_data, old_size, old_capa);
+
+        return new_data;
     }
 
 
@@ -322,8 +435,8 @@ struct fu_VEC
     #define MOV_ctor(dest, item) (new (dest) T(FWD(item)))
     #define CPY_ctor(dest, item) (new (dest) T(    item ))
 
-    #define  MEMCPY_range(d, s, n)  std::memcpy(d, s, u32(n) * sizeof(T))
-    #define MEMMOVE_range(d, s, n) std::memmove(d, s, u32(n) * sizeof(T))
+    #define  MEMCPY_range(d, s, n) if (d != s && n)  std::memcpy(d, s, u32(n) * sizeof(T))
+    #define MEMMOVE_range(d, s, n) if (d != s && n) std::memmove(d, s, u32(n) * sizeof(T))
 
     fu_INL void CPY_ctor_range(T* dest, const T* src, i32 count) noexcept
     {
