@@ -78,11 +78,18 @@ struct fu_VEC
                   UNSAFE__Unpack(_big_PACK) | SIGN_BIT);
     }
 
-    fu_INL void UNSAFE__WriteBig(T* data, i32 size, i32 capa) {
+    fu_INL void UNSAFE__WriteBig(T* data, i32 size, i32 capa) noexcept {
         assert(capa > SMALL_CAPA);
         _big_data = data;
         _big_size = size;
         _big_PACK = UNSAFE__Pack(capa);
+    }
+
+    fu_INL void UNSAFE__WriteEmpty() noexcept {
+        static_assert(!SMALL_CAPA);
+        _big_data = nullptr;
+        _big_size = 0;
+        _big_PACK = 0;
     }
 
     fu_INL i32 capa() const noexcept {
@@ -102,16 +109,19 @@ struct fu_VEC
     }
 
     fu_INL void UNSAFE__WriteSmall(i32 actual_size) noexcept {
-        if constexpr (SMALL_CAPA) {
-            const char s = actual_size << 4;
-            std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
-        }
-        else assert(false);
+        static_assert(SMALL_CAPA);
+        const char s = char(actual_size << 4);
+        std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
     }
 
     fu_INL void UNSAFE__WriteSize(i32 actual_size) noexcept {
-        if (small())    UNSAFE__WriteSmall(actual_size);
-        else            _big_size = actual_size;
+        if constexpr (SMALL_CAPA)
+            if (small()) {
+                UNSAFE__WriteSmall(actual_size);
+                return;
+            }
+
+        _big_size = actual_size;
     }
 
     fu_INL i32 size() const noexcept {
@@ -193,7 +203,7 @@ struct fu_VEC
 
                 typename t_idx, typename t_del, typename t_insert,
                                 typename t_pop, typename t_push >
-    fu_INL T* _Mutate(
+    fu_INL T* _Splice(
 
         // Out params.
         i32& out_old_size,
@@ -326,10 +336,14 @@ struct fu_VEC
         // We have to reallocate.
 
         T* new_data;
-        if (new_capa <= SMALL_CAPA)
+        if (new_size <= SMALL_CAPA)
         {
             new_data = (T*)this;
-            UNSAFE__WriteSmall(new_size);
+
+            if constexpr (SMALL_CAPA)
+                UNSAFE__WriteSmall(new_size);
+            else
+                UNSAFE__WriteEmpty();
         }
         else
         {
@@ -501,7 +515,7 @@ struct fu_VEC
     #define One     fu_ONE()
 
     #define MUT_op(Init, Clear, ...) i32 old_size; i32 new_size;\
-        T* new_data = _Mutate<Init, Clear>(old_size, new_size,\
+        T* new_data = _Splice<Init, Clear>(old_size, new_size,\
             __VA_ARGS__ )
 
     #define MUT_front(rem, add) MUT_op(false, false, Zero, rem, add, Zero, Zero)
