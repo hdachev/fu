@@ -12,7 +12,7 @@ struct fu_VEC
     static const bool TRIVIAL   = std::is_trivially_destructible<T>::value;
 
     static const i32 VEC_SIZE   = 16;
-    static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= 8
+    static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= alignof(T*)
                                 ? (VEC_SIZE - 1) / sizeof(T)
                                 : 0;
 
@@ -30,12 +30,12 @@ struct fu_VEC
     static const bool PACK_CAPA =
         SMALL_CAPA && sizeof(T) < 4 && fu_LITTLE_ENDIAN;
 
-    fu_INL static i32 UNSAFE__Unpack(i32 packed) noexcept {
+    fu_INL static constexpr i32 UNSAFE__Unpack(i32 packed) noexcept {
         if constexpr (PACK_CAPA) return (packed << 8) | (u32(packed) >> 24);
         else                     return  packed;
     }
 
-    fu_INL static i32 UNSAFE__Pack(i32 actual) noexcept {
+    fu_INL static constexpr i32 UNSAFE__Pack(i32 actual) noexcept {
         if constexpr (PACK_CAPA) return (actual << 24) | (u32(actual) >> 8);
         else                     return  actual;
     }
@@ -85,8 +85,7 @@ struct fu_VEC
         _big_PACK = UNSAFE__Pack(capa);
     }
 
-    fu_INL void UNSAFE__WriteEmpty() noexcept {
-        static_assert(!SMALL_CAPA);
+    fu_INL void UNSAFE__Reset() noexcept {
         _big_data = nullptr;
         _big_size = 0;
         _big_PACK = 0;
@@ -98,6 +97,7 @@ struct fu_VEC
             return small() ? SMALL_CAPA : capa;
         }
 
+        static_assert(!PACK_CAPA);
         return _big_PACK;
     }
 
@@ -143,12 +143,15 @@ struct fu_VEC
         return _big_data;
     }
 
+
+
+
+
     /////////////////////////////////////////////
     //
     // Deallocation.
 
     #define UNSAFE__arc(data_ptr) ((fu_ARC*)data_ptr - 1)
-    #define UNSAFE__unique() (UNSAFE__arc(_big_data)->unique())
 
     ~fu_VEC() noexcept
     {
@@ -156,40 +159,142 @@ struct fu_VEC
         //  incomplete type and all, here works.
         static_assert(sizeof(fu_VEC) == VEC_SIZE);
 
-        i32 old_capa = capa();
-        if (old_capa != SMALL_CAPA)
-            UNSAFE__Release(
-                UNSAFE__arc(_big_data),
-                _big_data,
-                _big_size,
-                old_capa &~ SIGN_BIT);
+        _SafeDealloc();
 
+        // Ensure things break badly in debug.
         #ifndef NDEBUG
         _big_data = (T*)1;
+        _big_size = 1;
+        _big_PACK = 0x01010101;
         #endif
     }
 
-    fu_INL static void UNSAFE__Release(
-        fu_ARC* old_arc,
+
+    // Safe release.
+
+    fu_INL void _SafeDealloc() noexcept
+    {
+        i32 shared_capa = capa() &~ SIGN_BIT;
+        if (shared_capa > SMALL_CAPA)
+            SHARED__Dealloc(
+                _big_data, _big_size, shared_capa);
+
+        UNSAFE__Reset();
+    }
+
+    fu_INL static void SHARED__Dealloc(
         T* old_data, i32 old_size, i32 old_capa) noexcept
     {
-        if (old_arc->decr())
-        {
-            // Destroy if needed.
-            if constexpr (!TRIVIAL)
-                for (T *src = old_data
-                    ,  *end = old_data + old_size
-                            ; src < end; src++
-                            ) src->~T();
+        fu_ARC* arc = UNSAFE__arc(old_data);
+        if (arc->decr()) {
+            DESTROY_range(
+                old_data,
+                old_data + old_size);
 
-            old_arc->dealloc(old_capa * sizeof(T));
+            arc->dealloc(old_capa * sizeof(T));
         }
     }
 
 
+    // Unsafe release.
+
+    fu_INL void UNIQ__Dealloc_DontRunDtors() noexcept
+    {
+        i32 unique_capa = capa();
+        assert(unique_capa > SMALL_CAPA);
+
+        i32 shared_capa = unique_capa &~ SIGN_BIT;
+        if (shared_capa > SMALL_CAPA) {
+            UNIQ__Dealloc_DontRunDtors(
+                _big_data, shared_capa);
+        }
+        else {
+            assert(false);
+        }
+    }
+
+    fu_INL static void UNIQ__Dealloc_DontRunDtors(
+        T* old_data, i32 old_capa) noexcept
+    {
+        fu_ARC* arc = UNSAFE__arc(old_data);
+
+        #ifndef NDEBUG
+        assert(arc->decr() && "not unique");
+        #endif
+
+        arc->dealloc(old_capa * sizeof(T));
+    }
 
 
 
+
+
+
+    /////////////////////////////////////////////
+    //
+    // Copy & move constructors.
+
+    fu_INL fu_VEC(const fu_VEC& c)
+        : _big_data(c._big_data)
+        , _big_size(c._big_size)
+        , _big_PACK(c._big_PACK)
+    {
+        i32 shared_capa = capa() &~ SIGN_BIT;
+        if (shared_capa > SMALL_CAPA)
+        {
+            // Register sharing.
+            c.UNSAFE__MarkShared();
+            UNSAFE__arc(_big_data)->incr();
+        }
+    }
+
+    fu_INL fu_VEC(fu_VEC&& other)
+        : _big_data(x._big_data)
+        , _big_size(x._big_size)
+        , _big_PACK(x._big_PACK)
+    {
+        other.UNSAFE__Reset();
+    }
+
+    fu_INL fu_VEC& operator=(const fu_VEC& c)
+    {
+        if (&c != this)
+            append(size(), c);
+
+        return *this;
+    }
+
+    fu_INL fu_VEC& operator=(fu_VEC&& c)
+    {
+        if (&c != this)
+            append(size(), static_cast<fu_VEC&&> (c));
+
+        return *this;
+    }
+
+
+
+
+    /////////////////////////////////////////////
+    //
+    // Re-acquiring ownership.
+
+    fu_INL i32 slow_check_unique() const noexcept
+    {
+        // Quick.
+        i32 unique_capa = capa();
+        if (unique_capa >= SMALL_CAPA)
+            return true;
+
+        // Slow.
+        if (UNSAFE__arc(_big_data)->unique()) {
+            UNSAFE__MarkUnique();
+            return true;
+        }
+
+        // Fail.
+        return false;
+    }
 
 
 
@@ -323,7 +428,7 @@ struct fu_VEC
                 }
 
                 // Attempt to reacquire ownership.
-                if (hard_check_unique())
+                if (slow_check_unique())
                 {
                     old_capa = UNSAFE__MarkUnique();
                     goto CONSIDER_HOLDING_GROUND;
@@ -343,7 +448,7 @@ struct fu_VEC
             if constexpr (SMALL_CAPA)
                 UNSAFE__WriteSmall(new_size);
             else
-                UNSAFE__WriteEmpty();
+                UNSAFE__Reset();
         }
         else
         {
@@ -362,11 +467,11 @@ struct fu_VEC
         // Can we relocate the content?
         const i32 shared_capa = old_capa &~ SIGN_BIT;
         if (old_capa    > 0 ||
-           (shared_capa > 0 && shared_capa < new_size && hard_check_unique()))
+           (shared_capa > 0 && shared_capa < new_size && slow_check_unique()))
         {
+            // Cheap move by memcpy.
             assert(new_data != old_data);
 
-            // Cheap move by memcpy.
             if constexpr (!is_Clear)
             {
                 if constexpr (fu_MAYBE_POS(idx))
@@ -405,9 +510,9 @@ struct fu_VEC
             }
 
             // Free old.
-            if (old_capa > SMALL_CAPA)
-                UNSAFE__Dealloc_DontRunDtors(
-                    old_data, old_capa);
+            if (shared_capa > SMALL_CAPA)
+                UNIQ__Dealloc_DontRunDtors(
+                    old_data, shared_capa);
 
             return new_data;
         }
@@ -430,7 +535,7 @@ struct fu_VEC
         // Release the old mem, running destructors
         //  if we somehow ended up as the unique owner in the meantime.
         if (old_capa > SMALL_CAPA)
-            UNSAFE__Dealloc(
+            SHARED__Dealloc(
                 old_data, old_size, old_capa);
 
         return new_data;
@@ -614,13 +719,13 @@ struct fu_VEC
 
         MUT_mid(idx, del, src_size);
 
-        if (!src.hard_check_unique()) {
-            CPY_ctor_range(new_data + idx, src_data, src_size);
-            src._Dealloc();
+        if (!TRIVIAL && src.slow_check_unique()) {
+            MEMCPY_range(new_data + idx, src_data, src_size);
+            src.UNIQ__Dealloc_DontRunDtors();
         }
         else {
-            MEMCPY_range(new_data + idx, src_data, src_size);
-            src._Dealloc_DontRunDtors();
+            CPY_ctor_range(new_data + idx, src_data, src_size);
+            src._SafeDealloc();
         }
     }
 
@@ -656,13 +761,13 @@ struct fu_VEC
 
         MUT_back(del, src_size);
 
-        if (!src.hard_check_unique()) {
-            CPY_ctor_range(new_data + old_size, src_data, src_size);
-            src._Dealloc();
+        if (!TRIVIAL && src.slow_check_unique()) {
+            MEMCPY_range(new_data + old_size, src_data, src_size);
+            src.UNIQ__Dealloc_DontRunDtors();
         }
         else {
-            MEMCPY_range(new_data + old_size, src_data, src_size);
-            src._Dealloc_DontRunDtors();
+            CPY_ctor_range(new_data + old_size, src_data, src_size);
+            src._SafeDealloc();
         }
     }
 
