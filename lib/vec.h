@@ -551,8 +551,8 @@ struct fu_VEC
     //
     // Ctor/dtor utils.
 
-    #define MOV_ctor(dest, item) (new (dest) T(FWD(item)))
-    #define CPY_ctor(dest, item) (new (dest) T(    item ))
+    #define MOV_ctor(dest, item) (new (dest) T(static_cast<T&&>(item)))
+    #define CPY_ctor(dest, item) (new (dest) T(                 item ))
 
     #define  MEMCPY_range(d, s, n) if (d != s && n)  std::memcpy(d, s, u32(n) * sizeof(T))
     #define MEMMOVE_range(d, s, n) if (d != s && n) std::memmove(d, s, u32(n) * sizeof(T))
@@ -613,8 +613,6 @@ struct fu_VEC
     /////////////////////////////////////////////
     //
     // High level operator helpers.
-
-    #define FWD(v)  static_cast<T&&>(v)
 
     #define Zero    fu_ZERO()
     #define One     fu_ONE()
@@ -714,6 +712,8 @@ struct fu_VEC
     template <typename I, typename D>
     void splice(I idx, D del, fu_VEC&& src) noexcept
     {
+        assert((void*)&r != (void*)this && "mut alias");
+
         T*  src_data = src.data();
         i32 src_size = src.size();
 
@@ -756,9 +756,10 @@ struct fu_VEC
     template <typename D>
     void append(D del, fu_VEC&& src) noexcept
     {
+        assert((void*)&r != (void*)this && "mut alias");
+
         T*  src_data = src.data();
         i32 src_size = src.size();
-
         MUT_back(del, src_size);
 
         if (!TRIVIAL && src.slow_check_unique()) {
@@ -813,14 +814,14 @@ template <typename T>
 fu_VEC<T> slice(fu_VEC<T>&& v, i32 start) noexcept
 {
     v.trim(start);
-    return FWD(v);
+    return static_cast<fu_VEC<T>&&>(v);
 }
 
 template <typename T>
 fu_VEC<T> slice(fu_VEC<T>&& v, i32 start, i32 end) noexcept
 {
     v.trim(start, end);
-    return FWD(v);
+    return static_cast<fu_VEC<T>&&>(v);
 }
 
 template <typename T>
@@ -856,20 +857,20 @@ fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, fu_VEC<T>&& b) noexcept {
-    a.append(Zero, FWD(b));
-    return FWD(a);
+    a.append(Zero, static_cast<fu_VEC&&>(b));
+    return static_cast<fu_VEC&&>(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, const fu_VEC<T>& b) noexcept {
     a.append(Zero, b);
-    return FWD(a);
+    return static_cast<fu_VEC&&>(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
     a.splice(Zero, Zero, b);
-    return FWD(a);
+    return static_cast<fu_VEC&&>(a);
 }
 
 
@@ -880,7 +881,6 @@ fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
 #undef  MEMCPY_range
 #undef MEMMOVE_range
 
-#undef FWD
 #undef Zero
 #undef One
 
