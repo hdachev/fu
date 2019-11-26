@@ -67,8 +67,21 @@ struct fu_VEC
 
     static const i32 SIGN_BIT = 1 << 31;
 
+    fu_INL i32 capa() const noexcept {
+        if constexpr (SMALL_CAPA) {
+            i32 capa = UNSAFE__Unpack(_big_PACK);
+            return small() ? SMALL_CAPA : capa;
+        }
+
+        return _big_PACK;
+    }
+
+    fu_INL i32 shared_capa() const noexcept {
+        return capa() &~ SIGN_BIT;
+    }
+
     fu_INL void UNSAFE__MarkUnique() noexcept {
-        i32  capa = UNSAFE__Unpack(_big_PACK) &~ SIGN_BIT;
+        i32  capa = shared_capa();
         _big_PACK = UNSAFE__Pack(capa);
         return capa;
     }
@@ -89,16 +102,6 @@ struct fu_VEC
         _big_data = nullptr;
         _big_size = 0;
         _big_PACK = 0;
-    }
-
-    fu_INL i32 capa() const noexcept {
-        if constexpr (SMALL_CAPA) {
-            i32 capa = UNSAFE__Unpack(_big_PACK);
-            return small() ? SMALL_CAPA : capa;
-        }
-
-        static_assert(!PACK_CAPA);
-        return _big_PACK;
     }
 
     /////////////////////////////////////////////
@@ -174,7 +177,7 @@ struct fu_VEC
 
     fu_INL void _SafeDealloc() noexcept
     {
-        i32 shared_capa = capa() &~ SIGN_BIT;
+        i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
             SHARED__Dealloc(
                 _big_data, _big_size, shared_capa);
@@ -239,7 +242,7 @@ struct fu_VEC
         , _big_size(c._big_size)
         , _big_PACK(c._big_PACK)
     {
-        i32 shared_capa = capa() &~ SIGN_BIT;
+        i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
         {
             // Register sharing.
