@@ -738,11 +738,7 @@ struct fu_VEC
     {
         assert((void*)&r != (void*)this && "mut alias");
 
-        T*  src_data =       src.data();
-        i32 src_size = (i32) src.size();
-
-        MUT_mid(idx, del, src_size);
-        CPY_ctor_range(new_data + idx, src_data, src_size);
+        splice_copy(idx, del, src.data(), (i32) src.size());
     }
 
     template <typename I, typename D>
@@ -781,11 +777,7 @@ struct fu_VEC
     {
         assert((void*)&r != (void*)this && "mut alias");
 
-        T*  src_data =       src.data();
-        i32 src_size = (i32) src.size();
-
-        MUT_back(del, src_size);
-        CPY_ctor_range(new_data + old_size, src_data, src_size);
+        append_copy(del, src.data(), (i32) src.size());
     }
 
     template <typename D>
