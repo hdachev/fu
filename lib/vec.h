@@ -220,14 +220,8 @@ struct fu_VEC
         i32 unique_capa = capa();
         assert(unique_capa > SMALL_CAPA);
 
-        i32 shared_capa = unique_capa &~ SIGN_BIT;
-        if (shared_capa > SMALL_CAPA) {
-            UNIQ__Dealloc_DontRunDtors(
-                _big_data, shared_capa);
-        }
-        else {
-            assert(false);
-        }
+        UNIQ__Dealloc_DontRunDtors(
+            _big_data, unique_capa &~ SIGN_BIT);
     }
 
     fu_INL static void UNIQ__Dealloc_DontRunDtors(
@@ -897,11 +891,11 @@ struct fu_VEC
         auto s = (u32) size();
 
         // Hopefully compiles away.
-        assert(idx >= 0 && idx < s);
         if (idx >= 0 && idx < s)
             return data()[idx];
 
         // Failsafe.
+        assert(false);
         static const T Default {};
         return Default;
     }
@@ -918,7 +912,7 @@ struct fu_VEC
 
     fu_NEVER_INLINE void _DoReserve(i32 new_capa) noexcept {
         if (new_capa) {
-            assert(new_capa >= 0);
+            assert(new_capa > 0);
 
             int grow = new_capa - size();
                 grow = grow > 0
@@ -940,7 +934,6 @@ struct fu_VEC
         reserve();
 
         auto s = (u32) size();
-        assert(idx >= 0 && idx < s);
 
         // Sepuku bounds check.
         idx = idx >= 0 && idx < s ? idx : 0xffffffff;
