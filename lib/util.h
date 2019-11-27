@@ -27,29 +27,44 @@ const uint8_t fu_EXIT_BadAlloc = 101;
 
 /////////////////////////////////////////////
 
-struct fu_ZERO {
+struct fu_ZERO
+{
     fu_INL constexpr operator int() const noexcept {
         return 0;
     }
-};
 
-struct fu_ONE {
-    fu_INL constexpr operator int() const noexcept {
-        return 1;
+    fu_INL void operator=(int x) noexcept {
+        assert(x == 0);
     }
 };
 
-fu_INL constexpr bool fu_MAYBE_POS(fu_ZERO) noexcept {
-    return false;
-}
+struct fu_INT01
+{
+    bool val = true;
 
-fu_INL constexpr bool fu_MAYBE_POS(fu_ONE) noexcept {
-    return true;
-}
+    fu_INL void operator=(int x) noexcept {
+        assert(x == 0 || x == 1);
+        val = x > 0;
+    }
 
-fu_INL constexpr bool fu_MAYBE_POS(int) noexcept {
-    return true;
-}
+    fu_INL constexpr operator int() const noexcept {
+        return val ? 1 : 0;
+    }
+};
+
+constexpr fu_INT01 fu_ONE { true };
+
+template <typename T>
+struct fu_MAYBE_POS {
+    static constexpr bool value = true;
+};
+
+template <>
+struct fu_MAYBE_POS<fu_ZERO> {
+    static constexpr bool value = false;
+};
+
+#define fu_MAYBE_POS(...) (fu_MAYBE_POS<decltype( __VA_ARGS__ )>::value)
 
 /////////////////////////////////////////////
 

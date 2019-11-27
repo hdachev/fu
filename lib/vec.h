@@ -16,11 +16,15 @@ struct fu_VEC
                                 ? (VEC_SIZE - 1) / sizeof(T)
                                 : 0;
 
+    static const bool HAS_SMALL = SMALL_CAPA > 0;
+
     /////////////////////////////////////////////
 
             T*  _big_data = nullptr;
             i32 _big_size = 0;
     mutable i32 _big_PACK = 0;
+
+    fu_VEC() = default;
 
     /////////////////////////////////////////////
 
@@ -44,7 +48,7 @@ struct fu_VEC
     static const i32 SMALL_SIZE_OFFSET  = PACK_CAPA ? 24 + 4 : 4;
     static const i32 SMALL_SIZE_MASK    = 0xf;
 
-    fu_INL static i32 UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
+    fu_INL static void UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
     {
         // We might need to waste a slot to be able to later tell
         //  the difference between small & big strings/vectors,
@@ -61,14 +65,14 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL bool small() const noexcept {
-        if constexpr (SMALL_CAPA) return !(_big_PACK & IS_BIG_MASK);
-        else                      return false;
+        if constexpr (HAS_SMALL) return !(_big_PACK & IS_BIG_MASK);
+        else                     return false;
     }
 
     static const i32 SIGN_BIT = 1 << 31;
 
     fu_INL i32 capa() const noexcept {
-        if constexpr (SMALL_CAPA) {
+        if constexpr (HAS_SMALL) {
             i32 capa = UNSAFE__Unpack(_big_PACK);
             return small() ? SMALL_CAPA : capa;
         }
@@ -80,13 +84,15 @@ struct fu_VEC
         return capa() &~ SIGN_BIT;
     }
 
-    fu_INL void UNSAFE__MarkUnique() noexcept {
+    fu_INL i32 UNSAFE__MarkUnique() const noexcept {
+        assert(!small());
         i32  capa = shared_capa();
         _big_PACK = UNSAFE__Pack(capa);
         return capa;
     }
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
+        assert(!small());
         _big_PACK = UNSAFE__Pack( // Make negative.
                   UNSAFE__Unpack(_big_PACK) | SIGN_BIT);
     }
@@ -107,18 +113,24 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL i32 UNSAFE__ReadSmallSize() const noexcept {
-        if constexpr (SMALL_CAPA)   return (_big_PACK >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
-        else                        return 0;
+        if constexpr (HAS_SMALL) return (_big_PACK >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
+        else                     return 0;
     }
 
     fu_INL void UNSAFE__WriteSmall(i32 actual_size) noexcept {
         static_assert(SMALL_CAPA);
-        const char s = char(actual_size << 4);
-        std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
+
+        if constexpr (PACK_CAPA) {
+            const char s = char(actual_size << 4);
+            std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
+        }
+        else {
+            _big_PACK = (actual_size & SMALL_SIZE_MASK) << SMALL_SIZE_OFFSET;
+        }
     }
 
     fu_INL void UNSAFE__WriteSize(i32 actual_size) noexcept {
-        if constexpr (SMALL_CAPA)
+        if constexpr (HAS_SMALL)
             if (small()) {
                 UNSAFE__WriteSmall(actual_size);
                 return;
@@ -128,7 +140,7 @@ struct fu_VEC
     }
 
     fu_INL i32 size() const noexcept {
-        if constexpr (SMALL_CAPA) {
+        if constexpr (HAS_SMALL) {
             i32 small_size = UNSAFE__ReadSmallSize();
             return small() ? small_size : _big_size;
         }
@@ -139,7 +151,7 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL const T* data() const noexcept {
-        if constexpr (SMALL_CAPA) {
+        if constexpr (HAS_SMALL) {
             return small() ? (T*)this : _big_data;
         }
 
@@ -188,6 +200,8 @@ struct fu_VEC
     fu_INL static void SHARED__Dealloc(
         T* old_data, i32 old_size, i32 old_capa) noexcept
     {
+        assert(old_capa > SMALL_CAPA);
+
         fu_ARC* arc = UNSAFE__arc(old_data);
         if (arc->decr()) {
             DESTROY_range(
@@ -245,31 +259,34 @@ struct fu_VEC
         i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
         {
-            // Register sharing.
+            UNSAFE__MarkShared();
+
             c.UNSAFE__MarkShared();
             UNSAFE__arc(_big_data)->incr();
         }
     }
 
-    fu_INL fu_VEC(fu_VEC&& other)
+    fu_INL fu_VEC(fu_VEC&& x)
         : _big_data(x._big_data)
         , _big_size(x._big_size)
         , _big_PACK(x._big_PACK)
     {
-        other.UNSAFE__Reset();
+        x.UNSAFE__Reset();
     }
 
     fu_INL fu_VEC& operator=(const fu_VEC& c)
     {
-        append(size(), c);
+        if (this != &c)
+            *this = fu_VEC(c);
 
         return *this;
     }
 
     fu_INL fu_VEC& operator=(fu_VEC&& c)
     {
-        assert(&c != this);
-        append(size(), static_cast<fu_VEC&&> (c));
+        this->~fu_VEC();
+        new (this) fu_VEC(
+            static_cast<fu_VEC&&>(c));
 
         return *this;
     }
@@ -281,21 +298,23 @@ struct fu_VEC
     //
     // Re-acquiring ownership.
 
-    fu_INL i32 slow_check_unique() const noexcept
+    fu_INL bool slow_check_unique() const noexcept
     {
-        // Quick.
         i32 unique_capa = capa();
         if (unique_capa >= SMALL_CAPA)
             return true;
 
-        // Slow.
-        if (UNSAFE__arc(_big_data)->unique()) {
+        if (slow_check_unique(_big_data)) {
             UNSAFE__MarkUnique();
             return true;
         }
 
-        // Fail.
         return false;
+    }
+
+    fu_INL static bool slow_check_unique(const T* data) noexcept
+    {
+        return UNSAFE__arc(data)->unique();
     }
 
 
@@ -326,9 +345,9 @@ struct fu_VEC
         // TODO consider inlining these manually,
         //  there's some risk that common subexpressions
         //   won't eliminate cleanly for small vectors.
-        const i32  old_size = op_Init ? 0          : size();
-              i32  old_capa = op_Init ? SMALL_CAPA : capa();
-        const T*   old_data = op_Init ? (T*)this   : data();
+        const i32  old_size = is_Init ? 0          : size();
+              i32  old_capa = is_Init ? SMALL_CAPA : capa();
+              T*   old_data = is_Init ? (T*)this   : (T*)data();
 
         assert(idx >= 0 && idx <= old_size
             && del >= 0 && pop >= 0 && idx + del + pop <= old_size
@@ -397,8 +416,8 @@ struct fu_VEC
                              (fu_MAYBE_POS(del) || fu_MAYBE_POS(insert)))
                 {
                     MEMMOVE_range(
-                        old_data + (idx + del),
                         old_data + (idx + insert),
+                        old_data + (idx + del),
                         old_size - del - pop);
                 }
 
@@ -434,7 +453,7 @@ struct fu_VEC
                 }
 
                 // Attempt to reacquire ownership.
-                if (slow_check_unique())
+                if (slow_check_unique(old_data))
                 {
                     old_capa = UNSAFE__MarkUnique();
                     goto CONSIDER_HOLDING_GROUND;
@@ -451,7 +470,7 @@ struct fu_VEC
         {
             new_data = (T*)this;
 
-            if constexpr (SMALL_CAPA)
+            if constexpr (HAS_SMALL)
                 UNSAFE__WriteSmall(new_size);
             else
                 UNSAFE__Reset();
@@ -467,13 +486,13 @@ struct fu_VEC
         }
 
         // Init ends here (no free, no realloc).
-        if (is_Init)
+        if constexpr (is_Init)
             return new_data;
 
         // Can we relocate the content?
         const i32 shared_capa = old_capa &~ SIGN_BIT;
         if (old_capa    > 0 ||
-           (shared_capa > 0 && shared_capa < new_size && slow_check_unique()))
+           (shared_capa > 0 && shared_capa < new_size && slow_check_unique(old_data)))
         {
             // Cheap move by memcpy.
             assert(new_data != old_data);
@@ -535,14 +554,14 @@ struct fu_VEC
             CPY_ctor_range(
                 new_data + (idx + insert),
                 old_data + (idx + del),
-                old_size - (idx - del - pop));
+                old_size - (idx + del + pop));
         }
 
         // Release the old mem, running destructors
         //  if we somehow ended up as the unique owner in the meantime.
-        if (old_capa > SMALL_CAPA)
+        if (shared_capa > SMALL_CAPA)
             SHARED__Dealloc(
-                old_data, old_size, old_capa);
+                old_data, old_size, shared_capa);
 
         return new_data;
     }
@@ -560,28 +579,35 @@ struct fu_VEC
     #define MOV_ctor(dest, item) (new (dest) T(static_cast<T&&>(item)))
     #define CPY_ctor(dest, item) (new (dest) T(                 item ))
 
-    #define  MEMCPY_range(d, s, n) if (d != s && n)  std::memcpy(d, s, u32(n) * sizeof(T))
-    #define MEMMOVE_range(d, s, n) if (d != s && n) std::memmove(d, s, u32(n) * sizeof(T))
+    fu_INL static void MEMCPY_range(T* d, const T* s, i32 n) noexcept {
+        if (d != s && n)
+            std::memcpy(d, s, u32(n) * sizeof(T));
+    }
 
-    fu_INL void CPY_ctor_range(T* dest, const T* src, i32 count) noexcept
+    fu_INL static void MEMMOVE_range(T* d, const T* s, i32 n) noexcept {
+        if (d != s && n)
+            std::memmove(d, s, u32(n) * sizeof(T));
+    }
+
+    fu_INL static void CPY_ctor_range(T* dest, const T* src, i32 count) noexcept
     {
         if constexpr (TRIVIAL)
             MEMCPY_range(dest, src, count);
         else
-            for (*end = dest + count; i < end; i++)
-                CPY_ctor(dest, src[i]);
+            for (const T* end = dest + count; dest < end; dest++, src++)
+                CPY_ctor(dest, *src);
     }
 
-    fu_INL void MOV_ctor_range(T* dest, const T* src, i32 count) noexcept
+    fu_INL static void MOV_ctor_range(T* dest, T* src, i32 count) noexcept
     {
         if constexpr (TRIVIAL)
             MEMCPY_range(dest, src, count);
         else
-            for (*end = dest + count; i < end; i++)
-                MOV_ctor(dest, src[i]);
+            for (const T* end = dest + count; dest < end; dest++, src++)
+                MOV_ctor(dest, *src);
     }
 
-    fu_INL void DEF_initRange(T* start, T* end) noexcept
+    fu_INL static void DEF_initRange(T* start, T* end) noexcept
     {
         if constexpr (!TRIVIAL)
             for (T* i = start; i < end; i++)
@@ -609,6 +635,13 @@ struct fu_VEC
 #endif
     }
 
+    fu_INL static void DESTROY_range(T* start, T* end) noexcept
+    {
+        if constexpr (!TRIVIAL)
+            for (T* i = start; i < end; i++)
+                i->~T();
+    }
+
 
 
 
@@ -621,7 +654,7 @@ struct fu_VEC
     // High level operator helpers.
 
     #define Zero    fu_ZERO()
-    #define One     fu_ONE()
+    #define One     fu_ONE
 
     #define MUT_op(Init, Clear, Reserve, ...) i32 old_size; i32 new_size;\
         T* new_data = _Splice<Init, Clear, Reserve>(old_size, new_size,\
@@ -633,7 +666,7 @@ struct fu_VEC
     #define MUT_trim(shift, pop) MUT_op(false, false, false, Zero, shift, Zero, pop, Zero)
     #define MUT_init(size) MUT_op(true, false, false, Zero, Zero, Zero, Zero, size)
     #define MUT_clear() MUT_op(false, true, false, Zero, Zero, Zero, Zero, Zero)
-    #define MUT_reserve(capa) MUT_op(false, true, true, Zero, Zero, Zero, Zero, Zero)
+    #define MUT_reserve(capa) MUT_op(false, false, true, Zero, Zero, Zero, Zero, Zero)
 
 
     //
@@ -701,11 +734,11 @@ struct fu_VEC
     }
 
     void shift() noexcept {
-        MUT_front(Zero, One);
+        MUT_front(One, Zero);
     }
 
     void trim(i32 head) noexcept {
-        MUT_front(Zero, head);
+        MUT_front(head, Zero);
     }
 
     void trim(i32 head, i32 tail) noexcept {
@@ -719,10 +752,10 @@ struct fu_VEC
     template <typename I, typename D>
     void splice(I idx, D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&r != (void*)this && "splice: rvalref alias");
+        assert((void*)&src != (void*)this && "splice: rvalref alias");
 
-        T*  src_data = src.data();
-        i32 src_size = src.size();
+        T*  src_data = (T*) src.data();
+        i32 src_size =      src.size();
 
         MUT_mid(idx, del, src_size);
 
@@ -740,7 +773,7 @@ struct fu_VEC
     auto splice(I idx, D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
-        splice_copy(idx, del, src.data(), (i32) src.size());
+        splice_copy(idx, del, r.data(), (i32) r.size());
     }
 
     template <typename I, typename D>
@@ -766,7 +799,7 @@ struct fu_VEC
     template <typename D>
     void append(D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&r != (void*)this && "append: rvalref alias");
+        assert((void*)&src != (void*)this && "append: rvalref alias");
 
         T*  src_data = src.data();
         i32 src_size = src.size();
@@ -786,14 +819,14 @@ struct fu_VEC
     auto append(D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
-        append_copy(del, src.data(), (i32) src.size());
+        append_copy(del, r.data(), (i32) r.size());
     }
 
     template <typename D>
     void append_copy(D del, const T* src_data, i32 src_size) noexcept
     {
-        T*  old_data = data();
-        i32 old_size = size();
+        const T*  old_data = data();
+              i32 old_size = size();
 
         if (src_data < old_data || src_data > old_data + old_size) {
             MUT_back(del, src_size);
@@ -819,7 +852,7 @@ struct fu_VEC
         // TODO fix mostly useless copying,
         //  although it's just extra memcpy work it's silly.
         fu_VEC tmpbuf;
-        tmpbuf.init_copy(src_data, src_size);
+        tmpbuf.UNSAFE__init_copy(src_data, src_size);
         splice(idx, del, static_cast<fu_VEC&&>(tmpbuf));
     }
 
@@ -827,12 +860,12 @@ struct fu_VEC
     //
     // Finally, some stuff to power literals.
 
-    void init_copy(T* src_data, i32 src_size) noexcept {
+    void UNSAFE__init_copy(const T* src_data, i32 src_size) noexcept {
         MUT_init(src_size);
         CPY_ctor_range(new_data, src_data, src_size);
     }
 
-    void init_move(T* src_data, i32 src_size) noexcept {
+    void UNSAFE__init_move(T* src_data, i32 src_size) noexcept {
         MUT_init(src_size);
         MOV_ctor_range(new_data, src_data, src_size);
     }
@@ -843,7 +876,7 @@ struct fu_VEC
 
     i32 find(const T& search) const {
         const T* start = data();
-        const T* end   = start + size;
+        const T* end   = start + size();
 
         for (T* i = start; i < end; i++)
             if (i == search)
@@ -857,7 +890,7 @@ struct fu_VEC
     }
 
     fu_INL const T* end() const {
-        return data() + size;
+        return data() + size();
     }
 
     fu_INL const T& operator[](i32 idx) const {
@@ -869,7 +902,7 @@ struct fu_VEC
             return data()[idx];
 
         // Failsafe.
-        static const T Default;
+        static const T Default {};
         return Default;
     }
 
@@ -967,20 +1000,20 @@ fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, fu_VEC<T>&& b) noexcept {
-    a.append(Zero, static_cast<fu_VEC&&>(b));
-    return static_cast<fu_VEC&&>(a);
+    a.append(Zero, static_cast<fu_VEC<T>&&>(b));
+    return static_cast<fu_VEC<T>&&>(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(fu_VEC<T>&& a, const fu_VEC<T>& b) noexcept {
     a.append(Zero, b);
-    return static_cast<fu_VEC&&>(a);
+    return static_cast<fu_VEC<T>&&>(a);
 }
 
 template <typename T>
 fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
     a.splice(Zero, Zero, b);
-    return static_cast<fu_VEC&&>(a);
+    return static_cast<fu_VEC<T>&&>(a);
 }
 
 template <typename T>
@@ -994,8 +1027,6 @@ fu_VEC<T>& operator+=(fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
 
 #undef MOV_ctor
 #undef CPY_ctor
-#undef  MEMCPY_range
-#undef MEMMOVE_range
 
 #undef Zero
 #undef One

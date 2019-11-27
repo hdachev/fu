@@ -10,6 +10,9 @@
 struct fu_DEBUG_CNTDWN {
     std::atomic_int m_cnt;
 
+    const char* topic;
+    fu_DEBUG_CNTDWN(const char* topic) : topic(topic) {}
+
     ~fu_DEBUG_CNTDWN() {
         assert(m_cnt == 0);
     }
@@ -30,8 +33,8 @@ struct alignas(16) fu_ARC
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
 
-    inline static fu_DEBUG_CNTDWN DEBUG_count;
-    inline static fu_DEBUG_CNTDWN DEBUG_total;
+    inline static fu_DEBUG_CNTDWN DEBUG_count { "DEBUG_count" };
+    inline static fu_DEBUG_CNTDWN DEBUG_total { "DEBUG_total" };
     #endif
 
     fu_NEVER_INLINE void dealloc(size_t bytes)

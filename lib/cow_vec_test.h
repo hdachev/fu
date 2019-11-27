@@ -19,16 +19,13 @@ void cow_vec_test(int cap0, int cap1)
     //
     vec v1 = v0;
 
-    assert(v1.shared_capa() == v0.shared_capa()
-        && v1.unique_capa() == 0
-        && v0.unique_capa());
+    assert(v1.shared_capa() == v0.shared_capa());
 
     //
     for (int i = 0; i < cap1; i++)
         v1.push( T(i) );
 
-    assert(v1.shared_capa() == v0.shared_capa()
-        || v1.shared_capa() <= v1.size() * 2);
+    assert(v1.data() != v0.data() && (v1.shared_capa() == v0.shared_capa() || v1.shared_capa() <= v1.size() * 2));
 
     //
     vec v2 = v1;
@@ -66,7 +63,8 @@ void cow_vec_test(int cap0, int cap1)
     assert(v2.size() == v1.size());
 
     //
-    v2 = { v1.begin(), v1.end() };
+    v2.clear();
+    v2.init_copy(v1.data(), v1.size());
 
     assert(v1.size() == v2.size() && v1.data() != v2.data());
     for (int i = 0; i < v1.size(); i++)
@@ -85,9 +83,8 @@ struct NonTriv
 {
     int x;
 
-    NonTriv(int x)
-        : x (x)
-    {}
+    NonTriv() { x = 0; }
+    NonTriv(int x) : x (x) {}
 
     bool operator==(const NonTriv& other) const
     {
