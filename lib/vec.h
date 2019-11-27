@@ -307,6 +307,7 @@ struct fu_VEC
 
     template <  bool is_Init,
                 bool is_Clear,
+                bool is_Reserve,
 
                 typename t_idx, typename t_del, typename t_insert,
                                 typename t_pop, typename t_push >
@@ -416,16 +417,19 @@ struct fu_VEC
             if (new_size > SMALL_CAPA &&
                 new_size <= (old_capa &~ SIGN_BIT))
             {
-                // Do nothing if this is a TRIVIAL shrink -
-                //  we can right-slice shared TRIVIAL for free.
-                //   Doesn't work for non-TRIVIAL
-                //    because we'd lose track of destructors.
-                if constexpr (TRIVIAL)
+                if constexpr (!is_Reserve)
                 {
-                    if (idx + del + pop == old_size)
+                    // Do nothing if this is a TRIVIAL shrink -
+                    //  we can right-slice shared TRIVIAL for free.
+                    //   Doesn't work for non-TRIVIAL
+                    //    because we'd lose track of destructors.
+                    if constexpr (TRIVIAL)
                     {
-                        _big_size = idx;
-                        return nullptr;
+                        if (idx + del + pop == old_size)
+                        {
+                            _big_size = idx;
+                            return nullptr;
+                        }
                     }
                 }
 
@@ -619,16 +623,17 @@ struct fu_VEC
     #define Zero    fu_ZERO()
     #define One     fu_ONE()
 
-    #define MUT_op(Init, Clear, ...) i32 old_size; i32 new_size;\
-        T* new_data = _Splice<Init, Clear>(old_size, new_size,\
+    #define MUT_op(Init, Clear, Reserve, ...) i32 old_size; i32 new_size;\
+        T* new_data = _Splice<Init, Clear, Reserve>(old_size, new_size,\
             __VA_ARGS__ )
 
-    #define MUT_front(rem, add) MUT_op(false, false, Zero, rem, add, Zero, Zero)
-    #define MUT_back(rem, add) MUT_op(false, false, Zero, Zero, Zero, rem, add)
-    #define MUT_mid(at, rem, add) MUT_op(false, false, at, rem, add, Zero, Zero)
-    #define MUT_trim(shift, pop) MUT_op(false, false, Zero, shift, Zero, pop, Zero)
-    #define MUT_init(size) MUT_op(true, false, Zero, Zero, Zero, Zero, size)
-    #define MUT_clear() MUT_op(false, true, Zero, Zero, Zero, Zero, Zero)
+    #define MUT_front(rem, add) MUT_op(false, false, false, Zero, rem, add, Zero, Zero)
+    #define MUT_back(rem, add) MUT_op(false, false, false, Zero, Zero, Zero, rem, add)
+    #define MUT_mid(at, rem, add) MUT_op(false, false, false, at, rem, add, Zero, Zero)
+    #define MUT_trim(shift, pop) MUT_op(false, false, false, Zero, shift, Zero, pop, Zero)
+    #define MUT_init(size) MUT_op(true, false, false, Zero, Zero, Zero, Zero, size)
+    #define MUT_clear() MUT_op(false, true, false, Zero, Zero, Zero, Zero, Zero)
+    #define MUT_reserve(capa) MUT_op(false, true, true, Zero, Zero, Zero, Zero, Zero)
 
 
     //
@@ -750,7 +755,7 @@ struct fu_VEC
         }
         else if (idx || del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                idx, del, 0, src_data, src_size);
+                idx, del, Zero, src_data, src_size);
         }
     }
 
@@ -796,7 +801,7 @@ struct fu_VEC
         }
         else if (del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                0, 0, del, src_data, src_size);
+                Zero, Zero, del, src_data, src_size);
         }
     }
 
@@ -804,8 +809,9 @@ struct fu_VEC
     //
     // Self-splice slow path.
 
+    template <typename I, typename D, typename P>
     fu_NEVER_INLINE void UNSAFE__self_splice(
-        i32 idx, i32 del, i32 pop,
+        I idx, D del, P pop,
         const T* src_data, i32 src_size) noexcept
     {
         assert(false && "Untested.");
@@ -823,12 +829,32 @@ struct fu_VEC
 
     void init_copy(T* src_data, i32 src_size) noexcept {
         MUT_init(src_size);
-        MOV_ctor_range(new_data, src_data, src_size);
+        CPY_ctor_range(new_data, src_data, src_size);
     }
 
     void init_move(T* src_data, i32 src_size) noexcept {
         MUT_init(src_size);
         MOV_ctor_range(new_data, src_data, src_size);
+    }
+
+
+    //
+    // Acquire unique.
+
+    template <typename C>
+    void reserve(C new_capa) noexcept {
+        assert(new_capa >= 0);
+
+        int grow = new_capa - size();
+            grow = grow > 0
+                 ? grow : 0;
+
+        MUT_reserve(grow);
+        UNSAFE__WriteSize(old_size);
+    }
+
+    void reserve() noexcept {
+        MUT_reserve(Zero);
     }
 };
 
@@ -896,6 +922,12 @@ template <typename T>
 fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
     a.splice(Zero, Zero, b);
     return static_cast<fu_VEC&&>(a);
+}
+
+template <typename T>
+fu_VEC<T>& operator+=(fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
+    a.append(Zero, b);
+    return a;
 }
 
 
