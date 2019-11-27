@@ -261,16 +261,15 @@ struct fu_VEC
 
     fu_INL fu_VEC& operator=(const fu_VEC& c)
     {
-        if (&c != this)
-            append(size(), c);
+        append(size(), c);
 
         return *this;
     }
 
     fu_INL fu_VEC& operator=(fu_VEC&& c)
     {
-        if (&c != this)
-            append(size(), static_cast<fu_VEC&&> (c));
+        assert(&c != this);
+        append(size(), static_cast<fu_VEC&&> (c));
 
         return *this;
     }
@@ -715,7 +714,7 @@ struct fu_VEC
     template <typename I, typename D>
     void splice(I idx, D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&r != (void*)this && "mut alias");
+        assert((void*)&r != (void*)this && "splice: rvalref alias");
 
         T*  src_data = src.data();
         i32 src_size = src.size();
@@ -736,16 +735,23 @@ struct fu_VEC
     auto splice(I idx, D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
-        assert((void*)&r != (void*)this && "mut alias");
-
         splice_copy(idx, del, src.data(), (i32) src.size());
     }
 
     template <typename I, typename D>
     void splice_copy(I idx, D del, const T* src_data, i32 src_size) noexcept
     {
-        MUT_mid(idx, del, src_size);
-        CPY_ctor_range(new_data + idx, src_data, src_size);
+        T*  old_data = data();
+        i32 old_size = size();
+
+        if (src_data < old_data || src_data > old_data + old_size) {
+            MUT_mid(idx, del, src_size);
+            CPY_ctor_range(new_data + idx, src_data, src_size);
+        }
+        else if (idx || del != old_size || src_data != old_data) {
+            UNSAFE__self_splice(
+                idx, del, 0, src_data, src_size);
+        }
     }
 
 
@@ -755,7 +761,7 @@ struct fu_VEC
     template <typename D>
     void append(D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&r != (void*)this && "mut alias");
+        assert((void*)&r != (void*)this && "append: rvalref alias");
 
         T*  src_data = src.data();
         i32 src_size = src.size();
@@ -775,16 +781,40 @@ struct fu_VEC
     auto append(D del, const V& r) noexcept
         ->  decltype( const_cast<T*>( r.data() + r.size() ), void() )
     {
-        assert((void*)&r != (void*)this && "mut alias");
-
         append_copy(del, src.data(), (i32) src.size());
     }
 
     template <typename D>
     void append_copy(D del, const T* src_data, i32 src_size) noexcept
     {
-        MUT_back(del, src_size);
-        CPY_ctor_range(new_data + old_size, src_data, src_size);
+        T*  old_data = data();
+        i32 old_size = size();
+
+        if (src_data < old_data || src_data > old_data + old_size) {
+            MUT_back(del, src_size);
+            CPY_ctor_range(new_data + old_size, src_data, src_size);
+        }
+        else if (del != old_size || src_data != old_data) {
+            UNSAFE__self_splice(
+                0, 0, del, src_data, src_size);
+        }
+    }
+
+
+    //
+    // Self-splice slow path.
+
+    fu_NEVER_INLINE void UNSAFE__self_splice(
+        i32 idx, i32 del, i32 pop,
+        const T* src_data, i32 src_size) noexcept
+    {
+        assert(false && "Untested.");
+
+        // TODO fix mostly useless copying,
+        //  although it's just extra memcpy work it's silly.
+        fu_VEC tmpbuf;
+        tmpbuf.init_copy(src_data, src_size);
+        splice(idx, del, static_cast<fu_VEC&&>(tmpbuf));
     }
 
 
