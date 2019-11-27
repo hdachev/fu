@@ -839,23 +839,82 @@ struct fu_VEC
 
 
     //
+    // Pure reads.
+
+    i32 find(const T& search) const {
+        const T* start = data();
+        const T* end   = start + size;
+
+        for (T* i = start; i < end; i++)
+            if (i == search)
+                return (i32) i - start;
+
+        return -1;
+    }
+
+    fu_INL const T* begin() const {
+        return data();
+    }
+
+    fu_INL const T* end() const {
+        return data() + size;
+    }
+
+    fu_INL const T& operator[](i32 idx) const {
+        auto s = (u32) size();
+
+        // Hopefully compiles away.
+        assert(idx >= 0 && idx < s);
+        if (idx >= 0 && idx < s)
+            return data()[idx];
+
+        // Failsafe.
+        static const T Default;
+        return Default;
+    }
+
+
+    //
     // Acquire unique.
 
     template <typename C>
-    void reserve(C new_capa) noexcept {
-        assert(new_capa >= 0);
-
-        int grow = new_capa - size();
-            grow = grow > 0
-                 ? grow : 0;
-
-        MUT_reserve(grow);
-        UNSAFE__WriteSize(old_size);
+    fu_INL void reserve(C new_capa) noexcept {
+        if (new_capa > capa() || new_capa < 0)
+            _DoReserve(new_capa);
     }
 
-    void reserve() noexcept {
-        MUT_reserve(Zero);
+    fu_NEVER_INLINE void _DoReserve(i32 new_capa) noexcept {
+        if (new_capa) {
+            assert(new_capa >= 0);
+
+            int grow = new_capa - size();
+                grow = grow > 0
+                     ? grow : 0;
+
+            MUT_reserve(grow);
+            UNSAFE__WriteSize(old_size);
+        }
+        else {
+            MUT_reserve(Zero);
+        }
     }
+
+    fu_INL void reserve() noexcept {
+        return reserve(Zero);
+    }
+
+    fu_INL T& mutref(i32 idx) noexcept {
+        reserve();
+
+        auto s = (u32) size();
+        assert(idx >= 0 && idx < s);
+
+        // Sepuku bounds check.
+        idx = idx >= 0 && idx < s ? idx : 0xffffffff;
+        return data()[idx];
+    }
+
+
 };
 
 
