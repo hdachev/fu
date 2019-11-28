@@ -222,6 +222,8 @@ struct fu_VEC
 
         UNIQ__Dealloc_DontRunDtors(
             _big_data, unique_capa &~ SIGN_BIT);
+
+        UNSAFE__Reset();
     }
 
     fu_INL static void UNIQ__Dealloc_DontRunDtors(
@@ -412,7 +414,7 @@ struct fu_VEC
                     MEMMOVE_range(
                         old_data + (idx + insert),
                         old_data + (idx + del),
-                        old_size - del - pop);
+                        old_size - (idx + del + pop));
                 }
 
                 // Done.
@@ -474,8 +476,25 @@ struct fu_VEC
             i32 new_capa = new_size;
             fu_ARC::alloc(new_data, new_capa);
             UNSAFE__EnsureActualLooksBig(new_capa);
-
             assert(new_capa >= new_size);
+
+            // Small-to-big needs to move content
+            //  BEFORE persisting big size.
+            if (is_Init || (TRIVIAL && old_capa == SMALL_CAPA))
+            {
+                // Relocate before writing size,
+                //  else we overwrite content.
+                if constexpr (HAS_SMALL && !is_Init)
+                    UNSAFE__Relocate(
+                        idx, del, insert, pop,
+                        new_data, old_data, old_size);
+
+                UNSAFE__WriteBig(new_data, new_size, new_capa);
+
+                // Done.
+                return new_data;
+            }
+
             UNSAFE__WriteBig(new_data, new_size, new_capa);
         }
 
@@ -483,31 +502,20 @@ struct fu_VEC
         if constexpr (is_Init)
             return new_data;
 
-        // Can we relocate the content?
+        // Move or copy?
         const i32 shared_capa = old_capa &~ SIGN_BIT;
-        if (old_capa    > 0 ||
-           (shared_capa > 0 && shared_capa < new_size && slow_check_unique(old_data)))
+
+        // Move is cheaper for non-trivial - no copy ctors,
+        //  but slower for trivial - extra checks & last resort refc hit.
+        if constexpr (!TRIVIAL)
         {
-            // Cheap move by memcpy.
-            assert(new_data != old_data);
-
-            if constexpr (!is_Clear)
+            if (old_capa    > 0 ||
+               (shared_capa > 0 && shared_capa < new_size && slow_check_unique(old_data)))
             {
-                if constexpr (fu_MAYBE_POS(idx))
-                    MEMCPY_range(
-                        new_data,
-                        old_data,
-                        idx);
+                // Cheap move by memcpy.
+                assert(new_data != old_data);
 
-                MEMCPY_range(
-                    new_data + (idx + insert),
-                    old_data + (idx + del),
-                    old_size - (idx - del - pop));
-            }
-
-            // Call destructors (copy-paste from above).
-            if constexpr (!TRIVIAL)
-            {
+                // Call destructors (copy-paste from above).
                 if constexpr (is_Clear)
                 {
                     DESTROY_range(
@@ -525,18 +533,25 @@ struct fu_VEC
                         DESTROY_range(
                             old_data + (old_size - pop),
                             old_data + (old_size      ));
+
+                    UNSAFE__Relocate(
+                        idx, del, insert, pop,
+                        new_data, old_data, old_size);
                 }
+
+                // Free old alloc.
+                if (shared_capa > SMALL_CAPA)
+                    UNIQ__Dealloc_DontRunDtors(
+                        old_data, shared_capa);
+
+                return new_data;
             }
-
-            // Free old.
-            if (shared_capa > SMALL_CAPA)
-                UNIQ__Dealloc_DontRunDtors(
-                    old_data, shared_capa);
-
-            return new_data;
         }
 
         // Finally, the expensive copy-construct.
+        //  It's actually the faster option for trivial data,
+        //   because we skip the checks & the refc-hit,
+        //    since it's a memcpy anyway.
         if constexpr (!is_Clear)
         {
             if constexpr (fu_MAYBE_POS(idx))
@@ -553,11 +568,37 @@ struct fu_VEC
 
         // Release the old mem, running destructors
         //  if we somehow ended up as the unique owner in the meantime.
-        if (shared_capa > SMALL_CAPA)
+        if constexpr (TRIVIAL)
+        {
+            assert(shared_capa > SMALL_CAPA);
+
             SHARED__Dealloc(
                 old_data, old_size, shared_capa);
+        }
+        else if (shared_capa > SMALL_CAPA)
+        {
+            SHARED__Dealloc(
+                old_data, old_size, shared_capa);
+        }
 
         return new_data;
+    }
+
+    template <typename t_idx, typename t_del, typename t_insert, typename t_pop>
+    fu_INL void UNSAFE__Relocate(
+        t_idx idx, t_del del, t_insert insert, t_pop pop,
+        T* new_data, const T* old_data, i32 old_size)
+    {
+        if constexpr (fu_MAYBE_POS(idx))
+            MEMCPY_range(
+                new_data,
+                old_data,
+                idx);
+
+        MEMCPY_range(
+            new_data + (idx + insert),
+            old_data + (idx + del),
+            old_size - (idx + del + pop));
     }
 
 
@@ -773,8 +814,8 @@ struct fu_VEC
     template <typename I, typename D>
     void splice_copy(I idx, D del, const T* src_data, i32 src_size) noexcept
     {
-        T*  old_data = data();
-        i32 old_size = size();
+        const T*  old_data = data();
+              i32 old_size = size();
 
         if (src_data < old_data || src_data > old_data + old_size) {
             MUT_mid(idx, del, src_size);
@@ -828,7 +869,7 @@ struct fu_VEC
         }
         else if (del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                old_size, del, src_data, src_size);
+                old_size - del, del, src_data, src_size);
         }
     }
 

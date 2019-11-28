@@ -100,6 +100,34 @@ void cow_vec_test(int cap0, int cap1)
 
             assert(a == b && b == c && a == i);
         }
+
+        v2 = v0;
+        v2.splice(0, 0, v2);
+        int s4 = v2.size();
+        assert(s3 == s4);
+
+        for (int i = 0; i < v0.size(); i++) {
+            auto a = v0[i];
+            auto b = v2[i];
+            auto c = v2[i + v0.size()];
+
+            assert(a == b && b == c && a == i);
+        }
+
+        v2 = v0;
+        v2.splice(1, 0, v2);
+        int s5 = v2.size();
+        assert(s4 == s5);
+
+        assert(v0[0] == v2[0]);
+
+        for (int i = 0; i < v0.size(); i++) {
+            auto a = v0[i];
+            auto b = v2[i + 1];
+            auto c = v2[i + (i ? v0.size() : 0)];
+
+            assert(a == b && b == c && a == i);
+        }
     }
 
     //
