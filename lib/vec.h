@@ -841,10 +841,6 @@ struct fu_VEC
         I idx, D del, P pop,
         const T* src_data, i32 src_size) noexcept
     {
-        assert(false && "Untested.");
-
-        // TODO fix mostly useless copying,
-        //  although it's just extra memcpy work it's silly.
         fu_VEC tmpbuf;
         tmpbuf.UNSAFE__init_copy(src_data, src_size);
         splice(idx, del, static_cast<fu_VEC&&>(tmpbuf));

@@ -77,6 +77,31 @@ void cow_vec_test(int cap0, int cap1)
             && s1 == cap1 - 1);
     }
 
+    {
+        v2 = v0;
+        int s0 = v2.size();
+        assert(v2.data() == v0.data() || v2.size() <= SMALL_CAPA);
+
+        v2.reserve();
+        int s1 = v2.size();
+        assert(v2.data() != v0.data());
+
+        v2 = v2;
+        int s2 = v2.size();
+
+        v2 += v2;
+        int s3 = v2.size();
+        assert(s0 == s1 && s1 == s2 && s2 * 2 == s3);
+
+        for (int i = 0; i < v0.size(); i++) {
+            auto a = v0[i];
+            auto b = v2[i];
+            auto c = v2[i + v0.size()];
+
+            assert(a == b && b == c && a == i);
+        }
+    }
+
     //
     v2 = v1;
     assert(v2[1] == v1[1]);
