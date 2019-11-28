@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./vec.h"
+#include "./str.h"
 
 template <typename T>
 void cow_vec_test(int cap0, int cap1)
@@ -242,4 +242,14 @@ void cow_vec_tests()
         cow_vec_test<NonTriv>(i + (i >> 2), i);
         cow_vec_test<NonTriv>(i + (i >> 3), i);
     }
+
+    //
+    fu_STR hey = fu_TO_STR("you");
+    hey += " cruel " + fu_TO_STR("world");
+
+    fu_STR hey2 = fu_TO_STR("you cruel world");
+
+    assert(hey == hey2);
+
+    assert(memcmp(hey.data(), "you cruel world", 15) == 0);
 }

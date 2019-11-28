@@ -836,16 +836,19 @@ struct fu_VEC
     {
         assert((void*)&src != (void*)this && "append: rvalref alias");
 
-        T*  src_data = src.data();
-        i32 src_size = src.size();
+        const T*  src_data = src.data();
+              i32 src_size = src.size();
+
         MUT_back(del, src_size);
 
+        int idx = old_size - del;
+
         if (!TRIVIAL && src.slow_check_unique()) {
-            MEMCPY_range(new_data + old_size, src_data, src_size);
+            MEMCPY_range(new_data + idx, src_data, src_size);
             src.UNIQ__Dealloc_DontRunDtors();
         }
         else {
-            CPY_ctor_range(new_data + old_size, src_data, src_size);
+            CPY_ctor_range(new_data + idx, src_data, src_size);
             src._SafeDealloc();
         }
     }
@@ -863,13 +866,15 @@ struct fu_VEC
         const T*  old_data = data();
               i32 old_size = size();
 
+        int idx = old_size - del;
+
         if (src_data < old_data || src_data > old_data + old_size) {
             MUT_back(del, src_size);
-            CPY_ctor_range(new_data + old_size, src_data, src_size);
+            CPY_ctor_range(new_data + idx, src_data, src_size);
         }
         else if (del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                old_size - del, del, src_data, src_size);
+                idx, del, src_data, src_size);
         }
     }
 
@@ -1054,6 +1059,12 @@ fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
 template <typename T>
 fu_VEC<T>& operator+=(fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
     a.append(Zero, b);
+    return a;
+}
+
+template <typename T>
+fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
+    a.append(Zero, static_cast<fu_VEC<T>&&>(b));
     return a;
 }
 
