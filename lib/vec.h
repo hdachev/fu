@@ -782,7 +782,7 @@ struct fu_VEC
         }
         else if (idx || del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                idx, del, Zero, src_data, src_size);
+                idx, del, src_data, src_size);
         }
     }
 
@@ -828,7 +828,7 @@ struct fu_VEC
         }
         else if (del != old_size || src_data != old_data) {
             UNSAFE__self_splice(
-                Zero, Zero, del, src_data, src_size);
+                old_size, del, src_data, src_size);
         }
     }
 
@@ -836,9 +836,9 @@ struct fu_VEC
     //
     // Self-splice slow path.
 
-    template <typename I, typename D, typename P>
+    template <typename I, typename D>
     fu_NEVER_INLINE void UNSAFE__self_splice(
-        I idx, D del, P pop,
+        I idx, D del,
         const T* src_data, i32 src_size) noexcept
     {
         fu_VEC tmpbuf;
@@ -883,19 +883,6 @@ struct fu_VEC
         return data() + size();
     }
 
-    fu_INL const T& operator[](i32 idx) const {
-        auto s = (u32) size();
-
-        // Hopefully compiles away.
-        if (idx >= 0 && idx < s)
-            return data()[idx];
-
-        // Failsafe.
-        assert(false);
-        static const T Default {};
-        return Default;
-    }
-
 
     //
     // Acquire unique.
@@ -926,17 +913,35 @@ struct fu_VEC
         return reserve(Zero);
     }
 
-    fu_INL T& mutref(i32 idx) noexcept {
-        reserve();
 
-        auto s = (u32) size();
+    // Sepuku bounds-checks,
+    //  note these are still costly,
+    //   consider removing in RETAIL builds,
+    //    static proofs + compiling down to raw ptrs,
+    //     and a battery of high-level operators
+    //      that lift the checks outside the loop.
 
-        // Sepuku bounds check.
-        idx = idx >= 0 && idx < s ? idx : 0xffffffff;
-        return data()[idx];
+    static constexpr u32 OUT_OF_BOUNDS = u32(-1);
+
+    fu_INL const T& operator[](i32 idx) const
+    {
+        u32 s = (u32) size();
+        u32 i = (u32) idx;
+        i = i < s ? i : OUT_OF_BOUNDS;
+
+        return data()[i];
     }
 
+    fu_INL T& mutref(i32 idx) noexcept
+    {
+        reserve();
 
+        u32 s = (u32) size();
+        u32 i = (u32) idx;
+        i = i < s ? i : OUT_OF_BOUNDS;
+
+        return data()[i];
+    }
 };
 
 
