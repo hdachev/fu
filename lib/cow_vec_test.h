@@ -9,6 +9,8 @@ void cow_vec_test(int cap0, int cap1)
 
     const int SMALL_CAPA = vec::SMALL_CAPA;
 
+    const size_t HEADER = sizeof(fu_ARC) / sizeof(T);
+
     //
     vec v0;
 
@@ -29,7 +31,7 @@ void cow_vec_test(int cap0, int cap1)
 
     int shared_capa0 = v0.shared_capa();
     int shared_capa1 = v1.shared_capa();
-    assert(v1.data() != v0.data() && (shared_capa1 == shared_capa0 || shared_capa1 <= v1.size() * 2 || shared_capa0 <= SMALL_CAPA));
+    assert(v1.data() != v0.data() && (shared_capa1 == shared_capa0 || shared_capa1 <= (v1.size() + HEADER) * 2 || shared_capa0 <= SMALL_CAPA));
 
     //
     vec v2 = v1;
@@ -45,14 +47,35 @@ void cow_vec_test(int cap0, int cap1)
         && v1.size() == cap1 * 2
         && v2.size() == 0);
 
-    //
-    v2 = v0;
-    v2.pop();
+    {
+        v2 = v0;
+        v2.pop();
 
-    int s0 = v0.size();
-    int s1 = v2.size();
-    assert(s0 == cap1
-        && s1 == cap1 - 1);
+        int s0 = v0.size();
+        int s1 = v2.size();
+        assert(s0 == cap1
+            && s1 == cap1 - 1);
+    }
+
+    {
+        v2 = v0;
+        v2.shift();
+
+        int s0 = v0.size();
+        int s1 = v2.size();
+        assert(s0 == cap1
+            && s1 == cap1 - 1);
+    }
+
+    {
+        v2 = v0;
+        v2.splice(1, 1);
+
+        int s0 = v0.size();
+        int s1 = v2.size();
+        assert(s0 == cap1
+            && s1 == cap1 - 1);
+    }
 
     //
     v2 = v1;
@@ -146,10 +169,20 @@ void cow_vec_tests()
         cow_vec_test<char>(i + (i >> 2), i);
         cow_vec_test<char>(i + (i >> 3), i);
 
+        cow_vec_test<short>(i, i + (i >> 2));
+        cow_vec_test<short>(i, i + (i >> 3));
+        cow_vec_test<short>(i + (i >> 2), i);
+        cow_vec_test<short>(i + (i >> 3), i);
+
         cow_vec_test<int>(i, i + (i >> 2));
         cow_vec_test<int>(i, i + (i >> 3));
         cow_vec_test<int>(i + (i >> 2), i);
         cow_vec_test<int>(i + (i >> 3), i);
+
+        cow_vec_test<size_t>(i, i + (i >> 2));
+        cow_vec_test<size_t>(i, i + (i >> 3));
+        cow_vec_test<size_t>(i + (i >> 2), i);
+        cow_vec_test<size_t>(i + (i >> 3), i);
 
         cow_vec_test<NonTriv>(i, i + (i >> 2));
         cow_vec_test<NonTriv>(i, i + (i >> 3));
