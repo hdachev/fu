@@ -82,13 +82,13 @@ inline fu_STR& operator+=(fu_STR& m, const char* cstr) noexcept
 // And once more.
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(const fu_STR& str, T& t) noexcept
+fu_STR operator+(const fu_STR& str, const T& t) noexcept
 {
     return str + fu_TO_STR(t);
 }
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(T& t, const fu_STR& str) noexcept
+fu_STR operator+(const T& t, const fu_STR& str) noexcept
 {
     return fu_TO_STR(t) + str;
 }

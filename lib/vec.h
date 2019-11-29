@@ -1136,6 +1136,12 @@ fu_VEC<T>& operator+=(fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
 }
 
 template <typename T>
+fu_VEC<T> operator+(const fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
+    // TODO optimize reserve
+    return fu_VEC<T>(a) + b;
+}
+
+template <typename T>
 fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
     a.append(Zero, static_cast<fu_VEC<T>&&>(b));
     return a;
