@@ -21,11 +21,6 @@ inline fu_STR fu_TO_STR(char chr) noexcept
     return vec;
 }
 
-inline const fu_STR& fu_TO_STR(const fu_STR& str) noexcept
-{
-    return str;
-}
-
 inline fu_STR fu_TO_STR(long long num) noexcept
 {
     fu_STR vec;
@@ -81,6 +76,42 @@ inline fu_STR& operator+=(fu_STR& m, const char* cstr) noexcept
 {
     m.append_copy(fu_ZERO(), cstr, i32(strlen(cstr)));
     return m;
+}
+
+
+// And once more.
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+fu_STR operator+(const fu_STR& str, T& t) noexcept
+{
+    return str + fu_TO_STR(t);
+}
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+fu_STR operator+(T& t, const fu_STR& str) noexcept
+{
+    return fu_TO_STR(t) + str;
+}
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+fu_STR operator+(fu_STR&& str, const T& t) noexcept
+{
+    str.append(fu_ZERO(), fu_TO_STR(t));
+    return static_cast<fu_STR&&>(str);
+}
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+fu_STR operator+(const T& t, fu_STR&& str) noexcept
+{
+    str.splice(fu_ZERO(), fu_ZERO(), fu_TO_STR(t));
+    return static_cast<fu_STR&&>(str);
+}
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+fu_STR& operator+=(fu_STR& str, const T& t) noexcept
+{
+    str.append(fu_ZERO(), fu_TO_STR(t));
+    return str;
 }
 
 
