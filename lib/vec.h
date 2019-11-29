@@ -247,7 +247,7 @@ struct fu_VEC
     //
     // Copy & move constructors.
 
-    fu_INL fu_VEC(const fu_VEC& c)
+    fu_INL fu_VEC(const fu_VEC& c) noexcept
         : _big_data(c._big_data)
         , _big_size(c._big_size)
         , _big_PACK(c._big_PACK)
@@ -262,7 +262,7 @@ struct fu_VEC
         }
     }
 
-    fu_INL fu_VEC(fu_VEC&& x)
+    fu_INL fu_VEC(fu_VEC&& x) noexcept
         : _big_data(x._big_data)
         , _big_size(x._big_size)
         , _big_PACK(x._big_PACK)
@@ -270,7 +270,7 @@ struct fu_VEC
         x.UNSAFE__Reset();
     }
 
-    fu_INL fu_VEC& operator=(const fu_VEC& c)
+    fu_INL fu_VEC& operator=(const fu_VEC& c) noexcept
     {
         if (this != &c)
             *this = fu_VEC(c);
@@ -278,7 +278,7 @@ struct fu_VEC
         return *this;
     }
 
-    fu_INL fu_VEC& operator=(fu_VEC&& c)
+    fu_INL fu_VEC& operator=(fu_VEC&& c) noexcept
     {
         this->~fu_VEC();
         new (this) fu_VEC(
@@ -335,8 +335,7 @@ struct fu_VEC
         // Cursors.
         t_idx idx = {}, t_del del = {}, t_insert insert = {},
                         t_pop pop = {}, t_push   push   = {}
-
-    ) noexcept
+            ) noexcept
     {
         // TODO consider inlining these manually,
         //  there's some risk that common subexpressions
@@ -587,7 +586,8 @@ struct fu_VEC
     template <typename t_idx, typename t_del, typename t_insert, typename t_pop>
     fu_INL void UNSAFE__Relocate(
         t_idx idx, t_del del, t_insert insert, t_pop pop,
-        T* new_data, const T* old_data, i32 old_size)
+        T* new_data, const T* old_data, i32 old_size
+            ) noexcept
     {
         if constexpr (fu_MAYBE_POS(idx))
             MEMCPY_range(
@@ -910,7 +910,15 @@ struct fu_VEC
     //
     // Pure reads.
 
-    i32 find(const T& search) const {
+    fu_INL const T* begin() const noexcept {
+        return data();
+    }
+
+    fu_INL const T* end() const noexcept {
+        return data() + size();
+    }
+
+    i32 find(const T& search) const noexcept {
         const T* start = data();
         const T* end   = start + size();
 
@@ -919,14 +927,6 @@ struct fu_VEC
                 return (i32) i - start;
 
         return -1;
-    }
-
-    fu_INL const T* begin() const {
-        return data();
-    }
-
-    fu_INL const T* end() const {
-        return data() + size();
     }
 
 
@@ -959,6 +959,15 @@ struct fu_VEC
         return reserve(Zero);
     }
 
+    T* mut_begin() noexcept {
+        reserve();
+        return (T*)data();
+    }
+
+    fu_INL const T* mut_end() noexcept {
+        return end();
+    }
+
 
     // Sepuku bounds-checks,
     //  note these are still costly,
@@ -969,7 +978,7 @@ struct fu_VEC
 
     static constexpr u32 OUT_OF_BOUNDS = u32(-1);
 
-    fu_INL const T& operator[](i32 idx) const
+    fu_INL const T& operator[](i32 idx) const noexcept
     {
         u32 s = (u32) size();
         u32 i = (u32) idx;
