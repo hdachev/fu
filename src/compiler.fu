@@ -4753,7 +4753,7 @@ pub fn cpp_codegen(
             else                esc += c;
         }
 
-        return 'fu_STRING("' + esc + '")';
+        return 'fu_TO_STR("' + esc + '")';
     }
 
     fn cgArrayLiteral(node: SolvedNode): string
@@ -4837,7 +4837,7 @@ pub fn cpp_codegen(
                 if (id == '[]')
                 {
                     if (head.type.canon == 'string')
-                        return 'fu_STRING(' + items[0] + '[' + items[1] + '])';
+                        return 'fu_TO_STR(' + items[0] + '[' + items[1] + '])';
 
                     // The new cow_vec is here.
                     if (head.type.quals & q_mutref)
@@ -4969,13 +4969,13 @@ pub fn cpp_codegen(
         }
 
         if (id == 'slice' && items.len == 2)
-            return items[0] + '.slice(' + items[1] + ')';
+            return 'slice(' + items[0] + ', ' + items[1] + ')';
 
         if (id == 'slice' && items.len == 3)
-            return items[0] + '.slice(' + items[1] + ', ' + items[2] + ')';
+            return 'slice(' + items[0] + ', ' + items[1] + ', ' + items[2] + ')';
 
         if (id == 'substr' && items.len == 3)
-            return items[0] + '.substr(' + items[1] + ', ' + items[2] + ')';
+            return 'substr(' + items[0] + ', ' + items[1] + ', ' + items[2] + ')';
 
         if (id == 'sort' && items.len == 1)
         {
@@ -5094,9 +5094,9 @@ inline void fu_MEMSLIDE(void* dest, void* source)
 
     fn annotateString(): string
     {
-        include('"../lib/cow_vec.h"');
+        include('"../lib/str.h"');
 
-        return 'fu_COW_STR';
+        return 'fu_STR';
     }
 
     fn annotateNever(): string
@@ -5150,7 +5150,7 @@ template <typename T>
 {
     throw std::runtime_error(
         std::string(
-            what.m_data, size_t(what.m_size)));
+            what.data(), size_t(what.size())));
 }
 `
 ////////////////////////////////////
@@ -5207,12 +5207,12 @@ fu_COW_VEC<T> fu_CONCAT(
             _ffwd[JOIN] =
 ////////////////////////////////////
 `
-inline fu_COW_STR fu_JOIN(
-    const fu_COW_VEC<fu_COW_STR>& vec,
-    const fu_COW_STR& sep)
+inline fu_STR fu_JOIN(
+    const fu_COW_VEC<fu_STR>& vec,
+    const fu_STR& sep)
 {
-    size_t len = 0;
-    for (size_t i = 0; i < vec.size(); i++)
+    int len = 0;
+    for (int i = 0; i < vec.size(); i++)
     {
         if (i)
             len += sep.size();
@@ -5220,9 +5220,9 @@ inline fu_COW_STR fu_JOIN(
         len += vec[i].size();
     }
 
-    fu_COW_STR result;
+    fu_STR result;
     result.reserve(len);
-    for (size_t i = 0; i < vec.size(); i++)
+    for (int i = 0; i < vec.size(); i++)
     {
         if (i)
             result += sep;
@@ -5251,20 +5251,20 @@ inline fu_COW_STR fu_JOIN(
             _ffwd[SPLIT] =
 ////////////////////////////////////
 `
-inline fu_COW_VEC<fu_COW_STR> fu_SPLIT(
-    fu_COW_STR s,
-    const fu_COW_STR& sep)
+inline fu_COW_VEC<fu_STR> fu_SPLIT(
+    fu_STR s,
+    const fu_STR& sep)
 {
-    fu_COW_VEC<fu_COW_STR> result;
+    fu_COW_VEC<fu_STR> result;
 
-    size_t next;
-    while (int(next = s.find(sep)) >= 0)
+    int next;
+    while ((next = s.find(sep)) >= 0)
     {
-        result.push(s.slice(0, next));
-        s = s.slice(next + sep.size());
+        result.push(slice(s, 0, next));
+        s = slice(s, next + sep.size());
     }
 
-    result.push(static_cast<fu_COW_STR&&>(s));
+    result.push(static_cast<fu_STR&&>(s));
     return result;
 }
 `

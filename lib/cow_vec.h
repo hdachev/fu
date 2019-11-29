@@ -367,7 +367,7 @@ struct fu_COW_VEC
     // Public, const.
 
     inline T*       data()  const { return m_data;          }
-    inline size_t   size()  const { return size_t(m_size);  }
+    inline int      size()  const { return m_size;          }
     inline const T* begin() const { return m_data;          }
     inline const T* end()   const { return m_data + m_size; }
 
