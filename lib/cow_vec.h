@@ -962,3 +962,22 @@ inline fu_COW_STR& operator+=(fu_COW_STR& a, T b)
     a.append( fu_STRING(b) );
     return a;
 }
+
+
+
+// Crutches.
+
+template <typename T>
+inline fu_COW_VEC<T> slice(const fu_COW_VEC<T>& v, int a, int b) {
+    return v.slice(a, b);
+}
+
+template <typename T>
+inline fu_COW_VEC<T> slice(const fu_COW_VEC<T>& v, int a) {
+    return v.slice(a);
+}
+
+template <typename T>
+inline fu_COW_VEC<T> substr(const fu_COW_VEC<T>& v, int a, int b) {
+    return v.substr(a, b);
+}

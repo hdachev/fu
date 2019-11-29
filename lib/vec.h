@@ -1061,35 +1061,27 @@ struct fu_VEC
 };
 
 
-// Slice.
+// Slice/move.
 
 template <typename T>
-fu_VEC<T> slice(fu_VEC<T>&& v, i32 start) noexcept
-{
+fu_VEC<T> slice(fu_VEC<T>&& v, i32 start) noexcept {
     v.trim(start);
     return static_cast<fu_VEC<T>&&>(v);
 }
 
 template <typename T>
-fu_VEC<T> slice(fu_VEC<T>&& v, i32 start, i32 end) noexcept
-{
+fu_VEC<T> slice(fu_VEC<T>&& v, i32 start, i32 end) noexcept {
     v.trim(start, end);
     return static_cast<fu_VEC<T>&&>(v);
 }
 
 template <typename T>
-fu_VEC<T> slice(const fu_VEC<T>& v, i32 start) noexcept {
-    i32 end = v.size();
-    assert(start >= 0 && start <= end);
-
-    fu_VEC<T> result;
-
-    const T* src = v.data();
-    result.append_copy(Zero, Zero,
-        src + start, src + end);
-
-    return result;
+fu_INL fu_VEC<T> substr(fu_VEC<T>&& v, i32 start, i32 count) noexcept {
+    return slice(static_cast<fu_VEC<T>&&>(v), start, start + count);
 }
+
+
+// Slice/copy.
 
 template <typename T>
 fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
@@ -1097,12 +1089,23 @@ fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
     assert(start >= 0 && start <= end && end <= s);
 
     fu_VEC<T> result;
-
-    const T* src = v.data();
-    result.append_copy(Zero, Zero,
-        src + start, src + end);
+    i32 count = end - start;
+    if (count > 0) {
+        const T* src = v.data();
+        result.UNSAFE__init_copy(src + start, count);
+    }
 
     return result;
+}
+
+template <typename T>
+fu_INL fu_VEC<T> slice(const fu_VEC<T>& v, i32 start) noexcept {
+    return slice(v, start, v.size());
+}
+
+template <typename T>
+fu_INL fu_VEC<T> substr(const fu_VEC<T>& v, i32 start, i32 count) noexcept {
+    return slice(v, start, start + count);
 }
 
 
