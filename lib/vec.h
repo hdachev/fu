@@ -918,6 +918,9 @@ struct fu_VEC
         return data() + size();
     }
 
+
+    // Item search.
+
     i32 find(const T& search) const noexcept {
         const T* start = data();
         const T* end   = start + size();
@@ -927,6 +930,64 @@ struct fu_VEC
                 return (i32) i - start;
 
         return -1;
+    }
+
+    fu_INL bool starts_with(const T& prefix) const noexcept {
+        return size() && *data() == prefix;
+    }
+
+
+    // Substring search.
+
+    fu_INL i32 find(const fu_VEC& v) const noexcept {
+        return find(v.data(), v.size());
+    }
+
+    fu_NEVER_INLINE i32 find(const T* i0, i32 s) const noexcept {
+        i32 my_size = size();
+        if (s <= 0 || s > my_size)
+            return s == 0 ? 0 : -1;
+
+        const T* i1     = i0 + s;
+        const T* start  = data();
+        const T* end    = start + (my_size - s);
+        const T* back   = end;
+
+        for (const T* i = start; i <= end; i++) {
+            if (*i != *i0)
+                continue;
+
+            back = i++;
+            for (const T* search = i0 + 1; search < i1; i++, search++) {
+                if (*i != *search) {
+                    i = back;
+                    goto continue_OUTER;
+                }
+            }
+
+            return int(back - start);
+            continue_OUTER:;
+        }
+
+        return -1;
+    }
+
+    bool starts_with(const T* i0, i32 s) const noexcept {
+        i32 my_size = size();
+        if (s < 0 || s > my_size)
+            return false;
+
+        const T* i1 = i0 + s;
+        const T* match = data();
+        for (const T* search = i0; search < i1; search++, match++)
+            if (*search != *match)
+                return false;
+
+        return true;
+    }
+
+    bool starts_with(const fu_VEC& v) const noexcept {
+        return starts_with(v.data(), v.size());
     }
 
 
