@@ -357,16 +357,16 @@ struct fu_VEC
         push    = push   > 0 ? push   : t_push();
 
         // <=(u32) hints should compile stuff away.
-        idx     = idx <=(u32) old_size ? idx : old_size;
+        idx     = (u32) idx <= (u32) old_size ? idx : old_size;
 
         if constexpr (fu_MAYBE_POS(del)) {
             i32 max = old_size - idx;
-            del = del <=(u32) max ? del : max;
+            del = (u32) del <= (u32) max ? del : max;
         }
 
         if constexpr (fu_MAYBE_POS(pop)) {
             i32 max = old_size - idx - del;
-            pop = pop <=(u32) max ? pop : max;
+            pop = (u32) pop <= (u32) max ? pop : max;
         }
 
         const i32 new_size = is_Clear
@@ -693,7 +693,7 @@ struct fu_VEC
 
     #define MUT_op(Init, Clear, Reserve, ...) i32 old_size; i32 new_size;\
         T* new_data = _Splice<Init, Clear, Reserve>(old_size, new_size,\
-            __VA_ARGS__ )
+            __VA_ARGS__ ); (void)old_size; (void)new_size; (void)new_data;
 
     #define MUT_front(rem, add) MUT_op(false, false, false, Zero, rem, add, Zero, Zero)
     #define MUT_back(rem, add) MUT_op(false, false, false, Zero, Zero, Zero, rem, add)
