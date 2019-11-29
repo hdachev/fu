@@ -10,6 +10,9 @@
 #include <time.h>
 
 
+// #define ISOLATE_FAILING_TESTCASE
+
+
 //
 
 struct TEA
@@ -315,7 +318,7 @@ std::string build_and_run(const std::string& cpp)
 }
 
 
-// #define ISOLATE_FAILING_TESTCASE
+//
 
 #ifdef ISOLATE_FAILING_TESTCASE
 #include "../../build.cpp/failing-testcase.cpp"
@@ -397,11 +400,13 @@ void saySomethingNice()
 
 // Tests.
 
+std::string to_string(const fu_STR& str) {
+    return std::string(str.data(), size_t(str.size()));
+}
+
 std::string ZERO(const std::string& src)
 {
-    auto cpp_fu = compile_testcase( fu_STRING(src.c_str()) );
-
-    auto cpp = std::string(cpp_fu.m_data, size_t(cpp_fu.m_size));
+    auto cpp = to_string( compile_testcase( fu_TO_STR(src.c_str()) ) );
 
     // ...
     auto result = build_and_run(cpp);
@@ -418,7 +423,7 @@ std::string ZERO(const std::string& src)
 void FAIL(const std::string& src)
 {
     try {
-        auto cpp = compile_testcase( fu_STRING(src.c_str()) );
+        auto cpp = compile_testcase( fu_TO_STR(src.c_str()) );
     }
     catch (const std::exception& e) {
         // TODO check error message.

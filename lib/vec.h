@@ -472,7 +472,7 @@ struct fu_VEC
         }
         else
         {
-            i32 new_capa = new_size;
+            i32 new_capa = new_size + HAS_SMALL;
             fu_ARC::alloc(new_data, new_capa);
             UNSAFE__EnsureActualLooksBig(new_capa);
             assert(new_capa >= new_size);
