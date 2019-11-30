@@ -50,7 +50,7 @@ size_type fbstring_lfind(
 
     // Here we know that the last char matches
     //  Continue in pedestrian mode
-    for (size_t j = 0;;) {
+    for (size_type j = 0;;) {
       assert(j < nsize);
       if (i[j] != needle[j]) {
 

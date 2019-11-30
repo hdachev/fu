@@ -4258,7 +4258,7 @@ pub fn cpp_codegen(
             annotateVector();
 
             let item = typeAnnot(tdef.fields[0].type);
-            return 'fu_COW_VEC<' + item + '>';
+            return 'fu_VEC<' + item + '>';
         }
 
         if (k == 'map')
@@ -4907,13 +4907,7 @@ pub fn cpp_codegen(
         }
 
         if (id == 'len' && items.len == 1)
-        {
-            // No point in the extra fn.
-            if (type_isArray(node.items[0].type))
-                return 'int(' + items[0] + '.m_size)';
-
-            return 'int(' + items[0] + '.size())';
-        }
+            return items[0] + '.size()';
 
         if (id == 'push' && items.len == 2)
             return items[0] + '.push(' + items[1] + ')';
@@ -5000,7 +4994,7 @@ pub fn cpp_codegen(
             return cgThrow(id, '"Assertion failed."');
 
         if (id == 'move' && items.len == 3)
-            return '([&]() { auto* _ = ' + items[0] + '.data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
+            return '([&]() { auto* _ = ' + items[0] + '.mut_data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
 
         if (id == 'concat' && items.len == 2)
             return cgConcat(items);
@@ -5084,12 +5078,12 @@ inline void fu_MEMSLIDE(void* dest, void* source)
 
     fn annotateMap(): void
     {
-        include('"../lib/cow_vec.h"');
+        include('"../lib/map.h"');
     }
 
     fn annotateVector(): void
     {
-        include('"../lib/cow_vec.h"');
+        include('"../lib/vec.h"');
     }
 
     fn annotateString(): string
@@ -5176,11 +5170,11 @@ template <typename T>
 ////////////////////////////////////
 `
 template <typename T>
-fu_COW_VEC<T> fu_CONCAT(
-    const fu_COW_VEC<T>& a,
-    const fu_COW_VEC<T>& b)
+fu_VEC<T> fu_CONCAT(
+    const fu_VEC<T>& a,
+    const fu_VEC<T>& b)
 {
-    fu_COW_VEC<T> result;
+    fu_VEC<T> result;
     result.reserve(a.size() + b.size());
 
     for (const auto& i : a) result.push(i);
@@ -5208,7 +5202,7 @@ fu_COW_VEC<T> fu_CONCAT(
 ////////////////////////////////////
 `
 inline fu_STR fu_JOIN(
-    const fu_COW_VEC<fu_STR>& vec,
+    const fu_VEC<fu_STR>& vec,
     const fu_STR& sep)
 {
     int len = 0;
@@ -5251,11 +5245,11 @@ inline fu_STR fu_JOIN(
             _ffwd[SPLIT] =
 ////////////////////////////////////
 `
-inline fu_COW_VEC<fu_STR> fu_SPLIT(
+inline fu_VEC<fu_STR> fu_SPLIT(
     fu_STR s,
     const fu_STR& sep)
 {
-    fu_COW_VEC<fu_STR> result;
+    fu_VEC<fu_STR> result;
 
     int next;
     while ((next = s.find(sep)) >= 0)
@@ -5287,7 +5281,7 @@ inline fu_COW_VEC<fu_STR> fu_SPLIT(
 ////////////////////////////////////
 `
 template <typename K, typename V>
-fu_COW_VEC<K> fu_KEYS(
+fu_VEC<K> fu_KEYS(
     const fu_COW_MAP<K, V>& map)
 {
     return map.m_keys;

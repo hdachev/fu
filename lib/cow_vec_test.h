@@ -7,7 +7,7 @@ void cow_vec_test(int cap0, int cap1)
 {
     using vec = fu_VEC<T>;
 
-    const int SMALL_CAPA = vec::SMALL_CAPA;
+    const int SMALL_CAPA = fu_CONFIG<T>::SMALL_CAPA;
 
     const size_t HEADER = sizeof(fu_ARC) / sizeof(T);
 

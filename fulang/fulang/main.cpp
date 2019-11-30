@@ -11,7 +11,7 @@
 
 
 // #define ISOLATE_FAILING_TESTCASE
-// #define WRITE_COMPILER
+#define WRITE_COMPILER
 
 
 //

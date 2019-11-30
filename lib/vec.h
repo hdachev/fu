@@ -4,20 +4,45 @@
 #include "find.h"
 
 template <typename T>
+struct fu_CONFIG
+{
+    static constexpr bool TRIVIAL =
+        std::is_trivially_destructible<T>::value;
+
+    static constexpr i32 VEC_SIZE = 16;
+
+    static constexpr i32 SMALL_CAPA =
+        TRIVIAL && alignof(T) <= alignof(T*)
+            ? (VEC_SIZE - 1) / sizeof(T)
+            : 0;
+
+
+    // On little endian, we need the least significant capacity byte
+    //  to be the rightmost byte of our struct,
+    //   unless item size is >= 4, in which case we don't need aliasing.
+
+    static constexpr bool PACK_CAPA =
+        SMALL_CAPA && sizeof(T) < 4 && fu_LITTLE_ENDIAN;
+
+    static constexpr i32 IS_BIG_MASK        = PACK_CAPA ? 0xf << 24 : 0xf;
+    static constexpr i32 SMALL_SIZE_OFFSET  = PACK_CAPA ? 24 + 4 : 4;
+};
+
+template <typename T>
 struct fu_VEC
 {
     /////////////////////////////////////////////
-    //
-    // Primitives.
 
-    static const bool TRIVIAL   = std::is_trivially_destructible<T>::value;
+    #define TRIVIAL             (fu_CONFIG<T>::TRIVIAL)
+    #define VEC_SIZE            (fu_CONFIG<T>::VEC_SIZE)
+    #define SMALL_CAPA          (fu_CONFIG<T>::SMALL_CAPA)
+    #define HAS_SMALL           (SMALL_CAPA != 0)
 
-    static const i32 VEC_SIZE   = 16;
-    static const i32 SMALL_CAPA = TRIVIAL && alignof(T) <= alignof(T*)
-                                ? (VEC_SIZE - 1) / sizeof(T)
-                                : 0;
+    #define PACK_CAPA           (fu_CONFIG<T>::PACK_CAPA)
+    #define IS_BIG_MASK         (fu_CONFIG<T>::IS_BIG_MASK)
+    #define SMALL_SIZE_OFFSET   (fu_CONFIG<T>::SMALL_SIZE_OFFSET)
 
-    static const bool HAS_SMALL = SMALL_CAPA > 0;
+    static constexpr i32 SMALL_SIZE_MASK = 0xf;
 
     /////////////////////////////////////////////
 
@@ -29,12 +54,6 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    // On little endian, we need the least significant capacity byte
-    //  to be the rightmost byte of our struct,
-    //   unless item size is >= 4, in which case we don't need aliasing.
-    static const bool PACK_CAPA =
-        SMALL_CAPA && sizeof(T) < 4 && fu_LITTLE_ENDIAN;
-
     fu_INL static constexpr i32 UNSAFE__Unpack(i32 packed) noexcept {
         if constexpr (PACK_CAPA) return (packed << 8) | (u32(packed) >> 24);
         else                     return  packed;
@@ -44,10 +63,6 @@ struct fu_VEC
         if constexpr (PACK_CAPA) return (actual << 24) | (u32(actual) >> 8);
         else                     return  actual;
     }
-
-    static const i32 IS_BIG_MASK        = PACK_CAPA ? 0xf << 24 : 0xf;
-    static const i32 SMALL_SIZE_OFFSET  = PACK_CAPA ? 24 + 4 : 4;
-    static const i32 SMALL_SIZE_MASK    = 0xf;
 
     fu_INL static void UNSAFE__EnsureActualLooksBig(i32& actual) noexcept
     {
@@ -70,7 +85,7 @@ struct fu_VEC
         else                     return false;
     }
 
-    static const i32 SIGN_BIT = 1 << 31;
+    static constexpr i32 SIGN_BIT = 1 << 31;
 
     fu_INL i32 capa() const noexcept {
         if constexpr (HAS_SMALL) {
@@ -147,6 +162,10 @@ struct fu_VEC
         }
 
         return _big_size;
+    }
+
+    fu_INL explicit operator bool() const noexcept {
+        return size() != 0;
     }
 
     /////////////////////////////////////////////
@@ -842,7 +861,7 @@ struct fu_VEC
 
         MUT_back(del, src_size);
 
-        int idx = old_size - del;
+        i32 idx = old_size - del;
 
         if (!TRIVIAL && src.slow_check_unique()) {
             MEMCPY_range(new_data + idx, src_data, src_size);
@@ -867,7 +886,7 @@ struct fu_VEC
         const T*  old_data = data();
               i32 old_size = size();
 
-        int idx = old_size - del;
+        i32 idx = old_size - del;
 
         if (src_data < old_data || src_data > old_data + old_size) {
             MUT_back(del, src_size);
@@ -926,9 +945,9 @@ struct fu_VEC
         const T* start = data();
         const T* end   = start + size();
 
-        for (T* i = start; i < end; i++)
-            if (i == search)
-                return (i32) i - start;
+        for (const T* i = start; i < end; i++)
+            if (*i == search)
+                return i32(i - start);
 
         return -1;
     }
@@ -983,7 +1002,7 @@ struct fu_VEC
         if (new_capa) {
             assert(new_capa > 0);
 
-            int grow = new_capa - size();
+            i32 grow = new_capa - size();
                 grow = grow > 0
                      ? grow : 0;
 
@@ -999,13 +1018,47 @@ struct fu_VEC
         return reserve(Zero);
     }
 
-    T* mut_begin() noexcept {
+
+    //
+
+    fu_INL T* mut_data() noexcept {
         reserve();
         return (T*)data();
     }
 
-    fu_INL const T* mut_end() noexcept {
-        return end();
+    fu_INL T* mut_begin() noexcept {
+        return mut_data();
+    }
+
+    fu_INL T* mut_end() noexcept {
+        return (T*)end();
+    }
+
+
+    // Literal expressions:
+    //  TODO use fu_ARR instead.
+    //   TODO allow the compiler to optimize case TRIVIAL.
+
+    template <i32 new_size>
+    struct INIT
+    {
+        static_assert(new_size > 0);
+
+        T data[new_size];
+
+        INIT(const INIT&) = delete;
+        INIT(INIT&&) /* -MOV-CTOR- */ = default;
+
+        INIT& operator=(const INIT&) = delete;
+        INIT& operator=(INIT&&) = delete;
+    };
+
+    template <i32 new_size>
+    inline fu_VEC(INIT<new_size>&& init) noexcept
+    {
+        static_assert(new_size > 0);
+
+        UNSAFE__init_move(init.data, new_size);
     }
 
 
@@ -1035,7 +1088,7 @@ struct fu_VEC
         u32 i = (u32) idx;
         i = i < s ? i : OUT_OF_BOUNDS;
 
-        return data()[i];
+        return ((T*)data())[i];
     }
 };
 
@@ -1142,3 +1195,14 @@ fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
 #undef MUT_trim
 #undef MUT_init
 #undef MUT_clear
+
+//
+
+#undef TRIVIAL
+#undef VEC_SIZE
+#undef SMALL_CAPA
+#undef HAS_SMALL
+
+#undef PACK_CAPA
+#undef IS_BIG_MASK
+#undef SMALL_SIZE_OFFSET
