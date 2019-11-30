@@ -1,21 +1,21 @@
 
-RELEASE compiler.fu
+NEWCOW compiler.fu
 
-    lex:      20236 µs
-    parse:    15799 µs
-    solve:    48105 µs
-    codegen:  19374 µs
+    lex:     16360 µs
+    parse:   9664 µs
+    solve:   33659 µs
+    codegen: 17845 µs
 
-             130260 µs
+            107170 µs
 
-DEBUG compiler.fu
+STDSTR compiler.fu
 
-    lex:     130466 µs
-    parse:    56186 µs
-    solve:   220868 µs
-    codegen:  58789 µs
+    lex:     16273 µs
+    parse:   12105 µs
+    solve:   42522 µs
+    codegen: 17095 µs
 
-             530421 µs
+            118851 µs
 
     std::string compile(const std::string& fname, const std::string& src, s_TEMP_Context& ctx)
     {
