@@ -11,6 +11,7 @@
 
 
 // #define ISOLATE_FAILING_TESTCASE
+// #define WRITE_COMPILER
 
 
 //
@@ -455,6 +456,8 @@ void FU_FILE(const std::string& fname)
 
     std::cout << "        " << tt << " µs\n" << std::endl;
 
+#ifdef WRITE_COMPILER
+
     str_replace_all(cpp,
         "int main()", "int auto_main()");
 
@@ -465,6 +468,8 @@ void FU_FILE(const std::string& fname)
         writeFile(out_fname, cpp);
         std::cout << "WROTE " << out_fname << std::endl;
     }
+
+#endif
 }
 
 
