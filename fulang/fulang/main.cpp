@@ -5,11 +5,11 @@
 
 #include <iostream>
 #include <string>
-#include <chrono>
 
 #include <time.h>
 
 #include "../../lib/io.h"
+#include "../../lib/now.h"
 
 
 // #define ISOLATE_FAILING_TESTCASE
@@ -398,12 +398,12 @@ void FU_FILE(const std::string& fname)
         exit(1);
     }
 
-    auto t0 = std::chrono::high_resolution_clock::now();
+    auto t0 = fu::now_hr();
     auto cpp = ZERO(fu);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto tt = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    auto t1 = fu::now_hr();
+    auto tt = t1 - t0;
 
-    std::cout << "        " << tt << " µs\n" << std::endl;
+    std::cout << "        " << tt << "s\n" << std::endl;
 
 #ifdef WRITE_COMPILER
     updateCPPFile(path, to_string(cpp) );
