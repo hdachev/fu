@@ -9,6 +9,8 @@
 
 #include <time.h>
 
+#include "../../lib/io.h"
+
 
 // #define ISOLATE_FAILING_TESTCASE
 #define WRITE_COMPILER
@@ -46,78 +48,6 @@ TEA hash_src(const std::string& src)
     }
 
     return result;
-}
-
-
-//
-
-template <typename F>
-struct fu_DEFER
-{
-    F fn;
-    ~fu_DEFER() { fn(); }
-
-    fu_DEFER(F fn) : fn(fn) {}
-    fu_DEFER(const fu_DEFER&) = delete;
-    void operator=(const fu_DEFER&) = delete;
-};
-
-
-//
-
-int getFileSize(const std::string& path)
-{
-    struct stat sb;
-    if (stat(path.c_str(), &sb) == 0)
-        return int(sb.st_size);
-
-    return -1;
-}
-
-std::string readFile(const std::string& path)
-{
-    errno = 0;
-
-    FILE* file = fopen(path.c_str(), "r");
-    fu_DEFER _file { [&]() { fclose(file); } };
-
-    auto code = strerror(errno);
-
-    std::string output;
-    if (file)
-    {
-        char buffer[256];
-        while (fgets(buffer, 256, file) != nullptr)
-            output += buffer;
-    }
-
-    return output;
-}
-
-bool writeFile(const std::string& path, const std::string& src)
-{
-    auto ok = false;
-
-    errno = 0;
-    FILE* file = fopen(path.c_str(), "w");
-    auto code = strerror(errno);
-
-    if (file)
-    {
-        size_t expect = src.size();
-        size_t actual = fwrite(src.data(), 1, expect, file);
-
-        ok = actual == expect;
-
-        fclose(file);
-    }
-    else
-    {
-
-        // So?
-    }
-
-    return ok;
 }
 
 
@@ -170,7 +100,7 @@ std::string get_PRJDIR()
     std::string path = HOME;
     path += "fu/";
 
-    auto bytes = getFileSize(path + "src/compiler.fu");
+    auto bytes = fu::file_size(path + "src/compiler.fu");
     if (bytes < 10000)
     {
         std::cout << "Bad compiler.fu: " << bytes << std::endl;
@@ -282,7 +212,7 @@ std::string build_and_run(const std::string& cpp)
 
     const auto& ERROR = [&]()
     {
-        writeFile((PRJDIR + "build.cpp/failing-testcase.cpp").c_str(), cpp);
+        fu::file_write((PRJDIR + "build.cpp/failing-testcase.cpp").c_str(), cpp);
 
         if (out.empty())
             out = "[ EXIT CODE " + std::to_string(code) + " ]";
@@ -290,11 +220,11 @@ std::string build_and_run(const std::string& cpp)
         return std::move(out);
     };
 
-    if (getFileSize(F + ".exe") <= 0)
+    if (fu::file_size(F + ".exe") <= 0)
     {
         NEW_STUFF = true;
 
-        writeFile((F + ".cpp").c_str(), cpp);
+        fu::file_write((F + ".cpp").c_str(), cpp);
 
         out = fu_EXEC(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1").wait(code);
         if (code) return ERROR();
@@ -405,12 +335,12 @@ std::string to_string(const fu_STR& str) {
     return std::string(str.data(), size_t(str.size()));
 }
 
-std::string ZERO(const std::string& src)
+fu_STR ZERO(const fu_STR& src)
 {
-    auto cpp = to_string( compile_testcase( fu_TO_STR(src.c_str()) ) );
+    auto cpp = compile_testcase(fu_STR(src));
 
     // ...
-    auto result = build_and_run(cpp);
+    auto result = build_and_run( to_string(cpp) );
     if (result.size())
     {
         std::cout << result << std::endl;
@@ -419,6 +349,11 @@ std::string ZERO(const std::string& src)
 
     // std::cout << "PASS" << std::endl;
     return cpp;
+}
+
+fu_STR ZERO(const std::string& src)
+{
+    return ZERO(fu_TO_STR(src.c_str()));
 }
 
 void FAIL(const std::string& src)
@@ -435,6 +370,20 @@ void FAIL(const std::string& src)
     exit(1);
 }
 
+void updateCPPFile(const std::string& path, std::string cpp)
+{
+    str_replace_all(cpp,
+        "int main()", "int auto_main()");
+
+    auto out_fname = path + ".cpp";
+
+    if (to_string( fu::file_read(out_fname) ) != cpp)
+    {
+        fu::file_write(out_fname, cpp);
+        std::cout << "WROTE " << out_fname << std::endl;
+    }
+}
+
 void FU_FILE(const std::string& fname)
 {
     std::string path = PRJDIR;
@@ -442,7 +391,7 @@ void FU_FILE(const std::string& fname)
 
     std::cout << "COMPILE " << fname << std::endl;
 
-    auto fu = readFile(path);
+    auto fu = fu::file_read(path);
     if (!fu.size())
     {
         std::cout << "BAD FILE: " << path << std::endl;
@@ -457,18 +406,7 @@ void FU_FILE(const std::string& fname)
     std::cout << "        " << tt << " µs\n" << std::endl;
 
 #ifdef WRITE_COMPILER
-
-    str_replace_all(cpp,
-        "int main()", "int auto_main()");
-
-    auto out_fname = path + ".cpp";
-
-    if (readFile(out_fname) != cpp)
-    {
-        writeFile(out_fname, cpp);
-        std::cout << "WROTE " << out_fname << std::endl;
-    }
-
+    updateCPPFile(path, to_string(cpp) );
 #endif
 }
 

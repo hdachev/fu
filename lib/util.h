@@ -7,7 +7,8 @@ using u32 = unsigned int;
 
 /////////////////////////////////////////////
 
-const uint8_t fu_EXIT_BadAlloc = 101;
+const uint8_t fu_EXIT_BadAlloc      =  101;
+const int     fu_ERR_UnknownError   = -101;
 
 /////////////////////////////////////////////
 
@@ -101,5 +102,3 @@ inline uint32_t fu_NEXT_LOG2(uint32_t a) // a must be >= 2
     return 32 - uint32_t( __builtin_clz(a - 1));
 #endif
 }
-
-/////////////////////////////////////////////
