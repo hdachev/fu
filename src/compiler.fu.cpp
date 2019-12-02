@@ -412,7 +412,7 @@ struct sf_lex
     };
     void err_str(const fu_STR& kind, const int& idx0, const fu_STR& reason)
     {
-        while (((idx < end) && (fu_TO_STR(src[idx]) > fu_TO_STR(" "))))
+        while (((idx < end) && (strlit_cmp(fu_TO_STR(src[idx]), " ", 1) > 0)))
             idx++;
 
         const int col = (idx0 - lidx);
@@ -464,7 +464,7 @@ struct sf_lex
         {
             const int idx0 = fu_CLONE(idx);
             fu_STR c = fu_TO_STR(src[idx++]);
-            if ((c <= fu_TO_STR(" ")))
+            if ((strlit_cmp(c, " ", 1) <= 0))
             {
                 if (strlit_eq(c, "\n", 1))
                 {
@@ -472,12 +472,12 @@ struct sf_lex
                     lidx = (idx - 1);
                 };
             }
-            else if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || strlit_eq(c, "_", 1)))
+            else if ((((strlit_cmp(c, "A", 1) >= 0) && (strlit_cmp(c, "Z", 1) <= 0)) || ((strlit_cmp(c, "a", 1) >= 0) && (strlit_cmp(c, "z", 1) <= 0)) || strlit_eq(c, "_", 1)))
             {
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+                    if ((((strlit_cmp(c, "A", 1) >= 0) && (strlit_cmp(c, "Z", 1) <= 0)) || ((strlit_cmp(c, "a", 1) >= 0) && (strlit_cmp(c, "z", 1) <= 0)) || strlit_eq(c, "_", 1) || ((strlit_cmp(c, "0", 1) >= 0) && (strlit_cmp(c, "9", 1) <= 0))))
                     {
                     }
                     else
@@ -489,7 +489,7 @@ struct sf_lex
                 const int idx1 = fu_CLONE(idx);
                 token(fu_TO_STR("id"), slice(src, idx0, idx1), idx0, idx1);
             }
-            else if (((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9"))))
+            else if (((strlit_cmp(c, "0", 1) >= 0) && (strlit_cmp(c, "9", 1) <= 0)))
             {
                 bool hex = false;
                 bool dot = false;
@@ -502,7 +502,7 @@ struct sf_lex
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if (((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9"))))
+                    if (((strlit_cmp(c, "0", 1) >= 0) && (strlit_cmp(c, "9", 1) <= 0)))
                     {
                     }
                     else if (strlit_eq(c, ".", 1))
@@ -526,7 +526,7 @@ struct sf_lex
 
                         exp = true;
                     }
-                    else if ((((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("f"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("F")))))
+                    else if ((((strlit_cmp(c, "a", 1) >= 0) && (strlit_cmp(c, "f", 1) <= 0)) || ((strlit_cmp(c, "A", 1) >= 0) && (strlit_cmp(c, "F", 1) <= 0))))
                     {
                         if (!hex)
                         {
@@ -541,7 +541,7 @@ struct sf_lex
                     };
                 };
                 fu_STR trail = fu_TO_STR(src[(idx - 1)]);
-                if ((!((trail >= fu_TO_STR("0")) && (trail <= fu_TO_STR("9"))) && !(hex && (((trail >= fu_TO_STR("a")) && (trail <= fu_TO_STR("f"))) || ((trail >= fu_TO_STR("A")) && (trail <= fu_TO_STR("F")))))))
+                if ((!((strlit_cmp(trail, "0", 1) >= 0) && (strlit_cmp(trail, "9", 1) <= 0)) && !(hex && (((strlit_cmp(trail, "a", 1) >= 0) && (strlit_cmp(trail, "f", 1) <= 0)) || ((strlit_cmp(trail, "A", 1) >= 0) && (strlit_cmp(trail, "F", 1) <= 0))))))
                     err(fu_TO_STR("num"), idx0, (idx - 1));
                 else
                 {
@@ -1938,7 +1938,7 @@ struct sf_runSolver
         for (int i = 0; (i < id.size()); i++)
         {
             fu_STR c = fu_TO_STR(id[i]);
-            if ((strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+            if ((strlit_eq(c, "_", 1) || ((strlit_cmp(c, "a", 1) >= 0) && (strlit_cmp(c, "z", 1) <= 0)) || ((strlit_cmp(c, "A", 1) >= 0) && (strlit_cmp(c, "Z", 1) <= 0)) || ((strlit_cmp(c, "0", 1) >= 0) && (strlit_cmp(c, "9", 1) <= 0))))
                 return true;
 
         };
@@ -3512,7 +3512,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < id.size()); i++)
         {
             fu_STR c = fu_TO_STR(id[i]);
-            if ((strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+            if ((strlit_eq(c, "_", 1) || ((strlit_cmp(c, "a", 1) >= 0) && (strlit_cmp(c, "z", 1) <= 0)) || ((strlit_cmp(c, "A", 1) >= 0) && (strlit_cmp(c, "Z", 1) <= 0)) || ((strlit_cmp(c, "0", 1) >= 0) && (strlit_cmp(c, "9", 1) <= 0))))
             {
             }
             else
@@ -3591,6 +3591,15 @@ struct sf_cpp_codegen
                             out = (fu_TO_STR("!") + out);
 
                         return out;
+                    };
+                };
+                if ((strlit_eq(id, "<=", 2) || strlit_eq(id, ">=", 2) || strlit_eq(id, "<", 1) || strlit_eq(id, ">", 1)))
+                {
+                    if (strlit_eq(nodes[1].kind, "str", 3))
+                    {
+                        const int cstr_len = nodes[1].value.size();
+                        fu_STR right = stripStringLiteral(items[1]);
+                        return ((((((((fu_TO_STR("(strlit_cmp(") + items[0]) + fu_TO_STR(", ")) + right) + fu_TO_STR(", ")) + cstr_len) + fu_TO_STR(") ")) + id) + fu_TO_STR(" 0)"));
                     };
                 };
                 if ((mode & M_STMT))

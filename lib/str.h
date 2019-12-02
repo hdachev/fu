@@ -136,7 +136,8 @@ inline int strcmp(const fu_STR& a, const fu_STR& b) noexcept
     int s   = s0 < s1 ? s0 : s1;
 
     int cmp = memcmp(a.data(), b.data(), size_t(s));
-    return cmp ? cmp : s0 - s1;
+    int dif = s0 - s1;
+    return cmp ? cmp : dif;
 }
 
 inline bool operator<(const fu_STR& a, const fu_STR& b) noexcept
@@ -162,8 +163,18 @@ inline bool operator>=(const fu_STR& a, const fu_STR& b) noexcept
 
 //
 
-inline bool strlit_eq(const fu_STR& a, const char* cstr, size_t cstr_len) noexcept
+inline bool strlit_eq(const fu_STR& a, const char* cstr, int s1) noexcept
 {
-    return cstr_len == (size_t) a.size()
-        && memcmp(a.data(), cstr, cstr_len) == 0;
+    return s1 == a.size()
+        && memcmp(a.data(), cstr, s1) == 0;
+}
+
+inline int strlit_cmp(const fu_STR& a, const char* cstr, int s1) noexcept
+{
+    int s0  = a.size();
+    int s   = s0 < s1 ? s0 : s1;
+
+    int cmp = memcmp(a.data(), cstr, size_t(s));
+    int dif = s0 - s1;
+    return cmp ? cmp : dif;
 }

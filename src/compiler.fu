@@ -4901,7 +4901,17 @@ pub fn cpp_codegen(
 
                         return out;
                     }
+                }
 
+                if (id == '<=' || id == '>=' || id == '<' || id == '>')
+                {
+                    if (nodes[1].kind == 'str')
+                    {
+                        let cstr_len = nodes[1].value.len;
+                        let right = stripStringLiteral(items[1]);
+
+                        return '(strlit_cmp(' + items[0] + ', ' + right + ', ' + cstr_len + ') ' + id + ' 0)';
+                    }
                 }
 
                 // Skip some of the ridiculous parens.
