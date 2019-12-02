@@ -158,3 +158,12 @@ inline bool operator>=(const fu_STR& a, const fu_STR& b) noexcept
 {
     return strcmp(a, b) >= 0;
 }
+
+
+//
+
+inline bool strlit_eq(const fu_STR& a, const char* cstr, size_t cstr_len) noexcept
+{
+    return cstr_len == (size_t) a.size()
+        && memcmp(a.data(), cstr, cstr_len) == 0;
+}

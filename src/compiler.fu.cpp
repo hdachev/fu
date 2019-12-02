@@ -437,16 +437,16 @@ struct sf_lex
         for (int i = (idx0 + 1); (i < n); i++)
         {
             fu_STR c = fu_TO_STR(src[i]);
-            if ((c == fu_TO_STR("\\")))
+            if (strlit_eq(c, "\\", 1))
             {
                 fu_STR c1 = fu_TO_STR(src[++i]);
-                if ((c1 == fu_TO_STR("n")))
+                if (strlit_eq(c1, "n", 1))
                     out += fu_TO_STR("\n");
-                else if ((c1 == fu_TO_STR("r")))
+                else if (strlit_eq(c1, "r", 1))
                     out += fu_TO_STR("\r");
-                else if ((c1 == fu_TO_STR("t")))
+                else if (strlit_eq(c1, "t", 1))
                     out += fu_TO_STR("\t");
-                else if ((c1 == fu_TO_STR("v")))
+                else if (strlit_eq(c1, "v", 1))
                     out += fu_TO_STR("\v");
                 else
                     out += c1;
@@ -466,18 +466,18 @@ struct sf_lex
             fu_STR c = fu_TO_STR(src[idx++]);
             if ((c <= fu_TO_STR(" ")))
             {
-                if ((c == fu_TO_STR("\n")))
+                if (strlit_eq(c, "\n", 1))
                 {
                     line++;
                     lidx = (idx - 1);
                 };
             }
-            else if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || (c == fu_TO_STR("_"))))
+            else if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || strlit_eq(c, "_", 1)))
             {
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || (c == fu_TO_STR("_")) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+                    if ((((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
                     {
                     }
                     else
@@ -494,7 +494,7 @@ struct sf_lex
                 bool hex = false;
                 bool dot = false;
                 bool exp = false;
-                if (((c == fu_TO_STR("0")) && (idx < end) && (fu_TO_STR(src[idx]) == fu_TO_STR("x"))))
+                if ((strlit_eq(c, "0", 1) && (idx < end) && strlit_eq(fu_TO_STR(src[idx]), "x", 1)))
                 {
                     hex = true;
                     idx++;
@@ -505,7 +505,7 @@ struct sf_lex
                     if (((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9"))))
                     {
                     }
-                    else if ((c == fu_TO_STR(".")))
+                    else if (strlit_eq(c, ".", 1))
                     {
                         if ((hex || dot || exp))
                         {
@@ -514,14 +514,14 @@ struct sf_lex
                         };
                         dot = true;
                     }
-                    else if ((((c == fu_TO_STR("e")) || (c == fu_TO_STR("E"))) && !hex))
+                    else if (((strlit_eq(c, "e", 1) || strlit_eq(c, "E", 1)) && !hex))
                     {
                         if ((hex || exp))
                         {
                             err(fu_TO_STR("num"), idx0, (idx - 1));
                             break;
                         };
-                        if (((idx < end) && ((fu_TO_STR(src[idx]) == fu_TO_STR("-")) || (fu_TO_STR(src[idx]) == fu_TO_STR("+")))))
+                        if (((idx < end) && (strlit_eq(fu_TO_STR(src[idx]), "-", 1) || strlit_eq(fu_TO_STR(src[idx]), "+", 1))))
                             idx++;
 
                         exp = true;
@@ -550,7 +550,7 @@ struct sf_lex
                     token(checkNum(((dot || exp) ? fu_TO_STR("num") : fu_TO_STR("int")), str), str, idx0, idx1);
                 };
             }
-            else if (((c == fu_TO_STR("'")) || (c == fu_TO_STR("\"")) || (c == fu_TO_STR("`"))))
+            else if ((strlit_eq(c, "'", 1) || strlit_eq(c, "\"", 1) || strlit_eq(c, "`", 1)))
             {
                 bool esc = false;
                 bool ok = false;
@@ -562,12 +562,12 @@ struct sf_lex
                         ok = true;
                         break;
                     }
-                    else if ((c1 == fu_TO_STR("\\")))
+                    else if (strlit_eq(c1, "\\", 1))
                     {
                         esc = true;
                         idx++;
                     }
-                    else if ((c == fu_TO_STR("\n")))
+                    else if (strlit_eq(c, "\n", 1))
                     {
                         line++;
                         lidx = (idx - 1);
@@ -582,13 +582,13 @@ struct sf_lex
                     token(fu_TO_STR("str"), str, idx0, idx1);
                 };
             }
-            else if (((c == fu_TO_STR("/")) && (idx < end) && (fu_TO_STR(src[idx]) == fu_TO_STR("/"))))
+            else if ((strlit_eq(c, "/", 1) && (idx < end) && strlit_eq(fu_TO_STR(src[idx]), "/", 1)))
             {
                 idx++;
                 while ((idx < end))
                 {
                     fu_STR c1 = fu_TO_STR(src[idx++]);
-                    if ((c1 == fu_TO_STR("\n")))
+                    if (strlit_eq(c1, "\n", 1))
                     {
                         line++;
                         lidx = (idx - 1);
@@ -596,18 +596,18 @@ struct sf_lex
                     };
                 };
             }
-            else if (((c == fu_TO_STR("/")) && (idx < end) && (fu_TO_STR(src[idx]) == fu_TO_STR("*"))))
+            else if ((strlit_eq(c, "/", 1) && (idx < end) && strlit_eq(fu_TO_STR(src[idx]), "*", 1)))
             {
                 idx++;
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if ((c == fu_TO_STR("\n")))
+                    if (strlit_eq(c, "\n", 1))
                     {
                         line++;
                         lidx = (idx - 1);
                     }
-                    else if (((c == fu_TO_STR("*")) && (idx < end) && (fu_TO_STR(src[idx]) == fu_TO_STR("/"))))
+                    else if ((strlit_eq(c, "*", 1) && (idx < end) && strlit_eq(fu_TO_STR(src[idx]), "/", 1)))
                     {
                         idx++;
                         break;
@@ -828,9 +828,9 @@ struct sf_parse
     s_Node parseStructItem()
     {
         const s_Token& token = _tokens[_idx++];
-        if (((token.kind == fu_TO_STR("op")) || (token.kind == fu_TO_STR("id"))))
+        if ((strlit_eq(token.kind, "op", 2) || strlit_eq(token.kind, "id", 2)))
         {
-            if ((token.value == fu_TO_STR("fn")))
+            if (strlit_eq(token.value, "fn", 2))
                 return parseStructMethod();
 
         };
@@ -868,12 +868,12 @@ struct sf_parse
             _col0 = token.col;
             ((_col0 > col00) || fail_Lint(((((fu_TO_STR("Bad indent, expecting more than ") + col00) + fu_TO_STR(". Block starts on line ")) + line0) + fu_TO_STR("."))));
             s_Node expr = (mode.size() ? parseStructItem() : parseStatement());
-            ((expr.kind != fu_TO_STR("call")) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || fail_Lint(fu_TO_STR("Orphan pure-looking expression.")));
+            (!strlit_eq(expr.kind, "call", 4) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || fail_Lint(fu_TO_STR("Orphan pure-looking expression.")));
             const int exprIdx = items.size();
-            if ((expr.kind != fu_TO_STR("empty")))
+            if (!strlit_eq(expr.kind, "empty", 5))
                 items.push(expr);
 
-            if ((expr.kind == fu_TO_STR("struct")))
+            if (strlit_eq(expr.kind, "struct", 6))
                 unwrapStructMethods(items, exprIdx);
 
         };
@@ -886,9 +886,9 @@ struct sf_parse
         for (int i = 0; (i < members.size()); i++)
         {
             s_Node& item = members.mutref(i);
-            if ((item.kind == fu_TO_STR("fn")))
+            if (strlit_eq(item.kind, "fn", 2))
             {
-                if ((item.value == fu_TO_STR("free")))
+                if (strlit_eq(item.value, "free", 4))
                 {
                     structNode.flags |= F_DESTRUCTOR;
                     item.flags |= F_DESTRUCTOR;
@@ -904,52 +904,52 @@ struct sf_parse
     {
         s_Token loc0 = fu_CLONE(_loc);
         s_Token token = fu_CLONE((_loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx++]; if (_) return _; } fail(fu_TO_STR("")); }())));
-        if (((token.kind == fu_TO_STR("op")) || (token.kind == fu_TO_STR("id"))))
+        if ((strlit_eq(token.kind, "op", 2) || strlit_eq(token.kind, "id", 2)))
         {
             const fu_STR& v = token.value;
-            if ((v == fu_TO_STR("{")))
+            if (strlit_eq(v, "{", 1))
                 return parseBlock();
 
-            if ((v == fu_TO_STR("let")))
+            if (strlit_eq(v, "let", 3))
                 return parseLetStmt();
 
-            if ((v == fu_TO_STR("mut")))
+            if (strlit_eq(v, "mut", 3))
                 return ((void)_idx--, parseLetStmt());
 
-            if ((v == fu_TO_STR("if")))
+            if (strlit_eq(v, "if", 2))
                 return parseIf();
 
-            if ((v == fu_TO_STR("return")))
+            if (strlit_eq(v, "return", 6))
                 return parseReturn();
 
-            if ((v == fu_TO_STR("for")))
+            if (strlit_eq(v, "for", 3))
                 return parseFor();
 
-            if ((v == fu_TO_STR("while")))
+            if (strlit_eq(v, "while", 5))
                 return parseWhile();
 
-            if ((v == fu_TO_STR("do")))
+            if (strlit_eq(v, "do", 2))
                 return parseDoWhile();
 
-            if ((v == fu_TO_STR("break")))
+            if (strlit_eq(v, "break", 5))
                 return parseJump(fu_TO_STR("break"));
 
-            if ((v == fu_TO_STR("continue")))
+            if (strlit_eq(v, "continue", 8))
                 return parseJump(fu_TO_STR("continue"));
 
-            if ((v == fu_TO_STR(";")))
+            if (strlit_eq(v, ";", 1))
                 return parseEmpty();
 
-            if ((v == fu_TO_STR("fn")))
+            if (strlit_eq(v, "fn", 2))
                 return parseFnDecl();
 
-            if ((v == fu_TO_STR("struct")))
+            if (strlit_eq(v, "struct", 6))
                 return parseStructDecl();
 
-            if ((v == fu_TO_STR(":")))
+            if (strlit_eq(v, ":", 1))
                 return parseLabelledStatement();
 
-            if ((v == fu_TO_STR("pub")))
+            if (strlit_eq(v, "pub", 3))
                 return parseStatement();
 
         };
@@ -961,7 +961,7 @@ struct sf_parse
     {
         s_Token label = consume(fu_TO_STR("id"), fu_TO_STR(""));
         s_Node stmt = parseStatement();
-        if ((stmt.kind == fu_TO_STR("loop")))
+        if (strlit_eq(stmt.kind, "loop", 4))
         {
             (stmt.value.size() && fail(fu_TO_STR("")));
             stmt.value = ([&]() -> const fu_STR& { { const fu_STR& _ = label.value; if (_.size()) return _; } fail(fu_TO_STR("")); }());
@@ -1036,7 +1036,7 @@ struct sf_parse
     s_Node parseFnBodyBranch()
     {
         s_Node body = parseStatement();
-        return (((body.kind == fu_TO_STR("block")) || (body.kind == fu_TO_STR("return"))) ? fu_CLONE(body) : ((void)_numReturns++, createReturn(body)));
+        return ((strlit_eq(body.kind, "block", 5) || strlit_eq(body.kind, "return", 6)) ? fu_CLONE(body) : ((void)_numReturns++, createReturn(body)));
     };
     s_Node tryPopTypeAnnot()
     {
@@ -1153,7 +1153,7 @@ struct sf_parse
 
         _idx++;
         s_Node mid {};
-        if ((op == fu_TO_STR("?")))
+        if (strlit_eq(op, "?", 1))
         {
             mid = parseExpression(fu_CLONE(_precedence));
             consume(fu_TO_STR("op"), fu_TO_STR(":"));
@@ -1162,10 +1162,10 @@ struct sf_parse
         if (mid)
             return createIf(left, mid, right);
 
-        if ((op == fu_TO_STR("||")))
+        if (strlit_eq(op, "||", 2))
             return createOr(left, right);
 
-        if ((op == fu_TO_STR("&&")))
+        if (strlit_eq(op, "&&", 2))
             return createAnd(left, right);
 
         return createCall(op, F_INFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } });
@@ -1173,19 +1173,19 @@ struct sf_parse
     s_Node tryParseExpressionTail(const s_Node& head)
     {
         const s_Token& token = _tokens[_idx++];
-        if ((token.kind == fu_TO_STR("op")))
+        if (strlit_eq(token.kind, "op", 2))
         {
             const fu_STR& v = token.value;
-            if ((v == fu_TO_STR(";")))
+            if (strlit_eq(v, ";", 1))
                 return ((void)_idx--, miss());
 
-            if ((v == fu_TO_STR(".")))
+            if (strlit_eq(v, ".", 1))
                 return parseAccessExpression(head);
 
-            if ((v == fu_TO_STR("(")))
+            if (strlit_eq(v, "(", 1))
                 return parseCallExpression(head);
 
-            if ((v == fu_TO_STR("[")))
+            if (strlit_eq(v, "[", 1))
                 return parseIndexExpression(head);
 
             const int& p1 = BINOP.PRECEDENCE[v];
@@ -1204,28 +1204,28 @@ struct sf_parse
         
         {
             const fu_STR& k = token.kind;
-            if (((k == fu_TO_STR("int")) || (k == fu_TO_STR("num")) || (k == fu_TO_STR("str"))))
+            if ((strlit_eq(k, "int", 3) || strlit_eq(k, "num", 3) || strlit_eq(k, "str", 3)))
                 return createLeaf(token.kind, token.value);
 
-            if ((k == fu_TO_STR("id")))
+            if (strlit_eq(k, "id", 2))
                 return createRead(token.value);
 
-            if ((k == fu_TO_STR("op")))
+            if (strlit_eq(k, "op", 2))
             {
                 const fu_STR& v = token.value;
-                if ((v == fu_TO_STR("(")))
+                if (strlit_eq(v, "(", 1))
                     return parseParens();
 
-                if ((v == fu_TO_STR("[")))
+                if (strlit_eq(v, "[", 1))
                     return parseArrayLiteral();
 
-                if ((v == fu_TO_STR("$")))
+                if (strlit_eq(v, "$", 1))
                     return parseTypeParam();
 
-                if ((v == fu_TO_STR("@")))
+                if (strlit_eq(v, "@", 1))
                     return parseTypeTag();
 
-                if ((v == fu_TO_STR("[]")))
+                if (strlit_eq(v, "[]", 2))
                     return make(fu_TO_STR("definit"), fu_VEC<s_Node>{}, 0, fu_TO_STR(""));
 
                 return parsePrefix(fu_CLONE(token.value));
@@ -1270,7 +1270,7 @@ struct sf_parse
     s_Node parsePrefix(fu_STR&& op)
     {
         ((PREFIX.find(op) != -1) || ((void)_idx--, fail(fu_TO_STR(""))));
-        if (((op == fu_TO_STR("&")) && tryConsume(fu_TO_STR("id"), fu_TO_STR("mut"))))
+        if ((strlit_eq(op, "&", 1) && tryConsume(fu_TO_STR("id"), fu_TO_STR("mut"))))
             op = fu_TO_STR("&mut");
 
         return createPrefix(op, parseUnaryExpression());
@@ -1281,7 +1281,7 @@ struct sf_parse
     };
     s_Node createPrefix(const fu_STR& op, const s_Node& expr)
     {
-        if ((op == fu_TO_STR("!")))
+        if (strlit_eq(op, "!", 1))
             return createNot(expr);
 
         return createCall(op, F_PREFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
@@ -1315,13 +1315,13 @@ struct sf_parse
             first = false;
             fu_STR name = fu_TO_STR("");
             bool autoName = false;
-            if (((_tokens[_idx].kind == fu_TO_STR("id")) && (_tokens[(_idx + 1)].kind == fu_TO_STR("op")) && (_tokens[(_idx + 1)].value == fu_TO_STR(":"))))
+            if ((strlit_eq(_tokens[_idx].kind, "id", 2) && strlit_eq(_tokens[(_idx + 1)].kind, "op", 2) && strlit_eq(_tokens[(_idx + 1)].value, ":", 1)))
             {
                 name = _tokens[_idx].value;
                 _idx += 2;
                 flags |= F_NAMED_ARGS;
             }
-            else if (((_tokens[_idx].kind == fu_TO_STR("op")) && (_tokens[_idx].value == fu_TO_STR(":"))))
+            else if ((strlit_eq(_tokens[_idx].kind, "op", 2) && strlit_eq(_tokens[_idx].value, ":", 1)))
             {
                 autoName = true;
                 _idx++;
@@ -1330,7 +1330,7 @@ struct sf_parse
             s_Node expr = parseExpression(fu_CLONE(P_COMMA));
             if (autoName)
             {
-                (((expr.kind == fu_TO_STR("call")) && (expr.flags & F_ID)) || fail(fu_TO_STR("Can't :auto_name this expression.")));
+                ((strlit_eq(expr.kind, "call", 4) && (expr.flags & F_ID)) || fail(fu_TO_STR("Can't :auto_name this expression.")));
                 name = expr.value;
             };
             out_args.push((name.size() ? createLabel(name, expr) : fu_CLONE(expr)));
@@ -1345,13 +1345,13 @@ struct sf_parse
     {
         fu_VEC<s_Node> args = fu_VEC<s_Node>{};
         const int argFlags = parseCallArgs(fu_TO_STR(")"), args);
-        if (((expr.kind == fu_TO_STR("call")) && (expr.flags & F_ACCESS)))
+        if ((strlit_eq(expr.kind, "call", 4) && (expr.flags & F_ACCESS)))
         {
             const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
             args.unshift(head);
             return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_TO_STR("")); }()), (F_METHOD | argFlags), args);
         };
-        if (((expr.kind == fu_TO_STR("call")) && (expr.flags & F_ID)))
+        if ((strlit_eq(expr.kind, "call", 4) && (expr.flags & F_ID)))
             return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_TO_STR("")); }()), argFlags, args);
 
         fail(fu_TO_STR("TODO dynamic call"));
@@ -1451,7 +1451,7 @@ struct sf_parse
         s_Node init = parseLetStmt();
         s_Node cond = parseExpressionStatement();
         const s_Token& token = _tokens[_idx];
-        s_Node post = (((token.kind == fu_TO_STR("op")) && (token.value == fu_TO_STR(")"))) ? parseEmpty() : parseExpression(fu_CLONE(_precedence)));
+        s_Node post = ((strlit_eq(token.kind, "op", 2) && strlit_eq(token.value, ")", 1)) ? parseEmpty() : parseExpression(fu_CLONE(_precedence)));
         consume(fu_TO_STR("op"), fu_TO_STR(")"));
         s_Node body = parseStatement();
         return createLoop(init, cond, post, body, miss());
@@ -1480,7 +1480,7 @@ struct sf_parse
     };
     s_Node parse_EVAL()
     {
-        ((_tokens[(_tokens.size() - 1)].kind == fu_TO_STR("eof")) || fail(fu_TO_STR("Missing `eof` token.")));
+        (strlit_eq(_tokens[(_tokens.size() - 1)].kind, "eof", 3) || fail(fu_TO_STR("Missing `eof` token.")));
         return parseRoot();
     };
 };
@@ -1677,7 +1677,7 @@ s_Type createArray(const s_Type& item, s_TEMP_Context& ctx)
 
 bool type_isString(const s_Type& type)
 {
-    return (type.canon == fu_TO_STR("string"));
+    return strlit_eq(type.canon, "string", 6);
 }
 
 bool type_isArray(const s_Type& type)
@@ -1691,7 +1691,7 @@ s_Type tryClear_array(const s_Type& type, const s_TEMP_Context& ctx)
         return s_Type { fu_STR{}, int{} };
 
     const s_Struct& def = lookupType(type.canon, ctx);
-    return ([&]() -> const s_Type& { if ((def.kind == fu_TO_STR("array"))) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }());
+    return ([&]() -> const s_Type& { if (strlit_eq(def.kind, "array", 5)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }());
 }
 
 bool type_isMap(const s_Type& type)
@@ -1714,7 +1714,7 @@ s_MapFields tryClear_map(const s_Type& type, const s_TEMP_Context& ctx)
         return s_MapFields { s_Type{}, s_Type{} };
 
     const s_Struct& def = lookupType(type.canon, ctx);
-    ((def.kind == fu_TO_STR("map")) || fu_THROW("Assertion failed."));
+    (strlit_eq(def.kind, "map", 3) || fu_THROW("Assertion failed."));
     return s_MapFields { fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
 }
 
@@ -1807,19 +1807,19 @@ struct sf_runSolver
     s_ScopeIdx TemplateDecl(const s_Node& node)
     {
         const fu_STR& id = node.value;
-        ((node.kind == fu_TO_STR("fn")) || fail(fu_TO_STR("TODO")));
+        (strlit_eq(node.kind, "fn", 2) || fail(fu_TO_STR("TODO")));
         const int min = (node.items.size() + FN_ARGS_BACK);
-        const int max = ((node.kind == fu_TO_STR("fn")) ? 0xffffff : fu_CLONE(min));
+        const int max = (strlit_eq(node.kind, "fn", 2) ? 0xffffff : fu_CLONE(min));
         s_Template tempatle = s_Template { fu_CLONE(node), fu_COW_MAP<fu_STR, s_SolvedNode>{} };
         fu_VEC<fu_STR> arg_n {};
-        if ((node.kind == fu_TO_STR("fn")))
+        if (strlit_eq(node.kind, "fn", 2))
         {
             const fu_VEC<s_Node>& items = node.items;
             const int numArgs = (items.size() + FN_ARGS_BACK);
             for (int i = 0; (i < numArgs); i++)
             {
                 const s_Node& arg = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_TO_STR("")); }());
-                ((arg.kind == fu_TO_STR("let")) || fail(fu_TO_STR("")));
+                (strlit_eq(arg.kind, "let", 3) || fail(fu_TO_STR("")));
                 const fu_STR& name = ([&]() -> const fu_STR& { { const fu_STR& _ = arg.value; if (_.size()) return _; } fail(fu_TO_STR("")); }());
                 arg_n.push(name);
             };
@@ -1840,7 +1840,7 @@ struct sf_runSolver
         for (int i = 0; (i < max); i++)
         {
             const s_SolvedNode& arg = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_TO_STR("")); }());
-            ((arg.kind == fu_TO_STR("let")) || fail(fu_TO_STR("")));
+            (strlit_eq(arg.kind, "let", 3) || fail(fu_TO_STR("")));
             arg_t.push(([&]() -> const s_Type& { { const s_Type& _ = arg.type; if (_) return _; } fail(fu_TO_STR("")); }()));
             arg_n.push(([&]() -> const fu_STR& { { const fu_STR& _ = arg.value; if (_.size()) return _; } fail(fu_TO_STR("")); }()));
             const bool isImplicit = !!(arg.flags & F_IMPLICIT);
@@ -1917,7 +1917,7 @@ struct sf_runSolver
         fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_CLONE(overload.args));
         fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_CLONE(overload.names));
         fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_CLONE(overload.defaults));
-        if ((via.kind != fu_TO_STR("var")))
+        if (!strlit_eq(via.kind, "var", 3))
         {
             kind = fu_TO_STR("p-wrap");
             min++;
@@ -1938,7 +1938,7 @@ struct sf_runSolver
         for (int i = 0; (i < id.size()); i++)
         {
             fu_STR c = fu_TO_STR(id[i]);
-            if (((c == fu_TO_STR("_")) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+            if ((strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
                 return true;
 
         };
@@ -2035,7 +2035,7 @@ struct sf_runSolver
                 for (int i = 0; (i < arity); i++)
                 {
                     s_SolvedNode arg = fu_CLONE(args.mutref(i));
-                    names.push(((arg.kind == fu_TO_STR("label")) ? fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(fu_TO_STR("")); }())) : fu_TO_STR("")));
+                    names.push((strlit_eq(arg.kind, "label", 5) ? fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(fu_TO_STR("")); }())) : fu_TO_STR("")));
                 };
                 (some || fail(fu_TO_STR("")));
             };
@@ -2156,76 +2156,76 @@ struct sf_runSolver
     s_SolvedNode solveNode(const s_Node& node, const s_Type& type)
     {
         const fu_STR& k = node.kind;
-        if ((k == fu_TO_STR("root")))
+        if (strlit_eq(k, "root", 4))
             return solveRoot(node);
 
-        if ((k == fu_TO_STR("block")))
+        if (strlit_eq(k, "block", 5))
             return solveBlock(node);
 
-        if ((k == fu_TO_STR("label")))
+        if (strlit_eq(k, "label", 5))
             return solveComma(node);
 
-        if ((k == fu_TO_STR("comma")))
+        if (strlit_eq(k, "comma", 5))
             return solveComma(node);
 
-        if ((k == fu_TO_STR("let")))
+        if (strlit_eq(k, "let", 3))
             return solveLet(node);
 
-        if ((k == fu_TO_STR("call")))
+        if (strlit_eq(k, "call", 4))
             return solveCall(node);
 
-        if ((k == fu_TO_STR("arrlit")))
+        if (strlit_eq(k, "arrlit", 6))
             return solveArrayLiteral(node, type);
 
-        if ((k == fu_TO_STR("if")))
+        if (strlit_eq(k, "if", 2))
             return solveIf(node, fu_CLONE(type));
 
-        if ((k == fu_TO_STR("or")))
+        if (strlit_eq(k, "or", 2))
             return solveOr(node, fu_CLONE(type));
 
-        if ((k == fu_TO_STR("!")))
+        if (strlit_eq(k, "!", 1))
             return solveNot(node);
 
-        if ((k == fu_TO_STR("and")))
+        if (strlit_eq(k, "and", 3))
             return solveAnd(node, fu_CLONE(type));
 
-        if ((k == fu_TO_STR("return")))
+        if (strlit_eq(k, "return", 6))
             return solveReturn(node);
 
-        if ((k == fu_TO_STR("loop")))
+        if (strlit_eq(k, "loop", 4))
             return solveBlock(node);
 
-        if ((k == fu_TO_STR("break")))
+        if (strlit_eq(k, "break", 5))
             return solveJump(node);
 
-        if ((k == fu_TO_STR("continue")))
+        if (strlit_eq(k, "continue", 8))
             return solveJump(node);
 
-        if ((k == fu_TO_STR("int")))
+        if (strlit_eq(k, "int", 3))
             return solveInt(node);
 
-        if ((k == fu_TO_STR("str")))
+        if (strlit_eq(k, "str", 3))
             return solveStr(node);
 
-        if ((k == fu_TO_STR("empty")))
+        if (strlit_eq(k, "empty", 5))
             return solveEmpty(node);
 
-        if ((k == fu_TO_STR("definit")))
+        if (strlit_eq(k, "definit", 7))
             return solveDefinit(type);
 
         fail((fu_TO_STR("TODO: ") + k));
     };
     bool isUnordered(const fu_STR& kind)
     {
-        return ((kind == fu_TO_STR("fn")) || (kind == fu_TO_STR("struct")));
+        return (strlit_eq(kind, "fn", 2) || strlit_eq(kind, "struct", 6));
     };
     s_SolvedNode unorderedPrep(const s_Node& node)
     {
         const fu_STR& k = node.kind;
-        if ((k == fu_TO_STR("fn")))
+        if (strlit_eq(k, "fn", 2))
             return uPrepFn(node);
 
-        if ((k == fu_TO_STR("struct")))
+        if (strlit_eq(k, "struct", 6))
             return uPrepStruct(node);
 
         fail((fu_TO_STR("TODO: ") + k));
@@ -2233,10 +2233,10 @@ struct sf_runSolver
     s_SolvedNode unorderedSolve(const s_Node& node, const s_SolvedNode& prep)
     {
         const fu_STR& k = node.kind;
-        if ((k == fu_TO_STR("fn")))
+        if (strlit_eq(k, "fn", 2))
             return uSolveFn(node, prep);
 
-        if ((k == fu_TO_STR("struct")))
+        if (strlit_eq(k, "struct", 6))
             return uSolveStruct(node, prep);
 
         fail((fu_TO_STR("TODO: ") + k));
@@ -2307,7 +2307,7 @@ struct sf_runSolver
         ((inItems.size() >= FN_RET_BACK) || fail(fu_TO_STR("")));
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = fu_CLONE(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }());
         out.items.resize(inItems.size());
-        if ((_current_fn && (id != fu_TO_STR("free"))))
+        if ((_current_fn && !strlit_eq(id, "free", 4)))
         {
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;
@@ -2320,7 +2320,7 @@ struct sf_runSolver
             for (int i = 0; (i < (inItems.size() + FN_ARGS_BACK)); i++)
             {
                 const s_Node& n_arg = ([&]() -> const s_Node& { { const s_Node& _ = inItems[i]; if (_) return _; } fail(fu_TO_STR("")); }());
-                ((n_arg.kind == fu_TO_STR("let")) || fail(fu_TO_STR("")));
+                (strlit_eq(n_arg.kind, "let", 3) || fail(fu_TO_STR("")));
                 if (spec)
                 {
                     s_Node mut_arg = fu_CLONE(n_arg);
@@ -2339,7 +2339,7 @@ struct sf_runSolver
             s_Node n_body = fu_CLONE(([&]() -> const s_Node& { { const s_Node& _ = inItems[(inItems.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_TO_STR("")); }()));
             if ((caseIdx >= 0))
             {
-                ((n_body.kind == fu_TO_STR("pattern")) || fail(fu_TO_STR("")));
+                (strlit_eq(n_body.kind, "pattern", 7) || fail(fu_TO_STR("")));
                 s_Node branch = fu_CLONE(([&]() -> s_Node& { { s_Node& _ = n_body.items.mutref(caseIdx); if (_) return _; } fail(fu_TO_STR("")); }()));
                 const fu_VEC<s_Node>& items = branch.items;
                 n_ret = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } return n_ret; }());
@@ -2382,7 +2382,7 @@ struct sf_runSolver
     s_SolvedNode doTrySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
         s_Node node = fu_CLONE(tempatle.node);
-        ((node.kind == fu_TO_STR("fn")) || fail(fu_TO_STR("TODO")));
+        (strlit_eq(node.kind, "fn", 2) || fail(fu_TO_STR("TODO")));
         s_SolvedNode result = trySpecializeFn(node, args);
         if (!result)
             result.kind = fu_TO_STR("spec-fail");
@@ -2397,7 +2397,7 @@ struct sf_runSolver
         for (int i = 0; (i < numArgs); i++)
         {
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_TO_STR("")); }());
-            ((argNode.kind == fu_TO_STR("let")) || fail(fu_TO_STR("")));
+            (strlit_eq(argNode.kind, "let", 3) || fail(fu_TO_STR("")));
             s_Type inType = ((args.size() > i) ? fu_CLONE(args[i].type) : s_Type { fu_STR{}, int{} });
             if (inType)
             {
@@ -2417,7 +2417,7 @@ struct sf_runSolver
         };
         int caseIdx = -1;
         const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_TO_STR("")); }());
-        if ((pattern.kind == fu_TO_STR("pattern")))
+        if (strlit_eq(pattern.kind, "pattern", 7))
         {
             const fu_VEC<s_Node>& branches = pattern.items;
             for (int i = 0; (i < branches.size()); i++)
@@ -2474,7 +2474,7 @@ struct sf_runSolver
             for (int i = 0; (i < items.size()); i++)
             {
                 const s_SolvedNode& item = items[i];
-                if ((item && (item.kind == fu_TO_STR("let")) && (item.flags & F_FIELD)))
+                if ((item && strlit_eq(item.kind, "let", 3) && (item.flags & F_FIELD)))
                 {
                     members.push(item);
                     fields.push(s_StructField { fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = item.value; if (_.size()) return _; } fail(fu_TO_STR("")); }())), fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = item.type; if (_) return _; } fail(fu_TO_STR("")); }())) });
@@ -2491,7 +2491,7 @@ struct sf_runSolver
         for (int i = 0; (i < members.size()); i++)
         {
             const s_Node& node = members[i];
-            if ((node.kind == fu_TO_STR("let")))
+            if (strlit_eq(node.kind, "let", 3))
                 out.push(solveField(structType, node));
             else
                 fail((fu_TO_STR("TODO: ") + node.kind));
@@ -2563,7 +2563,7 @@ struct sf_runSolver
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
-        if ((node.kind == fu_TO_STR("call")))
+        if (strlit_eq(node.kind, "call", 4))
         {
             const fu_VEC<s_Node>& items = node.items;
             if (items.size())
@@ -2572,13 +2572,13 @@ struct sf_runSolver
                 {
                     s_Type t = evalTypeAnnot(items[0]).type;
                     (t || fail(fu_TO_STR("")));
-                    if ((node.value == fu_TO_STR("&")))
+                    if (strlit_eq(node.value, "&", 1))
                         return solved(node, add_ref(t), fu_VEC<s_SolvedNode>{});
 
-                    if ((node.value == fu_TO_STR("&mut")))
+                    if (strlit_eq(node.value, "&mut", 4))
                         return solved(node, add_mutref(t), fu_VEC<s_SolvedNode>{});
 
-                    if ((node.value == fu_TO_STR("[]")))
+                    if (strlit_eq(node.value, "[]", 2))
                         return solved(node, createArray(t, ctx), fu_VEC<s_SolvedNode>{});
 
                 }
@@ -2587,7 +2587,7 @@ struct sf_runSolver
                     s_Type a = evalTypeAnnot(items[0]).type;
                     s_Type b = evalTypeAnnot(items[1]).type;
                     ((a && b) || fail(fu_TO_STR("")));
-                    if ((node.value == fu_TO_STR("Map")))
+                    if (strlit_eq(node.value, "Map", 3))
                         return solved(node, createMap(a, b, ctx), fu_VEC<s_SolvedNode>{});
 
                 };
@@ -2601,7 +2601,7 @@ struct sf_runSolver
                     for (int i = 0; (i < overloads.size()); i++)
                     {
                         s_Overload maybe = fu_CLONE(GET(overloads[i]));
-                        if ((maybe.kind == fu_TO_STR("type")))
+                        if (strlit_eq(maybe.kind, "type", 4))
                             return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(fu_TO_STR("")); }()), fu_VEC<s_SolvedNode>{});
 
                     };
@@ -2609,7 +2609,7 @@ struct sf_runSolver
                 fail(((fu_TO_STR("No type `") + id) + fu_TO_STR("` in scope.")));
             };
         }
-        else if ((node.kind == fu_TO_STR("typeparam")))
+        else if (strlit_eq(node.kind, "typeparam", 9))
         {
             const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_TO_STR("")); }());
             (_typeParams || fail(((fu_TO_STR("Unexpected type param: `$") + id) + fu_TO_STR("`."))));
@@ -2620,14 +2620,14 @@ struct sf_runSolver
     };
     bool trySolveTypeParams(const s_Node& node, s_Type&& type, fu_COW_MAP<fu_STR, s_Type>& typeParams)
     {
-        if ((node.kind == fu_TO_STR("call")))
+        if (strlit_eq(node.kind, "call", 4))
         {
             const fu_VEC<s_Node>& items = node.items;
             if (items.size())
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == fu_TO_STR("&")) ? tryClear_ref(type) : ((node.value == fu_TO_STR("&mut")) ? tryClear_mutref(type) : ((node.value == fu_TO_STR("[]")) ? tryClear_array(type, ctx) : ((void)fail(fu_TO_STR("TODO")), s_Type { fu_STR{}, int{} }))));
+                    s_Type t = (strlit_eq(node.value, "&", 1) ? tryClear_ref(type) : (strlit_eq(node.value, "&mut", 4) ? tryClear_mutref(type) : (strlit_eq(node.value, "[]", 2) ? tryClear_array(type, ctx) : ((void)fail(fu_TO_STR("TODO")), s_Type { fu_STR{}, int{} }))));
                     if (!t)
                         return false;
 
@@ -2635,7 +2635,7 @@ struct sf_runSolver
                 }
                 else if ((items.size() == 2))
                 {
-                    if ((node.value == fu_TO_STR("Map")))
+                    if (strlit_eq(node.value, "Map", 3))
                     {
                         s_MapFields kv = tryClear_map(type, ctx);
                         if (!kv)
@@ -2654,7 +2654,7 @@ struct sf_runSolver
                     for (int i = 0; (i < overloads.size()); i++)
                     {
                         s_Overload maybe = fu_CLONE(GET(overloads[i]));
-                        if ((maybe.kind == fu_TO_STR("type")))
+                        if (strlit_eq(maybe.kind, "type", 4))
                             return isAssignable(([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(fu_TO_STR("")); }()), type);
 
                     };
@@ -2662,7 +2662,7 @@ struct sf_runSolver
                 fail(((fu_TO_STR("No type `") + id) + fu_TO_STR("` in scope.")));
             };
         }
-        else if ((node.kind == fu_TO_STR("typeparam")))
+        else if (strlit_eq(node.kind, "typeparam", 9))
         {
             const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_TO_STR("")); }());
             s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{} }; return _; } (typeParams.upsert(id)));
@@ -2682,13 +2682,13 @@ struct sf_runSolver
     bool evalTypePattern(const s_Node& node, const fu_COW_MAP<fu_STR, s_Type>& typeParams)
     {
         const fu_VEC<s_Node>& items = node.items;
-        if (((node.kind == fu_TO_STR("call")) && (items.size() == 2)))
+        if ((strlit_eq(node.kind, "call", 4) && (items.size() == 2)))
         {
             const s_Node& left = ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
             const s_Node& right = ([&]() -> const s_Node& { { const s_Node& _ = items[1]; if (_) return _; } fail(fu_TO_STR("")); }());
-            if ((node.value == fu_TO_STR("->")))
+            if (strlit_eq(node.value, "->", 2))
             {
-                if (((left.kind == fu_TO_STR("typeparam")) && (right.kind == fu_TO_STR("typetag"))))
+                if ((strlit_eq(left.kind, "typeparam", 9) && strlit_eq(right.kind, "typetag", 7)))
                 {
                     const fu_STR& tag = ([&]() -> const fu_STR& { { const fu_STR& _ = right.value; if (_.size()) return _; } fail(fu_TO_STR("")); }());
                     const s_Type& type = ([&]() -> const s_Type& { if (left.value.size()) { const s_Type& _ = typeParams[left.value]; if (_) return _; } fail(((fu_TO_STR("No type param `$") + left.value) + fu_TO_STR("` in scope."))); }());
@@ -2704,9 +2704,9 @@ struct sf_runSolver
                     return isAssignable(expect, actual);
                 };
             }
-            else if ((node.value == fu_TO_STR("&&")))
+            else if (strlit_eq(node.value, "&&", 2))
                 return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
-            else if ((node.value == fu_TO_STR("||")))
+            else if (strlit_eq(node.value, "||", 2))
                 return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
 
         };
@@ -2725,7 +2725,7 @@ struct sf_runSolver
         s_Overload callTarg = fu_CLONE(GET(callTargIdx));
         while (callTarg.partial)
         {
-            const bool unshift = (callTarg.kind == fu_TO_STR("p-unshift"));
+            const bool unshift = strlit_eq(callTarg.kind, "p-unshift", 9);
             s_Partial partial = fu_CLONE(([&]() -> s_Partial& { { s_Partial& _ = callTarg.partial; if (_) return _; } fail(fu_TO_STR("")); }()));
             const s_ScopeIdx& viaIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.via; if (_) return _; } fail(fu_TO_STR("")); }());
             callTargIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.target; if (_) return _; } fail(fu_TO_STR("")); }());
@@ -2776,7 +2776,7 @@ struct sf_runSolver
         if (fnNode.target)
         {
             s_Overload& o = GET(fnNode.target);
-            ((o.kind == fu_TO_STR("fn")) || fail(fu_TO_STR("")));
+            (strlit_eq(o.kind, "fn", 2) || fail(fu_TO_STR("")));
             ((o.names.size() == o.args.size()) || fail(fu_TO_STR("")));
             ((o.names.find(id) < 0) || fail(fu_TO_STR("Implicit argument name collision.")));
             o.args.push(type);
@@ -2923,7 +2923,7 @@ struct sf_runSolver
     s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_ScopeIdx& target, fu_VEC<s_SolvedNode>&& args)
     {
         s_Overload overload = fu_CLONE(GET(target));
-        if ((overload.kind == fu_TO_STR("field")))
+        if (strlit_eq(overload.kind, "field", 5))
         {
             s_SolvedNode head = fu_CLONE(([&]() -> s_SolvedNode& { if ((args.size() == 1)) { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(fu_TO_STR("")); }()));
             const s_Type& headType = ([&]() -> const s_Type& { { const s_Type& _ = head.type; if (_) return _; } fail(fu_TO_STR("")); }());
@@ -3081,7 +3081,7 @@ struct sf_cpp_codegen
     fu_STR typeAnnot(const s_Type& type, const int& mode)
     {
         fu_STR fwd = typeAnnotBase(type);
-        if (((mode & M_RETVAL) && (type.canon == fu_TO_STR("never"))))
+        if (((mode & M_RETVAL) && strlit_eq(type.canon, "never", 5)))
             return (fu_TO_STR("[[noreturn]] ") + fwd);
 
         if ((type.quals & q_mutref))
@@ -3101,24 +3101,24 @@ struct sf_cpp_codegen
     fu_STR typeAnnotBase(const s_Type& type)
     {
         const fu_STR& c = type.canon;
-        if ((c == fu_TO_STR("i32")))
+        if (strlit_eq(c, "i32", 3))
             return fu_TO_STR("int");
 
-        if ((c == fu_TO_STR("bool")))
+        if (strlit_eq(c, "bool", 4))
             return fu_TO_STR("bool");
 
-        if ((c == fu_TO_STR("void")))
+        if (strlit_eq(c, "void", 4))
             return fu_TO_STR("void");
 
-        if ((c == fu_TO_STR("string")))
+        if (strlit_eq(c, "string", 6))
             return annotateString();
 
-        if ((c == fu_TO_STR("never")))
+        if (strlit_eq(c, "never", 5))
             return annotateNever();
 
         const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type.canon, ctx); if (_) return _; } fail((fu_TO_STR("TODO: ") + type.canon)); }());
         const fu_STR& k = tdef.kind;
-        if ((k == fu_TO_STR("struct")))
+        if (strlit_eq(k, "struct", 6))
         {
             if (!(_tfwd.find(type.canon) != -1))
             {
@@ -3127,13 +3127,13 @@ struct sf_cpp_codegen
             };
             return type.canon;
         };
-        if ((k == fu_TO_STR("array")))
+        if (strlit_eq(k, "array", 5))
         {
             annotateVector();
             fu_STR item = typeAnnot(tdef.fields[0].type, 0);
             return ((fu_TO_STR("fu_VEC<") + item) + fu_TO_STR(">"));
         };
-        if ((k == fu_TO_STR("map")))
+        if (strlit_eq(k, "map", 3))
         {
             fu_STR k = typeAnnot(tdef.fields[0].type, 0);
             fu_STR v = typeAnnot(tdef.fields[1].type, 0);
@@ -3199,19 +3199,19 @@ struct sf_cpp_codegen
     };
     fu_STR ID(const fu_STR& id)
     {
-        if ((id == fu_TO_STR("this")))
+        if (strlit_eq(id, "this", 4))
             return fu_TO_STR("_");
 
-        if ((id == fu_TO_STR("template")))
+        if (strlit_eq(id, "template", 8))
             return fu_TO_STR("tempatle");
 
-        if ((id == fu_TO_STR("not")))
+        if (strlit_eq(id, "not", 3))
             return fu_TO_STR("nott");
 
-        if ((id == fu_TO_STR("and")))
+        if (strlit_eq(id, "and", 3))
             return fu_TO_STR("andd");
 
-        if ((id == fu_TO_STR("or")))
+        if (strlit_eq(id, "or", 2))
             return fu_TO_STR("orr");
 
         return id;
@@ -3224,7 +3224,7 @@ struct sf_cpp_codegen
         {
             const fu_STR& line = lines[i];
             if (line.size())
-                src += ((_indent + line) + ((last(line) == fu_TO_STR(";")) ? fu_TO_STR("\n") : fu_TO_STR(";")));
+                src += ((_indent + line) + (strlit_eq(last(line), ";", 1) ? fu_TO_STR("\n") : fu_TO_STR(";")));
 
         };
         return src;
@@ -3234,7 +3234,7 @@ struct sf_cpp_codegen
         fu_STR indent0 = fu_CLONE(_indent);
         _indent += fu_TO_STR("    ");
         fu_STR src = cgStatements(nodes);
-        if ((!skipCurlies || (nodes.size() != 1) || ((nodes[0].kind != fu_TO_STR("return")) && (nodes[0].kind != fu_TO_STR("call")))))
+        if ((!skipCurlies || (nodes.size() != 1) || (!strlit_eq(nodes[0].kind, "return", 6) && !strlit_eq(nodes[0].kind, "call", 4))))
             src = ((((indent0 + fu_TO_STR("{")) + src) + indent0) + fu_TO_STR("}"));
 
         _indent = indent0;
@@ -3242,7 +3242,7 @@ struct sf_cpp_codegen
     };
     fu_STR blockWrapSubstatement(const s_SolvedNode& node)
     {
-        return ((node.kind != fu_TO_STR("block")) ? blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, true) : ((node.items.size() == 1) ? blockWrapSubstatement(node.items[0]) : cgBlock(node)));
+        return (!strlit_eq(node.kind, "block", 5) ? blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, true) : ((node.items.size() == 1) ? blockWrapSubstatement(node.items[0]) : cgBlock(node)));
     };
     fu_STR cgBlock(const s_SolvedNode& block)
     {
@@ -3273,7 +3273,7 @@ struct sf_cpp_codegen
     fu_STR try_cgFnAsStruct(const s_SolvedNode& fn)
     {
         const s_SolvedNode& body = fn.items[(fn.items.size() + FN_BODY_BACK)];
-        if ((!body || (body.kind != fu_TO_STR("block"))))
+        if ((!body || !strlit_eq(body.kind, "block", 5)))
             return fu_TO_STR("");
 
         const fu_VEC<s_SolvedNode>& items = body.items;
@@ -3283,13 +3283,13 @@ struct sf_cpp_codegen
         {
             end = i;
             const s_SolvedNode& item = items[i];
-            if ((item.kind == fu_TO_STR("fn")))
+            if (strlit_eq(item.kind, "fn", 2))
             {
                 if ((item.flags & F_CLOSURE))
                     hasClosuresInHeader = true;
 
             }
-            else if (((item.kind != fu_TO_STR("let")) && (item.kind != fu_TO_STR("struct"))))
+            else if ((!strlit_eq(item.kind, "let", 3) && !strlit_eq(item.kind, "struct", 6)))
             {
                 break;
             };
@@ -3348,12 +3348,12 @@ struct sf_cpp_codegen
         const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_TO_STR("")); }());
         const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(fu_TO_STR("")); }());
         fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(fu_TO_STR("")); }()), M_RETVAL);
-        const bool closure = (!!_clsrN && (fn.flags & F_CLOSURE) && (fn.value != fu_TO_STR("==")));
+        const bool closure = (!!_clsrN && (fn.flags & F_CLOSURE) && !strlit_eq(fn.value, "==", 2));
         if (!(fn.flags & F_CLOSURE))
             _indent = fu_TO_STR("\n");
 
         fu_STR src = (closure ? ((fu_TO_STR("const auto& ") + fn.value) + fu_TO_STR(" = [&](")) : (((annot + fu_TO_STR(" ")) + fn.value) + fu_TO_STR("(")));
-        if ((fn.value == fu_TO_STR("==")))
+        if (strlit_eq(fn.value, "==", 2))
             src = (((annot + fu_TO_STR(" operator")) + fn.value) + fu_TO_STR("("));
 
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
@@ -3364,10 +3364,10 @@ struct sf_cpp_codegen
             src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_TO_STR("")); }()), false);
         };
         src += (closure ? (fu_TO_STR(") -> ") + annot) : fu_TO_STR(")"));
-        if ((!closure && (src != fu_TO_STR("int auto_main()")) && !(fn.flags & F_CLOSURE) && (int(_fdef.find(([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_TO_STR("")); }()))) >= 0)))
+        if ((!closure && !strlit_eq(src, "int auto_main()", 10) && !(fn.flags & F_CLOSURE) && (int(_fdef.find(([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_TO_STR("")); }()))) >= 0)))
             (_ffwd.upsert(src) = ((fu_TO_STR("\n") + src) + fu_TO_STR(";")));
 
-        if ((body.kind == fu_TO_STR("block")))
+        if (strlit_eq(body.kind, "block", 5))
             src += cgBlock(body);
         else
             src += blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { body } }, false);
@@ -3470,23 +3470,27 @@ struct sf_cpp_codegen
         for (int i = 0; (i < node.value.size()); i++)
         {
             fu_STR c = fu_TO_STR(node.value[i]);
-            if ((c == fu_TO_STR("\n")))
+            if (strlit_eq(c, "\n", 1))
                 esc += fu_TO_STR("\\n");
-            else if ((c == fu_TO_STR("\r")))
+            else if (strlit_eq(c, "\r", 1))
                 esc += fu_TO_STR("\\r");
-            else if ((c == fu_TO_STR("\t")))
+            else if (strlit_eq(c, "\t", 1))
                 esc += fu_TO_STR("\\t");
-            else if ((c == fu_TO_STR("\v")))
+            else if (strlit_eq(c, "\v", 1))
                 esc += fu_TO_STR("\\v");
-            else if ((c == fu_TO_STR("\\")))
+            else if (strlit_eq(c, "\\", 1))
                 esc += fu_TO_STR("\\\\");
-            else if ((c == fu_TO_STR("\"")))
+            else if (strlit_eq(c, "\"", 1))
                 esc += fu_TO_STR("\\\"");
             else
                 esc += c;
 
         };
         return ((fu_TO_STR("fu_TO_STR(\"") + esc) + fu_TO_STR("\")"));
+    };
+    fu_STR stripStringLiteral(const fu_STR& src)
+    {
+        return slice(src, 10, (src.size() - 1));
     };
     fu_STR cgArrayLiteral(const s_SolvedNode& node)
     {
@@ -3508,7 +3512,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < id.size()); i++)
         {
             fu_STR c = fu_TO_STR(id[i]);
-            if (((c == fu_TO_STR("_")) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
+            if ((strlit_eq(c, "_", 1) || ((c >= fu_TO_STR("a")) && (c <= fu_TO_STR("z"))) || ((c >= fu_TO_STR("A")) && (c <= fu_TO_STR("Z"))) || ((c >= fu_TO_STR("0")) && (c <= fu_TO_STR("9")))))
             {
             }
             else
@@ -3521,7 +3525,7 @@ struct sf_cpp_codegen
     {
         const s_Overload& target = ([&]() -> const s_Overload& { { const s_Overload& _ = GET(node.target); if (_) return _; } fail(fu_TO_STR("")); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
-        if ((target.kind == fu_TO_STR("defctor")))
+        if (strlit_eq(target.kind, "defctor", 7))
         {
             const fu_STR& head = ([&]() -> const s_Type& { { const s_Type& _ = target.type; if (_) return _; } fail(fu_TO_STR("")); }()).canon;
             const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, ctx); if (_) return _; } fail(fu_TO_STR("")); }());
@@ -3544,9 +3548,9 @@ struct sf_cpp_codegen
 
             if ((items.size() == 2))
             {
-                if ((id == fu_TO_STR("[]")))
+                if (strlit_eq(id, "[]", 2))
                 {
-                    if ((head.type.canon == fu_TO_STR("string")))
+                    if (strlit_eq(head.type.canon, "string", 6))
                         return ((((fu_TO_STR("fu_TO_STR(") + items[0]) + fu_TO_STR("[")) + items[1]) + fu_TO_STR("])"));
 
                     if ((head.type.quals & q_mutref))
@@ -3554,20 +3558,20 @@ struct sf_cpp_codegen
 
                     return (((items[0] + fu_TO_STR("[")) + items[1]) + fu_TO_STR("]"));
                 };
-                if ((id == fu_TO_STR("=")))
+                if (strlit_eq(id, "=", 1))
                 {
-                    if (((head.kind == fu_TO_STR("call")) && (head.value == fu_TO_STR("[]")) && (head.items.size() == 2)))
+                    if ((strlit_eq(head.kind, "call", 4) && strlit_eq(head.value, "[]", 2) && (head.items.size() == 2)))
                     {
                         if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()).type))
                             return ((((((fu_TO_STR("(") + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()), 0)) + fu_TO_STR(".upsert(")) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(fu_TO_STR("")); }()), 0)) + fu_TO_STR(") = ")) + items[1]) + fu_TO_STR(")"));
 
                     };
                 };
-                if ((id == fu_TO_STR("||=")))
+                if (strlit_eq(id, "||=", 3))
                 {
                     fu_STR left = fu_CLONE(items[0]);
                     fu_STR right = fu_CLONE(items[1]);
-                    if (((head.kind == fu_TO_STR("call")) && (head.value == fu_TO_STR("[]")) && (head.items.size() == 2)))
+                    if ((strlit_eq(head.kind, "call", 4) && strlit_eq(head.value, "[]", 2) && (head.items.size() == 2)))
                     {
                         if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()).type))
                             left = (((cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()), 0) + fu_TO_STR(".upsert(")) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(fu_TO_STR("")); }()), 0)) + fu_TO_STR(")"));
@@ -3576,6 +3580,19 @@ struct sf_cpp_codegen
                     fu_STR annot = typeAnnot(head.type, 0);
                     return ((((((((((fu_TO_STR("([&](") + annot) + fu_TO_STR(" _) -> ")) + annot) + fu_TO_STR(" { if (!")) + boolWrap(head.type, fu_TO_STR("_"))) + fu_TO_STR(") _ = ")) + right) + fu_TO_STR("; return _; } (")) + left) + fu_TO_STR("))"));
                 };
+                if ((strlit_eq(id, "==", 2) || strlit_eq(id, "!=", 2)))
+                {
+                    if (strlit_eq(nodes[1].kind, "str", 3))
+                    {
+                        const int cstr_len = nodes[1].value.size();
+                        fu_STR right = stripStringLiteral(items[1]);
+                        fu_STR out = ((((((fu_TO_STR("strlit_eq(") + items[0]) + fu_TO_STR(", ")) + right) + fu_TO_STR(", ")) + cstr_len) + fu_TO_STR(")"));
+                        if (strlit_eq(id, "!=", 2))
+                            out = (fu_TO_STR("!") + out);
+
+                        return out;
+                    };
+                };
                 if ((mode & M_STMT))
                     return ((((items[0] + fu_TO_STR(" ")) + id) + fu_TO_STR(" ")) + items[1]);
                 else
@@ -3583,10 +3600,10 @@ struct sf_cpp_codegen
 
             };
         };
-        if ((target.kind == fu_TO_STR("var")))
+        if (strlit_eq(target.kind, "var", 3))
             return ID(id);
 
-        if ((target.kind == fu_TO_STR("field")))
+        if (strlit_eq(target.kind, "field", 5))
         {
             fu_STR sep = fu_TO_STR(".");
             const s_Struct& parent = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()).type.canon, ctx); if (_) return _; } fail(fu_TO_STR("")); }());
@@ -3595,118 +3612,118 @@ struct sf_cpp_codegen
 
             return ((items[0] + sep) + ID(id));
         };
-        if (((id == fu_TO_STR("len")) && (items.size() == 1)))
+        if ((strlit_eq(id, "len", 3) && (items.size() == 1)))
             return (items[0] + fu_TO_STR(".size()"));
 
-        if (((id == fu_TO_STR("push")) && (items.size() == 2)))
+        if ((strlit_eq(id, "push", 4) && (items.size() == 2)))
             return (((items[0] + fu_TO_STR(".push(")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("pop")) && (items.size() == 1)))
+        if ((strlit_eq(id, "pop", 3) && (items.size() == 1)))
             return (items[0] + fu_TO_STR(".pop()"));
 
-        if (((id == fu_TO_STR("unshift")) && (items.size() == 2)))
+        if ((strlit_eq(id, "unshift", 7) && (items.size() == 2)))
             return (((items[0] + fu_TO_STR(".unshift(")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("insert")) && (items.size() == 3)))
+        if ((strlit_eq(id, "insert", 6) && (items.size() == 3)))
             return (((((items[0] + fu_TO_STR(".insert(")) + items[1]) + fu_TO_STR(", ")) + items[2]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("splice")) && (items.size() == 3)))
+        if ((strlit_eq(id, "splice", 6) && (items.size() == 3)))
             return (((((items[0] + fu_TO_STR(".splice(")) + items[1]) + fu_TO_STR(", ")) + items[2]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("grow")) && (items.size() == 2)))
+        if ((strlit_eq(id, "grow", 4) && (items.size() == 2)))
             return (((items[0] + fu_TO_STR(".grow(")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("shrink")) && (items.size() == 2)))
+        if ((strlit_eq(id, "shrink", 6) && (items.size() == 2)))
             return (((items[0] + fu_TO_STR(".shrink(")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("resize")) && (items.size() == 2)))
+        if ((strlit_eq(id, "resize", 6) && (items.size() == 2)))
             return (((items[0] + fu_TO_STR(".resize(")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("clear")) && (items.size() == 1)))
+        if ((strlit_eq(id, "clear", 5) && (items.size() == 1)))
             return (items[0] + fu_TO_STR(".clear()"));
 
-        if (((id == fu_TO_STR("find")) && (items.size() == 2)))
+        if ((strlit_eq(id, "find", 4) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
-            if ((head.type.canon == fu_TO_STR("string")))
+            if (strlit_eq(head.type.canon, "string", 6))
                 return ((((fu_TO_STR("int(") + items[0]) + fu_TO_STR(".find(")) + items[1]) + fu_TO_STR("))"));
 
             include(fu_TO_STR("<algorithm>"));
             return (((items[0] + fu_TO_STR(".find(")) + items[1]) + fu_TO_STR(")"));
         };
-        if (((id == fu_TO_STR("starts")) && (items.size() == 2)))
+        if ((strlit_eq(id, "starts", 6) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
-            if ((head.type.canon == fu_TO_STR("string")))
+            if (strlit_eq(head.type.canon, "string", 6))
                 return (((items[0] + fu_TO_STR(".starts_with(")) + items[1]) + fu_TO_STR(")"));
 
         };
-        if (((id == fu_TO_STR("has")) && (items.size() == 2)))
+        if ((strlit_eq(id, "has", 3) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
-            if ((head.type.canon == fu_TO_STR("string")))
+            if (strlit_eq(head.type.canon, "string", 6))
                 return ((((fu_TO_STR("(int(") + items[0]) + fu_TO_STR(".find(")) + items[1]) + fu_TO_STR(")) >= 0)"));
 
             return ((((fu_TO_STR("(") + items[0]) + fu_TO_STR(".find(")) + items[1]) + fu_TO_STR(") != -1)"));
         };
-        if (((id == fu_TO_STR("slice")) && (items.size() == 2)))
+        if ((strlit_eq(id, "slice", 5) && (items.size() == 2)))
             return ((((fu_TO_STR("slice(") + items[0]) + fu_TO_STR(", ")) + items[1]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("slice")) && (items.size() == 3)))
+        if ((strlit_eq(id, "slice", 5) && (items.size() == 3)))
             return ((((((fu_TO_STR("slice(") + items[0]) + fu_TO_STR(", ")) + items[1]) + fu_TO_STR(", ")) + items[2]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("substr")) && (items.size() == 3)))
+        if ((strlit_eq(id, "substr", 6) && (items.size() == 3)))
             return ((((((fu_TO_STR("substr(") + items[0]) + fu_TO_STR(", ")) + items[1]) + fu_TO_STR(", ")) + items[2]) + fu_TO_STR(")"));
 
-        if (((id == fu_TO_STR("sort")) && (items.size() == 1)))
+        if ((strlit_eq(id, "sort", 4) && (items.size() == 1)))
         {
             include(fu_TO_STR("<algorithm>"));
             return ((fu_TO_STR("([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (") + items[0]) + fu_TO_STR("))"));
         };
-        if (((id == fu_TO_STR("char")) && (items.size() == 2)))
+        if ((strlit_eq(id, "char", 4) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }());
-            if ((head.type.canon == fu_TO_STR("string")))
+            if (strlit_eq(head.type.canon, "string", 6))
                 return ((((fu_TO_STR("int(") + items[0]) + fu_TO_STR("[")) + items[1]) + fu_TO_STR("])"));
 
         };
-        if ((((id == fu_TO_STR("true")) || (id == fu_TO_STR("false"))) && !items.size()))
+        if (((strlit_eq(id, "true", 4) || strlit_eq(id, "false", 5)) && !items.size()))
             return id;
 
-        if (((id == fu_TO_STR("throw")) && (items.size() == 1)))
+        if ((strlit_eq(id, "throw", 5) && (items.size() == 1)))
             return cgThrow(id, items[0]);
 
-        if (((id == fu_TO_STR("assert")) && (items.size() == 0)))
+        if ((strlit_eq(id, "assert", 6) && (items.size() == 0)))
             return cgThrow(id, fu_TO_STR("\"Assertion failed.\""));
 
-        if (((id == fu_TO_STR("move")) && (items.size() == 3)))
+        if ((strlit_eq(id, "move", 4) && (items.size() == 3)))
             return ((((fu_TO_STR("([&]() { auto* _ = ") + items[0]) + fu_TO_STR(".mut_data(); ")) + cgSlide((fu_TO_STR("_ + ") + items[2]), (fu_TO_STR("_ + ") + items[1]), fu_TO_STR("sizeof(*_)"))) + fu_TO_STR("; } ())"));
 
-        if (((id == fu_TO_STR("concat")) && (items.size() == 2)))
+        if ((strlit_eq(id, "concat", 6) && (items.size() == 2)))
             return cgConcat(items);
 
-        if (((id == fu_TO_STR("split")) && (items.size() == 2)))
+        if ((strlit_eq(id, "split", 5) && (items.size() == 2)))
             return cgSplit(items);
 
-        if (((id == fu_TO_STR("join")) && (items.size() == 2)))
+        if ((strlit_eq(id, "join", 4) && (items.size() == 2)))
             return cgJoin(items);
 
-        if (((id == fu_TO_STR("join")) && (items.size() == 2)))
+        if ((strlit_eq(id, "join", 4) && (items.size() == 2)))
             return cgJoin(items);
 
-        if (((id == fu_TO_STR("keys")) && (items.size() == 1)))
+        if ((strlit_eq(id, "keys", 4) && (items.size() == 1)))
             return cgKeys(items);
 
-        if (((id == fu_TO_STR("CLONE")) && (items.size() == 1)))
+        if ((strlit_eq(id, "CLONE", 5) && (items.size() == 1)))
             return cgClone(items[0]);
 
-        if (((id == fu_TO_STR("STEAL")) && (items.size() == 1)))
+        if ((strlit_eq(id, "STEAL", 5) && (items.size() == 1)))
             return cgSteal(items[0]);
 
-        if (((id == fu_TO_STR("SWAP")) && (items.size() == 2)))
+        if ((strlit_eq(id, "SWAP", 4) && (items.size() == 2)))
             return cgSwap(items);
 
-        if ((id == fu_TO_STR("print")))
+        if (strlit_eq(id, "print", 5))
             return cgPrint(items);
 
         return (((ID(id) + fu_TO_STR("(")) + fu_JOIN(items, fu_TO_STR(", "))) + fu_TO_STR(")"));
@@ -3764,7 +3781,7 @@ struct sf_cpp_codegen
             include(fu_TO_STR("<string>"));
             (_ffwd.upsert(THROW) = fu_TO_STR("\n[[noreturn]] fu_NEVER fu_THROW(const char* what)\n{\n    throw std::runtime_error(what);\n}\n\ntemplate <typename T>\n[[noreturn]] fu_NEVER fu_THROW(const T& what)\n{\n    throw std::runtime_error(\n        std::string(\n            what.data(), size_t(what.size())));\n}\n"));
         };
-        if ((kind == fu_TO_STR("assert")))
+        if (strlit_eq(kind, "assert", 6))
         {
         };
         return ((fu_TO_STR("fu_THROW(") + item) + fu_TO_STR(")"));
@@ -3828,7 +3845,7 @@ struct sf_cpp_codegen
         const bool stmt = !!(mode & M_STMT);
         const auto& blockWrap_unlessIf = [&](const s_SolvedNode& node) -> fu_STR
         {
-            return ((node.kind == fu_TO_STR("if")) ? (fu_TO_STR(" ") + cgNode(node, M_STMT)) : blockWrapSubstatement(node));
+            return (strlit_eq(node.kind, "if", 2) ? (fu_TO_STR(" ") + cgNode(node, M_STMT)) : blockWrapSubstatement(node));
         };
         fu_STR cond = ([&]() -> fu_STR { if (n0) return boolWrap(n0.type, cgNode(n0, M_RETBOOL)); else return fu_STR{}; }());
         fu_STR cons = ([&]() -> fu_STR { if (n1) return (stmt ? blockWrapSubstatement(n1) : cgNode(n1, 0)); else return fu_STR{}; }());
@@ -3932,7 +3949,7 @@ struct sf_cpp_codegen
             {
                 const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_TO_STR("")); }());
                 s_SolvedNode tail = fu_CLONE(item);
-                if ((item.kind == fu_TO_STR("and")))
+                if (strlit_eq(item.kind, "and", 3))
                 {
                     const fu_VEC<s_SolvedNode>& items = item.items;
                     tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_TO_STR("")); }());
@@ -3970,7 +3987,7 @@ struct sf_cpp_codegen
     };
     fu_STR postfixBlock(const fu_STR& src, const fu_STR& postfix)
     {
-        ((fu_TO_STR(src[(src.size() - 1)]) == fu_TO_STR("}")) || fail(fu_TO_STR("")));
+        (strlit_eq(fu_TO_STR(src[(src.size() - 1)]), "}", 1) || fail(fu_TO_STR("")));
         return ((slice(src, 0, (src.size() - 1)) + postfix) + fu_TO_STR("}"));
     };
     fu_STR cgLoop(const s_SolvedNode& node)
@@ -4013,76 +4030,76 @@ struct sf_cpp_codegen
     fu_STR cgNode(const s_SolvedNode& node, const int& mode)
     {
         const fu_STR& k = node.kind;
-        if ((k == fu_TO_STR("root")))
+        if (strlit_eq(k, "root", 4))
             return cgRoot(node);
 
-        if ((k == fu_TO_STR("block")))
+        if (strlit_eq(k, "block", 5))
             return cgBlock(node);
 
-        if ((k == fu_TO_STR("fn")))
+        if (strlit_eq(k, "fn", 2))
             return cgFn(node);
 
-        if ((k == fu_TO_STR("return")))
+        if (strlit_eq(k, "return", 6))
             return cgReturn(node);
 
-        if ((k == fu_TO_STR("break")))
+        if (strlit_eq(k, "break", 5))
             return cgJump(node);
 
-        if ((k == fu_TO_STR("continue")))
+        if (strlit_eq(k, "continue", 8))
             return cgJump(node);
 
-        if ((k == fu_TO_STR("call")))
+        if (strlit_eq(k, "call", 4))
             return cgCall(node, mode);
 
-        if ((k == fu_TO_STR("let")))
+        if (strlit_eq(k, "let", 3))
             return cgLet(node);
 
-        if ((k == fu_TO_STR("if")))
+        if (strlit_eq(k, "if", 2))
             return cgIf(node, mode);
 
-        if ((k == fu_TO_STR("!")))
+        if (strlit_eq(k, "!", 1))
             return cgNot(node);
 
-        if ((k == fu_TO_STR("or")))
+        if (strlit_eq(k, "or", 2))
             return cgOr(node);
 
-        if ((k == fu_TO_STR("and")))
+        if (strlit_eq(k, "and", 3))
             return cgAnd(node);
 
-        if ((k == fu_TO_STR("loop")))
+        if (strlit_eq(k, "loop", 4))
             return cgLoop(node);
 
-        if ((k == fu_TO_STR("int")))
+        if (strlit_eq(k, "int", 3))
             return cgLiteral(node);
 
-        if ((k == fu_TO_STR("str")))
+        if (strlit_eq(k, "str", 3))
             return cgStringLiteral(node);
 
-        if ((k == fu_TO_STR("arrlit")))
+        if (strlit_eq(k, "arrlit", 6))
             return cgArrayLiteral(node);
 
-        if ((k == fu_TO_STR("definit")))
+        if (strlit_eq(k, "definit", 7))
             return cgDefaultInit(node);
 
-        if ((k == fu_TO_STR("empty")))
+        if (strlit_eq(k, "empty", 5))
             return cgEmpty();
 
-        if ((k == fu_TO_STR("comma")))
+        if (strlit_eq(k, "comma", 5))
             return cgParens(node);
 
-        if ((k == fu_TO_STR("parens")))
+        if (strlit_eq(k, "parens", 6))
             return cgParens(node);
 
-        if ((k == fu_TO_STR("label")))
+        if (strlit_eq(k, "label", 5))
             return cgParens(node);
 
-        if ((k == fu_TO_STR("struct")))
+        if (strlit_eq(k, "struct", 6))
             return cgEmpty();
 
-        if ((k == fu_TO_STR("copy")))
+        if (strlit_eq(k, "copy", 4))
             return cgCopyMove(node);
 
-        if ((k == fu_TO_STR("move")))
+        if (strlit_eq(k, "move", 4))
             return cgCopyMove(node);
 
         fail((fu_TO_STR("TODO: ") + k));
@@ -4090,7 +4107,7 @@ struct sf_cpp_codegen
     fu_STR cgCopyMove(const s_SolvedNode& node)
     {
         fu_STR a = cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_TO_STR("")); }()), 0);
-        if ((node.kind == fu_TO_STR("move")))
+        if (strlit_eq(node.kind, "move", 4))
             return cgSteal(a);
 
         return cgClone(a);
@@ -4126,7 +4143,7 @@ struct sf_cpp_codegen
     };
     fu_STR cpp_codegen_EVAL()
     {
-        ((root.kind == fu_TO_STR("root")) || fail(fu_TO_STR("")));
+        (strlit_eq(root.kind, "root", 4) || fail(fu_TO_STR("")));
         fu_STR src = cgNode(root, 0);
         return src;
     };

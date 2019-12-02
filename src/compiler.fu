@@ -4756,6 +4756,11 @@ pub fn cpp_codegen(
         return 'fu_TO_STR("' + esc + '")';
     }
 
+    fn stripStringLiteral(src: string): string
+    {
+        return src.slice(10, src.len - 1);
+    }
+
     fn cgArrayLiteral(node: SolvedNode): string
     {
         let items = cgNodes(node.items);
@@ -4880,6 +4885,23 @@ pub fn cpp_codegen(
                     return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
                         boolWrap(head.type, '_') + ') _ = ' +
                             right + '; return _; } (' + left + '))';
+                }
+
+                //
+                if (id == '==' || id == '!=')
+                {
+                    if (nodes[1].kind == 'str')
+                    {
+                        let cstr_len = nodes[1].value.len;
+                        let right = stripStringLiteral(items[1]);
+
+                        mut out = 'strlit_eq(' + items[0] + ', ' + right + ', ' + cstr_len + ')';
+                        if (id == '!=')
+                            out = '!' + out;
+
+                        return out;
+                    }
+
                 }
 
                 // Skip some of the ridiculous parens.
