@@ -163,18 +163,49 @@ inline bool operator>=(const fu_STR& a, const fu_STR& b) noexcept
 
 //
 
-inline bool strlit_eq(const fu_STR& a, const char* cstr, int s1) noexcept
+struct fu_STR_LIT
 {
-    return s1 == a.size()
-        && memcmp(a.data(), cstr, s1) == 0;
+    const char* data;
+    int size;
+};
+
+fu_INL fu_STR_LIT operator ""_fu(const char* cstr, size_t len) noexcept {
+    return fu_STR_LIT { cstr, (int) len };
 }
 
-inline int strlit_cmp(const fu_STR& a, const char* cstr, int s1) noexcept
+fu_INL bool operator==(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return a.size() == b.size
+        && memcmp(a.data(), b.data, (size_t) b.size) == 0;
+}
+
+fu_INL bool operator!=(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return a.size() != b.size
+        || memcmp(a.data(), b.data, (size_t) b.size) != 0;
+}
+
+fu_INL int strcmp(const fu_STR& a, const fu_STR_LIT& b) noexcept
 {
     int s0  = a.size();
+    int s1  = b.size;
     int s   = s0 < s1 ? s0 : s1;
 
-    int cmp = memcmp(a.data(), cstr, size_t(s));
+    int cmp = memcmp(a.data(), b.data, size_t(s));
     int dif = s0 - s1;
     return cmp ? cmp : dif;
+}
+
+inline bool operator<(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return strcmp(a, b) < 0;
+}
+
+inline bool operator>(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return strcmp(a, b) > 0;
+}
+
+inline bool operator<=(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return strcmp(a, b) <= 0;
+}
+
+inline bool operator>=(const fu_STR& a, const fu_STR_LIT& b) noexcept {
+    return strcmp(a, b) >= 0;
 }

@@ -4804,7 +4804,7 @@ pub fn cpp_codegen(
     fn cgCall(node: SolvedNode, mode: i32): string
     {
         let target = GET(node.target) || fail();
-        let items  = cgNodes(node.items);
+        mut items  = cgNodes(node.items);
 
         if (target.kind == 'defctor')
         {
@@ -4870,13 +4870,10 @@ pub fn cpp_codegen(
                 //  notice again the special casing for std::maps.
                 if (id == '||=')
                 {
-                    mut left  = items[0];
-                    mut right = items[1];
-
                     if (head.kind == 'call' && head.value == '[]' && head.items.len == 2)
                     {
                         if (type_isMap((head.items[0] || fail()).type))
-                            left = cgNode(head.items[0] || fail()) +
+                            items[0] = cgNode(head.items[0] || fail()) +
                                 '.upsert(' + cgNode(head.items[1] || fail()) + ')';
                     }
 
@@ -4884,34 +4881,15 @@ pub fn cpp_codegen(
 
                     return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
                         boolWrap(head.type, '_') + ') _ = ' +
-                            right + '; return _; } (' + left + '))';
+                            items[1] + '; return _; } (' + items[0] + '))';
                 }
 
                 //
-                if (id == '==' || id == '!=')
+                if (id == '==' || id == '!=' ||
+                    id == '<=' || id == '>=' || id == '<' || id == '>')
                 {
                     if (nodes[1].kind == 'str')
-                    {
-                        let cstr_len = nodes[1].value.len;
-                        let right = stripStringLiteral(items[1]);
-
-                        mut out = 'strlit_eq(' + items[0] + ', ' + right + ', ' + cstr_len + ')';
-                        if (id == '!=')
-                            out = '!' + out;
-
-                        return out;
-                    }
-                }
-
-                if (id == '<=' || id == '>=' || id == '<' || id == '>')
-                {
-                    if (nodes[1].kind == 'str')
-                    {
-                        let cstr_len = nodes[1].value.len;
-                        let right = stripStringLiteral(items[1]);
-
-                        return '(strlit_cmp(' + items[0] + ', ' + right + ', ' + cstr_len + ') ' + id + ' 0)';
-                    }
+                        items[1] = stripStringLiteral(items[1]) + '_fu';
                 }
 
                 // Skip some of the ridiculous parens.
