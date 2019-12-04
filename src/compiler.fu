@@ -1584,15 +1584,16 @@ pub fn parse(_fname: string, _tokens: Token[])
 //                   | 'template'
 //                   | 'string';
 
-pub let q_mutref       = 1 << 0;
-pub let q_ref          = 1 << 1;
+pub let q_mutref        = 1 << 0;
+pub let q_ref           = 1 << 1;
 
-pub let q_copy         = 1 << 2;
-pub let q_trivial      = 1 << 3;
-pub let q_primitive    = 1 << 4;
-pub let q_arithmetic   = 1 << 5;
-pub let q_integral     = 1 << 6;
-pub let q_signed       = 1 << 7;
+pub let q_copy          = 1 << 2;
+pub let q_trivial       = 1 << 3;
+pub let q_primitive     = 1 << 4;
+pub let q_arithmetic    = 1 << 5;
+pub let q_integral      = 1 << 6;
+pub let q_signed        = 1 << 7;
+pub let q_floating_pt   = 1 << 8;
 
 let TAGS =
 [
@@ -1602,9 +1603,11 @@ let TAGS =
     'copy',
     'trivial',
     'primitive',
+
     'arithmetic',
     'integral',
     'signed',
+    'floating_point',
 ];
 
 pub struct Type
@@ -1623,18 +1626,20 @@ fn ==(a: Type, b: Type)
 
 //
 
-pub let Trivial        = q_copy     | q_trivial    ;
-pub let Primitive      = Trivial    | q_primitive  ;
-pub let Arithmetic     = Primitive  | q_arithmetic ;
-pub let Integral       = Arithmetic | q_integral   ;
-pub let SignedInt      = Integral   | q_signed     ;
+pub let Trivial     = q_copy     | q_trivial     ;
+pub let Primitive   = Trivial    | q_primitive   ;
+pub let Arithmetic  = Primitive  | q_arithmetic  ;
+pub let Integral    = Arithmetic | q_integral    ;
+pub let SignedInt   = Integral   | q_signed      ;
+pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i32          = Type('i32', SignedInt);
-pub let t_void         = Type('void', 0);
-pub let t_bool         = Type('bool', Primitive);
-pub let t_never        = Type('never', 0);
-pub let t_template     = Type('template', 0);
-pub let t_string       = Type('string', q_copy);
+pub let t_i32       = Type('i32', SignedInt);
+pub let t_f64       = Type('f64', FloatingPt);
+pub let t_void      = Type('void', 0);
+pub let t_bool      = Type('bool', Primitive);
+pub let t_never     = Type('never', 0);
+pub let t_template  = Type('template', 0);
+pub let t_string    = Type('string', q_copy);
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -2046,11 +2051,11 @@ pub fn Scope_lookup(scope: Scope, id: string): ScopeIdx[]
     mut results: ScopeIdx[] = [];
 
     let items = scope.items;
-    for (mut i = items.len; i --> 0; )
+    for (mut i = 0; i < items.len; i++)
     {
         let item = items[i];
         if (item.id == id)
-            results.push(item.index);
+            results.unshift(item.index);
     }
 
     return results;
@@ -3956,6 +3961,7 @@ fn listGlobals(): Scope
     mut scope: Scope;
 
     Scope_Typedef(scope, 'i32',    t_i32   );
+    Scope_Typedef(scope, 'f64',    t_f64   );
     Scope_Typedef(scope, 'bool',   t_bool  );
     Scope_Typedef(scope, 'void',   t_void  );
     Scope_Typedef(scope, 'string', t_string);
@@ -4005,7 +4011,7 @@ fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn /(a: $T, b: $T)
     // case ($T -> @floating_point):                       $T __native_pure;
     // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
-    case ($T -> @integral):          $T __native_pure;
+    case ($T -> @arithmetic): $T __native_pure;
 
 fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
@@ -4125,7 +4131,14 @@ fn assert()             : never __native_pure;
 
 // TODO we should go for an any $B -> call stringify(b) macro.
 fn +(a: &string, b: i32): string __native_pure;
+fn +(a: &string, b: f64): string __native_pure;
 fn join(a: &string[], sep: &string): string __native_pure;
+
+// TODO fix impure io.
+fn     now_hr(): f64 __native_pure;
+fn  file_size(path: string): i32 __native_pure;
+fn  file_read(path: string): string __native_pure;
+fn file_write(path: string, body: string): bool __native_pure;
 
 `;
 
@@ -4233,6 +4246,7 @@ pub fn cpp_codegen(
         let c = type.canon;
 
         if (c == 'i32')    return 'int';
+        if (c == 'f64')    return 'double';
         if (c == 'bool')   return 'bool';
         if (c == 'void')   return 'void';
         if (c == 'string') return annotateString();
@@ -5020,6 +5034,12 @@ pub fn cpp_codegen(
         if (id == 'print')
             return cgPrint(items);
 
+        if (id == 'now_hr')
+        {
+            include('"../lib/now.h"');
+            return 'fu::now_hr()';
+        }
+
         return ID(id) + '(' + items.join(', ') + ')';
     }
 
@@ -5031,7 +5051,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < items.len; i++)
             src += ' << ' + items[i];
 
-        src += ' << std::endl)';
+        src += ' << "\\n")';
         return src;
     }
 
@@ -5673,17 +5693,24 @@ fn compile(
     implicit ctx: &mut TEMP_Context,
     fname: string, src: string): string
 {
-    let res_lex = lex(
-        :fname, :src);
+    let t0 = now_hr();
+    let res_lex = lex(:fname, :src);
 
-    let res_parse = parse(
-        fname, res_lex.tokens);
+    let t1 = now_hr();
+    let res_parse = parse(fname, res_lex.tokens);
 
-    let res_solve = solve(
-        res_parse);
+    let t2 = now_hr();
+    let res_solve = solve(res_parse);
 
-    let cpp = cpp_codegen(
-        res_solve.root, res_solve.scope);
+    let t3 = now_hr();
+    let cpp = cpp_codegen(res_solve.root, res_solve.scope);
+
+    let t4 = now_hr();
+
+    print('lex     ', t1 - t0, 's');
+    print('parse   ', t2 - t1, 's');
+    print('solve   ', t3 - t2, 's');
+    print('codegen ', t4 - t3, 's');
 
     return cpp;
 }

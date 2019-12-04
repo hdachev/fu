@@ -174,6 +174,11 @@ struct fu_STRLIT
         return vec;
     }
 
+    // TODO remove: shimming ostream <<
+    operator const char*() const noexcept {
+        return m_data;
+    }
+
     fu_INL const char* data() const noexcept {
         return m_data;
     }
