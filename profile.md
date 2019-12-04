@@ -1,4 +1,13 @@
 
+STRLIT compiler.fu
+
+    lex     0.00932813s
+    parse   0.00778103s
+    solve   0.0308979s
+    codegen 0.00925708s
+
+            0.0827391s
+
 NEWCOW compiler.fu
 
     lex:     16360 µs
