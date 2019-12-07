@@ -15,9 +15,9 @@ int exec(fu_STR cmd, fu_STR& stdout) {
     fu::defer _pclose { [&]() { if (pipe) pclose(pipe); } };
 
     if (pipe) {
-        char buffer[256];
+        char buffer[FREAD_BUFFER_SIZE];
         size_t count;
-        while ((count = fread(buffer, 1, 256, pipe)))
+        while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, pipe)))
             stdout.append_copy(
                 fu_ZERO(), buffer, (int) count);
 

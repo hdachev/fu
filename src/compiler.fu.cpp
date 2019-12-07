@@ -1,9 +1,7 @@
 #include "../lib/map.h"
-#include "../lib/now.h"
 #include "../lib/str.h"
 #include "../lib/vec.h"
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -4148,19 +4146,10 @@ struct sf_cpp_codegen
 
 fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 {
-    const double t0 = fu::now_hr();
     s_LexResult res_lex = lex(src, fname);
-    const double t1 = fu::now_hr();
     s_Node res_parse = parse(fname, res_lex.tokens);
-    const double t2 = fu::now_hr();
     s_SolveResult res_solve = solve(res_parse, ctx);
-    const double t3 = fu::now_hr();
     fu_STR cpp = cpp_codegen(res_solve.root, res_solve.scope, ctx);
-    const double t4 = fu::now_hr();
-    (std::cout << "lex     "_fu << (t1 - t0) << "s"_fu << "\n");
-    (std::cout << "parse   "_fu << (t2 - t1) << "s"_fu << "\n");
-    (std::cout << "solve   "_fu << (t3 - t2) << "s"_fu << "\n");
-    (std::cout << "codegen "_fu << (t4 - t3) << "s"_fu << "\n");
     return cpp;
 }
 

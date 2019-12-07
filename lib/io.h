@@ -76,9 +76,9 @@ fu_STR file_read(span<const char> path, fu_STR& output)
     fu::defer _fclose { [&]() { if (file) fclose(file); } };
 
     if (file) {
-        char buffer[256];
+        char buffer[FREAD_BUFFER_SIZE];
         size_t count;
-        while ((count = fread(buffer, 1, 256, file)))
+        while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, file)))
             output.append_copy(
                 fu_ZERO(), buffer, (int) count);
     }

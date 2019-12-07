@@ -1,6 +1,7 @@
 #pragma once
 
 #include "std.h"
+#include "cfg.h"
 
 using i32 = int;
 using u32 = unsigned int;

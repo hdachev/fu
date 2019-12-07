@@ -22,8 +22,6 @@ struct fu_DEBUG_CNTDWN {
 
 #endif
 
-inline const uint8_t MIN_ALLOC = 128;
-
 
 // Putting the nasty shit here.
 
@@ -75,8 +73,8 @@ struct alignas(16) fu_ARC
             if (rnd <= bytes || rnd > 0x80000000)
                 std::exit(fu_EXIT_BadAlloc);
 
-            rnd = rnd > MIN_ALLOC
-                ? rnd : MIN_ALLOC;
+            rnd = rnd > fu::ARC_MIN_ALLOC
+                ? rnd : fu::ARC_MIN_ALLOC;
 
             bytes = rnd;
         }
@@ -139,4 +137,4 @@ struct alignas(16) fu_ARC
 
 static_assert(sizeof(int)    == 4);
 static_assert(sizeof(fu_ARC) == 16);
-static_assert(sizeof(fu_ARC) < MIN_ALLOC);
+static_assert(sizeof(fu_ARC) < fu::ARC_MIN_ALLOC);

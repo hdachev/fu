@@ -5693,24 +5693,24 @@ fn compile(
     implicit ctx: &mut TEMP_Context,
     fname: string, src: string): string
 {
-    let t0 = now_hr();
+    // let t0 = now_hr();
     let res_lex = lex(:fname, :src);
 
-    let t1 = now_hr();
+    // let t1 = now_hr();
     let res_parse = parse(fname, res_lex.tokens);
 
-    let t2 = now_hr();
+    // let t2 = now_hr();
     let res_solve = solve(res_parse);
 
-    let t3 = now_hr();
+    // let t3 = now_hr();
     let cpp = cpp_codegen(res_solve.root, res_solve.scope);
 
-    let t4 = now_hr();
+    // let t4 = now_hr();
 
-    print('lex     ', t1 - t0, 's');
-    print('parse   ', t2 - t1, 's');
-    print('solve   ', t3 - t2, 's');
-    print('codegen ', t4 - t3, 's');
+    // print('lex     ', t1 - t0, 's');
+    // print('parse   ', t2 - t1, 's');
+    // print('solve   ', t3 - t2, 's');
+    // print('codegen ', t4 - t3, 's');
 
     return cpp;
 }
