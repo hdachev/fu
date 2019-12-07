@@ -963,14 +963,14 @@ struct fu_VEC
     // Substring search.
 
     fu_INL i32 find(const fu_VEC& v) const noexcept {
-        return find(v.data(), v.size());
+        return find(v.data(), v.size(), 0);
     }
 
-    fu_INL i32 find(const T* i0, i32 s) const noexcept {
+    fu_INL i32 find(const T* i0, i32 s, i32 start) const noexcept {
         return fbstring_lfind(
             data(), size(),
             i0, s,
-            fu_ZERO());
+            start);
     }
 
     bool starts_with(const T* i0, i32 s) const noexcept {

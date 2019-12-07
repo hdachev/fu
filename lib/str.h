@@ -47,6 +47,11 @@ inline fu_STR fu_TO_STR(int num) noexcept
     return fu_TO_STR((long long)num);
 }
 
+inline fu_STR fu_TO_STR(unsigned int num) noexcept
+{
+    return fu_TO_STR((long long)num);
+}
+
 
 // Accel.
 
@@ -172,11 +177,6 @@ struct fu_STRLIT
         fu_STR vec;
         vec.UNSAFE__init_copy(m_data, m_size);
         return vec;
-    }
-
-    // TODO remove: shimming ostream <<
-    operator const char*() const noexcept {
-        return m_data;
     }
 
     fu_INL const char* data() const noexcept {
@@ -313,7 +313,28 @@ fu_INL fu_STR& operator+=(fu_STR& str, const fu_STRLIT& lit) noexcept {
 
 fu_STR operator+(const fu_STRLIT& a, const fu_STRLIT& b) noexcept
 {
-    // TODO static assert this never happens -
-    //  should have been compiled to a single literal.
+    // TODO static assert this must never happen -
+    //  must compile to a single literal -
+    //   or use automatic literal concat.
     return fu_STR(a) + b;
+}
+
+template <typename OStream>
+auto operator<<(OStream& stream, const fu_STR& str)
+    -> decltype(
+        stream.write(str.data(), (size_t) str.size()),
+        stream << *str.data())
+{
+    stream.write(str.data(), (size_t) str.size());
+    return stream;
+}
+
+template <typename OStream>
+auto operator<<(OStream& stream, const fu_STRLIT& str)
+    -> decltype(
+        stream.write(str.data(), (size_t) str.size()),
+        stream << *str.data())
+{
+    stream.write(str.data(), (size_t) str.size());
+    return stream;
 }

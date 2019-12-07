@@ -10,6 +10,7 @@
 
 #include "../../lib/io.h"
 #include "../../lib/now.h"
+#include "../../lib/shell.h"
 
 
 // #define ISOLATE_FAILING_TESTCASE
@@ -37,11 +38,11 @@ struct TEA
     }
 };
 
-TEA hash_src(const std::string& src)
+TEA hash_src(const fu_STR& src)
 {
     TEA result;
 
-    for (size_t i = 0; i < src.size(); i++)
+    for (int i = 0; i < src.size(); i++)
     {
         result.v0 ^= src[i];
         result.encrypt();
@@ -54,19 +55,19 @@ TEA hash_src(const std::string& src)
 //
 
 void str_replace_all(
-    std::string& subject,
-    const std::string search,
-    const std::string replace)
+    fu_STR& subject,
+    const fu_STR& search,
+    const fu_STR& replace)
 {
-    size_t pos = 0;
-    while (int(pos = subject.find(search, pos)) >= 0)
-        subject.replace(pos, search.size(), replace);
+    int pos = 0;
+    while ((pos = subject.find(search.data(), search.size(), pos)) >= 0)
+        subject.splice(pos, search.size(), replace);
 }
 
 
 //
 
-void ensure_trailing_slash(std::string& path)
+void ensure_trailing_slash(fu_STR& path)
 {
     if (!path.size() || path[0] != '/')
     {
@@ -78,26 +79,26 @@ void ensure_trailing_slash(std::string& path)
         path += '/';
 }
 
-std::string get_HOME()
+fu_STR get_HOME()
 {
-    std::string result = "/Users/hdachev";
+    fu_STR result = "/Users/hdachev"_fu;
 
     const char* home = getenv("HOME");
     if (home)
-        result = home;
+        result = ""_fu + home;
 
     ensure_trailing_slash(result);
     return result;
 }
 
-static const std::string HOME = get_HOME();
+static const fu_STR HOME = get_HOME();
 
 
 //
 
-std::string get_PRJDIR()
+fu_STR get_PRJDIR()
 {
-    std::string path = HOME;
+    fu_STR path = HOME;
     path += "fu/";
 
     auto bytes = fu::file_size(path + "src/compiler.fu");
@@ -110,142 +111,68 @@ std::string get_PRJDIR()
     return path;
 }
 
-static const std::string PRJDIR = get_PRJDIR();
+static const fu_STR PRJDIR = get_PRJDIR();
 
 
 //
 
-class fu_EXEC
-{
-    FILE* m_pipe = nullptr;
-    std::string output;
-    int code = 0;
-
-    void run(const char* cmd)
-    {
-        close();
-        code = -1;
-        m_pipe = popen(cmd, "r");
-    }
-
-public:
-    fu_EXEC(const fu_EXEC&) = delete;
-    void operator=(const fu_EXEC&) = delete;
-
-    fu_EXEC(fu_EXEC&& v)
-    {
-        output = std::move(v.output);
-        code = v.code;
-        m_pipe = v.m_pipe; v.m_pipe = nullptr;
-    };
-
-    fu_EXEC& operator=(fu_EXEC&& v)
-    {
-        output = std::move(v.output);
-        code = v.code;
-        m_pipe = v.m_pipe; v.m_pipe = nullptr;
-        return *this;
-    }
-
-    fu_EXEC() = default;
-
-    fu_EXEC(const std::string& cmd)
-    {
-        run(cmd.c_str());
-    }
-
-    fu_EXEC(const char* cmd)
-    {
-        run(cmd);
-    }
-
-    ~fu_EXEC()
-    {
-        close();
-    }
-
-    int close()
-    {
-        auto f = m_pipe;
-        m_pipe = nullptr;
-        if (f) code = pclose(f);
-        return code;
-    }
-
-    std::string&& wait(int& code)
-    {
-        if (m_pipe)
-        {
-            char buffer[256];
-            while (fgets(buffer, 256, m_pipe) != nullptr)
-                output += buffer;
-        }
-
-        code = close();
-        return std::move(output);
-    }
-};
-
-
-//
-
-static const std::string GCC_CMD = "g++ -std=c++1z -O3 "
+static const fu_STR GCC_CMD = "g++ -std=c++1z -O3 "_fu
 
         // Opt-in.
-        "-pedantic-errors -Wall -Wextra -Werror "
+        "-pedantic-errors -Wall -Wextra -Werror "_fu
 
         // Opt-out.
-        "-Wno-parentheses-equality ";
+        "-Wno-parentheses-equality "_fu;
 
 static bool NEW_STUFF = false;
 
-std::string build_and_run(const std::string& cpp)
+fu_STR build_and_run(const fu_STR& cpp)
 {
     int code = 0;
-    std::string out;
+    fu_STR stdout;
 
     auto hash = hash_src(cpp);
-    std::string F = PRJDIR
-        + "build.cpp/tea-"  + std::to_string(hash.v0)
-        + "-"               + std::to_string(hash.v1)
-        + "-"               + std::to_string(cpp.size());
+    fu_STR F = PRJDIR
+        + "build.cpp/tea-"  + hash.v0
+        + "-"               + hash.v1
+        + "-"               + cpp.size();
 
     const auto& ERROR = [&]()
     {
-        fu::file_write((PRJDIR + "build.cpp/failing-testcase.cpp").c_str(), cpp);
+        fu::file_write(PRJDIR + "build.cpp/failing-testcase.cpp", cpp);
 
-        if (out.empty())
-            out = "[ EXIT CODE " + std::to_string(code) + " ]";
+        if (!stdout)
+            stdout = "[ EXIT CODE "_fu + code + " ]";
 
-        return std::move(out);
+        return stdout;
     };
 
     if (fu::file_size(F + ".exe") <= 0)
     {
         NEW_STUFF = true;
 
-        fu::file_write((F + ".cpp").c_str(), cpp);
+        fu::file_write(F + ".cpp", cpp);
 
-        out = fu_EXEC(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1").wait(code);
+        code = fu::exec(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1", stdout);
         if (code) return ERROR();
 
-        out = fu_EXEC(GCC_CMD + "-o " + F + ".tmp " + F + ".o 2>&1").wait(code);
+        code = fu::exec(GCC_CMD + "-o " + F + ".tmp " + F + ".o 2>&1", stdout);
         if (code) return ERROR();
 
-        out = fu_EXEC("chmod 755 " + F + ".tmp").wait(code);
+        code = fu::exec("chmod 755 " + F + ".tmp", stdout);
         if (code) return ERROR();
 
-        out = fu_EXEC("mv " + F + ".tmp " + F + ".exe").wait(code);
+        code = fu::exec("mv " + F + ".tmp " + F + ".exe", stdout);
         if (code) return ERROR();
 
-        out = fu_EXEC("rm " + F + ".o").wait(code);
+        code = fu::exec("rm " + F + ".o", stdout);
         if (code) return ERROR();
     }
 
-    out = fu_EXEC(F + ".exe").wait(code);
+    code = fu::exec(F + ".exe", stdout);
     if (code) return ERROR();
 
-    return "";
+    return {};
 }
 
 
@@ -340,7 +267,7 @@ fu_STR ZERO(const fu_STR& src)
     auto cpp = compile_testcase(fu_STR(src));
 
     // ...
-    auto result = build_and_run( to_string(cpp) );
+    auto result = build_and_run(cpp);
     if (result.size())
     {
         std::cout << result << std::endl;
@@ -370,24 +297,24 @@ void FAIL(const std::string& src)
     exit(1);
 }
 
-void updateCPPFile(const std::string& path, std::string cpp)
+void updateCPPFile(const fu_STR& path, fu_STR cpp)
 {
     str_replace_all(cpp,
-        "int main()", "int auto_main()");
+        "int main()"_fu,
+        "int auto_main()"_fu);
 
     auto out_fname = path + ".cpp";
 
-    if (to_string( fu::file_read(out_fname) ) != cpp)
+    if (fu::file_read(out_fname) != cpp)
     {
         fu::file_write(out_fname, cpp);
         std::cout << "WROTE " << out_fname << std::endl;
     }
 }
 
-void FU_FILE(const std::string& fname)
+void FU_FILE(const fu_STR& fname)
 {
-    std::string path = PRJDIR;
-    path += "src/" + fname;
+    fu_STR path = PRJDIR + "src/" + fname;
 
     std::cout << "COMPILE " << fname << std::endl;
 
@@ -406,7 +333,7 @@ void FU_FILE(const std::string& fname)
     std::cout << "        " << tt << "s\n" << std::endl;
 
 #ifdef WRITE_COMPILER
-    updateCPPFile(path, to_string(cpp) );
+    updateCPPFile(path, cpp);
 #endif
 }
 
@@ -1014,26 +941,26 @@ void RUN()
     //   e.g. copy-on-write behaves as expected.
 
     const auto& ARROPS = [&](
-        std::string literal,
-        std::string operation,
-        std::string assertion)
+        fu_STR literal,
+        fu_STR operation,
+        fu_STR assertion)
     {
         assertion = "(" + assertion + ")";
 
-        const auto& EXPR = [&](std::string varname) -> std::string
+        const auto& EXPR = [&](fu_STR varname) -> fu_STR
         {
-            std::string ret = assertion;
-            str_replace_all(ret, "@", varname);
+            fu_STR ret = assertion;
+            str_replace_all(ret, "@"_fu, varname);
             return ret;
         };
 
-        std::string src;
+        fu_STR src;
 
         src += "\n";
         src += "\n    {";
         src += "\n        mut arr0 = [" + literal + "];";
         src += "\n        arr0." + operation + "; // expect_lambda";
-        src += "\n        if (" + EXPR("arr0") + " != 0) return 13;";
+        src += "\n        if (" + EXPR("arr0"_fu) + " != 0) return 13;";
         src += "\n    }";
         src += "\n";
         src += "\n    mut orig = [" + literal + "];";
@@ -1041,14 +968,14 @@ void RUN()
         src += "\n    {";
         src += "\n        mut arr1 = CLONE(orig);";
         src += "\n        arr1." + operation + "; // expect_lambda";
-        src += "\n        if (" + EXPR("arr1") + " != 0) return 17;";
+        src += "\n        if (" + EXPR("arr1"_fu) + " != 0) return 17;";
         src += "\n    }";
         src += "\n";
         src += "\n    {";
         src += "\n        mut arr2 = STEAL(orig);";
         src += "\n        if (orig.len) return 19;";
         src += "\n        arr2." + operation + "; // expect_lambda";
-        src += "\n        if (" + EXPR("arr2") + " != 0) return 23;";
+        src += "\n        if (" + EXPR("arr2"_fu) + " != 0) return 23;";
         src += "\n    }";
         src += "\n";
         src += "\n    return 0;";
@@ -1057,42 +984,42 @@ void RUN()
         ZERO(src);
     };
 
-    ARROPS( "0,1,2,3,4",
-            "push(5)",
-            "@[1] + @[4] - @[5]");
+    ARROPS( "0,1,2,3,4"_fu,
+            "push(5)"_fu,
+            "@[1] + @[4] - @[5]"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "insert(5, 5)",
-            "@[1] + @[4] - @[5]");
+    ARROPS( "0,1,2,3,4"_fu,
+            "insert(5, 5)"_fu,
+            "@[1] + @[4] - @[5]"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "pop()",
-            "@[1] + @[3] - @.len");
+    ARROPS( "0,1,2,3,4"_fu,
+            "pop()"_fu,
+            "@[1] + @[3] - @.len"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "splice(4, 1)",
-            "@[1] + @[3] - @.len");
+    ARROPS( "0,1,2,3,4"_fu,
+            "splice(4, 1)"_fu,
+            "@[1] + @[3] - @.len"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "unshift(5)",
-            "@[2] + @[5] - @[0]");
+    ARROPS( "0,1,2,3,4"_fu,
+            "unshift(5)"_fu,
+            "@[2] + @[5] - @[0]"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "insert(0, 5)",
-            "@[2] + @[5] - @[0]");
+    ARROPS( "0,1,2,3,4"_fu,
+            "insert(0, 5)"_fu,
+            "@[2] + @[5] - @[0]"_fu);
 
     // We don't seem to have shifting yet.
-    // ARROPS( "0,1,2,3,4",
-    //         "shift()",
-    //         "@[0] + @[2] - @[3]");
+    // ARROPS( "0,1,2,3,4"_fu,
+    //         "shift()"_fu,
+    //         "@[0] + @[2] - @[3]"_fu);
 
-    ARROPS( "0,1,2,3,4",
-            "insert(1, 5)",
-            "@[2] + @[5] - @[1]");
+    ARROPS( "0,1,2,3,4"_fu,
+            "insert(1, 5)"_fu,
+            "@[2] + @[5] - @[1]"_fu);
 
-    ARROPS( "0,1,2,3,100",
-            "splice(1, 3)",
-            "@.len + @[0] + @[1] - 102");
+    ARROPS( "0,1,2,3,100"_fu,
+            "splice(1, 3)"_fu,
+            "@.len + @[0] + @[1] - 102"_fu);
 
 
     //
@@ -1830,7 +1757,7 @@ void RUN()
 
     saySomethingNice();
 
-    FU_FILE("compiler.fu");
+    FU_FILE("compiler.fu"_fu);
 }
 
 

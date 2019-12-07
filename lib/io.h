@@ -72,13 +72,15 @@ int file_write(span<const char> path, span<const char> body)
 
 fu_STR file_read(span<const char> path, fu_STR& output)
 {
-    FILE* file = fopen(c_str(path), "r");
-    fu_DEFER _fclose { [&]() { fclose(file); } };
+    auto file = fopen(c_str(path), "r");
+    fu::defer _fclose { [&]() { if (file) fclose(file); } };
 
     if (file) {
         char buffer[256];
-        while (fgets(buffer, 256, file) != nullptr)
-            output += buffer;
+        size_t count;
+        while ((count = fread(buffer, 1, 256, file)))
+            output.append_copy(
+                fu_ZERO(), buffer, (int) count);
     }
 
     return output;

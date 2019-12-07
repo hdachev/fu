@@ -1,12 +1,16 @@
 #pragma once
 
+namespace fu {
+
 template <typename F>
-struct fu_DEFER
+struct defer
 {
     F fn;
-    ~fu_DEFER() { fn(); }
+    ~defer() { fn(); }
 
-    fu_DEFER(F fn) : fn(fn) {}
-    fu_DEFER(const fu_DEFER&) = delete;
-    void operator=(const fu_DEFER&) = delete;
+    defer(F fn) : fn(fn) {}
+    defer(const defer&) = delete;
+    void operator=(const defer&) = delete;
 };
+
+} // namespace
