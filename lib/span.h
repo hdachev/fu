@@ -60,15 +60,6 @@ struct span
     inline uint64_t u_size() const {
         return m_end - m_data;
     }
-
-
-    // cstr -> span<const char>
-
-    template <typename _ = decltype(m_data = "")>
-    inline span(const char* cstr) {
-        m_data = cstr;
-        m_end  = cstr + strlen(cstr);
-    }
 };
 
 } // namespace

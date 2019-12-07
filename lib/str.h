@@ -170,6 +170,8 @@ inline bool operator>=(const fu_STR& a, const fu_STR& b) noexcept
 
 struct fu_STRLIT
 {
+    typedef char value_type;
+
     const char* m_data;
     int m_size;
 
@@ -185,59 +187,6 @@ struct fu_STRLIT
 
     fu_INL int size() const noexcept {
         return m_size;
-    }
-
-
-    // TODO remove -
-    //  We've got to get rid of these shits.
-
-    // Item search.
-
-    i32 find(char search) const noexcept {
-        const char* start = data();
-        const char* end   = start + size();
-
-        for (const char* i = start; i < end; i++)
-            if (*i == search)
-                return i32(i - start);
-
-        return -1;
-    }
-
-    fu_INL bool starts_with(char prefix) const noexcept {
-        return size() && *data() == prefix;
-    }
-
-
-    // Substring search.
-
-    fu_INL i32 find(const fu_STR& v) const noexcept {
-        return find(v.data(), v.size());
-    }
-
-    fu_INL i32 find(const char* i0, i32 s) const noexcept {
-        return fbstring_lfind(
-            data(), size(),
-            i0, s,
-            fu_ZERO());
-    }
-
-    bool starts_with(const char* i0, i32 s) const noexcept {
-        i32 my_size = size();
-        if (s < 0 || s > my_size)
-            return false;
-
-        const char* i1 = i0 + s;
-        const char* match = data();
-        for (const char* search = i0; search < i1; search++, match++)
-            if (*search != *match)
-                return false;
-
-        return true;
-    }
-
-    bool starts_with(const fu_STR& v) const noexcept {
-        return starts_with(v.data(), v.size());
     }
 };
 

@@ -1,3 +1,4 @@
+#include "../lib/find.h"
 #include "../lib/map.h"
 #include "../lib/str.h"
 #include "../lib/vec.h"
@@ -95,7 +96,7 @@ inline fu_VEC<fu_STR> fu_SPLIT(
     fu_VEC<fu_STR> result;
 
     int next;
-    while ((next = s.find(sep)) >= 0)
+    while ((next = fu::lfind(s, sep)) >= 0)
     {
         result.push(slice(s, 0, next));
         s = slice(s, next + sep.size());
@@ -614,12 +615,12 @@ struct sf_lex
                     };
                 };
             }
-            else if ((int(OPTOKENS.find(c)) >= 0))
+            else if ((fu::lfind(OPTOKENS, c) != -1))
             {
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if (!(int(OPTOKENS.find(c)) >= 0))
+                    if (!(fu::lfind(OPTOKENS, c) != -1))
                     {
                         idx--;
                         break;
@@ -632,7 +633,7 @@ struct sf_lex
                     while ((begin < end))
                     {
                         fu_STR candidate = slice(src, begin, end);
-                        const bool ok = (OPERATORS.find(candidate) != -1);
+                        const bool ok = (fu::lfind(OPERATORS, candidate) != -1);
                         if (((end > (begin + 1)) && !ok))
                         {
                             end--;
@@ -1192,7 +1193,7 @@ struct sf_parse
             if (p1)
                 return ((void)_idx--, tryParseBinary(head, v, p1));
 
-            if ((POSTFIX.find(v) != -1))
+            if ((fu::lfind(POSTFIX, v) != -1))
                 return createCall(v, F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { head } });
 
         };
@@ -1250,7 +1251,7 @@ struct sf_parse
     s_Node parseTypeParam()
     {
         fu_STR value = consume("id"_fu, ""_fu).value;
-        if (!(_dollars.find(value) != -1))
+        if (!(fu::lfind(_dollars, value) != -1))
             _dollars.push(value);
 
         return createTypeParam(value);
@@ -1269,7 +1270,7 @@ struct sf_parse
     };
     s_Node parsePrefix(fu_STR&& op)
     {
-        ((PREFIX.find(op) != -1) || ((void)_idx--, fail(""_fu)));
+        ((fu::lfind(PREFIX, op) != -1) || ((void)_idx--, fail(""_fu)));
         if (((op == "&"_fu) && tryConsume("id"_fu, "mut"_fu)))
             op = "&mut"_fu;
 
@@ -1595,7 +1596,7 @@ fu_STR serializeType(const s_Type& type)
 
 bool type_has(const s_Type& type, const fu_STR& tag)
 {
-    const int idx = TAGS.find(tag);
+    const int idx = fu::lfind(TAGS, tag);
     ((idx >= 0) || fu_THROW((("Unknown type tag: `"_fu + tag) + "`."_fu)));
     const int mask = (1 << idx);
     return ((type.quals & mask) == mask);
@@ -1685,7 +1686,7 @@ bool type_isString(const s_Type& type)
 
 bool type_isArray(const s_Type& type)
 {
-    return type.canon.starts_with("Array("_fu);
+    return fu::lmatch(type.canon, "Array("_fu);
 }
 
 s_Type tryClear_array(const s_Type& type, const s_TEMP_Context& ctx)
@@ -1699,7 +1700,7 @@ s_Type tryClear_array(const s_Type& type, const s_TEMP_Context& ctx)
 
 bool type_isMap(const s_Type& type)
 {
-    return type.canon.starts_with("Map("_fu);
+    return fu::lmatch(type.canon, "Map("_fu);
 }
 
 s_Type createMap(const s_Type& key, const s_Type& value, s_TEMP_Context& ctx)
@@ -1742,7 +1743,7 @@ fu_VEC<fu_STR> Scope_keys(const s_Scope& scope)
     for (int i = items.size(); (i-- > 0); )
     {
         const fu_STR& id = items[i].id;
-        if (!(keys.find(id) != -1))
+        if (!(fu::lfind(keys, id) != -1))
             keys.push(id);
 
     };
@@ -1997,7 +1998,7 @@ struct sf_runSolver
         int offset = 0;
         for (int i = 0; (i < declaration.size()); i++)
         {
-            int idx = callsite.find(declaration[i]);
+            int idx = fu::lfind(callsite, declaration[i]);
             if ((idx < 0))
             {
                 for (int i = fu_CLONE(offset); (i < callsite.size()); i++)
@@ -2781,7 +2782,7 @@ struct sf_runSolver
             s_Overload& o = GET(fnNode.target);
             ((o.kind == "fn"_fu) || fail(""_fu));
             ((o.names.size() == o.args.size()) || fail(""_fu));
-            ((o.names.find(id) < 0) || fail("Implicit argument name collision."_fu));
+            ((fu::lfind(o.names, id) < 0) || fail("Implicit argument name collision."_fu));
             o.args.push(type);
             o.names.push(id);
         };
@@ -3078,7 +3079,7 @@ struct sf_cpp_codegen
     };
     void include(const fu_STR& lib)
     {
-        if (!(_libs.find(lib) != -1))
+        if (!(fu::lfind(_libs, lib) != -1))
             (_libs.upsert(lib) = (("#include "_fu + lib) + "\n"_fu));
 
     };
@@ -3127,7 +3128,7 @@ struct sf_cpp_codegen
         const fu_STR& k = tdef.kind;
         if ((k == "struct"_fu))
         {
-            if (!(_tfwd.find(type.canon) != -1))
+            if (!(fu::lfind(_tfwd, type.canon) != -1))
             {
                 (_tfwd.upsert(type.canon) = (("\nstruct "_fu + type.canon) + ";"_fu));
                 _tdef += declareStruct(type, tdef);
@@ -3371,7 +3372,7 @@ struct sf_cpp_codegen
             src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false);
         };
         src += (closure ? (") -> "_fu + annot) : ")"_fu);
-        if ((!closure && (src != "int auto_main()"_fu) && !(fn.flags & F_CLOSURE) && (int(_fdef.find(([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))) >= 0)))
+        if ((!closure && (src != "int auto_main()"_fu) && !(fn.flags & F_CLOSURE) && (fu::lfind(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }())) != -1)))
             (_ffwd.upsert(src) = (("\n"_fu + src) + ";"_fu));
 
         if ((body.kind == "block"_fu))
@@ -3444,7 +3445,7 @@ struct sf_cpp_codegen
             return src;
 
         src = fu_JOIN(fu_SPLIT(src, "([&]("_fu), "([]("_fu);
-        if (src.starts_with("const "_fu))
+        if (fu::lmatch(src, "const "_fu))
             src = slice(src, 6);
 
         _fdef += (src = (("inline const "_fu + src) + ";\n"_fu));
@@ -3632,27 +3633,18 @@ struct sf_cpp_codegen
 
         if (((id == "find"_fu) && (items.size() == 2)))
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
-            if ((head.type.canon == "string"_fu))
-                return (((("int("_fu + items.mutref(0)) + ".find("_fu) + items.mutref(1)) + "))"_fu);
-
-            include("<algorithm>"_fu);
-            return (((items.mutref(0) + ".find("_fu) + items.mutref(1)) + ")"_fu);
+            include("\"../lib/find.h\""_fu);
+            return (("fu::lfind("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "starts"_fu) && (items.size() == 2)))
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
-            if ((head.type.canon == "string"_fu))
-                return (((items.mutref(0) + ".starts_with("_fu) + items.mutref(1)) + ")"_fu);
-
+            include("\"../lib/find.h\""_fu);
+            return (("fu::lmatch("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "has"_fu) && (items.size() == 2)))
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
-            if ((head.type.canon == "string"_fu))
-                return (((("(int("_fu + items.mutref(0)) + ".find("_fu) + items.mutref(1)) + ")) >= 0)"_fu);
-
-            return (((("("_fu + items.mutref(0)) + ".find("_fu) + items.mutref(1)) + ") != -1)"_fu);
+            include("\"../lib/find.h\""_fu);
+            return (("(fu::lfind("_fu + fu_JOIN(items, ", "_fu)) + ") != -1)"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
             return (((("slice("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ")"_fu);
@@ -3734,7 +3726,7 @@ struct sf_cpp_codegen
     fu_STR cgSlide(const fu_STR& destExpr, const fu_STR& srcExpr, const fu_STR& numBytesExpr)
     {
         fu_STR SLIDE = "::slide"_fu;
-        if (!(_tfwd.find(SLIDE) != -1))
+        if (!(fu::lfind(_tfwd, SLIDE) != -1))
         {
             include("<cstring>"_fu);
             (_tfwd.upsert(SLIDE) = "\ntemplate <size_t N>\ninline void fu_MEMSLIDE(void* dest, void* source)\n{\n    char swap_buffer[N];\n\n    std::memcpy(\n        swap_buffer, source, N);\n\n    if (source < dest)\n        std::memmove(\n            source, (char*)source + N,\n            (char*)dest - (char*)source);\n    else\n        std::memmove(\n            (char*)dest + N, dest,\n            (char*)source - (char*)dest);\n\n    std::memcpy(\n        dest, swap_buffer, N);\n}\n"_fu);
@@ -3757,7 +3749,7 @@ struct sf_cpp_codegen
     fu_STR annotateNever()
     {
         fu_STR NEVER = "::NEVER"_fu;
-        if (!(_tfwd.find(NEVER) != -1))
+        if (!(fu::lfind(_tfwd, NEVER) != -1))
         {
             include("<stdexcept>"_fu);
             (_tfwd.upsert(NEVER) = "\nstruct fu_NEVER\n{\n    fu_NEVER(const fu_NEVER&) = delete;\n    void operator=(const fu_NEVER&) = delete;\n\n    template<typename T>\n    [[noreturn]] operator T() const\n    {\n        throw std::runtime_error(\"fu_NEVER cast\");\n    }\n};\n"_fu);
@@ -3767,7 +3759,7 @@ struct sf_cpp_codegen
     fu_STR cgThrow(const fu_STR& kind, const fu_STR& item)
     {
         fu_STR THROW = "::THROW"_fu;
-        if (!(_ffwd.find(THROW) != -1))
+        if (!(fu::lfind(_ffwd, THROW) != -1))
         {
             annotateNever();
             include("<stdexcept>"_fu);
@@ -3782,7 +3774,7 @@ struct sf_cpp_codegen
     fu_STR cgConcat(const fu_VEC<fu_STR>& items)
     {
         fu_STR CONCAT = "::CONCAT"_fu;
-        if (!(_ffwd.find(CONCAT) != -1))
+        if (!(fu::lfind(_ffwd, CONCAT) != -1))
         {
             annotateVector();
             (_ffwd.upsert(CONCAT) = "\ntemplate <typename T>\nfu_VEC<T> fu_CONCAT(\n    const fu_VEC<T>& a,\n    const fu_VEC<T>& b)\n{\n    fu_VEC<T> result;\n    result.reserve(a.size() + b.size());\n\n    for (const auto& i : a) result.push(i);\n    for (const auto& i : b) result.push(i);\n\n    return result;\n}\n"_fu);
@@ -3792,7 +3784,7 @@ struct sf_cpp_codegen
     fu_STR cgJoin(const fu_VEC<fu_STR>& items)
     {
         fu_STR JOIN = "::JOIN"_fu;
-        if (!(_ffwd.find(JOIN) != -1))
+        if (!(fu::lfind(_ffwd, JOIN) != -1))
         {
             annotateString();
             annotateVector();
@@ -3803,18 +3795,19 @@ struct sf_cpp_codegen
     fu_STR cgSplit(const fu_VEC<fu_STR>& items)
     {
         fu_STR SPLIT = "::SPLIT"_fu;
-        if (!(_ffwd.find(SPLIT) != -1))
+        if (!(fu::lfind(_ffwd, SPLIT) != -1))
         {
             annotateString();
             annotateVector();
-            (_ffwd.upsert(SPLIT) = "\ninline fu_VEC<fu_STR> fu_SPLIT(\n    fu_STR s,\n    const fu_STR& sep)\n{\n    fu_VEC<fu_STR> result;\n\n    int next;\n    while ((next = s.find(sep)) >= 0)\n    {\n        result.push(slice(s, 0, next));\n        s = slice(s, next + sep.size());\n    }\n\n    result.push(static_cast<fu_STR&&>(s));\n    return result;\n}\n"_fu);
+            include("\"../lib/find.h\""_fu);
+            (_ffwd.upsert(SPLIT) = "\ninline fu_VEC<fu_STR> fu_SPLIT(\n    fu_STR s,\n    const fu_STR& sep)\n{\n    fu_VEC<fu_STR> result;\n\n    int next;\n    while ((next = fu::lfind(s, sep)) >= 0)\n    {\n        result.push(slice(s, 0, next));\n        s = slice(s, next + sep.size());\n    }\n\n    result.push(static_cast<fu_STR&&>(s));\n    return result;\n}\n"_fu);
         };
         return (("fu_SPLIT("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgKeys(const fu_VEC<fu_STR>& items)
     {
         fu_STR KEYS = "::KEYS"_fu;
-        if (!(_ffwd.find(KEYS) != -1))
+        if (!(fu::lfind(_ffwd, KEYS) != -1))
         {
             annotateMap();
             annotateVector();
@@ -3869,7 +3862,7 @@ struct sf_cpp_codegen
         if (((type.quals & q_ref) && !(type.quals & q_mutref)))
         {
             fu_STR DEFAULT = "::DEFAULT"_fu;
-            if (!(_ffwd.find(DEFAULT) != -1))
+            if (!(fu::lfind(_ffwd, DEFAULT) != -1))
                 (_ffwd.upsert(DEFAULT) = "\ntemplate <typename T>\nstruct fu_DEFAULT { static inline const T value {}; };\n"_fu);
 
             return (("fu_DEFAULT<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);
@@ -4001,10 +3994,10 @@ struct sf_cpp_codegen
         {
             fu_STR brk = (("L_"_fu + node.value) + "_b"_fu);
             fu_STR cnt = (("L_"_fu + node.value) + "_c"_fu);
-            if ((int(body.find(cnt)) >= 0))
+            if ((fu::lfind(body, cnt) != -1))
                 body = ("{"_fu + postfixBlock(body, (((_indent + "    }"_fu) + cnt) + ":;"_fu)));
 
-            if ((int(body.find(brk)) >= 0))
+            if ((fu::lfind(body, brk) != -1))
                 breakLabel = (((_indent + "    "_fu) + brk) + ":;"_fu);
 
         };
@@ -4118,7 +4111,7 @@ struct sf_cpp_codegen
     fu_STR cgClone(const fu_STR& src)
     {
         fu_STR CLONE = "::CLONE"_fu;
-        if (!(_ffwd.find(CLONE) != -1))
+        if (!(fu::lfind(_ffwd, CLONE) != -1))
             (_ffwd.upsert(CLONE) = "\ntemplate <typename T>\ninline T fu_CLONE(const T& source)\n{\n    return source;\n}\n"_fu);
 
         return (("fu_CLONE("_fu + src) + ")"_fu);
@@ -4156,7 +4149,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 fu_STR compile_testcase(fu_STR&& src)
 {
     fu_STR fname = "testcase"_fu;
-    if (!(int(src.find("fn ZERO()"_fu)) >= 0))
+    if (!(fu::lfind(src, "fn ZERO()"_fu) != -1))
         src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     src += "\nfn main(): i32 ZERO();\n\n"_fu;
@@ -4168,7 +4161,7 @@ inline const fu_STR TEST_SRC = "\n\n    fn test(one: i32)\n    {\n        let ze
 int ZERO()
 {
     fu_STR cpp = compile_testcase(fu_CLONE(TEST_SRC));
-    return (int(cpp.find("main()"_fu)) ? 0 : 101);
+    return (fu::lfind(cpp, "main()"_fu) ? 0 : 101);
 }
 
 int auto_main()

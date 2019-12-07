@@ -4949,28 +4949,20 @@ pub fn cpp_codegen(
 
         if (id == 'find' && items.len == 2)
         {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return 'int(' + items[0] + '.find(' + items[1] + '))';
-
-            include('<algorithm>');
-            return items[0] + '.find(' + items[1] + ')';
+            include('"../lib/find.h"');
+            return 'fu::lfind(' + items.join(', ') + ')';
         }
 
         if (id == 'starts' && items.len == 2)
         {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return items[0] + '.starts_with(' + items[1] + ')';
+            include('"../lib/find.h"');
+            return 'fu::lmatch(' + items.join(', ') + ')';
         }
 
         if (id == 'has' && items.len == 2)
         {
-            let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
-                return '(int(' + items[0] + '.find(' + items[1] + ')) >= 0)';
-
-            return '(' + items[0] + '.find(' + items[1] + ') != -1)';
+            include('"../lib/find.h"');
+            return '(fu::lfind(' + items.join(', ') + ') != -1)';
         }
 
         if (id == 'slice' && items.len == 2)
@@ -5258,6 +5250,7 @@ inline fu_STR fu_JOIN(
         {
             annotateString();
             annotateVector();
+            include('"../lib/find.h"');
 
             _ffwd[SPLIT] =
 ////////////////////////////////////
@@ -5269,7 +5262,7 @@ inline fu_VEC<fu_STR> fu_SPLIT(
     fu_VEC<fu_STR> result;
 
     int next;
-    while ((next = s.find(sep)) >= 0)
+    while ((next = fu::lfind(s, sep)) >= 0)
     {
         result.push(slice(s, 0, next));
         s = slice(s, next + sep.size());

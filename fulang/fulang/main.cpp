@@ -10,6 +10,7 @@
 
 #include "../../lib/io.h"
 #include "../../lib/now.h"
+#include "../../lib/find.h"
 #include "../../lib/shell.h"
 
 
@@ -60,7 +61,7 @@ void str_replace_all(
     const fu_STR& replace)
 {
     int pos = 0;
-    while ((pos = subject.find(search.data(), search.size(), pos)) >= 0)
+    while ((pos = fu::lfind(subject, search, pos)) >= 0)
         subject.splice(pos, search.size(), replace);
 }
 

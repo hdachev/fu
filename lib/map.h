@@ -14,15 +14,6 @@ struct fu_COW_MAP
 
     // Const API.
 
-    int find(const K& key) const
-    {
-        for (int i = 0; i < m_keys.size(); i++)
-            if (m_keys[i] == key)
-                return i;
-
-        return -1;
-    }
-
     const V& operator[](const K& key) const
     {
         for (int i = 0; i < m_keys.size(); i++)
@@ -74,3 +65,20 @@ struct fu_COW_MAP
         return *((V*)1);
     }
 };
+
+namespace fu
+{
+    template <typename K, typename _>
+    int lfind(const fu_COW_MAP<K, _>& map, const K& key) noexcept
+    {
+        auto& keys = map.m_keys;
+        auto* i0   = keys.data();
+        auto* i1   = i0 + keys.size();
+
+        for (auto* i = i0; i < i1; i++)
+            if (*i == key)
+                return i - i0;
+
+        return -1;
+    }
+}

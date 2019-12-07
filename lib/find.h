@@ -1,79 +1,83 @@
+#pragma once
 
+#include "algo/fbstring_lfind.h"
 
-// FBString::find
-
-template <  typename value_type,
-            typename size_type = int,
-            typename pos_type = int,
-            size_type npos = size_type(-1)  >
-
-size_type fbstring_lfind(
-    const value_type* haystack, const size_type size,
-    const value_type* needle,   const size_type nsize,
-    const pos_type pos
-        ) noexcept
+namespace fu
 {
-  // nsize + pos can overflow (eg pos == npos),
-  //  guard against that by checking
-  //   that nsize + pos does not wrap around.
-  if (nsize + pos > size || nsize + pos < pos) {
-    return npos;
-  }
 
-  if (nsize == 0) {
-    return pos;
-  }
-
-  // Don't use std::search,
-  //  use a Boyer-Moore-like trick by comparing
-  //   the last characters first
-  auto const nsize_1 = nsize - 1;
-  auto const lastNeedle = needle[nsize_1];
-
-  // Boyer-Moore skip value for the last char in the needle. Zero is
-  // not a valid value; skip will be computed the first time it's
-  // needed.
-  size_type skip = 0;
-
-  const value_type* i = haystack + pos;
-  auto iEnd = haystack + size - nsize_1;
-
-  while (i < iEnd) {
-
-    // Boyer-Moore: match the last element in the needle
-    while (i[nsize_1] != lastNeedle) {
-      if (++i == iEnd) {
-        // not found
-        return npos;
-      }
-    }
-
-    // Here we know that the last char matches
-    //  Continue in pedestrian mode
-    for (size_type j = 0;;) {
-      assert(j < nsize);
-      if (i[j] != needle[j]) {
-
-        // Not found, we can skip
-        //  Compute the skip value lazily
-        if (skip == 0) {
-          skip = 1;
-          while (skip <= nsize_1 && needle[nsize_1 - skip] != lastNeedle) {
-            ++skip;
-          }
-        }
-        i += skip;
-        break;
-      }
-
-      // Check if done searching
-      if (++j == nsize) {
-
-        // Yay
-        return i - haystack;
-      }
-    }
-  }
-  return npos;
+// lfind substr
+template <  typename H, typename N,
+            typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
+            typename D = decltype(((H*)1)->data() - ((N*)1)->data())
+                >
+S lfind(const H& haystack, const N& needle, S start = S(0)) noexcept
+{
+    return fbstring_lfind(
+        haystack.data(), haystack.size(),
+        needle.data(), needle.size(), start);
 }
 
+// lfind character
+template <  typename V,
+            typename S = decltype(((V*)1)->size())
+                >
+S lfind(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
+{
+    auto* data = vec.data();
+    auto size  = vec.size();
+
+    start = start >= S(0) ? start : S(0);
+    start = start <= size ? start : size;
+
+    auto* i0 = data + start;
+    auto* i1 = data + size;
+    for (auto* i = i0; i < i1; i++)
+        if (*i == item)
+            return S(i - i0);
+
+    return S(-1);
+}
+
+// starts with substr
+template <  typename H, typename N,
+            typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
+            typename D = decltype(((H*)1)->data() - ((N*)1)->data())
+                >
+bool lmatch(const H& haystack, const N& needle, S start = S(0)) noexcept
+{
+    auto* data = haystack.data();
+    auto  size = haystack.size();
+    start = start >= S(0) ? start : S(0);
+    start = start <= size ? start : size;
+
+    auto nsize = needle.size();
+    if (nsize < 0 || nsize > size - start)
+        return false;
+
+    auto* search = needle.data();
+    auto* end    = search + nsize;
+    auto* match  = data   + start;
+
+    for ( ; search < end; search++, match++)
+        if (*search != *match)
+            return false;
+
+    return true;
+}
+
+// starts with char
+template <  typename V,
+            typename S = decltype(((V*)1)->size())
+                >
+bool lmatch(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
+{
+    auto* data = vec.data();
+    auto size  = vec.size();
+    start = start >= S(0) ? start : S(0);
+    start = start <= size ? start : size;
+
+    return size > start && data[start] == item;
+}
+
+}
+// namespace fu

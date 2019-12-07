@@ -4,7 +4,6 @@
 #include <type_traits>
 
 #include "arc.h"
-#include "find.h"
 
 template <typename T>
 struct fu_CONFIG
@@ -34,6 +33,8 @@ struct fu_CONFIG
 template <typename T>
 struct fu_VEC
 {
+    typedef T value_type;
+
     /////////////////////////////////////////////
 
     #define TRIVIAL             (fu_CONFIG<T>::TRIVIAL)
@@ -939,56 +940,6 @@ struct fu_VEC
 
     fu_INL const T* end() const noexcept {
         return data() + size();
-    }
-
-
-    // Item search.
-
-    i32 find(const T& search) const noexcept {
-        const T* start = data();
-        const T* end   = start + size();
-
-        for (const T* i = start; i < end; i++)
-            if (*i == search)
-                return i32(i - start);
-
-        return -1;
-    }
-
-    fu_INL bool starts_with(const T& prefix) const noexcept {
-        return size() && *data() == prefix;
-    }
-
-
-    // Substring search.
-
-    fu_INL i32 find(const fu_VEC& v) const noexcept {
-        return find(v.data(), v.size(), 0);
-    }
-
-    fu_INL i32 find(const T* i0, i32 s, i32 start) const noexcept {
-        return fbstring_lfind(
-            data(), size(),
-            i0, s,
-            start);
-    }
-
-    bool starts_with(const T* i0, i32 s) const noexcept {
-        i32 my_size = size();
-        if (s < 0 || s > my_size)
-            return false;
-
-        const T* i1 = i0 + s;
-        const T* match = data();
-        for (const T* search = i0; search < i1; search++, match++)
-            if (*search != *match)
-                return false;
-
-        return true;
-    }
-
-    bool starts_with(const fu_VEC& v) const noexcept {
-        return starts_with(v.data(), v.size());
     }
 
 
