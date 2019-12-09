@@ -1023,26 +1023,22 @@ struct fu_VEC
     //     and a battery of high-level operators
     //      that lift the checks outside the loop.
 
-    static constexpr u32 OUT_OF_BOUNDS = u32(-1);
-
     fu_INL const T& operator[](i32 idx) const noexcept
     {
-        u32 s = (u32) size();
-        u32 i = (u32) idx;
-        i = i < s ? i : OUT_OF_BOUNDS;
-
-        return data()[i];
+        const T* ok = data() + idx;
+        return (u32) idx < (u32) size()
+             ? *ok
+             : *((T*)1);
     }
 
     fu_INL T& mutref(i32 idx) noexcept
     {
         reserve();
 
-        u32 s = (u32) size();
-        u32 i = (u32) idx;
-        i = i < s ? i : OUT_OF_BOUNDS;
-
-        return ((T*)data())[i];
+        T* ok = (T*) data() + idx;
+        return (u32) idx < (u32) size()
+             ? *ok
+             : *((T*)1);
     }
 };
 
