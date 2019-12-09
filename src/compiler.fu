@@ -1631,9 +1631,11 @@ pub let Primitive   = Trivial    | q_primitive   ;
 pub let Arithmetic  = Primitive  | q_arithmetic  ;
 pub let Integral    = Arithmetic | q_integral    ;
 pub let SignedInt   = Integral   | q_signed      ;
+pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
 pub let t_i32       = Type('i32', SignedInt);
+pub let t_u32       = Type('u32', UnsignedInt);
 pub let t_f64       = Type('f64', FloatingPt);
 pub let t_void      = Type('void', 0);
 pub let t_bool      = Type('bool', Primitive);
@@ -3961,6 +3963,7 @@ fn listGlobals(): Scope
     mut scope: Scope;
 
     Scope_Typedef(scope, 'i32',    t_i32   );
+    Scope_Typedef(scope, 'u32',    t_u32   );
     Scope_Typedef(scope, 'f64',    t_f64   );
     Scope_Typedef(scope, 'bool',   t_bool  );
     Scope_Typedef(scope, 'void',   t_void  );
