@@ -4962,7 +4962,7 @@ pub fn cpp_codegen(
         if (id == 'has' && items.len == 2)
         {
             include('"../lib/find.h"');
-            return '(fu::lfind(' + items.join(', ') + ') != -1)';
+            return 'fu::has(' + items.join(', ') + ')';
         }
 
         if (id == 'slice' && items.len == 2)

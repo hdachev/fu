@@ -14,7 +14,7 @@ struct fu_COW_MAP
 
     // Const API.
 
-    const V& operator[](const K& key) const
+    const V& operator[](const K& key) const noexcept
     {
         for (int i = 0; i < m_keys.size(); i++)
             if (m_keys[i] == key)
@@ -24,20 +24,31 @@ struct fu_COW_MAP
         return def;
     }
 
-    inline size_t size() const
+    inline int size() const noexcept
     {
         return m_keys.size();
     }
 
-    inline explicit operator bool() const
+    inline explicit operator bool() const noexcept
     {
         return m_keys.size() > 0;
+    }
+
+    int find(const K& key) const noexcept
+    {
+        auto* i0 = m_keys.data();
+        auto* i1 = i0 + m_keys.size();
+        for (auto* i = i0; i < i1; i++)
+            if (*i == key)
+                return int(i - i0);
+
+        return -1;
     }
 
 
     // Mut API.
 
-    V& upsert(const K& key)
+    V& upsert(const K& key) noexcept
     {
         // Update?
         for (int i = 0; i < m_keys.size(); i++)
@@ -55,7 +66,7 @@ struct fu_COW_MAP
         }
     }
 
-    V& mutref(const K& key)
+    V& mutref(const K& key) noexcept
     {
         for (int i = 0; i < m_keys.size(); i++)
             if (m_keys[i] == key)
@@ -65,20 +76,3 @@ struct fu_COW_MAP
         return *((V*)1);
     }
 };
-
-namespace fu
-{
-    template <typename K, typename _>
-    int lfind(const fu_COW_MAP<K, _>& map, const K& key) noexcept
-    {
-        auto& keys = map.m_keys;
-        auto* i0   = keys.data();
-        auto* i1   = i0 + keys.size();
-
-        for (auto* i = i0; i < i1; i++)
-            if (*i == key)
-                return i - i0;
-
-        return -1;
-    }
-}

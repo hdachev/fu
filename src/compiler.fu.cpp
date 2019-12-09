@@ -615,12 +615,12 @@ struct sf_lex
                     };
                 };
             }
-            else if ((fu::lfind(OPTOKENS, c) != -1))
+            else if (fu::has(OPTOKENS, c))
             {
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if (!(fu::lfind(OPTOKENS, c) != -1))
+                    if (!fu::has(OPTOKENS, c))
                     {
                         idx--;
                         break;
@@ -633,7 +633,7 @@ struct sf_lex
                     while ((begin < end))
                     {
                         fu_STR candidate = slice(src, begin, end);
-                        const bool ok = (fu::lfind(OPERATORS, candidate) != -1);
+                        const bool ok = fu::has(OPERATORS, candidate);
                         if (((end > (begin + 1)) && !ok))
                         {
                             end--;
@@ -1193,7 +1193,7 @@ struct sf_parse
             if (p1)
                 return ((void)_idx--, tryParseBinary(head, v, p1));
 
-            if ((fu::lfind(POSTFIX, v) != -1))
+            if (fu::has(POSTFIX, v))
                 return createCall(v, F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { head } });
 
         };
@@ -1251,7 +1251,7 @@ struct sf_parse
     s_Node parseTypeParam()
     {
         fu_STR value = consume("id"_fu, ""_fu).value;
-        if (!(fu::lfind(_dollars, value) != -1))
+        if (!fu::has(_dollars, value))
             _dollars.push(value);
 
         return createTypeParam(value);
@@ -1270,7 +1270,7 @@ struct sf_parse
     };
     s_Node parsePrefix(fu_STR&& op)
     {
-        ((fu::lfind(PREFIX, op) != -1) || ((void)_idx--, fail(""_fu)));
+        (fu::has(PREFIX, op) || ((void)_idx--, fail(""_fu)));
         if (((op == "&"_fu) && tryConsume("id"_fu, "mut"_fu)))
             op = "&mut"_fu;
 
@@ -1743,7 +1743,7 @@ fu_VEC<fu_STR> Scope_keys(const s_Scope& scope)
     for (int i = items.size(); (i-- > 0); )
     {
         const fu_STR& id = items[i].id;
-        if (!(fu::lfind(keys, id) != -1))
+        if (!fu::has(keys, id))
             keys.push(id);
 
     };
@@ -3079,7 +3079,7 @@ struct sf_cpp_codegen
     };
     void include(const fu_STR& lib)
     {
-        if (!(fu::lfind(_libs, lib) != -1))
+        if (!fu::has(_libs, lib))
             (_libs.upsert(lib) = (("#include "_fu + lib) + "\n"_fu));
 
     };
@@ -3128,7 +3128,7 @@ struct sf_cpp_codegen
         const fu_STR& k = tdef.kind;
         if ((k == "struct"_fu))
         {
-            if (!(fu::lfind(_tfwd, type.canon) != -1))
+            if (!fu::has(_tfwd, type.canon))
             {
                 (_tfwd.upsert(type.canon) = (("\nstruct "_fu + type.canon) + ";"_fu));
                 _tdef += declareStruct(type, tdef);
@@ -3372,7 +3372,7 @@ struct sf_cpp_codegen
             src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false);
         };
         src += (closure ? (") -> "_fu + annot) : ")"_fu);
-        if ((!closure && (src != "int auto_main()"_fu) && !(fn.flags & F_CLOSURE) && (fu::lfind(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }())) != -1)))
+        if ((!closure && (src != "int auto_main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))))
             (_ffwd.upsert(src) = (("\n"_fu + src) + ";"_fu));
 
         if ((body.kind == "block"_fu))
@@ -3644,7 +3644,7 @@ struct sf_cpp_codegen
         if (((id == "has"_fu) && (items.size() == 2)))
         {
             include("\"../lib/find.h\""_fu);
-            return (("(fu::lfind("_fu + fu_JOIN(items, ", "_fu)) + ") != -1)"_fu);
+            return (("fu::has("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
             return (((("slice("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ")"_fu);
@@ -3726,7 +3726,7 @@ struct sf_cpp_codegen
     fu_STR cgSlide(const fu_STR& destExpr, const fu_STR& srcExpr, const fu_STR& numBytesExpr)
     {
         fu_STR SLIDE = "::slide"_fu;
-        if (!(fu::lfind(_tfwd, SLIDE) != -1))
+        if (!fu::has(_tfwd, SLIDE))
         {
             include("<cstring>"_fu);
             (_tfwd.upsert(SLIDE) = "\ntemplate <size_t N>\ninline void fu_MEMSLIDE(void* dest, void* source)\n{\n    char swap_buffer[N];\n\n    std::memcpy(\n        swap_buffer, source, N);\n\n    if (source < dest)\n        std::memmove(\n            source, (char*)source + N,\n            (char*)dest - (char*)source);\n    else\n        std::memmove(\n            (char*)dest + N, dest,\n            (char*)source - (char*)dest);\n\n    std::memcpy(\n        dest, swap_buffer, N);\n}\n"_fu);
@@ -3749,7 +3749,7 @@ struct sf_cpp_codegen
     fu_STR annotateNever()
     {
         fu_STR NEVER = "::NEVER"_fu;
-        if (!(fu::lfind(_tfwd, NEVER) != -1))
+        if (!fu::has(_tfwd, NEVER))
         {
             include("<stdexcept>"_fu);
             (_tfwd.upsert(NEVER) = "\nstruct fu_NEVER\n{\n    fu_NEVER(const fu_NEVER&) = delete;\n    void operator=(const fu_NEVER&) = delete;\n\n    template<typename T>\n    [[noreturn]] operator T() const\n    {\n        throw std::runtime_error(\"fu_NEVER cast\");\n    }\n};\n"_fu);
@@ -3759,7 +3759,7 @@ struct sf_cpp_codegen
     fu_STR cgThrow(const fu_STR& kind, const fu_STR& item)
     {
         fu_STR THROW = "::THROW"_fu;
-        if (!(fu::lfind(_ffwd, THROW) != -1))
+        if (!fu::has(_ffwd, THROW))
         {
             annotateNever();
             include("<stdexcept>"_fu);
@@ -3774,7 +3774,7 @@ struct sf_cpp_codegen
     fu_STR cgConcat(const fu_VEC<fu_STR>& items)
     {
         fu_STR CONCAT = "::CONCAT"_fu;
-        if (!(fu::lfind(_ffwd, CONCAT) != -1))
+        if (!fu::has(_ffwd, CONCAT))
         {
             annotateVector();
             (_ffwd.upsert(CONCAT) = "\ntemplate <typename T>\nfu_VEC<T> fu_CONCAT(\n    const fu_VEC<T>& a,\n    const fu_VEC<T>& b)\n{\n    fu_VEC<T> result;\n    result.reserve(a.size() + b.size());\n\n    for (const auto& i : a) result.push(i);\n    for (const auto& i : b) result.push(i);\n\n    return result;\n}\n"_fu);
@@ -3784,7 +3784,7 @@ struct sf_cpp_codegen
     fu_STR cgJoin(const fu_VEC<fu_STR>& items)
     {
         fu_STR JOIN = "::JOIN"_fu;
-        if (!(fu::lfind(_ffwd, JOIN) != -1))
+        if (!fu::has(_ffwd, JOIN))
         {
             annotateString();
             annotateVector();
@@ -3795,7 +3795,7 @@ struct sf_cpp_codegen
     fu_STR cgSplit(const fu_VEC<fu_STR>& items)
     {
         fu_STR SPLIT = "::SPLIT"_fu;
-        if (!(fu::lfind(_ffwd, SPLIT) != -1))
+        if (!fu::has(_ffwd, SPLIT))
         {
             annotateString();
             annotateVector();
@@ -3807,7 +3807,7 @@ struct sf_cpp_codegen
     fu_STR cgKeys(const fu_VEC<fu_STR>& items)
     {
         fu_STR KEYS = "::KEYS"_fu;
-        if (!(fu::lfind(_ffwd, KEYS) != -1))
+        if (!fu::has(_ffwd, KEYS))
         {
             annotateMap();
             annotateVector();
@@ -3862,7 +3862,7 @@ struct sf_cpp_codegen
         if (((type.quals & q_ref) && !(type.quals & q_mutref)))
         {
             fu_STR DEFAULT = "::DEFAULT"_fu;
-            if (!(fu::lfind(_ffwd, DEFAULT) != -1))
+            if (!fu::has(_ffwd, DEFAULT))
                 (_ffwd.upsert(DEFAULT) = "\ntemplate <typename T>\nstruct fu_DEFAULT { static inline const T value {}; };\n"_fu);
 
             return (("fu_DEFAULT<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);
@@ -3994,10 +3994,10 @@ struct sf_cpp_codegen
         {
             fu_STR brk = (("L_"_fu + node.value) + "_b"_fu);
             fu_STR cnt = (("L_"_fu + node.value) + "_c"_fu);
-            if ((fu::lfind(body, cnt) != -1))
+            if (fu::has(body, cnt))
                 body = ("{"_fu + postfixBlock(body, (((_indent + "    }"_fu) + cnt) + ":;"_fu)));
 
-            if ((fu::lfind(body, brk) != -1))
+            if (fu::has(body, brk))
                 breakLabel = (((_indent + "    "_fu) + brk) + ":;"_fu);
 
         };
@@ -4111,7 +4111,7 @@ struct sf_cpp_codegen
     fu_STR cgClone(const fu_STR& src)
     {
         fu_STR CLONE = "::CLONE"_fu;
-        if (!(fu::lfind(_ffwd, CLONE) != -1))
+        if (!fu::has(_ffwd, CLONE))
             (_ffwd.upsert(CLONE) = "\ntemplate <typename T>\ninline T fu_CLONE(const T& source)\n{\n    return source;\n}\n"_fu);
 
         return (("fu_CLONE("_fu + src) + ")"_fu);
@@ -4149,7 +4149,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 fu_STR compile_testcase(fu_STR&& src)
 {
     fu_STR fname = "testcase"_fu;
-    if (!(fu::lfind(src, "fn ZERO()"_fu) != -1))
+    if (!fu::has(src, "fn ZERO()"_fu))
         src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     src += "\nfn main(): i32 ZERO();\n\n"_fu;

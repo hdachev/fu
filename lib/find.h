@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util.h"
 #include "algo/fbstring_lfind.h"
 
 namespace fu
@@ -77,6 +78,20 @@ bool lmatch(const V& vec, const typename V::value_type& item, S start = S(0)) no
     start = start <= size ? start : size;
 
     return size > start && data[start] == item;
+}
+
+// custom lfind
+template <typename V, typename I>
+fu_INL auto lfind(const V& vec, const I& item) noexcept -> decltype(vec.find(item))
+{
+    return vec.find(item);
+}
+
+// has := lfind != -1
+template <typename V, typename I>
+fu_INL bool has(const V& vec, const I& item) noexcept
+{
+    return fu::lfind(vec, item) != -1;
 }
 
 }
