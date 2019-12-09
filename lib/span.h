@@ -7,8 +7,11 @@ namespace fu {
 template <typename T>
 struct span
 {
-    T* m_data;
-    T* m_end;
+    typedef char value_type;
+
+    T*  m_data;
+    int m_size;
+    // int m_capa; // could enable some weird tricks
 
     span() = default;
 
@@ -21,44 +24,40 @@ struct span
                 typename = decltype(
                     m_data = ((V*)1)->data()
                 )>
-    inline span(const V& v) {
+    inline span(const V& v) noexcept
+    {
         m_data = v.data();
-        m_end = m_data + v.size();
+        m_size = v.size();
     }
 
     template <  typename V,
                 typename = decltype(
                     m_data = ((V*)1)->mut_data()
                 )>
-    inline span(V& v) {
+    inline span(V& v)
+    {
         m_data = v.mut_data();
-        m_end = m_data + v.size();
+        m_size = v.size();
     }
 
-    inline const T* data() const {
+    inline const T* data() const noexcept {
         return m_data;
     }
 
-    inline T* mut_data() {
+    inline T* mut_data() noexcept {
         return m_data;
     }
 
-    inline const T* end() const {
-        return m_end;
+    inline const T* end() const noexcept {
+        return m_data + m_size;
     }
 
-    inline T* mut_end() {
-        return m_end;
+    inline T* mut_end() noexcept {
+        return m_data + m_size;
     }
 
-    inline int size() const {
-        int s = int(m_end - m_data);
-        assert(s >= 0);
-        return s;
-    }
-
-    inline uint64_t u_size() const {
-        return m_end - m_data;
+    inline int size() const noexcept {
+        return m_size;
     }
 };
 

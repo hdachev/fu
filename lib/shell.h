@@ -7,8 +7,8 @@
 
 namespace fu {
 
-int exec(fu_STR cmd, fu_STR& stdout) {
-
+int exec(fu_STR cmd, fu_STR& stdout)
+{
     cmd.push('\0');
 
     auto pipe = popen(cmd.data(), "r");
@@ -29,7 +29,8 @@ int exec(fu_STR cmd, fu_STR& stdout) {
     return -1;
 }
 
-int exec(const fu_STR& cmd) {
+int exec(const fu_STR& cmd)
+{
     fu_STR stdout;
     return exec(cmd, stdout);
 }

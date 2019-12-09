@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 #include <iostream>
 #include <string>
@@ -10,47 +9,14 @@
 
 #include "../../lib/io.h"
 #include "../../lib/now.h"
+#include "../../lib/env.h"
+#include "../../lib/tea.h"
 #include "../../lib/find.h"
 #include "../../lib/shell.h"
 
 
 // #define ISOLATE_FAILING_TESTCASE
 #define WRITE_COMPILER
-
-
-//
-
-struct TEA
-{
-    unsigned int v0 = 0;
-    unsigned int v1 = 0;
-
-    void encrypt()
-    {
-        unsigned int sum    = 0u;
-        unsigned int delta  = 0x9e3779b9u;
-
-        for (int i = 0; i < 16; i++)
-        {
-            sum += delta;
-            v0 += ((v1<<4) + 0xA341316Cu) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4u);
-            v1 += ((v0<<4) + 0xAD90777Du) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761Eu);
-        }
-    }
-};
-
-TEA hash_src(const fu_STR& src)
-{
-    TEA result;
-
-    for (int i = 0; i < src.size(); i++)
-    {
-        result.v0 ^= src[i];
-        result.encrypt();
-    }
-
-    return result;
-}
 
 
 //
@@ -84,9 +50,9 @@ fu_STR get_HOME()
 {
     fu_STR result = "/Users/hdachev"_fu;
 
-    const char* home = getenv("HOME");
+    auto home = fu::env_get("HOME"_fu);
     if (home)
-        result = ""_fu + home;
+        result = home;
 
     ensure_trailing_slash(result);
     return result;
@@ -132,7 +98,9 @@ fu_STR build_and_run(const fu_STR& cpp)
     int code = 0;
     fu_STR stdout;
 
-    auto hash = hash_src(cpp);
+    auto hash = fu::TEA();
+    hash.string(cpp);
+
     fu_STR F = PRJDIR
         + "build.cpp/tea-"  + hash.v0
         + "-"               + hash.v1

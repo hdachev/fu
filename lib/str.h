@@ -188,6 +188,10 @@ struct fu_STRLIT
     fu_INL int size() const noexcept {
         return m_size;
     }
+
+    fu_INL explicit operator bool() const noexcept {
+        return m_size;
+    }
 };
 
 fu_INL fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {

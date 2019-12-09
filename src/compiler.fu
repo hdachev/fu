@@ -4138,10 +4138,11 @@ fn +(a: &string, b: f64): string __native_pure;
 fn join(a: &string[], sep: &string): string __native_pure;
 
 // TODO fix impure io.
-fn     now_hr(): f64 __native_pure;
-fn  file_size(path: string): i32 __native_pure;
-fn  file_read(path: string): string __native_pure;
+fn now_hr(): f64 __native_pure;
+fn file_size(path: string): i32 __native_pure;
+fn file_read(path: string): string __native_pure;
 fn file_write(path: string, body: string): bool __native_pure;
+fn env_get(key: string): string __native_pure;
 
 `;
 
