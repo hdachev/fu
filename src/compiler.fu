@@ -1634,9 +1634,19 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
+pub let t_i8        = Type( 'i8', SignedInt);
+pub let t_i16       = Type('i16', SignedInt);
 pub let t_i32       = Type('i32', SignedInt);
+pub let t_i64       = Type('i64', SignedInt);
+
+pub let t_u8        = Type( 'u8', UnsignedInt);
+pub let t_u16       = Type('u16', UnsignedInt);
 pub let t_u32       = Type('u32', UnsignedInt);
+pub let t_u64       = Type('u64', UnsignedInt);
+
+pub let t_f32       = Type('f32', FloatingPt);
 pub let t_f64       = Type('f64', FloatingPt);
+
 pub let t_void      = Type('void', 0);
 pub let t_bool      = Type('bool', Primitive);
 pub let t_never     = Type('never', 0);
@@ -3962,9 +3972,19 @@ fn listGlobals(): Scope
 {
     mut scope: Scope;
 
+    Scope_Typedef(scope,  'i8',    t_i8    );
+    Scope_Typedef(scope, 'i16',    t_i16   );
     Scope_Typedef(scope, 'i32',    t_i32   );
+    Scope_Typedef(scope, 'i64',    t_i64   );
+
+    Scope_Typedef(scope,  'u8',    t_u8    );
+    Scope_Typedef(scope, 'u16',    t_u16   );
     Scope_Typedef(scope, 'u32',    t_u32   );
+    Scope_Typedef(scope, 'u64',    t_u64   );
+
+    Scope_Typedef(scope, 'f32',    t_f32   );
     Scope_Typedef(scope, 'f64',    t_f64   );
+
     Scope_Typedef(scope, 'bool',   t_bool  );
     Scope_Typedef(scope, 'void',   t_void  );
     Scope_Typedef(scope, 'string', t_string);
@@ -4249,8 +4269,19 @@ pub fn cpp_codegen(
     {
         let c = type.canon;
 
-        if (c == 'i32')    return 'int';
-        if (c == 'f64')    return 'double';
+        if (c ==  'i8')    return 'i8';
+        if (c == 'i16')    return 'i16';
+        if (c == 'i32')    return 'int'; // TODO fix, pandemic includes
+        if (c == 'i64')    return 'i64';
+
+        if (c ==  'u8')    return 'u8';
+        if (c == 'u16')    return 'u16';
+        if (c == 'u32')    return 'u32';
+        if (c == 'u64')    return 'u64';
+
+        if (c == 'f32')    return 'f32';
+        if (c == 'f64')    return 'f64';
+
         if (c == 'bool')   return 'bool';
         if (c == 'void')   return 'void';
         if (c == 'string') return annotateString();

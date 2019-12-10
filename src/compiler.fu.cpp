@@ -1509,8 +1509,15 @@ inline const int Integral = (Arithmetic | q_integral);
 inline const int SignedInt = (Integral | q_signed);
 inline const int& UnsignedInt = Integral;
 inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
+inline const s_Type t_i8 = s_Type { "i8"_fu, fu_CLONE(SignedInt) };
+inline const s_Type t_i16 = s_Type { "i16"_fu, fu_CLONE(SignedInt) };
 inline const s_Type t_i32 = s_Type { "i32"_fu, fu_CLONE(SignedInt) };
+inline const s_Type t_i64 = s_Type { "i64"_fu, fu_CLONE(SignedInt) };
+inline const s_Type t_u8 = s_Type { "u8"_fu, fu_CLONE(UnsignedInt) };
+inline const s_Type t_u16 = s_Type { "u16"_fu, fu_CLONE(UnsignedInt) };
 inline const s_Type t_u32 = s_Type { "u32"_fu, fu_CLONE(UnsignedInt) };
+inline const s_Type t_u64 = s_Type { "u64"_fu, fu_CLONE(UnsignedInt) };
+inline const s_Type t_f32 = s_Type { "f32"_fu, fu_CLONE(FloatingPt) };
 inline const s_Type t_f64 = s_Type { "f64"_fu, fu_CLONE(FloatingPt) };
 inline const s_Type t_void = s_Type { "void"_fu, 0 };
 inline const s_Type t_bool = s_Type { "bool"_fu, fu_CLONE(Primitive) };
@@ -3025,8 +3032,15 @@ struct sf_runSolver
 s_Scope listGlobals()
 {
     s_Scope scope {};
+    Scope_Typedef(scope, "i8"_fu, t_i8);
+    Scope_Typedef(scope, "i16"_fu, t_i16);
     Scope_Typedef(scope, "i32"_fu, t_i32);
+    Scope_Typedef(scope, "i64"_fu, t_i64);
+    Scope_Typedef(scope, "u8"_fu, t_u8);
+    Scope_Typedef(scope, "u16"_fu, t_u16);
     Scope_Typedef(scope, "u32"_fu, t_u32);
+    Scope_Typedef(scope, "u64"_fu, t_u64);
+    Scope_Typedef(scope, "f32"_fu, t_f32);
     Scope_Typedef(scope, "f64"_fu, t_f64);
     Scope_Typedef(scope, "bool"_fu, t_bool);
     Scope_Typedef(scope, "void"_fu, t_void);
@@ -3109,11 +3123,35 @@ struct sf_cpp_codegen
     fu_STR typeAnnotBase(const s_Type& type)
     {
         const fu_STR& c = type.canon;
+        if ((c == "i8"_fu))
+            return "i8"_fu;
+
+        if ((c == "i16"_fu))
+            return "i16"_fu;
+
         if ((c == "i32"_fu))
             return "int"_fu;
 
+        if ((c == "i64"_fu))
+            return "i64"_fu;
+
+        if ((c == "u8"_fu))
+            return "u8"_fu;
+
+        if ((c == "u16"_fu))
+            return "u16"_fu;
+
+        if ((c == "u32"_fu))
+            return "u32"_fu;
+
+        if ((c == "u64"_fu))
+            return "u64"_fu;
+
+        if ((c == "f32"_fu))
+            return "f32"_fu;
+
         if ((c == "f64"_fu))
-            return "double"_fu;
+            return "f64"_fu;
 
         if ((c == "bool"_fu))
             return "bool"_fu;
