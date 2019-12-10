@@ -192,6 +192,14 @@ struct fu_STRLIT
     fu_INL explicit operator bool() const noexcept {
         return m_size;
     }
+
+    fu_INL const char& operator[](i32 idx) const noexcept
+    {
+        const char* ok = m_data + idx;
+        return (u32) idx < (u32) m_size
+             ? *ok
+             : *((char*)1);
+    }
 };
 
 fu_INL fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {
