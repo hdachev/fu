@@ -1100,33 +1100,35 @@ fu_VEC<T> operator+(fu_VEC<T>&& a, fu_VEC<T>&& b) noexcept {
 }
 
 template <typename T>
-fu_VEC<T> operator+(fu_VEC<T>&& a, const fu_VEC<T>& b) noexcept {
+fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
+    a.append(Zero, static_cast<fu_VEC<T>&&>(b));
+    return a;
+}
+
+#define VECLIKE() V, typename = decltype(const_cast<T&>(((V*)1)->data()[((V*)1)->size()]))
+
+template <typename T, typename VECLIKE()>
+fu_VEC<T> operator+(fu_VEC<T>&& a, const V& b) noexcept {
     a.append(Zero, b);
     return static_cast<fu_VEC<T>&&>(a);
 }
 
-template <typename T>
-fu_VEC<T> operator+(const fu_VEC<T>& b, fu_VEC<T>&& a) noexcept {
+template <typename T, typename VECLIKE()>
+fu_VEC<T> operator+(const V& b, fu_VEC<T>&& a) noexcept {
     a.splice(Zero, Zero, b);
     return static_cast<fu_VEC<T>&&>(a);
 }
 
-template <typename T>
-fu_VEC<T>& operator+=(fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
+template <typename T, typename VECLIKE()>
+fu_VEC<T>& operator+=(fu_VEC<T>& a, const V& b) noexcept {
     a.append(Zero, b);
     return a;
 }
 
-template <typename T>
-fu_VEC<T> operator+(const fu_VEC<T>& a, const fu_VEC<T>& b) noexcept {
+template <typename T, typename VECLIKE()>
+fu_VEC<T> operator+(const fu_VEC<T>& a, const V& b) noexcept {
     // TODO optimize reserve
     return fu_VEC<T>(a) + b;
-}
-
-template <typename T>
-fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
-    a.append(Zero, static_cast<fu_VEC<T>&&>(b));
-    return a;
 }
 
 

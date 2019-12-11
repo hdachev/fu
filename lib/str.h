@@ -246,27 +246,8 @@ fu_INL bool operator>=(const fu_STR& a, const fu_STRLIT& b) noexcept {
 
 //
 
-fu_INL fu_STR operator+(fu_STR&& str, const fu_STRLIT& lit) noexcept {
-    str.append_copy(fu_ZERO(), lit.data(), lit.size());
-    return static_cast<fu_STR&&>(str);
-}
-
-fu_INL fu_STR operator+(const fu_STR& str, const fu_STRLIT& lit) noexcept {
-    return fu_STR(str) + lit;
-}
-
-fu_INL fu_STR operator+(const fu_STRLIT& lit, fu_STR&& str) noexcept {
-    str.splice_copy(fu_ZERO(), fu_ZERO(), lit.data(), lit.size());
-    return static_cast<fu_STR&&>(str);
-}
-
 fu_INL fu_STR operator+(const fu_STRLIT& lit, const fu_STR& str) noexcept {
     return lit + fu_STR(str);
-}
-
-fu_INL fu_STR& operator+=(fu_STR& str, const fu_STRLIT& lit) noexcept {
-    str.append_copy(fu_ZERO(), lit.data(), lit.size());
-    return str;
 }
 
 
