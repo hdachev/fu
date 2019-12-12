@@ -1,8 +1,10 @@
-#include "std.h"
+#pragma once
+
+#include "../std.h"
 
 namespace fu {
 
-struct FreeList
+struct LF_FreeList
 {
     struct Node { Node* next; };
 
@@ -79,15 +81,15 @@ struct FreeList
         }
     }
 
-    void dealloc(Node* node) noexcept
+    void dealloc(char* node) noexcept
     {
-        if (!do_dealloc<true>(node))
-            do_dealloc<false>(node);
+        if (!do_dealloc<true>((Node*) node))
+            do_dealloc<false>((Node*) node);
     }
 
     ////////////////////////////////////////////////
 
-    Node* try_alloc() noexcept
+    char* try_alloc() noexcept
     {
         bool empty;
         for (;;)
@@ -159,7 +161,7 @@ struct FreeList
                             }
                         }
 
-                        return OLD_HEAD;
+                        return (char*) OLD_HEAD;
                     }
 
                     empty = false;
@@ -179,7 +181,7 @@ struct FreeList
         {
             Node* head = REST;
             REST = REST->next;
-            dealloc(head);
+            dealloc((char*) head);
         }
     }
 };

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <atomic>
-
-#include "util.h"
+#include "mem/alloc.h"
 
 
 //
@@ -57,33 +55,24 @@ struct alignas(16) fu_ARC
         }
         #endif
 
-        std::free((void*)this);
+        fu::pow2mem_free((char*) this, bytes);
     }
 
     fu_NEVER_INLINE static char* alloc(size_t& inout_bytes)
     {
         size_t bytes = inout_bytes;
-        {
-            uint32_t rnd = fu_NEXT_POW2(
-                uint32_t(bytes
-                    + sizeof(fu_ARC)));
 
-            // Node re 0x8: it'll fit in an i32
-            //  after we sub the header size.
-            if (rnd <= bytes || rnd > 0x80000000)
-                std::exit(fu_EXIT_BadAlloc);
+        // Round up.
+        bytes += sizeof(fu_ARC);
+        char* mem = fu::pow2mem_alloc(bytes);
+        bytes -= sizeof(fu_ARC);
 
-            rnd = rnd > fu::ARC_MIN_ALLOC
-                ? rnd : fu::ARC_MIN_ALLOC;
-
-            bytes = rnd;
-        }
-
-        char*   mem    = (char*) std::malloc(bytes);
-                bytes -= sizeof(fu_ARC);
+        // Must fit in i32.
+        if (inout_bytes > 0x7fffffffu)
+            std::exit(fu_EXIT_BadAlloc);
 
         fu_ARC* header = (fu_ARC*) mem;
-                header->m_arc.store(0, std::memory_order_relaxed);
+        new (header) fu_ARC();
 
         #ifndef NDEBUG
         {
