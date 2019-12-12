@@ -4,6 +4,8 @@
 
 namespace fu {
 
+#define fu_TEST_FREE_LIST
+
 ////////////////////////////
 
 LF_FreeList g_lffl_MIN_ALLOC;
@@ -53,7 +55,7 @@ void pow2mem_free(char* memory, size_t bytes)
     #ifdef fu_TEST_FREE_LIST
 
     if (bytes == ARC_MIN_ALLOC)
-        return g_lffl_MIN_ALLOC.dealloc(char);
+        return g_lffl_MIN_ALLOC.dealloc(memory);
 
     #endif
     ////////////////////////
