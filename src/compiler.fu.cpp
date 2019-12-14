@@ -1,7 +1,7 @@
-#include "../lib/find.h"
 #include "../lib/map.h"
 #include "../lib/str.h"
 #include "../lib/vec.h"
+#include "../lib/vec/find.h"
 #include <algorithm>
 #include <stdexcept>
 #include <string>
@@ -3674,17 +3674,17 @@ struct sf_cpp_codegen
 
         if (((id == "find"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/find.h\""_fu);
+            include("\"../lib/vec/find.h\""_fu);
             return (("fu::lfind("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "starts"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/find.h\""_fu);
+            include("\"../lib/vec/find.h\""_fu);
             return (("fu::lmatch("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "has"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/find.h\""_fu);
+            include("\"../lib/vec/find.h\""_fu);
             return (("fu::has("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
@@ -3840,7 +3840,7 @@ struct sf_cpp_codegen
         {
             annotateString();
             annotateVector();
-            include("\"../lib/find.h\""_fu);
+            include("\"../lib/vec/find.h\""_fu);
             (_ffwd.upsert(SPLIT) = "\ninline fu_VEC<fu_STR> fu_SPLIT(\n    fu_STR s,\n    const fu_STR& sep)\n{\n    fu_VEC<fu_STR> result;\n\n    int next;\n    while ((next = fu::lfind(s, sep)) >= 0)\n    {\n        result.push(slice(s, 0, next));\n        s = slice(s, next + sep.size());\n    }\n\n    result.push(static_cast<fu_STR&&>(s));\n    return result;\n}\n"_fu);
         };
         return (("fu_SPLIT("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);

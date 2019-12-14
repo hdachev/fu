@@ -1,7 +1,7 @@
 #pragma once
 
-#include "util.h"
-#include "algo/fbstring_lfind.h"
+#include "../util.h"
+#include "../algo/fbstring_lfind.h"
 
 namespace fu
 {

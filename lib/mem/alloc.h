@@ -1,14 +1,20 @@
 #pragma once
 
+#include "../util.h"
+
+// #define fu_TEST_FREE_LIST
+
+#ifdef fu_TEST_FREE_LIST
 #include "lf_free_list.h"
+#endif
 
 namespace fu {
 
-#define fu_TEST_FREE_LIST
-
 ////////////////////////////
 
+#ifdef fu_TEST_FREE_LIST
 LF_FreeList g_lffl_MIN_ALLOC;
+#endif
 
 char* pow2mem_alloc(size_t& inout_bytes) noexcept
 {

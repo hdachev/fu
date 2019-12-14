@@ -11,25 +11,14 @@
 #include "../../lib/now.h"
 #include "../../lib/env.h"
 #include "../../lib/tea.h"
-#include "../../lib/find.h"
 #include "../../lib/shell.h"
+
+#include "../../lib/vec/find.h"
+#include "../../lib/vec/replace.h"
 
 
 // #define ISOLATE_FAILING_TESTCASE
 #define WRITE_COMPILER
-
-
-//
-
-void str_replace_all(
-    fu_STR& subject,
-    const fu_STR& search,
-    const fu_STR& replace)
-{
-    int pos = 0;
-    while ((pos = fu::lfind(subject, search, pos)) >= 0)
-        subject.splice(pos, search.size(), replace);
-}
 
 
 //
@@ -148,7 +137,7 @@ fu_STR build_and_run(const fu_STR& cpp)
 //
 
 #ifdef ISOLATE_FAILING_TESTCASE
-#include "../../build.cpp/failing-testcase.cpp"
+#include "build.cpp/failing-testcase.cpp"
 #endif
 
 #ifndef ISOLATE_FAILING_TESTCASE
@@ -268,7 +257,8 @@ void FAIL(const std::string& src)
 
 void updateCPPFile(const fu_STR& path, fu_STR cpp)
 {
-    str_replace_all(cpp,
+    cpp = fu::replace(
+        static_cast<fu_STR&&>(cpp),
         "int main()"_fu,
         "int auto_main()"_fu);
 
@@ -918,9 +908,7 @@ void RUN()
 
         const auto& EXPR = [&](fu_STR varname) -> fu_STR
         {
-            fu_STR ret = assertion;
-            str_replace_all(ret, "@"_fu, varname);
-            return ret;
+            return fu::replace(assertion, "@"_fu, varname);
         };
 
         fu_STR src;

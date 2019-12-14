@@ -4984,19 +4984,19 @@ pub fn cpp_codegen(
 
         if (id == 'find' && items.len == 2)
         {
-            include('"../lib/find.h"');
+            include('"../lib/vec/find.h"');
             return 'fu::lfind(' + items.join(', ') + ')';
         }
 
         if (id == 'starts' && items.len == 2)
         {
-            include('"../lib/find.h"');
+            include('"../lib/vec/find.h"');
             return 'fu::lmatch(' + items.join(', ') + ')';
         }
 
         if (id == 'has' && items.len == 2)
         {
-            include('"../lib/find.h"');
+            include('"../lib/vec/find.h"');
             return 'fu::has(' + items.join(', ') + ')';
         }
 
@@ -5285,7 +5285,7 @@ inline fu_STR fu_JOIN(
         {
             annotateString();
             annotateVector();
-            include('"../lib/find.h"');
+            include('"../lib/vec/find.h"');
 
             _ffwd[SPLIT] =
 ////////////////////////////////////
