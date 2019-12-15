@@ -1781,7 +1781,9 @@ pub fn type_has(type: Type, tag: string)
 pub fn type_tryInter(a: Type, b: Type)
 {
     if (a.canon != b.canon)
-        return Type();
+        return a == t_never ? b
+             : b == t_never ? a
+             : Type();
 
     return Type(
         a.canon,
@@ -3671,7 +3673,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             type = !secType ? priType
                             : type_tryInter(priType, secType);
 
-            type || fail('No common supertype.');
+            type || fail('[if] No common supertype.');
 
             if (cons)
                 cons = maybeCopyOrMove(cons, type);

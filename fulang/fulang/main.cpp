@@ -1710,6 +1710,13 @@ void RUN()
     )");
 
 
+    // Ternary improvements.
+
+    ZERO(R"(
+        return 0 > 1 ? throw('should type check') : 0;
+    )");
+
+
     //
 
     saySomethingNice();

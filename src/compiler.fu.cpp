@@ -1614,7 +1614,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if ((a.canon != b.canon))
-        return s_Type { fu_STR{}, int{} };
+        return ((a == t_never) ? fu_CLONE(b) : ((b == t_never) ? fu_CLONE(a) : s_Type { fu_STR{}, int{} }));
 
     return s_Type { fu_CLONE(a.canon), (a.quals & b.quals) };
 }
@@ -2835,7 +2835,7 @@ struct sf_runSolver
         if (!((type == t_void) || (type == t_bool)))
         {
             type = (!secType ? fu_CLONE(priType) : type_tryInter(priType, secType));
-            (type || fail("No common supertype."_fu));
+            (type || fail("[if] No common supertype."_fu));
             if (cons)
                 cons = maybeCopyOrMove(cons, type);
 
