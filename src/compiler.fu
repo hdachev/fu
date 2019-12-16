@@ -2696,8 +2696,12 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         if (ret)
             return ret;
 
+        let debug = scope_tryMatch__mutargs(:id, :args, :flags);
+        if (debug)
+            return debug;
+
         return Scope_lookup(_scope, id)
-             ? fail('No overload of `' + id + '` matches call signature.')
+             ? fail('No overload of `' + id + '` matches call signature: ' + TODO_memoize_mangler(args))
              : fail('`' + id + '` is not defined.');
     }
 
@@ -5067,6 +5071,18 @@ pub fn cpp_codegen(
         {
             include('"../lib/now.h"');
             return 'fu::now_hr()';
+        }
+
+        if (id == 'file_write' || id == 'file_read' || id == 'file_size')
+        {
+            include('"../lib/io.h"');
+            return 'fu::' + id + '(' + items.join(', ') + ')';
+        }
+
+        if (id == 'env_get')
+        {
+            include('"../lib/env.h"');
+            return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
         return ID(id) + '(' + items.join(', ') + ')';

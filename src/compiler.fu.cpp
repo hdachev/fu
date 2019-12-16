@@ -2164,7 +2164,11 @@ struct sf_runSolver
         if (ret)
             return ret;
 
-        (Scope_lookup(_scope, id) ? fail((("No overload of `"_fu + id) + "` matches call signature."_fu)) : fail((("`"_fu + id) + "` is not defined."_fu)));
+        s_ScopeIdx debug = scope_tryMatch__mutargs(id, args, flags, s_Type{});
+        if (debug)
+            return debug;
+
+        (Scope_lookup(_scope, id) ? fail(((("No overload of `"_fu + id) + "` matches call signature: "_fu) + TODO_memoize_mangler(args))) : fail((("`"_fu + id) + "` is not defined."_fu)));
     };
     s_SolvedNode solveNode(const s_Node& node, const s_Type& type)
     {
@@ -3751,6 +3755,16 @@ struct sf_cpp_codegen
         {
             include("\"../lib/now.h\""_fu);
             return "fu::now_hr()"_fu;
+        };
+        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu)))
+        {
+            include("\"../lib/io.h\""_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        };
+        if ((id == "env_get"_fu))
+        {
+            include("\"../lib/env.h\""_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         return (((ID(id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
     };
