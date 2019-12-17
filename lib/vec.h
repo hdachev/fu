@@ -50,9 +50,16 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-            T*  _big_data = nullptr;
-            i32 _big_size = 0;
-    mutable i32 _big_PACK = 0;
+    struct Big {
+                T*  data = nullptr;
+                i32 size = 0;
+        mutable i32 PACK = 0;
+    };
+
+    union {
+        Big  big = {};
+        char buf[VEC_SIZE];
+    };
 
     fu_VEC() = default;
 
@@ -85,7 +92,7 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL bool small() const noexcept {
-        if constexpr (HAS_SMALL) return !(_big_PACK & IS_BIG_MASK);
+        if constexpr (HAS_SMALL) return !(big.PACK & IS_BIG_MASK);
         else                     return false;
     }
 
@@ -93,11 +100,11 @@ struct fu_VEC
 
     fu_INL i32 capa() const noexcept {
         if constexpr (HAS_SMALL) {
-            i32 capa = UNSAFE__Unpack(_big_PACK);
+            i32 capa = UNSAFE__Unpack(big.PACK);
             return small() ? SMALL_CAPA : capa;
         }
 
-        return _big_PACK;
+        return big.PACK;
     }
 
     fu_INL i32 shared_capa() const noexcept {
@@ -107,33 +114,33 @@ struct fu_VEC
     fu_INL i32 UNSAFE__MarkUnique() const noexcept {
         assert(!small());
         i32  capa = shared_capa();
-        _big_PACK = UNSAFE__Pack(capa);
+        big.PACK = UNSAFE__Pack(capa);
         return capa;
     }
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
         assert(!small());
-        _big_PACK = UNSAFE__Pack( // Make negative.
-                  UNSAFE__Unpack(_big_PACK) | SIGN_BIT);
+        big.PACK = UNSAFE__Pack( // Make negative.
+                  UNSAFE__Unpack(big.PACK) | SIGN_BIT);
     }
 
     fu_INL void UNSAFE__WriteBig(T* data, i32 size, i32 capa) noexcept {
         assert(capa > SMALL_CAPA);
-        _big_data = data;
-        _big_size = size;
-        _big_PACK = UNSAFE__Pack(capa);
+        big.data = data;
+        big.size = size;
+        big.PACK = UNSAFE__Pack(capa);
     }
 
     fu_INL void UNSAFE__Reset() noexcept {
-        _big_data = nullptr;
-        _big_size = 0;
-        _big_PACK = 0;
+        big.data = nullptr;
+        big.size = 0;
+        big.PACK = 0;
     }
 
     /////////////////////////////////////////////
 
     fu_INL i32 UNSAFE__ReadSmallSize() const noexcept {
-        if constexpr (HAS_SMALL) return (_big_PACK >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
+        if constexpr (HAS_SMALL) return (big.PACK >> SMALL_SIZE_OFFSET) & SMALL_SIZE_MASK;
         else                     return 0;
     }
 
@@ -145,7 +152,7 @@ struct fu_VEC
             std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
         }
         else {
-            _big_PACK = (actual_size & SMALL_SIZE_MASK) << SMALL_SIZE_OFFSET;
+            big.PACK = (actual_size & SMALL_SIZE_MASK) << SMALL_SIZE_OFFSET;
         }
     }
 
@@ -156,16 +163,16 @@ struct fu_VEC
                 return;
             }
 
-        _big_size = actual_size;
+        big.size = actual_size;
     }
 
     fu_INL i32 size() const noexcept {
         if constexpr (HAS_SMALL) {
             i32 small_size = UNSAFE__ReadSmallSize();
-            return small() ? small_size : _big_size;
+            return small() ? small_size : big.size;
         }
 
-        return _big_size;
+        return big.size;
     }
 
     fu_INL explicit operator bool() const noexcept {
@@ -176,10 +183,10 @@ struct fu_VEC
 
     fu_INL const T* data() const noexcept {
         if constexpr (HAS_SMALL) {
-            return small() ? (T*)this : _big_data;
+            return small() ? (T*)this : big.data;
         }
 
-        return _big_data;
+        return big.data;
     }
 
 
@@ -202,9 +209,9 @@ struct fu_VEC
 
         // Ensure things break badly in debug.
         #ifndef NDEBUG
-        _big_data = (T*)1;
-        _big_size = 1;
-        _big_PACK = 0x01010101;
+        big.data = (T*)1;
+        big.size = 1;
+        big.PACK = 0x01010101;
         #endif
     }
 
@@ -216,7 +223,7 @@ struct fu_VEC
         i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
             SHARED__Dealloc(
-                _big_data, _big_size, shared_capa);
+                big.data, big.size, shared_capa);
 
         UNSAFE__Reset();
     }
@@ -245,7 +252,7 @@ struct fu_VEC
         assert(unique_capa > SMALL_CAPA);
 
         UNIQ__Dealloc_DontRunDtors(
-            _big_data, unique_capa &~ SIGN_BIT);
+            big.data, unique_capa &~ SIGN_BIT);
 
         UNSAFE__Reset();
     }
@@ -272,9 +279,7 @@ struct fu_VEC
     // Copy & move constructors.
 
     fu_INL fu_VEC(const fu_VEC& c) noexcept
-        : _big_data(c._big_data)
-        , _big_size(c._big_size)
-        , _big_PACK(c._big_PACK)
+        : big(c.big)
     {
         i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
@@ -282,14 +287,12 @@ struct fu_VEC
             UNSAFE__MarkShared();
 
             c.UNSAFE__MarkShared();
-            UNSAFE__arc(_big_data)->incr();
+            UNSAFE__arc(big.data)->incr();
         }
     }
 
     fu_INL fu_VEC(fu_VEC&& x) noexcept
-        : _big_data(x._big_data)
-        , _big_size(x._big_size)
-        , _big_PACK(x._big_PACK)
+        : big(x.big)
     {
         x.UNSAFE__Reset();
     }
@@ -324,7 +327,7 @@ struct fu_VEC
         if (unique_capa >= SMALL_CAPA)
             return true;
 
-        if (slow_check_unique(_big_data)) {
+        if (slow_check_unique(big.data)) {
             UNSAFE__MarkUnique();
             return true;
         }
@@ -465,7 +468,7 @@ struct fu_VEC
                     {
                         if (idx + del + pop == old_size)
                         {
-                            _big_size = idx;
+                            big.size = idx;
                             return nullptr;
                         }
                     }
