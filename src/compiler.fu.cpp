@@ -1,3 +1,5 @@
+#include "../lib/env.h"
+#include "../lib/io.h"
 #include "../lib/map.h"
 #include "../lib/str.h"
 #include "../lib/vec.h"
@@ -121,6 +123,8 @@ template <typename T>
 
 bool operator==(const s_Type& a, const s_Type& b);
 bool someFieldNonCopy(const fu_VEC<s_StructField>& fields);
+fu_STR path(const fu_STR& a, const fu_STR& b);
+fu_STR path(const fu_STR& a, const fu_STR& b, const fu_STR& c);
 int ZERO();
 int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields);
 int auto_main();
@@ -4218,6 +4222,28 @@ int ZERO()
     fu_STR cpp = compile_testcase(fu_CLONE(TEST_SRC));
     return (fu::lfind(cpp, "main()"_fu) ? 0 : 101);
 }
+
+fu_STR path(const fu_STR& a, const fu_STR& b)
+{
+    return ((last(a) == "/"_fu) ? (a + b) : ((a + "/"_fu) + b));
+}
+
+fu_STR path(const fu_STR& a, const fu_STR& b, const fu_STR& c)
+{
+    return ((last(a) == "/"_fu) ? path((a + b), c) : path(((a + "/"_fu) + b), c));
+}
+inline const fu_STR HOME = ([]() -> fu_STR { { fu_STR _ = fu::env_get("HOME"_fu); if (_.size()) return _; } return "/Users/hdachev"_fu; }());
+
+fu_STR locate_PRJDIR()
+{
+    fu_STR dir = path(HOME, "fu"_fu);
+    fu_STR fn = path(dir, "src/compiler.fu"_fu);
+    const int fs = fu::file_size(fn);
+    ((fs > 10000) || fu_THROW(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
+    return dir;
+}
+inline const fu_STR PRJDIR = locate_PRJDIR();
+inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
 
 int auto_main()
 {

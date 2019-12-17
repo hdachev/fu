@@ -5812,3 +5812,43 @@ fn ZERO(): i32
 
     return cpp.find('main()') ? 0 : 101;
 }
+
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Orchestration.
+
+fn path(a: string, b: string)
+    a.last == '/'
+        ? a + b
+        : a + '/' + b;
+
+fn path(a: string, b: string, c: string)
+    a.last == '/'
+        ? path(a + b, c)
+        : path(a + '/' + b, c);
+
+let HOME = env_get('HOME') || '/Users/hdachev';
+
+fn locate_PRJDIR(): string {
+    let dir = path(HOME, 'fu');
+    let fn  = path(dir, 'src/compiler.fu');
+    let fs  = file_size(fn);
+        fs  > 10000 || throw('Bad compiler.fu: ' + fn + ': ' + fs);
+
+    return dir;
+}
+
+let PRJDIR = locate_PRJDIR();
+
+let GCC_CMD = 'g++ -std=c++1z -O3 '
+            + '-pedantic-errors -Wall -Wextra -Werror ' // opt-in
+            + '-Wno-parentheses-equality ' // opt-out
+            ;

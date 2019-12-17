@@ -23,62 +23,17 @@
 
 //
 
-void ensure_trailing_slash(fu_STR& path)
-{
-    if (!path.size() || path[0] != '/')
-    {
-        std::cout << "Bad path: `" << path << "`." << std::endl;
-        exit(1);
-    }
+#ifdef ISOLATE_FAILING_TESTCASE
+#include "build.cpp/failing-testcase.cpp"
+#endif
 
-    if (path.size() && path[path.size() - 1] != '/')
-        path += '/';
-}
+#ifndef ISOLATE_FAILING_TESTCASE
+#include "../../src/compiler.fu.cpp"
 
-fu_STR get_HOME()
-{
-    fu_STR result = "/Users/hdachev"_fu;
-
-    auto home = fu::env_get("HOME"_fu);
-    if (home)
-        result = home;
-
-    ensure_trailing_slash(result);
-    return result;
-}
-
-static const fu_STR HOME = get_HOME();
+#include "../../lib/cow_vec_test.h"
 
 
 //
-
-fu_STR get_PRJDIR()
-{
-    fu_STR path = HOME;
-    path += "fu/";
-
-    auto bytes = fu::file_size(path + "src/compiler.fu");
-    if (bytes < 10000)
-    {
-        std::cout << "Bad compiler.fu: " << bytes << std::endl;
-        exit(1);
-    }
-
-    return path;
-}
-
-static const fu_STR PRJDIR = get_PRJDIR();
-
-
-//
-
-static const fu_STR GCC_CMD = "g++ -std=c++1z -O3 "_fu
-
-        // Opt-in.
-        "-pedantic-errors -Wall -Wextra -Werror "_fu
-
-        // Opt-out.
-        "-Wno-parentheses-equality "_fu;
 
 static bool NEW_STUFF = false;
 
@@ -90,14 +45,16 @@ fu_STR build_and_run(const fu_STR& cpp)
     auto hash = fu::TEA();
     hash.string(cpp);
 
-    fu_STR F = PRJDIR
-        + "build.cpp/tea-"  + hash.v0
-        + "-"               + hash.v1
-        + "-"               + cpp.size();
+    fu_STR F = path(
+        PRJDIR  , "build.cpp/tea-"_fu  + hash.v0
+                + "-"_fu               + hash.v1
+                + "-"_fu               + cpp.size());
 
     const auto& ERROR = [&]()
     {
-        fu::file_write(PRJDIR + "build.cpp/failing-testcase.cpp", cpp);
+        fu::file_write(
+            path(PRJDIR, "build.cpp/failing-testcase.cpp"_fu),
+                cpp);
 
         if (!stdout)
             stdout = "[ EXIT CODE "_fu + code + " ]";
@@ -132,18 +89,6 @@ fu_STR build_and_run(const fu_STR& cpp)
 
     return {};
 }
-
-
-//
-
-#ifdef ISOLATE_FAILING_TESTCASE
-#include "build.cpp/failing-testcase.cpp"
-#endif
-
-#ifndef ISOLATE_FAILING_TESTCASE
-#include "../../src/compiler.fu.cpp"
-
-#include "../../lib/cow_vec_test.h"
 
 
 // So lets go.
@@ -273,14 +218,14 @@ void updateCPPFile(const fu_STR& path, fu_STR cpp)
 
 void FU_FILE(const fu_STR& fname)
 {
-    fu_STR path = PRJDIR + "src/" + fname;
+    fu_STR fpath = path(PRJDIR, "src/"_fu + fname);
 
     std::cout << "COMPILE " << fname << std::endl;
 
-    auto fu = fu::file_read(path);
+    auto fu = fu::file_read(fpath);
     if (!fu.size())
     {
-        std::cout << "BAD FILE: " << path << std::endl;
+        std::cout << "BAD FILE: " << fpath << std::endl;
         exit(1);
     }
 
@@ -292,7 +237,7 @@ void FU_FILE(const fu_STR& fname)
     std::cout << "        " << tt << "s\n" << std::endl;
 
 #ifdef WRITE_COMPILER
-    updateCPPFile(path, cpp);
+    updateCPPFile(fpath, cpp);
 #endif
 }
 

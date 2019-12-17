@@ -73,7 +73,7 @@ size_type fbstring_lfind(
       if (++j == nsize) {
 
         // Yay
-        return i - haystack;
+        return size_type(i - haystack);
       }
     }
   }
