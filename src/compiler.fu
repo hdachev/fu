@@ -5852,3 +5852,49 @@ let GCC_CMD = 'g++ -std=c++1z -O3 '
             + '-pedantic-errors -Wall -Wextra -Werror ' // opt-in
             + '-Wno-parentheses-equality ' // opt-out
             ;
+
+fn buildAndRun(cpp: string): string
+{
+    mut code: i32;
+    mut stdout: string;
+
+    let hash = hash_tea(cpp);
+
+    let F = path(
+        PRJDIR  , "build.cpp/tea-"  + hash
+                + "-"               + cpp.len);
+
+    fn ERR()
+    {
+        file_write(
+            path(PRJDIR, "build.cpp/failing-testcase.cpp"_fu),
+            cpp);
+
+        if (!stdout)
+            stdout = "[ EXIT CODE "_fu + code + " ]";
+
+        return stdout;
+    }
+
+    if (file_size(F + ".exe") <= 0)
+    {
+        ///////////////////////
+        // NEW_STUFF = true; //
+        ///////////////////////
+
+        file_write(F + ".cpp", cpp);
+
+        code = shell_exec(GCC_CMD+ "-c -o " +F+ ".o " +F+ ".cpp 2>&1", stdout)
+            || shell_exec(GCC_CMD+ "-o " +F+ ".tmp " +F+ ".o 2>&1", stdout)
+            || shell_exec("chmod 755 " +F+ ".tmp", stdout)
+            || shell_exec("mv " +F+ ".tmp " +F+ ".exe", stdout)
+            || shell_exec("rm " +F+ ".o", stdout);
+
+        if (code) return ERR;
+    }
+
+    code = shell_exec(F+ ".exe", stdout);
+    if (code) return ERR;
+
+    return {};
+}
