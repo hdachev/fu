@@ -6004,10 +6004,13 @@ fn ZERO(src: string): string
 // fn FAIL(src: string): string
 // {
 //     let cpp = compile_testcase(src)
-//         catch (err)
-//             return src; // TODO check exception
+//         catch err
+//         {
+//             // TODO check exception
+//             return src;
+//         }
 
-//     throw("DID NOT THROW");
+//     throw('[ FAIL-TESTCASE: Does not actually throw. ]');
 // }
 
 fn updateCPPFile(path: string, cpp: string)
