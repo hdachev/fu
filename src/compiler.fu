@@ -2520,14 +2520,19 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
         // Arity 0 - blind head match.
         // Allows simple shadowing of variables and such, latest wins.
-        if (!args.len)
+        if (!args)
         {
-            let headIdx = overloads[0];
-            if (GET(headIdx).min == 0)
-                matchIdx = headIdx;
+            for (mut i = 0; i < overloads.len; i++)
+            {
+                let headIdx = overloads[i];
+                if (GET(headIdx).min == 0)
+                {
+                    matchIdx = headIdx;
+                    break;
+                }
+            }
         }
-
-        if (!matchIdx)
+        else
         {
             let arity = args.len;
 
@@ -4185,6 +4190,8 @@ fn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;
 fn hash_tea(str: string): string __native_pure;
 
 fn i32(v: f64): i32 __native_pure;
+
+fn exit(code: i32): never __native_pure;
 
 `;
 
@@ -5974,3 +5981,22 @@ fn saySomethingNice()
         print(NICE_THINGS[(sec >> 6) & 0xf]);
     }
 }
+
+fn ZERO(src: string): string
+{
+    let cpp     = compile_testcase(src);
+    let result  = buildAndRun(cpp);
+    if (result)
+        throw (result);
+
+    return cpp;
+}
+
+// fn FAIL(src: string): string
+// {
+//     let cpp = compile_testcase(src)
+//         catch (err)
+//             return src; // TODO check exception
+
+//     throw("DID NOT THROW");
+// }

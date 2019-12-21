@@ -33,11 +33,6 @@
 #include "../../lib/cow_vec_test.h"
 
 
-//
-
-static bool NEW_STUFF = false;
-
-
 // So lets go.
 
 void RUN();
@@ -69,22 +64,6 @@ int main(int argc, const char * argv[])
 
 
 // Tests.
-
-fu_STR ZERO(const fu_STR& src)
-{
-    auto cpp = compile_testcase(fu_STR(src));
-
-    // ...
-    auto result = buildAndRun(cpp);
-    if (result.size())
-    {
-        std::cout << result << std::endl;
-        exit(1);
-    }
-
-    // std::cout << "PASS" << std::endl;
-    return cpp;
-}
 
 fu_STR ZERO(const std::string& src)
 {
