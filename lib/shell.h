@@ -7,7 +7,7 @@
 
 namespace fu {
 
-int exec(fu_STR cmd, fu_STR& stdout)
+int shell_exec(fu_STR cmd, fu_STR& stdout)
 {
     cmd.push('\0');
 
@@ -29,10 +29,10 @@ int exec(fu_STR cmd, fu_STR& stdout)
     return -1;
 }
 
-int exec(const fu_STR& cmd)
+int shell_exec(const fu_STR& cmd)
 {
     fu_STR stdout;
-    return exec(cmd, stdout);
+    return shell_exec(cmd, stdout);
 }
 
 } // namespace

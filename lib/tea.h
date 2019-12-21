@@ -1,8 +1,12 @@
 #pragma once
 
 #include "std.h"
+#include "str.h"
 
 namespace fu {
+
+// TODO FIX this is complete bullshit,
+//  i just need some kind of hash to get going.
 
 struct TEA
 {
@@ -55,5 +59,20 @@ struct TEA
         }
     }
 };
+
+template <typename T>
+fu_STR hash_tea(const T& str)
+{
+    TEA hash;
+    hash.string(str);
+
+    fu_STR res;
+
+    res += hash.v0;
+    res += '-';
+    res += hash.v1;
+
+    return res;
+}
 
 } // namespace

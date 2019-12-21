@@ -4037,7 +4037,13 @@ fn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
 fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
 fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+
 fn /(a: $T, b: $T)
+    // case ($T -> @floating_point):                       $T __native_pure;
+    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
+    case ($T -> @arithmetic): $T __native_pure;
+
+fn %(a: $T, b: $T)
     // case ($T -> @floating_point):                       $T __native_pure;
     // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
     case ($T -> @arithmetic): $T __native_pure;
@@ -4165,10 +4171,20 @@ fn join(a: &string[], sep: &string): string __native_pure;
 
 // TODO fix impure io.
 fn now_hr(): f64 __native_pure;
+fn now_utc(): f64 __native_pure;
+
+fn env_get(key: string): string __native_pure;
+
 fn file_size(path: string): i32 __native_pure;
 fn file_read(path: string): string __native_pure;
 fn file_write(path: string, body: string): bool __native_pure;
-fn env_get(key: string): string __native_pure;
+
+fn shell_exec(cmd: string): i32 __native_pure;
+fn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;
+
+fn hash_tea(str: string): string __native_pure;
+
+fn i32(v: f64): i32 __native_pure;
 
 `;
 
@@ -5067,10 +5083,10 @@ pub fn cpp_codegen(
         if (id == 'print')
             return cgPrint(items);
 
-        if (id == 'now_hr')
+        if (id == 'now_hr' || id == 'now_utc')
         {
             include('"../lib/now.h"');
-            return 'fu::now_hr()';
+            return 'fu::' + id + '()';
         }
 
         if (id == 'file_write' || id == 'file_read' || id == 'file_size')
@@ -5082,6 +5098,18 @@ pub fn cpp_codegen(
         if (id == 'env_get')
         {
             include('"../lib/env.h"');
+            return 'fu::' + id + '(' + items.join(', ') + ')';
+        }
+
+        if (id == 'hash_tea')
+        {
+            include('"../lib/tea.h"');
+            return 'fu::' + id + '(' + items.join(', ') + ')';
+        }
+
+        if (id == 'shell_exec')
+        {
+            include('"../lib/shell.h"');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
@@ -5855,23 +5883,23 @@ let GCC_CMD = 'g++ -std=c++1z -O3 '
 
 fn buildAndRun(cpp: string): string
 {
-    mut code: i32;
-    mut stdout: string;
+    mut code    : i32;
+    mut stdout  : string;
 
-    let hash = hash_tea(cpp);
+    let hash    = hash_tea(cpp);
 
-    let F = path(
+    let F       = path(
         PRJDIR  , "build.cpp/tea-"  + hash
                 + "-"               + cpp.len);
 
     fn ERR()
     {
         file_write(
-            path(PRJDIR, "build.cpp/failing-testcase.cpp"_fu),
-            cpp);
+            path(PRJDIR, "build.cpp/failing-testcase.cpp"),
+                cpp);
 
         if (!stdout)
-            stdout = "[ EXIT CODE "_fu + code + " ]";
+            stdout = "[ EXIT CODE " + code + " ]";
 
         return stdout;
     }
@@ -5896,5 +5924,53 @@ fn buildAndRun(cpp: string): string
     code = shell_exec(F+ ".exe", stdout);
     if (code) return ERR;
 
-    return {};
+    return '';
+}
+
+let NICE_THINGS =
+[
+    "LOOKING GOOD TODAY !",
+    "PASSING TESTS LIKE A BOSS !",
+    "THIS IS SOME TOP NOTCH SHIT !",
+    "VALUE ADDED !",
+
+    "GOING STRONG !",
+    "KILLIN IT !",
+    "POWER LEVEL INCREASED !",
+    "NOW MAKE ME BETTER AGAIN !",
+
+    "NOW MAKE ME EVEN MORE BETTER !",
+    "ALL CLEAR !",
+    "UPGRADE ACCEPTED !",
+    "YOU'RE THE BEST MAN !",
+
+    "I LOVE YOU YOU !",
+    "MORE IS MORE !",
+    "THIS IS AWESOME !",
+    "THIS IS AWESOME !",
+];
+
+fn saySomethingNice()
+{
+    let sec = i32(now_utc());
+
+/////////////////////////////
+    let NEW_STUFF = false; //
+/////////////////////////////
+
+    if (sec % 5 && !NEW_STUFF)
+    {
+        mut str = '';
+        for (mut i = 0; i < 3; i++)
+            if (sec & (1 << i))
+                str += '🍒';
+            else
+                str += '🍊';
+
+        print(str);
+    }
+    else
+    {
+        print(NICE_THINGS[(sec >> 6) & 0xf]);
+    }
 }

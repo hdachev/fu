@@ -37,59 +37,6 @@
 
 static bool NEW_STUFF = false;
 
-fu_STR build_and_run(const fu_STR& cpp)
-{
-    int code = 0;
-    fu_STR stdout;
-
-    auto hash = fu::TEA();
-    hash.string(cpp);
-
-    fu_STR F = path(
-        PRJDIR  , "build.cpp/tea-"_fu  + hash.v0
-                + "-"_fu               + hash.v1
-                + "-"_fu               + cpp.size());
-
-    const auto& ERROR = [&]()
-    {
-        fu::file_write(
-            path(PRJDIR, "build.cpp/failing-testcase.cpp"_fu),
-                cpp);
-
-        if (!stdout)
-            stdout = "[ EXIT CODE "_fu + code + " ]";
-
-        return stdout;
-    };
-
-    if (fu::file_size(F + ".exe") <= 0)
-    {
-        NEW_STUFF = true;
-
-        fu::file_write(F + ".cpp", cpp);
-
-        code = fu::exec(GCC_CMD + "-c -o " + F + ".o " + F + ".cpp 2>&1", stdout);
-        if (code) return ERROR();
-
-        code = fu::exec(GCC_CMD + "-o " + F + ".tmp " + F + ".o 2>&1", stdout);
-        if (code) return ERROR();
-
-        code = fu::exec("chmod 755 " + F + ".tmp", stdout);
-        if (code) return ERROR();
-
-        code = fu::exec("mv " + F + ".tmp " + F + ".exe", stdout);
-        if (code) return ERROR();
-
-        code = fu::exec("rm " + F + ".o", stdout);
-        if (code) return ERROR();
-    }
-
-    code = fu::exec(F + ".exe", stdout);
-    if (code) return ERROR();
-
-    return {};
-}
-
 
 // So lets go.
 
@@ -120,57 +67,15 @@ int main(int argc, const char * argv[])
     return 0;
 }
 
-void saySomethingNice()
-{
-    auto sec = time(nullptr);
-
-    if (sec % 5 && !NEW_STUFF)
-    {
-        for (int i = 0; i < 3; i++)
-            if (sec & (1 << i))
-                std::cout << "🍒";
-            else
-                std::cout << "🍊";
-    }
-    else switch ((sec >> 6) & 0xf)
-    {
-        case 0x0: std::cout << "LOOKING GOOD TODAY !" << std::endl; break;
-        case 0x1: std::cout << "PASSING TESTS LIKE A BOSS !" << std::endl; break;
-        case 0x2: std::cout << "THIS IS SOME TOP NOTCH SHIT !" << std::endl; break;
-        case 0x3: std::cout << "VALUE ADDED !" << std::endl; break;
-
-        case 0x4: std::cout << "GOING STRONG !" << std::endl; break;
-        case 0x5: std::cout << "KILLIN IT !" << std::endl; break;
-        case 0x6: std::cout << "POWER LEVEL INCREASED !" << std::endl; break;
-        case 0x7: std::cout << "NOW MAKE ME BETTER AGAIN !" << std::endl; break;
-
-        case 0x8: std::cout << "NOW MAKE ME EVEN MORE BETTER !" << std::endl; break;
-        case 0x9: std::cout << "ALL CLEAR !" << std::endl; break;
-        case 0xa: std::cout << "UPGRADE ACCEPTED !" << std::endl; break;
-        case 0xb: std::cout << "YOU'RE THE BEST MAN !" << std::endl; break;
-
-        case 0xc: std::cout << "I LOVE YOU YOU !" << std::endl; break;
-        case 0xd: std::cout << "MORE IS MORE !" << std::endl; break;
-        case 0xe: std::cout << "THIS IS AWESOME !" << std::endl; break;
-        case 0xf: std::cout << "THIS IS AWESOME !" << std::endl; break;
-    }
-
-    std::cout << std::endl;
-}
-
 
 // Tests.
-
-std::string to_string(const fu_STR& str) {
-    return std::string(str.data(), size_t(str.size()));
-}
 
 fu_STR ZERO(const fu_STR& src)
 {
     auto cpp = compile_testcase(fu_STR(src));
 
     // ...
-    auto result = build_and_run(cpp);
+    auto result = buildAndRun(cpp);
     if (result.size())
     {
         std::cout << result << std::endl;
