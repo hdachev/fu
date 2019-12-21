@@ -1,6 +1,7 @@
 // expect_lambda
 
-let WARN_ON_IMPLICIT_COPY = false;
+let WARN_ON_IMPLICIT_COPY   = false;
+let WRITE_COMPILER          = true;
 
 
 
@@ -4149,6 +4150,8 @@ fn char  (a: &string, i0: i32): i32 __native_pure;
 
 fn split(str: &string, sep: &string): string[] __native_pure;
 
+fn replace(in: &string, all: &string, with: &string): string __native_pure;
+
 
 // Maps.
 
@@ -5027,6 +5030,12 @@ pub fn cpp_codegen(
         {
             include('"../lib/vec/find.h"');
             return 'fu::has(' + items.join(', ') + ')';
+        }
+
+        if (id == 'replace' && items.len == 3)
+        {
+            include('"../lib/vec/replace.h"');
+            return 'fu::replace(' + items.join(', ') + ')';
         }
 
         if (id == 'slice' && items.len == 2)
@@ -6000,3 +6009,34 @@ fn ZERO(src: string): string
 
 //     throw("DID NOT THROW");
 // }
+
+fn updateCPPFile(path: string, cpp: string)
+{
+    let fname = path + '.cpp';
+    if (file_read(fname) != cpp)
+    {
+        file_write(fname, cpp);
+        print('WROTE ' + fname);
+    }
+}
+
+fn FU_FILE(fname: string)
+{
+    let fpath = path(PRJDIR, 'src/' + fname);
+
+    print('COMPILE ', fname);
+
+    let fu = file_read(fpath);
+    if (!fu)
+        throw ('BAD FILE: ' + fpath);
+
+    let t0  = now_hr();
+    let cpp = ZERO(fu);
+    let t1  = now_hr();
+    let tt  = t1 - t0;
+
+    print('        ', tt, 's\n');
+
+    if (WRITE_COMPILER)
+        updateCPPFile(fpath, cpp);
+}

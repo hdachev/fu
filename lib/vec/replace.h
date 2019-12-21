@@ -13,12 +13,13 @@ fu_VEC<T> replace(
     fu_VEC<T>&& subject,
     const S& search, const R& replace) noexcept
 {
+    int ssize   = search.size();
     int rsize   = replace.size();
     int pos     = 0;
 
     while ((pos = fu::lfind(subject, search, pos)) >= 0)
     {
-        subject.splice(pos, search.size(), replace);
+        subject.splice(pos, ssize, replace);
         pos += rsize;
     }
 

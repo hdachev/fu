@@ -18,7 +18,6 @@
 
 
 // #define ISOLATE_FAILING_TESTCASE
-#define WRITE_COMPILER
 
 
 //
@@ -28,7 +27,10 @@
 #endif
 
 #ifndef ISOLATE_FAILING_TESTCASE
+
+#define main auto_main
 #include "../../src/compiler.fu.cpp"
+#undef  main
 
 #include "../../lib/cow_vec_test.h"
 
@@ -82,47 +84,6 @@ void FAIL(const std::string& src)
 
     std::cout << "DID NOT THROW" << std::endl;
     exit(1);
-}
-
-void updateCPPFile(const fu_STR& path, fu_STR cpp)
-{
-    cpp = fu::replace(
-        static_cast<fu_STR&&>(cpp),
-        "int main()"_fu,
-        "int auto_main()"_fu);
-
-    auto out_fname = path + ".cpp";
-
-    if (fu::file_read(out_fname) != cpp)
-    {
-        fu::file_write(out_fname, cpp);
-        std::cout << "WROTE " << out_fname << std::endl;
-    }
-}
-
-void FU_FILE(const fu_STR& fname)
-{
-    fu_STR fpath = path(PRJDIR, "src/"_fu + fname);
-
-    std::cout << "COMPILE " << fname << std::endl;
-
-    auto fu = fu::file_read(fpath);
-    if (!fu.size())
-    {
-        std::cout << "BAD FILE: " << fpath << std::endl;
-        exit(1);
-    }
-
-    auto t0 = fu::now_hr();
-    auto cpp = ZERO(fu);
-    auto t1 = fu::now_hr();
-    auto tt = t1 - t0;
-
-    std::cout << "        " << tt << "s\n" << std::endl;
-
-#ifdef WRITE_COMPILER
-    updateCPPFile(fpath, cpp);
-#endif
 }
 
 
