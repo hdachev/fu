@@ -6042,22 +6042,19 @@ fn ZERO(src: string): string
     let cpp     = compile_testcase(src);
     let result  = buildAndRun(cpp);
     if (result)
-        throw (result);
+        throw(result);
 
     return cpp;
 }
 
-// fn FAIL(src: string): string
-// {
-//     let cpp = compile_testcase(src)
-//         catch err
-//         {
-//             // TODO check exception
-//             return src;
-//         }
+fn FAIL(src: string): i32
+{
+    let cpp = compile_testcase(src)
+        catch e
+            return e.len; // TODO validate
 
-//     throw('[ FAIL-TESTCASE: Does not actually throw. ]');
-// }
+    throw("DID NOT THROW: " + cpp);
+}
 
 fn updateCPPFile(path: string, cpp: string)
 {

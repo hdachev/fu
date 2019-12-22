@@ -4369,6 +4369,13 @@ fu_STR ZERO(const fu_STR& src)
     return cpp;
 }
 
+int FAIL(const fu_STR& src)
+{
+    fu_STR cpp; try { cpp = compile_testcase(fu_CLONE(src)); } catch (const std::exception& _ex) { const fu_STR& e = fu_TO_STR(_ex.what()); 
+        return e.size(); };
+    fu_THROW(("DID NOT THROW: "_fu + cpp));
+}
+
 void updateCPPFile(const fu_STR& path, const fu_STR& cpp)
 {
     fu_STR fname = (path + ".cpp"_fu);
