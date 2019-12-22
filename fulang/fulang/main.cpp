@@ -1509,21 +1509,20 @@ void RUN()
 
     // Catch.
 
-    // ZERO(R"(
-    //     fn throw_hey(): i32 {
-    //         throw('hey');
-    //         return 1;
-    //     }
+    ZERO(R"(
+        fn throw_hey(): i32 {
+            throw('hey');
+            return 1;
+        }
 
-    //     fn ZERO(): i32 {
-    //         let x = throw_hey()
-    //             catch err {
-    //                 return err.len - 3;
-    //             }
+        fn ZERO(): i32 {
+            let x = throw_hey()
+                catch err
+                    return err.len - 3;
 
-    //         return 7;
-    //     }
-    // )");
+            return 7;
+        }
+    )");
 
 
     //

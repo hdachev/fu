@@ -1107,7 +1107,7 @@ struct sf_parse
         s_Node ret = parseLet();
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = parseLet();
+            s_Node err = createLet(consume("id"_fu, ""_fu).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
             s_Node cahtch = parseStatement();
             return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cahtch } }, 0, ""_fu);
         };
@@ -2250,6 +2250,9 @@ struct sf_runSolver
         if ((k == "definit"_fu))
             return solveDefinit(type);
 
+        if ((k == "catch"_fu))
+            return solveCatch(node);
+
         fail(("TODO: "_fu + k));
     };
     bool isUnordered(const fu_STR& kind)
@@ -2597,6 +2600,13 @@ struct sf_runSolver
             scope_using(overload);
 
         return out;
+    };
+    s_SolvedNode solveCatch(const s_Node& node)
+    {
+        ((node.items.size() == 3) || fail(""_fu));
+        fu_VEC<s_SolvedNode> nodes = solveNodes(node.items, s_Type{});
+        (((nodes[1].kind == "let"_fu) && isAssignableAsArgument(nodes[1].type, fu_CLONE(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
+        return solved(node, nodes[0].type, nodes);
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
@@ -3437,7 +3447,7 @@ struct sf_cpp_codegen
             if (i)
                 src += ", "_fu;
 
-            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false);
+            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false, false);
         };
         src += (closure ? (") -> "_fu + annot) : ")"_fu);
         if ((!closure && (src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))))
@@ -3492,10 +3502,10 @@ struct sf_cpp_codegen
         _fdef += (("\n"_fu + src) + "\n"_fu);
         return ""_fu;
     };
-    fu_STR binding(const s_SolvedNode& node, const bool& doInit)
+    fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-        fu_STR annot = typeAnnot(node.type, ((((node.flags & F_MUT) == 0) ? fu_CLONE(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : fu_CLONE(M_ARGUMENT))));
+        fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? fu_CLONE(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : fu_CLONE(M_ARGUMENT))));
         fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(""_fu); }()) + " "_fu) + ID(id));
         s_SolvedNode init = (node.items ? fu_CLONE(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         if ((!doInit || (node.flags & F_ARG)))
@@ -3508,7 +3518,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgLet(const s_SolvedNode& node)
     {
-        fu_STR src = binding(node, true);
+        fu_STR src = binding(node, true, false);
         if ((_fnN || _faasN))
             return src;
 
@@ -4106,6 +4116,15 @@ struct sf_cpp_codegen
 
         return (((("while ("_fu + cond) + ")"_fu) + body) + breakLabel);
     };
+    fu_STR cgCatch(const s_SolvedNode& node)
+    {
+        const fu_VEC<s_SolvedNode>& items = node.items;
+        const s_SolvedNode& let_main = items[0];
+        fu_STR let_init = cgNode(items[0].items[LET_INIT], 0);
+        const fu_STR& err_id = items[1].value;
+        fu_STR body = blockWrapSubstatement(items[2]);
+        return (((((((((binding(let_main, false, true) + "; try { "_fu) + let_main.value) + " = "_fu) + let_init) + "; } catch (const std::exception& _ex) { const fu_STR& "_fu) + err_id) + " = fu_TO_STR(_ex.what()); "_fu) + body) + " }"_fu);
+    };
     fu_STR cgNode(const s_SolvedNode& node, const int& mode)
     {
         const fu_STR& k = node.kind;
@@ -4180,6 +4199,9 @@ struct sf_cpp_codegen
 
         if ((k == "move"_fu))
             return cgCopyMove(node);
+
+        if ((k == "catch"_fu))
+            return cgCatch(node);
 
         fail(("TODO: "_fu + k));
     };

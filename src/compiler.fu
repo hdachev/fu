@@ -1036,8 +1036,11 @@ pub fn parse(_fname: string, _tokens: Token[])
         // Catch here.
         if (tryConsume('id', 'catch'))
         {
-            let err     = parseLet();
-            let catch   = parseStatement();
+            let err = createLet(
+                consume('id').value, 0,
+                createRead('string'), Node);
+
+            let catch = parseStatement();
 
             return make('catch', [ ret, err, catch ]);
         }
@@ -2725,30 +2728,32 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
     {
         let k = node.kind;
 
-        if (k == 'root')       return solveRoot(node);
-        if (k == 'block')      return solveBlock(node);
-        if (k == 'label')      return solveComma(node);
-        if (k == 'comma')      return solveComma(node);
+        if (k == 'root')        return solveRoot(node);
+        if (k == 'block')       return solveBlock(node);
+        if (k == 'label')       return solveComma(node);
+        if (k == 'comma')       return solveComma(node);
 
-        if (k == 'let')        return solveLet(node);
-        if (k == 'call')       return solveCall(node);
-        if (k == 'arrlit')     return solveArrayLiteral(node, type);
+        if (k == 'let')         return solveLet(node);
+        if (k == 'call')        return solveCall(node);
+        if (k == 'arrlit')      return solveArrayLiteral(node, type);
 
-        if (k == 'if')         return solveIf(node, type);
-        if (k == 'or')         return solveOr(node, type);
-        if (k == '!')          return solveNot(node);
-        if (k == 'and')        return solveAnd(node, type);
+        if (k == 'if')          return solveIf(node, type);
+        if (k == 'or')          return solveOr(node, type);
+        if (k == '!')           return solveNot(node);
+        if (k == 'and')         return solveAnd(node, type);
 
-        if (k == 'return')     return solveReturn(node);
-        if (k == 'loop')       return solveBlock(node);
-        if (k == 'break')      return solveJump(node);
-        if (k == 'continue')   return solveJump(node);
+        if (k == 'return')      return solveReturn(node);
+        if (k == 'loop')        return solveBlock(node);
+        if (k == 'break')       return solveJump(node);
+        if (k == 'continue')    return solveJump(node);
 
-        if (k == 'int')        return solveInt(node);
-        if (k == 'str')        return solveStr(node);
-        if (k == 'empty')      return solveEmpty(node);
+        if (k == 'int')         return solveInt(node);
+        if (k == 'str')         return solveStr(node);
+        if (k == 'empty')       return solveEmpty(node);
 
-        if (k == 'definit')    return solveDefinit(type);
+        if (k == 'definit')     return solveDefinit(type);
+
+        if (k == 'catch')       return solveCatch(node);
 
         return fail('TODO: ' + k);
     }
@@ -3275,6 +3280,19 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             scope_using(overload);
 
         return out;
+    }
+
+    fn solveCatch(node: Node): SolvedNode
+    {
+        node.items.len == 3 || fail();
+
+        let nodes = solveNodes(node.items);
+        nodes[1].kind == 'let' && isAssignableAsArgument(
+            nodes[1].type, t_string) || fail(
+                'catch: exceptions are strings,'
+                    + ' consider dropping the annotation.');
+
+        return solved(node, nodes[0].type, nodes);
     }
 
 
@@ -4694,7 +4712,7 @@ pub fn cpp_codegen(
             if (i)
                 src += ', ';
 
-            src += binding(items[i] || fail(), false);
+            src += binding(items[i] || fail());
         }
 
         src += closure
@@ -4764,11 +4782,11 @@ pub fn cpp_codegen(
         return '';
     }
 
-    fn binding(node: SolvedNode, doInit: bool): string
+    fn binding(node: SolvedNode, doInit = false, forceMut = false): string
     {
         let id    = node.value || fail();
         let annot = typeAnnot(
-            node.type, (node.flags & F_MUT == 0 ? M_CONST : 0)
+            node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
                      | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));
 
         let head  = (annot || fail()) + ' ' + ID(id);
@@ -4785,7 +4803,7 @@ pub fn cpp_codegen(
 
     fn cgLet(node: SolvedNode): string
     {
-        mut src = binding(node, true);
+        mut src = binding(node, doInit: true);
         if (_fnN || _faasN)
             return src;
 
@@ -5668,6 +5686,22 @@ struct fu_DEFAULT { static inline const T value {}; };
         return 'while (' + cond + ')' + body + breakLabel;
     }
 
+    fn cgCatch(node: SolvedNode)
+    {
+        let items       = node.items;
+
+        let let_main    = items[0];
+        let let_init    = cgNode(items[0].items[LET_INIT]);
+        let err_id      = items[1].value;
+        let body        = blockWrapSubstatement(items[2]);
+
+        return binding(let_main, forceMut: true)
+             + '; try { ' + let_main.value
+             + ' = ' + let_init
+             + '; } catch (const std::exception& _ex) { const fu_STR& '
+             + err_id + ' = fu_TO_STR(_ex.what()); ' + body + ' }';
+    }
+
 
     //
 
@@ -5675,32 +5709,33 @@ struct fu_DEFAULT { static inline const T value {}; };
     {
         let k = node.kind;
 
-        if (k == 'root')       return cgRoot(node);
-        if (k == 'block')      return cgBlock(node);
-        if (k == 'fn')         return cgFn(node);
-        if (k == 'return')     return cgReturn(node);
-        if (k == 'break')      return cgJump(node);
-        if (k == 'continue')   return cgJump(node);
-        if (k == 'call')       return cgCall(node, mode);
-        if (k == 'let')        return cgLet(node);
-        if (k == 'if')         return cgIf(node, mode);
-        if (k == '!')          return cgNot(node);
-        if (k == 'or')         return cgOr(node);
-        if (k == 'and')        return cgAnd(node);
-        if (k == 'loop')       return cgLoop(node);
-        if (k == 'int')        return cgLiteral(node);
-        if (k == 'str')        return cgStringLiteral(node);
-        if (k == 'arrlit')     return cgArrayLiteral(node);
-        if (k == 'definit')    return cgDefaultInit(node);
-        if (k == 'empty')      return cgEmpty();
+        if (k == 'root')        return cgRoot(node);
+        if (k == 'block')       return cgBlock(node);
+        if (k == 'fn')          return cgFn(node);
+        if (k == 'return')      return cgReturn(node);
+        if (k == 'break')       return cgJump(node);
+        if (k == 'continue')    return cgJump(node);
+        if (k == 'call')        return cgCall(node, mode);
+        if (k == 'let')         return cgLet(node);
+        if (k == 'if')          return cgIf(node, mode);
+        if (k == '!')           return cgNot(node);
+        if (k == 'or')          return cgOr(node);
+        if (k == 'and')         return cgAnd(node);
+        if (k == 'loop')        return cgLoop(node);
+        if (k == 'int')         return cgLiteral(node);
+        if (k == 'str')         return cgStringLiteral(node);
+        if (k == 'arrlit')      return cgArrayLiteral(node);
+        if (k == 'definit')     return cgDefaultInit(node);
+        if (k == 'empty')       return cgEmpty();
 
-        if (k == 'comma')      return cgParens(node);
-        if (k == 'parens')     return cgParens(node);
-        if (k == 'label')      return cgParens(node);
-        if (k == 'struct')     return cgEmpty();
+        if (k == 'comma')       return cgParens(node);
+        if (k == 'parens')      return cgParens(node);
+        if (k == 'label')       return cgParens(node);
+        if (k == 'struct')      return cgEmpty();
 
-        if (k == 'copy')       return cgCopyMove(node);
-        if (k == 'move')       return cgCopyMove(node);
+        if (k == 'copy')        return cgCopyMove(node);
+        if (k == 'move')        return cgCopyMove(node);
+        if (k == 'catch')       return cgCatch(node);
 
         return fail('TODO: ' + k);
     }
