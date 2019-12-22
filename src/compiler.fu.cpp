@@ -1105,6 +1105,12 @@ struct sf_parse
     s_Node parseLetStmt()
     {
         s_Node ret = parseLet();
+        if (tryConsume("id"_fu, "catch"_fu))
+        {
+            s_Node err = parseLet();
+            s_Node cahtch = parseStatement();
+            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cahtch } }, 0, ""_fu);
+        };
         consume("op"_fu, ";"_fu);
         return ret;
     };
@@ -3271,6 +3277,9 @@ struct sf_cpp_codegen
 
         if ((id == "template"_fu))
             return "tempatle"_fu;
+
+        if ((id == "catch"_fu))
+            return "cahtch"_fu;
 
         if ((id == "not"_fu))
             return "nott"_fu;

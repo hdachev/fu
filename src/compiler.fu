@@ -1032,6 +1032,16 @@ pub fn parse(_fname: string, _tokens: Token[])
     fn parseLetStmt(): Node
     {
         let ret = parseLet();
+
+        // Catch here.
+        if (tryConsume('id', 'catch'))
+        {
+            let err     = parseLet();
+            let catch   = parseStatement();
+
+            return make('catch', [ ret, err, catch ]);
+        }
+
         consume('op', ';');
         return ret;
     }
@@ -4441,6 +4451,7 @@ pub fn cpp_codegen(
     {
         if (id == 'this')       return '_';
         if (id == 'template')   return 'tempatle';
+        if (id == 'catch')      return 'cahtch';
         if (id == 'not')        return 'nott';
         if (id == 'and')        return 'andd';
         if (id == 'or')         return 'orr';
