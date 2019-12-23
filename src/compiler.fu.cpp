@@ -31,6 +31,7 @@ struct s_LexResult;
 struct s_MapFields;
 struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
 struct s_Scope;
 struct s_ScopeIdx;
@@ -198,6 +199,19 @@ struct s_Node
             || value.size()
             || items
             || token
+        ;
+    }
+};
+
+struct s_ParserOutput
+{
+    s_Node root;
+    fu_VEC<fu_STR> imports;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || root
+            || imports
         ;
     }
 };
@@ -774,6 +788,7 @@ struct sf_parse
     int _implicits = 0;
     fu_STR _structName = ""_fu;
     fu_VEC<fu_STR> _dollars {};
+    fu_VEC<fu_STR> _imports {};
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
         const s_Token& here = _tokens[_idx];
@@ -926,12 +941,25 @@ struct sf_parse
     {
         s_Token loc0 = fu_CLONE(_loc);
         s_Token token = fu_CLONE((_loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx++]; if (_) return _; } fail(""_fu); }())));
-        if (((token.kind == "op"_fu) || (token.kind == "id"_fu)))
+        if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
             if ((v == "{"_fu))
                 return parseBlock();
 
+            if ((v == ";"_fu))
+                return parseEmpty();
+
+            if ((v == ":"_fu))
+                return parseLabelledStatement();
+
+            if ((v == "#"_fu))
+                return parsePragma();
+
+        }
+        else if ((token.kind == "id"_fu))
+        {
+            const fu_STR& v = token.value;
             if ((v == "let"_fu))
                 return parseLetStmt();
 
@@ -959,17 +987,11 @@ struct sf_parse
             if ((v == "continue"_fu))
                 return parseJump("continue"_fu);
 
-            if ((v == ";"_fu))
-                return parseEmpty();
-
             if ((v == "fn"_fu))
                 return parseFnDecl();
 
             if ((v == "struct"_fu))
                 return parseStructDecl();
-
-            if ((v == ":"_fu))
-                return parseLabelledStatement();
 
             if ((v == "pub"_fu))
                 return parseStatement();
@@ -978,6 +1000,23 @@ struct sf_parse
         _idx--;
         _loc = loc0;
         return parseExpressionStatement();
+    };
+    s_Node parsePragma()
+    {
+        fu_STR v = consume("id"_fu, ""_fu).value;
+        if ((v == "import"_fu))
+            return parseImport();
+
+        fail((("Unknown #pragma: `"_fu + v) + "`."_fu));
+    };
+    s_Node parseImport()
+    {
+        fu_STR value = consume("str"_fu, ""_fu).value;
+        if (!fu::has(_imports, value))
+            _imports.push(value);
+
+        consume("op"_fu, ";"_fu);
+        return make("import"_fu, fu_VEC<s_Node>{}, 0, value);
     };
     s_Node parseLabelledStatement()
     {
@@ -1506,10 +1545,11 @@ struct sf_parse
     {
         return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, ""_fu);
     };
-    s_Node parse_EVAL()
+    s_ParserOutput parse_EVAL()
     {
         ((_tokens[(_tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
-        return parseRoot();
+        s_Node root = parseRoot();
+        return s_ParserOutput { fu_CLONE(root), fu_CLONE(_imports) };
     };
 };
 
@@ -3088,7 +3128,7 @@ inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure():
 s_Scope solvePrelude()
 {
     s_LexResult lexed = lex(prelude_src, "__prelude"_fu);
-    s_Node root = parse("__prelude"_fu, lexed.tokens);
+    s_Node root = parse("__prelude"_fu, lexed.tokens).root;
     s_TEMP_Context ctx {};
     s_Scope scope = listGlobals();
     s_SolveResult solved = runSolver(root, scope, ctx);
@@ -4266,7 +4306,7 @@ struct sf_cpp_codegen
 fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 {
     s_LexResult res_lex = lex(src, fname);
-    s_Node res_parse = parse(fname, res_lex.tokens);
+    s_Node res_parse = parse(fname, res_lex.tokens).root;
     s_SolveResult res_solve = solve(res_parse, ctx);
     fu_STR cpp = cpp_codegen(res_solve.root, res_solve.scope, ctx);
     return cpp;

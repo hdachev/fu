@@ -534,7 +534,13 @@ pub let LOOP_POST_COND = 4;
 
 //
 
-pub fn parse(_fname: string, _tokens: Token[])
+pub struct ParserOutput
+{
+    root:       Node;
+    imports:    string[];
+}
+
+pub fn parse(_fname: string, _tokens: Token[]): ParserOutput
 {
     mut _idx        = 0;
     mut _loc: Token = _tokens[0];
@@ -545,6 +551,7 @@ pub fn parse(_fname: string, _tokens: Token[])
     mut _implicits  = 0;
     mut _structName = '';
     mut _dollars    : string[];
+    mut _imports    : string[];
 
 
     //
@@ -621,16 +628,6 @@ pub fn parse(_fname: string, _tokens: Token[])
     fn parseRoot(): Node
     {
         _loc = _tokens[_idx];
-
-        // Imports only ok on top of files.
-        // for (;;) {
-        //     if (!peek('id', 'import'))
-        //         break;
-
-        //     loc = ctx.idx
-        //     consume()
-        //     items += parseImport()
-        // }
 
         mut out = make('root',
             parseBlockLike('eof', 'eof'));
@@ -819,14 +816,22 @@ pub fn parse(_fname: string, _tokens: Token[])
         let token = _loc = _tokens[_idx++] || fail();
         ///////////////////////////////////////////////
 
-        if (token.kind == 'op' || token.kind == 'id')
+        if (token.kind == 'op')
         {
             let v = token.value;
 
             if (v == '{')           return parseBlock();
+            if (v == ';')           return parseEmpty();
+            if (v == ':')           return parseLabelledStatement();
+
+            if (v == '#')           return parsePragma();
+        }
+        else if (token.kind == 'id')
+        {
+            let v = token.value;
+
             if (v == 'let')         return parseLetStmt();
             if (v == 'mut')         return (_idx--, parseLetStmt());
-
             if (v == 'if')          return parseIf();
             if (v == 'return')      return parseReturn();
 
@@ -836,11 +841,8 @@ pub fn parse(_fname: string, _tokens: Token[])
             if (v == 'break')       return parseJump('break');
             if (v == 'continue')    return parseJump('continue');
 
-            if (v == ';')           return parseEmpty();
             if (v == 'fn')          return parseFnDecl();
             if (v == 'struct')      return parseStructDecl();
-
-            if (v == ':')           return parseLabelledStatement();
 
             // Ignore pubs for now.
             if (v == 'pub')         return parseStatement();
@@ -853,6 +855,26 @@ pub fn parse(_fname: string, _tokens: Token[])
 
         // Expression statement, followed by a semi.
         return parseExpressionStatement();
+    }
+
+    fn parsePragma(): Node
+    {
+        let v = consume('id').value;
+        if (v == 'import')
+            return parseImport();
+
+        return fail('Unknown #pragma: `' + v + '`.');
+    }
+
+    fn parseImport(): Node
+    {
+        let value = consume('str').value;
+        if (!_imports.has(value))
+            _imports.push(value);
+
+        consume('op', ';');
+
+        return make('import', :value);
     }
 
     fn parseLabelledStatement(): Node
@@ -1590,8 +1612,13 @@ pub fn parse(_fname: string, _tokens: Token[])
     _tokens[_tokens.len - 1].kind == 'eof' || fail(
         'Missing `eof` token.');
 
+    // PARSE END
+
     //
-    return parseRoot();
+    let root = parseRoot();
+
+    return ParserOutput(
+        :root, _imports);
 }
 
 
@@ -4229,7 +4256,7 @@ fn exit(code: i32): never __native_pure;
 fn solvePrelude(): Scope
 {
     let lexed   = lex(prelude_src, '__prelude');
-    let root    = parse('__prelude', lexed.tokens);
+    let root    = parse('__prelude', lexed.tokens).root;
 
     let implicit mut ctx: TEMP_Context;
     let scope   = listGlobals();
@@ -5840,7 +5867,7 @@ fn compile(
     let res_lex = lex(:fname, :src);
 
     // let t1 = now_hr();
-    let res_parse = parse(fname, res_lex.tokens);
+    let res_parse = parse(fname, res_lex.tokens).root;
 
     // let t2 = now_hr();
     let res_solve = solve(res_parse);
