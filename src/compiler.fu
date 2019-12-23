@@ -11,9 +11,21 @@ fn last(s: string)
     s.len   ? s[s.len - 1]
             : '';
 
-// fn /(a: string, b: string)
-//     a.last == '/'   ? a + b
-//                     : a + '/' + b;
+fn hasIdentifierChars(id: string)
+{
+    for (mut i = 0; i < id.len; i++)
+    {
+        let c = id[i];
+        if (c == '_' || c >= 'a' && c <= 'z'
+                     || c >= 'A' && c <= 'Z'
+                     || c >= '0' && c <= '9')
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 
 
@@ -2429,22 +2441,6 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
     //
 
-    fn hasIdentifierChars(id: string)
-    {
-        for (mut i = 0; i < id.len; i++)
-        {
-            let c = id[i];
-            if (c == '_' || c >= 'a' && c <= 'z'
-                         || c >= 'A' && c <= 'Z'
-                         || c >= '0' && c <= '9')
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     fn scope_using(viaIdx: ScopeIdx)
     {
         let via = GET(viaIdx);
@@ -4708,7 +4704,7 @@ pub fn cpp_codegen(
                 ? 'const auto& ' + fn.value + ' = [&]('
                 : annot + ' ' + fn.value + '(';
 
-        if (fn.value == '==')
+        if (!hasIdentifierChars(fn.value))
             src = annot + ' operator' + fn.value + '(';
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
@@ -5926,21 +5922,14 @@ fn ZERO(): i32
 ////////
 ////////     Orchestration.
 
-fn path(a: string, b: string)
-    a.last == '/'
-        ? a + b
-        : a + '/' + b;
+fn absdir(a: string)
+    a.last == '/' ? a : a + '/';
 
-fn path(a: string, b: string, c: string)
-    a.last == '/'
-        ? path(a + b, c)
-        : path(a + '/' + b, c);
-
-let HOME = env_get('HOME') || '/Users/hdachev';
+let HOME = absdir(env_get('HOME') || '/Users/hdachev');
 
 fn locate_PRJDIR(): string {
-    let dir = path(HOME, 'fu');
-    let fn  = path(dir, 'src/compiler.fu');
+    let dir = HOME + 'fu/';
+    let fn  = dir  + 'src/compiler.fu';
     let fs  = file_size(fn);
         fs  > 10000 || throw('Bad compiler.fu: ' + fn + ': ' + fs);
 
@@ -5961,15 +5950,14 @@ fn buildAndRun(cpp: string): string
     mut stdout  : string;
 
     let hash    = hash_tea(cpp);
-
-    let F       = path(
-        PRJDIR  , "build.cpp/tea-"  + hash
-                + "-"               + cpp.len);
+    let F       = PRJDIR
+                + "build.cpp/tea-"  + hash
+                + "-"               + cpp.len;
 
     fn ERR()
     {
         file_write(
-            path(PRJDIR, "build.cpp/failing-testcase.cpp"),
+            PRJDIR + "build.cpp/failing-testcase.cpp",
                 cpp);
 
         if (!stdout)
@@ -6080,7 +6068,7 @@ fn updateCPPFile(path: string, cpp: string)
 
 fn FU_FILE(fname: string)
 {
-    let fpath = path(PRJDIR, 'src/' + fname);
+    let fpath = PRJDIR + 'src/' + fname;
 
     print('COMPILE ', fname);
 

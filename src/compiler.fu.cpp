@@ -129,8 +129,6 @@ template <typename T>
 bool operator==(const s_Type& a, const s_Type& b);
 bool someFieldNonCopy(const fu_VEC<s_StructField>& fields);
 fu_STR ZERO(const fu_STR& src);
-fu_STR path(const fu_STR& a, const fu_STR& b);
-fu_STR path(const fu_STR& a, const fu_STR& b, const fu_STR& c);
 int ZERO();
 int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields);
 s_SolveResult solve(const s_Node& parse, s_TEMP_Context& ctx);
@@ -404,6 +402,18 @@ inline const bool WRITE_COMPILER = true;
 fu_STR last(const fu_STR& s)
 {
     return (s.size() ? fu_TO_STR(s[(s.size() - 1)]) : ""_fu);
+}
+
+bool hasIdentifierChars(const fu_STR& id)
+{
+    for (int i = 0; (i < id.size()); i++)
+    {
+        fu_STR c = fu_TO_STR(id[i]);
+        if (((c == "_"_fu) || ((c >= "a"_fu) && (c <= "z"_fu)) || ((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "0"_fu) && (c <= "9"_fu))))
+            return true;
+
+    };
+    return false;
 }
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<61> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
@@ -1963,17 +1973,6 @@ struct sf_runSolver
         };
         return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { fu_CLONE(viaIdx), fu_CLONE(overloadIdx) });
     };
-    bool hasIdentifierChars(const fu_STR& id)
-    {
-        for (int i = 0; (i < id.size()); i++)
-        {
-            fu_STR c = fu_TO_STR(id[i]);
-            if (((c == "_"_fu) || ((c >= "a"_fu) && (c <= "z"_fu)) || ((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "0"_fu) && (c <= "9"_fu))))
-                return true;
-
-        };
-        return false;
-    };
     void scope_using(const s_ScopeIdx& viaIdx)
     {
         s_Overload via = fu_CLONE(GET(viaIdx));
@@ -3441,7 +3440,7 @@ struct sf_cpp_codegen
             _indent = "\n"_fu;
 
         fu_STR src = (closure ? (("const auto& "_fu + fn.value) + " = [&]("_fu) : (((annot + " "_fu) + fn.value) + "("_fu));
-        if ((fn.value == "=="_fu))
+        if (!hasIdentifierChars(fn.value))
             src = (((annot + " operator"_fu) + fn.value) + "("_fu);
 
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
@@ -4291,21 +4290,16 @@ int ZERO()
     return (fu::lfind(cpp, "main()"_fu) ? 0 : 101);
 }
 
-fu_STR path(const fu_STR& a, const fu_STR& b)
+fu_STR absdir(const fu_STR& a)
 {
-    return ((last(a) == "/"_fu) ? (a + b) : ((a + "/"_fu) + b));
+    return ((last(a) == "/"_fu) ? fu_CLONE(a) : (a + "/"_fu));
 }
-
-fu_STR path(const fu_STR& a, const fu_STR& b, const fu_STR& c)
-{
-    return ((last(a) == "/"_fu) ? path((a + b), c) : path(((a + "/"_fu) + b), c));
-}
-inline const fu_STR HOME = ([]() -> fu_STR { { fu_STR _ = fu::env_get("HOME"_fu); if (_.size()) return _; } return "/Users/hdachev"_fu; }());
+inline const fu_STR HOME = absdir(([]() -> fu_STR { { fu_STR _ = fu::env_get("HOME"_fu); if (_.size()) return _; } return "/Users/hdachev"_fu; }()));
 
 fu_STR locate_PRJDIR()
 {
-    fu_STR dir = path(HOME, "fu"_fu);
-    fu_STR fn = path(dir, "src/compiler.fu"_fu);
+    fu_STR dir = (HOME + "fu/"_fu);
+    fu_STR fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fn);
     ((fs > 10000) || fu_THROW(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
     (std::cout << ("PRJDIR: "_fu + dir) << "\n");
@@ -4320,10 +4314,10 @@ struct sf_buildAndRun
     int code {};
     fu_STR stdout {};
     fu_STR hash = fu::hash_tea(cpp);
-    fu_STR F = path(PRJDIR, ((("build.cpp/tea-"_fu + hash) + "-"_fu) + cpp.size()));
+    fu_STR F = ((((PRJDIR + "build.cpp/tea-"_fu) + hash) + "-"_fu) + cpp.size());
     fu_STR& ERR()
     {
-        fu::file_write(path(PRJDIR, "build.cpp/failing-testcase.cpp"_fu), cpp);
+        fu::file_write((PRJDIR + "build.cpp/failing-testcase.cpp"_fu), cpp);
         if (!stdout.size())
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
@@ -4411,7 +4405,7 @@ void updateCPPFile(const fu_STR& path, const fu_STR& cpp)
 
 void FU_FILE(const fu_STR& fname)
 {
-    fu_STR fpath = path(PRJDIR, ("src/"_fu + fname));
+    fu_STR fpath = ((PRJDIR + "src/"_fu) + fname);
     (std::cout << "COMPILE "_fu << fname << "\n");
     fu_STR fu = fu::file_read(fpath);
     if (!fu.size())
