@@ -2452,7 +2452,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             let id = keys[i];
 
             // Skip over operators.
-            if (!hasIdentifierChars(id))
+            if (!id.hasIdentifierChars)
                 continue;
 
             let overloads = Scope_lookup(_scope, id);
@@ -4704,7 +4704,7 @@ pub fn cpp_codegen(
                 ? 'const auto& ' + fn.value + ' = [&]('
                 : annot + ' ' + fn.value + '(';
 
-        if (!hasIdentifierChars(fn.value))
+        if (!fn.value.hasIdentifierChars)
             src = annot + ' operator' + fn.value + '(';
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
