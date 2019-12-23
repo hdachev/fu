@@ -4124,8 +4124,18 @@ struct sf_cpp_codegen
         const s_SolvedNode& let_main = items[0];
         fu_STR let_init = cgNode(items[0].items[LET_INIT], 0);
         const fu_STR& err_id = items[1].value;
-        fu_STR body = blockWrapSubstatement(items[2]);
-        return (((((((((binding(let_main, false, true) + "; try { "_fu) + let_main.value) + " = "_fu) + let_init) + "; } catch (const std::exception& _ex) { const fu_STR& "_fu) + err_id) + " = fu_TO_STR(_ex.what()); "_fu) + body) + " }"_fu);
+        fu_STR catch_body = blockWrapSubstatement(items[2]);
+        fu_STR src = (binding(let_main, false, true) + ";"_fu);
+        src += (_indent + "try"_fu);
+        src += (_indent + "{"_fu);
+        src += (((((_indent + "    "_fu) + let_main.value) + " = "_fu) + let_init) + ";"_fu);
+        src += (_indent + "}"_fu);
+        src += (_indent + "catch (const std::exception& o_0)"_fu);
+        src += (_indent + "{"_fu);
+        src += (((_indent + "    const fu_STR& "_fu) + err_id) + " = fu_TO_STR(o_0.what());"_fu);
+        src += (_indent + catch_body);
+        src += (_indent + "}\n"_fu);
+        return src;
     };
     fu_STR cgNode(const s_SolvedNode& node, const int& mode)
     {
@@ -4374,8 +4384,18 @@ fu_STR ZERO(const fu_STR& src)
 
 int FAIL(const fu_STR& src)
 {
-    fu_STR cpp; try { cpp = compile_testcase(fu_CLONE(src)); } catch (const std::exception& _ex) { const fu_STR& e = fu_TO_STR(_ex.what()); 
-        return e.size(); };
+    fu_STR cpp;
+    try
+    {
+        cpp = compile_testcase(fu_CLONE(src));
+    }
+    catch (const std::exception& o_0)
+    {
+        const fu_STR& e = fu_TO_STR(o_0.what());
+    
+        return e.size();
+    }
+;
     fu_THROW(("DID NOT THROW: "_fu + cpp));
 }
 

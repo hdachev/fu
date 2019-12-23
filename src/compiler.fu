@@ -5690,20 +5690,27 @@ struct fu_DEFAULT { static inline const T value {}; };
         return 'while (' + cond + ')' + body + breakLabel;
     }
 
-    fn cgCatch(node: SolvedNode)
+    fn cgCatch(node: SolvedNode): string
     {
         let items       = node.items;
 
         let let_main    = items[0];
         let let_init    = cgNode(items[0].items[LET_INIT]);
         let err_id      = items[1].value;
-        let body        = blockWrapSubstatement(items[2]);
+        let catch_body  = blockWrapSubstatement(items[2]);
 
-        return binding(let_main, forceMut: true)
-             + '; try { ' + let_main.value
-             + ' = ' + let_init
-             + '; } catch (const std::exception& _ex) { const fu_STR& '
-             + err_id + ' = fu_TO_STR(_ex.what()); ' + body + ' }';
+        mut src =        binding(let_main, forceMut: true) + ';';
+        src += _indent + 'try';
+        src += _indent + '{';
+        src += _indent + '    ' + let_main.value + ' = ' + let_init + ';';
+        src += _indent + '}';
+        src += _indent + 'catch (const std::exception& o_0)';
+        src += _indent + '{';
+        src += _indent + '    const fu_STR& ' + err_id + ' = fu_TO_STR(o_0.what());';
+        src += _indent + catch_body;
+        src += _indent + '}\n';
+
+        return src;
     }
 
 
