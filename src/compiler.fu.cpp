@@ -29,6 +29,10 @@ struct fu_NEVER
 struct s_BINOP;
 struct s_LexResult;
 struct s_MapFields;
+struct s_Module;
+struct s_ModuleInputs;
+struct s_ModuleOutputs;
+struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
@@ -36,8 +40,8 @@ struct s_Partial;
 struct s_Scope;
 struct s_ScopeIdx;
 struct s_ScopeItem;
-struct s_SolveResult;
 struct s_SolvedNode;
+struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
 struct s_TEMP_Context;
@@ -132,7 +136,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields);
 fu_STR ZERO(const fu_STR& src);
 int ZERO();
 int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields);
-s_SolveResult solve(const s_Node& parse, s_TEMP_Context& ctx);
+s_SolverOutput solve(const s_Node& parse, s_TEMP_Context& ctx);
 s_Type createArray(const s_Type& item, s_TEMP_Context& ctx);
 void runTestSuite();
 struct s_Token
@@ -229,56 +233,17 @@ struct s_Type
     }
 };
 
-struct s_StructField
+struct s_ModuleInputs
 {
-    fu_STR id;
-    s_Type type;
+    fu_STR fname;
+    fu_STR src;
+    s_ParserOutput parse;
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
-            || type
-        ;
-    }
-};
-
-struct s_Struct
-{
-    fu_STR kind;
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind.size()
-            || id.size()
-            || fields
-            || flags
-        ;
-    }
-};
-
-struct s_TEMP_Context
-{
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || types
-        ;
-    }
-};
-
-struct s_MapFields
-{
-    s_Type key;
-    s_Type value;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || key
-            || value
+            || fname.size()
+            || src.size()
+            || parse
         ;
     }
 };
@@ -290,19 +255,6 @@ struct s_ScopeIdx
     {
         return false
             || raw
-        ;
-    }
-};
-
-struct s_ScopeItem
-{
-    fu_STR id;
-    s_ScopeIdx index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id.size()
-            || index
         ;
     }
 };
@@ -326,6 +278,19 @@ struct s_SolvedNode
             || token
             || type
             || target
+        ;
+    }
+};
+
+struct s_ScopeItem
+{
+    fu_STR id;
+    s_ScopeIdx index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id.size()
+            || index
         ;
     }
 };
@@ -398,7 +363,7 @@ struct s_Scope
     }
 };
 
-struct s_SolveResult
+struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
@@ -407,6 +372,111 @@ struct s_SolveResult
         return false
             || root
             || scope
+        ;
+    }
+};
+
+struct s_ModuleOutputs
+{
+    fu_VEC<fu_STR> absimports;
+    s_SolverOutput solve;
+    fu_STR cpp;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || absimports
+            || solve
+            || cpp.size()
+        ;
+    }
+};
+
+struct s_ModuleStats
+{
+    f64 s_lex;
+    f64 s_parse;
+    f64 s_solve;
+    f64 s_cpp;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || s_lex
+            || s_parse
+            || s_solve
+            || s_cpp
+        ;
+    }
+};
+
+struct s_Module
+{
+    int id;
+    s_ModuleInputs in;
+    s_ModuleOutputs out;
+    s_ModuleStats stats;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || in
+            || out
+            || stats
+        ;
+    }
+};
+
+struct s_StructField
+{
+    fu_STR id;
+    s_Type type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id.size()
+            || type
+        ;
+    }
+};
+
+struct s_Struct
+{
+    fu_STR kind;
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || id.size()
+            || fields
+            || flags
+        ;
+    }
+};
+
+struct s_TEMP_Context
+{
+    fu_COW_MAP<fu_STR, s_Struct> types;
+    fu_COW_MAP<fu_STR, s_Module> modules;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || types
+            || modules
+        ;
+    }
+};
+
+struct s_MapFields
+{
+    s_Type key;
+    s_Type value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || key
+            || value
         ;
     }
 };
@@ -777,7 +847,7 @@ inline const int LOOP_POST_COND = 4;
 
 struct sf_parse
 {
-    const fu_STR& _fname;
+    const fu_STR& fname;
     const fu_VEC<s_Token>& _tokens;
     int _idx = 0;
     s_Token _loc = fu_CLONE(_tokens[0]);
@@ -800,7 +870,7 @@ struct sf_parse
         const int& l1 = here.line;
         const int& c1 = here.col;
         fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
-        fu_THROW(((((_fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
+        fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
     [[noreturn]] fu_NEVER fail_Lint(const fu_STR& reason)
     {
@@ -1684,6 +1754,11 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
         return ((a == t_never) ? fu_CLONE(b) : ((b == t_never) ? fu_CLONE(a) : s_Type { fu_STR{}, int{} }));
 
     return s_Type { fu_CLONE(a.canon), (a.quals & b.quals) };
+}
+
+s_Module upsertModule(const fu_STR& fname, s_TEMP_Context& ctx)
+{
+    return ([&](s_Module& _) -> s_Module& { if (!_) _ = s_Module { fu_KEYS(ctx.modules).size(), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} }; return _; } (ctx.modules.upsert(fname)));
 }
 
 void registerType(const fu_STR& canon, const s_Struct& def, s_TEMP_Context& ctx)
@@ -3096,9 +3171,9 @@ struct sf_runSolver
         _here = here0;
         return result;
     };
-    s_SolveResult runSolver_EVAL()
+    s_SolverOutput runSolver_EVAL()
     {
-        return s_SolveResult { solveNode(parse, s_Type{}), fu_CLONE(_scope) };
+        return s_SolverOutput { solveNode(parse, s_Type{}), fu_CLONE(_scope) };
     };
 };
 
@@ -3123,7 +3198,7 @@ s_Scope listGlobals()
     Scope_Typedef(scope, "never"_fu, t_never);
     return scope;
 }
-inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn concat(a: $T[], b: $T[]): $T[] __native_pure;\nfn slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn pop(a: &mut $T[]): void __native_pure;\n\nfn clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn [](a: string, i: i32): string __native_pure;\nfn +=(a: &mut string, b: string): &mut string __native_pure;\nfn + (a: string, b: string): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn find(a: string, b: string): i32 __native_pure;\nfn has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\nfn split(str: string, sep: string): string[] __native_pure;\n\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: &Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: &Map($K, $V)): $K[] __native_pure;\nfn values(a: &Map($K, $V)): $V[] __native_pure;\nfn has   (a: &Map($K, $V), b: &$K): bool __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\nfn join(a: string[], sep: string): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
+inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn concat(a: $T[], b: $T[]): $T[] __native_pure;\nfn slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn pop(a: &mut $T[]): void __native_pure;\n\nfn clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn [](a: string, i: i32): string __native_pure;\nfn +=(a: &mut string, b: string): &mut string __native_pure;\nfn + (a: string, b: string): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn find(a: string, b: string): i32 __native_pure;\nfn has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\nfn split(str: string, sep: string): string[] __native_pure;\n\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: Map($K, $V)): $K[] __native_pure;\nfn values(a: Map($K, $V)): $V[] __native_pure;\nfn has   (a: Map($K, $V), b: $K): bool __native_pure;\nfn count (a: Map($K, $V)): i32 __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\nfn join(a: string[], sep: string): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
 
 s_Scope solvePrelude()
 {
@@ -3131,12 +3206,12 @@ s_Scope solvePrelude()
     s_Node root = parse("__prelude"_fu, lexed.tokens).root;
     s_TEMP_Context ctx {};
     s_Scope scope = listGlobals();
-    s_SolveResult solved = runSolver(root, scope, ctx);
+    s_SolverOutput solved = runSolver(root, scope, ctx);
     return solved.scope;
 }
 inline const s_Scope PRELUDE = solvePrelude();
 
-s_SolveResult solve(const s_Node& parse, s_TEMP_Context& ctx)
+s_SolverOutput solve(const s_Node& parse, s_TEMP_Context& ctx)
 {
     return runSolver(parse, PRELUDE, ctx);
 }
@@ -4305,11 +4380,32 @@ struct sf_cpp_codegen
 
 fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 {
-    s_LexResult res_lex = lex(src, fname);
-    s_Node res_parse = parse(fname, res_lex.tokens).root;
-    s_SolveResult res_solve = solve(res_parse, ctx);
-    fu_STR cpp = cpp_codegen(res_solve.root, res_solve.scope, ctx);
-    return cpp;
+    s_Module module = upsertModule(fname, ctx);
+    if (!module.in)
+    {
+        module.out = s_ModuleOutputs { fu_VEC<fu_STR>{}, s_SolverOutput{}, fu_STR{} };
+        const f64 t0 = fu::now_hr();
+        s_LexResult lexer_result = lex(src, fname);
+        const f64 t1 = fu::now_hr();
+        module.in = s_ModuleInputs { fu_CLONE(fname), fu_CLONE(src), parse(fname, lexer_result.tokens) };
+        const f64 t2 = fu::now_hr();
+        module.stats.s_lex = (t1 - t0);
+        module.stats.s_parse = (t2 - t1);
+    }
+    else if (!module.out)
+        fu_THROW((("#import circle around `"_fu + fname) + "`."_fu));
+
+    if (!module.out)
+    {
+        const f64 t0 = fu::now_hr();
+        module.out = s_ModuleOutputs { fu_VEC<fu_STR>{}, solve(module.in.parse.root, ctx), fu_STR{} };
+        const f64 t1 = fu::now_hr();
+        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, ctx);
+        const f64 t2 = fu::now_hr();
+        module.stats.s_solve = (t1 - t0);
+        module.stats.s_cpp = (t2 - t1);
+    };
+    return module.out.cpp;
 }
 
 fu_STR compile_testcase(fu_STR&& src)

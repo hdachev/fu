@@ -540,7 +540,7 @@ pub struct ParserOutput
     imports:    string[];
 }
 
-pub fn parse(_fname: string, _tokens: Token[]): ParserOutput
+pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 {
     mut _idx        = 0;
     mut _loc: Token = _tokens[0];
@@ -573,7 +573,7 @@ pub fn parse(_fname: string, _tokens: Token[]): ParserOutput
             ? '@' + l1 + ':' + c1
             : '@' + l0 + ':' + c0 + '..' + l1 + ':' + c1;
 
-        return throw(_fname + ' ' + addr + ':\n\t' + reason);
+        return throw(fname + ' ' + addr + ':\n\t' + reason);
     }
 
     fn fail_Lint(reason: string)
@@ -1865,6 +1865,40 @@ pub struct StructField
 };
 
 
+// Build service primitives.
+
+pub struct ModuleInputs
+{
+    fname:      string;
+    src:        string;
+    parse:      ParserOutput;
+};
+
+pub struct ModuleOutputs
+{
+    absimports: string[];
+    solve:      SolverOutput;
+    cpp:        string;
+};
+
+pub struct ModuleStats
+{
+    s_lex:      f64;
+    s_parse:    f64;
+    s_solve:    f64;
+    s_cpp:      f64;
+};
+
+pub struct Module
+{
+    id:         i32;
+
+    in:         ModuleInputs;
+    out:        ModuleOutputs;
+    stats:      ModuleStats;
+};
+
+
 // The temp context -
 //  TBD what this will look like in the end -
 //   we'll likely need a typespace per module,
@@ -1873,7 +1907,15 @@ pub struct StructField
 
 pub struct TEMP_Context
 {
-    types:  Map(string, Struct);
+    types:      Map(string, Struct);
+    modules:    Map(string, Module);
+};
+
+pub fn upsertModule(
+    implicit ctx: &mut TEMP_Context,
+    fname: string): Module
+{
+    return ctx.modules[fname] ||= Module(id: ctx.modules.keys.len);
 };
 
 pub fn registerType(
@@ -2202,7 +2244,7 @@ pub fn Scope_add(
 ////////
 ////////     Solver.
 
-pub struct SolveResult
+pub struct SolverOutput
 {
     root:       SolvedNode;
     scope:      Scope;
@@ -2216,7 +2258,7 @@ fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): SolveResult
+fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): SolverOutput
 {
     mut _scope:         Scope       = globals;
 
@@ -4027,7 +4069,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
     // So lets go.
 
-    return SolveResult(
+    return SolverOutput(
         root: solveNode(parse),
         scope: _scope);
 }
@@ -4210,13 +4252,14 @@ fn replace(in: string, all: string, with: string): string __native_pure;
 
 // Maps.
 
-fn [](a: &Map($K, $V), b: &$K)
+fn [](a: Map($K, $V), b: &$K)
     case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
     case ($a -> &    Map($K, $V)): &    $V __native_pure;
 
-fn keys  (a: &Map($K, $V)): $K[] __native_pure;
-fn values(a: &Map($K, $V)): $V[] __native_pure;
-fn has   (a: &Map($K, $V), b: &$K): bool __native_pure;
+fn keys  (a: Map($K, $V)): $K[] __native_pure;
+fn values(a: Map($K, $V)): $V[] __native_pure;
+fn has   (a: Map($K, $V), b: $K): bool __native_pure;
+fn count (a: Map($K, $V)): i32 __native_pure;
 
 
 // Assertions, bugs & fails.
@@ -5863,26 +5906,64 @@ fn compile(
     implicit ctx: &mut TEMP_Context,
     fname: string, src: string): string
 {
-    // let t0 = now_hr();
-    let res_lex = lex(:fname, :src);
+    mut module = upsertModule(fname);
 
-    // let t1 = now_hr();
-    let res_parse = parse(fname, res_lex.tokens).root;
+    // Inputs are only dependent on the one file in question.
+    if (!module.in)
+    {
+        // Invalidate outputs.
+        module.out = ModuleOutputs;
 
-    // let t2 = now_hr();
-    let res_solve = solve(res_parse);
+        let t0 = now_hr();
+        let lexer_result =
+            lex(:fname, :src);
 
-    // let t3 = now_hr();
-    let cpp = cpp_codegen(res_solve.root, res_solve.scope);
+        let t1 = now_hr();
+        module.in = ModuleInputs(
+            :fname, :src,
+            parse: parse( :fname, lexer_result.tokens));
 
-    // let t4 = now_hr();
+        let t2 = now_hr();
 
-    // print('lex     ', t1 - t0, 's');
-    // print('parse   ', t2 - t1, 's');
-    // print('solve   ', t3 - t2, 's');
-    // print('codegen ', t4 - t3, 's');
+        // Stat.
+        module.stats.s_lex   = t1 - t0;
+        module.stats.s_parse = t2 - t1;
+    }
+    else if (!module.out)
+    {
+        throw ('#import circle around `' + fname + '`.');
+    }
 
-    return cpp;
+    // Process deps.
+    // TODO ........
+
+    //
+    if (!module.out)
+    {
+        let t0 = now_hr();
+        module.out = ModuleOutputs(
+            solve: solve(
+                module.in.parse.root));
+
+        let t1 = now_hr();
+        module.out.cpp = cpp_codegen(
+            module.out.solve.root,
+            module.out.solve.scope);
+
+        let t2 = now_hr();
+
+        module.stats.s_solve = t1 - t0;
+        module.stats.s_cpp   = t2 - t1;
+    }
+
+    // --------------------------------------------- //
+    // print('lex     ', module.stats.s_lex,   's'); //
+    // print('parse   ', module.stats.s_parse, 's'); //
+    // print('solve   ', module.stats.s_solve, 's'); //
+    // print('codegen ', module.stats.s_cpp,   's'); //
+    // --------------------------------------------- //
+
+    return module.out.cpp;
 }
 
 fn compile_testcase(mut src: string): string
