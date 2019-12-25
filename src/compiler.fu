@@ -4,8 +4,7 @@ let WARN_ON_IMPLICIT_COPY   = false;
 let WRITE_COMPILER          = true;
 
 
-
-// std candidates
+// Having fun.
 
 fn last(s: string)
     s.len   ? s[s.len - 1]
@@ -1378,7 +1377,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
             let expr = parseExpression(P_COMMA);
             if (autoName)
             {
-                expr.kind == 'call' && (expr.flags & F_ID)
+                expr.kind == 'call' && expr.value.hasIdentifierChars
                     || fail('Can\'t :auto_name this expression.');
 
                 name = expr.value;
@@ -5911,9 +5910,8 @@ fn compile(
         let t1 = now_hr();
         module.in = ModuleInputs(
             :fname,
-            :src,
-            lex: lexer_result,
-            parse: parse( :fname, lexer_result.tokens));
+            :src, lex: lexer_result,
+            :parse( :fname, lexer_result.tokens));
 
         let t2 = now_hr();
 

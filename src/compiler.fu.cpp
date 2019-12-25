@@ -1468,7 +1468,7 @@ struct sf_parse
             s_Node expr = parseExpression(int(P_COMMA));
             if (autoName)
             {
-                (((expr.kind == "call"_fu) && (expr.flags & F_ID)) || fail("Can't :auto_name this expression."_fu));
+                (((expr.kind == "call"_fu) && hasIdentifierChars(expr.value)) || fail("Can't :auto_name this expression."_fu));
                 name = expr.value;
             };
             out_args.push((name.size() ? createLabel(name, expr) : s_Node(expr)));
