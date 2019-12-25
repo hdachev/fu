@@ -1888,20 +1888,6 @@ fu_VEC<s_ScopeIdx> Scope_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-fu_VEC<fu_STR> Scope_keys(const s_Scope& scope)
-{
-    fu_VEC<fu_STR> keys = fu_VEC<fu_STR>{};
-    const fu_VEC<s_ScopeItem>& items = scope.items;
-    for (int i = items.size(); (i-- > 0); )
-    {
-        const fu_STR& id = items[i].id;
-        if (!fu::has(keys, id))
-            keys.push(id);
-
-    };
-    return keys;
-}
-
 int Scope_push(s_Scope& scope)
 {
     return scope.items.size();
@@ -2093,44 +2079,43 @@ struct sf_runSolver
     {
         s_Overload via { GET(viaIdx) };
         const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }());
-        fu_VEC<fu_STR> keys = Scope_keys(_scope);
-        for (int i = 0; (i < keys.size()); i++)
+        for (int i = 0; (i < _scope.items.size()); i++)
         {
-            const fu_STR& id = keys[i];
-            if (!hasIdentifierChars(id))
+            s_ScopeItem item { _scope.items.mutref(i) };
+            if (!hasIdentifierChars(item.id))
             {
                 continue;
             };
-            fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
-            if (!overloads)
+            const s_ScopeIdx& overloadIdx = item.index;
+            s_Overload overload { GET(overloadIdx) };
+            if ((overload.min < 1))
             {
                 continue;
             };
-            bool arity0 = false;
-            const int MUT_n0 = overloads.size();
-            for (int i = 0; (i < MUT_n0); i++)
+            if (overload.tempatle)
             {
-                const s_ScopeIdx& overloadIdx = overloads[i];
-                s_Overload overload { GET(overloadIdx) };
-                if ((overload.min < 1))
+                continue;
+            };
+            const s_Type& expect = ([&]() -> const s_Type& { { const s_Type& _ = overload.args[0]; if (_) return _; } fail(""_fu); }());
+            if (!isAssignableAsArgument(expect, s_Type(actual)))
+            {
+                continue;
+            };
+            if ((overload.min < 2))
+            {
+                for (int i = 0; (i < _scope.items.size()); i++)
                 {
-                    arity0 = true;
-                    continue;
-                };
-                if (overload.tempatle)
-                {
-                    continue;
-                };
-                const s_Type& expect = ([&]() -> const s_Type& { { const s_Type& _ = ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }())[0]; if (_) return _; } fail(""_fu); }());
-                if (!isAssignableAsArgument(expect, s_Type(actual)))
-                {
-                    continue;
-                };
-                if (((overload.min < 2) && arity0))
-                    fail((("`using` arity-0 conflict: `"_fu + id) + "`."_fu));
+                    s_ScopeItem o { _scope.items.mutref(i) };
+                    if ((o.id == item.id))
+                    {
+                        s_Overload other { GET(o.index) };
+                        if ((other.min < 1))
+                            fail((("`using` ambiguity: `"_fu + item.id) + "`."_fu));
 
-                Partial(id, viaIdx, overloadIdx);
+                    };
+                };
             };
+            Partial(item.id, viaIdx, overloadIdx);
         };
     };
     fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& callsite, const fu_VEC<fu_STR>& declaration)

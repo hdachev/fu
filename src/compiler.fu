@@ -2164,6 +2164,9 @@ pub struct Scope
     overloads:  Overload[];
 };
 
+
+////////////////////////////////
+
 pub fn Scope_lookup(scope: Scope, id: string): ScopeIdx[]
 {
     mut results: ScopeIdx[] = [];
@@ -2178,24 +2181,6 @@ pub fn Scope_lookup(scope: Scope, id: string): ScopeIdx[]
 
     return results;
 }
-
-pub fn Scope_keys(scope: Scope): string[]
-{
-    mut keys: string[] = [];
-
-    let items = scope.items;
-    for (mut i = items.len; i --> 0; )
-    {
-        let id = items[i].id;
-        if (!keys.has(id))
-            keys.push(id);
-    }
-
-    return keys;
-}
-
-
-////////////////////////////////
 
 pub fn Scope_push(scope: &mut Scope): i32
 {
@@ -2513,53 +2498,56 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
     }
 
 
-    //
+    // We need a smarter way of doing this.
 
     fn scope_using(viaIdx: ScopeIdx)
     {
         let via = GET(viaIdx);
         let actual = via.type || fail();
 
-        let keys = Scope_keys(_scope);
-        for (mut i = 0; i < keys.len; i++)
+        for (mut i = 0; i < _scope.items.len; i++)
         {
-            let id = keys[i];
+            let item = _scope.items[i];
 
             // Skip over operators.
-            if (!id.hasIdentifierChars)
+            if (!item.id.hasIdentifierChars)
                 continue;
 
-            let overloads = Scope_lookup(_scope, id);
-            if (!overloads)
+            let overloadIdx = item.index;
+            let overload = GET(overloadIdx);
+
+            // Needs at least one argument.
+            if (overload.min < 1)
                 continue;
 
-            mut arity0 = false;
-            let MUT_n0 = overloads.len;
-            for (mut i = 0; i < MUT_n0; i++)
+            // TODO using + templates, the fuck do we do?
+            if (overload.template)
+                continue;
+
+            // See if we fit.
+            let expect = overload.args[0] || fail();
+            if (!isAssignableAsArgument(expect, actual))
+                continue;
+
+            // Enforce no-collide.
+            if (overload.min < 2)
             {
-                let overloadIdx = overloads[i];
-                let overload = GET(overloadIdx);
-
-                if (overload.min < 1)
+                // Scan through -
+                //  no other arity-0 entries are allowable.
+                for (mut i = 0; i < _scope.items.len; i++)
                 {
-                    arity0 = true;
-                    continue;
+                    let o = _scope.items[i];
+                    if (o.id == item.id)
+                    {
+                        let other = GET(o.index);
+                        if (other.min < 1)
+                            fail('`using` ambiguity: `' + item.id + '`.');
+                    }
                 }
-
-                // TODO using + templates, the fuck do we do?
-                if (overload.template)
-                    continue;
-
-                let expect = (overload.args || fail())[0] || fail();
-                if (!isAssignableAsArgument(expect, actual))
-                    continue;
-
-                if (overload.min < 2 && arity0)
-                    fail('`using` arity-0 conflict: `' + id + '`.');
-
-                // MUT DURING ITER!
-                Partial(id, viaIdx, overloadIdx);
             }
+
+            // MUT DURING ITER!
+            Partial(item.id, viaIdx, overloadIdx);
         }
     }
 
