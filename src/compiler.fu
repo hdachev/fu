@@ -285,7 +285,7 @@ fn lex(src: string, fname: string): LexResult
                     esc = true;
                     idx++;
                 }
-                else if (c == '\n')
+                else if (c1 == '\n')
                 {
                     line++;
                     lidx = idx - 1;

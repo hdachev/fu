@@ -673,7 +673,7 @@ struct sf_lex
                         esc = true;
                         idx++;
                     }
-                    else if ((c == "\n"_fu))
+                    else if ((c1 == "\n"_fu))
                     {
                         line++;
                         lidx = (idx - 1);
