@@ -27,7 +27,7 @@ struct fu_NEVER
 };
 
 struct s_BINOP;
-struct s_LexResult;
+struct s_LexerOutput;
 struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
@@ -162,7 +162,7 @@ struct s_Token
     }
 };
 
-struct s_LexResult
+struct s_LexerOutput
 {
     fu_STR fname;
     fu_VEC<s_Token> tokens;
@@ -237,12 +237,14 @@ struct s_ModuleInputs
 {
     fu_STR fname;
     fu_STR src;
+    s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
     {
         return false
             || fname.size()
             || src.size()
+            || lex
             || parse
         ;
     }
@@ -564,7 +566,7 @@ struct sf_lex
         };
         return out;
     };
-    s_LexResult lex_EVAL()
+    s_LexerOutput lex_EVAL()
     {
         while ((idx < end))
         {
@@ -761,7 +763,7 @@ struct sf_lex
         line++;
         lidx = (idx + 0);
         token("eof"_fu, "eof"_fu, idx, idx);
-        return s_LexResult { fu_CLONE(fname), fu_CLONE(tokens) };
+        return s_LexerOutput { fu_CLONE(fname), fu_CLONE(tokens) };
     };
 };
 
@@ -3202,7 +3204,7 @@ inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure():
 
 s_Scope solvePrelude()
 {
-    s_LexResult lexed = lex(prelude_src, "__prelude"_fu);
+    s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse("__prelude"_fu, lexed.tokens).root;
     s_TEMP_Context ctx {};
     s_Scope scope = listGlobals();
@@ -4385,9 +4387,9 @@ fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
     {
         module.out = s_ModuleOutputs { fu_VEC<fu_STR>{}, s_SolverOutput{}, fu_STR{} };
         const f64 t0 = fu::now_hr();
-        s_LexResult lexer_result = lex(src, fname);
+        s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
-        module.in = s_ModuleInputs { fu_CLONE(fname), fu_CLONE(src), parse(fname, lexer_result.tokens) };
+        module.in = s_ModuleInputs { fu_CLONE(fname), fu_CLONE(src), fu_CLONE(lexer_result), parse(fname, lexer_result.tokens) };
         const f64 t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);

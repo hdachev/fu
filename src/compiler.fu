@@ -69,13 +69,13 @@ struct Token
     col:    i32;
 };
 
-struct LexResult
+struct LexerOutput
 {
     fname:  string;
     tokens: Token[];
 };
 
-fn lex(src: string, fname: string): LexResult
+fn lex(src: string, fname: string): LexerOutput
 {
     let end     = src.len;
     mut line    = 1;
@@ -400,7 +400,7 @@ fn lex(src: string, fname: string): LexResult
         idx, idx);
 
     // err, data
-    return LexResult( :fname, :tokens );
+    return LexerOutput( :fname, :tokens );
 }
 
 
@@ -1871,6 +1871,7 @@ pub struct ModuleInputs
 {
     fname:      string;
     src:        string;
+    lex:        LexerOutput;
     parse:      ParserOutput;
 };
 
@@ -5920,7 +5921,9 @@ fn compile(
 
         let t1 = now_hr();
         module.in = ModuleInputs(
-            :fname, :src,
+            :fname,
+            :src,
+            lex: lexer_result,
             parse: parse( :fname, lexer_result.tokens));
 
         let t2 = now_hr();
