@@ -11,6 +11,10 @@ fn last(s: string)
     s.len   ? s[s.len - 1]
             : '';
 
+fn only(s: $T[]): $T
+    s.len == 1 ? s[0] : throw (
+        'LEN != 1: ' + s.len);
+
 fn hasIdentifierChars(id: string)
 {
     for (mut i = 0; i < id.len; i++)
@@ -4867,7 +4871,20 @@ pub fn cpp_codegen(
             return head;
 
         if (init)
+        {
+            // Cleaner copy-init setup,
+            //  the default is super-verbose.
+            if (init.kind == 'copy' && !(node.type.quals & q_ref))
+            {
+                let expr = cgNode(init.items.only);
+                if (node.type.quals & q_trivial)
+                    return head + ' = ' + expr;
+
+                return head + ' { ' + expr + ' }';
+            }
+
             return head + ' = ' + cgNode(init);
+        }
 
         return head + ' {}';
     }
@@ -5188,7 +5205,7 @@ pub fn cpp_codegen(
             return cgKeys(items);
 
         if (id == 'CLONE' && items.len == 1)
-            return cgClone(items[0]);
+            return cgClone(node.type, items[0]);
 
         if (id == 'STEAL' && items.len == 1)
             return cgSteal(items[0]);
@@ -5828,7 +5845,7 @@ struct fu_DEFAULT { static inline const T value {}; };
         if (node.kind == 'move')
             return cgSteal(a);
 
-        return cgClone(a);
+        return cgClone(node.type, a);
     }
 
     fn cgSteal(src: string): string
@@ -5843,25 +5860,9 @@ struct fu_DEFAULT { static inline const T value {}; };
         return 'std::swap(' + items.join(', ') + ')';
     }
 
-    fn cgClone(src: string): string
+    fn cgClone(type: Type, src: string): string
     {
-        let CLONE = '::CLONE';
-        if (!_ffwd.has(CLONE))
-        {
-            _ffwd[CLONE] =
-////////////////////////////////////
-`
-template <typename T>
-inline T fu_CLONE(const T& source)
-{
-    return source;
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_CLONE(' + src + ')';
+        return typeAnnotBase(type) + '(' + src + ')';
     }
 
 

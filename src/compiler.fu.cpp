@@ -49,12 +49,6 @@ struct s_Template;
 struct s_Token;
 struct s_Type;
 template <typename T>
-inline T fu_CLONE(const T& source)
-{
-    return source;
-}
-
-template <typename T>
 fu_VEC<T> fu_CONCAT(
     const fu_VEC<T>& a,
     const fu_VEC<T>& b)
@@ -162,6 +156,53 @@ struct s_Token
     }
 };
 
+struct s_Type
+{
+    fu_STR canon;
+    int quals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon.size()
+            || quals
+        ;
+    }
+};
+
+struct s_ScopeIdx
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+
+struct s_SolvedNode
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_Token token;
+    s_Type type;
+    s_ScopeIdx target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || flags
+            || value.size()
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+
 struct s_LexerOutput
 {
     fu_STR fname;
@@ -220,19 +261,6 @@ struct s_ParserOutput
     }
 };
 
-struct s_Type
-{
-    fu_STR canon;
-    int quals;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || canon.size()
-            || quals
-        ;
-    }
-};
-
 struct s_ModuleInputs
 {
     fu_STR fname;
@@ -246,40 +274,6 @@ struct s_ModuleInputs
             || src.size()
             || lex
             || parse
-        ;
-    }
-};
-
-struct s_ScopeIdx
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_Token token;
-    s_Type type;
-    s_ScopeIdx target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind.size()
-            || flags
-            || value.size()
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -490,6 +484,11 @@ fu_STR last(const fu_STR& s)
     return (s.size() ? fu_TO_STR(s[(s.size() - 1)]) : ""_fu);
 }
 
+s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu_THROW(("LEN != 1: "_fu + s.size())));
+}
+
 bool hasIdentifierChars(const fu_STR& id)
 {
     for (int i = 0; (i < id.size()); i++)
@@ -516,7 +515,7 @@ struct sf_lex
     void token(const fu_STR& kind, const fu_STR& value, const int& idx0, const int& idx1)
     {
         const int col = (idx0 - lidx);
-        tokens.push(s_Token { fu_CLONE(kind), fu_CLONE(value), fu_CLONE(fname), fu_CLONE(idx0), fu_CLONE(idx1), fu_CLONE(line), fu_CLONE(col) });
+        tokens.push(s_Token { fu_STR(kind), fu_STR(value), fu_STR(fname), int(idx0), int(idx1), int(line), int(col) });
     };
     void err_str(const fu_STR& kind, const int& idx0, const fu_STR& reason)
     {
@@ -570,7 +569,7 @@ struct sf_lex
     {
         while ((idx < end))
         {
-            const int idx0 = fu_CLONE(idx);
+            const int idx0 = idx;
             fu_STR c = fu_TO_STR(src[idx++]);
             if ((c <= " "_fu))
             {
@@ -594,7 +593,7 @@ struct sf_lex
                         break;
                     };
                 };
-                const int idx1 = fu_CLONE(idx);
+                const int idx1 = idx;
                 token("id"_fu, slice(src, idx0, idx1), idx0, idx1);
             }
             else if (((c >= "0"_fu) && (c <= "9"_fu)))
@@ -653,7 +652,7 @@ struct sf_lex
                     err("num"_fu, idx0, (idx - 1));
                 else
                 {
-                    const int idx1 = fu_CLONE(idx);
+                    const int idx1 = idx;
                     fu_STR str = slice(src, idx0, idx1);
                     token(checkNum(((dot || exp) ? "num"_fu : "int"_fu), str), str, idx0, idx1);
                 };
@@ -685,7 +684,7 @@ struct sf_lex
                     err_str("str"_fu, idx0, "Unterminated string literal."_fu);
                 else
                 {
-                    const int idx1 = fu_CLONE(idx);
+                    const int idx1 = idx;
                     fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : slice(src, (idx0 + 1), (idx1 - 1)));
                     token("str"_fu, str, idx0, idx1);
                 };
@@ -735,8 +734,8 @@ struct sf_lex
                 };
                 
                 {
-                    int begin = fu_CLONE(idx0);
-                    int end = fu_CLONE(idx);
+                    int begin = idx0;
+                    int end = idx;
                     while ((begin < end))
                     {
                         fu_STR candidate = slice(src, begin, end);
@@ -763,7 +762,7 @@ struct sf_lex
         line++;
         lidx = (idx + 0);
         token("eof"_fu, "eof"_fu, idx, idx);
-        return s_LexerOutput { fu_CLONE(fname), fu_CLONE(tokens) };
+        return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
     };
 };
 
@@ -797,7 +796,7 @@ inline const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> {
 struct sf_setupOperators
 {
     s_BINOP out {};
-    int precedence = fu_CLONE(P_PREFIX_UNARY);
+    int precedence = P_PREFIX_UNARY;
     bool rightToLeft = false;
     void binop(const fu_VEC<fu_STR>& ops)
     {
@@ -834,7 +833,7 @@ struct sf_setupOperators
 };
 
 #define setupOperators(...) ((sf_setupOperators { __VA_ARGS__ }).setupOperators_EVAL())
-inline const s_BINOP BINOP = fu_CLONE(setupOperators());
+inline const s_BINOP BINOP { setupOperators() };
 inline const int& P_COMMA = ([]() -> const int& { { const int& _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu_THROW("Assertion failed."); }());
 inline const int LET_TYPE = 0;
 inline const int LET_INIT = 1;
@@ -852,9 +851,9 @@ struct sf_parse
     const fu_STR& fname;
     const fu_VEC<s_Token>& _tokens;
     int _idx = 0;
-    s_Token _loc = fu_CLONE(_tokens[0]);
+    s_Token _loc { _tokens[0] };
     int _col0 = 0;
-    int _precedence = fu_CLONE(P_RESET);
+    int _precedence = P_RESET;
     int _fnDepth = 0;
     int _numReturns = 0;
     int _implicits = 0;
@@ -867,8 +866,8 @@ struct sf_parse
         if (!reason.size())
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
-        const int l0 = fu_CLONE(_loc.line);
-        const int c0 = fu_CLONE(_loc.col);
+        const int l0 = _loc.line;
+        const int c0 = _loc.col;
         const int& l1 = here.line;
         const int& c1 = here.col;
         fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
@@ -880,7 +879,7 @@ struct sf_parse
     };
     s_Node make(const fu_STR& kind, const fu_VEC<s_Node>& items, const int& flags, const fu_STR& value)
     {
-        return s_Node { fu_CLONE(kind), fu_CLONE(flags), fu_CLONE(value), fu_CLONE(items), fu_CLONE(([&]() -> s_Token& { { s_Token& _ = _loc; if (_) return _; } fu_THROW("no loc"_fu); }())) };
+        return s_Node { fu_STR(kind), int(flags), fu_STR(value), fu_VEC<s_Node>(items), s_Token(([&]() -> s_Token& { { s_Token& _ = _loc; if (_) return _; } fu_THROW("no loc"_fu); }())) };
     };
     s_Node miss()
     {
@@ -927,12 +926,12 @@ struct sf_parse
     {
         s_Token name = tryConsume("id"_fu, ""_fu);
         const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_.size()) return _; } fail("Anon structs."_fu); }());
-        fu_STR structName0 = fu_CLONE(_structName);
+        fu_STR structName0 { _structName };
         _structName = id;
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
         _structName = structName0;
-        return make("struct"_fu, items, 0, (name ? fu_CLONE(name.value) : ""_fu));
+        return make("struct"_fu, items, 0, (name ? fu_STR(name.value) : ""_fu));
     };
     s_Node parseStructItem()
     {
@@ -960,7 +959,7 @@ struct sf_parse
     fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
     {
         const int& line0 = _tokens[_idx].line;
-        const int col00 = fu_CLONE(_col0);
+        const int col00 = _col0;
         fu_VEC<s_Node> items = fu_VEC<s_Node>{};
         while (true)
         {
@@ -990,7 +989,7 @@ struct sf_parse
     };
     void unwrapStructMethods(fu_VEC<s_Node>& out, const int& structNodeIdx)
     {
-        s_Node structNode = fu_CLONE(out.mutref(structNodeIdx));
+        s_Node structNode { out.mutref(structNodeIdx) };
         fu_VEC<s_Node>& members = structNode.items;
         for (int i = 0; (i < members.size()); i++)
         {
@@ -1011,8 +1010,8 @@ struct sf_parse
     };
     s_Node parseStatement()
     {
-        s_Token loc0 = fu_CLONE(_loc);
-        s_Token token = fu_CLONE((_loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx++]; if (_) return _; } fail(""_fu); }())));
+        s_Token loc0 { _loc };
+        s_Token token { (_loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx++]; if (_) return _; } fail(""_fu); }())) };
         if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
@@ -1108,14 +1107,14 @@ struct sf_parse
     };
     s_Node parseExpressionStatement()
     {
-        s_Node expr = parseExpression(fu_CLONE(P_RESET));
+        s_Node expr = parseExpression(int(P_RESET));
         consume("op"_fu, ";"_fu);
         return expr;
     };
     s_Node parseFnDecl()
     {
-        fu_VEC<fu_STR> dollars0 = fu_CLONE(_dollars);
-        const int numReturns0 = fu_CLONE(_numReturns);
+        fu_VEC<fu_STR> dollars0 { _dollars };
+        const int numReturns0 = _numReturns;
         s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, ""_fu); if (_) return _; } return tryConsume("op"_fu, ""_fu); }());
         consume("op"_fu, "("_fu);
         fu_VEC<s_Node> items {};
@@ -1169,7 +1168,7 @@ struct sf_parse
     s_Node parseFnBodyBranch()
     {
         s_Node body = parseStatement();
-        return (((body.kind == "block"_fu) || (body.kind == "return"_fu)) ? fu_CLONE(body) : ((void)_numReturns++, createReturn(body)));
+        return (((body.kind == "block"_fu) || (body.kind == "return"_fu)) ? s_Node(body) : ((void)_numReturns++, createReturn(body)));
     };
     s_Node tryPopTypeAnnot()
     {
@@ -1239,7 +1238,7 @@ struct sf_parse
     };
     s_Node parseLet()
     {
-        int flags = fu_CLONE(F_LOCAL);
+        int flags = F_LOCAL;
         const int numDollars0 = _dollars.size();
         if (tryConsume("id"_fu, "using"_fu))
             flags |= F_USING;
@@ -1252,7 +1251,7 @@ struct sf_parse
 
         fu_STR id = consume("id"_fu, ""_fu).value;
         s_Node type = tryPopTypeAnnot();
-        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(fu_CLONE(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
+        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -1267,8 +1266,8 @@ struct sf_parse
     };
     s_Node parseExpression(const int p1)
     {
-        const int p0 = fu_CLONE(_precedence);
-        s_Token loc0 = fu_CLONE(_loc);
+        const int p0 = _precedence;
+        s_Token loc0 { _loc };
         _precedence = p1;
         _loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx]; if (_) return _; } fail(""_fu); }());
         s_Node head = parseExpressionHead();
@@ -1294,10 +1293,10 @@ struct sf_parse
         s_Node mid {};
         if ((op == "?"_fu))
         {
-            mid = parseExpression(fu_CLONE(_precedence));
+            mid = parseExpression(int(_precedence));
             consume("op"_fu, ":"_fu);
         };
-        s_Node right = parseExpression(fu_CLONE(p1));
+        s_Node right = parseExpression(int(p1));
         if (mid)
             return createIf(left, mid, right);
 
@@ -1367,7 +1366,7 @@ struct sf_parse
                 if ((v == "[]"_fu))
                     return make("definit"_fu, fu_VEC<s_Node>{}, 0, ""_fu);
 
-                return parsePrefix(fu_CLONE(token.value));
+                return parsePrefix(fu_STR(token.value));
             };
         };
         _idx--;
@@ -1377,10 +1376,10 @@ struct sf_parse
     {
         fu_VEC<s_Node> items = fu_VEC<s_Node>{};
         do
-            items.push(parseExpression(fu_CLONE(P_COMMA)));
+            items.push(parseExpression(int(P_COMMA)));
         while (tryConsume("op"_fu, ","_fu));
         consume("op"_fu, ")"_fu);
-        return ((items.size() > 1) ? createComma(items) : fu_CLONE(items.mutref(0)));
+        return ((items.size() > 1) ? createComma(items) : s_Node(items.mutref(0)));
     };
     s_Node createComma(const fu_VEC<s_Node>& nodes)
     {
@@ -1416,7 +1415,7 @@ struct sf_parse
     };
     s_Node parseUnaryExpression()
     {
-        return parseExpression(fu_CLONE(P_PREFIX_UNARY));
+        return parseExpression(int(P_PREFIX_UNARY));
     };
     s_Node createPrefix(const fu_STR& op, const s_Node& expr)
     {
@@ -1466,13 +1465,13 @@ struct sf_parse
                 _idx++;
                 flags |= F_NAMED_ARGS;
             };
-            s_Node expr = parseExpression(fu_CLONE(P_COMMA));
+            s_Node expr = parseExpression(int(P_COMMA));
             if (autoName)
             {
                 (((expr.kind == "call"_fu) && (expr.flags & F_ID)) || fail("Can't :auto_name this expression."_fu));
                 name = expr.value;
             };
-            out_args.push((name.size() ? createLabel(name, expr) : fu_CLONE(expr)));
+            out_args.push((name.size() ? createLabel(name, expr) : s_Node(expr)));
         };
         return flags;
     };
@@ -1555,7 +1554,7 @@ struct sf_parse
     {
         s_Token nott = tryConsume("op"_fu, "!"_fu);
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(fu_CLONE(_precedence));
+        s_Node cond = parseExpression(int(_precedence));
         if (nott)
             cond = createNot(cond);
 
@@ -1590,7 +1589,7 @@ struct sf_parse
         s_Node init = parseLetStmt();
         s_Node cond = parseExpressionStatement();
         const s_Token& token = _tokens[_idx];
-        s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(fu_CLONE(_precedence)));
+        s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(int(_precedence)));
         consume("op"_fu, ")"_fu);
         s_Node body = parseStatement();
         return createLoop(init, cond, post, body, miss());
@@ -1598,7 +1597,7 @@ struct sf_parse
     s_Node parseWhile()
     {
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(fu_CLONE(_precedence));
+        s_Node cond = parseExpression(int(_precedence));
         consume("op"_fu, ")"_fu);
         s_Node body = parseStatement();
         return createLoop(miss(), cond, miss(), body, miss());
@@ -1608,7 +1607,7 @@ struct sf_parse
         s_Node body = parseStatement();
         consume("id"_fu, "while"_fu);
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(fu_CLONE(_precedence));
+        s_Node cond = parseExpression(int(_precedence));
         consume("op"_fu, ")"_fu);
         consume("op"_fu, ";"_fu);
         return createLoop(miss(), miss(), miss(), body, cond);
@@ -1621,7 +1620,7 @@ struct sf_parse
     {
         ((_tokens[(_tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
         s_Node root = parseRoot();
-        return s_ParserOutput { fu_CLONE(root), fu_CLONE(_imports) };
+        return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
     };
 };
 
@@ -1648,21 +1647,21 @@ inline const int Integral = (Arithmetic | q_integral);
 inline const int SignedInt = (Integral | q_signed);
 inline const int& UnsignedInt = Integral;
 inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-inline const s_Type t_i8 = s_Type { "i8"_fu, fu_CLONE(SignedInt) };
-inline const s_Type t_i16 = s_Type { "i16"_fu, fu_CLONE(SignedInt) };
-inline const s_Type t_i32 = s_Type { "i32"_fu, fu_CLONE(SignedInt) };
-inline const s_Type t_i64 = s_Type { "i64"_fu, fu_CLONE(SignedInt) };
-inline const s_Type t_u8 = s_Type { "u8"_fu, fu_CLONE(UnsignedInt) };
-inline const s_Type t_u16 = s_Type { "u16"_fu, fu_CLONE(UnsignedInt) };
-inline const s_Type t_u32 = s_Type { "u32"_fu, fu_CLONE(UnsignedInt) };
-inline const s_Type t_u64 = s_Type { "u64"_fu, fu_CLONE(UnsignedInt) };
-inline const s_Type t_f32 = s_Type { "f32"_fu, fu_CLONE(FloatingPt) };
-inline const s_Type t_f64 = s_Type { "f64"_fu, fu_CLONE(FloatingPt) };
+inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt) };
+inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt) };
+inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt) };
+inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt) };
+inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt) };
+inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt) };
+inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt) };
+inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt) };
+inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt) };
+inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt) };
 inline const s_Type t_void = s_Type { "void"_fu, 0 };
-inline const s_Type t_bool = s_Type { "bool"_fu, fu_CLONE(Primitive) };
+inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive) };
 inline const s_Type t_never = s_Type { "never"_fu, 0 };
 inline const s_Type t_template = s_Type { "template"_fu, 0 };
-inline const s_Type t_string = s_Type { "string"_fu, fu_CLONE(q_copy) };
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy) };
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
@@ -1677,12 +1676,12 @@ bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 
 s_Type qadd(const s_Type& type, const int& q)
 {
-    return s_Type { fu_CLONE(type.canon), (type.canon.size() ? (type.quals | q) : 0) };
+    return s_Type { fu_STR(type.canon), (type.canon.size() ? (type.quals | q) : 0) };
 }
 
 s_Type qsub(const s_Type& type, const int& q)
 {
-    return s_Type { fu_CLONE(type.canon), (type.quals & ~q) };
+    return s_Type { fu_STR(type.canon), (type.quals & ~q) };
 }
 
 bool qhas(const s_Type& type, const int& q)
@@ -1716,7 +1715,7 @@ s_Type tryClear_mutref(const s_Type& type)
 s_Type tryClear_ref(const s_Type& type)
 {
     s_Type t = tryClear(type, q_ref);
-    return (t ? qsub(t, q_mutref) : fu_CLONE(t));
+    return (t ? qsub(t, q_mutref) : s_Type(t));
 }
 
 s_Type clear_refs(const s_Type& type)
@@ -1753,9 +1752,9 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if ((a.canon != b.canon))
-        return ((a == t_never) ? fu_CLONE(b) : ((b == t_never) ? fu_CLONE(a) : s_Type { fu_STR{}, int{} }));
+        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{} }));
 
-    return s_Type { fu_CLONE(a.canon), (a.quals & b.quals) };
+    return s_Type { fu_STR(a.canon), (a.quals & b.quals) };
 }
 
 s_Module upsertModule(const fu_STR& fname, s_TEMP_Context& ctx)
@@ -1781,9 +1780,9 @@ s_Struct& lookupType_mut(const fu_STR& canon, s_TEMP_Context& ctx)
 s_Type initStruct(const fu_STR& id, const int& flags, s_TEMP_Context& ctx)
 {
     fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu_THROW("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
+    s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu_THROW("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, def.fields) };
+    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields) };
 }
 
 void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_TEMP_Context& ctx)
@@ -1826,10 +1825,10 @@ bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
 s_Type createArray(const s_Type& item, s_TEMP_Context& ctx)
 {
     const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, fu_CLONE(item) } } };
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
     fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
-    registerType(canon, s_Struct { "array"_fu, fu_CLONE(canon), fu_CLONE(fields), fu_CLONE(flags) }, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields) };
+    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, ctx);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields) };
 }
 
 bool type_isString(const s_Type& type)
@@ -1859,10 +1858,10 @@ bool type_isMap(const s_Type& type)
 s_Type createMap(const s_Type& key, const s_Type& value, s_TEMP_Context& ctx)
 {
     const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, fu_CLONE(key) }, s_StructField { "Value"_fu, fu_CLONE(value) } } };
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
-    registerType(canon, s_Struct { "map"_fu, fu_CLONE(canon), fu_CLONE(fields), fu_CLONE(flags) }, ctx);
-    return s_Type { fu_CLONE(canon), copyOrMove(flags, fields) };
+    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, ctx);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields) };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_TEMP_Context& ctx)
@@ -1872,7 +1871,7 @@ s_MapFields tryClear_map(const s_Type& type, const s_TEMP_Context& ctx)
 
     const s_Struct& def = lookupType(type.canon, ctx);
     ((def.kind == "map"_fu) || fu_THROW("Assertion failed."));
-    return s_MapFields { fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
+    return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
 }
 
 fu_VEC<s_ScopeIdx> Scope_lookup(const s_Scope& scope, const fu_STR& id)
@@ -1916,8 +1915,8 @@ void Scope_pop(s_Scope& scope, const int& memo)
 s_ScopeIdx Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial)
 {
     s_ScopeIdx index = s_ScopeIdx { (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_CLONE(kind), fu_CLONE(id), fu_CLONE(type), fu_CLONE(min), fu_CLONE(max), fu_CLONE(arg_t), fu_CLONE(arg_n), fu_CLONE(arg_d), fu_CLONE(partial), fu_CLONE(tempatle) };
-    scope.items.push(s_ScopeItem { fu_CLONE(id), fu_CLONE(index) });
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle) };
+    scope.items.push(s_ScopeItem { fu_STR(id), s_ScopeIdx(index) });
     scope.overloads.push(item);
     return index;
 }
@@ -1932,7 +1931,7 @@ struct sf_runSolver
     const s_Node& parse;
     const s_Scope& globals;
     s_TEMP_Context& ctx;
-    s_Scope _scope = fu_CLONE(globals);
+    s_Scope _scope { globals };
     s_Token _here {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
@@ -1947,9 +1946,9 @@ struct sf_runSolver
         if (!reason.size())
             reason = (("Unexpected `"_fu + _here.value) + "`."_fu);
 
-        fu_STR fname = fu_CLONE(_here.fname);
-        const int l0 = fu_CLONE(_here.line);
-        const int c0 = fu_CLONE(_here.col);
+        fu_STR fname { _here.fname };
+        const int l0 = _here.line;
+        const int c0 = _here.col;
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
         fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
@@ -1966,8 +1965,8 @@ struct sf_runSolver
         const fu_STR& id = node.value;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
-        const int max = ((node.kind == "fn"_fu) ? 0xffffff : fu_CLONE(min));
-        s_Template tempatle = s_Template { fu_CLONE(node), fu_COW_MAP<fu_STR, s_SolvedNode>{} };
+        const int max = ((node.kind == "fn"_fu) ? 0xffffff : int(min));
+        s_Template tempatle = s_Template { s_Node(node), fu_COW_MAP<fu_STR, s_SolvedNode>{} };
         fu_VEC<fu_STR> arg_n {};
         if ((node.kind == "fn"_fu))
         {
@@ -1985,7 +1984,7 @@ struct sf_runSolver
     };
     s_ScopeIdx FnDecl(const fu_STR& id, s_SolvedNode& node)
     {
-        fu_VEC<s_SolvedNode> items = fu_CLONE(node.items);
+        fu_VEC<s_SolvedNode> items { node.items };
         const s_SolvedNode& rnode = items[(items.size() + FN_RET_BACK)];
         const s_Type& ret = ([&]() -> const s_Type& { if (rnode) { const s_Type& _ = rnode.type; if (_) return _; } fail(""_fu); }());
         const int max = (items.size() + FN_RET_BACK);
@@ -2033,7 +2032,7 @@ struct sf_runSolver
             for (int i = 0; (i < members.size()); i++)
             {
                 const s_SolvedNode& member = members[i];
-                s_SolvedNode init = ([&]() -> s_SolvedNode { { s_SolvedNode _ = fu_CLONE(member.items[LET_INIT]); if (_) return _; } return tryDefaultInit(member.type); }());
+                s_SolvedNode init = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(member.items[LET_INIT]); if (_) return _; } return tryDefaultInit(member.type); }());
                 if (!init)
                 {
                     min = max;
@@ -2054,7 +2053,7 @@ struct sf_runSolver
     };
     s_SolvedNode createDefaultInit(const s_Type& type)
     {
-        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, fu_CLONE(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), fu_CLONE(type), s_ScopeIdx{} };
+        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_ScopeIdx{} };
     };
     s_SolvedNode solveDefinit(const s_Type& type)
     {
@@ -2065,15 +2064,15 @@ struct sf_runSolver
     };
     s_ScopeIdx Partial(const fu_STR& id, const s_ScopeIdx& viaIdx, const s_ScopeIdx& overloadIdx)
     {
-        s_Overload via = fu_CLONE(GET(viaIdx));
-        s_Overload overload = fu_CLONE(GET(overloadIdx));
+        s_Overload via { GET(viaIdx) };
+        s_Overload overload { GET(overloadIdx) };
         fu_STR kind = "p-unshift"_fu;
         int min = (overload.min - 1);
         int max = (overload.max - 1);
         (((min >= 0) && (max >= min)) || fail(""_fu));
-        fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_CLONE(overload.args));
-        fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_CLONE(overload.names));
-        fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_CLONE(overload.defaults));
+        fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_VEC<s_Type>(overload.args));
+        fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_VEC<fu_STR>(overload.names));
+        fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_VEC<s_SolvedNode>(overload.defaults));
         if ((via.kind != "var"_fu))
         {
             kind = "p-wrap"_fu;
@@ -2088,11 +2087,11 @@ struct sf_runSolver
                 arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
 
         };
-        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { fu_CLONE(viaIdx), fu_CLONE(overloadIdx) });
+        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_ScopeIdx(viaIdx), s_ScopeIdx(overloadIdx) });
     };
     void scope_using(const s_ScopeIdx& viaIdx)
     {
-        s_Overload via = fu_CLONE(GET(viaIdx));
+        s_Overload via { GET(viaIdx) };
         const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }());
         fu_VEC<fu_STR> keys = Scope_keys(_scope);
         for (int i = 0; (i < keys.size()); i++)
@@ -2112,7 +2111,7 @@ struct sf_runSolver
             for (int i = 0; (i < MUT_n0); i++)
             {
                 const s_ScopeIdx& overloadIdx = overloads[i];
-                s_Overload overload = fu_CLONE(GET(overloadIdx));
+                s_Overload overload { GET(overloadIdx) };
                 if ((overload.min < 1))
                 {
                     arity0 = true;
@@ -2123,7 +2122,7 @@ struct sf_runSolver
                     continue;
                 };
                 const s_Type& expect = ([&]() -> const s_Type& { { const s_Type& _ = ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }())[0]; if (_) return _; } fail(""_fu); }());
-                if (!isAssignableAsArgument(expect, fu_CLONE(actual)))
+                if (!isAssignableAsArgument(expect, s_Type(actual)))
                 {
                     continue;
                 };
@@ -2143,7 +2142,7 @@ struct sf_runSolver
             int idx = fu::lfind(callsite, declaration[i]);
             if ((idx < 0))
             {
-                for (int i = fu_CLONE(offset); (i < callsite.size()); i++)
+                for (int i = offset; (i < callsite.size()); i++)
                 {
                     offset++;
                     if (!callsite[i].size())
@@ -2185,16 +2184,16 @@ struct sf_runSolver
                 bool some = false;
                 for (int i = 0; (i < arity); i++)
                 {
-                    s_SolvedNode arg = fu_CLONE(args.mutref(i));
-                    names.push(((arg.kind == "label"_fu) ? fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(""_fu); }())) : ""_fu));
+                    s_SolvedNode arg { args.mutref(i) };
+                    names.push(((arg.kind == "label"_fu) ? fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(""_fu); }())) : ""_fu));
                 };
                 (some || fail(""_fu));
             };
             fu_VEC<int> reorder {};
             for (int i = 0; (i < overloads.size()); i++){
             {
-                s_ScopeIdx overloadIdx = fu_CLONE(overloads[i]);
-                s_Overload overload = fu_CLONE(GET(overloadIdx));
+                s_ScopeIdx overloadIdx { overloads[i] };
+                s_Overload overload { GET(overloadIdx) };
                 while (true){
                 {
                     if (((overload.min > arity) || (overload.max < arity)))
@@ -2230,12 +2229,12 @@ struct sf_runSolver
                     }L_TEST_AGAIN_c:;}
                     L_TEST_AGAIN_b:;
 
-                fu_VEC<s_Type> arg_t = fu_CLONE(([&]() -> fu_VEC<s_Type>& { { fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }()));
-                fu_VEC<s_SolvedNode> arg_d = fu_CLONE(overload.defaults);
+                fu_VEC<s_Type> arg_t { ([&]() -> fu_VEC<s_Type>& { { fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }()) };
+                fu_VEC<s_SolvedNode> arg_d { overload.defaults };
                 const int N = (reorder ? reorder.size() : args.size());
                 for (int i = 0; (i < N); i++)
                 {
-                    const int callsiteIndex = fu_CLONE((reorder ? reorder.mutref(i) : i));
+                    const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
                     if ((callsiteIndex < 0))
                     {
                         if (!(arg_d && arg_d[i]))
@@ -2244,7 +2243,7 @@ struct sf_runSolver
                         };
                         continue;
                     };
-                    if (!isAssignableAsArgument(arg_t[i], fu_CLONE(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(callsiteIndex); if (_) return _; } fail(""_fu); }()).type)))
+                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(callsiteIndex); if (_) return _; } fail(""_fu); }()).type)))
                     {
                         goto L_NEXT_c;
                     };
@@ -2259,7 +2258,7 @@ struct sf_runSolver
                     new_args.resize(reorder.size());
                     for (int i = 0; (i < reorder.size()); i++)
                     {
-                        const int idx = fu_CLONE(reorder.mutref(i));
+                        const int idx = reorder.mutref(i);
                         if ((idx >= 0))
                             new_args.mutref(i) = args.mutref(idx);
 
@@ -2271,7 +2270,7 @@ struct sf_runSolver
         };
         if (matchIdx)
         {
-            s_Overload matched = fu_CLONE(GET(matchIdx));
+            s_Overload matched { GET(matchIdx) };
             const fu_VEC<s_SolvedNode>& arg_d = matched.defaults;
             if (arg_d)
             {
@@ -2333,16 +2332,16 @@ struct sf_runSolver
             return solveArrayLiteral(node, type);
 
         if ((k == "if"_fu))
-            return solveIf(node, fu_CLONE(type));
+            return solveIf(node, s_Type(type));
 
         if ((k == "or"_fu))
-            return solveOr(node, fu_CLONE(type));
+            return solveOr(node, s_Type(type));
 
         if ((k == "!"_fu))
             return solveNot(node);
 
         if ((k == "and"_fu))
-            return solveAnd(node, fu_CLONE(type));
+            return solveAnd(node, s_Type(type));
 
         if ((k == "return"_fu))
             return solveReturn(node);
@@ -2431,7 +2430,7 @@ struct sf_runSolver
     };
     s_Node createTypeParam(const fu_STR& value)
     {
-        return s_Node { "typeparam"_fu, int{}, fu_CLONE(value), fu_VEC<s_Node>{}, fu_CLONE(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
+        return s_Node { "typeparam"_fu, int{}, fu_STR(value), fu_VEC<s_Node>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
@@ -2463,7 +2462,7 @@ struct sf_runSolver
 
         const fu_VEC<s_Node>& inItems = n_fn.items;
         ((inItems.size() >= FN_RET_BACK) || fail(""_fu));
-        s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = fu_CLONE(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }());
+        s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }());
         out.items.resize(inItems.size());
         if ((_current_fn && (id != "free"_fu)))
         {
@@ -2481,9 +2480,9 @@ struct sf_runSolver
                 ((n_arg.kind == "let"_fu) || fail(""_fu));
                 if (spec)
                 {
-                    s_Node mut_arg = fu_CLONE(n_arg);
+                    s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);
-                    s_Type type = fu_CLONE(_typeParams.mutref(mut_arg.value));
+                    s_Type type { _typeParams.mutref(mut_arg.value) };
                     if (!(type.quals & q_ref))
                         mut_arg.flags |= F_MUT;
 
@@ -2493,12 +2492,12 @@ struct sf_runSolver
                     outItems.mutref(i) = solveLet(n_arg);
 
             };
-            s_Node n_ret = fu_CLONE(inItems[(inItems.size() + FN_RET_BACK)]);
-            s_Node n_body = fu_CLONE(([&]() -> const s_Node& { { const s_Node& _ = inItems[(inItems.size() + FN_BODY_BACK)]; if (_) return _; } fail(""_fu); }()));
+            s_Node n_ret { inItems[(inItems.size() + FN_RET_BACK)] };
+            s_Node n_body { ([&]() -> const s_Node& { { const s_Node& _ = inItems[(inItems.size() + FN_BODY_BACK)]; if (_) return _; } fail(""_fu); }()) };
             if ((caseIdx >= 0))
             {
                 ((n_body.kind == "pattern"_fu) || fail(""_fu));
-                s_Node branch = fu_CLONE(([&]() -> s_Node& { { s_Node& _ = n_body.items.mutref(caseIdx); if (_) return _; } fail(""_fu); }()));
+                s_Node branch { ([&]() -> s_Node& { { s_Node& _ = n_body.items.mutref(caseIdx); if (_) return _; } fail(""_fu); }()) };
                 const fu_VEC<s_Node>& items = branch.items;
                 n_ret = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } return n_ret; }());
                 n_body = items[(items.size() + FN_BODY_BACK)];
@@ -2534,12 +2533,12 @@ struct sf_runSolver
     s_ScopeIdx trySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
         fu_STR mangle = TODO_memoize_mangler(args);
-        s_SolvedNode spec = fu_CLONE(([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempatle, args); return _; } (tempatle.specializations.upsert(mangle))));
+        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempatle, args); return _; } (tempatle.specializations.upsert(mangle))) };
         return spec.target;
     };
     s_SolvedNode doTrySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
-        s_Node node = fu_CLONE(tempatle.node);
+        s_Node node { tempatle.node };
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         s_SolvedNode result = trySpecializeFn(node, args);
         if (!result)
@@ -2556,7 +2555,7 @@ struct sf_runSolver
         {
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(""_fu); }());
             ((argNode.kind == "let"_fu) || fail(""_fu));
-            s_Type inType = ((args.size() > i) ? fu_CLONE(args[i].type) : s_Type { fu_STR{}, int{} });
+            s_Type inType = ((args.size() > i) ? s_Type(args[i].type) : s_Type { fu_STR{}, int{} });
             if (inType)
             {
                 const fu_STR& argName = ([&]() -> const fu_STR& { { const fu_STR& _ = argNode.value; if (_.size()) return _; } fail(""_fu); }());
@@ -2567,7 +2566,7 @@ struct sf_runSolver
             const s_Node& annot = argNode.items[LET_TYPE];
             if (annot)
             {
-                const bool ok = (inType && trySolveTypeParams(annot, fu_CLONE(inType), typeParams));
+                const bool ok = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
                 if (!ok)
                     return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
 
@@ -2614,7 +2613,7 @@ struct sf_runSolver
     };
     s_SolvedNode __solveStruct(const bool& solve, const s_Node& node, const s_SolvedNode& prep)
     {
-        s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = fu_CLONE(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
+        s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail("TODO anonymous structs"_fu); }());
         s_Type structType = initStruct(id, node.flags, ctx);
         if (!prep)
@@ -2627,7 +2626,7 @@ struct sf_runSolver
         
         {
             fu_VEC<s_SolvedNode> members {};
-            fu_VEC<s_SolvedNode> items = fu_CLONE(out.items);
+            fu_VEC<s_SolvedNode> items { out.items };
             fu_VEC<s_StructField> fields {};
             for (int i = 0; (i < items.size()); i++)
             {
@@ -2635,7 +2634,7 @@ struct sf_runSolver
                 if ((item && (item.kind == "let"_fu) && (item.flags & F_FIELD)))
                 {
                     members.push(item);
-                    fields.push(s_StructField { fu_CLONE(([&]() -> const fu_STR& { { const fu_STR& _ = item.value; if (_.size()) return _; } fail(""_fu); }())), fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = item.type; if (_) return _; } fail(""_fu); }())) });
+                    fields.push(s_StructField { fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = item.value; if (_.size()) return _; } fail(""_fu); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = item.type; if (_) return _; } fail(""_fu); }())) });
                 };
             };
             finalizeStruct(id, fields, ctx);
@@ -2663,7 +2662,7 @@ struct sf_runSolver
         const s_SolvedNode& nextExpr = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = out.items[0]; if (_) return _; } return out; }());
         const s_Type& nextType = ([&]() -> const s_Type& { { const s_Type& _ = nextExpr.type; if (_) return _; } fail(""_fu); }());
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
-        s_SolvedNode prevExpr = fu_CLONE(_current_fn.items.mutref(retIdx));
+        s_SolvedNode prevExpr { _current_fn.items.mutref(retIdx) };
         const s_Type& prevType = prevExpr.type;
         if (prevType)
         {
@@ -2685,8 +2684,8 @@ struct sf_runSolver
         s_SolvedNode s_annot = ([&]() -> s_SolvedNode { if (annot) return evalTypeAnnot(annot); else return s_SolvedNode{}; }());
         const s_Type& t_annot = s_annot.type;
         s_SolvedNode s_init = ([&]() -> s_SolvedNode { if (init) return solveNode(init, t_annot); else return s_SolvedNode{}; }());
-        s_Type t_init = fu_CLONE(s_init.type);
-        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : fu_CLONE(t_annot)) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail("Variable declarations without explicit type annotations must be initialized."_fu); }()))));
+        s_Type t_init { s_init.type };
+        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : s_Type(t_annot)) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : s_Type(([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail("Variable declarations without explicit type annotations must be initialized."_fu); }()))));
         if ((t_annot && t_init))
         {
             (isAssignable(t_annot, t_init) || fail("Type annotation does not match init expression."_fu));
@@ -2723,7 +2722,7 @@ struct sf_runSolver
     {
         ((node.items.size() == 3) || fail(""_fu));
         fu_VEC<s_SolvedNode> nodes = solveNodes(node.items, s_Type{});
-        (((nodes[1].kind == "let"_fu) && isAssignableAsArgument(nodes[1].type, fu_CLONE(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
+        (((nodes[1].kind == "let"_fu) && isAssignableAsArgument(nodes[1].type, s_Type(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
         return solved(node, nodes[0].type, nodes);
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
@@ -2765,7 +2764,7 @@ struct sf_runSolver
                 {
                     for (int i = 0; (i < overloads.size()); i++)
                     {
-                        s_Overload maybe = fu_CLONE(GET(overloads[i]));
+                        s_Overload maybe { GET(overloads[i]) };
                         if ((maybe.kind == "type"_fu))
                             return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(""_fu); }()), fu_VEC<s_SolvedNode>{});
 
@@ -2778,7 +2777,7 @@ struct sf_runSolver
         {
             const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
             (_typeParams || fail((("Unexpected type param: `$"_fu + id) + "`."_fu)));
-            s_Type type = fu_CLONE(([&]() -> s_Type& { if (_typeParams) { s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()));
+            s_Type type { ([&]() -> s_Type& { if (_typeParams) { s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
             return solved(node, type, fu_VEC<s_SolvedNode>{});
         };
         fail("TODO"_fu);
@@ -2796,7 +2795,7 @@ struct sf_runSolver
                     if (!t)
                         return false;
 
-                    return trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(""_fu); }()), fu_CLONE(t), typeParams);
+                    return trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(""_fu); }()), s_Type(t), typeParams);
                 }
                 else if ((items.size() == 2))
                 {
@@ -2806,7 +2805,7 @@ struct sf_runSolver
                         if (!kv)
                             return false;
 
-                        return (trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(""_fu); }()), fu_CLONE(kv.key), typeParams) && trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[1]; if (_) return _; } fail(""_fu); }()), fu_CLONE(kv.value), typeParams));
+                        return (trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(""_fu); }()), s_Type(kv.key), typeParams) && trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[1]; if (_) return _; } fail(""_fu); }()), s_Type(kv.value), typeParams));
                     };
                 };
             }
@@ -2818,7 +2817,7 @@ struct sf_runSolver
                 {
                     for (int i = 0; (i < overloads.size()); i++)
                     {
-                        s_Overload maybe = fu_CLONE(GET(overloads[i]));
+                        s_Overload maybe { GET(overloads[i]) };
                         if ((maybe.kind == "type"_fu))
                             return isAssignable(([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(""_fu); }()), type);
 
@@ -2861,7 +2860,7 @@ struct sf_runSolver
                 }
                 else
                 {
-                    fu_COW_MAP<fu_STR, s_Type> typeParams0 = fu_CLONE(_typeParams);
+                    fu_COW_MAP<fu_STR, s_Type> typeParams0 { _typeParams };
                     _typeParams = typeParams;
                     s_Type expect = evalTypeAnnot(right).type;
                     s_Type actual = evalTypeAnnot(left).type;
@@ -2879,7 +2878,7 @@ struct sf_runSolver
     };
     s_Node createRead(const fu_STR& id)
     {
-        return s_Node { "call"_fu, fu_CLONE(F_ID), fu_CLONE(id), fu_VEC<s_Node>{}, fu_CLONE(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
+        return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
     };
     s_SolvedNode solveCall(const s_Node& node)
     {
@@ -2887,27 +2886,27 @@ struct sf_runSolver
         (id.size() || fail(""_fu));
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
         s_ScopeIdx callTargIdx = scope_match__mutargs(id, args, node.flags);
-        s_Overload callTarg = fu_CLONE(GET(callTargIdx));
+        s_Overload callTarg { GET(callTargIdx) };
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
-            s_Partial partial = fu_CLONE(([&]() -> s_Partial& { { s_Partial& _ = callTarg.partial; if (_) return _; } fail(""_fu); }()));
+            s_Partial partial { ([&]() -> s_Partial& { { s_Partial& _ = callTarg.partial; if (_) return _; } fail(""_fu); }()) };
             const s_ScopeIdx& viaIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.via; if (_) return _; } fail(""_fu); }());
             callTargIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.target; if (_) return _; } fail(""_fu); }());
-            s_Overload via = fu_CLONE(GET(viaIdx));
+            s_Overload via { GET(viaIdx) };
             callTarg = GET(callTargIdx);
             fu_VEC<s_SolvedNode> innerArgs {};
             if (!unshift)
                 innerArgs = fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) } };
 
-            s_SolvedNode argNode = CallerNode(createRead("__partial"_fu), fu_CLONE(([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }())), viaIdx, fu_CLONE(innerArgs));
+            s_SolvedNode argNode = CallerNode(createRead("__partial"_fu), s_Type(([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }())), viaIdx, fu_VEC<s_SolvedNode>(innerArgs));
             if (unshift)
                 args.unshift(argNode);
             else
                 args.mutref(0) = argNode;
 
         };
-        return CallerNode(node, fu_CLONE(([&]() -> s_Type& { { s_Type& _ = callTarg.type; if (_) return _; } fail(""_fu); }())), callTargIdx, fu_CLONE(args));
+        return CallerNode(node, s_Type(([&]() -> s_Type& { { s_Type& _ = callTarg.type; if (_) return _; } fail(""_fu); }())), callTargIdx, fu_VEC<s_SolvedNode>(args));
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
@@ -2922,7 +2921,7 @@ struct sf_runSolver
         if (!itemType)
             fail("Cannot infer empty arraylit."_fu);
 
-        for (int i = fu_CLONE(startAt); (i < items.size()); i++)
+        for (int i = startAt; (i < items.size()); i++)
         {
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()).type);
             (itemType || fail("[array literal] No common supertype."_fu));
@@ -2931,7 +2930,7 @@ struct sf_runSolver
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
     {
-        return s_SolvedNode { "let"_fu, fu_CLONE(flags), fu_CLONE(id), fu_VEC<s_SolvedNode>{}, fu_CLONE(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), fu_CLONE(type), s_ScopeIdx{} };
+        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_ScopeIdx{} };
     };
     s_ScopeIdx injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
@@ -2956,7 +2955,7 @@ struct sf_runSolver
     {
         (TEST_expectImplicits || fail("Attempting to propagate implicit arguments."_fu));
         ((args.size() >= argIdx) || fail(""_fu));
-        args.insert(argIdx, CallerNode(createRead(id), fu_CLONE(type), getImplicit(id, type), fu_VEC<s_SolvedNode>{}));
+        args.insert(argIdx, CallerNode(createRead(id), s_Type(type), getImplicit(id, type), fu_VEC<s_SolvedNode>{}));
     };
     s_ScopeIdx getImplicit(const fu_STR& id, const s_Type& type)
     {
@@ -2980,13 +2979,13 @@ struct sf_runSolver
         s_SolvedNode cond = solveNode(n0, t_bool);
         s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
-        s_SolvedNode priExpr = fu_CLONE(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()));
-        s_SolvedNode secExpr = fu_CLONE(([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()));
+        s_SolvedNode priExpr { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()) };
+        s_SolvedNode secExpr { ([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
         const s_Type& secType = secExpr.type;
         if (!((type == t_void) || (type == t_bool)))
         {
-            type = (!secType ? fu_CLONE(priType) : type_tryInter(priType, secType));
+            type = (!secType ? s_Type(priType) : type_tryInter(priType, secType));
             (type || fail("[if] No common supertype."_fu));
             if (cons)
                 cons = maybeCopyOrMove(cons, type);
@@ -3012,7 +3011,7 @@ struct sf_runSolver
             s_Type sumType {};
             for (int i = 0; (i < items.size()); i++)
             {
-                s_SolvedNode item = fu_CLONE(items.mutref(i));
+                s_SolvedNode item { items.mutref(i) };
                 if ((item.type == t_never))
                 {
                     continue;
@@ -3083,14 +3082,14 @@ struct sf_runSolver
     };
     s_SolvedNode solved(const s_Node& node, const s_Type& type, const fu_VEC<s_SolvedNode>& items)
     {
-        return s_SolvedNode { fu_CLONE(node.kind), fu_CLONE(node.flags), fu_CLONE(node.value), fu_CLONE(items), fu_CLONE(node.token), fu_CLONE(type), s_ScopeIdx{} };
+        return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_Token(node.token), s_Type(type), s_ScopeIdx{} };
     };
     s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_ScopeIdx& target, fu_VEC<s_SolvedNode>&& args)
     {
-        s_Overload overload = fu_CLONE(GET(target));
+        s_Overload overload { GET(target) };
         if ((overload.kind == "field"_fu))
         {
-            s_SolvedNode head = fu_CLONE(([&]() -> s_SolvedNode& { if ((args.size() == 1)) { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()));
+            s_SolvedNode head { ([&]() -> s_SolvedNode& { if ((args.size() == 1)) { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) };
             const s_Type& headType = ([&]() -> const s_Type& { { const s_Type& _ = head.type; if (_) return _; } fail(""_fu); }());
             type = add_refs_from(headType, type);
         }
@@ -3120,12 +3119,12 @@ struct sf_runSolver
         if (WARN_ON_IMPLICIT_COPY)
         {
         };
-        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, fu_CLONE(node.token), clear_refs(node.type), s_ScopeIdx{} };
+        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_Token(node.token), clear_refs(node.type), s_ScopeIdx{} };
     };
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> result {};
-        s_Token here0 = fu_CLONE(_here);
+        s_Token here0 { _here };
         result.resize(nodes.size());
         for (int i = 0; (i < nodes.size()); i++)
         {
@@ -3140,9 +3139,9 @@ struct sf_runSolver
                 result.mutref(i) = solveNode(node, type);
                 continue;
             };
-            const int i0 = fu_CLONE(i);
+            const int i0 = i;
             int i1 = nodes.size();
-            for (int i = fu_CLONE(i0); (i < nodes.size()); i++)
+            for (int i = i0; (i < nodes.size()); i++)
             {
                 const s_Node& node = nodes[i];
                 if (!node)
@@ -3157,7 +3156,7 @@ struct sf_runSolver
                 _here = ([&]() -> const s_Token& { { const s_Token& _ = node.token; if (_) return _; } return _here; }());
                 result.mutref(i) = unorderedPrep(node);
             };
-            for (int i = fu_CLONE(i0); (i < i1); i++)
+            for (int i = i0; (i < i1); i++)
             {
                 const s_Node& node = nodes[i];
                 if (node)
@@ -3175,7 +3174,7 @@ struct sf_runSolver
     };
     s_SolverOutput runSolver_EVAL()
     {
-        return s_SolverOutput { solveNode(parse, s_Type{}), fu_CLONE(_scope) };
+        return s_SolverOutput { solveNode(parse, s_Type{}), s_Scope(_scope) };
     };
 };
 
@@ -3435,7 +3434,7 @@ struct sf_cpp_codegen
     };
     fu_STR blockWrap(const fu_VEC<s_SolvedNode>& nodes, const bool& skipCurlies)
     {
-        fu_STR indent0 = fu_CLONE(_indent);
+        fu_STR indent0 { _indent };
         _indent += "    "_fu;
         fu_STR src = cgStatements(nodes);
         if ((!skipCurlies || (nodes.size() != 1) || ((nodes[0].kind != "return"_fu) && (nodes[0].kind != "call"_fu))))
@@ -3502,7 +3501,7 @@ struct sf_cpp_codegen
             return ""_fu;
 
         fu_STR evalName = (fn.value + "_EVAL"_fu);
-        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_CLONE(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), fu_CLONE(fn.token), fu_CLONE(t_void), s_ScopeIdx{} } } }, fu_CLONE(fn.token), fu_CLONE(t_void), s_ScopeIdx{} };
+        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_Token(fn.token), s_Type(t_void), s_ScopeIdx{} } } }, s_Token(fn.token), s_Type(t_void), s_ScopeIdx{} };
         fu_VEC<s_SolvedNode> head = fu_CONCAT(fu_CONCAT(slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)), slice(items, 0, end)), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
         ((_clsrN == 0) || fail(""_fu));
         _clsrN--;
@@ -3522,7 +3521,7 @@ struct sf_cpp_codegen
             ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
             for (int i = 0; (i < keys.size()); i++)
             {
-                fu_STR key = fu_CLONE(keys.mutref(i));
+                fu_STR key { keys.mutref(i) };
                 const s_SolvedNode& s = specs[key];
                 if (s.target)
                     src += cgNode(s, 0);
@@ -3541,9 +3540,9 @@ struct sf_cpp_codegen
                 return ""_fu;
             };
         };
-        const int f0 = fu_CLONE(_fnN);
-        const int c0 = fu_CLONE(_clsrN);
-        fu_STR indent0 = fu_CLONE(_indent);
+        const int f0 = _fnN;
+        const int c0 = _clsrN;
+        fu_STR indent0 { _indent };
         _fnN++;
         if ((fn.flags & F_CLOSURE))
             _clsrN++;
@@ -3623,15 +3622,24 @@ struct sf_cpp_codegen
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-        fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? fu_CLONE(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : fu_CLONE(M_ARGUMENT))));
+        fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(""_fu); }()) + " "_fu) + ID(id));
-        s_SolvedNode init = (node.items ? fu_CLONE(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
         if (init)
-            return ((head + " = "_fu) + cgNode(init, 0));
+        {
+            if (((init.kind == "copy"_fu) && !(node.type.quals & q_ref)))
+            {
+                fu_STR expr = cgNode(only(init.items), 0);
+                if ((node.type.quals & q_trivial))
+                    return ((head + " = "_fu) + expr);
 
+                return (((head + " { "_fu) + expr) + " }"_fu);
+            };
+            return ((head + " = "_fu) + cgNode(init, 0));
+        };
         return (head + " {}"_fu);
     };
     fu_STR cgLet(const s_SolvedNode& node)
@@ -3896,7 +3904,7 @@ struct sf_cpp_codegen
             return cgKeys(items);
 
         if (((id == "CLONE"_fu) && (items.size() == 1)))
-            return cgClone(items.mutref(0));
+            return cgClone(node.type, items.mutref(0));
 
         if (((id == "STEAL"_fu) && (items.size() == 1)))
             return cgSteal(items.mutref(0));
@@ -4155,7 +4163,7 @@ struct sf_cpp_codegen
             for (int i = 0; (i < (items.size() - 1)); i++)
             {
                 const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }());
-                s_SolvedNode tail = fu_CLONE(item);
+                s_SolvedNode tail { item };
                 if ((item.kind == "and"_fu))
                 {
                     const fu_VEC<s_SolvedNode>& items = item.items;
@@ -4339,7 +4347,7 @@ struct sf_cpp_codegen
         if ((node.kind == "move"_fu))
             return cgSteal(a);
 
-        return cgClone(a);
+        return cgClone(node.type, a);
     };
     fu_STR cgSteal(const fu_STR& src)
     {
@@ -4351,13 +4359,9 @@ struct sf_cpp_codegen
         include("<utility>"_fu);
         return (("std::swap("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
     };
-    fu_STR cgClone(const fu_STR& src)
+    fu_STR cgClone(const s_Type& type, const fu_STR& src)
     {
-        fu_STR CLONE = "::CLONE"_fu;
-        if (!fu::has(_ffwd, CLONE))
-            (_ffwd.upsert(CLONE) = "\ntemplate <typename T>\ninline T fu_CLONE(const T& source)\n{\n    return source;\n}\n"_fu);
-
-        return (("fu_CLONE("_fu + src) + ")"_fu);
+        return (((typeAnnotBase(type) + "("_fu) + src) + ")"_fu);
     };
     fu_VEC<fu_STR> cgNodes(const fu_VEC<s_SolvedNode>& nodes, const int& mode)
     {
@@ -4389,7 +4393,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
-        module.in = s_ModuleInputs { fu_CLONE(fname), fu_CLONE(src), fu_CLONE(lexer_result), parse(fname, lexer_result.tokens) };
+        module.in = s_ModuleInputs { fu_STR(fname), fu_STR(src), s_LexerOutput(lexer_result), parse(fname, lexer_result.tokens) };
         const f64 t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);
@@ -4424,13 +4428,13 @@ inline const fu_STR TEST_SRC = "\n\n    fn test(one: i32)\n    {\n        let ze
 
 int ZERO()
 {
-    fu_STR cpp = compile_testcase(fu_CLONE(TEST_SRC));
+    fu_STR cpp = compile_testcase(fu_STR(TEST_SRC));
     return (fu::lfind(cpp, "main()"_fu) ? 0 : 101);
 }
 
 fu_STR absdir(const fu_STR& a)
 {
-    return ((last(a) == "/"_fu) ? fu_CLONE(a) : (a + "/"_fu));
+    return ((last(a) == "/"_fu) ? fu_STR(a) : (a + "/"_fu));
 }
 inline const fu_STR HOME = absdir(([]() -> fu_STR { { fu_STR _ = fu::env_get("HOME"_fu); if (_.size()) return _; } return "/Users/hdachev"_fu; }()));
 
@@ -4506,7 +4510,7 @@ void saySomethingNice()
 
 fu_STR ZERO(const fu_STR& src)
 {
-    fu_STR cpp = compile_testcase(fu_CLONE(src));
+    fu_STR cpp = compile_testcase(fu_STR(src));
     fu_STR result = buildAndRun(cpp);
     if (result.size())
         fu_THROW(result);
@@ -4519,7 +4523,7 @@ int FAIL(const fu_STR& src)
     fu_STR cpp;
     try
     {
-        cpp = compile_testcase(fu_CLONE(src));
+        cpp = compile_testcase(fu_STR(src));
     }
     catch (const std::exception& o_0)
     {
