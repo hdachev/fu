@@ -4194,18 +4194,18 @@ fn [](a: $T[], i: i32)
     case ($a -> &mut $T[]): &mut $T __native_pure;
     case ($a -> &    $T[]): &    $T __native_pure;
 
-fn push(a: &mut $T[], b: $T): void __native_pure;
+fn    push(a: &mut $T[], b: $T): void __native_pure;
 fn unshift(a: &mut $T[], b: $T): void __native_pure;
-fn insert(a: &mut $T[], i: i32, b: $T): void __native_pure;
+fn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;
 
 fn concat(a: $T[], b: $T[]): $T[] __native_pure;
-fn slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;
-fn slice(a: $T[], i0: i32): $T[] __native_pure;
+fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;
+fn  slice(a: $T[], i0: i32): $T[] __native_pure;
 
 fn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;
-fn pop(a: &mut $T[]): void __native_pure;
+fn    pop(a: &mut $T[]): void __native_pure;
 
-fn clear(a: &mut $T[]): void __native_pure;
+fn  clear(a: &mut $T[]): void __native_pure;
 fn resize(a: &mut $T[], len: i32): void __native_pure;
 fn shrink(a: &mut $T[], len: i32): void __native_pure;
 
@@ -4216,7 +4216,7 @@ fn sort(a: &mut $T[]): void __native_pure;
 // Strings.
 
 fn len(a: string): i32 __native_pure;
-fn [](a: string, i: i32): string __native_pure;
+fn  [](a: string, i: i32): string __native_pure;
 fn +=(a: &mut string, b: string): &mut string __native_pure;
 fn + (a: string, b: string): string __native_pure;
 
@@ -4227,8 +4227,8 @@ fn  <(a: string, b: string): bool __native_pure;
 fn >=(a: string, b: string): bool __native_pure;
 fn <=(a: string, b: string): bool __native_pure;
 
-fn find(a: string, b: string): i32 __native_pure;
-fn has(a: string, b: string): bool __native_pure;
+fn   find(a: string, b: string): i32 __native_pure;
+fn    has(a: string, b: string): bool __native_pure;
 fn starts(a: string, with: string): bool __native_pure;
 
 fn slice (a: string, i0: i32, i1: i32): string __native_pure;
@@ -4237,8 +4237,14 @@ fn slice (a: string, i0: i32): string __native_pure;
 fn substr(a: string, i0: i32, i1: i32): string __native_pure;
 fn char  (a: string, i0: i32): i32 __native_pure;
 
-fn split(str: string, sep: string): string[] __native_pure;
 
+// TODO: .replace() is a faster impl of .split().join().
+//  How do we express this so that .split.joins are automatically promoted?
+//   This would be generally useful, e.g.
+//    .map.maps and .map.filters could use this to skip allocs.
+
+fn   split(str: string, sep: string): string[] __native_pure;
+fn    join(a: string[], sep: string): string __native_pure;
 fn replace(in: string, all: string, with: string): string __native_pure;
 
 
@@ -4265,7 +4271,6 @@ fn assert(): never __native_pure;
 // TODO we should go for an any $B -> call stringify(b) macro.
 fn +(a: string, b: i32): string __native_pure;
 fn +(a: string, b: f64): string __native_pure;
-fn join(a: string[], sep: string): string __native_pure;
 
 // TODO fix impure io.
 fn now_hr(): f64 __native_pure;
@@ -4884,7 +4889,8 @@ pub fn cpp_codegen(
 
         // Nasty tempfix -
         //  can't have [&] in global space.
-        src = src.split('([&](').join('([](');
+        src = src.replace(
+            all: '([&](', with: '([](');
 
         // cpp17 inline const syntax sugars.
         if (src.starts(with: 'const '))
