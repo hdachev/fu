@@ -3,6 +3,8 @@
 let WARN_ON_IMPLICIT_COPY   = false;
 let WRITE_COMPILER          = true;
 
+// #import 'hello';
+
 
 // Having fun.
 
@@ -28,6 +30,27 @@ fn hasIdentifierChars(id: string)
     }
 
     return false;
+}
+
+fn path_ext(path: string): string
+{
+    for (mut i = path.len; i --> 0; i--)
+    {
+        let c = path[i];
+        if (c == '.') return path.slice(i);
+        if (c == '/') break;
+    }
+
+    return '';
+}
+
+fn path_dirname(path: string): string
+{
+    for (mut i = 0; i < path.len; i++)
+        if (path[i] == '/')
+            return path.slice(0, i + 1);
+
+    return '';
 }
 
 
@@ -871,11 +894,14 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn parseImport(): Node
     {
-        let value = consume('str').value;
+        mut value = consume('str').value;
         if (!_imports.has(value))
             _imports.push(value);
 
         consume('op', ';');
+
+        if (!value.path_ext)     value += '.fu';
+        if (!value.path_dirname) value = './' + value;
 
         return make('import', :value);
     }
@@ -2780,10 +2806,32 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         if (debug)
             return debug;
 
-        return Scope_lookup(_scope, id)
-             ? fail('No overload of `' + id + '` matches call signature: ' + TODO_memoize_mangler(args))
+        return NICERR_scopeMismatch(id, args);
+    }
+
+    fn NICERR_scopeMismatch(id: string, args: SolvedNode[]): never
+    {
+        // We should do everything possible to be helpful here,
+        //  do whatever you need, this is compile-fail path.
+        let overloads = Scope_lookup(_scope, id);
+
+        mut min = 0xffffff;
+        for (mut i = 0; i < overloads.len; i++)
+        {
+            let arity = GET(overloads[i]).min;
+            if (min > arity)
+                min = arity;
+        }
+
+        return overloads
+             ? args.len < min
+                ? fail('`' + id + '` expects ' + min + ' arguments, ' + args.len + ' provided.')
+                : fail('`' + id + '` bad args, provided: ' + TODO_memoize_mangler(args))
              : fail('`' + id + '` is not defined.');
     }
+
+
+    //
 
     fn solveNode(node: Node, type: Type = []): SolvedNode
     {
@@ -2815,6 +2863,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         if (k == 'definit')     return solveDefinit(type);
 
         if (k == 'catch')       return solveCatch(node);
+        if (k == 'import')      return solveImport(node);
 
         return fail('TODO: ' + k);
     }
@@ -3347,13 +3396,33 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
     {
         node.items.len == 3 || fail();
 
-        let nodes = solveNodes(node.items);
-        nodes[1].kind == 'let' && isAssignableAsArgument(
-            nodes[1].type, t_string) || fail(
+        let var_ok  = solveNode(node.items[0]);
+
+        ////////////////////////////////
+        let scope0  = Scope_push(_scope);
+        ////////////////////////////////
+
+        let var_err = solveNode(node.items[1]);
+        let catch   = solveNode(node.items[2]);
+
+        //////////////////////////
+        Scope_pop(_scope, scope0);
+        //////////////////////////
+
+        var_err.kind == 'let' && isAssignableAsArgument(
+            var_err.type, t_string) || fail(
                 'catch: exceptions are strings,'
                     + ' consider dropping the annotation.');
 
-        return solved(node, nodes[0].type, nodes);
+        return solved(node, var_ok.type,
+            [ var_ok, var_err, catch ]);
+    }
+
+    fn solveImport(node: Node): SolvedNode
+    {
+        if (node) {}
+
+        return fail('TODO - import - put stuff in localscope');
     }
 
 

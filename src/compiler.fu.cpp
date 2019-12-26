@@ -483,6 +483,33 @@ bool hasIdentifierChars(const fu_STR& id)
     };
     return false;
 }
+
+fu_STR path_ext(const fu_STR& path)
+{
+    for (int i = path.size(); (i-- > 0); i--)
+    {
+        fu_STR c = fu_TO_STR(path[i]);
+        if ((c == "."_fu))
+            return slice(path, i);
+
+        if ((c == "/"_fu))
+        {
+            break;
+        };
+    };
+    return ""_fu;
+}
+
+fu_STR path_dirname(const fu_STR& path)
+{
+    for (int i = 0; (i < path.size()); i++)
+    {
+        if ((fu_TO_STR(path[i]) == "/"_fu))
+            return slice(path, 0, (i + 1));
+
+    };
+    return ""_fu;
+}
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<61> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
 
@@ -1070,6 +1097,12 @@ struct sf_parse
             _imports.push(value);
 
         consume("op"_fu, ";"_fu);
+        if (!path_ext(value).size())
+            value += ".fu"_fu;
+
+        if (!path_dirname(value).size())
+            value = ("./"_fu + value);
+
         return make("import"_fu, fu_VEC<s_Node>{}, 0, value);
     };
     s_Node parseLabelledStatement()
@@ -2273,7 +2306,20 @@ struct sf_runSolver
         if (debug)
             return debug;
 
-        (Scope_lookup(_scope, id) ? fail(((("No overload of `"_fu + id) + "` matches call signature: "_fu) + TODO_memoize_mangler(args))) : fail((("`"_fu + id) + "` is not defined."_fu)));
+        NICERR_scopeMismatch(id, args);
+    };
+    [[noreturn]] fu_NEVER NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
+    {
+        fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
+        int min = 0xffffff;
+        for (int i = 0; (i < overloads.size()); i++)
+        {
+            const int arity = GET(overloads[i]).min;
+            if ((min > arity))
+                min = arity;
+
+        };
+        (overloads ? ((args.size() < min) ? fail((((((("`"_fu + id) + "` expects "_fu) + min) + " arguments, "_fu) + args.size()) + " provided."_fu)) : fail(((("`"_fu + id) + "` bad args, provided: "_fu) + TODO_memoize_mangler(args)))) : fail((("`"_fu + id) + "` is not defined."_fu)));
     };
     s_SolvedNode solveNode(const s_Node& node, const s_Type& type)
     {
@@ -2337,6 +2383,9 @@ struct sf_runSolver
 
         if ((k == "catch"_fu))
             return solveCatch(node);
+
+        if ((k == "import"_fu))
+            return solveImport(node);
 
         fail(("TODO: "_fu + k));
     };
@@ -2689,9 +2738,20 @@ struct sf_runSolver
     s_SolvedNode solveCatch(const s_Node& node)
     {
         ((node.items.size() == 3) || fail(""_fu));
-        fu_VEC<s_SolvedNode> nodes = solveNodes(node.items, s_Type{});
-        (((nodes[1].kind == "let"_fu) && isAssignableAsArgument(nodes[1].type, s_Type(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
-        return solved(node, nodes[0].type, nodes);
+        s_SolvedNode var_ok = solveNode(node.items[0], s_Type{});
+        const int scope0 = Scope_push(_scope);
+        s_SolvedNode var_err = solveNode(node.items[1], s_Type{});
+        s_SolvedNode cahtch = solveNode(node.items[2], s_Type{});
+        Scope_pop(_scope, scope0);
+        (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, s_Type(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
+        return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, cahtch } });
+    };
+    s_SolvedNode solveImport(const s_Node& node)
+    {
+        if (node)
+        {
+        };
+        fail("TODO - import - put stuff in localscope"_fu);
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
