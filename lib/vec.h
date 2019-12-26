@@ -51,15 +51,23 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     struct Big {
-                T*  data = nullptr;
+          const T*  data = nullptr;
                 i32 size = 0;
         mutable i32 PACK = 0;
     };
 
+#ifndef NDEBUG
+    typedef T All[1024];
+
     union {
+#endif
         Big  big = {};
+
+#ifndef NDEBUG
         char buf[VEC_SIZE];
+        const All* all;
     };
+#endif
 
     fu_VEC() = default;
 
@@ -223,7 +231,7 @@ struct fu_VEC
         i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
             SHARED__Dealloc(
-                big.data, big.size, shared_capa);
+                (T*)big.data, big.size, shared_capa);
 
         UNSAFE__Reset();
     }
@@ -252,7 +260,7 @@ struct fu_VEC
         assert(unique_capa > SMALL_CAPA);
 
         UNIQ__Dealloc_DontRunDtors(
-            big.data, unique_capa &~ SIGN_BIT);
+            (T*)big.data, unique_capa &~ SIGN_BIT);
 
         UNSAFE__Reset();
     }
