@@ -4112,6 +4112,8 @@ let prelude_src = `
 // Some lolcode.
 
 fn __native_pure(): never never;
+fn __native_pure(id: string): never never;
+fn __native_pure(id: string, opt: string): never never;
 
 fn STEAL (a: &mut $T): $T __native_pure;
 fn CLONE (a: &    $T): $T __native_pure;
@@ -4213,12 +4215,28 @@ fn move(a: &mut $T[], from: i32, to: i32): void __native_pure;
 fn sort(a: &mut $T[]): void __native_pure;
 
 
+// Concats.
+//
+//  flatten: str/arr a+b+c chains into a n-ary binop -
+//  adjoin : str/arr chain adjacent += for the same left-arg.
+//
+//      Currently just testing notations,
+//        but can we make this more generic?
+//          Will it be useful? Array ops are really
+//            the only thing we care about optimizing.
+
+fn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );
+fn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );
+fn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );
+
+fn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );
+fn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );
+
+
 // Strings.
 
 fn len(a: string): i32 __native_pure;
 fn  [](a: string, i: i32): string __native_pure;
-fn +=(a: &mut string, b: string): &mut string __native_pure;
-fn + (a: string, b: string): string __native_pure;
 
 fn ==(a: string, b: string): bool __native_pure;
 fn !=(a: string, b: string): bool __native_pure;
