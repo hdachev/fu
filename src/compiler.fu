@@ -2289,7 +2289,9 @@ fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): SolverOutput
+fn runSolver(
+    implicit ctx: &mut TEMP_Context,
+    parse: Node, globals: Scope): SolverOutput
 {
     mut _scope:         Scope       = globals;
 
@@ -2596,21 +2598,21 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
     //
 
     fn getNamedArgReorder(
-        callsite:    string[],
-        declaration: string[]): i32[]
+        names: string[],
+        arg_n: string[]): i32[]
     {
         mut result: i32[] = [];
 
         mut offset = 0;
-        for (mut i = 0; i < declaration.len; i++)
+        for (mut i = 0; i < arg_n.len; i++)
         {
-            mut idx = callsite.find(declaration[i]);
+            mut idx = names.find(arg_n[i]);
             if (idx < 0)
             {
-                for (mut i = offset; i < callsite.len; i++)
+                for (mut i = offset; i < names.len; i++)
                 {
                     offset++;
-                    if (!callsite[i])
+                    if (!names[i])
                     {
                         idx = i;
                         break;
@@ -2620,6 +2622,10 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
 
             result.push(idx);
         }
+
+        // Drop trailing misses.
+        while (result && result[result.len - 1] < 0)
+            result.pop();
 
         return result;
     }
@@ -2743,7 +2749,7 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
                         continue;
                     }
 
-                    if (!isAssignableAsArgument(arg_t[i], (args[callsiteIndex] || fail()).type))
+                    if (!isAssignableAsArgument(arg_t[i], args[callsiteIndex].type || fail()))
                         continue :NEXT;
                 }
 
@@ -3765,18 +3771,36 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
         fnNode: &mut SolvedNode,
         id: string, type: Type): ScopeIdx
     {
-        let newArgIdx = fnNode.items.len + FN_RET_BACK;
+        ///////////////////////////////////////////
+        // TODO obtain or persist this in the original scope.
+        let scope0  = Scope_push(_scope);
+        let ret     = Binding(id, type);
+        Scope_pop(_scope, scope0);
+        ///////////////////////////////////////////
 
-        // The new argnode.
-        let newArgNode = createLet(id, type, F_IMPLICIT);
-        fnNode.items.insert(newArgIdx, newArgNode);
+        // Reuse existing or add new argnode.
+        {
+            let n = fnNode.items.len;
+            for (mut i = 0; i < n; i++)
+            {
+                let arg: &mut SolvedNode = fnNode.items[i];
+                if (arg.value == id)
+                {
+                    isAssignable(type, arg.type)
+                        || fail('Implicit arg collision: `' + id + '`.');
+
+                    return ret;
+                }
+            }
+
+            let newArgIdx   = fnNode.items.len + FN_RET_BACK;
+            let newArgNode  = createLet(id, type, F_IMPLICIT);
+
+            fnNode.items.insert(newArgIdx, newArgNode);
+        }
 
         // If we dont have the overload yet,
         //  there's nothing else to do here.
-
-        // TODO argname check should come first -
-        //  the one below is too late,
-        //   wont catch an argname dupe here.
         if (fnNode.target)
         {
             let o: &mut Overload = GET(fnNode.target);
@@ -3785,18 +3809,12 @@ fn runSolver(implicit ctx: &mut TEMP_Context, parse: Node, globals: Scope): Solv
             o.kind == 'fn' || fail();
 
             o.names.len == o.args.len || fail();
-            o.names.find(id) < 0 || fail(
-                'Implicit argument name collision.');
 
             o.args .push(type);
             o.names.push(id);
         }
 
-        // TODO put in the original scope!
-        let scope0   =    Scope_push(_scope);
-        let overload =    Binding(id, type);
-                            Scope_pop(_scope, scope0);
-        return overload;
+        return ret;
     }
 
     fn bindImplicitArg(
@@ -6001,7 +6019,6 @@ struct fu_DEFAULT { static inline const T value {}; };
 ////////     The whole thing in one go.
 
 fn compile(
-    implicit ctx: &mut TEMP_Context,
     fname: string, src: string): string
 {
     mut module = upsertModule(fname);
@@ -6078,7 +6095,7 @@ fn compile_testcase(mut src: string): string
     //
     let implicit mut ctx: TEMP_Context;
 
-    return compile(:fname, :src, :ctx);
+    return compile(:fname, :src);
 }
 
 

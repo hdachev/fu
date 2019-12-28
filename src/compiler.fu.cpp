@@ -486,7 +486,7 @@ bool hasIdentifierChars(const fu_STR& id)
 
 fu_STR path_ext(const fu_STR& path)
 {
-    for (int i = path.size(); (i-- > 0); i--)
+    for (int i = path.size(); (i-- > 0); )
     {
         fu_STR c = fu_TO_STR(path[i]);
         if ((c == "."_fu))
@@ -502,7 +502,7 @@ fu_STR path_ext(const fu_STR& path)
 
 fu_STR path_dirname(const fu_STR& path)
 {
-    for (int i = 0; (i < path.size()); i++)
+    for (int i = path.size(); (i-- > 0); )
     {
         if ((fu_TO_STR(path[i]) == "/"_fu))
             return slice(path, 0, (i + 1));
@@ -2134,19 +2134,19 @@ struct sf_runSolver
             Partial(item.id, viaIdx, overloadIdx);
         };
     };
-    fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& callsite, const fu_VEC<fu_STR>& declaration)
+    fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& names, const fu_VEC<fu_STR>& arg_n)
     {
         fu_VEC<int> result = fu_VEC<int>{};
         int offset = 0;
-        for (int i = 0; (i < declaration.size()); i++)
+        for (int i = 0; (i < arg_n.size()); i++)
         {
-            int idx = fu::lfind(callsite, declaration[i]);
+            int idx = fu::lfind(names, arg_n[i]);
             if ((idx < 0))
             {
-                for (int i = offset; (i < callsite.size()); i++)
+                for (int i = offset; (i < names.size()); i++)
                 {
                     offset++;
-                    if (!callsite[i].size())
+                    if (!names[i].size())
                     {
                         idx = i;
                         break;
@@ -2155,6 +2155,9 @@ struct sf_runSolver
             };
             result.push(idx);
         };
+        while ((result && (result.mutref((result.size() - 1)) < 0)))
+            result.pop();
+
         return result;
     };
     s_ScopeIdx scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags, const s_Type& retType)
@@ -2244,7 +2247,7 @@ struct sf_runSolver
                         };
                         continue;
                     };
-                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(callsiteIndex); if (_) return _; } fail(""_fu); }()).type)))
+                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> s_Type& { { s_Type& _ = args.mutref(callsiteIndex).type; if (_) return _; } fail(""_fu); }()))))
                     {
                         goto L_NEXT_c;
                     };
@@ -2962,22 +2965,34 @@ struct sf_runSolver
     };
     s_ScopeIdx injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
-        const int newArgIdx = (fnNode.items.size() + FN_RET_BACK);
-        s_SolvedNode newArgNode = createLet(id, type, F_IMPLICIT);
-        fnNode.items.insert(newArgIdx, newArgNode);
+        const int scope0 = Scope_push(_scope);
+        s_ScopeIdx ret = Binding(id, type);
+        Scope_pop(_scope, scope0);
+        
+        {
+            const int n = fnNode.items.size();
+            for (int i = 0; (i < n); i++)
+            {
+                s_SolvedNode& arg = fnNode.items.mutref(i);
+                if ((arg.value == id))
+                {
+                    (isAssignable(type, arg.type) || fail((("Implicit arg collision: `"_fu + id) + "`."_fu)));
+                    return ret;
+                };
+            };
+            const int newArgIdx = (fnNode.items.size() + FN_RET_BACK);
+            s_SolvedNode newArgNode = createLet(id, type, F_IMPLICIT);
+            fnNode.items.insert(newArgIdx, newArgNode);
+        };
         if (fnNode.target)
         {
             s_Overload& o = GET(fnNode.target);
             ((o.kind == "fn"_fu) || fail(""_fu));
             ((o.names.size() == o.args.size()) || fail(""_fu));
-            ((fu::lfind(o.names, id) < 0) || fail("Implicit argument name collision."_fu));
             o.args.push(type);
             o.names.push(id);
         };
-        const int scope0 = Scope_push(_scope);
-        s_ScopeIdx overload = Binding(id, type);
-        Scope_pop(_scope, scope0);
-        return overload;
+        return ret;
     };
     void bindImplicitArg(fu_VEC<s_SolvedNode>& args, const int& argIdx, const fu_STR& id, const s_Type& type)
     {
