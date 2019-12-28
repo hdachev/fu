@@ -2183,17 +2183,18 @@ pub fn tryClear_map(type: Type): MapFields
 ////////     Scope.
 
 struct ScopeIdx { raw: i32; };
+struct Target { modid: i32; index: ScopeIdx; }
 
 struct SolvedNode
 {
-    kind:       string;
-    flags:      i32;
-    value:      string;
-    items:      SolvedNode[];
-    token:      Token;
+    kind:   string;
+    flags:  i32;
+    value:  string;
+    items:  SolvedNode[];
+    token:  Token;
 
-    type:       Type;
-    target:     ScopeIdx;
+    type:   Type;
+    target: Target;
 };
 
 struct Template
@@ -2204,8 +2205,8 @@ struct Template
 
 struct Partial
 {
-    via: ScopeIdx;
-    target: ScopeIdx;
+    via:    Target;
+    target: Target;
 };
 
 struct Overload
@@ -2241,16 +2242,18 @@ pub struct Scope
 
 ////////////////////////////////
 
-pub fn Scope_lookup(scope: Scope, id: string): ScopeIdx[]
+pub fn Scope_lookup(scope: Scope, id: string): Target[]
 {
-    mut results: ScopeIdx[] = [];
+    mut results: Target[] = [];
 
+    let modid = MODID;
     let items = scope.items;
     for (mut i = 0; i < items.len; i++)
     {
         let item = items[i];
         if (item.id == id)
-            results.unshift(item.index);
+            results.unshift(
+                Target(:modid, :item.index));
     }
 
     return results;
@@ -2279,9 +2282,11 @@ pub fn Scope_add(
     arg_t: Type[]       = [],
     arg_d: SolvedNode[] = [],
     template: Template  = [],
-    partial: Partial    = []): ScopeIdx
+    partial: Partial    = []): Target
 {
-    let index = ScopeIdx(scope.overloads.len + 1);
+    let modid = MODID;
+    let target = Target(:modid,
+        index: ScopeIdx(scope.overloads.len + 1));
 
     let item = Overload(
         :kind,
@@ -2290,10 +2295,12 @@ pub fn Scope_add(
         names: arg_n, defaults: arg_d,
         :partial, :template);
 
-    scope.items.push(ScopeItem( :id, :index ));
+    scope.items.push(
+        ScopeItem( :id, :target.index ));
+
     scope.overloads.push(item);
 
-    return index;
+    return target;
 }
 
 
@@ -2341,7 +2348,27 @@ fn solve(
 
     //
 
-    fn GET(idx: ScopeIdx): &mut Overload
+    fn GET(
+        implicit module: Module,
+        implicit ctx: TEMP_Context,
+        target: Target): Overload
+    {
+        target.index.raw > 0 || assert();
+
+        if (target.modid == module.modid)
+            return _scope.overloads[target.index.raw - 1];
+
+        return ctx.modules[target.modid]
+            .out.solve.scope.overloads[target.index.raw - 1];
+    }
+
+    fn GET_mut(target: Target): &mut Overload
+    {
+        target.index.raw > 0 && target.modid == MODID || assert();
+        return _scope.overloads[target.index.raw - 1];
+    }
+
+    fn GET_mut(idx: ScopeIdx): &mut Overload
     {
         idx.raw > 0 || assert();
         return _scope.overloads[idx.raw - 1];
@@ -2415,7 +2442,7 @@ fn solve(
             min, max, arg_n, :template);
     }
 
-    fn FnDecl(id: string, node: &mut SolvedNode): ScopeIdx
+    fn FnDecl(id: string, node: &mut SolvedNode): Target
     {
         let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
@@ -2535,7 +2562,7 @@ fn solve(
 
     //
 
-    fn Partial(id: string, viaIdx: ScopeIdx, overloadIdx: ScopeIdx)
+    fn Partial(id: string, viaIdx: Target, overloadIdx: Target)
     {
         let via      = GET(viaIdx);
         let overload = GET(overloadIdx);
@@ -2577,10 +2604,11 @@ fn solve(
 
     // We need a smarter way of doing this.
 
-    fn scope_using(viaIdx: ScopeIdx)
+    fn scope_using(viaIdx: Target)
     {
-        let via = GET(viaIdx);
-        let actual = via.type || fail();
+        let via     = GET(viaIdx);
+        let actual  = via.type || fail();
+        let modid   = MODID;
 
         for (mut i = 0; i < _scope.items.len; i++)
         {
@@ -2591,7 +2619,7 @@ fn solve(
                 continue;
 
             let overloadIdx = item.index;
-            let overload = GET(overloadIdx);
+            let overload = GET_mut(overloadIdx);
 
             // Needs at least one argument.
             if (overload.min < 1)
@@ -2616,15 +2644,16 @@ fn solve(
                     let o = _scope.items[i];
                     if (o.id == item.id)
                     {
-                        let other = GET(o.index);
+                        let other = GET_mut(o.index);
                         if (other.min < 1)
                             fail('`using` ambiguity: `' + item.id + '`.');
                     }
                 }
             }
 
-            // MUT DURING ITER!
-            Partial(item.id, viaIdx, overloadIdx);
+            //
+            Partial(item.id, viaIdx,
+                Target(:modid, overloadIdx));
         }
     }
 
@@ -2666,9 +2695,9 @@ fn solve(
 
     fn scope_tryMatch__mutargs(
         id: string, args: &mut SolvedNode[],
-        flags: i32 = 0, retType: Type = []): ScopeIdx
+        flags: i32 = 0, retType: Type = []): Target
     {
-        mut matchIdx: ScopeIdx;
+        mut matchIdx: Target;
 
         //
         let overloads = Scope_lookup(_scope, id);
@@ -2742,7 +2771,7 @@ fn solve(
                         if (reorder)
                             fail('TODO handle argument reorder in template specialization.');
 
-                        let o_mut: &mut Overload = GET(overloadIdx);
+                        let o_mut: &mut Overload = GET_mut(overloadIdx);
                         let specIdx = trySpecialize(
                             o_mut.template, args);
 
@@ -2852,7 +2881,7 @@ fn solve(
 
     //
 
-    fn scope_match__mutargs(id: string, args: &mut SolvedNode[], flags: i32): ScopeIdx
+    fn scope_match__mutargs(id: string, args: &mut SolvedNode[], flags: i32): Target
     {
         let ret = scope_tryMatch__mutargs(:id, :args, :flags);
         if (ret)
@@ -3154,7 +3183,7 @@ fn solve(
 
     fn trySpecialize(
         template: &mut Template, args: SolvedNode[])
-            : ScopeIdx
+            : Target
     {
         let mangle = TODO_memoize_mangler(args);
 
@@ -3799,7 +3828,7 @@ fn solve(
 
     fn injectImplicitArg__mutfn(
         fnNode: &mut SolvedNode,
-        id: string, type: Type): ScopeIdx
+        id: string, type: Type): Target
     {
         ///////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
@@ -3833,7 +3862,7 @@ fn solve(
         //  there's nothing else to do here.
         if (fnNode.target)
         {
-            let o: &mut Overload = GET(fnNode.target);
+            let o: &mut Overload = GET_mut(fnNode.target);
 
             // We'll be mutating the overload.
             o.kind == 'fn' || fail();
@@ -3861,7 +3890,7 @@ fn solve(
             target: getImplicit(id, type)));
     }
 
-    fn getImplicit(id: string, type: Type): ScopeIdx
+    fn getImplicit(id: string, type: Type): Target
     {
         mut args: SolvedNode[];
         mut matched = scope_tryMatch__mutargs(
@@ -4055,7 +4084,7 @@ fn solve(
     }
 
     fn CallerNode(
-        node: Node, mut type: Type, target: ScopeIdx, mut args: SolvedNode[] = [])
+        node: Node, mut type: Type, target: Target, mut args: SolvedNode[] = [])
             : SolvedNode
     {
         let overload = GET(target);
@@ -4422,6 +4451,8 @@ fn assert(): never __native_pure;
 // TODO we should go for an any $B -> call stringify(b) macro.
 fn +(a: string, b: i32): string __native_pure;
 fn +(a: string, b: f64): string __native_pure;
+fn +(a: i32, b: string): string __native_pure;
+fn +(a: f64, b: string): string __native_pure;
 
 // TODO fix impure io.
 fn now_hr(): f64 __native_pure;
@@ -4504,10 +4535,18 @@ pub fn cpp_codegen(
     mut _clsrN: i32;
     mut _faasN: i32;
 
-    fn GET(idx: ScopeIdx): &Overload
+    fn GET(
+        implicit module: Module,
+        implicit ctx: TEMP_Context,
+        target: Target): Overload
     {
-        idx.raw > 0 || assert();
-        return scope.overloads[idx.raw - 1];
+        target.index.raw > 0 || assert();
+
+        let m = target.modid == module.modid
+            ? module
+            : ctx.modules[target.modid];
+
+        return m.out.solve.scope.overloads[target.index.raw - 1];
     }
 
     fn fail(reason = '') throw(reason);
@@ -4883,13 +4922,13 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn ensureFwdDecl(idx: ScopeIdx)
+    fn ensureFwdDecl(target: Target)
     {
-        let overload = GET(idx);
+        let overload = GET(target);
         if (overload.kind != 'fn')
             return;
 
-        let ffwdKey = '#' + idx.raw;
+        let ffwdKey = target.modid + '#' + target.index.raw;
         if (_ffwd.has(ffwdKey))
             return;
 

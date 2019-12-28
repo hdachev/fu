@@ -45,6 +45,7 @@ struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
 struct s_TEMP_Context;
+struct s_Target;
 struct s_Template;
 struct s_Token;
 struct s_Type;
@@ -181,6 +182,19 @@ struct s_ScopeIdx
     }
 };
 
+struct s_Target
+{
+    int modid;
+    s_ScopeIdx index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+
 struct s_SolvedNode
 {
     fu_STR kind;
@@ -189,7 +203,7 @@ struct s_SolvedNode
     fu_VEC<s_SolvedNode> items;
     s_Token token;
     s_Type type;
-    s_ScopeIdx target;
+    s_Target target;
     explicit operator bool() const noexcept
     {
         return false
@@ -322,8 +336,8 @@ struct s_ScopeItem
 
 struct s_Partial
 {
-    s_ScopeIdx via;
-    s_ScopeIdx target;
+    s_Target via;
+    s_Target target;
     explicit operator bool() const noexcept
     {
         return false
@@ -1957,15 +1971,16 @@ s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEM
     return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
 }
 
-fu_VEC<s_ScopeIdx> Scope_lookup(const s_Scope& scope, const fu_STR& id)
+fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id, const s_Module& module)
 {
-    fu_VEC<s_ScopeIdx> results = fu_VEC<s_ScopeIdx>{};
+    fu_VEC<s_Target> results = fu_VEC<s_Target>{};
+    const int& modid = MODID(module);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     for (int i = 0; (i < items.size()); i++)
     {
         const s_ScopeItem& item = items[i];
         if ((item.id == id))
-            results.unshift(item.index);
+            results.unshift(s_Target { int(modid), s_ScopeIdx(item.index) });
 
     };
     return results;
@@ -1981,18 +1996,19 @@ void Scope_pop(s_Scope& scope, const int& memo)
     scope.items.shrink(memo);
 }
 
-s_ScopeIdx Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial, const s_Module& module)
 {
-    s_ScopeIdx index = s_ScopeIdx { (scope.overloads.size() + 1) };
+    const int& modid = MODID(module);
+    s_Target target = s_Target { int(modid), s_ScopeIdx { (scope.overloads.size() + 1) } };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle) };
-    scope.items.push(s_ScopeItem { fu_STR(id), s_ScopeIdx(index) });
+    scope.items.push(s_ScopeItem { fu_STR(id), s_ScopeIdx(target.index) });
     scope.overloads.push(item);
-    return index;
+    return target;
 }
 
-s_ScopeIdx Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{});
+    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
 }
 
 struct sf_solve
@@ -2005,7 +2021,20 @@ struct sf_solve
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
-    s_Overload& GET(const s_ScopeIdx& idx)
+    s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
+    {
+        ((target.index.raw > 0) || fu_THROW("Assertion failed."));
+        if ((target.modid == module.modid))
+            return _scope.overloads.mutref((target.index.raw - 1));
+
+        return ctx.modules[target.modid].out.solve.scope.overloads[(target.index.raw - 1)];
+    };
+    s_Overload& GET_mut(const s_Target& target)
+    {
+        (((target.index.raw > 0) && (target.modid == MODID(module))) || fu_THROW("Assertion failed."));
+        return _scope.overloads.mutref((target.index.raw - 1));
+    };
+    s_Overload& GET_mut(const s_ScopeIdx& idx)
     {
         ((idx.raw > 0) || fu_THROW("Assertion failed."));
         return _scope.overloads.mutref((idx.raw - 1));
@@ -2021,15 +2050,15 @@ struct sf_solve
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
         fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
-    s_ScopeIdx Binding(const fu_STR& id, const s_Type& type)
+    s_Target Binding(const fu_STR& id, const s_Type& type)
     {
-        return Scope_add(_scope, "var"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(""_fu); }()), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{});
+        return Scope_add(_scope, "var"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(""_fu); }()), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
     };
-    s_ScopeIdx Field(const fu_STR& id, const s_Type& structType, const s_Type& fieldType)
+    s_Target Field(const fu_STR& id, const s_Type& structType, const s_Type& fieldType)
     {
-        return Scope_add(_scope, "field"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(""_fu); }()), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(""_fu); }()) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{});
+        return Scope_add(_scope, "field"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(""_fu); }()), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(""_fu); }()) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
     };
-    s_ScopeIdx TemplateDecl(const s_Node& node)
+    s_Target TemplateDecl(const s_Node& node)
     {
         const fu_STR& id = node.value;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
@@ -2049,9 +2078,9 @@ struct sf_solve
                 arg_n.push(name);
             };
         };
-        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tempatle, s_Partial{});
+        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tempatle, s_Partial{}, module);
     };
-    s_ScopeIdx FnDecl(const fu_STR& id, s_SolvedNode& node)
+    s_Target FnDecl(const fu_STR& id, s_SolvedNode& node)
     {
         fu_VEC<s_SolvedNode> items { node.items };
         const s_SolvedNode& rnode = items[(items.size() + FN_RET_BACK)];
@@ -2079,11 +2108,11 @@ struct sf_solve
 
             };
         };
-        s_ScopeIdx overload = Scope_add(_scope, "fn"_fu, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{});
+        s_Target overload = Scope_add(_scope, "fn"_fu, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, module);
         node.target = overload;
         return overload;
     };
-    s_ScopeIdx DefaultCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
+    s_Target DefaultCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
     {
         fu_VEC<s_Type> arg_t = fu_VEC<s_Type>{};
         fu_VEC<fu_STR> arg_n = fu_VEC<fu_STR>{};
@@ -2111,18 +2140,18 @@ struct sf_solve
                 arg_d.push(init);
             };
         };
-        return Scope_add(_scope, "defctor"_fu, id, type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{});
+        return Scope_add(_scope, "defctor"_fu, id, type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, module);
     };
     s_SolvedNode tryDefaultInit(const s_Type& type)
     {
         if ((type.quals & q_ref))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
+            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
 
         return createDefaultInit(type);
     };
     s_SolvedNode createDefaultInit(const s_Type& type)
     {
-        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_ScopeIdx{} };
+        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
     };
     s_SolvedNode solveDefinit(const s_Type& type)
     {
@@ -2131,10 +2160,10 @@ struct sf_solve
 
         return ([&]() -> s_SolvedNode { { s_SolvedNode _ = tryDefaultInit(type); if (_) return _; } fail(("Cannot definit: "_fu + serializeType(type))); }());
     };
-    s_ScopeIdx Partial(const fu_STR& id, const s_ScopeIdx& viaIdx, const s_ScopeIdx& overloadIdx)
+    s_Target Partial(const fu_STR& id, const s_Target& viaIdx, const s_Target& overloadIdx)
     {
-        s_Overload via { GET(viaIdx) };
-        s_Overload overload { GET(overloadIdx) };
+        s_Overload via = GET(viaIdx, module, ctx);
+        s_Overload overload = GET(overloadIdx, module, ctx);
         fu_STR kind = "p-unshift"_fu;
         int min = (overload.min - 1);
         int max = (overload.max - 1);
@@ -2153,15 +2182,16 @@ struct sf_solve
                 arg_n.unshift("using"_fu);
 
             if (arg_d)
-                arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+                arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
 
         };
-        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_ScopeIdx(viaIdx), s_ScopeIdx(overloadIdx) });
+        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_Target(viaIdx), s_Target(overloadIdx) }, module);
     };
-    void scope_using(const s_ScopeIdx& viaIdx)
+    void scope_using(const s_Target& viaIdx)
     {
-        s_Overload via { GET(viaIdx) };
+        s_Overload via = GET(viaIdx, module, ctx);
         const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }());
+        const int& modid = MODID(module);
         for (int i = 0; (i < _scope.items.size()); i++)
         {
             s_ScopeItem item { _scope.items.mutref(i) };
@@ -2170,7 +2200,7 @@ struct sf_solve
                 continue;
             };
             const s_ScopeIdx& overloadIdx = item.index;
-            s_Overload overload { GET(overloadIdx) };
+            s_Overload overload { GET_mut(overloadIdx) };
             if ((overload.min < 1))
             {
                 continue;
@@ -2191,14 +2221,14 @@ struct sf_solve
                     s_ScopeItem o { _scope.items.mutref(i) };
                     if ((o.id == item.id))
                     {
-                        s_Overload other { GET(o.index) };
+                        s_Overload other { GET_mut(o.index) };
                         if ((other.min < 1))
                             fail((("`using` ambiguity: `"_fu + item.id) + "`."_fu));
 
                     };
                 };
             };
-            Partial(item.id, viaIdx, overloadIdx);
+            Partial(item.id, viaIdx, s_Target { int(modid), s_ScopeIdx(overloadIdx) });
         };
     };
     fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& names, const fu_VEC<fu_STR>& arg_n)
@@ -2227,10 +2257,10 @@ struct sf_solve
 
         return result;
     };
-    s_ScopeIdx scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags, const s_Type& retType)
+    s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags, const s_Type& retType)
     {
-        s_ScopeIdx matchIdx {};
-        fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
+        s_Target matchIdx {};
+        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
         if (!overloads)
             return matchIdx;
 
@@ -2238,8 +2268,8 @@ struct sf_solve
         {
             for (int i = 0; (i < overloads.size()); i++)
             {
-                const s_ScopeIdx& headIdx = overloads[i];
-                if ((GET(headIdx).min == 0))
+                const s_Target& headIdx = overloads[i];
+                if ((GET(headIdx, module, ctx).min == 0))
                 {
                     matchIdx = headIdx;
                     break;
@@ -2263,8 +2293,8 @@ struct sf_solve
             fu_VEC<int> reorder {};
             for (int i = 0; (i < overloads.size()); i++){
             {
-                s_ScopeIdx overloadIdx { overloads[i] };
-                s_Overload overload { GET(overloadIdx) };
+                s_Target overloadIdx { overloads[i] };
+                s_Overload overload = GET(overloadIdx, module, ctx);
                 while (true){
                 {
                     if (((overload.min > arity) || (overload.max < arity)))
@@ -2285,14 +2315,14 @@ struct sf_solve
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization."_fu);
 
-                        s_Overload& o_mut = GET(overloadIdx);
-                        s_ScopeIdx specIdx = trySpecialize(o_mut.tempatle, args);
+                        s_Overload& o_mut = GET_mut(overloadIdx);
+                        s_Target specIdx = trySpecialize(o_mut.tempatle, args);
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
                         };
                         overloadIdx = specIdx;
-                        overload = GET(specIdx);
+                        overload = GET(specIdx, module, ctx);
                         goto L_TEST_AGAIN_c;
                     };
                     goto L_TEST_AGAIN_b;
@@ -2341,7 +2371,7 @@ struct sf_solve
         };
         if (matchIdx)
         {
-            s_Overload matched { GET(matchIdx) };
+            s_Overload matched = GET(matchIdx, module, ctx);
             const fu_VEC<s_SolvedNode>& arg_d = matched.defaults;
             if (arg_d)
             {
@@ -2366,13 +2396,13 @@ struct sf_solve
         };
         return matchIdx;
     };
-    s_ScopeIdx scope_match__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags)
+    s_Target scope_match__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags)
     {
-        s_ScopeIdx ret = scope_tryMatch__mutargs(id, args, flags, s_Type{});
+        s_Target ret = scope_tryMatch__mutargs(id, args, flags, s_Type{});
         if (ret)
             return ret;
 
-        s_ScopeIdx debug = scope_tryMatch__mutargs(id, args, flags, s_Type{});
+        s_Target debug = scope_tryMatch__mutargs(id, args, flags, s_Type{});
         if (debug)
             return debug;
 
@@ -2380,11 +2410,11 @@ struct sf_solve
     };
     [[noreturn]] fu_NEVER NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
-        fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
+        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
         int min = 0xffffff;
         for (int i = 0; (i < overloads.size()); i++)
         {
-            const int arity = GET(overloads[i]).min;
+            const int arity = GET(overloads[i], module, ctx).min;
             if ((min > arity))
                 min = arity;
 
@@ -2521,7 +2551,7 @@ struct sf_solve
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
-        return __solveFn(false, false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} }, -1);
+        return __solveFn(false, false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }, -1);
     };
     s_SolvedNode uSolveFn(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -2539,13 +2569,13 @@ struct sf_solve
             if (solve)
                 return ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = prep; if (_) return _; } fail(""_fu); }());
 
-            s_ScopeIdx tDecl = TemplateDecl(n_fn);
+            s_Target tDecl = TemplateDecl(n_fn);
             s_SolvedNode out = solved(n_fn, t_void, fu_VEC<s_SolvedNode>{});
             out.target = tDecl;
             return out;
         };
         if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
+            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
 
         const fu_VEC<s_Node>& inItems = n_fn.items;
         ((inItems.size() >= FN_RET_BACK) || fail(""_fu));
@@ -2591,7 +2621,7 @@ struct sf_solve
             };
             
             {
-                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
                 outItems.mutref((outItems.size() + FN_RET_BACK)) = s_ret;
             };
             if (solve)
@@ -2617,7 +2647,7 @@ struct sf_solve
 
         return mangle;
     };
-    s_ScopeIdx trySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
+    s_Target trySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
         fu_STR mangle = TODO_memoize_mangler(args);
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempatle, args); return _; } (tempatle.specializations.upsert(mangle))) };
@@ -2655,7 +2685,7 @@ struct sf_solve
             {
                 const bool ok = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
                 if (!ok)
-                    return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
+                    return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
 
             };
         };
@@ -2676,14 +2706,14 @@ struct sf_solve
                 };
             };
             if ((caseIdx < 0))
-                return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} };
+                return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
 
         };
         s_SolvedNode current_fn0 {};
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         const int scope0 = Scope_push(_scope);
-        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} }, caseIdx);
+        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }, caseIdx);
         (specialized || fail(""_fu));
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
@@ -2692,7 +2722,7 @@ struct sf_solve
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
     {
-        return __solveStruct(false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+        return __solveStruct(false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
     };
     s_SolvedNode uSolveStruct(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -2704,7 +2734,7 @@ struct sf_solve
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail("TODO anonymous structs"_fu); }());
         s_Type structType = initStruct(id, node.flags, module);
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, structType);
+            out.target = Scope_Typedef(_scope, id, structType, module);
 
         if (!solve)
             return out;
@@ -2790,7 +2820,7 @@ struct sf_solve
     s_SolvedNode solveLet(const s_Node& node)
     {
         s_SolvedNode out = solveBinding(node);
-        s_ScopeIdx overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)));
+        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)));
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -2799,7 +2829,7 @@ struct sf_solve
     s_SolvedNode solveField(const s_Type& structType, const s_Node& node)
     {
         s_SolvedNode out = solveBinding(node);
-        s_ScopeIdx overload = Field(out.value, structType, out.type);
+        s_Target overload = Field(out.value, structType, out.type);
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -2857,12 +2887,12 @@ struct sf_solve
             else
             {
                 const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-                fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
+                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
                 if (overloads)
                 {
                     for (int i = 0; (i < overloads.size()); i++)
                     {
-                        s_Overload maybe { GET(overloads[i]) };
+                        s_Overload maybe = GET(overloads[i], module, ctx);
                         if ((maybe.kind == "type"_fu))
                             return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(""_fu); }()), fu_VEC<s_SolvedNode>{});
 
@@ -2910,12 +2940,12 @@ struct sf_solve
             else
             {
                 const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-                fu_VEC<s_ScopeIdx> overloads = Scope_lookup(_scope, id);
+                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
                 if (overloads)
                 {
                     for (int i = 0; (i < overloads.size()); i++)
                     {
-                        s_Overload maybe { GET(overloads[i]) };
+                        s_Overload maybe = GET(overloads[i], module, ctx);
                         if ((maybe.kind == "type"_fu))
                             return isAssignable(([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(""_fu); }()), type);
 
@@ -2983,16 +3013,16 @@ struct sf_solve
         const fu_STR& id = node.value;
         (id.size() || fail(""_fu));
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        s_ScopeIdx callTargIdx = scope_match__mutargs(id, args, node.flags);
-        s_Overload callTarg { GET(callTargIdx) };
+        s_Target callTargIdx = scope_match__mutargs(id, args, node.flags);
+        s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
             s_Partial partial { ([&]() -> s_Partial& { { s_Partial& _ = callTarg.partial; if (_) return _; } fail(""_fu); }()) };
-            const s_ScopeIdx& viaIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.via; if (_) return _; } fail(""_fu); }());
-            callTargIdx = ([&]() -> const s_ScopeIdx& { { const s_ScopeIdx& _ = partial.target; if (_) return _; } fail(""_fu); }());
-            s_Overload via { GET(viaIdx) };
-            callTarg = GET(callTargIdx);
+            const s_Target& viaIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.via; if (_) return _; } fail(""_fu); }());
+            callTargIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.target; if (_) return _; } fail(""_fu); }());
+            s_Overload via = GET(viaIdx, module, ctx);
+            callTarg = GET(callTargIdx, module, ctx);
             fu_VEC<s_SolvedNode> innerArgs {};
             if (!unshift)
                 innerArgs = fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) } };
@@ -3028,12 +3058,12 @@ struct sf_solve
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
     {
-        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_ScopeIdx{} };
+        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
     };
-    s_ScopeIdx injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
+    s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
         const int scope0 = Scope_push(_scope);
-        s_ScopeIdx ret = Binding(id, type);
+        s_Target ret = Binding(id, type);
         Scope_pop(_scope, scope0);
         
         {
@@ -3053,7 +3083,7 @@ struct sf_solve
         };
         if (fnNode.target)
         {
-            s_Overload& o = GET(fnNode.target);
+            s_Overload& o = GET_mut(fnNode.target);
             ((o.kind == "fn"_fu) || fail(""_fu));
             ((o.names.size() == o.args.size()) || fail(""_fu));
             o.args.push(type);
@@ -3067,10 +3097,10 @@ struct sf_solve
         ((args.size() >= argIdx) || fail(""_fu));
         args.insert(argIdx, CallerNode(createRead(id), s_Type(type), getImplicit(id, type), fu_VEC<s_SolvedNode>{}));
     };
-    s_ScopeIdx getImplicit(const fu_STR& id, const s_Type& type)
+    s_Target getImplicit(const fu_STR& id, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> args {};
-        s_ScopeIdx matched = scope_tryMatch__mutargs(id, args, 0, type);
+        s_Target matched = scope_tryMatch__mutargs(id, args, 0, type);
         if (!matched)
         {
             if (!_current_fn)
@@ -3087,8 +3117,8 @@ struct sf_solve
         const s_Node& n1 = node.items[1];
         const s_Node& n2 = node.items[2];
         s_SolvedNode cond = solveNode(n0, t_bool);
-        s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
-        s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+        s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+        s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
         s_SolvedNode priExpr { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()) };
         s_SolvedNode secExpr { ([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
@@ -3192,11 +3222,11 @@ struct sf_solve
     };
     s_SolvedNode solved(const s_Node& node, const s_Type& type, const fu_VEC<s_SolvedNode>& items)
     {
-        return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_Token(node.token), s_Type(type), s_ScopeIdx{} };
+        return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_Token(node.token), s_Type(type), s_Target{} };
     };
-    s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_ScopeIdx& target, fu_VEC<s_SolvedNode>&& args)
+    s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_Target& target, fu_VEC<s_SolvedNode>&& args)
     {
-        s_Overload overload { GET(target) };
+        s_Overload overload = GET(target, module, ctx);
         if ((overload.kind == "field"_fu))
         {
             s_SolvedNode head { ([&]() -> s_SolvedNode& { if ((args.size() == 1)) { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) };
@@ -3229,7 +3259,7 @@ struct sf_solve
         if (WARN_ON_IMPLICIT_COPY)
         {
         };
-        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_Token(node.token), clear_refs(node.type), s_ScopeIdx{} };
+        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_Token(node.token), clear_refs(node.type), s_Target{} };
     };
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
@@ -3290,32 +3320,32 @@ struct sf_solve
 
 #define solve(...) ((sf_solve { __VA_ARGS__ }).solve_EVAL())
 
-s_Scope listGlobals()
+s_Scope listGlobals(const s_Module& module)
 {
     s_Scope scope {};
-    Scope_Typedef(scope, "i8"_fu, t_i8);
-    Scope_Typedef(scope, "i16"_fu, t_i16);
-    Scope_Typedef(scope, "i32"_fu, t_i32);
-    Scope_Typedef(scope, "i64"_fu, t_i64);
-    Scope_Typedef(scope, "u8"_fu, t_u8);
-    Scope_Typedef(scope, "u16"_fu, t_u16);
-    Scope_Typedef(scope, "u32"_fu, t_u32);
-    Scope_Typedef(scope, "u64"_fu, t_u64);
-    Scope_Typedef(scope, "f32"_fu, t_f32);
-    Scope_Typedef(scope, "f64"_fu, t_f64);
-    Scope_Typedef(scope, "bool"_fu, t_bool);
-    Scope_Typedef(scope, "void"_fu, t_void);
-    Scope_Typedef(scope, "string"_fu, t_string);
-    Scope_Typedef(scope, "never"_fu, t_never);
+    Scope_Typedef(scope, "i8"_fu, t_i8, module);
+    Scope_Typedef(scope, "i16"_fu, t_i16, module);
+    Scope_Typedef(scope, "i32"_fu, t_i32, module);
+    Scope_Typedef(scope, "i64"_fu, t_i64, module);
+    Scope_Typedef(scope, "u8"_fu, t_u8, module);
+    Scope_Typedef(scope, "u16"_fu, t_u16, module);
+    Scope_Typedef(scope, "u32"_fu, t_u32, module);
+    Scope_Typedef(scope, "u64"_fu, t_u64, module);
+    Scope_Typedef(scope, "f32"_fu, t_f32, module);
+    Scope_Typedef(scope, "f64"_fu, t_f64, module);
+    Scope_Typedef(scope, "bool"_fu, t_bool, module);
+    Scope_Typedef(scope, "void"_fu, t_void, module);
+    Scope_Typedef(scope, "string"_fu, t_string, module);
+    Scope_Typedef(scope, "never"_fu, t_never, module);
     return scope;
 }
-inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\nfn __native_pure(id: string): never never;\nfn __native_pure(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn    push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn concat(a: $T[], b: $T[]): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn    pop(a: &mut $T[]): void __native_pure;\n\nfn  clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn  [](a: string, i: i32): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn   find(a: string, b: string): i32 __native_pure;\nfn    has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native_pure;\nfn    join(a: string[], sep: string): string __native_pure;\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: Map($K, $V)): $K[] __native_pure;\nfn values(a: Map($K, $V)): $V[] __native_pure;\nfn has   (a: Map($K, $V), b: $K): bool __native_pure;\nfn count (a: Map($K, $V)): i32 __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
+inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\nfn __native_pure(id: string): never never;\nfn __native_pure(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn    push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn concat(a: $T[], b: $T[]): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn    pop(a: &mut $T[]): void __native_pure;\n\nfn  clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn  [](a: string, i: i32): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn   find(a: string, b: string): i32 __native_pure;\nfn    has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native_pure;\nfn    join(a: string[], sep: string): string __native_pure;\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: Map($K, $V)): $K[] __native_pure;\nfn values(a: Map($K, $V)): $V[] __native_pure;\nfn has   (a: Map($K, $V), b: $K): bool __native_pure;\nfn count (a: Map($K, $V)): i32 __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\nfn +(a: i32, b: string): string __native_pure;\nfn +(a: f64, b: string): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
 
 s_TEMP_Context solvePrelude()
 {
     s_TEMP_Context ctx {};
     s_Module module { getModule(""_fu, ctx) };
-    ctx.modules.mutref(0).out.solve.scope = listGlobals();
+    ctx.modules.mutref(0).out.solve.scope = listGlobals(module);
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse("__prelude"_fu, lexed.tokens).root;
     s_SolverOutput solved = solve(root, ctx, module);
@@ -3345,10 +3375,11 @@ struct sf_cpp_codegen
     int _fnN {};
     int _clsrN {};
     int _faasN {};
-    const s_Overload& GET(const s_ScopeIdx& idx)
+    s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
-        ((idx.raw > 0) || fu_THROW("Assertion failed."));
-        return scope.overloads[(idx.raw - 1)];
+        ((target.index.raw > 0) || fu_THROW("Assertion failed."));
+        const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
+        return m.out.solve.scope.overloads[(target.index.raw - 1)];
     };
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
@@ -3610,7 +3641,7 @@ struct sf_cpp_codegen
             return ""_fu;
 
         fu_STR evalName = (fn.value + "_EVAL"_fu);
-        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_Token(fn.token), s_Type(t_void), s_ScopeIdx{} } } }, s_Token(fn.token), s_Type(t_void), s_ScopeIdx{} };
+        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_Token(fn.token), s_Type(t_void), s_Target{} } } }, s_Token(fn.token), s_Type(t_void), s_Target{} };
         fu_VEC<s_SolvedNode> head = fu_CONCAT(fu_CONCAT(slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)), slice(items, 0, end)), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
         ((_clsrN == 0) || fail(""_fu));
         _clsrN--;
@@ -3639,13 +3670,13 @@ struct sf_cpp_codegen
         src += (closure ? (") -> "_fu + annot) : ")"_fu);
         return src;
     };
-    void ensureFwdDecl(const s_ScopeIdx& idx)
+    void ensureFwdDecl(const s_Target& target)
     {
-        const s_Overload& overload = GET(idx);
+        s_Overload overload = GET(target, module, ctx);
         if ((overload.kind != "fn"_fu))
             return;
 
-        fu_STR ffwdKey = ("#"_fu + idx.raw);
+        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index.raw);
         if (fu::has(_ffwd, ffwdKey))
             return;
 
@@ -3670,7 +3701,7 @@ struct sf_cpp_codegen
         if (!fn.items.size())
         {
             fu_STR src = ""_fu;
-            const s_Template& tempatle = ([&]() -> const s_Template& { { const s_Template& _ = GET(fn.target).tempatle; if (_) return _; } fail(""_fu); }());
+            s_Template tempatle = ([&]() -> s_Template { { s_Template _ = GET(fn.target, module, ctx).tempatle; if (_) return _; } fail(""_fu); }());
             const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = tempatle.specializations;
             fu_VEC<fu_STR> keys = fu_KEYS(specs);
             ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
@@ -3765,7 +3796,7 @@ struct sf_cpp_codegen
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(""_fu); }()) + " "_fu) + ID(id));
-        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_ScopeIdx{} });
+        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
@@ -3872,7 +3903,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgCall(const s_SolvedNode& node, const int& mode)
     {
-        const s_Overload& target = ([&]() -> const s_Overload& { { const s_Overload& _ = GET(node.target); if (_) return _; } fail(""_fu); }());
+        s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(""_fu); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
         if ((target.kind == "defctor"_fu))
         {
