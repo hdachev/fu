@@ -3356,11 +3356,7 @@ fn solve(
     {
         let out = solved(node, t_void, solveNodes(node.items));
 
-        // Either use the return expression,
-        //  or the void-returning return statement itself,
-        //   so we always have a node to rely on.
-
-        let nextExpr    = out.items[0] || out;
+        let nextExpr    = out.items.len ? out.items[0] : out;
         let nextType    = nextExpr.type || fail();
 
         let retIdx      = _current_fn.items.len + FN_RET_BACK;
@@ -4858,6 +4854,71 @@ pub fn cpp_codegen(
 
     //
 
+    fn cgFnSignature(fn: SolvedNode): string
+    {
+        let items   = fn.items;
+        let ret     = items[items.len + FN_RET_BACK] || fail();
+        let annot   = typeAnnot(ret.type || fail(), M_RETVAL);
+        let closure = !!_clsrN && (fn.flags & F_CLOSURE);
+
+        mut src = closure
+                ? 'const auto& ' + fn.value + ' = [&]('
+                : annot + ' ' + fn.value + '(';
+
+        if (!fn.value.hasIdentifierChars)
+            src = annot + ' operator' + fn.value + '(';
+
+        for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
+        {
+            if (i)
+                src += ', ';
+
+            src += binding(items[i] || fail());
+        }
+
+        src += closure
+             ? ') -> ' + annot
+             : ')';
+
+        return src;
+    }
+
+    fn ensureFwdDecl(idx: ScopeIdx)
+    {
+        let overload = GET(idx);
+        if (overload.kind != 'fn')
+            return;
+
+        let ffwdKey = '#' + idx.raw;
+        if (_ffwd.has(ffwdKey))
+            return;
+
+        let id      = overload.name || fail();
+        let ret     = overload.type || fail();
+        let annot   = typeAnnot(ret, M_RETVAL);
+
+        mut src = id.hasIdentifierChars
+                ? '\n' + annot + ' ' + id + '('
+                : '\n' + annot + ' operator' + id + '(';
+
+        let arg_t = overload.args;
+        for (mut i = 0; i < arg_t.len; i++)
+        {
+            if (i)
+                src += ', ';
+
+            src += typeAnnot(arg_t[i], M_ARGUMENT);
+        }
+
+        src += ');';
+        _ffwd[ffwdKey] = src;
+
+        return;
+    }
+
+
+    //
+
     fn cgFn(fn: SolvedNode): string
     {
         // Template emit.
@@ -4904,8 +4965,8 @@ pub fn cpp_codegen(
         }
 
         ///////////////////////////
-        let f0    = _fnN;
-        let c0    = _clsrN;
+        let f0 = _fnN;
+        let c0 = _clsrN;
         let indent0 = _indent;
 
         _fnN++;
@@ -4915,39 +4976,14 @@ pub fn cpp_codegen(
         //
         let items = fn.items;
         let body  = items[items.len + FN_BODY_BACK] || fail();
-        let ret   = items[items.len + FN_RET_BACK ] || fail();
-        let annot = typeAnnot(ret.type || fail(), M_RETVAL);
-
-        //
-        let closure = !!_clsrN
-            && (fn.flags & F_CLOSURE)
-            && fn.value != '==';
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
             _indent = '\n';
 
-        mut src = closure
-                ? 'const auto& ' + fn.value + ' = [&]('
-                : annot + ' ' + fn.value + '(';
-
-        if (!fn.value.hasIdentifierChars)
-            src = annot + ' operator' + fn.value + '(';
-
-        for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
-        {
-            if (i)
-                src += ', ';
-
-            src += binding(items[i] || fail());
-        }
-
-        src += closure
-             ? ') -> ' + annot
-             : ')';
-
-        if (!closure && src != 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
-            _ffwd[src] = '\n' + src + ';';
+        mut src = cgFnSignature(fn);
+        if (src != 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
+            ensureFwdDecl(fn.target);
 
         if (body.kind == 'block')
             src += cgBlock(body);

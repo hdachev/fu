@@ -48,6 +48,13 @@ struct s_TEMP_Context;
 struct s_Template;
 struct s_Token;
 struct s_Type;
+bool operator==(const s_Type&, const s_Type&);
+int copyOrMove(const int&, const fu_VEC<s_StructField>&);
+bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+s_Type createArray(const s_Type&, s_Module&);
+int ZERO();
+fu_STR ZERO(const fu_STR&);
+void runTestSuite();
 template <typename T>
 fu_VEC<T> fu_CONCAT(
     const fu_VEC<T>& a,
@@ -125,13 +132,6 @@ template <typename T>
             what.data(), size_t(what.size())));
 }
 
-bool operator==(const s_Type& a, const s_Type& b);
-bool someFieldNonCopy(const fu_VEC<s_StructField>& fields);
-fu_STR ZERO(const fu_STR& src);
-int ZERO();
-int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields);
-s_Type createArray(const s_Type& item, s_Module& module);
-void runTestSuite();
 struct s_Token
 {
     fu_STR kind;
@@ -2746,7 +2746,7 @@ struct sf_solve
     s_SolvedNode solveReturn(const s_Node& node)
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
-        const s_SolvedNode& nextExpr = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = out.items[0]; if (_) return _; } return out; }());
+        const s_SolvedNode& nextExpr = (out.items.size() ? out.items[0] : out);
         const s_Type& nextType = ([&]() -> const s_Type& { { const s_Type& _ = nextExpr.type; if (_) return _; } fail(""_fu); }());
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
         s_SolvedNode prevExpr { _current_fn.items.mutref(retIdx) };
@@ -3619,6 +3619,52 @@ struct sf_cpp_codegen
         _clsrN++;
         return src;
     };
+    fu_STR cgFnSignature(const s_SolvedNode& fn)
+    {
+        const fu_VEC<s_SolvedNode>& items = fn.items;
+        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(""_fu); }());
+        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), M_RETVAL);
+        const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
+        fu_STR src = (closure ? (("const auto& "_fu + fn.value) + " = [&]("_fu) : (((annot + " "_fu) + fn.value) + "("_fu));
+        if (!hasIdentifierChars(fn.value))
+            src = (((annot + " operator"_fu) + fn.value) + "("_fu);
+
+        for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
+        {
+            if (i)
+                src += ", "_fu;
+
+            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false, false);
+        };
+        src += (closure ? (") -> "_fu + annot) : ")"_fu);
+        return src;
+    };
+    void ensureFwdDecl(const s_ScopeIdx& idx)
+    {
+        const s_Overload& overload = GET(idx);
+        if ((overload.kind != "fn"_fu))
+            return;
+
+        fu_STR ffwdKey = ("#"_fu + idx.raw);
+        if (fu::has(_ffwd, ffwdKey))
+            return;
+
+        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(""_fu); }());
+        const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(""_fu); }());
+        fu_STR annot = typeAnnot(ret, M_RETVAL);
+        fu_STR src = (hasIdentifierChars(id) ? (((("\n"_fu + annot) + " "_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu));
+        const fu_VEC<s_Type>& arg_t = overload.args;
+        for (int i = 0; (i < arg_t.size()); i++)
+        {
+            if (i)
+                src += ", "_fu;
+
+            src += typeAnnot(arg_t[i], M_ARGUMENT);
+        };
+        src += ");"_fu;
+        (_ffwd.upsert(ffwdKey) = src);
+        return;
+    };
     fu_STR cgFn(const s_SolvedNode& fn)
     {
         if (!fn.items.size())
@@ -3658,26 +3704,12 @@ struct sf_cpp_codegen
 
         const fu_VEC<s_SolvedNode>& items = fn.items;
         const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(""_fu); }());
-        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(""_fu); }());
-        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), M_RETVAL);
-        const bool closure = (!!_clsrN && (fn.flags & F_CLOSURE) && (fn.value != "=="_fu));
         if (!(fn.flags & F_CLOSURE))
             _indent = "\n"_fu;
 
-        fu_STR src = (closure ? (("const auto& "_fu + fn.value) + " = [&]("_fu) : (((annot + " "_fu) + fn.value) + "("_fu));
-        if (!hasIdentifierChars(fn.value))
-            src = (((annot + " operator"_fu) + fn.value) + "("_fu);
-
-        for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
-        {
-            if (i)
-                src += ", "_fu;
-
-            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false, false);
-        };
-        src += (closure ? (") -> "_fu + annot) : ")"_fu);
-        if ((!closure && (src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))))
-            (_ffwd.upsert(src) = (("\n"_fu + src) + ";"_fu));
+        fu_STR src = cgFnSignature(fn);
+        if (((src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))))
+            ensureFwdDecl(fn.target);
 
         if ((body.kind == "block"_fu))
             src += cgBlock(body);
