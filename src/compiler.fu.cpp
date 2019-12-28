@@ -95,6 +95,23 @@ fu_VEC<K> fu_KEYS(
     return map.m_keys;
 }
 
+inline fu_VEC<fu_STR> fu_SPLIT(
+    fu_STR s,
+    const fu_STR& sep)
+{
+    fu_VEC<fu_STR> result;
+
+    int next;
+    while ((next = fu::lfind(s, sep)) >= 0)
+    {
+        result.push(slice(s, 0, next));
+        s = slice(s, next + sep.size());
+    }
+
+    result.push(static_cast<fu_STR&&>(s));
+    return result;
+}
+
 [[noreturn]] fu_NEVER fu_THROW(const char* what)
 {
     throw std::runtime_error(what);
@@ -113,8 +130,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields);
 fu_STR ZERO(const fu_STR& src);
 int ZERO();
 int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields);
-s_SolverOutput solve(const s_Node& parse, s_TEMP_Context& ctx);
-s_Type createArray(const s_Type& item, s_TEMP_Context& ctx);
+s_Type createArray(const s_Type& item, s_Module& module);
 void runTestSuite();
 struct s_Token
 {
@@ -143,11 +159,13 @@ struct s_Type
 {
     fu_STR canon;
     int quals;
+    int modid;
     explicit operator bool() const noexcept
     {
         return false
             || canon.size()
             || quals
+            || modid
         ;
     }
 };
@@ -246,17 +264,45 @@ struct s_ParserOutput
 
 struct s_ModuleInputs
 {
-    fu_STR fname;
     fu_STR src;
     s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
     {
         return false
-            || fname.size()
             || src.size()
             || lex
             || parse
+        ;
+    }
+};
+
+struct s_StructField
+{
+    fu_STR id;
+    s_Type type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id.size()
+            || type
+        ;
+    }
+};
+
+struct s_Struct
+{
+    fu_STR kind;
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || id.size()
+            || fields
+            || flags
         ;
     }
 };
@@ -357,13 +403,15 @@ struct s_SolverOutput
 
 struct s_ModuleOutputs
 {
-    fu_VEC<fu_STR> absimports;
+    fu_VEC<int> deps;
+    fu_COW_MAP<fu_STR, s_Struct> types;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
     {
         return false
-            || absimports
+            || deps
+            || types
             || solve
             || cpp.size()
         ;
@@ -389,14 +437,16 @@ struct s_ModuleStats
 
 struct s_Module
 {
-    int id;
+    int modid;
+    fu_STR fname;
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
     explicit operator bool() const noexcept
     {
         return false
-            || id
+            || modid
+            || fname.size()
             || in
             || out
             || stats
@@ -404,44 +454,12 @@ struct s_Module
     }
 };
 
-struct s_StructField
-{
-    fu_STR id;
-    s_Type type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id.size()
-            || type
-        ;
-    }
-};
-
-struct s_Struct
-{
-    fu_STR kind;
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind.size()
-            || id.size()
-            || fields
-            || flags
-        ;
-    }
-};
-
 struct s_TEMP_Context
 {
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_Module> modules;
+    fu_VEC<s_Module> modules;
     explicit operator bool() const noexcept
     {
         return false
-            || types
             || modules
         ;
     }
@@ -509,6 +527,30 @@ fu_STR path_dirname(const fu_STR& path)
 
     };
     return ""_fu;
+}
+
+fu_STR path_normalize(const fu_STR& p)
+{
+    fu_VEC<fu_STR> path = fu_SPLIT(p, "/"_fu);
+    for (int i = path.size(); (i-- > 0); )
+    {
+        fu_STR part { path.mutref(i) };
+        if (((part == "."_fu) || (!part.size() && (i > 0) && (i < (path.size() - 1)))))
+            path.splice(i, 1);
+
+    };
+    for (int i = 1; (i < path.size()); i++)
+    {
+        if ((path.mutref(i) == ".."_fu))
+            path.splice(--i, 2);
+
+    };
+    return fu_JOIN(path, "/"_fu);
+}
+
+fu_STR path_join(const fu_STR& a, const fu_STR& b)
+{
+    return path_normalize(((a + "/"_fu) + b));
 }
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<61> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
@@ -1654,7 +1696,7 @@ inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<9> { "m
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
-    return ((a.canon == b.canon) && (a.quals == b.quals));
+    return ((a.modid == b.modid) && (a.canon == b.canon) && (a.quals == b.quals));
 }
 inline const int Trivial = (q_copy | q_trivial);
 inline const int Primitive = (Trivial | q_primitive);
@@ -1663,21 +1705,21 @@ inline const int Integral = (Arithmetic | q_integral);
 inline const int SignedInt = (Integral | q_signed);
 inline const int& UnsignedInt = Integral;
 inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt) };
-inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt) };
-inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt) };
-inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt) };
-inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt) };
-inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt) };
-inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt) };
-inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt) };
-inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt) };
-inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt) };
-inline const s_Type t_void = s_Type { "void"_fu, 0 };
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive) };
-inline const s_Type t_never = s_Type { "never"_fu, 0 };
-inline const s_Type t_template = s_Type { "template"_fu, 0 };
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy) };
+inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0 };
+inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0 };
+inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0 };
+inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0 };
+inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0 };
+inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0 };
+inline const s_Type t_void = s_Type { "void"_fu, 0, 0 };
+inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0 };
+inline const s_Type t_never = s_Type { "never"_fu, 0, 0 };
+inline const s_Type t_template = s_Type { "template"_fu, 0, 0 };
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0 };
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
@@ -1692,12 +1734,12 @@ bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 
 s_Type qadd(const s_Type& type, const int& q)
 {
-    return s_Type { fu_STR(type.canon), (type.canon.size() ? (type.quals | q) : 0) };
+    return s_Type { fu_STR(type.canon), (type.canon.size() ? (type.quals | q) : 0), int(type.modid) };
 }
 
 s_Type qsub(const s_Type& type, const int& q)
 {
-    return s_Type { fu_STR(type.canon), (type.quals & ~q) };
+    return s_Type { fu_STR(type.canon), (type.quals & ~q), int(type.modid) };
 }
 
 bool qhas(const s_Type& type, const int& q)
@@ -1708,7 +1750,7 @@ bool qhas(const s_Type& type, const int& q)
 s_Type tryClear(const s_Type& type, const int& q)
 {
     if ((!type || !qhas(type, q)))
-        return s_Type { fu_STR{}, int{} };
+        return s_Type { fu_STR{}, int{}, int{} };
 
     return qsub(type, q);
 }
@@ -1768,43 +1810,68 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if ((a.canon != b.canon))
-        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{} }));
+        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{}, int{} }));
 
-    return s_Type { fu_STR(a.canon), (a.quals & b.quals) };
+    return s_Type { fu_STR(a.canon), (a.quals & b.quals), int(a.modid) };
 }
 
-s_Module upsertModule(const fu_STR& fname, s_TEMP_Context& ctx)
+const int& MODID(const s_Module& module)
 {
-    return ([&](s_Module& _) -> s_Module& { if (!_) _ = s_Module { fu_KEYS(ctx.modules).size(), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} }; return _; } (ctx.modules.upsert(fname)));
+    return module.modid;
 }
 
-void registerType(const fu_STR& canon, const s_Struct& def, s_TEMP_Context& ctx)
+s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
 {
-    (ctx.types.upsert(canon) = def);
+    for (int i = 0; (i < ctx.modules.size()); i++)
+    {
+        if ((ctx.modules.mutref(i).fname == fname))
+            return ctx.modules.mutref(i);
+
+    };
+    const int i = ctx.modules.size();
+    s_Module module = s_Module { int(i), fu_STR{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
+    module.fname = fname;
+    ctx.modules.push(module);
+    return ctx.modules.mutref(i);
 }
 
-const s_Struct& lookupType(const fu_STR& canon, const s_TEMP_Context& ctx)
+void setModule(const s_Module& module, s_TEMP_Context& ctx)
 {
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.types[canon]; if (_) return _; } fu_THROW("Assertion failed."); }());
+    s_Module& current = ctx.modules.mutref(module.modid);
+    ((current.fname == module.fname) || fu_THROW("Assertion failed."));
+    current = module;
 }
 
-s_Struct& lookupType_mut(const fu_STR& canon, s_TEMP_Context& ctx)
+void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
 {
-    return ([&]() -> s_Struct& { { s_Struct& _ = ctx.types.mutref(canon); if (_) return _; } fu_THROW("Assertion failed."); }());
+    (module.out.types.upsert(canon) = def);
 }
 
-s_Type initStruct(const fu_STR& id, const int& flags, s_TEMP_Context& ctx)
+const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+{
+    if ((type.modid == module.modid))
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu_THROW("Assertion failed."); }());
+
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu_THROW("Assertion failed."); }());
+}
+
+s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
+{
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_THROW("Assertion failed."); }());
+}
+
+s_Type initStruct(const fu_STR& id, const int& flags, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
     s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu_THROW("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
-    registerType(canon, def, ctx);
-    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields) };
+    registerType(canon, def, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), int(MODID(module)) };
 }
 
-void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_TEMP_Context& ctx)
+void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
-    s_Struct& def = lookupType_mut(canon, ctx);
+    s_Struct& def = lookupType_mut(canon, module);
     def.fields = ([&]() -> const fu_VEC<s_StructField>& { { const fu_VEC<s_StructField>& _ = fields; if (_) return _; } fu_THROW("TODO empty structs?"_fu); }());
 }
 
@@ -1838,13 +1905,13 @@ bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
     return false;
 }
 
-s_Type createArray(const s_Type& item, s_TEMP_Context& ctx)
+s_Type createArray(const s_Type& item, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
     fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
-    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, ctx);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields) };
+    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), int(MODID(module)) };
 }
 
 bool type_isString(const s_Type& type)
@@ -1857,12 +1924,12 @@ bool type_isArray(const s_Type& type)
     return fu::lmatch(type.canon, "Array("_fu);
 }
 
-s_Type tryClear_array(const s_Type& type, const s_TEMP_Context& ctx)
+s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
 {
     if (!type_isArray(type))
-        return s_Type { fu_STR{}, int{} };
+        return s_Type { fu_STR{}, int{}, int{} };
 
-    const s_Struct& def = lookupType(type.canon, ctx);
+    const s_Struct& def = lookupType(type, module, ctx);
     return ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }());
 }
 
@@ -1871,21 +1938,21 @@ bool type_isMap(const s_Type& type)
     return fu::lmatch(type.canon, "Map("_fu);
 }
 
-s_Type createMap(const s_Type& key, const s_Type& value, s_TEMP_Context& ctx)
+s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
-    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, ctx);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields) };
+    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), int(MODID(module)) };
 }
 
-s_MapFields tryClear_map(const s_Type& type, const s_TEMP_Context& ctx)
+s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
 {
     if (!type_isMap(type))
         return s_MapFields { s_Type{}, s_Type{} };
 
-    const s_Struct& def = lookupType(type.canon, ctx);
+    const s_Struct& def = lookupType(type, module, ctx);
     ((def.kind == "map"_fu) || fu_THROW("Assertion failed."));
     return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
 }
@@ -1928,12 +1995,12 @@ s_ScopeIdx Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type)
     return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{});
 }
 
-struct sf_runSolver
+struct sf_solve
 {
     const s_Node& parse;
-    const s_Scope& globals;
-    s_TEMP_Context& ctx;
-    s_Scope _scope { globals };
+    const s_TEMP_Context& ctx;
+    s_Module& module;
+    s_Scope _scope { ctx.modules[0].out.solve.scope };
     s_Token _here {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
@@ -2575,11 +2642,11 @@ struct sf_runSolver
         {
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(""_fu); }());
             ((argNode.kind == "let"_fu) || fail(""_fu));
-            s_Type inType = ((args.size() > i) ? s_Type(args[i].type) : s_Type { fu_STR{}, int{} });
+            s_Type inType = ((args.size() > i) ? s_Type(args[i].type) : s_Type { fu_STR{}, int{}, int{} });
             if (inType)
             {
                 const fu_STR& argName = ([&]() -> const fu_STR& { { const fu_STR& _ = argNode.value; if (_.size()) return _; } fail(""_fu); }());
-                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{} }; return _; } (typeParams.upsert(argName)));
+                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{} }; return _; } (typeParams.upsert(argName)));
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
             };
             inType.quals |= q_ref;
@@ -2635,7 +2702,7 @@ struct sf_runSolver
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail("TODO anonymous structs"_fu); }());
-        s_Type structType = initStruct(id, node.flags, ctx);
+        s_Type structType = initStruct(id, node.flags, module);
         if (!prep)
             out.target = Scope_Typedef(_scope, id, structType);
 
@@ -2657,7 +2724,7 @@ struct sf_runSolver
                     fields.push(s_StructField { fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = item.value; if (_.size()) return _; } fail(""_fu); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = item.type; if (_) return _; } fail(""_fu); }())) });
                 };
             };
-            finalizeStruct(id, fields, ctx);
+            finalizeStruct(id, fields, module);
             DefaultCtor(id, structType, members);
         };
         return out;
@@ -2774,7 +2841,7 @@ struct sf_runSolver
                         return solved(node, add_mutref(t), fu_VEC<s_SolvedNode>{});
 
                     if ((node.value == "[]"_fu))
-                        return solved(node, createArray(t, ctx), fu_VEC<s_SolvedNode>{});
+                        return solved(node, createArray(t, module), fu_VEC<s_SolvedNode>{});
 
                 }
                 else if ((items.size() == 2))
@@ -2783,7 +2850,7 @@ struct sf_runSolver
                     s_Type b = evalTypeAnnot(items[1]).type;
                     ((a && b) || fail(""_fu));
                     if ((node.value == "Map"_fu))
-                        return solved(node, createMap(a, b, ctx), fu_VEC<s_SolvedNode>{});
+                        return solved(node, createMap(a, b, module), fu_VEC<s_SolvedNode>{});
 
                 };
             }
@@ -2822,7 +2889,7 @@ struct sf_runSolver
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type, ctx) : ((void)fail("TODO"_fu), s_Type { fu_STR{}, int{} }))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type, module, ctx) : ((void)fail("TODO"_fu), s_Type { fu_STR{}, int{}, int{} }))));
                     if (!t)
                         return false;
 
@@ -2832,7 +2899,7 @@ struct sf_runSolver
                 {
                     if ((node.value == "Map"_fu))
                     {
-                        s_MapFields kv = tryClear_map(type, ctx);
+                        s_MapFields kv = tryClear_map(type, module, ctx);
                         if (!kv)
                             return false;
 
@@ -2860,7 +2927,7 @@ struct sf_runSolver
         else if ((node.kind == "typeparam"_fu))
         {
             const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{} }; return _; } (typeParams.upsert(id)));
+            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{} }; return _; } (typeParams.upsert(id)));
             if (_param)
             {
                 s_Type inter = type_tryInter(_param, type);
@@ -2942,7 +3009,7 @@ struct sf_runSolver
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
-        s_Type itemType = (type ? tryClear_array(type, ctx) : s_Type { fu_STR{}, int{} });
+        s_Type itemType = (type ? tryClear_array(type, module, ctx) : s_Type { fu_STR{}, int{}, int{} });
         int startAt = 0;
         if ((!itemType && items.size()))
         {
@@ -2957,7 +3024,7 @@ struct sf_runSolver
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()).type);
             (itemType || fail("[array literal] No common supertype."_fu));
         };
-        return solved(node, createArray(itemType, ctx), items);
+        return solved(node, createArray(itemType, module), items);
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
     {
@@ -3215,13 +3282,13 @@ struct sf_runSolver
         _here = here0;
         return result;
     };
-    s_SolverOutput runSolver_EVAL()
+    s_SolverOutput solve_EVAL()
     {
         return s_SolverOutput { solveNode(parse, s_Type{}), s_Scope(_scope) };
     };
 };
 
-#define runSolver(...) ((sf_runSolver { __VA_ARGS__ }).runSolver_EVAL())
+#define solve(...) ((sf_solve { __VA_ARGS__ }).solve_EVAL())
 
 s_Scope listGlobals()
 {
@@ -3244,21 +3311,19 @@ s_Scope listGlobals()
 }
 inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\nfn __native_pure(id: string): never never;\nfn __native_pure(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn    push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn concat(a: $T[], b: $T[]): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn    pop(a: &mut $T[]): void __native_pure;\n\nfn  clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn  [](a: string, i: i32): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn   find(a: string, b: string): i32 __native_pure;\nfn    has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native_pure;\nfn    join(a: string[], sep: string): string __native_pure;\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: Map($K, $V)): $K[] __native_pure;\nfn values(a: Map($K, $V)): $V[] __native_pure;\nfn has   (a: Map($K, $V), b: $K): bool __native_pure;\nfn count (a: Map($K, $V)): i32 __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
 
-s_Scope solvePrelude()
+s_TEMP_Context solvePrelude()
 {
+    s_TEMP_Context ctx {};
+    s_Module module { getModule(""_fu, ctx) };
+    ctx.modules.mutref(0).out.solve.scope = listGlobals();
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse("__prelude"_fu, lexed.tokens).root;
-    s_TEMP_Context ctx {};
-    s_Scope scope = listGlobals();
-    s_SolverOutput solved = runSolver(root, scope, ctx);
-    return solved.scope;
+    s_SolverOutput solved = solve(root, ctx, module);
+    module.out.solve = solved;
+    setModule(module, ctx);
+    return ctx;
 }
-inline const s_Scope PRELUDE = solvePrelude();
-
-s_SolverOutput solve(const s_Node& parse, s_TEMP_Context& ctx)
-{
-    return runSolver(parse, PRELUDE, ctx);
-}
+inline const s_TEMP_Context CTX_PROTO = solvePrelude();
 inline const int M_STMT = (1 << 0);
 inline const int M_RETBOOL = (1 << 1);
 inline const int M_CONST = (1 << 2);
@@ -3269,6 +3334,7 @@ struct sf_cpp_codegen
 {
     const s_SolvedNode& root;
     const s_Scope& scope;
+    const s_Module& module;
     const s_TEMP_Context& ctx;
     fu_COW_MAP<fu_STR, fu_STR> _libs {};
     fu_COW_MAP<fu_STR, fu_STR> _tfwd {};
@@ -3359,7 +3425,7 @@ struct sf_cpp_codegen
         if ((c == "never"_fu))
             return annotateNever();
 
-        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type.canon, ctx); if (_) return _; } fail(("TODO: "_fu + type.canon)); }());
+        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.canon)); }());
         const fu_STR& k = tdef.kind;
         if ((k == "struct"_fu))
         {
@@ -3749,7 +3815,7 @@ struct sf_cpp_codegen
         if (!items.size())
             return cgDefault(node.type);
 
-        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, ctx); if (_) return _; } fail(""_fu); }());
+        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, module, ctx); if (_) return _; } fail(""_fu); }());
         fu_STR itemAnnot = typeAnnot(itemType, 0);
         fu_STR arrayAnnot = typeAnnot(node.type, 0);
         return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu_JOIN(items, ", "_fu)) + " } }"_fu);
@@ -3778,16 +3844,16 @@ struct sf_cpp_codegen
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
         if ((target.kind == "defctor"_fu))
         {
-            const fu_STR& head = ([&]() -> const s_Type& { { const s_Type& _ = target.type; if (_) return _; } fail(""_fu); }()).canon;
-            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, ctx); if (_) return _; } fail(""_fu); }());
+            const s_Type& head = ([&]() -> const s_Type& { { const s_Type& _ = target.type; if (_) return _; } fail(""_fu); }());
+            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, module, ctx); if (_) return _; } fail(""_fu); }());
             fu_STR open = " { "_fu;
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))
             {
-                open = ((" { "_fu + head) + "::Data { "_fu);
+                open = ((" { "_fu + head.canon) + "::Data { "_fu);
                 close = " }}"_fu;
             };
-            return (((head + open) + fu_JOIN(items, ", "_fu)) + close);
+            return (((head.canon + open) + fu_JOIN(items, ", "_fu)) + close);
         };
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = target.name; if (_.size()) return _; } fail(""_fu); }());
         if (hasNonIdentifierChars(id))
@@ -3842,7 +3908,7 @@ struct sf_cpp_codegen
         if ((target.kind == "field"_fu))
         {
             fu_STR sep = "."_fu;
-            const s_Struct& parent = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }()).type.canon, ctx); if (_) return _; } fail(""_fu); }());
+            const s_Struct& parent = lookupType(node.items[0].type, module, ctx);
             if ((parent.flags & F_DESTRUCTOR))
                 sep = ".data."_fu;
 
@@ -4429,14 +4495,14 @@ struct sf_cpp_codegen
 
 fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
 {
-    s_Module module = upsertModule(fname, ctx);
+    s_Module module { getModule(fname, ctx) };
     if (!module.in)
     {
-        module.out = s_ModuleOutputs { fu_VEC<fu_STR>{}, s_SolverOutput{}, fu_STR{} };
+        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, s_SolverOutput{}, fu_STR{} };
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
-        module.in = s_ModuleInputs { fu_STR(fname), fu_STR(src), s_LexerOutput(lexer_result), parse(fname, lexer_result.tokens) };
+        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), parse(fname, lexer_result.tokens) };
         const f64 t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);
@@ -4444,16 +4510,18 @@ fu_STR compile(const fu_STR& fname, const fu_STR& src, s_TEMP_Context& ctx)
     else if (!module.out)
         fu_THROW((("#import circle around `"_fu + fname) + "`."_fu));
 
+    setModule(module, ctx);
     if (!module.out)
     {
         const f64 t0 = fu::now_hr();
-        module.out = s_ModuleOutputs { fu_VEC<fu_STR>{}, solve(module.in.parse.root, ctx), fu_STR{} };
+        module.out.solve = solve(module.in.parse.root, ctx, module);
         const f64 t1 = fu::now_hr();
-        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, ctx);
+        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
         const f64 t2 = fu::now_hr();
         module.stats.s_solve = (t1 - t0);
         module.stats.s_cpp = (t2 - t1);
     };
+    setModule(module, ctx);
     return module.out.cpp;
 }
 
@@ -4464,7 +4532,7 @@ fu_STR compile_testcase(fu_STR&& src)
         src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     src += "\nfn main(): i32 ZERO();\n\n"_fu;
-    s_TEMP_Context ctx {};
+    s_TEMP_Context ctx { CTX_PROTO };
     return compile(fname, src, ctx);
 }
 inline const fu_STR TEST_SRC = "\n\n    fn test(one: i32)\n    {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn ZERO(): i32\n    {\n        return test(1) - 17;\n    }\n\n"_fu;
@@ -4763,6 +4831,7 @@ void runTestSuite()
     ZERO("\n        struct Type         { i: i32; };\n        struct Scope        { i: i32; };\n        struct Partial      { i: i32; };\n        struct Template     { i: i32; };\n        struct SolvedNode   { i: i32; };\n\n        pub fn Scope_add(\n            scope: &mut Scope,\n            kind: string, id: string, type: Type,\n\n            min: i32 = 0,\n            max: i32 = 0,\n            arg_n: string[]     = [],\n            arg_t: Type[]       = [],\n            arg_d: SolvedNode[] = [],\n            template: Template  = [],\n            partial: Partial    = []): i32\n        {\n            return scope.i\n                 + kind.len + id.len + type.i\n                 + min + max + arg_n.len + arg_t.len + arg_d.len\n                 + template.i + partial.i;\n        }\n\n        mut _scope: Scope;\n        let id: string;\n        let t_template: Type;\n        let min: i32;\n        let max: i32;\n        let arg_n: string[];\n        let template: Template;\n\n        return Scope_add(\n            _scope,\n            '', id, t_template,\n            min, max, arg_n,\n            :template);\n    "_fu);
     ZERO("\n        let i = 0;\n        let items = [ '' ];\n        i == items.len - 1 || throw('what?');\n        return i;\n    "_fu);
     ZERO("\n\n        return false /* test */\n             ? 0xffffff // what is this\n             : 0 // madness\n             ;\n    "_fu);
+    ZERO("\n\n        fn path_normalize(p: string): string {\n            mut path = p.split('/');\n\n            for (mut i = path.len; i --> 0; ) {\n                let part = path[i];\n                if (part == '.' || !part && i > 0 && i < path.len - 1)\n                    path.splice(i, 1);\n            }\n\n            for (mut i = 1; i < path.len; i++) {\n                if (path[i] == '..')\n                    path.splice(--i, 2);\n            }\n\n            return path.join('/');\n        }\n\n        fn path_join(a: string, b: string)\n            path_normalize(a + '/' + b);\n\n        fn ZERO()\n            path_join('hello/hey', './../you//') == 'hello/you/'\n                ? 0 : 1;\n    "_fu);
     ZERO("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu);
     ZERO("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw('woot');\n    "_fu);
     ZERO("\n\n        struct TrueStory { kind: string; value: string; };\n\n        mut specialized = TrueStory(kind: 'fn', value: 'val');\n\n        specialized.kind == 'fn' && specialized.value || throw('nope');\n\n        let v: &mut string = specialized.kind == 'fn'\n                          && specialized.value\n                          || throw('nope');\n        v += 'ue';\n\n        return specialized.value == 'value' ? 0 : 1;\n\n    "_fu);

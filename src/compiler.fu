@@ -53,21 +53,25 @@ fn path_dirname(path: string): string
     return '';
 }
 
-// fn path_normalize(path: string): string
-// {
-//     mut parts = path.split('/');
-//     for (mut i = path.len; i --> 0; ) // <- BROKEN see path vs parts
-//     {
-//         let part = path[i];
-//         if      (part == '.' || !part && i > 0) parts.splice(i    , 1);
-//         else if (part == '..'         && i > 0) parts.splice(i - 1, 2);
-//     }
+fn path_normalize(p: string): string {
+    mut path = p.split('/');
 
-//     return '/' + parts.join('/');
-// }
+    for (mut i = path.len; i --> 0; ) {
+        let part = path[i];
+        if (part == '.' || !part && i > 0 && i < path.len - 1)
+            path.splice(i, 1);
+    }
 
-// fn path_join(a: string, b: string)
-//     path_normalize(a + '/' + b);
+    for (mut i = 1; i < path.len; i++) {
+        if (path[i] == '..')
+            path.splice(--i, 2);
+    }
+
+    return path.join('/');
+}
+
+fn path_join(a: string, b: string)
+    path_normalize(a + '/' + b);
 
 
 
@@ -1716,12 +1720,14 @@ pub struct Type
 {
     canon: string;
     quals: i32;
+    modid: i32;
 };
 
 
 //
 
 fn ==(a: Type, b: Type)
+    a.modid == b.modid &&
     a.canon == b.canon &&
     a.quals == b.quals;
 
@@ -1736,24 +1742,24 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i8        = Type( 'i8', SignedInt);
-pub let t_i16       = Type('i16', SignedInt);
-pub let t_i32       = Type('i32', SignedInt);
-pub let t_i64       = Type('i64', SignedInt);
+pub let t_i8        = Type( 'i8', SignedInt, 0);
+pub let t_i16       = Type('i16', SignedInt, 0);
+pub let t_i32       = Type('i32', SignedInt, 0);
+pub let t_i64       = Type('i64', SignedInt, 0);
 
-pub let t_u8        = Type( 'u8', UnsignedInt);
-pub let t_u16       = Type('u16', UnsignedInt);
-pub let t_u32       = Type('u32', UnsignedInt);
-pub let t_u64       = Type('u64', UnsignedInt);
+pub let t_u8        = Type( 'u8', UnsignedInt, 0);
+pub let t_u16       = Type('u16', UnsignedInt, 0);
+pub let t_u32       = Type('u32', UnsignedInt, 0);
+pub let t_u64       = Type('u64', UnsignedInt, 0);
 
-pub let t_f32       = Type('f32', FloatingPt);
-pub let t_f64       = Type('f64', FloatingPt);
+pub let t_f32       = Type('f32', FloatingPt, 0);
+pub let t_f64       = Type('f64', FloatingPt, 0);
 
-pub let t_void      = Type('void', 0);
-pub let t_bool      = Type('bool', Primitive);
-pub let t_never     = Type('never', 0);
-pub let t_template  = Type('template', 0);
-pub let t_string    = Type('string', q_copy);
+pub let t_void      = Type('void', 0, 0);
+pub let t_bool      = Type('bool', Primitive, 0);
+pub let t_never     = Type('never', 0, 0);
+pub let t_template  = Type('template', 0, 0);
+pub let t_string    = Type('string', q_copy, 0);
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -1792,12 +1798,12 @@ pub fn isAssignableAsArgument(
 
 pub fn qadd(type: Type, q: i32)
 {
-    return Type(type.canon, type.canon ? type.quals | q : 0);
+    return Type(type.canon, type.canon ? type.quals | q : 0, type.modid);
 }
 
 pub fn qsub(type: Type, q: i32)
 {
-    return Type(type.canon, type.quals &~ q);
+    return Type(type.canon, type.quals &~ q, type.modid);
 }
 
 pub fn qhas(type: Type, q: i32)
@@ -1889,7 +1895,8 @@ pub fn type_tryInter(a: Type, b: Type)
 
     return Type(
         a.canon,
-        a.quals & b.quals);
+        a.quals & b.quals,
+        a.modid);
 }
 
 
@@ -1914,7 +1921,6 @@ pub struct StructField
 
 pub struct ModuleInputs
 {
-    fname:      string;
     src:        string;
     lex:        LexerOutput;
     parse:      ParserOutput;
@@ -1922,7 +1928,8 @@ pub struct ModuleInputs
 
 pub struct ModuleOutputs
 {
-    absimports: string[];
+    deps:       i32[];
+    types:      Map(string, Struct);
     solve:      SolverOutput;
     cpp:        string;
 };
@@ -1937,12 +1944,17 @@ pub struct ModuleStats
 
 pub struct Module
 {
-    id:         i32;
+    modid:      i32;
+    fname:      string;
 
     in:         ModuleInputs;
     out:        ModuleOutputs;
     stats:      ModuleStats;
 };
+
+fn MODID(implicit module: &Module) {
+    return module.modid;
+}
 
 
 // The temp context -
@@ -1953,36 +1965,59 @@ pub struct Module
 
 pub struct TEMP_Context
 {
-    types:      Map(string, Struct);
-    modules:    Map(string, Module);
+    modules: Module[];
 };
 
-pub fn upsertModule(
+pub fn getModule(
     implicit ctx: &mut TEMP_Context,
-    fname: string): Module
+    fname: string): &mut Module
 {
-    return ctx.modules[fname] ||= Module(id: ctx.modules.keys.len);
-};
+    for (mut i = 0; i < ctx.modules.len; i++)
+        if (ctx.modules[i].fname == fname)
+            return ctx.modules[i];
+
+    let i = ctx.modules.len;
+    mut module = Module(modid: i);
+        module.fname = fname;
+
+    ctx.modules.push(module);
+    return ctx.modules[i];
+}
+
+pub fn setModule(
+    implicit ctx: &mut TEMP_Context,
+    module: Module)
+{
+    let current: &mut Module = ctx.modules[module.modid];
+        current.fname == module.fname || assert();
+        current = module;
+}
 
 pub fn registerType(
-    implicit ctx: &mut TEMP_Context,
+    implicit module: &mut Module,
     canon: string, def: Struct): void
 {
-    ctx.types[canon] = def;
+    module.out.types[canon] = def;
 }
 
 pub fn lookupType(
+    implicit module: &Module,
     implicit ctx: &TEMP_Context,
-    canon: string): &Struct
+    type: Type): &Struct
 {
-    return ctx.types[canon] || assert();
+    if (type.modid == module.modid)
+        return module.out.types[type.canon]
+            || assert();
+
+    return ctx.modules[type.modid].out.types[type.canon]
+        || assert();
 }
 
 pub fn lookupType_mut(
-    implicit ctx: &mut TEMP_Context,
+    implicit module: &mut Module,
     canon: string): &mut Struct
 {
-    return ctx.types[canon] || assert();
+    return module.out.types[canon] || assert();
 }
 
 
@@ -1999,7 +2034,7 @@ pub fn initStruct(id: string, flags: i32)
 
     registerType(canon, def);
 
-    return Type(canon, copyOrMove(flags, def.fields));
+    return Type(canon, copyOrMove(flags, def.fields), MODID);
 }
 
 pub fn finalizeStruct(id: string, fields: StructField[])
@@ -2062,8 +2097,7 @@ pub fn createArray(item: Type): Type
         :fields,
         :flags));
 
-    return Type(canon,
-        copyOrMove(flags, fields));
+    return Type(canon, copyOrMove(flags, fields), MODID);
 }
 
 pub fn type_isString(type: Type): bool
@@ -2081,7 +2115,7 @@ pub fn tryClear_array(type: Type): Type
     if (!type_isArray(type))
         return Type();
 
-    let def = lookupType(type.canon);
+    let def = lookupType(type);
 
     return def.kind == 'array'
         && def.fields[0].type
@@ -2114,8 +2148,7 @@ pub fn createMap(key: Type, value: Type): Type
         :flags,
     ));
 
-    return Type(canon,
-        copyOrMove(flags, fields));
+    return Type(canon, copyOrMove(flags, fields), MODID);
 }
 
 pub struct MapFields
@@ -2129,7 +2162,7 @@ pub fn tryClear_map(type: Type): MapFields
     if (!type_isMap(type))
         return MapFields();
 
-    let def = lookupType(type.canon);
+    let def = lookupType(type);
     def.kind == 'map' || assert();
 
     return MapFields(
@@ -2277,8 +2310,8 @@ pub fn Scope_add(
 
 pub struct SolverOutput
 {
-    root:       SolvedNode;
-    scope:      Scope;
+    root:   SolvedNode;
+    scope:  Scope;
 };
 
 fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
@@ -2289,13 +2322,14 @@ fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-fn runSolver(
-    implicit ctx: &mut TEMP_Context,
-    parse: Node, globals: Scope): SolverOutput
+fn solve(
+    implicit ctx: &TEMP_Context,
+    implicit module: &mut Module,
+    parse: Node): SolverOutput
 {
-    mut _scope:         Scope       = globals;
-
-    mut _here:          Token;
+    // TODO FIX next
+    mut _scope: Scope = ctx.modules[0].out.solve.scope;
+    mut _here:  Token;
 
     // Needs template reset.
     mut _current_fn:    SolvedNode;
@@ -4414,24 +4448,28 @@ fn exit(code: i32): never __native_pure;
 
 `;
 
-fn solvePrelude(): Scope
+fn solvePrelude(): TEMP_Context
 {
+    // In order to keep the prelude around,
+    //  I'm thinking we'll just prep a ready-to-copy template,
+    //   with prelude solved at modid 0.
+    let implicit mut ctx: TEMP_Context;
+    let implicit mut module = getModule('');
+
+    // Hacking things in.
+    ctx.modules[0].out.solve.scope = listGlobals();
+
     let lexed   = lex(prelude_src, '__prelude');
     let root    = parse('__prelude', lexed.tokens).root;
+    let solved  = solve(root);
 
-    let implicit mut ctx: TEMP_Context;
-    let scope   = listGlobals();
-    let solved  = runSolver(root, scope);
+    module.out.solve = solved;
+    setModule(module);
 
-    return solved.scope;
+    return ctx;
 }
 
-let PRELUDE: Scope = solvePrelude();
-
-pub fn solve(parse: Node)
-{
-    return runSolver(parse, PRELUDE);
-}
+let CTX_PROTO: TEMP_Context = solvePrelude();
 
 
 
@@ -4455,6 +4493,7 @@ let M_ARGUMENT          = 1 << 4;
 //
 
 pub fn cpp_codegen(
+    implicit module: &Module,
     implicit ctx: &TEMP_Context,
     root: SolvedNode, scope: Scope): string
 {
@@ -4535,7 +4574,7 @@ pub fn cpp_codegen(
         if (c == 'string') return annotateString();
         if (c == 'never')  return annotateNever();
 
-        let tdef = lookupType(type.canon) || fail('TODO: ' + type.canon);
+        let tdef = lookupType(type) || fail('TODO: ' + type.canon);
         let k = tdef.kind;
 
         if (k == 'struct')
@@ -5115,7 +5154,7 @@ pub fn cpp_codegen(
 
         if (target.kind == 'defctor')
         {
-            let head = (target.type || fail()).canon;
+            let head = (target.type || fail());
             let type = lookupType(head) || fail();
 
             //
@@ -5123,11 +5162,11 @@ pub fn cpp_codegen(
             mut close = ' }';
             if (type.flags & F_DESTRUCTOR)
             {
-                open = ' { ' + head + '::Data { ';
+                open = ' { ' + head.canon + '::Data { ';
                 close = ' }}';
             }
 
-            return head + open + items.join(', ') + close;
+            return head.canon + open + items.join(', ') + close;
         }
 
         let id = target.name || fail();
@@ -5205,10 +5244,7 @@ pub fn cpp_codegen(
         if (target.kind == 'field')
         {
             mut sep = '.';
-            let parent = lookupType(
-                (node.items[0] || fail())
-                    .type.canon) || fail();
-
+            let parent = lookupType(node.items[0].type);
             if (parent.flags & F_DESTRUCTOR)
                 sep = '.data.';
 
@@ -6018,10 +6054,9 @@ struct fu_DEFAULT { static inline const T value {}; };
 ////////
 ////////     The whole thing in one go.
 
-fn compile(
-    fname: string, src: string): string
+fn compile(fname: string, src: string): string
 {
-    mut module = upsertModule(fname);
+    let implicit mut module = getModule(fname);
 
     // Inputs are only dependent on the one file in question.
     if (!module.in)
@@ -6035,7 +6070,6 @@ fn compile(
 
         let t1 = now_hr();
         module.in = ModuleInputs(
-            :fname,
             :src, lex: lexer_result,
             :parse( :fname, lexer_result.tokens));
 
@@ -6050,6 +6084,9 @@ fn compile(
         throw ('#import circle around `' + fname + '`.');
     }
 
+    // Prevent module circles.
+    setModule(module);
+
     // Process deps.
     // TODO ........
 
@@ -6057,9 +6094,8 @@ fn compile(
     if (!module.out)
     {
         let t0 = now_hr();
-        module.out = ModuleOutputs(
-            solve: solve(
-                module.in.parse.root));
+        module.out.solve = solve(
+            module.in.parse.root);
 
         let t1 = now_hr();
         module.out.cpp = cpp_codegen(
@@ -6071,6 +6107,9 @@ fn compile(
         module.stats.s_solve = t1 - t0;
         module.stats.s_cpp   = t2 - t1;
     }
+
+    // Final repersist.
+    setModule(module);
 
     // --------------------------------------------- //
     // print('lex     ', module.stats.s_lex,   's'); //
@@ -6093,7 +6132,7 @@ fn compile_testcase(mut src: string): string
     src += '\nfn main(): i32 ZERO();\n\n';
 
     //
-    let implicit mut ctx: TEMP_Context;
+    let implicit mut ctx = CTX_PROTO;
 
     return compile(:fname, :src);
 }
@@ -7576,14 +7615,18 @@ fn runTestSuite()
 
     ZERO(`
 
-        fn path_normalize(p: string): string
-        {
+        fn path_normalize(p: string): string {
             mut path = p.split('/');
-            for (mut i = path.len; i --> 0; )
-            {
+
+            for (mut i = path.len; i --> 0; ) {
                 let part = path[i];
-                if      (part == '.' || !part && i > 0) path.splice(i    , 1);
-                else if (part == '..'         && i > 0) path.splice(i - 1, 2);
+                if (part == '.' || !part && i > 0 && i < path.len - 1)
+                    path.splice(i, 1);
+            }
+
+            for (mut i = 1; i < path.len; i++) {
+                if (path[i] == '..')
+                    path.splice(--i, 2);
             }
 
             return path.join('/');

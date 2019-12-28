@@ -1,22 +1,3 @@
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-
-#include <iostream>
-#include <string>
-
-#include <time.h>
-
-#include "../../lib/io.h"
-#include "../../lib/now.h"
-#include "../../lib/env.h"
-#include "../../lib/tea.h"
-#include "../../lib/shell.h"
-
-#include "../../lib/vec/find.h"
-#include "../../lib/vec/replace.h"
-
-
 // #define ISOLATE_FAILING_TESTCASE
 
 #ifdef ISOLATE_FAILING_TESTCASE
