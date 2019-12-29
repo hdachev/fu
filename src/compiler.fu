@@ -71,7 +71,8 @@ fn path_normalize(p: string): string {
 }
 
 fn path_join(a: string, b: string)
-    path_normalize(a + '/' + b);
+    b && b[0] == '/'    ? b
+                        : path_normalize(a + '/' + b);
 
 
 
@@ -915,13 +916,16 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     fn parseImport(): Node
     {
         mut value = consume('str').value;
-        if (!_imports.has(value))
-            _imports.push(value);
-
-        consume('op', ';');
+                    consume('op', ';');
 
         if (!value.path_ext)     value += '.fu';
         if (!value.path_dirname) value = './' + value;
+
+        value = path_join(
+            path_dirname(fname), value);
+
+        if (!_imports.has(value))
+            _imports.push(value);
 
         return make('import', :value);
     }
@@ -1966,7 +1970,15 @@ fn MODID(implicit module: &Module) {
 pub struct TEMP_Context
 {
     modules: Module[];
+    files: Map(string, string);
 };
+
+pub fn getFile(
+    implicit ctx: &mut TEMP_Context,
+    path: string)
+{
+    return ctx.files[path] ||= file_read(path);
+}
 
 pub fn getModule(
     implicit ctx: &mut TEMP_Context,
@@ -6129,7 +6141,7 @@ struct fu_DEFAULT { static inline const T value {}; };
 ////////
 ////////     The whole thing in one go.
 
-fn compile(fname: string, src: string): string
+fn compile(fname: string, via: string = ''): string
 {
     let implicit mut module = getModule(fname);
 
@@ -6138,6 +6150,9 @@ fn compile(fname: string, src: string): string
     {
         // Invalidate outputs.
         module.out = ModuleOutputs;
+
+        let src = getFile(fname) || throw (
+            '#import badfile: `' + via + fname + '`.');
 
         let t0 = now_hr();
         let lexer_result =
@@ -6153,19 +6168,26 @@ fn compile(fname: string, src: string): string
         // Stat.
         module.stats.s_lex   = t1 - t0;
         module.stats.s_parse = t2 - t1;
+
+        // Prevent module circles.
+        setModule(module);
     }
-    else if (!module.out)
+    else
     {
-        throw ('#import circle around `' + fname + '`.');
+        // Having input stuff solved but no output stuff means circular #import -
+        //  module.out is currently being worked on the stack above us somewhere.
+        module.out || throw (
+            '#import circle: `' + via + fname + '`.');
     }
 
-    // Prevent module circles.
-    setModule(module);
+    // Compile dependencies.
+    let imports = module.in.parse.imports;
+    for (mut i = 0; i < imports.len; i++)
+        compile(
+            fname: imports[i],
+              via: fname + ' <- ' + via);
 
-    // Process deps.
-    // TODO ........
-
-    //
+    // We're good to go here.
     if (!module.out)
     {
         let t0 = now_hr();
@@ -6181,10 +6203,10 @@ fn compile(fname: string, src: string): string
 
         module.stats.s_solve = t1 - t0;
         module.stats.s_cpp   = t2 - t1;
-    }
 
-    // Final repersist.
-    setModule(module);
+        // Final repersist.
+        setModule(module);
+    }
 
     // --------------------------------------------- //
     // print('lex     ', module.stats.s_lex,   's'); //
@@ -6196,11 +6218,12 @@ fn compile(fname: string, src: string): string
     return module.out.cpp;
 }
 
-fn compile_testcase(mut src: string): string
+fn compile_testcase(mut src: string, mut fname = ''): string
 {
-    let fname = 'testcase';
+    if (!fname)
+        fname = 'testcase';
 
-    //
+    // Some nonsense.
     if (!src.has('fn ZERO()'))
         src = '\n\nfn ZERO(): i32 {\n' + src + '\n}\n';
 
@@ -6208,8 +6231,9 @@ fn compile_testcase(mut src: string): string
 
     //
     let implicit mut ctx = CTX_PROTO;
+        ctx.files[fname] = src;
 
-    return compile(:fname, :src);
+    return compile(:fname);
 }
 
 
@@ -6312,6 +6336,9 @@ fn buildAndRun(cpp: string): string
 
         file_write(F + ".cpp", cpp);
 
+        print('  BUILD ', F, '.cpp');
+        let t0 = now_hr();
+
         code = shell_exec(GCC_CMD+ "-c -o " +F+ ".o " +F+ ".cpp 2>&1", stdout)
             || shell_exec(GCC_CMD+ "-o " +F+ ".tmp " +F+ ".o 2>&1", stdout)
             || shell_exec("chmod 755 " +F+ ".tmp", stdout)
@@ -6319,6 +6346,9 @@ fn buildAndRun(cpp: string): string
             || shell_exec("rm " +F+ ".o", stdout);
 
         if (code) return ERR;
+
+        let t1 = now_hr();
+        print('     OK ', t1 - t0, 's');
     }
 
     code = shell_exec(F+ ".exe", stdout);
@@ -6375,10 +6405,10 @@ fn saySomethingNice()
     }
 }
 
-fn ZERO(src: string): string
+fn ZERO(src: string, fname = ''): string
 {
-    let cpp     = compile_testcase(src);
-    let result  = buildAndRun(cpp);
+    let cpp     = compile_testcase(:src, :fname);
+    let result  = buildAndRun(:cpp);
     if (result)
         throw(result);
 
@@ -6404,25 +6434,25 @@ fn updateCPPFile(path: string, cpp: string)
     }
 }
 
-fn FU_FILE(fname: string)
+fn FU_FILE(mut fname: string)
 {
-    let fpath = PRJDIR + 'src/' + fname;
+    fname = PRJDIR + 'src/' + fname;
 
     print('COMPILE ', fname);
 
-    let fu = file_read(fpath);
-    if (!fu)
-        throw ('BAD FILE: ' + fpath);
+    let src = file_read(fname);
+    if (!src)
+        throw ('BAD FILE: ' + fname);
 
     let t0  = now_hr();
-    let cpp = ZERO(fu);
+    let cpp = ZERO(:src, :fname);
     let t1  = now_hr();
     let tt  = t1 - t0;
 
     print('        ', tt, 's\n');
 
     if (WRITE_COMPILER)
-        updateCPPFile(fpath, cpp);
+        updateCPPFile(fname, cpp);
 }
 
 
