@@ -2473,7 +2473,7 @@ struct sf_solve
             return solveStr(node);
 
         if ((k == "empty"_fu))
-            return solveEmpty(node);
+            return createEmpty();
 
         if ((k == "definit"_fu))
             return solveDefinit(type);
@@ -2538,9 +2538,9 @@ struct sf_solve
     {
         return solved(node, t_string, fu_VEC<s_SolvedNode>{});
     };
-    s_SolvedNode solveEmpty(const s_Node& node)
+    s_SolvedNode createEmpty()
     {
-        return solved(node, t_void, fu_VEC<s_SolvedNode>{});
+        return s_SolvedNode { "empty"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type(t_void), s_Target{} };
     };
     s_Node createTypeParam(const fu_STR& value)
     {
@@ -2852,10 +2852,17 @@ struct sf_solve
     };
     s_SolvedNode solveImport(const s_Node& node)
     {
-        if (node)
+        const fu_STR& fname = node.value;
+        const fu_VEC<s_Module>& modules = ctx.modules;
+        for (int i = 1; (i < modules.size()); i++)
         {
+            if ((modules[i].fname == fname))
+            {
+                Scope_import(i);
+                return createEmpty();
+            };
         };
-        fail("TODO - import - put stuff in localscope"_fu);
+        fu_THROW("Assertion failed.");
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {

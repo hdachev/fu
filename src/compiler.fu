@@ -2953,7 +2953,7 @@ fn solve(
 
         if (k == 'int')         return solveInt(node);
         if (k == 'str')         return solveStr(node);
-        if (k == 'empty')       return solveEmpty(node);
+        if (k == 'empty')       return createEmpty();
 
         if (k == 'definit')     return solveDefinit(type);
 
@@ -3028,9 +3028,10 @@ fn solve(
         return solved(node, t_string);
     }
 
-    fn solveEmpty(node: Node): SolvedNode
+    fn createEmpty(): SolvedNode
     {
-        return solved(node, t_void);
+        return SolvedNode(
+            kind: 'empty', type: t_void);
     }
 
 
@@ -3521,9 +3522,19 @@ fn solve(
 
     fn solveImport(node: Node): SolvedNode
     {
-        if (node) {}
+        let fname = node.value;
+        let modules = ctx.modules;
 
-        return fail('TODO - import - put stuff in localscope');
+        for (mut i = 1; i < modules.len; i++)
+        {
+            if (modules[i].fname == fname)
+            {
+                Scope_import(i);
+                return createEmpty();
+            }
+        }
+
+        assert();
     }
 
 
