@@ -2344,7 +2344,7 @@ fn solve(
     parse: Node): SolverOutput
 {
     // TODO FIX next
-    mut _scope: Scope = ctx.modules[0].out.solve.scope;
+    mut _scope: Scope;
     mut _here:  Token;
 
     // Needs template reset.
@@ -2356,6 +2356,15 @@ fn solve(
 
 
     //
+
+    fn Scope_import(modid: i32): void
+    {
+        let items = ctx.modules[modid].out.solve
+            .scope.items;
+
+        for (mut i = 0; i < items.len; i++)
+            _scope.items.push(items[i]);
+    }
 
     fn GET(
         implicit module: Module,
@@ -4229,8 +4238,15 @@ fn solve(
     }
 
 
-    // So lets go.
+    // SOLVE END
 
+    // Import prelude / inject builtins.
+    if (module.modid)
+        Scope_import(0);
+    else
+        _scope = listGlobals();
+
+    // Run the thing.
     return SolverOutput(
         root: solveNode(parse),
         scope: _scope);
@@ -4239,7 +4255,7 @@ fn solve(
 
 // Solve & cache the prelude.
 
-fn listGlobals(): Scope
+fn listGlobals(implicit module: Module): Scope
 {
     mut scope: Scope;
 
@@ -4490,9 +4506,6 @@ fn solvePrelude(): TEMP_Context
     //   with prelude solved at modid 0.
     let implicit mut ctx: TEMP_Context;
     let implicit mut module = getModule('');
-
-    // Hacking things in.
-    ctx.modules[0].out.solve.scope = listGlobals();
 
     let lexed   = lex(prelude_src, '__prelude');
     let root    = parse('__prelude', lexed.tokens).root;

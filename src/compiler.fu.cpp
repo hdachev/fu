@@ -48,13 +48,14 @@ struct s_Target;
 struct s_Template;
 struct s_Token;
 struct s_Type;
+int ZERO();
+fu_STR ZERO(const fu_STR&, fu_STR&&);
+void runTestSuite();
 bool operator==(const s_Type&, const s_Type&);
 int copyOrMove(const int&, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Type createArray(const s_Type&, s_Module&);
-int ZERO();
-fu_STR ZERO(const fu_STR&, fu_STR&&);
-void runTestSuite();
+s_Scope listGlobals(const s_Module&);
 template <typename T>
 fu_VEC<T> fu_CONCAT(
     const fu_VEC<T>& a,
@@ -2011,11 +2012,18 @@ struct sf_solve
     const s_Node& parse;
     const s_TEMP_Context& ctx;
     s_Module& module;
-    s_Scope _scope { ctx.modules[0].out.solve.scope };
+    s_Scope _scope {};
     s_Token _here {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
+    void Scope_import(const int& modid)
+    {
+        const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
+        for (int i = 0; (i < items.size()); i++)
+            _scope.items.push(items[i]);
+
+    };
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
         ((target.index > 0) || fu_THROW("Assertion failed."));
@@ -3310,6 +3318,11 @@ struct sf_solve
     };
     s_SolverOutput solve_EVAL()
     {
+        if (module.modid)
+            Scope_import(0);
+        else
+            _scope = listGlobals(module);
+
         return s_SolverOutput { solveNode(parse, s_Type{}), s_Scope(_scope) };
     };
 };
@@ -3341,7 +3354,6 @@ s_TEMP_Context solvePrelude()
 {
     s_TEMP_Context ctx {};
     s_Module module { getModule(""_fu, ctx) };
-    ctx.modules.mutref(0).out.solve.scope = listGlobals(module);
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse("__prelude"_fu, lexed.tokens).root;
     s_SolverOutput solved = solve(root, ctx, module);
