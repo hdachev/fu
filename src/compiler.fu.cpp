@@ -38,7 +38,6 @@ struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
 struct s_Scope;
-struct s_ScopeIdx;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
@@ -171,21 +170,10 @@ struct s_Type
     }
 };
 
-struct s_ScopeIdx
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-
 struct s_Target
 {
     int modid;
-    s_ScopeIdx index;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
@@ -324,12 +312,12 @@ struct s_Struct
 struct s_ScopeItem
 {
     fu_STR id;
-    s_ScopeIdx index;
+    s_Target target;
     explicit operator bool() const noexcept
     {
         return false
             || id.size()
-            || index
+            || target
         ;
     }
 };
@@ -350,12 +338,10 @@ struct s_Partial
 struct s_Template
 {
     s_Node node;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specializations;
     explicit operator bool() const noexcept
     {
         return false
             || node
-            || specializations
         ;
     }
 };
@@ -419,6 +405,7 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_COW_MAP<fu_STR, s_Struct> types;
+    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -426,6 +413,7 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
+            || specs
             || solve
             || cpp.size()
         ;
@@ -493,17 +481,17 @@ struct s_MapFields
         ;
     }
 };
+
+s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu_THROW(("LEN != 1: "_fu + s.size())));
+}
 inline const bool WARN_ON_IMPLICIT_COPY = false;
 inline const bool WRITE_COMPILER = true;
 
 fu_STR last(const fu_STR& s)
 {
     return (s.size() ? fu_TO_STR(s[(s.size() - 1)]) : ""_fu);
-}
-
-s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
-{
-    return ((s.size() == 1) ? s[0] : fu_THROW(("LEN != 1: "_fu + s.size())));
 }
 
 bool hasIdentifierChars(const fu_STR& id)
@@ -1979,16 +1967,15 @@ s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEM
     return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
 }
 
-fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id, const s_Module& module)
+fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
 {
     fu_VEC<s_Target> results = fu_VEC<s_Target>{};
-    const int& modid = MODID(module);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     for (int i = 0; (i < items.size()); i++)
     {
         const s_ScopeItem& item = items[i];
         if ((item.id == id))
-            results.unshift(s_Target { int(modid), s_ScopeIdx(item.index) });
+            results.unshift(item.target);
 
     };
     return results;
@@ -2007,9 +1994,9 @@ void Scope_pop(s_Scope& scope, const int& memo)
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial, const s_Module& module)
 {
     const int& modid = MODID(module);
-    s_Target target = s_Target { int(modid), s_ScopeIdx { (scope.overloads.size() + 1) } };
+    s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle) };
-    scope.items.push(s_ScopeItem { fu_STR(id), s_ScopeIdx(target.index) });
+    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;
 }
@@ -2031,21 +2018,16 @@ struct sf_solve
     bool TEST_expectImplicits = false;
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
-        ((target.index.raw > 0) || fu_THROW("Assertion failed."));
+        ((target.index > 0) || fu_THROW("Assertion failed."));
         if ((target.modid == module.modid))
-            return _scope.overloads.mutref((target.index.raw - 1));
+            return _scope.overloads.mutref((target.index - 1));
 
-        return ctx.modules[target.modid].out.solve.scope.overloads[(target.index.raw - 1)];
+        return ctx.modules[target.modid].out.solve.scope.overloads[(target.index - 1)];
     };
     s_Overload& GET_mut(const s_Target& target)
     {
-        (((target.index.raw > 0) && (target.modid == MODID(module))) || fu_THROW("Assertion failed."));
-        return _scope.overloads.mutref((target.index.raw - 1));
-    };
-    s_Overload& GET_mut(const s_ScopeIdx& idx)
-    {
-        ((idx.raw > 0) || fu_THROW("Assertion failed."));
-        return _scope.overloads.mutref((idx.raw - 1));
+        (((target.index > 0) && (target.modid == MODID(module))) || fu_THROW("Assertion failed."));
+        return _scope.overloads.mutref((target.index - 1));
     };
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
@@ -2072,7 +2054,7 @@ struct sf_solve
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
         const int max = ((node.kind == "fn"_fu) ? 0xffffff : int(min));
-        s_Template tempatle = s_Template { s_Node(node), fu_COW_MAP<fu_STR, s_SolvedNode>{} };
+        s_Template tempatle = s_Template { s_Node(node) };
         fu_VEC<fu_STR> arg_n {};
         if ((node.kind == "fn"_fu))
         {
@@ -2199,7 +2181,6 @@ struct sf_solve
     {
         s_Overload via = GET(viaIdx, module, ctx);
         const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }());
-        const int& modid = MODID(module);
         for (int i = 0; (i < _scope.items.size()); i++)
         {
             s_ScopeItem item { _scope.items.mutref(i) };
@@ -2207,8 +2188,8 @@ struct sf_solve
             {
                 continue;
             };
-            const s_ScopeIdx& overloadIdx = item.index;
-            s_Overload overload { GET_mut(overloadIdx) };
+            const s_Target& overloadIdx = item.target;
+            s_Overload overload = GET(overloadIdx, module, ctx);
             if ((overload.min < 1))
             {
                 continue;
@@ -2229,14 +2210,14 @@ struct sf_solve
                     s_ScopeItem o { _scope.items.mutref(i) };
                     if ((o.id == item.id))
                     {
-                        s_Overload other { GET_mut(o.index) };
+                        s_Overload other = GET(o.target, module, ctx);
                         if ((other.min < 1))
                             fail((("`using` ambiguity: `"_fu + item.id) + "`."_fu));
 
                     };
                 };
             };
-            Partial(item.id, viaIdx, s_Target { int(modid), s_ScopeIdx(overloadIdx) });
+            Partial(item.id, viaIdx, overloadIdx);
         };
     };
     fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& names, const fu_VEC<fu_STR>& arg_n)
@@ -2268,7 +2249,7 @@ struct sf_solve
     s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags, const s_Type& retType)
     {
         s_Target matchIdx {};
-        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
+        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
         if (!overloads)
             return matchIdx;
 
@@ -2323,8 +2304,8 @@ struct sf_solve
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization."_fu);
 
-                        s_Overload& o_mut = GET_mut(overloadIdx);
-                        s_Target specIdx = trySpecialize(o_mut.tempatle, args);
+                        s_Overload o = GET(overloadIdx, module, ctx);
+                        s_Target specIdx = trySpecialize(overloadIdx, o.tempatle, args);
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -2418,7 +2399,7 @@ struct sf_solve
     };
     [[noreturn]] fu_NEVER NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
-        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
+        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
         int min = 0xffffff;
         for (int i = 0; (i < overloads.size()); i++)
         {
@@ -2655,15 +2636,22 @@ struct sf_solve
 
         return mangle;
     };
-    s_Target trySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
+    s_Target trySpecialize(const s_Target& target, const s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
-        fu_STR mangle = TODO_memoize_mangler(args);
-        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = doTrySpecialize(tempatle, args); return _; } (tempatle.specializations.upsert(mangle))) };
+        fu_STR mangle = ((target.modid + "#"_fu) + target.index);
+        mangle += TODO_memoize_mangler(args);
+        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
+        if (!spec)
+        {
+            s_SolvedNode spec = doTrySpecialize(tempatle, args);
+            (module.out.specs.upsert(mangle) = spec);
+            return spec.target;
+        };
         return spec.target;
     };
-    s_SolvedNode doTrySpecialize(s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
+    s_SolvedNode doTrySpecialize(const s_Template& tempatle, const fu_VEC<s_SolvedNode>& args)
     {
-        s_Node node { tempatle.node };
+        const s_Node& node = tempatle.node;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         s_SolvedNode result = trySpecializeFn(node, args);
         if (!result)
@@ -2895,7 +2883,7 @@ struct sf_solve
             else
             {
                 const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
+                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
                 if (overloads)
                 {
                     for (int i = 0; (i < overloads.size()); i++)
@@ -2948,7 +2936,7 @@ struct sf_solve
             else
             {
                 const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
-                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id, module);
+                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
                 if (overloads)
                 {
                     for (int i = 0; (i < overloads.size()); i++)
@@ -3385,9 +3373,9 @@ struct sf_cpp_codegen
     int _faasN {};
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
-        ((target.index.raw > 0) || fu_THROW("Assertion failed."));
+        ((target.index > 0) || fu_THROW("Assertion failed."));
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
-        return m.out.solve.scope.overloads[(target.index.raw - 1)];
+        return m.out.solve.scope.overloads[(target.index - 1)];
     };
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
@@ -3539,10 +3527,30 @@ struct sf_cpp_codegen
 
         return out;
     };
+    fu_STR cgSpecs()
+    {
+        fu_STR src = ""_fu;
+        const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
+        fu_VEC<fu_STR> keys = fu_KEYS(specs);
+        for (int i = 0; (i < keys.size()); i++)
+        {
+            const fu_STR& k = keys[i];
+            if ((fu_TO_STR(k[0]) == "0"_fu))
+            {
+                continue;
+            };
+            const s_SolvedNode& s = specs[k];
+            if (s.target)
+                src += cgNode(s, 0);
+
+        };
+        return src;
+    };
     fu_STR cgRoot(const s_SolvedNode& root)
     {
+        fu_STR specs = cgSpecs();
         fu_STR src = cgStatements(root.items);
-        fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + _fdef);
+        fu_STR header = (((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + specs) + _tdef) + _fdef);
         return (header + src);
     };
     fu_STR ID(const fu_STR& id)
@@ -3684,7 +3692,7 @@ struct sf_cpp_codegen
         if ((overload.kind != "fn"_fu))
             return;
 
-        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index.raw);
+        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index);
         if (fu::has(_ffwd, ffwdKey))
             return;
 
@@ -3707,22 +3715,8 @@ struct sf_cpp_codegen
     fu_STR cgFn(const s_SolvedNode& fn)
     {
         if (!fn.items.size())
-        {
-            fu_STR src = ""_fu;
-            s_Template tempatle = ([&]() -> s_Template { { s_Template _ = GET(fn.target, module, ctx).tempatle; if (_) return _; } fail(""_fu); }());
-            const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = tempatle.specializations;
-            fu_VEC<fu_STR> keys = fu_KEYS(specs);
-            ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
-            for (int i = 0; (i < keys.size()); i++)
-            {
-                fu_STR key { keys.mutref(i) };
-                const s_SolvedNode& s = specs[key];
-                if (s.target)
-                    src += cgNode(s, 0);
+            return ""_fu;
 
-            };
-            return src;
-        };
         if (((_faasN == 0) && (fn.flags & F_HAS_CLOSURE)))
         {
             _faasN++;
@@ -4120,6 +4114,7 @@ struct sf_cpp_codegen
             include("\"../lib/shell.h\""_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
+        ((id != "__native_pure"_fu) || fu_THROW("Assertion failed."));
         return (((ID(id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)
@@ -4569,7 +4564,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
     {
-        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, s_SolverOutput{}, fu_STR{} };
+        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
         fu_STR src { ([&]() -> fu_STR& { { fu_STR& _ = getFile(fname, ctx); if (_.size()) return _; } fu_THROW(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);

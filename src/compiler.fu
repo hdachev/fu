@@ -2195,8 +2195,7 @@ pub fn tryClear_map(type: Type): MapFields
 ////////
 ////////     Scope.
 
-struct ScopeIdx { raw: i32; };
-struct Target { modid: i32; index: ScopeIdx; }
+struct Target { modid: i32; index: i32; }
 
 struct SolvedNode
 {
@@ -2242,7 +2241,7 @@ struct Overload
 struct ScopeItem
 {
     id:         string;
-    index:      ScopeIdx;
+    target:     Target;
 };
 
 pub struct Scope
@@ -2258,14 +2257,12 @@ pub fn Scope_lookup(scope: Scope, id: string): Target[]
 {
     mut results: Target[] = [];
 
-    let modid = MODID;
     let items = scope.items;
     for (mut i = 0; i < items.len; i++)
     {
         let item = items[i];
         if (item.id == id)
-            results.unshift(
-                Target(:modid, :item.index));
+            results.unshift(item.target);
     }
 
     return results;
@@ -2298,7 +2295,7 @@ pub fn Scope_add(
 {
     let modid = MODID;
     let target = Target(:modid,
-        index: ScopeIdx(scope.overloads.len + 1));
+        index: scope.overloads.len + 1);
 
     let item = Overload(
         :kind,
@@ -2308,7 +2305,7 @@ pub fn Scope_add(
         :partial, :template);
 
     scope.items.push(
-        ScopeItem( :id, :target.index ));
+        ScopeItem( :id, :target ));
 
     scope.overloads.push(item);
 
@@ -2365,25 +2362,19 @@ fn solve(
         implicit ctx: TEMP_Context,
         target: Target): Overload
     {
-        target.index.raw > 0 || assert();
+        target.index > 0 || assert();
 
         if (target.modid == module.modid)
-            return _scope.overloads[target.index.raw - 1];
+            return _scope.overloads[target.index - 1];
 
         return ctx.modules[target.modid]
-            .out.solve.scope.overloads[target.index.raw - 1];
+            .out.solve.scope.overloads[target.index - 1];
     }
 
     fn GET_mut(target: Target): &mut Overload
     {
-        target.index.raw > 0 && target.modid == MODID || assert();
-        return _scope.overloads[target.index.raw - 1];
-    }
-
-    fn GET_mut(idx: ScopeIdx): &mut Overload
-    {
-        idx.raw > 0 || assert();
-        return _scope.overloads[idx.raw - 1];
+        target.index > 0 && target.modid == MODID || assert();
+        return _scope.overloads[target.index - 1];
     }
 
 
@@ -2620,7 +2611,6 @@ fn solve(
     {
         let via     = GET(viaIdx);
         let actual  = via.type || fail();
-        let modid   = MODID;
 
         for (mut i = 0; i < _scope.items.len; i++)
         {
@@ -2630,8 +2620,8 @@ fn solve(
             if (!item.id.hasIdentifierChars)
                 continue;
 
-            let overloadIdx = item.index;
-            let overload = GET_mut(overloadIdx);
+            let overloadIdx = item.target;
+            let overload = GET(overloadIdx);
 
             // Needs at least one argument.
             if (overload.min < 1)
@@ -2656,7 +2646,7 @@ fn solve(
                     let o = _scope.items[i];
                     if (o.id == item.id)
                     {
-                        let other = GET_mut(o.index);
+                        let other = GET(o.target);
                         if (other.min < 1)
                             fail('`using` ambiguity: `' + item.id + '`.');
                     }
@@ -2664,8 +2654,7 @@ fn solve(
             }
 
             //
-            Partial(item.id, viaIdx,
-                Target(:modid, overloadIdx));
+            Partial(item.id, viaIdx, overloadIdx);
         }
     }
 
@@ -3198,7 +3187,7 @@ fn solve(
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = target.modid + '#' + target.index.raw;
+        mut mangle = target.modid + '#' + target.index;
             mangle += TODO_memoize_mangler(args);
 
         // TODO FIX THIS MESS -
@@ -3834,10 +3823,7 @@ fn solve(
     }
 
 
-    // This is a weird one,
-    //  in case this is the current fn we're solving,
-    //   we wont have overload yet, but we do have the node,
-    //    otherwise we have the overload and get the node from there.
+    //
 
     fn createLet(id: string, type: Type, flags: i32 = 0): SolvedNode
     {
@@ -4562,13 +4548,13 @@ pub fn cpp_codegen(
         implicit ctx: TEMP_Context,
         target: Target): Overload
     {
-        target.index.raw > 0 || assert();
+        target.index > 0 || assert();
 
         let m = target.modid == module.modid
             ? module
             : ctx.modules[target.modid];
 
-        return m.out.solve.scope.overloads[target.index.raw - 1];
+        return m.out.solve.scope.overloads[target.index - 1];
     }
 
     fn fail(reason = '') throw(reason);
@@ -4756,12 +4742,13 @@ pub fn cpp_codegen(
 
     fn cgRoot(root: SolvedNode): string
     {
-        let src = cgStatements(root.items);
+        let specs  = cgSpecs();
+        let src    = cgStatements(root.items);
 
         mut header = collectDedupes(_libs)
                    + collectDedupes(_tfwd)
                    + collectDedupes(_ffwd)
-                   + cgSpecs()
+                   +               (specs)
                    +               (_tdef)
                    +               (_fdef)
                    ;
@@ -4973,7 +4960,7 @@ pub fn cpp_codegen(
         if (overload.kind != 'fn')
             return;
 
-        let ffwdKey = target.modid + '#' + target.index.raw;
+        let ffwdKey = target.modid + '#' + target.index;
         if (_ffwd.has(ffwdKey))
             return;
 
