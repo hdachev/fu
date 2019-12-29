@@ -1933,7 +1933,8 @@ pub struct ModuleInputs
 pub struct ModuleOutputs
 {
     deps:       i32[];
-    types:      Map(string, Struct);
+    types:      Map(string, Struct);        // canon  -> type info
+    specs:      Map(string, SolvedNode);    // mangle -> spec
     solve:      SolverOutput;
     cpp:        string;
 };
@@ -2212,7 +2213,6 @@ struct SolvedNode
 struct Template
 {
     node: Node;
-    specializations: Map(string, SolvedNode); // mangle -> spec
 };
 
 struct Partial
@@ -2783,9 +2783,9 @@ fn solve(
                         if (reorder)
                             fail('TODO handle argument reorder in template specialization.');
 
-                        let o_mut: &mut Overload = GET_mut(overloadIdx);
+                        let o = GET(overloadIdx);
                         let specIdx = trySpecialize(
-                            o_mut.template, args);
+                            overloadIdx, o.template, args);
 
                         if (!specIdx)
                             continue :NEXT;
@@ -3194,21 +3194,31 @@ fn solve(
     //
 
     fn trySpecialize(
-        template: &mut Template, args: SolvedNode[])
+        target: Target, template: Template, args: SolvedNode[])
             : Target
     {
-        let mangle = TODO_memoize_mangler(args);
+        // TODO memoize the whole mangle.
+        mut mangle = target.modid + '#' + target.index.raw;
+            mangle += TODO_memoize_mangler(args);
 
-        //
-        let spec =
-            (template.specializations[mangle] ||=
-                doTrySpecialize(template, args));
+        // TODO FIX THIS MESS -
+        //  A. Not recursion capable: use the general prep-vs-solve approach here too.
+        //  B. The multiple map taps here are because stuff
+        //      moves around while doTrySpecialize does its work -
+        //      if maps values didn't move around we'd be good.
+        let spec = module.out.specs[mangle] ||= SolvedNode;
+        if (!spec)
+        {
+            let spec = doTrySpecialize(template, args);
+            module.out.specs[mangle] = spec;
+            return spec.target;
+        }
 
         return spec.target;
     }
 
     fn doTrySpecialize(
-        template: &mut Template, args: SolvedNode[])
+        template: Template, args: SolvedNode[])
             : SolvedNode
     {
         let node = template.node;
@@ -4722,6 +4732,28 @@ pub fn cpp_codegen(
         return out;
     }
 
+    fn cgSpecs(): string
+    {
+        mut src = '';
+
+        let specs = module.out.specs;
+        let keys = specs.keys();
+        for (mut i = 0; i < keys.len; i++)
+        {
+            // Prelude?
+            let k = keys[i];
+            if (k[0] == '0')
+                continue;
+
+            // Emit.
+            let s = specs[k];
+            if (s.target)
+                src += cgNode(s);
+        }
+
+        return src;
+    }
+
     fn cgRoot(root: SolvedNode): string
     {
         let src = cgStatements(root.items);
@@ -4729,6 +4761,7 @@ pub fn cpp_codegen(
         mut header = collectDedupes(_libs)
                    + collectDedupes(_tfwd)
                    + collectDedupes(_ffwd)
+                   + cgSpecs()
                    +               (_tdef)
                    +               (_fdef)
                    ;
@@ -4972,27 +5005,9 @@ pub fn cpp_codegen(
 
     fn cgFn(fn: SolvedNode): string
     {
-        // Template emit.
+        // Template? TODO FIX dunno why this is how we tell, looks terrible.
         if (!fn.items.len)
-        {
-            mut src = '';
-
-            let template = GET(fn.target).template || fail();
-            let specs = template.specializations;
-
-            mut keys = specs.keys();
-            keys.sort();
-
-            for (mut i = 0; i < keys.len; i++)
-            {
-                let key = keys[i];
-                let s = specs[key];
-                if (s.target)
-                    src += cgNode(s);
-            }
-
-            return src;
-        }
+            return '';
 
         // Use like-struct output for top-level functions with closures -
         //  We'll try to "close over" a root-level struct.
@@ -5482,6 +5497,8 @@ pub fn cpp_codegen(
             include('"../lib/shell.h"');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
+
+        id != '__native_pure' || assert();
 
         return ID(id) + '(' + items.join(', ') + ')';
     }
