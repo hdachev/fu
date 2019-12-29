@@ -2359,11 +2359,13 @@ fn solve(
 
     fn Scope_import(modid: i32): void
     {
-        let items = ctx.modules[modid].out.solve
-            .scope.items;
-
+        let items = ctx.modules[modid].out.solve.scope.items;
         for (mut i = 0; i < items.len; i++)
-            _scope.items.push(items[i]);
+        {
+            let item = items[i];
+            if (item.target.modid == modid)
+                _scope.items.push(items[i]);
+        }
     }
 
     fn GET(

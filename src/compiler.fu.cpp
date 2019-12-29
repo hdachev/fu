@@ -2021,8 +2021,12 @@ struct sf_solve
     {
         const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
         for (int i = 0; (i < items.size()); i++)
-            _scope.items.push(items[i]);
+        {
+            const s_ScopeItem& item = items[i];
+            if ((item.target.modid == modid))
+                _scope.items.push(items[i]);
 
+        };
     };
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
