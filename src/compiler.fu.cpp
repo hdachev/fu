@@ -4115,6 +4115,9 @@ struct sf_cpp_codegen
             return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
         ((id != "__native_pure"_fu) || fu_THROW("Assertion failed."));
+        if ((node.target.modid && (node.target.modid != module.modid)))
+            ensureFwdDecl(node.target);
+
         return (((ID(id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)

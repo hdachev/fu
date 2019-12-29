@@ -5487,6 +5487,9 @@ pub fn cpp_codegen(
 
         id != '__native_pure' || assert();
 
+        if (node.target.modid && node.target.modid != module.modid)
+            ensureFwdDecl(node.target);
+
         return ID(id) + '(' + items.join(', ') + ')';
     }
 
