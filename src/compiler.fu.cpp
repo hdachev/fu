@@ -1,6 +1,7 @@
 #include "../lib/env.h"
 #include "../lib/io.h"
 #include "../lib/map.h"
+#include "../lib/never.h"
 #include "../lib/now.h"
 #include "../lib/shell.h"
 #include "../lib/str.h"
@@ -10,21 +11,7 @@
 #include "../lib/vec/replace.h"
 #include <algorithm>
 #include <iostream>
-#include <stdexcept>
-#include <string>
 #include <utility>
-
-struct fu_NEVER
-{
-    fu_NEVER(const fu_NEVER&) = delete;
-    void operator=(const fu_NEVER&) = delete;
-
-    template<typename T>
-    [[noreturn]] operator T() const
-    {
-        throw std::runtime_error("fu_NEVER cast");
-    }
-};
 
 struct s_BINOP;
 struct s_LexerOutput;
@@ -53,11 +40,13 @@ fu_STR compile_testcase(const fu_STR&);
 int ZERO();
 s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
 void runTestSuite();
+int FAIL(const fu_STR&);
 bool operator==(const s_Type&, const s_Type&);
 int copyOrMove(const int&, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Type createArray(const s_Type&, s_Module&);
 s_Scope listGlobals(const s_Module&);
+s_LexerOutput lex(const fu_STR&, const fu_STR&);
 void sayHello();
 template <typename T>
 fu_VEC<T> fu_CONCAT(
@@ -123,19 +112,8 @@ inline fu_VEC<fu_STR> fu_SPLIT(
     return result;
 }
 
-[[noreturn]] fu_NEVER fu_THROW(const char* what)
-{
-    throw std::runtime_error(what);
-}
-
-template <typename T>
-[[noreturn]] fu_NEVER fu_THROW(const T& what)
-{
-    throw std::runtime_error(
-        std::string(
-            what.data(), size_t(what.size())));
-}
-
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
 struct s_TokenIdx
 {
     int modid;
@@ -148,7 +126,10 @@ struct s_TokenIdx
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Type
+                                #define DEF_s_Type
 struct s_Type
 {
     fu_STR canon;
@@ -163,7 +144,10 @@ struct s_Type
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
 struct s_Target
 {
     int modid;
@@ -176,7 +160,10 @@ struct s_Target
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
     fu_STR kind;
@@ -199,7 +186,26 @@ struct s_SolvedNode
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_BINOP
+                                #define DEF_s_BINOP
+struct s_BINOP
+{
+    fu_COW_MAP<fu_STR, int> PRECEDENCE;
+    fu_COW_MAP<int, bool> RIGHT_TO_LEFT;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || PRECEDENCE
+            || RIGHT_TO_LEFT
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Token
+                                #define DEF_s_Token
 struct s_Token
 {
     fu_STR kind;
@@ -220,33 +226,10 @@ struct s_Token
         ;
     }
 };
+                                #endif
 
-struct s_LexerOutput
-{
-    fu_STR fname;
-    fu_VEC<s_Token> tokens;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || fname.size()
-            || tokens
-        ;
-    }
-};
-
-struct s_BINOP
-{
-    fu_COW_MAP<fu_STR, int> PRECEDENCE;
-    fu_COW_MAP<int, bool> RIGHT_TO_LEFT;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || PRECEDENCE
-            || RIGHT_TO_LEFT
-        ;
-    }
-};
-
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
 struct s_Node
 {
     fu_STR kind;
@@ -265,7 +248,10 @@ struct s_Node
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_ParserOutput
+                                #define DEF_s_ParserOutput
 struct s_ParserOutput
 {
     s_Node root;
@@ -278,7 +264,26 @@ struct s_ParserOutput
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_LexerOutput
+                                #define DEF_s_LexerOutput
+struct s_LexerOutput
+{
+    fu_STR fname;
+    fu_VEC<s_Token> tokens;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || fname.size()
+            || tokens
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleInputs
+                                #define DEF_s_ModuleInputs
 struct s_ModuleInputs
 {
     fu_STR src;
@@ -293,7 +298,10 @@ struct s_ModuleInputs
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
 struct s_StructField
 {
     fu_STR id;
@@ -306,7 +314,10 @@ struct s_StructField
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
 struct s_Struct
 {
     fu_STR kind;
@@ -323,7 +334,10 @@ struct s_Struct
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
 struct s_ScopeItem
 {
     fu_STR id;
@@ -336,7 +350,10 @@ struct s_ScopeItem
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Partial
+                                #define DEF_s_Partial
 struct s_Partial
 {
     s_Target via;
@@ -349,7 +366,10 @@ struct s_Partial
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Template
+                                #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
@@ -360,7 +380,10 @@ struct s_Template
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
 struct s_Overload
 {
     fu_STR kind;
@@ -389,7 +412,10 @@ struct s_Overload
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Scope
+                                #define DEF_s_Scope
 struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
@@ -402,7 +428,10 @@ struct s_Scope
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_SolverOutput
+                                #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
     s_SolvedNode root;
@@ -415,7 +444,10 @@ struct s_SolverOutput
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_ModuleOutputs
+                                #define DEF_s_ModuleOutputs
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
@@ -434,7 +466,10 @@ struct s_ModuleOutputs
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_ModuleStats
+                                #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
     f64 s_lex;
@@ -451,7 +486,10 @@ struct s_ModuleStats
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_Module
+                                #define DEF_s_Module
 struct s_Module
 {
     int modid;
@@ -470,7 +508,10 @@ struct s_Module
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_TEMP_Context
+                                #define DEF_s_TEMP_Context
 struct s_TEMP_Context
 {
     fu_VEC<s_Module> modules;
@@ -483,7 +524,10 @@ struct s_TEMP_Context
         ;
     }
 };
+                                #endif
 
+                                #ifndef DEF_s_MapFields
+                                #define DEF_s_MapFields
 struct s_MapFields
 {
     s_Type key;
@@ -496,10 +540,11 @@ struct s_MapFields
         ;
     }
 };
+                                #endif
 
 s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
 {
-    return ((s.size() == 1) ? s[0] : fu_THROW(("LEN != 1: "_fu + s.size())));
+    return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
 }
 inline const bool WARN_ON_IMPLICIT_COPY = false;
 inline const bool WRITE_COMPILER = true;
@@ -571,276 +616,6 @@ fu_STR path_join(const fu_STR& a, const fu_STR& b)
 {
     return ((b.size() && (fu_TO_STR(b[0]) == "/"_fu)) ? fu_STR(b) : path_normalize(((a + "/"_fu) + b)));
 }
-inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
-inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<61> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
-
-struct sf_lex
-{
-    const fu_STR& src;
-    const fu_STR& fname;
-    const int end = src.size();
-    int line = 1;
-    int lidx = -1;
-    int idx = 0;
-    fu_VEC<s_Token> tokens {};
-    void token(const fu_STR& kind, const fu_STR& value, const int& idx0, const int& idx1)
-    {
-        const int col = (idx0 - lidx);
-        tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
-    };
-    void err_str(const fu_STR& kind, const int& idx0, const fu_STR& reason)
-    {
-        while (((idx < end) && (fu_TO_STR(src[idx]) > " "_fu)))
-            idx++;
-
-        const int col = (idx0 - lidx);
-        fu_STR value = slice(src, idx0, idx);
-        fu_THROW((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
-    };
-    void err(const fu_STR& kind, const int& idx0, const int& reason)
-    {
-        err_str(kind, idx0, fu_TO_STR(src[reason]));
-    };
-    fu_STR checkNum(const fu_STR& kind, const fu_STR& src)
-    {
-        if (src.size())
-        {
-        };
-        return kind;
-    };
-    fu_STR unescapeStr(const fu_STR& src, const int& idx0, const int& idx1)
-    {
-        fu_STR out = ""_fu;
-        const int n = (idx1 - 1);
-        for (int i = (idx0 + 1); (i < n); i++)
-        {
-            fu_STR c = fu_TO_STR(src[i]);
-            if ((c == "\\"_fu))
-            {
-                fu_STR c1 = fu_TO_STR(src[++i]);
-                if ((c1 == "n"_fu))
-                    out += "\n"_fu;
-                else if ((c1 == "r"_fu))
-                    out += "\r"_fu;
-                else if ((c1 == "t"_fu))
-                    out += "\t"_fu;
-                else if ((c1 == "v"_fu))
-                    out += "\v"_fu;
-                else
-                    out += c1;
-
-            }
-            else
-                out += c;
-
-        };
-        return out;
-    };
-    s_LexerOutput lex_EVAL()
-    {
-        while ((idx < end))
-        {
-            const int idx0 = idx;
-            fu_STR c = fu_TO_STR(src[idx++]);
-            if ((c <= " "_fu))
-            {
-                if ((c == "\n"_fu))
-                {
-                    line++;
-                    lidx = (idx - 1);
-                };
-            }
-            else if ((((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "a"_fu) && (c <= "z"_fu)) || (c == "_"_fu)))
-            {
-                while ((idx < end))
-                {
-                    fu_STR c = fu_TO_STR(src[idx++]);
-                    if ((((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "a"_fu) && (c <= "z"_fu)) || (c == "_"_fu) || ((c >= "0"_fu) && (c <= "9"_fu))))
-                    {
-                    }
-                    else
-                    {
-                        idx--;
-                        break;
-                    };
-                };
-                const int idx1 = idx;
-                token("id"_fu, slice(src, idx0, idx1), idx0, idx1);
-            }
-            else if (((c >= "0"_fu) && (c <= "9"_fu)))
-            {
-                bool hex = false;
-                bool dot = false;
-                bool exp = false;
-                if (((c == "0"_fu) && (idx < end) && (fu_TO_STR(src[idx]) == "x"_fu)))
-                {
-                    hex = true;
-                    idx++;
-                };
-                while ((idx < end))
-                {
-                    fu_STR c = fu_TO_STR(src[idx++]);
-                    if (((c >= "0"_fu) && (c <= "9"_fu)))
-                    {
-                    }
-                    else if ((c == "."_fu))
-                    {
-                        if ((hex || dot || exp))
-                        {
-                            err("num"_fu, idx0, (idx - 1));
-                            break;
-                        };
-                        dot = true;
-                    }
-                    else if ((((c == "e"_fu) || (c == "E"_fu)) && !hex))
-                    {
-                        if ((hex || exp))
-                        {
-                            err("num"_fu, idx0, (idx - 1));
-                            break;
-                        };
-                        if (((idx < end) && ((fu_TO_STR(src[idx]) == "-"_fu) || (fu_TO_STR(src[idx]) == "+"_fu))))
-                            idx++;
-
-                        exp = true;
-                    }
-                    else if ((((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))
-                    {
-                        if (!hex)
-                        {
-                            err("num"_fu, idx0, (idx - 1));
-                            break;
-                        };
-                    }
-                    else
-                    {
-                        idx--;
-                        break;
-                    };
-                };
-                fu_STR trail = fu_TO_STR(src[(idx - 1)]);
-                if ((!((trail >= "0"_fu) && (trail <= "9"_fu)) && !(hex && (((trail >= "a"_fu) && (trail <= "f"_fu)) || ((trail >= "A"_fu) && (trail <= "F"_fu))))))
-                    err("num"_fu, idx0, (idx - 1));
-                else
-                {
-                    const int idx1 = idx;
-                    fu_STR str = slice(src, idx0, idx1);
-                    token(checkNum(((dot || exp) ? "num"_fu : "int"_fu), str), str, idx0, idx1);
-                };
-            }
-            else if (((c == "'"_fu) || (c == "\""_fu) || (c == "`"_fu)))
-            {
-                bool esc = false;
-                bool ok = false;
-                while ((idx < end))
-                {
-                    fu_STR c1 = fu_TO_STR(src[idx++]);
-                    if ((c1 == c))
-                    {
-                        ok = true;
-                        break;
-                    }
-                    else if ((c1 == "\\"_fu))
-                    {
-                        esc = true;
-                        idx++;
-                    }
-                    else if ((c1 == "\n"_fu))
-                    {
-                        line++;
-                        lidx = (idx - 1);
-                    };
-                };
-                if (!ok)
-                    err_str("str"_fu, idx0, "Unterminated string literal."_fu);
-                else
-                {
-                    const int idx1 = idx;
-                    fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : slice(src, (idx0 + 1), (idx1 - 1)));
-                    token("str"_fu, str, idx0, idx1);
-                };
-            }
-            else if (((c == "/"_fu) && (idx < end) && (fu_TO_STR(src[idx]) == "/"_fu)))
-            {
-                idx++;
-                while ((idx < end))
-                {
-                    fu_STR c1 = fu_TO_STR(src[idx++]);
-                    if ((c1 == "\n"_fu))
-                    {
-                        line++;
-                        lidx = (idx - 1);
-                        break;
-                    };
-                };
-            }
-            else if (((c == "/"_fu) && (idx < end) && (fu_TO_STR(src[idx]) == "*"_fu)))
-            {
-                idx++;
-                while ((idx < end))
-                {
-                    fu_STR c = fu_TO_STR(src[idx++]);
-                    if ((c == "\n"_fu))
-                    {
-                        line++;
-                        lidx = (idx - 1);
-                    }
-                    else if (((c == "*"_fu) && (idx < end) && (fu_TO_STR(src[idx]) == "/"_fu)))
-                    {
-                        idx++;
-                        break;
-                    };
-                };
-            }
-            else if (fu::has(OPTOKENS, c))
-            {
-                while ((idx < end))
-                {
-                    fu_STR c = fu_TO_STR(src[idx++]);
-                    if (!fu::has(OPTOKENS, c))
-                    {
-                        idx--;
-                        break;
-                    };
-                };
-                
-                {
-                    int begin = idx0;
-                    int end = idx;
-                    while ((begin < end))
-                    {
-                        fu_STR candidate = slice(src, begin, end);
-                        const bool ok = fu::has(OPERATORS, candidate);
-                        if (((end > (begin + 1)) && !ok))
-                        {
-                            end--;
-                            continue;
-                        };
-                        if (!ok)
-                            err("op"_fu, begin, end);
-                        else
-                            token("op"_fu, candidate, begin, end);
-
-                        begin = end;
-                        end = idx;
-                    };
-                };
-            }
-            else
-                err("?"_fu, idx0, idx0);
-
-        };
-        line++;
-        lidx = (idx + 0);
-        token("eof"_fu, "eof"_fu, idx, idx);
-        return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
-    };
-};
-s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
-{
-    return (sf_lex { src, fname }).lex_EVAL();
-}
-
 inline const int F_METHOD = (1 << 0);
 inline const int F_INFIX = (1 << 1);
 inline const int F_PREFIX = (1 << 2);
@@ -911,7 +686,7 @@ s_BINOP setupOperators()
 }
 
 inline const s_BINOP BINOP = setupOperators();
-inline const int& P_COMMA = ([]() -> const int& { { const int& _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu_THROW("Assertion failed."); }());
+inline const int& P_COMMA = ([]() -> const int& { { const int& _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail("Assertion failed."); }());
 inline const int LET_TYPE = 0;
 inline const int LET_INIT = 1;
 inline const int FN_RET_BACK = -2;
@@ -938,7 +713,7 @@ struct sf_parse
     fu_STR _structName = ""_fu;
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
-    [[noreturn]] fu_NEVER fail(fu_STR&& reason)
+    [[noreturn]] fu::never fail(fu_STR&& reason)
     {
         const s_Token& loc = tokens[_loc];
         const s_Token& here = tokens[_idx];
@@ -950,9 +725,9 @@ struct sf_parse
         const int& l1 = here.line;
         const int& c1 = here.col;
         fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
-        fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
+        fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
-    [[noreturn]] fu_NEVER fail_Lint(const fu_STR& reason)
+    [[noreturn]] fu::never fail_Lint(const fu_STR& reason)
     {
         fail(("Lint: "_fu + reason));
     };
@@ -1833,7 +1608,7 @@ fu_STR serializeType(const s_Type& type)
 bool type_has(const s_Type& type, const fu_STR& tag)
 {
     const int idx = fu::lfind(TAGS, tag);
-    ((idx >= 0) || fu_THROW((("Unknown type tag: `"_fu + tag) + "`."_fu)));
+    ((idx >= 0) || fu::fail((("Unknown type tag: `"_fu + tag) + "`."_fu)));
     const int mask = (1 << idx);
     return ((type.quals & mask) == mask);
 }
@@ -1884,7 +1659,7 @@ s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
 void setModule(const s_Module& module, s_TEMP_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
-    ((current.fname == module.fname) || fu_THROW("Assertion failed."));
+    ((current.fname == module.fname) || fu::fail("Assertion failed."));
     current = module;
 }
 
@@ -1896,20 +1671,20 @@ void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
 const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
 {
     if ((type.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu_THROW("Assertion failed."); }());
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
 
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu_THROW("Assertion failed."); }());
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
 }
 
 s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
 {
-    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_THROW("Assertion failed."); }());
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail("Assertion failed."); }());
 }
 
 s_Type initStruct(const fu_STR& id, const int& flags, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu_THROW("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
+    s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu::fail("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
     return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module) };
 }
@@ -1918,7 +1693,7 @@ void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Mod
 {
     fu_STR canon = ("s_"_fu + id);
     s_Struct& def = lookupType_mut(canon, module);
-    def.fields = ([&]() -> const fu_VEC<s_StructField>& { { const fu_VEC<s_StructField>& _ = fields; if (_) return _; } fu_THROW("TODO empty structs?"_fu); }());
+    def.fields = ([&]() -> const fu_VEC<s_StructField>& { { const fu_VEC<s_StructField>& _ = fields; if (_) return _; } fu::fail("TODO empty structs?"_fu); }());
 }
 
 int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields)
@@ -1976,7 +1751,7 @@ s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_TEMP_C
         return s_Type { fu_STR{}, int{}, int{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
-    return ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }());
+    return ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }());
 }
 
 bool type_isMap(const s_Type& type)
@@ -1999,8 +1774,8 @@ s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEM
         return s_MapFields { s_Type{}, s_Type{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
-    ((def.kind == "map"_fu) || fu_THROW("Assertion failed."));
-    return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu_THROW("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu_THROW("Assertion failed."); }())) };
+    ((def.kind == "map"_fu) || fu::fail("Assertion failed."));
+    return s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())) };
 }
 
 fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
@@ -2065,7 +1840,7 @@ struct sf_solve
     };
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
-        ((target.index > 0) || fu_THROW("Assertion failed."));
+        ((target.index > 0) || fu::fail("Assertion failed."));
         if ((target.modid == module.modid))
             return _scope.overloads.mutref((target.index - 1));
 
@@ -2073,10 +1848,10 @@ struct sf_solve
     };
     s_Overload& GET_mut(const s_Target& target)
     {
-        (((target.index > 0) && (target.modid == MODID(module))) || fu_THROW("Assertion failed."));
+        (((target.index > 0) && (target.modid == MODID(module))) || fu::fail("Assertion failed."));
         return _scope.overloads.mutref((target.index - 1));
     };
-    [[noreturn]] fu_NEVER fail(fu_STR&& reason)
+    [[noreturn]] fu::never fail(fu_STR&& reason)
     {
         s_Token here = _token(_here, ctx);
         if (!reason.size())
@@ -2086,7 +1861,7 @@ struct sf_solve
         const int& l0 = here.line;
         const int& c0 = here.col;
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
-        fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
+        fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
     s_Target Binding(const fu_STR& id, const s_Type& type)
     {
@@ -2445,7 +2220,7 @@ struct sf_solve
 
         NICERR_scopeMismatch(id, args);
     };
-    [[noreturn]] fu_NEVER NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
+    [[noreturn]] fu::never NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
         fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
         int min = 0xffffff;
@@ -2902,7 +2677,7 @@ struct sf_solve
                 return createEmpty();
             };
         };
-        fu_THROW("Assertion failed.");
+        fu::fail("Assertion failed.");
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
@@ -3435,13 +3210,13 @@ struct sf_cpp_codegen
     int _faasN {};
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
-        ((target.index > 0) || fu_THROW("Assertion failed."));
+        ((target.index > 0) || fu::fail("Assertion failed."));
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
         return m.out.solve.scope.overloads[(target.index - 1)];
     };
-    [[noreturn]] fu_NEVER fail(fu_STR&& reason)
+    [[noreturn]] fu::never fail(fu_STR&& reason)
     {
-        fu_THROW(reason);
+        fu::fail(reason);
     };
     void include(const fu_STR& lib)
     {
@@ -3542,7 +3317,7 @@ struct sf_cpp_codegen
     };
     fu_STR declareStruct(const s_Type& t, const s_Struct& s)
     {
-        fu_STR def = (("\nstruct "_fu + t.canon) + "\n{"_fu);
+        fu_STR def = (((((("\n                                #ifndef DEF_"_fu + t.canon) + "\n                                #define DEF_"_fu) + t.canon) + "\nstruct "_fu) + t.canon) + "\n{"_fu);
         fu_STR indent = "\n    "_fu;
         if ((s.flags & F_DESTRUCTOR))
         {
@@ -3577,7 +3352,7 @@ struct sf_cpp_codegen
 
         def += "\n        ;"_fu;
         def += "\n    }"_fu;
-        return (def + "\n};\n"_fu);
+        return (def + "\n};\n                                #endif\n"_fu);
     };
     fu_STR collectDedupes(const fu_COW_MAP<fu_STR, fu_STR>& dedupes)
     {
@@ -4190,7 +3965,7 @@ struct sf_cpp_codegen
             include("\"../lib/shell.h\""_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
         };
-        ((id != "__native_pure"_fu) || fu_THROW("Assertion failed."));
+        ((id != "__native_pure"_fu) || fu::fail("Assertion failed."));
         if ((node.target.modid && (node.target.modid != module.modid)))
             ensureFwdDecl(node.target);
 
@@ -4231,28 +4006,16 @@ struct sf_cpp_codegen
     };
     fu_STR annotateNever()
     {
-        fu_STR NEVER = "::NEVER"_fu;
-        if (!fu::has(_tfwd, NEVER))
-        {
-            include("<stdexcept>"_fu);
-            (_tfwd.upsert(NEVER) = "\nstruct fu_NEVER\n{\n    fu_NEVER(const fu_NEVER&) = delete;\n    void operator=(const fu_NEVER&) = delete;\n\n    template<typename T>\n    [[noreturn]] operator T() const\n    {\n        throw std::runtime_error(\"fu_NEVER cast\");\n    }\n};\n"_fu);
-        };
-        return "fu_NEVER"_fu;
+        include("\"../lib/never.h\""_fu);
+        return "fu::never"_fu;
     };
     fu_STR cgThrow(const fu_STR& kind, const fu_STR& item)
     {
-        fu_STR THROW = "::THROW"_fu;
-        if (!fu::has(_ffwd, THROW))
-        {
-            annotateNever();
-            include("<stdexcept>"_fu);
-            include("<string>"_fu);
-            (_ffwd.upsert(THROW) = "\n[[noreturn]] fu_NEVER fu_THROW(const char* what)\n{\n    throw std::runtime_error(what);\n}\n\ntemplate <typename T>\n[[noreturn]] fu_NEVER fu_THROW(const T& what)\n{\n    throw std::runtime_error(\n        std::string(\n            what.data(), size_t(what.size())));\n}\n"_fu);
-        };
+        annotateNever();
         if ((kind == "assert"_fu))
         {
         };
-        return (("fu_THROW("_fu + item) + ")"_fu);
+        return (("fu::fail("_fu + item) + ")"_fu);
     };
     fu_STR cgConcat(const fu_VEC<fu_STR>& items)
     {
@@ -4647,7 +4410,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     if (!module.in)
     {
         module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
-        fu_STR src { ([&]() -> fu_STR& { { fu_STR& _ = getFile(fname, ctx); if (_.size()) return _; } fu_THROW(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
+        fu_STR src { ([&]() -> fu_STR& { { fu_STR& _ = getFile(fname, ctx); if (_.size()) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
@@ -4659,7 +4422,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     }
     else
     {
-        (module.out || fu_THROW(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
+        (module.out || fu::fail(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
     };
     fu_VEC<fu_STR> imports { module.in.parse.imports };
     for (int i = 0; (i < imports.size()); i++)
@@ -4701,7 +4464,7 @@ fu_STR compile_testcase(const fu_STR& src)
             return ctx.modules[i].out.cpp;
 
     };
-    fu_THROW("Assertion failed.");
+    fu::fail("Assertion failed.");
 }
 inline const fu_STR TEST_SRC = "\n\n    fn test(one: i32)\n    {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn ZERO(): i32\n    {\n        return test(1) - 17;\n    }\n\n"_fu;
 
@@ -4722,7 +4485,7 @@ fu_STR locate_PRJDIR()
     fu_STR dir = (HOME + "fu/"_fu);
     fu_STR fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fn);
-    ((fs > 10000) || fu_THROW(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
+    ((fs > 10000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
     (std::cout << ("PRJDIR: "_fu + dir) << "\n");
     return dir;
 }
@@ -4748,7 +4511,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
     {
         if (!cpp.size())
         {
-            for (int i = 0; (i < Fs.size()); i++)
+            for (int i = Fs.size(); (i-- > 0); )
                 cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu);
 
         };
@@ -4784,7 +4547,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
-        for (int i = 0; (i < Fs.size()); i++)
+        for (int i = Fs.size(); (i-- > 0); )
             cmd += (Fs.mutref(i) + ".o "_fu);
 
         
@@ -4793,8 +4556,10 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
             const f64 t0 = fu::now_hr();
             code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
             if (code)
+            {
+                (std::cout << ("   FAIL "_fu + fu_JOIN(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
                 return ERR(""_fu);
-
+            };
             const f64 t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
         };
@@ -4843,7 +4608,7 @@ s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
     s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
     fu_STR result = buildAndRun(ctx);
     if (result.size())
-        fu_THROW(result);
+        fu::fail(result);
 
     return ctx;
 }
@@ -4862,7 +4627,7 @@ int FAIL(const fu_STR& src)
         return e.size();
     }
 ;
-    fu_THROW(("DID NOT THROW: "_fu + cpp));
+    fu::fail(("DID NOT THROW: "_fu + cpp));
 }
 
 void updateCPPFile(const s_Module& module)
@@ -4882,7 +4647,7 @@ void FU_FILE(fu_STR&& fname)
     (std::cout << "COMPILE "_fu << fname << "\n");
     fu_STR src = fu::file_read(fname);
     if (!src.size())
-        fu_THROW(("BAD FILE: "_fu + fname));
+        fu::fail(("BAD FILE: "_fu + fname));
 
     const f64 t0 = fu::now_hr();
     s_TEMP_Context ctx = ZERO(src, fu_STR(fname));

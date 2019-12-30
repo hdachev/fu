@@ -1,5 +1,8 @@
 // expect_lambda
 
+#import 'lexer';
+
+
 let WARN_ON_IMPLICIT_COPY   = false;
 let WRITE_COMPILER          = true;
 
@@ -81,388 +84,13 @@ fn path_join(a: string, b: string)
 ////////
 ////////
 ////////
-////////     Lexer.
+////////     Parser.
 
-let OPTOKENS = '{}[]()!?~@#$%^&*/-+<=>,.;:|';
-
-let OPERATORS =
-[
-    '+', '++', '-', '--',
-    '*', '**', '/', '%',
-    '<', '<<', '<<<', '>', '>>', '>>>',
-    '===', '==', '!=', '!==', '<=', '>=', '=>', '->', '<=>',
-    '!', '?', '??',
-    '.', '..', '...', ':', '::', ',', ';',
-    '&', '&&', '|', '||', '^', '~',
-    '{', '}', '[', ']', '(', ')', '[]',
-    '=',
-    '+=', '-=', '*=', '**=', '/=', '%=',
-    '&=', '|=', '^=',
-    '&&=', '||=',
-    '@', '#', '$',
-];
-
-struct Token
-{
-    kind:   string;
-    value:  string;
-
-    idx0:   i32;
-    idx1:   i32;
-    line:   i32;
-    col:    i32;
-};
-
-struct TokenIdx // 8b vs 48b, nobrainer
+pub struct TokenIdx // 8b vs 48b, nobrainer
 {
     modid:  i32;
     tokidx: i32;
 };
-
-struct LexerOutput
-{
-    fname:  string;
-    tokens: Token[];
-};
-
-fn lex(src: string, fname: string): LexerOutput
-{
-    let end     = src.len;
-    mut line    = 1;
-    mut lidx    = -1;
-    mut idx     = 0;
-
-    mut tokens: Token[];
-
-    fn token(kind: string, value: string, idx0: i32, idx1: i32)
-    {
-        let col = idx0 - lidx;
-
-        tokens.push(
-            Token( :kind, :value, :idx0, :idx1, :line, :col ));
-    }
-
-    fn err_str(kind: string, idx0: i32, reason: string)
-    {
-        // exit to nearest whitespace
-        while (idx < end && src[idx] > ' ')
-            idx++;
-
-        let col = idx0 - lidx;
-        let value = src.slice(idx0, idx);
-
-        throw('LEX ERROR: ' + fname + '@' + line + ':' + col
-            + ':\n\t' + reason
-            + '\n\t' + kind + ': `' + value + '`');
-    }
-
-    fn err(kind: string, idx0: i32, reason: i32)
-    {
-        err_str(kind, idx0, src[reason]);
-    }
-
-    fn checkNum(kind: string, src: string): string
-    {
-        ////////////
-        //  TODO  //
-        ////////////
-
-        if (src) {} // unused
-
-        return kind;
-    }
-
-    fn unescapeStr(src: string, idx0: i32, idx1: i32): string
-    {
-        mut out = '';
-
-        let n = idx1 - 1;
-        for (mut i = idx0 + 1; i < n; i++)
-        {
-            let c = src[i];
-            if (c == '\\')
-            {
-                let c1 = src[++i];
-
-                if      (c1 == 'n') out += '\n';
-                else if (c1 == 'r') out += '\r';
-                else if (c1 == 't') out += '\t';
-                else if (c1 == 'v') out += '\v';
-                else                out += c1;
-            }
-            else
-            {
-                out += c;
-            }
-        }
-
-        return out;
-    }
-
-    while (idx < end)
-    {
-        let idx0 = idx;
-        let c = src[idx++];
-
-        // whitespace
-        if (c <= ' ')
-        {
-            if (c == '\n')
-            {
-                line++;
-                lidx = idx - 1;
-            }
-        }
-
-        // identifiers & keywords
-        else if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_')
-        {
-            while (idx < end)
-            {
-                let c = src[idx++];
-                if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || c >= '0' && c <= '9')
-                {
-                    //
-                }
-                else
-                {
-                    idx--;
-                    break;
-                }
-            }
-
-            let idx1 = idx;
-
-            token(
-                'id', src.slice(idx0, idx1),
-                idx0, idx1);
-        }
-
-        // numeric literals
-        else if (c >= '0' && c <= '9')
-        {
-            mut hex = false;
-            mut dot = false;
-            mut exp = false;
-
-            if (c == '0' && idx < end && src[idx] == 'x')
-            {
-                hex = true;
-                idx++;
-            }
-
-            while (idx < end)
-            {
-                let c = src[idx++];
-
-                if (c >= '0' && c <= '9')
-                {
-                    //
-                }
-                else if (c == '.')
-                {
-                    if (hex || dot || exp)
-                    {
-                        err('num', idx0, idx - 1);
-                        break;
-                    }
-
-                    dot = true;
-                }
-                else if ((c == 'e' || c == 'E') && !hex)
-                {
-                    if (hex || exp)
-                    {
-                        err('num', idx0, idx - 1);
-                        break;
-                    }
-
-                    if (idx < end && (src[idx] == '-' || src[idx] == '+'))
-                        idx++;
-
-                    exp = true;
-                }
-                else if (c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
-                {
-                    if (!hex)
-                    {
-                        err('num', idx0, idx - 1);
-                        break;
-                    }
-                }
-                else
-                {
-                    idx--;
-                    break;
-                }
-            }
-
-            let trail = src[idx - 1];
-            if (!(trail >= '0' && trail <= '9') &&
-                !(hex && (trail >= 'a' && trail <= 'f'
-                       || trail >= 'A' && trail <= 'F')))
-            {
-                err('num', idx0, idx - 1);
-            }
-            else
-            {
-                let idx1 = idx;
-                let str = src.slice(idx0, idx1);
-
-                token(
-                    checkNum(dot || exp ? 'num' : 'int', str), str,
-                    idx0, idx1);
-            }
-        }
-
-        // string literals
-        else if (c == '\'' || c == '"' || c == '`')
-        {
-            mut esc = false;
-            mut ok  = false;
-
-            while (idx < end)
-            {
-                let c1 = src[idx++];
-                if (c1 == c)
-                {
-                    ok = true;
-                    break;
-                }
-                else if (c1 == '\\')
-                {
-                    esc = true;
-                    idx++;
-                }
-                else if (c1 == '\n')
-                {
-                    line++;
-                    lidx = idx - 1;
-                }
-            }
-
-            if (!ok)
-            {
-                err_str('str', idx0, 'Unterminated string literal.');
-            }
-            else
-            {
-                let idx1 = idx;
-                let str  = esc  ? unescapeStr(src, idx0, idx1)
-                                : src.slice(idx0 + 1, idx1 - 1);
-
-                token(
-                    'str', str,
-                    idx0, idx1);
-            }
-        }
-
-        // comments
-        else if (c == '/' && idx < end && src[idx] == '/')
-        {
-            idx++;
-            while (idx < end)
-            {
-                let c1 = src[idx++];
-                if (c1 == '\n')
-                {
-                    line++;
-                    lidx = idx - 1;
-                    break;
-                }
-            }
-        }
-
-        // multiline comments
-        else if (c == '/' && idx < end && src[idx] == '*')
-        {
-            idx++;
-            while (idx < end)
-            {
-                let c = src[idx++];
-                if (c == '\n')
-                {
-                    line++;
-                    lidx = idx - 1;
-                }
-                else if (c == '*' && idx < end && src[idx] == '/')
-                {
-                    idx++;
-                    break;
-                }
-            }
-        }
-
-        // operators
-        else if (OPTOKENS.has(c))
-        {
-            while (idx < end)
-            {
-                let c = src[idx++];
-                if (!OPTOKENS.has(c))
-                {
-                    idx--;
-                    break;
-                }
-            }
-
-            // split off adjacent operators
-            {
-                mut begin   = idx0;
-                mut end     = idx;
-                while (begin < end)
-                {
-                    let candidate = src.slice(begin, end);
-                    let ok = OPERATORS.has(candidate);
-                    if (end > begin + 1 && !ok)
-                    {
-                        end--;
-                        continue;
-                    }
-
-                    if (!ok)
-                        err('op', begin, end);
-                    else
-                        token(
-                            'op', candidate,
-                            begin, end);
-
-                    begin = end;
-                    end = idx;
-                }
-            }
-        }
-
-        // dunno
-        else
-        {
-            err('?', idx0, idx0);
-        }
-    }
-
-    // end of file token
-    line++;
-    lidx = idx + 0;
-
-    token(
-        'eof', 'eof',
-        idx, idx);
-
-    // err, data
-    return LexerOutput( :fname, :tokens );
-}
-
-
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Parser.
 
 pub struct Node
 {
@@ -4694,7 +4322,10 @@ pub fn cpp_codegen(
 
     fn declareStruct(t: Type, s: Struct): string
     {
-        mut def = '\nstruct ' + t.canon + '\n{';
+        mut def = '\n                                #ifndef DEF_' + t.canon
+                + '\n                                #define DEF_' + t.canon
+                + '\nstruct ' + t.canon + '\n{';
+
         mut indent = '\n    ';
 
         if (s.flags & F_DESTRUCTOR)
@@ -4738,7 +4369,7 @@ pub fn cpp_codegen(
         def += '\n        ;';
         def += '\n    }';
 
-        return def + '\n};\n';
+        return def + '\n};\n                                #endif\n';
     }
 
 
@@ -5611,68 +5242,23 @@ inline void fu_MEMSLIDE(void* dest, void* source)
 
     fn annotateNever(): string
     {
-        let NEVER = '::NEVER';
-        if (!_tfwd.has(NEVER))
-        {
-            include('<stdexcept>');
+        include('"../lib/never.h"');
 
-            _tfwd[NEVER] =
-////////////////////////////////////
-`
-struct fu_NEVER
-{
-    fu_NEVER(const fu_NEVER&) = delete;
-    void operator=(const fu_NEVER&) = delete;
-
-    template<typename T>
-    [[noreturn]] operator T() const
-    {
-        throw std::runtime_error("fu_NEVER cast");
-    }
-};
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_NEVER';
+        return 'fu::never';
     }
 
     fn cgThrow(kind: string, item: string): string
     {
-        let THROW = '::THROW';
-        if (!_ffwd.has(THROW))
-        {
-            annotateNever();
-            include('<stdexcept>');
-            include('<string>');
-
-            _ffwd[THROW] =
-////////////////////////////////////
-`
-[[noreturn]] fu_NEVER fu_THROW(const char* what)
-{
-    throw std::runtime_error(what);
-}
-
-template <typename T>
-[[noreturn]] fu_NEVER fu_THROW(const T& what)
-{
-    throw std::runtime_error(
-        std::string(
-            what.data(), size_t(what.size())));
-}
-`
-////////////////////////////////////
-            ;
-        }
+        annotateNever();
 
         if (kind == 'assert')
         {
-            // TODO
+            //////////
+            // TODO //
+            //////////
         }
 
-        return 'fu_THROW(' + item + ')';
+        return 'fu::fail(' + item + ')';
     }
 
     fn cgConcat(items: string[]): string
@@ -6404,7 +5990,7 @@ fn buildAndRun(ctx: TEMP_Context): string
     fn ERR(mut cpp: string = '')
     {
         if (!cpp)
-            for (mut i = 0; i < Fs.len; i++)
+            for (mut i = Fs.len; i --> 0; )
                 cpp += '#include "' + Fs[i] + '.cpp"\n';
 
         let fname = PRJDIR + 'build.cpp/failing-testcase.cpp';
@@ -6452,7 +6038,7 @@ fn buildAndRun(ctx: TEMP_Context): string
         let F_tmp = F_exe + '.tmp';
 
         mut cmd = GCC_CMD + '-o ' + F_tmp + ' ';
-        for (mut i = 0; i < Fs.len; i++)
+        for (mut i = Fs.len; i --> 0; )
             cmd += Fs[i] + '.o ';
 
         {
@@ -6463,7 +6049,11 @@ fn buildAndRun(ctx: TEMP_Context): string
                 || shell_exec('chmod 755 ' + F_tmp + ' 2>&1', stdout)
                 || shell_exec('mv ' + F_tmp + ' ' + F_exe + ' 2>&1', stdout);
 
-            if (code) return ERR;
+            if (code)
+            {
+                print('   FAIL ' + Fs.join('\n        ' + '\n'));
+                return ERR;
+            }
 
             let t1 = now_hr();
             print('     OK ', t1 - t0, 's');
