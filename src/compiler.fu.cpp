@@ -836,8 +836,11 @@ struct sf_lex
         return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
     };
 };
+s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
+{
+    return (sf_lex { src, fname }).lex_EVAL();
+}
 
-#define lex(...) ((sf_lex { __VA_ARGS__ }).lex_EVAL())
 inline const int F_METHOD = (1 << 0);
 inline const int F_INFIX = (1 << 1);
 inline const int F_PREFIX = (1 << 2);
@@ -877,7 +880,7 @@ struct sf_setupOperators
             (out.PRECEDENCE.upsert(ops[i]) = precedence);
 
     };
-    s_BINOP& setupOperators_EVAL()
+    s_BINOP setupOperators_EVAL()
     {
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "as"_fu, "is"_fu } });
         rightToLeft = true;
@@ -902,9 +905,12 @@ struct sf_setupOperators
         return out;
     };
 };
+s_BINOP setupOperators()
+{
+    return (sf_setupOperators {  }).setupOperators_EVAL();
+}
 
-#define setupOperators(...) ((sf_setupOperators { __VA_ARGS__ }).setupOperators_EVAL())
-inline const s_BINOP BINOP { setupOperators() };
+inline const s_BINOP BINOP = setupOperators();
 inline const int& P_COMMA = ([]() -> const int& { { const int& _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu_THROW("Assertion failed."); }());
 inline const int LET_TYPE = 0;
 inline const int LET_INIT = 1;
@@ -1703,8 +1709,11 @@ struct sf_parse
         return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
     };
 };
+s_ParserOutput parse(const int& modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
+{
+    return (sf_parse { modid, fname, tokens }).parse_EVAL();
+}
 
-#define parse(...) ((sf_parse { __VA_ARGS__ }).parse_EVAL())
 inline const int q_mutref = (1 << 0);
 inline const int q_ref = (1 << 1);
 inline const int q_copy = (1 << 2);
@@ -3364,8 +3373,11 @@ struct sf_solve
         return s_SolverOutput { solveNode(parse, s_Type{}), s_Scope(_scope) };
     };
 };
+s_SolverOutput solve(const s_Node& parse, const s_TEMP_Context& ctx, s_Module& module)
+{
+    return (sf_solve { parse, ctx, module }).solve_EVAL();
+}
 
-#define solve(...) ((sf_solve { __VA_ARGS__ }).solve_EVAL())
 
 s_Scope listGlobals(const s_Module& module)
 {
@@ -3712,7 +3724,21 @@ struct sf_cpp_codegen
         ((_clsrN == 0) || fail(""_fu));
         _clsrN--;
         fu_STR structName = ("sf_"_fu + fn.value);
-        fu_STR src = (((((((((("\nstruct "_fu + structName) + blockWrap(head, false)) + ";"_fu) + "\n\n#define "_fu) + fn.value) + "(...) (("_fu) + structName) + " { __VA_ARGS__ })."_fu) + evalName) + "())\n"_fu);
+        fu_STR src = ((("\nstruct "_fu + structName) + blockWrap(head, false)) + ";"_fu);
+        
+        {
+            fu_VEC<fu_STR> args {};
+            for (int i = 0; (i < (fn.items.size() + FN_ARGS_BACK)); i++)
+            {
+                const s_SolvedNode& argNode = fn.items[i];
+                const s_Type& argType = argNode.type;
+                const fu_STR& arg = argNode.value;
+                args.push(((argType.quals & q_ref) ? fu_STR(arg) : cgSteal(arg)));
+            };
+            src += "\n"_fu;
+            src += cgFnSignature(fn);
+            src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu_JOIN(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
+        };
         _clsrN++;
         return src;
     };
@@ -4609,8 +4635,11 @@ struct sf_cpp_codegen
         return src;
     };
 };
+fu_STR cpp_codegen(const s_SolvedNode& root, const s_Scope& scope, const s_Module& module, const s_TEMP_Context& ctx)
+{
+    return (sf_cpp_codegen { root, scope, module, ctx }).cpp_codegen_EVAL();
+}
 
-#define cpp_codegen(...) ((sf_cpp_codegen { __VA_ARGS__ }).cpp_codegen_EVAL())
 
 fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
 {
@@ -4714,7 +4743,6 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         Fs.push(F);
         len_all += cpp.size();
     };
-    ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (Fs));
     fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu_JOIN(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](const fu_STR& cpp) -> fu_STR&
     {
@@ -5021,7 +5049,7 @@ void runTestSuite()
     ZERO("\n        {\n            return 0;\n        }\n    "_fu, ""_fu);
     FAIL("\n        {\n            return 0; //ERR block\n       }\n    "_fu);
     FAIL("\n        {\n            return 0; //ERR block\n         }\n    "_fu);
-    ZERO("\n\n    struct BINOP {\n        P: Map(string, i32);\n    };\n\n    fn setupOperators()\n    {\n        mut out: BINOP;\n\n        fn binop(op: string)\n            out.P[op] = 7;\n\n        binop(',');\n\n        return out;\n    }\n\n    let BINOP   = setupOperators();\n    let P_COMMA = BINOP.P[','] || assert();\n\n    fn ZERO() P_COMMA - 7;\n\n    "_fu, ""_fu);
+    ZERO("\n\n    struct BINOP {\n        P: Map(string, i32);\n    };\n\n    fn setupOperators(): BINOP\n    {\n        mut out: BINOP;\n\n        fn binop(op: string)\n            out.P[op] = 7;\n\n        binop(',');\n\n        return out;\n    }\n\n    let BINOP   = setupOperators();\n    let P_COMMA = BINOP.P[','] || assert();\n\n    fn ZERO() P_COMMA - 7;\n\n    "_fu, ""_fu);
     ZERO("\n\n        // -no-lambda\n        // This converted to a ref-returning\n        // logical chain for some reason.\n        let hex = true;\n        let trail = 'x';\n        if (!(trail >= '0' && trail <= '9') &&\n            !(hex && (trail >= 'a' && trail <= 'f'\n                   || trail >= 'A' && trail <= 'F')))\n        {\n            return 0;\n        }\n\n        return 1;\n\n    "_fu, ""_fu);
     ZERO("\n        struct Type     { i: i32; };\n        struct Token    { i: i32; };\n        struct ScopeIdx { i: i32; };\n\n        struct SolvedNode\n        {\n            kind:       string;\n            flags:      i32;\n            value:      string;\n            items:      SolvedNode[];\n            token:      Token;\n\n            type:       Type;\n            target:     ScopeIdx;\n        };\n\n        let _here: Token;\n\n        fn createDefaultInit(type: Type): SolvedNode\n        {\n            // Broken arg re-arrange.\n            return SolvedNode(\n                kind: 'definit',\n                token: _here,\n                :type);\n        }\n\n        return createDefaultInit(Type()).target.i;\n    "_fu, ""_fu);
     ZERO("\n        struct Type         { i: i32; };\n        struct Scope        { i: i32; };\n        struct Partial      { i: i32; };\n        struct Template     { i: i32; };\n        struct SolvedNode   { i: i32; };\n\n        pub fn Scope_add(\n            scope: &mut Scope,\n            kind: string, id: string, type: Type,\n\n            min: i32 = 0,\n            max: i32 = 0,\n            arg_n: string[]     = [],\n            arg_t: Type[]       = [],\n            arg_d: SolvedNode[] = [],\n            template: Template  = [],\n            partial: Partial    = []): i32\n        {\n            return scope.i\n                 + kind.len + id.len + type.i\n                 + min + max + arg_n.len + arg_t.len + arg_d.len\n                 + template.i + partial.i;\n        }\n\n        mut _scope: Scope;\n        let id: string;\n        let t_template: Type;\n        let min: i32;\n        let max: i32;\n        let arg_n: string[];\n        let template: Template;\n\n        return Scope_add(\n            _scope,\n            '', id, t_template,\n            min, max, arg_n,\n            :template);\n    "_fu, ""_fu);

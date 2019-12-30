@@ -516,7 +516,7 @@ struct BINOP {
     RIGHT_TO_LEFT:  Map(i32,   bool);
 };
 
-fn setupOperators()
+fn setupOperators(): BINOP
 {
     mut out: BINOP;
 
@@ -4875,18 +4875,7 @@ pub fn cpp_codegen(
     }
 
 
-    // This is kinda weird - it's an auto-refactor:
-    //  it converts a fn that contains closures
-    //   into a struct, with its args and leading "lets"
-    //    converted into fields, and then leading closures
-    //     converted into struct members.
-
-    // The tail of the fn remains in an "EVAL" function,
-    //  and currently to limit the damage we emit a macro
-    //   that remaps the invocation.
-
-    // TODO this can do more -
-    //  we could collect most of the top-level stuff on the struct.
+    // This barely works unless it doesn't.
 
     fn try_cgFnAsStruct(fn: SolvedNode): string
     {
@@ -4952,8 +4941,28 @@ pub fn cpp_codegen(
 
         let structName = 'sf_' + fn.value;
         mut src = '\nstruct ' + structName
-                + blockWrap(head) + ';'
-                + '\n\n#define ' + fn.value + '(...) ((' + structName + ' { __VA_ARGS__ }).' + evalName + '())\n';
+                + blockWrap(head) + ';';
+
+        //////////////////////
+        {
+            mut args: string[];
+
+            for (mut i = 0; i < fn.items.len + FN_ARGS_BACK; i++)
+            {
+                let argNode = fn.items[i];
+                let argType = argNode.type;
+                let arg     = argNode.value;
+
+                args.push(
+                    argType.quals & q_ref
+                        ? arg
+                        : cgSteal(arg));
+            }
+
+            src += '\n';
+            src += cgFnSignature(fn);
+            src += '\n{\n    return (' + structName + ' { ' + args.join(', ') + ' }).' + evalName + '();\n}\n\n';
+        }
 
         //////////////////////
         _clsrN++;
@@ -6385,8 +6394,6 @@ fn buildAndRun(ctx: TEMP_Context): string
         len_all += cpp.len;
     }
 
-    Fs.sort();
-
     //
     let F_exe   = PRJDIR
                 + 'build.cpp/b-'    + hash_tea(Fs.join('/'))
@@ -7724,7 +7731,7 @@ fn runTestSuite()
         P: Map(string, i32);
     };
 
-    fn setupOperators()
+    fn setupOperators(): BINOP
     {
         mut out: BINOP;
 
