@@ -6401,15 +6401,17 @@ fn buildAndRun(ctx: TEMP_Context): string
                 + '-'               + Fs.len;
 
     //
-    fn ERR(cpp: string = '')
+    fn ERR(mut cpp: string = '')
     {
-        if (cpp)
-        {
-            let fname = PRJDIR + 'build.cpp/failing-testcase.cpp';
-            print('  WRITE ' + fname);
-            file_write(fname, cpp);
-        }
+        if (!cpp)
+            for (mut i = 0; i < Fs.len; i++)
+                cpp += '#include "' + Fs[i] + '.cpp"\n';
 
+        let fname = PRJDIR + 'build.cpp/failing-testcase.cpp';
+        print('  WRITE ' + fname);
+        file_write(fname, cpp);
+
+        //
         if (!stdout)
             stdout = '[ EXIT CODE ' + code + ' ]';
 

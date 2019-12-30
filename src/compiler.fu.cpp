@@ -4744,14 +4744,17 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         len_all += cpp.size();
     };
     fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu_JOIN(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
-    const auto& ERR = [&](const fu_STR& cpp) -> fu_STR&
+    const auto& ERR = [&](fu_STR&& cpp) -> fu_STR&
     {
-        if (cpp.size())
+        if (!cpp.size())
         {
-            fu_STR fname = (PRJDIR + "build.cpp/failing-testcase.cpp"_fu);
-            (std::cout << ("  WRITE "_fu + fname) << "\n");
-            fu::file_write(fname, cpp);
+            for (int i = 0; (i < Fs.size()); i++)
+                cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu);
+
         };
+        fu_STR fname = (PRJDIR + "build.cpp/failing-testcase.cpp"_fu);
+        (std::cout << ("  WRITE "_fu + fname) << "\n");
+        fu::file_write(fname, cpp);
         if (!stdout.size())
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
@@ -4773,7 +4776,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
                 const f64 t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
-                    return ERR(cpp);
+                    return ERR(fu_STR(cpp));
 
                 const f64 t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
