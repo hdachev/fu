@@ -1,32 +1,7 @@
 #include "../lib/str.h"
 #include "../lib/vec.h"
 #include "../lib/vec/find.h"
-
-inline fu_STR fu_JOIN(
-    const fu_VEC<fu_STR>& vec,
-    const fu_STR& sep)
-{
-    int len = 0;
-    for (int i = 0; i < vec.size(); i++)
-    {
-        if (i)
-            len += sep.size();
-
-        len += vec[i].size();
-    }
-
-    fu_STR result;
-    result.reserve(len);
-    for (int i = 0; i < vec.size(); i++)
-    {
-        if (i)
-            result += sep;
-
-        result += vec[i];
-    }
-
-    return result;
-}
+#include "../lib/vec/join.h"
 
 inline fu_VEC<fu_STR> fu_SPLIT(
     fu_STR s,
@@ -105,7 +80,7 @@ fu_STR path_normalize(const fu_STR& p)
             path.splice(--i, 2);
 
     };
-    return fu_JOIN(path, "/"_fu);
+    return fu::join(path, "/"_fu);
 }
 
 fu_STR path_join(const fu_STR& a, const fu_STR& b)

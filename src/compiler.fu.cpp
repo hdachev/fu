@@ -8,6 +8,7 @@
 #include "../lib/tea.h"
 #include "../lib/vec.h"
 #include "../lib/vec/find.h"
+#include "../lib/vec/join.h"
 #include "../lib/vec/replace.h"
 #include <algorithm>
 #include <iostream>
@@ -3406,7 +3407,7 @@ struct sf_cpp_codegen
             };
             src += "\n"_fu;
             src += cgFnSignature(fn);
-            src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu_JOIN(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
+            src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu::join(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
         };
         _clsrN++;
         return src;
@@ -3628,7 +3629,7 @@ struct sf_cpp_codegen
         s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, module, ctx); if (_) return _; } fail(""_fu); }());
         fu_STR itemAnnot = typeAnnot(itemType, 0);
         fu_STR arrayAnnot = typeAnnot(node.type, 0);
-        return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu_JOIN(items, ", "_fu)) + " } }"_fu);
+        return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu::join(items, ", "_fu)) + " } }"_fu);
     };
     fu_STR cgDefaultInit(const s_SolvedNode& node)
     {
@@ -3663,7 +3664,7 @@ struct sf_cpp_codegen
                 open = ((" { "_fu + head.canon) + "::Data { "_fu);
                 close = " }}"_fu;
             };
-            return (((head.canon + open) + fu_JOIN(items, ", "_fu)) + close);
+            return (((head.canon + open) + fu::join(items, ", "_fu)) + close);
         };
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = target.name; if (_.size()) return _; } fail(""_fu); }());
         if (hasNonIdentifierChars(id))
@@ -3757,22 +3758,22 @@ struct sf_cpp_codegen
         if (((id == "find"_fu) && (items.size() == 2)))
         {
             include("\"../lib/vec/find.h\""_fu);
-            return (("fu::lfind("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (("fu::lfind("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "starts"_fu) && (items.size() == 2)))
         {
             include("\"../lib/vec/find.h\""_fu);
-            return (("fu::lmatch("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (("fu::lmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "has"_fu) && (items.size() == 2)))
         {
             include("\"../lib/vec/find.h\""_fu);
-            return (("fu::has("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (("fu::has("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "replace"_fu) && (items.size() == 3)))
         {
             include("\"../lib/vec/replace.h\""_fu);
-            return (("fu::replace("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (("fu::replace("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
             return (((("slice("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ")"_fu);
@@ -3842,28 +3843,28 @@ struct sf_cpp_codegen
         if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu)))
         {
             include("\"../lib/io.h\""_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "env_get"_fu))
         {
             include("\"../lib/env.h\""_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "hash_tea"_fu))
         {
             include("\"../lib/tea.h\""_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "shell_exec"_fu))
         {
             include("\"../lib/shell.h\""_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         ((id != "__native_pure"_fu) || fu::fail("Assertion failed."));
         if ((node.target.modid && (node.target.modid != module.modid)))
             ensureFwdDecl(node.target);
 
-        return (((ID(id) + "("_fu) + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)
     {
@@ -3919,18 +3920,12 @@ struct sf_cpp_codegen
             annotateVector();
             (_ffwd.upsert(CONCAT) = "\ntemplate <typename T>\nfu_VEC<T> fu_CONCAT(\n    const fu_VEC<T>& a,\n    const fu_VEC<T>& b)\n{\n    fu_VEC<T> result;\n    result.reserve(a.size() + b.size());\n\n    for (const auto& i : a) result.push(i);\n    for (const auto& i : b) result.push(i);\n\n    return result;\n}\n"_fu);
         };
-        return (("fu_CONCAT("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        return (("fu_CONCAT("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgJoin(const fu_VEC<fu_STR>& items)
     {
-        fu_STR JOIN = "::JOIN"_fu;
-        if (!fu::has(_ffwd, JOIN))
-        {
-            annotateString();
-            annotateVector();
-            (_ffwd.upsert(JOIN) = "\ninline fu_STR fu_JOIN(\n    const fu_VEC<fu_STR>& vec,\n    const fu_STR& sep)\n{\n    int len = 0;\n    for (int i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            len += sep.size();\n\n        len += vec[i].size();\n    }\n\n    fu_STR result;\n    result.reserve(len);\n    for (int i = 0; i < vec.size(); i++)\n    {\n        if (i)\n            result += sep;\n\n        result += vec[i];\n    }\n\n    return result;\n}\n"_fu);
-        };
-        return (("fu_JOIN("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        include("\"../lib/vec/join.h\""_fu);
+        return (("fu::join("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgSplit(const fu_VEC<fu_STR>& items)
     {
@@ -3942,7 +3937,7 @@ struct sf_cpp_codegen
             include("\"../lib/vec/find.h\""_fu);
             (_ffwd.upsert(SPLIT) = "\ninline fu_VEC<fu_STR> fu_SPLIT(\n    fu_STR s,\n    const fu_STR& sep)\n{\n    fu_VEC<fu_STR> result;\n\n    int next;\n    while ((next = fu::lfind(s, sep)) >= 0)\n    {\n        result.push(slice(s, 0, next));\n        s = slice(s, next + sep.size());\n    }\n\n    result.push(static_cast<fu_STR&&>(s));\n    return result;\n}\n"_fu);
         };
-        return (("fu_SPLIT("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        return (("fu_SPLIT("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgKeys(const fu_VEC<fu_STR>& items)
     {
@@ -3953,7 +3948,7 @@ struct sf_cpp_codegen
             annotateVector();
             (_ffwd.upsert(KEYS) = "\ntemplate <typename K, typename V>\nfu_VEC<K> fu_KEYS(\n    const fu_COW_MAP<K, V>& map)\n{\n    return map.m_keys;\n}\n"_fu);
         };
-        return (("fu_KEYS("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        return (("fu_KEYS("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgLiteral(const s_SolvedNode& node)
     {
@@ -4268,7 +4263,7 @@ struct sf_cpp_codegen
     fu_STR cgSwap(const fu_VEC<fu_STR>& items)
     {
         include("<utility>"_fu);
-        return (("std::swap("_fu + fu_JOIN(items, ", "_fu)) + ")"_fu);
+        return (("std::swap("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgClone(const s_Type& type, const fu_STR& src)
     {
@@ -4400,7 +4395,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         Fs.push(F);
         len_all += cpp.size();
     };
-    fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu_JOIN(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](fu_STR&& cpp) -> fu_STR&
     {
         if (!cpp.size())
@@ -4451,7 +4446,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
             code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
             if (code)
             {
-                (std::cout << ("   FAIL "_fu + fu_JOIN(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
+                (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
                 return ERR(""_fu);
             };
             const f64 t1 = fu::now_hr();
