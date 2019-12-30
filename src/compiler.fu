@@ -3,8 +3,6 @@
 let WARN_ON_IMPLICIT_COPY   = false;
 let WRITE_COMPILER          = true;
 
-// #import 'hello';
-
 
 // Having fun.
 
@@ -6251,11 +6249,8 @@ fn compile(fname: string, via: string = ''): string
     return module.out.cpp;
 }
 
-fn compile_testcase(mut src: string, mut fname = ''): string
+fn compile_testcase(mut src: string, fname: string): TEMP_Context
 {
-    if (!fname)
-        fname = 'testcase';
-
     // Some nonsense.
     if (!src.has('fn ZERO()'))
         src = '\n\nfn ZERO(): i32 {\n' + src + '\n}\n';
@@ -6266,7 +6261,20 @@ fn compile_testcase(mut src: string, mut fname = ''): string
     let implicit mut ctx = CTX_PROTO;
         ctx.files[fname] = src;
 
-    return compile(:fname);
+    compile(:fname);
+
+    return ctx;
+}
+
+fn compile_testcase(src: string): string
+{
+    let fname = 'testcase';
+    let ctx = compile_testcase(src, fname);
+    for (mut i = 1; i < ctx.modules.len; i++)
+        if (ctx.modules[i].fname == fname)
+            return ctx.modules[i].out.cpp;
+
+    assert();
 }
 
 
@@ -6339,52 +6347,112 @@ let GCC_CMD = 'g++ -std=c++1z -O3 '
             + '-Wno-parentheses-equality ' // opt-out
             ;
 
-fn buildAndRun(cpp: string): string
+fn buildAndRun(ctx: TEMP_Context): string
 {
-    mut code    : i32;
-    mut stdout  : string;
+    mut code: i32;
+    mut stdout: string;
 
-    let hash    = hash_tea(cpp);
-    let F       = PRJDIR
-                + "build.cpp/tea-"  + hash
-                + "-"               + cpp.len;
+    //
+    mut Fs: string[];
+    mut len_all: i32;
 
-    fn ERR()
+    // Starting after prelude.
+    for (mut i = 1; i < ctx.modules.len; i++)
     {
-        file_write(
-            PRJDIR + "build.cpp/failing-testcase.cpp",
-                cpp);
+        let module  = ctx.modules[i];
+        let cpp     = module.out.cpp;
+        let F       = PRJDIR
+                    + 'build.cpp/o-'    + hash_tea(cpp)
+                    + '-'               + cpp.len;
+
+        Fs.push(F);
+        len_all += cpp.len;
+    }
+
+    Fs.sort();
+
+    //
+    let F_exe   = PRJDIR
+                + 'build.cpp/b-'    + hash_tea(Fs.join('/'))
+                + '-'               + len_all
+                + '-'               + Fs.len;
+
+    //
+    fn ERR(cpp: string = '')
+    {
+        if (cpp)
+        {
+            let fname = PRJDIR + 'build.cpp/failing-testcase.cpp';
+            print('  WRITE ' + fname);
+            file_write(fname, cpp);
+        }
 
         if (!stdout)
-            stdout = "[ EXIT CODE " + code + " ]";
+            stdout = '[ EXIT CODE ' + code + ' ]';
 
         return stdout;
     }
 
-    if (file_size(F + ".exe") <= 0)
+    if (file_size(F_exe) < 1)
     {
-        ///////////////////////
-        // NEW_STUFF = true; //
-        ///////////////////////
+        // Build.
+        for (mut i = 0; i < Fs.len; i++)
+        {
+            let F     = Fs[i];
+            let F_cpp = F + '.cpp';
+            let F_tmp = F + '.o.tmp';
+            let F_obj = F + '.o';
 
-        file_write(F + ".cpp", cpp);
+            if (file_size(F_obj) < 1)
+            {
+                // Prelude @ 0.
+                let cpp = ctx.modules[i + 1].out.cpp;
 
-        print('  BUILD ', F, '.cpp');
-        let t0 = now_hr();
+                file_write(F_cpp, cpp);
 
-        code = shell_exec(GCC_CMD+ "-c -o " +F+ ".o " +F+ ".cpp 2>&1", stdout)
-            || shell_exec(GCC_CMD+ "-o " +F+ ".tmp " +F+ ".o 2>&1", stdout)
-            || shell_exec("chmod 755 " +F+ ".tmp", stdout)
-            || shell_exec("mv " +F+ ".tmp " +F+ ".exe", stdout)
-            || shell_exec("rm " +F+ ".o", stdout);
+                print('  BUILD ', F_cpp);
+                let t0 = now_hr();
+
+                code = shell_exec(GCC_CMD + '-c -o ' + F_tmp + ' ' + F_cpp + ' 2>&1', stdout)
+                    || shell_exec('mv ' + F_tmp + ' ' + F_obj + ' 2>&1', stdout);
+
+                if (code) return ERR(cpp);
+
+                let t1 = now_hr();
+                print('     OK ', t1 - t0, 's');
+            }
+        }
+
+        // Link.
+        let F_tmp = F_exe + '.tmp';
+
+        mut cmd = GCC_CMD + '-o ' + F_tmp + ' ';
+        for (mut i = 0; i < Fs.len; i++)
+            cmd += Fs[i] + '.o ';
+
+        {
+            print('   LINK ', F_exe);
+            let t0 = now_hr();
+
+            code = shell_exec(cmd + ' 2>&1', stdout)
+                || shell_exec('chmod 755 ' + F_tmp + ' 2>&1', stdout)
+                || shell_exec('mv ' + F_tmp + ' ' + F_exe + ' 2>&1', stdout);
+
+            if (code) return ERR;
+
+            let t1 = now_hr();
+            print('     OK ', t1 - t0, 's');
+        }
+
+        // Delete single object file.
+        if (Fs.len == 1)
+            code = shell_exec('rm ' + Fs[0] + '.o 2>&1', stdout);
 
         if (code) return ERR;
-
-        let t1 = now_hr();
-        print('     OK ', t1 - t0, 's');
     }
 
-    code = shell_exec(F+ ".exe", stdout);
+    code = shell_exec(F_exe, stdout);
+
     if (code) return ERR;
 
     return '';
@@ -6438,17 +6506,20 @@ fn saySomethingNice()
     }
 }
 
-fn ZERO(src: string, fname = ''): string
+fn ZERO(src: string, mut fname = ''): TEMP_Context
 {
-    let cpp     = compile_testcase(:src, :fname);
-    let result  = buildAndRun(:cpp);
+    if (!fname)
+        fname = 'testcase.ZERO';
+
+    let ctx     = compile_testcase(:src, :fname);
+    let result  = buildAndRun(:ctx);
     if (result)
         throw(result);
 
-    return cpp;
+    return ctx;
 }
 
-fn FAIL(src: string): i32
+fn FAIL(src: string)
 {
     let cpp = compile_testcase(src)
         catch e
@@ -6457,12 +6528,14 @@ fn FAIL(src: string): i32
     throw("DID NOT THROW: " + cpp);
 }
 
-fn updateCPPFile(path: string, cpp: string)
+fn updateCPPFile(module: Module)
 {
-    let fname = path + '.cpp';
+    let fname = module.fname + '.cpp';
+    let cpp   = module.out.cpp;
+
     if (file_read(fname) != cpp)
     {
-        file_write(fname, cpp);
+        file_write(fname, module.out.cpp);
         print('WROTE ' + fname);
     }
 }
@@ -6478,14 +6551,21 @@ fn FU_FILE(mut fname: string)
         throw ('BAD FILE: ' + fname);
 
     let t0  = now_hr();
-    let cpp = ZERO(:src, :fname);
+    let ctx = ZERO(:src, :fname);
     let t1  = now_hr();
     let tt  = t1 - t0;
 
     print('        ', tt, 's\n');
 
     if (WRITE_COMPILER)
-        updateCPPFile(fname, cpp);
+        for (mut i = 1; i < ctx.modules.len; i++)
+            updateCPPFile(ctx.modules[i]);
+
+    // Test imports.
+    {
+        #import 'hello';
+        sayHello();
+    }
 }
 
 

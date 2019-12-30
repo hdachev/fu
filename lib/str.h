@@ -87,26 +87,26 @@ inline fu_STR& operator+=(fu_STR& m, const char* cstr) noexcept
 // And once more.
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(const fu_STR& str, const T& t) noexcept
+inline fu_STR operator+(const fu_STR& str, const T& t) noexcept
 {
     return str + fu_TO_STR(t);
 }
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(const T& t, const fu_STR& str) noexcept
+inline fu_STR operator+(const T& t, const fu_STR& str) noexcept
 {
     return fu_TO_STR(t) + str;
 }
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(fu_STR&& str, const T& t) noexcept
+inline fu_STR operator+(fu_STR&& str, const T& t) noexcept
 {
     str.append(fu_ZERO(), fu_TO_STR(t));
     return static_cast<fu_STR&&>(str);
 }
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR operator+(const T& t, fu_STR&& str) noexcept
+inline fu_STR operator+(const T& t, fu_STR&& str) noexcept
 {
     str.splice(fu_ZERO(), fu_ZERO(), fu_TO_STR(t));
     return static_cast<fu_STR&&>(str);
@@ -253,7 +253,7 @@ fu_INL fu_STR operator+(const fu_STRLIT& lit, const fu_STR& str) noexcept {
 
 // Duct tape.
 
-fu_STR operator+(const fu_STRLIT& a, const fu_STRLIT& b) noexcept
+inline fu_STR operator+(const fu_STRLIT& a, const fu_STRLIT& b) noexcept
 {
     // TODO static assert this must never happen -
     //  must compile to a single literal -

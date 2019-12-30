@@ -48,14 +48,16 @@ struct s_Target;
 struct s_Template;
 struct s_Token;
 struct s_Type;
+fu_STR compile_testcase(const fu_STR&);
 int ZERO();
-fu_STR ZERO(const fu_STR&, fu_STR&&);
+s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
 void runTestSuite();
 bool operator==(const s_Type&, const s_Type&);
 int copyOrMove(const int&, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Type createArray(const s_Type&, s_Module&);
 s_Scope listGlobals(const s_Module&);
+void sayHello();
 template <typename T>
 fu_VEC<T> fu_CONCAT(
     const fu_VEC<T>& a,
@@ -4623,24 +4625,35 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     return module.out.cpp;
 }
 
-fu_STR compile_testcase(fu_STR&& src, fu_STR&& fname)
+s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
 {
-    if (!fname.size())
-        fname = "testcase"_fu;
-
     if (!fu::has(src, "fn ZERO()"_fu))
         src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     src += "\nfn main(): i32 ZERO();\n\n"_fu;
     s_TEMP_Context ctx { CTX_PROTO };
     (ctx.files.upsert(fname) = src);
-    return compile(fname, ""_fu, ctx);
+    compile(fname, ""_fu, ctx);
+    return ctx;
+}
+
+fu_STR compile_testcase(const fu_STR& src)
+{
+    fu_STR fname = "testcase"_fu;
+    s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
+    for (int i = 1; (i < ctx.modules.size()); i++)
+    {
+        if ((ctx.modules[i].fname == fname))
+            return ctx.modules[i].out.cpp;
+
+    };
+    fu_THROW("Assertion failed.");
 }
 inline const fu_STR TEST_SRC = "\n\n    fn test(one: i32)\n    {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn ZERO(): i32\n    {\n        return test(1) - 17;\n    }\n\n"_fu;
 
 int ZERO()
 {
-    fu_STR cpp = compile_testcase(fu_STR(TEST_SRC), ""_fu);
+    fu_STR cpp = compile_testcase(TEST_SRC);
     return (fu::lfind(cpp, "main()"_fu) ? 0 : 101);
 }
 
@@ -4662,44 +4675,86 @@ fu_STR locate_PRJDIR()
 inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
 
-struct sf_buildAndRun
+fu_STR buildAndRun(const s_TEMP_Context& ctx)
 {
-    const fu_STR& cpp;
     int code {};
     fu_STR stdout {};
-    fu_STR hash = fu::hash_tea(cpp);
-    fu_STR F = ((((PRJDIR + "build.cpp/tea-"_fu) + hash) + "-"_fu) + cpp.size());
-    fu_STR& ERR()
+    fu_VEC<fu_STR> Fs {};
+    int len_all {};
+    for (int i = 1; (i < ctx.modules.size()); i++)
     {
-        fu::file_write((PRJDIR + "build.cpp/failing-testcase.cpp"_fu), cpp);
+        const s_Module& module = ctx.modules[i];
+        const fu_STR& cpp = module.out.cpp;
+        fu_STR F = ((((PRJDIR + "build.cpp/o-"_fu) + fu::hash_tea(cpp)) + "-"_fu) + cpp.size());
+        Fs.push(F);
+        len_all += cpp.size();
+    };
+    ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (Fs));
+    fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu_JOIN(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    const auto& ERR = [&](const fu_STR& cpp) -> fu_STR&
+    {
+        if (cpp.size())
+        {
+            fu_STR fname = (PRJDIR + "build.cpp/failing-testcase.cpp"_fu);
+            (std::cout << ("  WRITE "_fu + fname) << "\n");
+            fu::file_write(fname, cpp);
+        };
         if (!stdout.size())
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
         return stdout;
     };
-    fu_STR buildAndRun_EVAL()
+    if ((fu::file_size(F_exe) < 1))
     {
-        if ((fu::file_size((F + ".exe"_fu)) <= 0))
+        for (int i = 0; (i < Fs.size()); i++)
         {
-            fu::file_write((F + ".cpp"_fu), cpp);
-            (std::cout << "  BUILD "_fu << F << ".cpp"_fu << "\n");
+            fu_STR F { Fs.mutref(i) };
+            fu_STR F_cpp = (F + ".cpp"_fu);
+            fu_STR F_tmp = (F + ".o.tmp"_fu);
+            fu_STR F_obj = (F + ".o"_fu);
+            if ((fu::file_size(F_obj) < 1))
+            {
+                const fu_STR& cpp = ctx.modules[(i + 1)].out.cpp;
+                fu::file_write(F_cpp, cpp);
+                (std::cout << "  BUILD "_fu << F_cpp << "\n");
+                const f64 t0 = fu::now_hr();
+                code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
+                if (code)
+                    return ERR(cpp);
+
+                const f64 t1 = fu::now_hr();
+                (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
+            };
+        };
+        fu_STR F_tmp = (F_exe + ".tmp"_fu);
+        fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
+        for (int i = 0; (i < Fs.size()); i++)
+            cmd += (Fs.mutref(i) + ".o "_fu);
+
+        
+        {
+            (std::cout << "   LINK "_fu << F_exe << "\n");
             const f64 t0 = fu::now_hr();
-            code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F) + ".o "_fu) + F) + ".cpp 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((((((GCC_CMD + "-o "_fu) + F) + ".tmp "_fu) + F) + ".o 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F) + ".tmp"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((((("mv "_fu + F) + ".tmp "_fu) + F) + ".exe"_fu), stdout); if (_) return _; } return fu::shell_exec((("rm "_fu + F) + ".o"_fu), stdout); }());
+            code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
             if (code)
-                return ERR();
+                return ERR(""_fu);
 
             const f64 t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
         };
-        code = fu::shell_exec((F + ".exe"_fu), stdout);
+        if ((Fs.size() == 1))
+            code = fu::shell_exec((("rm "_fu + Fs.mutref(0)) + ".o 2>&1"_fu), stdout);
+
         if (code)
-            return ERR();
+            return ERR(""_fu);
 
-        return ""_fu;
     };
-};
+    code = fu::shell_exec(F_exe, stdout);
+    if (code)
+        return ERR(""_fu);
 
-#define buildAndRun(...) ((sf_buildAndRun { __VA_ARGS__ }).buildAndRun_EVAL())
+    return ""_fu;
+}
 inline const fu_VEC<fu_STR> NICE_THINGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<16> { "LOOKING GOOD TODAY !"_fu, "PASSING TESTS LIKE A BOSS !"_fu, "THIS IS SOME TOP NOTCH SHIT !"_fu, "VALUE ADDED !"_fu, "GOING STRONG !"_fu, "KILLIN IT !"_fu, "POWER LEVEL INCREASED !"_fu, "NOW MAKE ME BETTER AGAIN !"_fu, "NOW MAKE ME EVEN MORE BETTER !"_fu, "ALL CLEAR !"_fu, "UPGRADE ACCEPTED !"_fu, "YOU'RE THE BEST MAN !"_fu, "I LOVE YOU YOU !"_fu, "MORE IS MORE !"_fu, "THIS IS AWESOME !"_fu, "THIS IS AWESOME !"_fu } };
 
 void saySomethingNice()
@@ -4724,14 +4779,17 @@ void saySomethingNice()
 
 }
 
-fu_STR ZERO(const fu_STR& src, fu_STR&& fname)
+s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
 {
-    fu_STR cpp = compile_testcase(fu_STR(src), fu_STR(fname));
-    fu_STR result = buildAndRun(cpp);
+    if (!fname.size())
+        fname = "testcase.ZERO"_fu;
+
+    s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
+    fu_STR result = buildAndRun(ctx);
     if (result.size())
         fu_THROW(result);
 
-    return cpp;
+    return ctx;
 }
 
 int FAIL(const fu_STR& src)
@@ -4739,7 +4797,7 @@ int FAIL(const fu_STR& src)
     fu_STR cpp;
     try
     {
-        cpp = compile_testcase(fu_STR(src), ""_fu);
+        cpp = compile_testcase(src);
     }
     catch (const std::exception& o_0)
     {
@@ -4751,12 +4809,13 @@ int FAIL(const fu_STR& src)
     fu_THROW(("DID NOT THROW: "_fu + cpp));
 }
 
-void updateCPPFile(const fu_STR& path, const fu_STR& cpp)
+void updateCPPFile(const s_Module& module)
 {
-    fu_STR fname = (path + ".cpp"_fu);
+    fu_STR fname = (module.fname + ".cpp"_fu);
+    const fu_STR& cpp = module.out.cpp;
     if ((fu::file_read(fname) != cpp))
     {
-        fu::file_write(fname, cpp);
+        fu::file_write(fname, module.out.cpp);
         (std::cout << ("WROTE "_fu + fname) << "\n");
     };
 }
@@ -4770,13 +4829,20 @@ void FU_FILE(fu_STR&& fname)
         fu_THROW(("BAD FILE: "_fu + fname));
 
     const f64 t0 = fu::now_hr();
-    fu_STR cpp = ZERO(src, fu_STR(fname));
+    s_TEMP_Context ctx = ZERO(src, fu_STR(fname));
     const f64 t1 = fu::now_hr();
     const f64 tt = (t1 - t0);
     (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     if (WRITE_COMPILER)
-        updateCPPFile(fname, cpp);
+    {
+        for (int i = 1; (i < ctx.modules.size()); i++)
+            updateCPPFile(ctx.modules[i]);
 
+    };
+    
+    {
+        sayHello();
+    };
 }
 
 void runTestSuiteAndBuildCompiler()

@@ -16,7 +16,7 @@ namespace fu {
 LF_FreeList g_lffl_MIN_ALLOC;
 #endif
 
-char* pow2mem_alloc(size_t& inout_bytes) noexcept
+inline char* pow2mem_alloc(size_t& inout_bytes) noexcept
 {
     size_t bytes = inout_bytes;
     {
@@ -53,7 +53,7 @@ char* pow2mem_alloc(size_t& inout_bytes) noexcept
 
 ////////////////////////////
 
-void pow2mem_free(char* memory, size_t bytes)
+inline void pow2mem_free(char* memory, size_t bytes)
 {
     bytes = fu_NEXT_POW2(uint32_t(bytes));
 

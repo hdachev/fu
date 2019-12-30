@@ -7,6 +7,7 @@
 #ifndef ISOLATE_FAILING_TESTCASE
 
 #define main auto_main
+#include "../../src/hello.fu.cpp"
 #include "../../src/compiler.fu.cpp"
 #undef  main
 
