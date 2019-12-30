@@ -106,12 +106,17 @@ struct Token
 {
     kind:   string;
     value:  string;
-    fname:  string;
 
     idx0:   i32;
     idx1:   i32;
     line:   i32;
     col:    i32;
+};
+
+struct TokenIdx // 8b vs 48b, nobrainer
+{
+    modid:  i32;
+    tokidx: i32;
 };
 
 struct LexerOutput
@@ -134,8 +139,7 @@ fn lex(src: string, fname: string): LexerOutput
         let col = idx0 - lidx;
 
         tokens.push(
-            Token(  :kind, :value, :idx0, :idx1,
-                    :fname, :line, :col ));
+            Token( :kind, :value, :idx0, :idx1, :line, :col ));
     }
 
     fn err_str(kind: string, idx0: i32, reason: string)
@@ -466,7 +470,7 @@ pub struct Node
     flags:      i32;
     value:      string;
     items:      Node[];
-    token:      Token;
+    token:      TokenIdx;
 };
 
 
@@ -585,10 +589,10 @@ pub struct ParserOutput
     imports:    string[];
 }
 
-pub fn parse(fname: string, _tokens: Token[]): ParserOutput
+pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 {
     mut _idx        = 0;
-    mut _loc: Token = _tokens[0];
+    mut _loc        = 0;
     mut _col0       = 0;
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
@@ -603,13 +607,14 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn fail(mut reason: string = '')
     {
-        let here = _tokens[_idx];
+        let loc  = tokens[_loc];
+        let here = tokens[_idx];
 
         if (!reason)
             reason = 'Unexpected `' + here.value + '`.';
 
-        let l0 = _loc.line;
-        let c0 = _loc.col;
+        let l0 = loc.line;
+        let c0 = loc.col;
 
         let l1 = here.line;
         let c1 = here.col;
@@ -635,7 +640,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     {
         return Node(
             :kind, :flags, :value, :items,
-                token: _loc || throw('no loc'));
+                token: TokenIdx(:modid, _loc) );
     };
 
     fn miss() Node();
@@ -645,7 +650,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn consume(kind: string, value: string = ''): Token
     {
-        let token = _tokens[_idx];
+        let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
         {
             _idx++;
@@ -657,7 +662,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn tryConsume(kind: string, value: string = ''): Token
     {
-        let token = _tokens[_idx];
+        let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
         {
             _idx++;
@@ -672,7 +677,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn parseRoot(): Node
     {
-        _loc = _tokens[_idx];
+        _loc = _idx;
 
         mut out = make('root',
             parseBlockLike('eof', 'eof'));
@@ -724,7 +729,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     fn parseStructItem(): Node
     {
         //////////////////////////////
-        let token = _tokens[_idx++];
+        let token = tokens[_idx++];
 
         if (token.kind == 'op' || token.kind == 'id')
             if (token.value == 'fn')
@@ -770,13 +775,13 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
         endKind: string, endVal: string,
         mode: string = ''): Node[]
     {
-        let line0 = _tokens[_idx].line;
+        let line0 = tokens[_idx].line;
         let col00 = _col0;
 
         mut items: Node[] = [];
         while (true)
         {
-            let token = _tokens[_idx];
+            let token = tokens[_idx];
             if (token.kind == endKind && token.value == endVal)
             {
                 // Done.
@@ -858,7 +863,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     {
         ///////////////////////////////////////////////
         let loc0  = _loc;
-        let token = _loc = _tokens[_idx++] || fail();
+        let token = tokens[_loc = _idx++] || fail();
         ///////////////////////////////////////////////
 
         if (token.kind == 'op')
@@ -1172,27 +1177,26 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
 
     fn parseExpression(p1 = _precedence): Node
     {
-        let p0      = _precedence;
-        let loc0    = _loc;
-
         //////////////////////////////
+        let p0 = _precedence;
+        let loc0 = _loc;
         _precedence = p1;
-        _loc        = _tokens[_idx] || fail();
+        _loc = _idx;
         //////////////////////////////
 
-        mut head    = parseExpressionHead();
+        mut head = parseExpressionHead();
         {
             mut out: Node;
-            while (out  = tryParseExpressionTail(head))
+            while (out = tryParseExpressionTail(head))
             {
-                _loc    = _tokens[_idx] || fail();
-                head    = out;
+                _loc = _idx;
+                head = out;
             };
         }
 
         //////////////////////////////
         _precedence = p0;
-        _loc        = loc0;
+        _loc = loc0;
         //////////////////////////////
 
         return head;
@@ -1230,7 +1234,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     fn tryParseExpressionTail(head: Node): Node
     {
         // Consume.
-        let token = _tokens[_idx++];
+        let token = tokens[_idx++];
         if (token.kind == 'op')
         {
             let v = token.value;
@@ -1255,7 +1259,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     fn parseExpressionHead(): Node
     {
         //////////////////////////////
-        let token = _tokens[_idx++];
+        let token = tokens[_idx++];
         //////////////////////////////
 
         {
@@ -1404,17 +1408,17 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
             mut name = '';
             mut autoName = false;
 
-            if (_tokens[_idx    ] .kind == 'id' &&
-                _tokens[_idx + 1] .kind == 'op' &&
-                _tokens[_idx + 1].value == ':')
+            if (tokens[_idx    ] .kind == 'id' &&
+                tokens[_idx + 1] .kind == 'op' &&
+                tokens[_idx + 1].value == ':')
             {
-                name = _tokens[_idx].value;
+                name = tokens[_idx].value;
                 _idx += 2;
 
                 flags |= F_NAMED_ARGS;
             }
-            else if (_tokens[_idx].kind == 'op'
-                  && _tokens[_idx].value == ':')
+            else if (tokens[_idx].kind == 'op'
+                  && tokens[_idx].value == ':')
             {
                 autoName = true;
                 _idx++;
@@ -1618,7 +1622,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
         let init = parseLetStmt();
         let cond = parseExpressionStatement();
 
-        let token = _tokens[_idx];
+        let token = tokens[_idx];
         let post = token.kind == 'op' && token.value == ')'
             ? parseEmpty()
             : parseExpression();
@@ -1660,7 +1664,7 @@ pub fn parse(fname: string, _tokens: Token[]): ParserOutput
     // Good to go.
 
     // Check EOF.
-    _tokens[_tokens.len - 1].kind == 'eof' || fail(
+    tokens[tokens.len - 1].kind == 'eof' || fail(
         'Missing `eof` token.');
 
     // PARSE END
@@ -1955,9 +1959,8 @@ pub struct Module
     stats:      ModuleStats;
 };
 
-fn MODID(implicit module: &Module) {
-    return module.modid;
-}
+fn MODID(implicit module: Module): i32
+    module.modid;
 
 
 // The temp context -
@@ -1971,6 +1974,12 @@ pub struct TEMP_Context
     modules: Module[];
     files: Map(string, string);
 };
+
+pub fn _token(implicit ctx: TEMP_Context, idx: TokenIdx): Token
+    ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+
+pub fn _fname(implicit ctx: TEMP_Context, idx: TokenIdx): string
+    ctx.modules[idx.modid].fname;
 
 pub fn getFile(
     implicit ctx: &mut TEMP_Context,
@@ -2199,9 +2208,14 @@ struct SolvedNode
 {
     kind:   string;
     flags:  i32;
+
+    ////////////////////////////////
+    // room for one more i32 here //
+    ////////////////////////////////
+
     value:  string;
     items:  SolvedNode[];
-    token:  Token;
+    token:  TokenIdx;
 
     type:   Type;
     target: Target;
@@ -2343,7 +2357,7 @@ fn solve(
 {
     // TODO FIX next
     mut _scope: Scope;
-    mut _here:  Token;
+    mut _here:  TokenIdx;
 
     // Needs template reset.
     mut _current_fn:    SolvedNode;
@@ -2391,12 +2405,14 @@ fn solve(
 
     fn fail(mut reason: string = ''): never
     {
-        if (!reason)
-            reason = 'Unexpected `' + _here.value + '`.';
+        let here = _here._token;
 
-        let fname = _here.fname;
-        let l0    = _here.line;
-        let c0    = _here.col;
+        if (!reason)
+            reason = 'Unexpected `' + here.value + '`.';
+
+        let fname = _here._fname;
+        let l0 = here.line;
+        let c0 = here.col;
 
         let addr = '@' + l0 + ':' + c0;
 
@@ -4519,7 +4535,7 @@ fn solvePrelude(): TEMP_Context
     let implicit mut module = getModule('');
 
     let lexed   = lex(prelude_src, '__prelude');
-    let root    = parse('__prelude', lexed.tokens).root;
+    let root    = parse(0, '__prelude', :lexed.tokens).root;
     let solved  = solve(root);
 
     module.out.solve = solved;
@@ -6192,7 +6208,7 @@ fn compile(fname: string, via: string = ''): string
         let t1 = now_hr();
         module.in = ModuleInputs(
             :src, lex: lexer_result,
-            :parse( :fname, lexer_result.tokens));
+            :parse( :module.modid, :fname, :lexer_result.tokens ));
 
         let t2 = now_hr();
 

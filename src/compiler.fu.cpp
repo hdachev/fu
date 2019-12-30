@@ -47,6 +47,7 @@ struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
+struct s_TokenIdx;
 struct s_Type;
 fu_STR compile_testcase(const fu_STR&);
 int ZERO();
@@ -135,25 +136,15 @@ template <typename T>
             what.data(), size_t(what.size())));
 }
 
-struct s_Token
+struct s_TokenIdx
 {
-    fu_STR kind;
-    fu_STR value;
-    fu_STR fname;
-    int idx0;
-    int idx1;
-    int line;
-    int col;
+    int modid;
+    int tokidx;
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
-            || fname.size()
-            || idx0
-            || idx1
-            || line
-            || col
+            || modid
+            || tokidx
         ;
     }
 };
@@ -192,7 +183,7 @@ struct s_SolvedNode
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
-    s_Token token;
+    s_TokenIdx token;
     s_Type type;
     s_Target target;
     explicit operator bool() const noexcept
@@ -205,6 +196,27 @@ struct s_SolvedNode
             || token
             || type
             || target
+        ;
+    }
+};
+
+struct s_Token
+{
+    fu_STR kind;
+    fu_STR value;
+    int idx0;
+    int idx1;
+    int line;
+    int col;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || value.size()
+            || idx0
+            || idx1
+            || line
+            || col
         ;
     }
 };
@@ -241,7 +253,7 @@ struct s_Node
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
-    s_Token token;
+    s_TokenIdx token;
     explicit operator bool() const noexcept
     {
         return false
@@ -574,7 +586,7 @@ struct sf_lex
     void token(const fu_STR& kind, const fu_STR& value, const int& idx0, const int& idx1)
     {
         const int col = (idx0 - lidx);
-        tokens.push(s_Token { fu_STR(kind), fu_STR(value), fu_STR(fname), int(idx0), int(idx1), int(line), int(col) });
+        tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
     };
     void err_str(const fu_STR& kind, const int& idx0, const fu_STR& reason)
     {
@@ -907,10 +919,11 @@ inline const int LOOP_POST_COND = 4;
 
 struct sf_parse
 {
+    const int& modid;
     const fu_STR& fname;
-    const fu_VEC<s_Token>& _tokens;
+    const fu_VEC<s_Token>& tokens;
     int _idx = 0;
-    s_Token _loc { _tokens[0] };
+    int _loc = 0;
     int _col0 = 0;
     int _precedence = P_RESET;
     int _fnDepth = 0;
@@ -921,12 +934,13 @@ struct sf_parse
     fu_VEC<fu_STR> _imports {};
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
-        const s_Token& here = _tokens[_idx];
+        const s_Token& loc = tokens[_loc];
+        const s_Token& here = tokens[_idx];
         if (!reason.size())
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
-        const int l0 = _loc.line;
-        const int c0 = _loc.col;
+        const int& l0 = loc.line;
+        const int& c0 = loc.col;
         const int& l1 = here.line;
         const int& c1 = here.col;
         fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
@@ -938,15 +952,15 @@ struct sf_parse
     };
     s_Node make(const fu_STR& kind, const fu_VEC<s_Node>& items, const int& flags, const fu_STR& value)
     {
-        return s_Node { fu_STR(kind), int(flags), fu_STR(value), fu_VEC<s_Node>(items), s_Token(([&]() -> s_Token& { { s_Token& _ = _loc; if (_) return _; } fu_THROW("no loc"_fu); }())) };
+        return s_Node { fu_STR(kind), int(flags), fu_STR(value), fu_VEC<s_Node>(items), s_TokenIdx { int(modid), int(_loc) } };
     };
     s_Node miss()
     {
-        return s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} };
+        return s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} };
     };
     s_Token consume(const fu_STR& kind, const fu_STR& value)
     {
-        const s_Token& token = _tokens[_idx];
+        const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value.size() || (token.value == value))))
         {
             _idx++;
@@ -956,17 +970,17 @@ struct sf_parse
     };
     s_Token tryConsume(const fu_STR& kind, const fu_STR& value)
     {
-        const s_Token& token = _tokens[_idx];
+        const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value.size() || (token.value == value))))
         {
             _idx++;
             return token;
         };
-        return s_Token { fu_STR{}, fu_STR{}, fu_STR{}, int{}, int{}, int{}, int{} };
+        return s_Token { fu_STR{}, fu_STR{}, int{}, int{}, int{}, int{} };
     };
     s_Node parseRoot()
     {
-        _loc = _tokens[_idx];
+        _loc = _idx;
         s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, ""_fu), 0, ""_fu);
         if (_implicits)
             out.flags |= F_IMPLICIT;
@@ -994,7 +1008,7 @@ struct sf_parse
     };
     s_Node parseStructItem()
     {
-        const s_Token& token = _tokens[_idx++];
+        const s_Token& token = tokens[_idx++];
         if (((token.kind == "op"_fu) || (token.kind == "id"_fu)))
         {
             if ((token.value == "fn"_fu))
@@ -1017,12 +1031,12 @@ struct sf_parse
     };
     fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
     {
-        const int& line0 = _tokens[_idx].line;
+        const int& line0 = tokens[_idx].line;
         const int col00 = _col0;
         fu_VEC<s_Node> items = fu_VEC<s_Node>{};
         while (true)
         {
-            const s_Token& token = _tokens[_idx];
+            const s_Token& token = tokens[_idx];
             if (((token.kind == endKind) && (token.value == endVal)))
             {
                 _col0 = col00;
@@ -1069,8 +1083,8 @@ struct sf_parse
     };
     s_Node parseStatement()
     {
-        s_Token loc0 { _loc };
-        s_Token token { (_loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx++]; if (_) return _; } fail(""_fu); }())) };
+        const int loc0 = _loc;
+        const s_Token& token = ([&]() -> const s_Token& { { const s_Token& _ = tokens[(_loc = _idx++)]; if (_) return _; } fail(""_fu); }());
         if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
@@ -1295,7 +1309,7 @@ struct sf_parse
         s_Node ret = parseLet();
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = createLet(consume("id"_fu, ""_fu).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
+            s_Node err = createLet(consume("id"_fu, ""_fu).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
             s_Node cahtch = parseStatement();
             return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cahtch } }, 0, ""_fu);
         };
@@ -1317,7 +1331,7 @@ struct sf_parse
 
         fu_STR id = consume("id"_fu, ""_fu).value;
         s_Node type = tryPopTypeAnnot();
-        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
+        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -1333,16 +1347,16 @@ struct sf_parse
     s_Node parseExpression(const int p1)
     {
         const int p0 = _precedence;
-        s_Token loc0 { _loc };
+        const int loc0 = _loc;
         _precedence = p1;
-        _loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx]; if (_) return _; } fail(""_fu); }());
+        _loc = _idx;
         s_Node head = parseExpressionHead();
         
         {
             s_Node out {};
             while ((out = tryParseExpressionTail(head)))
             {
-                _loc = ([&]() -> const s_Token& { { const s_Token& _ = _tokens[_idx]; if (_) return _; } fail(""_fu); }());
+                _loc = _idx;
                 head = out;
             };
         };
@@ -1376,7 +1390,7 @@ struct sf_parse
     };
     s_Node tryParseExpressionTail(const s_Node& head)
     {
-        const s_Token& token = _tokens[_idx++];
+        const s_Token& token = tokens[_idx++];
         if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
@@ -1404,7 +1418,7 @@ struct sf_parse
     };
     s_Node parseExpressionHead()
     {
-        const s_Token& token = _tokens[_idx++];
+        const s_Token& token = tokens[_idx++];
         
         {
             const fu_STR& k = token.kind;
@@ -1519,13 +1533,13 @@ struct sf_parse
             first = false;
             fu_STR name = ""_fu;
             bool autoName = false;
-            if (((_tokens[_idx].kind == "id"_fu) && (_tokens[(_idx + 1)].kind == "op"_fu) && (_tokens[(_idx + 1)].value == ":"_fu)))
+            if (((tokens[_idx].kind == "id"_fu) && (tokens[(_idx + 1)].kind == "op"_fu) && (tokens[(_idx + 1)].value == ":"_fu)))
             {
-                name = _tokens[_idx].value;
+                name = tokens[_idx].value;
                 _idx += 2;
                 flags |= F_NAMED_ARGS;
             }
-            else if (((_tokens[_idx].kind == "op"_fu) && (_tokens[_idx].value == ":"_fu)))
+            else if (((tokens[_idx].kind == "op"_fu) && (tokens[_idx].value == ":"_fu)))
             {
                 autoName = true;
                 _idx++;
@@ -1594,7 +1608,7 @@ struct sf_parse
         ((_fnDepth > 0) || ((void)_idx--, fail(""_fu)));
         _numReturns++;
         if (tryConsume("op"_fu, ";"_fu))
-            return createReturn(s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_Token{} });
+            return createReturn(s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
 
         return createReturn(parseExpressionStatement());
     };
@@ -1654,7 +1668,7 @@ struct sf_parse
         tryConsume("id"_fu, "let"_fu);
         s_Node init = parseLetStmt();
         s_Node cond = parseExpressionStatement();
-        const s_Token& token = _tokens[_idx];
+        const s_Token& token = tokens[_idx];
         s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(int(_precedence)));
         consume("op"_fu, ")"_fu);
         s_Node body = parseStatement();
@@ -1684,7 +1698,7 @@ struct sf_parse
     };
     s_ParserOutput parse_EVAL()
     {
-        ((_tokens[(_tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
+        ((tokens[(tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
         s_Node root = parseRoot();
         return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
     };
@@ -1823,9 +1837,19 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
     return s_Type { fu_STR(a.canon), (a.quals & b.quals), int(a.modid) };
 }
 
-const int& MODID(const s_Module& module)
+int MODID(const s_Module& module)
 {
     return module.modid;
+}
+
+s_Token _token(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+{
+    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+}
+
+fu_STR _fname(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+{
+    return ctx.modules[idx.modid].fname;
 }
 
 fu_STR& getFile(const fu_STR& path, s_TEMP_Context& ctx)
@@ -1878,7 +1902,7 @@ s_Type initStruct(const fu_STR& id, const int& flags, s_Module& module)
     fu_STR canon = ("s_"_fu + id);
     s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu_THROW("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), int(MODID(module)) };
+    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module) };
 }
 
 void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
@@ -1924,7 +1948,7 @@ s_Type createArray(const s_Type& item, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
     fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
     registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), int(MODID(module)) };
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module) };
 }
 
 bool type_isString(const s_Type& type)
@@ -1957,7 +1981,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), int(MODID(module)) };
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module) };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
@@ -1996,7 +2020,7 @@ void Scope_pop(s_Scope& scope, const int& memo)
 
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial, const s_Module& module)
 {
-    const int& modid = MODID(module);
+    const int modid = MODID(module);
     s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
@@ -2015,7 +2039,7 @@ struct sf_solve
     const s_TEMP_Context& ctx;
     s_Module& module;
     s_Scope _scope {};
-    s_Token _here {};
+    s_TokenIdx _here {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
@@ -2045,12 +2069,13 @@ struct sf_solve
     };
     [[noreturn]] fu_NEVER fail(fu_STR&& reason)
     {
+        s_Token here = _token(_here, ctx);
         if (!reason.size())
-            reason = (("Unexpected `"_fu + _here.value) + "`."_fu);
+            reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
-        fu_STR fname { _here.fname };
-        const int l0 = _here.line;
-        const int c0 = _here.col;
+        fu_STR fname = _fname(_here, ctx);
+        const int& l0 = here.line;
+        const int& c0 = here.col;
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
         fu_THROW(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
@@ -2149,13 +2174,13 @@ struct sf_solve
     s_SolvedNode tryDefaultInit(const s_Type& type)
     {
         if ((type.quals & q_ref))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
+            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
 
         return createDefaultInit(type);
     };
     s_SolvedNode createDefaultInit(const s_Type& type)
     {
-        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
+        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
     };
     s_SolvedNode solveDefinit(const s_Type& type)
     {
@@ -2186,7 +2211,7 @@ struct sf_solve
                 arg_n.unshift("using"_fu);
 
             if (arg_d)
-                arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+                arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
 
         };
         return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_Target(viaIdx), s_Target(overloadIdx) }, module);
@@ -2546,15 +2571,15 @@ struct sf_solve
     };
     s_SolvedNode createEmpty()
     {
-        return s_SolvedNode { "empty"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type(t_void), s_Target{} };
+        return s_SolvedNode { "empty"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type(t_void), s_Target{} };
     };
     s_Node createTypeParam(const fu_STR& value)
     {
-        return s_Node { "typeparam"_fu, int{}, fu_STR(value), fu_VEC<s_Node>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
+        return s_Node { "typeparam"_fu, int{}, fu_STR(value), fu_VEC<s_Node>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(""_fu); }())) };
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
-        return __solveFn(false, false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }, -1);
+        return __solveFn(false, false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }, -1);
     };
     s_SolvedNode uSolveFn(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -2578,7 +2603,7 @@ struct sf_solve
             return out;
         };
         if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
+            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
 
         const fu_VEC<s_Node>& inItems = n_fn.items;
         ((inItems.size() >= FN_RET_BACK) || fail(""_fu));
@@ -2624,7 +2649,7 @@ struct sf_solve
             };
             
             {
-                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
                 outItems.mutref((outItems.size() + FN_RET_BACK)) = s_ret;
             };
             if (solve)
@@ -2654,7 +2679,7 @@ struct sf_solve
     {
         fu_STR mangle = ((target.modid + "#"_fu) + target.index);
         mangle += TODO_memoize_mangler(args);
-        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
+        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
             s_SolvedNode spec = doTrySpecialize(tempatle, args);
@@ -2695,7 +2720,7 @@ struct sf_solve
             {
                 const bool ok = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
                 if (!ok)
-                    return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
+                    return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
 
             };
         };
@@ -2716,14 +2741,14 @@ struct sf_solve
                 };
             };
             if ((caseIdx < 0))
-                return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} };
+                return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
 
         };
         s_SolvedNode current_fn0 {};
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         const int scope0 = Scope_push(_scope);
-        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} }, caseIdx);
+        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }, caseIdx);
         (specialized || fail(""_fu));
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
@@ -2732,7 +2757,7 @@ struct sf_solve
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
     {
-        return __solveStruct(false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+        return __solveStruct(false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
     };
     s_SolvedNode uSolveStruct(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -3023,7 +3048,7 @@ struct sf_solve
     };
     s_Node createRead(const fu_STR& id)
     {
-        return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())) };
+        return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(""_fu); }())) };
     };
     s_SolvedNode solveCall(const s_Node& node)
     {
@@ -3075,7 +3100,7 @@ struct sf_solve
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
     {
-        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_Token(([&]() -> s_Token& { { s_Token& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
+        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(""_fu); }())), s_Type(type), s_Target{} };
     };
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
@@ -3134,8 +3159,8 @@ struct sf_solve
         const s_Node& n1 = node.items[1];
         const s_Node& n2 = node.items[2];
         s_SolvedNode cond = solveNode(n0, t_bool);
-        s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
-        s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+        s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+        s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
         s_SolvedNode priExpr { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()) };
         s_SolvedNode secExpr { ([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
@@ -3239,7 +3264,7 @@ struct sf_solve
     };
     s_SolvedNode solved(const s_Node& node, const s_Type& type, const fu_VEC<s_SolvedNode>& items)
     {
-        return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_Token(node.token), s_Type(type), s_Target{} };
+        return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_TokenIdx(node.token), s_Type(type), s_Target{} };
     };
     s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_Target& target, fu_VEC<s_SolvedNode>&& args)
     {
@@ -3276,12 +3301,12 @@ struct sf_solve
         if (WARN_ON_IMPLICIT_COPY)
         {
         };
-        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_Token(node.token), clear_refs(node.type), s_Target{} };
+        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
     };
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> result {};
-        s_Token here0 { _here };
+        s_TokenIdx here0 { _here };
         result.resize(nodes.size());
         for (int i = 0; (i < nodes.size()); i++)
         {
@@ -3292,7 +3317,7 @@ struct sf_solve
             };
             if (!isUnordered(node.kind))
             {
-                _here = ([&]() -> const s_Token& { { const s_Token& _ = node.token; if (_) return _; } return _here; }());
+                _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
                 result.mutref(i) = solveNode(node, type);
                 continue;
             };
@@ -3310,7 +3335,7 @@ struct sf_solve
                     i1 = i;
                     break;
                 };
-                _here = ([&]() -> const s_Token& { { const s_Token& _ = node.token; if (_) return _; } return _here; }());
+                _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
                 result.mutref(i) = unorderedPrep(node);
             };
             for (int i = i0; (i < i1); i++)
@@ -3318,7 +3343,7 @@ struct sf_solve
                 const s_Node& node = nodes[i];
                 if (node)
                 {
-                    _here = ([&]() -> const s_Token& { { const s_Token& _ = node.token; if (_) return _; } return _here; }());
+                    _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
                     result.mutref(i) = unorderedSolve(node, result.mutref(i));
                 };
             };
@@ -3368,7 +3393,7 @@ s_TEMP_Context solvePrelude()
     s_TEMP_Context ctx {};
     s_Module module { getModule(""_fu, ctx) };
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
-    s_Node root = parse("__prelude"_fu, lexed.tokens).root;
+    s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
     s_SolverOutput solved = solve(root, ctx, module);
     module.out.solve = solved;
     setModule(module, ctx);
@@ -3682,7 +3707,7 @@ struct sf_cpp_codegen
             return ""_fu;
 
         fu_STR evalName = (fn.value + "_EVAL"_fu);
-        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_Token(fn.token), s_Type(t_void), s_Target{} } } }, s_Token(fn.token), s_Type(t_void), s_Target{} };
+        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_TokenIdx(fn.token), s_Type(t_void), s_Target{} } } }, s_TokenIdx(fn.token), s_Type(t_void), s_Target{} };
         fu_VEC<s_SolvedNode> head = fu_CONCAT(fu_CONCAT(slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)), slice(items, 0, end)), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
         ((_clsrN == 0) || fail(""_fu));
         _clsrN--;
@@ -3823,7 +3848,7 @@ struct sf_cpp_codegen
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(""_fu); }()) + " "_fu) + ID(id));
-        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token{}, s_Type{}, s_Target{} });
+        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
@@ -4597,7 +4622,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
-        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), parse(fname, lexer_result.tokens) };
+        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), parse(module.modid, fname, lexer_result.tokens) };
         const f64 t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);
