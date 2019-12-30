@@ -1,0 +1,65 @@
+
+fn last(s: string)
+    s.len   ? s[s.len - 1]
+            : '';
+
+fn only(s: $T[]): $T
+    s.len == 1 ? s[0] : throw (
+        'LEN != 1: ' + s.len);
+
+fn hasIdentifierChars(id: string) {
+    for (mut i = 0; i < id.len; i++)
+    {
+        let c = id[i];
+        if (c == '_' || c >= 'a' && c <= 'z'
+                     || c >= 'A' && c <= 'Z'
+                     || c >= '0' && c <= '9')
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn path_ext(path: string): string
+{
+    for (mut i = path.len; i --> 0; )
+    {
+        let c = path[i];
+        if (c == '.') return path.slice(i);
+        if (c == '/') break;
+    }
+
+    return '';
+}
+
+fn path_dirname(path: string): string
+{
+    for (mut i = path.len; i --> 0; )
+        if (path[i] == '/')
+            return path.slice(0, i + 1);
+
+    return '';
+}
+
+fn path_normalize(p: string): string {
+    mut path = p.split('/');
+
+    for (mut i = path.len; i --> 0; ) {
+        let part = path[i];
+        if (part == '.' || !part && i > 0 && i < path.len - 1)
+            path.splice(i, 1);
+    }
+
+    for (mut i = 1; i < path.len; i++) {
+        if (path[i] == '..')
+            path.splice(--i, 2);
+    }
+
+    return path.join('/');
+}
+
+fn path_join(a: string, b: string)
+    b && b[0] == '/'    ? b
+                        : path_normalize(a + '/' + b);
