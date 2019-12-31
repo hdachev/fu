@@ -3366,9 +3366,18 @@ pub fn cpp_codegen(
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
 
-        mut src = id.hasIdentifierChars
-                ? '\n' + annot + ' ' + id + '('
-                : '\n' + annot + ' operator' + id + '(';
+        let isOp    = !id.hasIdentifierChars;
+
+        // TODO FIX
+        //  Running into issues with attempting to forward declare
+        //   builtin operators specialized in other modules
+        //    when importing their inline const stuff - a perfect storm.
+        if (isOp && id != '==')
+            return;
+
+        mut src = isOp
+                ? '\n' + annot + ' operator' + id + '('
+                : '\n' + annot + ' ' + id + '(';
 
         let arg_t = overload.args;
         for (mut i = 0; i < arg_t.len; i++)
@@ -3676,6 +3685,30 @@ pub fn cpp_codegen(
 
         let id = target.name || fail();
 
+        if (target.kind == 'global')
+        {
+            if (node.target.modid != module.modid)
+                cgForeignGlobal(node.target);
+
+            return ID(id); // TODO ensure const emit.
+        }
+
+        if (target.kind == 'var')
+            return ID(id);
+
+        if (target.kind == 'field')
+        {
+            mut sep = '.';
+            let parent = lookupType(node.items[0].type);
+            if (parent.flags & F_DESTRUCTOR)
+                sep = '.data.';
+
+            return items[0] + sep + ID(id);
+        }
+
+        if (node.target.modid && node.target.modid != module.modid)
+            ensureFwdDecl(node.target);
+
         if (hasNonIdentifierChars(id))
         {
             let nodes = node.items  || fail();
@@ -3741,27 +3774,6 @@ pub fn cpp_codegen(
                 else
                     return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
             }
-        }
-
-        if (target.kind == 'global')
-        {
-            if (node.target.modid != module.modid)
-                cgForeignGlobal(node.target);
-
-            return ID(id); // TODO ensure const emit.
-        }
-
-        if (target.kind == 'var')
-            return ID(id);
-
-        if (target.kind == 'field')
-        {
-            mut sep = '.';
-            let parent = lookupType(node.items[0].type);
-            if (parent.flags & F_DESTRUCTOR)
-                sep = '.data.';
-
-            return items[0] + sep + ID(id);
         }
 
         if (id == 'len' && items.len == 1)
@@ -3907,9 +3919,6 @@ pub fn cpp_codegen(
         }
 
         id != '__native_pure' || assert();
-
-        if (node.target.modid && node.target.modid != module.modid)
-            ensureFwdDecl(node.target);
 
         return ID(id) + '(' + items.join(', ') + ')';
     }

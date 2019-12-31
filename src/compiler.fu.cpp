@@ -2826,7 +2826,11 @@ struct sf_cpp_codegen
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(""_fu); }());
         const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(""_fu); }());
         fu_STR annot = typeAnnot(ret, M_RETVAL);
-        fu_STR src = (hasIdentifierChars(id) ? (((("\n"_fu + annot) + " "_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu));
+        const bool isOp = !hasIdentifierChars(id);
+        if ((isOp && (id != "=="_fu)))
+            return;
+
+        fu_STR src = (isOp ? (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " "_fu) + id) + "("_fu));
         const fu_VEC<s_Type>& arg_t = overload.args;
         for (int i = 0; (i < arg_t.size()); i++)
         {
@@ -3059,6 +3063,28 @@ struct sf_cpp_codegen
             return (((head.canon + open) + fu::join(items, ", "_fu)) + close);
         };
         const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = target.name; if (_.size()) return _; } fail(""_fu); }());
+        if ((target.kind == "global"_fu))
+        {
+            if ((node.target.modid != module.modid))
+                cgForeignGlobal(node.target);
+
+            return ID(id);
+        };
+        if ((target.kind == "var"_fu))
+            return ID(id);
+
+        if ((target.kind == "field"_fu))
+        {
+            fu_STR sep = "."_fu;
+            const s_Struct& parent = lookupType(node.items[0].type, module, ctx);
+            if ((parent.flags & F_DESTRUCTOR))
+                sep = ".data."_fu;
+
+            return ((items.mutref(0) + sep) + ID(id));
+        };
+        if ((node.target.modid && (node.target.modid != module.modid)))
+            ensureFwdDecl(node.target);
+
         if (hasNonIdentifierChars(id))
         {
             const fu_VEC<s_SolvedNode>& nodes = ([&]() -> const fu_VEC<s_SolvedNode>& { { const fu_VEC<s_SolvedNode>& _ = node.items; if (_) return _; } fail(""_fu); }());
@@ -3104,25 +3130,6 @@ struct sf_cpp_codegen
                     return (((((("("_fu + items.mutref(0)) + " "_fu) + id) + " "_fu) + items.mutref(1)) + ")"_fu);
 
             };
-        };
-        if ((target.kind == "global"_fu))
-        {
-            if ((node.target.modid != module.modid))
-                cgForeignGlobal(node.target);
-
-            return ID(id);
-        };
-        if ((target.kind == "var"_fu))
-            return ID(id);
-
-        if ((target.kind == "field"_fu))
-        {
-            fu_STR sep = "."_fu;
-            const s_Struct& parent = lookupType(node.items[0].type, module, ctx);
-            if ((parent.flags & F_DESTRUCTOR))
-                sep = ".data."_fu;
-
-            return ((items.mutref(0) + sep) + ID(id));
         };
         if (((id == "len"_fu) && (items.size() == 1)))
             return (items.mutref(0) + ".size()"_fu);
@@ -3257,9 +3264,6 @@ struct sf_cpp_codegen
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         ((id != "__native_pure"_fu) || fu::fail("Assertion failed."));
-        if ((node.target.modid && (node.target.modid != module.modid)))
-            ensureFwdDecl(node.target);
-
         return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)
