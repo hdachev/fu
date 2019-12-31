@@ -988,12 +988,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             let expr = parseExpression(P_COMMA);
             if (autoName)
-            {
-                expr.kind == 'call' && expr.value.hasIdentifierChars
-                    || fail('Can\'t :auto_name this expression.');
-
-                name = expr.value;
-            }
+                name = getAutoName(expr);
 
             out_args.push(
                 name    ? createLabel(name, expr)
@@ -1001,6 +996,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
 
         return flags;
+    }
+
+    fn getAutoName(expr: Node): string
+    {
+        if (expr.kind == 'call' && expr.value.hasIdentifierChars)
+            return expr.value;
+
+        if (expr.items)
+            return getAutoName(expr.items[0]);
+
+        return fail('Can\'t :auto_name this expression.');
     }
 
     fn createLabel(id: string, value: Node): Node
@@ -1801,13 +1807,18 @@ struct Overload
     // Arity.
     min: i32;
     max: i32;
+
+    // TODO pack in single array.
     args: Type[];
     names: string[];
     defaults: SolvedNode[];
 
-    // Amazing stuff.
+    // TODO move exotic bloat over to module,
+    //  all trailers can fit in the same
+    //   [ modid / thing ] slot here.
     partial: Partial;
     template: Template;
+    constant: SolvedNode;
 };
 
 struct ScopeItem
@@ -1857,13 +1868,14 @@ pub fn Scope_add(
     scope: &mut Scope,
     kind: string, id: string, type: Type,
 
-    min: i32 = 0,
-    max: i32 = 0,
-    arg_n: string[]     = [],
-    arg_t: Type[]       = [],
-    arg_d: SolvedNode[] = [],
-    template: Template  = [],
-    partial: Partial    = []): Target
+    min: i32                = 0,
+    max: i32                = 0,
+    arg_n: string[]         = [],
+    arg_t: Type[]           = [],
+    arg_d: SolvedNode[]     = [],
+    template: Template      = [],
+    partial: Partial        = [],
+    constant: SolvedNode    = []): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -1874,7 +1886,7 @@ pub fn Scope_add(
         name: id, :type,
         :min, :max, args: arg_t,
         names: arg_n, defaults: arg_d,
-        :partial, :template);
+        :partial, :template, :constant);
 
     scope.items.push(
         ScopeItem( :id, :target ));
@@ -1982,18 +1994,18 @@ fn solve(
 
     //
 
-    fn Binding(id: string, type: Type)
+    fn Binding(id: string, type: Type, kind = 'var', constant: SolvedNode = [])
     {
         return Scope_add(
-            _scope, 'var',
-            id || fail(), type || fail());
+            _scope, :kind,
+            :id || fail(), :type || fail(), :constant);
     }
 
     fn Field(id: string, structType: Type, fieldType: Type)
     {
         return Scope_add(
             _scope, 'field',
-            id || fail(), fieldType || fail(),
+            :id || fail(), fieldType || fail(),
             1, 1, [ 'this' ], [ structType || fail() ]);
     }
 
@@ -2026,8 +2038,8 @@ fn solve(
 
         return Scope_add(
             _scope,
-            'template', id, t_template,
-            min, max, arg_n, :template);
+            'template', :id, t_template,
+            :min, :max, arg_n, :template);
     }
 
     fn FnDecl(id: string, node: &mut SolvedNode): Target
@@ -2068,8 +2080,8 @@ fn solve(
 
         let overload = Scope_add(
             _scope,
-            'fn', id, ret,
-            min, max, arg_n, arg_t, arg_d);
+            'fn', :id, ret,
+            :min, :max, arg_n, arg_t, arg_d);
 
         node.target = overload;
 
@@ -2116,8 +2128,8 @@ fn solve(
 
         return Scope_add(
             _scope,
-            'defctor', id, type,
-            min, max, arg_n, arg_t, arg_d);
+            'defctor', :id, :type,
+            :min, :max, arg_n, arg_t, arg_d);
     }
 
     fn tryDefaultInit(type: Type): SolvedNode
@@ -2166,7 +2178,7 @@ fn solve(
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
-        if (via.kind != 'var')
+        if (via.kind != 'var' && via.kind != 'global')
         {
             kind = 'p-wrap';
             min++;
@@ -2184,8 +2196,8 @@ fn solve(
 
         return Scope_add(
             _scope,
-            kind, id, overload.type,
-            min, max, arg_n, arg_t, arg_d,
+            :kind, :id, :overload.type,
+            :min, :max, arg_n, arg_t, arg_d,
             partial: Partial(viaIdx, overloadIdx));
     }
 
@@ -3033,20 +3045,29 @@ fn solve(
             s_init = maybeCopyOrMove(s_init, t_let);
 
         //
-        let out = solved(node, t_let, [s_annot || s_init, s_init]);
+        mut out = solved(node, t_let, [s_annot || s_init, s_init]);
 
-        if (node.flags & F_MUT)
-            _current_fn || fail(
-                'Mutable statics are not currently allowed.');
+        if !(_current_fn || node.flags & F_FIELD)
+        {
+            if (out.flags & F_MUT || out.type.quals & q_mutref)
+                fail('Mutable statics are not currently allowed.');
+
+            out.kind = 'global';
+        }
 
         return out;
     }
 
     fn solveLet(node: Node): SolvedNode
     {
-        let out = solveBinding(node);
-        let overload = Binding(
-            id: out.value,
+        let out         = solveBinding(node);
+        let global      = out.kind == 'global';
+
+        let overload    = Binding(
+            id:             out.value,
+            kind:           global ? 'global' : 'var',
+            constant:       global && out,
+
             node.flags & F_MUT
                 ? add_mutref(out.type)
                 : add_ref(out.type));
@@ -4744,9 +4765,12 @@ pub fn cpp_codegen(
 
     fn cgLet(node: SolvedNode): string
     {
-        mut src = binding(node, doInit: true);
-        if (_fnN || _faasN)
-            return src;
+        return binding(node, doInit: true);
+    }
+
+    fn cgGlobal(node: SolvedNode): string
+    {
+        mut src = cgLet(node);
 
         // Nasty tempfix -
         //  can't have [&] in global space.
@@ -4760,6 +4784,17 @@ pub fn cpp_codegen(
         //
         _fdef += src = 'inline const ' + src + ';\n';
         return '';
+    }
+
+    fn cgForeignGlobal(target: Target): void
+    {
+        let key = target.modid + '#' + target.index;
+        if (_ffwd.has(key))
+            return;
+
+        _ffwd[key] = '';
+        let o = GET(target);
+        cgGlobal(o.constant);
     }
 
     fn cgReturn(node: SolvedNode): string
@@ -4937,6 +4972,14 @@ pub fn cpp_codegen(
                 else
                     return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
             }
+        }
+
+        if (target.kind == 'global')
+        {
+            if (node.target.modid != module.modid)
+                cgForeignGlobal(node.target);
+
+            return ID(id); // TODO ensure const emit.
         }
 
         if (target.kind == 'var')
@@ -5586,6 +5629,7 @@ struct fu_DEFAULT { static inline const T value {}; };
         if (k == 'continue')    return cgJump(node);
         if (k == 'call')        return cgCall(node, mode);
         if (k == 'let')         return cgLet(node);
+        if (k == 'global')      return cgGlobal(node);
         if (k == 'if')          return cgIf(node, mode);
         if (k == '!')           return cgNot(node);
         if (k == 'or')          return cgOr(node);

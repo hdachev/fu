@@ -68,6 +68,9 @@ fu_VEC<T> fu_CONCAT(
     return result;
 }
 
+template <typename T>
+struct fu_DEFAULT { static inline const T value {}; };
+
 template <typename K, typename V>
 fu_VEC<K> fu_KEYS(
     const fu_COW_MAP<K, V>& map)
@@ -359,6 +362,7 @@ struct s_Overload
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
     s_Template tempatle;
+    s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
         return false
@@ -372,6 +376,7 @@ struct s_Overload
             || defaults
             || partial
             || tempatle
+            || constant
         ;
     }
 };
@@ -1223,13 +1228,21 @@ struct sf_parse
             };
             s_Node expr = parseExpression(int(P_COMMA));
             if (autoName)
-            {
-                (((expr.kind == "call"_fu) && hasIdentifierChars(expr.value)) || fail("Can't :auto_name this expression."_fu));
-                name = expr.value;
-            };
+                name = getAutoName(expr);
+
             out_args.push((name.size() ? createLabel(name, expr) : s_Node(expr)));
         };
         return flags;
+    };
+    fu_STR getAutoName(const s_Node& expr)
+    {
+        if (((expr.kind == "call"_fu) && hasIdentifierChars(expr.value)))
+            return expr.value;
+
+        if (expr.items)
+            return getAutoName(expr.items[0]);
+
+        fail("Can't :auto_name this expression."_fu);
     };
     s_Node createLabel(const fu_STR& id, const s_Node& value)
     {
@@ -1697,11 +1710,11 @@ void Scope_pop(s_Scope& scope, const int& memo)
     scope.items.shrink(memo);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tempatle, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
     s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tempatle), s_SolvedNode(constant) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;
@@ -1709,7 +1722,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
 
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
+    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
 }
 
 struct sf_solve
@@ -1758,13 +1771,13 @@ struct sf_solve
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
         fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
-    s_Target Binding(const fu_STR& id, const s_Type& type)
+    s_Target Binding(const fu_STR& id, const s_Type& type, fu_STR&& kind, const s_SolvedNode& constant)
     {
-        return Scope_add(_scope, "var"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(""_fu); }()), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
+        return Scope_add(_scope, kind, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(""_fu); }()), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, constant, module);
     };
     s_Target Field(const fu_STR& id, const s_Type& structType, const s_Type& fieldType)
     {
-        return Scope_add(_scope, "field"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(""_fu); }()), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(""_fu); }()) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, module);
+        return Scope_add(_scope, "field"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(""_fu); }()), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(""_fu); }()) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target TemplateDecl(const s_Node& node)
     {
@@ -1786,7 +1799,7 @@ struct sf_solve
                 arg_n.push(name);
             };
         };
-        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tempatle, s_Partial{}, module);
+        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tempatle, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target FnDecl(const fu_STR& id, s_SolvedNode& node)
     {
@@ -1816,7 +1829,7 @@ struct sf_solve
 
             };
         };
-        s_Target overload = Scope_add(_scope, "fn"_fu, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, module);
+        s_Target overload = Scope_add(_scope, "fn"_fu, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
     };
@@ -1848,7 +1861,7 @@ struct sf_solve
                 arg_d.push(init);
             };
         };
-        return Scope_add(_scope, "defctor"_fu, id, type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, module);
+        return Scope_add(_scope, "defctor"_fu, id, type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_SolvedNode tryDefaultInit(const s_Type& type)
     {
@@ -1879,7 +1892,7 @@ struct sf_solve
         fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_VEC<s_Type>(overload.args));
         fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_VEC<fu_STR>(overload.names));
         fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_VEC<s_SolvedNode>(overload.defaults));
-        if ((via.kind != "var"_fu))
+        if (((via.kind != "var"_fu) && (via.kind != "global"_fu)))
         {
             kind = "p-wrap"_fu;
             min++;
@@ -1893,7 +1906,7 @@ struct sf_solve
                 arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
 
         };
-        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_Target(viaIdx), s_Target(overloadIdx) }, module);
+        return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_Target(viaIdx), s_Target(overloadIdx) }, s_SolvedNode{}, module);
     };
     void scope_using(const s_Target& viaIdx)
     {
@@ -2525,16 +2538,20 @@ struct sf_solve
             s_init = maybeCopyOrMove(s_init, t_let);
 
         s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = s_annot; if (_) return _; } return s_init; }()), s_init } });
-        if ((node.flags & F_MUT))
+        if (!(_current_fn || (node.flags & F_FIELD)))
         {
-            ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = _current_fn; if (_) return _; } fail("Mutable statics are not currently allowed."_fu); }());
+            if (((out.flags & F_MUT) || (out.type.quals & q_mutref)))
+                fail("Mutable statics are not currently allowed."_fu);
+
+            out.kind = "global"_fu;
         };
         return out;
     };
     s_SolvedNode solveLet(const s_Node& node)
     {
         s_SolvedNode out = solveBinding(node);
-        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)));
+        const bool global = (out.kind == "global"_fu);
+        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)), (global ? "global"_fu : "var"_fu), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu_DEFAULT<s_SolvedNode>::value; }()));
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -2784,7 +2801,7 @@ struct sf_solve
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
         const int scope0 = Scope_push(_scope);
-        s_Target ret = Binding(id, type);
+        s_Target ret = Binding(id, type, "var"_fu, s_SolvedNode{});
         Scope_pop(_scope, scope0);
         
         {
@@ -3564,16 +3581,27 @@ struct sf_cpp_codegen
     };
     fu_STR cgLet(const s_SolvedNode& node)
     {
-        fu_STR src = binding(node, true, false);
-        if ((_fnN || _faasN))
-            return src;
-
+        return binding(node, true, false);
+    };
+    fu_STR cgGlobal(const s_SolvedNode& node)
+    {
+        fu_STR src = cgLet(node);
         src = fu::replace(src, "([&]("_fu, "([]("_fu);
         if (fu::lmatch(src, "const "_fu))
             src = slice(src, 6);
 
         _fdef += (src = (("inline const "_fu + src) + ";\n"_fu));
         return ""_fu;
+    };
+    void cgForeignGlobal(const s_Target& target)
+    {
+        fu_STR key = ((target.modid + "#"_fu) + target.index);
+        if (fu::has(_ffwd, key))
+            return;
+
+        (_ffwd.upsert(key) = ""_fu);
+        s_Overload o = GET(target, module, ctx);
+        cgGlobal(o.constant);
     };
     fu_STR cgReturn(const s_SolvedNode& node)
     {
@@ -3712,6 +3740,13 @@ struct sf_cpp_codegen
                     return (((((("("_fu + items.mutref(0)) + " "_fu) + id) + " "_fu) + items.mutref(1)) + ")"_fu);
 
             };
+        };
+        if ((target.kind == "global"_fu))
+        {
+            if ((node.target.modid != module.modid))
+                cgForeignGlobal(node.target);
+
+            return ID(id);
         };
         if ((target.kind == "var"_fu))
             return ID(id);
@@ -4193,6 +4228,9 @@ struct sf_cpp_codegen
 
         if ((k == "let"_fu))
             return cgLet(node);
+
+        if ((k == "global"_fu))
+            return cgGlobal(node);
 
         if ((k == "if"_fu))
             return cgIf(node, mode);
