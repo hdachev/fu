@@ -1,0 +1,226 @@
+
+pub let q_mutref        = 1 << 0;
+pub let q_ref           = 1 << 1;
+
+pub let q_copy          = 1 << 2;
+pub let q_trivial       = 1 << 3;
+pub let q_primitive     = 1 << 4;
+pub let q_arithmetic    = 1 << 5;
+pub let q_integral      = 1 << 6;
+pub let q_signed        = 1 << 7;
+pub let q_floating_pt   = 1 << 8;
+
+let TAGS =
+[
+    'mutref',
+    'ref',
+
+    'copy',
+    'trivial',
+    'primitive',
+
+    'arithmetic',
+    'integral',
+    'signed',
+    'floating_point',
+];
+
+pub struct Type
+{
+    canon: string;
+    quals: i32;
+    modid: i32;
+};
+
+
+//
+
+fn ==(a: Type, b: Type)
+    a.modid == b.modid &&
+    a.canon == b.canon &&
+    a.quals == b.quals;
+
+
+//
+
+pub let Trivial     = q_copy     | q_trivial     ;
+pub let Primitive   = Trivial    | q_primitive   ;
+pub let Arithmetic  = Primitive  | q_arithmetic  ;
+pub let Integral    = Arithmetic | q_integral    ;
+pub let SignedInt   = Integral   | q_signed      ;
+pub let UnsignedInt = Integral                   ;
+pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
+
+pub let t_i8        = Type( 'i8', SignedInt, 0);
+pub let t_i16       = Type('i16', SignedInt, 0);
+pub let t_i32       = Type('i32', SignedInt, 0);
+pub let t_i64       = Type('i64', SignedInt, 0);
+
+pub let t_u8        = Type( 'u8', UnsignedInt, 0);
+pub let t_u16       = Type('u16', UnsignedInt, 0);
+pub let t_u32       = Type('u32', UnsignedInt, 0);
+pub let t_u64       = Type('u64', UnsignedInt, 0);
+
+pub let t_f32       = Type('f32', FloatingPt, 0);
+pub let t_f64       = Type('f64', FloatingPt, 0);
+
+pub let t_void      = Type('void', 0, 0);
+pub let t_bool      = Type('bool', Primitive, 0);
+pub let t_never     = Type('never', 0, 0);
+pub let t_template  = Type('template', 0, 0);
+pub let t_string    = Type('string', q_copy, 0);
+
+
+// https://doc.rust-lang.org/nomicon/subtyping.html:
+
+// Re: covariance of `T` in `Box<T>`:
+//
+// As it turns out, the argument for why it's ok for Box
+//  (and Vec, Hashmap, etc.) to be covariant is pretty similar
+//   to the argument for why it's ok for lifetimes to be covariant:
+//    as soon as you try to stuff them in something like a mutable
+//     reference, they inherit invariance and you're prevented
+//      from doing anything bad.
+
+pub fn isAssignable(host: Type, guest: Type)
+{
+    return host.canon == guest.canon
+            && (host.quals == guest.quals ||
+                  !(host.quals & q_mutref) // mut invariance
+                    && (host.quals & guest.quals) == host.quals)
+        || guest == t_never
+            && guest.quals == 0;
+}
+
+
+//
+
+pub fn isAssignableAsArgument(
+    host: Type, mut guest: Type)
+{
+    guest.quals |= q_ref;
+    return isAssignable(host, guest);
+}
+
+
+//
+
+pub fn qadd(type: Type, q: i32)
+{
+    return Type(type.canon, type.canon ? type.quals | q : 0, type.modid);
+}
+
+pub fn qsub(type: Type, q: i32)
+{
+    return Type(type.canon, type.quals &~ q, type.modid);
+}
+
+pub fn qhas(type: Type, q: i32)
+{
+    return type.quals & q == q;
+}
+
+fn tryClear(type: Type, q: i32): Type
+{
+    if (!type || !qhas(type, q))
+        return Type();
+
+    return qsub(type, q);
+}
+
+
+//
+
+pub fn add_ref(type: Type)
+{
+    return qadd(type, q_ref);
+}
+
+pub fn add_mutref(type: Type)
+{
+    return qadd(type, q_ref | q_mutref);
+}
+
+
+//
+
+pub fn tryClear_mutref(type: Type)
+{
+    return tryClear(type, q_ref | q_mutref);
+}
+
+pub fn tryClear_ref(type: Type)
+{
+    let t = tryClear(type, q_ref);
+
+    return t
+         ? qsub(t, q_mutref)
+         : t;
+}
+
+pub fn clear_refs(type: Type)
+{
+    return qsub(type, q_ref | q_mutref);
+}
+
+pub fn clear_mutref(type: Type)
+{
+    return qsub(type, q_mutref);
+}
+
+pub fn add_refs_from(src: Type, dest: Type)
+{
+    return qadd(dest, src.quals & (q_ref | q_mutref));
+}
+
+
+//
+
+pub fn serializeType(type: Type)
+{
+    if (type.quals)
+        return '(' + type.canon + '{' + type.quals + '})';
+
+    return '(' + type.canon + ')';
+}
+
+pub fn type_has(type: Type, tag: string)
+{
+    let idx = TAGS.find(tag);
+    idx >= 0 || throw('Unknown type tag: `' + tag + '`.');
+    let mask = 1 << idx;
+    return (type.quals & mask) == mask;
+}
+
+
+//
+
+pub fn type_tryInter(a: Type, b: Type)
+{
+    if (a.canon != b.canon)
+        return a == t_never ? b
+             : b == t_never ? a
+             : Type();
+
+    return Type(
+        a.canon,
+        a.quals & b.quals,
+        a.modid);
+}
+
+
+//
+
+pub struct Struct
+{
+    kind:   string; // 'struct'|'array'|'map';
+    id:     string;
+    fields: StructField[];
+    flags:  i32;
+};
+
+pub struct StructField
+{
+    id:     string;
+    type:   Type;
+};

@@ -11,6 +11,7 @@
 #include "../../src/helpers.fu.cpp"
 #include "../../src/lexer.fu.cpp"
 #include "../../src/parser.fu.cpp"
+#include "../../src/types.fu.cpp"
 #include "../../src/compiler.fu.cpp"
 #undef  main
 
