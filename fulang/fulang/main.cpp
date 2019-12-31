@@ -9,10 +9,12 @@
 #define main auto_main
 #include "../../src/hello.fu.cpp"
 #include "../../src/helpers.fu.cpp"
+
 #include "../../src/lexer.fu.cpp"
 #include "../../src/parser.fu.cpp"
 #include "../../src/types.fu.cpp"
 #include "../../src/solver.fu.cpp"
+#include "../../src/prelude.fu.cpp"
 #include "../../src/compiler.fu.cpp"
 #undef  main
 

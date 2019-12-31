@@ -40,6 +40,7 @@ s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
 void runTestSuite();
 int FAIL(const fu_STR&);
 void sayHello();
+s_TEMP_Context solvePrelude();
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
 void setModule(const s_Module&, s_TEMP_Context&);
@@ -137,6 +138,124 @@ struct s_SolvedNode
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu_STR id;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id.size()
+            || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Partial
+                                #define DEF_s_Partial
+struct s_Partial
+{
+    s_Target via;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || via
+            || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_Node> items;
+    s_TokenIdx token;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || flags
+            || value.size()
+            || items
+            || token
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Template
+                                #define DEF_s_Template
+struct s_Template
+{
+    s_Node node;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || node
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_STR name;
+    s_Type type;
+    int min;
+    int max;
+    fu_VEC<s_Type> args;
+    fu_VEC<fu_STR> names;
+    fu_VEC<s_SolvedNode> defaults;
+    s_Partial partial;
+    s_Template tempatle;
+    s_SolvedNode constant;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind.size()
+            || name.size()
+            || type
+            || min
+            || max
+            || args
+            || names
+            || defaults
+            || partial
+            || tempatle
+            || constant
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Scope
+                                #define DEF_s_Scope
+struct s_Scope
+{
+    fu_VEC<s_ScopeItem> items;
+    fu_VEC<s_Overload> overloads;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+            || overloads
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -172,28 +291,6 @@ struct s_LexerOutput
         return false
             || fname.size()
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_Node> items;
-    s_TokenIdx token;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind.size()
-            || flags
-            || value.size()
-            || items
-            || token
         ;
     }
 };
@@ -264,102 +361,6 @@ struct s_Struct
             || id.size()
             || fields
             || flags
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu_STR id;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id.size()
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Partial
-                                #define DEF_s_Partial
-struct s_Partial
-{
-    s_Target via;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || via
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Template
-                                #define DEF_s_Template
-struct s_Template
-{
-    s_Node node;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || node
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
-{
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int min;
-    int max;
-    fu_VEC<s_Type> args;
-    fu_VEC<fu_STR> names;
-    fu_VEC<s_SolvedNode> defaults;
-    s_Partial partial;
-    s_Template tempatle;
-    s_SolvedNode constant;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind.size()
-            || name.size()
-            || type
-            || min
-            || max
-            || args
-            || names
-            || defaults
-            || partial
-            || tempatle
-            || constant
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Scope
-                                #define DEF_s_Scope
-struct s_Scope
-{
-    fu_VEC<s_ScopeItem> items;
-    fu_VEC<s_Overload> overloads;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items
-            || overloads
         ;
     }
 };
@@ -469,28 +470,6 @@ s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
                                 #ifndef DEF_WRITE_COMPILER
                                 #define DEF_WRITE_COMPILER
 inline const bool WRITE_COMPILER = true;
-                                #endif
-
-                                #ifndef DEF_prelude_src
-                                #define DEF_prelude_src
-inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure(): never never;\nfn __native_pure(id: string): never never;\nfn __native_pure(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native_pure;\nfn CLONE (a: &    $T): $T __native_pure;\n\nfn print(a: $A): void __native_pure;\nfn print(a: $A, b: $B): void __native_pure;\nfn print(a: $A, b: $B, c: $C): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native_pure;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;\n    case ($T -> @arithmetic): $T __native_pure;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;\n\n\n// Logic.\n\nfn true (): bool __native_pure;\nfn false(): bool __native_pure;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native_pure;\nfn ||=(a: &mut $T, b: $T): &mut $T __native_pure;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native_pure;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native_pure;\nfn find(a: $T[], b: $T): i32 __native_pure;\nfn has (a: $T[], b: $T): bool __native_pure;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native_pure;\n    case ($a -> &    $T[]): &    $T __native_pure;\n\nfn    push(a: &mut $T[], b: $T): void __native_pure;\nfn unshift(a: &mut $T[], b: $T): void __native_pure;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;\n\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;\nfn  slice(a: $T[], i0: i32): $T[] __native_pure;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;\nfn    pop(a: &mut $T[]): void __native_pure;\n\nfn  clear(a: &mut $T[]): void __native_pure;\nfn resize(a: &mut $T[], len: i32): void __native_pure;\nfn shrink(a: &mut $T[], len: i32): void __native_pure;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native_pure;\nfn sort(a: &mut $T[]): void __native_pure;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native_pure;\nfn  [](a: string, i: i32): string __native_pure;\n\nfn ==(a: string, b: string): bool __native_pure;\nfn !=(a: string, b: string): bool __native_pure;\nfn  >(a: string, b: string): bool __native_pure;\nfn  <(a: string, b: string): bool __native_pure;\nfn >=(a: string, b: string): bool __native_pure;\nfn <=(a: string, b: string): bool __native_pure;\n\nfn   find(a: string, b: string): i32 __native_pure;\nfn    has(a: string, b: string): bool __native_pure;\nfn starts(a: string, with: string): bool __native_pure;\n\nfn slice (a: string, i0: i32, i1: i32): string __native_pure;\nfn slice (a: string, i0: i32): string __native_pure;\n\nfn substr(a: string, i0: i32, i1: i32): string __native_pure;\nfn char  (a: string, i0: i32): i32 __native_pure;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native_pure;\nfn    join(a: string[], sep: string): string __native_pure;\nfn replace(in: string, all: string, with: string): string __native_pure;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;\n    case ($a -> &    Map($K, $V)): &    $V __native_pure;\n\nfn keys  (a: Map($K, $V)): $K[] __native_pure;\nfn values(a: Map($K, $V)): $V[] __native_pure;\nfn has   (a: Map($K, $V), b: $K): bool __native_pure;\nfn count (a: Map($K, $V)): i32 __native_pure;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native_pure;\nfn assert(): never __native_pure;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native_pure;\nfn +(a: string, b: f64): string __native_pure;\nfn +(a: i32, b: string): string __native_pure;\nfn +(a: f64, b: string): string __native_pure;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native_pure;\nfn now_utc(): f64 __native_pure;\n\nfn env_get(key: string): string __native_pure;\n\nfn file_size(path: string): i32 __native_pure;\nfn file_read(path: string): string __native_pure;\nfn file_write(path: string, body: string): bool __native_pure;\n\nfn shell_exec(cmd: string): i32 __native_pure;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;\n\nfn hash_tea(str: string): string __native_pure;\n\nfn i32(v: f64): i32 __native_pure;\n\nfn exit(code: i32): never __native_pure;\n\n"_fu;
-                                #endif
-
-s_TEMP_Context solvePrelude()
-{
-    s_TEMP_Context ctx {};
-    s_Module module { getModule(""_fu, ctx) };
-    s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
-    s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
-    s_SolverOutput solved = solve(root, ctx, module);
-    module.out.solve = solved;
-    setModule(module, ctx);
-    return ctx;
-}
-
-                                #ifndef DEF_CTX_PROTO
-                                #define DEF_CTX_PROTO
-inline const s_TEMP_Context CTX_PROTO = solvePrelude();
                                 #endif
 
                                 #ifndef DEF_M_STMT
@@ -1898,13 +1877,18 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     return module.out.cpp;
 }
 
+                                #ifndef DEF_CTX_PRELUDE
+                                #define DEF_CTX_PRELUDE
+inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
+                                #endif
+
 s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
 {
     if (!fu::has(src, "fn ZERO()"_fu))
         src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     src += "\nfn main(): i32 ZERO();\n\n"_fu;
-    s_TEMP_Context ctx { CTX_PROTO };
+    s_TEMP_Context ctx { CTX_PRELUDE };
     (ctx.files.upsert(fname) = src);
     compile(fname, ""_fu, ctx);
     return ctx;

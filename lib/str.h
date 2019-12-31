@@ -202,7 +202,7 @@ struct fu_STRLIT
     }
 };
 
-fu_INL fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {
+fu_INL constexpr fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {
     return fu_STRLIT { cstr, (int) len };
 }
 
