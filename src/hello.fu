@@ -1,4 +1,48 @@
 
-fn sayHello() {
-    print('hello you!');
+let NICE_THINGS =
+[
+    "LOOKING GOOD TODAY !",
+    "PASSING TESTS LIKE A BOSS !",
+    "THIS IS SOME TOP NOTCH SHIT !",
+    "VALUE ADDED !",
+
+    "GOING STRONG !",
+    "KILLIN IT !",
+    "POWER LEVEL INCREASED !",
+    "NOW MAKE ME BETTER AGAIN !",
+
+    "NOW MAKE ME EVEN MORE BETTER !",
+    "ALL CLEAR !",
+    "UPGRADE ACCEPTED !",
+    "YOU'RE THE BEST MAN !",
+
+    "I LOVE YOU YOU !",
+    "MORE IS MORE !",
+    "THIS IS AWESOME !",
+    "XOXO !",
+];
+
+fn saySomethingNice()
+{
+    let sec = i32(now_utc());
+
+/////////////////////////////
+    let NEW_STUFF = false; //
+/////////////////////////////
+
+    if (sec % 5 && !NEW_STUFF)
+    {
+        mut str = '';
+        for (mut i = 0; i < 3; i++)
+            if (sec & (1 << i))
+                str += '🍒';
+            else
+                str += '🍊';
+
+        print(str);
+    }
+    else
+    {
+        print(NICE_THINGS[(sec >> 6) & 0xf]);
+    }
 }

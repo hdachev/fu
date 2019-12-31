@@ -312,54 +312,6 @@ fn buildAndRun(ctx: TEMP_Context): string
     return '';
 }
 
-let NICE_THINGS =
-[
-    "LOOKING GOOD TODAY !",
-    "PASSING TESTS LIKE A BOSS !",
-    "THIS IS SOME TOP NOTCH SHIT !",
-    "VALUE ADDED !",
-
-    "GOING STRONG !",
-    "KILLIN IT !",
-    "POWER LEVEL INCREASED !",
-    "NOW MAKE ME BETTER AGAIN !",
-
-    "NOW MAKE ME EVEN MORE BETTER !",
-    "ALL CLEAR !",
-    "UPGRADE ACCEPTED !",
-    "YOU'RE THE BEST MAN !",
-
-    "I LOVE YOU YOU !",
-    "MORE IS MORE !",
-    "THIS IS AWESOME !",
-    "THIS IS AWESOME !",
-];
-
-fn saySomethingNice()
-{
-    let sec = i32(now_utc());
-
-/////////////////////////////
-    let NEW_STUFF = false; //
-/////////////////////////////
-
-    if (sec % 5 && !NEW_STUFF)
-    {
-        mut str = '';
-        for (mut i = 0; i < 3; i++)
-            if (sec & (1 << i))
-                str += '🍒';
-            else
-                str += '🍊';
-
-        print(str);
-    }
-    else
-    {
-        print(NICE_THINGS[(sec >> 6) & 0xf]);
-    }
-}
-
 fn ZERO(src: string, mut fname = ''): TEMP_Context
 {
     if (!fname)
@@ -414,12 +366,6 @@ fn FU_FILE(mut fname: string)
     if (WRITE_COMPILER)
         for (mut i = 1; i < ctx.modules.len; i++)
             updateCPPFile(ctx.modules[i]);
-
-    // Test imports.
-    {
-        #import 'hello';
-        sayHello();
-    }
 }
 
 
@@ -428,7 +374,10 @@ fn FU_FILE(mut fname: string)
 fn runTestSuiteAndBuildCompiler()
 {
     runTestSuite();
+
+    #import 'hello';
     saySomethingNice();
+
     FU_FILE('compiler.fu');
 }
 

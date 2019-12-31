@@ -38,7 +38,7 @@ void runTestSuite();
 int FAIL(const fu_STR&);
 int ZERO();
 fu_STR compile_testcase(const fu_STR&);
-void sayHello();
+void saySomethingNice();
 s_TEMP_Context solvePrelude();
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
@@ -647,33 +647,6 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
     return ""_fu;
 }
 
-                                #ifndef DEF_NICE_THINGS
-                                #define DEF_NICE_THINGS
-inline const fu_VEC<fu_STR> NICE_THINGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<16> { "LOOKING GOOD TODAY !"_fu, "PASSING TESTS LIKE A BOSS !"_fu, "THIS IS SOME TOP NOTCH SHIT !"_fu, "VALUE ADDED !"_fu, "GOING STRONG !"_fu, "KILLIN IT !"_fu, "POWER LEVEL INCREASED !"_fu, "NOW MAKE ME BETTER AGAIN !"_fu, "NOW MAKE ME EVEN MORE BETTER !"_fu, "ALL CLEAR !"_fu, "UPGRADE ACCEPTED !"_fu, "YOU'RE THE BEST MAN !"_fu, "I LOVE YOU YOU !"_fu, "MORE IS MORE !"_fu, "THIS IS AWESOME !"_fu, "THIS IS AWESOME !"_fu } };
-                                #endif
-
-void saySomethingNice()
-{
-    const int sec = i32(fu::now_utc());
-    const bool NEW_STUFF = false;
-    if (((sec % 5) && !NEW_STUFF))
-    {
-        fu_STR str = ""_fu;
-        for (int i = 0; (i < 3); i++)
-        {
-            if ((sec & (1 << i)))
-                str += "🍒"_fu;
-            else
-                str += "🍊"_fu;
-
-        };
-        (std::cout << str << "\n");
-    }
-    else
-        (std::cout << NICE_THINGS[((sec >> 6) & 0xf)] << "\n");
-
-}
-
 s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
 {
     if (!fname.size())
@@ -733,10 +706,6 @@ void FU_FILE(fu_STR&& fname)
         for (int i = 1; (i < ctx.modules.size()); i++)
             updateCPPFile(ctx.modules[i]);
 
-    };
-    
-    {
-        sayHello();
     };
 }
 
