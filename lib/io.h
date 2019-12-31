@@ -11,7 +11,7 @@
 
 namespace fu {
 
-int file_write(fu_STR path, span<const char> body)
+inline int file_write(fu_STR path, span<const char> body)
 {
     path.push('\0');
 
@@ -32,7 +32,7 @@ int file_write(fu_STR path, span<const char> body)
     return err;
 }
 
-fu_STR file_read(fu_STR path, fu_STR& output)
+inline fu_STR file_read(fu_STR path, fu_STR& output)
 {
     path.push('\0');
 
@@ -50,7 +50,7 @@ fu_STR file_read(fu_STR path, fu_STR& output)
     return output;
 }
 
-int file_size(fu_STR path)
+inline int file_size(fu_STR path)
 {
     path.push('\0');
 
@@ -61,7 +61,7 @@ int file_size(fu_STR path)
     return -1;
 }
 
-fu_STR file_read(const fu_STR& path)
+inline fu_STR file_read(const fu_STR& path)
 {
     fu_STR output;
     file_read(path, output);
