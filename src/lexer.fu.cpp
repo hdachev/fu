@@ -44,8 +44,16 @@ struct s_LexerOutput
     }
 };
                                 #endif
+
+                                #ifndef DEF_OPTOKENS
+                                #define DEF_OPTOKENS
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+                                #endif
+
+                                #ifndef DEF_OPERATORS
+                                #define DEF_OPERATORS
 inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<61> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
+                                #endif
 
 struct sf_lex
 {
