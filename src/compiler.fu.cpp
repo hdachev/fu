@@ -39,12 +39,7 @@ int ZERO();
 s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
 void runTestSuite();
 int FAIL(const fu_STR&);
-fu_STR last(const fu_STR&);
-bool hasIdentifierChars(const fu_STR&);
-s_LexerOutput lex(const fu_STR&, const fu_STR&);
-s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
-s_Type clear_refs(const s_Type&);
-bool operator==(const s_Type&, const s_Type&);
+void sayHello();
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
 void setModule(const s_Module&, s_TEMP_Context&);
@@ -53,7 +48,12 @@ bool type_isString(const s_Type&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
 bool type_isMap(const s_Type&);
 s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
-void sayHello();
+s_Type clear_refs(const s_Type&);
+bool operator==(const s_Type&, const s_Type&);
+s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
+s_LexerOutput lex(const fu_STR&, const fu_STR&);
+fu_STR last(const fu_STR&);
+bool hasIdentifierChars(const fu_STR&);
 template <typename K, typename V>
 fu_VEC<K> fu_KEYS(
     const fu_COW_MAP<K, V>& map)
@@ -1881,7 +1881,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
         (module.out || fu::fail(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
     };
     fu_VEC<fu_STR> imports { module.in.parse.imports };
-    for (int i = 0; (i < imports.size()); i++)
+    for (int i = imports.size(); (i-- > 0); )
         compile(imports[i], ((fname + " <- "_fu) + via), ctx);
 
     if (!module.out)

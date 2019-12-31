@@ -1856,9 +1856,11 @@ fn compile(fname: string, via: string = ''): string
             '#import circle: `' + via + fname + '`.');
     }
 
-    // Compile dependencies.
+    // Compile dependencies -
+    //  since we link in reverse, we reverse the deps here too,
+    //   resulting in a link that's in the order of imports.
     let imports = module.in.parse.imports;
-    for (mut i = 0; i < imports.len; i++)
+    for (mut i = imports.len; i --> 0; )
         compile(
             fname: imports[i],
               via: fname + ' <- ' + via);

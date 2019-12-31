@@ -28,7 +28,9 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
-bool hasIdentifierChars(const fu_STR&);
+int copyOrMove(const int&, const fu_VEC<s_StructField>&);
+bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+s_Scope listGlobals(const s_Module&);
 s_Type tryClear_ref(const s_Type&);
 s_Type clear_refs(const s_Type&);
 s_Type clear_mutref(const s_Type&);
@@ -42,9 +44,7 @@ bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type add_ref(const s_Type&);
 s_Type add_mutref(const s_Type&);
 s_Type tryClear_mutref(const s_Type&);
-int copyOrMove(const int&, const fu_VEC<s_StructField>&);
-bool someFieldNonCopy(const fu_VEC<s_StructField>&);
-s_Scope listGlobals(const s_Module&);
+bool hasIdentifierChars(const fu_STR&);
 template <typename T>
 struct fu_DEFAULT { static inline const T value {}; };
 
