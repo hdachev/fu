@@ -1,12 +1,10 @@
 #import 'compiler';
 
 
-// A quick self-test.
+// A quick self-test without I/O.
 
 let TEST_SRC = `
-
-    fn test(one: i32)
-    {
+    fn test(one: i32) {
         let zero = one - 1;
         let two  = one * 2;
 
@@ -19,18 +17,16 @@ let TEST_SRC = `
         return outer(one) + (two - one) * 17;
     }
 
-    fn ZERO(): i32
-    {
+    fn main(): i32 {
         return test(1) - 17;
     }
-
 `;
 
-fn ZERO(): i32
+fn main(): i32
 {
     let cpp = compile_testcase(TEST_SRC);
 
-    return cpp.find('main()') ? 0 : 101;
+    return cpp.find('int main()') ? 0 : 101;
 }
 
 
@@ -328,7 +324,7 @@ fn runTests()
             return outer(one) + (two - one) * 17;
         }
 
-        fn ZERO() test(1) - 17;
+        fn main() test(1) - 17;
     `);
 
     ZERO(`
@@ -729,7 +725,7 @@ fn runTests()
     ZERO(`
         let OPERATORS = [ '+', '-', '*', '/' ];
 
-        fn ZERO()
+        fn main()
             OPERATORS[2] == '*' ? 0 : 1;
     `);
 
@@ -1188,7 +1184,7 @@ fn runTests()
     let BINOP   = setupOperators();
     let P_COMMA = BINOP.P[','] || assert();
 
-    fn ZERO() P_COMMA - 7;
+    fn main() P_COMMA - 7;
 
     `);
 
@@ -1318,7 +1314,7 @@ fn runTests()
         fn path_join(a: string, b: string)
             path_normalize(a + '/' + b);
 
-        fn ZERO()
+        fn main()
             path_join('hello/hey', './../you//') == 'hello/you/'
                 ? 0 : 1;
     `);
@@ -1369,7 +1365,7 @@ fn runTests()
             return Token('hey');
         };
 
-        fn ZERO(): i32 {
+        fn main(): i32 {
             let a = 3;
             let v = a && consume().value;
             return v.len - a;
@@ -1402,7 +1398,7 @@ fn runTests()
             case ($a -> &mut $T[]): &mut $T a[a.len - 1];
             case ($a -> &    $T[]): &    $T a[a.len - 1];
 
-        fn ZERO()
+        fn main()
         {
             let a = [1];
             mut b = [2];
@@ -1470,7 +1466,7 @@ fn runTests()
             sum += node.value;
         };
 
-        fn ZERO(): i32 {
+        fn main(): i32 {
             let tree = SolvedNode(3,
                 [ SolvedNode(5), SolvedNode(7) ]);
 
@@ -1497,7 +1493,7 @@ fn runTests()
             return 1;
         }
 
-        fn ZERO(): i32 {
+        fn main(): i32 {
             let x = throw_hey()
                 catch err
                     return err.len - 3;

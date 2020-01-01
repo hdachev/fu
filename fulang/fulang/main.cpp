@@ -21,7 +21,7 @@
 #include "../../src/compiler.fu.cpp"
 #include "../../src/tests.fu.cpp"
 
-#undef  main
+#undef main
 
 #include "../../lib/cow_vec_test.h"
 

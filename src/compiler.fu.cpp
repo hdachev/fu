@@ -33,7 +33,6 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
-s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
 int FAIL(const fu_STR&);
 fu_STR compile_testcase(const fu_STR&);
 s_TEMP_Context solvePrelude();
@@ -494,10 +493,9 @@ inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
 
 s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
 {
-    if (!fu::has(src, "fn ZERO()"_fu))
-        src = (("\n\nfn ZERO(): i32 {\n"_fu + src) + "\n}\n"_fu);
+    if (!fu::has(src, "fn main()"_fu))
+        src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
-    src += "\nfn main(): i32 ZERO();\n\n"_fu;
     s_TEMP_Context ctx { CTX_PRELUDE };
     (ctx.files.upsert(fname) = src);
     compile(fname, ""_fu, ctx);

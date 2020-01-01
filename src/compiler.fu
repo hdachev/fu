@@ -93,10 +93,8 @@ fn compile(fname: string, via: string = ''): string
 fn compile_testcase(mut src: string, fname: string): TEMP_Context
 {
     // Some nonsense.
-    if (!src.has('fn ZERO()'))
-        src = '\n\nfn ZERO(): i32 {\n' + src + '\n}\n';
-
-    src += '\nfn main(): i32 ZERO();\n\n';
+    if (!src.has('fn main()'))
+        src = '\n\nfn main(): i32 {\n' + src + '\n}\n';
 
     //
     let implicit mut ctx = CTX_PRELUDE;
