@@ -22,7 +22,7 @@ let TEST_SRC = `
     }
 `;
 
-fn main(): i32
+fn self_test(): i32
 {
     let cpp = compile_testcase(TEST_SRC);
 

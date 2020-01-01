@@ -16,8 +16,20 @@ fn main(args: string[]): i32
     }
 
     // Router.
-    let cmd = next();
+    let arg0    = next();
+    let cmd     = next();
 
+    // Exit 0 on no command, else we fail build-checks.
+    if (!cmd)
+    {
+        print('SELF ', arg0);
+        self_test();
+
+        print('Hello! Try `fu run hello.fu`.');
+        return 0;
+    }
+
+    // Go!
     let run = cmd == 'build' ? false
             : cmd == 'run'   ? true
             : throw('Bad command: `' + cmd + '`,' +

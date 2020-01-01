@@ -24,10 +24,11 @@ pub fn cpp_codegen(
     mut _tdef: string;
     mut _fdef: string;
 
-    mut _indent: string     = '\n';
-    mut _fnN:   i32;
+    mut _indent: string = '\n';
+    mut _fnN: i32;
     mut _clsrN: i32;
     mut _faasN: i32;
+    mut _hasMain: i32;
 
     fn GET(
         implicit module: Module,
@@ -233,6 +234,7 @@ pub fn cpp_codegen(
     {
         let specs  = cgSpecs();
         let src    = cgStatements(root.items);
+        let main   = cgMain();
 
         mut header = collectDedupes(_libs)
                    + collectDedupes(_tfwd)
@@ -242,7 +244,30 @@ pub fn cpp_codegen(
                    +               (_fdef)
                    ;
 
-        return header + src;
+        return header + src + main;
+    }
+
+    fn cgMain(): string
+    {
+        if (!_hasMain)
+            return '';
+
+        if (_hasMain != 2)
+            return '\n\nint main() { return fu_MAIN(); }\n';
+
+        // Main with cli args.
+        annotateString();
+
+        return '\n\nint main(int argc, char* argv[])'
+            +  '\n{'
+            +  '\n    fu_VEC<fu_STR> args;'
+            +  '\n    args.reserve(argc);'
+            +  '\n'
+            +  '\n    for (int i = 0; i < argc; i++)'
+            +  '\n        args.push(fu_TO_STR(argv[i]));'
+            +  '\n'
+            +  '\n    fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));'
+            +  '\n}\n';
     }
 
 
@@ -433,12 +458,19 @@ pub fn cpp_codegen(
             ret.type || fail(),
             M_RETVAL | (closure ? M_CLOSURE : 0));
 
-        mut src = closure
-                ? 'const auto& ' + fn.value + ' = [&]('
-                : annot + ' ' + fn.value + '(';
+        mut id = fn.value;
+        if (id == 'main' && !closure)
+        {
+            _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
+            id = 'fu_MAIN';
+        }
 
-        if (!fn.value.hasIdentifierChars)
-            src = annot + ' operator' + fn.value + '(';
+        mut src = closure
+                ? 'const auto& ' + id + ' = [&]('
+                : annot + ' ' + id + '(';
+
+        if (!id.hasIdentifierChars)
+            src = annot + ' operator' + id + '(';
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {

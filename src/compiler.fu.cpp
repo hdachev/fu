@@ -32,6 +32,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+fu_STR last(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
 fu_STR build(const fu_STR&, const bool&);
 int FAIL(const fu_STR&);
@@ -43,7 +44,6 @@ void setModule(const s_Module&, s_TEMP_Context&);
 s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
 s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
-fu_STR last(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

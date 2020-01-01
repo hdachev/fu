@@ -436,7 +436,7 @@ struct s_TEMP_Context
 inline const fu_STR TEST_SRC = "\n    fn test(one: i32) {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn main(): i32 {\n        return test(1) - 17;\n    }\n"_fu;
                                 #endif
 
-int main()
+int self_test()
 {
     fu_STR cpp = compile_testcase(TEST_SRC);
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
@@ -446,7 +446,7 @@ void runTestsAndBuildCompiler()
 {
     runTests();
     saySomethingNice();
-    FU_FILE("tests.fu"_fu);
+    FU_FILE("cli.fu"_fu);
 }
 
 void runTests()

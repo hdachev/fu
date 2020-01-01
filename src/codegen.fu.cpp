@@ -28,14 +28,14 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+fu_STR last(const fu_STR&);
+bool hasIdentifierChars(const fu_STR&);
 const s_Struct& lookupType(const s_Type&, const s_Module&, const s_TEMP_Context&);
 bool type_isString(const s_Type&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
 bool type_isMap(const s_Type&);
 s_Type clear_refs(const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
-fu_STR last(const fu_STR&);
-bool hasIdentifierChars(const fu_STR&);
 template <typename K, typename V>
 fu_VEC<K> fu_KEYS(
     const fu_COW_MAP<K, V>& map)
@@ -618,6 +618,7 @@ struct sf_cpp_codegen
     int _fnN {};
     int _clsrN {};
     int _faasN {};
+    int _hasMain {};
     s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
     {
         ((target.index > 0) || fu::fail("Assertion failed."));
@@ -797,8 +798,20 @@ struct sf_cpp_codegen
     {
         fu_STR specs = cgSpecs();
         fu_STR src = cgStatements(root.items);
+        fu_STR main = cgMain();
         fu_STR header = (((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + specs) + _tdef) + _fdef);
-        return (header + src);
+        return ((header + src) + main);
+    };
+    fu_STR cgMain()
+    {
+        if (!_hasMain)
+            return ""_fu;
+
+        if ((_hasMain != 2))
+            return "\n\nint main() { return fu_MAIN(); }\n"_fu;
+
+        annotateString();
+        return ((((((((("\n\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"_fu) + "\n}\n"_fu);
     };
     fu_STR ID(const fu_STR& id)
     {
@@ -933,9 +946,15 @@ struct sf_cpp_codegen
         const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(""_fu); }());
         const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
         fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
-        fu_STR src = (closure ? (("const auto& "_fu + fn.value) + " = [&]("_fu) : (((annot + " "_fu) + fn.value) + "("_fu));
-        if (!hasIdentifierChars(fn.value))
-            src = (((annot + " operator"_fu) + fn.value) + "("_fu);
+        fu_STR id { fn.value };
+        if (((id == "main"_fu) && !closure))
+        {
+            _hasMain = ((fn.items.size() + FN_ARGS_BACK) ? 2 : 1);
+            id = "fu_MAIN"_fu;
+        };
+        fu_STR src = (closure ? (("const auto& "_fu + id) + " = [&]("_fu) : (((annot + " "_fu) + id) + "("_fu));
+        if (!hasIdentifierChars(id))
+            src = (((annot + " operator"_fu) + id) + "("_fu);
 
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
         {

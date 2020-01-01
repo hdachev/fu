@@ -6,8 +6,6 @@
 
 #ifndef ISOLATE_FAILING_TESTCASE
 
-#define main auto_main
-
 #include "../../src/hello.fu.cpp"
 #include "../../src/helpers.fu.cpp"
 
@@ -21,8 +19,6 @@
 #include "../../src/compiler.fu.cpp"
 #include "../../src/tests.fu.cpp"
 
-#undef main
-
 #include "../../lib/cow_vec_test.h"
 
 
@@ -31,7 +27,7 @@
 int main(int argc, const char * argv[])
 {
     cow_vec_tests();
-    auto_main();
+    self_test();
     runTestsAndBuildCompiler();
 
     return 0;
