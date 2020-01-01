@@ -1,0 +1,41 @@
+#import 'helpers';
+#import 'compiler';
+#import 'tests';
+
+fn main(args: string[]): i32
+{
+    mut idx = 0;
+
+    fn next(): string
+    {
+        let i = idx++;
+        if (i < args.len)
+            return args[i];
+
+        return '';
+    }
+
+    // Router.
+    let cmd = next();
+
+    let run = cmd == 'build' ? false
+            : cmd == 'run'   ? true
+            : throw('Bad command: `' + cmd + '`,' +
+                    ' valid examples are `fu build hello.fu`' +
+                    ' and `fu run hello.fu`.');
+
+    let cwd     = fs_cwd();
+    let relpath = next();
+    let abspath = relpath && path_join(cwd, relpath) || throw(
+                    'Missing filename argument, a valid example is:' +
+                    ' `fu ' + cmd + ' main.fu`.');
+
+    //
+    let result  = build(abspath, :run);
+
+    // TODO ....
+    print('BUILT', result);
+
+    // Done.
+    return 0;
+}

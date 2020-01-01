@@ -33,6 +33,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
+fu_STR build(const fu_STR&, const bool&);
 int FAIL(const fu_STR&);
 fu_STR compile_testcase(const fu_STR&);
 s_TEMP_Context solvePrelude();
@@ -493,7 +494,7 @@ inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
 
 s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
 {
-    if (!fu::has(src, "fn main()"_fu))
+    if (!fu::has(src, "fn main("_fu))
         src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     s_TEMP_Context ctx { CTX_PRELUDE };
@@ -522,7 +523,7 @@ fu_STR absdir(const fu_STR& a)
 
                                 #ifndef DEF_HOME
                                 #define DEF_HOME
-inline const fu_STR HOME = absdir(([]() -> fu_STR { { fu_STR _ = fu::env_get("HOME"_fu); if (_.size()) return _; } return "/Users/hdachev"_fu; }()));
+inline const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
                                 #endif
 
 fu_STR locate_PRJDIR()
@@ -545,7 +546,7 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
                                 #endif
 
-fu_STR buildAndRun(const s_TEMP_Context& ctx)
+fu_STR build(const s_TEMP_Context& ctx, const bool& run)
 {
     int code {};
     fu_STR stdout {};
@@ -560,7 +561,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         len_all += cpp.size();
     };
     fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
-    const auto& ERR = [&](fu_STR&& cpp) -> fu_STR&
+    const auto& ERR = [&](fu_STR&& cpp) -> fu::never
     {
         if (!cpp.size())
         {
@@ -574,7 +575,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
         if (!stdout.size())
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
-        return stdout;
+        fu::fail(stdout);
     };
     if ((fu::file_size(F_exe) < 1))
     {
@@ -592,7 +593,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
                 const f64 t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
-                    return ERR(fu_STR(cpp));
+                    ERR(fu_STR(cpp));
 
                 const f64 t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
@@ -611,7 +612,7 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
-                return ERR(""_fu);
+                ERR(""_fu);
             };
             const f64 t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
@@ -620,14 +621,23 @@ fu_STR buildAndRun(const s_TEMP_Context& ctx)
             code = fu::shell_exec((("rm "_fu + Fs.mutref(0)) + ".o 2>&1"_fu), stdout);
 
         if (code)
-            return ERR(""_fu);
+            ERR(""_fu);
 
     };
-    code = fu::shell_exec(F_exe, stdout);
-    if (code)
-        return ERR(""_fu);
+    if (run)
+        code = fu::shell_exec(F_exe, stdout);
 
-    return ""_fu;
+    if (code)
+        ERR(""_fu);
+
+    return F_exe;
+}
+
+fu_STR build(const fu_STR& fname, const bool& run)
+{
+    s_TEMP_Context ctx { CTX_PRELUDE };
+    compile(fname, ""_fu, ctx);
+    return build(ctx, run);
 }
 
 s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
@@ -636,10 +646,7 @@ s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
         fname = "testcase.ZERO"_fu;
 
     s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
-    fu_STR result = buildAndRun(ctx);
-    if (result.size())
-        fu::fail(result);
-
+    build(ctx, true);
     return ctx;
 }
 
@@ -667,7 +674,7 @@ void updateCPPFile(const s_Module& module)
     if ((fu::file_read(fname) != cpp))
     {
         fu::file_write(fname, module.out.cpp);
-        (std::cout << ("WROTE "_fu + fname) << "\n");
+        (std::cout << ("  WROTE "_fu + fname) << "\n");
     };
 }
 

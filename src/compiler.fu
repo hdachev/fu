@@ -93,7 +93,7 @@ fn compile(fname: string, via: string = ''): string
 fn compile_testcase(mut src: string, fname: string): TEMP_Context
 {
     // Some nonsense.
-    if (!src.has('fn main()'))
+    if (!src.has('fn main('))
         src = '\n\nfn main(): i32 {\n' + src + '\n}\n';
 
     //
@@ -131,7 +131,7 @@ fn compile_testcase(src: string): string
 fn absdir(a: string)
     a.last == '/' ? a : a + '/';
 
-let HOME = absdir(env_get('HOME') || '/Users/hdachev');
+let HOME = absdir(env_get('HOME'));
 
 fn locate_PRJDIR(): string {
     let dir = HOME + 'fu/';
@@ -150,7 +150,7 @@ let GCC_CMD = 'g++ -std=c++1z -O3 '
             + '-Wno-parentheses-equality ' // opt-out
             ;
 
-fn buildAndRun(ctx: TEMP_Context): string
+fn build(ctx: TEMP_Context, run: bool): string
 {
     mut code: i32;
     mut stdout: string;
@@ -193,7 +193,7 @@ fn buildAndRun(ctx: TEMP_Context): string
         if (!stdout)
             stdout = '[ EXIT CODE ' + code + ' ]';
 
-        return stdout;
+        return throw(stdout);
     }
 
     if (file_size(F_exe) < 1)
@@ -258,11 +258,21 @@ fn buildAndRun(ctx: TEMP_Context): string
         if (code) return ERR;
     }
 
-    code = shell_exec(F_exe, stdout);
+    if (run)
+        code = shell_exec(F_exe, stdout);
 
     if (code) return ERR;
 
-    return '';
+    // Returns path to resulting binary,
+    //  can be moved out, or ran or whatever.
+    return F_exe;
+}
+
+fn build(fname: string, run: bool)
+{
+    let implicit mut ctx = CTX_PRELUDE;
+    compile(:fname);
+    return build(ctx, :run);
 }
 
 fn ZERO(src: string, mut fname = ''): TEMP_Context
@@ -270,10 +280,8 @@ fn ZERO(src: string, mut fname = ''): TEMP_Context
     if (!fname)
         fname = 'testcase.ZERO';
 
-    let ctx     = compile_testcase(:src, :fname);
-    let result  = buildAndRun(:ctx);
-    if (result)
-        throw(result);
+    let ctx = compile_testcase(:src, :fname);
+    build(:ctx, run: true);
 
     return ctx;
 }
@@ -295,7 +303,7 @@ fn updateCPPFile(module: Module)
     if (file_read(fname) != cpp)
     {
         file_write(fname, module.out.cpp);
-        print('WROTE ' + fname);
+        print('  WROTE ' + fname);
     }
 }
 

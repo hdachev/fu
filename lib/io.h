@@ -68,4 +68,13 @@ inline fu_STR file_read(const fu_STR& path)
     return output;
 }
 
+inline fu_STR fs_cwd()
+{
+    char buf[FS_MAX_PATH];
+
+    auto*  cwd  = getcwd(buf, FS_MAX_PATH);
+    return cwd  ? fu_TO_STR(buf)
+                : fu_STR();
+}
+
 } // namespace

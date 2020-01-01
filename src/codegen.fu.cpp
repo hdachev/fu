@@ -1377,7 +1377,7 @@ struct sf_cpp_codegen
             include("\"../lib/now.h\""_fu);
             return (("fu::"_fu + id) + "()"_fu);
         };
-        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu)))
+        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu) || (id == "fs_cwd"_fu)))
         {
             include("\"../lib/io.h\""_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);

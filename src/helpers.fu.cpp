@@ -85,5 +85,5 @@ fu_STR path_normalize(const fu_STR& p)
 
 fu_STR path_join(const fu_STR& a, const fu_STR& b)
 {
-    return ((b.size() && (fu_TO_STR(b[0]) == "/"_fu)) ? fu_STR(b) : path_normalize(((a + "/"_fu) + b)));
+    return ((b.size() && (fu_TO_STR(b[0]) == "/"_fu)) ? path_normalize(b) : path_normalize(((a + "/"_fu) + b)));
 }

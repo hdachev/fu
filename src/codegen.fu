@@ -428,6 +428,7 @@ pub fn cpp_codegen(
         let items   = fn.items;
         let ret     = items[items.len + FN_RET_BACK] || fail();
         let closure = !!_clsrN && (fn.flags & F_CLOSURE);
+
         let annot   = typeAnnot(
             ret.type || fail(),
             M_RETVAL | (closure ? M_CLOSURE : 0));
@@ -996,7 +997,7 @@ pub fn cpp_codegen(
             return 'fu::' + id + '()';
         }
 
-        if (id == 'file_write' || id == 'file_read' || id == 'file_size')
+        if (id == 'file_write' || id == 'file_read' || id == 'file_size' || id == 'fs_cwd')
         {
             include('"../lib/io.h"');
             return 'fu::' + id + '(' + items.join(', ') + ')';

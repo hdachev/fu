@@ -61,5 +61,5 @@ fn path_normalize(p: string): string {
 }
 
 fn path_join(a: string, b: string)
-    b && b[0] == '/'    ? b
+    b && b[0] == '/'    ? path_normalize(b)
                         : path_normalize(a + '/' + b);

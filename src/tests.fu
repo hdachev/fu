@@ -39,7 +39,7 @@ fn runTestsAndBuildCompiler()
     #import 'hello';
     saySomethingNice();
 
-    FU_FILE('tests.fu');
+    FU_FILE('cli.fu');
 }
 
 fn runTests()
@@ -1477,15 +1477,9 @@ fn runTests()
 
     `);
 
-
-    // Ternary improvements.
-
     ZERO(`
         return 0 > 1 ? throw('should type check') : 0;
     `);
-
-
-    // Catch.
 
     ZERO(`
         fn throw_hey(): i32 {
@@ -1501,4 +1495,26 @@ fn runTests()
             return 7;
         }
     `);
+
+    // ZERO(`
+    //     fn main(): i32 {
+    //         mut args = [ 'hello', 'you' ];
+    //         mut idx = 0;
+
+    //         fn next() {
+    //             let i = idx++;
+    //             if (i < args.len)
+    //                 return args[i];
+
+    //             return '';  // FAILCASE HERE - wants reference gets value
+    //                         // - first off, this shouldn't fail, retval is a value.
+    //                         // - second off, it could also work as a ref -
+    //                         //      has to recognize that this is a definit.
+    //         }
+
+    //         // Router.
+    //         return next().len - 5;
+    //     }
+    // `);
+
 }
