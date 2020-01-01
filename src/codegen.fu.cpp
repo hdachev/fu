@@ -473,6 +473,11 @@ inline const int M_RETVAL = (1 << 3);
 inline const int M_ARGUMENT = (1 << 4);
                                 #endif
 
+                                #ifndef DEF_M_CLOSURE
+                                #define DEF_M_CLOSURE
+inline const int M_CLOSURE = (1 << 5);
+                                #endif
+
                                 #ifndef DEF_q_mutref
                                 #define DEF_q_mutref
 inline const int q_mutref = (1 << 0);
@@ -632,7 +637,7 @@ struct sf_cpp_codegen
     fu_STR typeAnnot(const s_Type& type, const int& mode)
     {
         fu_STR fwd = typeAnnotBase(type);
-        if (((mode & M_RETVAL) && (type.canon == "never"_fu)))
+        if (((mode & M_RETVAL) && (type.canon == "never"_fu) && !(mode & M_CLOSURE)))
             return ("[[noreturn]] "_fu + fwd);
 
         if ((type.quals & q_mutref))
@@ -926,8 +931,8 @@ struct sf_cpp_codegen
     {
         const fu_VEC<s_SolvedNode>& items = fn.items;
         const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(""_fu); }());
-        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), M_RETVAL);
         const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
+        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
         fu_STR src = (closure ? (("const auto& "_fu + fn.value) + " = [&]("_fu) : (((annot + " "_fu) + fn.value) + "("_fu));
         if (!hasIdentifierChars(fn.value))
             src = (((annot + " operator"_fu) + fn.value) + "("_fu);
