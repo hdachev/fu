@@ -34,9 +34,9 @@ struct s_TokenIdx;
 struct s_Type;
 fu_STR last(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
-fu_STR build(const fu_STR&, const bool&);
+void build(const fu_STR&, const bool&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&);
 int FAIL(const fu_STR&);
-fu_STR compile_testcase(const fu_STR&);
+fu_STR compile_snippet(const fu_STR&);
 s_TEMP_Context solvePrelude();
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
@@ -311,7 +311,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template tempatle;
+    s_Template Q_template;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -325,7 +325,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || tempatle
+            || Q_template
             || constant
         ;
     }
@@ -444,12 +444,7 @@ struct s_TEMP_Context
 };
                                 #endif
 
-                                #ifndef DEF_WRITE_FILES
-                                #define DEF_WRITE_FILES
-inline const bool WRITE_FILES = true;
-                                #endif
-
-fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
+void compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
@@ -484,7 +479,6 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
         module.stats.s_cpp = (t2 - t1);
         setModule(module, ctx);
     };
-    return module.out.cpp;
 }
 
                                 #ifndef DEF_CTX_PRELUDE
@@ -492,7 +486,7 @@ fu_STR compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
 inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
-s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
+s_TEMP_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
 {
     if (!fu::has(src, "fn main("_fu))
         src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
@@ -503,10 +497,10 @@ s_TEMP_Context compile_testcase(fu_STR&& src, const fu_STR& fname)
     return ctx;
 }
 
-fu_STR compile_testcase(const fu_STR& src)
+fu_STR compile_snippet(const fu_STR& src)
 {
     fu_STR fname = "testcase"_fu;
-    s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
+    s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         if ((ctx.modules[i].fname == fname))
@@ -516,38 +510,54 @@ fu_STR compile_testcase(const fu_STR& src)
     fu::fail("Assertion failed.");
 }
 
-fu_STR absdir(const fu_STR& a)
-{
-    return ((last(a) == "/"_fu) ? fu_STR(a) : (a + "/"_fu));
-}
-
-                                #ifndef DEF_HOME
-                                #define DEF_HOME
-inline const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
-                                #endif
-
-fu_STR locate_PRJDIR()
-{
-    fu_STR dir = (HOME + "fu/"_fu);
-    fu_STR fn = (dir + "src/compiler.fu"_fu);
-    const int fs = fu::file_size(fn);
-    ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
-    (std::cout << ("PRJDIR: "_fu + dir) << "\n");
-    return dir;
-}
-
-                                #ifndef DEF_PRJDIR
-                                #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
-                                #endif
-
                                 #ifndef DEF_GCC_CMD
                                 #define DEF_GCC_CMD
 inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
                                 #endif
 
-fu_STR build(const s_TEMP_Context& ctx, const bool& run)
+void update_file(const fu_STR& fname, const fu_STR& data)
 {
+    if ((fu::file_read(fname) == data))
+        return;
+
+    fu::file_write(fname, data);
+    (std::cout << ("  WROTE "_fu + fname) << "\n");
+}
+
+void update_cpp(const s_Module& module, const fu_STR& dir_src, const fu_STR& dir_cpp)
+{
+    fu_STR fname = (module.fname + ".cpp"_fu);
+    if ((dir_src.size() && dir_cpp.size()))
+    {
+        if (!fu::lmatch(fname, dir_src))
+        {
+            (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << "\n");
+            return;
+        };
+        fname = (dir_cpp + slice(fname, dir_src.size()));
+    };
+    update_file(fname, module.out.cpp);
+}
+
+void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& dir_obj, fu_STR&& dir_bin, fu_STR&& dir_src, fu_STR&& dir_cpp)
+{
+    if ((last(dir_wrk) != "/"_fu))
+    {
+        (dir_wrk.size() || fu::fail("No workspace directory provided."_fu));
+        dir_wrk += "/"_fu;
+    };
+    if ((dir_obj.size() && (last(dir_obj) != "/"_fu)))
+        dir_obj += "/"_fu;
+
+    if ((dir_bin.size() && (last(dir_bin) != "/"_fu)))
+        dir_bin += "/"_fu;
+
+    if ((dir_src.size() && (last(dir_src) != "/"_fu)))
+        dir_src += "/"_fu;
+
+    if ((dir_cpp.size() && (last(dir_cpp) != "/"_fu)))
+        dir_cpp += "/"_fu;
+
     int code {};
     fu_STR stdout {};
     fu_VEC<fu_STR> Fs {};
@@ -556,11 +566,11 @@ fu_STR build(const s_TEMP_Context& ctx, const bool& run)
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = module.out.cpp;
-        fu_STR F = ((((PRJDIR + "build.cpp/o-"_fu) + fu::hash_tea(cpp)) + "-"_fu) + cpp.size());
+        fu_STR F = ((((dir_wrk + "o-"_fu) + fu::hash_tea(cpp)) + "-"_fu) + cpp.size());
         Fs.push(F);
         len_all += cpp.size();
     };
-    fu_STR F_exe = ((((((PRJDIR + "build.cpp/b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](fu_STR&& cpp) -> fu::never
     {
         if (!cpp.size())
@@ -569,7 +579,7 @@ fu_STR build(const s_TEMP_Context& ctx, const bool& run)
                 cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu);
 
         };
-        fu_STR fname = (PRJDIR + "build.cpp/failing-testcase.cpp"_fu);
+        fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
         (std::cout << ("  WRITE "_fu + fname) << "\n");
         fu::file_write(fname, cpp);
         if (!stdout.size())
@@ -630,23 +640,66 @@ fu_STR build(const s_TEMP_Context& ctx, const bool& run)
     if (code)
         ERR(""_fu);
 
-    return F_exe;
+    if ((dir_cpp.size() && dir_src.size()))
+    {
+        for (int i = 1; (i < ctx.modules.size()); i++)
+            update_cpp(ctx.modules[i], dir_src, dir_cpp);
+
+    };
 }
 
-fu_STR build(const fu_STR& fname, const bool& run)
+void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&& dir_obj, fu_STR&& dir_bin, fu_STR&& dir_src, fu_STR&& dir_cpp)
 {
     s_TEMP_Context ctx { CTX_PRELUDE };
-    compile(fname, ""_fu, ctx);
-    return build(ctx, run);
+    
+    {
+        (std::cout << "COMPILE "_fu << fname << "\n");
+        const f64 t0 = fu::now_hr();
+        compile(fname, ""_fu, ctx);
+        const f64 t1 = fu::now_hr();
+        const f64 tt = (t1 - t0);
+        (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
+    };
+    return build(ctx, run, fu_STR(dir_wrk), fu_STR(dir_obj), fu_STR(dir_bin), fu_STR(dir_src), fu_STR(dir_cpp));
 }
+
+fu_STR absdir(const fu_STR& a)
+{
+    return ((last(a) == "/"_fu) ? fu_STR(a) : (a + "/"_fu));
+}
+
+                                #ifndef DEF_HOME
+                                #define DEF_HOME
+inline const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
+                                #endif
+
+fu_STR locate_PRJDIR()
+{
+    fu_STR dir = (HOME + "fu/"_fu);
+    fu_STR fn = (dir + "src/compiler.fu"_fu);
+    const int fs = fu::file_size(fn);
+    ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
+    (std::cout << ("PRJDIR: "_fu + dir) << "\n");
+    return dir;
+}
+
+                                #ifndef DEF_PRJDIR
+                                #define DEF_PRJDIR
+inline const fu_STR PRJDIR = locate_PRJDIR();
+                                #endif
+
+                                #ifndef DEF_DEFAULT_WORKSPACE
+                                #define DEF_DEFAULT_WORKSPACE
+inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
+                                #endif
 
 s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
 {
     if (!fname.size())
         fname = "testcase.ZERO"_fu;
 
-    s_TEMP_Context ctx = compile_testcase(fu_STR(src), fname);
-    build(ctx, true);
+    s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
+    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), ""_fu, ""_fu, ""_fu, ""_fu);
     return ctx;
 }
 
@@ -655,7 +708,7 @@ int FAIL(const fu_STR& src)
     fu_STR cpp;
     try
     {
-        cpp = compile_testcase(src);
+        cpp = compile_snippet(src);
     }
     catch (const std::exception& o_0)
     {
@@ -665,36 +718,4 @@ int FAIL(const fu_STR& src)
     }
 ;
     fu::fail(("DID NOT THROW: "_fu + cpp));
-}
-
-void updateCPPFile(const s_Module& module)
-{
-    fu_STR fname = (module.fname + ".cpp"_fu);
-    const fu_STR& cpp = module.out.cpp;
-    if ((fu::file_read(fname) != cpp))
-    {
-        fu::file_write(fname, module.out.cpp);
-        (std::cout << ("  WROTE "_fu + fname) << "\n");
-    };
-}
-
-void FU_FILE(fu_STR&& fname)
-{
-    fname = ((PRJDIR + "src/"_fu) + fname);
-    (std::cout << "COMPILE "_fu << fname << "\n");
-    fu_STR src = fu::file_read(fname);
-    if (!src.size())
-        fu::fail(("BAD FILE: "_fu + fname));
-
-    const f64 t0 = fu::now_hr();
-    s_TEMP_Context ctx = ZERO(src, fu_STR(fname));
-    const f64 t1 = fu::now_hr();
-    const f64 tt = (t1 - t0);
-    (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
-    if (WRITE_FILES)
-    {
-        for (int i = 1; (i < ctx.modules.size()); i++)
-            updateCPPFile(ctx.modules[i]);
-
-    };
 }

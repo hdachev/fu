@@ -200,7 +200,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template tempatle;
+    s_Template Q_template;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -214,7 +214,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || tempatle
+            || Q_template
             || constant
         ;
     }
@@ -811,27 +811,36 @@ struct sf_cpp_codegen
             return "\n\nint main() { return fu_MAIN(); }\n"_fu;
 
         annotateString();
-        return ((((((((("\n\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"_fu) + "\n}\n"_fu);
+        return ((((((((("\n\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"_fu) + "\n}\n"_fu);
     };
     fu_STR ID(const fu_STR& id)
     {
         if ((id == "this"_fu))
-            return "_"_fu;
+            return "Q_this"_fu;
 
         if ((id == "template"_fu))
-            return "tempatle"_fu;
+            return "Q_template"_fu;
 
         if ((id == "catch"_fu))
-            return "cahtch"_fu;
+            return "Q_catch"_fu;
 
         if ((id == "not"_fu))
-            return "nott"_fu;
+            return "Q_not"_fu;
 
         if ((id == "and"_fu))
-            return "andd"_fu;
+            return "Q_and"_fu;
 
         if ((id == "or"_fu))
-            return "orr"_fu;
+            return "Q_or"_fu;
+
+        if ((id == "int"_fu))
+            return "Q_int"_fu;
+
+        if ((id == "short"_fu))
+            return "Q_short"_fu;
+
+        if ((id == "long"_fu))
+            return "Q_long"_fu;
 
         return id;
     };

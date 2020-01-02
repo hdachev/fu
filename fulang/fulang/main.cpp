@@ -19,6 +19,10 @@
 #include "../../src/compiler.fu.cpp"
 #include "../../src/tests.fu.cpp"
 
+#define main cli_main
+#include "../../src/cli.fu.cpp"
+#undef  main
+
 #include "../../lib/cow_vec_test.h"
 
 

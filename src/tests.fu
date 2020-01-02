@@ -24,23 +24,13 @@ let TEST_SRC = `
 
 fn self_test(): i32
 {
-    let cpp = compile_testcase(TEST_SRC);
+    let cpp = compile_snippet(TEST_SRC);
 
     return cpp.find('int main()') ? 0 : 101;
 }
 
 
 // Run the whole battery & build self.
-
-fn runTestsAndBuildCompiler()
-{
-    runTests();
-
-    #import 'hello';
-    saySomethingNice();
-
-    FU_FILE('cli.fu');
-}
 
 fn runTests()
 {

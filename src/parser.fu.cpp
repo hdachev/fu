@@ -729,8 +729,8 @@ struct sf_parse
         if (tryConsume("id"_fu, "catch"_fu))
         {
             s_Node err = createLet(consume("id"_fu, ""_fu).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
-            s_Node cahtch = parseStatement();
-            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cahtch } }, 0, ""_fu);
+            s_Node Q_catch = parseStatement();
+            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, ""_fu);
         };
         consume("op"_fu, ";"_fu);
         return ret;
@@ -1059,10 +1059,10 @@ struct sf_parse
     };
     s_Node parseIf()
     {
-        s_Token nott = tryConsume("op"_fu, "!"_fu);
+        s_Token Q_not = tryConsume("op"_fu, "!"_fu);
         consume("op"_fu, "("_fu);
         s_Node cond = parseExpression(int(_precedence));
-        if (nott)
+        if (Q_not)
             cond = createNot(cond);
 
         consume("op"_fu, ")"_fu);

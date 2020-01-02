@@ -2,30 +2,30 @@
 #import 'compiler';
 #import 'tests';
 
-fn main(args: string[]): i32
+fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 {
     mut idx = 0;
 
-    fn next(): string
-    {
+    fn next(): string {
         let i = idx++;
-        if (i < args.len)
-            return args[i];
+        if (i < argv.len)
+            return argv[i];
 
         return '';
     }
 
     // Router.
-    let arg0    = next();
+    let self    = next();
     let cmd     = next();
 
     // Exit 0 on no command, else we fail build-checks.
-    if (!cmd)
-    {
-        print('SELF ', arg0);
+    if (!cmd) {
+        print(self);
+        print('No cli args, running a quick self test.');
         self_test();
+        print('\tEverything looks good.');
 
-        print('Hello! Try `fu run hello.fu`.');
+        print('\n\tHello! Try `fu run file.fu`.');
         return 0;
     }
 
@@ -33,21 +33,100 @@ fn main(args: string[]): i32
     let run = cmd == 'build' ? false
             : cmd == 'run'   ? true
             : throw('Bad command: `' + cmd + '`,' +
-                    ' valid examples are `fu build hello.fu`' +
-                    ' and `fu run hello.fu`.');
+                    '\n\tvalid examples are `fu build file.fu`' +
+                    '\n\tand `fu run file.fu`.');
 
-    let cwd     = fs_cwd();
-    let relpath = next();
-    let abspath = relpath && path_join(cwd, relpath) || throw(
-                    'Missing filename argument, a valid example is:' +
-                    ' `fu ' + cmd + ' main.fu`.');
+    fn abs(path: string)
+        path    && path[0] != '-'
+                && path_join(cwd, path);
+
+    // A silly option parser.
+    let EMIT_CPP = 1 << 0;
+    let EMIT_OBJ = 1 << 1;
+    let EMIT_BIN = 1 << 2;
+
+    mut dir_src: string;
+    mut dir_cpp: string;
+    mut dir_obj: string;
+    mut dir_bin: string;
+
+    mut options: i32;
 
     //
-    let result  = build(abspath, :run);
+    mut val = next();
+    while (val.len > 1 && val[0] == '-') {
+        mut opt = val;
+        if (opt[1] != '-') {
+            opt = opt[1];
+            val = '-' + val.slice(2);
+            if (val == '-')
+                val = next();
+        }
+        else {
+            val = next();
+        }
 
-    // TODO ....
-    print('BUILT', result);
+        fn option(short: string, long: string, o: i32, dir: &mut string) {
+            if (opt == short || opt == long) {
+                options |= o;
+                if (opt == long) {
+                    dir = val;
+                    val = abs(next()) || throw(
+                        'Option --' + long + ' expects a path,' +
+                        '\n\ttry `--' + long + ' rel/or/abs/dir/`');
+                }
+
+                opt = '';
+            }
+        }
+
+        option('-', '--src',        0, dir_src);
+        option('c', '--cpp', EMIT_CPP, dir_cpp);
+        option('o', '--obj', EMIT_OBJ, dir_obj);
+        option('b', '--bin', EMIT_BIN, dir_bin);
+
+        if (opt)
+            throw('Unknown option: `' + opt + '`.');
+    }
+
+    // Defaulting.
+    if (options & EMIT_CPP) {
+        if (!dir_src) dir_src = dir_cpp || cwd;
+        if (!dir_cpp) dir_cpp = dir_src;
+    }
+
+    // Do the work.
+    {
+        let abspath = abs(val) || throw(
+            'Missing filename argument, a valid example is:' +
+            '\n\t`fu ' + cmd + ' file.fu`.');
+
+        let dir_wrk = DEFAULT_WORKSPACE;
+
+        build(abspath, :run,
+            :dir_wrk,
+            :dir_src, :dir_cpp,
+            :dir_obj, :dir_bin);
+    }
 
     // Done.
     return 0;
+}
+
+fn main(argv: string[])
+    cli_handle(argv);
+
+
+//
+
+fn runTestsAndBuildCompiler()
+{
+    runTests();
+
+    #import 'hello';
+    saySomethingNice();
+
+    cli_handle(
+        cwd: PRJDIR,
+        [ 'fu', 'run', '-c', 'src/cli.fu' ]);
 }

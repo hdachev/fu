@@ -266,7 +266,7 @@ pub fn cpp_codegen(
             +  '\n    for (int i = 0; i < argc; i++)'
             +  '\n        args.push(fu_TO_STR(argv[i]));'
             +  '\n'
-            +  '\n    fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));'
+            +  '\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));'
             +  '\n}\n';
     }
 
@@ -275,12 +275,15 @@ pub fn cpp_codegen(
 
     fn ID(id: string): string
     {
-        if (id == 'this')       return '_';
-        if (id == 'template')   return 'tempatle';
-        if (id == 'catch')      return 'cahtch';
-        if (id == 'not')        return 'nott';
-        if (id == 'and')        return 'andd';
-        if (id == 'or')         return 'orr';
+        if (id == 'this')       return 'Q_this';
+        if (id == 'template')   return 'Q_template';
+        if (id == 'catch')      return 'Q_catch';
+        if (id == 'not')        return 'Q_not';
+        if (id == 'and')        return 'Q_and';
+        if (id == 'or')         return 'Q_or';
+        if (id == 'int')        return 'Q_int';
+        if (id == 'short')      return 'Q_short';
+        if (id == 'long')       return 'Q_long';
 
         return id;
     }

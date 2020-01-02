@@ -25,12 +25,9 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
-void runTests();
-void saySomethingNice();
 s_TEMP_Context ZERO(const fu_STR&, fu_STR&&);
-void FU_FILE(fu_STR&&);
 int FAIL(const fu_STR&);
-fu_STR compile_testcase(const fu_STR&);
+fu_STR compile_snippet(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -298,7 +295,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template tempatle;
+    s_Template Q_template;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -312,7 +309,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || tempatle
+            || Q_template
             || constant
         ;
     }
@@ -438,15 +435,8 @@ inline const fu_STR TEST_SRC = "\n    fn test(one: i32) {\n        let zero = on
 
 int self_test()
 {
-    fu_STR cpp = compile_testcase(TEST_SRC);
+    fu_STR cpp = compile_snippet(TEST_SRC);
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
-}
-
-void runTestsAndBuildCompiler()
-{
-    runTests();
-    saySomethingNice();
-    FU_FILE("cli.fu"_fu);
 }
 
 void runTests()
