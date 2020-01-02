@@ -539,7 +539,7 @@ void update_cpp(const s_Module& module, const fu_STR& dir_src, const fu_STR& dir
     update_file(fname, module.out.cpp);
 }
 
-void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& dir_obj, fu_STR&& dir_bin, fu_STR&& dir_src, fu_STR&& dir_cpp)
+void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp)
 {
     if ((last(dir_wrk) != "/"_fu))
     {
@@ -548,9 +548,6 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
     };
     if ((dir_obj.size() && (last(dir_obj) != "/"_fu)))
         dir_obj += "/"_fu;
-
-    if ((dir_bin.size() && (last(dir_bin) != "/"_fu)))
-        dir_bin += "/"_fu;
 
     if ((dir_src.size() && (last(dir_src) != "/"_fu)))
         dir_src += "/"_fu;
@@ -646,9 +643,15 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             update_cpp(ctx.modules[i], dir_src, dir_cpp);
 
     };
+    if (bin.size())
+        code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
+
+    if (code)
+        ERR(""_fu);
+
 }
 
-void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&& dir_obj, fu_STR&& dir_bin, fu_STR&& dir_src, fu_STR&& dir_cpp)
+void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp)
 {
     s_TEMP_Context ctx { CTX_PRELUDE };
     
@@ -660,7 +663,7 @@ void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&&
         const f64 tt = (t1 - t0);
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
-    return build(ctx, run, fu_STR(dir_wrk), fu_STR(dir_obj), fu_STR(dir_bin), fu_STR(dir_src), fu_STR(dir_cpp));
+    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp));
 }
 
 fu_STR absdir(const fu_STR& a)

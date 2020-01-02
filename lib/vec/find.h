@@ -94,5 +94,32 @@ fu_INL bool has(const V& vec, const I& item) noexcept
     return fu::lfind(vec, item) != -1;
 }
 
+// ends with substr
+template <  typename H, typename N,
+            typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
+            typename D = decltype(((H*)1)->data() - ((N*)1)->data())
+                >
+bool rmatch(const H& haystack, const N& needle, S start = S(0)) noexcept
+{
+    auto* data = haystack.data();
+    auto  size = haystack.size();
+    start = start >= S(0) ? start : S(0);
+    start = start <= size ? start : size;
+
+    auto nsize = needle.size();
+    if (nsize < 0 || nsize > size - start)
+        return false;
+
+    auto* search = needle.data();
+    auto* end    = search + nsize;
+    auto* match  = data   + (size - start);
+
+    for ( ; search < end; search++, match++)
+        if (*search != *match)
+            return false;
+
+    return true;
+}
+
 }
 // namespace fu

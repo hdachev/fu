@@ -1333,6 +1333,11 @@ struct sf_cpp_codegen
             include("\"../lib/vec/find.h\""_fu);
             return (("fu::lmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
+        if (((id == "ends"_fu) && (items.size() == 2)))
+        {
+            include("\"../lib/vec/find.h\""_fu);
+            return (("fu::rmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
+        };
         if (((id == "has"_fu) && (items.size() == 2)))
         {
             include("\"../lib/vec/find.h\""_fu);

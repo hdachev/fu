@@ -956,6 +956,12 @@ pub fn cpp_codegen(
             return 'fu::lmatch(' + items.join(', ') + ')';
         }
 
+        if (id == 'ends' && items.len == 2)
+        {
+            include('"../lib/vec/find.h"');
+            return 'fu::rmatch(' + items.join(', ') + ')';
+        }
+
         if (id == 'has' && items.len == 2)
         {
             include('"../lib/vec/find.h"');

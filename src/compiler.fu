@@ -165,8 +165,8 @@ pub fn build(
 
     mut dir_wrk: string,
 
+    mut bin     = '',
     mut dir_obj = '',
-    mut dir_bin = '',
     mut dir_src = '',
     mut dir_cpp = ''): void
 {
@@ -179,7 +179,6 @@ pub fn build(
 
     //
     if (dir_obj && dir_obj.last != '/') dir_obj += '/';
-    if (dir_bin && dir_bin.last != '/') dir_bin += '/';
     if (dir_src && dir_src.last != '/') dir_src += '/';
     if (dir_cpp && dir_cpp.last != '/') dir_cpp += '/';
 
@@ -298,6 +297,12 @@ pub fn build(
         for (mut i = 1; i < ctx.modules.len; i++)
             update_cpp(ctx.modules[i],
                 :dir_cpp, :dir_src);
+
+    // output binary.
+    if (bin)
+        code = shell_exec('mv ' + F_exe + ' ' + bin + ' 2>&1', stdout);
+
+    if (code) return ERR;
 }
 
 pub fn build(
@@ -306,8 +311,8 @@ pub fn build(
 
     dir_wrk: string,
 
+    bin     = '',
     dir_obj = '',
-    dir_bin = '',
     dir_src = '',
     dir_cpp = '')
 {
@@ -324,8 +329,8 @@ pub fn build(
         print('        ', tt, 's\n');
     }
 
-    return build(ctx, :run, :dir_wrk,
-        :dir_obj, :dir_bin, :dir_src, :dir_cpp);
+    return build(ctx, :run, :bin,
+        :dir_wrk, :dir_obj, :dir_src, :dir_cpp);
 }
 
 

@@ -19,13 +19,15 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     let cmd     = next();
 
     // Exit 0 on no command, else we fail build-checks.
-    if (!cmd) {
-        print(self);
-        print('No cli args, running a quick self test.');
-        self_test();
-        print('\tEverything looks good.');
+    if (!cmd)
+    {
+        print('\n\tHello! ', self);
+        print(  '\tNothing to do, running a quick self test.\n');
 
-        print('\n\tHello! Try `fu run file.fu`.');
+        self_test();
+        print('\tEverything checks out.');
+        print('\tTry `fu run file.fu`.\n');
+
         return 0;
     }
 
@@ -48,7 +50,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     mut dir_src: string;
     mut dir_cpp: string;
     mut dir_obj: string;
-    mut dir_bin: string;
+    mut bin:     string;
 
     mut options: i32;
 
@@ -70,10 +72,12 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
             if (opt == short || opt == long) {
                 options |= o;
                 if (opt == long) {
-                    dir = val;
-                    val = abs(next()) || throw(
-                        'Option --' + long + ' expects a path,' +
-                        '\n\ttry `--' + long + ' rel/or/abs/dir/`');
+                    dir = abs(val) || throw(
+                        'Option ' + long + ' expects a path,' +
+                        '\n\tgot `' + val + '`,' +
+                        '\n\ttry `' + long + ' rel/or/abs/dir/`.');
+
+                    val = next();
                 }
 
                 opt = '';
@@ -83,7 +87,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         option('-', '--src',        0, dir_src);
         option('c', '--cpp', EMIT_CPP, dir_cpp);
         option('o', '--obj', EMIT_OBJ, dir_obj);
-        option('b', '--bin', EMIT_BIN, dir_bin);
+        option('b', '--bin', EMIT_BIN,     bin);
 
         if (opt)
             throw('Unknown option: `' + opt + '`.');
@@ -96,20 +100,21 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     }
 
     // Do the work.
-    {
-        let abspath = abs(val) || throw(
-            'Missing filename argument, a valid example is:' +
-            '\n\t`fu ' + cmd + ' file.fu`.');
+    let fname = abs(val) || throw(
+        'Missing filename argument, a valid example is:' +
+        '\n\t`fu ' + cmd + ' file.fu`.');
 
-        let dir_wrk = DEFAULT_WORKSPACE;
+    let dir_wrk = DEFAULT_WORKSPACE;
 
-        build(abspath, :run,
-            :dir_wrk,
-            :dir_src, :dir_cpp,
-            :dir_obj, :dir_bin);
-    }
+    if (options & EMIT_BIN)
+        bin ||= fname.ends(with: '.fu')
+                ? fname.slice(0, fname.len - '.fu'.len)
+                : fname + '.exe';
 
-    // Done.
+    // Go.
+    build(:fname, :run, :bin,
+        :dir_wrk, :dir_src, :dir_cpp, :dir_obj);
+
     return 0;
 }
 
@@ -128,5 +133,5 @@ fn runTestsAndBuildCompiler()
 
     cli_handle(
         cwd: PRJDIR,
-        [ 'fu', 'run', '-c', 'src/cli.fu' ]);
+        [ 'fu', 'run', '--bin', 'bin/fu', '-c', 'src/cli.fu' ]);
 }
