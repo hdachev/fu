@@ -129,22 +129,13 @@ let GCC_CMD = 'g++ -std=c++1z -O3 '
             + '-Wno-parentheses-equality ' // opt-out
             ;
 
-fn update_file(fname: string, data: string)
+fn update_file(
+    mut fname   : string,
+        data    : string,
+        dir_src : string = '',
+        dir_out : string = '')
 {
-    if (file_read(fname) == data)
-        return;
-
-    file_write(fname, data);
-    print('  WROTE ' + fname);
-}
-
-fn update_cpp(module: Module,
-    dir_src: string = '',
-    dir_cpp: string = '')
-{
-    mut fname = module.fname + '.cpp';
-
-    if (dir_src && dir_cpp)
+    if (dir_src && dir_out)
     {
         if (!fname.starts(with: dir_src))
         {
@@ -153,10 +144,17 @@ fn update_cpp(module: Module,
         }
 
         // TODO mkdirp
-        fname = dir_cpp + fname.slice(dir_src.len);
+        fname = dir_out + fname.slice(dir_src.len);
     }
 
-    update_file(:fname, module.out.cpp);
+    if (file_read(fname) == data)
+        return;
+
+    let err = file_write(fname, data);
+    if (err)
+        throw('Failed to write `' + fname + '`, error: #' + err);
+
+    print('  WROTE ' + fname);
 }
 
 pub fn build(
@@ -168,7 +166,9 @@ pub fn build(
     mut bin     = '',
     mut dir_obj = '',
     mut dir_src = '',
-    mut dir_cpp = ''): void
+    mut dir_cpp = '',
+
+    unity: string = ''): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.last != '/')
@@ -224,6 +224,14 @@ pub fn build(
         return throw(stdout);
     }
 
+    // Link order.
+    mut link_order: i32[];
+
+    // TODO dep sort
+    for (mut i = ctx.modules.len; i --> 1/*prelude*/; )
+        link_order.push(i - 1/*prelude*/);
+
+    //
     if (file_size(F_exe) < 1)
     {
         // Build.
@@ -258,8 +266,8 @@ pub fn build(
         let F_tmp = F_exe + '.tmp';
 
         mut cmd = GCC_CMD + '-o ' + F_tmp + ' ';
-        for (mut i = Fs.len; i --> 0; )
-            cmd += Fs[i] + '.o ';
+        for (mut i = 0; i < link_order.len; i++)
+            cmd += Fs[link_order[i]] + '.o ';
 
         {
             print('   LINK ', F_exe);
@@ -294,9 +302,35 @@ pub fn build(
 
     // .cpp file output.
     if (dir_cpp && dir_src)
-        for (mut i = 1; i < ctx.modules.len; i++)
-            update_cpp(ctx.modules[i],
-                :dir_cpp, :dir_src);
+    {
+        mut cpp_files: string[];
+
+        for (mut i = 1/*prelude*/; i < ctx.modules.len; i++)
+        {
+            let module  = ctx.modules[i];
+            let fname   = module.fname + '.cpp';
+            let data    = module.out.cpp;
+
+            update_file(
+                :fname, :data,
+                :dir_src, dir_out: dir_cpp);
+
+            cpp_files.push(fname);
+        }
+
+        if (unity)
+        {
+            link_order.len == cpp_files.len || assert();
+
+            mut data = '#pragma once\n\n';
+            for (mut i = 0; i < link_order.len; i++)
+                data += '#include "' + cpp_files[link_order[i]] + '"\n';
+
+            update_file(
+                fname: unity + '.unity.cpp', :data,
+                :dir_src, dir_out: dir_cpp);
+        }
+    }
 
     // output binary.
     if (bin)
@@ -329,7 +363,7 @@ pub fn build(
         print('        ', tt, 's\n');
     }
 
-    return build(ctx, :run, :bin,
+    return build(ctx, :run, :bin, unity :fname,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp);
 }
 

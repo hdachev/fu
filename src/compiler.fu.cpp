@@ -515,31 +515,28 @@ fu_STR compile_snippet(const fu_STR& src)
 inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
                                 #endif
 
-void update_file(const fu_STR& fname, const fu_STR& data)
+void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
-    if ((fu::file_read(fname) == data))
-        return;
-
-    fu::file_write(fname, data);
-    (std::cout << ("  WROTE "_fu + fname) << "\n");
-}
-
-void update_cpp(const s_Module& module, const fu_STR& dir_src, const fu_STR& dir_cpp)
-{
-    fu_STR fname = (module.fname + ".cpp"_fu);
-    if ((dir_src.size() && dir_cpp.size()))
+    if ((dir_src.size() && dir_out.size()))
     {
         if (!fu::lmatch(fname, dir_src))
         {
             (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << "\n");
             return;
         };
-        fname = (dir_cpp + slice(fname, dir_src.size()));
+        fname = (dir_out + slice(fname, dir_src.size()));
     };
-    update_file(fname, module.out.cpp);
+    if ((fu::file_read(fname) == data))
+        return;
+
+    const int err = fu::file_write(fname, data);
+    if (err)
+        fu::fail(((("Failed to write `"_fu + fname) + "`, error: #"_fu) + err));
+
+    (std::cout << ("  WROTE "_fu + fname) << "\n");
 }
 
-void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp)
+void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity)
 {
     if ((last(dir_wrk) != "/"_fu))
     {
@@ -584,6 +581,10 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
         fu::fail(stdout);
     };
+    fu_VEC<int> link_order {};
+    for (int i = ctx.modules.size(); (i-- > 1); )
+        link_order.push((i - 1));
+
     if ((fu::file_size(F_exe) < 1))
     {
         for (int i = 0; (i < Fs.size()); i++)
@@ -608,8 +609,8 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
-        for (int i = Fs.size(); (i-- > 0); )
-            cmd += (Fs.mutref(i) + ".o "_fu);
+        for (int i = 0; (i < link_order.size()); i++)
+            cmd += (Fs.mutref(link_order.mutref(i)) + ".o "_fu);
 
         
         {
@@ -639,9 +640,24 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
     if ((dir_cpp.size() && dir_src.size()))
     {
+        fu_VEC<fu_STR> cpp_files {};
         for (int i = 1; (i < ctx.modules.size()); i++)
-            update_cpp(ctx.modules[i], dir_src, dir_cpp);
+        {
+            const s_Module& module = ctx.modules[i];
+            fu_STR fname = (module.fname + ".cpp"_fu);
+            const fu_STR& data = module.out.cpp;
+            update_file(fu_STR(fname), data, dir_src, dir_cpp);
+            cpp_files.push(fname);
+        };
+        if (unity.size())
+        {
+            ((link_order.size() == cpp_files.size()) || fu::fail("Assertion failed."));
+            fu_STR data = "#pragma once\n\n"_fu;
+            for (int i = 0; (i < link_order.size()); i++)
+                data += (("#include \""_fu + cpp_files.mutref(link_order.mutref(i))) + "\"\n"_fu);
 
+            update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
+        };
     };
     if (bin.size())
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
@@ -663,7 +679,7 @@ void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&&
         const f64 tt = (t1 - t0);
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
-    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp));
+    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname);
 }
 
 fu_STR absdir(const fu_STR& a)
@@ -702,7 +718,7 @@ s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
         fname = "testcase.ZERO"_fu;
 
     s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), ""_fu, ""_fu, ""_fu, ""_fu);
+    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), ""_fu, ""_fu, ""_fu, ""_fu, ""_fu);
     return ctx;
 }
 

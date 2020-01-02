@@ -197,7 +197,7 @@ fn env_get(key: string): string __native_pure;
 fn fs_cwd(): string __native_pure;
 fn file_size(path: string): i32 __native_pure;
 fn file_read(path: string): string __native_pure;
-fn file_write(path: string, body: string): bool __native_pure;
+fn file_write(path: string, body: string): i32 __native_pure;
 
 fn shell_exec(cmd: string): i32 __native_pure;
 fn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;

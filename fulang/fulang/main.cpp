@@ -6,21 +6,8 @@
 
 #ifndef ISOLATE_FAILING_TESTCASE
 
-#include "../../src/hello.fu.cpp"
-#include "../../src/helpers.fu.cpp"
-
-#include "../../src/lexer.fu.cpp"
-#include "../../src/parser.fu.cpp"
-#include "../../src/types.fu.cpp"
-#include "../../src/solver.fu.cpp"
-#include "../../src/codegen.fu.cpp"
-#include "../../src/prelude.fu.cpp"
-
-#include "../../src/compiler.fu.cpp"
-#include "../../src/tests.fu.cpp"
-
 #define main cli_main
-#include "../../src/cli.fu.cpp"
+#include "../../src/cli.fu.unity.cpp"
 #undef  main
 
 #include "../../lib/cow_vec_test.h"
