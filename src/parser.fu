@@ -540,6 +540,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (!type && _numReturns == numReturns0)
             items[retIdx] = type = createRead('void');
 
+        // Ensure main: i32, kinda lame doing it here.
+        if (name.value == 'main' && _fnDepth == 1)
+        {
+            if (!type)
+                items[retIdx] = type = createRead('i32');
+            else if (type.kind != 'call' || type.value != 'i32' || type.items.len)
+                fail('fn main() must return i32.');
+        }
+
+        //
         if (type)
             flags |= F_FULLY_TYPED;
 

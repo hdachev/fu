@@ -626,6 +626,14 @@ struct sf_parse
         if ((!type && (_numReturns == numReturns0)))
             items.mutref(retIdx) = (type = createRead("void"_fu));
 
+        if (((name.value == "main"_fu) && (_fnDepth == 1)))
+        {
+            if (!type)
+                items.mutref(retIdx) = (type = createRead("i32"_fu));
+            else if (((type.kind != "call"_fu) || (type.value != "i32"_fu) || type.items.size()))
+                fail("fn main() must return i32."_fu);
+
+        };
         if (type)
             flags |= F_FULLY_TYPED;
 
