@@ -647,7 +647,7 @@ fn runTests()
         src += "\n";
         src += "\n    {";
         src += "\n        mut arr0 = [" + literal + "];";
-        src += "\n        arr0." + operation + "; // expect_lambda";
+        src += "\n        arr0." + operation + ";";
         src += "\n        if (" + EXPR("arr0") + " != 0) return 13;";
         src += "\n    }";
         src += "\n";
@@ -655,14 +655,14 @@ fn runTests()
         src += "\n";
         src += "\n    {";
         src += "\n        mut arr1 = CLONE(orig);";
-        src += "\n        arr1." + operation + "; // expect_lambda";
+        src += "\n        arr1." + operation + ";";
         src += "\n        if (" + EXPR("arr1") + " != 0) return 17;";
         src += "\n    }";
         src += "\n";
         src += "\n    {";
         src += "\n        mut arr2 = STEAL(orig);";
         src += "\n        if (orig.len) return 19;";
-        src += "\n        arr2." + operation + "; // expect_lambda";
+        src += "\n        arr2." + operation + ";";
         src += "\n        if (" + EXPR("arr2") + " != 0) return 23;";
         src += "\n    }";
         src += "\n";
@@ -795,18 +795,18 @@ fn runTests()
 
     ZERO(`
         return 'hello world'.find('world')
-             - 2 * [1, 7, 13, 14, 19].find(14); // expect_lambda
+             - 2 * [1, 7, 13, 14, 19].find(14);
     `);
 
     ZERO(`
-        return ('hello world'.has('world') ? 1 : 0) // expect_lambda
+        return ('hello world'.has('world') ? 1 : 0)
              + ([1, 14, 96, 2].has(14)     ? 2 : 0)
              - 3;
     `);
 
     ZERO(`
         let hw = 'hello world!';
-        let a = hw.slice(6, 6 + 5); // expect_lambda
+        let a = hw.slice(6, 6 + 5);
         let b = hw.substr(6, 5);
         return a == b && a == 'world' ? a.len - 5 : 1;
     `);
@@ -858,7 +858,7 @@ fn runTests()
         let b = 'hello world';
         mut offset = 0;
 
-        fn pop(): string { // expect_lambda
+        fn pop(): string {
             mut a = '';
 
             while (offset < b.len) {
@@ -919,13 +919,13 @@ fn runTests()
 
     ZERO(`
         struct Test { x: i32; };
-        fn hey() Test(); // expect_lambda private type, technically ok, technically ok though not needed
+        fn hey() Test();
         return hey.x;
     `);
 
     ZERO(`
         struct Test { x: i32; };
-        fn hey(y: i32 = 0) // expect_lambda private type, technically ok though not needed
+        fn hey(y: i32 = 0)
             y   ? Test(1)
                 : Test();
 
@@ -1033,13 +1033,13 @@ fn runTests()
         let y = 'world';
         let w = x || y;
 
-        return w == 'hello' ? 0 : 1; // expect_lambda
+        return w == 'hello' ? 0 : 1;
     `);
 
     ZERO(`
         let x = 'hello';
         let y = 'world';
-        let w = x && y; // expect_lambda
+        let w = x && y;
 
         return w == 'world' ? 0 : 1;
     `);
@@ -1047,7 +1047,7 @@ fn runTests()
     ZERO(`
         let x = 'hello';
         let y = 'world';
-        let w = 3 && x || y; // expect_lambda
+        let w = 3 && x || y;
 
         return w == 'hello' ? 0 : 1;
     `);
@@ -1056,7 +1056,7 @@ fn runTests()
         let x = 'hello';
         let y = 'world';
         let arr: i32[];
-        let w = arr && x || y; // expect_lambda
+        let w = arr && x || y;
 
         return w == 'world' ? 0 : 1;
     `);
@@ -1065,7 +1065,7 @@ fn runTests()
         let x = 'hello';
         let y = 'world';
         let arr: i32[];
-        let w = arr && x || y || throw("Nope."); // expect_lambda
+        let w = arr && x || y || throw("Nope.");
 
         return w == 'world' ? 0 : 1;
     `);
@@ -1077,13 +1077,13 @@ fn runTests()
 
     ZERO(`
         mut i = 7;
-        i ||= 11; // expect_lambda
+        i ||= 11;
         return i - 7;
     `);
 
     ZERO(`
         mut i = 0;
-        i ||= 11; // expect_lambda
+        i ||= 11;
         return i - 11;
     `);
 
@@ -1093,7 +1093,7 @@ fn runTests()
 
         m['hello'] = 'world';
         fn f() (
-            g++, 'cruel world'); // expect_lambda
+            g++, 'cruel world');
 
         m['hello'] ||= f();
         return g;
@@ -1105,7 +1105,7 @@ fn runTests()
 
         m['_not_hello_'] = 'world';
         fn f() (
-            g++, 'cruel world'); // expect_lambda
+            g++, 'cruel world');
 
         m['hello'] ||= f();
         return g - 1;
