@@ -34,7 +34,7 @@ struct s_TokenIdx;
 struct s_Type;
 fu_STR last(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
-void build(const fu_STR&, const bool&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&);
+void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
 s_TEMP_Context solvePrelude();
@@ -493,7 +493,7 @@ s_TEMP_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
 
     s_TEMP_Context ctx { CTX_PRELUDE };
     (ctx.files.upsert(fname) = src);
-    compile(fname, ""_fu, ctx);
+    compile(fname, fu_STR{}, ctx);
     return ctx;
 }
 
@@ -620,7 +620,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
-                ERR(""_fu);
+                ERR(fu_STR{});
             };
             const f64 t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
@@ -629,14 +629,14 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             code = fu::shell_exec((("rm "_fu + Fs[0]) + ".o 2>&1"_fu), stdout);
 
         if (code)
-            ERR(""_fu);
+            ERR(fu_STR{});
 
     };
     if (run)
         code = fu::shell_exec(F_exe, stdout);
 
     if (code)
-        ERR(""_fu);
+        ERR(fu_STR{});
 
     if ((dir_cpp.size() && dir_src.size()))
     {
@@ -663,18 +663,18 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
 
     if (code)
-        ERR(""_fu);
+        ERR(fu_STR{});
 
 }
 
-void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp)
+void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp)
 {
     s_TEMP_Context ctx { CTX_PRELUDE };
     
     {
         (std::cout << "COMPILE "_fu << fname << "\n");
         const f64 t0 = fu::now_hr();
-        compile(fname, ""_fu, ctx);
+        compile(fname, fu_STR{}, ctx);
         const f64 t1 = fu::now_hr();
         const f64 tt = (t1 - t0);
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
@@ -718,7 +718,7 @@ s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
         fname = "testcase.ZERO"_fu;
 
     s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), ""_fu, ""_fu, ""_fu, ""_fu, ""_fu);
+    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }
 

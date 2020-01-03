@@ -1486,22 +1486,22 @@ fn runTests()
         }
     `);
 
-    // ZERO(`
-    //     fn main(): i32 {
-    //         mut args = [ 'hello', 'you' ];
-    //         mut idx = 0;
+    ZERO(`
+        fn main(): i32 {
+            let args = [ 'hello', 'you' ];
+            mut idx = 0;
 
-    //         fn next() {
-    //             let i = idx++;
-    //             if (i < args.len)
-    //                 return args[i];
+            fn next() {
+                let i = idx++;
+                if (i < args.len)
+                    return args[i];
 
-    //             return '';
-    //         }
+                return '';
+            }
 
-    //         // Router.
-    //         return next().len - 5;
-    //     }
-    // `);
+            // Router.
+            return next().len - 5;
+        }
+    `);
 
 }

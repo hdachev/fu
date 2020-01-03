@@ -1,3 +1,4 @@
+#include "../lib/default.h"
 #include "../lib/map.h"
 #include "../lib/never.h"
 #include "../lib/str.h"
@@ -348,7 +349,7 @@ struct sf_parse
     int _fnDepth = 0;
     int _numReturns = 0;
     int _implicits = 0;
-    fu_STR _structName = ""_fu;
+    fu_STR _structName {};
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
     [[noreturn]] fu::never fail(fu_STR&& reason)
@@ -400,7 +401,7 @@ struct sf_parse
     s_Node parseRoot()
     {
         _loc = _idx;
-        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, ""_fu), 0, ""_fu);
+        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, fu_STR{}), 0, fu_STR{});
         if (_implicits)
             out.flags |= F_IMPLICIT;
 
@@ -408,22 +409,22 @@ struct sf_parse
     };
     s_Node parseBlock()
     {
-        return createBlock(parseBlockLike("op"_fu, "}"_fu, ""_fu));
+        return createBlock(parseBlockLike("op"_fu, "}"_fu, fu_STR{}));
     };
     s_Node createBlock(const fu_VEC<s_Node>& items)
     {
-        return make("block"_fu, items, 0, ""_fu);
+        return make("block"_fu, items, 0, fu_STR{});
     };
     s_Node parseStructDecl()
     {
-        s_Token name = tryConsume("id"_fu, ""_fu);
+        s_Token name = tryConsume("id"_fu, fu_STR{});
         const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_.size()) return _; } fail("Anon structs."_fu); }());
         fu_STR structName0 { _structName };
         _structName = id;
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
         _structName = structName0;
-        return make("struct"_fu, items, 0, (name ? fu_STR(name.value) : ""_fu));
+        return make("struct"_fu, items, 0, (name ? name.value : fu::Default<fu_STR>::value));
     };
     s_Node parseStructItem()
     {
@@ -443,7 +444,7 @@ struct sf_parse
     s_Node parseStructMethod()
     {
         s_Node fnNode = parseFnDecl();
-        s_Node typeAnnot = createPrefix("&"_fu, createRead(([&]() -> const fu_STR& { { const fu_STR& _ = _structName; if (_.size()) return _; } fail(""_fu); }())));
+        s_Node typeAnnot = createPrefix("&"_fu, createRead(([&]() -> const fu_STR& { { const fu_STR& _ = _structName; if (_.size()) return _; } fail(fu_STR{}); }())));
         fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
         fnNode.flags |= F_METHOD;
         return fnNode;
@@ -452,7 +453,7 @@ struct sf_parse
     {
         const int& line0 = tokens[_idx].line;
         const int col00 = _col0;
-        fu_VEC<s_Node> items = fu_VEC<s_Node>{};
+        fu_VEC<s_Node> items {};
         while (true)
         {
             const s_Token& token = tokens[_idx];
@@ -493,7 +494,7 @@ struct sf_parse
                     structNode.flags |= F_DESTRUCTOR;
                     item.flags |= F_DESTRUCTOR;
                 };
-                ((item.items.size() >= 2) || fail(""_fu));
+                ((item.items.size() >= 2) || fail(fu_STR{}));
                 out.push(item);
                 members.splice(i--, 1);
             };
@@ -503,7 +504,7 @@ struct sf_parse
     s_Node parseStatement()
     {
         const int loc0 = _loc;
-        const s_Token& token = ([&]() -> const s_Token& { { const s_Token& _ = tokens[(_loc = _idx++)]; if (_) return _; } fail(""_fu); }());
+        const s_Token& token = ([&]() -> const s_Token& { { const s_Token& _ = tokens[(_loc = _idx++)]; if (_) return _; } fail(fu_STR{}); }());
         if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
@@ -566,7 +567,7 @@ struct sf_parse
     };
     s_Node parsePragma()
     {
-        fu_STR v = consume("id"_fu, ""_fu).value;
+        fu_STR v = consume("id"_fu, fu_STR{}).value;
         if ((v == "import"_fu))
             return parseImport();
 
@@ -574,7 +575,7 @@ struct sf_parse
     };
     s_Node parseImport()
     {
-        fu_STR value = consume("str"_fu, ""_fu).value;
+        fu_STR value = consume("str"_fu, fu_STR{}).value;
         consume("op"_fu, ";"_fu);
         if (!path_ext(value).size())
             value += ".fu"_fu;
@@ -590,19 +591,19 @@ struct sf_parse
     };
     s_Node parseLabelledStatement()
     {
-        s_Token label = consume("id"_fu, ""_fu);
+        s_Token label = consume("id"_fu, fu_STR{});
         s_Node stmt = parseStatement();
         if ((stmt.kind == "loop"_fu))
         {
-            (stmt.value.size() && fail(""_fu));
-            stmt.value = ([&]() -> const fu_STR& { { const fu_STR& _ = label.value; if (_.size()) return _; } fail(""_fu); }());
+            (stmt.value.size() && fail(fu_STR{}));
+            stmt.value = ([&]() -> const fu_STR& { { const fu_STR& _ = label.value; if (_.size()) return _; } fail(fu_STR{}); }());
             return stmt;
         };
-        fail(""_fu);
+        fail(fu_STR{});
     };
     s_Node parseEmpty()
     {
-        return make("empty"_fu, fu_VEC<s_Node>{}, 0, ""_fu);
+        return make("empty"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
     };
     s_Node parseExpressionStatement()
     {
@@ -614,7 +615,7 @@ struct sf_parse
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, ""_fu); if (_) return _; } return tryConsume("op"_fu, ""_fu); }());
+        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return tryConsume("op"_fu, fu_STR{}); }());
         consume("op"_fu, "("_fu);
         fu_VEC<s_Node> items {};
         int flags = parseArgsDecl(items, "op"_fu, ")"_fu);
@@ -654,17 +655,17 @@ struct sf_parse
         s_Node body {};
         if (tryConsume("id"_fu, "case"_fu))
         {
-            fu_VEC<s_Node> branches = fu_VEC<s_Node>{};
+            fu_VEC<s_Node> branches {};
             flags |= F_PATTERN;
             do
             {
                 s_Node cond = parseUnaryExpression();
                 s_Node type = tryPopTypeAnnot();
                 s_Node body = parseFnBodyBranch();
-                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body } }, 0, ""_fu));
+                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body } }, 0, fu_STR{}));
             }
             while (tryConsume("id"_fu, "case"_fu));
-            body = make("pattern"_fu, branches, 0, ""_fu);
+            body = make("pattern"_fu, branches, 0, fu_STR{});
         }
         else
             body = parseFnBodyBranch();
@@ -736,9 +737,9 @@ struct sf_parse
         s_Node ret = parseLet();
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = createLet(consume("id"_fu, ""_fu).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
+            s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
             s_Node Q_catch = parseStatement();
-            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, ""_fu);
+            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, fu_STR{});
         };
         consume("op"_fu, ";"_fu);
         return ret;
@@ -756,7 +757,7 @@ struct sf_parse
         if (tryConsume("id"_fu, "mut"_fu))
             flags |= F_MUT;
 
-        fu_STR id = consume("id"_fu, ""_fu).value;
+        fu_STR id = consume("id"_fu, fu_STR{}).value;
         s_Node type = tryPopTypeAnnot();
         s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
         if ((numDollars0 != _dollars.size()))
@@ -871,17 +872,17 @@ struct sf_parse
                     return parseTypeTag();
 
                 if ((v == "[]"_fu))
-                    return make("definit"_fu, fu_VEC<s_Node>{}, 0, ""_fu);
+                    return make("definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 
                 return parsePrefix(fu_STR(token.value));
             };
         };
         _idx--;
-        fail(""_fu);
+        fail(fu_STR{});
     };
     s_Node parseParens()
     {
-        fu_VEC<s_Node> items = fu_VEC<s_Node>{};
+        fu_VEC<s_Node> items {};
         do
             items.push(parseExpression(int(P_COMMA)));
         while (tryConsume("op"_fu, ","_fu));
@@ -890,11 +891,11 @@ struct sf_parse
     };
     s_Node createComma(const fu_VEC<s_Node>& nodes)
     {
-        return make("comma"_fu, nodes, 0, ""_fu);
+        return make("comma"_fu, nodes, 0, fu_STR{});
     };
     s_Node parseTypeParam()
     {
-        fu_STR value = consume("id"_fu, ""_fu).value;
+        fu_STR value = consume("id"_fu, fu_STR{}).value;
         if (!fu::has(_dollars, value))
             _dollars.push(value);
 
@@ -906,7 +907,7 @@ struct sf_parse
     };
     s_Node parseTypeTag()
     {
-        return createTypeTag(consume("id"_fu, ""_fu).value);
+        return createTypeTag(consume("id"_fu, fu_STR{}).value);
     };
     s_Node createTypeTag(const fu_STR& value)
     {
@@ -914,7 +915,7 @@ struct sf_parse
     };
     s_Node parsePrefix(fu_STR&& op)
     {
-        (fu::has(PREFIX, op) || ((void)_idx--, fail(""_fu)));
+        (fu::has(PREFIX, op) || ((void)_idx--, fail(fu_STR{})));
         if (((op == "&"_fu) && tryConsume("id"_fu, "mut"_fu)))
             op = "&mut"_fu;
 
@@ -933,11 +934,11 @@ struct sf_parse
     };
     s_Node createNot(const s_Node& expr)
     {
-        return make("!"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } }, 0, ""_fu);
+        return make("!"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } }, 0, fu_STR{});
     };
     s_Node parseAccessExpression(const s_Node& expr)
     {
-        return createCall(consume("id"_fu, ""_fu).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
+        return createCall(consume("id"_fu, fu_STR{}).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
     };
     int parseCallArgs(const fu_STR& endop, fu_VEC<s_Node>& out_args)
     {
@@ -958,7 +959,7 @@ struct sf_parse
                 };
             };
             first = false;
-            fu_STR name = ""_fu;
+            fu_STR name {};
             bool autoName = false;
             if (((tokens[_idx].kind == "id"_fu) && (tokens[(_idx + 1)].kind == "op"_fu) && (tokens[(_idx + 1)].value == ":"_fu)))
             {
@@ -996,32 +997,32 @@ struct sf_parse
     };
     s_Node parseCallExpression(const s_Node& expr)
     {
-        fu_VEC<s_Node> args = fu_VEC<s_Node>{};
+        fu_VEC<s_Node> args {};
         const int argFlags = parseCallArgs(")"_fu, args);
         if (((expr.kind == "call"_fu) && (expr.flags & F_ACCESS)))
         {
-            const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(""_fu); }());
+            const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_STR{}); }());
             args.unshift(head);
-            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(""_fu); }()), (F_METHOD | argFlags), args);
+            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_STR{}); }()), (F_METHOD | argFlags), args);
         };
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
-            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(""_fu); }()), argFlags, args);
+            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_STR{}); }()), argFlags, args);
 
         fail("TODO dynamic call"_fu);
     };
     s_Node parseArrayLiteral()
     {
-        fu_VEC<s_Node> args = fu_VEC<s_Node>{};
+        fu_VEC<s_Node> args {};
         const int argFlags = parseCallArgs("]"_fu, args);
         return createArrayLiteral(argFlags, args);
     };
     s_Node createArrayLiteral(const int& argFlags, const fu_VEC<s_Node>& items)
     {
-        return make("arrlit"_fu, items, argFlags, ""_fu);
+        return make("arrlit"_fu, items, argFlags, fu_STR{});
     };
     s_Node parseIndexExpression(const s_Node& expr)
     {
-        fu_VEC<s_Node> args = fu_VEC<s_Node>{};
+        fu_VEC<s_Node> args {};
         const int argFlags = parseCallArgs("]"_fu, args);
         args.unshift(expr);
         return createCall("[]"_fu, (F_INDEX & argFlags), args);
@@ -1036,11 +1037,11 @@ struct sf_parse
     };
     s_Node createRead(const fu_STR& id)
     {
-        return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(""_fu); }()), F_ID, fu_VEC<s_Node>{});
+        return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(fu_STR{}); }()), F_ID, fu_VEC<s_Node>{});
     };
     s_Node parseReturn()
     {
-        ((_fnDepth > 0) || ((void)_idx--, fail(""_fu)));
+        ((_fnDepth > 0) || ((void)_idx--, fail(fu_STR{})));
         _numReturns++;
         if (tryConsume("op"_fu, ";"_fu))
             return createReturn(s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
@@ -1050,13 +1051,13 @@ struct sf_parse
     s_Node createReturn(const s_Node& node)
     {
         if (!node)
-            return make("return"_fu, fu_VEC<s_Node>{}, 0, ""_fu);
+            return make("return"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 
-        return make("return"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { node } }, 0, ""_fu);
+        return make("return"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { node } }, 0, fu_STR{});
     };
     s_Node parseJump(const fu_STR& kind)
     {
-        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, ""_fu); else return s_Token{}; }());
+        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, fu_STR{}); else return s_Token{}; }());
         s_Node jump = createJump(kind, label.value);
         consume("op"_fu, ";"_fu);
         return jump;
@@ -1080,7 +1081,7 @@ struct sf_parse
     };
     s_Node createIf(const s_Node& cond, const s_Node& cons, const s_Node& alt)
     {
-        return make("if"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, cons, alt } }, 0, ""_fu);
+        return make("if"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, cons, alt } }, 0, fu_STR{});
     };
     s_Node createOr(const s_Node& left, const s_Node& right)
     {
@@ -1095,7 +1096,7 @@ struct sf_parse
         const fu_STR& k_left = left.kind;
         const fu_STR& k_right = right.kind;
         fu_VEC<s_Node> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { right } }) : ((k_right == kind) ? (fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { left } } + right.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } })));
-        return make(kind, items, 0, ""_fu);
+        return make(kind, items, 0, fu_STR{});
     };
     s_Node parseFor()
     {
@@ -1129,7 +1130,7 @@ struct sf_parse
     };
     s_Node createLoop(const s_Node& init, const s_Node& cond, const s_Node& post, const s_Node& body, const s_Node& postcond)
     {
-        return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, ""_fu);
+        return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, fu_STR{});
     };
     s_ParserOutput parse_EVAL()
     {

@@ -22,7 +22,7 @@ inline fu_VEC<fu_STR> fu_SPLIT(
 
 fu_STR last(const fu_STR& s)
 {
-    return (s.size() ? fu_TO_STR(s[(s.size() - 1)]) : ""_fu);
+    return (s.size() ? fu_TO_STR(s[(s.size() - 1)]) : fu_STR{});
 }
 
 bool hasIdentifierChars(const fu_STR& id)
@@ -50,7 +50,7 @@ fu_STR path_ext(const fu_STR& path)
             break;
         };
     };
-    return ""_fu;
+    return fu_STR{};
 }
 
 fu_STR path_dirname(const fu_STR& path)
@@ -61,7 +61,7 @@ fu_STR path_dirname(const fu_STR& path)
             return slice(path, 0, (i + 1));
 
     };
-    return ""_fu;
+    return fu_STR{};
 }
 
 fu_STR path_normalize(const fu_STR& p)

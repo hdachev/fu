@@ -625,7 +625,7 @@ struct sf_cpp_codegen
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
         return m.out.solve.scope.overloads[(target.index - 1)];
     };
-    [[noreturn]] fu::never fail(fu_STR&& reason)
+    [[noreturn]] fu::never fail(const fu_STR& reason)
     {
         fu::fail(reason);
     };
@@ -759,7 +759,7 @@ struct sf_cpp_codegen
         def += "\n    {"_fu;
         def += "\n        return false"_fu;
         for (int i = 0; (i < fields.size()); i++)
-            def += ("\n            || "_fu + boolWrap(fields[i].type, (((s.flags & F_DESTRUCTOR) ? "data."_fu : ""_fu) + ID(fields[i].id))));
+            def += ("\n            || "_fu + boolWrap(fields[i].type, (((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{}) + ID(fields[i].id))));
 
         def += "\n        ;"_fu;
         def += "\n    }"_fu;
@@ -767,7 +767,7 @@ struct sf_cpp_codegen
     };
     fu_STR collectDedupes(const fu_COW_MAP<fu_STR, fu_STR>& dedupes)
     {
-        fu_STR out = ""_fu;
+        fu_STR out {};
         fu_VEC<fu_STR> keys = fu_KEYS(dedupes);
         ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
         for (int i = 0; (i < keys.size()); i++)
@@ -777,7 +777,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgSpecs()
     {
-        fu_STR src = ""_fu;
+        fu_STR src {};
         const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
         fu_VEC<fu_STR> keys = fu_KEYS(specs);
         for (int i = 0; (i < keys.size()); i++)
@@ -805,7 +805,7 @@ struct sf_cpp_codegen
     fu_STR cgMain()
     {
         if (!_hasMain)
-            return ""_fu;
+            return fu_STR{};
 
         if ((_hasMain != 2))
             return "\n\nint main() { return fu_MAIN(); }\n"_fu;
@@ -846,7 +846,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgStatements(const fu_VEC<s_SolvedNode>& nodes)
     {
-        fu_STR src = ""_fu;
+        fu_STR src {};
         fu_VEC<fu_STR> lines = cgNodes(nodes, M_STMT);
         for (int i = 0; (i < lines.size()); i++)
         {
@@ -902,7 +902,7 @@ struct sf_cpp_codegen
     {
         const s_SolvedNode& body = fn.items[(fn.items.size() + FN_BODY_BACK)];
         if ((!body || (body.kind != "block"_fu)))
-            return ""_fu;
+            return fu_STR{};
 
         const fu_VEC<s_SolvedNode>& items = body.items;
         bool hasClosuresInHeader = false;
@@ -923,12 +923,12 @@ struct sf_cpp_codegen
             };
         };
         if (!hasClosuresInHeader)
-            return ""_fu;
+            return fu_STR{};
 
         fu_STR evalName = (fn.value + "_EVAL"_fu);
         s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_TokenIdx(fn.token), s_Type(t_void), s_Target{} } } }, s_TokenIdx(fn.token), s_Type(t_void), s_Target{} };
         fu_VEC<s_SolvedNode> head = ((slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)) + slice(items, 0, end)) + fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
-        ((_clsrN == 0) || fail(""_fu));
+        ((_clsrN == 0) || fail(fu_STR{}));
         _clsrN--;
         fu_STR structName = ("sf_"_fu + fn.value);
         fu_STR src = ((("\nstruct "_fu + structName) + blockWrap(head, false)) + ";"_fu);
@@ -952,9 +952,9 @@ struct sf_cpp_codegen
     fu_STR cgFnSignature(const s_SolvedNode& fn)
     {
         const fu_VEC<s_SolvedNode>& items = fn.items;
-        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(""_fu); }());
+        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(fu_STR{}); }());
         const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
-        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(""_fu); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
+        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(fu_STR{}); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
         fu_STR id { fn.value };
         if (((id == "main"_fu) && !closure))
         {
@@ -970,7 +970,7 @@ struct sf_cpp_codegen
             if (i)
                 src += ", "_fu;
 
-            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }()), false, false);
+            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }()), false, false);
         };
         src += (closure ? (") -> "_fu + annot) : ")"_fu);
         return src;
@@ -985,8 +985,8 @@ struct sf_cpp_codegen
         if (fu::has(_ffwd, ffwdKey))
             return;
 
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(""_fu); }());
-        const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(""_fu); }());
+        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(fu_STR{}); }());
+        const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(fu_STR{}); }());
         fu_STR annot = typeAnnot(ret, M_RETVAL);
         const bool isOp = !hasIdentifierChars(id);
         if ((isOp && (id != "=="_fu)))
@@ -1008,7 +1008,7 @@ struct sf_cpp_codegen
     fu_STR cgFn(const s_SolvedNode& fn)
     {
         if (!fn.items.size())
-            return ""_fu;
+            return fu_STR{};
 
         if (((_faasN == 0) && (fn.flags & F_HAS_CLOSURE)))
         {
@@ -1018,7 +1018,7 @@ struct sf_cpp_codegen
             if (src.size())
             {
                 _fdef += src;
-                return ""_fu;
+                return fu_STR{};
             };
         };
         const int f0 = _fnN;
@@ -1029,12 +1029,12 @@ struct sf_cpp_codegen
             _clsrN++;
 
         const fu_VEC<s_SolvedNode>& items = fn.items;
-        const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(""_fu); }());
+        const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
         if (!(fn.flags & F_CLOSURE))
             _indent = "\n"_fu;
 
         fu_STR src = cgFnSignature(fn);
-        if (((src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(""_fu); }()))))
+        if (((src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_STR{}); }()))))
             ensureFwdDecl(fn.target);
 
         if ((body.kind == "block"_fu))
@@ -1047,7 +1047,7 @@ struct sf_cpp_codegen
         _indent = indent0;
         if ((fn.flags & F_DESTRUCTOR))
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(""_fu); }());
+            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
             const fu_STR& name = head.type.canon;
             src += (((("\n\n"_fu + name) + "::~"_fu) + name) + "() noexcept"_fu);
             src += "\n{"_fu;
@@ -1084,13 +1084,13 @@ struct sf_cpp_codegen
             return src;
 
         _fdef += (("\n"_fu + src) + "\n"_fu);
-        return ""_fu;
+        return fu_STR{};
     };
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
+        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
-        fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(""_fu); }()) + " "_fu) + ID(id));
+        fu_STR head = ((([&]() -> const fu_STR& { { const fu_STR& _ = annot; if (_.size()) return _; } fail(fu_STR{}); }()) + " "_fu) + ID(id));
         s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
@@ -1105,6 +1105,9 @@ struct sf_cpp_codegen
 
                 return (((head + " { "_fu) + expr) + " }"_fu);
             };
+            if (((init.kind == "definit"_fu) && !(init.type.quals & q_ref) && (init.type == node.type)))
+                return (head + " {}"_fu);
+
             return ((head + " = "_fu) + cgNode(init, 0));
         };
         return (head + " {}"_fu);
@@ -1121,7 +1124,7 @@ struct sf_cpp_codegen
             src = slice(src, 6);
 
         _fdef += ((((((("\n                                #ifndef DEF_"_fu + node.value) + "\n                                #define DEF_"_fu) + node.value) + "\ninline const "_fu) + src) + ";"_fu) + "\n                                #endif\n"_fu);
-        return ""_fu;
+        return fu_STR{};
     };
     void cgForeignGlobal(const s_Target& target)
     {
@@ -1129,7 +1132,7 @@ struct sf_cpp_codegen
         if (fu::has(_ffwd, key))
             return;
 
-        (_ffwd.upsert(key) = ""_fu);
+        (_ffwd.upsert(key) = fu_STR{});
         s_Overload o = GET(target, module, ctx);
         cgGlobal(o.constant);
     };
@@ -1137,7 +1140,7 @@ struct sf_cpp_codegen
     {
         if (node.items)
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
+            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
             fu_STR src = cgNode(head, 0);
             if ((head.type == t_never))
                 return src;
@@ -1156,7 +1159,7 @@ struct sf_cpp_codegen
     fu_STR cgStringLiteral(const s_SolvedNode& node)
     {
         annotateString();
-        fu_STR esc = ""_fu;
+        fu_STR esc {};
         for (int i = 0; (i < node.value.size()); i++)
         {
             fu_STR c = fu_TO_STR(node.value[i]);
@@ -1184,7 +1187,7 @@ struct sf_cpp_codegen
         if (!items.size())
             return cgDefault(node.type);
 
-        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, module, ctx); if (_) return _; } fail(""_fu); }());
+        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, module, ctx); if (_) return _; } fail(fu_STR{}); }());
         fu_STR itemAnnot = typeAnnot(itemType, 0);
         fu_STR arrayAnnot = typeAnnot(node.type, 0);
         return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu::join(items, ", "_fu)) + " } }"_fu);
@@ -1209,12 +1212,12 @@ struct sf_cpp_codegen
     };
     fu_STR cgCall(const s_SolvedNode& node, const int& mode)
     {
-        s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(""_fu); }());
+        s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(fu_STR{}); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
         if ((target.kind == "defctor"_fu))
         {
-            const s_Type& head = ([&]() -> const s_Type& { { const s_Type& _ = target.type; if (_) return _; } fail(""_fu); }());
-            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, module, ctx); if (_) return _; } fail(""_fu); }());
+            const s_Type& head = ([&]() -> const s_Type& { { const s_Type& _ = target.type; if (_) return _; } fail(fu_STR{}); }());
+            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
             fu_STR open = " { "_fu;
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))
@@ -1224,7 +1227,7 @@ struct sf_cpp_codegen
             };
             return (((head.canon + open) + fu::join(items, ", "_fu)) + close);
         };
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = target.name; if (_.size()) return _; } fail(""_fu); }());
+        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = target.name; if (_.size()) return _; } fail(fu_STR{}); }());
         if ((target.kind == "global"_fu))
         {
             if ((node.target.modid != module.modid))
@@ -1249,8 +1252,8 @@ struct sf_cpp_codegen
 
         if (hasNonIdentifierChars(id))
         {
-            const fu_VEC<s_SolvedNode>& nodes = ([&]() -> const fu_VEC<s_SolvedNode>& { { const fu_VEC<s_SolvedNode>& _ = node.items; if (_) return _; } fail(""_fu); }());
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = nodes[0]; if (_) return _; } fail(""_fu); }());
+            const fu_VEC<s_SolvedNode>& nodes = ([&]() -> const fu_VEC<s_SolvedNode>& { { const fu_VEC<s_SolvedNode>& _ = node.items; if (_) return _; } fail(fu_STR{}); }());
+            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = nodes[0]; if (_) return _; } fail(fu_STR{}); }());
             if ((items.size() == 1))
                 return ((node.flags & F_POSTFIX) ? (items[0] + id) : (id + items[0]));
 
@@ -1270,8 +1273,8 @@ struct sf_cpp_codegen
                 {
                     if (((head.kind == "call"_fu) && (head.value == "[]"_fu) && (head.items.size() == 2)))
                     {
-                        if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()).type))
-                            return (((((("("_fu + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()), 0)) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(""_fu); }()), 0)) + ") = "_fu) + items[1]) + ")"_fu);
+                        if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_STR{}); }()).type))
+                            return (((((("("_fu + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_STR{}); }()), 0)) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(fu_STR{}); }()), 0)) + ") = "_fu) + items[1]) + ")"_fu);
 
                     };
                 };
@@ -1279,8 +1282,8 @@ struct sf_cpp_codegen
                 {
                     if (((head.kind == "call"_fu) && (head.value == "[]"_fu) && (head.items.size() == 2)))
                     {
-                        if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()).type))
-                            items.mutref(0) = (((cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()), 0) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(""_fu); }()), 0)) + ")"_fu);
+                        if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_STR{}); }()).type))
+                            items.mutref(0) = (((cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(fu_STR{}); }()), 0) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(fu_STR{}); }()), 0)) + ")"_fu);
 
                     };
                     fu_STR annot = typeAnnot(head.type, 0);
@@ -1364,7 +1367,7 @@ struct sf_cpp_codegen
         };
         if (((id == "char"_fu) && (items.size() == 2)))
         {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
+            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
             if ((head.type.canon == "string"_fu))
                 return (((("int("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
@@ -1509,11 +1512,11 @@ struct sf_cpp_codegen
     };
     fu_STR cgLiteral(const s_SolvedNode& node)
     {
-        return ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
+        return ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
     };
     fu_STR cgEmpty()
     {
-        return ""_fu;
+        return fu_STR{};
     };
     fu_STR cgIf(const s_SolvedNode& node, const int& mode)
     {
@@ -1529,7 +1532,7 @@ struct sf_cpp_codegen
         fu_STR cons = ([&]() -> fu_STR { if (n1) return (stmt ? blockWrapSubstatement(n1) : cgNode(n1, 0)); else return fu_STR{}; }());
         fu_STR alt = ([&]() -> fu_STR { if (n2) return (stmt ? blockWrap_unlessIf(n2) : cgNode(n2, 0)); else return fu_STR{}; }());
         if (stmt)
-            return (((("if ("_fu + cond) + ")"_fu) + cons) + (alt.size() ? ((_indent + "else"_fu) + alt) : ""_fu));
+            return (((("if ("_fu + cond) + ")"_fu) + cons) + (alt.size() ? ((_indent + "else"_fu) + alt) : fu_STR{}));
 
         if ((cons.size() && alt.size()))
             return (((((("("_fu + cond) + " ? "_fu) + cons) + " : "_fu) + alt) + ")"_fu);
@@ -1567,7 +1570,7 @@ struct sf_cpp_codegen
             const fu_VEC<s_SolvedNode>& items = node.items;
             const bool retSecondLast = (items[(items.size() - 1)].type == t_never);
             const int condEnd = (retSecondLast ? (items.size() - 2) : (items.size() - 1));
-            fu_STR src = ""_fu;
+            fu_STR src {};
             if (condEnd)
             {
                 src += "if ("_fu;
@@ -1623,26 +1626,26 @@ struct sf_cpp_codegen
             const fu_VEC<s_SolvedNode>& items = node.items;
             for (int i = 0; (i < (items.size() - 1)); i++)
             {
-                const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }());
+                const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
                 s_SolvedNode tail { item };
                 if ((item.kind == "and"_fu))
                 {
                     const fu_VEC<s_SolvedNode>& items = item.items;
-                    tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(""_fu); }());
+                    tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
                     src += " if ("_fu;
                     for (int i = 0; (i < (items.size() - 1)); i++)
                     {
                         if (i)
                             src += " && "_fu;
 
-                        const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(""_fu); }());
+                        const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
                         src += boolWrap(item.type, cgNode(item, M_RETBOOL));
                     };
                     src += ")"_fu;
                 };
                 src += ((((((" { "_fu + annot) + " _ = "_fu) + cgNode(tail, 0)) + "; if ("_fu) + boolWrap(tail.type, "_"_fu)) + ") return _; }"_fu);
             };
-            const s_SolvedNode& tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(""_fu); }());
+            const s_SolvedNode& tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
             if (!(tail.type == t_never))
                 src += " return"_fu;
 
@@ -1663,7 +1666,7 @@ struct sf_cpp_codegen
     };
     fu_STR postfixBlock(const fu_STR& src, const fu_STR& postfix)
     {
-        ((fu_TO_STR(src[(src.size() - 1)]) == "}"_fu) || fail(""_fu));
+        ((fu_TO_STR(src[(src.size() - 1)]) == "}"_fu) || fail(fu_STR{}));
         return ((slice(src, 0, (src.size() - 1)) + postfix) + "}"_fu);
     };
     fu_STR cgLoop(const s_SolvedNode& node)
@@ -1679,7 +1682,7 @@ struct sf_cpp_codegen
         fu_STR post = ([&]() -> fu_STR { if (n_post) return cgNode(n_post, 0); else return fu_STR{}; }());
         fu_STR body = ([&]() -> fu_STR { if (n_body) return blockWrapSubstatement(n_body); else return fu_STR{}; }());
         fu_STR pcnd = ([&]() -> fu_STR { if (n_pcnd) return boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL)); else return fu_STR{}; }());
-        fu_STR breakLabel = ""_fu;
+        fu_STR breakLabel {};
         if ((body.size() && node.value.size()))
         {
             fu_STR brk = (("L_"_fu + node.value) + "_b"_fu);
@@ -1807,7 +1810,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgCopyMove(const s_SolvedNode& node)
     {
-        fu_STR a = cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }()), 0);
+        fu_STR a = cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }()), 0);
         if ((node.kind == "move"_fu))
             return cgSteal(a);
 
@@ -1829,18 +1832,18 @@ struct sf_cpp_codegen
     };
     fu_VEC<fu_STR> cgNodes(const fu_VEC<s_SolvedNode>& nodes, const int& mode)
     {
-        fu_VEC<fu_STR> result = fu_VEC<fu_STR>{};
+        fu_VEC<fu_STR> result {};
         for (int i = 0; (i < nodes.size()); i++)
         {
             const s_SolvedNode& node = nodes[i];
-            fu_STR src = (node ? cgNode(node, mode) : ""_fu);
+            fu_STR src = (node ? cgNode(node, mode) : fu_STR{});
             result.push(src);
         };
         return result;
     };
     fu_STR cpp_codegen_EVAL()
     {
-        ((root.kind == "root"_fu) || fail(""_fu));
+        ((root.kind == "root"_fu) || fail(fu_STR{}));
         fu_STR src = cgNode(root, 0);
         return src;
     };

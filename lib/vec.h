@@ -69,7 +69,7 @@ struct fu_VEC
     };
 #endif
 
-    fu_VEC() = default;
+    constexpr fu_VEC() = default;
 
     /////////////////////////////////////////////
 

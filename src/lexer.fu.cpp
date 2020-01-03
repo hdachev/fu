@@ -91,7 +91,7 @@ struct sf_lex
     };
     fu_STR unescapeStr(const fu_STR& src, const int& idx0, const int& idx1)
     {
-        fu_STR out = ""_fu;
+        fu_STR out {};
         const int n = (idx1 - 1);
         for (int i = (idx0 + 1); (i < n); i++)
         {

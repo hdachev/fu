@@ -436,7 +436,7 @@ inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native_pure():
 s_TEMP_Context solvePrelude()
 {
     s_TEMP_Context ctx {};
-    s_Module module { getModule(""_fu, ctx) };
+    s_Module module { getModule(fu_STR{}, ctx) };
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
     s_SolverOutput solved = solve(root, ctx, module);

@@ -14,7 +14,7 @@ void saySomethingNice()
     const bool NEW_STUFF = false;
     if (((sec % 5) && !NEW_STUFF))
     {
-        fu_STR str = ""_fu;
+        fu_STR str {};
         for (int i = 0; (i < 3); i++)
         {
             if ((sec & (1 << i)))

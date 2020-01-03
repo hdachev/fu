@@ -10,7 +10,7 @@ fu_STR path_join(const fu_STR&, const fu_STR&);
 void saySomethingNice();
 int self_test();
 void runTests();
-void build(const fu_STR&, const bool&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&);
+void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
                                 #ifndef DEF_PRJDIR
                                 #define DEF_PRJDIR
@@ -33,7 +33,7 @@ struct sf_cli_handle
         if ((i < argv.size()))
             return argv[i];
 
-        return ""_fu;
+        return fu_STR{};
     };
     fu_STR self = next();
     fu_STR cmd = next();
@@ -86,7 +86,7 @@ struct sf_cli_handle
                         dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_.size()) return _; } fu::fail((((((((("Option "_fu + Q_long) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + Q_long) + " rel/or/abs/dir/`."_fu)); }());
                         val = next();
                     };
-                    opt = ""_fu;
+                    opt = fu_STR{};
                 };
             };
             option("-"_fu, "--src"_fu, 0, dir_src);
@@ -111,7 +111,7 @@ struct sf_cli_handle
         if ((options & EMIT_BIN))
             ([&](fu_STR& _) -> fu_STR& { if (!_.size()) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
-        build(fname, run, dir_wrk, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp));
+        build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp);
         return 0;
     };
 };

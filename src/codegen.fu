@@ -669,6 +669,10 @@ pub fn cpp_codegen(
                 return head + ' { ' + expr + ' }';
             }
 
+            // Definit.
+            if (init.kind == 'definit' && !(init.type.quals & q_ref) && init.type == node.type)
+                return head + ' {}';
+
             return head + ' = ' + cgNode(init);
         }
 

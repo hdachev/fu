@@ -1513,9 +1513,9 @@ fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
-        let out = solved(node, t_void, solveNodes(node.items));
+        mut out = solved(node, t_void, solveNodes(node.items));
 
-        let nextExpr    = out.items.len ? out.items[0] : out;
+        let nextExpr    = out.items ? out.items[0] : out;
         let nextType    = nextExpr.type || fail();
 
         let retIdx      = _current_fn.items.len + FN_RET_BACK;
@@ -1527,6 +1527,11 @@ fn solve(
                 || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
         else
             _current_fn.items[retIdx] = nextExpr || fail();
+
+        if (out.items)
+            maybeCopyOrMove(out.items[0],
+                prevType || nextType,
+                isReturn: true);
 
         return out;
     }
@@ -2252,7 +2257,8 @@ fn solve(
             let arg_t = overload.args || fail();
             for (mut i = 0; i < args.len; i++)
                 maybeCopyOrMove(
-                    args[i] || fail(), arg_t[i]);
+                    args[i] || fail(), arg_t[i],
+                    isArgument: true);
         }
 
         //
@@ -2261,7 +2267,9 @@ fn solve(
         return out;
     }
 
-    fn maybeCopyOrMove(node: &mut SolvedNode, slot: Type): void
+    fn maybeCopyOrMove(node: &mut SolvedNode, slot: Type,
+        isReturn = false,
+        isArgument = false): void
     {
         let q = slot.quals;
 
@@ -2271,11 +2279,26 @@ fn solve(
 
         // No copy needed when the slot is a reference.
         if (q & q_ref)
+        {
+            // Except if we're talking a fnarg,
+            //  in which case we're better off binding a temporary,
+            //   else we risk cache missing on the useless global defval.
+            if (node.kind == 'definit' && isArgument)
+                node.type.quals &= ~q_ref;
+
             return;
+        }
 
         // Also, no copy needed when the expression is a value.
         if !(node.type.quals & q_ref)
             return;
+
+        // Definits can just as well emit values.
+        if (node.kind == 'definit')
+        {
+            node.type.quals &= ~q_ref;
+            return;
+        }
 
         if !(q & q_copy)
             fail('Needs an explicit STEAL or CLONE.');
@@ -2285,6 +2308,10 @@ fn solve(
             // if !(node.type.quals & q_trivial)
             //     print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
         }
+
+        //
+        if (isReturn)
+            return;
 
         // Here we go.
         node = SolvedNode(
