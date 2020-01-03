@@ -651,8 +651,8 @@ fn solve(
 
     fn tryDefaultInit(type: Type): SolvedNode
     {
-        // Reference? No init, else default.
-        if (type.quals & q_ref)
+        // Cannot definit mutrefs.
+        if (type.quals & q_mutref)
             return SolvedNode();
 
         return createDefaultInit(type);
@@ -1130,6 +1130,10 @@ fn solve(
 
     fn solveStr(node: Node): SolvedNode
     {
+        if (!node.value)
+            return createDefaultInit(
+                add_ref(t_string));
+
         return solved(node, t_string);
     }
 
@@ -2232,7 +2236,8 @@ fn solve(
         let overload = GET(target);
 
         // HACK -
-        // TBD how we make this stuff work in real life.
+        //  TBD how we make this stuff work in real life.
+        //   OR alternatively, do this for arrays too.
         if (overload.kind == 'field')
         {
             let head = args.len == 1 && args[0] || fail();

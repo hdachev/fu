@@ -1281,22 +1281,13 @@ fu_VEC<K> fu_KEYS(
 
     fn cgDefault(type: Type): string
     {
-        if (type.quals & q_ref && !(type.quals & q_mutref))
-        {
-            let DEFAULT = '::DEFAULT';
-            if (!_ffwd.has(DEFAULT))
-            {
-                _ffwd[DEFAULT] =
-////////////////////////////////////
-`
-template <typename T>
-struct fu_DEFAULT { static inline const T value {}; };
-`
-////////////////////////////////////
-                ;
-            }
+        type.quals & q_mutref && fail('Cannot definit mutrefs.');
 
-            return 'fu_DEFAULT<' + typeAnnot(clear_refs(type)) + '>::value';
+        if (type.quals & q_ref)
+        {
+            include('"../lib/default.h"');
+
+            return 'fu::Default<' + typeAnnot(clear_refs(type)) + '>::value';
         }
 
         return typeAnnot(type) + '{}';

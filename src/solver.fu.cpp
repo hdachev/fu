@@ -1,3 +1,4 @@
+#include "../lib/default.h"
 #include "../lib/io.h"
 #include "../lib/map.h"
 #include "../lib/never.h"
@@ -45,9 +46,6 @@ bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type add_ref(const s_Type&);
 s_Type add_mutref(const s_Type&);
 s_Type tryClear_mutref(const s_Type&);
-template <typename T>
-struct fu_DEFAULT { static inline const T value {}; };
-
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -1671,7 +1669,7 @@ struct sf_solve
     {
         s_SolvedNode out = solveBinding(node);
         const bool global = (out.kind == "global"_fu);
-        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)), (global ? "global"_fu : "var"_fu), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu_DEFAULT<s_SolvedNode>::value; }()));
+        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type) : add_ref(out.type)), (global ? "global"_fu : "var"_fu), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
         if ((out.flags & F_USING))
             scope_using(overload);
 

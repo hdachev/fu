@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vec.h"
+#include "default.h"
 
 
 //
@@ -20,8 +21,7 @@ struct fu_COW_MAP
             if (m_keys[i] == key)
                 return m_values[i];
 
-        static const V def {};
-        return def;
+        return fu::Default<V>::value;
     }
 
     inline int size() const noexcept

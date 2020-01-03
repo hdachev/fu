@@ -1551,13 +1551,11 @@ struct sf_cpp_codegen
     };
     fu_STR cgDefault(const s_Type& type)
     {
-        if (((type.quals & q_ref) && !(type.quals & q_mutref)))
+        ((type.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
+        if ((type.quals & q_ref))
         {
-            fu_STR DEFAULT = "::DEFAULT"_fu;
-            if (!fu::has(_ffwd, DEFAULT))
-                (_ffwd.upsert(DEFAULT) = "\ntemplate <typename T>\nstruct fu_DEFAULT { static inline const T value {}; };\n"_fu);
-
-            return (("fu_DEFAULT<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);
+            include("\"../lib/default.h\""_fu);
+            return (("fu::Default<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);
         };
         return (typeAnnot(type, 0) + "{}"_fu);
     };
