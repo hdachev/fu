@@ -1559,7 +1559,7 @@ fn solve(
                 'Type annotation does not match init expression.');
 
         if (s_init)
-            s_init = maybeCopyOrMove(s_init, t_let);
+            maybeCopyOrMove(s_init, t_let);
 
         //
         mut out = solved(node, t_let, [s_annot || s_init, s_init]);
@@ -2079,9 +2079,9 @@ fn solve(
             type || fail('[if] No common supertype.');
 
             if (cons)
-                cons = maybeCopyOrMove(cons, type);
+                maybeCopyOrMove(cons, type);
             if (alt)
-                alt  = maybeCopyOrMove(alt, type);
+                maybeCopyOrMove(alt, type);
         }
 
         return solved(node, type || fail(), [ cond, cons, alt ]);
@@ -2137,7 +2137,7 @@ fn solve(
                 //  and if the sum type is not a reference,
                 //   some shit may need copying here.
                 for (mut i = 0; i < items.len; i++)
-                    items[i] = maybeCopyOrMove(
+                    maybeCopyOrMove(
                         items[i], sumType);
 
                 type = sumType;
@@ -2246,7 +2246,7 @@ fn solve(
         {
             let arg_t = overload.args || fail();
             for (mut i = 0; i < args.len; i++)
-                args[i] = maybeCopyOrMove(
+                maybeCopyOrMove(
                     args[i] || fail(), arg_t[i]);
         }
 
@@ -2256,17 +2256,21 @@ fn solve(
         return out;
     }
 
-    fn maybeCopyOrMove(
-        node: SolvedNode, slot: Type): SolvedNode
+    fn maybeCopyOrMove(node: &mut SolvedNode, slot: Type): void
     {
-        // No copy needed when the slot is a reference.
         let q = slot.quals;
+
+        // Clear mutrefs unless needed.
+        if !(q & q_mutref)
+            node.type.quals &= ~q_mutref;
+
+        // No copy needed when the slot is a reference.
         if (q & q_ref)
-            return node;
+            return;
 
         // Also, no copy needed when the expression is a value.
         if !(node.type.quals & q_ref)
-            return node;
+            return;
 
         if !(q & q_copy)
             fail('Needs an explicit STEAL or CLONE.');
@@ -2278,7 +2282,7 @@ fn solve(
         }
 
         // Here we go.
-        return SolvedNode(
+        node = SolvedNode(
             kind: 'copy',
 
             items:  [ node ],

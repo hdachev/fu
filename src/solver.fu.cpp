@@ -1034,7 +1034,7 @@ struct sf_solve
         const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(""_fu); }());
         for (int i = 0; (i < _scope.items.size()); i++)
         {
-            s_ScopeItem item { _scope.items.mutref(i) };
+            s_ScopeItem item { _scope.items[i] };
             if (!hasIdentifierChars(item.id))
             {
                 continue;
@@ -1058,7 +1058,7 @@ struct sf_solve
             {
                 for (int i = 0; (i < _scope.items.size()); i++)
                 {
-                    s_ScopeItem o { _scope.items.mutref(i) };
+                    s_ScopeItem o { _scope.items[i] };
                     if ((o.id == item.id))
                     {
                         s_Overload other = GET(o.target, module, ctx);
@@ -1125,7 +1125,7 @@ struct sf_solve
                 bool some = false;
                 for (int i = 0; (i < arity); i++)
                 {
-                    s_SolvedNode arg { args.mutref(i) };
+                    s_SolvedNode arg { args[i] };
                     names.push(((arg.kind == "label"_fu) ? fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(""_fu); }())) : ""_fu));
                 };
                 (some || fail(""_fu));
@@ -1141,7 +1141,7 @@ struct sf_solve
                     {
                         goto L_NEXT_c;
                     };
-                    if ((retType && !isAssignable(retType, ([&]() -> s_Type& { { s_Type& _ = overload.type; if (_) return _; } fail(""_fu); }()))))
+                    if ((retType && !isAssignable(retType, ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(""_fu); }()))))
                     {
                         goto L_NEXT_c;
                     };
@@ -1170,7 +1170,7 @@ struct sf_solve
                     }L_TEST_AGAIN_c:;}
                     L_TEST_AGAIN_b:;
 
-                fu_VEC<s_Type> arg_t { ([&]() -> fu_VEC<s_Type>& { { fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }()) };
+                fu_VEC<s_Type> arg_t { ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }()) };
                 fu_VEC<s_SolvedNode> arg_d { overload.defaults };
                 const int N = (reorder ? reorder.size() : args.size());
                 for (int i = 0; (i < N); i++)
@@ -1184,7 +1184,7 @@ struct sf_solve
                         };
                         continue;
                     };
-                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> s_Type& { { s_Type& _ = args.mutref(callsiteIndex).type; if (_) return _; } fail(""_fu); }()))))
+                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> const s_Type& { { const s_Type& _ = args.mutref(callsiteIndex).type; if (_) return _; } fail(""_fu); }()))))
                     {
                         goto L_NEXT_c;
                     };
@@ -1199,7 +1199,7 @@ struct sf_solve
                     new_args.resize(reorder.size());
                     for (int i = 0; (i < reorder.size()); i++)
                     {
-                        const int idx = reorder.mutref(i);
+                        const int idx = reorder[i];
                         if ((idx >= 0))
                             new_args.mutref(i) = args.mutref(idx);
 
@@ -1219,7 +1219,7 @@ struct sf_solve
                     args.resize(arg_d.size());
 
                 for (int i = 0; (i < arg_d.size()); i++)
-                    args.mutref(i) = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args.mutref(i); if (_) return _; } if (arg_d) { const s_SolvedNode& _ = arg_d[i]; if (_) return _; } fail(""_fu); }());
+                    args.mutref(i) = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } if (arg_d) { const s_SolvedNode& _ = arg_d[i]; if (_) return _; } fail(""_fu); }());
 
             };
             const fu_VEC<s_Type>& arg_t = matched.args;
@@ -1439,7 +1439,7 @@ struct sf_solve
                 {
                     s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);
-                    s_Type type { _typeParams.mutref(mut_arg.value) };
+                    s_Type type { _typeParams[mut_arg.value] };
                     if (!(type.quals & q_ref))
                         mut_arg.flags |= F_MUT;
 
@@ -1454,7 +1454,7 @@ struct sf_solve
             if ((caseIdx >= 0))
             {
                 ((n_body.kind == "pattern"_fu) || fail(""_fu));
-                s_Node branch { ([&]() -> s_Node& { { s_Node& _ = n_body.items.mutref(caseIdx); if (_) return _; } fail(""_fu); }()) };
+                s_Node branch { ([&]() -> const s_Node& { { const s_Node& _ = n_body.items.mutref(caseIdx); if (_) return _; } fail(""_fu); }()) };
                 const fu_VEC<s_Node>& items = branch.items;
                 n_ret = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } return n_ret; }());
                 n_body = items[(items.size() + FN_BODY_BACK)];
@@ -1626,7 +1626,7 @@ struct sf_solve
         const s_SolvedNode& nextExpr = (out.items.size() ? out.items[0] : out);
         const s_Type& nextType = ([&]() -> const s_Type& { { const s_Type& _ = nextExpr.type; if (_) return _; } fail(""_fu); }());
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
-        s_SolvedNode prevExpr { _current_fn.items.mutref(retIdx) };
+        s_SolvedNode prevExpr { _current_fn.items[retIdx] };
         const s_Type& prevType = prevExpr.type;
         if (prevType)
         {
@@ -1655,7 +1655,7 @@ struct sf_solve
             (isAssignable(t_annot, t_init) || fail("Type annotation does not match init expression."_fu));
         };
         if (s_init)
-            s_init = maybeCopyOrMove(s_init, t_let);
+            maybeCopyOrMove(s_init, t_let);
 
         s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = s_annot; if (_) return _; } return s_init; }()), s_init } });
         if (!(_current_fn || (node.flags & F_FIELD)))
@@ -1763,7 +1763,7 @@ struct sf_solve
         {
             const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(""_fu); }());
             (_typeParams || fail((("Unexpected type param: `$"_fu + id) + "`."_fu)));
-            s_Type type { ([&]() -> s_Type& { if (_typeParams) { s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
+            s_Type type { ([&]() -> const s_Type& { if (_typeParams) { const s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
             return solved(node, type, fu_VEC<s_SolvedNode>{});
         };
         fail("TODO"_fu);
@@ -1876,7 +1876,7 @@ struct sf_solve
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
-            s_Partial partial { ([&]() -> s_Partial& { { s_Partial& _ = callTarg.partial; if (_) return _; } fail(""_fu); }()) };
+            s_Partial partial { ([&]() -> const s_Partial& { { const s_Partial& _ = callTarg.partial; if (_) return _; } fail(""_fu); }()) };
             const s_Target& viaIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.via; if (_) return _; } fail(""_fu); }());
             callTargIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.target; if (_) return _; } fail(""_fu); }());
             s_Overload via = GET(viaIdx, module, ctx);
@@ -1892,7 +1892,7 @@ struct sf_solve
                 args.mutref(0) = argNode;
 
         };
-        return CallerNode(node, s_Type(([&]() -> s_Type& { { s_Type& _ = callTarg.type; if (_) return _; } fail(""_fu); }())), callTargIdx, fu_VEC<s_SolvedNode>(args));
+        return CallerNode(node, s_Type(([&]() -> const s_Type& { { const s_Type& _ = callTarg.type; if (_) return _; } fail(""_fu); }())), callTargIdx, fu_VEC<s_SolvedNode>(args));
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
@@ -1977,8 +1977,8 @@ struct sf_solve
         s_SolvedNode cond = solveNode(n0, t_bool);
         s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
         s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
-        s_SolvedNode priExpr { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = cons; if (_) return _; } { s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()) };
-        s_SolvedNode secExpr { ([&]() -> s_SolvedNode& { if (cons) { s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
+        s_SolvedNode priExpr { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = cons; if (_) return _; } { const s_SolvedNode& _ = alt; if (_) return _; } fail(""_fu); }()) };
+        s_SolvedNode secExpr { ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
         const s_Type& secType = secExpr.type;
         if (!((type == t_void) || (type == t_bool)))
@@ -1986,13 +1986,13 @@ struct sf_solve
             type = (!secType ? s_Type(priType) : type_tryInter(priType, secType));
             (type || fail("[if] No common supertype."_fu));
             if (cons)
-                cons = maybeCopyOrMove(cons, type);
+                maybeCopyOrMove(cons, type);
 
             if (alt)
-                alt = maybeCopyOrMove(alt, type);
+                maybeCopyOrMove(alt, type);
 
         };
-        return solved(node, ([&]() -> s_Type& { { s_Type& _ = type; if (_) return _; } fail(""_fu); }()), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { cond, cons, alt } });
+        return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(""_fu); }()), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { cond, cons, alt } });
     };
     s_SolvedNode solveNot(const s_Node& node)
     {
@@ -2009,7 +2009,7 @@ struct sf_solve
             s_Type sumType {};
             for (int i = 0; (i < items.size()); i++)
             {
-                s_SolvedNode item { items.mutref(i) };
+                s_SolvedNode item { items[i] };
                 if ((item.type == t_never))
                 {
                     continue;
@@ -2029,7 +2029,7 @@ struct sf_solve
             if (sumType)
             {
                 for (int i = 0; (i < items.size()); i++)
-                    items.mutref(i) = maybeCopyOrMove(items.mutref(i), sumType);
+                    maybeCopyOrMove(items.mutref(i), sumType);
 
                 type = sumType;
             }
@@ -2087,7 +2087,7 @@ struct sf_solve
         s_Overload overload = GET(target, module, ctx);
         if ((overload.kind == "field"_fu))
         {
-            s_SolvedNode head { ([&]() -> s_SolvedNode& { if ((args.size() == 1)) { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) };
+            s_SolvedNode head { ([&]() -> const s_SolvedNode& { if ((args.size() == 1)) { const s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(""_fu); }()) };
             const s_Type& headType = ([&]() -> const s_Type& { { const s_Type& _ = head.type; if (_) return _; } fail(""_fu); }());
             type = add_refs_from(headType, type);
         }
@@ -2095,21 +2095,24 @@ struct sf_solve
         {
             const fu_VEC<s_Type>& arg_t = ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(""_fu); }());
             for (int i = 0; (i < args.size()); i++)
-                args.mutref(i) = maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(""_fu); }()), arg_t[i]);
+                maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(""_fu); }()), arg_t[i]);
 
         };
         s_SolvedNode out = solved(node, type, args);
         out.target = target;
         return out;
     };
-    s_SolvedNode maybeCopyOrMove(const s_SolvedNode& node, const s_Type& slot)
+    void maybeCopyOrMove(s_SolvedNode& node, const s_Type& slot)
     {
         const int& q = slot.quals;
+        if (!(q & q_mutref))
+            node.type.quals &= ~q_mutref;
+
         if ((q & q_ref))
-            return node;
+            return;
 
         if (!(node.type.quals & q_ref))
-            return node;
+            return;
 
         if (!(q & q_copy))
             fail("Needs an explicit STEAL or CLONE."_fu);
@@ -2117,7 +2120,7 @@ struct sf_solve
         if (WARN_ON_IMPLICIT_COPY)
         {
         };
-        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
+        node = s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
     };
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
@@ -2160,7 +2163,7 @@ struct sf_solve
                 if (node)
                 {
                     _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
-                    result.mutref(i) = unorderedSolve(node, result.mutref(i));
+                    result.mutref(i) = unorderedSolve(node, result[i]);
                 };
             };
             ((i1 > i0) || fail(""_fu));

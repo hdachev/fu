@@ -867,7 +867,7 @@ pub fn cpp_codegen(
                         return 'fu_TO_STR(' + items[0] + '[' + items[1] + '])';
 
                     // The new cow_vec is here.
-                    if (head.type.quals & q_mutref)
+                    if (node.type.quals & q_mutref)
                         return items[0] + '.mutref(' + items[1] + ')';
 
                     return items[0] + '[' + items[1] + ']';

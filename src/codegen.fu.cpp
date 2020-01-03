@@ -1242,7 +1242,7 @@ struct sf_cpp_codegen
             if ((parent.flags & F_DESTRUCTOR))
                 sep = ".data."_fu;
 
-            return ((items.mutref(0) + sep) + ID(id));
+            return ((items[0] + sep) + ID(id));
         };
         if ((node.target.modid && (node.target.modid != module.modid)))
             ensureFwdDecl(node.target);
@@ -1252,26 +1252,26 @@ struct sf_cpp_codegen
             const fu_VEC<s_SolvedNode>& nodes = ([&]() -> const fu_VEC<s_SolvedNode>& { { const fu_VEC<s_SolvedNode>& _ = node.items; if (_) return _; } fail(""_fu); }());
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = nodes[0]; if (_) return _; } fail(""_fu); }());
             if ((items.size() == 1))
-                return ((node.flags & F_POSTFIX) ? (items.mutref(0) + id) : (id + items.mutref(0)));
+                return ((node.flags & F_POSTFIX) ? (items[0] + id) : (id + items[0]));
 
             if ((items.size() == 2))
             {
                 if ((id == "[]"_fu))
                 {
                     if ((head.type.canon == "string"_fu))
-                        return (((("fu_TO_STR("_fu + items.mutref(0)) + "["_fu) + items.mutref(1)) + "])"_fu);
+                        return (((("fu_TO_STR("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
-                    if ((head.type.quals & q_mutref))
-                        return (((items.mutref(0) + ".mutref("_fu) + items.mutref(1)) + ")"_fu);
+                    if ((node.type.quals & q_mutref))
+                        return (((items[0] + ".mutref("_fu) + items[1]) + ")"_fu);
 
-                    return (((items.mutref(0) + "["_fu) + items.mutref(1)) + "]"_fu);
+                    return (((items[0] + "["_fu) + items[1]) + "]"_fu);
                 };
                 if ((id == "="_fu))
                 {
                     if (((head.kind == "call"_fu) && (head.value == "[]"_fu) && (head.items.size() == 2)))
                     {
                         if (type_isMap(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()).type))
-                            return (((((("("_fu + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()), 0)) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(""_fu); }()), 0)) + ") = "_fu) + items.mutref(1)) + ")"_fu);
+                            return (((((("("_fu + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[0]; if (_) return _; } fail(""_fu); }()), 0)) + ".upsert("_fu) + cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = head.items[1]; if (_) return _; } fail(""_fu); }()), 0)) + ") = "_fu) + items[1]) + ")"_fu);
 
                     };
                 };
@@ -1284,44 +1284,44 @@ struct sf_cpp_codegen
 
                     };
                     fu_STR annot = typeAnnot(head.type, 0);
-                    return (((((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!"_fu) + boolWrap(head.type, "_"_fu)) + ") _ = "_fu) + items.mutref(1)) + "; return _; } ("_fu) + items.mutref(0)) + "))"_fu);
+                    return (((((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!"_fu) + boolWrap(head.type, "_"_fu)) + ") _ = "_fu) + items[1]) + "; return _; } ("_fu) + items[0]) + "))"_fu);
                 };
                 if ((mode & M_STMT))
-                    return ((((items.mutref(0) + " "_fu) + id) + " "_fu) + items.mutref(1));
+                    return ((((items[0] + " "_fu) + id) + " "_fu) + items[1]);
                 else
-                    return (((((("("_fu + items.mutref(0)) + " "_fu) + id) + " "_fu) + items.mutref(1)) + ")"_fu);
+                    return (((((("("_fu + items[0]) + " "_fu) + id) + " "_fu) + items[1]) + ")"_fu);
 
             };
         };
         if (((id == "len"_fu) && (items.size() == 1)))
-            return (items.mutref(0) + ".size()"_fu);
+            return (items[0] + ".size()"_fu);
 
         if (((id == "push"_fu) && (items.size() == 2)))
-            return (((items.mutref(0) + ".push("_fu) + items.mutref(1)) + ")"_fu);
+            return (((items[0] + ".push("_fu) + items[1]) + ")"_fu);
 
         if (((id == "pop"_fu) && (items.size() == 1)))
-            return (items.mutref(0) + ".pop()"_fu);
+            return (items[0] + ".pop()"_fu);
 
         if (((id == "unshift"_fu) && (items.size() == 2)))
-            return (((items.mutref(0) + ".unshift("_fu) + items.mutref(1)) + ")"_fu);
+            return (((items[0] + ".unshift("_fu) + items[1]) + ")"_fu);
 
         if (((id == "insert"_fu) && (items.size() == 3)))
-            return (((((items.mutref(0) + ".insert("_fu) + items.mutref(1)) + ", "_fu) + items.mutref(2)) + ")"_fu);
+            return (((((items[0] + ".insert("_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
 
         if (((id == "splice"_fu) && (items.size() == 3)))
-            return (((((items.mutref(0) + ".splice("_fu) + items.mutref(1)) + ", "_fu) + items.mutref(2)) + ")"_fu);
+            return (((((items[0] + ".splice("_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
 
         if (((id == "grow"_fu) && (items.size() == 2)))
-            return (((items.mutref(0) + ".grow("_fu) + items.mutref(1)) + ")"_fu);
+            return (((items[0] + ".grow("_fu) + items[1]) + ")"_fu);
 
         if (((id == "shrink"_fu) && (items.size() == 2)))
-            return (((items.mutref(0) + ".shrink("_fu) + items.mutref(1)) + ")"_fu);
+            return (((items[0] + ".shrink("_fu) + items[1]) + ")"_fu);
 
         if (((id == "resize"_fu) && (items.size() == 2)))
-            return (((items.mutref(0) + ".resize("_fu) + items.mutref(1)) + ")"_fu);
+            return (((items[0] + ".resize("_fu) + items[1]) + ")"_fu);
 
         if (((id == "clear"_fu) && (items.size() == 1)))
-            return (items.mutref(0) + ".clear()"_fu);
+            return (items[0] + ".clear()"_fu);
 
         if (((id == "find"_fu) && (items.size() == 2)))
         {
@@ -1349,37 +1349,37 @@ struct sf_cpp_codegen
             return (("fu::replace("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
-            return (((("slice("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ")"_fu);
+            return (((("slice("_fu + items[0]) + ", "_fu) + items[1]) + ")"_fu);
 
         if (((id == "slice"_fu) && (items.size() == 3)))
-            return (((((("slice("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ", "_fu) + items.mutref(2)) + ")"_fu);
+            return (((((("slice("_fu + items[0]) + ", "_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
 
         if (((id == "substr"_fu) && (items.size() == 3)))
-            return (((((("substr("_fu + items.mutref(0)) + ", "_fu) + items.mutref(1)) + ", "_fu) + items.mutref(2)) + ")"_fu);
+            return (((((("substr("_fu + items[0]) + ", "_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
 
         if (((id == "sort"_fu) && (items.size() == 1)))
         {
             include("<algorithm>"_fu);
-            return (("([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } ("_fu + items.mutref(0)) + "))"_fu);
+            return (("([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } ("_fu + items[0]) + "))"_fu);
         };
         if (((id == "char"_fu) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(""_fu); }());
             if ((head.type.canon == "string"_fu))
-                return (((("int("_fu + items.mutref(0)) + "["_fu) + items.mutref(1)) + "])"_fu);
+                return (((("int("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
         };
         if ((((id == "true"_fu) || (id == "false"_fu)) && !items.size()))
             return id;
 
         if (((id == "throw"_fu) && (items.size() == 1)))
-            return cgThrow(id, items.mutref(0));
+            return cgThrow(id, items[0]);
 
         if (((id == "assert"_fu) && (items.size() == 0)))
             return cgThrow(id, "\"Assertion failed.\""_fu);
 
         if (((id == "move"_fu) && (items.size() == 3)))
-            return (((("([&]() { auto* _ = "_fu + items.mutref(0)) + ".mut_data(); "_fu) + cgSlide(("_ + "_fu + items.mutref(2)), ("_ + "_fu + items.mutref(1)), "sizeof(*_)"_fu)) + "; } ())"_fu);
+            return (((("([&]() { auto* _ = "_fu + items[0]) + ".mut_data(); "_fu) + cgSlide(("_ + "_fu + items[2]), ("_ + "_fu + items[1]), "sizeof(*_)"_fu)) + "; } ())"_fu);
 
         if (((id == "split"_fu) && (items.size() == 2)))
             return cgSplit(items);
@@ -1394,10 +1394,10 @@ struct sf_cpp_codegen
             return cgKeys(items);
 
         if (((id == "CLONE"_fu) && (items.size() == 1)))
-            return cgClone(node.type, items.mutref(0));
+            return cgClone(node.type, items[0]);
 
         if (((id == "STEAL"_fu) && (items.size() == 1)))
-            return cgSteal(items.mutref(0));
+            return cgSteal(items[0]);
 
         if (((id == "SWAP"_fu) && (items.size() == 2)))
             return cgSwap(items);

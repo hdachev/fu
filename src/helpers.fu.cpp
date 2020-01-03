@@ -69,14 +69,14 @@ fu_STR path_normalize(const fu_STR& p)
     fu_VEC<fu_STR> path = fu_SPLIT(p, "/"_fu);
     for (int i = path.size(); (i-- > 0); )
     {
-        fu_STR part { path.mutref(i) };
+        fu_STR part { path[i] };
         if (((part == "."_fu) || (!part.size() && (i > 0) && (i < (path.size() - 1)))))
             path.splice(i, 1);
 
     };
     for (int i = 1; (i < path.size()); i++)
     {
-        if ((path.mutref(i) == ".."_fu))
+        if ((path[i] == ".."_fu))
             path.splice(--i, 2);
 
     };

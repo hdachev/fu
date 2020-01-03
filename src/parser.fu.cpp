@@ -443,7 +443,7 @@ struct sf_parse
     s_Node parseStructMethod()
     {
         s_Node fnNode = parseFnDecl();
-        s_Node typeAnnot = createPrefix("&"_fu, createRead(([&]() -> fu_STR& { { fu_STR& _ = _structName; if (_.size()) return _; } fail(""_fu); }())));
+        s_Node typeAnnot = createPrefix("&"_fu, createRead(([&]() -> const fu_STR& { { const fu_STR& _ = _structName; if (_.size()) return _; } fail(""_fu); }())));
         fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
         fnNode.flags |= F_METHOD;
         return fnNode;
@@ -481,7 +481,7 @@ struct sf_parse
     };
     void unwrapStructMethods(fu_VEC<s_Node>& out, const int& structNodeIdx)
     {
-        s_Node structNode { out.mutref(structNodeIdx) };
+        s_Node structNode { out[structNodeIdx] };
         fu_VEC<s_Node>& members = structNode.items;
         for (int i = 0; (i < members.size()); i++)
         {
@@ -886,7 +886,7 @@ struct sf_parse
             items.push(parseExpression(int(P_COMMA)));
         while (tryConsume("op"_fu, ","_fu));
         consume("op"_fu, ")"_fu);
-        return ((items.size() > 1) ? createComma(items) : s_Node(items.mutref(0)));
+        return ((items.size() > 1) ? createComma(items) : s_Node(items[0]));
     };
     s_Node createComma(const fu_VEC<s_Node>& nodes)
     {
