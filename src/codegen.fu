@@ -352,6 +352,90 @@ pub fn cpp_codegen(
     }
 
 
+    //
+
+    fn cgFnSignature(fn: SolvedNode): string
+    {
+        let items   = fn.items;
+        let ret     = items[items.len + FN_RET_BACK] || fail();
+        let closure = !!_clsrN && (fn.flags & F_CLOSURE);
+
+        let annot   = typeAnnot(
+            ret.type || fail(),
+            M_RETVAL | (closure ? M_CLOSURE : 0));
+
+        mut id = fn.value;
+        if (id == 'main' && !closure)
+        {
+            _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
+            id = 'fu_MAIN';
+        }
+
+        mut src = closure
+                ? 'const auto& ' + id + ' = [&]('
+                : annot + ' ' + id + '(';
+
+        if (!id.hasIdentifierChars)
+            src = annot + ' operator' + id + '(';
+
+        for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
+        {
+            if (i)
+                src += ', ';
+
+            src += binding(items[i] || fail());
+        }
+
+        src += closure
+             ? ') -> ' + annot
+             : ')';
+
+        return src;
+    }
+
+    fn ensureFwdDecl(target: Target)
+    {
+        let overload = GET(target);
+        if (overload.kind != 'fn' || overload.name == 'main')
+            return;
+
+        let ffwdKey = target.modid + '#' + target.index;
+        if (_ffwd.has(ffwdKey))
+            return;
+
+        let id      = overload.name || fail();
+        let ret     = overload.type || fail();
+        let annot   = typeAnnot(ret, M_RETVAL);
+
+        let isOp    = !id.hasIdentifierChars;
+
+        // TODO FIX
+        //  Running into issues with attempting to forward declare
+        //   builtin operators specialized in other modules
+        //    when importing their inline const stuff - a perfect storm.
+        if (isOp && id != '==')
+            return;
+
+        mut src = isOp
+                ? '\n' + annot + ' operator' + id + '('
+                : '\n' + annot + ' ' + id + '(';
+
+        let arg_t = overload.args;
+        for (mut i = 0; i < arg_t.len; i++)
+        {
+            if (i)
+                src += ', ';
+
+            src += typeAnnot(arg_t[i], M_ARGUMENT);
+        }
+
+        src += ');';
+        _ffwd[ffwdKey] = src;
+
+        return;
+    }
+
+
     // This barely works unless it doesn't.
 
     fn try_cgFnAsStruct(fn: SolvedNode): string
@@ -441,95 +525,14 @@ pub fn cpp_codegen(
             src += '\n{\n    return (' + structName + ' { ' + args.join(', ') + ' }).' + evalName + '();\n}\n\n';
         }
 
+        if (_fdef.has(fn.value || fail()))
+            ensureFwdDecl(fn.target);
+
         //////////////////////
         _clsrN++;
         //////////////////////
 
         return src;
-    }
-
-
-    //
-
-    fn cgFnSignature(fn: SolvedNode): string
-    {
-        let items   = fn.items;
-        let ret     = items[items.len + FN_RET_BACK] || fail();
-        let closure = !!_clsrN && (fn.flags & F_CLOSURE);
-
-        let annot   = typeAnnot(
-            ret.type || fail(),
-            M_RETVAL | (closure ? M_CLOSURE : 0));
-
-        mut id = fn.value;
-        if (id == 'main' && !closure)
-        {
-            _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
-            id = 'fu_MAIN';
-        }
-
-        mut src = closure
-                ? 'const auto& ' + id + ' = [&]('
-                : annot + ' ' + id + '(';
-
-        if (!id.hasIdentifierChars)
-            src = annot + ' operator' + id + '(';
-
-        for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
-        {
-            if (i)
-                src += ', ';
-
-            src += binding(items[i] || fail());
-        }
-
-        src += closure
-             ? ') -> ' + annot
-             : ')';
-
-        return src;
-    }
-
-    fn ensureFwdDecl(target: Target)
-    {
-        let overload = GET(target);
-        if (overload.kind != 'fn')
-            return;
-
-        let ffwdKey = target.modid + '#' + target.index;
-        if (_ffwd.has(ffwdKey))
-            return;
-
-        let id      = overload.name || fail();
-        let ret     = overload.type || fail();
-        let annot   = typeAnnot(ret, M_RETVAL);
-
-        let isOp    = !id.hasIdentifierChars;
-
-        // TODO FIX
-        //  Running into issues with attempting to forward declare
-        //   builtin operators specialized in other modules
-        //    when importing their inline const stuff - a perfect storm.
-        if (isOp && id != '==')
-            return;
-
-        mut src = isOp
-                ? '\n' + annot + ' operator' + id + '('
-                : '\n' + annot + ' ' + id + '(';
-
-        let arg_t = overload.args;
-        for (mut i = 0; i < arg_t.len; i++)
-        {
-            if (i)
-                src += ', ';
-
-            src += typeAnnot(arg_t[i], M_ARGUMENT);
-        }
-
-        src += ');';
-        _ffwd[ffwdKey] = src;
-
-        return;
     }
 
 
@@ -580,7 +583,7 @@ pub fn cpp_codegen(
             _indent = '\n';
 
         mut src = cgFnSignature(fn);
-        if (src != 'int main()' && !(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
+        if (!(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
             ensureFwdDecl(fn.target);
 
         if (body.kind == 'block')

@@ -498,9 +498,9 @@ inline const int q_trivial = (1 << 3);
 inline const int F_DESTRUCTOR = (1 << 31);
                                 #endif
 
-                                #ifndef DEF_FN_BODY_BACK
-                                #define DEF_FN_BODY_BACK
-inline const int FN_BODY_BACK = -1;
+                                #ifndef DEF_FN_RET_BACK
+                                #define DEF_FN_RET_BACK
+inline const int FN_RET_BACK = -2;
                                 #endif
 
                                 #ifndef DEF_F_CLOSURE
@@ -508,19 +508,19 @@ inline const int FN_BODY_BACK = -1;
 inline const int F_CLOSURE = (1 << 27);
                                 #endif
 
-                                #ifndef DEF_t_void
-                                #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0 };
-                                #endif
-
-                                #ifndef DEF_FN_RET_BACK
-                                #define DEF_FN_RET_BACK
-inline const int FN_RET_BACK = -2;
-                                #endif
-
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
 inline const int& FN_ARGS_BACK = FN_RET_BACK;
+                                #endif
+
+                                #ifndef DEF_FN_BODY_BACK
+                                #define DEF_FN_BODY_BACK
+inline const int FN_BODY_BACK = -1;
+                                #endif
+
+                                #ifndef DEF_t_void
+                                #define DEF_t_void
+inline const s_Type t_void = s_Type { "void"_fu, 0, 0 };
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
@@ -898,6 +898,62 @@ struct sf_cpp_codegen
         };
         return (src + ")"_fu);
     };
+    fu_STR cgFnSignature(const s_SolvedNode& fn)
+    {
+        const fu_VEC<s_SolvedNode>& items = fn.items;
+        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(fu_STR{}); }());
+        const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
+        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(fu_STR{}); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
+        fu_STR id { fn.value };
+        if (((id == "main"_fu) && !closure))
+        {
+            _hasMain = ((fn.items.size() + FN_ARGS_BACK) ? 2 : 1);
+            id = "fu_MAIN"_fu;
+        };
+        fu_STR src = (closure ? (("const auto& "_fu + id) + " = [&]("_fu) : (((annot + " "_fu) + id) + "("_fu));
+        if (!hasIdentifierChars(id))
+            src = (((annot + " operator"_fu) + id) + "("_fu);
+
+        for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
+        {
+            if (i)
+                src += ", "_fu;
+
+            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }()), false, false);
+        };
+        src += (closure ? (") -> "_fu + annot) : ")"_fu);
+        return src;
+    };
+    void ensureFwdDecl(const s_Target& target)
+    {
+        s_Overload overload = GET(target, module, ctx);
+        if (((overload.kind != "fn"_fu) || (overload.name == "main"_fu)))
+            return;
+
+        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index);
+        if (fu::has(_ffwd, ffwdKey))
+            return;
+
+        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(fu_STR{}); }());
+        const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(fu_STR{}); }());
+        fu_STR annot = typeAnnot(ret, M_RETVAL);
+        const bool isOp = !hasIdentifierChars(id);
+        if ((isOp && (id != "=="_fu)))
+            return;
+
+        fu_STR src = (isOp ? (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " "_fu) + id) + "("_fu));
+        const fu_VEC<s_Type>& arg_t = overload.args;
+        for (int i = 0; (i < arg_t.size()); i++)
+        {
+            if (i)
+                src += ", "_fu;
+
+            src += typeAnnot(arg_t[i], M_ARGUMENT);
+        };
+        src += ");"_fu;
+        (_ffwd.upsert(ffwdKey) = src);
+        return;
+    };
     fu_STR try_cgFnAsStruct(const s_SolvedNode& fn)
     {
         const s_SolvedNode& body = fn.items[(fn.items.size() + FN_BODY_BACK)];
@@ -946,64 +1002,11 @@ struct sf_cpp_codegen
             src += cgFnSignature(fn);
             src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu::join(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
         };
+        if (fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_STR{}); }())))
+            ensureFwdDecl(fn.target);
+
         _clsrN++;
         return src;
-    };
-    fu_STR cgFnSignature(const s_SolvedNode& fn)
-    {
-        const fu_VEC<s_SolvedNode>& items = fn.items;
-        const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(fu_STR{}); }());
-        const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
-        fu_STR annot = typeAnnot(([&]() -> const s_Type& { { const s_Type& _ = ret.type; if (_) return _; } fail(fu_STR{}); }()), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
-        fu_STR id { fn.value };
-        if (((id == "main"_fu) && !closure))
-        {
-            _hasMain = ((fn.items.size() + FN_ARGS_BACK) ? 2 : 1);
-            id = "fu_MAIN"_fu;
-        };
-        fu_STR src = (closure ? (("const auto& "_fu + id) + " = [&]("_fu) : (((annot + " "_fu) + id) + "("_fu));
-        if (!hasIdentifierChars(id))
-            src = (((annot + " operator"_fu) + id) + "("_fu);
-
-        for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
-        {
-            if (i)
-                src += ", "_fu;
-
-            src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }()), false, false);
-        };
-        src += (closure ? (") -> "_fu + annot) : ")"_fu);
-        return src;
-    };
-    void ensureFwdDecl(const s_Target& target)
-    {
-        s_Overload overload = GET(target, module, ctx);
-        if ((overload.kind != "fn"_fu))
-            return;
-
-        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index);
-        if (fu::has(_ffwd, ffwdKey))
-            return;
-
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = overload.name; if (_.size()) return _; } fail(fu_STR{}); }());
-        const s_Type& ret = ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(fu_STR{}); }());
-        fu_STR annot = typeAnnot(ret, M_RETVAL);
-        const bool isOp = !hasIdentifierChars(id);
-        if ((isOp && (id != "=="_fu)))
-            return;
-
-        fu_STR src = (isOp ? (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " "_fu) + id) + "("_fu));
-        const fu_VEC<s_Type>& arg_t = overload.args;
-        for (int i = 0; (i < arg_t.size()); i++)
-        {
-            if (i)
-                src += ", "_fu;
-
-            src += typeAnnot(arg_t[i], M_ARGUMENT);
-        };
-        src += ");"_fu;
-        (_ffwd.upsert(ffwdKey) = src);
-        return;
     };
     fu_STR cgFn(const s_SolvedNode& fn)
     {
@@ -1034,7 +1037,7 @@ struct sf_cpp_codegen
             _indent = "\n"_fu;
 
         fu_STR src = cgFnSignature(fn);
-        if (((src != "int main()"_fu) && !(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_STR{}); }()))))
+        if ((!(fn.flags & F_CLOSURE) && fu::has(_fdef, ([&]() -> const fu_STR& { { const fu_STR& _ = fn.value; if (_.size()) return _; } fail(fu_STR{}); }()))))
             ensureFwdDecl(fn.target);
 
         if ((body.kind == "block"_fu))

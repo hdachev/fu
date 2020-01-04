@@ -1487,8 +1487,12 @@ fn runTests()
     `);
 
     ZERO(`
-        fn main(): i32 {
-            let args = [ 'hello', 'you' ];
+
+        fn main()
+            cli_handle([ 'hello', 'you' ]);
+
+        fn cli_handle(args: string[]): i32
+        {
             mut idx = 0;
 
             fn next() {
