@@ -64,6 +64,17 @@ fu_STR path_dirname(const fu_STR& path)
     return fu_STR{};
 }
 
+fu_STR path_filename(const fu_STR& path)
+{
+    for (int i = path.size(); (i-- > 0); )
+    {
+        if ((fu_TO_STR(path[i]) == "/"_fu))
+            return slice(path, (i + 1));
+
+    };
+    return path;
+}
+
 fu_STR path_normalize(const fu_STR& p)
 {
     fu_VEC<fu_STR> path = fu_SPLIT(p, "/"_fu);

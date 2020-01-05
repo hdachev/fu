@@ -33,6 +33,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 fu_STR last(const fu_STR&);
+fu_STR path_filename(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
 void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
@@ -595,9 +596,10 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             fu_STR F_obj = (F + ".o"_fu);
             if ((fu::file_size(F_obj) < 1))
             {
-                const fu_STR& cpp = ctx.modules[(i + 1)].out.cpp;
+                const s_Module& module = ctx.modules[(i + 1)];
+                const fu_STR& cpp = module.out.cpp;
                 fu::file_write(F_cpp, cpp);
-                (std::cout << "  BUILD "_fu << F_cpp << "\n");
+                (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
                 const f64 t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
@@ -712,11 +714,9 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
                                 #endif
 
-s_TEMP_Context ZERO(const fu_STR& src, fu_STR&& fname)
+s_TEMP_Context ZERO(const fu_STR& src)
 {
-    if (!fname.size())
-        fname = "testcase.ZERO"_fu;
-
+    fu_STR fname = "testcase.ZERO"_fu;
     s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
     build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;

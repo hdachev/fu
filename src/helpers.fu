@@ -43,6 +43,15 @@ fn path_dirname(path: string): string
     return '';
 }
 
+fn path_filename(path: string): string
+{
+    for (mut i = path.len; i --> 0; )
+        if (path[i] == '/')
+            return path.slice(i + 1);
+
+    return path;
+}
+
 fn path_normalize(p: string): string {
     mut path = p.split('/');
 

@@ -245,11 +245,13 @@ pub fn build(
             if (file_size(F_obj) < 1)
             {
                 // Prelude @ 0.
-                let cpp = ctx.modules[i + 1].out.cpp;
+                let module = ctx.modules[i + 1];
+                let cpp = module.out.cpp;
 
                 file_write(F_cpp, cpp);
 
-                print('  BUILD ', F_cpp);
+                print('  BUILD ', module.fname.path_filename, ' ', F_cpp);
+
                 let t0 = now_hr();
 
                 code = shell_exec(GCC_CMD + '-c -o ' + F_tmp + ' ' + F_cpp + ' 2>&1', stdout)
@@ -384,7 +386,8 @@ fn absdir(a: string)
 
 let HOME = absdir(env_get('HOME'));
 
-fn locate_PRJDIR(): string {
+fn locate_PRJDIR(): string
+{
     let dir = HOME + 'fu/';
     let fn  = dir  + 'src/compiler.fu';
     let fs  = file_size(fn);
@@ -397,11 +400,9 @@ fn locate_PRJDIR(): string {
     let PRJDIR              = locate_PRJDIR();
 pub let DEFAULT_WORKSPACE   = PRJDIR + 'build.cpp/';
 
-fn ZERO(src: string, mut fname = ''): TEMP_Context
+fn ZERO(src: string): TEMP_Context
 {
-    if (!fname)
-        fname = 'testcase.ZERO';
-
+    let fname = 'testcase.ZERO';
     let ctx = compile_snippet(:src, :fname);
     build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
 

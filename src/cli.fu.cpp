@@ -6,6 +6,7 @@
 #include <iostream>
 #include <utility>
 
+void runTestsAndBuildCompiler();
 fu_STR path_join(const fu_STR&, const fu_STR&);
 void saySomethingNice();
 int self_test();
@@ -39,13 +40,20 @@ struct sf_cli_handle
     fu_STR cmd = next();
     int cli_handle_EVAL()
     {
-        if (!cmd.size())
+        if ((argv.size() == 1))
         {
             (std::cout << "\n\tHello! "_fu << self << "\n");
             (std::cout << "\tNothing to do, running a quick self test.\n"_fu << "\n");
             self_test();
             (std::cout << "\tEverything checks out."_fu << "\n");
             (std::cout << "\tTry `fu run file.fu`.\n"_fu << "\n");
+            return 0;
+        };
+        if (((argv.size() == 2) && (cmd == "self"_fu)))
+        {
+            (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << "\n");
+            self_test();
+            runTestsAndBuildCompiler();
             return 0;
         };
         const bool run = ((cmd == "build"_fu) ? false : ((cmd == "run"_fu) ? true : fu::fail((((("Bad command: `"_fu + cmd) + "`,"_fu) + "\n\tvalid examples are `fu build file.fu`"_fu) + "\n\tand `fu run file.fu`."_fu))));
