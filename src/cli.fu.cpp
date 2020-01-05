@@ -39,7 +39,6 @@ struct sf_cli_handle
         return fu_STR{};
     };
     fu_STR self = next();
-    fu_STR cmd = next();
     int cli_handle_EVAL()
     {
         if ((argv.size() == 1))
@@ -48,17 +47,16 @@ struct sf_cli_handle
             (std::cout << "\tNothing to do, running a quick self test.\n"_fu << "\n");
             self_test();
             (std::cout << "\tEverything checks out."_fu << "\n");
-            (std::cout << "\tTry `fu run file.fu`.\n"_fu << "\n");
+            (std::cout << "\tTry `fu file.fu`.\n"_fu << "\n");
             return 0;
         };
-        if (((argv.size() == 2) && (cmd == "self"_fu)))
+        if (((argv.size() == 2) && (argv[1] == "self"_fu)))
         {
             (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << "\n");
             self_test();
             runTestsAndBuildCompiler();
             return 0;
         };
-        const bool run = ((cmd == "build"_fu) ? false : ((cmd == "run"_fu) ? true : fu::fail((((("Bad command: `"_fu + cmd) + "`,"_fu) + "\n\tvalid examples are `fu build file.fu`"_fu) + "\n\tand `fu run file.fu`."_fu))));
         const auto& abs = [&](const fu_STR& path) -> fu_STR
         {
             return ([&]() -> fu_STR { if (path && (fu_TO_STR(path[0]) != "-"_fu)) return path_join(cwd, path); else return fu_STR{}; }());
@@ -72,6 +70,7 @@ struct sf_cli_handle
         fu_STR bin {};
         int options {};
         fu_STR scheme {};
+        bool run {};
         fu_STR val = next();
         while (((val.size() > 1) && (fu_TO_STR(val[0]) == "-"_fu)))
         {
@@ -94,6 +93,7 @@ struct sf_cli_handle
                     options |= o;
                     if ((opt == Q_long))
                     {
+                        (dir && fu::fail((((opt + ": already set to `"_fu) + dir) + "`."_fu)));
                         dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail((((((((("Option "_fu + Q_long) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + Q_long) + " rel/or/abs/dir/`."_fu)); }());
                         val = next();
                     };
@@ -106,7 +106,13 @@ struct sf_cli_handle
             option("b"_fu, "--bin"_fu, EMIT_BIN, bin);
             if (((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu)))
             {
+                (scheme && fu::fail((((opt + ": Scheme already set to `"_fu) + opt) + "`."_fu)));
                 scheme = slice(opt, 2);
+                continue;
+            };
+            if (((opt == "--run"_fu) || (opt == "r"_fu)))
+            {
+                run = true;
                 continue;
             }
             else if (opt)
@@ -122,7 +128,7 @@ struct sf_cli_handle
                 dir_cpp = dir_src;
 
         };
-        fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail(((("Missing filename argument, a valid example is:"_fu + "\n\t`fu "_fu) + cmd) + " file.fu`."_fu)); }());
+        fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)); }());
         const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
         if ((options & EMIT_BIN))
             ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
@@ -149,7 +155,7 @@ void runTestsAndBuildCompiler()
 {
     runTests();
     saySomethingNice();
-    cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<6> { "fu"_fu, "run"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, fu_STR(PRJDIR));
+    cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, fu_STR(PRJDIR));
 }
 
 

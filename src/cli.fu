@@ -15,8 +15,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     }
 
     // Router.
-    let self    = next();
-    let cmd     = next();
+    let self = next();
 
     // Exit 0 on no command, else we fail build-checks.
     if (argv.len == 1)
@@ -26,13 +25,13 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
         self_test();
         print('\tEverything checks out.');
-        print('\tTry `fu run file.fu`.\n');
+        print('\tTry `fu file.fu`.\n');
 
         return 0;
     }
 
     // Full test suite.
-    if (argv.len == 2 && cmd == 'self')
+    if (argv.len == 2 && argv[1] == 'self')
     {
         print('\n\tRunning test suite and rebuilding self ...\n');
 
@@ -40,13 +39,6 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         runTestsAndBuildCompiler();
         return 0;
     }
-
-    // Go!
-    let run = cmd == 'build' ? false
-            : cmd == 'run'   ? true
-            : throw('Bad command: `' + cmd + '`,' +
-                    '\n\tvalid examples are `fu build file.fu`' +
-                    '\n\tand `fu run file.fu`.');
 
     fn abs(path: string)
         path    && path[0] != '-'
@@ -64,6 +56,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     mut options: i32;
     mut scheme:  string;
+    mut run:     bool;
 
     //
     mut val = next();
@@ -83,6 +76,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
             if (opt == short || opt == long) {
                 options |= o;
                 if (opt == long) {
+                    dir && throw(opt + ': already set to `' + dir + '`.');
                     dir = abs(val) || throw(
                         'Option ' + long + ' expects a path,' +
                         '\n\tgot `' + val + '`,' +
@@ -102,7 +96,14 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
         // Scheme.
         if (opt == '--debug' || opt == '--reldeb' || opt == '--release' || opt == '--retail') {
+            scheme && throw(opt + ': Scheme already set to `' + opt + '`.');
             scheme = opt.slice(2);
+            continue;
+        }
+
+        // Run or don't.
+        if (opt == '--run' || opt == 'r') {
+            run = true;
             continue;
         }
 
@@ -119,7 +120,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     // Do the work.
     let fname = abs(val) || throw(
         'Missing filename argument, a valid example is:' +
-        '\n\t`fu ' + cmd + ' file.fu`.');
+        '\n\t`fu file.fu`.');
 
     let dir_wrk = DEFAULT_WORKSPACE;
 
@@ -151,5 +152,5 @@ fn runTestsAndBuildCompiler()
 
     cli_handle(
         cwd: PRJDIR,
-        [ 'fu', 'run', '--bin', 'bin/fu', '-c', 'src/cli.fu' ]);
+        [ 'fu', '--bin', 'bin/fu', '-c', 'src/cli.fu' ]);
 }
