@@ -1029,7 +1029,7 @@ struct fu_VEC
 
     // Sepuku bounds-checks,
     //  note these are still costly,
-    //   consider removing in RETAIL builds,
+    //   consider removing in fu_RETAIL builds,
     //    static proofs + compiling down to raw ptrs,
     //     and a battery of high-level operators
     //      that lift the checks outside the loop.
@@ -1037,9 +1037,16 @@ struct fu_VEC
     fu_INL const T& operator[](i32 idx) const noexcept
     {
         const T* ok = data() + idx;
+
+        #if fu_RETAIL
+        return *ok;
+
+        #else
         return (u32) idx < (u32) size()
              ? *ok
              : *((T*)1);
+
+        #endif
     }
 
     fu_INL T& mutref(i32 idx) noexcept
@@ -1047,9 +1054,16 @@ struct fu_VEC
         reserve();
 
         T* ok = (T*) data() + idx;
+
+        #if fu_RETAIL
+        return *ok;
+
+        #else
         return (u32) idx < (u32) size()
              ? *ok
              : *((T*)1);
+
+        #endif
     }
 };
 
@@ -1082,11 +1096,14 @@ fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
     assert(start >= 0 && start <= end && end <= s);
 
     fu_VEC<T> result;
-    i32 count = end - start;
-    if (count > 0) {
-        const T* src = v.data();
-        result.UNSAFE__init_copy(src + start, count);
-    }
+
+    end         = end < s ? end : s;
+    start       = start > 0 ? start : 0;
+    i32 count   = end - start;
+    count       = count > 0 ? count : 0;
+
+    const T* src = v.data();
+    result.UNSAFE__init_copy(src + start, count);
 
     return result;
 }

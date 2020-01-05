@@ -11,7 +11,7 @@ fu_STR path_join(const fu_STR&, const fu_STR&);
 void saySomethingNice();
 int self_test();
 void runTests();
-void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
                                 #ifndef DEF_PRJDIR
                                 #define DEF_PRJDIR
@@ -69,6 +69,7 @@ struct sf_cli_handle
         fu_STR dir_obj {};
         fu_STR bin {};
         int options {};
+        fu_STR scheme {};
         fu_STR val = next();
         while (((val.size() > 1) && (fu_TO_STR(val[0]) == "-"_fu)))
         {
@@ -101,7 +102,12 @@ struct sf_cli_handle
             option("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp);
             option("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj);
             option("b"_fu, "--bin"_fu, EMIT_BIN, bin);
-            if (opt.size())
+            if (((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu)))
+            {
+                scheme = slice(opt, 2);
+                continue;
+            }
+            else if (opt.size())
                 fu::fail((("Unknown option: `"_fu + opt) + "`."_fu));
 
         };
@@ -119,7 +125,7 @@ struct sf_cli_handle
         if ((options & EMIT_BIN))
             ([&](fu_STR& _) -> fu_STR& { if (!_.size()) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
-        build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp);
+        build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme);
         return 0;
     };
 };

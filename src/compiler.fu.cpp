@@ -35,7 +35,7 @@ struct s_Type;
 fu_STR last(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
-void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
 s_TEMP_Context solvePrelude();
@@ -511,11 +511,6 @@ fu_STR compile_snippet(const fu_STR& src)
     fu::fail("Assertion failed.");
 }
 
-                                #ifndef DEF_GCC_CMD
-                                #define DEF_GCC_CMD
-inline const fu_STR GCC_CMD = (("g++ -std=c++1z -O3 "_fu + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
-                                #endif
-
 void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
     if ((dir_src.size() && dir_out.size()))
@@ -537,7 +532,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     (std::cout << ("  WROTE "_fu + fname) << "\n");
 }
 
-void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity)
+void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
 {
     if ((last(dir_wrk) != "/"_fu))
     {
@@ -557,11 +552,19 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
     fu_STR stdout {};
     fu_VEC<fu_STR> Fs {};
     int len_all {};
+    fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG "_fu : "-Og "_fu);
+    if (((scheme == "debug"_fu) || (scheme == "reldeb"_fu)))
+        O_lvl += "-g "_fu;
+
+    if ((scheme == "retail"_fu))
+        O_lvl += "-Dfu_RETAIL "_fu;
+
+    fu_STR GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = module.out.cpp;
-        fu_STR F = ((((dir_wrk + "o-"_fu) + fu::hash_tea(cpp)) + "-"_fu) + cpp.size());
+        fu_STR F = ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size());
         Fs.push(F);
         len_all += cpp.size();
     };
@@ -669,7 +672,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
 }
 
-void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp)
+void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
 {
     s_TEMP_Context ctx { CTX_PRELUDE };
     
@@ -681,7 +684,7 @@ void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, const fu
         const f64 tt = (t1 - t0);
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
-    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname);
+    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
 }
 
 fu_STR absdir(const fu_STR& a)
@@ -718,7 +721,7 @@ s_TEMP_Context ZERO(const fu_STR& src)
 {
     fu_STR fname = "testcase.ZERO"_fu;
     s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
+    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }
 

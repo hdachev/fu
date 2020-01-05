@@ -63,6 +63,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     mut bin:     string;
 
     mut options: i32;
+    mut scheme:  string;
 
     //
     mut val = next();
@@ -99,7 +100,13 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         option('o', '--obj', EMIT_OBJ, dir_obj);
         option('b', '--bin', EMIT_BIN,     bin);
 
-        if (opt)
+        // Scheme.
+        if (opt == '--debug' || opt == '--reldeb' || opt == '--release' || opt == '--retail') {
+            scheme = opt.slice(2);
+            continue;
+        }
+
+        else if (opt)
             throw('Unknown option: `' + opt + '`.');
     }
 
@@ -123,7 +130,8 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     // Go.
     build(:fname, :run, :bin,
-        :dir_wrk, :dir_src, :dir_cpp, :dir_obj);
+        :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
+        :scheme);
 
     return 0;
 }

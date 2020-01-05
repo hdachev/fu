@@ -46,7 +46,8 @@ struct fu_ZERO
     }
 
     fu_INL void operator=(int x) noexcept {
-        assert(x == 0);
+        if (x)
+            assert(false);
     }
 };
 

@@ -124,11 +124,6 @@ fn compile_snippet(src: string): string
 ////////
 ////////     Orchestration.
 
-let GCC_CMD = 'g++ -std=c++1z -O3 '
-            + '-pedantic-errors -Wall -Wextra -Werror ' // opt-in
-            + '-Wno-parentheses-equality ' // opt-out
-            ;
-
 fn update_file(
     mut fname   : string,
         data    : string,
@@ -168,7 +163,8 @@ pub fn build(
     mut dir_src = '',
     mut dir_cpp = '',
 
-    unity: string = ''): void
+    unity:  string = '',
+    scheme: string = ''): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.last != '/')
@@ -190,12 +186,30 @@ pub fn build(
     mut Fs: string[];
     mut len_all: i32;
 
+    // Optimization level.
+    mut O_lvl   = scheme != 'debug'
+                ? '-O3 -DNDEBUG '
+                : '-Og '
+                ;
+
+    // Debug symbols.
+    if (scheme == 'debug' || scheme == 'reldeb')
+        O_lvl += '-g ';
+
+    if (scheme == 'retail')
+        O_lvl += '-Dfu_RETAIL ';
+
+    let GCC_CMD = 'g++ -std=c++1z ' + O_lvl
+                + '-pedantic-errors -Wall -Wextra -Werror ' // opt-in
+                + '-Wno-parentheses-equality ' // opt-out
+                ;
+
     // Starting after prelude.
     for (mut i = 1; i < ctx.modules.len; i++)
     {
         let module  = ctx.modules[i];
         let cpp     = module.out.cpp;
-        let F       = dir_wrk   + 'o-' + hash_tea(cpp)
+        let F       = dir_wrk   + 'o-' + hash_tea(GCC_CMD + cpp)
                                 + '-' + cpp.len;
 
         Fs.push(F);
@@ -350,7 +364,8 @@ pub fn build(
     bin     = '',
     dir_obj = '',
     dir_src = '',
-    dir_cpp = '')
+    dir_cpp = '',
+    scheme  = '')
 {
     let implicit mut ctx = CTX_PRELUDE;
 
@@ -365,8 +380,9 @@ pub fn build(
         print('        ', tt, 's\n');
     }
 
-    return build(ctx, :run, :bin, unity :fname,
-        :dir_wrk, :dir_obj, :dir_src, :dir_cpp);
+    return build(ctx, :run, :bin, :scheme,
+        :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
+        unity: fname);
 }
 
 

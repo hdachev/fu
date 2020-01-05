@@ -1653,7 +1653,8 @@ struct sf_solve
         const s_Type& t_annot = s_annot.type;
         s_SolvedNode s_init = ([&]() -> s_SolvedNode { if (init) return solveNode(init, t_annot); else return s_SolvedNode{}; }());
         s_Type t_init { s_init.type };
-        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : s_Type(t_annot)) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : s_Type(([&]() -> const s_Type& { { const s_Type& _ = t_init; if (_) return _; } fail("Variable declarations without explicit type annotations must be initialized."_fu); }()))));
+        (t_annot || t_init || fail("Variable declarations without type annotations must be initialized."_fu));
+        s_Type t_let = (t_annot ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(t_annot) : s_Type(t_annot)) : (((t_init.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(t_init) : s_Type(t_init)));
         if ((t_annot && t_init))
         {
             (isAssignable(t_annot, t_init) || fail("Type annotation does not match init expression."_fu));
