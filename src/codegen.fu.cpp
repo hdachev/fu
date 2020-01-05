@@ -1408,7 +1408,7 @@ struct sf_cpp_codegen
             include("\"../lib/now.h\""_fu);
             return (("fu::"_fu + id) + "()"_fu);
         };
-        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu) || (id == "fs_cwd"_fu)))
+        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu) || (id == "fs_cwd"_fu) || (id == "fs_mkdir_p"_fu)))
         {
             include("\"../lib/io.h\""_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
@@ -1428,7 +1428,7 @@ struct sf_cpp_codegen
             include("\"../lib/shell.h\""_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
-        ((id != "__native_pure"_fu) || fu::fail("Assertion failed."));
+        ((id != "__native"_fu) || fu::fail("Assertion failed."));
         return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)

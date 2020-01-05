@@ -19,7 +19,9 @@ typedef   double f64;
 /////////////////////////////////////////////
 
 const uint8_t fu_EXIT_BadAlloc      =  101;
+
 const int     fu_ERR_UnknownError   = -101;
+const int     fu_ERR_FS_BadPath     = -102;
 
 /////////////////////////////////////////////
 

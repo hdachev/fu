@@ -7,107 +7,107 @@ let prelude_src = `
 
 // Some lolcode.
 
-fn __native_pure(): never never;
-fn __native_pure(id: string): never never;
-fn __native_pure(id: string, opt: string): never never;
+fn __native(): never never;
+fn __native(id: string): never never;
+fn __native(id: string, opt: string): never never;
 
-fn STEAL (a: &mut $T): $T __native_pure;
-fn CLONE (a: &    $T): $T __native_pure;
+fn STEAL (a: &mut $T): $T __native;
+fn CLONE (a: &    $T): $T __native;
 
-fn print(a: $A): void __native_pure;
-fn print(a: $A, b: $B): void __native_pure;
-fn print(a: $A, b: $B, c: $C): void __native_pure;
-fn print(a: $A, b: $B, c: $C, d: $D): void __native_pure;
-fn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native_pure;
-fn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native_pure;
+fn print(a: $A): void __native;
+fn print(a: $A, b: $B): void __native;
+fn print(a: $A, b: $B, c: $C): void __native;
+fn print(a: $A, b: $B, c: $C, d: $D): void __native;
+fn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;
+fn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;
 
 
 // Arithmetics.
 
-fn +(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
-fn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+fn +(a: $T)                 case ($T -> @arithmetic):   $T __native;
+fn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
 
-fn -(a: $T)                 case ($T -> @arithmetic):   $T __native_pure;
-fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
-fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native_pure;
+fn -(a: $T)                 case ($T -> @arithmetic):   $T __native;
+fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
+fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
 
 fn /(a: $T, b: $T)
-    // case ($T -> @floating_point):                       $T __native_pure;
-    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
-    case ($T -> @arithmetic): $T __native_pure;
+    // case ($T -> @floating_point):                       $T __native;
+    // case ($T -> @integral && $b -> @non_zero):          $T __native;
+    case ($T -> @arithmetic): $T __native;
 
 fn %(a: $T, b: $T)
-    // case ($T -> @floating_point):                       $T __native_pure;
-    // case ($T -> @integral && $b -> @non_zero):          $T __native_pure;
-    case ($T -> @arithmetic): $T __native_pure;
+    // case ($T -> @floating_point):                       $T __native;
+    // case ($T -> @integral && $b -> @non_zero):          $T __native;
+    case ($T -> @arithmetic): $T __native;
 
-fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
-fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native_pure;
-fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
-fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native_pure;
+fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
+fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
+fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
+fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 
-fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
-fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
-fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
-fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
-fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
-fn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native_pure;
+fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
 
 
 // Bitwise.
 
-fn ~(a: $T)                 case ($T -> @integral):     $T __native_pure;
-fn &(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
-fn |(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
-fn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native_pure;
-fn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
-fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native_pure;
+fn ~(a: $T)                 case ($T -> @integral):     $T __native;
+fn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;
+fn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;
+fn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;
+fn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;
+fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;
 
-fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
-fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
-fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native_pure;
+fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
+fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
+fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 
 
 // Logic.
 
-fn true (): bool __native_pure;
-fn false(): bool __native_pure;
+fn true (): bool __native;
+fn false(): bool __native;
 
 
 // Assignment.
 
-fn   =(a: &mut $T, b: $T): &mut $T __native_pure;
-fn ||=(a: &mut $T, b: $T): &mut $T __native_pure;
+fn   =(a: &mut $T, b: $T): &mut $T __native;
+fn ||=(a: &mut $T, b: $T): &mut $T __native;
 
-fn SWAP(a: &mut $T, b: &mut $T): void __native_pure;
+fn SWAP(a: &mut $T, b: &mut $T): void __native;
 
 
 // Arrays.
 
-fn len (a: $T[]): i32 __native_pure;
-fn find(a: $T[], b: $T): i32 __native_pure;
-fn has (a: $T[], b: $T): bool __native_pure;
+fn len (a: $T[]): i32 __native;
+fn find(a: $T[], b: $T): i32 __native;
+fn has (a: $T[], b: $T): bool __native;
 
 fn [](a: $T[], i: i32)
-    case ($a -> &mut $T[]): &mut $T __native_pure;
-    case ($a -> &    $T[]): &    $T __native_pure;
+    case ($a -> &mut $T[]): &mut $T __native;
+    case ($a -> &    $T[]): &    $T __native;
 
-fn    push(a: &mut $T[], b: $T): void __native_pure;
-fn unshift(a: &mut $T[], b: $T): void __native_pure;
-fn  insert(a: &mut $T[], i: i32, b: $T): void __native_pure;
+fn    push(a: &mut $T[], b: $T): void __native;
+fn unshift(a: &mut $T[], b: $T): void __native;
+fn  insert(a: &mut $T[], i: i32, b: $T): void __native;
 
-fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native_pure;
-fn  slice(a: $T[], i0: i32): $T[] __native_pure;
+fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native;
+fn  slice(a: $T[], i0: i32): $T[] __native;
 
-fn splice(a: &mut $T[], i: i32, N: i32): void __native_pure;
-fn    pop(a: &mut $T[]): void __native_pure;
+fn splice(a: &mut $T[], i: i32, N: i32): void __native;
+fn    pop(a: &mut $T[]): void __native;
 
-fn  clear(a: &mut $T[]): void __native_pure;
-fn resize(a: &mut $T[], len: i32): void __native_pure;
-fn shrink(a: &mut $T[], len: i32): void __native_pure;
+fn  clear(a: &mut $T[]): void __native;
+fn resize(a: &mut $T[], len: i32): void __native;
+fn shrink(a: &mut $T[], len: i32): void __native;
 
-fn move(a: &mut $T[], from: i32, to: i32): void __native_pure;
-fn sort(a: &mut $T[]): void __native_pure;
+fn move(a: &mut $T[], from: i32, to: i32): void __native;
+fn sort(a: &mut $T[]): void __native;
 
 
 // Concats.
@@ -120,36 +120,36 @@ fn sort(a: &mut $T[]): void __native_pure;
 //          Will it be useful? Array ops are really
 //            the only thing we care about optimizing.
 
-fn +(a: $T[], b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );
-fn +(a: $T[], b: $T  ): $T[] __native_pure( 'arr+', 'flatjoin' );
-fn +(a: $T  , b: $T[]): $T[] __native_pure( 'arr+', 'flatjoin' );
+fn +(a: $T[], b: $T[]): $T[] __native( 'arr+', 'flatjoin' );
+fn +(a: $T[], b: $T  ): $T[] __native( 'arr+', 'flatjoin' );
+fn +(a: $T  , b: $T[]): $T[] __native( 'arr+', 'flatjoin' );
 
-fn +=(a: &mut string, b: string): &mut string __native_pure( 'arr+', 'flatjoin' );
-fn + (a:      string, b: string):      string __native_pure( 'arr+', 'flatjoin' );
+fn +=(a: &mut string, b: string): &mut string __native( 'arr+', 'flatjoin' );
+fn + (a:      string, b: string):      string __native( 'arr+', 'flatjoin' );
 
 
 // Strings.
 
-fn len(a: string): i32 __native_pure;
-fn  [](a: string, i: i32): string __native_pure;
+fn len(a: string): i32 __native;
+fn  [](a: string, i: i32): string __native;
 
-fn ==(a: string, b: string): bool __native_pure;
-fn !=(a: string, b: string): bool __native_pure;
-fn  >(a: string, b: string): bool __native_pure;
-fn  <(a: string, b: string): bool __native_pure;
-fn >=(a: string, b: string): bool __native_pure;
-fn <=(a: string, b: string): bool __native_pure;
+fn ==(a: string, b: string): bool __native;
+fn !=(a: string, b: string): bool __native;
+fn  >(a: string, b: string): bool __native;
+fn  <(a: string, b: string): bool __native;
+fn >=(a: string, b: string): bool __native;
+fn <=(a: string, b: string): bool __native;
 
-fn   find(a: string, b: string): i32 __native_pure;
-fn    has(a: string, b: string): bool __native_pure;
-fn starts(a: string, with: string): bool __native_pure;
-fn   ends(a: string, with: string): bool __native_pure;
+fn   find(a: string, b: string): i32 __native;
+fn    has(a: string, b: string): bool __native;
+fn starts(a: string, with: string): bool __native;
+fn   ends(a: string, with: string): bool __native;
 
-fn slice (a: string, i0: i32, i1: i32): string __native_pure;
-fn slice (a: string, i0: i32): string __native_pure;
+fn slice (a: string, i0: i32, i1: i32): string __native;
+fn slice (a: string, i0: i32): string __native;
 
-fn substr(a: string, i0: i32, i1: i32): string __native_pure;
-fn char  (a: string, i0: i32): i32 __native_pure;
+fn substr(a: string, i0: i32, i1: i32): string __native;
+fn char  (a: string, i0: i32): i32 __native;
 
 
 // TODO: .replace() is a faster impl of .split().join().
@@ -157,56 +157,59 @@ fn char  (a: string, i0: i32): i32 __native_pure;
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn   split(str: string, sep: string): string[] __native_pure;
-fn    join(a: string[], sep: string): string __native_pure;
-fn replace(in: string, all: string, with: string): string __native_pure;
+fn   split(str: string, sep: string): string[] __native;
+fn    join(a: string[], sep: string): string __native;
+fn replace(in: string, all: string, with: string): string __native;
 
 
 // Maps.
 
 fn [](a: Map($K, $V), b: &$K)
-    case ($a -> &mut Map($K, $V)): &mut $V __native_pure;
-    case ($a -> &    Map($K, $V)): &    $V __native_pure;
+    case ($a -> &mut Map($K, $V)): &mut $V __native;
+    case ($a -> &    Map($K, $V)): &    $V __native;
 
-fn keys  (a: Map($K, $V)): $K[] __native_pure;
-fn values(a: Map($K, $V)): $V[] __native_pure;
-fn has   (a: Map($K, $V), b: $K): bool __native_pure;
-fn count (a: Map($K, $V)): i32 __native_pure;
+fn keys  (a: Map($K, $V)): $K[] __native;
+fn values(a: Map($K, $V)): $V[] __native;
+fn has   (a: Map($K, $V), b: $K): bool __native;
+fn count (a: Map($K, $V)): i32 __native;
 
 
 // Assertions, bugs & fails.
 
-fn throw(reason: string): never __native_pure;
-fn assert(): never __native_pure;
+fn throw(reason: string): never __native;
+fn assert(): never __native;
 
 
 // Butt plugs.
 
 // TODO we should go for an any $B -> call stringify(b) macro.
-fn +(a: string, b: i32): string __native_pure;
-fn +(a: string, b: f64): string __native_pure;
-fn +(a: i32, b: string): string __native_pure;
-fn +(a: f64, b: string): string __native_pure;
+fn +(a: string, b: i32): string __native;
+fn +(a: string, b: f64): string __native;
+fn +(a: i32, b: string): string __native;
+fn +(a: f64, b: string): string __native;
 
 // TODO fix impure io.
-fn now_hr(): f64 __native_pure;
-fn now_utc(): f64 __native_pure;
+fn now_hr(): f64 __native;
+fn now_utc(): f64 __native;
 
-fn env_get(key: string): string __native_pure;
+fn env_get(key: string): string __native;
 
-fn fs_cwd(): string __native_pure;
-fn file_size(path: string): i32 __native_pure;
-fn file_read(path: string): string __native_pure;
-fn file_write(path: string, body: string): i32 __native_pure;
+fn file_size(path: string): i32 __native;
+fn file_read(path: string): string __native;
+fn file_write(path: string, body: string): i32 __native;
 
-fn shell_exec(cmd: string): i32 __native_pure;
-fn shell_exec(cmd: string, stdout: &mut string): i32 __native_pure;
+fn fs_cwd(): string __native;
+fn fs_mkdir_p(path: string): i32 __native;
+fn fs_mkdir_p(path: string, mode: i32): i32 __native;
 
-fn hash_tea(str: string): string __native_pure;
+fn shell_exec(cmd: string): i32 __native;
+fn shell_exec(cmd: string, stdout: &mut string): i32 __native;
 
-fn i32(v: f64): i32 __native_pure;
+fn hash_tea(str: string): string __native;
 
-fn exit(code: i32): never __native_pure;
+fn i32(v: f64): i32 __native;
+
+fn exit(code: i32): never __native;
 
 `;
 

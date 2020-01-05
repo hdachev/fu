@@ -33,6 +33,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 fu_STR last(const fu_STR&);
+fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
 void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
@@ -568,6 +569,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         Fs.push(F);
         len_all += cpp.size();
     };
+    fu::fs_mkdir_p(dir_wrk);
     fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](fu_STR&& cpp) -> fu::never
     {
@@ -645,6 +647,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
     if ((dir_cpp && dir_src))
     {
+        fu::fs_mkdir_p(dir_cpp);
         fu_VEC<fu_STR> cpp_files {};
         for (int i = 1; (i < ctx.modules.size()); i++)
         {
@@ -665,8 +668,10 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         };
     };
     if (bin)
+    {
+        fu::fs_mkdir_p(path_dirname(bin));
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
-
+    };
     if (code)
         ERR(fu_STR{});
 

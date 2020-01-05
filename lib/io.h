@@ -77,4 +77,60 @@ inline fu_STR fs_cwd()
                 : fu_STR();
 }
 
+inline int fs_mkdir_p(
+    fu_STR path,
+    int mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+{
+    // Cstr.
+    if (!path.size())
+        return fu_ERR_FS_BadPath;
+
+    if (path       [path.size() - 1] == '/')
+        path.mutref(path.size() - 1) = '\0';
+    else
+        path += '\0';
+
+    const char* c_str = path.data();
+
+    //
+    struct stat st;
+
+    // Exists?
+    if (!stat(c_str, &st) && S_ISDIR(st.st_mode))
+        return 0;
+
+    // Create?
+    if (!mkdir(c_str, (mode_t) mode))
+        return 0;
+
+    int err = errno;
+    err = err ? err : fu_ERR_UnknownError;
+
+    // Create parent?
+    // TODO no realloc and no recursion.
+    for (auto i = path.size() - 2; i --> 0; )
+        if (path[i] == '/')
+        {
+            err = fs_mkdir_p( slice(path, 0, i), mode );
+
+            if (err)
+                return err;
+
+            // Retry?
+            if (!mkdir(c_str, (mode_t) mode))
+                return 0;
+
+            err = errno;
+            err = err ? err : fu_ERR_UnknownError;
+
+            // Raced with other?
+            if (err == EEXIST && !stat(c_str, &st) && S_ISDIR(st.st_mode))
+                return 0;
+
+            return err;
+        }
+
+    return err;
+}
+
 } // namespace

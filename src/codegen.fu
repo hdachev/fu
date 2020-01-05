@@ -1045,7 +1045,7 @@ pub fn cpp_codegen(
             return 'fu::' + id + '()';
         }
 
-        if (id == 'file_write' || id == 'file_read' || id == 'file_size' || id == 'fs_cwd')
+        if (id == 'file_write' || id == 'file_read' || id == 'file_size' || id == 'fs_cwd' || id == 'fs_mkdir_p')
         {
             include('"../lib/io.h"');
             return 'fu::' + id + '(' + items.join(', ') + ')';
@@ -1069,7 +1069,7 @@ pub fn cpp_codegen(
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
-        id != '__native_pure' || assert();
+        id != '__native' || assert();
 
         return ID(id) + '(' + items.join(', ') + ')';
     }
