@@ -501,8 +501,8 @@ pub fn cpp_codegen(
         //////////////////////
 
         let structName = 'sf_' + fn.value;
-        mut src = '\nstruct ' + structName
-                + blockWrap(head) + ';';
+        mut src = '\nnamespace {\n\nstruct ' + structName
+                + blockWrap(head) + ';\n';
 
         //////////////////////
         {
@@ -520,7 +520,7 @@ pub fn cpp_codegen(
                         : cgSteal(arg));
             }
 
-            src += '\n';
+            src += '\n} // namespace\n\n';
             src += cgFnSignature(fn);
             src += '\n{\n    return (' + structName + ' { ' + args.join(', ') + ' }).' + evalName + '();\n}\n\n';
         }

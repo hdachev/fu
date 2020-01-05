@@ -23,6 +23,8 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
                                 #endif
 
+namespace {
+
 struct sf_cli_handle
 {
     const fu_VEC<fu_STR>& argv;
@@ -129,6 +131,9 @@ struct sf_cli_handle
         return 0;
     };
 };
+
+} // namespace
+
 int cli_handle(const fu_VEC<fu_STR>& argv, fu_STR&& cwd)
 {
     return (sf_cli_handle { argv, std::move(cwd) }).cli_handle_EVAL();

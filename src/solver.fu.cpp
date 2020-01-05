@@ -843,6 +843,8 @@ inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0 };
 inline const s_Type t_never = s_Type { "never"_fu, 0, 0 };
                                 #endif
 
+namespace {
+
 struct sf_solve
 {
     const s_Node& parse;
@@ -2200,6 +2202,9 @@ struct sf_solve
         return s_SolverOutput { solveNode(parse, s_Type{}), s_Scope(_scope) };
     };
 };
+
+} // namespace
+
 s_SolverOutput solve(const s_Node& parse, const s_TEMP_Context& ctx, s_Module& module)
 {
     return (sf_solve { parse, ctx, module }).solve_EVAL();

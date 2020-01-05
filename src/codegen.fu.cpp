@@ -602,6 +602,8 @@ inline const int LOOP_BODY = 3;
 inline const int LOOP_POST_COND = 4;
                                 #endif
 
+namespace {
+
 struct sf_cpp_codegen
 {
     const s_SolvedNode& root;
@@ -986,7 +988,7 @@ struct sf_cpp_codegen
         ((_clsrN == 0) || fail(fu_STR{}));
         _clsrN--;
         fu_STR structName = ("sf_"_fu + fn.value);
-        fu_STR src = ((("\nstruct "_fu + structName) + blockWrap(head, false)) + ";"_fu);
+        fu_STR src = ((("\nnamespace {\n\nstruct "_fu + structName) + blockWrap(head, false)) + ";\n"_fu);
         
         {
             fu_VEC<fu_STR> args {};
@@ -997,7 +999,7 @@ struct sf_cpp_codegen
                 const fu_STR& arg = argNode.value;
                 args.push(((argType.quals & q_ref) ? fu_STR(arg) : cgSteal(arg)));
             };
-            src += "\n"_fu;
+            src += "\n} // namespace\n\n"_fu;
             src += cgFnSignature(fn);
             src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu::join(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
         };
@@ -1885,6 +1887,9 @@ struct sf_cpp_codegen
         return src;
     };
 };
+
+} // namespace
+
 fu_STR cpp_codegen(const s_SolvedNode& root, const s_Scope& scope, const s_Module& module, const s_TEMP_Context& ctx)
 {
     return (sf_cpp_codegen { root, scope, module, ctx }).cpp_codegen_EVAL();

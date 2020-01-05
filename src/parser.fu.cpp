@@ -233,6 +233,8 @@ inline const fu_VEC<fu_STR> PREFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> {
 inline const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
                                 #endif
 
+namespace {
+
 struct sf_setupOperators
 {
     s_BINOP out {};
@@ -271,6 +273,9 @@ struct sf_setupOperators
         return out;
     };
 };
+
+} // namespace
+
 s_BINOP setupOperators()
 {
     return (sf_setupOperators {  }).setupOperators_EVAL();
@@ -336,6 +341,8 @@ inline const int LOOP_BODY = 3;
                                 #define DEF_LOOP_POST_COND
 inline const int LOOP_POST_COND = 4;
                                 #endif
+
+namespace {
 
 struct sf_parse
 {
@@ -1139,6 +1146,9 @@ struct sf_parse
         return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
     };
 };
+
+} // namespace
+
 s_ParserOutput parse(const int& modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
 {
     return (sf_parse { modid, fname, tokens }).parse_EVAL();
