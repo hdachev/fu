@@ -1012,17 +1012,20 @@ pub fn cpp_codegen(
         if (id == 'assert' && items.len == 0)
             return cgThrow(id, '"Assertion failed."');
 
+        if (id == 'join' && items.len == 2)
+        {
+            include('"../lib/vec/join.h"');
+            return 'fu::join(' + items.join(', ') + ')';
+        }
+
         if (id == 'split' && items.len == 2)
-            return cgSplit(items);
-
-        if (id == 'join' && items.len == 2)
-            return cgJoin(items);
-
-        if (id == 'join' && items.len == 2)
-            return cgJoin(items);
+        {
+            include('"../lib/vec/split.h"');
+            return 'fu::split(' + items.join(', ') + ')';
+        }
 
         if (id == 'keys' && items.len == 1)
-            return cgKeys(items);
+            return items[0] + '.m_keys';
 
         if (id == 'CLONE' && items.len == 1)
             return cgClone(node.type, items[0]);
@@ -1119,74 +1122,6 @@ pub fn cpp_codegen(
         }
 
         return 'fu::fail(' + item + ')';
-    }
-
-    fn cgJoin(items: string[]): string
-    {
-        include('"../lib/vec/join.h"');
-
-        return 'fu::join(' + items.join(', ') + ')';
-    }
-
-    fn cgSplit(items: string[]): string
-    {
-        let SPLIT = '::SPLIT';
-        if (!_ffwd.has(SPLIT))
-        {
-            annotateString();
-            annotateVector();
-            include('"../lib/vec/find.h"');
-
-            _ffwd[SPLIT] =
-////////////////////////////////////
-`
-inline fu_VEC<fu_STR> fu_SPLIT(
-    fu_STR s,
-    const fu_STR& sep)
-{
-    fu_VEC<fu_STR> result;
-
-    int next;
-    while ((next = fu::lfind(s, sep)) >= 0)
-    {
-        result.push(slice(s, 0, next));
-        s = slice(s, next + sep.size());
-    }
-
-    result.push(static_cast<fu_STR&&>(s));
-    return result;
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_SPLIT(' + items.join(', ') + ')';
-    }
-
-    fn cgKeys(items: string[]): string
-    {
-        let KEYS = '::KEYS';
-        if (!_ffwd.has(KEYS))
-        {
-            annotateMap();
-            annotateVector();
-
-            _ffwd[KEYS] =
-////////////////////////////////////
-`
-template <typename K, typename V>
-fu_VEC<K> fu_KEYS(
-    const fu_COW_MAP<K, V>& map)
-{
-    return map.m_keys;
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_KEYS(' + items.join(', ') + ')';
     }
 
     fn cgLiteral(node: SolvedNode): string

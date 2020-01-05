@@ -35,13 +35,6 @@ s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
 bool type_isMap(const s_Type&);
 s_Type clear_refs(const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
-template <typename K, typename V>
-fu_VEC<K> fu_KEYS(
-    const fu_COW_MAP<K, V>& map)
-{
-    return map.m_keys;
-}
-
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -769,7 +762,7 @@ struct sf_cpp_codegen
     fu_STR collectDedupes(const fu_COW_MAP<fu_STR, fu_STR>& dedupes)
     {
         fu_STR out {};
-        fu_VEC<fu_STR> keys = fu_KEYS(dedupes);
+        fu_VEC<fu_STR> keys = dedupes.m_keys;
         ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
         for (int i = 0; (i < keys.size()); i++)
             out += dedupes[keys.mutref(i)];
@@ -780,7 +773,7 @@ struct sf_cpp_codegen
     {
         fu_STR src {};
         const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
-        fu_VEC<fu_STR> keys = fu_KEYS(specs);
+        fu_VEC<fu_STR> keys = specs.m_keys;
         for (int i = 0; (i < keys.size()); i++)
         {
             const fu_STR& k = keys[i];
@@ -1385,17 +1378,18 @@ struct sf_cpp_codegen
         if (((id == "assert"_fu) && (items.size() == 0)))
             return cgThrow(id, "\"Assertion failed.\""_fu);
 
+        if (((id == "join"_fu) && (items.size() == 2)))
+        {
+            include("\"../lib/vec/join.h\""_fu);
+            return (("fu::join("_fu + fu::join(items, ", "_fu)) + ")"_fu);
+        };
         if (((id == "split"_fu) && (items.size() == 2)))
-            return cgSplit(items);
-
-        if (((id == "join"_fu) && (items.size() == 2)))
-            return cgJoin(items);
-
-        if (((id == "join"_fu) && (items.size() == 2)))
-            return cgJoin(items);
-
+        {
+            include("\"../lib/vec/split.h\""_fu);
+            return (("fu::split("_fu + fu::join(items, ", "_fu)) + ")"_fu);
+        };
         if (((id == "keys"_fu) && (items.size() == 1)))
-            return cgKeys(items);
+            return (items[0] + ".m_keys"_fu);
 
         if (((id == "CLONE"_fu) && (items.size() == 1)))
             return cgClone(node.type, items[0]);
@@ -1472,34 +1466,6 @@ struct sf_cpp_codegen
         {
         };
         return (("fu::fail("_fu + item) + ")"_fu);
-    };
-    fu_STR cgJoin(const fu_VEC<fu_STR>& items)
-    {
-        include("\"../lib/vec/join.h\""_fu);
-        return (("fu::join("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-    };
-    fu_STR cgSplit(const fu_VEC<fu_STR>& items)
-    {
-        fu_STR SPLIT = "::SPLIT"_fu;
-        if (!fu::has(_ffwd, SPLIT))
-        {
-            annotateString();
-            annotateVector();
-            include("\"../lib/vec/find.h\""_fu);
-            (_ffwd.upsert(SPLIT) = "\ninline fu_VEC<fu_STR> fu_SPLIT(\n    fu_STR s,\n    const fu_STR& sep)\n{\n    fu_VEC<fu_STR> result;\n\n    int next;\n    while ((next = fu::lfind(s, sep)) >= 0)\n    {\n        result.push(slice(s, 0, next));\n        s = slice(s, next + sep.size());\n    }\n\n    result.push(static_cast<fu_STR&&>(s));\n    return result;\n}\n"_fu);
-        };
-        return (("fu_SPLIT("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-    };
-    fu_STR cgKeys(const fu_VEC<fu_STR>& items)
-    {
-        fu_STR KEYS = "::KEYS"_fu;
-        if (!fu::has(_ffwd, KEYS))
-        {
-            annotateMap();
-            annotateVector();
-            (_ffwd.upsert(KEYS) = "\ntemplate <typename K, typename V>\nfu_VEC<K> fu_KEYS(\n    const fu_COW_MAP<K, V>& map)\n{\n    return map.m_keys;\n}\n"_fu);
-        };
-        return (("fu_KEYS("_fu + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgLiteral(const s_SolvedNode& node)
     {

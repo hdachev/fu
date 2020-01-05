@@ -1,24 +1,7 @@
 #include "../lib/str.h"
 #include "../lib/vec.h"
-#include "../lib/vec/find.h"
 #include "../lib/vec/join.h"
-
-inline fu_VEC<fu_STR> fu_SPLIT(
-    fu_STR s,
-    const fu_STR& sep)
-{
-    fu_VEC<fu_STR> result;
-
-    int next;
-    while ((next = fu::lfind(s, sep)) >= 0)
-    {
-        result.push(slice(s, 0, next));
-        s = slice(s, next + sep.size());
-    }
-
-    result.push(static_cast<fu_STR&&>(s));
-    return result;
-}
+#include "../lib/vec/split.h"
 
 fu_STR last(const fu_STR& s)
 {
@@ -77,7 +60,7 @@ fu_STR path_filename(const fu_STR& path)
 
 fu_STR path_normalize(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = fu_SPLIT(p, "/"_fu);
+    fu_VEC<fu_STR> path = fu::split(p, "/"_fu);
     for (int i = path.size(); (i-- > 0); )
     {
         fu_STR part { path[i] };
