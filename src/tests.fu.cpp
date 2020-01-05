@@ -534,8 +534,6 @@ void runTests()
     ZERO("\n        let OPERATORS = [ '+', '-', '*', '/' ];\n\n        fn main()\n            OPERATORS[2] == '*' ? 0 : 1;\n    "_fu);
     ZERO("\n        struct Y { b: bool; }\n        struct X { y: Y[]; }\n\n        mut x: X[];\n        x.push( X([ Y(true) ]) );\n\n        return x.len + x[0].y.len * 2 - 3;\n    "_fu);
     ZERO("\n        mut a = [7, 1, 5, 3, 99, -13]; // [-13, 1, 3, 5, 7, 99]\n        a.sort();\n        return a[0] + a[1] + a[3] + a[4];\n    "_fu);
-    ZERO("\n        mut a = [0, 1, 2, 3, 4]; // [2, 0, 1, 3, 4]\n        a.move(2, 0);\n        return a[0] + a[3] - a[2] - a[4];\n    "_fu);
-    ZERO("\n        mut a = [2, 0, 1, 3, 4]; // [0, 1, 2, 3, 4]\n        a.move(0, 2);\n        return a[1] + a[4] - a[2] - a[3];\n    "_fu);
     ZERO("\n        let a = [0, 1, 2, 3];\n        let b = a.slice(1, 3);\n        return b.len - b[1];\n    "_fu);
     ZERO("\n        let a = [0, 1, 2, 3];\n        let b = a.slice(1);\n        return b.len - b[2];\n    "_fu);
     ZERO("\n        mut str = 'hello ';\n        str += 'world';\n\n        return str.len - 11;\n    "_fu);

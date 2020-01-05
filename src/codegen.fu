@@ -1012,9 +1012,6 @@ pub fn cpp_codegen(
         if (id == 'assert' && items.len == 0)
             return cgThrow(id, '"Assertion failed."');
 
-        if (id == 'move' && items.len == 3)
-            return '([&]() { auto* _ = ' + items[0] + '.mut_data(); ' + cgSlide('_ + ' + items[2], '_ + ' + items[1], 'sizeof(*_)') + '; } ())';
-
         if (id == 'split' && items.len == 2)
             return cgSplit(items);
 
@@ -1084,44 +1081,6 @@ pub fn cpp_codegen(
 
         src += ' << "\\n")';
         return src;
-    }
-
-    fn cgSlide(destExpr: string, srcExpr: string, numBytesExpr: string): string
-    {
-        let SLIDE = '::slide';
-        if (!_tfwd.has(SLIDE))
-        {
-            include('<cstring>');
-
-            _tfwd[SLIDE] =
-////////////////////////////////////
-`
-template <size_t N>
-inline void fu_MEMSLIDE(void* dest, void* source)
-{
-    char swap_buffer[N];
-
-    std::memcpy(
-        swap_buffer, source, N);
-
-    if (source < dest)
-        std::memmove(
-            source, (char*)source + N,
-            (char*)dest - (char*)source);
-    else
-        std::memmove(
-            (char*)dest + N, dest,
-            (char*)source - (char*)dest);
-
-    std::memcpy(
-        dest, swap_buffer, N);
-}
-`
-////////////////////////////////////
-            ;
-        }
-
-        return 'fu_MEMSLIDE<' + numBytesExpr + '>(' + destExpr + ', ' + srcExpr + ')';
     }
 
     fn annotateMap(): void
