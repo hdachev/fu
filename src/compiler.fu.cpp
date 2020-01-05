@@ -576,7 +576,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         if (!cpp)
         {
             for (int i = Fs.size(); (i-- > 0); )
-                cpp += (("#include \""_fu + Fs[i]) + ".cpp\"\n"_fu);
+                (cpp += "#include \""_fu, cpp += Fs[i], cpp += ".cpp\"\n"_fu);
 
         };
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
@@ -617,7 +617,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
         for (int i = 0; (i < link_order.size()); i++)
-            cmd += (Fs[link_order.mutref(i)] + ".o "_fu);
+            (cmd += Fs[link_order.mutref(i)], cmd += ".o "_fu);
 
         
         {
@@ -662,7 +662,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             ((link_order.size() == cpp_files.size()) || fu::fail("Assertion failed."));
             fu_STR data = "#pragma once\n\n"_fu;
             for (int i = 0; (i < link_order.size()); i++)
-                data += (("#include \""_fu + cpp_files[link_order.mutref(i)]) + "\"\n"_fu);
+                (data += "#include \""_fu, data += cpp_files[link_order.mutref(i)], data += "\"\n"_fu);
 
             update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
         };

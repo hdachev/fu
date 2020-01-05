@@ -31,6 +31,7 @@ struct s_Type;
 fu_STR last(const fu_STR&);
 bool hasIdentifierChars(const fu_STR&);
 const s_Struct& lookupType(const s_Type&, const s_Module&, const s_TEMP_Context&);
+bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
 bool type_isMap(const s_Type&);
 s_Type clear_refs(const s_Type&);
@@ -550,6 +551,11 @@ inline const int F_POSTFIX = (1 << 3);
 inline const int q_copy = (1 << 2);
                                 #endif
 
+                                #ifndef DEF_t_string
+                                #define DEF_t_string
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0 };
+                                #endif
+
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
 inline const int Trivial = (q_copy | q_trivial);
@@ -733,7 +739,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < fields.size()); i++)
         {
             const s_StructField& field = fields[i];
-            def += ((((indent + typeAnnot(field.type, 0)) + " "_fu) + ID(field.id)) + ";"_fu);
+            (def += indent, def += typeAnnot(field.type, 0), def += " "_fu, def += ID(field.id), def += ";"_fu);
         };
         if ((s.flags & F_DESTRUCTOR))
         {
@@ -742,18 +748,18 @@ struct sf_cpp_codegen
             def += "\n    Data data;"_fu;
             def += "\n    bool dtor = false;"_fu;
             def += "\n"_fu;
-            def += (("\n    ~"_fu + t.canon) + "() noexcept;"_fu);
-            def += (("\n    inline "_fu + t.canon) + "(Data data) noexcept : data(data) {};"_fu);
-            def += (((("\n    "_fu + t.canon) + "(const "_fu) + t.canon) + "&) = delete;"_fu);
-            def += (((("\n    "_fu + t.canon) + "& operator=(const "_fu) + t.canon) + "&) = delete;"_fu);
-            def += (((("\n    "_fu + t.canon) + "("_fu) + t.canon) + "&&) noexcept;"_fu);
-            def += (((("\n    "_fu + t.canon) + "& operator=("_fu) + t.canon) + "&&) noexcept;"_fu);
+            (def += "\n    ~"_fu, def += t.canon, def += "() noexcept;"_fu);
+            (def += "\n    inline "_fu, def += t.canon, def += "(Data data) noexcept : data(data) {};"_fu);
+            (def += "\n    "_fu, def += t.canon, def += "(const "_fu, def += t.canon, def += "&) = delete;"_fu);
+            (def += "\n    "_fu, def += t.canon, def += "& operator=(const "_fu, def += t.canon, def += "&) = delete;"_fu);
+            (def += "\n    "_fu, def += t.canon, def += "("_fu, def += t.canon, def += "&&) noexcept;"_fu);
+            (def += "\n    "_fu, def += t.canon, def += "& operator=("_fu, def += t.canon, def += "&&) noexcept;"_fu);
         };
         def += "\n    explicit operator bool() const noexcept"_fu;
         def += "\n    {"_fu;
         def += "\n        return false"_fu;
         for (int i = 0; (i < fields.size()); i++)
-            def += ("\n            || "_fu + boolWrap(fields[i].type, (((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{}) + ID(fields[i].id))));
+            (def += "\n            || "_fu, def += boolWrap(fields[i].type, (((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{}) + ID(fields[i].id))));
 
         def += "\n        ;"_fu;
         def += "\n    }"_fu;
@@ -846,7 +852,7 @@ struct sf_cpp_codegen
         {
             const fu_STR& line = lines[i];
             if (line)
-                src += ((_indent + line) + ((last(line) == ";"_fu) ? "\n"_fu : ";"_fu));
+                (src += _indent, src += line, src += ((last(line) == ";"_fu) ? "\n"_fu : ";"_fu));
 
         };
         return src;
@@ -994,7 +1000,7 @@ struct sf_cpp_codegen
             };
             src += "\n} // namespace\n\n"_fu;
             src += cgFnSignature(fn);
-            src += (((((("\n{\n    return ("_fu + structName) + " { "_fu) + fu::join(args, ", "_fu)) + " })."_fu) + evalName) + "();\n}\n\n"_fu);
+            (src += "\n{\n    return ("_fu, src += structName, src += " { "_fu, src += fu::join(args, ", "_fu), src += " })."_fu, src += evalName, src += "();\n}\n\n"_fu);
         };
         if (fu::has(_fdef, (fn.value ? fn.value : fail(fu_STR{}))))
             ensureFwdDecl(fn.target);
@@ -1046,7 +1052,7 @@ struct sf_cpp_codegen
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
             const fu_STR& name = head.type.canon;
-            src += (((("\n\n"_fu + name) + "::~"_fu) + name) + "() noexcept"_fu);
+            (src += "\n\n"_fu, src += name, src += "::~"_fu, src += name, src += "() noexcept"_fu);
             src += "\n{"_fu;
             src += "\n    if (!dtor)"_fu;
             src += "\n    {"_fu;
@@ -1056,7 +1062,7 @@ struct sf_cpp_codegen
             src += "\n}"_fu;
             include("<cassert>"_fu);
             include("<utility>"_fu);
-            src += (((((("\n\n"_fu + name) + "::"_fu) + name) + "("_fu) + name) + "&& src) noexcept"_fu);
+            (src += "\n\n"_fu, src += name, src += "::"_fu, src += name, src += "("_fu, src += name, src += "&& src) noexcept"_fu);
             src += "\n    : data(std::move(src.data))"_fu;
             src += "\n{"_fu;
             src += "\n    assert(!src.dtor);"_fu;
@@ -1064,14 +1070,14 @@ struct sf_cpp_codegen
             src += "\n    src.dtor = true;"_fu;
             src += "\n}"_fu;
             include("<cstring>"_fu);
-            src += (((((("\n\n"_fu + name) + "& "_fu) + name) + "::operator=("_fu) + name) + "&& src) noexcept"_fu);
+            (src += "\n\n"_fu, src += name, src += "& "_fu, src += name, src += "::operator=("_fu, src += name, src += "&& src) noexcept"_fu);
             src += "\n{"_fu;
             src += "\n    if (&src != this)"_fu;
             src += "\n    {"_fu;
-            src += (("\n        char temp[sizeof("_fu + name) + ")];"_fu);
-            src += (("\n        std::memcpy(temp, this, sizeof("_fu + name) + "));"_fu);
-            src += (("\n        std::memcpy(this, &src, sizeof("_fu + name) + "));"_fu);
-            src += (("\n        std::memcpy(&src, temp, sizeof("_fu + name) + "));"_fu);
+            (src += "\n        char temp[sizeof("_fu, src += name, src += ")];"_fu);
+            (src += "\n        std::memcpy(temp, this, sizeof("_fu, src += name, src += "));"_fu);
+            (src += "\n        std::memcpy(this, &src, sizeof("_fu, src += name, src += "));"_fu);
+            (src += "\n        std::memcpy(&src, temp, sizeof("_fu, src += name, src += "));"_fu);
             src += "\n    }"_fu;
             src += "\n"_fu;
             src += "\n    return *this;"_fu;
@@ -1080,7 +1086,7 @@ struct sf_cpp_codegen
         if ((fn.flags & F_CLOSURE))
             return src;
 
-        _fdef += (("\n"_fu + src) + "\n"_fu);
+        (_fdef += "\n"_fu, _fdef += src, _fdef += "\n"_fu);
         return fu_STR{};
     };
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
@@ -1120,7 +1126,7 @@ struct sf_cpp_codegen
         if (fu::lmatch(src, "const "_fu))
             src = slice(src, 6);
 
-        _fdef += ((((((("\n                                #ifndef DEF_"_fu + node.value) + "\n                                #define DEF_"_fu) + node.value) + "\ninline const "_fu) + src) + ";"_fu) + "\n                                #endif\n"_fu);
+        (_fdef += "\n                                #ifndef DEF_"_fu, _fdef += node.value, _fdef += "\n                                #define DEF_"_fu, _fdef += node.value, _fdef += "\ninline const "_fu, _fdef += src, _fdef += ";"_fu, _fdef += "\n                                #endif\n"_fu);
         return fu_STR{};
     };
     void cgForeignGlobal(const s_Target& target)
@@ -1286,6 +1292,18 @@ struct sf_cpp_codegen
                     fu_STR annot = typeAnnot(head.type, 0);
                     return (((((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!"_fu) + boolWrap(head.type, "_"_fu)) + ") _ = "_fu) + items[1]) + "; return _; } ("_fu) + items[0]) + "))"_fu);
                 };
+                if ((id == "+="_fu))
+                {
+                    if (((head.type.canon == t_string.canon) || type_isArray(head.type)))
+                    {
+                        if (isFieldChain(node.items[0]))
+                        {
+                            if (((node.items[1].value == "+"_fu) && (node.items[1].type.canon == head.type.canon)))
+                                return cgAppend(node, items[0]);
+
+                        };
+                    };
+                };
                 if ((mode & M_STMT))
                     return ((((items[0] + " "_fu) + id) + " "_fu) + items[1]);
                 else
@@ -1431,12 +1449,35 @@ struct sf_cpp_codegen
         ((id != "__native"_fu) || fu::fail("Assertion failed."));
         return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
+    fu_STR cgAppend(const s_SolvedNode& node, const fu_STR& into)
+    {
+        fu_STR src = "("_fu;
+        cgAppend_visit(node.type.canon, into, node.items[1], src);
+        src += ")"_fu;
+        return src;
+    };
+    void cgAppend_visit(const fu_STR& canon, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src)
+    {
+        if (((stuff.kind != "call"_fu) || (stuff.value != "+"_fu) || (stuff.type.canon != canon) || (stuff.items.size() != 2)))
+        {
+            fu_STR val = cgNode(stuff, 0);
+            if ((src.size() > 1))
+                src += ", "_fu;
+
+            (src += into, src += " += "_fu, src += val);
+        }
+        else
+        {
+            cgAppend_visit(canon, into, stuff.items[0], src);
+            cgAppend_visit(canon, into, stuff.items[1], src);
+        };
+    };
     fu_STR cgPrint(const fu_VEC<fu_STR>& items)
     {
         include("<iostream>"_fu);
         fu_STR src = "(std::cout"_fu;
         for (int i = 0; (i < items.size()); i++)
-            src += (" << "_fu + items[i]);
+            (src += " << "_fu, src += items[i]);
 
         src += " << \"\\n\")"_fu;
         return src;
@@ -1544,14 +1585,14 @@ struct sf_cpp_codegen
             fu_STR tail = cgNode(items[condEnd], 0);
             if (retSecondLast)
             {
-                src += (((("{ "_fu + typeAnnot(type, 0)) + " _ = "_fu) + tail) + "; "_fu);
-                src += (("if (!"_fu + boolWrap(type, "_"_fu)) + ") return _; } "_fu);
-                src += (cgNode(items[(items.size() - 1)], 0) + ";"_fu);
+                (src += "{ "_fu, src += typeAnnot(type, 0), src += " _ = "_fu, src += tail, src += "; "_fu);
+                (src += "if (!"_fu, src += boolWrap(type, "_"_fu), src += ") return _; } "_fu);
+                (src += cgNode(items[(items.size() - 1)], 0), src += ";"_fu);
             }
             else
             {
-                src += (("return "_fu + tail) + ";"_fu);
-                src += ((" else return "_fu + cgDefault(type)) + ";"_fu);
+                (src += "return "_fu, src += tail, src += ";"_fu);
+                (src += " else return "_fu, src += cgDefault(type), src += ";"_fu);
             };
             src = (((("([&]() -> "_fu + typeAnnot(type, 0)) + " { "_fu) + src) + " }())"_fu);
             return src;
@@ -1593,9 +1634,9 @@ struct sf_cpp_codegen
                     {
                         const s_SolvedNode& n = node.items[i];
                         fu_STR item = cgNode(n, 0);
-                        src += (((boolWrap(n.type, item) + " ? "_fu) + item) + " : "_fu);
+                        (src += boolWrap(n.type, item), src += " ? "_fu, src += item, src += " : "_fu);
                     };
-                    src += (cgNode(node.items[(node.items.size() - 1)], 0) + ")"_fu);
+                    (src += cgNode(node.items[(node.items.size() - 1)], 0), src += ")"_fu);
                     return src;
                 };
             };
@@ -1621,13 +1662,13 @@ struct sf_cpp_codegen
                     };
                     src += ")"_fu;
                 };
-                src += ((((((" { "_fu + annot) + " _ = "_fu) + cgNode(tail, 0)) + "; if ("_fu) + boolWrap(tail.type, "_"_fu)) + ") return _; }"_fu);
+                (src += " { "_fu, src += annot, src += " _ = "_fu, src += cgNode(tail, 0), src += "; if ("_fu, src += boolWrap(tail.type, "_"_fu), src += ") return _; }"_fu);
             };
             const s_SolvedNode& tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
             if (!(tail.type == t_never))
                 src += " return"_fu;
 
-            src += ((" "_fu + cgNode(tail, 0)) + "; }())"_fu);
+            (src += " "_fu, src += cgNode(tail, 0), src += "; }())"_fu);
             return src;
         };
         fu_STR src = "("_fu;
@@ -1706,15 +1747,15 @@ struct sf_cpp_codegen
         const fu_STR& err_id = items[1].value;
         fu_STR catch_body = blockWrapSubstatement(items[2]);
         fu_STR src = (binding(let_main, false, true) + ";"_fu);
-        src += (_indent + "try"_fu);
-        src += (_indent + "{"_fu);
-        src += (((((_indent + "    "_fu) + let_main.value) + " = "_fu) + let_init) + ";"_fu);
-        src += (_indent + "}"_fu);
-        src += (_indent + "catch (const std::exception& o_0)"_fu);
-        src += (_indent + "{"_fu);
-        src += (((_indent + "    const fu_STR& "_fu) + err_id) + " = fu_TO_STR(o_0.what());"_fu);
-        src += (_indent + catch_body);
-        src += (_indent + "}\n"_fu);
+        (src += _indent, src += "try"_fu);
+        (src += _indent, src += "{"_fu);
+        (src += _indent, src += "    "_fu, src += let_main.value, src += " = "_fu, src += let_init, src += ";"_fu);
+        (src += _indent, src += "}"_fu);
+        (src += _indent, src += "catch (const std::exception& o_0)"_fu);
+        (src += _indent, src += "{"_fu);
+        (src += _indent, src += "    const fu_STR& "_fu, src += err_id, src += " = fu_TO_STR(o_0.what());"_fu);
+        (src += _indent, src += catch_body);
+        (src += _indent, src += "}\n"_fu);
         return src;
     };
     fu_STR cgNode(const s_SolvedNode& node, const int& mode)

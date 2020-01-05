@@ -913,6 +913,14 @@ pub fn cpp_codegen(
                             items[1] + '; return _; } (' + items[0] + '))';
                 }
 
+                // Collapse (a += b + c) into (a += b, a += c),
+                //  totally surprised at how little if any impact this has.
+                if (id == '+=')
+                    if (head.type.canon == t_string.canon || type_isArray(head.type))
+                        if (isFieldChain(node.items[0]))
+                            if (node.items[1].value == '+' && node.items[1].type.canon == head.type.canon)
+                                return cgAppend(node, items[0]);
+
                 // Skip some of the ridiculous parens.
                 if (mode & M_STMT)
                     return items[0] + ' ' + id + ' ' + items[1];
@@ -1072,6 +1080,34 @@ pub fn cpp_codegen(
         id != '__native' || assert();
 
         return ID(id) + '(' + items.join(', ') + ')';
+    }
+
+    fn cgAppend(node: SolvedNode, into: string): string
+    {
+        mut src = '(';
+        cgAppend_visit(node.type.canon, into, node.items[1], src);
+        src += ')';
+
+        return src;
+    }
+
+    fn cgAppend_visit(
+        canon: string, into: string,
+        stuff: SolvedNode, src: &mut string)
+    {
+        if (stuff.kind != 'call' || stuff.value != '+' || stuff.type.canon != canon || stuff.items.len != 2)
+        {
+            let val = cgNode(stuff);
+            if (src.len > 1)
+                src += ', ';
+
+            src += into + ' += ' + val;
+        }
+        else
+        {
+            cgAppend_visit(canon, into, stuff.items[0], src);
+            cgAppend_visit(canon, into, stuff.items[1], src);
+        }
     }
 
     fn cgPrint(items: string[]): string
