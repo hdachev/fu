@@ -59,7 +59,7 @@ struct sf_cli_handle
         const bool run = ((cmd == "build"_fu) ? false : ((cmd == "run"_fu) ? true : fu::fail((((("Bad command: `"_fu + cmd) + "`,"_fu) + "\n\tvalid examples are `fu build file.fu`"_fu) + "\n\tand `fu run file.fu`."_fu))));
         const auto& abs = [&](const fu_STR& path) -> fu_STR
         {
-            return ([&]() -> fu_STR { if (path.size() && (fu_TO_STR(path[0]) != "-"_fu)) return path_join(cwd, path); else return fu_STR{}; }());
+            return ([&]() -> fu_STR { if (path && (fu_TO_STR(path[0]) != "-"_fu)) return path_join(cwd, path); else return fu_STR{}; }());
         };
         const int EMIT_CPP = (1 << 0);
         const int EMIT_OBJ = (1 << 1);
@@ -92,7 +92,7 @@ struct sf_cli_handle
                     options |= o;
                     if ((opt == Q_long))
                     {
-                        dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_.size()) return _; } fu::fail((((((((("Option "_fu + Q_long) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + Q_long) + " rel/or/abs/dir/`."_fu)); }());
+                        dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail((((((((("Option "_fu + Q_long) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + Q_long) + " rel/or/abs/dir/`."_fu)); }());
                         val = next();
                     };
                     opt = fu_STR{};
@@ -107,23 +107,23 @@ struct sf_cli_handle
                 scheme = slice(opt, 2);
                 continue;
             }
-            else if (opt.size())
+            else if (opt)
                 fu::fail((("Unknown option: `"_fu + opt) + "`."_fu));
 
         };
         if ((options & EMIT_CPP))
         {
-            if (!dir_src.size())
-                dir_src = ([&]() -> const fu_STR& { { const fu_STR& _ = dir_cpp; if (_.size()) return _; } return cwd; }());
+            if (!dir_src)
+                dir_src = (dir_cpp ? dir_cpp : cwd);
 
-            if (!dir_cpp.size())
+            if (!dir_cpp)
                 dir_cpp = dir_src;
 
         };
-        fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_.size()) return _; } fu::fail(((("Missing filename argument, a valid example is:"_fu + "\n\t`fu "_fu) + cmd) + " file.fu`."_fu)); }());
+        fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail(((("Missing filename argument, a valid example is:"_fu + "\n\t`fu "_fu) + cmd) + " file.fu`."_fu)); }());
         const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
         if ((options & EMIT_BIN))
-            ([&](fu_STR& _) -> fu_STR& { if (!_.size()) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
+            ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
         build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme);
         return 0;

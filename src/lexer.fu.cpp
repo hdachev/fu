@@ -18,8 +18,8 @@ struct s_Token
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
+            || kind
+            || value
             || idx0
             || idx1
             || line
@@ -38,7 +38,7 @@ struct s_LexerOutput
     explicit operator bool() const noexcept
     {
         return false
-            || fname.size()
+            || fname
             || tokens
         ;
     }
@@ -84,7 +84,7 @@ struct sf_lex
     };
     fu_STR checkNum(const fu_STR& kind, const fu_STR& src)
     {
-        if (src.size())
+        if (src)
         {
         };
         return kind;

@@ -41,8 +41,8 @@ struct s_Token
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
+            || kind
+            || value
             || idx0
             || idx1
             || line
@@ -61,7 +61,7 @@ struct s_LexerOutput
     explicit operator bool() const noexcept
     {
         return false
-            || fname.size()
+            || fname
             || tokens
         ;
     }
@@ -96,9 +96,9 @@ struct s_Node
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
         ;
@@ -132,7 +132,7 @@ struct s_ModuleInputs
     explicit operator bool() const noexcept
     {
         return false
-            || src.size()
+            || src
             || lex
             || parse
         ;
@@ -150,7 +150,7 @@ struct s_Type
     explicit operator bool() const noexcept
     {
         return false
-            || canon.size()
+            || canon
             || quals
             || modid
         ;
@@ -167,7 +167,7 @@ struct s_StructField
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || type
         ;
     }
@@ -185,8 +185,8 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || id.size()
+            || kind
+            || id
             || fields
             || flags
         ;
@@ -224,9 +224,9 @@ struct s_SolvedNode
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
             || type
@@ -245,7 +245,7 @@ struct s_ScopeItem
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || target
         ;
     }
@@ -300,8 +300,8 @@ struct s_Overload
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || name.size()
+            || kind
+            || name
             || type
             || min
             || max
@@ -364,7 +364,7 @@ struct s_ModuleOutputs
             || types
             || specs
             || solve
-            || cpp.size()
+            || cpp
         ;
     }
 };
@@ -403,7 +403,7 @@ struct s_Module
     {
         return false
             || modid
-            || fname.size()
+            || fname
             || in
             || out
             || stats

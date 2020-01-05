@@ -59,8 +59,8 @@ struct s_Token
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
+            || kind
+            || value
             || idx0
             || idx1
             || line
@@ -79,7 +79,7 @@ struct s_LexerOutput
     explicit operator bool() const noexcept
     {
         return false
-            || fname.size()
+            || fname
             || tokens
         ;
     }
@@ -114,9 +114,9 @@ struct s_Node
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
         ;
@@ -150,7 +150,7 @@ struct s_ModuleInputs
     explicit operator bool() const noexcept
     {
         return false
-            || src.size()
+            || src
             || lex
             || parse
         ;
@@ -168,7 +168,7 @@ struct s_Type
     explicit operator bool() const noexcept
     {
         return false
-            || canon.size()
+            || canon
             || quals
             || modid
         ;
@@ -185,7 +185,7 @@ struct s_StructField
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || type
         ;
     }
@@ -203,8 +203,8 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || id.size()
+            || kind
+            || id
             || fields
             || flags
         ;
@@ -242,9 +242,9 @@ struct s_SolvedNode
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
             || type
@@ -263,7 +263,7 @@ struct s_ScopeItem
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || target
         ;
     }
@@ -318,8 +318,8 @@ struct s_Overload
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || name.size()
+            || kind
+            || name
             || type
             || min
             || max
@@ -382,7 +382,7 @@ struct s_ModuleOutputs
             || types
             || specs
             || solve
-            || cpp.size()
+            || cpp
         ;
     }
 };
@@ -421,7 +421,7 @@ struct s_Module
     {
         return false
             || modid
-            || fname.size()
+            || fname
             || in
             || out
             || stats
@@ -484,7 +484,7 @@ fu_STR _fname(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
 
 fu_STR& getFile(const fu_STR& path, s_TEMP_Context& ctx)
 {
-    return ([&](fu_STR& _) -> fu_STR& { if (!_.size()) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
+    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
 }
 
 s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
@@ -530,7 +530,7 @@ s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
 s_Type initStruct(const fu_STR& id, const int& flags, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fu::fail("TODO anonymous structs?"_fu); }())), fu_VEC<s_StructField>{}, (flags | 0) };
+    s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
     return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module) };
 }
@@ -539,7 +539,7 @@ void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Mod
 {
     fu_STR canon = ("s_"_fu + id);
     s_Struct& def = lookupType_mut(canon, module);
-    def.fields = ([&]() -> const fu_VEC<s_StructField>& { { const fu_VEC<s_StructField>& _ = fields; if (_) return _; } fu::fail("TODO empty structs?"_fu); }());
+    def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
 }
 
                                 #ifndef DEF_F_DESTRUCTOR
@@ -880,7 +880,7 @@ struct sf_solve
     [[noreturn]] fu::never fail(fu_STR&& reason)
     {
         s_Token here = _token(_here, ctx);
-        if (!reason.size())
+        if (!reason)
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
         fu_STR fname = _fname(_here, ctx);
@@ -891,11 +891,11 @@ struct sf_solve
     };
     s_Target Binding(const fu_STR& id, const s_Type& type, fu_STR&& kind, const s_SolvedNode& constant)
     {
-        return Scope_add(_scope, kind, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(fu_STR{}); }()), ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(fu_STR{}); }()), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, constant, module);
+        return Scope_add(_scope, kind, (id ? id : fail(fu_STR{})), (type ? type : fail(fu_STR{})), 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, constant, module);
     };
     s_Target Field(const fu_STR& id, const s_Type& structType, const s_Type& fieldType)
     {
-        return Scope_add(_scope, "field"_fu, ([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(fu_STR{}); }()), ([&]() -> const s_Type& { { const s_Type& _ = fieldType; if (_) return _; } fail(fu_STR{}); }()), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { ([&]() -> const s_Type& { { const s_Type& _ = structType; if (_) return _; } fail(fu_STR{}); }()) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+        return Scope_add(_scope, "field"_fu, (id ? id : fail(fu_STR{})), (fieldType ? fieldType : fail(fu_STR{})), 1, 1, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "this"_fu } }, fu_VEC<s_Type> { fu_VEC<s_Type>::INIT<1> { (structType ? structType : fail(fu_STR{})) } }, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target TemplateDecl(const s_Node& node)
     {
@@ -913,7 +913,7 @@ struct sf_solve
             {
                 const s_Node& arg = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
                 ((arg.kind == "let"_fu) || fail(fu_STR{}));
-                const fu_STR& name = ([&]() -> const fu_STR& { { const fu_STR& _ = arg.value; if (_.size()) return _; } fail(fu_STR{}); }());
+                const fu_STR& name = (arg.value ? arg.value : fail(fu_STR{}));
                 arg_n.push(name);
             };
         };
@@ -934,8 +934,8 @@ struct sf_solve
         {
             const s_SolvedNode& arg = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }());
             ((arg.kind == "let"_fu) || fail(fu_STR{}));
-            arg_t.push(([&]() -> const s_Type& { { const s_Type& _ = arg.type; if (_) return _; } fail(fu_STR{}); }()));
-            arg_n.push(([&]() -> const fu_STR& { { const fu_STR& _ = arg.value; if (_.size()) return _; } fail(fu_STR{}); }()));
+            arg_t.push((arg.type ? arg.type : fail(fu_STR{})));
+            arg_n.push((arg.value ? arg.value : fail(fu_STR{})));
             const bool isImplicit = !!(arg.flags & F_IMPLICIT);
             if (!isImplicit)
             {
@@ -958,8 +958,8 @@ struct sf_solve
         for (int i = 0; (i < members.size()); i++)
         {
             const s_SolvedNode& member = members[i];
-            arg_t.push(([&]() -> const s_Type& { { const s_Type& _ = member.type; if (_) return _; } fail(fu_STR{}); }()));
-            arg_n.push(([&]() -> const fu_STR& { { const fu_STR& _ = member.value; if (_.size()) return _; } fail(fu_STR{}); }()));
+            arg_t.push((member.type ? member.type : fail(fu_STR{})));
+            arg_n.push((member.value ? member.value : fail(fu_STR{})));
         };
         const int max = members.size();
         int min = 0;
@@ -990,7 +990,7 @@ struct sf_solve
     };
     s_SolvedNode createDefaultInit(const s_Type& type)
     {
-        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(fu_STR{}); }())), s_Type(type), s_Target{} };
+        return s_SolvedNode { "definit"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
     };
     s_SolvedNode solveDefinit(const s_Type& type)
     {
@@ -1029,7 +1029,7 @@ struct sf_solve
     void scope_using(const s_Target& viaIdx)
     {
         s_Overload via = GET(viaIdx, module, ctx);
-        const s_Type& actual = ([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(fu_STR{}); }());
+        const s_Type& actual = (via.type ? via.type : fail(fu_STR{}));
         for (int i = 0; (i < _scope.items.size()); i++)
         {
             s_ScopeItem item { _scope.items[i] };
@@ -1081,7 +1081,7 @@ struct sf_solve
                 for (int i = offset; (i < names.size()); i++)
                 {
                     offset++;
-                    if (!names[i].size())
+                    if (!names[i])
                     {
                         idx = i;
                         break;
@@ -1124,7 +1124,7 @@ struct sf_solve
                 for (int i = 0; (i < arity); i++)
                 {
                     s_SolvedNode arg { args[i] };
-                    names.push(((arg.kind == "label"_fu) ? ([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_.size()) return _; } fail(fu_STR{}); }()) : fu::Default<fu_STR>::value));
+                    names.push(((arg.kind == "label"_fu) ? ([&]() -> const fu_STR& { { const fu_STR& _ = ((void)(some = true), arg.value); if (_) return _; } fail(fu_STR{}); }()) : fu::Default<fu_STR>::value));
                 };
                 (some || fail(fu_STR{}));
             };
@@ -1139,7 +1139,7 @@ struct sf_solve
                     {
                         goto L_NEXT_c;
                     };
-                    if ((retType && !isAssignable(retType, ([&]() -> const s_Type& { { const s_Type& _ = overload.type; if (_) return _; } fail(fu_STR{}); }()))))
+                    if ((retType && !isAssignable(retType, (overload.type ? overload.type : fail(fu_STR{})))))
                     {
                         goto L_NEXT_c;
                     };
@@ -1168,7 +1168,7 @@ struct sf_solve
                     }L_TEST_AGAIN_c:;}
                     L_TEST_AGAIN_b:;
 
-                fu_VEC<s_Type> arg_t { ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(fu_STR{}); }()) };
+                fu_VEC<s_Type> arg_t { (overload.args ? overload.args : fail(fu_STR{})) };
                 fu_VEC<s_SolvedNode> arg_d { overload.defaults };
                 const int N = (reorder ? reorder.size() : args.size());
                 for (int i = 0; (i < N); i++)
@@ -1223,7 +1223,7 @@ struct sf_solve
             const fu_VEC<s_Type>& arg_t = matched.args;
             if ((arg_t && (args.size() < arg_t.size())))
             {
-                const fu_VEC<fu_STR>& arg_n = ([&]() -> const fu_VEC<fu_STR>& { { const fu_VEC<fu_STR>& _ = matched.names; if (_) return _; } fail(fu_STR{}); }());
+                const fu_VEC<fu_STR>& arg_n = (matched.names ? matched.names : fail(fu_STR{}));
                 for (int i = args.size(); (i < arg_t.size()); i++)
                 {
                     const fu_STR& id = arg_n[i];
@@ -1369,7 +1369,7 @@ struct sf_solve
     {
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
-        return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = last.type; if (_) return _; } fail(fu_STR{}); }()), items);
+        return solved(node, (last.type ? last.type : fail(fu_STR{})), items);
     };
     s_SolvedNode solveInt(const s_Node& node)
     {
@@ -1377,7 +1377,7 @@ struct sf_solve
     };
     s_SolvedNode solveStr(const s_Node& node)
     {
-        if (!node.value.size())
+        if (!node.value)
             return createDefaultInit(add_ref(t_string));
 
         return solved(node, t_string, fu_VEC<s_SolvedNode>{});
@@ -1388,7 +1388,7 @@ struct sf_solve
     };
     s_Node createTypeParam(const fu_STR& value)
     {
-        return s_Node { "typeparam"_fu, int{}, fu_STR(value), fu_VEC<s_Node>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(fu_STR{}); }())) };
+        return s_Node { "typeparam"_fu, int{}, fu_STR(value), fu_VEC<s_Node>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))) };
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
@@ -1400,7 +1400,7 @@ struct sf_solve
     };
     s_SolvedNode __solveFn(const bool& solve, const bool& spec, const s_Node& n_fn, const s_SolvedNode& prep, const int& caseIdx)
     {
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = n_fn.value; if (_.size()) return _; } fail("TODO anonymous fns"_fu); }());
+        const fu_STR& id = (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu));
         if (spec)
         {
             (solve || fail(fu_STR{}));
@@ -1408,7 +1408,7 @@ struct sf_solve
         else if ((n_fn.flags & F_TEMPLATE))
         {
             if (solve)
-                return ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = prep; if (_) return _; } fail(fu_STR{}); }());
+                return (prep ? prep : fail(fu_STR{}));
 
             s_Target tDecl = TemplateDecl(n_fn);
             s_SolvedNode out = solved(n_fn, t_void, fu_VEC<s_SolvedNode>{});
@@ -1523,7 +1523,7 @@ struct sf_solve
             s_Type inType = ((args.size() > i) ? s_Type(args[i].type) : s_Type { fu_STR{}, int{}, int{} });
             if (inType)
             {
-                const fu_STR& argName = ([&]() -> const fu_STR& { { const fu_STR& _ = argNode.value; if (_.size()) return _; } fail(fu_STR{}); }());
+                const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
                 s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{} }; return _; } (typeParams.upsert(argName)));
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
             };
@@ -1545,7 +1545,7 @@ struct sf_solve
             for (int i = 0; (i < branches.size()); i++)
             {
                 const s_Node& branch = branches[i];
-                const fu_VEC<s_Node>& items = ([&]() -> const s_Node& { { const s_Node& _ = branch; if (_) return _; } fail(fu_STR{}); }()).items;
+                const fu_VEC<s_Node>& items = (branch ? branch : fail(fu_STR{})).items;
                 const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
                 if (evalTypePattern(cond, typeParams))
                 {
@@ -1579,7 +1579,7 @@ struct sf_solve
     s_SolvedNode __solveStruct(const bool& solve, const s_Node& node, const s_SolvedNode& prep)
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
-        const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail("TODO anonymous structs"_fu); }());
+        const fu_STR& id = (node.value ? node.value : fail("TODO anonymous structs"_fu));
         s_Type structType = initStruct(id, node.flags, module);
         if (!prep)
             out.target = Scope_Typedef(_scope, id, structType, module);
@@ -1599,7 +1599,7 @@ struct sf_solve
                 if ((item && (item.kind == "let"_fu) && (item.flags & F_FIELD)))
                 {
                     members.push(item);
-                    fields.push(s_StructField { fu_STR(([&]() -> const fu_STR& { { const fu_STR& _ = item.value; if (_.size()) return _; } fail(fu_STR{}); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = item.type; if (_) return _; } fail(fu_STR{}); }())) });
+                    fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_Type((item.type ? item.type : fail(fu_STR{}))) });
                 };
             };
             finalizeStruct(id, fields, module);
@@ -1625,7 +1625,7 @@ struct sf_solve
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         s_SolvedNode nextExpr { (out.items ? out.items.mutref(0) : out) };
-        const s_Type& nextType = ([&]() -> const s_Type& { { const s_Type& _ = nextExpr.type; if (_) return _; } fail(fu_STR{}); }());
+        const s_Type& nextType = (nextExpr.type ? nextExpr.type : fail(fu_STR{}));
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
         s_SolvedNode prevExpr { _current_fn.items[retIdx] };
         const s_Type& prevType = prevExpr.type;
@@ -1634,10 +1634,10 @@ struct sf_solve
             (isAssignable(prevType, nextType) || fail(((("Non-assignable return types: "_fu + serializeType(prevType)) + " <- "_fu) + serializeType(nextType))));
         }
         else
-            _current_fn.items.mutref(retIdx) = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = nextExpr; if (_) return _; } fail(fu_STR{}); }());
+            _current_fn.items.mutref(retIdx) = (nextExpr ? nextExpr : fail(fu_STR{}));
 
         if (out.items)
-            maybeCopyOrMove(out.items.mutref(0), ([&]() -> const s_Type& { { const s_Type& _ = prevType; if (_) return _; } return nextType; }()), true, false);
+            maybeCopyOrMove(out.items.mutref(0), (prevType ? prevType : nextType), true, false);
 
         return out;
     };
@@ -1662,7 +1662,7 @@ struct sf_solve
         if (s_init)
             maybeCopyOrMove(s_init, t_let, false, false);
 
-        s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = s_annot; if (_) return _; } return s_init; }()), s_init } });
+        s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { (s_annot ? s_annot : s_init), s_init } });
         if (!(_current_fn || (node.flags & F_FIELD)))
         {
             if (((out.flags & F_MUT) || (out.type.quals & q_mutref)))
@@ -1749,7 +1749,7 @@ struct sf_solve
             }
             else
             {
-                const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
+                const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
                 fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
                 if (overloads)
                 {
@@ -1757,7 +1757,7 @@ struct sf_solve
                     {
                         s_Overload maybe = GET(overloads[i], module, ctx);
                         if ((maybe.kind == "type"_fu))
-                            return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(fu_STR{}); }()), fu_VEC<s_SolvedNode>{});
+                            return solved(node, (maybe.type ? maybe.type : fail(fu_STR{})), fu_VEC<s_SolvedNode>{});
 
                     };
                 };
@@ -1766,7 +1766,7 @@ struct sf_solve
         }
         else if ((node.kind == "typeparam"_fu))
         {
-            const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
+            const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
             (_typeParams || fail((("Unexpected type param: `$"_fu + id) + "`."_fu)));
             s_Type type { ([&]() -> const s_Type& { if (_typeParams) { const s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
             return solved(node, type, fu_VEC<s_SolvedNode>{});
@@ -1802,7 +1802,7 @@ struct sf_solve
             }
             else
             {
-                const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
+                const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
                 fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
                 if (overloads)
                 {
@@ -1810,7 +1810,7 @@ struct sf_solve
                     {
                         s_Overload maybe = GET(overloads[i], module, ctx);
                         if ((maybe.kind == "type"_fu))
-                            return isAssignable(([&]() -> const s_Type& { { const s_Type& _ = maybe.type; if (_) return _; } fail(fu_STR{}); }()), type);
+                            return isAssignable((maybe.type ? maybe.type : fail(fu_STR{})), type);
 
                     };
                 };
@@ -1819,7 +1819,7 @@ struct sf_solve
         }
         else if ((node.kind == "typeparam"_fu))
         {
-            const fu_STR& id = ([&]() -> const fu_STR& { { const fu_STR& _ = node.value; if (_.size()) return _; } fail(fu_STR{}); }());
+            const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
             s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{} }; return _; } (typeParams.upsert(id)));
             if (_param)
             {
@@ -1845,8 +1845,8 @@ struct sf_solve
             {
                 if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
                 {
-                    const fu_STR& tag = ([&]() -> const fu_STR& { { const fu_STR& _ = right.value; if (_.size()) return _; } fail(fu_STR{}); }());
-                    const s_Type& type = ([&]() -> const s_Type& { if (left.value.size()) { const s_Type& _ = typeParams[left.value]; if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
+                    const fu_STR& tag = (right.value ? right.value : fail(fu_STR{}));
+                    const s_Type& type = ([&]() -> const s_Type& { if (left.value) { const s_Type& _ = typeParams[left.value]; if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
                     return type_has(type, tag);
                 }
                 else
@@ -1869,35 +1869,35 @@ struct sf_solve
     };
     s_Node createRead(const fu_STR& id)
     {
-        return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(fu_STR{}); }())) };
+        return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))) };
     };
     s_SolvedNode solveCall(const s_Node& node)
     {
         const fu_STR& id = node.value;
-        (id.size() || fail(fu_STR{}));
+        (id || fail(fu_STR{}));
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
         s_Target callTargIdx = scope_match__mutargs(id, args, node.flags);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
-            s_Partial partial { ([&]() -> const s_Partial& { { const s_Partial& _ = callTarg.partial; if (_) return _; } fail(fu_STR{}); }()) };
-            const s_Target& viaIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.via; if (_) return _; } fail(fu_STR{}); }());
-            callTargIdx = ([&]() -> const s_Target& { { const s_Target& _ = partial.target; if (_) return _; } fail(fu_STR{}); }());
+            s_Partial partial { (callTarg.partial ? callTarg.partial : fail(fu_STR{})) };
+            const s_Target& viaIdx = (partial.via ? partial.via : fail(fu_STR{}));
+            callTargIdx = (partial.target ? partial.target : fail(fu_STR{}));
             s_Overload via = GET(viaIdx, module, ctx);
             callTarg = GET(callTargIdx, module, ctx);
             fu_VEC<s_SolvedNode> innerArgs {};
             if (!unshift)
                 innerArgs = fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(fu_STR{}); }()) } };
 
-            s_SolvedNode argNode = CallerNode(createRead("__partial"_fu), s_Type(([&]() -> const s_Type& { { const s_Type& _ = via.type; if (_) return _; } fail(fu_STR{}); }())), viaIdx, fu_VEC<s_SolvedNode>(innerArgs));
+            s_SolvedNode argNode = CallerNode(createRead("__partial"_fu), s_Type((via.type ? via.type : fail(fu_STR{}))), viaIdx, fu_VEC<s_SolvedNode>(innerArgs));
             if (unshift)
                 args.unshift(argNode);
             else
                 args.mutref(0) = argNode;
 
         };
-        return CallerNode(node, s_Type(([&]() -> const s_Type& { { const s_Type& _ = callTarg.type; if (_) return _; } fail(fu_STR{}); }())), callTargIdx, fu_VEC<s_SolvedNode>(args));
+        return CallerNode(node, s_Type((callTarg.type ? callTarg.type : fail(fu_STR{}))), callTargIdx, fu_VEC<s_SolvedNode>(args));
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
@@ -1921,7 +1921,7 @@ struct sf_solve
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
     {
-        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_TokenIdx(([&]() -> s_TokenIdx& { { s_TokenIdx& _ = _here; if (_) return _; } fail(fu_STR{}); }())), s_Type(type), s_Target{} };
+        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
     };
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
@@ -1982,7 +1982,7 @@ struct sf_solve
         s_SolvedNode cond = solveNode(n0, t_bool);
         s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
         s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
-        s_SolvedNode priExpr { ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = cons; if (_) return _; } { const s_SolvedNode& _ = alt; if (_) return _; } fail(fu_STR{}); }()) };
+        s_SolvedNode priExpr { (cons ? cons : alt ? alt : fail(fu_STR{})) };
         s_SolvedNode secExpr { ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
         const s_Type& secType = secExpr.type;
@@ -1997,7 +1997,7 @@ struct sf_solve
                 maybeCopyOrMove(alt, type, false, false);
 
         };
-        return solved(node, ([&]() -> const s_Type& { { const s_Type& _ = type; if (_) return _; } fail(fu_STR{}); }()), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { cond, cons, alt } });
+        return solved(node, (type ? type : fail(fu_STR{})), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { cond, cons, alt } });
     };
     s_SolvedNode solveNot(const s_Node& node)
     {
@@ -2093,12 +2093,12 @@ struct sf_solve
         if ((overload.kind == "field"_fu))
         {
             s_SolvedNode head { ([&]() -> const s_SolvedNode& { if ((args.size() == 1)) { const s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(fu_STR{}); }()) };
-            const s_Type& headType = ([&]() -> const s_Type& { { const s_Type& _ = head.type; if (_) return _; } fail(fu_STR{}); }());
+            const s_Type& headType = (head.type ? head.type : fail(fu_STR{}));
             type = add_refs_from(headType, type);
         }
         else if (args.size())
         {
-            const fu_VEC<s_Type>& arg_t = ([&]() -> const fu_VEC<s_Type>& { { const fu_VEC<s_Type>& _ = overload.args; if (_) return _; } fail(fu_STR{}); }());
+            const fu_VEC<s_Type>& arg_t = (overload.args ? overload.args : fail(fu_STR{}));
             for (int i = 0; (i < args.size()); i++)
                 maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(fu_STR{}); }()), arg_t[i], false, true);
 
@@ -2153,7 +2153,7 @@ struct sf_solve
             };
             if (!isUnordered(node.kind))
             {
-                _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
+                _here = (node.token ? node.token : _here);
                 result.mutref(i) = solveNode(node, type);
                 continue;
             };
@@ -2171,7 +2171,7 @@ struct sf_solve
                     i1 = i;
                     break;
                 };
-                _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
+                _here = (node.token ? node.token : _here);
                 result.mutref(i) = unorderedPrep(node);
             };
             for (int i = i0; (i < i1); i++)
@@ -2179,7 +2179,7 @@ struct sf_solve
                 const s_Node& node = nodes[i];
                 if (node)
                 {
-                    _here = ([&]() -> const s_TokenIdx& { { const s_TokenIdx& _ = node.token; if (_) return _; } return _here; }());
+                    _here = (node.token ? node.token : _here);
                     result.mutref(i) = unorderedSolve(node, result[i]);
                 };
             };

@@ -58,8 +58,8 @@ struct s_Token
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
+            || kind
+            || value
             || idx0
             || idx1
             || line
@@ -78,7 +78,7 @@ struct s_LexerOutput
     explicit operator bool() const noexcept
     {
         return false
-            || fname.size()
+            || fname
             || tokens
         ;
     }
@@ -113,9 +113,9 @@ struct s_Node
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
         ;
@@ -149,7 +149,7 @@ struct s_ModuleInputs
     explicit operator bool() const noexcept
     {
         return false
-            || src.size()
+            || src
             || lex
             || parse
         ;
@@ -167,7 +167,7 @@ struct s_Type
     explicit operator bool() const noexcept
     {
         return false
-            || canon.size()
+            || canon
             || quals
             || modid
         ;
@@ -184,7 +184,7 @@ struct s_StructField
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || type
         ;
     }
@@ -202,8 +202,8 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || id.size()
+            || kind
+            || id
             || fields
             || flags
         ;
@@ -241,9 +241,9 @@ struct s_SolvedNode
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
             || type
@@ -262,7 +262,7 @@ struct s_ScopeItem
     explicit operator bool() const noexcept
     {
         return false
-            || id.size()
+            || id
             || target
         ;
     }
@@ -317,8 +317,8 @@ struct s_Overload
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || name.size()
+            || kind
+            || name
             || type
             || min
             || max
@@ -381,7 +381,7 @@ struct s_ModuleOutputs
             || types
             || specs
             || solve
-            || cpp.size()
+            || cpp
         ;
     }
 };
@@ -420,7 +420,7 @@ struct s_Module
     {
         return false
             || modid
-            || fname.size()
+            || fname
             || in
             || out
             || stats
@@ -451,7 +451,7 @@ void compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
     if (!module.in)
     {
         module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
-        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_.size()) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
+        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
@@ -513,7 +513,7 @@ fu_STR compile_snippet(const fu_STR& src)
 
 void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
-    if ((dir_src.size() && dir_out.size()))
+    if ((dir_src && dir_out))
     {
         if (!fu::lmatch(fname, dir_src))
         {
@@ -536,16 +536,16 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 {
     if ((last(dir_wrk) != "/"_fu))
     {
-        (dir_wrk.size() || fu::fail("No workspace directory provided."_fu));
+        (dir_wrk || fu::fail("No workspace directory provided."_fu));
         dir_wrk += "/"_fu;
     };
-    if ((dir_obj.size() && (last(dir_obj) != "/"_fu)))
+    if ((dir_obj && (last(dir_obj) != "/"_fu)))
         dir_obj += "/"_fu;
 
-    if ((dir_src.size() && (last(dir_src) != "/"_fu)))
+    if ((dir_src && (last(dir_src) != "/"_fu)))
         dir_src += "/"_fu;
 
-    if ((dir_cpp.size() && (last(dir_cpp) != "/"_fu)))
+    if ((dir_cpp && (last(dir_cpp) != "/"_fu)))
         dir_cpp += "/"_fu;
 
     int code {};
@@ -571,7 +571,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
     fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](fu_STR&& cpp) -> fu::never
     {
-        if (!cpp.size())
+        if (!cpp)
         {
             for (int i = Fs.size(); (i-- > 0); )
                 cpp += (("#include \""_fu + Fs[i]) + ".cpp\"\n"_fu);
@@ -580,7 +580,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
         (std::cout << ("  WRITE "_fu + fname) << "\n");
         fu::file_write(fname, cpp);
-        if (!stdout.size())
+        if (!stdout)
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
         fu::fail(stdout);
@@ -643,7 +643,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
     if (code)
         ERR(fu_STR{});
 
-    if ((dir_cpp.size() && dir_src.size()))
+    if ((dir_cpp && dir_src))
     {
         fu_VEC<fu_STR> cpp_files {};
         for (int i = 1; (i < ctx.modules.size()); i++)
@@ -654,7 +654,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             update_file(fu_STR(fname), data, dir_src, dir_cpp);
             cpp_files.push(fname);
         };
-        if (unity.size())
+        if (unity)
         {
             ((link_order.size() == cpp_files.size()) || fu::fail("Assertion failed."));
             fu_STR data = "#pragma once\n\n"_fu;
@@ -664,7 +664,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
         };
     };
-    if (bin.size())
+    if (bin)
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
 
     if (code)

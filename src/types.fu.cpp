@@ -14,7 +14,7 @@ struct s_Type
     explicit operator bool() const noexcept
     {
         return false
-            || canon.size()
+            || canon
             || quals
             || modid
         ;
@@ -200,7 +200,7 @@ bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 
 s_Type qadd(const s_Type& type, const int& q)
 {
-    return s_Type { fu_STR(type.canon), (type.canon.size() ? (type.quals | q) : 0), int(type.modid) };
+    return s_Type { fu_STR(type.canon), (type.canon ? (type.quals | q) : 0), int(type.modid) };
 }
 
 s_Type qsub(const s_Type& type, const int& q)

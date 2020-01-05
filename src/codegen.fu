@@ -1277,8 +1277,9 @@ fu_VEC<K> fu_KEYS(
 
     fn boolWrap(type: Type, src: string): string
     {
-        if (type_isString(type))
-            return src + '.size()';
+        if (type) {}
+        // if (type_isString(type) || type_isArray(type))
+        //     return src + '.size()';
 
         return src;
     }
@@ -1373,6 +1374,32 @@ fu_VEC<K> fu_KEYS(
         let type = node.type;
         if (!(type == t_bool))
         {
+            // Try a ?: chain.
+            mut ternary = true;
+            for (mut i = 0; i < node.items.len - 1; i++)
+            {
+                if (!isFieldChain(node.items[i]))
+                {
+                    ternary = false;
+                    break;
+                }
+
+                if (ternary)
+                {
+                    mut src = '(';
+                    for (mut i = 0; i < node.items.len - 1; i++)
+                    {
+                        let n = node.items[i];
+                        let item = cgNode(n);
+                        src += boolWrap(n.type, item) + ' ? ' + item + ' : ';
+                    }
+
+                    src += cgNode(node.items[node.items.len - 1]) + ')';
+                    return src;
+                }
+            }
+
+            //
             let annot = typeAnnot(type);
 
             mut src = '([&]() -> ' + annot + ' {';
@@ -1424,6 +1451,21 @@ fu_VEC<K> fu_KEYS(
         }
 
         return src + ')';
+    }
+
+    fn isFieldChain(node: SolvedNode): bool
+    {
+        if (node.kind != 'call')
+            return false;
+
+        let t = GET(node.target);
+        if (t.kind == 'field')
+            return isFieldChain(node.items.only);
+
+        if (t.kind == 'var' || t.kind == 'const')
+            return true;
+
+        return false;
     }
 
 

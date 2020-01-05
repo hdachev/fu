@@ -43,8 +43,8 @@ struct s_Token
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
-            || value.size()
+            || kind
+            || value
             || idx0
             || idx1
             || line
@@ -82,9 +82,9 @@ struct s_Node
     explicit operator bool() const noexcept
     {
         return false
-            || kind.size()
+            || kind
             || flags
-            || value.size()
+            || value
             || items
             || token
         ;
@@ -356,7 +356,7 @@ struct sf_parse
     {
         const s_Token& loc = tokens[_loc];
         const s_Token& here = tokens[_idx];
-        if (!reason.size())
+        if (!reason)
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
         const int& l0 = loc.line;
@@ -381,17 +381,17 @@ struct sf_parse
     s_Token consume(const fu_STR& kind, const fu_STR& value)
     {
         const s_Token& token = tokens[_idx];
-        if (((token.kind == kind) && (!value.size() || (token.value == value))))
+        if (((token.kind == kind) && (!value || (token.value == value))))
         {
             _idx++;
             return token;
         };
-        fail((((("Expected `"_fu + ([&]() -> const fu_STR& { { const fu_STR& _ = value; if (_.size()) return _; } return kind; }())) + "`, got `"_fu) + token.value) + "`."_fu));
+        fail((((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
     };
     s_Token tryConsume(const fu_STR& kind, const fu_STR& value)
     {
         const s_Token& token = tokens[_idx];
-        if (((token.kind == kind) && (!value.size() || (token.value == value))))
+        if (((token.kind == kind) && (!value || (token.value == value))))
         {
             _idx++;
             return token;
@@ -418,7 +418,7 @@ struct sf_parse
     s_Node parseStructDecl()
     {
         s_Token name = tryConsume("id"_fu, fu_STR{});
-        const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_.size()) return _; } fail("Anon structs."_fu); }());
+        const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_) return _; } fail("Anon structs."_fu); }());
         fu_STR structName0 { _structName };
         _structName = id;
         consume("op"_fu, "{"_fu);
@@ -444,7 +444,7 @@ struct sf_parse
     s_Node parseStructMethod()
     {
         s_Node fnNode = parseFnDecl();
-        s_Node typeAnnot = createPrefix("&"_fu, createRead(([&]() -> const fu_STR& { { const fu_STR& _ = _structName; if (_.size()) return _; } fail(fu_STR{}); }())));
+        s_Node typeAnnot = createPrefix("&"_fu, createRead((_structName ? _structName : fail(fu_STR{}))));
         fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
         fnNode.flags |= F_METHOD;
         return fnNode;
@@ -468,7 +468,7 @@ struct sf_parse
             };
             _col0 = token.col;
             ((_col0 > col00) || fail_Lint((((("Bad indent, expecting more than "_fu + col00) + ". Block starts on line "_fu) + line0) + "."_fu)));
-            s_Node expr = (mode.size() ? parseStructItem() : parseStatement());
+            s_Node expr = (mode ? parseStructItem() : parseStatement());
             ((expr.kind != "call"_fu) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || fail_Lint("Orphan pure-looking expression."_fu));
             const int exprIdx = items.size();
             if ((expr.kind != "empty"_fu))
@@ -577,10 +577,10 @@ struct sf_parse
     {
         fu_STR value = consume("str"_fu, fu_STR{}).value;
         consume("op"_fu, ";"_fu);
-        if (!path_ext(value).size())
+        if (!path_ext(value))
             value += ".fu"_fu;
 
-        if (!path_dirname(value).size())
+        if (!path_dirname(value))
             value = ("./"_fu + value);
 
         value = path_join(path_dirname(fname), value);
@@ -595,8 +595,8 @@ struct sf_parse
         s_Node stmt = parseStatement();
         if ((stmt.kind == "loop"_fu))
         {
-            (stmt.value.size() && fail(fu_STR{}));
-            stmt.value = ([&]() -> const fu_STR& { { const fu_STR& _ = label.value; if (_.size()) return _; } fail(fu_STR{}); }());
+            (stmt.value && fail(fu_STR{}));
+            stmt.value = (label.value ? label.value : fail(fu_STR{}));
             return stmt;
         };
         fail(fu_STR{});
@@ -977,7 +977,7 @@ struct sf_parse
             if (autoName)
                 name = getAutoName(expr);
 
-            out_args.push((name.size() ? createLabel(name, expr) : s_Node(expr)));
+            out_args.push((name ? createLabel(name, expr) : s_Node(expr)));
         };
         return flags;
     };
@@ -1003,10 +1003,10 @@ struct sf_parse
         {
             const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_STR{}); }());
             args.unshift(head);
-            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_STR{}); }()), (F_METHOD | argFlags), args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), (F_METHOD | argFlags), args);
         };
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
-            return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = expr.value; if (_.size()) return _; } fail(fu_STR{}); }()), argFlags, args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), argFlags, args);
 
         fail("TODO dynamic call"_fu);
     };
@@ -1037,7 +1037,7 @@ struct sf_parse
     };
     s_Node createRead(const fu_STR& id)
     {
-        return createCall(([&]() -> const fu_STR& { { const fu_STR& _ = id; if (_.size()) return _; } fail(fu_STR{}); }()), F_ID, fu_VEC<s_Node>{});
+        return createCall((id ? id : fail(fu_STR{})), F_ID, fu_VEC<s_Node>{});
     };
     s_Node parseReturn()
     {
