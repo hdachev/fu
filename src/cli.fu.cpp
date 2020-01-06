@@ -133,6 +133,13 @@ struct sf_cli_handle
         if ((options & EMIT_BIN))
             ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
+        
+        {
+            fu_STR val = next();
+            if (val)
+                fu::fail((("Leftover option: `"_fu + val) + "`."_fu));
+
+        };
         build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme);
         return 0;
     };

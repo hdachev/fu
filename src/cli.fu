@@ -129,6 +129,12 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
                 ? fname.slice(0, fname.len - '.fu'.len)
                 : fname + '.exe';
 
+    //
+    {
+        let val = next();
+        if (val) throw('Leftover option: `' + val + '`.');
+    }
+
     // Go.
     build(:fname, :run, :bin,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
