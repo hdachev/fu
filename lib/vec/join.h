@@ -17,8 +17,10 @@ inline fu_STR join(
     fu_STR result;
     result.reserve(len);
     for (int i = 0; i < vec.size(); i++) {
-        if (i)  result += sep;
-                result += vec[i];
+        if (i)
+            result += sep;
+
+        result += vec[i];
     }
 
     return result;

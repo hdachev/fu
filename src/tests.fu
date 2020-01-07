@@ -1470,7 +1470,7 @@ fn runTests()
                 catch err
                     return err.len - 3;
 
-            return 7;
+            return x || 7;
         }
     `);
 

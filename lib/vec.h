@@ -474,7 +474,7 @@ struct fu_VEC
                     //    because we'd lose track of destructors.
                     if constexpr (TRIVIAL)
                     {
-                        if (idx + del + pop == old_size)
+                        if (idx + del + pop == old_size && push + insert == 0)
                         {
                             big.size = idx;
                             return nullptr;
@@ -651,12 +651,12 @@ struct fu_VEC
 
     fu_INL static void MEMCPY_range(T* d, const T* s, i32 n) noexcept {
         if (d != s && n)
-            std::memcpy(d, s, u32(n) * sizeof(T));
+            std::memcpy((char*)d, s, u32(n) * sizeof(T));
     }
 
     fu_INL static void MEMMOVE_range(T* d, const T* s, i32 n) noexcept {
         if (d != s && n)
-            std::memmove(d, s, u32(n) * sizeof(T));
+            std::memmove((char*)d, s, u32(n) * sizeof(T));
     }
 
     fu_INL static void CPY_ctor_range(T* dest, const T* src, i32 count) noexcept
@@ -710,6 +710,9 @@ struct fu_VEC
         if constexpr (!TRIVIAL)
             for (T* i = start; i < end; i++)
                 i->~T();
+
+        (void) start;
+        (void) end;
     }
 
 
@@ -996,6 +999,7 @@ struct fu_VEC
     }
 
     fu_INL T* mut_end() noexcept {
+        reserve();
         return (T*)end();
     }
 
