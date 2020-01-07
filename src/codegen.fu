@@ -626,13 +626,13 @@ pub fn cpp_codegen(
 
             src += '\n\n' + name + '& ' + name + '::operator=(' + name + '&& src) noexcept';
             src += '\n{';
-            src += '\n    if (&src != this)';
-            src += '\n    {';
-            src += '\n        char temp[sizeof(' + name + ')];';
-            src += '\n        std::memcpy(temp, this, sizeof(' + name + '));';
-            src += '\n        std::memcpy(this, &src, sizeof(' + name + '));';
-            src += '\n        std::memcpy(&src, temp, sizeof(' + name + '));';
-            src += '\n    }';
+            src += '\n    char temp[sizeof(' + name + ')];';
+            src += '\n    char* a = (char*) this;';
+            src += '\n    char* b = (char*) &src;';
+            src += '\n';
+            src += '\n    std::memcpy (temp, a, sizeof(' + name + '));';
+            src += '\n    std::memmove(a,    b, sizeof(' + name + '));';
+            src += '\n    std::memcpy (b, temp, sizeof(' + name + '));';
             src += '\n';
             src += '\n    return *this;';
             src += '\n}';
