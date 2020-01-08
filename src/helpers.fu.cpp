@@ -77,6 +77,33 @@ fu_STR path_normalize(const fu_STR& p)
     return fu::join(path, "/"_fu);
 }
 
+fu_STR path_relative(const fu_STR& from, const fu_STR& to)
+{
+    const int min = ((from.size() < to.size()) ? from.size() : to.size());
+    int same = 0;
+    for (int i = 0; (i < min); i++)
+    {
+        fu_STR a = fu_TO_STR(from[i]);
+        fu_STR b = fu_TO_STR(to[i]);
+        if ((b != a))
+        {
+            break;
+        };
+        if ((b == "/"_fu))
+            same = (i + 1);
+
+    };
+    fu_STR res {};
+    for (int i = same; (i < from.size()); i++)
+    {
+        if ((fu_TO_STR(from[i]) == "/"_fu))
+            res += "../"_fu;
+
+    };
+    res += slice(to, same);
+    return res;
+}
+
 fu_STR path_join(const fu_STR& a, const fu_STR& b)
 {
     return ((b && (fu_TO_STR(b[0]) == "/"_fu)) ? path_normalize(b) : path_normalize(((a + "/"_fu) + b)));

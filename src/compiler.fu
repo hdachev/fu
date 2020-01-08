@@ -343,7 +343,12 @@ pub fn build(
 
             mut data = '#pragma once\n\n';
             for (mut i = 0; i < link_order.len; i++)
-                data += '#include "' + cpp_files[link_order[i]] + '"\n';
+            {
+                let incl = cpp_files[link_order[i]];
+                let rel = path_relative(unity, incl);
+
+                data += '#include "' + rel + '"\n';
+            }
 
             update_file(
                 fname: unity + '.unity.cpp', :data,

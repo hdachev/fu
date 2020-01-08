@@ -69,6 +69,30 @@ fn path_normalize(p: string): string {
     return path.join('/');
 }
 
+fn path_relative(from: string, to: string): string {
+    let min = from.len < to.len ? from.len : to.len;
+
+    mut same = 0;
+    for (mut i = 0; i < min; i++) {
+        let a = from[i];
+        let b = to[i];
+
+        if (b != a)
+            break;
+
+        if (b == '/')
+            same = i + 1;
+    }
+
+    mut res: string;
+    for (mut i = same; i < from.len; i++)
+        if (from[i] == '/')
+            res += '../';
+
+    res += to.slice(same);
+    return res;
+}
+
 fn path_join(a: string, b: string)
     b && b[0] == '/'    ? path_normalize(b)
                         : path_normalize(a + '/' + b);

@@ -32,6 +32,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
@@ -662,8 +663,11 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             ((link_order.size() == cpp_files.size()) || fu::fail("Assertion failed."));
             fu_STR data = "#pragma once\n\n"_fu;
             for (int i = 0; (i < link_order.size()); i++)
-                (data += "#include \""_fu, data += cpp_files[link_order.mutref(i)], data += "\"\n"_fu);
-
+            {
+                fu_STR incl { cpp_files[link_order.mutref(i)] };
+                fu_STR rel = path_relative(unity, incl);
+                (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
+            };
             update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
         };
     };
