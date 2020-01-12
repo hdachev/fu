@@ -921,7 +921,7 @@ struct sf_solve
         };
         return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, Q_template, s_Partial{}, s_SolvedNode{}, module);
     };
-    s_Target FnDecl(const fu_STR& id, s_SolvedNode& node)
+    s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node)
     {
         fu_VEC<s_SolvedNode> items { node.items };
         const s_SolvedNode& rnode = items[(items.size() + FN_RET_BACK)];
@@ -949,7 +949,7 @@ struct sf_solve
 
             };
         };
-        s_Target overload = Scope_add(_scope, "fn"_fu, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
     };
@@ -1429,6 +1429,7 @@ struct sf_solve
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;
         };
+        bool native = false;
         
         {
             const int scope0 = Scope_push(_scope);
@@ -1462,6 +1463,17 @@ struct sf_solve
                 n_ret = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } return n_ret; }());
                 n_body = items[(items.size() + FN_BODY_BACK)];
             };
+            if (((n_body.kind == "block"_fu) && (n_body.items.size() == 1)))
+            {
+                s_Node ret { n_body.items[0] };
+                if (((ret.kind == "return"_fu) && (ret.items.size() == 1)))
+                {
+                    const s_Node& expr = ret.items[0];
+                    if (((expr.kind == "call"_fu) && (expr.value == "__native"_fu)))
+                        native = true;
+
+                };
+            };
             
             {
                 s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
@@ -1477,8 +1489,10 @@ struct sf_solve
             Scope_pop(_scope, scope0);
         };
         if (!prep)
-            FnDecl(id, out);
-
+        {
+            fu_STR kind = (native ? "__native"_fu : "fn"_fu);
+            FnDecl(kind, id, out);
+        };
         (!solve || out.items.mutref((out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
         return out;
     };

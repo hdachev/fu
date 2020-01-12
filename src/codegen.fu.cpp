@@ -947,9 +947,6 @@ struct sf_cpp_codegen
         const s_Type& ret = (overload.type ? overload.type : fail(fu_STR{}));
         fu_STR annot = typeAnnot(ret, M_RETVAL);
         const bool isOp = !hasIdentifierChars(id);
-        if ((isOp && (id != "=="_fu)))
-            return;
-
         fu_STR src = (isOp ? (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " "_fu) + id) + "("_fu));
         const fu_VEC<s_Type>& arg_t = overload.args;
         for (int i = 0; (i < arg_t.size()); i++)

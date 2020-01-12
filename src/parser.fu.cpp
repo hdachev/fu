@@ -683,7 +683,14 @@ struct sf_parse
     s_Node parseFnBodyBranch()
     {
         s_Node body = parseStatement();
-        return (((body.kind == "block"_fu) || (body.kind == "return"_fu)) ? s_Node(body) : ((void)_numReturns++, createReturn(body)));
+        if ((body.kind == "block"_fu))
+            return body;
+
+        if ((body.kind == "return"_fu))
+            return createBlock(fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { body } });
+
+        _numReturns++;
+        return createBlock(fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { createReturn(body) } });
     };
     s_Node tryPopTypeAnnot()
     {

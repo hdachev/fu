@@ -419,13 +419,6 @@ pub fn cpp_codegen(
 
         let isOp    = !id.hasIdentifierChars;
 
-        // TODO FIX
-        //  Running into issues with attempting to forward declare
-        //   builtin operators specialized in other modules
-        //    when importing their inline const stuff - a perfect storm.
-        if (isOp && id != '==')
-            return;
-
         mut src = isOp
                 ? '\n' + annot + ' operator' + id + '('
                 : '\n' + annot + ' ' + id + '(';

@@ -608,9 +608,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         let body = parseStatement();
 
-        return body.kind == 'block' || body.kind == 'return'
-             ? body
-             : (_numReturns++, createReturn(body));
+        if (body.kind == 'block')
+            return body;
+
+        if (body.kind == 'return')
+            return createBlock([ body ]);
+
+        _numReturns++;
+        return createBlock([ createReturn(body) ]);
     }
 
     fn tryPopTypeAnnot(): Node

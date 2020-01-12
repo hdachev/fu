@@ -559,7 +559,7 @@ fn solve(
             :min, :max, arg_n, :template);
     }
 
-    fn FnDecl(id: string, node: &mut SolvedNode): Target
+    fn FnDecl(kind: string, id: string, node: &mut SolvedNode): Target
     {
         let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
@@ -597,7 +597,7 @@ fn solve(
 
         let overload = Scope_add(
             _scope,
-            'fn', :id, ret,
+            :kind, :id, ret,
             :min, :max, arg_n, arg_t, arg_d);
 
         node.target = overload;
@@ -1201,6 +1201,8 @@ fn solve(
         }
 
         //////////////////////////
+        mut native = false;
+
         {
             let scope0 = Scope_push(_scope);
 
@@ -1247,6 +1249,18 @@ fn solve(
                 n_body  = items[items.len + FN_BODY_BACK];
             }
 
+            // Builtin?
+            if (n_body.kind == 'block' && n_body.items.len == 1)
+            {
+                let ret = n_body.items[0];
+                if (ret.kind == 'return' && ret.items.len == 1)
+                {
+                    let expr = ret.items[0];
+                    if (expr.kind == 'call' && expr.value == '__native')
+                        native = true;
+                }
+            }
+
             // Return type annot.
             {
                 let s_ret = n_ret
@@ -1279,7 +1293,12 @@ fn solve(
         //////////////////////////
 
         if (!prep)
-            FnDecl(id, out);
+        {
+            mut kind = native ? '__native' : 'fn';
+
+            //
+            FnDecl(:kind, :id, out);
+        }
 
         !solve || out.items[out.items.len + FN_BODY_BACK] || fail();
 
