@@ -5,7 +5,7 @@
 #include "../lib/vec/find.h"
 #include "../lib/vec/join.h"
 #include "../lib/vec/replace.h"
-#include <algorithm>
+#include "../lib/vec/sort.h"
 
 struct s_LexerOutput;
 struct s_Module;
@@ -778,7 +778,7 @@ struct sf_cpp_codegen
     {
         fu_STR out {};
         fu_VEC<fu_STR> keys = dedupes.m_keys;
-        ([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (keys));
+        fu::sort(keys);
         for (int i = 0; (i < keys.size()); i++)
             out += dedupes[keys.mutref(i)];
 
@@ -1383,8 +1383,8 @@ struct sf_cpp_codegen
 
         if (((id == "sort"_fu) && (items.size() == 1)))
         {
-            include("<algorithm>"_fu);
-            return (("([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } ("_fu + items[0]) + "))"_fu);
+            include("\"../lib/vec/sort.h\""_fu);
+            return (("fu::sort("_fu + items[0]) + ")"_fu);
         };
         if (((id == "char"_fu) && (items.size() == 2)))
         {

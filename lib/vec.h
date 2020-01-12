@@ -946,18 +946,6 @@ struct fu_VEC
 
 
     //
-    // Pure reads.
-
-    fu_INL const T* begin() const noexcept {
-        return data();
-    }
-
-    fu_INL const T* end() const noexcept {
-        return data() + size();
-    }
-
-
-    //
     // Acquire unique.
 
     template <typename C>
@@ -992,15 +980,6 @@ struct fu_VEC
     fu_INL T* mut_data() noexcept {
         reserve();
         return (T*)data();
-    }
-
-    fu_INL T* mut_begin() noexcept {
-        return mut_data();
-    }
-
-    fu_INL T* mut_end() noexcept {
-        reserve();
-        return (T*)end();
     }
 
 

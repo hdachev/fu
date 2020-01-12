@@ -5,13 +5,12 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "span.h"
 #include "str.h"
 #include "defer.h"
 
 namespace fu {
 
-inline int file_write(fu_STR path, span<const char> body)
+inline int file_write(fu_STR path, const fu_STR& body)
 {
     path.push('\0');
 

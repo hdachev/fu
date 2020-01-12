@@ -1003,8 +1003,8 @@ pub fn cpp_codegen(
 
         if (id == 'sort' && items.len == 1)
         {
-            include('<algorithm>');
-            return '([&](auto& _) { std::sort(_.mut_begin(), _.mut_end()); } (' + items[0] + '))';
+            include('"../lib/vec/sort.h"');
+            return 'fu::sort(' + items[0] + ')';
         }
 
         if (id == 'char' && items.len == 2)
