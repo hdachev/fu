@@ -30,7 +30,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 bool hasIdentifierChars(const fu_STR&);
-int copyOrMove(const int&, const fu_VEC<s_StructField>&);
+int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Scope listGlobals(const s_Module&);
 s_Type tryClear_ref(const s_Type&);
@@ -527,7 +527,7 @@ s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
     return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail("Assertion failed."); }());
 }
 
-s_Type initStruct(const fu_STR& id, const int& flags, s_Module& module)
+s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
     s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
@@ -552,7 +552,7 @@ inline const int F_DESTRUCTOR = (1 << 31);
 inline const int q_copy = (1 << 2);
                                 #endif
 
-int copyOrMove(const int& flags, const fu_VEC<s_StructField>& fields)
+int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
 {
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
         return 0;
@@ -658,12 +658,12 @@ int Scope_push(s_Scope& scope)
     return scope.items.size();
 }
 
-void Scope_pop(s_Scope& scope, const int& memo)
+void Scope_pop(s_Scope& scope, const int memo)
 {
     scope.items.shrink(memo);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int& min, const int& max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
     s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
@@ -685,7 +685,7 @@ inline const int FN_RET_BACK = -2;
 
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
-inline const int& FN_ARGS_BACK = FN_RET_BACK;
+inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
                                 #ifndef DEF_t_template
@@ -855,7 +855,7 @@ struct sf_solve
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
-    void Scope_import(const int& modid)
+    void Scope_import(const int modid)
     {
         const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
         for (int i = 0; (i < items.size()); i++)
@@ -886,8 +886,8 @@ struct sf_solve
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
         fu_STR fname = _fname(_here, ctx);
-        const int& l0 = here.line;
-        const int& c0 = here.col;
+        const int l0 = here.line;
+        const int c0 = here.col;
         fu_STR addr = ((("@"_fu + l0) + ":"_fu) + c0);
         fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
@@ -1097,7 +1097,7 @@ struct sf_solve
 
         return result;
     };
-    s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags, const s_Type& retType)
+    s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
     {
         s_Target matchIdx {};
         fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
@@ -1236,7 +1236,7 @@ struct sf_solve
         };
         return matchIdx;
     };
-    s_Target scope_match__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int& flags)
+    s_Target scope_match__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
     {
         s_Target ret = scope_tryMatch__mutargs(id, args, flags, s_Type{});
         if (ret)
@@ -1400,7 +1400,7 @@ struct sf_solve
     {
         return __solveFn(true, false, node, prep, -1);
     };
-    s_SolvedNode __solveFn(const bool& solve, const bool& spec, const s_Node& n_fn, const s_SolvedNode& prep, const int& caseIdx)
+    s_SolvedNode __solveFn(const bool solve, const bool spec, const s_Node& n_fn, const s_SolvedNode& prep, const int caseIdx)
     {
         const fu_STR& id = (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu));
         if (spec)
@@ -1578,7 +1578,7 @@ struct sf_solve
     {
         return __solveStruct(true, node, prep);
     };
-    s_SolvedNode __solveStruct(const bool& solve, const s_Node& node, const s_SolvedNode& prep)
+    s_SolvedNode __solveStruct(const bool solve, const s_Node& node, const s_SolvedNode& prep)
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
         const fu_STR& id = (node.value ? node.value : fail("TODO anonymous structs"_fu));
@@ -1921,7 +1921,7 @@ struct sf_solve
         };
         return solved(node, createArray(itemType, module), items);
     };
-    s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int& flags)
+    s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int flags)
     {
         return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
     };
@@ -1956,7 +1956,7 @@ struct sf_solve
         };
         return ret;
     };
-    void bindImplicitArg(fu_VEC<s_SolvedNode>& args, const int& argIdx, const fu_STR& id, const s_Type& type)
+    void bindImplicitArg(fu_VEC<s_SolvedNode>& args, const int argIdx, const fu_STR& id, const s_Type& type)
     {
         (TEST_expectImplicits || fail("Attempting to propagate implicit arguments."_fu));
         ((args.size() >= argIdx) || fail(fu_STR{}));
@@ -2111,7 +2111,7 @@ struct sf_solve
     };
     void maybeCopyOrMove(s_SolvedNode& node, const s_Type& slot, const bool isReturn, const bool isArgument)
     {
-        const int& q = slot.quals;
+        const int q = slot.quals;
         if (!(q & q_mutref))
             node.type.quals &= ~q_mutref;
 
@@ -2228,7 +2228,7 @@ inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0 };
 
                                 #ifndef DEF_UnsignedInt
                                 #define DEF_UnsignedInt
-inline const int& UnsignedInt = Integral;
+inline const int UnsignedInt = Integral;
                                 #endif
 
                                 #ifndef DEF_t_u8

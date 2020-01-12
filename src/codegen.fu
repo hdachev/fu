@@ -9,6 +9,7 @@ let M_CONST             = 1 << 2;
 let M_RETVAL            = 1 << 3;
 let M_ARGUMENT          = 1 << 4;
 let M_CLOSURE           = 1 << 5;
+let M_FWDECL            = 1 << 6;
 
 
 //
@@ -67,8 +68,17 @@ pub fn cpp_codegen(
 
         if (type.quals & q_mutref)
             return fwd + '&';
+
         if (type.quals & q_ref)
+        {
+            // Pass primitives by value.
+            if (type.quals & q_primitive)
+                return (mode & M_ARGUMENT | mode & M_CONST) && !(mode & M_FWDECL)
+                     ? 'const ' + fwd
+                     : fwd;
+
             return 'const ' + fwd + '&';
+        }
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
@@ -426,7 +436,7 @@ pub fn cpp_codegen(
             if (i)
                 src += ', ';
 
-            src += typeAnnot(arg_t[i], M_ARGUMENT);
+            src += typeAnnot(arg_t[i], M_ARGUMENT | M_FWDECL);
         }
 
         src += ');';

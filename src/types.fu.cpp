@@ -104,7 +104,7 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_UnsignedInt
                                 #define DEF_UnsignedInt
-inline const int& UnsignedInt = Integral;
+inline const int UnsignedInt = Integral;
                                 #endif
 
                                 #ifndef DEF_FloatingPt
@@ -198,22 +198,22 @@ bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
     return isAssignable(host, guest);
 }
 
-s_Type qadd(const s_Type& type, const int& q)
+s_Type qadd(const s_Type& type, const int q)
 {
     return s_Type { fu_STR(type.canon), (type.canon ? (type.quals | q) : 0), int(type.modid) };
 }
 
-s_Type qsub(const s_Type& type, const int& q)
+s_Type qsub(const s_Type& type, const int q)
 {
     return s_Type { fu_STR(type.canon), (type.quals & ~q), int(type.modid) };
 }
 
-bool qhas(const s_Type& type, const int& q)
+bool qhas(const s_Type& type, const int q)
 {
     return ((type.quals & q) == q);
 }
 
-s_Type tryClear(const s_Type& type, const int& q)
+s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
         return s_Type { fu_STR{}, int{}, int{} };

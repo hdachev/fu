@@ -66,12 +66,12 @@ struct sf_lex
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
-    void token(const fu_STR& kind, const fu_STR& value, const int& idx0, const int& idx1)
+    void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1)
     {
         const int col = (idx0 - lidx);
         tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
     };
-    void err_str(const fu_STR& kind, const int& idx0, const fu_STR& reason)
+    void err_str(const fu_STR& kind, const int idx0, const fu_STR& reason)
     {
         while (((idx < end) && (fu_TO_STR(src[idx]) > " "_fu)))
             idx++;
@@ -80,7 +80,7 @@ struct sf_lex
         fu_STR value = slice(src, idx0, idx);
         fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
     };
-    void err(const fu_STR& kind, const int& idx0, const int& reason)
+    void err(const fu_STR& kind, const int idx0, const int reason)
     {
         err_str(kind, idx0, fu_TO_STR(src[reason]));
     };
@@ -91,7 +91,7 @@ struct sf_lex
         };
         return kind;
     };
-    fu_STR unescapeStr(const fu_STR& src, const int& idx0, const int& idx1)
+    fu_STR unescapeStr(const fu_STR& src, const int idx0, const int idx1)
     {
         fu_STR out {};
         const int n = (idx1 - 1);

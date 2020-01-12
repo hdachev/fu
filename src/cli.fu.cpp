@@ -11,7 +11,7 @@ int self_test();
 void runTests();
 void saySomethingNice();
 fu_STR path_join(const fu_STR&, const fu_STR&);
-void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
                                 #ifndef DEF_PRJDIR
                                 #define DEF_PRJDIR
@@ -86,7 +86,7 @@ struct sf_cli_handle
             else
                 val = next();
 
-            const auto& option = [&](const fu_STR& Q_short, const fu_STR& Q_long, const int& o, fu_STR& dir) -> void
+            const auto& option = [&](const fu_STR& Q_short, const fu_STR& Q_long, const int o, fu_STR& dir) -> void
             {
                 if (((opt == Q_short) || (opt == Q_long)))
                 {

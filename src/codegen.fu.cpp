@@ -471,6 +471,11 @@ inline const int M_ARGUMENT = (1 << 4);
 inline const int M_CLOSURE = (1 << 5);
                                 #endif
 
+                                #ifndef DEF_M_FWDECL
+                                #define DEF_M_FWDECL
+inline const int M_FWDECL = (1 << 6);
+                                #endif
+
                                 #ifndef DEF_q_mutref
                                 #define DEF_q_mutref
 inline const int q_mutref = (1 << 0);
@@ -479,6 +484,11 @@ inline const int q_mutref = (1 << 0);
                                 #ifndef DEF_q_ref
                                 #define DEF_q_ref
 inline const int q_ref = (1 << 1);
+                                #endif
+
+                                #ifndef DEF_q_primitive
+                                #define DEF_q_primitive
+inline const int q_primitive = (1 << 4);
                                 #endif
 
                                 #ifndef DEF_q_trivial
@@ -503,7 +513,7 @@ inline const int F_CLOSURE = (1 << 27);
 
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
-inline const int& FN_ARGS_BACK = FN_RET_BACK;
+inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
                                 #ifndef DEF_FN_BODY_BACK
@@ -559,11 +569,6 @@ inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0 };
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
 inline const int Trivial = (q_copy | q_trivial);
-                                #endif
-
-                                #ifndef DEF_q_primitive
-                                #define DEF_q_primitive
-inline const int q_primitive = (1 << 4);
                                 #endif
 
                                 #ifndef DEF_Primitive
@@ -635,7 +640,7 @@ struct sf_cpp_codegen
             (_libs.upsert(lib) = (("#include "_fu + lib) + "\n"_fu));
 
     };
-    fu_STR typeAnnot(const s_Type& type, const int& mode)
+    fu_STR typeAnnot(const s_Type& type, const int mode)
     {
         fu_STR fwd = typeAnnotBase(type);
         if (((mode & M_RETVAL) && (type.canon == "never"_fu) && !(mode & M_CLOSURE)))
@@ -645,8 +650,12 @@ struct sf_cpp_codegen
             return (fwd + "&"_fu);
 
         if ((type.quals & q_ref))
-            return (("const "_fu + fwd) + "&"_fu);
+        {
+            if ((type.quals & q_primitive))
+                return ((((mode & M_ARGUMENT) | (mode & M_CONST)) && !(mode & M_FWDECL)) ? ("const "_fu + fwd) : fu_STR(fwd));
 
+            return (("const "_fu + fwd) + "&"_fu);
+        };
         if (((mode & M_CONST) && (type.quals & q_trivial)))
             return ("const "_fu + fwd);
 
@@ -857,7 +866,7 @@ struct sf_cpp_codegen
         };
         return src;
     };
-    fu_STR blockWrap(const fu_VEC<s_SolvedNode>& nodes, const bool& skipCurlies)
+    fu_STR blockWrap(const fu_VEC<s_SolvedNode>& nodes, const bool skipCurlies)
     {
         fu_STR indent0 { _indent };
         _indent += "    "_fu;
@@ -948,7 +957,7 @@ struct sf_cpp_codegen
             if (i)
                 src += ", "_fu;
 
-            src += typeAnnot(arg_t[i], M_ARGUMENT);
+            src += typeAnnot(arg_t[i], (M_ARGUMENT | M_FWDECL));
         };
         src += ");"_fu;
         (_ffwd.upsert(ffwdKey) = src);
@@ -1213,7 +1222,7 @@ struct sf_cpp_codegen
         };
         return false;
     };
-    fu_STR cgCall(const s_SolvedNode& node, const int& mode)
+    fu_STR cgCall(const s_SolvedNode& node, const int mode)
     {
         s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(fu_STR{}); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
@@ -1516,7 +1525,7 @@ struct sf_cpp_codegen
     {
         return fu_STR{};
     };
-    fu_STR cgIf(const s_SolvedNode& node, const int& mode)
+    fu_STR cgIf(const s_SolvedNode& node, const int mode)
     {
         const s_SolvedNode& n0 = node.items[0];
         const s_SolvedNode& n1 = node.items[1];
@@ -1758,7 +1767,7 @@ struct sf_cpp_codegen
         (src += _indent, src += "}\n"_fu);
         return src;
     };
-    fu_STR cgNode(const s_SolvedNode& node, const int& mode)
+    fu_STR cgNode(const s_SolvedNode& node, const int mode)
     {
         const fu_STR& k = node.kind;
         if ((k == "root"_fu))
@@ -1863,7 +1872,7 @@ struct sf_cpp_codegen
     {
         return (((typeAnnotBase(type) + "("_fu) + src) + ")"_fu);
     };
-    fu_VEC<fu_STR> cgNodes(const fu_VEC<s_SolvedNode>& nodes, const int& mode)
+    fu_VEC<fu_STR> cgNodes(const fu_VEC<s_SolvedNode>& nodes, const int mode)
     {
         fu_VEC<fu_STR> result {};
         for (int i = 0; (i < nodes.size()); i++)

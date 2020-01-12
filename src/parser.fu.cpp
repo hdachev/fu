@@ -289,7 +289,7 @@ inline const s_BINOP BINOP = setupOperators();
 
                                 #ifndef DEF_P_COMMA
                                 #define DEF_P_COMMA
-inline const int& P_COMMA = ([]() -> const int& { { const int& _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail("Assertion failed."); }());
+inline const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail("Assertion failed."); }());
                                 #endif
 
                                 #ifndef DEF_LET_TYPE
@@ -314,7 +314,7 @@ inline const int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
-inline const int& FN_ARGS_BACK = FN_RET_BACK;
+inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
@@ -346,7 +346,7 @@ namespace {
 
 struct sf_parse
 {
-    const int& modid;
+    const int modid;
     const fu_STR& fname;
     const fu_VEC<s_Token>& tokens;
     int _idx = 0;
@@ -366,10 +366,10 @@ struct sf_parse
         if (!reason)
             reason = (("Unexpected `"_fu + here.value) + "`."_fu);
 
-        const int& l0 = loc.line;
-        const int& c0 = loc.col;
-        const int& l1 = here.line;
-        const int& c1 = here.col;
+        const int l0 = loc.line;
+        const int c0 = loc.col;
+        const int l1 = here.line;
+        const int c1 = here.col;
         fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
         fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
@@ -377,7 +377,7 @@ struct sf_parse
     {
         fail(("Lint: "_fu + reason));
     };
-    s_Node make(const fu_STR& kind, const fu_VEC<s_Node>& items, const int& flags, const fu_STR& value)
+    s_Node make(const fu_STR& kind, const fu_VEC<s_Node>& items, const int flags, const fu_STR& value)
     {
         return s_Node { fu_STR(kind), int(flags), fu_STR(value), fu_VEC<s_Node>(items), s_TokenIdx { int(modid), int(_loc) } };
     };
@@ -458,7 +458,7 @@ struct sf_parse
     };
     fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
     {
-        const int& line0 = tokens[_idx].line;
+        const int line0 = tokens[_idx].line;
         const int col00 = _col0;
         fu_VEC<s_Node> items {};
         while (true)
@@ -468,8 +468,8 @@ struct sf_parse
             {
                 _col0 = col00;
                 _idx++;
-                const int& line1 = token.line;
-                const int& col1 = token.col;
+                const int line1 = token.line;
+                const int col1 = token.col;
                 ((line1 == line0) || (col1 == _col0) || fail_Lint((((((((("Bad closing `"_fu + token.value) + "` indent, expecting "_fu) + (_col0 - 1)) + ", got "_fu) + (col1 - 1)) + ". Block starts on line "_fu) + line0) + "."_fu)));
                 break;
             };
@@ -487,7 +487,7 @@ struct sf_parse
         };
         return items;
     };
-    void unwrapStructMethods(fu_VEC<s_Node>& out, const int& structNodeIdx)
+    void unwrapStructMethods(fu_VEC<s_Node>& out, const int structNodeIdx)
     {
         s_Node structNode { out[structNodeIdx] };
         fu_VEC<s_Node>& members = structNode.items;
@@ -775,7 +775,7 @@ struct sf_parse
 
         return createLet(id, flags, type, init);
     };
-    s_Node createLet(const fu_STR& id, const int& flags, const s_Node& type, const s_Node& init)
+    s_Node createLet(const fu_STR& id, const int flags, const s_Node& type, const s_Node& init)
     {
         return make("let"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { type, init } }, flags, id);
     };
@@ -799,7 +799,7 @@ struct sf_parse
         _loc = loc0;
         return head;
     };
-    s_Node tryParseBinary(const s_Node& left, const fu_STR& op, const int& p1)
+    s_Node tryParseBinary(const s_Node& left, const fu_STR& op, const int p1)
     {
         if (((p1 > _precedence) || ((p1 == _precedence) && !BINOP.RIGHT_TO_LEFT[p1])))
             return miss();
@@ -841,7 +841,7 @@ struct sf_parse
             if ((v == "["_fu))
                 return parseIndexExpression(head);
 
-            const int& p1 = BINOP.PRECEDENCE[v];
+            const int p1 = BINOP.PRECEDENCE[v];
             if (p1)
                 return ((void)_idx--, tryParseBinary(head, v, p1));
 
@@ -1023,7 +1023,7 @@ struct sf_parse
         const int argFlags = parseCallArgs("]"_fu, args);
         return createArrayLiteral(argFlags, args);
     };
-    s_Node createArrayLiteral(const int& argFlags, const fu_VEC<s_Node>& items)
+    s_Node createArrayLiteral(const int argFlags, const fu_VEC<s_Node>& items)
     {
         return make("arrlit"_fu, items, argFlags, fu_STR{});
     };
@@ -1038,7 +1038,7 @@ struct sf_parse
     {
         return make(kind, fu_VEC<s_Node>{}, 0, value);
     };
-    s_Node createCall(const fu_STR& id, const int& flags, const fu_VEC<s_Node>& args)
+    s_Node createCall(const fu_STR& id, const int flags, const fu_VEC<s_Node>& args)
     {
         return make("call"_fu, args, flags, id);
     };
@@ -1149,7 +1149,7 @@ struct sf_parse
 
 } // namespace
 
-s_ParserOutput parse(const int& modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
+s_ParserOutput parse(const int modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
 {
     return (sf_parse { modid, fname, tokens }).parse_EVAL();
 }

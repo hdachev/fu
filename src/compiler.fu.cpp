@@ -36,11 +36,11 @@ fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
-void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
-s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
+s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
 void setModule(const s_Module&, s_TEMP_Context&);
@@ -580,7 +580,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     (std::cout << ("  WROTE "_fu + fname) << "\n");
 }
 
-void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
+void build(const s_TEMP_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
 {
     if ((last(dir_wrk) != "/"_fu))
     {
@@ -724,7 +724,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
 }
 
-void build(const fu_STR& fname, const bool& run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
+void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
 {
     s_TEMP_Context ctx { CTX_PRELUDE };
     
