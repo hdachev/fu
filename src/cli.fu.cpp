@@ -7,10 +7,10 @@
 #include <utility>
 
 void runTestsAndBuildCompiler();
-fu_STR path_join(const fu_STR&, const fu_STR&);
-void saySomethingNice();
 int self_test();
 void runTests();
+void saySomethingNice();
+fu_STR path_join(const fu_STR&, const fu_STR&);
 void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
                                 #ifndef DEF_PRJDIR

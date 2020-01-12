@@ -1,10 +1,9 @@
 #import 'helpers';
 #import 'lexer';
 #import 'parser';
-#import 'types';
 #import 'solver';
-#import 'codegen';
 #import 'prelude';
+#import 'codegen';
 
 
 //
@@ -48,11 +47,9 @@ fn compile(fname: string, via: string = '')
             '#import circle: `' + via + fname + '`.');
     }
 
-    // Compile dependencies -
-    //  since we link in reverse, we reverse the deps here too,
-    //   resulting in a link that's in the order of imports.
+    //
     let imports = module.in.parse.imports;
-    for (mut i = imports.len; i --> 0; )
+    for (mut i = 0; i < imports.len; i++)
         compile(
             fname: imports[i],
               via: fname + ' <- ' + via);
@@ -110,6 +107,44 @@ fn compile_snippet(src: string): string
             return ctx.modules[i].out.cpp;
 
     assert();
+}
+
+
+//
+
+fn getLinkOrder(modules: Module[]): i32[]
+{
+    mut link_order: i32[] = [];
+
+    fn visit(module: Module): void
+    {
+        let link_id = module.modid - 1;
+        if (link_order.has(link_id))
+            return;
+
+        let imports = module.in.parse.imports;
+        for (mut i = 0; i < imports.len; i++)
+        {
+            let fname = imports[i];
+            for (mut i = 1; i < modules.len; i++)
+            {
+                let module = modules[i];
+                if (module.fname == fname)
+                {
+                    visit(module);
+                    break;
+                }
+            }
+        }
+
+        link_order.has(link_id) && assert();
+        link_order.push(link_id);
+    }
+
+    for (mut i = 1; i < modules.len; i++)
+        visit(modules[i]);
+
+    return link_order;
 }
 
 
@@ -239,14 +274,8 @@ pub fn build(
         return throw(stdout);
     }
 
-    // Link order.
-    mut link_order: i32[];
-
-    // TODO dep sort
-    for (mut i = ctx.modules.len; i --> 1/*prelude*/; )
-        link_order.push(i - 1/*prelude*/);
-
     //
+    let link_order = getLinkOrder(ctx.modules);
     if (file_size(F_exe) < 1)
     {
         // Build.

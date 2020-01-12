@@ -36,17 +36,17 @@ fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
-fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
 void build(const fu_STR&, const bool&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
-s_TEMP_Context solvePrelude();
+s_LexerOutput lex(const fu_STR&, const fu_STR&);
+s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
 fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
 s_Module& getModule(const fu_STR&, s_TEMP_Context&);
 void setModule(const s_Module&, s_TEMP_Context&);
 s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
-s_ParserOutput parse(const int&, const fu_STR&, const fu_VEC<s_Token>&);
-s_LexerOutput lex(const fu_STR&, const fu_STR&);
+s_TEMP_Context solvePrelude();
+fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -468,7 +468,7 @@ void compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
         (module.out || fu::fail(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
     };
     fu_VEC<fu_STR> imports { module.in.parse.imports };
-    for (int i = imports.size(); (i-- > 0); )
+    for (int i = 0; (i < imports.size()); i++)
         compile(imports[i], ((fname + " <- "_fu) + via), ctx);
 
     if (!module.out)
@@ -512,6 +512,52 @@ fu_STR compile_snippet(const fu_STR& src)
     };
     fu::fail("Assertion failed.");
 }
+
+namespace {
+
+struct sf_getLinkOrder
+{
+    const fu_VEC<s_Module>& modules;
+    fu_VEC<int> link_order {};
+    void visit(const s_Module& module)
+    {
+        const int link_id = (module.modid - 1);
+        if (fu::has(link_order, link_id))
+            return;
+
+        const fu_VEC<fu_STR>& imports = module.in.parse.imports;
+        for (int i = 0; (i < imports.size()); i++)
+        {
+            const fu_STR& fname = imports[i];
+            for (int i = 1; (i < modules.size()); i++)
+            {
+                const s_Module& module = modules[i];
+                if ((module.fname == fname))
+                {
+                    visit(module);
+                    break;
+                };
+            };
+        };
+        (fu::has(link_order, link_id) && fu::fail("Assertion failed."));
+        link_order.push(link_id);
+    };
+    fu_VEC<int> getLinkOrder_EVAL()
+    {
+        for (int i = 1; (i < modules.size()); i++)
+            visit(modules[i]);
+
+        return link_order;
+    };
+};
+
+} // namespace
+
+fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules)
+{
+    return (sf_getLinkOrder { modules }).getLinkOrder_EVAL();
+}
+
 
 void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
@@ -588,10 +634,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
 
         fu::fail(stdout);
     };
-    fu_VEC<int> link_order {};
-    for (int i = ctx.modules.size(); (i-- > 1); )
-        link_order.push((i - 1));
-
+    fu_VEC<int> link_order = getLinkOrder(ctx.modules);
     if ((fu::file_size(F_exe) < 1))
     {
         for (int i = 0; (i < Fs.size()); i++)
@@ -618,7 +661,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
         for (int i = 0; (i < link_order.size()); i++)
-            (cmd += Fs[link_order.mutref(i)], cmd += ".o "_fu);
+            (cmd += Fs[link_order[i]], cmd += ".o "_fu);
 
         
         {
@@ -664,7 +707,7 @@ void build(const s_TEMP_Context& ctx, const bool& run, fu_STR&& dir_wrk, fu_STR&
             fu_STR data = "#pragma once\n\n"_fu;
             for (int i = 0; (i < link_order.size()); i++)
             {
-                fu_STR incl { cpp_files[link_order.mutref(i)] };
+                fu_STR incl { cpp_files[link_order[i]] };
                 fu_STR rel = path_relative(unity, incl);
                 (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
             };
