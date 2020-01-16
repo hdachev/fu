@@ -11,7 +11,9 @@
 #include "../lib/vec/join.h"
 #include <iostream>
 
+struct s_Effects;
 struct s_LexerOutput;
+struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -159,6 +161,34 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
@@ -166,12 +196,16 @@ struct s_Type
     fu_STR canon;
     int quals;
     int modid;
+    s_Lifetime lifetime;
+    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || canon
             || quals
             || modid
+            || lifetime
+            || effects
         ;
     }
 };

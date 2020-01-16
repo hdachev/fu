@@ -7,7 +7,9 @@
 #include "../lib/vec/replace.h"
 #include "../lib/vec/sort.h"
 
+struct s_Effects;
 struct s_LexerOutput;
+struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -52,6 +54,34 @@ struct s_TokenIdx
 };
                                 #endif
 
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
@@ -59,12 +89,16 @@ struct s_Type
     fu_STR canon;
     int quals;
     int modid;
+    s_Lifetime lifetime;
+    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || canon
             || quals
             || modid
+            || lifetime
+            || effects
         ;
     }
 };
@@ -523,7 +557,7 @@ inline const int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0 };
+inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
@@ -548,7 +582,7 @@ inline const int LET_INIT = 1;
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0 };
+inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -563,7 +597,7 @@ inline const int q_copy = (1 << 2);
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0 };
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_Trivial
@@ -578,7 +612,7 @@ inline const int Primitive = (Trivial | q_primitive);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0 };
+inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT

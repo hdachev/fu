@@ -25,12 +25,42 @@ let TAGS =
     'floating_point',
 ];
 
+
+//
+
+pub let e_exit      = 1 <<  0;
+pub let e_crash     = 1 <<  1;
+pub let e_div0      = 1 <<  2;
+pub let e_segv      = 1 <<  3;
+
+pub let e_throw     = 1 <<  4;
+
+pub let e_io        = 1 <<  8;
+
+pub let e_malloc    = 1 << 12;
+pub let e_memcpy    = 1 << 13;
+
+
+//
+
+pub struct Lifetime { raw: i32; }
+pub struct Effects  { raw: i32; }
+
 pub struct Type
 {
     canon: string;
     quals: i32;
     modid: i32;
+
+    lifetime: Lifetime;
+    effects:  Effects;
 };
+
+fn type_inter(a: Lifetime, b: Lifetime)
+    a.raw > b.raw ? a : b;
+
+fn type_inter(a: Effects, b: Effects)
+    Effects( raw: a.raw | b.raw );
 
 
 //
@@ -105,11 +135,6 @@ pub fn isAssignableAsArgument(
 
 //
 
-pub fn qadd(type: Type, q: i32)
-{
-    return Type(type.canon, type.canon ? type.quals | q : 0, type.modid);
-}
-
 pub fn qsub(type: Type, q: i32)
 {
     return Type(type.canon, type.quals &~ q, type.modid);
@@ -131,14 +156,32 @@ fn tryClear(type: Type, q: i32): Type
 
 //
 
-pub fn add_ref(type: Type)
+pub fn add_ref(type: Type, lifetime: Lifetime): Type
 {
-    return qadd(type, q_ref);
+    if !(type.quals & q_ref)
+    {
+        mut t = type || throw('falsy type');
+            t.quals |= q_ref;
+            t.lifetime ||= lifetime;
+
+        return t;
+    }
+
+    return type;
 }
 
-pub fn add_mutref(type: Type)
+pub fn add_mutref(type: Type, lifetime: Lifetime): Type
 {
-    return qadd(type, q_ref | q_mutref);
+    if !(type.quals & q_mutref)
+    {
+        mut t = type || throw('falsy type');
+            t.quals |= q_mutref | q_ref;
+            t.lifetime ||= lifetime;
+
+        return t;
+    }
+
+    return type;
 }
 
 
@@ -168,9 +211,11 @@ pub fn clear_mutref(type: Type)
     return qsub(type, q_mutref);
 }
 
-pub fn add_refs_from(src: Type, dest: Type)
+pub fn add_refs(from: Type, mut to: Type)
 {
-    return qadd(dest, src.quals & (q_ref | q_mutref));
+    to.quals |= from.quals & (q_ref | q_mutref);
+    to.lifetime = type_inter(from.lifetime, to.lifetime);
+    return to;
 }
 
 
@@ -205,7 +250,9 @@ pub fn type_tryInter(a: Type, b: Type)
     return Type(
         a.canon,
         a.quals & b.quals,
-        a.modid);
+        a.modid,
+        type_inter(a.lifetime, b.lifetime),
+        type_inter(a.effects,  b.effects ));
 }
 
 

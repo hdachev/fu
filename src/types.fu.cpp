@@ -3,7 +3,38 @@
 #include "../lib/vec.h"
 #include "../lib/vec/find.h"
 
+struct s_Effects;
+struct s_Lifetime;
 struct s_Type;
+s_Effects type_inter(const s_Effects&, const s_Effects&);
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
@@ -11,12 +42,16 @@ struct s_Type
     fu_STR canon;
     int quals;
     int modid;
+    s_Lifetime lifetime;
+    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || canon
             || quals
             || modid
+            || lifetime
+            || effects
         ;
     }
 };
@@ -72,6 +107,56 @@ inline const int q_floating_pt = (1 << 8);
 inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<9> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "floating_point"_fu } };
                                 #endif
 
+                                #ifndef DEF_e_exit
+                                #define DEF_e_exit
+inline const int e_exit = (1 << 0);
+                                #endif
+
+                                #ifndef DEF_e_crash
+                                #define DEF_e_crash
+inline const int e_crash = (1 << 1);
+                                #endif
+
+                                #ifndef DEF_e_div0
+                                #define DEF_e_div0
+inline const int e_div0 = (1 << 2);
+                                #endif
+
+                                #ifndef DEF_e_segv
+                                #define DEF_e_segv
+inline const int e_segv = (1 << 3);
+                                #endif
+
+                                #ifndef DEF_e_throw
+                                #define DEF_e_throw
+inline const int e_throw = (1 << 4);
+                                #endif
+
+                                #ifndef DEF_e_io
+                                #define DEF_e_io
+inline const int e_io = (1 << 8);
+                                #endif
+
+                                #ifndef DEF_e_malloc
+                                #define DEF_e_malloc
+inline const int e_malloc = (1 << 12);
+                                #endif
+
+                                #ifndef DEF_e_memcpy
+                                #define DEF_e_memcpy
+inline const int e_memcpy = (1 << 13);
+                                #endif
+
+const s_Lifetime& type_inter(const s_Lifetime& a, const s_Lifetime& b)
+{
+    return ((a.raw > b.raw) ? a : b);
+}
+
+s_Effects type_inter(const s_Effects& a, const s_Effects& b)
+{
+    return s_Effects { (a.raw | b.raw) };
+}
+
 bool operator==(const s_Type& a, const s_Type& b)
 {
     return ((a.modid == b.modid) && (a.canon == b.canon) && (a.quals == b.quals));
@@ -114,77 +199,77 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0 };
+inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0 };
+inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0 };
+inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0 };
+inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0 };
+inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0 };
+inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0 };
+inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0 };
+inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0 };
+inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0 };
+inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_template
                                 #define DEF_t_template
-inline const s_Type t_template = s_Type { "template"_fu, 0, 0 };
+inline const s_Type t_template = s_Type { "template"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0 };
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
@@ -198,14 +283,9 @@ bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
     return isAssignable(host, guest);
 }
 
-s_Type qadd(const s_Type& type, const int q)
-{
-    return s_Type { fu_STR(type.canon), (type.canon ? (type.quals | q) : 0), int(type.modid) };
-}
-
 s_Type qsub(const s_Type& type, const int q)
 {
-    return s_Type { fu_STR(type.canon), (type.quals & ~q), int(type.modid) };
+    return s_Type { fu_STR(type.canon), (type.quals & ~q), int(type.modid), s_Lifetime{}, s_Effects{} };
 }
 
 bool qhas(const s_Type& type, const int q)
@@ -216,19 +296,33 @@ bool qhas(const s_Type& type, const int q)
 s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
-        return s_Type { fu_STR{}, int{}, int{} };
+        return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
 
     return qsub(type, q);
 }
 
-s_Type add_ref(const s_Type& type)
+s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 {
-    return qadd(type, q_ref);
+    if (!(type.quals & q_ref))
+    {
+        s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
+        t.quals |= q_ref;
+        ([&](s_Lifetime& _) -> s_Lifetime& { if (!_) _ = lifetime; return _; } (t.lifetime));
+        return t;
+    };
+    return type;
 }
 
-s_Type add_mutref(const s_Type& type)
+s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
 {
-    return qadd(type, (q_ref | q_mutref));
+    if (!(type.quals & q_mutref))
+    {
+        s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
+        t.quals |= (q_mutref | q_ref);
+        ([&](s_Lifetime& _) -> s_Lifetime& { if (!_) _ = lifetime; return _; } (t.lifetime));
+        return t;
+    };
+    return type;
 }
 
 s_Type tryClear_mutref(const s_Type& type)
@@ -252,9 +346,11 @@ s_Type clear_mutref(const s_Type& type)
     return qsub(type, q_mutref);
 }
 
-s_Type add_refs_from(const s_Type& src, const s_Type& dest)
+s_Type& add_refs(const s_Type& from, s_Type&& to)
 {
-    return qadd(dest, (src.quals & (q_ref | q_mutref)));
+    to.quals |= (from.quals & (q_ref | q_mutref));
+    to.lifetime = type_inter(from.lifetime, to.lifetime);
+    return to;
 }
 
 fu_STR serializeType(const s_Type& type)
@@ -276,7 +372,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if ((a.canon != b.canon))
-        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{}, int{} }));
+        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }));
 
-    return s_Type { fu_STR(a.canon), (a.quals & b.quals), int(a.modid) };
+    return s_Type { fu_STR(a.canon), (a.quals & b.quals), int(a.modid), s_Lifetime(type_inter(a.lifetime, b.lifetime)), type_inter(a.effects, b.effects) };
 }

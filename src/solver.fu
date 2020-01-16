@@ -200,7 +200,8 @@ pub fn createArray(item: Type): Type
         :fields,
         :flags));
 
-    return Type(canon, copyOrMove(flags, fields), MODID);
+    return Type(canon, copyOrMove(flags, fields), MODID,
+        :item.lifetime);
 }
 
 pub fn type_isString(type: Type): bool
@@ -220,9 +221,10 @@ pub fn tryClear_array(type: Type): Type
 
     let def = lookupType(type);
 
-    return def.kind == 'array'
-        && def.fields[0].type
-        || assert();
+    //
+    mut t = def.kind == 'array' && def.fields[0].type || assert();
+    t.lifetime = type.lifetime;
+    return t;
 }
 
 
@@ -251,7 +253,9 @@ pub fn createMap(key: Type, value: Type): Type
         :flags,
     ));
 
-    return Type(canon, copyOrMove(flags, fields), MODID);
+    return Type(canon, copyOrMove(flags, fields), MODID,
+        lifetime: type_inter( key.lifetime,
+                            value.lifetime ));
 }
 
 pub struct MapFields
@@ -268,9 +272,15 @@ pub fn tryClear_map(type: Type): MapFields
     let def = lookupType(type);
     def.kind == 'map' || assert();
 
-    return MapFields(
+    //
+    mut mf = MapFields(
         key:   def.fields[0].type || assert(),
         value: def.fields[1].type || assert());
+
+    mf.key.lifetime     = type.lifetime;
+    mf.value.lifetime   = type.lifetime;
+
+    return mf;
 }
 
 
@@ -414,6 +424,29 @@ pub fn Scope_add(
 }
 
 
+//
+
+fn Lifetime_invalid(): Lifetime
+    Lifetime( raw: 0x7fffffff );
+
+fn Lifetime_static(): Lifetime
+    Lifetime( raw: 1 );
+
+fn Lifetime_fromArgIndex(argIdx: i32): Lifetime
+    Lifetime( raw: -1 - argIdx );
+
+fn Lifetime_fromCallArgs(
+    lifetime: Lifetime, args: SolvedNode[]): Lifetime
+{
+    if (lifetime.raw >= 0)
+        return lifetime;
+
+    let argIdx  = -1 - lifetime.raw;
+    let arg     = args[argIdx];
+
+    return arg.type.lifetime;
+}
+
 
 
 ///////////////////////////////////////
@@ -510,6 +543,9 @@ fn solve(
 
 
     //
+
+    fn Lifetime_next(): Lifetime
+        Lifetime( raw: _scope.items.len + 1 );
 
     fn Binding(id: string, type: Type, kind = 'var', constant: SolvedNode = [])
     {
@@ -1042,7 +1078,7 @@ fn solve(
         if (k == 'label')       return solveComma(node);
         if (k == 'comma')       return solveComma(node);
 
-        if (k == 'let')         return solveLet(node);
+        if (k == 'let')         return solveLet(node, Lifetime_next());
         if (k == 'call')        return solveCall(node);
         if (k == 'arrlit')      return solveArrayLiteral(node, type);
 
@@ -1132,7 +1168,7 @@ fn solve(
     {
         if (!node.value)
             return createDefaultInit(
-                add_ref(t_string));
+                add_ref(t_string, Lifetime_static));
 
         return solved(node, t_string);
     }
@@ -1215,6 +1251,8 @@ fn solve(
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == 'let' || fail();
 
+                let lifetime = Lifetime_fromArgIndex(i);
+
                 if (spec)
                 {
                     // Specialize with actuals.
@@ -1226,11 +1264,11 @@ fn solve(
                     if !(type.quals & q_ref)
                         mut_arg.flags |= F_MUT;
 
-                    outItems[i] = solveLet(mut_arg);
+                    outItems[i] = solveLet(mut_arg, :lifetime);
                 }
                 else
                 {
-                    outItems[i] = solveLet(n_arg);
+                    outItems[i] = solveLet(n_arg, :lifetime);
                 }
             }
 
@@ -1563,37 +1601,34 @@ fn solve(
 
     //
 
-    fn solveBinding(node: Node): SolvedNode
+    fn solveBinding(node: Node, lifetime: Lifetime): SolvedNode
     {
-        let annot       = node.items[LET_TYPE];
-        let init        = node.items[LET_INIT];
+        let n_annot     = node.items[LET_TYPE];
+        let n_init      = node.items[LET_INIT];
 
-        let s_annot     = annot && evalTypeAnnot(annot);
-        let t_annot     = s_annot.type;
+        mut annot       = n_annot && evalTypeAnnot(n_annot);
+        mut init        = n_init && solveNode(n_init, annot.type);
 
-        mut s_init      = init && solveNode(init, t_annot);
-        let t_init      = s_init.type;
-
-        t_annot || t_init || fail(
+        annot.type || init.type || fail(
             'Variable declarations without type annotations must be initialized.');
 
-        let t_let       = t_annot
+        let t_let       = annot.type
                             ? node.flags & F_ARG && !(node.flags & F_MUT)
-                              ? add_ref(t_annot)
-                              : t_annot
-                        : t_init.quals & q_mutref || node.flags & F_MUT
-                            ? clear_refs(t_init)
-                            : t_init;
+                              ? add_ref(annot.type, lifetime)
+                              : annot.type
+                        : init.type.quals & q_mutref || node.flags & F_MUT
+                            ? clear_refs(init.type)
+                            : init.type;
 
-        if (t_annot && t_init)
-            isAssignable(t_annot, t_init) || fail(
+        if (annot.type && init.type)
+            isAssignable(annot.type, init.type) || fail(
                 'Type annotation does not match init expression.');
 
-        if (s_init)
-            maybeCopyOrMove(s_init, t_let);
+        if (init)
+            maybeCopyOrMove(init, t_let);
 
         //
-        mut out = solved(node, t_let, [s_annot || s_init, s_init]);
+        mut out = solved(node, t_let, [annot || init, init]);
 
         if !(_current_fn || node.flags & F_FIELD)
         {
@@ -1606,9 +1641,9 @@ fn solve(
         return out;
     }
 
-    fn solveLet(node: Node): SolvedNode
+    fn solveLet(node: Node, lifetime: Lifetime): SolvedNode
     {
-        let out         = solveBinding(node);
+        let out         = solveBinding(node, lifetime);
         let global      = out.kind == 'global';
 
         let overload    = Binding(
@@ -1617,8 +1652,8 @@ fn solve(
             constant:       global && out,
 
             node.flags & F_MUT
-                ? add_mutref(out.type)
-                : add_ref(out.type));
+                ? add_mutref(out.type, lifetime)
+                : add_ref(out.type, lifetime));
 
         if (out.flags & F_USING)
             scope_using(overload);
@@ -1628,7 +1663,7 @@ fn solve(
 
     fn solveField(structType: Type, node: Node): SolvedNode
     {
-        let out = solveBinding(node);
+        let out = solveBinding(node, Lifetime_fromArgIndex(0));
         let overload = Field(
             id: out.value,
             :structType, fieldType: out.type);
@@ -1698,10 +1733,10 @@ fn solve(
                     t || fail();
 
                     if (node.value == '&')
-                        return solved(node, add_ref(t));
+                        return solved(node, add_ref(t, Lifetime_invalid));
 
                     if (node.value == '&mut')
-                        return solved(node, add_mutref(t));
+                        return solved(node, add_mutref(t, Lifetime_invalid));
 
                     if (node.value == '[]')
                         return solved(node, createArray(t));
@@ -1958,13 +1993,9 @@ fn solve(
 
     fn solveArrayLiteral(node: Node, type: Type): SolvedNode
     {
-        let items = solveNodes(node.items);
-
-        mut itemType = type
-            ? tryClear_array(type)
-            : Type;
-
-        mut startAt = 0;
+        let items       = solveNodes(node.items);
+        mut itemType    = type && tryClear_array(type);
+        mut startAt     = 0;
 
         if (!itemType && items.len)
         {
@@ -2270,7 +2301,7 @@ fn solve(
             let head = args.len == 1 && args[0] || fail();
             let headType = head.type || fail();
 
-            type = add_refs_from(headType, type);
+            type = add_refs(from: headType, to: type);
         }
 
         // Tag copies and moves.
@@ -2281,6 +2312,9 @@ fn solve(
                 maybeCopyOrMove(
                     args[i] || fail(), arg_t[i],
                     isArgument: true);
+
+            type.lifetime = Lifetime_fromCallArgs(
+                type.lifetime, args);
         }
 
         //
