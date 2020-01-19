@@ -1413,7 +1413,9 @@ fn solve(
             let argNode = items[i] || fail();
             argNode.kind == 'let'  || fail();
 
-            mut inType = args.len > i ? args[i].type : Type();
+            mut inType = args.len > i && args[i].type;
+                inType.lifetime = Lifetime_fromArgIndex(i);
+
             if (inType)
             {
                 let argName = argNode.value || fail();

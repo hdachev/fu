@@ -1606,7 +1606,8 @@ struct sf_solve
         {
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
             ((argNode.kind == "let"_fu) || fail(fu_STR{}));
-            s_Type inType = ((args.size() > i) ? s_Type(args[i].type) : s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} });
+            s_Type inType { ([&]() -> const s_Type& { if ((args.size() > i)) return args[i].type; else return fu::Default<s_Type>::value; }()) };
+            inType.lifetime = Lifetime_fromArgIndex(i);
             if (inType)
             {
                 const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));

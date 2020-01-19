@@ -135,12 +135,15 @@ pub fn isAssignableAsArgument(
 
 //
 
-pub fn qsub(type: Type, q: i32)
+pub fn qsub(type: Type, q: i32): Type
 {
-    return Type(type.canon, type.quals &~ q, type.modid);
+    mut t = type;
+        t.quals &= ~q;
+
+    return t;
 }
 
-pub fn qhas(type: Type, q: i32)
+pub fn qhas(type: Type, q: i32): bool
 {
     return type.quals & q == q;
 }
