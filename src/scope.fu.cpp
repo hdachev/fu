@@ -1,10 +1,14 @@
+#include "../lib/io.h"
 #include "../lib/map.h"
+#include "../lib/never.h"
 #include "../lib/str.h"
 #include "../lib/vec.h"
+#include "../lib/vec/find.h"
 
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
+struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -25,11 +29,10 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
-s_LexerOutput lex(const fu_STR&, const fu_STR&);
-s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
-s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
-s_Module& getModule(const fu_STR&, s_TEMP_Context&);
-void setModule(const s_Module&, s_TEMP_Context&);
+int copyOrMove(int, const fu_VEC<s_StructField>&);
+bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+fu_STR serializeType(const s_Type&);
+const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -462,24 +465,259 @@ struct s_TEMP_Context
 };
                                 #endif
 
-                                #ifndef DEF_prelude_src
-                                #define DEF_prelude_src
-inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native(): never never;\nfn __native(id: string): never never;\nfn __native(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native;\nfn CLONE (a: &    $T): $T __native;\n\nfn print(a: $A): void __native;\nfn print(a: $A, b: $B): void __native;\nfn print(a: $A, b: $B, c: $C): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native;\n    case ($T -> @arithmetic): $T __native;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native;\n    case ($T -> @arithmetic): $T __native;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\n\n\n// Logic.\n\nfn true (): bool __native;\nfn false(): bool __native;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native;\nfn ||=(a: &mut $T, b: $T): &mut $T __native;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native;\nfn find(a: $T[], b: $T): i32 __native;\nfn has (a: $T[], b: $T): bool __native;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native;\n    case ($a -> &    $T[]): &    $T __native;\n\nfn    push(a: &mut $T[], b: $T): void __native;\nfn unshift(a: &mut $T[], b: $T): void __native;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native;\n\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native;\nfn  slice(a: $T[], i0: i32): $T[] __native;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native;\nfn    pop(a: &mut $T[]): void __native;\n\nfn  clear(a: &mut $T[]): void __native;\nfn resize(a: &mut $T[], len: i32): void __native;\nfn shrink(a: &mut $T[], len: i32): void __native;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native;\nfn sort(a: &mut $T[]): void __native;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native;\nfn  [](a: string, i: i32): string __native;\n\nfn ==(a: string, b: string): bool __native;\nfn !=(a: string, b: string): bool __native;\nfn  >(a: string, b: string): bool __native;\nfn  <(a: string, b: string): bool __native;\nfn >=(a: string, b: string): bool __native;\nfn <=(a: string, b: string): bool __native;\n\nfn   find(a: string, b: string): i32 __native;\nfn    has(a: string, b: string): bool __native;\nfn starts(a: string, with: string): bool __native;\nfn   ends(a: string, with: string): bool __native;\n\nfn slice (a: string, i0: i32, i1: i32): string __native;\nfn slice (a: string, i0: i32): string __native;\n\nfn substr(a: string, i0: i32, i1: i32): string __native;\nfn char  (a: string, i0: i32): i32 __native;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native;\nfn    join(a: string[], sep: string): string __native;\nfn replace(in: string, all: string, with: string): string __native;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native;\n    case ($a -> &    Map($K, $V)): &    $V __native;\n\nfn keys  (a: Map($K, $V)): $K[] __native;\nfn values(a: Map($K, $V)): $V[] __native;\nfn has   (a: Map($K, $V), b: $K): bool __native;\nfn count (a: Map($K, $V)): i32 __native;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native;\nfn assert(): never __native;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native;\nfn +(a: string, b: f64): string __native;\nfn +(a: i32, b: string): string __native;\nfn +(a: f64, b: string): string __native;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native;\nfn now_utc(): f64 __native;\n\nfn env_get(key: string): string __native;\n\nfn file_size(path: string): i32 __native;\nfn file_read(path: string): string __native;\nfn file_write(path: string, body: string): i32 __native;\n\nfn fs_cwd(): string __native;\nfn fs_mkdir_p(path: string): i32 __native;\nfn fs_mkdir_p(path: string, mode: i32): i32 __native;\n\nfn shell_exec(cmd: string): i32 __native;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native;\n\nfn hash_tea(str: string): string __native;\n\nfn i32(v: f64): i32 __native;\n\nfn exit(code: i32): never __native;\n\n"_fu;
+                                #ifndef DEF_s_MapFields
+                                #define DEF_s_MapFields
+struct s_MapFields
+{
+    s_Type key;
+    s_Type value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || key
+            || value
+        ;
+    }
+};
                                 #endif
 
-s_TEMP_Context solvePrelude()
+int MODID(const s_Module& module)
 {
-    s_TEMP_Context ctx {};
-    s_Module module { getModule(fu_STR{}, ctx) };
-    s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
-    s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
-    s_SolverOutput solved = solve(root, ctx, module);
-    module.out.solve = solved;
-    setModule(module, ctx);
-    return ctx;
+    return module.modid;
 }
 
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
+s_Token _token(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+{
+    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+}
+
+fu_STR _fname(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+{
+    return ctx.modules[idx.modid].fname;
+}
+
+fu_STR& getFile(const fu_STR& path, s_TEMP_Context& ctx)
+{
+    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
+}
+
+s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
+{
+    for (int i = 0; (i < ctx.modules.size()); i++)
+    {
+        if ((ctx.modules.mutref(i).fname == fname))
+            return ctx.modules.mutref(i);
+
+    };
+    const int i = ctx.modules.size();
+    s_Module module = s_Module { int(i), fu_STR{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
+    module.fname = fname;
+    ctx.modules.push(module);
+    return ctx.modules.mutref(i);
+}
+
+void setModule(const s_Module& module, s_TEMP_Context& ctx)
+{
+    s_Module& current = ctx.modules.mutref(module.modid);
+    ((current.fname == module.fname) || fu::fail("Assertion failed."));
+    current = module;
+}
+
+void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
+{
+    (module.out.types.upsert(canon) = def);
+}
+
+const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+{
+    if ((type.modid == module.modid))
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+}
+
+s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
+{
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail("Assertion failed."); }());
+}
+
+s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
+{
+    fu_STR canon = ("s_"_fu + id);
+    s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
+    registerType(canon, def, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module), s_Lifetime{}, s_Effects{} };
+}
+
+void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
+{
+    fu_STR canon = ("s_"_fu + id);
+    s_Struct& def = lookupType_mut(canon, module);
+    def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
+}
+
+                                #ifndef DEF_F_DESTRUCTOR
+                                #define DEF_F_DESTRUCTOR
+inline const int F_DESTRUCTOR = (1 << 31);
                                 #endif
+
+                                #ifndef DEF_q_copy
+                                #define DEF_q_copy
+inline const int q_copy = (1 << 2);
+                                #endif
+
+int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
+{
+    if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
+        return 0;
+
+    return q_copy;
+}
+
+bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
+{
+    for (int i = 0; (i < fields.size()); i++)
+    {
+        if (!(fields[i].type.quals & q_copy))
+            return true;
+
+    };
+    return false;
+}
+
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline const int q_trivial = (1 << 3);
+                                #endif
+
+bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
+{
+    for (int i = 0; (i < fields.size()); i++)
+    {
+        if (!(fields[i].type.quals & q_trivial))
+            return true;
+
+    };
+    return false;
+}
+
+s_Type createArray(const s_Type& item, s_Module& module)
+{
+    const int flags = 0;
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
+    fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
+    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(item.lifetime), s_Effects{} };
+}
+
+bool type_isString(const s_Type& type)
+{
+    return (type.canon == "string"_fu);
+}
+
+bool type_isArray(const s_Type& type)
+{
+    return fu::lmatch(type.canon, "Array("_fu);
+}
+
+s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+{
+    if (!type_isArray(type))
+        return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
+
+    const s_Struct& def = lookupType(type, module, ctx);
+    s_Type t { ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }()) };
+    t.lifetime = type.lifetime;
+    return t;
+}
+
+bool type_isMap(const s_Type& type)
+{
+    return fu::lmatch(type.canon, "Map("_fu);
+}
+
+s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
+{
+    const int flags = 0;
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
+    fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
+    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
+}
+
+s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+{
+    if (!type_isMap(type))
+        return s_MapFields { s_Type{}, s_Type{} };
+
+    const s_Struct& def = lookupType(type, module, ctx);
+    ((def.kind == "map"_fu) || fu::fail("Assertion failed."));
+    s_MapFields mf = s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())) };
+    mf.key.lifetime = type.lifetime;
+    mf.value.lifetime = type.lifetime;
+    return mf;
+}
+
+fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
+{
+    fu_VEC<s_Target> results {};
+    const fu_VEC<s_ScopeItem>& items = scope.items;
+    for (int i = 0; (i < items.size()); i++)
+    {
+        const s_ScopeItem& item = items[i];
+        if ((item.id == id))
+            results.unshift(item.target);
+
+    };
+    return results;
+}
+
+int Scope_push(s_Scope& scope)
+{
+    return scope.items.size();
+}
+
+void Scope_pop(s_Scope& scope, const int memo)
+{
+    scope.items.shrink(memo);
+}
+
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+{
+    const int modid = MODID(module);
+    s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(Q_template), s_SolvedNode(constant) };
+    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
+    scope.overloads.push(item);
+    return target;
+}
+
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
+{
+    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+}
+
+s_Lifetime Lifetime_invalid()
+{
+    return s_Lifetime { 0x7fffffff };
+}
+
+s_Lifetime Lifetime_static()
+{
+    return s_Lifetime { 1 };
+}
+
+s_Lifetime Lifetime_fromArgIndex(const int argIdx)
+{
+    return s_Lifetime { (-1 - argIdx) };
+}
+
+s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
+{
+    if ((lifetime.raw >= 0))
+        return lifetime;
+
+    const int argIdx = (-1 - lifetime.raw);
+    const s_SolvedNode& arg = args[argIdx];
+    return arg.type.lifetime;
+}

@@ -2,6 +2,7 @@
 #import 'lexer';
 #import 'parser';
 #import 'solver';
+#import 'scope';
 #import 'prelude';
 #import 'codegen';
 

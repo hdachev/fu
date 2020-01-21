@@ -1,6 +1,7 @@
 #import 'helpers';
 #import 'parser';
 #import 'types';
+#import 'scope';
 #import 'solver';
 
 let M_STMT              = 1 << 0;

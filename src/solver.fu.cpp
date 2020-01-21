@@ -1,5 +1,4 @@
 #include "../lib/default.h"
-#include "../lib/io.h"
 #include "../lib/map.h"
 #include "../lib/never.h"
 #include "../lib/str.h"
@@ -32,9 +31,25 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 bool hasIdentifierChars(const fu_STR&);
-int copyOrMove(int, const fu_VEC<s_StructField>&);
-bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Scope listGlobals(const s_Module&);
+s_Token _token(const s_TokenIdx&, const s_TEMP_Context&);
+fu_STR _fname(const s_TokenIdx&, const s_TEMP_Context&);
+s_Type initStruct(const fu_STR&, int, s_Module&);
+void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
+s_Type createArray(const s_Type&, s_Module&);
+s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
+s_Type createMap(const s_Type&, const s_Type&, s_Module&);
+s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_TEMP_Context&);
+int MODID(const s_Module&);
+fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
+int Scope_push(s_Scope&);
+void Scope_pop(s_Scope&, int);
+s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
+s_Lifetime Lifetime_invalid();
+s_Lifetime Lifetime_static();
+s_Lifetime Lifetime_fromArgIndex(int);
+s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
@@ -45,10 +60,47 @@ s_Type& add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
-const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
 bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_Node> items;
+    s_TokenIdx token;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -84,44 +136,6 @@ struct s_LexerOutput
         return false
             || fname
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_Node> items;
-    s_TokenIdx token;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
         ;
     }
 };
@@ -502,247 +516,6 @@ struct s_MapFields
 inline const bool WARN_ON_IMPLICIT_COPY = false;
                                 #endif
 
-int MODID(const s_Module& module)
-{
-    return module.modid;
-}
-
-s_Token _token(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
-{
-    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
-}
-
-fu_STR _fname(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
-{
-    return ctx.modules[idx.modid].fname;
-}
-
-fu_STR& getFile(const fu_STR& path, s_TEMP_Context& ctx)
-{
-    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
-}
-
-s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
-{
-    for (int i = 0; (i < ctx.modules.size()); i++)
-    {
-        if ((ctx.modules.mutref(i).fname == fname))
-            return ctx.modules.mutref(i);
-
-    };
-    const int i = ctx.modules.size();
-    s_Module module = s_Module { int(i), fu_STR{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
-    module.fname = fname;
-    ctx.modules.push(module);
-    return ctx.modules.mutref(i);
-}
-
-void setModule(const s_Module& module, s_TEMP_Context& ctx)
-{
-    s_Module& current = ctx.modules.mutref(module.modid);
-    ((current.fname == module.fname) || fu::fail("Assertion failed."));
-    current = module;
-}
-
-void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
-{
-    (module.out.types.upsert(canon) = def);
-}
-
-const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
-{
-    if ((type.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
-
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
-}
-
-s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
-{
-    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail("Assertion failed."); }());
-}
-
-s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
-{
-    fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
-    registerType(canon, def, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module), s_Lifetime{}, s_Effects{} };
-}
-
-void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
-{
-    fu_STR canon = ("s_"_fu + id);
-    s_Struct& def = lookupType_mut(canon, module);
-    def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
-}
-
-                                #ifndef DEF_F_DESTRUCTOR
-                                #define DEF_F_DESTRUCTOR
-inline const int F_DESTRUCTOR = (1 << 31);
-                                #endif
-
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
-                                #endif
-
-int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
-{
-    if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
-        return 0;
-
-    return q_copy;
-}
-
-bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
-{
-    for (int i = 0; (i < fields.size()); i++)
-    {
-        if (!(fields[i].type.quals & q_copy))
-            return true;
-
-    };
-    return false;
-}
-
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
-                                #endif
-
-bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
-{
-    for (int i = 0; (i < fields.size()); i++)
-    {
-        if (!(fields[i].type.quals & q_trivial))
-            return true;
-
-    };
-    return false;
-}
-
-s_Type createArray(const s_Type& item, s_Module& module)
-{
-    const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
-    fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
-    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(item.lifetime), s_Effects{} };
-}
-
-bool type_isString(const s_Type& type)
-{
-    return (type.canon == "string"_fu);
-}
-
-bool type_isArray(const s_Type& type)
-{
-    return fu::lmatch(type.canon, "Array("_fu);
-}
-
-s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
-{
-    if (!type_isArray(type))
-        return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
-
-    const s_Struct& def = lookupType(type, module, ctx);
-    s_Type t { ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }()) };
-    t.lifetime = type.lifetime;
-    return t;
-}
-
-bool type_isMap(const s_Type& type)
-{
-    return fu::lmatch(type.canon, "Map("_fu);
-}
-
-s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
-{
-    const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
-    fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
-    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
-}
-
-s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
-{
-    if (!type_isMap(type))
-        return s_MapFields { s_Type{}, s_Type{} };
-
-    const s_Struct& def = lookupType(type, module, ctx);
-    ((def.kind == "map"_fu) || fu::fail("Assertion failed."));
-    s_MapFields mf = s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())) };
-    mf.key.lifetime = type.lifetime;
-    mf.value.lifetime = type.lifetime;
-    return mf;
-}
-
-fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
-{
-    fu_VEC<s_Target> results {};
-    const fu_VEC<s_ScopeItem>& items = scope.items;
-    for (int i = 0; (i < items.size()); i++)
-    {
-        const s_ScopeItem& item = items[i];
-        if ((item.id == id))
-            results.unshift(item.target);
-
-    };
-    return results;
-}
-
-int Scope_push(s_Scope& scope)
-{
-    return scope.items.size();
-}
-
-void Scope_pop(s_Scope& scope, const int memo)
-{
-    scope.items.shrink(memo);
-}
-
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
-{
-    const int modid = MODID(module);
-    s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(Q_template), s_SolvedNode(constant) };
-    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
-    scope.overloads.push(item);
-    return target;
-}
-
-s_Lifetime Lifetime_invalid()
-{
-    return s_Lifetime { 0x7fffffff };
-}
-
-s_Lifetime Lifetime_static()
-{
-    return s_Lifetime { 1 };
-}
-
-s_Lifetime Lifetime_fromArgIndex(const int argIdx)
-{
-    return s_Lifetime { (-1 - argIdx) };
-}
-
-s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
-{
-    if ((lifetime.raw >= 0))
-        return lifetime;
-
-    const int argIdx = (-1 - lifetime.raw);
-    const s_SolvedNode& arg = args[argIdx];
-    return arg.type.lifetime;
-}
-
-s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
-{
-    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
-}
-
                                 #ifndef DEF_FN_RET_BACK
                                 #define DEF_FN_RET_BACK
 inline const int FN_RET_BACK = -2;
@@ -781,6 +554,16 @@ inline const int F_NAMED_ARGS = (1 << 25);
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
 inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_q_copy
+                                #define DEF_q_copy
+inline const int q_copy = (1 << 2);
+                                #endif
+
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline const int q_trivial = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_Trivial

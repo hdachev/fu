@@ -1,6 +1,7 @@
 #import 'lexer';
 #import 'parser';
 #import 'solver';
+#import 'scope';
 
 let prelude_src = `
 
