@@ -2,6 +2,7 @@
 #include "../lib/str.h"
 #include "../lib/vec.h"
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -19,7 +20,6 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -27,9 +27,9 @@ struct s_TokenIdx;
 struct s_Type;
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
-s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
-s_Module& getModule(const fu_STR&, s_TEMP_Context&);
-void setModule(const s_Module&, s_TEMP_Context&);
+s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
+s_Module& getModule(const fu_STR&, s_Context&);
+void setModule(const s_Module&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -446,9 +446,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;
@@ -467,9 +467,9 @@ struct s_TEMP_Context
 inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn __native(): never never;\nfn __native(id: string): never never;\nfn __native(id: string, opt: string): never never;\n\nfn STEAL (a: &mut $T): $T __native;\nfn CLONE (a: &    $T): $T __native;\n\nfn print(a: $A): void __native;\nfn print(a: $A, b: $B): void __native;\nfn print(a: $A, b: $B, c: $C): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;\n\n\n// Arithmetics.\n\nfn +(a: $T)                 case ($T -> @arithmetic):   $T __native;\nfn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\n\nfn -(a: $T)                 case ($T -> @arithmetic):   $T __native;\nfn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\nfn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;\n\nfn /(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native;\n    case ($T -> @arithmetic): $T __native;\n\nfn %(a: $T, b: $T)\n    // case ($T -> @floating_point):                       $T __native;\n    // case ($T -> @integral && $b -> @non_zero):          $T __native;\n    case ($T -> @arithmetic): $T __native;\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\n\nfn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\nfn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\n\n\n// Logic.\n\nfn true (): bool __native;\nfn false(): bool __native;\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native;\nfn ||=(a: &mut $T, b: $T): &mut $T __native;\n\nfn SWAP(a: &mut $T, b: &mut $T): void __native;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native;\nfn find(a: $T[], b: $T): i32 __native;\nfn has (a: $T[], b: $T): bool __native;\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native;\n    case ($a -> &    $T[]): &    $T __native;\n\nfn    push(a: &mut $T[], b: $T): void __native;\nfn unshift(a: &mut $T[], b: $T): void __native;\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native;\n\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native;\nfn  slice(a: $T[], i0: i32): $T[] __native;\n\nfn splice(a: &mut $T[], i: i32, N: i32): void __native;\nfn    pop(a: &mut $T[]): void __native;\n\nfn  clear(a: &mut $T[]): void __native;\nfn resize(a: &mut $T[], len: i32): void __native;\nfn shrink(a: &mut $T[], len: i32): void __native;\n\nfn move(a: &mut $T[], from: i32, to: i32): void __native;\nfn sort(a: &mut $T[]): void __native;\n\n\n// Concats.\n//\n//  flatten: str/arr a+b+c chains into a n-ary binop -\n//  adjoin : str/arr chain adjacent += for the same left-arg.\n//\n//      Currently just testing notations,\n//        but can we make this more generic?\n//          Will it be useful? Array ops are really\n//            the only thing we care about optimizing.\n\nfn +(a: $T[], b: $T[]): $T[] __native( 'arr+', 'flatjoin' );\nfn +(a: $T[], b: $T  ): $T[] __native( 'arr+', 'flatjoin' );\nfn +(a: $T  , b: $T[]): $T[] __native( 'arr+', 'flatjoin' );\n\nfn +=(a: &mut string, b: string): &mut string __native( 'arr+', 'flatjoin' );\nfn + (a:      string, b: string):      string __native( 'arr+', 'flatjoin' );\n\n\n// Strings.\n\nfn len(a: string): i32 __native;\nfn  [](a: string, i: i32): string __native;\n\nfn ==(a: string, b: string): bool __native;\nfn !=(a: string, b: string): bool __native;\nfn  >(a: string, b: string): bool __native;\nfn  <(a: string, b: string): bool __native;\nfn >=(a: string, b: string): bool __native;\nfn <=(a: string, b: string): bool __native;\n\nfn   find(a: string, b: string): i32 __native;\nfn    has(a: string, b: string): bool __native;\nfn starts(a: string, with: string): bool __native;\nfn   ends(a: string, with: string): bool __native;\n\nfn slice (a: string, i0: i32, i1: i32): string __native;\nfn slice (a: string, i0: i32): string __native;\n\nfn substr(a: string, i0: i32, i1: i32): string __native;\nfn char  (a: string, i0: i32): i32 __native;\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native;\nfn    join(a: string[], sep: string): string __native;\nfn replace(in: string, all: string, with: string): string __native;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native;\n    case ($a -> &    Map($K, $V)): &    $V __native;\n\nfn keys  (a: Map($K, $V)): $K[] __native;\nfn values(a: Map($K, $V)): $V[] __native;\nfn has   (a: Map($K, $V), b: $K): bool __native;\nfn count (a: Map($K, $V)): i32 __native;\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native;\nfn assert(): never __native;\n\n\n// Butt plugs.\n\n// TODO we should go for an any $B -> call stringify(b) macro.\nfn +(a: string, b: i32): string __native;\nfn +(a: string, b: f64): string __native;\nfn +(a: i32, b: string): string __native;\nfn +(a: f64, b: string): string __native;\n\n// TODO fix impure io.\nfn now_hr(): f64 __native;\nfn now_utc(): f64 __native;\n\nfn env_get(key: string): string __native;\n\nfn file_size(path: string): i32 __native;\nfn file_read(path: string): string __native;\nfn file_write(path: string, body: string): i32 __native;\n\nfn fs_cwd(): string __native;\nfn fs_mkdir_p(path: string): i32 __native;\nfn fs_mkdir_p(path: string, mode: i32): i32 __native;\n\nfn shell_exec(cmd: string): i32 __native;\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native;\n\nfn hash_tea(str: string): string __native;\n\nfn i32(v: f64): i32 __native;\n\nfn exit(code: i32): never __native;\n\n"_fu;
                                 #endif
 
-s_TEMP_Context solvePrelude()
+s_Context solvePrelude()
 {
-    s_TEMP_Context ctx {};
+    s_Context ctx {};
     s_Module module { getModule(fu_STR{}, ctx) };
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
@@ -481,5 +481,5 @@ s_TEMP_Context solvePrelude()
 
                                 #ifndef DEF_CTX_PRELUDE
                                 #define DEF_CTX_PRELUDE
-inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
+inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif

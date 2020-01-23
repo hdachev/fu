@@ -7,6 +7,7 @@
 #include "../lib/vec/replace.h"
 #include "../lib/vec/sort.h"
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -24,7 +25,6 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -32,9 +32,9 @@ struct s_TokenIdx;
 struct s_Type;
 fu_STR last(const fu_STR&);
 bool hasIdentifierChars(const fu_STR&);
-const s_Struct& lookupType(const s_Type&, const s_Module&, const s_TEMP_Context&);
+const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
 bool type_isArray(const s_Type&);
-s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
+s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 bool type_isMap(const s_Type&);
 s_Type clear_refs(const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
@@ -454,9 +454,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;
@@ -647,7 +647,7 @@ struct sf_cpp_codegen
     const s_SolvedNode& root;
     const s_Scope& scope;
     const s_Module& module;
-    const s_TEMP_Context& ctx;
+    const s_Context& ctx;
     fu_COW_MAP<fu_STR, fu_STR> _libs {};
     fu_COW_MAP<fu_STR, fu_STR> _tfwd {};
     fu_COW_MAP<fu_STR, fu_STR> _ffwd {};
@@ -658,7 +658,7 @@ struct sf_cpp_codegen
     int _clsrN {};
     int _faasN {};
     int _hasMain {};
-    s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
+    s_Overload GET(const s_Target& target, const s_Module& module, const s_Context& ctx)
     {
         ((target.index > 0) || fu::fail("Assertion failed."));
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
@@ -1924,7 +1924,7 @@ struct sf_cpp_codegen
 
 } // namespace
 
-fu_STR cpp_codegen(const s_SolvedNode& root, const s_Scope& scope, const s_Module& module, const s_TEMP_Context& ctx)
+fu_STR cpp_codegen(const s_SolvedNode& root, const s_Scope& scope, const s_Module& module, const s_Context& ctx)
 {
     return (sf_cpp_codegen { root, scope, module, ctx }).cpp_codegen_EVAL();
 }

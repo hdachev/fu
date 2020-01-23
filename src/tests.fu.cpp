@@ -4,6 +4,7 @@
 #include "../lib/vec/find.h"
 #include "../lib/vec/replace.h"
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -21,13 +22,12 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
-s_TEMP_Context ZERO(const fu_STR&);
+s_Context ZERO(const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
                                 #ifndef DEF_s_Token
@@ -446,9 +446,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;

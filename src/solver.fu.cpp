@@ -6,6 +6,7 @@
 #include "../lib/vec/find.h"
 #include <utility>
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -24,7 +25,6 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -32,18 +32,18 @@ struct s_TokenIdx;
 struct s_Type;
 bool hasIdentifierChars(const fu_STR&);
 s_Scope listGlobals(const s_Module&);
-s_Token _token(const s_TokenIdx&, const s_TEMP_Context&);
-fu_STR _fname(const s_TokenIdx&, const s_TEMP_Context&);
+s_Token _token(const s_TokenIdx&, const s_Context&);
+fu_STR _fname(const s_TokenIdx&, const s_Context&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
 void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
 s_Type createArray(const s_Type&, s_Module&);
-s_Type tryClear_array(const s_Type&, const s_Module&, const s_TEMP_Context&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
+s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 s_Type createMap(const s_Type&, const s_Type&, s_Module&);
-s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_TEMP_Context&);
-int MODID(const s_Module&);
+s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 int Scope_push(s_Scope&);
+int MODID(const s_Module&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_invalid();
@@ -479,9 +479,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;
@@ -696,7 +696,7 @@ namespace {
 struct sf_solve
 {
     const s_Node& parse;
-    const s_TEMP_Context& ctx;
+    const s_Context& ctx;
     s_Module& module;
     s_Scope _scope {};
     s_TokenIdx _here {};
@@ -714,7 +714,7 @@ struct sf_solve
 
         };
     };
-    s_Overload GET(const s_Target& target, const s_Module& module, const s_TEMP_Context& ctx)
+    s_Overload GET(const s_Target& target, const s_Module& module, const s_Context& ctx)
     {
         ((target.index > 0) || fu::fail("Assertion failed."));
         if ((target.modid == module.modid))
@@ -2072,7 +2072,7 @@ struct sf_solve
 
 } // namespace
 
-s_SolverOutput solve(const s_Node& parse, const s_TEMP_Context& ctx, s_Module& module)
+s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module)
 {
     return (sf_solve { parse, ctx, module }).solve_EVAL();
 }

@@ -49,28 +49,28 @@ pub fn MODID(implicit module: Module): i32
 //    so everyone can read from immut shared concurrently,
 //     and write into their own without having to sync.
 
-pub struct TEMP_Context
+pub struct Context
 {
     modules: Module[];
     files: Map(string, string);
 };
 
-pub fn _token(implicit ctx: TEMP_Context, idx: TokenIdx): Token
+pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 
-pub fn _fname(implicit ctx: TEMP_Context, idx: TokenIdx): string
+pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
 
 pub fn getFile(
-    implicit ctx: &mut TEMP_Context,
+    implicit ctx: &mut Context,
     path: string)
 {
     return ctx.files[path] ||= file_read(path);
 }
 
 pub fn getModule(
-    implicit ctx: &mut TEMP_Context,
-    fname: string): &mut Module
+    implicit ctx: &mut Context,
+    fname: string)
 {
     for (mut i = 0; i < ctx.modules.len; i++)
         if (ctx.modules[i].fname == fname)
@@ -85,7 +85,7 @@ pub fn getModule(
 }
 
 pub fn setModule(
-    implicit ctx: &mut TEMP_Context,
+    implicit ctx: &mut Context,
     module: Module)
 {
     let current: &mut Module = ctx.modules[module.modid];
@@ -101,9 +101,9 @@ fn registerType(
 }
 
 pub fn lookupType(
-    implicit module: &Module,
-    implicit ctx: &TEMP_Context,
-    type: Type): &Struct
+    implicit module: Module,
+    implicit ctx: Context,
+    type: Type)
 {
     if (type.modid == module.modid)
         return module.out.types[type.canon]
@@ -115,7 +115,7 @@ pub fn lookupType(
 
 pub fn lookupType_mut(
     implicit module: &mut Module,
-    canon: string): &mut Struct
+    canon: string)
 {
     return module.out.types[canon] || assert();
 }

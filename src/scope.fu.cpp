@@ -5,6 +5,7 @@
 #include "../lib/vec.h"
 #include "../lib/vec/find.h"
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -23,7 +24,6 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -449,9 +449,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;
@@ -486,22 +486,22 @@ int MODID(const s_Module& module)
     return module.modid;
 }
 
-s_Token _token(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 }
 
-fu_STR _fname(const s_TokenIdx& idx, const s_TEMP_Context& ctx)
+fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].fname;
 }
 
-fu_STR& getFile(const fu_STR& path, s_TEMP_Context& ctx)
+fu_STR& getFile(const fu_STR& path, s_Context& ctx)
 {
     return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
 }
 
-s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
+s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 {
     for (int i = 0; (i < ctx.modules.size()); i++)
     {
@@ -516,7 +516,7 @@ s_Module& getModule(const fu_STR& fname, s_TEMP_Context& ctx)
     return ctx.modules.mutref(i);
 }
 
-void setModule(const s_Module& module, s_TEMP_Context& ctx)
+void setModule(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
     ((current.fname == module.fname) || fu::fail("Assertion failed."));
@@ -528,7 +528,7 @@ void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
     (module.out.types.upsert(canon) = def);
 }
 
-const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if ((type.modid == module.modid))
         return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
@@ -620,7 +620,7 @@ bool type_isArray(const s_Type& type)
     return fu::lmatch(type.canon, "Array("_fu);
 }
 
-s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if (!type_isArray(type))
         return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
@@ -645,7 +645,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
     return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
 }
 
-s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_TEMP_Context& ctx)
+s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if (!type_isMap(type))
         return s_MapFields { s_Type{}, s_Type{} };

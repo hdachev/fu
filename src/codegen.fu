@@ -16,8 +16,8 @@ let M_FWDECL            = 1 << 6;
 //
 
 pub fn cpp_codegen(
-    implicit module: &Module,
-    implicit ctx: &TEMP_Context,
+    implicit module: Module,
+    implicit ctx: Context,
     root: SolvedNode, scope: Scope): string
 {
     mut _libs: Map(string, string);
@@ -34,7 +34,7 @@ pub fn cpp_codegen(
 
     fn GET(
         implicit module: Module,
-        implicit ctx: TEMP_Context,
+        implicit ctx: Context,
         target: Target): Overload
     {
         target.index > 0 || assert();
@@ -206,7 +206,7 @@ pub fn cpp_codegen(
     //
 
     fn collectDedupes(
-        dedupes: &Map(string, string)): string
+        dedupes: Map(string, string)): string
     {
         mut out = '';
 

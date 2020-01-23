@@ -11,6 +11,7 @@
 #include "../lib/vec/join.h"
 #include <iostream>
 
+struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -28,13 +29,12 @@ struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructField;
-struct s_TEMP_Context;
 struct s_Target;
 struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
-fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_TEMP_Context&);
+fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
@@ -44,11 +44,11 @@ int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
-s_SolverOutput solve(const s_Node&, const s_TEMP_Context&, s_Module&);
-fu_STR& getFile(const fu_STR&, s_TEMP_Context&);
-s_Module& getModule(const fu_STR&, s_TEMP_Context&);
-void setModule(const s_Module&, s_TEMP_Context&);
-s_TEMP_Context solvePrelude();
+s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
+fu_STR& getFile(const fu_STR&, s_Context&);
+s_Module& getModule(const fu_STR&, s_Context&);
+void setModule(const s_Module&, s_Context&);
+s_Context solvePrelude();
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -465,9 +465,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_TEMP_Context
-                                #define DEF_s_TEMP_Context
-struct s_TEMP_Context
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_COW_MAP<fu_STR, fu_STR> files;
@@ -481,7 +481,7 @@ struct s_TEMP_Context
 };
                                 #endif
 
-void compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
+void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
@@ -520,15 +520,15 @@ void compile(const fu_STR& fname, const fu_STR& via, s_TEMP_Context& ctx)
 
                                 #ifndef DEF_CTX_PRELUDE
                                 #define DEF_CTX_PRELUDE
-inline const s_TEMP_Context CTX_PRELUDE = solvePrelude();
+inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
-s_TEMP_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
+s_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
 {
     if (!fu::has(src, "fn main("_fu))
         src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
-    s_TEMP_Context ctx { CTX_PRELUDE };
+    s_Context ctx { CTX_PRELUDE };
     (ctx.files.upsert(fname) = src);
     compile(fname, fu_STR{}, ctx);
     return ctx;
@@ -537,7 +537,7 @@ s_TEMP_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
 fu_STR compile_snippet(const fu_STR& src)
 {
     fu_STR fname = "testcase"_fu;
-    s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
+    s_Context ctx = compile_snippet(fu_STR(src), fname);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         if ((ctx.modules[i].fname == fname))
@@ -614,7 +614,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     (std::cout << ("  WROTE "_fu + fname) << "\n");
 }
 
-void build(const s_TEMP_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
+void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
 {
     if ((last(dir_wrk) != "/"_fu))
     {
@@ -760,7 +760,7 @@ void build(const s_TEMP_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&&
 
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
 {
-    s_TEMP_Context ctx { CTX_PRELUDE };
+    s_Context ctx { CTX_PRELUDE };
     
     {
         (std::cout << "COMPILE "_fu << fname << "\n");
@@ -803,10 +803,10 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
                                 #endif
 
-s_TEMP_Context ZERO(const fu_STR& src)
+s_Context ZERO(const fu_STR& src)
 {
     fu_STR fname = "testcase.ZERO"_fu;
-    s_TEMP_Context ctx = compile_snippet(fu_STR(src), fname);
+    s_Context ctx = compile_snippet(fu_STR(src), fname);
     build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }

@@ -18,7 +18,7 @@ let WARN_ON_IMPLICIT_COPY = false;
 ////////     Solver.
 
 fn solve(
-    implicit ctx: &TEMP_Context,
+    implicit ctx: Context,
     implicit module: &mut Module,
     parse: Node): SolverOutput
 {
@@ -49,7 +49,7 @@ fn solve(
 
     fn GET(
         implicit module: Module,
-        implicit ctx: TEMP_Context,
+        implicit ctx: Context,
         target: Target): Overload
     {
         target.index > 0 || assert();
@@ -61,7 +61,7 @@ fn solve(
             .out.solve.scope.overloads[target.index - 1];
     }
 
-    fn GET_mut(target: Target): &mut Overload
+    fn GET_mut(target: Target)
     {
         target.index > 0 && target.modid == MODID || assert();
         return _scope.overloads[target.index - 1];

@@ -84,7 +84,7 @@ fn compile(fname: string, via: string = '')
     // --------------------------------------------- //
 }
 
-fn compile_snippet(mut src: string, fname: string): TEMP_Context
+fn compile_snippet(mut src: string, fname: string): Context
 {
     // Some nonsense.
     if (!src.has('fn main('))
@@ -188,7 +188,7 @@ fn update_file(
 }
 
 pub fn build(
-    ctx: TEMP_Context,
+    ctx: Context,
     run: bool,
 
     mut dir_wrk: string,
@@ -458,7 +458,7 @@ fn locate_PRJDIR(): string
     let PRJDIR              = locate_PRJDIR();
 pub let DEFAULT_WORKSPACE   = PRJDIR + 'build.cpp/';
 
-fn ZERO(src: string): TEMP_Context
+fn ZERO(src: string): Context
 {
     let fname = 'testcase.ZERO';
     let ctx = compile_snippet(:src, :fname);

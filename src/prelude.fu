@@ -214,12 +214,12 @@ fn exit(code: i32): never __native;
 
 `;
 
-fn solvePrelude(): TEMP_Context
+fn solvePrelude(): Context
 {
     // In order to keep the prelude around,
     //  I'm thinking we'll just prep a ready-to-copy template,
     //   with prelude solved at modid 0.
-    let implicit mut ctx: TEMP_Context;
+    let implicit mut ctx: Context;
     let implicit mut module = getModule('');
 
     let lexed   = lex(prelude_src, '__prelude');
@@ -232,4 +232,4 @@ fn solvePrelude(): TEMP_Context
     return ctx;
 }
 
-pub let CTX_PRELUDE: TEMP_Context = solvePrelude();
+pub let CTX_PRELUDE: Context = solvePrelude();
