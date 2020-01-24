@@ -1,6 +1,7 @@
 #import 'lexer';
 #import 'parser';
 #import 'types';
+#import 'lifetimes';
 
 
 // Build service primitives.
@@ -435,9 +436,7 @@ pub fn Lifetime_fromCallArgs(
     if (argIdx < 0)
         return lifetime;
 
-    let argIdx  = -1 - lifetime.raw;
-    let arg     = args[argIdx];
-
+    let arg = args[argIdx];
     return arg.type.lifetime;
 }
 

@@ -6,10 +6,10 @@
 struct s_Effects;
 struct s_Lifetime;
 struct s_Type;
-s_Effects type_inter(const s_Effects&, const s_Effects&);
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
+const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
 {
     int raw;
     explicit operator bool() const noexcept
@@ -21,9 +21,9 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
 {
     int raw;
     explicit operator bool() const noexcept
@@ -146,11 +146,6 @@ inline const int e_malloc = (1 << 12);
                                 #define DEF_e_memcpy
 inline const int e_memcpy = (1 << 13);
                                 #endif
-
-const s_Lifetime& type_inter(const s_Lifetime& a, const s_Lifetime& b)
-{
-    return ((a.raw > b.raw) ? a : b);
-}
 
 s_Effects type_inter(const s_Effects& a, const s_Effects& b)
 {
@@ -317,14 +312,10 @@ s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 
 s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
 {
-    if (!(type.quals & q_mutref))
-    {
-        s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-        t.quals |= (q_mutref | q_ref);
-        ([&](s_Lifetime& _) -> s_Lifetime& { if (!_) _ = lifetime; return _; } (t.lifetime));
-        return t;
-    };
-    return type;
+    s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
+    t.quals |= (q_mutref | q_ref);
+    t.lifetime = type_inter(t.lifetime, lifetime);
+    return t;
 }
 
 s_Type tryClear_mutref(const s_Type& type)

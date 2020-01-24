@@ -1,9 +1,6 @@
 
 pub struct Lifetime { raw: i32; };
 
-pub fn type_inter(a: Lifetime, b: Lifetime)
-    a.raw > b.raw ? a : b;
-
 
 //
 
@@ -18,3 +15,12 @@ pub fn Lifetime_fromArgIndex(argIdx: i32)
 
 pub fn Lifetime_toArgIndex(lifetime: Lifetime)
     -1 - lifetime.raw;
+
+
+// TODO these are not "inter"s, they are unions.
+// TODO unions of arguments ([neg][mask] 30 arg bits).
+//       union of arg and scope yields arg -
+//        will be correct once we decompose closures.
+
+pub fn type_inter(a: Lifetime, b: Lifetime)
+    a.raw > b.raw ? a : b;

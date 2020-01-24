@@ -46,11 +46,7 @@ int Scope_push(s_Scope&);
 int MODID(const s_Module&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
-s_Lifetime Lifetime_invalid();
-s_Lifetime Lifetime_static();
-s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
-bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
@@ -63,6 +59,10 @@ s_Type type_tryInter(const s_Type&, const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
+bool isAssignable(const s_Type&, const s_Type&);
+s_Lifetime Lifetime_fromArgIndex(int);
+s_Lifetime Lifetime_invalid();
+s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx

@@ -172,16 +172,11 @@ pub fn add_ref(type: Type, lifetime: Lifetime): Type
 
 pub fn add_mutref(type: Type, lifetime: Lifetime): Type
 {
-    if !(type.quals & q_mutref)
-    {
-        mut t = type || throw('falsy type');
-            t.quals |= q_mutref | q_ref;
-            t.lifetime ||= lifetime;
+    mut t = type || throw('falsy type');
+        t.quals   |= q_mutref | q_ref;
+        t.lifetime = type_inter(t.lifetime, lifetime);
 
-        return t;
-    }
-
-    return type;
+    return t;
 }
 
 
@@ -213,7 +208,7 @@ pub fn clear_mutref(type: Type)
 
 pub fn add_refs(from: Type, mut to: Type)
 {
-    to.quals |= from.quals & (q_ref | q_mutref);
+    to.quals   |= from.quals & (q_ref | q_mutref);
     to.lifetime = type_inter(from.lifetime, to.lifetime);
     return to;
 }

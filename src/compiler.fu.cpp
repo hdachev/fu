@@ -34,6 +34,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+s_Context solvePrelude();
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
@@ -48,7 +49,6 @@ s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 fu_STR& getFile(const fu_STR&, s_Context&);
 s_Module& getModule(const fu_STR&, s_Context&);
 void setModule(const s_Module&, s_Context&);
-s_Context solvePrelude();
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

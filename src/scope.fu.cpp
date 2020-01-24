@@ -32,6 +32,7 @@ struct s_Type;
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 fu_STR serializeType(const s_Type&);
+int Lifetime_toArgIndex(const s_Lifetime&);
 const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -697,27 +698,12 @@ s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, con
     return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
 }
 
-s_Lifetime Lifetime_invalid()
-{
-    return s_Lifetime { 0x7fffffff };
-}
-
-s_Lifetime Lifetime_static()
-{
-    return s_Lifetime { 1 };
-}
-
-s_Lifetime Lifetime_fromArgIndex(const int argIdx)
-{
-    return s_Lifetime { (-1 - argIdx) };
-}
-
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
 {
-    if ((lifetime.raw >= 0))
+    const int argIdx = Lifetime_toArgIndex(lifetime);
+    if ((argIdx < 0))
         return lifetime;
 
-    const int argIdx = (-1 - lifetime.raw);
     const s_SolvedNode& arg = args[argIdx];
     return arg.type.lifetime;
 }
