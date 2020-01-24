@@ -428,19 +428,11 @@ pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 
 //
 
-pub fn Lifetime_invalid(): Lifetime
-    Lifetime( raw: 0x7fffffff );
-
-pub fn Lifetime_static(): Lifetime
-    Lifetime( raw: 1 );
-
-pub fn Lifetime_fromArgIndex(argIdx: i32): Lifetime
-    Lifetime( raw: -1 - argIdx );
-
 pub fn Lifetime_fromCallArgs(
     lifetime: Lifetime, args: SolvedNode[]): Lifetime
 {
-    if (lifetime.raw >= 0)
+    let argIdx = Lifetime_toArgIndex(lifetime);
+    if (argIdx < 0)
         return lifetime;
 
     let argIdx  = -1 - lifetime.raw;

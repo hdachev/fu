@@ -1,0 +1,20 @@
+
+pub struct Lifetime { raw: i32; };
+
+pub fn type_inter(a: Lifetime, b: Lifetime)
+    a.raw > b.raw ? a : b;
+
+
+//
+
+pub fn Lifetime_invalid()
+    Lifetime( raw: 0x7fffffff );
+
+pub fn Lifetime_static()
+    Lifetime( raw: 1 );
+
+pub fn Lifetime_fromArgIndex(argIdx: i32)
+    Lifetime( raw: -1 - argIdx );
+
+pub fn Lifetime_toArgIndex(lifetime: Lifetime)
+    -1 - lifetime.raw;

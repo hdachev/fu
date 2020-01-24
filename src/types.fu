@@ -1,3 +1,4 @@
+#import 'lifetimes';
 
 pub let q_mutref        = 1 << 0;
 pub let q_ref           = 1 << 1;
@@ -43,7 +44,6 @@ pub let e_memcpy    = 1 << 13;
 
 //
 
-pub struct Lifetime { raw: i32; }
 pub struct Effects  { raw: i32; }
 
 pub struct Type
@@ -55,9 +55,6 @@ pub struct Type
     lifetime: Lifetime;
     effects:  Effects;
 };
-
-fn type_inter(a: Lifetime, b: Lifetime)
-    a.raw > b.raw ? a : b;
 
 fn type_inter(a: Effects, b: Effects)
     Effects( raw: a.raw | b.raw );
