@@ -707,3 +707,153 @@ s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_Solv
     const s_SolvedNode& arg = args[argIdx];
     return arg.type.lifetime;
 }
+
+                                #ifndef DEF_Trivial
+                                #define DEF_Trivial
+inline const int Trivial = (q_copy | q_trivial);
+                                #endif
+
+                                #ifndef DEF_q_primitive
+                                #define DEF_q_primitive
+inline const int q_primitive = (1 << 4);
+                                #endif
+
+                                #ifndef DEF_Primitive
+                                #define DEF_Primitive
+inline const int Primitive = (Trivial | q_primitive);
+                                #endif
+
+                                #ifndef DEF_q_arithmetic
+                                #define DEF_q_arithmetic
+inline const int q_arithmetic = (1 << 5);
+                                #endif
+
+                                #ifndef DEF_Arithmetic
+                                #define DEF_Arithmetic
+inline const int Arithmetic = (Primitive | q_arithmetic);
+                                #endif
+
+                                #ifndef DEF_q_integral
+                                #define DEF_q_integral
+inline const int q_integral = (1 << 6);
+                                #endif
+
+                                #ifndef DEF_Integral
+                                #define DEF_Integral
+inline const int Integral = (Arithmetic | q_integral);
+                                #endif
+
+                                #ifndef DEF_q_signed
+                                #define DEF_q_signed
+inline const int q_signed = (1 << 7);
+                                #endif
+
+                                #ifndef DEF_SignedInt
+                                #define DEF_SignedInt
+inline const int SignedInt = (Integral | q_signed);
+                                #endif
+
+                                #ifndef DEF_t_i8
+                                #define DEF_t_i8
+inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_i16
+                                #define DEF_t_i16
+inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_i32
+                                #define DEF_t_i32
+inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_i64
+                                #define DEF_t_i64
+inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_UnsignedInt
+                                #define DEF_UnsignedInt
+inline const int UnsignedInt = Integral;
+                                #endif
+
+                                #ifndef DEF_t_u8
+                                #define DEF_t_u8
+inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u16
+                                #define DEF_t_u16
+inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u32
+                                #define DEF_t_u32
+inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u64
+                                #define DEF_t_u64
+inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_q_floating_pt
+                                #define DEF_q_floating_pt
+inline const int q_floating_pt = (1 << 8);
+                                #endif
+
+                                #ifndef DEF_FloatingPt
+                                #define DEF_FloatingPt
+inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
+                                #endif
+
+                                #ifndef DEF_t_f32
+                                #define DEF_t_f32
+inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_f64
+                                #define DEF_t_f64
+inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_bool
+                                #define DEF_t_bool
+inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_void
+                                #define DEF_t_void
+inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_string
+                                #define DEF_t_string
+inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_never
+                                #define DEF_t_never
+inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+s_Scope listGlobals(const s_Module& module)
+{
+    s_Scope scope {};
+    Scope_Typedef(scope, "i8"_fu, t_i8, module);
+    Scope_Typedef(scope, "i16"_fu, t_i16, module);
+    Scope_Typedef(scope, "i32"_fu, t_i32, module);
+    Scope_Typedef(scope, "i64"_fu, t_i64, module);
+    Scope_Typedef(scope, "u8"_fu, t_u8, module);
+    Scope_Typedef(scope, "u16"_fu, t_u16, module);
+    Scope_Typedef(scope, "u32"_fu, t_u32, module);
+    Scope_Typedef(scope, "u64"_fu, t_u64, module);
+    Scope_Typedef(scope, "f32"_fu, t_f32, module);
+    Scope_Typedef(scope, "f64"_fu, t_f64, module);
+    Scope_Typedef(scope, "bool"_fu, t_bool, module);
+    Scope_Typedef(scope, "void"_fu, t_void, module);
+    Scope_Typedef(scope, "string"_fu, t_string, module);
+    Scope_Typedef(scope, "never"_fu, t_never, module);
+    return scope;
+}

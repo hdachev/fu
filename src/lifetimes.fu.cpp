@@ -14,14 +14,9 @@ struct s_Lifetime
 };
                                 #endif
 
-s_Lifetime Lifetime_invalid()
-{
-    return s_Lifetime { 0x7fffffff };
-}
-
 s_Lifetime Lifetime_static()
 {
-    return s_Lifetime { 1 };
+    return s_Lifetime { int{} };
 }
 
 s_Lifetime Lifetime_fromArgIndex(const int argIdx)

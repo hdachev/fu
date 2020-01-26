@@ -4,11 +4,8 @@ pub struct Lifetime { raw: i32; };
 
 //
 
-pub fn Lifetime_invalid()
-    Lifetime( raw: 0x7fffffff );
-
 pub fn Lifetime_static()
-    Lifetime( raw: 1 );
+    Lifetime();
 
 pub fn Lifetime_fromArgIndex(argIdx: i32)
     Lifetime( raw: -1 - argIdx );

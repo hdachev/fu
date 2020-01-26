@@ -158,16 +158,11 @@ fn tryClear(type: Type, q: i32): Type
 
 pub fn add_ref(type: Type, lifetime: Lifetime): Type
 {
-    if !(type.quals & q_ref)
-    {
-        mut t = type || throw('falsy type');
-            t.quals |= q_ref;
-            t.lifetime ||= lifetime;
+    mut t = type || throw('falsy type');
+        t.quals |= q_ref;
+        t.lifetime = type_inter(lifetime, t.lifetime);
 
-        return t;
-    }
-
-    return type;
+    return t;
 }
 
 pub fn add_mutref(type: Type, lifetime: Lifetime): Type
@@ -196,9 +191,16 @@ pub fn tryClear_ref(type: Type)
          : t;
 }
 
-pub fn clear_refs(type: Type)
+pub fn clear_refs(type: Type): Type
 {
-    return qsub(type, q_ref | q_mutref);
+    // TODO FIX only works for top-level references,
+    //  will break on nested refs.
+
+    mut t = type;
+        t.quals &= ~(q_ref | q_mutref);
+        t.lifetime = Lifetime_static;
+
+    return t;
 }
 
 pub fn clear_mutref(type: Type)

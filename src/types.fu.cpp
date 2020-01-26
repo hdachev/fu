@@ -7,6 +7,7 @@ struct s_Effects;
 struct s_Lifetime;
 struct s_Type;
 const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
+s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
 struct s_Effects
@@ -300,14 +301,10 @@ s_Type tryClear(const s_Type& type, const int q)
 
 s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 {
-    if (!(type.quals & q_ref))
-    {
-        s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-        t.quals |= q_ref;
-        ([&](s_Lifetime& _) -> s_Lifetime& { if (!_) _ = lifetime; return _; } (t.lifetime));
-        return t;
-    };
-    return type;
+    s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
+    t.quals |= q_ref;
+    t.lifetime = type_inter(lifetime, t.lifetime);
+    return t;
 }
 
 s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
@@ -331,7 +328,10 @@ s_Type tryClear_ref(const s_Type& type)
 
 s_Type clear_refs(const s_Type& type)
 {
-    return qsub(type, (q_ref | q_mutref));
+    s_Type t { type };
+    t.quals &= ~(q_ref | q_mutref);
+    t.lifetime = Lifetime_static();
+    return t;
 }
 
 s_Type clear_mutref(const s_Type& type)

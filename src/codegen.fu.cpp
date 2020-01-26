@@ -36,8 +36,8 @@ const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 bool type_isMap(const s_Type&);
-s_Type clear_refs(const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
+s_Type clear_refs(const s_Type&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx

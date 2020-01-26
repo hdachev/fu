@@ -31,7 +31,6 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 bool hasIdentifierChars(const fu_STR&);
-s_Scope listGlobals(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
@@ -47,10 +46,10 @@ int MODID(const s_Module&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
+s_Scope listGlobals(const s_Module&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
-s_Type clear_refs(const s_Type&);
 s_Type clear_mutref(const s_Type&);
 s_Type& add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
@@ -59,9 +58,9 @@ s_Type type_tryInter(const s_Type&, const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
+s_Type clear_refs(const s_Type&);
 bool isAssignable(const s_Type&, const s_Type&);
 s_Lifetime Lifetime_fromArgIndex(int);
-s_Lifetime Lifetime_invalid();
 s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -700,6 +699,7 @@ struct sf_solve
     s_Module& module;
     s_Scope _scope {};
     s_TokenIdx _here {};
+    int _return_idx {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
@@ -1284,7 +1284,8 @@ struct sf_solve
         bool native = false;
         
         {
-            const int scope0 = Scope_push(_scope);
+            const int return_idx0 = _return_idx;
+            _return_idx = Scope_push(_scope);
             std::swap(_current_fn, out);
             fu_VEC<s_SolvedNode>& outItems = _current_fn.items;
             for (int i = 0; (i < (inItems.size() + FN_ARGS_BACK)); i++)
@@ -1339,7 +1340,8 @@ struct sf_solve
                 outItems.mutref((outItems.size() + FN_BODY_BACK)) = s_body;
             };
             std::swap(_current_fn, out);
-            Scope_pop(_scope, scope0);
+            Scope_pop(_scope, _return_idx);
+            _return_idx = return_idx0;
         };
         if (!prep)
         {
@@ -1390,14 +1392,14 @@ struct sf_solve
             const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
             ((argNode.kind == "let"_fu) || fail(fu_STR{}));
             s_Type inType { ([&]() -> const s_Type& { if ((args.size() > i)) return args[i].type; else return fu::Default<s_Type>::value; }()) };
-            inType.lifetime = Lifetime_fromArgIndex(i);
             if (inType)
             {
+                inType.lifetime = Lifetime_fromArgIndex(i);
                 const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
                 s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
+                inType.quals |= q_ref;
             };
-            inType.quals |= q_ref;
             const s_Node& annot = argNode.items[LET_TYPE];
             if (annot)
             {
@@ -1494,20 +1496,21 @@ struct sf_solve
     s_SolvedNode solveReturn(const s_Node& node)
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
-        s_SolvedNode nextExpr { (out.items ? out.items.mutref(0) : out) };
-        const s_Type& nextType = (nextExpr.type ? nextExpr.type : fail(fu_STR{}));
+        s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
+        if ((next.type.lifetime.raw > _return_idx))
+            next.type = clear_refs(next.type);
+
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
-        s_SolvedNode prevExpr { _current_fn.items[retIdx] };
-        const s_Type& prevType = prevExpr.type;
-        if (prevType)
+        s_SolvedNode prev { _current_fn.items[retIdx] };
+        if (prev.type)
         {
-            (isAssignable(prevType, nextType) || fail(((("Non-assignable return types: "_fu + serializeType(prevType)) + " <- "_fu) + serializeType(nextType))));
+            (isAssignable(prev.type, next.type) || fail(((("Non-assignable return types: "_fu + serializeType(prev.type)) + " <- "_fu) + serializeType(next.type))));
         }
         else
-            _current_fn.items.mutref(retIdx) = (nextExpr ? nextExpr : fail(fu_STR{}));
+            _current_fn.items.mutref(retIdx) = (next ? next : fail(fu_STR{}));
 
         if (out.items)
-            maybeCopyOrMove(out.items.mutref(0), (prevType ? prevType : nextType), true, false);
+            maybeCopyOrMove(out.items.mutref(0), (prev.type ? prev.type : next.type), true, false);
 
         return out;
     };
@@ -1596,10 +1599,10 @@ struct sf_solve
                     s_Type t = evalTypeAnnot(items[0]).type;
                     (t || fail(fu_STR{}));
                     if ((node.value == "&"_fu))
-                        return solved(node, add_ref(t, Lifetime_invalid()), fu_VEC<s_SolvedNode>{});
+                        return solved(node, add_ref(t, Lifetime_static()), fu_VEC<s_SolvedNode>{});
 
                     if ((node.value == "&mut"_fu))
-                        return solved(node, add_mutref(t, Lifetime_invalid()), fu_VEC<s_SolvedNode>{});
+                        return solved(node, add_mutref(t, Lifetime_static()), fu_VEC<s_SolvedNode>{});
 
                     if ((node.value == "[]"_fu))
                         return solved(node, createArray(t, module), fu_VEC<s_SolvedNode>{});
@@ -2077,83 +2080,3 @@ s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module
     return (sf_solve { parse, ctx, module }).solve_EVAL();
 }
 
-
-                                #ifndef DEF_t_i8
-                                #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i16
-                                #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i64
-                                #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_UnsignedInt
-                                #define DEF_UnsignedInt
-inline const int UnsignedInt = Integral;
-                                #endif
-
-                                #ifndef DEF_t_u8
-                                #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u16
-                                #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u32
-                                #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u64
-                                #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_q_floating_pt
-                                #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_FloatingPt
-                                #define DEF_FloatingPt
-inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-                                #endif
-
-                                #ifndef DEF_t_f32
-                                #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_f64
-                                #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-s_Scope listGlobals(const s_Module& module)
-{
-    s_Scope scope {};
-    Scope_Typedef(scope, "i8"_fu, t_i8, module);
-    Scope_Typedef(scope, "i16"_fu, t_i16, module);
-    Scope_Typedef(scope, "i32"_fu, t_i32, module);
-    Scope_Typedef(scope, "i64"_fu, t_i64, module);
-    Scope_Typedef(scope, "u8"_fu, t_u8, module);
-    Scope_Typedef(scope, "u16"_fu, t_u16, module);
-    Scope_Typedef(scope, "u32"_fu, t_u32, module);
-    Scope_Typedef(scope, "u64"_fu, t_u64, module);
-    Scope_Typedef(scope, "f32"_fu, t_f32, module);
-    Scope_Typedef(scope, "f64"_fu, t_f64, module);
-    Scope_Typedef(scope, "bool"_fu, t_bool, module);
-    Scope_Typedef(scope, "void"_fu, t_void, module);
-    Scope_Typedef(scope, "string"_fu, t_string, module);
-    Scope_Typedef(scope, "never"_fu, t_never, module);
-    return scope;
-}

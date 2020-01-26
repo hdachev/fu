@@ -635,4 +635,5 @@ void runTests()
     ZERO("\n        return 0 > 1 ? throw('should type check') : 0;\n    "_fu);
     ZERO("\n        fn throw_hey(): i32 {\n            throw('hey');\n            return 1;\n        }\n\n        fn main(): i32 {\n            let x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return x || 7;\n        }\n    "_fu);
     ZERO("\n\n        fn main()\n            cli_handle([ 'hello', 'you' ]);\n\n        fn cli_handle(args: string[]): i32\n        {\n            mut idx = 0;\n\n            fn next() {\n                let i = idx++;\n                if (i < args.len)\n                    return args[i];\n\n                return '';\n            }\n\n            // Router.\n            return next().len - 5;\n        }\n    "_fu);
+    ZERO("\n        fn test() {\n            mut x = 5;\n            return x;\n        }\n\n        fn main() {\n            return test() - 5;\n        }\n    "_fu);
 }

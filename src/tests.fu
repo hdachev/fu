@@ -1496,4 +1496,15 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test() {
+            mut x = 5;
+            return x;
+        }
+
+        fn main() {
+            return test() - 5;
+        }
+    `);
+
 }

@@ -28,6 +28,7 @@ fn solve(
     mut _here:  TokenIdx;
 
     // Needs template reset.
+    mut _return_idx:    i32;
     mut _current_fn:    SolvedNode;
     mut _typeParams:    Map(string, Type);
 
@@ -786,7 +787,8 @@ fn solve(
         mut native = false;
 
         {
-            let scope0 = Scope_push(_scope);
+            let return_idx0 = _return_idx;
+            _return_idx = Scope_push(_scope);
 
             SWAP(_current_fn, out);
             let outItems: &mut SolvedNode[] = _current_fn.items;
@@ -872,7 +874,8 @@ fn solve(
 
             SWAP(_current_fn, out);
 
-            Scope_pop(_scope, scope0);
+            Scope_pop(_scope, _return_idx);
+            _return_idx = return_idx0;
         }
         //////////////////////////
 
@@ -960,10 +963,13 @@ fn solve(
             argNode.kind == 'let'  || fail();
 
             mut inType = args.len > i && args[i].type;
-                inType.lifetime = Lifetime_fromArgIndex(i);
 
             if (inType)
             {
+                // All fnargs are referable.
+                inType.lifetime = Lifetime_fromArgIndex(i);
+
+                //
                 let argName = argNode.value || fail();
 
                 // Same pattern - grabs a mutref.
@@ -973,10 +979,10 @@ fn solve(
                 argName_typeParam && fail(
                     'Type param name collision with argument: `' + argName + '`.')
                         = inType;
-            }
 
-            // All fnargs are refereable.
-            inType.quals |= q_ref;
+                //
+                inType.quals |= q_ref;
+            }
 
             // Type check.
             let annot = argNode.items[LET_TYPE];
@@ -1118,24 +1124,30 @@ fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
-        mut out = solved(node, t_void, solveNodes(node.items));
+        mut out = solved(
+            node, t_void, solveNodes(node.items));
 
-        let nextExpr    = out.items ? out.items[0] : out;
-        let nextType    = nextExpr.type || fail();
+        let next: &mut SolvedNode =
+            out.items   ? out.items[0]
+                        : out;
 
-        let retIdx      = _current_fn.items.len + FN_RET_BACK;
-        let prevExpr    = _current_fn.items[retIdx];
-        let prevType    = prevExpr.type;
+        // TODO this doesn't work
+        //  for deeply referential types.
+        if (next.type.lifetime.raw > _return_idx)
+            next.type = clear_refs(next.type);
 
-        if (prevType)
-            isAssignable(prevType, nextType)
-                || fail('Non-assignable return types: ' + serializeType(prevType) + ' <- ' + serializeType(nextType));
+        let retIdx = _current_fn.items.len + FN_RET_BACK;
+        let prev   = _current_fn.items[retIdx];
+
+        if (prev.type)
+            isAssignable(prev.type, next.type)
+                || fail('Non-assignable return types: ' + serializeType(prev.type) + ' <- ' + serializeType(next.type));
         else
-            _current_fn.items[retIdx] = nextExpr || fail();
+            _current_fn.items[retIdx] = next || fail();
 
         if (out.items)
             maybeCopyOrMove(out.items[0],
-                prevType || nextType,
+                prev.type || next.type,
                 isReturn: true);
 
         return out;
@@ -1281,10 +1293,10 @@ fn solve(
                     t || fail();
 
                     if (node.value == '&')
-                        return solved(node, add_ref(t, Lifetime_invalid));
+                        return solved(node, add_ref(t, Lifetime_static));
 
                     if (node.value == '&mut')
-                        return solved(node, add_mutref(t, Lifetime_invalid));
+                        return solved(node, add_mutref(t, Lifetime_static));
 
                     if (node.value == '[]')
                         return solved(node, createArray(t));
@@ -2015,32 +2027,4 @@ fn solve(
     return SolverOutput(
         root: solveNode(parse),
         scope: _scope);
-}
-
-
-// Solve & cache the prelude.
-
-fn listGlobals(implicit module: Module): Scope
-{
-    mut scope: Scope;
-
-    Scope_Typedef(scope,  'i8',    t_i8    );
-    Scope_Typedef(scope, 'i16',    t_i16   );
-    Scope_Typedef(scope, 'i32',    t_i32   );
-    Scope_Typedef(scope, 'i64',    t_i64   );
-
-    Scope_Typedef(scope,  'u8',    t_u8    );
-    Scope_Typedef(scope, 'u16',    t_u16   );
-    Scope_Typedef(scope, 'u32',    t_u32   );
-    Scope_Typedef(scope, 'u64',    t_u64   );
-
-    Scope_Typedef(scope, 'f32',    t_f32   );
-    Scope_Typedef(scope, 'f64',    t_f64   );
-
-    Scope_Typedef(scope, 'bool',   t_bool  );
-    Scope_Typedef(scope, 'void',   t_void  );
-    Scope_Typedef(scope, 'string', t_string);
-    Scope_Typedef(scope, 'never',  t_never );
-
-    return scope;
 }
