@@ -7,7 +7,6 @@ struct s_Effects;
 struct s_Lifetime;
 struct s_Type;
 const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
-s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
 struct s_Effects
@@ -329,14 +328,16 @@ s_Type tryClear_ref(const s_Type& type)
 s_Type clear_refs(const s_Type& type)
 {
     s_Type t { type };
-    t.quals &= ~(q_ref | q_mutref);
-    t.lifetime = Lifetime_static();
+    t.quals &= ~q_ref;
+    t.quals &= ~q_mutref;
     return t;
 }
 
 s_Type clear_mutref(const s_Type& type)
 {
-    return qsub(type, q_mutref);
+    s_Type t { type };
+    t.quals &= ~q_mutref;
+    return t;
 }
 
 s_Type& add_refs(const s_Type& from, s_Type&& to)

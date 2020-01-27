@@ -193,19 +193,19 @@ pub fn tryClear_ref(type: Type)
 
 pub fn clear_refs(type: Type): Type
 {
-    // TODO FIX only works for top-level references,
-    //  will break on nested refs.
-
     mut t = type;
-        t.quals &= ~(q_ref | q_mutref);
-        t.lifetime = Lifetime_static;
+        t.quals &= ~q_ref;
+        t.quals &= ~q_mutref;
 
     return t;
 }
 
 pub fn clear_mutref(type: Type)
 {
-    return qsub(type, q_mutref);
+    mut t = type;
+        t.quals &= ~q_mutref;
+
+    return t;
 }
 
 pub fn add_refs(from: Type, mut to: Type)
