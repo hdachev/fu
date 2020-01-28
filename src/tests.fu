@@ -1496,15 +1496,40 @@ fn runTests()
         }
     `);
 
+
+    // Lifetimes & type inference.
+
     ZERO(`
         fn test() {
             mut x = 5;
             return x;
         }
 
-        fn main() {
-            return test() - 5;
-        }
+        fn main()
+            test() - 5;
     `);
 
+    ZERO(`
+        struct Test { i: i32; };
+
+        fn test() {
+            mut x = Test(5);
+            return x;
+        }
+
+        fn main()
+            test().i - 5;
+    `);
+
+    ZERO(`
+        struct Test { a: i32; b: i32; };
+
+        fn test() {
+            mut x = Test(5, -5);
+            return x;
+        }
+
+        fn main()
+            test().a + test().b;
+    `);
 }

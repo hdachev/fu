@@ -1,5 +1,8 @@
 #!/bin/bash
 
+git checkout *.fu.cpp
+./bootstrap
+
 ./bin/fu self
 ./bin/fu self
 ./bin/fu self
