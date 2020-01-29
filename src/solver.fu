@@ -1131,10 +1131,15 @@ fn solve(
             out.items   ? out.items[0]
                         : out;
 
-        // TODO this doesn't work
-        //  for deeply referential types.
-        if (next.type.lifetime.raw > _return_idx)
-            next.type = clear_refs(next.type);
+        //////////////////////////////////////////////////////
+        //                                                  //
+        // TODO LIFETIMES   this doesn't work               //
+        //                  for deeply referential types.   //
+                                                            //
+        if (next.type.lifetime.raw > _return_idx)           //
+            next.type = clear_refs(next.type);              //
+                                                            //
+        //////////////////////////////////////////////////////
 
         let retIdx = _current_fn.items.len + FN_RET_BACK;
         let prev   = _current_fn.items[retIdx];
