@@ -92,6 +92,7 @@ fn has (a: $T[], b: $T): bool __native;
 fn [](a: $T[], i: i32)
     case ($a -> &mut $T[]): &mut $T __native;
     case ($a -> &    $T[]): &    $T __native;
+    case ($a ->      $T[]):      $T __native;
 
 fn    push(a: &mut $T[], b: $T): void __native;
 fn unshift(a: &mut $T[], b: $T): void __native;
@@ -168,6 +169,7 @@ fn replace(in: string, all: string, with: string): string __native;
 fn [](a: Map($K, $V), b: &$K)
     case ($a -> &mut Map($K, $V)): &mut $V __native;
     case ($a -> &    Map($K, $V)): &    $V __native;
+    case ($a ->      Map($K, $V)):      $V __native;
 
 fn keys  (a: Map($K, $V)): $K[] __native;
 fn values(a: Map($K, $V)): $V[] __native;
