@@ -6,6 +6,7 @@
 #include "../lib/vec/join.h"
 #include "../lib/vec/replace.h"
 #include "../lib/vec/sort.h"
+#include <utility>
 
 struct s_Context;
 struct s_Effects;
@@ -1278,7 +1279,7 @@ struct sf_cpp_codegen
 
             return ID(id);
         };
-        if ((target.kind == "var"_fu))
+        if (((target.kind == "var"_fu) || (target.kind == "arg"_fu) || (target.kind == "ref"_fu)))
             return ID(id);
 
         if ((target.kind == "field"_fu))
@@ -1428,7 +1429,7 @@ struct sf_cpp_codegen
 
         };
         if ((((id == "true"_fu) || (id == "false"_fu)) && !items.size()))
-            return id;
+            return std::move(id);
 
         if (((id == "throw"_fu) && (items.size() == 1)))
             return cgThrow(id, items[0]);
@@ -1732,7 +1733,7 @@ struct sf_cpp_codegen
         if ((t.kind == "field"_fu))
             return isFieldChain(only(node.items));
 
-        if (((t.kind == "var"_fu) || (t.kind == "const"_fu)))
+        if (((t.kind == "var"_fu) || (t.kind == "global"_fu) || (t.kind == "arg"_fu) || (t.kind == "ref"_fu)))
             return true;
 
         return false;
@@ -1876,6 +1877,9 @@ struct sf_cpp_codegen
         if ((k == "move"_fu))
             return cgCopyMove(node);
 
+        if ((k == "nrvo"_fu))
+            return cgCopyMove(node);
+
         if ((k == "catch"_fu))
             return cgCatch(node);
 
@@ -1884,6 +1888,9 @@ struct sf_cpp_codegen
     fu_STR cgCopyMove(const s_SolvedNode& node)
     {
         fu_STR a = cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }()), 0);
+        if ((node.kind == "nrvo"_fu))
+            return a;
+
         if ((node.kind == "move"_fu))
             return cgSteal(a);
 

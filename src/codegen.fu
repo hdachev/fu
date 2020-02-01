@@ -842,8 +842,12 @@ pub fn cpp_codegen(
             return ID(id); // TODO ensure const emit.
         }
 
-        if (target.kind == 'var')
+        if (target.kind == 'var' ||
+            target.kind == 'arg' ||
+            target.kind == 'ref')
+        {
             return ID(id);
+        }
 
         if (target.kind == 'field')
         {
@@ -1396,8 +1400,13 @@ pub fn cpp_codegen(
         if (t.kind == 'field')
             return isFieldChain(node.items.only);
 
-        if (t.kind == 'var' || t.kind == 'const')
+        if (t.kind == 'var' ||
+            t.kind == 'global' ||
+            t.kind == 'arg' ||
+            t.kind == 'ref')
+        {
             return true;
+        }
 
         return false;
     }
@@ -1510,6 +1519,7 @@ pub fn cpp_codegen(
 
         if (k == 'copy')        return cgCopyMove(node);
         if (k == 'move')        return cgCopyMove(node);
+        if (k == 'nrvo')        return cgCopyMove(node);
         if (k == 'catch')       return cgCatch(node);
 
         return fail('TODO: ' + k);
@@ -1521,6 +1531,9 @@ pub fn cpp_codegen(
     fn cgCopyMove(node: SolvedNode): string
     {
         let a = cgNode(node.items[0] || fail());
+
+        if (node.kind == 'nrvo')
+            return a;
 
         if (node.kind == 'move')
             return cgSteal(a);

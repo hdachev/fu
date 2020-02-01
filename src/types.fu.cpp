@@ -2,6 +2,7 @@
 #include "../lib/str.h"
 #include "../lib/vec.h"
 #include "../lib/vec/find.h"
+#include <utility>
 
 struct s_Effects;
 struct s_Lifetime;
@@ -340,11 +341,11 @@ s_Type clear_mutref(const s_Type& type)
     return t;
 }
 
-s_Type& add_refs(const s_Type& from, s_Type&& to)
+s_Type add_refs(const s_Type& from, s_Type&& to)
 {
     to.quals |= (from.quals & (q_ref | q_mutref));
     to.lifetime = type_inter(from.lifetime, to.lifetime);
-    return to;
+    return std::move(to);
 }
 
 fu_STR serializeType(const s_Type& type)

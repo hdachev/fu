@@ -51,7 +51,7 @@ bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
 s_Type clear_mutref(const s_Type&);
-s_Type& add_refs(const s_Type&, s_Type&&);
+s_Type add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
@@ -864,7 +864,7 @@ struct sf_solve
         fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_VEC<s_Type>(overload.args));
         fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_VEC<fu_STR>(overload.names));
         fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_VEC<s_SolvedNode>(overload.defaults));
-        if (((via.kind != "var"_fu) && (via.kind != "global"_fu)))
+        if (((via.kind != "var"_fu) && (via.kind != "global"_fu) && (via.kind != "arg"_fu) && (via.kind != "ref"_fu)))
         {
             kind = "p-wrap"_fu;
             min++;
@@ -1129,7 +1129,7 @@ struct sf_solve
             return solveComma(node);
 
         if ((k == "let"_fu))
-            return solveLet(node, Lifetime_next());
+            return solveLet(node, Lifetime_static());
 
         if ((k == "call"_fu))
             return solveCall(node);
@@ -1301,10 +1301,10 @@ struct sf_solve
                     if (!(type.quals & q_ref))
                         mut_arg.flags |= F_MUT;
 
-                    outItems.mutref(i) = solveLet(mut_arg, lifetime);
+                    outItems.mutref(i) = solveLet(mut_arg, s_Lifetime(lifetime));
                 }
                 else
-                    outItems.mutref(i) = solveLet(n_arg, lifetime);
+                    outItems.mutref(i) = solveLet(n_arg, s_Lifetime(lifetime));
 
             };
             s_Node n_ret { inItems[(inItems.size() + FN_RET_BACK)] };
@@ -1368,9 +1368,9 @@ struct sf_solve
         {
             s_SolvedNode spec = doTrySpecialize(Q_template, args);
             (module.out.specs.upsert(mangle) = spec);
-            return spec.target;
+            return std::move(spec.target);
         };
-        return spec.target;
+        return std::move(spec.target);
     };
     s_SolvedNode doTrySpecialize(const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args)
     {
@@ -1497,9 +1497,11 @@ struct sf_solve
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
-        if ((next.type.lifetime.raw > _return_idx))
-            next.type = clear_refs(next.type);
-
+        if (((next.type.lifetime.raw > _return_idx) && (next.type.quals & q_ref)))
+        {
+            const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
+            next = createMove(next, bool(nrvo));
+        };
         const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
         s_SolvedNode prev { _current_fn.items[retIdx] };
         if (prev.type)
@@ -1543,11 +1545,15 @@ struct sf_solve
         };
         return out;
     };
-    s_SolvedNode solveLet(const s_Node& node, const s_Lifetime& lifetime)
+    s_SolvedNode solveLet(const s_Node& node, s_Lifetime&& lifetime)
     {
         s_SolvedNode out = solveBinding(node, lifetime);
         const bool global = (out.kind == "global"_fu);
-        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), (global ? "global"_fu : "var"_fu), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
+        if (!(out.type.quals & q_ref))
+            lifetime = Lifetime_next();
+
+        fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.quals & q_ref) ? "ref"_fu : "var"_fu)));
+        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), fu_STR(kind), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -2009,7 +2015,15 @@ struct sf_solve
         if (isReturn)
             return;
 
-        node = s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
+        node = createCopy(node);
+    };
+    s_SolvedNode createCopy(const s_SolvedNode& node)
+    {
+        return s_SolvedNode { "copy"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
+    };
+    s_SolvedNode createMove(const s_SolvedNode& node, const bool nrvo)
+    {
+        return s_SolvedNode { (nrvo ? "nrvo"_fu : "move"_fu), int{}, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
     };
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {

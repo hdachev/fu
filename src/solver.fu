@@ -278,7 +278,10 @@ fn solve(
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
-        if (via.kind != 'var' && via.kind != 'global')
+        if (via.kind != 'var' &&
+            via.kind != 'global' &&
+            via.kind != 'arg' &&
+            via.kind != 'ref')
         {
             kind = 'p-wrap';
             min++;
@@ -625,7 +628,7 @@ fn solve(
         if (k == 'label')       return solveComma(node);
         if (k == 'comma')       return solveComma(node);
 
-        if (k == 'let')         return solveLet(node, Lifetime_next());
+        if (k == 'let')         return solveLet(node, Lifetime_static);
         if (k == 'call')        return solveCall(node);
         if (k == 'arrlit')      return solveArrayLiteral(node, type);
 
@@ -1136,9 +1139,15 @@ fn solve(
         // TODO LIFETIMES   this doesn't work               //
         //                  for deeply referential types.   //
                                                             //
-        if (next.type.lifetime.raw > _return_idx)           //
-            next.type = clear_refs(next.type);              //
+        if (next.type.lifetime.raw > _return_idx &&         //
+            next.type.quals & q_ref)                        //
+        {                                                   //
+            let nrvo = next.kind == 'call'                  //
+                    && next.items.len == 0                  //
+                    && next.target.GET.kind == 'var';       //
                                                             //
+            next = createMove(next, nrvo);                  //
+        }                                                   //
         //////////////////////////////////////////////////////
 
         let retIdx = _current_fn.items.len + FN_RET_BACK;
@@ -1206,15 +1215,29 @@ fn solve(
         return out;
     }
 
-    fn solveLet(node: Node, lifetime: Lifetime): SolvedNode
+    fn solveLet(node: Node, mut lifetime: Lifetime): SolvedNode
     {
         let out         = solveBinding(node, lifetime);
         let global      = out.kind == 'global';
 
+        //////////////////////////////////////////////////////
+        //                                                  //
+        // TODO LIFETIMES   this doesn't work               //
+        //                  for deeply referential types.   //
+                                                            //
+        if !(out.type.quals & q_ref)                        //
+            lifetime = Lifetime_next();                     //
+                                                            //
+        //////////////////////////////////////////////////////
+
+        let kind = global                   ? 'global'
+                 : node.flags & F_ARG       ? 'arg'
+                 : out.type.quals & q_ref   ? 'ref'
+                                            : 'var';
+
         let overload    = Binding(
-            id:             out.value,
-            kind:           global ? 'global' : 'var',
-            constant:       global && out,
+            id: out.value, :kind,
+            constant: global && out,
 
             node.flags & F_MUT
                 ? add_mutref(out.type, lifetime)
@@ -1935,13 +1958,22 @@ fn solve(
             return;
 
         // Here we go.
-        node = SolvedNode(
-            kind: 'copy',
+        node = createCopy(node);
+    }
 
+    fn createCopy(node: SolvedNode): SolvedNode
+        SolvedNode(
+            kind:   'copy',
             items:  [ node ],
             token:  node.token,
             type:   clear_refs(node.type));
-    }
+
+    fn createMove(node: SolvedNode, nrvo = false): SolvedNode
+        SolvedNode(
+            kind:   nrvo ? 'nrvo' : 'move',
+            items:  [ node ],
+            token:  node.token,
+            type:   clear_refs(node.type));
 
 
     //
