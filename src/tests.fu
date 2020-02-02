@@ -1534,36 +1534,33 @@ fn runTests()
     `);
 
 
-    // Returning a mut arg -
-    //  current codegen is to emit an Arg&& arg, and then return it by value -
-    //    codegen breaks on first case, returning an Arg& (lifetime inference off-by-one?),
-    //     second case breaks with clang warn about a missing std::move(arg).
+    // Returning a mut arg.
 
-    // ZERO(`
-    //     struct Test { i: i32[]; };
+    ZERO(`
+        struct Test { i: i32[]; };
 
-    //     fn test(mut x: Test) {
-    //         x.i[0] += x.i[1];
-    //         return x;
-    //     }
+        fn test(mut x: Test) {
+            x.i[0] += x.i[1];
+            return x;
+        }
 
-    //     fn main() {
-    //         let s = Test([ 1, 2 ]);
-    //         return test(s).i[0] - s.i[0] * 3;
-    //     }
-    // `);
+        fn main() {
+            let s = Test([ 1, 2 ]);
+            return test(s).i[0] - s.i[0] * 3;
+        }
+    `);
 
-    // ZERO(`
-    //     struct Test { i: i32[]; };
+    ZERO(`
+        struct Test { i: i32[]; };
 
-    //     fn test(mut x: Test): Test {
-    //         x.i[0] += x.i[1];
-    //         return x;
-    //     }
+        fn test(mut x: Test): Test {
+            x.i[0] += x.i[1];
+            return x;
+        }
 
-    //     fn main() {
-    //         let s = Test([ 1, 2 ]);
-    //         return test(s).i[0] - s.i[0] * 3;
-    //     }
-    // `);
+        fn main() {
+            let s = Test([ 1, 2 ]);
+            return test(s).i[0] - s.i[0] * 3;
+        }
+    `);
 }

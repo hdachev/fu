@@ -1,5 +1,6 @@
 #!/bin/bash
 
+git reset
 git checkout *.fu.cpp
 ./bootstrap
 
