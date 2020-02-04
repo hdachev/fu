@@ -5,16 +5,35 @@
 
 //
 
-#ifndef NDEBUG
+#if fu_RETAIL
+#define fu_ARC__DETECT_MEMORY_LEAKS 0
 
-struct fu_DEBUG_CNTDWN {
+#else
+#define fu_ARC__DETECT_MEMORY_LEAKS 1
+
+#endif
+
+
+//
+
+#if fu_ARC__DETECT_MEMORY_LEAKS
+#include <stdio.h>
+
+struct fu_DEBUG_CNTDWN
+{
     std::atomic_int m_cnt;
 
     const char* topic;
-    fu_DEBUG_CNTDWN(const char* topic) : topic(topic) {}
+    fu_DEBUG_CNTDWN(const char* topic)
+        : topic(topic) {}
 
-    ~fu_DEBUG_CNTDWN() {
-        assert(m_cnt == 0);
+    ~fu_DEBUG_CNTDWN()
+    {
+        if (m_cnt == 0)
+            return;
+
+        printf("\n\x1B[31m  FATAL:\n    Debug Countdown != 0:\n      topic: %s\n      m_cnt: %i\x1B[0m\n\n", topic, (int)m_cnt);
+        std::abort();
     }
 };
 
@@ -27,12 +46,12 @@ struct alignas(16) fu_ARC
 {
     std::atomic_int m_arc;
 
-    #ifndef NDEBUG
+    #if fu_ARC__DETECT_MEMORY_LEAKS
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
 
-    inline static fu_DEBUG_CNTDWN DEBUG_count { "DEBUG_count" };
-    inline static fu_DEBUG_CNTDWN DEBUG_total { "DEBUG_total" };
+    inline static fu_DEBUG_CNTDWN DEBUG_total { "Bytes Allocated" };
+    inline static fu_DEBUG_CNTDWN DEBUG_count { "Outstanding Allocations" };
     #endif
 
     fu_NEVER_INLINE void dealloc(size_t bytes)
@@ -40,18 +59,22 @@ struct alignas(16) fu_ARC
         assert((int)bytes <= DEBUG_bytes
                   && this == DEBUG_self);
 
-        #ifndef NDEBUG
+        #if fu_ARC__DETECT_MEMORY_LEAKS
         {
-            DEBUG_total.m_cnt -= 1;
+            DEBUG_count.m_cnt -= 1;
             DEBUG_total.m_cnt -= (int)DEBUG_bytes;
 
             DEBUG_bytes = -11;
             DEBUG_self  = nullptr;
+        }
+        #endif
 
+        #ifndef NDEBUG
+        {
             char* start = ((char*)this) + sizeof(fu_ARC);
             char* end   = start + bytes;
             for (char* i = start; i < end; i++)
-                *i = 0xfe;
+                *i = (char)(long long)i;
         }
         #endif
 
@@ -74,12 +97,12 @@ struct alignas(16) fu_ARC
         fu_ARC* header = (fu_ARC*) mem;
         new (header) fu_ARC();
 
-        #ifndef NDEBUG
+        #if fu_ARC__DETECT_MEMORY_LEAKS
         {
             header->DEBUG_bytes = (int)bytes;
             header->DEBUG_self  = mem;
 
-            DEBUG_total.m_cnt += 1;
+            DEBUG_count.m_cnt += 1;
             DEBUG_total.m_cnt += (int)bytes;
         }
         #endif
