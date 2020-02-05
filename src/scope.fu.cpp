@@ -165,6 +165,42 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
+struct s_StructField
+{
+    fu_STR id;
+    s_ValueType type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || type
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    fu_STR kind;
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || id
+            || fields
+            || flags
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -206,42 +242,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_Type type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    fu_STR kind;
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || id
-            || fields
-            || flags
         ;
     }
 };
@@ -594,7 +594,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
-        if (!(fields[i].type.value.quals & q_copy))
+        if (!(fields[i].type.quals & q_copy))
             return true;
 
     };
@@ -610,7 +610,7 @@ bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
-        if (!(fields[i].type.value.quals & q_trivial))
+        if (!(fields[i].type.quals & q_trivial))
             return true;
 
     };
@@ -620,7 +620,7 @@ bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
 s_Type createArray(const s_Type& item, s_Module& module)
 {
     const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_ValueType(item.value) } } };
     fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
     registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
     return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(item.lifetime), s_Effects{} };
@@ -642,9 +642,7 @@ s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Contex
         return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
-    s_Type t { ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }()) };
-    t.lifetime = type.lifetime;
-    return t;
+    return s_Type { s_ValueType(([&]() -> const s_ValueType& { if ((def.kind == "array"_fu)) { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
 bool type_isMap(const s_Type& type)
@@ -655,7 +653,7 @@ bool type_isMap(const s_Type& type)
 s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
 {
     const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
+    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
     return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
@@ -668,10 +666,7 @@ s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Con
 
     const s_Struct& def = lookupType(type, module, ctx);
     ((def.kind == "map"_fu) || fu::fail("Assertion failed."));
-    s_MapFields mf = s_MapFields { s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Type(([&]() -> const s_Type& { { const s_Type& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())) };
-    mf.key.lifetime = type.lifetime;
-    mf.value.lifetime = type.lifetime;
-    return mf;
+    return s_MapFields { s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} } };
 }
 
 fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)

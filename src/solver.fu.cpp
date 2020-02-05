@@ -193,6 +193,42 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
+struct s_StructField
+{
+    fu_STR id;
+    s_ValueType type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || type
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    fu_STR kind;
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || id
+            || fields
+            || flags
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -234,42 +270,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_Type type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    fu_STR kind;
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || id
-            || fields
-            || flags
         ;
     }
 };
@@ -1486,7 +1486,7 @@ struct sf_solve
                 if ((item && (item.kind == "let"_fu) && (item.flags & F_FIELD)))
                 {
                     members.push(item);
-                    fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_Type((item.type ? item.type : fail(fu_STR{}))) });
+                    fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_ValueType((item.type.value ? item.type.value : fail(fu_STR{}))) });
                 };
             };
             finalizeStruct(id, fields, module);

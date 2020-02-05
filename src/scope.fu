@@ -187,7 +187,7 @@ pub fn createArray(item: Type): Type
     [
         StructField(
             id:  'Item',
-            type: item),
+            type: item.value),
     ];
 
     let canon = 'Array(' + serializeType(item) + ')';
@@ -220,10 +220,9 @@ pub fn tryClear_array(type: Type): Type
 
     let def = lookupType(type);
 
-    //
-    mut t = def.kind == 'array' && def.fields[0].type || assert();
-    t.lifetime = type.lifetime;
-    return t;
+    return Type(
+        value: def.kind == 'array' && def.fields[0].type || assert(),
+        :type.lifetime);
 }
 
 
@@ -239,8 +238,8 @@ pub fn createMap(key: Type, value: Type): Type
     let flags  = 0;
     let fields =
     [
-        StructField(id:  'Key',   type: key  ),
-        StructField(id:  'Value', type: value),
+        StructField(id:  'Key',   type: key.value  ),
+        StructField(id:  'Value', type: value.value),
     ];
 
     let canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')';
@@ -270,17 +269,12 @@ pub fn tryClear_map(type: Type): MapFields
         return MapFields();
 
     let def = lookupType(type);
-    def.kind == 'map' || assert();
+        def.kind == 'map' || assert();
 
     //
-    mut mf = MapFields(
-        key:   def.fields[0].type || assert(),
-        value: def.fields[1].type || assert());
-
-    mf.key.lifetime     = type.lifetime;
-    mf.value.lifetime   = type.lifetime;
-
-    return mf;
+    return MapFields(
+        key:   Type(value: def.fields[0].type || assert(), :type.lifetime),
+        value: Type(value: def.fields[1].type || assert(), :type.lifetime));
 }
 
 

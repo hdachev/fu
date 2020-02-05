@@ -1093,8 +1093,8 @@ fn solve(
 
                     fields.push(
                         StructField(
-                            id:   item.value || fail(),
-                            type: item.type  || fail()));
+                            id:   item.value        || fail(),
+                            type: item.type.value   || fail()));
                 }
             }
 

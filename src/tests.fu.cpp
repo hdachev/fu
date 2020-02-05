@@ -161,6 +161,42 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
+struct s_StructField
+{
+    fu_STR id;
+    s_ValueType type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || type
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    fu_STR kind;
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || id
+            || fields
+            || flags
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -202,42 +238,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_Type type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    fu_STR kind;
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || id
-            || fields
-            || flags
         ;
     }
 };

@@ -359,7 +359,7 @@ struct s_ModuleInputs
 struct s_StructField
 {
     fu_STR id;
-    s_Type type;
+    s_ValueType type;
     explicit operator bool() const noexcept
     {
         return false
@@ -690,6 +690,10 @@ struct sf_cpp_codegen
             (_libs.upsert(lib) = (("#include "_fu + lib) + "\n"_fu));
 
     };
+    fu_STR typeAnnot(const s_ValueType& value)
+    {
+        return typeAnnot(s_Type { s_ValueType(value), s_Lifetime{}, s_Effects{} }, 0);
+    };
     fu_STR typeAnnot(const s_Type& type, const int mode)
     {
         fu_STR fwd = typeAnnotBase(type);
@@ -773,13 +777,13 @@ struct sf_cpp_codegen
         if ((k == "array"_fu))
         {
             annotateVector();
-            fu_STR item = typeAnnot(tdef.fields[0].type, 0);
+            fu_STR item = typeAnnot(tdef.fields[0].type);
             return (("fu_VEC<"_fu + item) + ">"_fu);
         };
         if ((k == "map"_fu))
         {
-            fu_STR k = typeAnnot(tdef.fields[0].type, 0);
-            fu_STR v = typeAnnot(tdef.fields[1].type, 0);
+            fu_STR k = typeAnnot(tdef.fields[0].type);
+            fu_STR v = typeAnnot(tdef.fields[1].type);
             annotateMap();
             return (((("fu_COW_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
         };
@@ -798,7 +802,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < fields.size()); i++)
         {
             const s_StructField& field = fields[i];
-            (def += indent, def += typeAnnot(field.type, 0), def += " "_fu, def += ID(field.id), def += ";"_fu);
+            (def += indent, def += typeAnnot(field.type), def += " "_fu, def += ID(field.id), def += ";"_fu);
         };
         if ((s.flags & F_DESTRUCTOR))
         {
@@ -1598,6 +1602,10 @@ struct sf_cpp_codegen
             return (((("("_fu + cond) + " || "_fu) + alt) + ")"_fu);
 
         fail("TODO"_fu);
+    };
+    fu_STR boolWrap(const s_ValueType& value, const fu_STR& src)
+    {
+        return boolWrap(s_Type { s_ValueType(value), s_Lifetime{}, s_Effects{} }, src);
     };
     fu_STR boolWrap(const s_Type& type, const fu_STR& src)
     {

@@ -60,6 +60,9 @@ pub fn cpp_codegen(
 
     //
 
+    fn typeAnnot(value: ValueType): string
+        typeAnnot(Type(:value));
+
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
         let fwd = typeAnnotBase(type);
@@ -1212,6 +1215,12 @@ pub fn cpp_codegen(
 
         return fail('TODO');
     }
+
+
+    //
+
+    fn boolWrap(value: ValueType, src: string): string
+        boolWrap(Type(value), src);
 
     fn boolWrap(type: Type, src: string): string
     {

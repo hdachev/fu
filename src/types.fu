@@ -274,5 +274,5 @@ pub struct Struct
 pub struct StructField
 {
     id:     string;
-    type:   Type;
+    type:   ValueType;
 };
