@@ -491,7 +491,8 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
         const f64 t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const f64 t1 = fu::now_hr();
-        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), parse(module.modid, fname, lexer_result.tokens) };
+        s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
+        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
         const f64 t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);

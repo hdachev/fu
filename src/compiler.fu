@@ -27,9 +27,11 @@ fn compile(fname: string, via: string = '')
             lex(:fname, :src);
 
         let t1 = now_hr();
+        let parser_result = parse( :module.modid, :fname, :lexer_result.tokens );
+
         module.in = ModuleInputs(
             :src, lex: lexer_result,
-            :parse( :module.modid, :fname, :lexer_result.tokens ));
+            parse: parser_result);
 
         let t2 = now_hr();
 
