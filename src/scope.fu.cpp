@@ -29,6 +29,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+struct s_ValueType;
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 fu_STR serializeType(const s_Type&);
@@ -146,6 +147,24 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    fu_STR canon;
+    int quals;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon
+            || quals
+            || modid
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -178,17 +197,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    fu_STR canon;
-    int quals;
-    int modid;
+    s_ValueType value;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
-            || quals
-            || modid
+            || value
             || lifetime
             || effects
         ;
@@ -531,10 +546,10 @@ void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
 
 const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    if ((type.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+    if ((type.value.modid == module.modid))
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
 
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.modid].out.types[type.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
 }
 
 s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
@@ -547,7 +562,7 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
     fu_STR canon = ("s_"_fu + id);
     s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module), s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, def.fields), MODID(module) }, s_Lifetime{}, s_Effects{} };
 }
 
 void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
@@ -579,7 +594,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
-        if (!(fields[i].type.quals & q_copy))
+        if (!(fields[i].type.value.quals & q_copy))
             return true;
 
     };
@@ -595,7 +610,7 @@ bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
-        if (!(fields[i].type.quals & q_trivial))
+        if (!(fields[i].type.value.quals & q_trivial))
             return true;
 
     };
@@ -608,23 +623,23 @@ s_Type createArray(const s_Type& item, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_Type(item) } } };
     fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
     registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(item.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
 
 bool type_isString(const s_Type& type)
 {
-    return (type.canon == "string"_fu);
+    return (type.value.canon == "string"_fu);
 }
 
 bool type_isArray(const s_Type& type)
 {
-    return fu::lmatch(type.canon, "Array("_fu);
+    return fu::lmatch(type.value.canon, "Array("_fu);
 }
 
 s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if (!type_isArray(type))
-        return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
+        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
     s_Type t { ([&]() -> const s_Type& { if ((def.kind == "array"_fu)) { const s_Type& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }()) };
@@ -634,7 +649,7 @@ s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Contex
 
 bool type_isMap(const s_Type& type)
 {
-    return fu::lmatch(type.canon, "Map("_fu);
+    return fu::lmatch(type.value.canon, "Map("_fu);
 }
 
 s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
@@ -643,7 +658,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_Type(key) }, s_StructField { "Value"_fu, s_Type(value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { fu_STR(canon), copyOrMove(flags, fields), MODID(module), s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
+    return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
@@ -755,22 +770,22 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_UnsignedInt
@@ -780,22 +795,22 @@ inline const int UnsignedInt = Integral;
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_floating_pt
@@ -810,32 +825,32 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_string = s_Type { s_ValueType { "string"_fu, int(q_copy), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 s_Scope listGlobals(const s_Module& module)

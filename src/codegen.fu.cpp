@@ -31,6 +31,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+struct s_ValueType;
 fu_STR last(const fu_STR&);
 bool hasIdentifierChars(const fu_STR&);
 const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
@@ -50,6 +51,24 @@ struct s_TokenIdx
         return false
             || modid
             || tokidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    fu_STR canon;
+    int quals;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon
+            || quals
+            || modid
         ;
     }
 };
@@ -87,17 +106,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    fu_STR canon;
-    int quals;
-    int modid;
+    s_ValueType value;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
-            || quals
-            || modid
+            || value
             || lifetime
             || effects
         ;
@@ -558,7 +573,7 @@ inline const int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
@@ -583,7 +598,7 @@ inline const int LET_INIT = 1;
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -598,7 +613,7 @@ inline const int q_copy = (1 << 2);
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_string = s_Type { s_ValueType { "string"_fu, int(q_copy), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_Trivial
@@ -613,7 +628,7 @@ inline const int Primitive = (Trivial | q_primitive);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
@@ -678,30 +693,30 @@ struct sf_cpp_codegen
     fu_STR typeAnnot(const s_Type& type, const int mode)
     {
         fu_STR fwd = typeAnnotBase(type);
-        if (((mode & M_RETVAL) && (type.canon == "never"_fu) && !(mode & M_CLOSURE)))
+        if (((mode & M_RETVAL) && (type.value.canon == "never"_fu) && !(mode & M_CLOSURE)))
             return ("[[noreturn]] "_fu + fwd);
 
-        if ((type.quals & q_mutref))
+        if ((type.value.quals & q_mutref))
             return (fwd + "&"_fu);
 
-        if ((type.quals & q_ref))
+        if ((type.value.quals & q_ref))
         {
-            if ((type.quals & q_primitive))
+            if ((type.value.quals & q_primitive))
                 return ((((mode & M_ARGUMENT) | (mode & M_CONST)) && !(mode & M_FWDECL)) ? ("const "_fu + fwd) : fu_STR(fwd));
 
             return (("const "_fu + fwd) + "&"_fu);
         };
-        if (((mode & M_CONST) && (type.quals & q_trivial)))
+        if (((mode & M_CONST) && (type.value.quals & q_trivial)))
             return ("const "_fu + fwd);
 
-        if (((mode & M_ARGUMENT) && !(type.quals & q_trivial)))
+        if (((mode & M_ARGUMENT) && !(type.value.quals & q_trivial)))
             return (fwd + "&&"_fu);
 
         return fwd;
     };
     fu_STR typeAnnotBase(const s_Type& type)
     {
-        const fu_STR& c = type.canon;
+        const fu_STR& c = type.value.canon;
         if ((c == "i8"_fu))
             return "i8"_fu;
 
@@ -744,16 +759,16 @@ struct sf_cpp_codegen
         if ((c == "never"_fu))
             return annotateNever();
 
-        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.canon)); }());
+        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
         const fu_STR& k = tdef.kind;
         if ((k == "struct"_fu))
         {
-            if (!fu::has(_tfwd, type.canon))
+            if (!fu::has(_tfwd, type.value.canon))
             {
-                (_tfwd.upsert(type.canon) = (("\nstruct "_fu + type.canon) + ";"_fu));
+                (_tfwd.upsert(type.value.canon) = (("\nstruct "_fu + type.value.canon) + ";"_fu));
                 _tdef += declareStruct(type, tdef);
             };
-            return type.canon;
+            return type.value.canon;
         };
         if ((k == "array"_fu))
         {
@@ -772,7 +787,7 @@ struct sf_cpp_codegen
     };
     fu_STR declareStruct(const s_Type& t, const s_Struct& s)
     {
-        fu_STR def = (((((("\n                                #ifndef DEF_"_fu + t.canon) + "\n                                #define DEF_"_fu) + t.canon) + "\nstruct "_fu) + t.canon) + "\n{"_fu);
+        fu_STR def = (((((("\n                                #ifndef DEF_"_fu + t.value.canon) + "\n                                #define DEF_"_fu) + t.value.canon) + "\nstruct "_fu) + t.value.canon) + "\n{"_fu);
         fu_STR indent = "\n    "_fu;
         if ((s.flags & F_DESTRUCTOR))
         {
@@ -792,12 +807,12 @@ struct sf_cpp_codegen
             def += "\n    Data data;"_fu;
             def += "\n    bool dtor = false;"_fu;
             def += "\n"_fu;
-            (def += "\n    ~"_fu, def += t.canon, def += "() noexcept;"_fu);
-            (def += "\n    inline "_fu, def += t.canon, def += "(Data data) noexcept : data(data) {};"_fu);
-            (def += "\n    "_fu, def += t.canon, def += "(const "_fu, def += t.canon, def += "&) = delete;"_fu);
-            (def += "\n    "_fu, def += t.canon, def += "& operator=(const "_fu, def += t.canon, def += "&) = delete;"_fu);
-            (def += "\n    "_fu, def += t.canon, def += "("_fu, def += t.canon, def += "&&) noexcept;"_fu);
-            (def += "\n    "_fu, def += t.canon, def += "& operator=("_fu, def += t.canon, def += "&&) noexcept;"_fu);
+            (def += "\n    ~"_fu, def += t.value.canon, def += "() noexcept;"_fu);
+            (def += "\n    inline "_fu, def += t.value.canon, def += "(Data data) noexcept : data(data) {};"_fu);
+            (def += "\n    "_fu, def += t.value.canon, def += "(const "_fu, def += t.value.canon, def += "&) = delete;"_fu);
+            (def += "\n    "_fu, def += t.value.canon, def += "& operator=(const "_fu, def += t.value.canon, def += "&) = delete;"_fu);
+            (def += "\n    "_fu, def += t.value.canon, def += "("_fu, def += t.value.canon, def += "&&) noexcept;"_fu);
+            (def += "\n    "_fu, def += t.value.canon, def += "& operator=("_fu, def += t.value.canon, def += "&&) noexcept;"_fu);
         };
         def += "\n    explicit operator bool() const noexcept"_fu;
         def += "\n    {"_fu;
@@ -1037,7 +1052,7 @@ struct sf_cpp_codegen
                 const s_SolvedNode& argNode = fn.items[i];
                 const s_Type& argType = argNode.type;
                 const fu_STR& arg = argNode.value;
-                args.push(((argType.quals & q_ref) ? fu_STR(arg) : cgSteal(arg)));
+                args.push(((argType.value.quals & q_ref) ? fu_STR(arg) : cgSteal(arg)));
             };
             src += "\n} // namespace\n\n"_fu;
             src += cgFnSignature(fn);
@@ -1092,7 +1107,7 @@ struct sf_cpp_codegen
         if ((fn.flags & F_DESTRUCTOR))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
-            const fu_STR& name = head.type.canon;
+            const fu_STR& name = head.type.value.canon;
             (src += "\n\n"_fu, src += name, src += "::~"_fu, src += name, src += "() noexcept"_fu);
             src += "\n{"_fu;
             src += "\n    if (!dtor)"_fu;
@@ -1141,15 +1156,15 @@ struct sf_cpp_codegen
 
         if (init)
         {
-            if (((init.kind == "copy"_fu) && !(node.type.quals & q_ref)))
+            if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
             {
                 fu_STR expr = cgNode(only(init.items), 0);
-                if ((node.type.quals & q_trivial))
+                if ((node.type.value.quals & q_trivial))
                     return ((head + " = "_fu) + expr);
 
                 return (((head + " { "_fu) + expr) + " }"_fu);
             };
-            if (((init.kind == "definit"_fu) && !(init.type.quals & q_ref) && (init.type == node.type)))
+            if (((init.kind == "definit"_fu) && !(init.type.value.quals & q_ref) && (init.type == node.type)))
                 return (head + " {}"_fu);
 
             return ((head + " = "_fu) + cgNode(init, 0));
@@ -1266,10 +1281,10 @@ struct sf_cpp_codegen
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))
             {
-                open = ((" { "_fu + head.canon) + "::Data { "_fu);
+                open = ((" { "_fu + head.value.canon) + "::Data { "_fu);
                 close = " }}"_fu;
             };
-            return (((head.canon + open) + fu::join(items, ", "_fu)) + close);
+            return (((head.value.canon + open) + fu::join(items, ", "_fu)) + close);
         };
         const fu_STR& id = (target.name ? target.name : fail(fu_STR{}));
         if ((target.kind == "global"_fu))
@@ -1305,10 +1320,10 @@ struct sf_cpp_codegen
             {
                 if ((id == "[]"_fu))
                 {
-                    if ((head.type.canon == "string"_fu))
+                    if ((head.type.value.canon == "string"_fu))
                         return (((("fu_TO_STR("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
-                    if ((node.type.quals & q_mutref))
+                    if ((node.type.value.quals & q_mutref))
                         return (((items[0] + ".mutref("_fu) + items[1]) + ")"_fu);
 
                     return (((items[0] + "["_fu) + items[1]) + "]"_fu);
@@ -1335,11 +1350,11 @@ struct sf_cpp_codegen
                 };
                 if ((id == "+="_fu))
                 {
-                    if (((head.type.canon == t_string.canon) || type_isArray(head.type)))
+                    if (((head.type.value.canon == t_string.value.canon) || type_isArray(head.type)))
                     {
                         if (isFieldChain(node.items[0]))
                         {
-                            if (((node.items[1].value == "+"_fu) && (node.items[1].type.canon == head.type.canon)))
+                            if (((node.items[1].value == "+"_fu) && (node.items[1].type.value.canon == head.type.value.canon)))
                                 return cgAppend(node, items[0]);
 
                         };
@@ -1424,7 +1439,7 @@ struct sf_cpp_codegen
         if (((id == "char"_fu) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
-            if ((head.type.canon == "string"_fu))
+            if ((head.type.value.canon == "string"_fu))
                 return (((("int("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
         };
@@ -1493,13 +1508,13 @@ struct sf_cpp_codegen
     fu_STR cgAppend(const s_SolvedNode& node, const fu_STR& into)
     {
         fu_STR src = "("_fu;
-        cgAppend_visit(node.type.canon, into, node.items[1], src);
+        cgAppend_visit(node.type.value.canon, into, node.items[1], src);
         src += ")"_fu;
         return src;
     };
     void cgAppend_visit(const fu_STR& canon, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src)
     {
-        if (((stuff.kind != "call"_fu) || (stuff.value != "+"_fu) || (stuff.type.canon != canon) || (stuff.items.size() != 2)))
+        if (((stuff.kind != "call"_fu) || (stuff.value != "+"_fu) || (stuff.type.value.canon != canon) || (stuff.items.size() != 2)))
         {
             fu_STR val = cgNode(stuff, 0);
             if ((src.size() > 1))
@@ -1593,8 +1608,8 @@ struct sf_cpp_codegen
     };
     fu_STR cgDefault(const s_Type& type)
     {
-        ((type.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
-        if ((type.quals & q_ref))
+        ((type.value.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
+        if ((type.value.quals & q_ref))
         {
             include("\"../lib/default.h\""_fu);
             return (("fu::Default<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);

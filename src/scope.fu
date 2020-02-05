@@ -135,7 +135,7 @@ pub fn initStruct(id: string, flags: i32)
 
     registerType(canon, def);
 
-    return Type(canon, copyOrMove(flags, def.fields), MODID);
+    return Type(ValueType(canon, copyOrMove(flags, def.fields), MODID));
 }
 
 pub fn finalizeStruct(id: string, fields: StructField[])
@@ -198,8 +198,9 @@ pub fn createArray(item: Type): Type
         :fields,
         :flags));
 
-    return Type(canon, copyOrMove(flags, fields), MODID,
-        :item.lifetime);
+    return Type(
+        ValueType(canon, copyOrMove(flags, fields), MODID),
+            :item.lifetime);
 }
 
 pub fn type_isString(type: Type): bool
@@ -251,9 +252,10 @@ pub fn createMap(key: Type, value: Type): Type
         :flags,
     ));
 
-    return Type(canon, copyOrMove(flags, fields), MODID,
-        lifetime: type_inter( key.lifetime,
-                            value.lifetime ));
+    return Type(
+        ValueType(canon, copyOrMove(flags, fields), MODID),
+            lifetime: type_inter( key.lifetime,
+                                value.lifetime ));
 }
 
 pub struct MapFields

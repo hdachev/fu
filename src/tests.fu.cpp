@@ -27,6 +27,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+struct s_ValueType;
 s_Context ZERO(const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
@@ -142,6 +143,24 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    fu_STR canon;
+    int quals;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon
+            || quals
+            || modid
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -174,17 +193,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    fu_STR canon;
-    int quals;
-    int modid;
+    s_ValueType value;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
-            || quals
-            || modid
+            || value
             || lifetime
             || effects
         ;

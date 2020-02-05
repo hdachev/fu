@@ -44,16 +44,23 @@ pub let e_memcpy    = 1 << 13;
 
 //
 
-pub struct Effects  { raw: i32; }
-
-pub struct Type
+pub struct ValueType
 {
     canon: string;
     quals: i32;
     modid: i32;
+};
 
-    lifetime: Lifetime;
-    effects:  Effects;
+pub struct Effects
+{
+    raw: i32;
+};
+
+pub struct Type
+{
+    using value:    ValueType;
+    lifetime:       Lifetime;
+    effects:        Effects;
 };
 
 fn type_inter(a: Effects, b: Effects)
@@ -78,24 +85,24 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i8        = Type( 'i8', SignedInt, 0);
-pub let t_i16       = Type('i16', SignedInt, 0);
-pub let t_i32       = Type('i32', SignedInt, 0);
-pub let t_i64       = Type('i64', SignedInt, 0);
+pub let t_i8        = Type(ValueType( 'i8', SignedInt, 0));
+pub let t_i16       = Type(ValueType('i16', SignedInt, 0));
+pub let t_i32       = Type(ValueType('i32', SignedInt, 0));
+pub let t_i64       = Type(ValueType('i64', SignedInt, 0));
 
-pub let t_u8        = Type( 'u8', UnsignedInt, 0);
-pub let t_u16       = Type('u16', UnsignedInt, 0);
-pub let t_u32       = Type('u32', UnsignedInt, 0);
-pub let t_u64       = Type('u64', UnsignedInt, 0);
+pub let t_u8        = Type(ValueType( 'u8', UnsignedInt, 0));
+pub let t_u16       = Type(ValueType('u16', UnsignedInt, 0));
+pub let t_u32       = Type(ValueType('u32', UnsignedInt, 0));
+pub let t_u64       = Type(ValueType('u64', UnsignedInt, 0));
 
-pub let t_f32       = Type('f32', FloatingPt, 0);
-pub let t_f64       = Type('f64', FloatingPt, 0);
+pub let t_f32       = Type(ValueType('f32', FloatingPt, 0));
+pub let t_f64       = Type(ValueType('f64', FloatingPt, 0));
 
-pub let t_void      = Type('void', 0, 0);
-pub let t_bool      = Type('bool', Primitive, 0);
-pub let t_never     = Type('never', 0, 0);
-pub let t_template  = Type('template', 0, 0);
-pub let t_string    = Type('string', q_copy, 0);
+pub let t_void      = Type(ValueType('void', 0, 0));
+pub let t_bool      = Type(ValueType('bool', Primitive, 0));
+pub let t_never     = Type(ValueType('never', 0, 0));
+pub let t_template  = Type(ValueType('template', 0, 0));
+pub let t_string    = Type(ValueType('string', q_copy, 0));
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -245,11 +252,12 @@ pub fn type_tryInter(a: Type, b: Type)
              : Type();
 
     return Type(
-        a.canon,
-        a.quals & b.quals,
-        a.modid,
-        type_inter(a.lifetime, b.lifetime),
-        type_inter(a.effects,  b.effects ));
+        ValueType(
+            :a.canon,
+            :a.quals & b.quals,
+            :a.modid),
+        type_inter(:a.lifetime, :b.lifetime),
+        type_inter(:a.effects,  :b.effects ));
 }
 
 

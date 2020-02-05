@@ -30,6 +30,7 @@ struct s_Template;
 struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
+struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
@@ -47,6 +48,7 @@ void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
+bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
@@ -59,7 +61,6 @@ bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
-bool isAssignable(const s_Type&, const s_Type&);
 s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_TokenIdx
@@ -174,6 +175,24 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    fu_STR canon;
+    int quals;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon
+            || quals
+            || modid
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
@@ -206,17 +225,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    fu_STR canon;
-    int quals;
-    int modid;
+    s_ValueType value;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
-            || quals
-            || modid
+            || value
             || lifetime
             || effects
         ;
@@ -527,7 +542,7 @@ inline const int FN_ARGS_BACK = FN_RET_BACK;
 
                                 #ifndef DEF_t_template
                                 #define DEF_t_template
-inline const s_Type t_template = s_Type { "template"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_template = s_Type { s_ValueType { "template"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_IMPLICIT
@@ -552,7 +567,7 @@ inline const int F_NAMED_ARGS = (1 << 25);
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_copy
@@ -612,12 +627,12 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_string = s_Type { s_ValueType { "string"_fu, int(q_copy), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -682,12 +697,12 @@ inline const int F_ID = (1 << 5);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 namespace {
@@ -837,7 +852,7 @@ struct sf_solve
     };
     s_SolvedNode tryDefaultInit(const s_Type& type)
     {
-        if ((type.quals & q_mutref))
+        if ((type.value.quals & q_mutref))
             return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
 
         return createDefaultInit(type);
@@ -1298,7 +1313,7 @@ struct sf_solve
                     s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);
                     s_Type type { _typeParams[mut_arg.value] };
-                    if (!(type.quals & q_ref))
+                    if (!(type.value.quals & q_ref))
                         mut_arg.flags |= F_MUT;
 
                     outItems.mutref(i) = solveLet(mut_arg, s_Lifetime(lifetime));
@@ -1396,9 +1411,9 @@ struct sf_solve
             {
                 inType.lifetime = Lifetime_fromArgIndex(i);
                 const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
-                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
+                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
                 ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
-                inType.quals |= q_ref;
+                inType.value.quals |= q_ref;
             };
             const s_Node& annot = argNode.items[LET_TYPE];
             if (annot)
@@ -1497,7 +1512,7 @@ struct sf_solve
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
-        if (((next.type.lifetime.raw > _return_idx) && (next.type.quals & q_ref)))
+        if (((next.type.lifetime.raw > _return_idx) && (next.type.value.quals & q_ref)))
         {
             const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
             next = createMove(next, bool(nrvo));
@@ -1527,7 +1542,7 @@ struct sf_solve
         s_SolvedNode annot = ([&]() -> s_SolvedNode { if (n_annot) return evalTypeAnnot(n_annot); else return s_SolvedNode{}; }());
         s_SolvedNode init = ([&]() -> s_SolvedNode { if (n_init) return solveNode(n_init, annot.type); else return s_SolvedNode{}; }());
         (annot.type || init.type || fail("Variable declarations without type annotations must be initialized."_fu));
-        s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(init.type) : s_Type(init.type)));
+        s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.value.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(init.type) : s_Type(init.type)));
         if ((annot.type && init.type))
         {
             (isAssignable(annot.type, init.type) || fail("Type annotation does not match init expression."_fu));
@@ -1538,7 +1553,7 @@ struct sf_solve
         s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { (annot ? annot : init), init } });
         if (!(_current_fn || (node.flags & F_FIELD)))
         {
-            if (((out.flags & F_MUT) || (out.type.quals & q_mutref)))
+            if (((out.flags & F_MUT) || (out.type.value.quals & q_mutref)))
                 fail("Mutable statics are not currently allowed."_fu);
 
             out.kind = "global"_fu;
@@ -1549,10 +1564,10 @@ struct sf_solve
     {
         s_SolvedNode out = solveBinding(node, lifetime);
         const bool global = (out.kind == "global"_fu);
-        if (!(out.type.quals & q_ref))
+        if (!(out.type.value.quals & q_ref))
             lifetime = Lifetime_next();
 
-        fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.quals & q_ref) ? "ref"_fu : "var"_fu)));
+        fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.value.quals & q_ref) ? "ref"_fu : "var"_fu)));
         s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), fu_STR(kind), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
         if ((out.flags & F_USING))
             scope_using(overload);
@@ -1659,7 +1674,7 @@ struct sf_solve
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type, module, ctx) : ((void)fail("TODO"_fu), s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type, module, ctx) : ((void)fail("TODO"_fu), s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }))));
                     if (!t)
                         return false;
 
@@ -1697,7 +1712,7 @@ struct sf_solve
         else if ((node.kind == "typeparam"_fu))
         {
             const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
-            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(id)));
+            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(id)));
             if (_param)
             {
                 s_Type inter = type_tryInter(_param, type);
@@ -1987,23 +2002,23 @@ struct sf_solve
     };
     void maybeCopyOrMove(s_SolvedNode& node, const s_Type& slot, const bool isReturn, const bool isArgument)
     {
-        const int q = slot.quals;
+        const int q = slot.value.quals;
         if (!(q & q_mutref))
-            node.type.quals &= ~q_mutref;
+            node.type.value.quals &= ~q_mutref;
 
         if ((q & q_ref))
         {
             if (((node.kind == "definit"_fu) && isArgument))
-                node.type.quals &= ~q_ref;
+                node.type.value.quals &= ~q_ref;
 
             return;
         };
-        if (!(node.type.quals & q_ref))
+        if (!(node.type.value.quals & q_ref))
             return;
 
         if ((node.kind == "definit"_fu))
         {
-            node.type.quals &= ~q_ref;
+            node.type.value.quals &= ~q_ref;
             return;
         };
         if (!(q & q_copy))

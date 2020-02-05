@@ -7,6 +7,7 @@
 struct s_Effects;
 struct s_Lifetime;
 struct s_Type;
+struct s_ValueType;
 const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
@@ -17,6 +18,24 @@ struct s_Effects
     {
         return false
             || raw
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    fu_STR canon;
+    int quals;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || canon
+            || quals
+            || modid
         ;
     }
 };
@@ -40,17 +59,13 @@ struct s_Lifetime
                                 #define DEF_s_Type
 struct s_Type
 {
-    fu_STR canon;
-    int quals;
-    int modid;
+    s_ValueType value;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
-            || quals
-            || modid
+            || value
             || lifetime
             || effects
         ;
@@ -155,7 +170,7 @@ s_Effects type_inter(const s_Effects& a, const s_Effects& b)
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
-    return ((a.modid == b.modid) && (a.canon == b.canon) && (a.quals == b.quals));
+    return ((a.value.modid == b.value.modid) && (a.value.canon == b.value.canon) && (a.value.quals == b.value.quals));
 }
 
                                 #ifndef DEF_Trivial
@@ -195,106 +210,106 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { "i8"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { "i16"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { "i32"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { "i64"_fu, int(SignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { "u8"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { "u16"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { "u32"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { "u64"_fu, int(UnsignedInt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { "f32"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { "f64"_fu, int(FloatingPt), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { "void"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { "bool"_fu, int(Primitive), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { "never"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_template
                                 #define DEF_t_template
-inline const s_Type t_template = s_Type { "template"_fu, 0, 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_template = s_Type { s_ValueType { "template"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
-inline const s_Type t_string = s_Type { "string"_fu, int(q_copy), 0, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_string = s_Type { s_ValueType { "string"_fu, int(q_copy), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return (((host.canon == guest.canon) && ((host.quals == guest.quals) || (!(host.quals & q_mutref) && ((host.quals & guest.quals) == host.quals)))) || ((guest == t_never) && (guest.quals == 0)));
+    return (((host.value.canon == guest.value.canon) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || ((guest == t_never) && (guest.value.quals == 0)));
 }
 
 bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 {
-    guest.quals |= q_ref;
+    guest.value.quals |= q_ref;
     return isAssignable(host, guest);
 }
 
 s_Type qsub(const s_Type& type, const int q)
 {
     s_Type t { type };
-    t.quals &= ~q;
+    t.value.quals &= ~q;
     return t;
 }
 
 bool qhas(const s_Type& type, const int q)
 {
-    return ((type.quals & q) == q);
+    return ((type.value.quals & q) == q);
 }
 
 s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
-        return s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} };
+        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
 
     return qsub(type, q);
 }
@@ -302,7 +317,7 @@ s_Type tryClear(const s_Type& type, const int q)
 s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 {
     s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.quals |= q_ref;
+    t.value.quals |= q_ref;
     t.lifetime = type_inter(lifetime, t.lifetime);
     return t;
 }
@@ -310,7 +325,7 @@ s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
 {
     s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.quals |= (q_mutref | q_ref);
+    t.value.quals |= (q_mutref | q_ref);
     t.lifetime = type_inter(t.lifetime, lifetime);
     return t;
 }
@@ -329,31 +344,31 @@ s_Type tryClear_ref(const s_Type& type)
 s_Type clear_refs(const s_Type& type)
 {
     s_Type t { type };
-    t.quals &= ~q_ref;
-    t.quals &= ~q_mutref;
+    t.value.quals &= ~q_ref;
+    t.value.quals &= ~q_mutref;
     return t;
 }
 
 s_Type clear_mutref(const s_Type& type)
 {
     s_Type t { type };
-    t.quals &= ~q_mutref;
+    t.value.quals &= ~q_mutref;
     return t;
 }
 
 s_Type add_refs(const s_Type& from, s_Type&& to)
 {
-    to.quals |= (from.quals & (q_ref | q_mutref));
+    to.value.quals |= (from.value.quals & (q_ref | q_mutref));
     to.lifetime = type_inter(from.lifetime, to.lifetime);
     return std::move(to);
 }
 
 fu_STR serializeType(const s_Type& type)
 {
-    if (type.quals)
-        return (((("("_fu + type.canon) + "{"_fu) + type.quals) + "})"_fu);
+    if (type.value.quals)
+        return (((("("_fu + type.value.canon) + "{"_fu) + type.value.quals) + "})"_fu);
 
-    return (("("_fu + type.canon) + ")"_fu);
+    return (("("_fu + type.value.canon) + ")"_fu);
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)
@@ -361,13 +376,13 @@ bool type_has(const s_Type& type, const fu_STR& tag)
     const int idx = fu::lfind(TAGS, tag);
     ((idx >= 0) || fu::fail((("Unknown type tag: `"_fu + tag) + "`."_fu)));
     const int mask = (1 << idx);
-    return ((type.quals & mask) == mask);
+    return ((type.value.quals & mask) == mask);
 }
 
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
-    if ((a.canon != b.canon))
-        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { fu_STR{}, int{}, int{}, s_Lifetime{}, s_Effects{} }));
+    if ((a.value.canon != b.value.canon))
+        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
-    return s_Type { fu_STR(a.canon), (a.quals & b.quals), int(a.modid), s_Lifetime(type_inter(a.lifetime, b.lifetime)), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { fu_STR(a.value.canon), (a.value.quals & b.value.quals), int(a.value.modid) }, s_Lifetime(type_inter(a.lifetime, b.lifetime)), type_inter(a.effects, b.effects) };
 }
