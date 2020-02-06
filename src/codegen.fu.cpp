@@ -963,7 +963,7 @@ struct sf_cpp_codegen
             return "(false /*empty parens*/)"_fu;
 
         if ((items.size() == 1))
-            return items[0];
+            return std::move(items[0]);
 
         fu_STR src = "("_fu;
         for (int i = 0; (i < items.size()); i++)

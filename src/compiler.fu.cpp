@@ -10,6 +10,7 @@
 #include "../lib/vec/find.h"
 #include "../lib/vec/join.h"
 #include <iostream>
+#include <utility>
 
 struct s_Context;
 struct s_Effects;
@@ -574,7 +575,7 @@ fu_STR compile_snippet(const fu_STR& src)
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         if ((ctx.modules[i].fname == fname))
-            return ctx.modules[i].out.cpp;
+            return std::move(ctx.modules[i].out.cpp);
 
     };
     fu::fail("Assertion failed.");
