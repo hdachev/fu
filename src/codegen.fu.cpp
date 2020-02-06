@@ -20,6 +20,7 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
@@ -74,15 +75,31 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    int relax;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+            || relax
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    int raw;
+    fu_VEC<s_Region> regions;
     explicit operator bool() const noexcept
     {
         return false
-            || raw
+            || regions
         ;
     }
 };

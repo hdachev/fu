@@ -18,6 +18,7 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
@@ -33,8 +34,10 @@ struct s_ValueType;
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 fu_STR serializeType(const s_Type&);
-int Lifetime_toArgIndex(const s_Lifetime&);
-const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
+s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
+int Region_toArgIndex(const s_Region&);
+s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
+s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -201,15 +204,31 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    int relax;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+            || relax
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    int raw;
+    fu_VEC<s_Region> regions;
     explicit operator bool() const noexcept
     {
         return false
-            || raw
+            || regions
         ;
     }
 };
@@ -656,7 +675,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
     fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(type_inter(key.lifetime, value.lifetime)), s_Effects{} };
+    return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
@@ -710,12 +729,21 @@ s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, con
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
 {
-    const int argIdx = Lifetime_toArgIndex(lifetime);
-    if ((argIdx < 0))
-        return lifetime;
-
-    const s_SolvedNode& arg = args[argIdx];
-    return arg.type.lifetime;
+    s_Lifetime result {};
+    for (int i = 0; (i < lifetime.regions.size()); i++)
+    {
+        const s_Region& r = lifetime.regions[i];
+        const int argIdx = Region_toArgIndex(r);
+        if ((argIdx < 0))
+        {
+            result = type_inter(result, r);
+            continue;
+        };
+        const s_SolvedNode& arg = args[argIdx];
+        s_Lifetime actual = Lifetime_relaxCallArg(s_Lifetime(arg.type.lifetime), r.relax);
+        result = type_inter(result, actual);
+    };
+    return result;
 }
 
                                 #ifndef DEF_Trivial

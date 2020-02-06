@@ -7,6 +7,12 @@ fn only(s: $T[]): $T
     s.len == 1 ? s[0] : throw (
         'LEN != 1: ' + s.len);
 
+fn if_only(s: $T[]): $T
+    s.len == 1 && s[0];
+
+fn if_first(s: $T[]): $T
+    s.len && s[0];
+
 fn hasIdentifierChars(id: string) {
     for (mut i = 0; i < id.len; i++)
     {

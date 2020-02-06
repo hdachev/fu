@@ -92,7 +92,7 @@ fn solve(
     //
 
     fn Lifetime_next(): Lifetime
-        Lifetime( raw: _scope.items.len + 1 );
+        Lifetime_fromScopeIdx( _scope.items.len + 1 );
 
     fn Binding(id: string, type: Type, kind = 'var', constant: SolvedNode = [])
     {
@@ -1139,7 +1139,7 @@ fn solve(
         // TODO LIFETIMES   this doesn't work               //
         //                  for deeply referential types.   //
                                                             //
-        if (next.type.lifetime.raw > _return_idx &&         //
+        if (next.type.lifetime.killedBy(_return_idx) &&     //
             next.type.quals & q_ref)                        //
         {                                                   //
             let nrvo = next.kind == 'call'                  //

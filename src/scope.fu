@@ -428,12 +428,28 @@ pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 pub fn Lifetime_fromCallArgs(
     lifetime: Lifetime, args: SolvedNode[]): Lifetime
 {
-    let argIdx = Lifetime_toArgIndex(lifetime);
-    if (argIdx < 0)
-        return lifetime;
+    mut result: Lifetime;
 
-    let arg = args[argIdx];
-    return arg.type.lifetime;
+    for (mut i = 0; i < lifetime.regions.len; i++)
+    {
+        let r = lifetime.regions[i];
+
+        // Use verbatim unless an argument.
+        let argIdx = Region_toArgIndex(r);
+        if (argIdx < 0)
+        {
+            result = type_inter(result, r);
+            continue;
+        }
+
+        // Else replace with actual from callsite,
+        //  incrementing the relax depth as much as possible.
+        let arg     = args[argIdx];
+        let actual  = Lifetime_relaxCallArg(arg.type.lifetime, r.relax);
+            result  = type_inter(result, actual);
+    }
+
+    return result;
 }
 
 

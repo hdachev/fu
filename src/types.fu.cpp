@@ -6,9 +6,10 @@
 
 struct s_Effects;
 struct s_Lifetime;
+struct s_Region;
 struct s_Type;
 struct s_ValueType;
-const s_Lifetime& type_inter(const s_Lifetime&, const s_Lifetime&);
+s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
 struct s_Effects
@@ -41,15 +42,31 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    int relax;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+            || relax
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    int raw;
+    fu_VEC<s_Region> regions;
     explicit operator bool() const noexcept
     {
         return false
-            || raw
+            || regions
         ;
     }
 };
@@ -384,5 +401,5 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
     if ((a.value.canon != b.value.canon))
         return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
-    return s_Type { s_ValueType { fu_STR(a.value.canon), (a.value.quals & b.value.quals), int(a.value.modid) }, s_Lifetime(type_inter(a.lifetime, b.lifetime)), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { fu_STR(a.value.canon), (a.value.quals & b.value.quals), int(a.value.modid) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }

@@ -19,6 +19,7 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
@@ -61,8 +62,10 @@ bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
-s_Lifetime Lifetime_fromArgIndex(int);
+s_Lifetime Lifetime_fromScopeIdx(int);
+bool killedBy(const s_Lifetime&, int);
 s_Lifetime Lifetime_static();
+s_Lifetime Lifetime_fromArgIndex(int);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -229,15 +232,31 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    int relax;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+            || relax
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    int raw;
+    fu_VEC<s_Region> regions;
     explicit operator bool() const noexcept
     {
         return false
-            || raw
+            || regions
         ;
     }
 };
@@ -756,7 +775,7 @@ struct sf_solve
     };
     s_Lifetime Lifetime_next()
     {
-        return s_Lifetime { (_scope.items.size() + 1) };
+        return Lifetime_fromScopeIdx((_scope.items.size() + 1));
     };
     s_Target Binding(const fu_STR& id, const s_Type& type, fu_STR&& kind, const s_SolvedNode& constant)
     {
@@ -1512,7 +1531,7 @@ struct sf_solve
     {
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
-        if (((next.type.lifetime.raw > _return_idx) && (next.type.value.quals & q_ref)))
+        if ((killedBy(next.type.lifetime, _return_idx) && (next.type.value.quals & q_ref)))
         {
             const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
             next = createMove(next, bool(nrvo));
