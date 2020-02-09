@@ -972,31 +972,31 @@ pub fn cpp_codegen(
 
         if (id == 'find' && items.len == 2)
         {
-            include('"../lib/vec/find.h"');
+            include('<fu/vec/find.h>');
             return 'fu::lfind(' + items.join(', ') + ')';
         }
 
         if (id == 'starts' && items.len == 2)
         {
-            include('"../lib/vec/find.h"');
+            include('<fu/vec/find.h>');
             return 'fu::lmatch(' + items.join(', ') + ')';
         }
 
         if (id == 'ends' && items.len == 2)
         {
-            include('"../lib/vec/find.h"');
+            include('<fu/vec/find.h>');
             return 'fu::rmatch(' + items.join(', ') + ')';
         }
 
         if (id == 'has' && items.len == 2)
         {
-            include('"../lib/vec/find.h"');
+            include('<fu/vec/find.h>');
             return 'fu::has(' + items.join(', ') + ')';
         }
 
         if (id == 'replace' && items.len == 3)
         {
-            include('"../lib/vec/replace.h"');
+            include('<fu/vec/replace.h>');
             return 'fu::replace(' + items.join(', ') + ')';
         }
 
@@ -1011,7 +1011,7 @@ pub fn cpp_codegen(
 
         if (id == 'sort' && items.len == 1)
         {
-            include('"../lib/vec/sort.h"');
+            include('<fu/vec/sort.h>');
             return 'fu::sort(' + items[0] + ')';
         }
 
@@ -1033,13 +1033,13 @@ pub fn cpp_codegen(
 
         if (id == 'join' && items.len == 2)
         {
-            include('"../lib/vec/join.h"');
+            include('<fu/vec/join.h>');
             return 'fu::join(' + items.join(', ') + ')';
         }
 
         if (id == 'split' && items.len == 2)
         {
-            include('"../lib/vec/split.h"');
+            include('<fu/vec/split.h>');
             return 'fu::split(' + items.join(', ') + ')';
         }
 
@@ -1060,31 +1060,31 @@ pub fn cpp_codegen(
 
         if (id == 'now_hr' || id == 'now_utc')
         {
-            include('"../lib/now.h"');
+            include('<fu/now.h>');
             return 'fu::' + id + '()';
         }
 
         if (id == 'file_write' || id == 'file_read' || id == 'file_size' || id == 'fs_cwd' || id == 'fs_mkdir_p')
         {
-            include('"../lib/io.h"');
+            include('<fu/io.h>');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
         if (id == 'env_get')
         {
-            include('"../lib/env.h"');
+            include('<fu/env.h>');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
         if (id == 'hash_tea')
         {
-            include('"../lib/tea.h"');
+            include('<fu/tea.h>');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
         if (id == 'shell_exec')
         {
-            include('"../lib/shell.h"');
+            include('<fu/shell.h>');
             return 'fu::' + id + '(' + items.join(', ') + ')';
         }
 
@@ -1135,24 +1135,24 @@ pub fn cpp_codegen(
 
     fn annotateMap(): void
     {
-        include('"../lib/map.h"');
+        include('<fu/map.h>');
     }
 
     fn annotateVector(): void
     {
-        include('"../lib/vec.h"');
+        include('<fu/vec.h>');
     }
 
     fn annotateString(): string
     {
-        include('"../lib/str.h"');
+        include('<fu/str.h>');
 
         return 'fu_STR';
     }
 
     fn annotateNever(): string
     {
-        include('"../lib/never.h"');
+        include('<fu/never.h>');
 
         return 'fu::never';
     }
@@ -1240,7 +1240,7 @@ pub fn cpp_codegen(
 
         if (type.quals & q_ref)
         {
-            include('"../lib/default.h"');
+            include('<fu/default.h>');
 
             return 'fu::Default<' + typeAnnot(clear_refs(type)) + '>::value';
         }

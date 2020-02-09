@@ -1,7 +1,7 @@
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/join.h"
-#include "../lib/vec/split.h"
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/join.h>
+#include <fu/vec/split.h>
 
 fu_STR last(const fu_STR& s)
 {

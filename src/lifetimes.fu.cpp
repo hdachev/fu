@@ -1,7 +1,7 @@
-#include "../lib/default.h"
-#include "../lib/never.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
+#include <fu/default.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
 #include <utility>
 
 struct s_Lifetime;

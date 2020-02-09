@@ -1,8 +1,8 @@
-#include "../lib/map.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
-#include "../lib/vec/replace.h"
+#include <fu/map.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
+#include <fu/vec/replace.h>
 
 struct s_Context;
 struct s_Effects;

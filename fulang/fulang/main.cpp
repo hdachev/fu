@@ -10,7 +10,7 @@
 #include "../../src/cli.fu.unity.cpp"
 #undef  main
 
-#include "../../lib/cow_vec_test.h"
+#include "../../include/fu/cow_vec_test.h"
 
 
 // So lets go.

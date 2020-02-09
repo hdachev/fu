@@ -1,6 +1,6 @@
-#include "../lib/now.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
+#include <fu/now.h>
+#include <fu/str.h>
+#include <fu/vec.h>
 #include <iostream>
 
                                 #ifndef DEF_NICE_THINGS

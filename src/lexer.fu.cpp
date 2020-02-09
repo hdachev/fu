@@ -1,7 +1,7 @@
-#include "../lib/never.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
 
 struct s_LexerOutput;
 struct s_Token;

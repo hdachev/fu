@@ -1,11 +1,11 @@
-#include "../lib/map.h"
-#include "../lib/never.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
-#include "../lib/vec/join.h"
-#include "../lib/vec/replace.h"
-#include "../lib/vec/sort.h"
+#include <fu/map.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
+#include <fu/vec/join.h>
+#include <fu/vec/replace.h>
+#include <fu/vec/sort.h>
 #include <utility>
 
 struct s_Context;
@@ -1420,27 +1420,27 @@ struct sf_cpp_codegen
 
         if (((id == "find"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/find.h\""_fu);
+            include("<fu/vec/find.h>"_fu);
             return (("fu::lfind("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "starts"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/find.h\""_fu);
+            include("<fu/vec/find.h>"_fu);
             return (("fu::lmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "ends"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/find.h\""_fu);
+            include("<fu/vec/find.h>"_fu);
             return (("fu::rmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "has"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/find.h\""_fu);
+            include("<fu/vec/find.h>"_fu);
             return (("fu::has("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "replace"_fu) && (items.size() == 3)))
         {
-            include("\"../lib/vec/replace.h\""_fu);
+            include("<fu/vec/replace.h>"_fu);
             return (("fu::replace("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "slice"_fu) && (items.size() == 2)))
@@ -1454,7 +1454,7 @@ struct sf_cpp_codegen
 
         if (((id == "sort"_fu) && (items.size() == 1)))
         {
-            include("\"../lib/vec/sort.h\""_fu);
+            include("<fu/vec/sort.h>"_fu);
             return (("fu::sort("_fu + items[0]) + ")"_fu);
         };
         if (((id == "char"_fu) && (items.size() == 2)))
@@ -1475,12 +1475,12 @@ struct sf_cpp_codegen
 
         if (((id == "join"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/join.h\""_fu);
+            include("<fu/vec/join.h>"_fu);
             return (("fu::join("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "split"_fu) && (items.size() == 2)))
         {
-            include("\"../lib/vec/split.h\""_fu);
+            include("<fu/vec/split.h>"_fu);
             return (("fu::split("_fu + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if (((id == "keys"_fu) && (items.size() == 1)))
@@ -1500,27 +1500,27 @@ struct sf_cpp_codegen
 
         if (((id == "now_hr"_fu) || (id == "now_utc"_fu)))
         {
-            include("\"../lib/now.h\""_fu);
+            include("<fu/now.h>"_fu);
             return (("fu::"_fu + id) + "()"_fu);
         };
         if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu) || (id == "fs_cwd"_fu) || (id == "fs_mkdir_p"_fu)))
         {
-            include("\"../lib/io.h\""_fu);
+            include("<fu/io.h>"_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "env_get"_fu))
         {
-            include("\"../lib/env.h\""_fu);
+            include("<fu/env.h>"_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "hash_tea"_fu))
         {
-            include("\"../lib/tea.h\""_fu);
+            include("<fu/tea.h>"_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         if ((id == "shell_exec"_fu))
         {
-            include("\"../lib/shell.h\""_fu);
+            include("<fu/shell.h>"_fu);
             return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
         };
         ((id != "__native"_fu) || fu::fail("Assertion failed."));
@@ -1561,20 +1561,20 @@ struct sf_cpp_codegen
     };
     void annotateMap()
     {
-        include("\"../lib/map.h\""_fu);
+        include("<fu/map.h>"_fu);
     };
     void annotateVector()
     {
-        include("\"../lib/vec.h\""_fu);
+        include("<fu/vec.h>"_fu);
     };
     fu_STR annotateString()
     {
-        include("\"../lib/str.h\""_fu);
+        include("<fu/str.h>"_fu);
         return "fu_STR"_fu;
     };
     fu_STR annotateNever()
     {
-        include("\"../lib/never.h\""_fu);
+        include("<fu/never.h>"_fu);
         return "fu::never"_fu;
     };
     fu_STR cgThrow(const fu_STR& kind, const fu_STR& item)
@@ -1636,7 +1636,7 @@ struct sf_cpp_codegen
         ((type.value.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
         if ((type.value.quals & q_ref))
         {
-            include("\"../lib/default.h\""_fu);
+            include("<fu/default.h>"_fu);
             return (("fu::Default<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);
         };
         return (typeAnnot(type, 0) + "{}"_fu);

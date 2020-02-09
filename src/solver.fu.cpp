@@ -1,9 +1,9 @@
-#include "../lib/default.h"
-#include "../lib/map.h"
-#include "../lib/never.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
+#include <fu/default.h>
+#include <fu/map.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
 #include <utility>
 
 struct s_Context;

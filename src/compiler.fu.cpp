@@ -1,14 +1,14 @@
-#include "../lib/env.h"
-#include "../lib/io.h"
-#include "../lib/map.h"
-#include "../lib/never.h"
-#include "../lib/now.h"
-#include "../lib/shell.h"
-#include "../lib/str.h"
-#include "../lib/tea.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
-#include "../lib/vec/join.h"
+#include <fu/env.h>
+#include <fu/io.h>
+#include <fu/map.h>
+#include <fu/never.h>
+#include <fu/now.h>
+#include <fu/shell.h>
+#include <fu/str.h>
+#include <fu/tea.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
+#include <fu/vec/join.h>
 #include <iostream>
 #include <utility>
 
@@ -675,6 +675,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     if ((scheme == "retail"_fu))
         O_lvl += "-Dfu_RETAIL "_fu;
 
+    fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
@@ -703,7 +704,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         fu::fail(stdout);
     };
     fu_VEC<int> link_order = getLinkOrder(ctx.modules);
-    if ((fu::file_size(F_exe) < 1))
+    if (((fu::file_size(F_exe) < 1) && (bin || run)))
     {
         for (int i = 0; (i < Fs.size()); i++)
         {
@@ -718,7 +719,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 fu::file_write(F_cpp, cpp);
                 (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
                 const f64 t0 = fu::now_hr();
-                code = ([&]() -> int { { int _ = fu::shell_exec((((((GCC_CMD + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
+                code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
                     ERR(fu_STR(cpp));
 

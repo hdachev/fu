@@ -236,6 +236,8 @@ pub fn build(
     if (scheme == 'retail')
         O_lvl += '-Dfu_RETAIL ';
 
+    let INCLUDE = '-I ~/fu/include ';
+
     let GCC_CMD = 'g++ -std=c++1z ' + O_lvl
                 + '-pedantic-errors -Wall -Wextra -Werror ' // opt-in
                 + '-Wno-parentheses-equality ' // opt-out
@@ -279,7 +281,7 @@ pub fn build(
 
     //
     let link_order = getLinkOrder(ctx.modules);
-    if (file_size(F_exe) < 1)
+    if (file_size(F_exe) < 1 && (bin || run))
     {
         // Build.
         for (mut i = 0; i < Fs.len; i++)
@@ -301,7 +303,7 @@ pub fn build(
 
                 let t0 = now_hr();
 
-                code = shell_exec(GCC_CMD + '-c -o ' + F_tmp + ' ' + F_cpp + ' 2>&1', stdout)
+                code = shell_exec(GCC_CMD + INCLUDE + '-c -o ' + F_tmp + ' ' + F_cpp + ' 2>&1', stdout)
                     || shell_exec('mv ' + F_tmp + ' ' + F_obj + ' 2>&1', stdout);
 
                 if (code) return ERR(cpp);

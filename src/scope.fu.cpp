@@ -1,9 +1,9 @@
-#include "../lib/io.h"
-#include "../lib/map.h"
-#include "../lib/never.h"
-#include "../lib/str.h"
-#include "../lib/vec.h"
-#include "../lib/vec/find.h"
+#include <fu/io.h>
+#include <fu/map.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/find.h>
 
 struct s_Context;
 struct s_Effects;
