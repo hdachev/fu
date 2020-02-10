@@ -554,7 +554,7 @@ s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 void setModule(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
-    ((current.fname == module.fname) || fu::fail("Assertion failed."));
+    ((current.fname == module.fname) || fu::fail());
     current = module;
 }
 
@@ -566,14 +566,14 @@ void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
 const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if ((type.value.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
 
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail("Assertion failed."); }());
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
 }
 
 s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
 {
-    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail("Assertion failed."); }());
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail(); }());
 }
 
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
@@ -661,7 +661,7 @@ s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Contex
         return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
-    return s_Type { s_ValueType(([&]() -> const s_ValueType& { if ((def.kind == "array"_fu)) { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} };
+    return s_Type { s_ValueType(([&]() -> const s_ValueType& { if ((def.kind == "array"_fu)) { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
 bool type_isMap(const s_Type& type)
@@ -684,8 +684,13 @@ s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Con
         return s_MapFields { s_Type{}, s_Type{} };
 
     const s_Struct& def = lookupType(type, module, ctx);
-    ((def.kind == "map"_fu) || fu::fail("Assertion failed."));
-    return s_MapFields { s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[1].type; if (_) return _; } fu::fail("Assertion failed."); }())), s_Lifetime(type.lifetime), s_Effects{} } };
+    ((def.kind == "map"_fu) || fu::fail());
+    return s_MapFields { s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[1].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} } };
+}
+
+bool isTemplate(const s_Overload& o)
+{
+    return (o.kind == "template"_fu);
 }
 
 fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)

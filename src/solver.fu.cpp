@@ -4,6 +4,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/find.h>
+#include <fu/vec/slice.h>
 #include <utility>
 
 struct s_Context;
@@ -37,6 +38,7 @@ s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
 void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+bool isTemplate(const s_Overload&);
 s_Type createArray(const s_Type&, s_Module&);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
@@ -750,7 +752,7 @@ struct sf_solve
     };
     s_Overload GET(const s_Target& target, const s_Module& module, const s_Context& ctx)
     {
-        ((target.index > 0) || fu::fail("Assertion failed."));
+        ((target.index > 0) || fu::fail());
         if ((target.modid == module.modid))
             return _scope.overloads[(target.index - 1)];
 
@@ -758,7 +760,7 @@ struct sf_solve
     };
     s_Overload& GET_mut(const s_Target& target)
     {
-        (((target.index > 0) && (target.modid == MODID(module))) || fu::fail("Assertion failed."));
+        (((target.index > 0) && (target.modid == MODID(module))) || fu::fail());
         return _scope.overloads.mutref((target.index - 1));
     };
     [[noreturn]] fu::never fail(fu_STR&& reason)
@@ -807,13 +809,13 @@ struct sf_solve
         };
         return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, Q_template, s_Partial{}, s_SolvedNode{}, module);
     };
-    s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node)
+    s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node, const s_Node& native)
     {
         fu_VEC<s_SolvedNode> items { node.items };
         const s_SolvedNode& rnode = items[(items.size() + FN_RET_BACK)];
         const s_Type& ret = ([&]() -> const s_Type& { if (rnode) { const s_Type& _ = rnode.type; if (_) return _; } fail(fu_STR{}); }());
         const int max = (items.size() + FN_RET_BACK);
-        fu_VEC<s_SolvedNode> args = slice(items, 0, max);
+        fu_VEC<s_SolvedNode> args = fu::slice(items, 0, max);
         fu_VEC<s_Type> arg_t {};
         fu_VEC<fu_STR> arg_n {};
         fu_VEC<s_SolvedNode> arg_d {};
@@ -835,7 +837,8 @@ struct sf_solve
 
             };
         };
-        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+        s_Template Q_template = s_Template { s_Node(native) };
+        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, Q_template, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
     };
@@ -895,9 +898,9 @@ struct sf_solve
         int min = (overload.min - 1);
         int max = (overload.max - 1);
         (((min >= 0) && (max >= min)) || fail(fu_STR{}));
-        fu_VEC<s_Type> arg_t = (overload.args ? slice(overload.args, 1) : fu_VEC<s_Type>(overload.args));
-        fu_VEC<fu_STR> arg_n = (overload.names ? slice(overload.names, 1) : fu_VEC<fu_STR>(overload.names));
-        fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? slice(overload.defaults, 1) : fu_VEC<s_SolvedNode>(overload.defaults));
+        fu_VEC<s_Type> arg_t = (overload.args ? fu::slice(overload.args, 1) : fu_VEC<s_Type>(overload.args));
+        fu_VEC<fu_STR> arg_n = (overload.names ? fu::slice(overload.names, 1) : fu_VEC<fu_STR>(overload.names));
+        fu_VEC<s_SolvedNode> arg_d = (overload.defaults ? fu::slice(overload.defaults, 1) : fu_VEC<s_SolvedNode>(overload.defaults));
         if (((via.kind != "var"_fu) && (via.kind != "global"_fu) && (via.kind != "arg"_fu) && (via.kind != "ref"_fu)))
         {
             kind = "p-wrap"_fu;
@@ -931,7 +934,7 @@ struct sf_solve
             {
                 continue;
             };
-            if (overload.Q_template)
+            if (isTemplate(overload))
             {
                 continue;
             };
@@ -1036,7 +1039,7 @@ struct sf_solve
                     else
                         reorder.clear();
 
-                    if (overload.Q_template)
+                    if (isTemplate(overload))
                     {
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization."_fu);
@@ -1316,6 +1319,7 @@ struct sf_solve
             out.flags |= F_CLOSURE;
         };
         bool native = false;
+        s_Node n_body {};
         
         {
             const int return_idx0 = _return_idx;
@@ -1342,7 +1346,7 @@ struct sf_solve
 
             };
             s_Node n_ret { inItems[(inItems.size() + FN_RET_BACK)] };
-            s_Node n_body { ([&]() -> const s_Node& { { const s_Node& _ = inItems[(inItems.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }()) };
+            n_body = ([&]() -> const s_Node& { { const s_Node& _ = inItems[(inItems.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
             if ((caseIdx >= 0))
             {
                 ((n_body.kind == "pattern"_fu) || fail(fu_STR{}));
@@ -1358,8 +1362,10 @@ struct sf_solve
                 {
                     const s_Node& expr = ret.items[0];
                     if (((expr.kind == "call"_fu) && (expr.value == "__native"_fu)))
+                    {
                         native = true;
-
+                        n_body = expr;
+                    };
                 };
             };
             
@@ -1367,7 +1373,7 @@ struct sf_solve
                 s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
                 outItems.mutref((outItems.size() + FN_RET_BACK)) = s_ret;
             };
-            if (solve)
+            if ((solve && !native))
             {
                 s_SolvedNode s_body = solveNode(n_body, s_Type{});
                 (s_body || fail(fu_STR{}));
@@ -1380,9 +1386,12 @@ struct sf_solve
         if (!prep)
         {
             fu_STR kind = (native ? "__native"_fu : "fn"_fu);
-            FnDecl(kind, id, out);
+            FnDecl(kind, id, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
         };
-        (!solve || out.items.mutref((out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
+        if ((solve && !native))
+        {
+            ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = out.items.mutref((out.items.size() + FN_BODY_BACK)); if (_) return _; } fail(fu_STR{}); }());
+        };
         return out;
     };
     fu_STR TODO_memoize_mangler(const fu_VEC<s_SolvedNode>& args)
@@ -1625,7 +1634,7 @@ struct sf_solve
                 return createEmpty();
             };
         };
-        fu::fail("Assertion failed.");
+        fu::fail();
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {

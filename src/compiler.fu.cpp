@@ -9,6 +9,7 @@
 #include <fu/vec.h>
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
+#include <fu/vec/slice.h>
 #include <iostream>
 #include <utility>
 
@@ -578,7 +579,7 @@ fu_STR compile_snippet(const fu_STR& src)
             return std::move(ctx.modules[i].out.cpp);
 
     };
-    fu::fail("Assertion failed.");
+    fu::fail();
 }
 
 namespace {
@@ -607,7 +608,7 @@ struct sf_getLinkOrder
                 };
             };
         };
-        (fu::has(link_order, link_id) && fu::fail("Assertion failed."));
+        (fu::has(link_order, link_id) && fu::fail());
         link_order.push(link_id);
     };
     fu_VEC<int> getLinkOrder_EVAL()
@@ -636,7 +637,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
             (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << "\n");
             return;
         };
-        fname = (dir_out + slice(fname, dir_src.size()));
+        fname = (dir_out + fu::slice(fname, dir_src.size()));
     };
     if ((fu::file_read(fname) == data))
         return;
@@ -772,7 +773,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         };
         if (unity)
         {
-            ((link_order.size() == cpp_files.size()) || fu::fail("Assertion failed."));
+            ((link_order.size() == cpp_files.size()) || fu::fail());
             fu_STR data = "#pragma once\n\n"_fu;
             for (int i = 0; (i < link_order.size()); i++)
             {

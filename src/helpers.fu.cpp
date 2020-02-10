@@ -1,6 +1,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/join.h>
+#include <fu/vec/slice.h>
 #include <fu/vec/split.h>
 
 fu_STR last(const fu_STR& s)
@@ -26,7 +27,7 @@ fu_STR path_ext(const fu_STR& path)
     {
         fu_STR c = fu_TO_STR(path[i]);
         if ((c == "."_fu))
-            return slice(path, i);
+            return fu::slice(path, i);
 
         if ((c == "/"_fu))
         {
@@ -41,7 +42,7 @@ fu_STR path_dirname(const fu_STR& path)
     for (int i = path.size(); (i-- > 0); )
     {
         if ((fu_TO_STR(path[i]) == "/"_fu))
-            return slice(path, 0, (i + 1));
+            return fu::slice(path, 0, (i + 1));
 
     };
     return fu_STR{};
@@ -52,7 +53,7 @@ fu_STR path_filename(const fu_STR& path)
     for (int i = path.size(); (i-- > 0); )
     {
         if ((fu_TO_STR(path[i]) == "/"_fu))
-            return slice(path, (i + 1));
+            return fu::slice(path, (i + 1));
 
     };
     return path;
@@ -100,7 +101,7 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
             res += "../"_fu;
 
     };
-    res += slice(to, same);
+    res += fu::slice(to, same);
     return res;
 }
 

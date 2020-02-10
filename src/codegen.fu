@@ -818,6 +818,31 @@ pub fn cpp_codegen(
         let target = GET(node.target) || fail();
         mut items  = cgNodes(node.items);
 
+        // Builtin specs.
+        if (target.kind == '__native' && target.template.node.items)
+        {
+            mut id = target.template.node.items[0].value;
+            if (id[0] == '<')
+            {
+                include(id);
+                id = target.template.node.items[1].value;
+            }
+
+            if (id[0] == '.')
+            {
+                if (items.len > 1)
+                    return items[0] + id + '(' + items.slice(1).join(', ') + ')';
+
+                return items[0] + id;
+            }
+
+            if (items)
+                return id + '(' + items.join(', ') + ')';
+
+            return id;
+        }
+
+        //
         if (target.kind == 'defctor')
         {
             let head = (target.type || fail());
@@ -940,111 +965,12 @@ pub fn cpp_codegen(
             }
         }
 
-        if (id == 'len' && items.len == 1)
-            return items[0] + '.size()';
-
-        if (id == 'push' && items.len == 2)
-            return items[0] + '.push(' + items[1] + ')';
-
-        if (id == 'pop' && items.len == 1)
-            return items[0] + '.pop()';
-
-        if (id == 'unshift' && items.len == 2)
-            return items[0] + '.unshift(' + items[1] + ')';
-
-        if (id == 'insert' && items.len == 3)
-            return items[0] + '.insert(' + items[1] + ', ' + items[2] + ')';
-
-        if (id == 'splice' && items.len == 3)
-            return items[0] + '.splice(' + items[1] + ', ' + items[2] + ')';
-
-        if (id == 'grow' && items.len == 2)
-            return items[0] + '.grow(' + items[1] + ')';
-
-        if (id == 'shrink' && items.len == 2)
-            return items[0] + '.shrink(' + items[1] + ')';
-
-        if (id == 'resize' && items.len == 2)
-            return items[0] + '.resize(' + items[1] + ')';
-
-        if (id == 'clear' && items.len == 1)
-            return items[0] + '.clear()';
-
-        if (id == 'find' && items.len == 2)
-        {
-            include('<fu/vec/find.h>');
-            return 'fu::lfind(' + items.join(', ') + ')';
-        }
-
-        if (id == 'starts' && items.len == 2)
-        {
-            include('<fu/vec/find.h>');
-            return 'fu::lmatch(' + items.join(', ') + ')';
-        }
-
-        if (id == 'ends' && items.len == 2)
-        {
-            include('<fu/vec/find.h>');
-            return 'fu::rmatch(' + items.join(', ') + ')';
-        }
-
-        if (id == 'has' && items.len == 2)
-        {
-            include('<fu/vec/find.h>');
-            return 'fu::has(' + items.join(', ') + ')';
-        }
-
-        if (id == 'replace' && items.len == 3)
-        {
-            include('<fu/vec/replace.h>');
-            return 'fu::replace(' + items.join(', ') + ')';
-        }
-
-        if (id == 'slice' && items.len == 2)
-            return 'slice(' + items[0] + ', ' + items[1] + ')';
-
-        if (id == 'slice' && items.len == 3)
-            return 'slice(' + items[0] + ', ' + items[1] + ', ' + items[2] + ')';
-
-        if (id == 'substr' && items.len == 3)
-            return 'substr(' + items[0] + ', ' + items[1] + ', ' + items[2] + ')';
-
-        if (id == 'sort' && items.len == 1)
-        {
-            include('<fu/vec/sort.h>');
-            return 'fu::sort(' + items[0] + ')';
-        }
-
         if (id == 'char' && items.len == 2)
         {
             let head = node.items[0] || fail();
             if (head.type.canon == 'string')
                 return 'int(' + items[0] + '[' + items[1] + '])';
         }
-
-        if ((id == 'true' || id == 'false') && !items.len)
-            return id;
-
-        if (id == 'throw' && items.len == 1)
-            return cgThrow(id, items[0]);
-
-        if (id == 'assert' && items.len == 0)
-            return cgThrow(id, '"Assertion failed."');
-
-        if (id == 'join' && items.len == 2)
-        {
-            include('<fu/vec/join.h>');
-            return 'fu::join(' + items.join(', ') + ')';
-        }
-
-        if (id == 'split' && items.len == 2)
-        {
-            include('<fu/vec/split.h>');
-            return 'fu::split(' + items.join(', ') + ')';
-        }
-
-        if (id == 'keys' && items.len == 1)
-            return items[0] + '.m_keys';
 
         if (id == 'CLONE' && items.len == 1)
             return cgClone(node.type, items[0]);
@@ -1057,36 +983,6 @@ pub fn cpp_codegen(
 
         if (id == 'print')
             return cgPrint(items);
-
-        if (id == 'now_hr' || id == 'now_utc')
-        {
-            include('<fu/now.h>');
-            return 'fu::' + id + '()';
-        }
-
-        if (id == 'file_write' || id == 'file_read' || id == 'file_size' || id == 'fs_cwd' || id == 'fs_mkdir_p')
-        {
-            include('<fu/io.h>');
-            return 'fu::' + id + '(' + items.join(', ') + ')';
-        }
-
-        if (id == 'env_get')
-        {
-            include('<fu/env.h>');
-            return 'fu::' + id + '(' + items.join(', ') + ')';
-        }
-
-        if (id == 'hash_tea')
-        {
-            include('<fu/tea.h>');
-            return 'fu::' + id + '(' + items.join(', ') + ')';
-        }
-
-        if (id == 'shell_exec')
-        {
-            include('<fu/shell.h>');
-            return 'fu::' + id + '(' + items.join(', ') + ')';
-        }
 
         id != '__native' || assert();
 
@@ -1155,20 +1051,6 @@ pub fn cpp_codegen(
         include('<fu/never.h>');
 
         return 'fu::never';
-    }
-
-    fn cgThrow(kind: string, item: string): string
-    {
-        annotateNever();
-
-        if (kind == 'assert')
-        {
-            //////////
-            // TODO //
-            //////////
-        }
-
-        return 'fu::fail(' + item + ')';
     }
 
     fn cgLiteral(node: SolvedNode): string
@@ -1409,9 +1291,9 @@ pub fn cpp_codegen(
         if (t.kind == 'field')
             return isFieldChain(node.items.only);
 
-        if (t.kind == 'var' ||
-            t.kind == 'global' ||
-            t.kind == 'arg' ||
+        if (t.kind == 'var'     ||
+            t.kind == 'global'  ||
+            t.kind == 'arg'     ||
             t.kind == 'ref')
         {
             return true;

@@ -7,6 +7,7 @@
 
 #include "str.h"
 #include "defer.h"
+#include "vec/slice.h"
 
 namespace fu {
 

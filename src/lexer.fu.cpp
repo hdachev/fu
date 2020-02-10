@@ -2,6 +2,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/find.h>
+#include <fu/vec/slice.h>
 
 struct s_LexerOutput;
 struct s_Token;
@@ -77,7 +78,7 @@ struct sf_lex
             idx++;
 
         const int col = (idx0 - lidx);
-        fu_STR value = slice(src, idx0, idx);
+        fu_STR value = fu::slice(src, idx0, idx);
         fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
     };
     void err(const fu_STR& kind, const int idx0, const int reason)
@@ -148,7 +149,7 @@ struct sf_lex
                     };
                 };
                 const int idx1 = idx;
-                token("id"_fu, slice(src, idx0, idx1), idx0, idx1);
+                token("id"_fu, fu::slice(src, idx0, idx1), idx0, idx1);
             }
             else if (((c >= "0"_fu) && (c <= "9"_fu)))
             {
@@ -207,7 +208,7 @@ struct sf_lex
                 else
                 {
                     const int idx1 = idx;
-                    fu_STR str = slice(src, idx0, idx1);
+                    fu_STR str = fu::slice(src, idx0, idx1);
                     token(checkNum(((dot || exp) ? "num"_fu : "int"_fu), str), str, idx0, idx1);
                 };
             }
@@ -239,7 +240,7 @@ struct sf_lex
                 else
                 {
                     const int idx1 = idx;
-                    fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : slice(src, (idx0 + 1), (idx1 - 1)));
+                    fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                     token("str"_fu, str, idx0, idx1);
                 };
             }
@@ -292,7 +293,7 @@ struct sf_lex
                     int end = idx;
                     while ((begin < end))
                     {
-                        fu_STR candidate = slice(src, begin, end);
+                        fu_STR candidate = fu::slice(src, begin, end);
                         const bool ok = fu::has(OPERATORS, candidate);
                         if (((end > (begin + 1)) && !ok))
                         {

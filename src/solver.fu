@@ -142,7 +142,7 @@ fn solve(
             :min, :max, arg_n, :template);
     }
 
-    fn FnDecl(kind: string, id: string, node: &mut SolvedNode): Target
+    fn FnDecl(kind: string, id: string, node: &mut SolvedNode, native: Node): Target
     {
         let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
@@ -178,10 +178,13 @@ fn solve(
             }
         }
 
+        let template = Template(node: native);
+
         let overload = Scope_add(
             _scope,
             :kind, :id, ret,
-            :min, :max, arg_n, arg_t, arg_d);
+            :min, :max, arg_n, arg_t, arg_d,
+            :template);
 
         node.target = overload;
 
@@ -328,7 +331,7 @@ fn solve(
                 continue;
 
             // TODO using + templates, the fuck do we do?
-            if (overload.template)
+            if (overload.isTemplate)
                 continue;
 
             // See if we fit.
@@ -467,7 +470,7 @@ fn solve(
                         reorder.clear();
 
                     // Specialize.
-                    if (overload.template)
+                    if (overload.isTemplate)
                     {
                         if (reorder)
                             fail('TODO handle argument reorder in template specialization.');
@@ -788,6 +791,7 @@ fn solve(
 
         //////////////////////////
         mut native = false;
+        mut n_body: Node;
 
         {
             let return_idx0 = _return_idx;
@@ -825,7 +829,7 @@ fn solve(
 
             /////////////////////////////////////////////////////
             mut n_ret   = inItems[inItems.len + FN_RET_BACK];
-            mut n_body  = inItems[inItems.len + FN_BODY_BACK] || fail();
+                n_body  = inItems[inItems.len + FN_BODY_BACK] || fail();
 
             // Pattern descent.
             if (caseIdx >= 0)
@@ -846,7 +850,11 @@ fn solve(
                 {
                     let expr = ret.items[0];
                     if (expr.kind == 'call' && expr.value == '__native')
+                    {
                         native = true;
+
+                        n_body = expr;
+                    }
                 }
             }
 
@@ -862,7 +870,7 @@ fn solve(
             }
 
             // Only if actually solving the fn, the fn body.
-            if (solve)
+            if (solve && !native)
             {
                 let s_body = solveNode(n_body);
                 s_body || fail();
@@ -887,10 +895,11 @@ fn solve(
             mut kind = native ? '__native' : 'fn';
 
             //
-            FnDecl(:kind, :id, out);
+            FnDecl(:kind, :id, out, native && n_body);
         }
 
-        !solve || out.items[out.items.len + FN_BODY_BACK] || fail();
+        if (solve && !native)
+            out.items[out.items.len + FN_BODY_BACK] || fail();
 
         return out;
     }

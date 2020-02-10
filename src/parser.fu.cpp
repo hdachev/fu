@@ -289,7 +289,7 @@ inline const s_BINOP BINOP = setupOperators();
 
                                 #ifndef DEF_P_COMMA
                                 #define DEF_P_COMMA
-inline const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail("Assertion failed."); }());
+inline const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail(); }());
                                 #endif
 
                                 #ifndef DEF_LET_TYPE

@@ -19,7 +19,7 @@ struct never
     }
 };
 
-[[noreturn]] inline never fail(const char* what)
+[[noreturn]] inline never fail(const char* what = "Assertion failed.")
 {
     throw std::runtime_error(what);
 }

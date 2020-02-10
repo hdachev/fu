@@ -14,6 +14,7 @@ fn __native(id: string, opt: string): never never;
 
 fn STEAL (a: &mut $T): $T __native;
 fn CLONE (a: &    $T): $T __native;
+fn SWAP  (a: &mut $T, b: &mut $T): void __native;
 
 fn print(a: $A): void __native;
 fn print(a: $A, b: $B): void __native;
@@ -71,8 +72,8 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 
 // Logic.
 
-fn true (): bool __native;
-fn false(): bool __native;
+fn true (): bool __native('true');
+fn false(): bool __native('false');
 
 
 // Assignment.
@@ -80,36 +81,33 @@ fn false(): bool __native;
 fn   =(a: &mut $T, b: $T): &mut $T __native;
 fn ||=(a: &mut $T, b: $T): &mut $T __native;
 
-fn SWAP(a: &mut $T, b: &mut $T): void __native;
-
 
 // Arrays.
 
-fn len (a: $T[]): i32 __native;
-fn find(a: $T[], b: $T): i32 __native;
-fn has (a: $T[], b: $T): bool __native;
+fn len (a: $T[]): i32 __native('.size()');
+fn find(a: $T[], b: $T): i32 __native('<fu/vec/find.h>', 'fu::lfind');
+fn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');
 
 fn [](a: $T[], i: i32)
     case ($a -> &mut $T[]): &mut $T __native;
     case ($a -> &    $T[]): &    $T __native;
     case ($a ->      $T[]):      $T __native;
 
-fn    push(a: &mut $T[], b: $T): void __native;
-fn unshift(a: &mut $T[], b: $T): void __native;
-fn  insert(a: &mut $T[], i: i32, b: $T): void __native;
+fn    push(a: &mut $T[], b: $T): void __native('.push');
+fn unshift(a: &mut $T[], b: $T): void __native('.unshift');
+fn  insert(a: &mut $T[], i: i32, b: $T): void __native('.insert');
 
-fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native;
-fn  slice(a: $T[], i0: i32): $T[] __native;
+fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
+fn  slice(a: $T[], i0: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
 
-fn splice(a: &mut $T[], i: i32, N: i32): void __native;
-fn    pop(a: &mut $T[]): void __native;
+fn splice(a: &mut $T[], i: i32, N: i32): void  __native('.splice');
+fn    pop(a: &mut $T[]): void __native('.pop()');
 
-fn  clear(a: &mut $T[]): void __native;
-fn resize(a: &mut $T[], len: i32): void __native;
-fn shrink(a: &mut $T[], len: i32): void __native;
+fn  clear(a: &mut $T[]): void __native('.clear()');
+fn resize(a: &mut $T[], len: i32): void __native('.resize');
+fn shrink(a: &mut $T[], len: i32): void __native('.shrink');
 
-fn move(a: &mut $T[], from: i32, to: i32): void __native;
-fn sort(a: &mut $T[]): void __native;
+fn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');
 
 
 // Concats.
@@ -122,17 +120,20 @@ fn sort(a: &mut $T[]): void __native;
 //          Will it be useful? Array ops are really
 //            the only thing we care about optimizing.
 
-fn +(a: $T[], b: $T[]): $T[] __native( 'arr+', 'flatjoin' );
-fn +(a: $T[], b: $T  ): $T[] __native( 'arr+', 'flatjoin' );
-fn +(a: $T  , b: $T[]): $T[] __native( 'arr+', 'flatjoin' );
+fn +(a: $T[], b: $T[]): $T[] __native;
+fn +(a: $T[], b: $T  ): $T[] __native;
+fn +(a: $T  , b: $T[]): $T[] __native;
 
-fn +=(a: &mut string, b: string): &mut string __native( 'arr+', 'flatjoin' );
-fn + (a:      string, b: string):      string __native( 'arr+', 'flatjoin' );
+fn +=(a: &mut string, b: string): &mut string __native;
+fn + (a:      string, b: string):      string __native;
 
 
 // Strings.
 
-fn len(a: string): i32 __native;
+fn  len(a: string): i32 __native('.size()');
+fn find(a: string, b: string): i32 __native('<fu/vec/find.h>', 'fu::lfind');
+fn  has(a: string, b: string): bool __native('<fu/vec/find.h>', 'fu::has');
+
 fn  [](a: string, i: i32): string __native;
 
 fn ==(a: string, b: string): bool __native;
@@ -142,15 +143,13 @@ fn  <(a: string, b: string): bool __native;
 fn >=(a: string, b: string): bool __native;
 fn <=(a: string, b: string): bool __native;
 
-fn   find(a: string, b: string): i32 __native;
-fn    has(a: string, b: string): bool __native;
-fn starts(a: string, with: string): bool __native;
-fn   ends(a: string, with: string): bool __native;
+fn starts(a: string, with: string): bool __native('<fu/vec/find.h>', 'fu::lmatch');
+fn   ends(a: string, with: string): bool __native('<fu/vec/find.h>', 'fu::rmatch');
 
-fn slice (a: string, i0: i32, i1: i32): string __native;
-fn slice (a: string, i0: i32): string __native;
+fn slice (a: string, i0: i32, i1: i32): string __native('<fu/vec/slice.h>', 'fu::slice');
+fn slice (a: string, i0: i32): string __native('<fu/vec/slice.h>', 'fu::slice');
 
-fn substr(a: string, i0: i32, i1: i32): string __native;
+fn substr(a: string, i0: i32, i1: i32): string __native('<fu/vec/slice.h>', 'fu::substr');
 fn char  (a: string, i0: i32): i32 __native;
 
 
@@ -159,9 +158,9 @@ fn char  (a: string, i0: i32): i32 __native;
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn   split(str: string, sep: string): string[] __native;
-fn    join(a: string[], sep: string): string __native;
-fn replace(in: string, all: string, with: string): string __native;
+fn   split(str: string, sep: string): string[] __native('<fu/vec/split.h>', 'fu::split');
+fn    join(a: string[], sep: string): string __native('<fu/vec/join.h>', 'fu::join');
+fn replace(in: string, all: string, with: string): string __native('<fu/vec/replace.h>', 'fu::replace');
 
 
 // Maps.
@@ -171,16 +170,16 @@ fn [](a: Map($K, $V), b: &$K)
     case ($a -> &    Map($K, $V)): &    $V __native;
     case ($a ->      Map($K, $V)):      $V __native;
 
-fn keys  (a: Map($K, $V)): $K[] __native;
-fn values(a: Map($K, $V)): $V[] __native;
-fn has   (a: Map($K, $V), b: $K): bool __native;
-fn count (a: Map($K, $V)): i32 __native;
+fn keys  (a: Map($K, $V)): $K[] __native('.m_keys');
+fn values(a: Map($K, $V)): $V[] __native('.m_values');
+fn has   (a: Map($K, $V), b: $K): bool __native('<fu/vec/find.h>', 'fu::has');
+fn count (a: Map($K, $V)): i32 __native('.size()');
 
 
 // Assertions, bugs & fails.
 
-fn throw(reason: string): never __native;
-fn assert(): never __native;
+fn throw(reason: string): never __native('<fu/never.h>', 'fu::fail');
+fn assert(): never __native('<fu/never.h>', 'fu::fail()');
 
 
 // Butt plugs.
@@ -192,23 +191,23 @@ fn +(a: i32, b: string): string __native;
 fn +(a: f64, b: string): string __native;
 
 // TODO fix impure io.
-fn now_hr(): f64 __native;
-fn now_utc(): f64 __native;
+fn now_hr(): f64 __native('<fu/now.h>', 'fu::now_hr()');
+fn now_utc(): f64 __native('<fu/now.h>', 'fu::now_utc()');
 
-fn env_get(key: string): string __native;
+fn env_get(key: string): string __native('<fu/env.h>', 'fu::env_get');
 
-fn file_size(path: string): i32 __native;
-fn file_read(path: string): string __native;
-fn file_write(path: string, body: string): i32 __native;
+fn file_size(path: string): i32 __native('<fu/io.h>', 'fu::file_size');
+fn file_read(path: string): string __native('<fu/io.h>', 'fu::file_read');
+fn file_write(path: string, body: string): i32 __native('<fu/io.h>', 'fu::file_write');
 
-fn fs_cwd(): string __native;
-fn fs_mkdir_p(path: string): i32 __native;
-fn fs_mkdir_p(path: string, mode: i32): i32 __native;
+fn fs_cwd(): string __native('<fu/io.h>', 'fu::fs_cwd()');
+fn fs_mkdir_p(path: string): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');
+fn fs_mkdir_p(path: string, mode: i32): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');
 
-fn shell_exec(cmd: string): i32 __native;
-fn shell_exec(cmd: string, stdout: &mut string): i32 __native;
+fn shell_exec(cmd: string): i32 __native('<fu/shell.h>', 'fu::shell_exec');
+fn shell_exec(cmd: string, stdout: &mut string): i32 __native('<fu/shell.h>', 'fu::shell_exec');
 
-fn hash_tea(str: string): string __native;
+fn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');
 
 fn i32(v: f64): i32 __native;
 

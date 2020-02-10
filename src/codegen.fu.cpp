@@ -5,6 +5,7 @@
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
 #include <fu/vec/replace.h>
+#include <fu/vec/slice.h>
 #include <fu/vec/sort.h>
 #include <utility>
 
@@ -693,7 +694,7 @@ struct sf_cpp_codegen
     int _hasMain {};
     s_Overload GET(const s_Target& target, const s_Module& module, const s_Context& ctx)
     {
-        ((target.index > 0) || fu::fail("Assertion failed."));
+        ((target.index > 0) || fu::fail());
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
         return m.out.solve.scope.overloads[(target.index - 1)];
     };
@@ -1059,8 +1060,8 @@ struct sf_cpp_codegen
             return fu_STR{};
 
         fu_STR evalName = (fn.value + "_EVAL"_fu);
-        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, slice(items, end, items.size()), s_TokenIdx(fn.token), s_Type(t_void), s_Target{} } } }, s_TokenIdx(fn.token), s_Type(t_void), s_Target{} };
-        fu_VEC<s_SolvedNode> head = ((slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)) + slice(items, 0, end)) + fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
+        s_SolvedNode restFn = s_SolvedNode { "fn"_fu, (fn.flags | F_CLOSURE), fu_STR(evalName), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { fn.items[(fn.items.size() - 2)], s_SolvedNode { "block"_fu, int{}, fu_STR{}, fu::slice(items, end, items.size()), s_TokenIdx(fn.token), s_Type(t_void), s_Target{} } } }, s_TokenIdx(fn.token), s_Type(t_void), s_Target{} };
+        fu_VEC<s_SolvedNode> head = ((fu::slice(fn.items, 0, (fn.items.size() + FN_ARGS_BACK)) + fu::slice(items, 0, end)) + fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { restFn } });
         ((_clsrN == 0) || fail(fu_STR{}));
         _clsrN--;
         fu_STR structName = ("sf_"_fu + fn.value);
@@ -1201,7 +1202,7 @@ struct sf_cpp_codegen
         fu_STR src = cgLet(node);
         src = fu::replace(src, "([&]("_fu, "([]("_fu);
         if (fu::lmatch(src, "const "_fu))
-            src = slice(src, 6);
+            src = fu::slice(src, 6);
 
         (_fdef += "\n                                #ifndef DEF_"_fu, _fdef += node.value, _fdef += "\n                                #define DEF_"_fu, _fdef += node.value, _fdef += "\ninline const "_fu, _fdef += src, _fdef += ";"_fu, _fdef += "\n                                #endif\n"_fu);
         return fu_STR{};
@@ -1294,6 +1295,26 @@ struct sf_cpp_codegen
     {
         s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(fu_STR{}); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
+        if (((target.kind == "__native"_fu) && target.Q_template.node.items))
+        {
+            fu_STR id { target.Q_template.node.items[0].value };
+            if ((fu_TO_STR(id[0]) == "<"_fu))
+            {
+                include(id);
+                id = target.Q_template.node.items[1].value;
+            };
+            if ((fu_TO_STR(id[0]) == "."_fu))
+            {
+                if ((items.size() > 1))
+                    return ((((items[0] + id) + "("_fu) + fu::join(fu::slice(items, 1), ", "_fu)) + ")"_fu);
+
+                return (items[0] + id);
+            };
+            if (items)
+                return (((id + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
+
+            return id;
+        };
         if ((target.kind == "defctor"_fu))
         {
             const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
@@ -1388,75 +1409,6 @@ struct sf_cpp_codegen
 
             };
         };
-        if (((id == "len"_fu) && (items.size() == 1)))
-            return (items[0] + ".size()"_fu);
-
-        if (((id == "push"_fu) && (items.size() == 2)))
-            return (((items[0] + ".push("_fu) + items[1]) + ")"_fu);
-
-        if (((id == "pop"_fu) && (items.size() == 1)))
-            return (items[0] + ".pop()"_fu);
-
-        if (((id == "unshift"_fu) && (items.size() == 2)))
-            return (((items[0] + ".unshift("_fu) + items[1]) + ")"_fu);
-
-        if (((id == "insert"_fu) && (items.size() == 3)))
-            return (((((items[0] + ".insert("_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
-
-        if (((id == "splice"_fu) && (items.size() == 3)))
-            return (((((items[0] + ".splice("_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
-
-        if (((id == "grow"_fu) && (items.size() == 2)))
-            return (((items[0] + ".grow("_fu) + items[1]) + ")"_fu);
-
-        if (((id == "shrink"_fu) && (items.size() == 2)))
-            return (((items[0] + ".shrink("_fu) + items[1]) + ")"_fu);
-
-        if (((id == "resize"_fu) && (items.size() == 2)))
-            return (((items[0] + ".resize("_fu) + items[1]) + ")"_fu);
-
-        if (((id == "clear"_fu) && (items.size() == 1)))
-            return (items[0] + ".clear()"_fu);
-
-        if (((id == "find"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/find.h>"_fu);
-            return (("fu::lfind("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "starts"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/find.h>"_fu);
-            return (("fu::lmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "ends"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/find.h>"_fu);
-            return (("fu::rmatch("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "has"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/find.h>"_fu);
-            return (("fu::has("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "replace"_fu) && (items.size() == 3)))
-        {
-            include("<fu/vec/replace.h>"_fu);
-            return (("fu::replace("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "slice"_fu) && (items.size() == 2)))
-            return (((("slice("_fu + items[0]) + ", "_fu) + items[1]) + ")"_fu);
-
-        if (((id == "slice"_fu) && (items.size() == 3)))
-            return (((((("slice("_fu + items[0]) + ", "_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
-
-        if (((id == "substr"_fu) && (items.size() == 3)))
-            return (((((("substr("_fu + items[0]) + ", "_fu) + items[1]) + ", "_fu) + items[2]) + ")"_fu);
-
-        if (((id == "sort"_fu) && (items.size() == 1)))
-        {
-            include("<fu/vec/sort.h>"_fu);
-            return (("fu::sort("_fu + items[0]) + ")"_fu);
-        };
         if (((id == "char"_fu) && (items.size() == 2)))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
@@ -1464,28 +1416,6 @@ struct sf_cpp_codegen
                 return (((("int("_fu + items[0]) + "["_fu) + items[1]) + "])"_fu);
 
         };
-        if ((((id == "true"_fu) || (id == "false"_fu)) && !items.size()))
-            return std::move(id);
-
-        if (((id == "throw"_fu) && (items.size() == 1)))
-            return cgThrow(id, items[0]);
-
-        if (((id == "assert"_fu) && (items.size() == 0)))
-            return cgThrow(id, "\"Assertion failed.\""_fu);
-
-        if (((id == "join"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/join.h>"_fu);
-            return (("fu::join("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "split"_fu) && (items.size() == 2)))
-        {
-            include("<fu/vec/split.h>"_fu);
-            return (("fu::split("_fu + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if (((id == "keys"_fu) && (items.size() == 1)))
-            return (items[0] + ".m_keys"_fu);
-
         if (((id == "CLONE"_fu) && (items.size() == 1)))
             return cgClone(node.type, items[0]);
 
@@ -1498,32 +1428,7 @@ struct sf_cpp_codegen
         if ((id == "print"_fu))
             return cgPrint(items);
 
-        if (((id == "now_hr"_fu) || (id == "now_utc"_fu)))
-        {
-            include("<fu/now.h>"_fu);
-            return (("fu::"_fu + id) + "()"_fu);
-        };
-        if (((id == "file_write"_fu) || (id == "file_read"_fu) || (id == "file_size"_fu) || (id == "fs_cwd"_fu) || (id == "fs_mkdir_p"_fu)))
-        {
-            include("<fu/io.h>"_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if ((id == "env_get"_fu))
-        {
-            include("<fu/env.h>"_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if ((id == "hash_tea"_fu))
-        {
-            include("<fu/tea.h>"_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        if ((id == "shell_exec"_fu))
-        {
-            include("<fu/shell.h>"_fu);
-            return (((("fu::"_fu + id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
-        };
-        ((id != "__native"_fu) || fu::fail("Assertion failed."));
+        ((id != "__native"_fu) || fu::fail());
         return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgAppend(const s_SolvedNode& node, const fu_STR& into)
@@ -1576,14 +1481,6 @@ struct sf_cpp_codegen
     {
         include("<fu/never.h>"_fu);
         return "fu::never"_fu;
-    };
-    fu_STR cgThrow(const fu_STR& kind, const fu_STR& item)
-    {
-        annotateNever();
-        if ((kind == "assert"_fu))
-        {
-        };
-        return (("fu::fail("_fu + item) + ")"_fu);
     };
     fu_STR cgLiteral(const s_SolvedNode& node)
     {
@@ -1781,7 +1678,7 @@ struct sf_cpp_codegen
     fu_STR postfixBlock(const fu_STR& src, const fu_STR& postfix)
     {
         ((fu_TO_STR(src[(src.size() - 1)]) == "}"_fu) || fail(fu_STR{}));
-        return ((slice(src, 0, (src.size() - 1)) + postfix) + "}"_fu);
+        return ((fu::slice(src, 0, (src.size() - 1)) + postfix) + "}"_fu);
     };
     fu_STR cgLoop(const s_SolvedNode& node)
     {

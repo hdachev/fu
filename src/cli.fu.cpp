@@ -3,6 +3,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/find.h>
+#include <fu/vec/slice.h>
 #include <iostream>
 #include <utility>
 
@@ -78,7 +79,7 @@ struct sf_cli_handle
             if ((fu_TO_STR(opt[1]) != "-"_fu))
             {
                 opt = fu_TO_STR(opt[1]);
-                val = ("-"_fu + slice(val, 2));
+                val = ("-"_fu + fu::slice(val, 2));
                 if ((val == "-"_fu))
                     val = next();
 
@@ -107,7 +108,7 @@ struct sf_cli_handle
             if (((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu)))
             {
                 (scheme && fu::fail((((opt + ": Scheme already set to `"_fu) + opt) + "`."_fu)));
-                scheme = slice(opt, 2);
+                scheme = fu::slice(opt, 2);
                 continue;
             };
             if (((opt == "--run"_fu) || (opt == "r"_fu)))
@@ -131,7 +132,7 @@ struct sf_cli_handle
         fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)); }());
         const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
         if ((options & EMIT_BIN))
-            ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
+            ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
         
         {
