@@ -1,16 +1,16 @@
 // #define ISOLATE_FAILING_TESTCASE
 
 #ifdef ISOLATE_FAILING_TESTCASE
-#include "../../build.cpp/failing-testcase.cpp"
+#include "../build.cpp/failing-testcase.cpp"
 #endif
 
 #ifndef ISOLATE_FAILING_TESTCASE
 
 #define main cli_main
-#include "../../src/cli.fu.unity.cpp"
+#include "../src/cli.fu.unity.cpp"
 #undef  main
 
-#include "../../include/fu/cow_vec_test.h"
+#include "../include/fu/cow_vec_test.h"
 
 
 // So lets go.
