@@ -86,6 +86,44 @@ fn f32(v: $T) case ($T -> @arithmetic): f32 __native;
 fn f64(v: $T) case ($T -> @arithmetic): f64 __native;
 
 
+// Math.
+
+fn abs(v: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::abs');
+fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::max');
+fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::min');
+
+fn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp');
+fn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp2');
+fn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log');
+fn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log10');
+fn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log2');
+
+fn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::pow');
+fn sqrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sqrt');
+fn cbrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cbrt');
+fn hypot(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::hypot');
+
+fn ceil (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::ceil');
+fn floor(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::floor');
+fn trunc(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::trunc');
+fn round(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::round');
+
+fn sin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sin');
+fn cos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cos');
+fn tan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::tan');
+
+fn asin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::asin');
+fn acos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::acos');
+fn atan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan');
+
+fn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan2');
+
+fn PI():  f64 __native('<math.h>', 'M_PI');
+fn E():   f64 __native('<math.h>', 'M_E');
+fn INF(): f64 __native('<math.h>', 'INFINITY');
+fn NAN(): f64 __native('<math.h>', 'NAN');
+
+
 // Logic.
 
 fn true (): bool __native('true');
