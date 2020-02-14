@@ -440,10 +440,10 @@ struct s_ModuleOutputs
                                 #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
-    f64 s_lex;
-    f64 s_parse;
-    f64 s_solve;
-    f64 s_cpp;
+    double s_lex;
+    double s_parse;
+    double s_solve;
+    double s_cpp;
     explicit operator bool() const noexcept
     {
         return false

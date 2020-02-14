@@ -463,10 +463,10 @@ struct s_ModuleOutputs
                                 #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
-    f64 s_lex;
-    f64 s_parse;
-    f64 s_solve;
-    f64 s_cpp;
+    double s_lex;
+    double s_parse;
+    double s_solve;
+    double s_cpp;
     explicit operator bool() const noexcept
     {
         return false
@@ -524,12 +524,12 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     {
         module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
         fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
-        const f64 t0 = fu::now_hr();
+        const double t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
-        const f64 t1 = fu::now_hr();
+        const double t1 = fu::now_hr();
         s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
         module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
-        const f64 t2 = fu::now_hr();
+        const double t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);
         setModule(module, ctx);
@@ -544,11 +544,11 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 
     if (!module.out)
     {
-        const f64 t0 = fu::now_hr();
+        const double t0 = fu::now_hr();
         module.out.solve = solve(module.in.parse.root, ctx, module);
-        const f64 t1 = fu::now_hr();
+        const double t1 = fu::now_hr();
         module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
-        const f64 t2 = fu::now_hr();
+        const double t2 = fu::now_hr();
         module.stats.s_solve = (t1 - t0);
         module.stats.s_cpp = (t2 - t1);
         setModule(module, ctx);
@@ -721,12 +721,12 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 const fu_STR& cpp = module.out.cpp;
                 fu::file_write(F_cpp, cpp);
                 (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
-                const f64 t0 = fu::now_hr();
+                const double t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
                     ERR(fu_STR(cpp));
 
-                const f64 t1 = fu::now_hr();
+                const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
             };
         };
@@ -738,14 +738,14 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         
         {
             (std::cout << "   LINK "_fu << F_exe << "\n");
-            const f64 t0 = fu::now_hr();
+            const double t0 = fu::now_hr();
             code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
                 ERR(fu_STR{});
             };
-            const f64 t1 = fu::now_hr();
+            const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
         };
         if ((Fs.size() == 1))
@@ -833,10 +833,10 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     
     {
         (std::cout << "COMPILE "_fu << fname << "\n");
-        const f64 t0 = fu::now_hr();
+        const double t0 = fu::now_hr();
         compile(fname, fu_STR{}, ctx);
-        const f64 t1 = fu::now_hr();
-        const f64 tt = (t1 - t0);
+        const double t1 = fu::now_hr();
+        const double tt = (t1 - t0);
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
     return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);

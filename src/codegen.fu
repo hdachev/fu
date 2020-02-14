@@ -101,7 +101,7 @@ pub fn cpp_codegen(
         let c = type.canon;
 
         if (c ==  'i8')    return 'i8';
-        if (c == 'i16')    return 'i16';
+        if (c == 'i16')    return 'short';
         if (c == 'i32')    return 'int'; // TODO fix, pandemic includes
         if (c == 'i64')    return 'i64';
 
@@ -110,8 +110,8 @@ pub fn cpp_codegen(
         if (c == 'u32')    return 'u32';
         if (c == 'u64')    return 'u64';
 
-        if (c == 'f32')    return 'f32';
-        if (c == 'f64')    return 'f64';
+        if (c == 'f32')    return 'float';
+        if (c == 'f64')    return 'double';
 
         if (c == 'bool')   return 'bool';
         if (c == 'void')   return 'void';
