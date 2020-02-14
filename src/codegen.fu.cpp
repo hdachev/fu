@@ -1784,6 +1784,9 @@ struct sf_cpp_codegen
         if ((k == "int"_fu))
             return cgLiteral(node);
 
+        if ((k == "num"_fu))
+            return cgLiteral(node);
+
         if ((k == "str"_fu))
             return cgStringLiteral(node);
 

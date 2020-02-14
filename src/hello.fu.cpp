@@ -10,7 +10,7 @@ inline const fu_VEC<fu_STR> NICE_THINGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<
 
 void saySomethingNice()
 {
-    const int sec = i32(fu::now_utc());
+    const int sec = int(fu::now_utc());
     const bool NEW_STUFF = false;
     if (((sec % 5) && !NEW_STUFF))
     {

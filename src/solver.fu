@@ -646,6 +646,7 @@ fn solve(
         if (k == 'continue')    return solveJump(node);
 
         if (k == 'int')         return solveInt(node);
+        if (k == 'num')         return solveNum(node);
         if (k == 'str')         return solveStr(node);
         if (k == 'empty')       return createEmpty();
 
@@ -715,6 +716,11 @@ fn solve(
     fn solveInt(node: Node): SolvedNode
     {
         return solved(node, t_i32);
+    }
+
+    fn solveNum(node: Node): SolvedNode
+    {
+        return solved(node, t_f64);
     }
 
     fn solveStr(node: Node): SolvedNode

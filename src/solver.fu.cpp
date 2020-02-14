@@ -651,6 +651,21 @@ inline const int SignedInt = (Integral | q_signed);
 inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
+                                #ifndef DEF_q_floating_pt
+                                #define DEF_q_floating_pt
+inline const int q_floating_pt = (1 << 8);
+                                #endif
+
+                                #ifndef DEF_FloatingPt
+                                #define DEF_FloatingPt
+inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
+                                #endif
+
+                                #ifndef DEF_t_f64
+                                #define DEF_t_f64
+inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
                                 #ifndef DEF_t_string
                                 #define DEF_t_string
 inline const s_Type t_string = s_Type { s_ValueType { "string"_fu, int(q_copy), 0 }, s_Lifetime{}, s_Effects{} };
@@ -1201,6 +1216,9 @@ struct sf_solve
         if ((k == "int"_fu))
             return solveInt(node);
 
+        if ((k == "num"_fu))
+            return solveNum(node);
+
         if ((k == "str"_fu))
             return solveStr(node);
 
@@ -1265,6 +1283,10 @@ struct sf_solve
     s_SolvedNode solveInt(const s_Node& node)
     {
         return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
+    };
+    s_SolvedNode solveNum(const s_Node& node)
+    {
+        return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode solveStr(const s_Node& node)
     {

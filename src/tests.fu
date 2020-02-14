@@ -1563,4 +1563,12 @@ fn runTests()
             return test(s).i[0] - s.i[0] * 3;
         }
     `);
+
+    ZERO(`
+
+        fn main() {
+            return i32(PI * 2.0) - 6;
+        }
+
+    `);
 }
