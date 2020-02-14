@@ -165,14 +165,6 @@ fn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');
 
 
 // Concats.
-//
-//  flatten: str/arr a+b+c chains into a n-ary binop -
-//  adjoin : str/arr chain adjacent += for the same left-arg.
-//
-//      Currently just testing notations,
-//        but can we make this more generic?
-//          Will it be useful? Array ops are really
-//            the only thing we care about optimizing.
 
 fn +(a: $T[], b: $T[]): $T[] __native;
 fn +(a: $T[], b: $T  ): $T[] __native;
@@ -180,6 +172,10 @@ fn +(a: $T  , b: $T[]): $T[] __native;
 
 fn +=(a: &mut string, b: string): &mut string __native;
 fn + (a:      string, b: string):      string __native;
+
+fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native;
+fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native;
+fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native;
 
 
 // Strings.
@@ -236,16 +232,10 @@ fn throw(reason: string): never __native('<fu/never.h>', 'fu::fail');
 fn assert(): never __native('<fu/never.h>', 'fu::fail()');
 
 
-// Butt plugs.
+// TODO move these out in separate imports,
+//  now::hr() etc, mini import syntax will be just as usable.
 
-// TODO we should go for an any $B -> call stringify(b) macro.
-fn +(a: string, b: i32): string __native;
-fn +(a: string, b: f64): string __native;
-fn +(a: i32, b: string): string __native;
-fn +(a: f64, b: string): string __native;
-
-// TODO fix impure io.
-fn now_hr(): f64 __native('<fu/now.h>', 'fu::now_hr()');
+fn now_hr (): f64 __native('<fu/now.h>', 'fu::now_hr()');
 fn now_utc(): f64 __native('<fu/now.h>', 'fu::now_utc()');
 
 fn env_get(key: string): string __native('<fu/env.h>', 'fu::env_get');
@@ -266,6 +256,9 @@ fn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');
 fn exit(code: i32): never __native;
 
 `;
+
+
+//
 
 fn solvePrelude(): Context
 {

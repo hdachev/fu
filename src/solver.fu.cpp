@@ -64,10 +64,10 @@ bool operator==(const s_Type&, const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
-s_Lifetime Lifetime_fromScopeIdx(int);
-bool killedBy(const s_Lifetime&, int);
 s_Lifetime Lifetime_static();
 s_Lifetime Lifetime_fromArgIndex(int);
+s_Lifetime Lifetime_fromScopeIdx(int);
+bool killedBy(const s_Lifetime&, int);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
