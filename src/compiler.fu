@@ -371,22 +371,76 @@ pub fn build(
             cpp_files.push(fname);
         }
 
-        if (unity)
+        // TODO FIX
+        let CMakeLists = unity && path_join(path_dirname(unity), 'CMakeLists.txt');
+
+        if (unity || CMakeLists)
         {
-            link_order.len == cpp_files.len || assert();
-
-            mut data = '#pragma once\n\n';
-            for (mut i = 0; i < link_order.len; i++)
+            // .unity.cpp
+            if (unity)
             {
-                let incl = cpp_files[link_order[i]];
-                let rel = path_relative(unity, incl);
+                mut data = '#pragma once\n\n';
 
-                data += '#include "' + rel + '"\n';
+                link_order.len == cpp_files.len || assert();
+                for (mut i = 0; i < link_order.len; i++)
+                {
+                    let incl = cpp_files[link_order[i]];
+                    let rel = path_relative(unity, incl);
+                    data += '#include "' + rel + '"\n';
+                }
+
+                update_file(
+                    fname: unity + '.unity.cpp', :data,
+                    :dir_src, dir_out: dir_cpp);
             }
 
-            update_file(
-                fname: unity + '.unity.cpp', :data,
-                :dir_src, dir_out: dir_cpp);
+            // CMakeLists.txt
+            if (CMakeLists)
+            {
+                mut data = 'cmake_minimum_required(VERSION 3.6)\n\n';
+
+                mut inputs:  string[];
+                mut outputs: string[];
+
+                link_order.len == cpp_files.len || assert();
+
+                mut main: string;
+
+                for (mut i = 0; i < link_order.len; i++)
+                {
+                    let moduleIdx = link_order[i] + /*prelude*/1;
+                    let module = ctx.modules[moduleIdx];
+
+                    let input = path_relative(CMakeLists, module.fname);
+                    if (moduleIdx == 1)
+                        main = input;
+
+                    inputs.push(input);
+                    outputs.push('${CMAKE_CURRENT_SOURCE_DIR}/' + path_relative(CMakeLists, cpp_files[link_order[i]]));
+                }
+
+                data += 'set(FU_MAIN '         + main                   + ')\n\n';
+                data += 'set(FU_INPUTS\n    '  + inputs .join('\n    ') + ')\n\n';
+                data += 'set(FU_OUTPUTS\n    ' + outputs.join('\n    ') + ')\n\n';
+
+                data += 'include_directories (~/fu/include/)\n\n';
+
+                data += 'add_custom_command(\n'
+                      + '    OUTPUT ${FU_OUTPUTS}\n'
+                      + '    COMMAND $ENV{HOME}/fu/bin/fu\n'
+                      + '    ARGS -c ${FU_MAIN}\n'
+                      + '    DEPENDS ${FU_INPUTS}\n'
+                      + '    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n'
+                      + '    VERBATIM)\n\n';
+
+                let libname = path_noext(path_filename(main));
+
+                data += 'add_library(' + libname + ' ${FU_OUTPUTS})\n';
+
+                update_file(
+                    fname: CMakeLists, :data,
+                    :dir_src, dir_out: dir_cpp);
+            }
         }
     }
 

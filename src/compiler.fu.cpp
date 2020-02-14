@@ -40,10 +40,12 @@ struct s_Type;
 struct s_ValueType;
 s_Context solvePrelude();
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
+fu_STR path_filename(const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR last(const fu_STR&);
+fu_STR path_noext(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
-fu_STR path_filename(const fu_STR&);
+fu_STR path_join(const fu_STR&, const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
@@ -771,17 +773,48 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
             update_file(fu_STR(fname), data, dir_src, dir_cpp);
             cpp_files.push(fname);
         };
-        if (unity)
+        fu_STR CMakeLists = ([&]() -> fu_STR { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_STR{}; }());
+        if ((unity || CMakeLists))
         {
-            ((link_order.size() == cpp_files.size()) || fu::fail());
-            fu_STR data = "#pragma once\n\n"_fu;
-            for (int i = 0; (i < link_order.size()); i++)
+            if (unity)
             {
-                fu_STR incl { cpp_files[link_order[i]] };
-                fu_STR rel = path_relative(unity, incl);
-                (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
+                fu_STR data = "#pragma once\n\n"_fu;
+                ((link_order.size() == cpp_files.size()) || fu::fail());
+                for (int i = 0; (i < link_order.size()); i++)
+                {
+                    fu_STR incl { cpp_files[link_order[i]] };
+                    fu_STR rel = path_relative(unity, incl);
+                    (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
+                };
+                update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
-            update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
+            if (CMakeLists)
+            {
+                fu_STR data = "cmake_minimum_required(VERSION 3.6)\n\n"_fu;
+                fu_VEC<fu_STR> inputs {};
+                fu_VEC<fu_STR> outputs {};
+                ((link_order.size() == cpp_files.size()) || fu::fail());
+                fu_STR main {};
+                for (int i = 0; (i < link_order.size()); i++)
+                {
+                    const int moduleIdx = (link_order[i] + 1);
+                    const s_Module& module = ctx.modules[moduleIdx];
+                    fu_STR input = path_relative(CMakeLists, module.fname);
+                    if ((moduleIdx == 1))
+                        main = input;
+
+                    inputs.push(input);
+                    outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_files[link_order[i]])));
+                };
+                (data += "set(FU_MAIN "_fu, data += main, data += ")\n\n"_fu);
+                (data += "set(FU_INPUTS\n    "_fu, data += fu::join(inputs, "\n    "_fu), data += ")\n\n"_fu);
+                (data += "set(FU_OUTPUTS\n    "_fu, data += fu::join(outputs, "\n    "_fu), data += ")\n\n"_fu);
+                data += "include_directories (~/fu/include/)\n\n"_fu;
+                (data += "add_custom_command(\n"_fu, data += "    OUTPUT ${FU_OUTPUTS}\n"_fu, data += "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu, data += "    ARGS -c ${FU_MAIN}\n"_fu, data += "    DEPENDS ${FU_INPUTS}\n"_fu, data += "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu, data += "    VERBATIM)\n\n"_fu);
+                fu_STR libname = path_noext(path_filename(main));
+                (data += "add_library("_fu, data += libname, data += " ${FU_OUTPUTS})\n"_fu);
+                update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
+            };
         };
     };
     if (bin)

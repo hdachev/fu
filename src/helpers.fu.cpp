@@ -37,6 +37,22 @@ fu_STR path_ext(const fu_STR& path)
     return fu_STR{};
 }
 
+fu_STR path_noext(const fu_STR& path)
+{
+    for (int i = path.size(); (i-- > 0); )
+    {
+        fu_STR c = fu_TO_STR(path[i]);
+        if ((c == "."_fu))
+            return fu::slice(path, 0, i);
+
+        if ((c == "/"_fu))
+        {
+            break;
+        };
+    };
+    return fu_STR{};
+}
+
 fu_STR path_dirname(const fu_STR& path)
 {
     for (int i = path.size(); (i-- > 0); )

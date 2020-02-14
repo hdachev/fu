@@ -40,6 +40,18 @@ fn path_ext(path: string): string
     return '';
 }
 
+fn path_noext(path: string): string
+{
+    for (mut i = path.len; i --> 0; )
+    {
+        let c = path[i];
+        if (c == '.') return path.slice(0, i);
+        if (c == '/') break;
+    }
+
+    return '';
+}
+
 fn path_dirname(path: string): string
 {
     for (mut i = path.len; i --> 0; )
