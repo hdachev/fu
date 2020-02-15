@@ -26,22 +26,33 @@ fn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;
 
 // Arithmetics.
 
-fn +(a: $T)                 case ($T -> @arithmetic):   $T __native;
-fn +(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
+fn +(a: $T) case ($T -> @arithmetic): $T __native;
+fn -(a: $T) case ($T -> @arithmetic): $T __native;
 
-fn -(a: $T)                 case ($T -> @arithmetic):   $T __native;
-fn -(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
-fn *(a: $T, b: $T)          case ($T -> @arithmetic):   $T __native;
+fn +(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
+fn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
+fn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
+fn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
 
-fn /(a: $T, b: $T)
-    // case ($T -> @floating_point):                       $T __native;
-    // case ($T -> @integral && $b -> @non_zero):          $T __native;
-    case ($T -> @arithmetic): $T __native;
+fn +(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): $A __native;
+    case ($A -> @integral && $B -> @floating_point): $B __native;
+
+fn -(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): $A __native;
+    case ($A -> @integral && $B -> @floating_point): $B __native;
+
+fn *(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): $A __native;
+    case ($A -> @integral && $B -> @floating_point): $B __native;
+
+fn /(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): $A __native;
+    case ($A -> @integral && $B -> @floating_point): $B __native;
 
 fn %(a: $T, b: $T)
-    // case ($T -> @floating_point):                       $T __native;
-    // case ($T -> @integral && $b -> @non_zero):          $T __native;
-    case ($T -> @arithmetic): $T __native;
+    case ($T -> @integral): $T __native;
+    case ($T -> @floating_point): $T __native('<cmath>', 'std::fmod');
 
 fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;

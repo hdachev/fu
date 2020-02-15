@@ -1779,11 +1779,11 @@ struct sf_solve
     bool evalTypePattern(const s_Node& node, const fu_COW_MAP<fu_STR, s_Type>& typeParams)
     {
         const fu_VEC<s_Node>& items = node.items;
-        if (((node.kind == "call"_fu) && (items.size() == 2)))
+        if ((items.size() == 2))
         {
             const s_Node& left = ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
             const s_Node& right = ([&]() -> const s_Node& { { const s_Node& _ = items[1]; if (_) return _; } fail(fu_STR{}); }());
-            if ((node.value == "->"_fu))
+            if (((node.kind == "call"_fu) && (node.value == "->"_fu)))
             {
                 if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
                 {
@@ -1801,9 +1801,9 @@ struct sf_solve
                     return isAssignable(expect, actual);
                 };
             }
-            else if ((node.value == "&&"_fu))
+            else if ((node.kind == "and"_fu))
                 return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
-            else if ((node.value == "||"_fu))
+            else if ((node.kind == "or"_fu))
                 return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
 
         };

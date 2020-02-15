@@ -1476,12 +1476,12 @@ fn solve(
     fn evalTypePattern(node: Node, typeParams: Map(string, Type)): bool
     {
         let items = node.items;
-        if (node.kind == 'call' && items.len == 2)
+        if (items.len == 2)
         {
             let left  = items[0] || fail();
             let right = items[1] || fail();
 
-            if (node.value == '->')
+            if (node.kind == 'call' && node.value == '->')
             {
                 if (left.kind  == 'typeparam' &&
                     right.kind == 'typetag')
@@ -1511,12 +1511,12 @@ fn solve(
                     return isAssignable(expect, actual);
                 }
             }
-            else if (node.value == '&&')
+            else if (node.kind == 'and')
             {
                 return evalTypePattern(left,  typeParams)
                     && evalTypePattern(right, typeParams);
             }
-            else if (node.value == '||')
+            else if (node.kind == 'or')
             {
                 return evalTypePattern(left,  typeParams)
                     && evalTypePattern(right, typeParams);
