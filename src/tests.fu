@@ -1565,10 +1565,12 @@ fn runTests()
     `);
 
     ZERO(`
+        fn main()
+            i32(PI * 2.0) - 6;
+    `);
 
-        fn main() {
-            return i32(PI * 2.0) - 6;
-        }
-
+    ZERO(`
+        fn main()
+            i32(PI * 2 - 6);
     `);
 }
