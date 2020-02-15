@@ -447,6 +447,10 @@ pub fn Lifetime_fromCallArgs(
 
         // Else replace with actual from callsite,
         //  incrementing the relax depth as much as possible.
+
+        // TODO FIX we can catch dangling references
+        //  to temporaries right here.
+
         let arg     = args[argIdx];
         let actual  = Lifetime_relaxCallArg(arg.type.lifetime, r.relax);
             result  = type_inter(result, actual);
