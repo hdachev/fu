@@ -89,8 +89,8 @@ fn f64(v: $T) case ($T -> @arithmetic): f64 __native('double');
 // Math.
 
 fn abs(v: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::abs');
-fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::max');
-fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::min');
+fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::max');
+fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::min');
 
 fn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp');
 fn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp2');
@@ -122,6 +122,10 @@ fn PI():  f64 __native('<math.h>', 'M_PI');
 fn E():   f64 __native('<math.h>', 'M_E');
 fn INF(): f64 __native('<math.h>', 'INFINITY');
 fn NAN(): f64 __native('<math.h>', 'NAN');
+
+fn nan(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isnan');
+fn inf(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isinf');
+fn finite(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isfinite');
 
 
 // Logic.
