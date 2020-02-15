@@ -383,9 +383,9 @@ s_Type add_refs(const s_Type& from, s_Type&& to)
 fu_STR serializeType(const s_Type& type)
 {
     if (type.value.quals)
-        return (((("("_fu + type.value.canon) + "{"_fu) + type.value.quals) + "})"_fu);
+        return ((type.value.canon + "+"_fu) + type.value.quals);
 
-    return (("("_fu + type.value.canon) + ")"_fu);
+    return type.value.canon;
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)

@@ -228,9 +228,9 @@ pub fn add_refs(from: Type, mut to: Type)
 pub fn serializeType(type: Type)
 {
     if (type.quals)
-        return '(' + type.canon + '{' + type.quals + '})';
+        return type.canon + '+' + type.quals;
 
-    return '(' + type.canon + ')';
+    return type.canon;
 }
 
 pub fn type_has(type: Type, tag: string)

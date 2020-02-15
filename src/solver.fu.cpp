@@ -1420,7 +1420,7 @@ struct sf_solve
     {
         fu_STR mangle {};
         for (int i = 0; (i < args.size()); i++)
-            (mangle += "\v"_fu, mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type));
+            (mangle += ","_fu, mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type));
 
         return mangle;
     };

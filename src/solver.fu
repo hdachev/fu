@@ -917,7 +917,7 @@ fn solve(
     {
         mut mangle = '';
         for (mut i = 0; i < args.len; i++)
-            mangle += '\v' + serializeType((args[i] || fail()).type);
+            mangle += ',' + serializeType((args[i] || fail()).type);
 
         return mangle;
     }
