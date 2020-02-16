@@ -645,8 +645,8 @@ fn solve(
         if (k == 'break')       return solveJump(node);
         if (k == 'continue')    return solveJump(node);
 
-        if (k == 'int')         return solveInt(node);
-        if (k == 'num')         return solveNum(node);
+        if (k == 'int')         return solveInt(node, type);
+        if (k == 'num')         return solveNum(node, type);
         if (k == 'str')         return solveStr(node);
         if (k == 'empty')       return createEmpty();
 
@@ -713,13 +713,30 @@ fn solve(
 
     //
 
-    fn solveInt(node: Node): SolvedNode
+    fn solveInt(node: Node, type: Type): SolvedNode
     {
+        if (type)
+        {
+            if (type == t_f32 || type == t_f64)
+                return solved(node, type);
+
+            // TODO FIX these need to check ranges and such.
+            if (type == t_i64 || type == t_i16 || type == t_i8)
+                return solved(node, type);
+
+            if (node.value[0] != '-')
+                if (type == t_u32 || type == t_u64 || type == t_u16 || type == t_u8)
+                    return solved(node, type);
+        }
+
         return solved(node, t_i32);
     }
 
-    fn solveNum(node: Node): SolvedNode
+    fn solveNum(node: Node, type: Type): SolvedNode
     {
+        if (type == t_f32)
+            return solved(node, t_f32);
+
         return solved(node, t_f64);
     }
 

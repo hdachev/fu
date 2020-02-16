@@ -676,4 +676,7 @@ void runTests()
     ZERO("\n        fn main()\n            i32(PI * 2 - 6);\n    "_fu);
     ZERO("\n        fn main()\n            PI * 2 - 6 |> i32;\n    "_fu);
     ZERO("\n        fn main()\n            i32 <| PI * 2 - 6;\n    "_fu);
+    ZERO("\n        let x: f32 = 1; fn main() 1 - x.i32;\n    "_fu);
+    ZERO("\n        let x: f32 = 1.0; fn main() 1 - x.i32;\n    "_fu);
+    ZERO("\n        let x: u8 = 1; fn main() 1 - x.i32;\n    "_fu);
 }

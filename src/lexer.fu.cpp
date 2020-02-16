@@ -85,13 +85,6 @@ struct sf_lex
     {
         err_str(kind, idx0, fu_TO_STR(src[reason]));
     };
-    fu_STR checkNum(const fu_STR& kind, const fu_STR& src)
-    {
-        if (src)
-        {
-        };
-        return kind;
-    };
     fu_STR unescapeStr(const fu_STR& src, const int idx0, const int idx1)
     {
         fu_STR out {};
@@ -209,7 +202,7 @@ struct sf_lex
                 {
                     const int idx1 = idx;
                     fu_STR str = fu::slice(src, idx0, idx1);
-                    token(checkNum(((dot || exp) ? "num"_fu : "int"_fu), str), str, idx0, idx1);
+                    token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
                 };
             }
             else if (((c == "'"_fu) || (c == "\""_fu) || (c == "`"_fu)))

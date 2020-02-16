@@ -739,39 +739,44 @@ struct sf_cpp_codegen
     fu_STR typeAnnotBase(const s_Type& type)
     {
         const fu_STR& c = type.value.canon;
-        if ((c == "i8"_fu))
-            return "i8"_fu;
+        if ((type.value.quals & q_primitive))
+        {
+            if ((c == "i32"_fu))
+                return "int"_fu;
 
-        if ((c == "i16"_fu))
-            return "short"_fu;
+            if ((c == "i16"_fu))
+                return "short"_fu;
 
-        if ((c == "i32"_fu))
-            return "int"_fu;
+            if ((c == "bool"_fu))
+                return "bool"_fu;
 
-        if ((c == "i64"_fu))
-            return "i64"_fu;
+            if ((c == "f32"_fu))
+                return "float"_fu;
 
-        if ((c == "u8"_fu))
-            return "u8"_fu;
+            if ((c == "f64"_fu))
+                return "double"_fu;
 
-        if ((c == "u16"_fu))
-            return "u16"_fu;
+            include("<cstdint>"_fu);
+            if ((c == "i8"_fu))
+                return "int8_t"_fu;
 
-        if ((c == "u32"_fu))
-            return "u32"_fu;
+            if ((c == "i64"_fu))
+                return "int64_t"_fu;
 
-        if ((c == "u64"_fu))
-            return "u64"_fu;
+            if ((c == "u8"_fu))
+                return "uint8_t"_fu;
 
-        if ((c == "f32"_fu))
-            return "float"_fu;
+            if ((c == "u16"_fu))
+                return "uint16_t"_fu;
 
-        if ((c == "f64"_fu))
-            return "double"_fu;
+            if ((c == "u32"_fu))
+                return "uint32_t"_fu;
 
-        if ((c == "bool"_fu))
-            return "bool"_fu;
+            if ((c == "u64"_fu))
+                return "uint64_t"_fu;
 
+            fail("Unknown primitive."_fu);
+        };
         if ((c == "void"_fu))
             return "void"_fu;
 

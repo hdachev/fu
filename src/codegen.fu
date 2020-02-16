@@ -100,20 +100,31 @@ pub fn cpp_codegen(
     {
         let c = type.canon;
 
-        if (c ==  'i8')    return 'i8';
-        if (c == 'i16')    return 'short';
-        if (c == 'i32')    return 'int'; // TODO fix, pandemic includes
-        if (c == 'i64')    return 'i64';
+        if (type.quals & q_primitive)
+        {
+            // Avoid #include noise when possible.
+            if (c == 'i32')    return 'int';
+            if (c == 'i16')    return 'short';
 
-        if (c ==  'u8')    return 'u8';
-        if (c == 'u16')    return 'u16';
-        if (c == 'u32')    return 'u32';
-        if (c == 'u64')    return 'u64';
+            if (c == 'bool')   return 'bool';
 
-        if (c == 'f32')    return 'float';
-        if (c == 'f64')    return 'double';
+            if (c == 'f32')    return 'float';
+            if (c == 'f64')    return 'double';
 
-        if (c == 'bool')   return 'bool';
+            // Tough luck.
+            include('<cstdint>');
+
+            if (c ==  'i8')    return 'int8_t';
+            if (c == 'i64')    return 'int64_t';
+
+            if (c ==  'u8')    return 'uint8_t';
+            if (c == 'u16')    return 'uint16_t';
+            if (c == 'u32')    return 'uint32_t';
+            if (c == 'u64')    return 'uint64_t';
+
+            fail('Unknown primitive.');
+        }
+
         if (c == 'void')   return 'void';
         if (c == 'string') return annotateString();
         if (c == 'never')  return annotateNever();

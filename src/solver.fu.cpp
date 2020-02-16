@@ -626,6 +626,31 @@ inline const int q_arithmetic = (1 << 5);
 inline const int Arithmetic = (Primitive | q_arithmetic);
                                 #endif
 
+                                #ifndef DEF_q_floating_pt
+                                #define DEF_q_floating_pt
+inline const int q_floating_pt = (1 << 8);
+                                #endif
+
+                                #ifndef DEF_q_signed
+                                #define DEF_q_signed
+inline const int q_signed = (1 << 7);
+                                #endif
+
+                                #ifndef DEF_FloatingPt
+                                #define DEF_FloatingPt
+inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
+                                #endif
+
+                                #ifndef DEF_t_f32
+                                #define DEF_t_f32
+inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_f64
+                                #define DEF_t_f64
+inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
                                 #ifndef DEF_q_integral
                                 #define DEF_q_integral
 inline const int q_integral = (1 << 6);
@@ -636,34 +661,54 @@ inline const int q_integral = (1 << 6);
 inline const int Integral = (Arithmetic | q_integral);
                                 #endif
 
-                                #ifndef DEF_q_signed
-                                #define DEF_q_signed
-inline const int q_signed = (1 << 7);
-                                #endif
-
                                 #ifndef DEF_SignedInt
                                 #define DEF_SignedInt
 inline const int SignedInt = (Integral | q_signed);
                                 #endif
 
+                                #ifndef DEF_t_i64
+                                #define DEF_t_i64
+inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_i16
+                                #define DEF_t_i16
+inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_i8
+                                #define DEF_t_i8
+inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_UnsignedInt
+                                #define DEF_UnsignedInt
+inline const int UnsignedInt = Integral;
+                                #endif
+
+                                #ifndef DEF_t_u32
+                                #define DEF_t_u32
+inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u64
+                                #define DEF_t_u64
+inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u16
+                                #define DEF_t_u16
+inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
+                                #ifndef DEF_t_u8
+                                #define DEF_t_u8
+inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
 inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_q_floating_pt
-                                #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_FloatingPt
-                                #define DEF_FloatingPt
-inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-                                #endif
-
-                                #ifndef DEF_t_f64
-                                #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_string
@@ -1214,10 +1259,10 @@ struct sf_solve
             return solveJump(node);
 
         if ((k == "int"_fu))
-            return solveInt(node);
+            return solveInt(node, type);
 
         if ((k == "num"_fu))
-            return solveNum(node);
+            return solveNum(node, type);
 
         if ((k == "str"_fu))
             return solveStr(node);
@@ -1280,12 +1325,30 @@ struct sf_solve
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
         return solved(node, (last.type ? last.type : fail(fu_STR{})), items);
     };
-    s_SolvedNode solveInt(const s_Node& node)
+    s_SolvedNode solveInt(const s_Node& node, const s_Type& type)
     {
+        if (type)
+        {
+            if (((type == t_f32) || (type == t_f64)))
+                return solved(node, type, fu_VEC<s_SolvedNode>{});
+
+            if (((type == t_i64) || (type == t_i16) || (type == t_i8)))
+                return solved(node, type, fu_VEC<s_SolvedNode>{});
+
+            if ((fu_TO_STR(node.value[0]) != "-"_fu))
+            {
+                if (((type == t_u32) || (type == t_u64) || (type == t_u16) || (type == t_u8)))
+                    return solved(node, type, fu_VEC<s_SolvedNode>{});
+
+            };
+        };
         return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
     };
-    s_SolvedNode solveNum(const s_Node& node)
+    s_SolvedNode solveNum(const s_Node& node, const s_Type& type)
     {
+        if ((type == t_f32))
+            return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
+
         return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode solveStr(const s_Node& node)
