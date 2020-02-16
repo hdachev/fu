@@ -149,35 +149,39 @@ struct sf_lex
                 bool hex = false;
                 bool dot = false;
                 bool exp = false;
-                if (((c == "0"_fu) && (idx < end) && (fu_TO_STR(src[idx]) == "x"_fu)))
+                if ((c == "0"_fu))
                 {
-                    hex = true;
-                    idx++;
+                    fu_STR c = ([&]() -> fu_STR { if ((idx < end)) return fu_TO_STR(src[idx]); else return fu_STR{}; }());
+                    if (((c == "x"_fu) || (c == "X"_fu)))
+                    {
+                        hex = true;
+                        idx++;
+                    };
                 };
                 while ((idx < end))
                 {
                     fu_STR c = fu_TO_STR(src[idx++]);
-                    if (((c >= "0"_fu) && (c <= "9"_fu)))
+                    if ((((c >= "0"_fu) && (c <= "9"_fu)) || (hex && (((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))))
                     {
                     }
                     else if ((c == "."_fu))
                     {
                         fu_STR c = ([&]() -> fu_STR { if ((idx < end)) return fu_TO_STR(src[idx]); else return fu_STR{}; }());
-                        if (((c < "0"_fu) || (c > "9"_fu)))
+                        if (!(((c >= "0"_fu) && (c <= "9"_fu)) || (hex && (((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))))
                         {
                             idx--;
                             break;
                         };
-                        if ((hex || dot || exp))
+                        if ((dot || exp))
                         {
                             err("num"_fu, idx0, (idx - 1));
                             break;
                         };
                         dot = true;
                     }
-                    else if ((((c == "e"_fu) || (c == "E"_fu)) && !hex))
+                    else if ((hex ? ((c == "p"_fu) || (c == "P"_fu)) : ((c == "e"_fu) || (c == "E"_fu))))
                     {
-                        if ((hex || exp))
+                        if (exp)
                         {
                             err("num"_fu, idx0, (idx - 1));
                             break;
@@ -186,14 +190,6 @@ struct sf_lex
                             idx++;
 
                         exp = true;
-                    }
-                    else if ((((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))
-                    {
-                        if (!hex)
-                        {
-                            err("num"_fu, idx0, (idx - 1));
-                            break;
-                        };
                     }
                     else
                     {
@@ -208,7 +204,11 @@ struct sf_lex
                 {
                     const int idx1 = idx;
                     fu_STR str = fu::slice(src, idx0, idx1);
-                    token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
+                    if ((hex && dot && !exp))
+                        err_str("num"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
+                    else
+                        token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
+
                 };
             }
             else if (((c == "'"_fu) || (c == "\""_fu) || (c == "`"_fu)))

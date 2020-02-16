@@ -1599,15 +1599,7 @@ fn runTests()
         let x: u8 = 1; fn main() 1 - x.i32;
     `);
 
-
-    // Immediate fncall after literal,
-    //  lexer must stop on time - not greedy.
-
     ZERO(`
         let x = 1.f32; fn main() 1 - x.i32;
     `);
-
-    // ZERO(`
-    //     let x = 1.u8; fn main() (1 - x).i32;
-    // `);
 }
