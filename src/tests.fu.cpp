@@ -674,4 +674,6 @@ void runTests()
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test): Test {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu);
     ZERO("\n        fn main()\n            i32(PI * 2.0) - 6;\n    "_fu);
     ZERO("\n        fn main()\n            i32(PI * 2 - 6);\n    "_fu);
+    ZERO("\n        fn main()\n            PI * 2 - 6 |> i32;\n    "_fu);
+    ZERO("\n        fn main()\n            i32 <| PI * 2 - 6;\n    "_fu);
 }

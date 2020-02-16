@@ -4,6 +4,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/find.h>
+#include <utility>
 
 struct s_BINOP;
 struct s_Node;
@@ -268,7 +269,9 @@ struct sf_setupOperators
         rightToLeft = true;
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "?"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<14> { "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<|"_fu } });
         rightToLeft = false;
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|>"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { ","_fu } });
         return out;
     };
@@ -828,7 +831,33 @@ struct sf_parse
         if ((op == "&&"_fu))
             return createAnd(left, right);
 
+        if ((op == "|>"_fu))
+            return pipelineRight(left, s_Node(right));
+
+        if ((op == "<|"_fu))
+            return pipelineLeft(s_Node(left), right);
+
         return createCall(op, F_INFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } });
+    };
+    s_Node pipelineRight(const s_Node& left, s_Node&& right)
+    {
+        if ((right.kind != "call"_fu))
+            fail("Cannot pipeline: not a call expr."_fu);
+
+        if ((right.flags & F_METHOD))
+            right.items.insert(1, left);
+        else
+            right.items.unshift(left);
+
+        return std::move(right);
+    };
+    s_Node pipelineLeft(s_Node&& left, const s_Node& right)
+    {
+        if ((left.kind != "call"_fu))
+            fail("Cannot pipeline: not a call expr."_fu);
+
+        left.items.push(right);
+        return std::move(left);
     };
     s_Node tryParseExpressionTail(const s_Node& head)
     {

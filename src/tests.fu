@@ -1573,4 +1573,14 @@ fn runTests()
         fn main()
             i32(PI * 2 - 6);
     `);
+
+    ZERO(`
+        fn main()
+            PI * 2 - 6 |> i32;
+    `);
+
+    ZERO(`
+        fn main()
+            i32 <| PI * 2 - 6;
+    `);
 }

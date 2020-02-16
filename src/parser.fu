@@ -100,7 +100,11 @@ fn setupOperators(): BINOP
     binop([ '?' ]);
     binop([ '=', '+=', '-=', '**=', '*=', '/=', '%=', '<<=', '>>=', '&=', '^=', '|=', '||=', '&&=' ]);
 
+    // F# has weird precedence here, why?
+    binop([ '<|' ]);
+
     rightToLeft = false;
+    binop([ '|>' ]);
     binop([ ',' ]);
 
     //
@@ -787,9 +791,36 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (op == '||') return createOr (left, right);
         if (op == '&&') return createAnd(left, right);
 
+        // Experimental sugar,
+        //  pipeline operator basics.
+        if (op == '|>') return pipelineRight(left, right);
+        if (op == '<|') return pipelineLeft (left, right);
+
         //
         return createCall(
             op, F_INFIX, [ left, right ]);
+    }
+
+    fn pipelineRight(left: Node, mut right: Node): Node
+    {
+        if (right.kind != 'call')
+            return fail('Cannot pipeline: not a call expr.');
+
+        if (right.flags & F_METHOD)
+            right.items.insert(1, left);
+        else
+            right.items.unshift(left);
+
+        return right;
+    }
+
+    fn pipelineLeft(mut left: Node, right: Node): Node
+    {
+        if (left.kind != 'call')
+            return fail('Cannot pipeline: not a call expr.');
+
+        left.items.push(right);
+        return left;
     }
 
     fn tryParseExpressionTail(head: Node): Node
