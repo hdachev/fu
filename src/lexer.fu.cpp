@@ -162,6 +162,12 @@ struct sf_lex
                     }
                     else if ((c == "."_fu))
                     {
+                        fu_STR c = ([&]() -> fu_STR { if ((idx < end)) return fu_TO_STR(src[idx]); else return fu_STR{}; }());
+                        if (((c < "0"_fu) || (c > "9"_fu)))
+                        {
+                            idx--;
+                            break;
+                        };
                         if ((hex || dot || exp))
                         {
                             err("num"_fu, idx0, (idx - 1));

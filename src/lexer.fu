@@ -161,6 +161,15 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else if (c == '.')
                 {
+                    // Don't munch dots unless followed by a decimal -
+                    //  So you can't do 1.e1 but that's the same as 1e1 or 1.0e1.
+                    let c = idx < end && src[idx];
+                    if (c < '0' || c > '9')
+                    {
+                        idx--;
+                        break;
+                    }
+
                     if (hex || dot || exp)
                     {
                         err('num', idx0, idx - 1);
