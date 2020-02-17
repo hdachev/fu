@@ -1049,6 +1049,13 @@ struct sf_solve
         while ((result && (result.mutref((result.size() - 1)) < 0)))
             result.pop();
 
+        for (int i = 0; (i < result.size()); i++)
+        {
+            if ((result.mutref(i) != i))
+                return result;
+
+        };
+        result.clear();
         return result;
     };
     s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)

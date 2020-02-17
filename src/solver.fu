@@ -394,6 +394,12 @@ fn solve(
         while (result && result[result.len - 1] < 0)
             result.pop();
 
+        // Return nothing if not needed.
+        for (mut i = 0; i < result.len; i++)
+            if (result[i] != i)
+                return result;
+
+        result.clear();
         return result;
     }
 
