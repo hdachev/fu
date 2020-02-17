@@ -1676,7 +1676,7 @@ struct sf_solve
         s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.value.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(init.type) : s_Type(init.type)));
         if ((annot.type && init.type))
         {
-            (isAssignable(annot.type, init.type) || fail("Type annotation does not match init expression."_fu));
+            (isAssignable(annot.type, init.type) || fail((((((("Type annotation does not match init expression: `"_fu + node.value) + ": "_fu) + serializeType(annot.type)) + " = "_fu) + serializeType(init.type)) + "`."_fu)));
         };
         if (init)
             maybeCopyOrMove(init, t_let, false, false);

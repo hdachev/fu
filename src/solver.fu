@@ -1237,7 +1237,8 @@ fn solve(
 
         if (annot.type && init.type)
             isAssignable(annot.type, init.type) || fail(
-                'Type annotation does not match init expression.');
+                'Type annotation does not match init expression: `'
+                    + node.value + ': ' + serializeType(annot.type) + ' = ' + serializeType(init.type) + '`.');
 
         if (init)
             maybeCopyOrMove(init, t_let);
