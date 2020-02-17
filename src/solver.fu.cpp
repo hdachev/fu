@@ -2041,23 +2041,27 @@ struct sf_solve
         if (!(type == t_bool))
         {
             s_Type sumType {};
-            for (int i = 0; (i < items.size()); i++)
+            bool hasNever = false;
+            for (int i = items.size(); (i-- > 0); )
             {
                 s_SolvedNode item { items[i] };
                 if ((item.type == t_never))
                 {
+                    hasNever = true;
                     continue;
                 };
+                const s_SolvedNode& andLast = ([&]() -> const s_SolvedNode& { if (hasNever && (item.kind == "and"_fu) && item.items) return item.items[(item.items.size() - 1)]; else return fu::Default<s_SolvedNode>::value; }());
+                const s_Type& itemType = ((andLast && !(andLast.type == t_never)) ? andLast.type : item.type);
                 if (sumType)
                 {
-                    sumType = type_tryInter(sumType, item.type);
+                    sumType = type_tryInter(sumType, itemType);
                     if (!sumType)
                     {
                         break;
                     };
                 }
                 else
-                    sumType = item.type;
+                    sumType = itemType;
 
             };
             if (sumType)
@@ -2102,7 +2106,6 @@ struct sf_solve
                     type = item.type;
                     sumType = item.type;
                 };
-                break;
             };
             if (sumType)
                 type = sumType;

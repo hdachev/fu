@@ -1807,26 +1807,36 @@ fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if (!(type == t_bool))
+        if !(type == t_bool)
         {
             mut sumType: Type;
+            mut hasNever = false;
 
             // Sum types, ignoring never.
-            for (mut i = 0; i < items.len; i++)
+            for (mut i = items.len; i --> 0; )
             {
                 let item = items[i];
                 if (item.type == t_never)
+                {
+                    hasNever = true;
                     continue;
+                }
+
+                // a && b || never: b can be mutref!
+                let andLast = hasNever && item.kind == 'and' && item.items && item.items[item.items.len - 1];
+                let itemType = andLast && !(andLast.type == t_never)
+                    ? andLast.type
+                    : item.type;
 
                 if (sumType)
                 {
-                    sumType = type_tryInter(sumType, item.type);
+                    sumType = type_tryInter(sumType, itemType);
                     if (!sumType)
                         break;
                 }
                 else
                 {
-                    sumType = item.type;
+                    sumType = itemType;
                 }
             }
 
@@ -1859,7 +1869,7 @@ fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if (!(type == t_bool))
+        if !(type == t_bool)
         {
             mut sumType: Type;
 
@@ -1879,11 +1889,9 @@ fn solve(
                 }
                 else
                 {
-                    type = item.type;
+                    type    = item.type;
                     sumType = item.type;
                 }
-
-                break;
             }
 
             if (sumType)
