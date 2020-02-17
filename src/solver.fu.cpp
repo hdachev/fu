@@ -2018,7 +2018,7 @@ struct sf_solve
         if (!((type == t_void) || (type == t_bool)))
         {
             type = (!secType ? s_Type(priType) : type_tryInter(priType, secType));
-            (type || fail("[if] No common supertype."_fu));
+            (type || fail((((("[if] No common supertype: `"_fu + serializeType(priType)) + " : "_fu) + serializeType(secType)) + "`."_fu)));
             if (cons)
                 maybeCopyOrMove(cons, type, false, false);
 

@@ -1775,7 +1775,7 @@ fn solve(
             type = !secType ? priType
                             : type_tryInter(priType, secType);
 
-            type || fail('[if] No common supertype.');
+            type || fail('[if] No common supertype: `' + serializeType(priType) + ' : ' + serializeType(secType) + '`.');
 
             if (cons)
                 maybeCopyOrMove(cons, type);
