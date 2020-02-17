@@ -2,6 +2,7 @@
 
 #include "../str.h"
 #include "find.h"
+#include "slice.h"
 
 namespace fu {
 
