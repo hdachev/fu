@@ -661,15 +661,17 @@ fn solve(
     fn isUnordered(kind: string)
     {
         return kind == 'fn'
-            || kind == 'struct';
+            || kind == 'struct'
+            || kind == 'typedef';
     }
 
     fn unorderedPrep(node: Node): SolvedNode
     {
         let k = node.kind;
 
-        if (k == 'fn')         return uPrepFn(node);
-        if (k == 'struct')     return uPrepStruct(node);
+        if (k == 'fn')          return uPrepFn(node);
+        if (k == 'struct')      return uPrepStruct(node);
+        if (k == 'typedef')     return solveTypedef(node);
 
         return fail('TODO: ' + k);
     }
@@ -678,8 +680,9 @@ fn solve(
     {
         let k = node.kind;
 
-        if (k == 'fn')         return uSolveFn(node, prep);
-        if (k == 'struct')     return uSolveStruct(node, prep);
+        if (k == 'fn')          return uSolveFn(node, prep);
+        if (k == 'struct')      return uSolveStruct(node, prep);
+        if (k == 'typedef')     return prep || fail();
 
         return fail('TODO: ' + k);
     }
@@ -1245,6 +1248,13 @@ fn solve(
         }
 
         return out;
+    }
+
+    fn solveTypedef(node: Node): SolvedNode
+    {
+        let annot = evalTypeAnnot(node.items.only);
+        Scope_Typedef(_scope, node.value, annot.type);
+        return createEmpty();
     }
 
     fn solveLet(node: Node, mut lifetime: Lifetime): SolvedNode

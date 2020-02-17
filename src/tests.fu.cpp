@@ -680,4 +680,5 @@ void runTests()
     ZERO("\n        let x: f32 = 1.0; fn main() 1 - x.i32;\n    "_fu);
     ZERO("\n        let x: u8 = 1; fn main() 1 - x.i32;\n    "_fu);
     ZERO("\n        let x = 1.f32; fn main() 1 - x.i32;\n    "_fu);
+    ZERO("\n        typedef Test = i32[];\n        fn yo(t: Test) t[0] + t[1];\n        fn main() yo([-1, +1]);\n    "_fu);
 }

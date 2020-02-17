@@ -425,6 +425,13 @@ struct sf_parse
     {
         return make("block"_fu, items, 0, fu_STR{});
     };
+    s_Node parseTypedef()
+    {
+        fu_STR name = consume("id"_fu, fu_STR{}).value;
+        consume("op"_fu, "="_fu);
+        s_Node annot = parseTypeAnnot();
+        return make("typedef"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { annot } }, 0, name);
+    };
     s_Node parseStructDecl()
     {
         s_Token name = tryConsume("id"_fu, fu_STR{});
@@ -566,6 +573,9 @@ struct sf_parse
 
             if ((v == "struct"_fu))
                 return parseStructDecl();
+
+            if ((v == "typedef"_fu))
+                return parseTypedef();
 
             if ((v == "pub"_fu))
                 return parseStatement();

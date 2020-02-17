@@ -546,6 +546,11 @@ struct s_MapFields
 };
                                 #endif
 
+s_Node only(const fu_VEC<s_Node>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
+}
+
                                 #ifndef DEF_WARN_ON_IMPLICIT_COPY
                                 #define DEF_WARN_ON_IMPLICIT_COPY
 inline const bool WARN_ON_IMPLICIT_COPY = false;
@@ -1283,7 +1288,7 @@ struct sf_solve
     };
     bool isUnordered(const fu_STR& kind)
     {
-        return ((kind == "fn"_fu) || (kind == "struct"_fu));
+        return ((kind == "fn"_fu) || (kind == "struct"_fu) || (kind == "typedef"_fu));
     };
     s_SolvedNode unorderedPrep(const s_Node& node)
     {
@@ -1293,6 +1298,9 @@ struct sf_solve
 
         if ((k == "struct"_fu))
             return uPrepStruct(node);
+
+        if ((k == "typedef"_fu))
+            return solveTypedef(node);
 
         fail(("TODO: "_fu + k));
     };
@@ -1304,6 +1312,9 @@ struct sf_solve
 
         if ((k == "struct"_fu))
             return uSolveStruct(node, prep);
+
+        if ((k == "typedef"_fu))
+            return (prep ? prep : fail(fu_STR{}));
 
         fail(("TODO: "_fu + k));
     };
@@ -1672,6 +1683,12 @@ struct sf_solve
             out.kind = "global"_fu;
         };
         return out;
+    };
+    s_SolvedNode solveTypedef(const s_Node& node)
+    {
+        s_SolvedNode annot = evalTypeAnnot(only(node.items));
+        Scope_Typedef(_scope, node.value, annot.type, module);
+        return createEmpty();
     };
     s_SolvedNode solveLet(const s_Node& node, s_Lifetime&& lifetime)
     {

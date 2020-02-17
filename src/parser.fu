@@ -255,6 +255,18 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
+    fn parseTypedef(): Node
+    {
+        let name = consume('id').value;
+        consume('op', '=');
+        let annot = parseTypeAnnot();
+
+        return make('typedef', value: name, items: [ annot ]);
+    }
+
+
+    //
+
     fn parseStructDecl(): Node
     {
         let name = tryConsume('id');
@@ -443,6 +455,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             if (v == 'fn')          return parseFnDecl();
             if (v == 'struct')      return parseStructDecl();
+            if (v == 'typedef')     return parseTypedef();
 
             // Ignore pubs for now.
             if (v == 'pub')         return parseStatement();

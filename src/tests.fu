@@ -1602,4 +1602,13 @@ fn runTests()
     ZERO(`
         let x = 1.f32; fn main() 1 - x.i32;
     `);
+
+
+    //
+
+    ZERO(`
+        typedef Test = i32[];
+        fn yo(t: Test) t[0] + t[1];
+        fn main() yo([-1, +1]);
+    `);
 }
