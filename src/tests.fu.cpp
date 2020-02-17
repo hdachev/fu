@@ -681,4 +681,8 @@ void runTests()
     ZERO("\n        let x: u8 = 1; fn main() 1 - x.i32;\n    "_fu);
     ZERO("\n        let x = 1.f32; fn main() 1 - x.i32;\n    "_fu);
     ZERO("\n        typedef Test = i32[];\n        fn yo(t: Test) t[0] + t[1];\n        fn main() yo([-1, +1]);\n    "_fu);
+    ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        fn hello(a: i32[]) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
+    ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
+    ZERO("\n        fn if_first(a: $T[]) a && a[0];\n\n        fn list(): i32[][] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
+    ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n\n        fn list(): X[] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
 }

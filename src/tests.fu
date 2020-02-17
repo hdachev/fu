@@ -1604,11 +1604,47 @@ fn runTests()
     `);
 
 
-    //
+    // Typedefs.
 
     ZERO(`
         typedef Test = i32[];
         fn yo(t: Test) t[0] + t[1];
         fn main() yo([-1, +1]);
+    `);
+
+    ZERO(`
+        fn if_first(a: $T[]) a && a[0];
+        fn hello(a: i32[]) a.if_first;
+        fn main() hello([ 3 ]) - 3;
+    `);
+
+    ZERO(`
+        fn if_first(a: $T[]) a && a[0];
+        typedef X = i32[];
+        fn hello(a: X) a.if_first;
+        fn main() hello([ 3 ]) - 3;
+    `);
+
+    ZERO(`
+        fn if_first(a: $T[]) a && a[0];
+
+        fn list(): i32[][] {
+            return [[ 3 ]];
+        }
+
+        fn hello() list.if_first.if_first;
+        fn main() hello - 3;
+    `);
+
+    ZERO(`
+        fn if_first(a: $T[]) a && a[0];
+        typedef X = i32[];
+
+        fn list(): X[] {
+            return [[ 3 ]];
+        }
+
+        fn hello() list.if_first.if_first;
+        fn main() hello - 3;
     `);
 }
