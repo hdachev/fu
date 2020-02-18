@@ -13,10 +13,11 @@ namespace fu {
 
 inline int file_write(fu_STR path, const fu_STR& body)
 {
-    path.push('\0');
+    path.push(std::byte('\0'));
+    auto cpath = (const char*)path.data();
 
     errno = 0;
-    FILE* file = fopen(path.data(), "w");
+    FILE* file = fopen(cpath, "w");
     int err = errno;
     err = err ? err : fu_ERR_UnknownError;
 
@@ -34,17 +35,18 @@ inline int file_write(fu_STR path, const fu_STR& body)
 
 inline fu_STR file_read(fu_STR path, fu_STR& output)
 {
-    path.push('\0');
+    path.push(std::byte('\0'));
+    auto cpath = (const char*)path.data();
 
-    auto file = fopen(path.data(), "r");
+    auto file = fopen(cpath, "r");
     fu::defer _fclose { [&]() { if (file) fclose(file); } };
 
     if (file) {
-        char buffer[FREAD_BUFFER_SIZE];
+        std::byte buffer[FREAD_BUFFER_SIZE];
         size_t count;
         while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, file)))
             output.append_copy(
-                fu_ZERO(), buffer, (int) count);
+                fu_ZERO(), buffer, int(count));
     }
 
     return output;
@@ -52,10 +54,11 @@ inline fu_STR file_read(fu_STR path, fu_STR& output)
 
 inline int file_size(fu_STR path)
 {
-    path.push('\0');
+    path.push(std::byte('\0'));
+    auto cpath = (const char*)path.data();
 
     struct stat sb;
-    if (stat(path.data(), &sb) == 0)
+    if (stat(cpath, &sb) == 0)
         return int(sb.st_size);
 
     return -1;
@@ -85,22 +88,22 @@ inline int fs_mkdir_p(
     if (!path.size())
         return fu_ERR_FS_BadPath;
 
-    if (path       [path.size() - 1] == '/')
-        path.mutref(path.size() - 1) = '\0';
+    if (path       [path.size() - 1] == std::byte('/'))
+        path.mutref(path.size() - 1) =  std::byte('\0');
     else
-        path += '\0';
+        path += std::byte('\0');
 
-    const char* c_str = path.data();
+    auto cpath = (const char*)path.data();
 
     //
     struct stat st;
 
     // Exists?
-    if (!stat(c_str, &st) && S_ISDIR(st.st_mode))
+    if (!stat(cpath, &st) && S_ISDIR(st.st_mode))
         return 0;
 
     // Create?
-    if (!mkdir(c_str, (mode_t) mode))
+    if (!mkdir(cpath, mode_t(mode)))
         return 0;
 
     int err = errno;
@@ -109,7 +112,7 @@ inline int fs_mkdir_p(
     // Create parent?
     // TODO no realloc and no recursion.
     for (auto i = path.size() - 2; i --> 0; )
-        if (path[i] == '/')
+        if (path[i] == std::byte('/'))
         {
             err = fs_mkdir_p( slice(path, 0, i), mode );
 
@@ -117,14 +120,14 @@ inline int fs_mkdir_p(
                 return err;
 
             // Retry?
-            if (!mkdir(c_str, (mode_t) mode))
+            if (!mkdir(cpath, mode_t(mode)))
                 return 0;
 
             err = errno;
             err = err ? err : fu_ERR_UnknownError;
 
             // Raced with other?
-            if (err == EEXIST && !stat(c_str, &st) && S_ISDIR(st.st_mode))
+            if (err == EEXIST && !stat(cpath, &st) && S_ISDIR(st.st_mode))
                 return 0;
 
             return err;

@@ -28,12 +28,9 @@ struct TEA
         }
     }
 
-    template <typename V, typename = decltype(*((char*)1) = ((V*)1)->data()[0])>
-    void string(const V& str) noexcept
+    void string(const char* start, size_t size) noexcept
     {
-        const char* start   = str.data();
-        const char* end     = start + str.size();
-
+        const char* end = start + size;
         for (auto* i = start; i < end; )
         {
             auto* end4 = i + 4; end4 = end4 > end ? end : end4;
@@ -60,16 +57,15 @@ struct TEA
     }
 };
 
-template <typename T>
-fu_STR hash_tea(const T& str)
+fu_STR hash_tea(const fu_STR& str)
 {
     TEA hash;
-    hash.string(str);
+    hash.string((const char*)str.data(), size_t(str.size()));
 
     fu_STR res;
 
     res += hash.v0;
-    res += '-';
+    res += std::byte('-');
     res += hash.v1;
 
     return res;

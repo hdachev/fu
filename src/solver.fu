@@ -755,6 +755,8 @@ fn solve(
 
     fn solveStr(node: Node): SolvedNode
     {
+        let t_string = createArray(t_byte);
+
         if (!node.value)
             return createDefaultInit(
                 add_ref(t_string, Lifetime_static));
@@ -1338,10 +1340,11 @@ fn solve(
         Scope_pop(_scope, scope0);
         //////////////////////////
 
-        var_err.kind == 'let' && isAssignableAsArgument(
-            var_err.type, t_string) || fail(
-                'catch: exceptions are strings,'
-                    + ' consider dropping the annotation.');
+        // TODO FIX
+        // var_err.kind == 'let' && isAssignableAsArgument(
+        //     var_err.type, t_string) || fail(
+        //         'catch: exceptions are strings,'
+        //             + ' consider dropping the annotation.');
 
         return solved(node, var_ok.type,
             [ var_ok, var_err, catch ]);

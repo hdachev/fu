@@ -6,6 +6,7 @@ pub let q_ref           = 1 << 1;
 pub let q_copy          = 1 << 2;
 pub let q_trivial       = 1 << 3;
 pub let q_primitive     = 1 << 4;
+
 pub let q_arithmetic    = 1 << 5;
 pub let q_integral      = 1 << 6;
 pub let q_signed        = 1 << 7;
@@ -69,6 +70,11 @@ fn type_inter(a: Effects, b: Effects)
 
 //
 
+fn ==(a: ValueType, b: ValueType)
+    a.quals == b.quals &&
+    a.modid == b.modid &&
+    a.canon == b.canon;
+
 fn ==(a: Type, b: Type)
     a.modid == b.modid &&
     a.canon == b.canon &&
@@ -100,9 +106,10 @@ pub let t_f64       = Type(ValueType('f64', FloatingPt, 0));
 
 pub let t_void      = Type(ValueType('void', 0, 0));
 pub let t_bool      = Type(ValueType('bool', Primitive, 0));
+
 pub let t_never     = Type(ValueType('never', 0, 0));
 pub let t_template  = Type(ValueType('template', 0, 0));
-pub let t_string    = Type(ValueType('string', q_copy, 0));
+pub let t_byte      = Type(ValueType('byte', Primitive, 0));
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:

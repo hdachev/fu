@@ -29,7 +29,7 @@ template <typename T>
 {
     throw std::runtime_error( // TODO FIX
         std::string(
-            what.data(), size_t(what.size())));
+            (const char*)what.data(), size_t(what.size())));
 }
 
 } // namespace

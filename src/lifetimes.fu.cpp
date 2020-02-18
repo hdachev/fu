@@ -6,7 +6,6 @@
 
 struct s_Lifetime;
 struct s_Region;
-s_Region only(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Region
                                 #define DEF_s_Region
@@ -38,20 +37,29 @@ struct s_Lifetime
 };
                                 #endif
 
-s_Region if_only(const fu_VEC<s_Region>& s)
+                                #ifndef DEFt_2_2v_s_Region_4__6
+                                #define DEFt_2_2v_s_Region_4__6
+inline s_Region if_only(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
+                                #endif
 
-s_Region if_first(const fu_VEC<s_Region>& s)
+                                #ifndef DEFt_2_3v_s_Region_4__6
+                                #define DEFt_2_3v_s_Region_4__6
+inline s_Region if_first(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
 }
+                                #endif
 
-s_Region only(const fu_VEC<s_Region>& s)
+                                #ifndef DEFt_2_1v_s_Region_4__6
+                                #define DEFt_2_1v_s_Region_4__6
+inline s_Region only(const fu_VEC<s_Region>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
 }
+                                #endif
 
 bool isStatic(const s_Lifetime& l)
 {

@@ -204,11 +204,6 @@ pub fn createArray(item: Type): Type
             :item.lifetime);
 }
 
-pub fn type_isString(type: Type): bool
-{
-    return type.canon == 'string';
-}
-
 pub fn type_isArray(type: Type): bool
 {
     return type.canon.starts(with: 'v(');
@@ -512,8 +507,8 @@ pub fn listGlobals(implicit module: Module): Scope
     Scope_Typedef(scope, 'f64',    t_f64   );
 
     Scope_Typedef(scope, 'bool',   t_bool  );
+    Scope_Typedef(scope, 'byte',   t_byte  );
     Scope_Typedef(scope, 'void',   t_void  );
-    Scope_Typedef(scope, 'string', t_string);
     Scope_Typedef(scope, 'never',  t_never );
 
     return scope;

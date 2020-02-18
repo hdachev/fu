@@ -31,6 +31,7 @@ pub fn cpp_codegen(
     mut _clsrN: i32;
     mut _faasN: i32;
     mut _hasMain: i32;
+    mut _isModuleSpecs: i32;
 
     fn GET(
         implicit module: Module,
@@ -103,24 +104,26 @@ pub fn cpp_codegen(
         if (type.quals & q_primitive)
         {
             // Avoid #include noise when possible.
-            if (c == 'i32')    return 'int';
-            if (c == 'i16')    return 'short';
+            if (c == 'i32')     return 'int';
+            if (c == 'i16')     return 'short';
 
-            if (c == 'bool')   return 'bool';
+            if (c == 'bool')    return 'bool';
 
-            if (c == 'f32')    return 'float';
-            if (c == 'f64')    return 'double';
+            if (c == 'f32')     return 'float';
+            if (c == 'f64')     return 'double';
 
             // Tough luck.
             include('<cstdint>');
 
-            if (c ==  'i8')    return 'int8_t';
-            if (c == 'i64')    return 'int64_t';
+            if (c ==  'i8')     return 'int8_t';
+            if (c == 'i64')     return 'int64_t';
 
-            if (c ==  'u8')    return 'uint8_t';
-            if (c == 'u16')    return 'uint16_t';
-            if (c == 'u32')    return 'uint32_t';
-            if (c == 'u64')    return 'uint64_t';
+            if (c ==  'u8')     return 'uint8_t';
+            if (c == 'u16')     return 'uint16_t';
+            if (c == 'u32')     return 'uint32_t';
+            if (c == 'u64')     return 'uint64_t';
+
+            if (c == 'byte')    return 'std::byte';
 
             fail('Unknown primitive.');
         }
@@ -146,8 +149,13 @@ pub fn cpp_codegen(
 
         if (k == 'array')
         {
-            annotateVector();
+            if (tdef.fields.only.type == t_byte.value)
+            {
+                annotateString();
+                return 'fu_STR';
+            }
 
+            annotateVector();
             let item = typeAnnot(tdef.fields[0].type);
             return 'fu_VEC<' + item + '>';
         }
@@ -237,6 +245,10 @@ pub fn cpp_codegen(
     {
         mut src = '';
 
+        /////////////////
+        _isModuleSpecs++;
+        /////////////////
+
         let specs = module.out.specs;
         let keys = specs.keys();
         for (mut i = 0; i < keys.len; i++)
@@ -249,8 +261,33 @@ pub fn cpp_codegen(
             // Emit.
             let s = specs[k];
             if (s.target)
-                src += cgNode(s);
+            {
+                mut dedupe = '';
+                for (mut i = 0; i < k.len; i++)
+                {
+                    let c = k[i];
+
+                    if (c >= '0' && c <= '9' ||
+                        c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+                    {
+                        dedupe += c;
+                    }
+                    else
+                    {
+                        dedupe += '_';
+                    }
+                }
+
+                src  += '\n                                #ifndef DEFt_' + dedupe
+                      + '\n                                #define DEFt_' + dedupe
+                      + '\n' + cgNode(s)
+                      + '\n                                #endif\n';
+            }
         }
+
+        /////////////////
+        _isModuleSpecs--;
+        /////////////////
 
         return src;
     }
@@ -264,8 +301,8 @@ pub fn cpp_codegen(
         mut header = collectDedupes(_libs)
                    + collectDedupes(_tfwd)
                    + collectDedupes(_ffwd)
-                   +               (specs)
                    +               (_tdef)
+                   +               (specs)
                    +               (_fdef)
                    ;
 
@@ -322,7 +359,7 @@ pub fn cpp_codegen(
         {
             let line = lines[i];
             if (line)
-                src += _indent + line + (line.last == ';' ? '\n' : ';');
+                src += _indent + line + (line.if_last == ';' ? '\n' : ';');
         }
 
         return src;
@@ -402,6 +439,9 @@ pub fn cpp_codegen(
 
         if (!id.hasIdentifierChars)
             src = annot + ' operator' + id + '(';
+
+        if (_isModuleSpecs && !closure)
+            src = 'inline ' + src;
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
@@ -657,7 +697,7 @@ pub fn cpp_codegen(
         }
 
         // This covers both closures & try_cgTryFnAsStruct:
-        if (fn.flags & F_CLOSURE)
+        if (fn.flags & F_CLOSURE || _isModuleSpecs)
             return src;
 
         _fdef += '\n' + src + '\n';
@@ -848,7 +888,12 @@ pub fn cpp_codegen(
             }
 
             if (items)
-                return id + '(' + items.join(', ') + ')';
+            {
+                if (id.hasIdentifierChars)
+                    return id + '(' + items.join(', ') + ')';
+
+                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+            }
 
             return id;
         }
@@ -917,9 +962,6 @@ pub fn cpp_codegen(
             {
                 if (id == '[]')
                 {
-                    if (head.type.canon == 'string')
-                        return 'fu_TO_STR(' + items[0] + '[' + items[1] + '])';
-
                     // The new cow_vec is here.
                     if (node.type.quals & q_mutref)
                         return items[0] + '.mutref(' + items[1] + ')';
@@ -963,10 +1005,9 @@ pub fn cpp_codegen(
                 // Collapse (a += b + c) into (a += b, a += c),
                 //  totally surprised at how little if any impact this has.
                 if (id == '+=')
-                    if (head.type.canon == t_string.canon || type_isArray(head.type))
-                        if (isFieldChain(node.items[0]))
-                            if (node.items[1].value == '+' && node.items[1].type.canon == head.type.canon)
-                                return cgAppend(node, items[0]);
+                    if (type_isArray(head.type) && isFieldChain(node.items[0]))
+                        if (node.items[1].value == '+' && node.items[1].type.canon == head.type.canon)
+                            return cgAppend(node, items[0]);
 
                 // Skip some of the ridiculous parens.
                 if (mode & M_STMT)
@@ -978,8 +1019,9 @@ pub fn cpp_codegen(
 
         if (id == 'char' && items.len == 2)
         {
+            // TODO FIX
             let head = node.items[0] || fail();
-            if (head.type.canon == 'string')
+            if (type_isArray(head.type))
                 return 'int(' + items[0] + '[' + items[1] + '])';
         }
 

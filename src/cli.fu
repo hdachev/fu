@@ -63,7 +63,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     while (val.len > 1 && val[0] == '-') {
         mut opt = val;
         if (opt[1] != '-') {
-            opt = opt[1];
+            opt = [ opt[1] ];
             val = '-' + val.slice(2);
             if (val == '-')
                 val = next();

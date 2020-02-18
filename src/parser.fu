@@ -260,6 +260,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let name = consume('id').value;
         consume('op', '=');
         let annot = parseTypeAnnot();
+        consume('op', ';');
 
         return make('typedef', value: name, items: [ annot ]);
     }

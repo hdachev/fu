@@ -1,3 +1,5 @@
+#include <cstdint>
+#include <fu/default.h>
 #include <fu/env.h>
 #include <fu/io.h>
 #include <fu/map.h>
@@ -39,28 +41,27 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 s_Context solvePrelude();
-fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
-fu_STR path_filename(const fu_STR&);
-fu_STR path_relative(const fu_STR&, const fu_STR&);
-fu_STR last(const fu_STR&);
-fu_STR path_noext(const fu_STR&);
-fu_STR path_dirname(const fu_STR&);
-fu_STR path_join(const fu_STR&, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
-int FAIL(const fu_STR&);
-fu_STR compile_snippet(const fu_STR&);
-s_LexerOutput lex(const fu_STR&, const fu_STR&);
-s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
+fu_VEC<std::byte> cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
+fu_VEC<std::byte> path_dirname(const fu_VEC<std::byte>&);
+fu_VEC<std::byte> path_filename(const fu_VEC<std::byte>&);
+fu_VEC<std::byte> path_join(const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
+fu_VEC<std::byte> path_relative(const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
+fu_VEC<std::byte> path_noext(const fu_VEC<std::byte>&);
+void build(const fu_VEC<std::byte>&, bool, const fu_VEC<std::byte>&, const fu_VEC<std::byte>&, const fu_VEC<std::byte>&, const fu_VEC<std::byte>&, const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
+int FAIL(const fu_VEC<std::byte>&);
+fu_VEC<std::byte> compile_snippet(const fu_VEC<std::byte>&);
+s_LexerOutput lex(const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
+s_ParserOutput parse(int, const fu_VEC<std::byte>&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-fu_STR& getFile(const fu_STR&, s_Context&);
-s_Module& getModule(const fu_STR&, s_Context&);
+fu_VEC<std::byte>& getFile(const fu_VEC<std::byte>&, s_Context&);
+s_Module& getModule(const fu_VEC<std::byte>&, s_Context&);
 void setModule(const s_Module&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
-    fu_STR value;
+    fu_VEC<std::byte> kind;
+    fu_VEC<std::byte> value;
     int idx0;
     int idx1;
     int line;
@@ -83,7 +84,7 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_STR fname;
+    fu_VEC<std::byte> fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
@@ -115,9 +116,9 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    fu_VEC<std::byte> kind;
     int flags;
-    fu_STR value;
+    fu_VEC<std::byte> value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
     explicit operator bool() const noexcept
@@ -138,7 +139,7 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_VEC<std::byte>> imports;
     explicit operator bool() const noexcept
     {
         return false
@@ -153,7 +154,7 @@ struct s_ParserOutput
                                 #define DEF_s_ModuleInputs
 struct s_ModuleInputs
 {
-    fu_STR src;
+    fu_VEC<std::byte> src;
     s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
@@ -171,7 +172,7 @@ struct s_ModuleInputs
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_STR canon;
+    fu_VEC<std::byte> canon;
     int quals;
     int modid;
     explicit operator bool() const noexcept
@@ -189,7 +190,7 @@ struct s_ValueType
                                 #define DEF_s_StructField
 struct s_StructField
 {
-    fu_STR id;
+    fu_VEC<std::byte> id;
     s_ValueType type;
     explicit operator bool() const noexcept
     {
@@ -205,8 +206,8 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR kind;
-    fu_STR id;
+    fu_VEC<std::byte> kind;
+    fu_VEC<std::byte> id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
@@ -303,9 +304,9 @@ struct s_Target
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    fu_VEC<std::byte> kind;
     int flags;
-    fu_STR value;
+    fu_VEC<std::byte> value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
@@ -329,7 +330,7 @@ struct s_SolvedNode
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
 {
-    fu_STR id;
+    fu_VEC<std::byte> id;
     s_Target target;
     explicit operator bool() const noexcept
     {
@@ -375,13 +376,13 @@ struct s_Template
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
-    fu_STR name;
+    fu_VEC<std::byte> kind;
+    fu_VEC<std::byte> name;
     s_Type type;
     int min;
     int max;
     fu_VEC<s_Type> args;
-    fu_VEC<fu_STR> names;
+    fu_VEC<fu_VEC<std::byte>> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
     s_Template Q_template;
@@ -442,10 +443,10 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
+    fu_COW_MAP<fu_VEC<std::byte>, s_Struct> types;
+    fu_COW_MAP<fu_VEC<std::byte>, s_SolvedNode> specs;
     s_SolverOutput solve;
-    fu_STR cpp;
+    fu_VEC<std::byte> cpp;
     explicit operator bool() const noexcept
     {
         return false
@@ -484,7 +485,7 @@ struct s_ModuleStats
 struct s_Module
 {
     int modid;
-    fu_STR fname;
+    fu_VEC<std::byte> fname;
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
@@ -506,7 +507,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_STR, fu_STR> files;
+    fu_COW_MAP<fu_VEC<std::byte>, fu_VEC<std::byte>> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -517,18 +518,34 @@ struct s_Context
 };
                                 #endif
 
-void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
+                                #ifndef DEFt_2_4v_byte_28__7
+                                #define DEFt_2_4v_byte_28__7
+inline std::byte if_last(fu_VEC<std::byte>& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
+}
+                                #endif
+
+                                #ifndef DEFt_2_4v_byte_28__6
+                                #define DEFt_2_4v_byte_28__6
+inline std::byte if_last(const fu_VEC<std::byte>& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
+}
+                                #endif
+
+void compile(const fu_VEC<std::byte>& fname, const fu_VEC<std::byte>& via, s_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
     {
-        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
-        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
+        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_VEC<std::byte>, s_Struct>{}, fu_COW_MAP<fu_VEC<std::byte>, s_SolvedNode>{}, s_SolverOutput{}, fu_VEC<std::byte>{} };
+        fu_VEC<std::byte> src { ([&]() -> const fu_VEC<std::byte>& { { const fu_VEC<std::byte>& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const double t0 = fu::now_hr();
         s_LexerOutput lexer_result = lex(src, fname);
         const double t1 = fu::now_hr();
         s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
-        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
+        module.in = s_ModuleInputs { fu_VEC<std::byte>(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
         const double t2 = fu::now_hr();
         module.stats.s_lex = (t1 - t0);
         module.stats.s_parse = (t2 - t1);
@@ -538,7 +555,7 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     {
         (module.out || fu::fail(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
     };
-    fu_VEC<fu_STR> imports { module.in.parse.imports };
+    fu_VEC<fu_VEC<std::byte>> imports { module.in.parse.imports };
     for (int i = 0; (i < imports.size()); i++)
         compile(imports[i], ((fname + " <- "_fu) + via), ctx);
 
@@ -560,21 +577,21 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
-s_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
+s_Context compile_snippet(fu_VEC<std::byte>&& src, const fu_VEC<std::byte>& fname)
 {
     if (!fu::has(src, "fn main("_fu))
         src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
 
     s_Context ctx { CTX_PRELUDE };
     (ctx.files.upsert(fname) = src);
-    compile(fname, fu_STR{}, ctx);
+    compile(fname, fu_VEC<std::byte>{}, ctx);
     return ctx;
 }
 
-fu_STR compile_snippet(const fu_STR& src)
+fu_VEC<std::byte> compile_snippet(const fu_VEC<std::byte>& src)
 {
-    fu_STR fname = "testcase"_fu;
-    s_Context ctx = compile_snippet(fu_STR(src), fname);
+    fu_VEC<std::byte> fname = "testcase"_fu;
+    s_Context ctx = compile_snippet(fu_VEC<std::byte>(src), fname);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         if ((ctx.modules[i].fname == fname))
@@ -596,10 +613,10 @@ struct sf_getLinkOrder
         if (fu::has(link_order, link_id))
             return;
 
-        const fu_VEC<fu_STR>& imports = module.in.parse.imports;
+        const fu_VEC<fu_VEC<std::byte>>& imports = module.in.parse.imports;
         for (int i = 0; (i < imports.size()); i++)
         {
-            const fu_STR& fname = imports[i];
+            const fu_VEC<std::byte>& fname = imports[i];
             for (int i = 1; (i < modules.size()); i++)
             {
                 const s_Module& module = modules[i];
@@ -630,7 +647,7 @@ fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules)
 }
 
 
-void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+void update_file(fu_VEC<std::byte>&& fname, const fu_VEC<std::byte>& data, const fu_VEC<std::byte>& dir_src, const fu_VEC<std::byte>& dir_out)
 {
     if ((dir_src && dir_out))
     {
@@ -651,54 +668,54 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     (std::cout << ("  WROTE "_fu + fname) << "\n");
 }
 
-void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
+void build(const s_Context& ctx, const bool run, fu_VEC<std::byte>&& dir_wrk, fu_VEC<std::byte>&& bin, fu_VEC<std::byte>&& dir_obj, fu_VEC<std::byte>&& dir_src, fu_VEC<std::byte>&& dir_cpp, const fu_VEC<std::byte>& unity, const fu_VEC<std::byte>& scheme)
 {
-    if ((last(dir_wrk) != "/"_fu))
+    if ((if_last(dir_wrk) != "/"_fu))
     {
         (dir_wrk || fu::fail("No workspace directory provided."_fu));
         dir_wrk += "/"_fu;
     };
-    if ((dir_obj && (last(dir_obj) != "/"_fu)))
+    if ((dir_obj && (if_last(dir_obj) != "/"_fu)))
         dir_obj += "/"_fu;
 
-    if ((dir_src && (last(dir_src) != "/"_fu)))
+    if ((dir_src && (if_last(dir_src) != "/"_fu)))
         dir_src += "/"_fu;
 
-    if ((dir_cpp && (last(dir_cpp) != "/"_fu)))
+    if ((dir_cpp && (if_last(dir_cpp) != "/"_fu)))
         dir_cpp += "/"_fu;
 
     int code {};
-    fu_STR stdout {};
-    fu_VEC<fu_STR> Fs {};
+    fu_VEC<std::byte> stdout {};
+    fu_VEC<fu_VEC<std::byte>> Fs {};
     int len_all {};
-    fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG "_fu : "-Og "_fu);
+    fu_VEC<std::byte> O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG "_fu : "-Og "_fu);
     if (((scheme == "debug"_fu) || (scheme == "reldeb"_fu)))
         O_lvl += "-g "_fu;
 
     if ((scheme == "retail"_fu))
         O_lvl += "-Dfu_RETAIL "_fu;
 
-    fu_STR INCLUDE = "-I ~/fu/include "_fu;
-    fu_STR GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
+    fu_VEC<std::byte> INCLUDE = "-I ~/fu/include "_fu;
+    fu_VEC<std::byte> GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
         const s_Module& module = ctx.modules[i];
-        const fu_STR& cpp = module.out.cpp;
-        fu_STR F = ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size());
+        const fu_VEC<std::byte>& cpp = module.out.cpp;
+        fu_VEC<std::byte> F = ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size());
         Fs.push(F);
         len_all += cpp.size();
     };
     fu::fs_mkdir_p(dir_wrk);
-    fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
-    const auto& ERR = [&](fu_STR&& cpp) -> fu::never
+    fu_VEC<std::byte> F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    const auto& ERR = [&](fu_VEC<std::byte>&& cpp) -> fu::never
     {
         if (!cpp)
         {
             for (int i = Fs.size(); (i-- > 0); )
-                (cpp += "#include \""_fu, cpp += Fs[i], cpp += ".cpp\"\n"_fu);
+                (cpp += "#include \""_fu, cpp += Fs.mutref(i), cpp += ".cpp\"\n"_fu);
 
         };
-        fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
+        fu_VEC<std::byte> fname = (dir_wrk + "failing-testcase.cpp"_fu);
         (std::cout << ("  WRITE "_fu + fname) << "\n");
         fu::file_write(fname, cpp);
         if (!stdout)
@@ -711,29 +728,29 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     {
         for (int i = 0; (i < Fs.size()); i++)
         {
-            fu_STR F { Fs[i] };
-            fu_STR F_cpp = (F + ".cpp"_fu);
-            fu_STR F_tmp = (F + ".o.tmp"_fu);
-            fu_STR F_obj = (F + ".o"_fu);
+            fu_VEC<std::byte> F { Fs[i] };
+            fu_VEC<std::byte> F_cpp = (F + ".cpp"_fu);
+            fu_VEC<std::byte> F_tmp = (F + ".o.tmp"_fu);
+            fu_VEC<std::byte> F_obj = (F + ".o"_fu);
             if ((fu::file_size(F_obj) < 1))
             {
                 const s_Module& module = ctx.modules[(i + 1)];
-                const fu_STR& cpp = module.out.cpp;
+                const fu_VEC<std::byte>& cpp = module.out.cpp;
                 fu::file_write(F_cpp, cpp);
                 (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
                 const double t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
-                    ERR(fu_STR(cpp));
+                    ERR(fu_VEC<std::byte>(cpp));
 
                 const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
             };
         };
-        fu_STR F_tmp = (F_exe + ".tmp"_fu);
-        fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
+        fu_VEC<std::byte> F_tmp = (F_exe + ".tmp"_fu);
+        fu_VEC<std::byte> cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
         for (int i = 0; (i < link_order.size()); i++)
-            (cmd += Fs[link_order[i]], cmd += ".o "_fu);
+            (cmd += Fs.mutref(link_order[i]), cmd += ".o "_fu);
 
         
         {
@@ -743,63 +760,63 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
-                ERR(fu_STR{});
+                ERR(fu_VEC<std::byte>{});
             };
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
         };
         if ((Fs.size() == 1))
-            code = fu::shell_exec((("rm "_fu + Fs[0]) + ".o 2>&1"_fu), stdout);
+            code = fu::shell_exec((("rm "_fu + Fs.mutref(0)) + ".o 2>&1"_fu), stdout);
 
         if (code)
-            ERR(fu_STR{});
+            ERR(fu_VEC<std::byte>{});
 
     };
     if (run)
         code = fu::shell_exec(F_exe, stdout);
 
     if (code)
-        ERR(fu_STR{});
+        ERR(fu_VEC<std::byte>{});
 
     if ((dir_cpp && dir_src))
     {
         fu::fs_mkdir_p(dir_cpp);
-        fu_VEC<fu_STR> cpp_files {};
+        fu_VEC<fu_VEC<std::byte>> cpp_files {};
         for (int i = 1; (i < ctx.modules.size()); i++)
         {
             const s_Module& module = ctx.modules[i];
-            fu_STR fname = (module.fname + ".cpp"_fu);
-            const fu_STR& data = module.out.cpp;
-            update_file(fu_STR(fname), data, dir_src, dir_cpp);
+            fu_VEC<std::byte> fname = (module.fname + ".cpp"_fu);
+            const fu_VEC<std::byte>& data = module.out.cpp;
+            update_file(fu_VEC<std::byte>(fname), data, dir_src, dir_cpp);
             cpp_files.push(fname);
         };
-        fu_STR CMakeLists = ([&]() -> fu_STR { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_STR{}; }());
+        fu_VEC<std::byte> CMakeLists = ([&]() -> fu_VEC<std::byte> { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_VEC<std::byte>{}; }());
         if ((unity || CMakeLists))
         {
             if (unity)
             {
-                fu_STR data = "#pragma once\n\n"_fu;
+                fu_VEC<std::byte> data = "#pragma once\n\n"_fu;
                 ((link_order.size() == cpp_files.size()) || fu::fail());
                 for (int i = 0; (i < link_order.size()); i++)
                 {
-                    fu_STR incl { cpp_files[link_order[i]] };
-                    fu_STR rel = path_relative(unity, incl);
+                    fu_VEC<std::byte> incl { cpp_files[link_order[i]] };
+                    fu_VEC<std::byte> rel = path_relative(unity, incl);
                     (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
                 };
                 update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
             if (CMakeLists)
             {
-                fu_STR data = "cmake_minimum_required(VERSION 3.6)\n\n"_fu;
-                fu_VEC<fu_STR> inputs {};
-                fu_VEC<fu_STR> outputs {};
+                fu_VEC<std::byte> data = "cmake_minimum_required(VERSION 3.6)\n\n"_fu;
+                fu_VEC<fu_VEC<std::byte>> inputs {};
+                fu_VEC<fu_VEC<std::byte>> outputs {};
                 ((link_order.size() == cpp_files.size()) || fu::fail());
-                fu_STR main {};
+                fu_VEC<std::byte> main {};
                 for (int i = 0; (i < link_order.size()); i++)
                 {
                     const int moduleIdx = (link_order[i] + 1);
                     const s_Module& module = ctx.modules[moduleIdx];
-                    fu_STR input = path_relative(CMakeLists, module.fname);
+                    fu_VEC<std::byte> input = path_relative(CMakeLists, module.fname);
                     if ((moduleIdx == 1))
                         main = input;
 
@@ -811,9 +828,9 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 (data += "set(FU_OUTPUTS\n    "_fu, data += fu::join(outputs, "\n    "_fu), data += ")\n\n"_fu);
                 data += "include_directories (~/fu/include/)\n\n"_fu;
                 (data += "add_custom_command(\n"_fu, data += "    OUTPUT ${FU_OUTPUTS}\n"_fu, data += "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu, data += "    ARGS -c ${FU_MAIN}\n"_fu, data += "    DEPENDS ${FU_INPUTS}\n"_fu, data += "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu, data += "    VERBATIM)\n\n"_fu);
-                fu_STR libname = path_noext(path_filename(main));
+                fu_VEC<std::byte> libname = path_noext(path_filename(main));
                 (data += "add_library("_fu, data += libname, data += " ${FU_OUTPUTS})\n"_fu);
-                update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
+                update_file(fu_VEC<std::byte>(CMakeLists), data, dir_src, dir_cpp);
             };
         };
     };
@@ -823,18 +840,18 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        ERR(fu_STR{});
+        ERR(fu_VEC<std::byte>{});
 
 }
 
-void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
+void build(const fu_VEC<std::byte>& fname, const bool run, const fu_VEC<std::byte>& dir_wrk, const fu_VEC<std::byte>& bin, const fu_VEC<std::byte>& dir_obj, const fu_VEC<std::byte>& dir_src, const fu_VEC<std::byte>& dir_cpp, const fu_VEC<std::byte>& scheme)
 {
     s_Context ctx { CTX_PRELUDE };
     
     {
         (std::cout << "COMPILE "_fu << fname << "\n");
         const double t0 = fu::now_hr();
-        compile(fname, fu_STR{}, ctx);
+        compile(fname, fu_VEC<std::byte>{}, ctx);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
         if (((t1 - t0) > 0.025))
@@ -858,23 +875,23 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
-    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
+    return build(ctx, run, fu_VEC<std::byte>(dir_wrk), fu_VEC<std::byte>(bin), fu_VEC<std::byte>(dir_obj), fu_VEC<std::byte>(dir_src), fu_VEC<std::byte>(dir_cpp), fname, scheme);
 }
 
-fu_STR absdir(const fu_STR& a)
+fu_VEC<std::byte> absdir(const fu_VEC<std::byte>& a)
 {
-    return ((last(a) == "/"_fu) ? fu_STR(a) : (a + "/"_fu));
+    return ((if_last(a) == "/"_fu) ? fu_VEC<std::byte>(a) : (a + "/"_fu));
 }
 
                                 #ifndef DEF_HOME
                                 #define DEF_HOME
-inline const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
+inline const fu_VEC<std::byte> HOME = absdir(fu::env_get("HOME"_fu));
                                 #endif
 
-fu_STR locate_PRJDIR()
+fu_VEC<std::byte> locate_PRJDIR()
 {
-    fu_STR dir = (HOME + "fu/"_fu);
-    fu_STR fn = (dir + "src/compiler.fu"_fu);
+    fu_VEC<std::byte> dir = (HOME + "fu/"_fu);
+    fu_VEC<std::byte> fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fn);
     ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
     (std::cout << ("PRJDIR: "_fu + dir) << "\n");
@@ -883,25 +900,25 @@ fu_STR locate_PRJDIR()
 
                                 #ifndef DEF_PRJDIR
                                 #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
+inline const fu_VEC<std::byte> PRJDIR = locate_PRJDIR();
                                 #endif
 
                                 #ifndef DEF_DEFAULT_WORKSPACE
                                 #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
+inline const fu_VEC<std::byte> DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
                                 #endif
 
-s_Context ZERO(const fu_STR& src)
+s_Context ZERO(const fu_VEC<std::byte>& src)
 {
-    fu_STR fname = "testcase.ZERO"_fu;
-    s_Context ctx = compile_snippet(fu_STR(src), fname);
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
+    fu_VEC<std::byte> fname = "testcase.ZERO"_fu;
+    s_Context ctx = compile_snippet(fu_VEC<std::byte>(src), fname);
+    build(ctx, true, fu_VEC<std::byte>(DEFAULT_WORKSPACE), fu_VEC<std::byte>{}, fu_VEC<std::byte>{}, fu_VEC<std::byte>{}, fu_VEC<std::byte>{}, fu_VEC<std::byte>{}, fu_VEC<std::byte>{});
     return ctx;
 }
 
-int FAIL(const fu_STR& src)
+int FAIL(const fu_VEC<std::byte>& src)
 {
-    fu_STR cpp;
+    fu_VEC<std::byte> cpp;
     try
     {
         cpp = compile_snippet(src);

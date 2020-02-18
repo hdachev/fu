@@ -69,7 +69,7 @@ pub fn lex(src: string, fname: string): LexerOutput
 
     fn err(kind: string, idx0: i32, reason: i32)
     {
-        err_str(kind, idx0, src[reason]);
+        err_str(kind, idx0, '`' + src[reason] + `'`);
     }
 
     fn unescapeStr(src: string, idx0: i32, idx1: i32): string

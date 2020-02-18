@@ -8,10 +8,6 @@ let prelude_src = `
 
 // Some lolcode.
 
-fn __native(): never never;
-fn __native(id: string): never never;
-fn __native(id: string, opt: string): never never;
-
 fn STEAL (a: &mut $T): $T __native;
 fn CLONE (a: &    $T): $T __native;
 fn SWAP  (a: &mut $T, b: &mut $T): void __native;
@@ -59,12 +55,12 @@ fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
 fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 
-fn ==(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
-fn !=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
-fn > (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
-fn < (a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
-fn >=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
-fn <=(a: $T, b: $T)         case ($T -> @arithmetic):   bool __native;
+fn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn > (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn < (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn >=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn <=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 
 
 // Bitwise.
@@ -154,8 +150,6 @@ fn ||=(a: &mut $T, b: $T): &mut $T __native;
 // Arrays.
 
 fn len (a: $T[]): i32 __native('.size()');
-fn find(a: $T[], b: $T): i32 __native('<fu/vec/find.h>', 'fu::lfind');
-fn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');
 
 fn [](a: $T[], i: i32)
     case ($a -> &mut $T[]): &mut $T __native;
@@ -168,6 +162,7 @@ fn  insert(a: &mut $T[], i: i32, b: $T): void __native('.insert');
 
 fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
 fn  slice(a: $T[], i0: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
+fn substr(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::substr');
 
 fn splice(a: &mut $T[], i: i32, N: i32): void  __native('.splice');
 fn    pop(a: &mut $T[]): void __native('.pop()');
@@ -179,44 +174,50 @@ fn shrink(a: &mut $T[], len: i32): void __native('.shrink');
 fn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');
 
 
-// Concats.
+// String likes.
 
-fn +(a: $T[], b: $T[]): $T[] __native;
-fn +(a: $T[], b: $T  ): $T[] __native;
-fn +(a: $T  , b: $T[]): $T[] __native;
+fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
+fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
+fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
 
-fn +=(a: &mut string, b: string): &mut string __native;
-fn + (a:      string, b: string):      string __native;
+fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
+fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
+fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
 
-fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native;
-fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native;
-fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native;
+fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');
+fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');
+fn starts(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');
+fn   ends(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');
+
+fn find(a: $T[], b: $T[]) case ($T -> @primitive): i32  __native('<fu/vec/find.h>', 'fu::lfind');
+fn has (a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::has');
+
+
+// TODO FIX
+fn find(a: $T[], b: $T): i32  __native('<fu/vec/find.h>', 'fu::lfind');
+fn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');
 
 
 // Strings.
 
-fn  len(a: string): i32 __native('.size()');
-fn find(a: string, b: string): i32 __native('<fu/vec/find.h>', 'fu::lfind');
-fn  has(a: string, b: string): bool __native('<fu/vec/find.h>', 'fu::has');
+typedef string = byte[];
 
-fn  [](a: string, i: i32): string __native;
+fn  >(a: string, b: string): bool __native('<fu/str.h>',  '>');
+fn  <(a: string, b: string): bool __native('<fu/str.h>',  '<');
+fn >=(a: string, b: string): bool __native('<fu/str.h>', '>=');
+fn <=(a: string, b: string): bool __native('<fu/str.h>', '<=');
 
-fn ==(a: string, b: string): bool __native;
-fn !=(a: string, b: string): bool __native;
-fn  >(a: string, b: string): bool __native;
-fn  <(a: string, b: string): bool __native;
-fn >=(a: string, b: string): bool __native;
-fn <=(a: string, b: string): bool __native;
+fn  >(a: string, b: byte): bool __native('<fu/str.h>',  '>');
+fn  <(a: string, b: byte): bool __native('<fu/str.h>',  '<');
+fn >=(a: string, b: byte): bool __native('<fu/str.h>', '>=');
+fn <=(a: string, b: byte): bool __native('<fu/str.h>', '<=');
 
-fn starts(a: string, with: string): bool __native('<fu/vec/find.h>', 'fu::lmatch');
-fn   ends(a: string, with: string): bool __native('<fu/vec/find.h>', 'fu::rmatch');
+fn  >(a: byte, b: string): bool __native('<fu/str.h>',  '>');
+fn  <(a: byte, b: string): bool __native('<fu/str.h>',  '<');
+fn >=(a: byte, b: string): bool __native('<fu/str.h>', '>=');
+fn <=(a: byte, b: string): bool __native('<fu/str.h>', '<=');
 
-fn slice (a: string, i0: i32, i1: i32): string __native('<fu/vec/slice.h>', 'fu::slice');
-fn slice (a: string, i0: i32): string __native('<fu/vec/slice.h>', 'fu::slice');
-
-fn substr(a: string, i0: i32, i1: i32): string __native('<fu/vec/slice.h>', 'fu::substr');
-fn char  (a: string, i0: i32): i32 __native;
-
+fn char(a: string, i0: i32): i32 __native;
 
 // TODO: .replace() is a faster impl of .split().join().
 //  How do we express this so that .split.joins are automatically promoted?
@@ -226,6 +227,20 @@ fn char  (a: string, i0: i32): i32 __native;
 fn   split(str: string, sep: string): string[] __native('<fu/vec/split.h>', 'fu::split');
 fn    join(a: string[], sep: string): string __native('<fu/vec/join.h>', 'fu::join');
 fn replace(in: string, all: string, with: string): string __native('<fu/vec/replace.h>', 'fu::replace');
+
+
+// Concats.
+
+fn +(a: $T[], b: $T[]): $T[] __native;
+fn +(a: $T[], b: $T  ): $T[] __native;
+fn +(a: $T  , b: $T[]): $T[] __native;
+
+fn +=(a: &mut $T[], b: $T[]): &mut $T[] __native;
+fn +=(a: &mut $T[], b: $T  ): &mut $T[] __native;
+
+fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native;
+fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native;
+fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native;
 
 
 // Maps.
