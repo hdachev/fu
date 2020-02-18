@@ -1092,6 +1092,7 @@ struct sf_solve
                 (some || fail(fu_STR{}));
             };
             fu_VEC<int> reorder {};
+            fu_STR args_mangled {};
             for (int i = 0; (i < overloads.size()); i++){
             {
                 s_Target overloadIdx { overloads[i] };
@@ -1117,7 +1118,7 @@ struct sf_solve
                             fail("TODO handle argument reorder in template specialization."_fu);
 
                         s_Overload o = GET(overloadIdx, module, ctx);
-                        s_Target specIdx = trySpecialize(overloadIdx, o.Q_template, args);
+                        s_Target specIdx = trySpecialize(overloadIdx, o.Q_template, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = TODO_memoize_mangler(args); return _; } (args_mangled)));
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -1501,14 +1502,18 @@ struct sf_solve
     {
         fu_STR mangle {};
         for (int i = 0; (i < args.size()); i++)
-            (mangle += ","_fu, mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type));
+        {
+            if (i)
+                mangle += ","_fu;
 
+            mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type);
+        };
         return mangle;
     };
-    s_Target trySpecialize(const s_Target& target, const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args)
+    s_Target trySpecialize(const s_Target& target, const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
     {
         fu_STR mangle = ((target.modid + "#"_fu) + target.index);
-        mangle += TODO_memoize_mangler(args);
+        mangle += mangled_args;
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {

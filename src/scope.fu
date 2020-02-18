@@ -190,7 +190,7 @@ pub fn createArray(item: Type): Type
             type: item.value),
     ];
 
-    let canon = 'Array(' + serializeType(item) + ')';
+    let canon = 'v(' + serializeType(item) + ')';
 
     registerType(canon, Struct(
         kind:   'array',
@@ -210,7 +210,7 @@ pub fn type_isString(type: Type): bool
 
 pub fn type_isArray(type: Type): bool
 {
-    return type.canon.starts(with: 'Array(');
+    return type.canon.starts(with: 'v(');
 }
 
 pub fn tryClear_array(type: Type): Type
@@ -230,7 +230,7 @@ pub fn tryClear_array(type: Type): Type
 
 pub fn type_isMap(type: Type): bool
 {
-    return type.canon.starts(with: 'Map(');
+    return type.canon.starts(with: 'm(');
 }
 
 pub fn createMap(key: Type, value: Type): Type
@@ -242,7 +242,7 @@ pub fn createMap(key: Type, value: Type): Type
         StructField(id:  'Value', type: value.value),
     ];
 
-    let canon = 'Map(' + serializeType(key) + ',' + serializeType(value) + ')';
+    let canon = 'm(' + serializeType(key) + ',' + serializeType(value) + ')';
 
     registerType(canon, Struct(
         kind:   'map',

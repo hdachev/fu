@@ -640,7 +640,7 @@ s_Type createArray(const s_Type& item, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_ValueType(item.value) } } };
-    fu_STR canon = (("Array("_fu + serializeType(item)) + ")"_fu);
+    fu_STR canon = (("v("_fu + serializeType(item)) + ")"_fu);
     registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
     return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
@@ -652,7 +652,7 @@ bool type_isString(const s_Type& type)
 
 bool type_isArray(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, "Array("_fu);
+    return fu::lmatch(type.value.canon, "v("_fu);
 }
 
 s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Context& ctx)
@@ -666,14 +666,14 @@ s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Contex
 
 bool type_isMap(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, "Map("_fu);
+    return fu::lmatch(type.value.canon, "m("_fu);
 }
 
 s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
-    fu_STR canon = (((("Map("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
+    fu_STR canon = (((("m("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
     return s_Type { s_ValueType { fu_STR(canon), copyOrMove(flags, fields), MODID(module) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
 }

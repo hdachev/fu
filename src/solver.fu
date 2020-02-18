@@ -452,6 +452,8 @@ fn solve(
             mut reorder: i32[];
 
             //
+            mut args_mangled: string;
+
             :NEXT
             for (mut i = 0; i < overloads.len; i++)
             {
@@ -483,7 +485,8 @@ fn solve(
 
                         let o = GET(overloadIdx);
                         let specIdx = trySpecialize(
-                            overloadIdx, o.template, args);
+                            overloadIdx, :o.template, :args,
+                            :args_mangled ||= mangleArguments(args));
 
                         if (!specIdx)
                             continue :NEXT;
@@ -621,7 +624,7 @@ fn solve(
         return overloads
              ? args.len < min
                 ? fail('`' + id + '` expects ' + min + ' arguments, ' + args.len + ' provided.')
-                : fail('`' + id + '` bad args, provided: ' + TODO_memoize_mangler(args))
+                : fail('`' + id + '` bad args, provided: ' + mangleArguments(args))
              : fail('`' + id + '` is not defined.');
     }
 
@@ -939,11 +942,16 @@ fn solve(
 
     //
 
-    fn TODO_memoize_mangler(args: SolvedNode[]): string
+    fn mangleArguments(args: SolvedNode[]): string
     {
         mut mangle = '';
         for (mut i = 0; i < args.len; i++)
-            mangle += ',' + serializeType((args[i] || fail()).type);
+        {
+            if (i)
+                mangle += ',';
+
+            mangle += serializeType((args[i] || fail()).type);
+        }
 
         return mangle;
     }
@@ -952,12 +960,13 @@ fn solve(
     //
 
     fn trySpecialize(
-        target: Target, template: Template, args: SolvedNode[])
+        target: Target, template: Template, args: SolvedNode[],
+        mangled_args: string)
             : Target
     {
         // TODO memoize the whole mangle.
         mut mangle = target.modid + '#' + target.index;
-            mangle += TODO_memoize_mangler(args);
+            mangle += mangled_args;
 
         // TODO FIX THIS MESS -
         //  A. Not recursion capable: use the general prep-vs-solve approach here too.
