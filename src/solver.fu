@@ -409,21 +409,19 @@ fn solve(
     {
         mut matchIdx: Target;
 
-        //
-        let overloads = Scope_lookup(_scope, id);
-        if (!overloads)
-            return matchIdx;
-
         // Arity 0 - blind head match.
         // Allows simple shadowing of variables and such, latest wins.
         if (!args)
         {
-            for (mut i = 0; i < overloads.len; i++)
+            mut scope_iterator: i32;
+            mut overloadIdx: Target;
+
+            while (overloadIdx =
+                Scope_search(_scope, id, scope_iterator))
             {
-                let headIdx = overloads[i];
-                if (GET(headIdx).min == 0)
+                if (GET(overloadIdx).min == 0)
                 {
-                    matchIdx = headIdx;
+                    matchIdx = overloadIdx;
                     break;
                 }
             }
@@ -449,15 +447,18 @@ fn solve(
                 some || fail();
             }
 
-            mut reorder: i32[];
-
             //
+            mut reorder: i32[];
             mut args_mangled: string;
 
+            //
+            mut scope_iterator: i32;
+            mut overloadIdx: Target;
+
             :NEXT
-            for (mut i = 0; i < overloads.len; i++)
+            while (overloadIdx =
+                Scope_search(_scope, id, scope_iterator))
             {
-                mut overloadIdx = overloads[i];
                 mut overload = GET(overloadIdx);
 
                 :TEST_AGAIN

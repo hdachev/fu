@@ -45,8 +45,9 @@ s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 s_Type createMap(const s_Type&, const s_Type&, s_Module&);
 s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
-int Scope_push(s_Scope&);
 int MODID(const s_Module&);
+s_Target Scope_search(const s_Scope&, const fu_STR&, int&);
+int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
@@ -1061,18 +1062,15 @@ struct sf_solve
     s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
     {
         s_Target matchIdx {};
-        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
-        if (!overloads)
-            return matchIdx;
-
         if (!args)
         {
-            for (int i = 0; (i < overloads.size()); i++)
+            int scope_iterator {};
+            s_Target overloadIdx {};
+            while ((overloadIdx = Scope_search(_scope, id, scope_iterator)))
             {
-                const s_Target& headIdx = overloads[i];
-                if ((GET(headIdx, module, ctx).min == 0))
+                if ((GET(overloadIdx, module, ctx).min == 0))
                 {
-                    matchIdx = headIdx;
+                    matchIdx = overloadIdx;
                     break;
                 };
             };
@@ -1093,9 +1091,10 @@ struct sf_solve
             };
             fu_VEC<int> reorder {};
             fu_STR args_mangled {};
-            for (int i = 0; (i < overloads.size()); i++){
+            int scope_iterator {};
+            s_Target overloadIdx {};
+            while ((overloadIdx = Scope_search(_scope, id, scope_iterator))){
             {
-                s_Target overloadIdx { overloads[i] };
                 s_Overload overload = GET(overloadIdx, module, ctx);
                 while (true){
                 {
@@ -1118,7 +1117,7 @@ struct sf_solve
                             fail("TODO handle argument reorder in template specialization."_fu);
 
                         s_Overload o = GET(overloadIdx, module, ctx);
-                        s_Target specIdx = trySpecialize(overloadIdx, o.Q_template, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = TODO_memoize_mangler(args); return _; } (args_mangled)));
+                        s_Target specIdx = trySpecialize(overloadIdx, o.Q_template, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -1221,7 +1220,7 @@ struct sf_solve
                 min = arity;
 
         };
-        (overloads ? ((args.size() < min) ? fail((((((("`"_fu + id) + "` expects "_fu) + min) + " arguments, "_fu) + args.size()) + " provided."_fu)) : fail(((("`"_fu + id) + "` bad args, provided: "_fu) + TODO_memoize_mangler(args)))) : fail((("`"_fu + id) + "` is not defined."_fu)));
+        (overloads ? ((args.size() < min) ? fail((((((("`"_fu + id) + "` expects "_fu) + min) + " arguments, "_fu) + args.size()) + " provided."_fu)) : fail(((("`"_fu + id) + "` bad args, provided: "_fu) + mangleArguments(args)))) : fail((("`"_fu + id) + "` is not defined."_fu)));
     };
     s_SolvedNode solveNode(const s_Node& node, const s_Type& type)
     {
@@ -1498,7 +1497,7 @@ struct sf_solve
         };
         return out;
     };
-    fu_STR TODO_memoize_mangler(const fu_VEC<s_SolvedNode>& args)
+    fu_STR mangleArguments(const fu_VEC<s_SolvedNode>& args)
     {
         fu_STR mangle {};
         for (int i = 0; (i < args.size()); i++)

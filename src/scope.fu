@@ -375,6 +375,28 @@ pub fn Scope_lookup(scope: Scope, id: string): Target[]
     return results;
 }
 
+pub fn Scope_search(
+    scope: Scope, id: string,
+    scope_iterator: &mut i32): Target
+{
+    let items = scope.items;
+
+    if (!scope_iterator)
+        scope_iterator = items.len;
+
+    while (scope_iterator --> 0)
+    {
+        let item = items[scope_iterator];
+        if (item.id == id)
+            return item.target;
+    }
+
+    return Target;
+}
+
+
+////////////////////////////////
+
 pub fn Scope_push(scope: &mut Scope): i32
 {
     return scope.items.len;
