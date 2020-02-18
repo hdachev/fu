@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -14,6 +13,7 @@ struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
@@ -34,7 +34,7 @@ struct s_Type;
 struct s_ValueType;
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
-fu_VEC<std::byte> serializeType(const s_Type&);
+fu_STR serializeType(const s_Type&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -43,8 +43,8 @@ s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> value;
+    fu_STR kind;
+    fu_STR value;
     int idx0;
     int idx1;
     int line;
@@ -67,7 +67,7 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
@@ -99,9 +99,9 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
     explicit operator bool() const noexcept
@@ -122,7 +122,7 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_VEC<std::byte>> imports;
+    fu_VEC<fu_STR> imports;
     explicit operator bool() const noexcept
     {
         return false
@@ -137,7 +137,7 @@ struct s_ParserOutput
                                 #define DEF_s_ModuleInputs
 struct s_ModuleInputs
 {
-    fu_VEC<std::byte> src;
+    fu_STR src;
     s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
@@ -157,7 +157,7 @@ struct s_ValueType
 {
     int quals;
     int modid;
-    fu_VEC<std::byte> canon;
+    fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
@@ -173,7 +173,7 @@ struct s_ValueType
                                 #define DEF_s_StructField
 struct s_StructField
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_ValueType type;
     explicit operator bool() const noexcept
     {
@@ -189,8 +189,8 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> id;
+    fu_STR kind;
+    fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
@@ -287,9 +287,9 @@ struct s_Target
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
@@ -313,7 +313,7 @@ struct s_SolvedNode
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_Target target;
     explicit operator bool() const noexcept
     {
@@ -359,13 +359,13 @@ struct s_Template
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> name;
+    fu_STR kind;
+    fu_STR name;
     s_Type type;
     int min;
     int max;
     fu_VEC<s_Type> args;
-    fu_VEC<fu_VEC<std::byte>> names;
+    fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
     s_Template Q_template;
@@ -426,10 +426,10 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_VEC<std::byte>, s_Struct> types;
-    fu_COW_MAP<fu_VEC<std::byte>, s_SolvedNode> specs;
+    fu_COW_MAP<fu_STR, s_Struct> types;
+    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
-    fu_VEC<std::byte> cpp;
+    fu_STR cpp;
     explicit operator bool() const noexcept
     {
         return false
@@ -443,21 +443,39 @@ struct s_ModuleOutputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ModuleStat
+                                #define DEF_s_ModuleStat
+struct s_ModuleStat
+{
+    double time;
+    int alloc_count;
+    int alloc_bytes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+            || alloc_count
+            || alloc_bytes
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleStats
                                 #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
-    double s_lex;
-    double s_parse;
-    double s_solve;
-    double s_cpp;
+    s_ModuleStat lex;
+    s_ModuleStat parse;
+    s_ModuleStat solve;
+    s_ModuleStat codegen;
     explicit operator bool() const noexcept
     {
         return false
-            || s_lex
-            || s_parse
-            || s_solve
-            || s_cpp
+            || lex
+            || parse
+            || solve
+            || codegen
         ;
     }
 };
@@ -468,7 +486,7 @@ struct s_ModuleStats
 struct s_Module
 {
     int modid;
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
@@ -490,7 +508,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_VEC<std::byte>, fu_VEC<std::byte>> files;
+    fu_COW_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -527,17 +545,17 @@ s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 }
 
-fu_VEC<std::byte> _fname(const s_TokenIdx& idx, const s_Context& ctx)
+fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].fname;
 }
 
-fu_VEC<std::byte>& getFile(const fu_VEC<std::byte>& path, s_Context& ctx)
+fu_STR& getFile(const fu_STR& path, s_Context& ctx)
 {
-    return ([&](fu_VEC<std::byte>& _) -> fu_VEC<std::byte>& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
+    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
 }
 
-s_Module& getModule(const fu_VEC<std::byte>& fname, s_Context& ctx)
+s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 {
     for (int i = 0; (i < ctx.modules.size()); i++)
     {
@@ -546,7 +564,7 @@ s_Module& getModule(const fu_VEC<std::byte>& fname, s_Context& ctx)
 
     };
     const int i = ctx.modules.size();
-    s_Module module = s_Module { int(i), fu_VEC<std::byte>{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
+    s_Module module = s_Module { int(i), fu_STR{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
     module.fname = fname;
     ctx.modules.push(module);
     return ctx.modules.mutref(i);
@@ -559,7 +577,7 @@ void setModule(const s_Module& module, s_Context& ctx)
     current = module;
 }
 
-void registerType(const fu_VEC<std::byte>& canon, const s_Struct& def, s_Module& module)
+void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
 {
     (module.out.types.upsert(canon) = def);
 }
@@ -572,22 +590,22 @@ const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_C
     return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
 }
 
-s_Struct& lookupType_mut(const fu_VEC<std::byte>& canon, s_Module& module)
+s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
 {
     return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail(); }());
 }
 
-s_Type initStruct(const fu_VEC<std::byte>& id, const int flags, s_Module& module)
+s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
-    fu_VEC<std::byte> canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_VEC<std::byte>((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
+    fu_STR canon = ("s_"_fu + id);
+    s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
-    return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_VEC<std::byte>(canon) }, s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
 
-void finalizeStruct(const fu_VEC<std::byte>& id, const fu_VEC<s_StructField>& fields, s_Module& module)
+void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
 {
-    fu_VEC<std::byte> canon = ("s_"_fu + id);
+    fu_STR canon = ("s_"_fu + id);
     s_Struct& def = lookupType_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
 }
@@ -641,9 +659,9 @@ s_Type createArray(const s_Type& item, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_ValueType(item.value) } } };
-    fu_VEC<std::byte> canon = (("v("_fu + serializeType(item)) + ")"_fu);
-    registerType(canon, s_Struct { "array"_fu, fu_VEC<std::byte>(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_VEC<std::byte>(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
+    fu_STR canon = (("v("_fu + serializeType(item)) + ")"_fu);
+    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
 
 bool type_isArray(const s_Type& type)
@@ -669,9 +687,9 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
 {
     const int flags = 0;
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
-    fu_VEC<std::byte> canon = (((("m("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
-    registerType(canon, s_Struct { "map"_fu, fu_VEC<std::byte>(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_VEC<std::byte>(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
+    fu_STR canon = (((("m("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
+    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
+    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_STR(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
@@ -689,7 +707,7 @@ bool isTemplate(const s_Overload& o)
     return (o.kind == "template"_fu);
 }
 
-fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_VEC<std::byte>& id)
+fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
 {
     fu_VEC<s_Target> results {};
     const fu_VEC<s_ScopeItem>& items = scope.items;
@@ -703,7 +721,7 @@ fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_VEC<std::byte>& id)
     return results;
 }
 
-s_Target Scope_search(const s_Scope& scope, const fu_VEC<std::byte>& id, int& scope_iterator)
+s_Target Scope_search(const s_Scope& scope, const fu_STR& id, int& scope_iterator)
 {
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)
@@ -729,19 +747,19 @@ void Scope_pop(s_Scope& scope, const int memo)
     scope.items.shrink(memo);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_VEC<std::byte>>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& Q_template, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
     s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_VEC<std::byte>(kind), fu_VEC<std::byte>(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_VEC<std::byte>>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(Q_template), s_SolvedNode(constant) };
-    scope.items.push(s_ScopeItem { fu_VEC<std::byte>(id), s_Target(target) });
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(Q_template), s_SolvedNode(constant) };
+    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;
 }
 
-s_Target Scope_Typedef(s_Scope& scope, const fu_VEC<std::byte>& id, const s_Type& type, const s_Module& module)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_VEC<std::byte>>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
 }
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)

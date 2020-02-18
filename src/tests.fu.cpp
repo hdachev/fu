@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/map.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -12,6 +11,7 @@ struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
@@ -30,15 +30,15 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
-s_Context ZERO(const fu_VEC<std::byte>&);
-int FAIL(const fu_VEC<std::byte>&);
-fu_VEC<std::byte> compile_snippet(const fu_VEC<std::byte>&);
+s_Context ZERO(const fu_STR&);
+int FAIL(const fu_STR&);
+fu_STR compile_snippet(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> value;
+    fu_STR kind;
+    fu_STR value;
     int idx0;
     int idx1;
     int line;
@@ -61,7 +61,7 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
@@ -93,9 +93,9 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
     explicit operator bool() const noexcept
@@ -116,7 +116,7 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_VEC<std::byte>> imports;
+    fu_VEC<fu_STR> imports;
     explicit operator bool() const noexcept
     {
         return false
@@ -131,7 +131,7 @@ struct s_ParserOutput
                                 #define DEF_s_ModuleInputs
 struct s_ModuleInputs
 {
-    fu_VEC<std::byte> src;
+    fu_STR src;
     s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
@@ -151,7 +151,7 @@ struct s_ValueType
 {
     int quals;
     int modid;
-    fu_VEC<std::byte> canon;
+    fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
@@ -167,7 +167,7 @@ struct s_ValueType
                                 #define DEF_s_StructField
 struct s_StructField
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_ValueType type;
     explicit operator bool() const noexcept
     {
@@ -183,8 +183,8 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> id;
+    fu_STR kind;
+    fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
@@ -281,9 +281,9 @@ struct s_Target
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
@@ -307,7 +307,7 @@ struct s_SolvedNode
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_Target target;
     explicit operator bool() const noexcept
     {
@@ -353,13 +353,13 @@ struct s_Template
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> name;
+    fu_STR kind;
+    fu_STR name;
     s_Type type;
     int min;
     int max;
     fu_VEC<s_Type> args;
-    fu_VEC<fu_VEC<std::byte>> names;
+    fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
     s_Template Q_template;
@@ -420,10 +420,10 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_VEC<std::byte>, s_Struct> types;
-    fu_COW_MAP<fu_VEC<std::byte>, s_SolvedNode> specs;
+    fu_COW_MAP<fu_STR, s_Struct> types;
+    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
-    fu_VEC<std::byte> cpp;
+    fu_STR cpp;
     explicit operator bool() const noexcept
     {
         return false
@@ -437,21 +437,39 @@ struct s_ModuleOutputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ModuleStat
+                                #define DEF_s_ModuleStat
+struct s_ModuleStat
+{
+    double time;
+    int alloc_count;
+    int alloc_bytes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+            || alloc_count
+            || alloc_bytes
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleStats
                                 #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
-    double s_lex;
-    double s_parse;
-    double s_solve;
-    double s_cpp;
+    s_ModuleStat lex;
+    s_ModuleStat parse;
+    s_ModuleStat solve;
+    s_ModuleStat codegen;
     explicit operator bool() const noexcept
     {
         return false
-            || s_lex
-            || s_parse
-            || s_solve
-            || s_cpp
+            || lex
+            || parse
+            || solve
+            || codegen
         ;
     }
 };
@@ -462,7 +480,7 @@ struct s_ModuleStats
 struct s_Module
 {
     int modid;
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
@@ -484,7 +502,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_VEC<std::byte>, fu_VEC<std::byte>> files;
+    fu_COW_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -497,12 +515,12 @@ struct s_Context
 
                                 #ifndef DEF_TEST_SRC
                                 #define DEF_TEST_SRC
-inline const fu_VEC<std::byte> TEST_SRC = "\n    fn test(one: i32) {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn main(): i32 {\n        return test(1) - 17;\n    }\n"_fu;
+inline const fu_STR TEST_SRC = "\n    fn test(one: i32) {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn main(): i32 {\n        return test(1) - 17;\n    }\n"_fu;
                                 #endif
 
 int self_test()
 {
-    fu_VEC<std::byte> cpp = compile_snippet(TEST_SRC);
+    fu_STR cpp = compile_snippet(TEST_SRC);
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
 }
 
@@ -545,7 +563,7 @@ void runTests()
     ZERO("\n        mut a = 0;\n        mut b = a;\n        b++;\n        let c = a = b;\n\n        return a - c;\n    "_fu);
     ZERO("\n        let x = 3;\n        return x / 2 - 1;\n    "_fu);
     ZERO("\n        fn div3by(a: $T) 3 / a;\n        return div3by(2) - 1;\n    "_fu);
-    fu_VEC<std::byte> RAII = "\n        let mut i = 0;\n        struct S {\n            j: &mut i32;\n            fn free()\n                j += j + 1;\n        }\n    "_fu;
+    fu_STR RAII = "\n        let mut i = 0;\n        struct S {\n            j: &mut i32;\n            fn free()\n                j += j + 1;\n        }\n    "_fu;
     ZERO((RAII + "\n        let s = S(i);\n        return i;\n        // <-destructor here\n    "_fu));
     ZERO((RAII + "\n        { let s = S(i); } // <-destructor here\n        return i - 1;\n    "_fu));
     ZERO((RAII + "\n        fn test(s: &S) { return s.j; }\n        test(S(i)); // <-destructor here\n        return i - 1;\n    "_fu));
@@ -556,14 +574,14 @@ void runTests()
     ZERO("\n        mut arr = [0, 1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        mut arr: i32[] = [1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        let x = 5;\n        mut arr = [ -5 ];\n        arr.push(x);\n        return arr[0] + arr[1];\n    "_fu);
-    const auto& ARROPS = [&](const fu_VEC<std::byte>& literal, const fu_VEC<std::byte>& operation, fu_VEC<std::byte>&& assertion) -> void
+    const auto& ARROPS = [&](const fu_STR& literal, const fu_STR& operation, fu_STR&& assertion) -> void
     {
         assertion = (("("_fu + assertion) + ")"_fu);
-        const auto& EXPR = [&](const fu_VEC<std::byte>& varname) -> fu_VEC<std::byte>
+        const auto& EXPR = [&](const fu_STR& varname) -> fu_STR
         {
             return fu::replace(assertion, "@"_fu, varname);
         };
-        fu_VEC<std::byte> src {};
+        fu_STR src {};
         src += "\n"_fu;
         src += "\n    {"_fu;
         (src += "\n        mut arr0 = ["_fu, src += literal, src += "];"_fu);
@@ -651,7 +669,7 @@ void runTests()
     ZERO("\n\n    struct BINOP {\n        P: Map(string, i32);\n    };\n\n    fn setupOperators(): BINOP\n    {\n        mut out: BINOP;\n\n        fn binop(op: string)\n            out.P[op] = 7;\n\n        binop(',');\n\n        return out;\n    }\n\n    let BINOP   = setupOperators();\n    let P_COMMA = BINOP.P[','] || assert();\n\n    fn main() P_COMMA - 7;\n\n    "_fu);
     ZERO("\n\n        // -no-lambda\n        // This converted to a ref-returning\n        // logical chain for some reason.\n        let hex = true;\n        let trail = 'x';\n        if (!(trail >= '0' && trail <= '9') &&\n            !(hex && (trail >= 'a' && trail <= 'f'\n                   || trail >= 'A' && trail <= 'F')))\n        {\n            return 0;\n        }\n\n        return 1;\n\n    "_fu);
     ZERO("\n        struct Type     { i: i32; };\n        struct Token    { i: i32; };\n        struct ScopeIdx { i: i32; };\n\n        struct SolvedNode\n        {\n            kind:       string;\n            flags:      i32;\n            value:      string;\n            items:      SolvedNode[];\n            token:      Token;\n\n            type:       Type;\n            target:     ScopeIdx;\n        };\n\n        let _here: Token;\n\n        fn createDefaultInit(type: Type): SolvedNode\n        {\n            // Broken arg re-arrange.\n            return SolvedNode(\n                kind: 'definit',\n                token: _here,\n                :type);\n        }\n\n        return createDefaultInit(Type()).target.i;\n    "_fu);
-    ZERO("\n        struct Type         { i: i32; };\n        struct Scope        { i: i32; };\n        struct Partial      { i: i32; };\n        struct Template     { i: i32; };\n        struct SolvedNode   { i: i32; };\n\n        pub fn Scope_add(\n            scope: &mut Scope,\n            kind: string, id: string, type: Type,\n\n            min: i32 = 0,\n            max: i32 = 0,\n            arg_n: string[]     = [],\n            arg_t: Type[]       = [],\n            arg_d: SolvedNode[] = [],\n            template: Template  = [],\n            partial: Partial    = []): i32\n        {\n            return scope.i\n                 + kind.len + id.len + type.i\n                 + min + max + arg_n.len + arg_t.len + arg_d.len\n                 + template.i + partial.i;\n        }\n\n        mut _scope: Scope;\n        let id: string;\n        let t_template: Type;\n        let min: i32;\n        let max: i32;\n        let arg_n: string[];\n        let template: Template;\n\n        return Scope_add(\n            _scope,\n            '', id, t_template,\n            min, max, arg_n,\n            :template);\n    "_fu);
+    ZERO("\n        struct Type         { i: i32; };\n        struct Scope        { i: i32; };\n        struct Partial      { i: i32; };\n        struct Template     { i: i32; };\n        struct SolvedNode   { i: i32; };\n\n        fn Scope_add(\n            scope: &mut Scope,\n            kind: string, id: string, type: Type,\n\n            min: i32 = 0,\n            max: i32 = 0,\n            arg_n: string[]     = [],\n            arg_t: Type[]       = [],\n            arg_d: SolvedNode[] = [],\n            template: Template  = [],\n            partial: Partial    = []): i32\n        {\n            return scope.i\n                 + kind.len + id.len + type.i\n                 + min + max + arg_n.len + arg_t.len + arg_d.len\n                 + template.i + partial.i;\n        }\n\n        mut _scope: Scope;\n        let id: string;\n        let t_template: Type;\n        let min: i32;\n        let max: i32;\n        let arg_n: string[];\n        let template: Template;\n\n        return Scope_add(\n            _scope,\n            '', id, t_template,\n            min, max, arg_n,\n            :template);\n    "_fu);
     ZERO("\n        let i = 0;\n        let items = [ '' ];\n        i == items.len - 1 || throw('what?');\n        return i;\n    "_fu);
     ZERO("\n\n        return false /* test */\n             ? 0xffffff // what is this\n             : 0 // madness\n             ;\n    "_fu);
     ZERO("\n\n        fn path_normalize(p: string): string {\n            mut path = p.split('/');\n\n            for (mut i = path.len; i --> 0; ) {\n                let part = path[i];\n                if (part == '.' || !part && i > 0 && i < path.len - 1)\n                    path.splice(i, 1);\n            }\n\n            for (mut i = 1; i < path.len; i++) {\n                if (path[i] == '..')\n                    path.splice(--i, 2);\n            }\n\n            return path.join('/');\n        }\n\n        fn path_join(a: string, b: string)\n            path_normalize(a + '/' + b);\n\n        fn main()\n            path_join('hello/hey', './../you//') == 'hello/you/'\n                ? 0 : 1;\n    "_fu);

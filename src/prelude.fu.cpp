@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/map.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -10,6 +9,7 @@ struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
@@ -28,17 +28,17 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
-s_LexerOutput lex(const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
-s_ParserOutput parse(int, const fu_VEC<std::byte>&, const fu_VEC<s_Token>&);
+s_LexerOutput lex(const fu_STR&, const fu_STR&);
+s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-s_Module& getModule(const fu_VEC<std::byte>&, s_Context&);
+s_Module& getModule(const fu_STR&, s_Context&);
 void setModule(const s_Module&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> value;
+    fu_STR kind;
+    fu_STR value;
     int idx0;
     int idx1;
     int line;
@@ -61,7 +61,7 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
@@ -93,9 +93,9 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
     explicit operator bool() const noexcept
@@ -116,7 +116,7 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_VEC<std::byte>> imports;
+    fu_VEC<fu_STR> imports;
     explicit operator bool() const noexcept
     {
         return false
@@ -131,7 +131,7 @@ struct s_ParserOutput
                                 #define DEF_s_ModuleInputs
 struct s_ModuleInputs
 {
-    fu_VEC<std::byte> src;
+    fu_STR src;
     s_LexerOutput lex;
     s_ParserOutput parse;
     explicit operator bool() const noexcept
@@ -151,7 +151,7 @@ struct s_ValueType
 {
     int quals;
     int modid;
-    fu_VEC<std::byte> canon;
+    fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
@@ -167,7 +167,7 @@ struct s_ValueType
                                 #define DEF_s_StructField
 struct s_StructField
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_ValueType type;
     explicit operator bool() const noexcept
     {
@@ -183,8 +183,8 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> id;
+    fu_STR kind;
+    fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
@@ -281,9 +281,9 @@ struct s_Target
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
@@ -307,7 +307,7 @@ struct s_SolvedNode
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
 {
-    fu_VEC<std::byte> id;
+    fu_STR id;
     s_Target target;
     explicit operator bool() const noexcept
     {
@@ -353,13 +353,13 @@ struct s_Template
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> name;
+    fu_STR kind;
+    fu_STR name;
     s_Type type;
     int min;
     int max;
     fu_VEC<s_Type> args;
-    fu_VEC<fu_VEC<std::byte>> names;
+    fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
     s_Template Q_template;
@@ -420,10 +420,10 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_VEC<std::byte>, s_Struct> types;
-    fu_COW_MAP<fu_VEC<std::byte>, s_SolvedNode> specs;
+    fu_COW_MAP<fu_STR, s_Struct> types;
+    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
-    fu_VEC<std::byte> cpp;
+    fu_STR cpp;
     explicit operator bool() const noexcept
     {
         return false
@@ -437,21 +437,39 @@ struct s_ModuleOutputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ModuleStat
+                                #define DEF_s_ModuleStat
+struct s_ModuleStat
+{
+    double time;
+    int alloc_count;
+    int alloc_bytes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+            || alloc_count
+            || alloc_bytes
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleStats
                                 #define DEF_s_ModuleStats
 struct s_ModuleStats
 {
-    double s_lex;
-    double s_parse;
-    double s_solve;
-    double s_cpp;
+    s_ModuleStat lex;
+    s_ModuleStat parse;
+    s_ModuleStat solve;
+    s_ModuleStat codegen;
     explicit operator bool() const noexcept
     {
         return false
-            || s_lex
-            || s_parse
-            || s_solve
-            || s_cpp
+            || lex
+            || parse
+            || solve
+            || codegen
         ;
     }
 };
@@ -462,7 +480,7 @@ struct s_ModuleStats
 struct s_Module
 {
     int modid;
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
@@ -484,7 +502,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_VEC<std::byte>, fu_VEC<std::byte>> files;
+    fu_COW_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -497,13 +515,13 @@ struct s_Context
 
                                 #ifndef DEF_prelude_src
                                 #define DEF_prelude_src
-inline const fu_VEC<std::byte> prelude_src = "\n\n\n// Some lolcode.\n\nfn STEAL (a: &mut $T): $T __native;\nfn CLONE (a: &    $T): $T __native;\nfn SWAP  (a: &mut $T, b: &mut $T): void __native;\n\nfn print(a: $A): void __native;\nfn print(a: $A, b: $B): void __native;\nfn print(a: $A, b: $B, c: $C): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;\n\n\n// Arithmetics.\n\nfn +(a: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T) case ($T -> @arithmetic): $T __native;\n\nfn +(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\n\nfn +(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn -(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn *(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn /(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn %(a: $T, b: $T)\n    case ($T -> @integral): $T __native;\n    case ($T -> @floating_point): $T __native('<cmath>', 'std::fmod');\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\n\nfn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn > (a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn < (a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn >=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn <=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\n\n\n// Numeric conversions.\n\nfn  i8(v: $T) case ($T -> @arithmetic):  i8 __native;\nfn i16(v: $T) case ($T -> @arithmetic): i16 __native('short');\nfn i32(v: $T) case ($T -> @arithmetic): i32 __native('int');\nfn i64(v: $T) case ($T -> @arithmetic): i64 __native;\n\nfn  u8(v: $T) case ($T -> @arithmetic):  u8 __native;\nfn u16(v: $T) case ($T -> @arithmetic): u16 __native;\nfn u32(v: $T) case ($T -> @arithmetic): u32 __native;\nfn u64(v: $T) case ($T -> @arithmetic): u64 __native;\n\nfn f32(v: $T) case ($T -> @arithmetic): f32 __native('float');\nfn f64(v: $T) case ($T -> @arithmetic): f64 __native('double');\n\n\n// Math.\n\nfn abs(v: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::abs');\nfn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::max');\nfn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::min');\n\nfn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp');\nfn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp2');\nfn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log');\nfn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log10');\nfn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log2');\n\nfn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::pow');\nfn sqrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sqrt');\nfn cbrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cbrt');\nfn hypot(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::hypot');\n\nfn ceil (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::ceil');\nfn floor(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::floor');\nfn trunc(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::trunc');\nfn round(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::round');\n\nfn sin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sin');\nfn cos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cos');\nfn tan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::tan');\n\nfn asin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::asin');\nfn acos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::acos');\nfn atan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan');\n\nfn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan2');\n\nfn PI():  f64 __native('<math.h>', 'M_PI');\nfn E():   f64 __native('<math.h>', 'M_E');\nfn INF(): f64 __native('<math.h>', 'INFINITY');\nfn NAN(): f64 __native('<math.h>', 'NAN');\n\nfn nan(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isnan');\nfn inf(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isinf');\nfn finite(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isfinite');\n\n\n// Logic.\n\nfn true (): bool __native('true');\nfn false(): bool __native('false');\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native;\nfn ||=(a: &mut $T, b: $T): &mut $T __native;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native('.size()');\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native;\n    case ($a -> &    $T[]): &    $T __native;\n    case ($a ->      $T[]):      $T __native;\n\nfn    push(a: &mut $T[], b: $T): void __native('.push');\nfn unshift(a: &mut $T[], b: $T): void __native('.unshift');\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native('.insert');\n\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');\nfn  slice(a: $T[], i0: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');\nfn substr(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::substr');\n\nfn splice(a: &mut $T[], i: i32, N: i32): void  __native('.splice');\nfn    pop(a: &mut $T[]): void __native('.pop()');\n\nfn  clear(a: &mut $T[]): void __native('.clear()');\nfn resize(a: &mut $T[], len: i32): void __native('.resize');\nfn shrink(a: &mut $T[], len: i32): void __native('.shrink');\n\nfn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');\n\n\n// String likes.\n\nfn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\nfn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\nfn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\n\nfn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\nfn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\nfn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\n\nfn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');\nfn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');\nfn starts(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');\nfn   ends(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');\n\nfn find(a: $T[], b: $T[]) case ($T -> @primitive): i32  __native('<fu/vec/find.h>', 'fu::lfind');\nfn has (a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::has');\n\n\n// TODO FIX\nfn find(a: $T[], b: $T): i32  __native('<fu/vec/find.h>', 'fu::lfind');\nfn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');\n\n\n// Strings.\n\ntypedef string = byte[];\n\nfn  >(a: string, b: string): bool __native('<fu/str.h>',  '>');\nfn  <(a: string, b: string): bool __native('<fu/str.h>',  '<');\nfn >=(a: string, b: string): bool __native('<fu/str.h>', '>=');\nfn <=(a: string, b: string): bool __native('<fu/str.h>', '<=');\n\nfn  >(a: string, b: byte): bool __native('<fu/str.h>',  '>');\nfn  <(a: string, b: byte): bool __native('<fu/str.h>',  '<');\nfn >=(a: string, b: byte): bool __native('<fu/str.h>', '>=');\nfn <=(a: string, b: byte): bool __native('<fu/str.h>', '<=');\n\nfn  >(a: byte, b: string): bool __native('<fu/str.h>',  '>');\nfn  <(a: byte, b: string): bool __native('<fu/str.h>',  '<');\nfn >=(a: byte, b: string): bool __native('<fu/str.h>', '>=');\nfn <=(a: byte, b: string): bool __native('<fu/str.h>', '<=');\n\nfn char(a: string, i0: i32): i32 __native;\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native('<fu/vec/split.h>', 'fu::split');\nfn    join(a: string[], sep: string): string __native('<fu/vec/join.h>', 'fu::join');\nfn replace(in: string, all: string, with: string): string __native('<fu/vec/replace.h>', 'fu::replace');\n\n\n// Concats.\n\nfn +(a: $T[], b: $T[]): $T[] __native;\nfn +(a: $T[], b: $T  ): $T[] __native;\nfn +(a: $T  , b: $T[]): $T[] __native;\n\nfn +=(a: &mut $T[], b: $T[]): &mut $T[] __native;\nfn +=(a: &mut $T[], b: $T  ): &mut $T[] __native;\n\nfn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native;\nfn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native;\nfn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native;\n    case ($a -> &    Map($K, $V)): &    $V __native;\n    case ($a ->      Map($K, $V)):      $V __native;\n\nfn keys  (a: Map($K, $V)): $K[] __native('.m_keys');\nfn values(a: Map($K, $V)): $V[] __native('.m_values');\nfn has   (a: Map($K, $V), b: $K): bool __native('<fu/vec/find.h>', 'fu::has');\nfn count (a: Map($K, $V)): i32 __native('.size()');\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native('<fu/never.h>', 'fu::fail');\nfn assert(): never __native('<fu/never.h>', 'fu::fail()');\n\n\n// TODO move these out in separate imports,\n//  now::hr() etc, mini import syntax will be just as usable.\n\nfn now_hr (): f64 __native('<fu/now.h>', 'fu::now_hr()');\nfn now_utc(): f64 __native('<fu/now.h>', 'fu::now_utc()');\n\nfn env_get(key: string): string __native('<fu/env.h>', 'fu::env_get');\n\nfn file_size(path: string): i32 __native('<fu/io.h>', 'fu::file_size');\nfn file_read(path: string): string __native('<fu/io.h>', 'fu::file_read');\nfn file_write(path: string, body: string): i32 __native('<fu/io.h>', 'fu::file_write');\n\nfn fs_cwd(): string __native('<fu/io.h>', 'fu::fs_cwd()');\nfn fs_mkdir_p(path: string): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');\nfn fs_mkdir_p(path: string, mode: i32): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');\n\nfn shell_exec(cmd: string): i32 __native('<fu/shell.h>', 'fu::shell_exec');\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native('<fu/shell.h>', 'fu::shell_exec');\n\nfn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');\n\nfn exit(code: i32): never __native;\n\n"_fu;
+inline const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn STEAL (a: &mut $T): $T __native;\nfn CLONE (a: &    $T): $T __native;\nfn SWAP  (a: &mut $T, b: &mut $T): void __native;\n\nfn print(a: $A): void __native;\nfn print(a: $A, b: $B): void __native;\nfn print(a: $A, b: $B, c: $C): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;\nfn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;\n\n\n// Arithmetics.\n\nfn +(a: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T) case ($T -> @arithmetic): $T __native;\n\nfn +(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\n\nfn +(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn -(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn *(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn /(a: $A, b: $B)\n    case ($A -> @floating_point && $B -> @integral): $A __native;\n    case ($A -> @integral && $B -> @floating_point): $B __native;\n\nfn %(a: $T, b: $T)\n    case ($T -> @integral): $T __native;\n    case ($T -> @floating_point): $T __native('<cmath>', 'std::fmod');\n\nfn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;\nfn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\nfn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;\n\nfn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn > (a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn < (a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn >=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\nfn <=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)                 case ($T -> @integral):     $T __native;\nfn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;\nfn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;\nfn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;\n\nfn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\nfn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;\n\n\n// Numeric conversions.\n\nfn  i8(v: $T) case ($T -> @arithmetic):  i8 __native;\nfn i16(v: $T) case ($T -> @arithmetic): i16 __native('short');\nfn i32(v: $T) case ($T -> @arithmetic): i32 __native('int');\nfn i64(v: $T) case ($T -> @arithmetic): i64 __native;\n\nfn  u8(v: $T) case ($T -> @arithmetic):  u8 __native;\nfn u16(v: $T) case ($T -> @arithmetic): u16 __native;\nfn u32(v: $T) case ($T -> @arithmetic): u32 __native;\nfn u64(v: $T) case ($T -> @arithmetic): u64 __native;\n\nfn f32(v: $T) case ($T -> @arithmetic): f32 __native('float');\nfn f64(v: $T) case ($T -> @arithmetic): f64 __native('double');\n\n\n// Math.\n\nfn abs(v: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::abs');\nfn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::max');\nfn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::min');\n\nfn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp');\nfn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp2');\nfn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log');\nfn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log10');\nfn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log2');\n\nfn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::pow');\nfn sqrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sqrt');\nfn cbrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cbrt');\nfn hypot(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::hypot');\n\nfn ceil (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::ceil');\nfn floor(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::floor');\nfn trunc(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::trunc');\nfn round(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::round');\n\nfn sin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sin');\nfn cos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cos');\nfn tan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::tan');\n\nfn asin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::asin');\nfn acos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::acos');\nfn atan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan');\n\nfn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan2');\n\nfn PI():  f64 __native('<math.h>', 'M_PI');\nfn E():   f64 __native('<math.h>', 'M_E');\nfn INF(): f64 __native('<math.h>', 'INFINITY');\nfn NAN(): f64 __native('<math.h>', 'NAN');\n\nfn nan(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isnan');\nfn inf(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isinf');\nfn finite(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isfinite');\n\n\n// Logic.\n\nfn true (): bool __native('true');\nfn false(): bool __native('false');\n\n\n// Assignment.\n\nfn   =(a: &mut $T, b: $T): &mut $T __native;\nfn ||=(a: &mut $T, b: $T): &mut $T __native;\n\n\n// Arrays.\n\nfn len (a: $T[]): i32 __native('.size()');\n\nfn [](a: $T[], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native;\n    case ($a -> &    $T[]): &    $T __native;\n    case ($a ->      $T[]):      $T __native;\n\nfn    push(a: &mut $T[], b: $T): void __native('.push');\nfn unshift(a: &mut $T[], b: $T): void __native('.unshift');\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native('.insert');\n\nfn  slice(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');\nfn  slice(a: $T[], i0: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');\nfn substr(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::substr');\n\nfn splice(a: &mut $T[], i: i32, N: i32): void  __native('.splice');\nfn    pop(a: &mut $T[]): void __native('.pop()');\n\nfn  clear(a: &mut $T[]): void __native('.clear()');\nfn resize(a: &mut $T[], len: i32): void __native('.resize');\nfn shrink(a: &mut $T[], len: i32): void __native('.shrink');\n\nfn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');\n\n\n// String likes.\n\nfn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\nfn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\nfn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '==');\n\nfn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\nfn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\nfn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');\n\nfn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');\nfn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');\nfn starts(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');\nfn   ends(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');\n\nfn find(a: $T[], b: $T[]) case ($T -> @primitive): i32  __native('<fu/vec/find.h>', 'fu::lfind');\nfn has (a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::has');\n\n\n// TODO FIX\nfn find(a: $T[], b: $T): i32  __native('<fu/vec/find.h>', 'fu::lfind');\nfn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');\n\n\n// Strings.\n\ntypedef string = byte[];\n\nfn  >(a: string, b: string): bool __native('<fu/str.h>',  '>');\nfn  <(a: string, b: string): bool __native('<fu/str.h>',  '<');\nfn >=(a: string, b: string): bool __native('<fu/str.h>', '>=');\nfn <=(a: string, b: string): bool __native('<fu/str.h>', '<=');\n\nfn  >(a: string, b: byte): bool __native('<fu/str.h>',  '>');\nfn  <(a: string, b: byte): bool __native('<fu/str.h>',  '<');\nfn >=(a: string, b: byte): bool __native('<fu/str.h>', '>=');\nfn <=(a: string, b: byte): bool __native('<fu/str.h>', '<=');\n\nfn  >(a: byte, b: string): bool __native('<fu/str.h>',  '>');\nfn  <(a: byte, b: string): bool __native('<fu/str.h>',  '<');\nfn >=(a: byte, b: string): bool __native('<fu/str.h>', '>=');\nfn <=(a: byte, b: string): bool __native('<fu/str.h>', '<=');\n\nfn char(a: string, i0: i32): i32 __native;\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native('<fu/vec/split.h>', 'fu::split');\nfn    join(a: string[], sep: string): string __native('<fu/vec/join.h>', 'fu::join');\nfn replace(in: string, all: string, with: string): string __native('<fu/vec/replace.h>', 'fu::replace');\n\n\n// Concats.\n\nfn +(a: $T[], b: $T[]): $T[] __native;\nfn +(a: $T[], b: $T  ): $T[] __native;\nfn +(a: $T  , b: $T[]): $T[] __native;\n\nfn +=(a: &mut $T[], b: $T[]): &mut $T[] __native;\nfn +=(a: &mut $T[], b: $T  ): &mut $T[] __native;\n\nfn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native;\nfn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native;\nfn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native;\n\n\n// Maps.\n\nfn [](a: Map($K, $V), b: &$K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native;\n    case ($a -> &    Map($K, $V)): &    $V __native;\n    case ($a ->      Map($K, $V)):      $V __native;\n\nfn keys  (a: Map($K, $V)): $K[] __native('.m_keys');\nfn values(a: Map($K, $V)): $V[] __native('.m_values');\nfn has   (a: Map($K, $V), b: $K): bool __native('<fu/vec/find.h>', 'fu::has');\nfn count (a: Map($K, $V)): i32 __native('.size()');\n\n\n// Assertions, bugs & fails.\n\nfn throw(reason: string): never __native('<fu/never.h>', 'fu::fail');\nfn assert(): never __native('<fu/never.h>', 'fu::fail()');\n\n\n// TODO move these out in separate imports,\n//  now::hr() etc, mini import syntax will be just as usable.\n\nfn now_hr (): f64 __native('<fu/now.h>', 'fu::now_hr()');\nfn now_utc(): f64 __native('<fu/now.h>', 'fu::now_utc()');\n\nfn env_get(key: string): string __native('<fu/env.h>', 'fu::env_get');\n\nfn file_size(path: string): i32 __native('<fu/io.h>', 'fu::file_size');\nfn file_read(path: string): string __native('<fu/io.h>', 'fu::file_read');\nfn file_write(path: string, body: string): i32 __native('<fu/io.h>', 'fu::file_write');\n\nfn fs_cwd(): string __native('<fu/io.h>', 'fu::fs_cwd()');\nfn fs_mkdir_p(path: string): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');\nfn fs_mkdir_p(path: string, mode: i32): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');\n\nfn shell_exec(cmd: string): i32 __native('<fu/shell.h>', 'fu::shell_exec');\nfn shell_exec(cmd: string, stdout: &mut string): i32 __native('<fu/shell.h>', 'fu::shell_exec');\n\nfn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');\n\nfn exit(code: i32): never __native;\n\n\n//\n\nfn ALLOC_STAT_COUNT(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_COUNT()');\nfn ALLOC_STAT_BYTES(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_BYTES()');\n\n"_fu;
                                 #endif
 
 s_Context solvePrelude()
 {
     s_Context ctx {};
-    s_Module module { getModule(fu_VEC<std::byte>{}, ctx) };
+    s_Module module { getModule(fu_STR{}, ctx) };
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
     s_SolverOutput solved = solve(root, ctx, module);

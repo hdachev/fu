@@ -8,6 +8,7 @@ set(FU_INPUTS
     parser.fu
     lifetimes.fu
     types.fu
+    stat.fu
     scope.fu
     solver.fu
     prelude.fu
@@ -23,6 +24,7 @@ set(FU_OUTPUTS
     ${CMAKE_CURRENT_SOURCE_DIR}/parser.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lifetimes.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.fu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stat.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scope.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/solver.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/prelude.fu.cpp

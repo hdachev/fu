@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -10,6 +9,7 @@ struct s_Lifetime;
 struct s_Region;
 struct s_Type;
 struct s_ValueType;
+bool operator==(const s_Type&, const s_Type&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
@@ -31,7 +31,7 @@ struct s_ValueType
 {
     int quals;
     int modid;
-    fu_VEC<std::byte> canon;
+    fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
@@ -138,7 +138,7 @@ inline const int q_floating_pt = (1 << 8);
 
                                 #ifndef DEF_TAGS
                                 #define DEF_TAGS
-inline const fu_VEC<fu_VEC<std::byte>> TAGS = fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<9> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "floating_point"_fu } };
+inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<9> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "floating_point"_fu } };
                                 #endif
 
                                 #ifndef DEF_e_exit
@@ -184,6 +184,11 @@ inline const int e_memcpy = (1 << 13);
 s_Effects type_inter(const s_Effects& a, const s_Effects& b)
 {
     return s_Effects { (a.raw | b.raw) };
+}
+
+bool operator==(const s_ValueType& a, const s_ValueType& b)
+{
+    return ((a.quals == b.quals) && (a.modid == b.modid) && (a.canon == b.canon));
 }
 
 bool operator==(const s_Type& a, const s_Type& b)
@@ -381,7 +386,7 @@ s_Type add_refs(const s_Type& from, s_Type&& to)
     return std::move(to);
 }
 
-fu_VEC<std::byte> serializeType(const s_Type& type)
+fu_STR serializeType(const s_Type& type)
 {
     if (type.value.quals)
         return ((type.value.canon + "+"_fu) + type.value.quals);
@@ -389,7 +394,7 @@ fu_VEC<std::byte> serializeType(const s_Type& type)
     return type.value.canon;
 }
 
-bool type_has(const s_Type& type, const fu_VEC<std::byte>& tag)
+bool type_has(const s_Type& type, const fu_STR& tag)
 {
     const int idx = fu::lfind(TAGS, tag);
     ((idx >= 0) || fu::fail((("Unknown type tag: `"_fu + tag) + "`."_fu)));
@@ -402,5 +407,5 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
     if ((a.value.canon != b.value.canon))
         return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
-    return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_VEC<std::byte>(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }

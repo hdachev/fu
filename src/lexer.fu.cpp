@@ -12,8 +12,8 @@ struct s_Token;
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> value;
+    fu_STR kind;
+    fu_STR value;
     int idx0;
     int idx1;
     int line;
@@ -36,7 +36,7 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_VEC<std::byte> fname;
+    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
@@ -50,46 +50,46 @@ struct s_LexerOutput
 
                                 #ifndef DEF_OPTOKENS
                                 #define DEF_OPTOKENS
-inline const fu_VEC<std::byte> OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
                                 #endif
 
                                 #ifndef DEF_OPERATORS
                                 #define DEF_OPERATORS
-inline const fu_VEC<fu_VEC<std::byte>> OPERATORS = fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<63> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
+inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<63> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu } };
                                 #endif
 
 namespace {
 
 struct sf_lex
 {
-    const fu_VEC<std::byte>& src;
-    const fu_VEC<std::byte>& fname;
+    const fu_STR& src;
+    const fu_STR& fname;
     const int end = src.size();
     int line = 1;
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
-    void token(const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& value, const int idx0, const int idx1)
+    void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1)
     {
         const int col = (idx0 - lidx);
-        tokens.push(s_Token { fu_VEC<std::byte>(kind), fu_VEC<std::byte>(value), int(idx0), int(idx1), int(line), int(col) });
+        tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
     };
-    void err_str(const fu_VEC<std::byte>& kind, const int idx0, const fu_VEC<std::byte>& reason)
+    void err_str(const fu_STR& kind, const int idx0, const fu_STR& reason)
     {
         while (((idx < end) && (src[idx] > " "_fu)))
             idx++;
 
         const int col = (idx0 - lidx);
-        fu_VEC<std::byte> value = fu::slice(src, idx0, idx);
+        fu_STR value = fu::slice(src, idx0, idx);
         fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
     };
-    void err(const fu_VEC<std::byte>& kind, const int idx0, const int reason)
+    void err(const fu_STR& kind, const int idx0, const int reason)
     {
         err_str(kind, idx0, (("`"_fu + src[reason]) + "'"_fu));
     };
-    fu_VEC<std::byte> unescapeStr(const fu_VEC<std::byte>& src, const int idx0, const int idx1)
+    fu_STR unescapeStr(const fu_STR& src, const int idx0, const int idx1)
     {
-        fu_VEC<std::byte> out {};
+        fu_STR out {};
         const int n = (idx1 - 1);
         for (int i = (idx0 + 1); (i < n); i++)
         {
@@ -205,7 +205,7 @@ struct sf_lex
                 else
                 {
                     const int idx1 = idx;
-                    fu_VEC<std::byte> str = fu::slice(src, idx0, idx1);
+                    fu_STR str = fu::slice(src, idx0, idx1);
                     if ((hex && dot && !exp))
                         err_str("num"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                     else
@@ -241,7 +241,7 @@ struct sf_lex
                 else
                 {
                     const int idx1 = idx;
-                    fu_VEC<std::byte> str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                    fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                     token("str"_fu, str, idx0, idx1);
                 };
             }
@@ -294,7 +294,7 @@ struct sf_lex
                     int end = idx;
                     while ((begin < end))
                     {
-                        fu_VEC<std::byte> candidate = fu::slice(src, begin, end);
+                        fu_STR candidate = fu::slice(src, begin, end);
                         const bool ok = fu::has(OPERATORS, candidate);
                         if (((end > (begin + 1)) && !ok))
                         {
@@ -318,13 +318,13 @@ struct sf_lex
         line++;
         lidx = (idx + 0);
         token("eof"_fu, "eof"_fu, idx, idx);
-        return s_LexerOutput { fu_VEC<std::byte>(fname), fu_VEC<s_Token>(tokens) };
+        return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
     };
 };
 
 } // namespace
 
-s_LexerOutput lex(const fu_VEC<std::byte>& src, const fu_VEC<std::byte>& fname)
+s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
 {
     return (sf_lex { src, fname }).lex_EVAL();
 }

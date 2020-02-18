@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/default.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -12,15 +11,15 @@ struct s_Node;
 struct s_ParserOutput;
 struct s_Token;
 struct s_TokenIdx;
-fu_VEC<std::byte> path_dirname(const fu_VEC<std::byte>&);
-fu_VEC<std::byte> path_join(const fu_VEC<std::byte>&, const fu_VEC<std::byte>&);
-bool hasIdentifierChars(const fu_VEC<std::byte>&);
-fu_VEC<std::byte> path_ext(const fu_VEC<std::byte>&);
+fu_STR path_dirname(const fu_STR&);
+fu_STR path_join(const fu_STR&, const fu_STR&);
+bool hasIdentifierChars(const fu_STR&);
+fu_STR path_ext(const fu_STR&);
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP
 struct s_BINOP
 {
-    fu_COW_MAP<fu_VEC<std::byte>, int> PRECEDENCE;
+    fu_COW_MAP<fu_STR, int> PRECEDENCE;
     fu_COW_MAP<int, bool> RIGHT_TO_LEFT;
     explicit operator bool() const noexcept
     {
@@ -36,8 +35,8 @@ struct s_BINOP
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_VEC<std::byte> kind;
-    fu_VEC<std::byte> value;
+    fu_STR kind;
+    fu_STR value;
     int idx0;
     int idx1;
     int line;
@@ -76,9 +75,9 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_VEC<std::byte> kind;
+    fu_STR kind;
     int flags;
-    fu_VEC<std::byte> value;
+    fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
     explicit operator bool() const noexcept
@@ -99,7 +98,7 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_VEC<std::byte>> imports;
+    fu_VEC<fu_STR> imports;
     explicit operator bool() const noexcept
     {
         return false
@@ -227,12 +226,12 @@ inline const int P_PREFIX_UNARY = 3;
 
                                 #ifndef DEF_PREFIX
                                 #define DEF_PREFIX
-inline const fu_VEC<fu_VEC<std::byte>> PREFIX = fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<10> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
+inline const fu_VEC<fu_STR> PREFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
                                 #endif
 
                                 #ifndef DEF_POSTFIX
                                 #define DEF_POSTFIX
-inline const fu_VEC<fu_VEC<std::byte>> POSTFIX = fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
+inline const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
                                 #endif
 
 namespace {
@@ -242,7 +241,7 @@ struct sf_setupOperators
     s_BINOP out {};
     int precedence = P_PREFIX_UNARY;
     bool rightToLeft = false;
-    void binop(const fu_VEC<fu_VEC<std::byte>>& ops)
+    void binop(const fu_VEC<fu_STR>& ops)
     {
         precedence++;
         (out.RIGHT_TO_LEFT.upsert(precedence) = rightToLeft);
@@ -252,28 +251,28 @@ struct sf_setupOperators
     };
     s_BINOP setupOperators_EVAL()
     {
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<2> { "as"_fu, "is"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "as"_fu, "is"_fu } });
         rightToLeft = true;
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "**"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "**"_fu } });
         rightToLeft = false;
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<3> { "*"_fu, "/"_fu, "%"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<2> { "+"_fu, "-"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<2> { "<<"_fu, ">>"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "&"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "^"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "|"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<4> { "<"_fu, "<="_fu, ">"_fu, ">="_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<3> { "=="_fu, "!="_fu, "<=>"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "->"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "&&"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "||"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "*"_fu, "/"_fu, "%"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "+"_fu, "-"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "<<"_fu, ">>"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "&"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "^"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<4> { "<"_fu, "<="_fu, ">"_fu, ">="_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "=="_fu, "!="_fu, "<=>"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "->"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "&&"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "||"_fu } });
         rightToLeft = true;
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "?"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<14> { "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "<|"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "?"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<14> { "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<|"_fu } });
         rightToLeft = false;
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { "|>"_fu } });
-        binop(fu_VEC<fu_VEC<std::byte>> { fu_VEC<fu_VEC<std::byte>>::INIT<1> { ","_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|>"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { ","_fu } });
         return out;
     };
 };
@@ -351,7 +350,7 @@ namespace {
 struct sf_parse
 {
     const int modid;
-    const fu_VEC<std::byte>& fname;
+    const fu_STR& fname;
     const fu_VEC<s_Token>& tokens;
     int _idx = 0;
     int _loc = 0;
@@ -360,10 +359,10 @@ struct sf_parse
     int _fnDepth = 0;
     int _numReturns = 0;
     int _implicits = 0;
-    fu_VEC<std::byte> _structName {};
-    fu_VEC<fu_VEC<std::byte>> _dollars {};
-    fu_VEC<fu_VEC<std::byte>> _imports {};
-    [[noreturn]] fu::never fail(fu_VEC<std::byte>&& reason)
+    fu_STR _structName {};
+    fu_VEC<fu_STR> _dollars {};
+    fu_VEC<fu_STR> _imports {};
+    [[noreturn]] fu::never fail(fu_STR&& reason)
     {
         const s_Token& loc = tokens[_loc];
         const s_Token& here = tokens[_idx];
@@ -374,22 +373,22 @@ struct sf_parse
         const int c0 = loc.col;
         const int l1 = here.line;
         const int c1 = here.col;
-        fu_VEC<std::byte> addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
+        fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
         fu::fail(((((fname + " "_fu) + addr) + ":\n\t"_fu) + reason));
     };
-    [[noreturn]] fu::never fail_Lint(const fu_VEC<std::byte>& reason)
+    [[noreturn]] fu::never fail_Lint(const fu_STR& reason)
     {
         fail(("Lint: "_fu + reason));
     };
-    s_Node make(const fu_VEC<std::byte>& kind, const fu_VEC<s_Node>& items, const int flags, const fu_VEC<std::byte>& value)
+    s_Node make(const fu_STR& kind, const fu_VEC<s_Node>& items, const int flags, const fu_STR& value)
     {
-        return s_Node { fu_VEC<std::byte>(kind), int(flags), fu_VEC<std::byte>(value), fu_VEC<s_Node>(items), s_TokenIdx { int(modid), int(_loc) } };
+        return s_Node { fu_STR(kind), int(flags), fu_STR(value), fu_VEC<s_Node>(items), s_TokenIdx { int(modid), int(_loc) } };
     };
     s_Node miss()
     {
-        return s_Node { fu_VEC<std::byte>{}, int{}, fu_VEC<std::byte>{}, fu_VEC<s_Node>{}, s_TokenIdx{} };
+        return s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} };
     };
-    s_Token consume(const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& value)
+    s_Token consume(const fu_STR& kind, const fu_STR& value)
     {
         const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value || (token.value == value))))
@@ -399,7 +398,7 @@ struct sf_parse
         };
         fail((((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
     };
-    s_Token tryConsume(const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& value)
+    s_Token tryConsume(const fu_STR& kind, const fu_STR& value)
     {
         const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value || (token.value == value))))
@@ -407,12 +406,12 @@ struct sf_parse
             _idx++;
             return token;
         };
-        return s_Token { fu_VEC<std::byte>{}, fu_VEC<std::byte>{}, int{}, int{}, int{}, int{} };
+        return s_Token { fu_STR{}, fu_STR{}, int{}, int{}, int{}, int{} };
     };
     s_Node parseRoot()
     {
         _loc = _idx;
-        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, fu_VEC<std::byte>{}), 0, fu_VEC<std::byte>{});
+        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, fu_STR{}), 0, fu_STR{});
         if (_implicits)
             out.flags |= F_IMPLICIT;
 
@@ -420,15 +419,15 @@ struct sf_parse
     };
     s_Node parseBlock()
     {
-        return createBlock(parseBlockLike("op"_fu, "}"_fu, fu_VEC<std::byte>{}));
+        return createBlock(parseBlockLike("op"_fu, "}"_fu, fu_STR{}));
     };
     s_Node createBlock(const fu_VEC<s_Node>& items)
     {
-        return make("block"_fu, items, 0, fu_VEC<std::byte>{});
+        return make("block"_fu, items, 0, fu_STR{});
     };
     s_Node parseTypedef()
     {
-        fu_VEC<std::byte> name = consume("id"_fu, fu_VEC<std::byte>{}).value;
+        fu_STR name = consume("id"_fu, fu_STR{}).value;
         consume("op"_fu, "="_fu);
         s_Node annot = parseTypeAnnot();
         consume("op"_fu, ";"_fu);
@@ -436,14 +435,14 @@ struct sf_parse
     };
     s_Node parseStructDecl()
     {
-        s_Token name = tryConsume("id"_fu, fu_VEC<std::byte>{});
-        const fu_VEC<std::byte>& id = ([&]() -> const fu_VEC<std::byte>& { if (name) { const fu_VEC<std::byte>& _ = name.value; if (_) return _; } fail("Anon structs."_fu); }());
-        fu_VEC<std::byte> structName0 { _structName };
+        s_Token name = tryConsume("id"_fu, fu_STR{});
+        const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_) return _; } fail("Anon structs."_fu); }());
+        fu_STR structName0 { _structName };
         _structName = id;
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
         _structName = structName0;
-        return make("struct"_fu, items, 0, (name ? name.value : fu::Default<fu_VEC<std::byte>>::value));
+        return make("struct"_fu, items, 0, (name ? name.value : fu::Default<fu_STR>::value));
     };
     s_Node parseStructItem()
     {
@@ -463,12 +462,12 @@ struct sf_parse
     s_Node parseStructMethod()
     {
         s_Node fnNode = parseFnDecl();
-        s_Node typeAnnot = createPrefix("&"_fu, createRead((_structName ? _structName : fail(fu_VEC<std::byte>{}))));
+        s_Node typeAnnot = createPrefix("&"_fu, createRead((_structName ? _structName : fail(fu_STR{}))));
         fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
         fnNode.flags |= F_METHOD;
         return fnNode;
     };
-    fu_VEC<s_Node> parseBlockLike(const fu_VEC<std::byte>& endKind, const fu_VEC<std::byte>& endVal, const fu_VEC<std::byte>& mode)
+    fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
     {
         const int line0 = tokens[_idx].line;
         const int col00 = _col0;
@@ -513,20 +512,25 @@ struct sf_parse
                     structNode.flags |= F_DESTRUCTOR;
                     item.flags |= F_DESTRUCTOR;
                 };
-                ((item.items.size() >= 2) || fail(fu_VEC<std::byte>{}));
+                ((item.items.size() >= 2) || fail(fu_STR{}));
                 out.push(item);
                 members.splice(i--, 1);
             };
         };
         out.mutref(structNodeIdx) = structNode;
     };
+    s_Node parsePub()
+    {
+        (_fnDepth && fail("Cannot publish from within a fn."_fu));
+        return parseStatement();
+    };
     s_Node parseStatement()
     {
         const int loc0 = _loc;
-        const s_Token& token = ([&]() -> const s_Token& { { const s_Token& _ = tokens[(_loc = _idx++)]; if (_) return _; } fail(fu_VEC<std::byte>{}); }());
+        const s_Token& token = ([&]() -> const s_Token& { { const s_Token& _ = tokens[(_loc = _idx++)]; if (_) return _; } fail(fu_STR{}); }());
         if ((token.kind == "op"_fu))
         {
-            const fu_VEC<std::byte>& v = token.value;
+            const fu_STR& v = token.value;
             if ((v == "{"_fu))
                 return parseBlock();
 
@@ -542,7 +546,7 @@ struct sf_parse
         }
         else if ((token.kind == "id"_fu))
         {
-            const fu_VEC<std::byte>& v = token.value;
+            const fu_STR& v = token.value;
             if ((v == "let"_fu))
                 return parseLetStmt();
 
@@ -580,7 +584,7 @@ struct sf_parse
                 return parseTypedef();
 
             if ((v == "pub"_fu))
-                return parseStatement();
+                return parsePub();
 
         };
         _idx--;
@@ -589,7 +593,7 @@ struct sf_parse
     };
     s_Node parsePragma()
     {
-        fu_VEC<std::byte> v = consume("id"_fu, fu_VEC<std::byte>{}).value;
+        fu_STR v = consume("id"_fu, fu_STR{}).value;
         if ((v == "import"_fu))
             return parseImport();
 
@@ -597,7 +601,7 @@ struct sf_parse
     };
     s_Node parseImport()
     {
-        fu_VEC<std::byte> value = consume("str"_fu, fu_VEC<std::byte>{}).value;
+        fu_STR value = consume("str"_fu, fu_STR{}).value;
         consume("op"_fu, ";"_fu);
         if (!path_ext(value))
             value += ".fu"_fu;
@@ -613,19 +617,19 @@ struct sf_parse
     };
     s_Node parseLabelledStatement()
     {
-        s_Token label = consume("id"_fu, fu_VEC<std::byte>{});
+        s_Token label = consume("id"_fu, fu_STR{});
         s_Node stmt = parseStatement();
         if ((stmt.kind == "loop"_fu))
         {
-            (stmt.value && fail(fu_VEC<std::byte>{}));
-            stmt.value = (label.value ? label.value : fail(fu_VEC<std::byte>{}));
+            (stmt.value && fail(fu_STR{}));
+            stmt.value = (label.value ? label.value : fail(fu_STR{}));
             return stmt;
         };
-        fail(fu_VEC<std::byte>{});
+        fail(fu_STR{});
     };
     s_Node parseEmpty()
     {
-        return make("empty"_fu, fu_VEC<s_Node>{}, 0, fu_VEC<std::byte>{});
+        return make("empty"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
     };
     s_Node parseExpressionStatement()
     {
@@ -635,9 +639,9 @@ struct sf_parse
     };
     s_Node parseFnDecl()
     {
-        fu_VEC<fu_VEC<std::byte>> dollars0 { _dollars };
+        fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_VEC<std::byte>{}); if (_) return _; } return tryConsume("op"_fu, fu_VEC<std::byte>{}); }());
+        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return tryConsume("op"_fu, fu_STR{}); }());
         consume("op"_fu, "("_fu);
         fu_VEC<s_Node> items {};
         int flags = parseArgsDecl(items, "op"_fu, ")"_fu);
@@ -684,10 +688,10 @@ struct sf_parse
                 s_Node cond = parseUnaryExpression();
                 s_Node type = tryPopTypeAnnot();
                 s_Node body = parseFnBodyBranch();
-                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body } }, 0, fu_VEC<std::byte>{}));
+                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body } }, 0, fu_STR{}));
             }
             while (tryConsume("id"_fu, "case"_fu));
-            body = make("pattern"_fu, branches, 0, fu_VEC<std::byte>{});
+            body = make("pattern"_fu, branches, 0, fu_STR{});
         }
         else
             body = parseFnBodyBranch();
@@ -715,7 +719,7 @@ struct sf_parse
     {
         return parseUnaryExpression();
     };
-    int parseArgsDecl(fu_VEC<s_Node>& outArgs, const fu_VEC<std::byte>& endk, const fu_VEC<std::byte>& endv)
+    int parseArgsDecl(fu_VEC<s_Node>& outArgs, const fu_STR& endk, const fu_STR& endv)
     {
         bool first = true;
         int outFlags = 0;
@@ -766,9 +770,9 @@ struct sf_parse
         s_Node ret = parseLet();
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = createLet(consume("id"_fu, fu_VEC<std::byte>{}).value, 0, createRead("string"_fu), s_Node { fu_VEC<std::byte>{}, int{}, fu_VEC<std::byte>{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
+            s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
             s_Node Q_catch = parseStatement();
-            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, fu_VEC<std::byte>{});
+            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, fu_STR{});
         };
         consume("op"_fu, ";"_fu);
         return ret;
@@ -786,9 +790,9 @@ struct sf_parse
         if (tryConsume("id"_fu, "mut"_fu))
             flags |= F_MUT;
 
-        fu_VEC<std::byte> id = consume("id"_fu, fu_VEC<std::byte>{}).value;
+        fu_STR id = consume("id"_fu, fu_STR{}).value;
         s_Node type = tryPopTypeAnnot();
-        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_VEC<std::byte>{}, int{}, fu_VEC<std::byte>{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
+        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -797,7 +801,7 @@ struct sf_parse
 
         return createLet(id, flags, type, init);
     };
-    s_Node createLet(const fu_VEC<std::byte>& id, const int flags, const s_Node& type, const s_Node& init)
+    s_Node createLet(const fu_STR& id, const int flags, const s_Node& type, const s_Node& init)
     {
         return make("let"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { type, init } }, flags, id);
     };
@@ -821,7 +825,7 @@ struct sf_parse
         _loc = loc0;
         return head;
     };
-    s_Node tryParseBinary(const s_Node& left, const fu_VEC<std::byte>& op, const int p1)
+    s_Node tryParseBinary(const s_Node& left, const fu_STR& op, const int p1)
     {
         if (((p1 > _precedence) || ((p1 == _precedence) && !BINOP.RIGHT_TO_LEFT[p1])))
             return miss();
@@ -876,7 +880,7 @@ struct sf_parse
         const s_Token& token = tokens[_idx++];
         if ((token.kind == "op"_fu))
         {
-            const fu_VEC<std::byte>& v = token.value;
+            const fu_STR& v = token.value;
             if ((v == ";"_fu))
                 return ((void)_idx--, miss());
 
@@ -904,7 +908,7 @@ struct sf_parse
         const s_Token& token = tokens[_idx++];
         
         {
-            const fu_VEC<std::byte>& k = token.kind;
+            const fu_STR& k = token.kind;
             if (((k == "int"_fu) || (k == "num"_fu) || (k == "str"_fu)))
                 return createLeaf(token.kind, token.value);
 
@@ -913,7 +917,7 @@ struct sf_parse
 
             if ((k == "op"_fu))
             {
-                const fu_VEC<std::byte>& v = token.value;
+                const fu_STR& v = token.value;
                 if ((v == "("_fu))
                     return parseParens();
 
@@ -927,13 +931,13 @@ struct sf_parse
                     return parseTypeTag();
 
                 if ((v == "[]"_fu))
-                    return make("definit"_fu, fu_VEC<s_Node>{}, 0, fu_VEC<std::byte>{});
+                    return make("definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 
-                return parsePrefix(fu_VEC<std::byte>(token.value));
+                return parsePrefix(fu_STR(token.value));
             };
         };
         _idx--;
-        fail(fu_VEC<std::byte>{});
+        fail(fu_STR{});
     };
     s_Node parseParens()
     {
@@ -946,31 +950,31 @@ struct sf_parse
     };
     s_Node createComma(const fu_VEC<s_Node>& nodes)
     {
-        return make("comma"_fu, nodes, 0, fu_VEC<std::byte>{});
+        return make("comma"_fu, nodes, 0, fu_STR{});
     };
     s_Node parseTypeParam()
     {
-        fu_VEC<std::byte> value = consume("id"_fu, fu_VEC<std::byte>{}).value;
+        fu_STR value = consume("id"_fu, fu_STR{}).value;
         if (!fu::has(_dollars, value))
             _dollars.push(value);
 
         return createTypeParam(value);
     };
-    s_Node createTypeParam(const fu_VEC<std::byte>& value)
+    s_Node createTypeParam(const fu_STR& value)
     {
         return make("typeparam"_fu, fu_VEC<s_Node>{}, 0, value);
     };
     s_Node parseTypeTag()
     {
-        return createTypeTag(consume("id"_fu, fu_VEC<std::byte>{}).value);
+        return createTypeTag(consume("id"_fu, fu_STR{}).value);
     };
-    s_Node createTypeTag(const fu_VEC<std::byte>& value)
+    s_Node createTypeTag(const fu_STR& value)
     {
         return make("typetag"_fu, fu_VEC<s_Node>{}, 0, value);
     };
-    s_Node parsePrefix(fu_VEC<std::byte>&& op)
+    s_Node parsePrefix(fu_STR&& op)
     {
-        (fu::has(PREFIX, op) || ((void)_idx--, fail(fu_VEC<std::byte>{})));
+        (fu::has(PREFIX, op) || ((void)_idx--, fail(fu_STR{})));
         if (((op == "&"_fu) && tryConsume("id"_fu, "mut"_fu)))
             op = "&mut"_fu;
 
@@ -980,7 +984,7 @@ struct sf_parse
     {
         return parseExpression(int(P_PREFIX_UNARY));
     };
-    s_Node createPrefix(const fu_VEC<std::byte>& op, const s_Node& expr)
+    s_Node createPrefix(const fu_STR& op, const s_Node& expr)
     {
         if ((op == "!"_fu))
             return createNot(expr);
@@ -989,13 +993,13 @@ struct sf_parse
     };
     s_Node createNot(const s_Node& expr)
     {
-        return make("!"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } }, 0, fu_VEC<std::byte>{});
+        return make("!"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } }, 0, fu_STR{});
     };
     s_Node parseAccessExpression(const s_Node& expr)
     {
-        return createCall(consume("id"_fu, fu_VEC<std::byte>{}).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
+        return createCall(consume("id"_fu, fu_STR{}).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
     };
-    int parseCallArgs(const fu_VEC<std::byte>& endop, fu_VEC<s_Node>& out_args)
+    int parseCallArgs(const fu_STR& endop, fu_VEC<s_Node>& out_args)
     {
         int flags = 0;
         bool first = true;
@@ -1014,7 +1018,7 @@ struct sf_parse
                 };
             };
             first = false;
-            fu_VEC<std::byte> name {};
+            fu_STR name {};
             bool autoName = false;
             if (((tokens[_idx].kind == "id"_fu) && (tokens[(_idx + 1)].kind == "op"_fu) && (tokens[(_idx + 1)].value == ":"_fu)))
             {
@@ -1036,7 +1040,7 @@ struct sf_parse
         };
         return flags;
     };
-    fu_VEC<std::byte> getAutoName(const s_Node& expr)
+    fu_STR getAutoName(const s_Node& expr)
     {
         if (((expr.kind == "call"_fu) && hasIdentifierChars(expr.value)))
             return expr.value;
@@ -1046,7 +1050,7 @@ struct sf_parse
 
         fail("Can't :auto_name this expression."_fu);
     };
-    s_Node createLabel(const fu_VEC<std::byte>& id, const s_Node& value)
+    s_Node createLabel(const fu_STR& id, const s_Node& value)
     {
         return make("label"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { value } }, 0, id);
     };
@@ -1056,12 +1060,12 @@ struct sf_parse
         const int argFlags = parseCallArgs(")"_fu, args);
         if (((expr.kind == "call"_fu) && (expr.flags & F_ACCESS)))
         {
-            const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_VEC<std::byte>{}); }());
+            const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_STR{}); }());
             args.unshift(head);
-            return createCall((expr.value ? expr.value : fail(fu_VEC<std::byte>{})), (F_METHOD | argFlags), args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), (F_METHOD | argFlags), args);
         };
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
-            return createCall((expr.value ? expr.value : fail(fu_VEC<std::byte>{})), argFlags, args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), argFlags, args);
 
         fail("TODO dynamic call"_fu);
     };
@@ -1073,7 +1077,7 @@ struct sf_parse
     };
     s_Node createArrayLiteral(const int argFlags, const fu_VEC<s_Node>& items)
     {
-        return make("arrlit"_fu, items, argFlags, fu_VEC<std::byte>{});
+        return make("arrlit"_fu, items, argFlags, fu_STR{});
     };
     s_Node parseIndexExpression(const s_Node& expr)
     {
@@ -1082,42 +1086,42 @@ struct sf_parse
         args.unshift(expr);
         return createCall("[]"_fu, (F_INDEX & argFlags), args);
     };
-    s_Node createLeaf(const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& value)
+    s_Node createLeaf(const fu_STR& kind, const fu_STR& value)
     {
         return make(kind, fu_VEC<s_Node>{}, 0, value);
     };
-    s_Node createCall(const fu_VEC<std::byte>& id, const int flags, const fu_VEC<s_Node>& args)
+    s_Node createCall(const fu_STR& id, const int flags, const fu_VEC<s_Node>& args)
     {
         return make("call"_fu, args, flags, id);
     };
-    s_Node createRead(const fu_VEC<std::byte>& id)
+    s_Node createRead(const fu_STR& id)
     {
-        return createCall((id ? id : fail(fu_VEC<std::byte>{})), F_ID, fu_VEC<s_Node>{});
+        return createCall((id ? id : fail(fu_STR{})), F_ID, fu_VEC<s_Node>{});
     };
     s_Node parseReturn()
     {
-        ((_fnDepth > 0) || ((void)_idx--, fail(fu_VEC<std::byte>{})));
+        ((_fnDepth > 0) || ((void)_idx--, fail(fu_STR{})));
         _numReturns++;
         if (tryConsume("op"_fu, ";"_fu))
-            return createReturn(s_Node { fu_VEC<std::byte>{}, int{}, fu_VEC<std::byte>{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
+            return createReturn(s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
 
         return createReturn(parseExpressionStatement());
     };
     s_Node createReturn(const s_Node& node)
     {
         if (!node)
-            return make("return"_fu, fu_VEC<s_Node>{}, 0, fu_VEC<std::byte>{});
+            return make("return"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 
-        return make("return"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { node } }, 0, fu_VEC<std::byte>{});
+        return make("return"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { node } }, 0, fu_STR{});
     };
-    s_Node parseJump(const fu_VEC<std::byte>& kind)
+    s_Node parseJump(const fu_STR& kind)
     {
-        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, fu_VEC<std::byte>{}); else return s_Token{}; }());
+        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, fu_STR{}); else return s_Token{}; }());
         s_Node jump = createJump(kind, label.value);
         consume("op"_fu, ";"_fu);
         return jump;
     };
-    s_Node createJump(const fu_VEC<std::byte>& kind, const fu_VEC<std::byte>& label)
+    s_Node createJump(const fu_STR& kind, const fu_STR& label)
     {
         return make(kind, fu_VEC<s_Node>{}, 0, label);
     };
@@ -1136,7 +1140,7 @@ struct sf_parse
     };
     s_Node createIf(const s_Node& cond, const s_Node& cons, const s_Node& alt)
     {
-        return make("if"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, cons, alt } }, 0, fu_VEC<std::byte>{});
+        return make("if"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, cons, alt } }, 0, fu_STR{});
     };
     s_Node createOr(const s_Node& left, const s_Node& right)
     {
@@ -1146,12 +1150,12 @@ struct sf_parse
     {
         return flattenIfSame("and"_fu, left, right);
     };
-    s_Node flattenIfSame(const fu_VEC<std::byte>& kind, const s_Node& left, const s_Node& right)
+    s_Node flattenIfSame(const fu_STR& kind, const s_Node& left, const s_Node& right)
     {
-        const fu_VEC<std::byte>& k_left = left.kind;
-        const fu_VEC<std::byte>& k_right = right.kind;
+        const fu_STR& k_left = left.kind;
+        const fu_STR& k_right = right.kind;
         fu_VEC<s_Node> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { right } }) : ((k_right == kind) ? (fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { left } } + right.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } })));
-        return make(kind, items, 0, fu_VEC<std::byte>{});
+        return make(kind, items, 0, fu_STR{});
     };
     s_Node parseFor()
     {
@@ -1185,19 +1189,19 @@ struct sf_parse
     };
     s_Node createLoop(const s_Node& init, const s_Node& cond, const s_Node& post, const s_Node& body, const s_Node& postcond)
     {
-        return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, fu_VEC<std::byte>{});
+        return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, fu_STR{});
     };
     s_ParserOutput parse_EVAL()
     {
         ((tokens[(tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
         s_Node root = parseRoot();
-        return s_ParserOutput { s_Node(root), fu_VEC<fu_VEC<std::byte>>(_imports) };
+        return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
     };
 };
 
 } // namespace
 
-s_ParserOutput parse(const int modid, const fu_VEC<std::byte>& fname, const fu_VEC<s_Token>& tokens)
+s_ParserOutput parse(const int modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
 {
     return (sf_parse { modid, fname, tokens }).parse_EVAL();
 }
