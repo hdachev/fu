@@ -29,15 +29,15 @@ struct s_Effects
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_VEC<std::byte> canon;
     int quals;
     int modid;
+    fu_VEC<std::byte> canon;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
             || quals
             || modid
+            || canon
         ;
     }
 };
@@ -188,7 +188,7 @@ s_Effects type_inter(const s_Effects& a, const s_Effects& b)
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
-    return ((a.value.modid == b.value.modid) && (a.value.canon == b.value.canon) && (a.value.quals == b.value.quals));
+    return ((a.value.quals == b.value.quals) && (a.value.modid == b.value.modid) && (a.value.canon == b.value.canon));
 }
 
                                 #ifndef DEF_Trivial
@@ -228,77 +228,77 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_template
                                 #define DEF_t_template
-inline const s_Type t_template = s_Type { s_ValueType { "template"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_template = s_Type { s_ValueType { 0, int{}, "template"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { "byte"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
@@ -402,5 +402,5 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
     if ((a.value.canon != b.value.canon))
         return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
-    return s_Type { s_ValueType { fu_VEC<std::byte>(a.value.canon), (a.value.quals & b.value.quals), int(a.value.modid) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_VEC<std::byte>(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }

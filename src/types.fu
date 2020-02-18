@@ -47,9 +47,9 @@ pub let e_memcpy    = 1 << 13;
 
 pub struct ValueType
 {
-    canon: string;
     quals: i32;
     modid: i32;
+    canon: string;
 };
 
 pub struct Effects
@@ -76,9 +76,9 @@ fn ==(a: ValueType, b: ValueType)
     a.canon == b.canon;
 
 fn ==(a: Type, b: Type)
+    a.quals == b.quals &&
     a.modid == b.modid &&
-    a.canon == b.canon &&
-    a.quals == b.quals;
+    a.canon == b.canon;
 
 
 //
@@ -91,25 +91,25 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i8        = Type(ValueType( 'i8', SignedInt, 0));
-pub let t_i16       = Type(ValueType('i16', SignedInt, 0));
-pub let t_i32       = Type(ValueType('i32', SignedInt, 0));
-pub let t_i64       = Type(ValueType('i64', SignedInt, 0));
+pub let t_i8        = Type(ValueType(canon: 'i8',  quals: SignedInt));
+pub let t_i16       = Type(ValueType(canon: 'i16', quals: SignedInt));
+pub let t_i32       = Type(ValueType(canon: 'i32', quals: SignedInt));
+pub let t_i64       = Type(ValueType(canon: 'i64', quals: SignedInt));
 
-pub let t_u8        = Type(ValueType( 'u8', UnsignedInt, 0));
-pub let t_u16       = Type(ValueType('u16', UnsignedInt, 0));
-pub let t_u32       = Type(ValueType('u32', UnsignedInt, 0));
-pub let t_u64       = Type(ValueType('u64', UnsignedInt, 0));
+pub let t_u8        = Type(ValueType(canon: 'u8',  quals: UnsignedInt));
+pub let t_u16       = Type(ValueType(canon: 'u16', quals: UnsignedInt));
+pub let t_u32       = Type(ValueType(canon: 'u32', quals: UnsignedInt));
+pub let t_u64       = Type(ValueType(canon: 'u64', quals: UnsignedInt));
 
-pub let t_f32       = Type(ValueType('f32', FloatingPt, 0));
-pub let t_f64       = Type(ValueType('f64', FloatingPt, 0));
+pub let t_f32       = Type(ValueType(canon: 'f32', quals: FloatingPt));
+pub let t_f64       = Type(ValueType(canon: 'f64', quals: FloatingPt));
 
-pub let t_void      = Type(ValueType('void', 0, 0));
-pub let t_bool      = Type(ValueType('bool', Primitive, 0));
+pub let t_void      = Type(ValueType(canon: 'void', quals: 0));
+pub let t_bool      = Type(ValueType(canon: 'bool', quals: Primitive));
 
-pub let t_never     = Type(ValueType('never', 0, 0));
-pub let t_template  = Type(ValueType('template', 0, 0));
-pub let t_byte      = Type(ValueType('byte', Primitive, 0));
+pub let t_never     = Type(ValueType(canon: 'never',    quals: 0));
+pub let t_template  = Type(ValueType(canon: 'template', quals: 0));
+pub let t_byte      = Type(ValueType(canon: 'byte',     quals: Primitive));
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:

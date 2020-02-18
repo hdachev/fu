@@ -172,15 +172,15 @@ struct s_ModuleInputs
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_VEC<std::byte> canon;
     int quals;
     int modid;
+    fu_VEC<std::byte> canon;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
             || quals
             || modid
+            || canon
         ;
     }
 };

@@ -63,15 +63,15 @@ struct s_TokenIdx
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_VEC<std::byte> canon;
     int quals;
     int modid;
+    fu_VEC<std::byte> canon;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
             || quals
             || modid
+            || canon
         ;
     }
 };
@@ -603,7 +603,7 @@ inline const int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
@@ -628,7 +628,7 @@ inline const int LET_INIT = 1;
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -653,7 +653,7 @@ inline const int Primitive = (Trivial | q_primitive);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT

@@ -186,15 +186,15 @@ struct s_ModuleInputs
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_VEC<std::byte> canon;
     int quals;
     int modid;
+    fu_VEC<std::byte> canon;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
             || quals
             || modid
+            || canon
         ;
     }
 };
@@ -561,6 +561,36 @@ inline s_Node only(const fu_VEC<s_Node>& s)
 inline const bool WARN_ON_IMPLICIT_COPY = false;
                                 #endif
 
+                                #ifndef DEF_q_copy
+                                #define DEF_q_copy
+inline const int q_copy = (1 << 2);
+                                #endif
+
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline const int q_trivial = (1 << 3);
+                                #endif
+
+                                #ifndef DEF_Trivial
+                                #define DEF_Trivial
+inline const int Trivial = (q_copy | q_trivial);
+                                #endif
+
+                                #ifndef DEF_q_primitive
+                                #define DEF_q_primitive
+inline const int q_primitive = (1 << 4);
+                                #endif
+
+                                #ifndef DEF_Primitive
+                                #define DEF_Primitive
+inline const int Primitive = (Trivial | q_primitive);
+                                #endif
+
+                                #ifndef DEF_t_byte
+                                #define DEF_t_byte
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
                                 #ifndef DEF_FN_RET_BACK
                                 #define DEF_FN_RET_BACK
 inline const int FN_RET_BACK = -2;
@@ -573,7 +603,7 @@ inline const int FN_ARGS_BACK = FN_RET_BACK;
 
                                 #ifndef DEF_t_template
                                 #define DEF_t_template
-inline const s_Type t_template = s_Type { s_ValueType { "template"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_template = s_Type { s_ValueType { 0, int{}, "template"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_IMPLICIT
@@ -598,32 +628,7 @@ inline const int F_NAMED_ARGS = (1 << 25);
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
-                                #endif
-
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
-                                #endif
-
-                                #ifndef DEF_Trivial
-                                #define DEF_Trivial
-inline const int Trivial = (q_copy | q_trivial);
-                                #endif
-
-                                #ifndef DEF_q_primitive
-                                #define DEF_q_primitive
-inline const int q_primitive = (1 << 4);
-                                #endif
-
-                                #ifndef DEF_Primitive
-                                #define DEF_Primitive
-inline const int Primitive = (Trivial | q_primitive);
+inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_arithmetic
@@ -653,12 +658,12 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_integral
@@ -678,17 +683,17 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_UnsignedInt
@@ -698,32 +703,27 @@ inline const int UnsignedInt = Integral;
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_byte
-                                #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { "byte"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -788,12 +788,12 @@ inline const int F_ID = (1 << 5);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 namespace {
@@ -809,6 +809,16 @@ struct sf_solve
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_VEC<std::byte>, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
+    fu_COW_MAP<s_Type, s_Type> _array_cache {};
+    s_Type& fast_createArray(const s_Type& type)
+    {
+        return ([&](s_Type& _) -> s_Type& { if (!_) _ = createArray(type, module); return _; } (_array_cache.upsert(type)));
+    };
+    s_Type _t_string {};
+    s_Type t_string()
+    {
+        return ([&](s_Type& _) -> s_Type& { if (!_) _ = fast_createArray(t_byte); return _; } (_t_string));
+    };
     void Scope_import(const int modid)
     {
         const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
@@ -1375,11 +1385,10 @@ struct sf_solve
     };
     s_SolvedNode solveStr(const s_Node& node)
     {
-        s_Type t_string = createArray(t_byte, module);
         if (!node.value)
-            return createDefaultInit(add_ref(t_string, Lifetime_static()));
+            return createDefaultInit(add_ref(t_string(), Lifetime_static()));
 
-        return solved(node, t_string, fu_VEC<s_SolvedNode>{});
+        return solved(node, t_string(), fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode createEmpty()
     {
@@ -1737,6 +1746,7 @@ struct sf_solve
         s_SolvedNode var_err = solveNode(node.items[1], s_Type{});
         s_SolvedNode Q_catch = solveNode(node.items[2], s_Type{});
         Scope_pop(_scope, scope0);
+        (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, t_string())) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
         return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, Q_catch } });
     };
     s_SolvedNode solveImport(const s_Node& node)
@@ -1771,7 +1781,7 @@ struct sf_solve
                         return solved(node, add_mutref(t, Lifetime_static()), fu_VEC<s_SolvedNode>{});
 
                     if ((node.value == "[]"_fu))
-                        return solved(node, createArray(t, module), fu_VEC<s_SolvedNode>{});
+                        return solved(node, fast_createArray(t), fu_VEC<s_SolvedNode>{});
 
                 }
                 else if ((items.size() == 2))
@@ -1954,7 +1964,7 @@ struct sf_solve
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_VEC<std::byte>{}); }()).type);
             (itemType || fail("[array literal] No common supertype."_fu));
         };
-        return solved(node, createArray(itemType, module), items);
+        return solved(node, fast_createArray(itemType), items);
     };
     s_SolvedNode createLet(const fu_VEC<std::byte>& id, const s_Type& type, const int flags)
     {

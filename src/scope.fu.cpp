@@ -155,15 +155,15 @@ struct s_ModuleInputs
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
-    fu_VEC<std::byte> canon;
     int quals;
     int modid;
+    fu_VEC<std::byte> canon;
     explicit operator bool() const noexcept
     {
         return false
-            || canon
             || quals
             || modid
+            || canon
         ;
     }
 };
@@ -582,7 +582,7 @@ s_Type initStruct(const fu_VEC<std::byte>& id, const int flags, s_Module& module
     fu_VEC<std::byte> canon = ("s_"_fu + id);
     s_Struct def = s_Struct { "struct"_fu, fu_VEC<std::byte>((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
-    return s_Type { s_ValueType { fu_VEC<std::byte>(canon), copyOrMove(flags, def.fields), MODID(module) }, s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_VEC<std::byte>(canon) }, s_Lifetime{}, s_Effects{} };
 }
 
 void finalizeStruct(const fu_VEC<std::byte>& id, const fu_VEC<s_StructField>& fields, s_Module& module)
@@ -643,7 +643,7 @@ s_Type createArray(const s_Type& item, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_ValueType(item.value) } } };
     fu_VEC<std::byte> canon = (("v("_fu + serializeType(item)) + ")"_fu);
     registerType(canon, s_Struct { "array"_fu, fu_VEC<std::byte>(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { fu_VEC<std::byte>(canon), copyOrMove(flags, fields), MODID(module) }, s_Lifetime(item.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_VEC<std::byte>(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
 
 bool type_isArray(const s_Type& type)
@@ -671,7 +671,7 @@ s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
     fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
     fu_VEC<std::byte> canon = (((("m("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
     registerType(canon, s_Struct { "map"_fu, fu_VEC<std::byte>(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { fu_VEC<std::byte>(canon), copyOrMove(flags, fields), MODID(module) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_VEC<std::byte>(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
@@ -810,22 +810,22 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { "i8"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { "i16"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { "i32"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { "i64"_fu, int(SignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_UnsignedInt
@@ -835,22 +835,22 @@ inline const int UnsignedInt = Integral;
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { "u8"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { "u16"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { "u32"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { "u64"_fu, int(UnsignedInt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_floating_pt
@@ -865,32 +865,32 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { "f32"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { "f64"_fu, int(FloatingPt), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { "bool"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { "byte"_fu, int(Primitive), 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { "void"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { "never"_fu, 0, 0 }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 s_Scope listGlobals(const s_Module& module)

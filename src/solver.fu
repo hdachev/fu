@@ -38,6 +38,17 @@ fn solve(
 
     //
 
+    mut _array_cache: Map(Type, Type);
+    fn fast_createArray(type: Type)
+        _array_cache[type] ||= createArray(type);
+
+    mut _t_string: Type;
+    fn t_string(): Type
+        _t_string ||= fast_createArray(t_byte);
+
+
+    //
+
     fn Scope_import(modid: i32): void
     {
         let items = ctx.modules[modid].out.solve.scope.items;
@@ -755,8 +766,6 @@ fn solve(
 
     fn solveStr(node: Node): SolvedNode
     {
-        let t_string = createArray(t_byte);
-
         if (!node.value)
             return createDefaultInit(
                 add_ref(t_string, Lifetime_static));
@@ -1340,11 +1349,10 @@ fn solve(
         Scope_pop(_scope, scope0);
         //////////////////////////
 
-        // TODO FIX
-        // var_err.kind == 'let' && isAssignableAsArgument(
-        //     var_err.type, t_string) || fail(
-        //         'catch: exceptions are strings,'
-        //             + ' consider dropping the annotation.');
+        var_err.kind == 'let' && isAssignableAsArgument(
+            var_err.type, t_string) || fail(
+                'catch: exceptions are strings,'
+                    + ' consider dropping the annotation.');
 
         return solved(node, var_ok.type,
             [ var_ok, var_err, catch ]);
@@ -1389,7 +1397,7 @@ fn solve(
                         return solved(node, add_mutref(t, Lifetime_static));
 
                     if (node.value == '[]')
-                        return solved(node, createArray(t));
+                        return solved(node, fast_createArray(t));
                 }
                 else if (items.len == 2)
                 {
@@ -1665,7 +1673,7 @@ fn solve(
                 '[array literal] No common supertype.');
         }
 
-        return solved(node, createArray(itemType), items);
+        return solved(node, fast_createArray(itemType), items);
     }
 
 
