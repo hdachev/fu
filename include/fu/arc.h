@@ -7,9 +7,16 @@
 
 #if fu_RETAIL
 #define fu_ARC__DETECT_MEMORY_LEAKS 0
+#define fu_ARC__PROFILE_MEMORY 0
 
 #else
 #define fu_ARC__DETECT_MEMORY_LEAKS 1
+
+    #ifndef NDEBUG
+    #define fu_ARC__PROFILE_MEMORY 1
+    #else
+    #define fu_ARC__PROFILE_MEMORY 0
+    #endif
 
 #endif
 
@@ -39,6 +46,24 @@ struct fu_DEBUG_CNTDWN
 
 #endif
 
+#if fu_ARC__PROFILE_MEMORY
+
+struct fu_DEBUG_COUNTER
+{
+    std::atomic_int m_cnt;
+
+    const char* topic;
+    fu_DEBUG_COUNTER(const char* topic)
+        : topic(topic) {}
+
+    ~fu_DEBUG_COUNTER()
+    {
+        printf("\x1B[36m  STAT: %s\tm_cnt: %i\x1B[0m\n", topic, (int)m_cnt);
+    }
+};
+
+#endif
+
 
 // Putting the nasty shit here.
 
@@ -50,8 +75,13 @@ struct alignas(16) fu_ARC
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
 
-    inline static fu_DEBUG_CNTDWN DEBUG_total { "Bytes Allocated" };
-    inline static fu_DEBUG_CNTDWN DEBUG_count { "Outstanding Allocations" };
+    inline static fu_DEBUG_CNTDWN DEBUG_total { "Leaked Alloc Count" };
+    inline static fu_DEBUG_CNTDWN DEBUG_count { "Leaked Alloc Bytes" };
+    #endif
+
+    #if fu_ARC__PROFILE_MEMORY
+    inline static fu_DEBUG_COUNTER STAT_allocs { "Total Alloc Count" };
+    inline static fu_DEBUG_COUNTER STAT_bytes  { "Total Alloc Bytes" };
     #endif
 
     fu_NEVER_INLINE void dealloc(size_t bytes)
@@ -105,6 +135,11 @@ struct alignas(16) fu_ARC
             DEBUG_count.m_cnt += 1;
             DEBUG_total.m_cnt += (int)bytes;
         }
+        #endif
+
+        #if fu_ARC__PROFILE_MEMORY
+        STAT_allocs.m_cnt++;
+        STAT_bytes.m_cnt += (int)bytes;
         #endif
 
         inout_bytes = bytes;
