@@ -1,0 +1,33 @@
+
+pub struct ModuleStat
+{
+    time:        f64;
+    alloc_count: i32;
+    alloc_bytes: i32;
+};
+
+pub fn +(a: ModuleStat, b: ModuleStat)
+    ModuleStat(a.time + b.time, a.alloc_count + b.alloc_count, a.alloc_bytes + b.alloc_bytes);
+
+pub fn -(a: ModuleStat, b: ModuleStat)
+    ModuleStat(a.time - b.time, a.alloc_count - b.alloc_count, a.alloc_bytes - b.alloc_bytes);
+
+pub fn +=(a: &mut ModuleStat, b: ModuleStat)
+{
+    a.time        += b.time;
+    a.alloc_count += b.alloc_count;
+    a.alloc_bytes += b.alloc_bytes;
+}
+
+// pub fn to_str(a: ModuleStat)
+
+pub fn ModuleStat_now()
+    ModuleStat(
+        time:         now_hr(),
+        alloc_count: ALLOC_STAT_COUNT,
+        alloc_bytes: ALLOC_STAT_BYTES);
+
+pub fn ModuleStat_print(a: ModuleStat, prefix: string, suffix = '')
+{
+    print(prefix, a.time, ' s\t', a.alloc_count + ' allocs\t' + a.alloc_bytes + ' bytes' + suffix);
+}

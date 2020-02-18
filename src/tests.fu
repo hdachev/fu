@@ -1222,7 +1222,7 @@ fn runTests()
         struct Template     { i: i32; };
         struct SolvedNode   { i: i32; };
 
-        pub fn Scope_add(
+        fn Scope_add(
             scope: &mut Scope,
             kind: string, id: string, type: Type,
 

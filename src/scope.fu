@@ -2,6 +2,7 @@
 #import 'parser';
 #import 'types';
 #import 'lifetimes';
+#import 'stat';
 
 
 // Build service primitives.
@@ -24,10 +25,10 @@ pub struct ModuleOutputs
 
 pub struct ModuleStats
 {
-    s_lex:      f64;
-    s_parse:    f64;
-    s_solve:    f64;
-    s_cpp:      f64;
+    lex:        ModuleStat;
+    parse:      ModuleStat;
+    solve:      ModuleStat;
+    codegen:    ModuleStat;
 };
 
 pub struct Module

@@ -3,6 +3,7 @@
 #import 'parser';
 #import 'solver';
 #import 'scope';
+#import 'stat';
 #import 'prelude';
 #import 'codegen';
 
@@ -22,22 +23,22 @@ fn compile(fname: string, via: string = '')
         let src = getFile(fname) || throw (
             '#import badfile: `' + via + fname + '`.');
 
-        let t0 = now_hr();
+        let stat0 = ModuleStat_now();
         let lexer_result =
             lex(:fname, :src);
 
-        let t1 = now_hr();
+        let stat1 = ModuleStat_now();
         let parser_result = parse( :module.modid, :fname, :lexer_result.tokens );
+
+        let stat2 = ModuleStat_now();
 
         module.in = ModuleInputs(
             :src, lex: lexer_result,
             parse: parser_result);
 
-        let t2 = now_hr();
-
         // Stat.
-        module.stats.s_lex   = t1 - t0;
-        module.stats.s_parse = t2 - t1;
+        module.stats.lex   = stat1 - stat0;
+        module.stats.parse = stat2 - stat1;
 
         // Prevent module circles.
         setModule(module);
@@ -60,30 +61,23 @@ fn compile(fname: string, via: string = '')
     // We're good to go here.
     if (!module.out)
     {
-        let t0 = now_hr();
+        let stat0 = ModuleStat_now();
         module.out.solve = solve(
             module.in.parse.root);
 
-        let t1 = now_hr();
+        let stat1 = ModuleStat_now();
         module.out.cpp = cpp_codegen(
             module.out.solve.root,
             module.out.solve.scope);
 
-        let t2 = now_hr();
+        let stat2 = ModuleStat_now();
 
-        module.stats.s_solve = t1 - t0;
-        module.stats.s_cpp   = t2 - t1;
+        module.stats.solve   = stat1 - stat0;
+        module.stats.codegen = stat2 - stat1;
 
         // Final repersist.
         setModule(module);
     }
-
-    // --------------------------------------------- //
-    // print('lex     ', module.stats.s_lex,   's'); //
-    // print('parse   ', module.stats.s_parse, 's'); //
-    // print('solve   ', module.stats.s_solve, 's'); //
-    // print('codegen ', module.stats.s_cpp,   's'); //
-    // --------------------------------------------- //
 }
 
 fn compile_snippet(mut src: string, fname: string): Context
@@ -479,24 +473,24 @@ pub fn build(
 
         if (t1 - t0 > 0.025)
         {
-            mut lex: f64;
-            mut parse: f64;
-            mut solve: f64;
-            mut cpp: f64;
+            mut lex:        ModuleStat;
+            mut parse:      ModuleStat;
+            mut solve:      ModuleStat;
+            mut codegen:    ModuleStat;
 
             let m = ctx.modules;
             for (mut i = 0; i < m.len; i++)
             {
-                lex += m[i].stats.s_lex;
-                parse += m[i].stats.s_parse;
-                solve += m[i].stats.s_solve;
-                cpp += m[i].stats.s_cpp;
+                lex     += m[i].stats.lex;
+                parse   += m[i].stats.parse;
+                solve   += m[i].stats.solve;
+                codegen += m[i].stats.codegen;
             }
 
-            print('\n    lex ', lex, 's');
-            print('  parse ', parse, 's');
-            print('  solve ', solve, 's');
-            print('    cpp ', cpp, 's\n');
+            ModuleStat_print(lex,   '\n    lex ');
+            ModuleStat_print(parse,   '  parse ');
+            ModuleStat_print(solve,   '  solve ');
+            ModuleStat_print(codegen, 'codegen ', '\n');
         }
 
         print('        ', tt, 's\n');
