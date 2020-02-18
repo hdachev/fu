@@ -477,6 +477,28 @@ pub fn build(
         let t1 = now_hr();
         let tt = t1 - t0;
 
+        if (t1 - t0 > 0.025)
+        {
+            mut lex: f64;
+            mut parse: f64;
+            mut solve: f64;
+            mut cpp: f64;
+
+            let m = ctx.modules;
+            for (mut i = 0; i < m.len; i++)
+            {
+                lex += m[i].stats.s_lex;
+                parse += m[i].stats.s_parse;
+                solve += m[i].stats.s_solve;
+                cpp += m[i].stats.s_cpp;
+            }
+
+            print('\n    lex ', lex, 's');
+            print('  parse ', parse, 's');
+            print('  solve ', solve, 's');
+            print('    cpp ', cpp, 's\n');
+        }
+
         print('        ', tt, 's\n');
     }
 

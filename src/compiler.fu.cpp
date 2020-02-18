@@ -837,6 +837,25 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         compile(fname, fu_STR{}, ctx);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
+        if (((t1 - t0) > 0.025))
+        {
+            double lex {};
+            double parse {};
+            double solve {};
+            double cpp {};
+            fu_VEC<s_Module> m { ctx.modules };
+            for (int i = 0; (i < m.size()); i++)
+            {
+                lex += m[i].stats.s_lex;
+                parse += m[i].stats.s_parse;
+                solve += m[i].stats.s_solve;
+                cpp += m[i].stats.s_cpp;
+            };
+            (std::cout << "\n    lex "_fu << lex << "s"_fu << "\n");
+            (std::cout << "  parse "_fu << parse << "s"_fu << "\n");
+            (std::cout << "  solve "_fu << solve << "s"_fu << "\n");
+            (std::cout << "    cpp "_fu << cpp << "s\n"_fu << "\n");
+        };
         (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
     };
     return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
