@@ -270,6 +270,12 @@ fn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');
 
 fn exit(code: i32): never __native;
 
+
+//
+
+fn ALLOC_STAT_COUNT(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_COUNT()');
+fn ALLOC_STAT_BYTES(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_BYTES()');
+
 `;
 
 

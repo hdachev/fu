@@ -5,4 +5,5 @@
 #include <cassert>
 #include <cstdint>
 
+#include <new>
 #include <atomic>

@@ -75,13 +75,19 @@ struct alignas(16) fu_ARC
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
 
-    inline static fu_DEBUG_CNTDWN DEBUG_total { "Leaked Alloc Count" };
-    inline static fu_DEBUG_CNTDWN DEBUG_count { "Leaked Alloc Bytes" };
+    inline static fu_DEBUG_CNTDWN CDOWN_count { "Leaked Alloc Count" };
+    inline static fu_DEBUG_CNTDWN CDOWN_bytes { "Leaked Alloc Bytes" };
     #endif
 
     #if fu_ARC__PROFILE_MEMORY
-    inline static fu_DEBUG_COUNTER STAT_allocs { "Total Alloc Count" };
-    inline static fu_DEBUG_COUNTER STAT_bytes  { "Total Alloc Bytes" };
+    inline static fu_DEBUG_COUNTER STAT_count { "Total Alloc Count" };
+    inline static fu_DEBUG_COUNTER STAT_bytes { "Total Alloc Bytes" };
+
+    inline static int ALLOC_STAT_COUNT() { return STAT_count.m_cnt; }
+    inline static int ALLOC_STAT_BYTES() { return STAT_bytes.m_cnt; }
+    #else
+    inline static int ALLOC_STAT_COUNT() { return 0; }
+    inline static int ALLOC_STAT_BYTES() { return 0; }
     #endif
 
     fu_NEVER_INLINE void dealloc(size_t bytes)
@@ -91,8 +97,8 @@ struct alignas(16) fu_ARC
 
         #if fu_ARC__DETECT_MEMORY_LEAKS
         {
-            DEBUG_count.m_cnt -= 1;
-            DEBUG_total.m_cnt -= (int)DEBUG_bytes;
+            CDOWN_count.m_cnt -= 1;
+            CDOWN_bytes.m_cnt -= (int)DEBUG_bytes;
 
             DEBUG_bytes = -11;
             DEBUG_self  = nullptr;
@@ -132,13 +138,13 @@ struct alignas(16) fu_ARC
             header->DEBUG_bytes = (int)bytes;
             header->DEBUG_self  = mem;
 
-            DEBUG_count.m_cnt += 1;
-            DEBUG_total.m_cnt += (int)bytes;
+            CDOWN_count.m_cnt += 1;
+            CDOWN_bytes.m_cnt += (int)bytes;
         }
         #endif
 
         #if fu_ARC__PROFILE_MEMORY
-        STAT_allocs.m_cnt++;
+        STAT_count.m_cnt++;
         STAT_bytes.m_cnt += (int)bytes;
         #endif
 
