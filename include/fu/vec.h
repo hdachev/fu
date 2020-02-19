@@ -742,7 +742,7 @@ struct fu_VEC
     #define MUT_trim(shift, pop) MUT_op(false, false, false, Zero, shift, Zero, pop, Zero)
     #define MUT_init(size) MUT_op(true, false, false, Zero, Zero, Zero, Zero, size)
     #define MUT_clear() MUT_op(false, true, false, Zero, Zero, Zero, Zero, Zero)
-    #define MUT_reserve(capa) MUT_op(false, false, true, Zero, Zero, Zero, Zero, Zero)
+    #define MUT_reserve(capa) MUT_op(false, false, true, Zero, Zero, Zero, Zero, capa)
 
 
     //
