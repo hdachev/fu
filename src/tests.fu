@@ -826,6 +826,32 @@ fn runTests()
     `);
 
 
+    // String opti checkers.
+
+    ZERO(`
+        let strA = '0123456789abcdef0123456789ABCDEF';
+
+        fn main()
+        {
+            let a0 = ALLOC_STAT_COUNT();
+            strA.slice(0, 26) == '0123456789abcdef0123456789' || throw('bad slice');
+
+            let a1 = ALLOC_STAT_COUNT();
+            a0 == a1 || throw('did alloc');
+
+            return 0;
+        }
+    `);
+
+    ZERO(`
+        let strA = '0123456789abcdef0123456789ABCDEF';
+
+        fn main()
+            strA.slice(26, 32) == 'ABCDEF'
+                ? 0 : 1;
+    `);
+
+
     // Maps.
 
     ZERO(`

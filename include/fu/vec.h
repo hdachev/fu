@@ -56,15 +56,17 @@ struct fu_VEC
     };
 
 #ifndef NDEBUG
-    typedef T All[1024];
+    typedef T    All[1024];
+    typedef char AllChars[1024];
 
     union {
 #endif
-        Big  big = {};
+        Big big = {};
 
 #ifndef NDEBUG
-        char buf[VEC_SIZE];
-        const All* all;
+        char  buf[VEC_SIZE];
+        const All*      all;
+        const AllChars* all_chars;
     };
 #endif
 
@@ -809,12 +811,12 @@ struct fu_VEC
         MUT_front(One, Zero);
     }
 
-    void trim(i32 head) noexcept {
-        MUT_front(head, Zero);
+    void shift(i32 shift) noexcept {
+        MUT_front(shift, Zero);
     }
 
-    void trim(i32 head, i32 tail) noexcept {
-        MUT_trim(head, tail);
+    void shift_pop(i32 shift, i32 pop) noexcept {
+        MUT_trim(shift, pop);
     }
 
 

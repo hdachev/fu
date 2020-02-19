@@ -9,13 +9,13 @@ namespace fu {
 
     template <typename T>
     fu_VEC<T> slice(fu_VEC<T>&& v, i32 start) noexcept {
-        v.trim(start);
+        v.shift(start);
         return static_cast<fu_VEC<T>&&>(v);
     }
 
     template <typename T>
     fu_VEC<T> slice(fu_VEC<T>&& v, i32 start, i32 end) noexcept {
-        v.trim(start, end);
+        v.shift_pop(start, v.size() - end);
         return static_cast<fu_VEC<T>&&>(v);
     }
 
@@ -28,7 +28,15 @@ namespace fu {
     // Copying.
 
     template <typename T>
-    fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept {
+    fu_VEC<T> slice(const fu_VEC<T>& v, i32 start, i32 end) noexcept
+    {
+        // Avoid-alloc for slice(0) strings.
+        if constexpr (fu_CONFIG<T>::TRIVIAL)
+            if (!start && end > fu_CONFIG<T>::SMALL_CAPA)
+                return slice(
+                    fu_VEC<T>(v), 0, end);
+
+        // The usual.
         i32 s = v.size();
         assert(start >= 0 && start <= end && end <= s);
 
