@@ -46,37 +46,6 @@ inline fu_STR fu_TO_STR(unsigned int num) noexcept
 }
 
 
-// Accel.
-
-inline fu_STR operator+(fu_STR&& x, const char* cstr) noexcept
-{
-    x.append_copy(fu_ZERO(), (const std::byte*)cstr, i32(strlen(cstr)));
-    return static_cast<fu_STR&&>(x);
-}
-
-inline fu_STR operator+(const char* cstr, fu_STR&& x) noexcept
-{
-    x.splice_copy(fu_ZERO(), fu_ZERO(), (const std::byte*)cstr, i32(strlen(cstr)));
-    return static_cast<fu_STR&&>(x);
-}
-
-inline fu_STR operator+(const fu_STR& c, const char* cstr) noexcept
-{
-    return fu_STR(c) + cstr;
-}
-
-inline fu_STR operator+(const char* cstr, const fu_STR& c) noexcept
-{
-    return cstr + fu_STR(c);
-}
-
-inline fu_STR& operator+=(fu_STR& m, const char* cstr) noexcept
-{
-    m.append_copy(fu_ZERO(), (const std::byte*)cstr, i32(strlen(cstr)));
-    return m;
-}
-
-
 // And once more.
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
