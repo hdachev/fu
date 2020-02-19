@@ -935,6 +935,7 @@ s_Context ZERO(const fu_STR& src)
 {
     fu_STR fname = "testcase.ZERO"_fu;
     s_Context ctx = compile_snippet(fu_STR(src), fname);
+    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu);
     build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }

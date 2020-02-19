@@ -475,9 +475,11 @@ struct fu_VEC
                     //    because we'd lose track of destructors.
                     if constexpr (TRIVIAL)
                     {
-                        if (idx + del + pop == old_size && push + insert == 0)
+                        if (push + insert == 0
+                            && (idx + del + pop == old_size
+                                         || del == 0))
                         {
-                            big.size = idx;
+                            big.size = new_size;
                             return nullptr;
                         }
                     }

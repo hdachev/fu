@@ -536,6 +536,8 @@ fn ZERO(src: string): Context
 {
     let fname = 'testcase.ZERO';
     let ctx = compile_snippet(:src, :fname);
+
+    build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE, scheme: 'debug');
     build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
 
     return ctx;
