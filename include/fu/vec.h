@@ -1091,13 +1091,34 @@ inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const V& b) noexcept {
     return a;
 }
 
-
-// TODO the other way around + two veclikes
-
 template <typename T, typename fu_VECLIKE()>
-inline fu_VEC<T> operator+(const fu_VEC<T>& a, const V& b) noexcept {
-    // TODO optimize reserve
+fu_INL fu_VEC<T> operator+(const fu_VEC<T>& a, const V& b) noexcept {
     return fu_VEC<T>(a) + b;
+}
+
+
+// Fallback - two veclikes.
+
+template <typename V, typename T,
+    typename T2 = typename V::fu_VECLIKE_value_type,
+    typename = decltype(*((T*)1)=*((T2*)1))>
+fu_INL fu_VEC<T> operator+(const V& a, const fu_VEC<T>& b) noexcept {
+    return a + fu_VEC<T>(b);
+}
+
+template <typename A, typename B,
+    typename T  = typename A::fu_VECLIKE_value_type,
+    typename T2 = typename B::fu_VECLIKE_value_type,
+    typename = decltype(*((T*)1)=*((T2*)1))>
+inline fu_VEC<T> operator+(const A& a, const B& b) noexcept
+{
+    fu_VEC<T> ret;
+
+    ret.reserve(a.size() + b.size());
+    ret.append(Zero, a);
+    ret.append(Zero, b);
+
+    return ret;
 }
 
 

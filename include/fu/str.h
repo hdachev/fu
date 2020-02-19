@@ -232,7 +232,8 @@ fu_INL bool operator>=(const fu_STR& a, std::byte b) noexcept
 
 struct fu_STRLIT
 {
-    typedef char value_type;
+    typedef std::byte value_type;
+    typedef std::byte fu_VECLIKE_value_type;
 
     const char* m_data;
     int m_size;
@@ -401,21 +402,6 @@ fu_INL bool operator>=(const fu_STRLIT& a, std::byte b) noexcept
 
 
 //
-
-fu_INL fu_STR operator+(const fu_STRLIT& lit, const fu_STR& str) noexcept {
-    return lit + fu_STR(str);
-}
-
-
-// Duct tape.
-
-inline fu_STR operator+(const fu_STRLIT& a, const fu_STRLIT& b) noexcept
-{
-    // TODO static assert this must never happen -
-    //  must compile to a single literal -
-    //   or use automatic literal concat.
-    return fu_STR(a) + b;
-}
 
 template <typename OStream>
 auto operator<<(OStream& stream, const fu_STR& str)
