@@ -947,6 +947,17 @@ struct fu_VEC
         MOV_ctor_range(new_data, src_data, src_size);
     }
 
+    // Operator +.
+
+    void UNSAFE__init_copy(
+        const T* src0, i32 size0,
+        const T* src1, i32 size1) noexcept
+    {
+        MUT_init(size0 + size1);
+        CPY_ctor_range(new_data        , src0, size0);
+        CPY_ctor_range(new_data + size0, src1, size1);
+    }
+
 
     //
     // Acquire unique.
@@ -1091,19 +1102,33 @@ inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const V& b) noexcept {
     return a;
 }
 
-template <typename T, typename fu_VECLIKE()>
-fu_INL fu_VEC<T> operator+(const fu_VEC<T>& a, const V& b) noexcept {
-    return fu_VEC<T>(a) + b;
-}
-
 
 // Fallback - two veclikes.
 
 template <typename V, typename T,
     typename T2 = typename V::fu_VECLIKE_value_type,
     typename = decltype(*((T*)1)=*((T2*)1))>
-fu_INL fu_VEC<T> operator+(const V& a, const fu_VEC<T>& b) noexcept {
-    return a + fu_VEC<T>(b);
+fu_INL fu_VEC<T> operator+(const fu_VEC<T>& a, const V& b) noexcept
+{
+    if (!b.size())
+        return fu_VEC<T>(a);
+
+    fu_VEC<T> vec;
+    vec.UNSAFE__init_copy(a.data(), a.size(), b.data(), b.size());
+    return vec;
+}
+
+template <typename V, typename T,
+    typename T2 = typename V::fu_VECLIKE_value_type,
+    typename = decltype(*((T*)1)=*((T2*)1))>
+fu_INL fu_VEC<T> operator+(const V& a, const fu_VEC<T>& b) noexcept
+{
+    if (!a.size())
+        return fu_VEC<T>(b);
+
+    fu_VEC<T> vec;
+    vec.UNSAFE__init_copy(a.data(), a.size(), b.data(), b.size());
+    return vec;
 }
 
 template <typename A, typename B,
@@ -1112,13 +1137,22 @@ template <typename A, typename B,
     typename = decltype(*((T*)1)=*((T2*)1))>
 inline fu_VEC<T> operator+(const A& a, const B& b) noexcept
 {
-    fu_VEC<T> ret;
+    fu_VEC<T> vec;
+    vec.UNSAFE__init_copy(a.data(), a.size(), b.data(), b.size());
+    return vec;
+}
 
-    ret.reserve(a.size() + b.size());
-    ret.append(Zero, a);
-    ret.append(Zero, b);
+template <typename T>
+inline fu_VEC<T> operator+(const fu_VEC<T>& a, const fu_VEC<T>& b) noexcept
+{
+    if (!a.size())
+        return fu_VEC<T>(b);
+    if (!b.size())
+        return fu_VEC<T>(a);
 
-    return ret;
+    fu_VEC<T> vec;
+    vec.UNSAFE__init_copy(a.data(), a.size(), b.data(), b.size());
+    return vec;
 }
 
 
