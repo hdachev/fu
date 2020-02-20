@@ -17,42 +17,7 @@ inline fu_STR fu_TO_STR(const char* cstr) noexcept
 
 // Strcmp.
 
-inline bool operator==(const fu_STR& a, const fu_STR& b) noexcept
-{
-    int s = a.size();
-    return s == b.size()
-        && memcmp(a.data(), b.data(), size_t(s)) == 0;
-}
-
-inline bool operator==(const fu_STR& a, std::byte b) noexcept
-{
-    return a.size() == 1 && *a.data() == b;
-}
-
-inline bool operator==(std::byte a, const fu_STR& b) noexcept
-{
-    return b.size() == 1 && *b.data() == a;
-}
-
-fu_INL bool operator!=(const fu_STR& a, const fu_STR& b) noexcept
-{
-    return !(a == b);
-}
-
-fu_INL bool operator!=(const fu_STR& a, std::byte b) noexcept
-{
-    return !(a == b);
-}
-
-fu_INL bool operator!=(std::byte a, const fu_STR& b) noexcept
-{
-    return !(a == b);
-}
-
-
-//
-
-fu_INL int strcmp(const std::byte* d0, int s0, const std::byte* d1, int s1) noexcept
+inline int strcmp(const std::byte* d0, int s0, const std::byte* d1, int s1) noexcept
 {
     int s   = s0 < s1 ? s0 : s1;
     int cmp = memcmp(d0, d1, size_t(s));
@@ -60,48 +25,98 @@ fu_INL int strcmp(const std::byte* d0, int s0, const std::byte* d1, int s1) noex
     return cmp ? cmp : dif;
 }
 
+#define A_B_STRINGLIKE() template <typename A, typename B, \
+    typename A1 = typename A::fu_ANY_value_type, \
+    typename B1 = typename A::fu_ANY_value_type, \
+    typename = decltype(*((A1**)1)=((B1*)2)), \
+    typename = decltype(*((std::byte**)1)=((A1*)2))>
 
-//
-
-fu_INL bool operator<(const fu_STR& a, const fu_STR& b) noexcept
+A_B_STRINGLIKE()
+inline bool operator==(const A& a, const B& b) noexcept
 {
+    int s = a.size();
+    return s == b.size()
+        && memcmp(a.data(), b.data(), size_t(s)) == 0;
+}
+
+A_B_STRINGLIKE()
+fu_INL bool operator!=(const A& a, const B& b) noexcept
+{
+    int s = a.size();
+    return s != b.size()
+        || memcmp(a.data(), b.data(), size_t(s)) != 0;
+}
+
+A_B_STRINGLIKE()
+fu_INL bool operator<(const A& a, const B& b) noexcept {
     return strcmp(a.data(), a.size(), b.data(), b.size()) < 0;
 }
 
-fu_INL bool operator>(const fu_STR& a, const fu_STR& b) noexcept
-{
+A_B_STRINGLIKE()
+fu_INL bool operator>(const A& a, const B& b) noexcept {
     return strcmp(a.data(), a.size(), b.data(), b.size()) > 0;
 }
 
-fu_INL bool operator<=(const fu_STR& a, const fu_STR& b) noexcept
-{
+A_B_STRINGLIKE()
+fu_INL bool operator<=(const A& a, const B& b) noexcept {
     return strcmp(a.data(), a.size(), b.data(), b.size()) <= 0;
 }
 
-fu_INL bool operator>=(const fu_STR& a, const fu_STR& b) noexcept
-{
+A_B_STRINGLIKE()
+fu_INL bool operator>=(const A& a, const B& b) noexcept {
     return strcmp(a.data(), a.size(), b.data(), b.size()) >= 0;
 }
 
 
 //
 
-fu_INL bool operator<(std::byte a, const fu_STR& b) noexcept
+#define V_STRINGLIKE() template <typename V, \
+    typename T = typename V::fu_ANY_value_type, \
+    typename = decltype(*((std::byte**)1)=((T*)2))>
+
+V_STRINGLIKE()
+fu_INL bool operator==(std::byte a, const V& b) noexcept {
+    return b.size() == 1 && a == *b.data();
+}
+
+V_STRINGLIKE()
+fu_INL bool operator!=(std::byte a, const V& b) noexcept {
+    return !(a == b);
+}
+
+V_STRINGLIKE()
+fu_INL bool operator==(const V& b, std::byte a) noexcept {
+    return a == b;
+}
+
+V_STRINGLIKE()
+fu_INL bool operator!=(const V& b, std::byte a) noexcept {
+    return !(a == b);
+}
+
+
+// Charcmp.
+
+V_STRINGLIKE()
+fu_INL bool operator<(std::byte a, const V& b) noexcept
 {
     return strcmp(&a, 1, b.data(), b.size()) < 0;
 }
 
-fu_INL bool operator>(std::byte a, const fu_STR& b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator>(std::byte a, const V& b) noexcept
 {
     return strcmp(&a, 1, b.data(), b.size()) > 0;
 }
 
-fu_INL bool operator<=(std::byte a, const fu_STR& b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator<=(std::byte a, const V& b) noexcept
 {
     return strcmp(&a, 1, b.data(), b.size()) <= 0;
 }
 
-fu_INL bool operator>=(std::byte a, const fu_STR& b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator>=(std::byte a, const V& b) noexcept
 {
     return strcmp(&a, 1, b.data(), b.size()) >= 0;
 }
@@ -109,22 +124,26 @@ fu_INL bool operator>=(std::byte a, const fu_STR& b) noexcept
 
 //
 
-fu_INL bool operator<(const fu_STR& a, std::byte b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator<(const V& a, std::byte b) noexcept
 {
     return strcmp(a.data(), a.size(), &b, 1) < 0;
 }
 
-fu_INL bool operator>(const fu_STR& a, std::byte b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator>(const V& a, std::byte b) noexcept
 {
     return strcmp(a.data(), a.size(), &b, 1) > 0;
 }
 
-fu_INL bool operator<=(const fu_STR& a, std::byte b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator<=(const V& a, std::byte b) noexcept
 {
     return strcmp(a.data(), a.size(), &b, 1) <= 0;
 }
 
-fu_INL bool operator>=(const fu_STR& a, std::byte b) noexcept
+V_STRINGLIKE()
+fu_INL bool operator>=(const V& a, std::byte b) noexcept
 {
     return strcmp(a.data(), a.size(), &b, 1) >= 0;
 }
@@ -170,137 +189,6 @@ struct fu_STRLIT
 
 fu_INL constexpr fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {
     return fu_STRLIT { cstr, (int) len };
-}
-
-
-//
-
-fu_INL bool operator==(const fu_STR& a, const fu_STRLIT& b) noexcept {
-    return a.size() == b.size()
-        && memcmp(a.data(), b.data(), (size_t) b.size()) == 0;
-}
-
-fu_INL bool operator==(std::byte a, const fu_STRLIT& b) noexcept {
-    return b.size() == 1 && a == *b.data();
-}
-
-fu_INL bool operator!=(const fu_STR& a, const fu_STRLIT& b) noexcept {
-    return !(a == b);
-}
-
-fu_INL bool operator!=(std::byte a, const fu_STRLIT& b) noexcept {
-    return !(a == b);
-}
-
-
-// Copy/paste & flip.
-
-fu_INL bool operator==(const fu_STRLIT& b, const fu_STR& a) noexcept {
-    return a == b;
-}
-
-fu_INL bool operator==(const fu_STRLIT& b, std::byte a) noexcept {
-    return a == b;
-}
-
-fu_INL bool operator!=(const fu_STRLIT& b, const fu_STR& a) noexcept {
-    return !(a == b);
-}
-
-fu_INL bool operator!=(const fu_STRLIT& b, std::byte a) noexcept {
-    return !(a == b);
-}
-
-
-//
-
-fu_INL bool operator<(const fu_STR& a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) < 0;
-}
-
-fu_INL bool operator>(const fu_STR& a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) > 0;
-}
-
-fu_INL bool operator<=(const fu_STR& a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) <= 0;
-}
-
-fu_INL bool operator>=(const fu_STR& a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) >= 0;
-}
-
-
-//
-
-fu_INL bool operator<(const fu_STRLIT& a, const fu_STR& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) < 0;
-}
-
-fu_INL bool operator>(const fu_STRLIT& a, const fu_STR& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) > 0;
-}
-
-fu_INL bool operator<=(const fu_STRLIT& a, const fu_STR& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) <= 0;
-}
-
-fu_INL bool operator>=(const fu_STRLIT& a, const fu_STR& b) noexcept
-{
-    return strcmp(a.data(), a.size(), b.data(), b.size()) >= 0;
-}
-
-
-//
-
-fu_INL bool operator<(std::byte a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(&a, 1, b.data(), b.size()) < 0;
-}
-
-fu_INL bool operator>(std::byte a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(&a, 1, b.data(), b.size()) > 0;
-}
-
-fu_INL bool operator<=(std::byte a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(&a, 1, b.data(), b.size()) <= 0;
-}
-
-fu_INL bool operator>=(std::byte a, const fu_STRLIT& b) noexcept
-{
-    return strcmp(&a, 1, b.data(), b.size()) >= 0;
-}
-
-
-//
-
-fu_INL bool operator<(const fu_STRLIT& a, std::byte b) noexcept
-{
-    return strcmp(a.data(), a.size(), &b, 1) < 0;
-}
-
-fu_INL bool operator>(const fu_STRLIT& a, std::byte b) noexcept
-{
-    return strcmp(a.data(), a.size(), &b, 1) > 0;
-}
-
-fu_INL bool operator<=(const fu_STRLIT& a, std::byte b) noexcept
-{
-    return strcmp(a.data(), a.size(), &b, 1) <= 0;
-}
-
-fu_INL bool operator>=(const fu_STRLIT& a, std::byte b) noexcept
-{
-    return strcmp(a.data(), a.size(), &b, 1) >= 0;
 }
 
 
