@@ -10,7 +10,7 @@ inline fu_STR join(
     const fu_STR& sep)
 {
     int len = sep.size() *
-            ( vec.size() && vec.size() - 1 );
+            ( vec.size() ? vec.size() - 1 : 0 );
 
     for (int i = 0; i < vec.size(); i++)
         len += vec[i].size();
