@@ -3,6 +3,7 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <iostream>

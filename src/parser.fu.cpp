@@ -3,6 +3,8 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <utility>
 
@@ -604,7 +606,7 @@ struct sf_parse
         fu_STR value = consume("str"_fu, fu_STR{}).value;
         consume("op"_fu, ";"_fu);
         if (!path_ext(value))
-            value += ".fu"_fu;
+            (value += ".fu"_fu);
 
         if (!path_dirname(value))
             value = ("./"_fu + value);

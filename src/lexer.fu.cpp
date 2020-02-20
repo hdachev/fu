@@ -3,6 +3,9 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
+#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 
@@ -98,19 +101,19 @@ struct sf_lex
             {
                 const std::byte c1 = src[++i];
                 if ((c1 == "n"_fu))
-                    out += "\n"_fu;
+                    (out += "\n"_fu);
                 else if ((c1 == "r"_fu))
-                    out += "\r"_fu;
+                    (out += "\r"_fu);
                 else if ((c1 == "t"_fu))
-                    out += "\t"_fu;
+                    (out += "\t"_fu);
                 else if ((c1 == "v"_fu))
-                    out += "\v"_fu;
+                    (out += "\v"_fu);
                 else
-                    out += c1;
+                    (out += c1);
 
             }
             else
-                out += c;
+                (out += c);
 
         };
         return out;

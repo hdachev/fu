@@ -150,13 +150,11 @@ pub fn cpp_codegen(
         if (k == 'array')
         {
             if (tdef.fields.only.type == t_byte.value)
-            {
-                annotateString();
-                return 'fu_STR';
-            }
+                return annotateString();
 
-            annotateVector();
             let item = typeAnnot(tdef.fields[0].type);
+
+            include('<fu/vec.h>');
             return 'fu_VEC<' + item + '>';
         }
 
@@ -165,7 +163,7 @@ pub fn cpp_codegen(
             let k = typeAnnot(tdef.fields[0].type);
             let v = typeAnnot(tdef.fields[1].type);
 
-            annotateMap();
+            include('<fu/map.h>');
             return 'fu_COW_MAP<' + k + ', ' + v + '>';
         }
 
@@ -1082,16 +1080,6 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn annotateMap(): void
-    {
-        include('<fu/map.h>');
-    }
-
-    fn annotateVector(): void
-    {
-        include('<fu/vec.h>');
-    }
-
     fn annotateString(): string
     {
         include('<fu/str.h>');
@@ -1422,7 +1410,7 @@ pub fn cpp_codegen(
         src += _indent + '}';
         src += _indent + 'catch (const std::exception& o_0)';
         src += _indent + '{';
-        src += _indent + '    const fu_STR& ' + err_id + ' = fu_TO_STR(o_0.what());';
+        src += _indent + '    const ' + annotateString() + '& ' + err_id + ' = fu_TO_STR(o_0.what());';
         src += _indent + catch_body;
         src += _indent + '}\n';
 

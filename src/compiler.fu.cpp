@@ -9,6 +9,8 @@
 #include <fu/str.h>
 #include <fu/tea.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
 #include <fu/vec/slice.h>
@@ -696,16 +698,16 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     if ((if_last(dir_wrk) != "/"_fu))
     {
         (dir_wrk || fu::fail("No workspace directory provided."_fu));
-        dir_wrk += "/"_fu;
+        (dir_wrk += "/"_fu);
     };
     if ((dir_obj && (if_last(dir_obj) != "/"_fu)))
-        dir_obj += "/"_fu;
+        (dir_obj += "/"_fu);
 
     if ((dir_src && (if_last(dir_src) != "/"_fu)))
-        dir_src += "/"_fu;
+        (dir_src += "/"_fu);
 
     if ((dir_cpp && (if_last(dir_cpp) != "/"_fu)))
-        dir_cpp += "/"_fu;
+        (dir_cpp += "/"_fu);
 
     int code {};
     fu_STR stdout {};
@@ -713,10 +715,10 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     int len_all {};
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG "_fu : "-Og "_fu);
     if (((scheme == "debug"_fu) || (scheme == "reldeb"_fu)))
-        O_lvl += "-g "_fu;
+        (O_lvl += "-g "_fu);
 
     if ((scheme == "retail"_fu))
-        O_lvl += "-Dfu_RETAIL "_fu;
+        (O_lvl += "-Dfu_RETAIL "_fu);
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
@@ -735,7 +737,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         if (!cpp)
         {
             for (int i = Fs.size(); (i-- > 0); )
-                (cpp += "#include \""_fu, cpp += Fs.mutref(i), cpp += ".cpp\"\n"_fu);
+                (cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu));
 
         };
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
@@ -773,7 +775,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
         for (int i = 0; (i < link_order.size()); i++)
-            (cmd += Fs.mutref(link_order[i]), cmd += ".o "_fu);
+            (cmd += (Fs.mutref(link_order[i]) + ".o "_fu));
 
         
         {
@@ -824,7 +826,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 {
                     fu_STR incl { cpp_files[link_order[i]] };
                     fu_STR rel = path_relative(unity, incl);
-                    (data += "#include \""_fu, data += rel, data += "\"\n"_fu);
+                    (data += (("#include \""_fu + rel) + "\"\n"_fu));
                 };
                 update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
@@ -846,13 +848,13 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                     inputs.push(input);
                     outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_files[link_order[i]])));
                 };
-                (data += "set(FU_MAIN "_fu, data += main, data += ")\n\n"_fu);
-                (data += "set(FU_INPUTS\n    "_fu, data += fu::join(inputs, "\n    "_fu), data += ")\n\n"_fu);
-                (data += "set(FU_OUTPUTS\n    "_fu, data += fu::join(outputs, "\n    "_fu), data += ")\n\n"_fu);
-                data += "include_directories (~/fu/include/)\n\n"_fu;
-                (data += "add_custom_command(\n"_fu, data += "    OUTPUT ${FU_OUTPUTS}\n"_fu, data += "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu, data += "    ARGS -c ${FU_MAIN}\n"_fu, data += "    DEPENDS ${FU_INPUTS}\n"_fu, data += "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu, data += "    VERBATIM)\n\n"_fu);
+                (data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu));
+                (data += (("set(FU_INPUTS\n    "_fu + fu::join(inputs, "\n    "_fu)) + ")\n\n"_fu));
+                (data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu));
+                (data += "include_directories (~/fu/include/)\n\n"_fu);
+                (data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu));
                 fu_STR libname = path_noext(path_filename(main));
-                (data += "add_library("_fu, data += libname, data += " ${FU_OUTPUTS})\n"_fu);
+                (data += (("add_library("_fu + libname) + " ${FU_OUTPUTS})\n"_fu));
                 update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
             };
         };

@@ -2,6 +2,7 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat_str.h>
 #include <utility>
 
 struct s_Lifetime;

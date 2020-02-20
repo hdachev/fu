@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
 #include <fu/vec/join.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/split.h>
@@ -110,10 +111,10 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
     for (int i = same; (i < from.size()); i++)
     {
         if ((from[i] == "/"_fu))
-            res += "../"_fu;
+            (res += "../"_fu);
 
     };
-    res += fu::slice(to, same);
+    (res += fu::slice(to, same));
     return res;
 }
 

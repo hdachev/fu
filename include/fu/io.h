@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "str.h"
 #include "defer.h"
+
+#include "str.h"
 #include "vec/slice.h"
+#include "vec/concat_one.h"
 
 namespace fu {
 

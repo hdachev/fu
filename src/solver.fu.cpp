@@ -3,6 +3,8 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <utility>
@@ -1535,16 +1537,16 @@ struct sf_solve
         for (int i = 0; (i < args.size()); i++)
         {
             if (i)
-                mangle += ","_fu;
+                (mangle += ","_fu);
 
-            mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type);
+            (mangle += serializeType(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = args[i]; if (_) return _; } fail(fu_STR{}); }()).type));
         };
         return mangle;
     };
     s_Target trySpecialize(const s_Target& target, const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
     {
         fu_STR mangle = ((target.modid + "#"_fu) + target.index);
-        mangle += mangled_args;
+        (mangle += mangled_args);
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {

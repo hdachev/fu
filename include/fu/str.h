@@ -14,73 +14,6 @@ inline fu_STR fu_TO_STR(const char* cstr) noexcept
     return vec;
 }
 
-inline fu_STR fu_TO_STR(long long num) noexcept
-{
-    fu_STR vec;
-
-    // TODO FIX this doesnt work on min-int + its slow
-    int at = 0;
-    if (num < 0) {
-        vec.push(std::byte('-'));
-        num = -num;
-        at = 1;
-    }
-
-    do {
-        int d = num % 10; num /= 10;
-        vec.insert(at, std::byte(d + '0'));
-    }
-    while (num);
-
-    return vec;
-}
-
-inline fu_STR fu_TO_STR(int num) noexcept
-{
-    return fu_TO_STR((long long)num);
-}
-
-inline fu_STR fu_TO_STR(unsigned int num) noexcept
-{
-    return fu_TO_STR((long long)num);
-}
-
-
-// And once more.
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(const fu_STR& str, const T& t) noexcept
-{
-    return str + fu_TO_STR(t);
-}
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(const T& t, const fu_STR& str) noexcept
-{
-    return fu_TO_STR(t) + str;
-}
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(fu_STR&& str, const T& t) noexcept
-{
-    str.append(fu_ZERO(), fu_TO_STR(t));
-    return static_cast<fu_STR&&>(str);
-}
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(const T& t, fu_STR&& str) noexcept
-{
-    str.splice(fu_ZERO(), fu_ZERO(), fu_TO_STR(t));
-    return static_cast<fu_STR&&>(str);
-}
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-fu_STR& operator+=(fu_STR& str, const T& t) noexcept
-{
-    str.append(fu_ZERO(), fu_TO_STR(t));
-    return str;
-}
-
 
 // Strcmp.
 
@@ -202,7 +135,8 @@ fu_INL bool operator>=(const fu_STR& a, std::byte b) noexcept
 struct fu_STRLIT
 {
     typedef std::byte value_type;
-    typedef std::byte fu_VECLIKE_value_type;
+    typedef std::byte fu_VIEW_value_type;
+    typedef std::byte fu_ANY_value_type;
 
     const char* m_data;
     int m_size;

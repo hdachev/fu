@@ -1,6 +1,7 @@
 #include <fu/map.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 
@@ -582,30 +583,30 @@ void runTests()
             return fu::replace(assertion, "@"_fu, varname);
         };
         fu_STR src {};
-        src += "\n"_fu;
-        src += "\n    {"_fu;
-        (src += "\n        mut arr0 = ["_fu, src += literal, src += "];"_fu);
-        (src += "\n        arr0."_fu, src += operation, src += ";"_fu);
-        (src += "\n        if ("_fu, src += EXPR("arr0"_fu), src += " != 0) return 13;"_fu);
-        src += "\n    }"_fu;
-        src += "\n"_fu;
-        (src += "\n    mut orig = ["_fu, src += literal, src += "];"_fu);
-        src += "\n"_fu;
-        src += "\n    {"_fu;
-        src += "\n        mut arr1 = CLONE(orig);"_fu;
-        (src += "\n        arr1."_fu, src += operation, src += ";"_fu);
-        (src += "\n        if ("_fu, src += EXPR("arr1"_fu), src += " != 0) return 17;"_fu);
-        src += "\n    }"_fu;
-        src += "\n"_fu;
-        src += "\n    {"_fu;
-        src += "\n        mut arr2 = STEAL(orig);"_fu;
-        src += "\n        if (orig.len) return 19;"_fu;
-        (src += "\n        arr2."_fu, src += operation, src += ";"_fu);
-        (src += "\n        if ("_fu, src += EXPR("arr2"_fu), src += " != 0) return 23;"_fu);
-        src += "\n    }"_fu;
-        src += "\n"_fu;
-        src += "\n    return 0;"_fu;
-        src += "\n"_fu;
+        (src += "\n"_fu);
+        (src += "\n    {"_fu);
+        (src += (("\n        mut arr0 = ["_fu + literal) + "];"_fu));
+        (src += (("\n        arr0."_fu + operation) + ";"_fu));
+        (src += (("\n        if ("_fu + EXPR("arr0"_fu)) + " != 0) return 13;"_fu));
+        (src += "\n    }"_fu);
+        (src += "\n"_fu);
+        (src += (("\n    mut orig = ["_fu + literal) + "];"_fu));
+        (src += "\n"_fu);
+        (src += "\n    {"_fu);
+        (src += "\n        mut arr1 = CLONE(orig);"_fu);
+        (src += (("\n        arr1."_fu + operation) + ";"_fu));
+        (src += (("\n        if ("_fu + EXPR("arr1"_fu)) + " != 0) return 17;"_fu));
+        (src += "\n    }"_fu);
+        (src += "\n"_fu);
+        (src += "\n    {"_fu);
+        (src += "\n        mut arr2 = STEAL(orig);"_fu);
+        (src += "\n        if (orig.len) return 19;"_fu);
+        (src += (("\n        arr2."_fu + operation) + ";"_fu));
+        (src += (("\n        if ("_fu + EXPR("arr2"_fu)) + " != 0) return 23;"_fu));
+        (src += "\n    }"_fu);
+        (src += "\n"_fu);
+        (src += "\n    return 0;"_fu);
+        (src += "\n"_fu);
         ZERO(src);
     };
     ARROPS("0,1,2,3,4"_fu, "push(5)"_fu, "@[1] + @[4] - @[5]"_fu);

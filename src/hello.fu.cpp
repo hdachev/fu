@@ -1,6 +1,7 @@
 #include <fu/now.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
 #include <iostream>
 
                                 #ifndef DEF_NICE_THINGS
@@ -18,9 +19,9 @@ void saySomethingNice()
         for (int i = 0; (i < 3); i++)
         {
             if ((sec & (1 << i)))
-                str += "🍒"_fu;
+                (str += "🍒"_fu);
             else
-                str += "🍊"_fu;
+                (str += "🍊"_fu);
 
         };
         (std::cout << str << "\n");
