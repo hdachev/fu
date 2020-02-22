@@ -1,8 +1,8 @@
-#import 'lexer';
-#import 'parser';
-#import 'types';
-#import 'lifetimes';
-#import 'stat';
+#import "lexer";
+#import "parser";
+#import "types";
+#import "lifetimes";
+#import "stat";
 
 
 // Build service primitives.
@@ -127,10 +127,10 @@ pub fn lookupType_mut(
 
 pub fn initStruct(id: string, flags: i32)
 {
-    let canon = 's_' + id;
+    let canon = "s_" + id;
     let def = Struct(
-        kind:   'struct',
-        id:     id      || throw('TODO anonymous structs?'),
+        kind:   "struct",
+        id:     id      || throw("TODO anonymous structs?"),
         flags:  flags|0,
     );
 
@@ -141,10 +141,10 @@ pub fn initStruct(id: string, flags: i32)
 
 pub fn finalizeStruct(id: string, fields: StructField[])
 {
-    let canon = 's_' + id;
+    let canon = "s_" + id;
     let def: &mut Struct = lookupType_mut(canon);
 
-    def.fields = fields || throw('TODO empty structs?');
+    def.fields = fields || throw("TODO empty structs?");
 }
 
 
@@ -187,14 +187,14 @@ pub fn createArray(item: Type): Type
     let fields: StructField[] =
     [
         StructField(
-            id:  'Item',
+            id:  "Item",
             type: item.value),
     ];
 
-    let canon = 'v(' + serializeType(item) + ')';
+    let canon = "v(" + serializeType(item) + ")";
 
     registerType(canon, Struct(
-        kind:   'array',
+        kind:   "array",
         id:     canon,
         :fields,
         :flags));
@@ -206,7 +206,7 @@ pub fn createArray(item: Type): Type
 
 pub fn type_isArray(type: Type): bool
 {
-    return type.canon.starts(with: 'v(');
+    return type.canon.starts(with: "v(");
 }
 
 pub fn tryClear_array(type: Type): Type
@@ -217,7 +217,7 @@ pub fn tryClear_array(type: Type): Type
     let def = lookupType(type);
 
     return Type(
-        value: def.kind == 'array' && def.fields[0].type || assert(),
+        value: def.kind == "array" && def.fields[0].type || assert(),
         :type.lifetime);
 }
 
@@ -226,7 +226,7 @@ pub fn tryClear_array(type: Type): Type
 
 pub fn type_isMap(type: Type): bool
 {
-    return type.canon.starts(with: 'm(');
+    return type.canon.starts(with: "m(");
 }
 
 pub fn createMap(key: Type, value: Type): Type
@@ -234,14 +234,14 @@ pub fn createMap(key: Type, value: Type): Type
     let flags  = 0;
     let fields =
     [
-        StructField(id:  'Key',   type: key.value  ),
-        StructField(id:  'Value', type: value.value),
+        StructField(id:  "Key",   type: key.value  ),
+        StructField(id:  "Value", type: value.value),
     ];
 
-    let canon = 'm(' + serializeType(key) + ',' + serializeType(value) + ')';
+    let canon = "m(" + serializeType(key) + "," + serializeType(value) + ")";
 
     registerType(canon, Struct(
-        kind:   'map',
+        kind:   "map",
         id:     canon,
         :fields,
         :flags,
@@ -265,7 +265,7 @@ pub fn tryClear_map(type: Type): MapFields
         return MapFields();
 
     let def = lookupType(type);
-        def.kind == 'map' || assert();
+        def.kind == "map" || assert();
 
     //
     return MapFields(
@@ -339,7 +339,7 @@ pub struct Overload
 };
 
 pub fn isTemplate(o: Overload)
-    o.kind == 'template';
+    o.kind == "template";
 
 pub struct ScopeItem
 {
@@ -440,7 +440,7 @@ pub fn Scope_add(
 
 pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
 {
-    return Scope_add(scope, 'type', id, type);
+    return Scope_add(scope, "type", id, type);
 }
 
 
@@ -493,23 +493,23 @@ pub fn listGlobals(implicit module: Module): Scope
 {
     mut scope: Scope;
 
-    Scope_Typedef(scope,  'i8',    t_i8    );
-    Scope_Typedef(scope, 'i16',    t_i16   );
-    Scope_Typedef(scope, 'i32',    t_i32   );
-    Scope_Typedef(scope, 'i64',    t_i64   );
+    Scope_Typedef(scope,  "i8",    t_i8    );
+    Scope_Typedef(scope, "i16",    t_i16   );
+    Scope_Typedef(scope, "i32",    t_i32   );
+    Scope_Typedef(scope, "i64",    t_i64   );
 
-    Scope_Typedef(scope,  'u8',    t_u8    );
-    Scope_Typedef(scope, 'u16',    t_u16   );
-    Scope_Typedef(scope, 'u32',    t_u32   );
-    Scope_Typedef(scope, 'u64',    t_u64   );
+    Scope_Typedef(scope,  "u8",    t_u8    );
+    Scope_Typedef(scope, "u16",    t_u16   );
+    Scope_Typedef(scope, "u32",    t_u32   );
+    Scope_Typedef(scope, "u64",    t_u64   );
 
-    Scope_Typedef(scope, 'f32',    t_f32   );
-    Scope_Typedef(scope, 'f64',    t_f64   );
+    Scope_Typedef(scope, "f32",    t_f32   );
+    Scope_Typedef(scope, "f64",    t_f64   );
 
-    Scope_Typedef(scope, 'bool',   t_bool  );
-    Scope_Typedef(scope, 'byte',   t_byte  );
-    Scope_Typedef(scope, 'void',   t_void  );
-    Scope_Typedef(scope, 'never',  t_never );
+    Scope_Typedef(scope, "bool",   t_bool  );
+    Scope_Typedef(scope, "byte",   t_byte  );
+    Scope_Typedef(scope, "void",   t_void  );
+    Scope_Typedef(scope, "never",  t_never );
 
     return scope;
 }

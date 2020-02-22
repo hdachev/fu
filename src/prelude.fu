@@ -1,7 +1,7 @@
-#import 'lexer';
-#import 'parser';
-#import 'solver';
-#import 'scope';
+#import "lexer";
+#import "parser";
+#import "solver";
+#import "scope";
 
 let prelude_src = `
 
@@ -48,7 +48,7 @@ fn /(a: $A, b: $B)
 
 fn %(a: $T, b: $T)
     case ($T -> @integral): $T __native;
-    case ($T -> @floating_point): $T __native('<cmath>', 'std::fmod');
+    case ($T -> @floating_point): $T __native("<cmath>", "std::fmod");
 
 fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
@@ -80,8 +80,8 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 // Numeric conversions.
 
 fn  i8(v: $T) case ($T -> @arithmetic):  i8 __native;
-fn i16(v: $T) case ($T -> @arithmetic): i16 __native('short');
-fn i32(v: $T) case ($T -> @arithmetic): i32 __native('int');
+fn i16(v: $T) case ($T -> @arithmetic): i16 __native("short");
+fn i32(v: $T) case ($T -> @arithmetic): i32 __native("int");
 fn i64(v: $T) case ($T -> @arithmetic): i64 __native;
 
 fn  u8(v: $T) case ($T -> @arithmetic):  u8 __native;
@@ -89,56 +89,56 @@ fn u16(v: $T) case ($T -> @arithmetic): u16 __native;
 fn u32(v: $T) case ($T -> @arithmetic): u32 __native;
 fn u64(v: $T) case ($T -> @arithmetic): u64 __native;
 
-fn f32(v: $T) case ($T -> @arithmetic): f32 __native('float');
-fn f64(v: $T) case ($T -> @arithmetic): f64 __native('double');
+fn f32(v: $T) case ($T -> @arithmetic): f32 __native("float");
+fn f64(v: $T) case ($T -> @arithmetic): f64 __native("double");
 
 
 // Math.
 
-fn abs(v: $T) case ($T -> @arithmetic): $T __native('<cmath>', 'std::abs');
-fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::max');
-fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native('<algorithm>', 'std::min');
+fn abs(v: $T) case ($T -> @arithmetic): $T __native("<cmath>", "std::abs");
+fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::max");
+fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::min");
 
-fn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp');
-fn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::exp2');
-fn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log');
-fn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log10');
-fn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::log2');
+fn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::exp");
+fn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::exp2");
+fn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log");
+fn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log10");
+fn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log2");
 
-fn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::pow');
-fn sqrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sqrt');
-fn cbrt (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cbrt');
-fn hypot(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::hypot');
+fn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::pow");
+fn sqrt (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::sqrt");
+fn cbrt (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::cbrt");
+fn hypot(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::hypot");
 
-fn ceil (v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::ceil');
-fn floor(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::floor');
-fn trunc(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::trunc');
-fn round(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::round');
+fn ceil (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::ceil");
+fn floor(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::floor");
+fn trunc(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::trunc");
+fn round(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::round");
 
-fn sin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::sin');
-fn cos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::cos');
-fn tan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::tan');
+fn sin(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::sin");
+fn cos(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::cos");
+fn tan(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::tan");
 
-fn asin(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::asin');
-fn acos(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::acos');
-fn atan(v: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan');
+fn asin(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::asin");
+fn acos(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::acos");
+fn atan(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::atan");
 
-fn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native('<cmath>', 'std::atan2');
+fn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::atan2");
 
-fn PI():  f64 __native('<math.h>', 'M_PI');
-fn E():   f64 __native('<math.h>', 'M_E');
-fn INF(): f64 __native('<math.h>', 'INFINITY');
-fn NAN(): f64 __native('<math.h>', 'NAN');
+fn PI():  f64 __native("<math.h>", "M_PI");
+fn E():   f64 __native("<math.h>", "M_E");
+fn INF(): f64 __native("<math.h>", "INFINITY");
+fn NAN(): f64 __native("<math.h>", "NAN");
 
-fn nan(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isnan');
-fn inf(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isinf');
-fn finite(v: $T) case ($T -> @floating_point): bool __native('<cmath>', 'std::isfinite');
+fn nan(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isnan");
+fn inf(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isinf");
+fn finite(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isfinite");
 
 
 // Logic.
 
-fn true (): bool __native('true');
-fn false(): bool __native('false');
+fn true (): bool __native("true");
+fn false(): bool __native("false");
 
 
 // Assignment.
@@ -149,73 +149,73 @@ fn ||=(a: &mut $T, b: $T): &mut $T __native;
 
 // Arrays.
 
-fn len (a: $T[]): i32 __native('.size()');
+fn len (a: $T[]): i32 __native(".size()");
 
 fn [](a: $T[], i: i32)
     case ($a -> &mut $T[]): &mut $T __native;
     case ($a -> &    $T[]): &    $T __native;
     case ($a ->      $T[]):      $T __native;
 
-fn    push(a: &mut $T[], b: $T): void __native('.push');
-fn unshift(a: &mut $T[], b: $T): void __native('.unshift');
-fn  insert(a: &mut $T[], i: i32, b: $T): void __native('.insert');
+fn    push(a: &mut $T[], b: $T): void __native(".push");
+fn unshift(a: &mut $T[], b: $T): void __native(".unshift");
+fn  insert(a: &mut $T[], i: i32, b: $T): void __native(".insert");
 
-fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
-fn  slice(a: $T[], i0: i32): $T[] __native('<fu/vec/slice.h>', 'fu::slice');
-fn substr(a: $T[], i0: i32, i1: i32): $T[] __native('<fu/vec/slice.h>', 'fu::substr');
+fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn  slice(a: $T[], i0: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn substr(a: $T[], i0: i32, i1: i32): $T[] __native("<fu/vec/slice.h>", "fu::substr");
 
-fn splice(a: &mut $T[], i: i32, N: i32): void  __native('.splice');
-fn    pop(a: &mut $T[]): void __native('.pop()');
+fn splice(a: &mut $T[], i: i32, N: i32): void  __native(".splice");
+fn    pop(a: &mut $T[]): void __native(".pop()");
 
-fn  clear(a: &mut $T[]): void __native('.clear()');
-fn resize(a: &mut $T[], len: i32): void __native('.resize');
-fn shrink(a: &mut $T[], len: i32): void __native('.shrink');
+fn  clear(a: &mut $T[]): void __native(".clear()");
+fn resize(a: &mut $T[], len: i32): void __native(".resize");
+fn shrink(a: &mut $T[], len: i32): void __native(".shrink");
 
-fn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');
+fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
 
 
 // String likes.
 
-fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
-fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
-fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
+fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
+fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
+fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
 
-fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
-fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
-fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
+fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
+fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
+fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
 
-fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');
-fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');
-fn starts(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');
-fn   ends(a: $T[], with:   $T) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');
+fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
+fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
+fn starts(a: $T[], with:   $T) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
+fn   ends(a: $T[], with:   $T) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
 
-fn find(a: $T[], b: $T[]) case ($T -> @primitive): i32  __native('<fu/vec/find.h>', 'fu::lfind');
-fn has (a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::has');
+fn find(a: $T[], b: $T[]) case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn has (a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // TODO FIX
-fn find(a: $T[], b: $T): i32  __native('<fu/vec/find.h>', 'fu::lfind');
-fn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');
+fn find(a: $T[], b: $T): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn has (a: $T[], b: $T): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // Strings.
 
 typedef string = byte[];
 
-fn  >(a: string, b: string): bool __native('<fu/vec/cmp.h>',  '>');
-fn  <(a: string, b: string): bool __native('<fu/vec/cmp.h>',  '<');
-fn >=(a: string, b: string): bool __native('<fu/vec/cmp.h>', '>=');
-fn <=(a: string, b: string): bool __native('<fu/vec/cmp.h>', '<=');
+fn  >(a: string, b: string): bool __native("<fu/vec/cmp.h>",  ">");
+fn  <(a: string, b: string): bool __native("<fu/vec/cmp.h>",  "<");
+fn >=(a: string, b: string): bool __native("<fu/vec/cmp.h>", ">=");
+fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 
-fn  >(a: string, b: byte): bool __native('<fu/vec/cmp.h>',  '>');
-fn  <(a: string, b: byte): bool __native('<fu/vec/cmp.h>',  '<');
-fn >=(a: string, b: byte): bool __native('<fu/vec/cmp.h>', '>=');
-fn <=(a: string, b: byte): bool __native('<fu/vec/cmp.h>', '<=');
+fn  >(a: string, b: byte): bool __native("<fu/vec/cmp.h>",  ">");
+fn  <(a: string, b: byte): bool __native("<fu/vec/cmp.h>",  "<");
+fn >=(a: string, b: byte): bool __native("<fu/vec/cmp.h>", ">=");
+fn <=(a: string, b: byte): bool __native("<fu/vec/cmp.h>", "<=");
 
-fn  >(a: byte, b: string): bool __native('<fu/vec/cmp.h>',  '>');
-fn  <(a: byte, b: string): bool __native('<fu/vec/cmp.h>',  '<');
-fn >=(a: byte, b: string): bool __native('<fu/vec/cmp.h>', '>=');
-fn <=(a: byte, b: string): bool __native('<fu/vec/cmp.h>', '<=');
+fn  >(a: byte, b: string): bool __native("<fu/vec/cmp.h>",  ">");
+fn  <(a: byte, b: string): bool __native("<fu/vec/cmp.h>",  "<");
+fn >=(a: byte, b: string): bool __native("<fu/vec/cmp.h>", ">=");
+fn <=(a: byte, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 
 fn char(a: string, i0: i32): i32 __native;
 
@@ -224,23 +224,23 @@ fn char(a: string, i0: i32): i32 __native;
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn   split(str: string, sep: string): string[] __native('<fu/vec/split.h>', 'fu::split');
-fn    join(a: string[], sep: string): string __native('<fu/vec/join.h>', 'fu::join');
-fn replace(in: string, all: string, with: string): string __native('<fu/vec/replace.h>', 'fu::replace');
+fn   split(str: string, sep: string): string[] __native("<fu/vec/split.h>", "fu::split");
+fn    join(a: string[], sep: string): string __native("<fu/vec/join.h>", "fu::join");
+fn replace(in: string, all: string, with: string): string __native("<fu/vec/replace.h>", "fu::replace");
 
 
 // Concats.
 
-fn +(a: $T[], b: $T[]): $T[] __native('<fu/vec/concat.h>', '+');
-fn +(a: $T[], b: $T  ): $T[] __native('<fu/vec/concat_one.h>', '+');
-fn +(a: $T  , b: $T[]): $T[] __native('<fu/vec/concat_one.h>', '+');
+fn +(a: $T[], b: $T[]): $T[] __native("<fu/vec/concat.h>", "+");
+fn +(a: $T[], b: $T  ): $T[] __native("<fu/vec/concat_one.h>", "+");
+fn +(a: $T  , b: $T[]): $T[] __native("<fu/vec/concat_one.h>", "+");
 
-fn +=(a: &mut $T[], b: $T[]): &mut $T[] __native('<fu/vec/concat.h>', '+=');
-fn +=(a: &mut $T[], b: $T  ): &mut $T[] __native('<fu/vec/concat_one.h>', '+=');
+fn +=(a: &mut $T[], b: $T[]): &mut $T[] __native("<fu/vec/concat.h>", "+=");
+fn +=(a: &mut $T[], b: $T  ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
-fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native('<fu/vec/concat_str.h>', '+');
-fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native('<fu/vec/concat_str.h>', '+');
-fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native('<fu/vec/concat_str.h>', '+=');
+fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
+fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
+fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native("<fu/vec/concat_str.h>", "+=");
 
 
 // Maps.
@@ -250,46 +250,46 @@ fn [](a: Map($K, $V), b: &$K)
     case ($a -> &    Map($K, $V)): &    $V __native;
     case ($a ->      Map($K, $V)):      $V __native;
 
-fn keys  (a: Map($K, $V)): $K[] __native('.m_keys');
-fn values(a: Map($K, $V)): $V[] __native('.m_values');
-fn has   (a: Map($K, $V), b: $K): bool __native('<fu/vec/find.h>', 'fu::has');
-fn count (a: Map($K, $V)): i32 __native('.size()');
+fn keys  (a: Map($K, $V)): $K[] __native(".m_keys");
+fn values(a: Map($K, $V)): $V[] __native(".m_values");
+fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
+fn count (a: Map($K, $V)): i32 __native(".size()");
 
 
 // Assertions, bugs & fails.
 
-fn throw(reason: string): never __native('<fu/never.h>', 'fu::fail');
-fn assert(): never __native('<fu/never.h>', 'fu::fail()');
+fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
+fn assert(): never __native("<fu/never.h>", "fu::fail()");
 
 
 // TODO move these out in separate imports,
 //  now::hr() etc, mini import syntax will be just as usable.
 
-fn now_hr (): f64 __native('<fu/now.h>', 'fu::now_hr()');
-fn now_utc(): f64 __native('<fu/now.h>', 'fu::now_utc()');
+fn now_hr (): f64 __native("<fu/now.h>", "fu::now_hr()");
+fn now_utc(): f64 __native("<fu/now.h>", "fu::now_utc()");
 
-fn env_get(key: string): string __native('<fu/env.h>', 'fu::env_get');
+fn env_get(key: string): string __native("<fu/env.h>", "fu::env_get");
 
-fn file_size(path: string): i32 __native('<fu/io.h>', 'fu::file_size');
-fn file_read(path: string): string __native('<fu/io.h>', 'fu::file_read');
-fn file_write(path: string, body: string): i32 __native('<fu/io.h>', 'fu::file_write');
+fn file_size(path: string): i32 __native("<fu/io.h>", "fu::file_size");
+fn file_read(path: string): string __native("<fu/io.h>", "fu::file_read");
+fn file_write(path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
 
-fn fs_cwd(): string __native('<fu/io.h>', 'fu::fs_cwd()');
-fn fs_mkdir_p(path: string): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');
-fn fs_mkdir_p(path: string, mode: i32): i32 __native('<fu/io.h>', 'fu::fs_mkdir_p');
+fn fs_cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
+fn fs_mkdir_p(path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
+fn fs_mkdir_p(path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
 
-fn shell_exec(cmd: string): i32 __native('<fu/shell.h>', 'fu::shell_exec');
-fn shell_exec(cmd: string, stdout: &mut string): i32 __native('<fu/shell.h>', 'fu::shell_exec');
+fn shell_exec(cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
+fn shell_exec(cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");
 
-fn hash_tea(str: string): string __native('<fu/tea.h>', 'fu::hash_tea');
+fn hash_tea(str: string): string __native("<fu/tea.h>", "fu::hash_tea");
 
 fn exit(code: i32): never __native;
 
 
 //
 
-fn ALLOC_STAT_COUNT(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_COUNT()');
-fn ALLOC_STAT_BYTES(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_BYTES()');
+fn ALLOC_STAT_COUNT(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
+fn ALLOC_STAT_BYTES(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
 
 `;
 
@@ -299,13 +299,13 @@ fn ALLOC_STAT_BYTES(): i32 __native('<fu/arc.h>', 'fu_ARC::ALLOC_STAT_BYTES()');
 fn solvePrelude(): Context
 {
     // In order to keep the prelude around,
-    //  I'm thinking we'll just prep a ready-to-copy template,
+    //  I"m thinking we"ll just prep a ready-to-copy template,
     //   with prelude solved at modid 0.
     let implicit mut ctx: Context;
-    let implicit mut module = getModule('');
+    let implicit mut module = getModule("");
 
-    let lexed   = lex(prelude_src, '__prelude');
-    let root    = parse(0, '__prelude', :lexed.tokens).root;
+    let lexed   = lex(prelude_src, "__prelude");
+    let root    = parse(0, "__prelude", :lexed.tokens).root;
     let solved  = solve(root);
 
     module.out.solve = solved;

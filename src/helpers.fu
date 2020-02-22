@@ -1,7 +1,7 @@
 
 fn only(s: $T[]): $T
     s.len == 1 ? s[0] : throw (
-        'LEN != 1: ' + s.len);
+        "LEN != 1: " + s.len);
 
 fn if_only(s: $T[]): $T
     s.len == 1 && s[0];
@@ -16,9 +16,9 @@ fn hasIdentifierChars(id: string) {
     for (mut i = 0; i < id.len; i++)
     {
         let c = id[i];
-        if (c == '_' || c >= 'a' && c <= 'z'
-                     || c >= 'A' && c <= 'Z'
-                     || c >= '0' && c <= '9')
+        if (c == "_" || c >= "a" && c <= "z"
+                     || c >= "A" && c <= "Z"
+                     || c >= "0" && c <= "9")
         {
             return true;
         }
@@ -32,11 +32,11 @@ fn path_ext(path: string): string
     for (mut i = path.len; i --> 0; )
     {
         let c = path[i];
-        if (c == '.') return path.slice(i);
-        if (c == '/') break;
+        if (c == ".") return path.slice(i);
+        if (c == "/") break;
     }
 
-    return '';
+    return "";
 }
 
 fn path_noext(path: string): string
@@ -44,46 +44,46 @@ fn path_noext(path: string): string
     for (mut i = path.len; i --> 0; )
     {
         let c = path[i];
-        if (c == '.') return path.slice(0, i);
-        if (c == '/') break;
+        if (c == ".") return path.slice(0, i);
+        if (c == "/") break;
     }
 
-    return '';
+    return "";
 }
 
 fn path_dirname(path: string): string
 {
     for (mut i = path.len; i --> 0; )
-        if (path[i] == '/')
+        if (path[i] == "/")
             return path.slice(0, i + 1);
 
-    return '';
+    return "";
 }
 
 fn path_filename(path: string): string
 {
     for (mut i = path.len; i --> 0; )
-        if (path[i] == '/')
+        if (path[i] == "/")
             return path.slice(i + 1);
 
     return path;
 }
 
 fn path_normalize(p: string): string {
-    mut path = p.split('/');
+    mut path = p.split("/");
 
     for (mut i = path.len; i --> 0; ) {
         let part = path[i];
-        if (part == '.' || !part && i > 0 && i < path.len - 1)
+        if (part == "." || !part && i > 0 && i < path.len - 1)
             path.splice(i, 1);
     }
 
     for (mut i = 1; i < path.len; i++) {
-        if (path[i] == '..')
+        if (path[i] == "..")
             path.splice(--i, 2);
     }
 
-    return path.join('/');
+    return path.join("/");
 }
 
 fn path_relative(from: string, to: string): string {
@@ -97,19 +97,19 @@ fn path_relative(from: string, to: string): string {
         if (b != a)
             break;
 
-        if (b == '/')
+        if (b == "/")
             same = i + 1;
     }
 
     mut res: string;
     for (mut i = same; i < from.len; i++)
-        if (from[i] == '/')
-            res += '../';
+        if (from[i] == "/")
+            res += "../";
 
     res += to.slice(same);
     return res;
 }
 
 fn path_join(a: string, b: string)
-    b && b[0] == '/'    ? path_normalize(b)
-                        : path_normalize(a + '/' + b);
+    b && b[0] == "/"    ? path_normalize(b)
+                        : path_normalize(a + "/" + b);

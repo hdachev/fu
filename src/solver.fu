@@ -1,9 +1,9 @@
-#import 'helpers';
-#import 'lexer';
-#import 'parser';
-#import 'scope';
-#import 'types';
-#import 'lifetimes';
+#import "helpers";
+#import "lexer";
+#import "parser";
+#import "scope";
+#import "types";
+#import "lifetimes";
 
 let WARN_ON_IMPLICIT_COPY = false;
 
@@ -83,20 +83,20 @@ fn solve(
 
     //
 
-    fn fail(mut reason: string = ''): never
+    fn fail(mut reason: string = ""): never
     {
         let here = _here._token;
 
         if (!reason)
-            reason = 'Unexpected `' + here.value + '`.';
+            reason = "Unexpected `" + here.value + "`.";
 
         let fname = _here._fname;
         let l0 = here.line;
         let c0 = here.col;
 
-        let addr = '@' + l0 + ':' + c0;
+        let addr = "@" + l0 + ":" + c0;
 
-        return throw(fname + ' ' + addr + ':\n\t' + reason);
+        return throw(fname + " " + addr + ":\n\t" + reason);
     }
 
 
@@ -105,7 +105,7 @@ fn solve(
     fn Lifetime_next(): Lifetime
         Lifetime_fromScopeIdx( _scope.items.len + 1 );
 
-    fn Binding(id: string, type: Type, kind = 'var', constant: SolvedNode = [])
+    fn Binding(id: string, type: Type, kind = "var", constant: SolvedNode = [])
     {
         return Scope_add(
             _scope, :kind,
@@ -115,33 +115,33 @@ fn solve(
     fn Field(id: string, structType: Type, fieldType: Type)
     {
         return Scope_add(
-            _scope, 'field',
+            _scope, "field",
             :id || fail(), fieldType || fail(),
-            1, 1, [ 'this' ], [ structType || fail() ]);
+            1, 1, [ "this" ], [ structType || fail() ]);
     }
 
     fn TemplateDecl(node: Node)
     {
         let id = node.value;
 
-        node.kind == 'fn' || fail('TODO');
+        node.kind == "fn" || fail("TODO");
         let min = node.items.len + FN_ARGS_BACK;
 
-        let max = node.kind == 'fn'
+        let max = node.kind == "fn"
             ? 0xffffff // implicit args etc, dunno whats happening, allow it all
             : min;
 
         let template = Template(node);
 
         mut arg_n: string[];
-        if (node.kind == 'fn')
+        if (node.kind == "fn")
         {
             let items = node.items;
             let numArgs = items.len + FN_ARGS_BACK;
             for (mut i = 0; i < numArgs; i++)
             {
                 let arg = items[i] || fail();
-                arg.kind == 'let' || fail();
+                arg.kind == "let" || fail();
                 let name = arg.value || fail();
                 arg_n.push(name);
             }
@@ -149,7 +149,7 @@ fn solve(
 
         return Scope_add(
             _scope,
-            'template', :id, t_template,
+            "template", :id, t_template,
             :min, :max, arg_n, :template);
     }
 
@@ -170,7 +170,7 @@ fn solve(
         for (mut i = 0; i < max; i++)
         {
             let arg = args[i]    || fail();
-            arg.kind == 'let'    || fail();
+            arg.kind == "let"    || fail();
             arg_t.push(arg.type  || fail());
             arg_n.push(arg.value || fail());
 
@@ -242,7 +242,7 @@ fn solve(
 
         return Scope_add(
             _scope,
-            'defctor', :id, :type,
+            "defctor", :id, :type,
             :min, :max, arg_n, arg_t, arg_d);
     }
 
@@ -258,7 +258,7 @@ fn solve(
     fn createDefaultInit(type: Type): SolvedNode
     {
         return SolvedNode(
-            kind: 'definit',
+            kind: "definit",
             token: _here || fail(),
             :type);
     }
@@ -267,10 +267,10 @@ fn solve(
     {
         if (!type)
             return fail(
-                'Cannot solve definit, no inferred type.');
+                "Cannot solve definit, no inferred type.");
 
         return tryDefaultInit(type)
-            || fail('Cannot definit: ' + serializeType(type));
+            || fail("Cannot definit: " + serializeType(type));
     }
 
 
@@ -281,7 +281,7 @@ fn solve(
         let via      = GET(viaIdx);
         let overload = GET(overloadIdx);
 
-        mut kind = 'p-unshift';
+        mut kind = "p-unshift";
         mut min = overload.min - 1;
         mut max = overload.max - 1;
         min >= 0 && max >= min || fail();
@@ -292,12 +292,12 @@ fn solve(
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
-        if (via.kind != 'var' &&
-            via.kind != 'global' &&
-            via.kind != 'arg' &&
-            via.kind != 'ref')
+        if (via.kind != "var" &&
+            via.kind != "global" &&
+            via.kind != "arg" &&
+            via.kind != "ref")
         {
-            kind = 'p-wrap';
+            kind = "p-wrap";
             min++;
             max++;
 
@@ -306,7 +306,7 @@ fn solve(
             //
             arg_t.unshift(via_t);
             if (arg_n)
-                arg_n.unshift('using');
+                arg_n.unshift("using");
             if (arg_d)
                 arg_d.unshift(SolvedNode());
         }
@@ -362,7 +362,7 @@ fn solve(
                     {
                         let other = GET(o.target);
                         if (other.min < 1)
-                            fail('`using` ambiguity: `' + item.id + '`.');
+                            fail("`using` ambiguity: `" + item.id + "`.");
                     }
                 }
             }
@@ -450,9 +450,9 @@ fn solve(
                 for (mut i = 0; i < arity; i++)
                 {
                     let arg = args[i];
-                    names.push(arg.kind == 'label'
+                    names.push(arg.kind == "label"
                         ? (some = true, arg.value) || fail()
-                        : '');
+                        : "");
                 }
 
                 some || fail();
@@ -493,7 +493,7 @@ fn solve(
                     if (overload.isTemplate)
                     {
                         if (reorder)
-                            fail('TODO handle argument reorder in template specialization.');
+                            fail("TODO handle argument reorder in template specialization.");
 
                         let o = GET(overloadIdx);
                         let specIdx = trySpecialize(
@@ -543,7 +543,7 @@ fn solve(
 
                 // Forbid ambiguity.
                 if (matchIdx)
-                    fail('Ambiguous callsite, matches multiple functions in scope: `' + id + '`.');
+                    fail("Ambiguous callsite, matches multiple functions in scope: `" + id + "`.");
 
                 // Done!
                 matchIdx = overloadIdx;
@@ -635,9 +635,9 @@ fn solve(
 
         return overloads
              ? args.len < min
-                ? fail('`' + id + '` expects ' + min + ' arguments, ' + args.len + ' provided.')
-                : fail('`' + id + '` bad args, provided: ' + mangleArguments(args))
-             : fail('`' + id + '` is not defined.');
+                ? fail("`" + id + "` expects " + min + " arguments, " + args.len + " provided.")
+                : fail("`" + id + "` bad args, provided: " + mangleArguments(args))
+             : fail("`" + id + "` is not defined.");
     }
 
 
@@ -647,65 +647,65 @@ fn solve(
     {
         let k = node.kind;
 
-        if (k == 'root')        return solveRoot(node);
-        if (k == 'block')       return solveBlock(node);
-        if (k == 'label')       return solveComma(node);
-        if (k == 'comma')       return solveComma(node);
+        if (k == "root")        return solveRoot(node);
+        if (k == "block")       return solveBlock(node);
+        if (k == "label")       return solveComma(node);
+        if (k == "comma")       return solveComma(node);
 
-        if (k == 'let')         return solveLet(node, Lifetime_static);
-        if (k == 'call')        return solveCall(node);
-        if (k == 'arrlit')      return solveArrayLiteral(node, type);
+        if (k == "let")         return solveLet(node, Lifetime_static);
+        if (k == "call")        return solveCall(node);
+        if (k == "arrlit")      return solveArrayLiteral(node, type);
 
-        if (k == 'if')          return solveIf(node, type);
-        if (k == 'or')          return solveOr(node, type);
-        if (k == '!')           return solveNot(node);
-        if (k == 'and')         return solveAnd(node, type);
+        if (k == "if")          return solveIf(node, type);
+        if (k == "or")          return solveOr(node, type);
+        if (k == "!")           return solveNot(node);
+        if (k == "and")         return solveAnd(node, type);
 
-        if (k == 'return')      return solveReturn(node);
-        if (k == 'loop')        return solveBlock(node);
-        if (k == 'break')       return solveJump(node);
-        if (k == 'continue')    return solveJump(node);
+        if (k == "return")      return solveReturn(node);
+        if (k == "loop")        return solveBlock(node);
+        if (k == "break")       return solveJump(node);
+        if (k == "continue")    return solveJump(node);
 
-        if (k == 'int')         return solveInt(node, type);
-        if (k == 'num')         return solveNum(node, type);
-        if (k == 'str')         return solveStr(node);
-        if (k == 'empty')       return createEmpty();
+        if (k == "int")         return solveInt(node, type);
+        if (k == "num")         return solveNum(node, type);
+        if (k == "str")         return solveStr(node);
+        if (k == "empty")       return createEmpty();
 
-        if (k == 'definit')     return solveDefinit(type);
+        if (k == "definit")     return solveDefinit(type);
 
-        if (k == 'catch')       return solveCatch(node);
-        if (k == 'import')      return solveImport(node);
+        if (k == "catch")       return solveCatch(node);
+        if (k == "import")      return solveImport(node);
 
-        return fail('TODO: ' + k);
+        return fail("TODO: " + k);
     }
 
     fn isUnordered(kind: string)
     {
-        return kind == 'fn'
-            || kind == 'struct'
-            || kind == 'typedef';
+        return kind == "fn"
+            || kind == "struct"
+            || kind == "typedef";
     }
 
     fn unorderedPrep(node: Node): SolvedNode
     {
         let k = node.kind;
 
-        if (k == 'fn')          return uPrepFn(node);
-        if (k == 'struct')      return uPrepStruct(node);
-        if (k == 'typedef')     return solveTypedef(node);
+        if (k == "fn")          return uPrepFn(node);
+        if (k == "struct")      return uPrepStruct(node);
+        if (k == "typedef")     return solveTypedef(node);
 
-        return fail('TODO: ' + k);
+        return fail("TODO: " + k);
     }
 
     fn unorderedSolve(node: Node, prep: SolvedNode)
     {
         let k = node.kind;
 
-        if (k == 'fn')          return uSolveFn(node, prep);
-        if (k == 'struct')      return uSolveStruct(node, prep);
-        if (k == 'typedef')     return prep || fail();
+        if (k == "fn")          return uSolveFn(node, prep);
+        if (k == "struct")      return uSolveStruct(node, prep);
+        if (k == "typedef")     return prep || fail();
 
-        return fail('TODO: ' + k);
+        return fail("TODO: " + k);
     }
 
 
@@ -748,7 +748,7 @@ fn solve(
             if (type == t_i64 || type == t_i16 || type == t_i8)
                 return solved(node, type);
 
-            if (node.value[0] != '-')
+            if (node.value[0] != "-")
                 if (type == t_u32 || type == t_u64 || type == t_u16 || type == t_u8)
                     return solved(node, type);
         }
@@ -776,7 +776,7 @@ fn solve(
     fn createEmpty(): SolvedNode
     {
         return SolvedNode(
-            kind: 'empty', type: t_void);
+            kind: "empty", type: t_void);
     }
 
 
@@ -784,7 +784,7 @@ fn solve(
 
     fn createTypeParam(value: string): Node
     {
-        return Node(kind: 'typeparam',
+        return Node(kind: "typeparam",
             :value, token: _here || fail());
     }
 
@@ -800,7 +800,7 @@ fn solve(
 
     fn __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
     {
-        let id = n_fn.value || fail('TODO anonymous fns');
+        let id = n_fn.value || fail("TODO anonymous fns");
 
         // Template early exit.
         if (spec)
@@ -830,7 +830,7 @@ fn solve(
         out.items.resize(inItems.len);
 
         //
-        if (_current_fn && id != 'free')
+        if (_current_fn && id != "free")
         {
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;
@@ -851,7 +851,7 @@ fn solve(
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
                 let n_arg = inItems[i] || fail();
-                n_arg.kind == 'let' || fail();
+                n_arg.kind == "let" || fail();
 
                 let lifetime = Lifetime_fromArgIndex(i);
 
@@ -881,7 +881,7 @@ fn solve(
             // Pattern descent.
             if (caseIdx >= 0)
             {
-                n_body.kind == 'pattern' || fail();
+                n_body.kind == "pattern" || fail();
                 let branch = n_body.items[caseIdx] || fail();
                 let items = branch.items;
 
@@ -890,13 +890,13 @@ fn solve(
             }
 
             // Builtin?
-            if (n_body.kind == 'block' && n_body.items.len == 1)
+            if (n_body.kind == "block" && n_body.items.len == 1)
             {
                 let ret = n_body.items[0];
-                if (ret.kind == 'return' && ret.items.len == 1)
+                if (ret.kind == "return" && ret.items.len == 1)
                 {
                     let expr = ret.items[0];
-                    if (expr.kind == 'call' && expr.value == '__native')
+                    if (expr.kind == "call" && expr.value == "__native")
                     {
                         native = true;
 
@@ -939,7 +939,7 @@ fn solve(
 
         if (!prep)
         {
-            mut kind = native ? '__native' : 'fn';
+            mut kind = native ? "__native" : "fn";
 
             //
             FnDecl(:kind, :id, out, native && n_body);
@@ -956,11 +956,11 @@ fn solve(
 
     fn mangleArguments(args: SolvedNode[]): string
     {
-        mut mangle = '';
+        mut mangle = "";
         for (mut i = 0; i < args.len; i++)
         {
             if (i)
-                mangle += ',';
+                mangle += ",";
 
             mangle += serializeType((args[i] || fail()).type);
         }
@@ -977,14 +977,14 @@ fn solve(
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = target.modid + '#' + target.index;
+        mut mangle = target.modid + "#" + target.index;
             mangle += mangled_args;
 
         // TODO FIX THIS MESS -
         //  A. Not recursion capable: use the general prep-vs-solve approach here too.
         //  B. The multiple map taps here are because stuff
         //      moves around while doTrySpecialize does its work -
-        //      if maps values didn't move around we'd be good.
+        //      if maps values didn"t move around we"d be good.
         let spec = module.out.specs[mangle] ||= SolvedNode;
         if (!spec)
         {
@@ -1002,10 +1002,10 @@ fn solve(
     {
         let node = template.node;
 
-        node.kind == 'fn' || fail('TODO');
+        node.kind == "fn" || fail("TODO");
         mut result = trySpecializeFn(node, args);
         if (!result)
-            result.kind = 'spec-fail';
+            result.kind = "spec-fail";
 
         return result;
     }
@@ -1025,7 +1025,7 @@ fn solve(
         for (mut i = 0; i < numArgs; i++)
         {
             let argNode = items[i] || fail();
-            argNode.kind == 'let'  || fail();
+            argNode.kind == "let"  || fail();
 
             mut inType = args.len > i && args[i].type;
 
@@ -1042,7 +1042,7 @@ fn solve(
                     typeParams[argName] ||= Type;
 
                 argName_typeParam && fail(
-                    'Type param name collision with argument: `' + argName + '`.')
+                    "Type param name collision with argument: `" + argName + "`.")
                         = inType;
 
                 //
@@ -1065,7 +1065,7 @@ fn solve(
         mut caseIdx = -1;
 
         let pattern = items[items.len + FN_BODY_BACK] || fail();
-        if (pattern.kind == 'pattern')
+        if (pattern.kind == "pattern")
         {
             let branches = pattern.items;
             for (mut i = 0; i < branches.len; i++)
@@ -1125,7 +1125,7 @@ fn solve(
     {
         mut out         = prep || solved(node, t_void);
 
-        let id          = node.value || fail('TODO anonymous structs');
+        let id          = node.value || fail("TODO anonymous structs");
         let structType  = initStruct(id, node.flags);
 
         // Add the arity-0 type entry.
@@ -1149,7 +1149,7 @@ fn solve(
             for (mut i = 0; i < items.len; i++)
             {
                 let item = items[i];
-                if (item && item.kind == 'let' && (item.flags & F_FIELD))
+                if (item && item.kind == "let" && (item.flags & F_FIELD))
                 {
                     members.push(item);
 
@@ -1175,10 +1175,10 @@ fn solve(
         for (mut i = 0; i < members.len; i++)
         {
             let node = members[i];
-            if (node.kind == 'let')
+            if (node.kind == "let")
                 out.push(solveField(:node, :structType));
             else
-                fail('TODO: ' + node.kind);
+                fail("TODO: " + node.kind);
         }
 
         return out;
@@ -1204,9 +1204,9 @@ fn solve(
         if (next.type.lifetime.killedBy(_return_idx) &&     //
             next.type.quals & q_ref)                        //
         {                                                   //
-            let nrvo = next.kind == 'call'                  //
+            let nrvo = next.kind == "call"                  //
                     && next.items.len == 0                  //
-                    && next.target.GET.kind == 'var';       //
+                    && next.target.GET.kind == "var";       //
                                                             //
             next = createMove(next, nrvo);                  //
         }                                                   //
@@ -1217,7 +1217,7 @@ fn solve(
 
         if (prev.type)
             isAssignable(prev.type, next.type)
-                || fail('Non-assignable return types: ' + serializeType(prev.type) + ' <- ' + serializeType(next.type));
+                || fail("Non-assignable return types: " + serializeType(prev.type) + " <- " + serializeType(next.type));
         else
             _current_fn.items[retIdx] = next || fail();
 
@@ -1246,7 +1246,7 @@ fn solve(
         mut init        = n_init && solveNode(n_init, annot.type);
 
         annot.type || init.type || fail(
-            'Variable declarations without type annotations must be initialized.');
+            "Variable declarations without type annotations must be initialized.");
 
         let t_let       = annot.type
                             ? node.flags & F_ARG && !(node.flags & F_MUT)
@@ -1258,8 +1258,8 @@ fn solve(
 
         if (annot.type && init.type)
             isAssignable(annot.type, init.type) || fail(
-                'Type annotation does not match init expression: `'
-                    + node.value + ': ' + serializeType(annot.type) + ' = ' + serializeType(init.type) + '`.');
+                "Type annotation does not match init expression: `"
+                    + node.value + ": " + serializeType(annot.type) + " = " + serializeType(init.type) + "`.");
 
         if (init)
             maybeCopyOrMove(init, t_let);
@@ -1270,9 +1270,9 @@ fn solve(
         if !(_current_fn || node.flags & F_FIELD)
         {
             if (out.flags & F_MUT || out.type.quals & q_mutref)
-                fail('Mutable statics are not currently allowed.');
+                fail("Mutable statics are not currently allowed.");
 
-            out.kind = 'global';
+            out.kind = "global";
         }
 
         return out;
@@ -1288,7 +1288,7 @@ fn solve(
     fn solveLet(node: Node, mut lifetime: Lifetime): SolvedNode
     {
         let out         = solveBinding(node, lifetime);
-        let global      = out.kind == 'global';
+        let global      = out.kind == "global";
 
         //////////////////////////////////////////////////////
         //                                                  //
@@ -1300,10 +1300,10 @@ fn solve(
                                                             //
         //////////////////////////////////////////////////////
 
-        let kind = global                   ? 'global'
-                 : node.flags & F_ARG       ? 'arg'
-                 : out.type.quals & q_ref   ? 'ref'
-                                            : 'var';
+        let kind = global                   ? "global"
+                 : node.flags & F_ARG       ? "arg"
+                 : out.type.quals & q_ref   ? "ref"
+                                            : "var";
 
         let overload    = Binding(
             id: out.value, :kind,
@@ -1349,10 +1349,10 @@ fn solve(
         Scope_pop(_scope, scope0);
         //////////////////////////
 
-        var_err.kind == 'let' && isAssignableAsArgument(
+        var_err.kind == "let" && isAssignableAsArgument(
             var_err.type, t_string) || fail(
-                'catch: exceptions are strings,'
-                    + ' consider dropping the annotation.');
+                "catch: exceptions are strings,"
+                    + " consider dropping the annotation.");
 
         return solved(node, var_ok.type,
             [ var_ok, var_err, catch ]);
@@ -1380,7 +1380,7 @@ fn solve(
 
     fn evalTypeAnnot(node: Node): SolvedNode
     {
-        if (node.kind == 'call')
+        if (node.kind == "call")
         {
             let items = node.items;
             if (items.len)
@@ -1390,13 +1390,13 @@ fn solve(
                     let t = evalTypeAnnot(items[0]).type;
                     t || fail();
 
-                    if (node.value == '&')
+                    if (node.value == "&")
                         return solved(node, add_ref(t, Lifetime_static));
 
-                    if (node.value == '&mut')
+                    if (node.value == "&mut")
                         return solved(node, add_mutref(t, Lifetime_static));
 
-                    if (node.value == '[]')
+                    if (node.value == "[]")
                         return solved(node, fast_createArray(t));
                 }
                 else if (items.len == 2)
@@ -1405,7 +1405,7 @@ fn solve(
                     let b = evalTypeAnnot(items[1]).type;
                     a && b || fail();
 
-                    if (node.value == 'Map')
+                    if (node.value == "Map")
                         return solved(node, createMap(a, b));
                 }
             }
@@ -1419,43 +1419,43 @@ fn solve(
                     for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
-                        if (maybe.kind == 'type')
+                        if (maybe.kind == "type")
                             return solved(node, maybe.type || fail());
                     }
                 }
 
-                fail('No type `' + id + '` in scope.');
+                fail("No type `" + id + "` in scope.");
             }
         }
-        else if (node.kind == 'typeparam')
+        else if (node.kind == "typeparam")
         {
             let id = node.value || fail();
             _typeParams || fail(
-                'Unexpected type param: `$' + id + '`.');
+                "Unexpected type param: `$" + id + "`.");
 
             let type = _typeParams && _typeParams[id] || fail(
-                'No type param `$' + id + '` in scope.');
+                "No type param `$" + id + "` in scope.");
 
             return solved(node, type);
         }
 
-        return fail('TODO');
+        return fail("TODO");
     }
 
     fn trySolveTypeParams(
         node: Node, mut type: Type, typeParams: &mut Map(string, Type)): bool
     {
-        if (node.kind == 'call')
+        if (node.kind == "call")
         {
             let items = node.items;
             if (items.len)
             {
                 if (items.len == 1)
                 {
-                    let t   = node.value == '&'    ? tryClear_ref(type)
-                            : node.value == '&mut' ? tryClear_mutref(type)
-                            : node.value == '[]'   ? tryClear_array(type)
-                            : (fail('TODO'), Type);
+                    let t   = node.value == "&"    ? tryClear_ref(type)
+                            : node.value == "&mut" ? tryClear_mutref(type)
+                            : node.value == "[]"   ? tryClear_array(type)
+                            : (fail("TODO"), Type);
 
                     if (!t)
                         return false;
@@ -1465,7 +1465,7 @@ fn solve(
                 }
                 else if (items.len == 2)
                 {
-                    if (node.value == 'Map')
+                    if (node.value == "Map")
                     {
                         let kv = tryClear_map(type);
                         if (!kv)
@@ -1486,15 +1486,15 @@ fn solve(
                     for (mut i = 0; i < overloads.len; i++)
                     {
                         let maybe = GET(overloads[i]);
-                        if (maybe.kind == 'type')
+                        if (maybe.kind == "type")
                             return isAssignable(maybe.type || fail(), type);
                     }
                 }
 
-                fail('No type `' + id + '` in scope.');
+                fail("No type `" + id + "` in scope.");
             }
         }
-        else if (node.kind == 'typeparam')
+        else if (node.kind == "typeparam")
         {
             let id = node.value || fail();
 
@@ -1525,7 +1525,7 @@ fn solve(
             return true;
         }
 
-        return fail('TODO');
+        return fail("TODO");
     }
 
     fn evalTypePattern(node: Node, typeParams: Map(string, Type)): bool
@@ -1536,14 +1536,14 @@ fn solve(
             let left  = items[0] || fail();
             let right = items[1] || fail();
 
-            if (node.kind == 'call' && node.value == '->')
+            if (node.kind == "call" && node.value == "->")
             {
-                if (left.kind  == 'typeparam' &&
-                    right.kind == 'typetag')
+                if (left.kind  == "typeparam" &&
+                    right.kind == "typetag")
                 {
                     let tag   = right.value || fail();
                     let type  = left.value && typeParams[left.value] || fail(
-                        'No type param `$' + left.value + '` in scope.');
+                        "No type param `$" + left.value + "` in scope.");
 
                     return type_has(type, tag);
                 }
@@ -1566,19 +1566,19 @@ fn solve(
                     return isAssignable(expect, actual);
                 }
             }
-            else if (node.kind == 'and')
+            else if (node.kind == "and")
             {
                 return evalTypePattern(left,  typeParams)
                     && evalTypePattern(right, typeParams);
             }
-            else if (node.kind == 'or')
+            else if (node.kind == "or")
             {
                 return evalTypePattern(left,  typeParams)
                     && evalTypePattern(right, typeParams);
             }
         }
 
-        return fail('TODO');
+        return fail("TODO");
     }
 
 
@@ -1587,7 +1587,7 @@ fn solve(
     fn createRead(id: string): Node
     {
         return Node(
-            kind:   'call',
+            kind:   "call",
             flags:  F_ID,
             value:  id,
             token:  (_here || fail()));
@@ -1604,7 +1604,7 @@ fn solve(
         // `using` codegen.
         while (callTarg.partial)
         {
-            let unshift     = callTarg.kind == 'p-unshift';
+            let unshift     = callTarg.kind == "p-unshift";
 
             let partial     = callTarg.partial  || fail();
             let viaIdx      = partial.via       || fail();
@@ -1625,7 +1625,7 @@ fn solve(
                 innerArgs = [ args[0] || fail() ];
 
             let argNode     = CallerNode(
-                createRead('__partial'),
+                createRead("__partial"),
                 via.type || fail(),
                 viaIdx,
                 innerArgs);
@@ -1662,7 +1662,7 @@ fn solve(
         }
 
         if (!itemType)
-            return fail('Cannot infer empty arraylit.');
+            return fail("Cannot infer empty arraylit.");
 
         for (mut i = startAt; i < items.len; i++)
         {
@@ -1670,7 +1670,7 @@ fn solve(
                 itemType, (items[i] || fail()).type);
 
             itemType || fail(
-                '[array literal] No common supertype.');
+                "[array literal] No common supertype.");
         }
 
         return solved(node, fast_createArray(itemType), items);
@@ -1682,7 +1682,7 @@ fn solve(
     fn createLet(id: string, type: Type, flags: i32 = 0): SolvedNode
     {
         return SolvedNode(
-            kind:   'let',
+            kind:   "let",
             flags:  flags,
             value:  id,
             token:  _here || fail(), :type);
@@ -1708,7 +1708,7 @@ fn solve(
                 if (arg.value == id)
                 {
                     isAssignable(type, arg.type)
-                        || fail('Implicit arg collision: `' + id + '`.');
+                        || fail("Implicit arg collision: `" + id + "`.");
 
                     return ret;
                 }
@@ -1727,7 +1727,7 @@ fn solve(
             let o: &mut Overload = GET_mut(fnNode.target);
 
             // We'll be mutating the overload.
-            o.kind == 'fn' || fail();
+            o.kind == "fn" || fail();
 
             o.names.len == o.args.len || fail();
 
@@ -1743,7 +1743,7 @@ fn solve(
         argIdx: i32, id: string, type: Type)
     {
         TEST_expectImplicits || fail(
-            'Attempting to propagate implicit arguments.');
+            "Attempting to propagate implicit arguments.");
 
         args.len >= argIdx || fail();
 
@@ -1761,7 +1761,7 @@ fn solve(
         if (!matched)
         {
             if (!_current_fn)
-                return fail('No implicit `' + id + '` in scope.');
+                return fail("No implicit `" + id + "` in scope.");
 
             matched = injectImplicitArg__mutfn(
                 _current_fn, id, type);
@@ -1796,7 +1796,7 @@ fn solve(
             type = !secType ? priType
                             : type_tryInter(priType, secType);
 
-            type || fail('[if] No common supertype: `' + serializeType(priType) + ' : ' + serializeType(secType) + '`.');
+            type || fail("[if] No common supertype: `" + serializeType(priType) + " : " + serializeType(secType) + "`.");
 
             if (cons)
                 maybeCopyOrMove(cons, type);
@@ -1844,7 +1844,7 @@ fn solve(
                 }
 
                 // a && b || never: b can be mutref!
-                let andLast = hasNever && item.kind == 'and' && item.items && item.items[item.items.len - 1];
+                let andLast = hasNever && item.kind == "and" && item.items && item.items[item.items.len - 1];
                 let itemType = andLast && !(andLast.type == t_never)
                     ? andLast.type
                     : item.type;
@@ -1962,7 +1962,7 @@ fn solve(
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
-        if (overload.kind == 'field')
+        if (overload.kind == "field")
         {
             let head = args.len == 1 && args[0] || fail();
             let headType = head.type || fail();
@@ -2005,7 +2005,7 @@ fn solve(
             // Except if we're talking a fnarg,
             //  in which case we're better off binding a temporary,
             //   else we risk cache missing on the useless global defval.
-            if (node.kind == 'definit' && isArgument)
+            if (node.kind == "definit" && isArgument)
                 node.type.quals &= ~q_ref;
 
             return;
@@ -2016,19 +2016,19 @@ fn solve(
             return;
 
         // Definits can just as well emit values.
-        if (node.kind == 'definit')
+        if (node.kind == "definit")
         {
             node.type.quals &= ~q_ref;
             return;
         }
 
         if !(q & q_copy)
-            fail('Needs an explicit STEAL or CLONE.');
+            fail("Needs an explicit STEAL or CLONE.");
 
         if (WARN_ON_IMPLICIT_COPY)
         {
             // if !(node.type.quals & q_trivial)
-            //     print('WARN ', _here.line, ':', _here.col, ':\timplicit copy ', node.type.canon);
+            //     print("WARN ", _here.line, ":", _here.col, ":\timplicit copy ", node.type.canon);
         }
 
         //
@@ -2041,14 +2041,14 @@ fn solve(
 
     fn createCopy(node: SolvedNode): SolvedNode
         SolvedNode(
-            kind:   'copy',
+            kind:   "copy",
             items:  [ node ],
             token:  node.token,
             type:   clear_refs(node.type));
 
     fn createMove(node: SolvedNode, nrvo = false): SolvedNode
         SolvedNode(
-            kind:   nrvo ? 'nrvo' : 'move',
+            kind:   nrvo ? "nrvo" : "move",
             items:  [ node ],
             token:  node.token,
             type:   clear_refs(node.type));

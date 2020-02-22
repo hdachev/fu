@@ -1,4 +1,4 @@
-#import 'lifetimes';
+#import "lifetimes";
 
 pub let q_mutref        = 1 << 0;
 pub let q_ref           = 1 << 1;
@@ -14,17 +14,17 @@ pub let q_floating_pt   = 1 << 8;
 
 let TAGS =
 [
-    'mutref',
-    'ref',
+    "mutref",
+    "ref",
 
-    'copy',
-    'trivial',
-    'primitive',
+    "copy",
+    "trivial",
+    "primitive",
 
-    'arithmetic',
-    'integral',
-    'signed',
-    'floating_point',
+    "arithmetic",
+    "integral",
+    "signed",
+    "floating_point",
 ];
 
 
@@ -91,25 +91,25 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral                   ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i8        = Type(ValueType(canon: 'i8',  quals: SignedInt));
-pub let t_i16       = Type(ValueType(canon: 'i16', quals: SignedInt));
-pub let t_i32       = Type(ValueType(canon: 'i32', quals: SignedInt));
-pub let t_i64       = Type(ValueType(canon: 'i64', quals: SignedInt));
+pub let t_i8        = Type(ValueType(canon: "i8",  quals: SignedInt));
+pub let t_i16       = Type(ValueType(canon: "i16", quals: SignedInt));
+pub let t_i32       = Type(ValueType(canon: "i32", quals: SignedInt));
+pub let t_i64       = Type(ValueType(canon: "i64", quals: SignedInt));
 
-pub let t_u8        = Type(ValueType(canon: 'u8',  quals: UnsignedInt));
-pub let t_u16       = Type(ValueType(canon: 'u16', quals: UnsignedInt));
-pub let t_u32       = Type(ValueType(canon: 'u32', quals: UnsignedInt));
-pub let t_u64       = Type(ValueType(canon: 'u64', quals: UnsignedInt));
+pub let t_u8        = Type(ValueType(canon: "u8",  quals: UnsignedInt));
+pub let t_u16       = Type(ValueType(canon: "u16", quals: UnsignedInt));
+pub let t_u32       = Type(ValueType(canon: "u32", quals: UnsignedInt));
+pub let t_u64       = Type(ValueType(canon: "u64", quals: UnsignedInt));
 
-pub let t_f32       = Type(ValueType(canon: 'f32', quals: FloatingPt));
-pub let t_f64       = Type(ValueType(canon: 'f64', quals: FloatingPt));
+pub let t_f32       = Type(ValueType(canon: "f32", quals: FloatingPt));
+pub let t_f64       = Type(ValueType(canon: "f64", quals: FloatingPt));
 
-pub let t_void      = Type(ValueType(canon: 'void', quals: 0));
-pub let t_bool      = Type(ValueType(canon: 'bool', quals: Primitive));
+pub let t_void      = Type(ValueType(canon: "void", quals: 0));
+pub let t_bool      = Type(ValueType(canon: "bool", quals: Primitive));
 
-pub let t_never     = Type(ValueType(canon: 'never',    quals: 0));
-pub let t_template  = Type(ValueType(canon: 'template', quals: 0));
-pub let t_byte      = Type(ValueType(canon: 'byte',     quals: Primitive));
+pub let t_never     = Type(ValueType(canon: "never",    quals: 0));
+pub let t_template  = Type(ValueType(canon: "template", quals: 0));
+pub let t_byte      = Type(ValueType(canon: "byte",     quals: Primitive));
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -172,7 +172,7 @@ fn tryClear(type: Type, q: i32): Type
 
 pub fn add_ref(type: Type, lifetime: Lifetime): Type
 {
-    mut t = type || throw('falsy type');
+    mut t = type || throw("falsy type");
         t.quals |= q_ref;
         t.lifetime = type_inter(lifetime, t.lifetime);
 
@@ -181,7 +181,7 @@ pub fn add_ref(type: Type, lifetime: Lifetime): Type
 
 pub fn add_mutref(type: Type, lifetime: Lifetime): Type
 {
-    mut t = type || throw('falsy type');
+    mut t = type || throw("falsy type");
         t.quals   |= q_mutref | q_ref;
         t.lifetime = type_inter(t.lifetime, lifetime);
 
@@ -235,7 +235,7 @@ pub fn add_refs(from: Type, mut to: Type)
 pub fn serializeType(type: Type)
 {
     if (type.quals)
-        return type.canon + '+' + type.quals;
+        return type.canon + "+" + type.quals;
 
     return type.canon;
 }
@@ -243,7 +243,7 @@ pub fn serializeType(type: Type)
 pub fn type_has(type: Type, tag: string)
 {
     let idx = TAGS.find(tag);
-    idx >= 0 || throw('Unknown type tag: `' + tag + '`.');
+    idx >= 0 || throw("Unknown type tag: `" + tag + "`.");
     let mask = 1 << idx;
     return (type.quals & mask) == mask;
 }
@@ -272,7 +272,7 @@ pub fn type_tryInter(a: Type, b: Type)
 
 pub struct Struct
 {
-    kind:   string; // 'struct'|'array'|'map';
+    kind:   string; // "struct"|"array"|"map";
     id:     string;
     fields: StructField[];
     flags:  i32;

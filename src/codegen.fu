@@ -1,8 +1,8 @@
-#import 'helpers';
-#import 'parser';
-#import 'types';
-#import 'scope';
-#import 'solver';
+#import "helpers";
+#import "parser";
+#import "types";
+#import "scope";
+#import "solver";
 
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
@@ -26,7 +26,7 @@ pub fn cpp_codegen(
     mut _tdef: string;
     mut _fdef: string;
 
-    mut _indent: string = '\n';
+    mut _indent: string = "\n";
     mut _fnN: i32;
     mut _clsrN: i32;
     mut _faasN: i32;
@@ -47,7 +47,7 @@ pub fn cpp_codegen(
         return m.out.solve.scope.overloads[target.index - 1];
     }
 
-    fn fail(reason = '') throw(reason);
+    fn fail(reason = "") throw(reason);
 
 
     //
@@ -55,7 +55,7 @@ pub fn cpp_codegen(
     fn include(lib: string)
     {
         if (!_libs.has(lib))
-            _libs[lib] = '#include ' + lib + '\n';
+            _libs[lib] = "#include " + lib + "\n";
     }
 
 
@@ -68,31 +68,31 @@ pub fn cpp_codegen(
     {
         let fwd = typeAnnotBase(type);
 
-        if (mode & M_RETVAL && type.canon == 'never' && !(mode & M_CLOSURE))
-            return '[[noreturn]] ' + fwd;
+        if (mode & M_RETVAL && type.canon == "never" && !(mode & M_CLOSURE))
+            return "[[noreturn]] " + fwd;
 
         if (type.quals & q_mutref)
-            return fwd + '&';
+            return fwd + "&";
 
         if (type.quals & q_ref)
         {
             // Pass primitives by value.
             if (type.quals & q_primitive)
                 return (mode & M_ARGUMENT | mode & M_CONST) && !(mode & M_FWDECL)
-                     ? 'const ' + fwd
+                     ? "const " + fwd
                      : fwd;
 
-            return 'const ' + fwd + '&';
+            return "const " + fwd + "&";
         }
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
         //   Currently this is more of a way to validate the codegen.
         if ((mode & M_CONST) && (type.quals & q_trivial))
-            return 'const ' + fwd;
+            return "const " + fwd;
 
         if ((mode & M_ARGUMENT) && !(type.quals & q_trivial))
-            return fwd + '&&';
+            return fwd + "&&";
 
         return fwd;
     }
@@ -104,42 +104,42 @@ pub fn cpp_codegen(
         if (type.quals & q_primitive)
         {
             // Avoid #include noise when possible.
-            if (c == 'i32')     return 'int';
-            if (c == 'i16')     return 'short';
+            if (c == "i32")     return "int";
+            if (c == "i16")     return "short";
 
-            if (c == 'bool')    return 'bool';
+            if (c == "bool")    return "bool";
 
-            if (c == 'f32')     return 'float';
-            if (c == 'f64')     return 'double';
+            if (c == "f32")     return "float";
+            if (c == "f64")     return "double";
 
             // Tough luck.
-            include('<cstdint>');
+            include("<cstdint>");
 
-            if (c ==  'i8')     return 'int8_t';
-            if (c == 'i64')     return 'int64_t';
+            if (c ==  "i8")     return "int8_t";
+            if (c == "i64")     return "int64_t";
 
-            if (c ==  'u8')     return 'uint8_t';
-            if (c == 'u16')     return 'uint16_t';
-            if (c == 'u32')     return 'uint32_t';
-            if (c == 'u64')     return 'uint64_t';
+            if (c ==  "u8")     return "uint8_t";
+            if (c == "u16")     return "uint16_t";
+            if (c == "u32")     return "uint32_t";
+            if (c == "u64")     return "uint64_t";
 
-            if (c == 'byte')    return 'std::byte';
+            if (c == "byte")    return "std::byte";
 
-            fail('Unknown primitive.');
+            fail("Unknown primitive.");
         }
 
-        if (c == 'void')   return 'void';
-        if (c == 'string') return annotateString();
-        if (c == 'never')  return annotateNever();
+        if (c == "void")   return "void";
+        if (c == "string") return annotateString();
+        if (c == "never")  return annotateNever();
 
-        let tdef = lookupType(type) || fail('TODO: ' + type.canon);
+        let tdef = lookupType(type) || fail("TODO: " + type.canon);
         let k = tdef.kind;
 
-        if (k == 'struct')
+        if (k == "struct")
         {
             if (!_tfwd.has(type.canon))
             {
-                _tfwd[type.canon] = '\nstruct ' + type.canon + ';';
+                _tfwd[type.canon] = "\nstruct " + type.canon + ";";
 
                 _tdef += declareStruct(type, tdef);
             }
@@ -147,79 +147,79 @@ pub fn cpp_codegen(
             return type.canon;
         }
 
-        if (k == 'array')
+        if (k == "array")
         {
             if (tdef.fields.only.type == t_byte.value)
                 return annotateString();
 
             let item = typeAnnot(tdef.fields[0].type);
 
-            include('<fu/vec.h>');
-            return 'fu_VEC<' + item + '>';
+            include("<fu/vec.h>");
+            return "fu_VEC<" + item + ">";
         }
 
-        if (k == 'map')
+        if (k == "map")
         {
             let k = typeAnnot(tdef.fields[0].type);
             let v = typeAnnot(tdef.fields[1].type);
 
-            include('<fu/map.h>');
-            return 'fu_COW_MAP<' + k + ', ' + v + '>';
+            include("<fu/map.h>");
+            return "fu_COW_MAP<" + k + ", " + v + ">";
         }
 
-        return fail('TODO: ' + tdef.kind);
+        return fail("TODO: " + tdef.kind);
     }
 
     fn declareStruct(t: Type, s: Struct): string
     {
-        mut def = '\n                                #ifndef DEF_' + t.canon
-                + '\n                                #define DEF_' + t.canon
-                + '\nstruct ' + t.canon + '\n{';
+        mut def = "\n                                #ifndef DEF_" + t.canon
+                + "\n                                #define DEF_" + t.canon
+                + "\nstruct " + t.canon + "\n{";
 
-        mut indent = '\n    ';
+        mut indent = "\n    ";
 
         if (s.flags & F_DESTRUCTOR)
         {
-            def += '\n    struct Data\n    {';
-            indent += '    ';
+            def += "\n    struct Data\n    {";
+            indent += "    ";
         }
 
         let fields = s.fields;
         for (mut i = 0; i < fields.len; i++)
         {
             let field = fields[i];
-            def += indent + typeAnnot(field.type) + ' ' + ID(field.id) + ';';
+            def += indent + typeAnnot(field.type) + " " + ID(field.id) + ";";
         }
 
         if (s.flags & F_DESTRUCTOR)
         {
-            def += '\n    };';
-            def += '\n';
-            def += '\n    Data data;';
-            def += '\n    bool dtor = false;';
-            def += '\n';
-            def += '\n    ~' + t.canon + '() noexcept;';
-            def += '\n    inline ' + t.canon + '(Data data) noexcept : data(data) {};';
-            def += '\n    ' + t.canon + '(const ' + t.canon + '&) = delete;';
-            def += '\n    ' + t.canon + '& operator=(const ' + t.canon + '&) = delete;';
-            def += '\n    ' + t.canon + '(' + t.canon + '&&) noexcept;';
-            def += '\n    ' + t.canon + '& operator=(' + t.canon + '&&) noexcept;';
+            def += "\n    };";
+            def += "\n";
+            def += "\n    Data data;";
+            def += "\n    bool dtor = false;";
+            def += "\n";
+            def += "\n    ~" + t.canon + "() noexcept;";
+            def += "\n    inline " + t.canon + "(Data data) noexcept : data(data) {};";
+            def += "\n    " + t.canon + "(const " + t.canon + "&) = delete;";
+            def += "\n    " + t.canon + "& operator=(const " + t.canon + "&) = delete;";
+            def += "\n    " + t.canon + "(" + t.canon + "&&) noexcept;";
+            def += "\n    " + t.canon + "& operator=(" + t.canon + "&&) noexcept;";
         }
 
-        def += '\n    explicit operator bool() const noexcept';
-        def += '\n    {';
-        def += '\n        return false';
+        def += "\n    explicit operator bool() const noexcept";
+        def += "\n    {";
+        def += "\n        return false";
 
         for (mut i = 0; i < fields.len; i++)
-            def += '\n            || '
+            def += "\n            || "
                 + boolWrap(fields[i].type,
-                    (s.flags & F_DESTRUCTOR ? 'data.' : '')
+                    (s.flags & F_DESTRUCTOR ? "data." : "")
                         + ID(fields[i].id));
 
-        def += '\n        ;';
-        def += '\n    }';
+        def += "\n        ;";
+        def += "\n    }";
 
-        return def + '\n};\n                                #endif\n';
+        return def + "\n};\n                                #endif\n";
     }
 
 
@@ -228,7 +228,7 @@ pub fn cpp_codegen(
     fn collectDedupes(
         dedupes: Map(string, string)): string
     {
-        mut out = '';
+        mut out = "";
 
         mut keys = dedupes.keys();
         keys.sort();
@@ -241,7 +241,7 @@ pub fn cpp_codegen(
 
     fn cgSpecs(): string
     {
-        mut src = '';
+        mut src = "";
 
         /////////////////
         _isModuleSpecs++;
@@ -253,33 +253,33 @@ pub fn cpp_codegen(
         {
             // Prelude?
             let k = keys[i];
-            if (k[0] == '0')
+            if (k[0] == "0")
                 continue;
 
             // Emit.
             let s = specs[k];
             if (s.target)
             {
-                mut dedupe = '';
+                mut dedupe = "";
                 for (mut i = 0; i < k.len; i++)
                 {
                     let c = k[i];
 
-                    if (c >= '0' && c <= '9' ||
-                        c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+                    if (c >= "0" && c <= "9" ||
+                        c >= "a" && c <= "z" || c >= "A" && c <= "Z")
                     {
                         dedupe += c;
                     }
                     else
                     {
-                        dedupe += '_';
+                        dedupe += "_";
                     }
                 }
 
-                src  += '\n                                #ifndef DEFt_' + dedupe
-                      + '\n                                #define DEFt_' + dedupe
-                      + '\n' + cgNode(s)
-                      + '\n                                #endif\n';
+                src  += "\n                                #ifndef DEFt_" + dedupe
+                      + "\n                                #define DEFt_" + dedupe
+                      + "\n" + cgNode(s)
+                      + "\n                                #endif\n";
             }
         }
 
@@ -310,24 +310,24 @@ pub fn cpp_codegen(
     fn cgMain(): string
     {
         if (!_hasMain)
-            return '';
+            return "";
 
         if (_hasMain != 2)
-            return '\n\nint main() { return fu_MAIN(); }\n';
+            return "\n\nint main() { return fu_MAIN(); }\n";
 
         // Main with cli args.
         annotateString();
 
-        return '\n\nint main(int argc, char* argv[])'
-            +  '\n{'
-            +  '\n    fu_VEC<fu_STR> args;'
-            +  '\n    args.reserve(argc);'
-            +  '\n'
-            +  '\n    for (int i = 0; i < argc; i++)'
-            +  '\n        args.push(fu_TO_STR(argv[i]));'
-            +  '\n'
-            +  '\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));'
-            +  '\n}\n';
+        return "\n\nint main(int argc, char* argv[])"
+            +  "\n{"
+            +  "\n    fu_VEC<fu_STR> args;"
+            +  "\n    args.reserve(argc);"
+            +  "\n"
+            +  "\n    for (int i = 0; i < argc; i++)"
+            +  "\n        args.push(fu_TO_STR(argv[i]));"
+            +  "\n"
+            +  "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"
+            +  "\n}\n";
     }
 
 
@@ -335,29 +335,29 @@ pub fn cpp_codegen(
 
     fn ID(id: string): string
     {
-        if (id == 'this')       return 'Q_this';
-        if (id == 'template')   return 'Q_template';
-        if (id == 'catch')      return 'Q_catch';
-        if (id == 'not')        return 'Q_not';
-        if (id == 'and')        return 'Q_and';
-        if (id == 'or')         return 'Q_or';
-        if (id == 'int')        return 'Q_int';
-        if (id == 'short')      return 'Q_short';
-        if (id == 'long')       return 'Q_long';
+        if (id == "this")       return "Q_this";
+        if (id == "template")   return "Q_template";
+        if (id == "catch")      return "Q_catch";
+        if (id == "not")        return "Q_not";
+        if (id == "and")        return "Q_and";
+        if (id == "or")         return "Q_or";
+        if (id == "int")        return "Q_int";
+        if (id == "short")      return "Q_short";
+        if (id == "long")       return "Q_long";
 
         return id;
     }
 
     fn cgStatements(nodes: SolvedNode[]): string
     {
-        mut src = '';
+        mut src = "";
 
         let lines = cgNodes(nodes, M_STMT);
         for (mut i = 0; i < lines.len; i++)
         {
             let line = lines[i];
             if (line)
-                src += _indent + line + (line.if_last == ';' ? '\n' : ';');
+                src += _indent + line + (line.if_last == ";" ? "\n" : ";");
         }
 
         return src;
@@ -366,11 +366,11 @@ pub fn cpp_codegen(
     fn blockWrap(nodes: SolvedNode[], skipCurlies: bool = false): string
     {
         let indent0 = _indent;
-        _indent += '    ';
+        _indent += "    ";
 
         mut src = cgStatements(nodes);
-        if (!skipCurlies || nodes.len != 1 || nodes[0].kind != 'return' && nodes[0].kind != 'call')
-            src = indent0 + '{' + src + indent0 + '}';
+        if (!skipCurlies || nodes.len != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
+            src = indent0 + "{" + src + indent0 + "}";
 
         _indent = indent0;
         return src;
@@ -378,7 +378,7 @@ pub fn cpp_codegen(
 
     fn blockWrapSubstatement(node: SolvedNode): string
     {
-        return node.kind != 'block' ? blockWrap([ node ], true)
+        return node.kind != "block" ? blockWrap([ node ], true)
              : node.items.len == 1  ? blockWrapSubstatement(node.items[0])
                                     : cgBlock(node);
     }
@@ -392,23 +392,23 @@ pub fn cpp_codegen(
     {
         let items = cgNodes(node.items);
         if (!items.len)
-            return '(false /*empty parens*/)';
+            return "(false /*empty parens*/)";
 
         if (items.len == 1)
             return items[0];
 
-        mut src = '(';
+        mut src = "(";
         for (mut i = 0; i < items.len; i++)
         {
             if (i)
-                src += ', ';
+                src += ", ";
             if (i < items.len - 1)
-                src += '(void)';
+                src += "(void)";
 
             src += items[i];
         }
 
-        return src + ')';
+        return src + ")";
     }
 
 
@@ -425,33 +425,33 @@ pub fn cpp_codegen(
             M_RETVAL | (closure ? M_CLOSURE : 0));
 
         mut id = fn.value;
-        if (id == 'main' && !closure)
+        if (id == "main" && !closure)
         {
             _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
-            id = 'fu_MAIN';
+            id = "fu_MAIN";
         }
 
         mut src = closure
-                ? 'const auto& ' + id + ' = [&]('
-                : annot + ' ' + id + '(';
+                ? "const auto& " + id + " = [&]("
+                : annot + " " + id + "(";
 
         if (!id.hasIdentifierChars)
-            src = annot + ' operator' + id + '(';
+            src = annot + " operator" + id + "(";
 
         if (_isModuleSpecs && !closure)
-            src = 'inline ' + src;
+            src = "inline " + src;
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
             if (i)
-                src += ', ';
+                src += ", ";
 
             src += binding(items[i] || fail());
         }
 
         src += closure
-             ? ') -> ' + annot
-             : ')';
+             ? ") -> " + annot
+             : ")";
 
         return src;
     }
@@ -459,10 +459,10 @@ pub fn cpp_codegen(
     fn ensureFwdDecl(target: Target)
     {
         let overload = GET(target);
-        if (overload.kind != 'fn' || overload.name == 'main')
+        if (overload.kind != "fn" || overload.name == "main")
             return;
 
-        let ffwdKey = target.modid + '#' + target.index;
+        let ffwdKey = target.modid + "#" + target.index;
         if (_ffwd.has(ffwdKey))
             return;
 
@@ -473,19 +473,19 @@ pub fn cpp_codegen(
         let isOp    = !id.hasIdentifierChars;
 
         mut src = isOp
-                ? '\n' + annot + ' operator' + id + '('
-                : '\n' + annot + ' ' + id + '(';
+                ? "\n" + annot + " operator" + id + "("
+                : "\n" + annot + " " + id + "(";
 
         let arg_t = overload.args;
         for (mut i = 0; i < arg_t.len; i++)
         {
             if (i)
-                src += ', ';
+                src += ", ";
 
             src += typeAnnot(arg_t[i], M_ARGUMENT | M_FWDECL);
         }
 
-        src += ');';
+        src += ");";
         _ffwd[ffwdKey] = src;
 
         return;
@@ -497,8 +497,8 @@ pub fn cpp_codegen(
     fn try_cgFnAsStruct(fn: SolvedNode): string
     {
         let body = fn.items[fn.items.len + FN_BODY_BACK];
-        if (!body || body.kind != 'block')
-            return '';
+        if (!body || body.kind != "block")
+            return "";
 
         let items = body.items;
 
@@ -512,26 +512,26 @@ pub fn cpp_codegen(
             end = i;
 
             let item = items[i];
-            if (item.kind == 'fn')
+            if (item.kind == "fn")
             {
                 if (item.flags & F_CLOSURE)
                     hasClosuresInHeader = true;
             }
-            else if (item.kind != 'let' && item.kind != 'struct')
+            else if (item.kind != "let" && item.kind != "struct")
             {
                 break;
             }
         }
 
         if (!hasClosuresInHeader)
-            return '';
+            return "";
 
         // Ok - refactor time.
-        let evalName = fn.value + '_EVAL';
+        let evalName = fn.value + "_EVAL";
 
         let restFn = SolvedNode(
 
-            kind: 'fn', type: t_void,
+            kind: "fn", type: t_void,
             flags: fn.flags | F_CLOSURE,
             token: fn.token,
             value: evalName,
@@ -540,7 +540,7 @@ pub fn cpp_codegen(
             [
                 fn.items[fn.items.len - 2], // retval
                 SolvedNode(
-                    kind: 'block', type: t_void,
+                    kind: "block", type: t_void,
                     token: fn.token,
                     items: items.slice(
                         end, items.len)),
@@ -556,9 +556,9 @@ pub fn cpp_codegen(
         _clsrN--; // -1, so root closures come up at 0.
         //////////////////////
 
-        let structName = 'sf_' + fn.value;
-        mut src = '\nnamespace {\n\nstruct ' + structName
-                + blockWrap(head) + ';\n';
+        let structName = "sf_" + fn.value;
+        mut src = "\nnamespace {\n\nstruct " + structName
+                + blockWrap(head) + ";\n";
 
         //////////////////////
         {
@@ -576,9 +576,9 @@ pub fn cpp_codegen(
                         : cgSteal(arg));
             }
 
-            src += '\n} // namespace\n\n';
+            src += "\n} // namespace\n\n";
             src += cgFnSignature(fn);
-            src += '\n{\n    return (' + structName + ' { ' + args.join(', ') + ' }).' + evalName + '();\n}\n\n';
+            src += "\n{\n    return (" + structName + " { " + args.join(", ") + " })." + evalName + "();\n}\n\n";
         }
 
         if (_fdef.has(fn.value || fail()))
@@ -598,7 +598,7 @@ pub fn cpp_codegen(
     {
         // Template? TODO FIX dunno why this is how we tell, looks terrible.
         if (!fn.items.len)
-            return '';
+            return "";
 
         // Use like-struct output for top-level functions with closures -
         //  We'll try to "close over" a root-level struct.
@@ -617,7 +617,7 @@ pub fn cpp_codegen(
             if (src)
             {
                 _fdef += src;
-                return '';
+                return "";
             }
         }
 
@@ -636,13 +636,13 @@ pub fn cpp_codegen(
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
-            _indent = '\n';
+            _indent = "\n";
 
         mut src = cgFnSignature(fn);
         if (!(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
             ensureFwdDecl(fn.target);
 
-        if (body.kind == 'block')
+        if (body.kind == "block")
             src += cgBlock(body);
         else
             src += blockWrap([ body ]);
@@ -658,48 +658,48 @@ pub fn cpp_codegen(
             let head = items[0] || fail();
             let name = head.type.canon;
 
-            src += '\n\n' + name + '::~' + name + '() noexcept';
-            src += '\n{';
-            src += '\n    if (!dtor)';
-            src += '\n    {';
-            src += '\n        dtor = true;';
-            src += '\n        free(*this);';
-            src += '\n    }';
-            src += '\n}';
+            src += "\n\n" + name + "::~" + name + "() noexcept";
+            src += "\n{";
+            src += "\n    if (!dtor)";
+            src += "\n    {";
+            src += "\n        dtor = true;";
+            src += "\n        free(*this);";
+            src += "\n    }";
+            src += "\n}";
 
-            include('<cassert>');
-            include('<utility>');
+            include("<cassert>");
+            include("<utility>");
 
-            src += '\n\n' + name + '::' + name + '(' + name + '&& src) noexcept';
-            src += '\n    : data(std::move(src.data))';
-            src += '\n{';
-            src += '\n    assert(!src.dtor);';
-            src += '\n    dtor = src.dtor;';
-            src += '\n    src.dtor = true;';
-            src += '\n}';
+            src += "\n\n" + name + "::" + name + "(" + name + "&& src) noexcept";
+            src += "\n    : data(std::move(src.data))";
+            src += "\n{";
+            src += "\n    assert(!src.dtor);";
+            src += "\n    dtor = src.dtor;";
+            src += "\n    src.dtor = true;";
+            src += "\n}";
 
-            include('<cstring>');
+            include("<cstring>");
 
-            src += '\n\n' + name + '& ' + name + '::operator=(' + name + '&& src) noexcept';
-            src += '\n{';
-            src += '\n    char temp[sizeof(' + name + ')];';
-            src += '\n    char* a = (char*) this;';
-            src += '\n    char* b = (char*) &src;';
-            src += '\n';
-            src += '\n    std::memcpy (temp, a, sizeof(' + name + '));';
-            src += '\n    std::memmove(a,    b, sizeof(' + name + '));';
-            src += '\n    std::memcpy (b, temp, sizeof(' + name + '));';
-            src += '\n';
-            src += '\n    return *this;';
-            src += '\n}';
+            src += "\n\n" + name + "& " + name + "::operator=(" + name + "&& src) noexcept";
+            src += "\n{";
+            src += "\n    char temp[sizeof(" + name + ")];";
+            src += "\n    char* a = (char*) this;";
+            src += "\n    char* b = (char*) &src;";
+            src += "\n";
+            src += "\n    std::memcpy (temp, a, sizeof(" + name + "));";
+            src += "\n    std::memmove(a,    b, sizeof(" + name + "));";
+            src += "\n    std::memcpy (b, temp, sizeof(" + name + "));";
+            src += "\n";
+            src += "\n    return *this;";
+            src += "\n}";
         }
 
         // This covers both closures & try_cgTryFnAsStruct:
         if (fn.flags & F_CLOSURE || _isModuleSpecs)
             return src;
 
-        _fdef += '\n' + src + '\n';
-        return '';
+        _fdef += "\n" + src + "\n";
+        return "";
     }
 
     fn binding(node: SolvedNode, doInit = false, forceMut = false): string
@@ -709,7 +709,7 @@ pub fn cpp_codegen(
             node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
                      | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));
 
-        let head  = (annot || fail()) + ' ' + ID(id);
+        let head  = (annot || fail()) + " " + ID(id);
         let init  = node.items ? node.items[LET_INIT] : SolvedNode;
 
         if (!doInit || (node.flags & F_ARG))
@@ -719,23 +719,23 @@ pub fn cpp_codegen(
         {
             // Cleaner copy-init setup,
             //  the default is super-verbose.
-            if (init.kind == 'copy' && !(node.type.quals & q_ref))
+            if (init.kind == "copy" && !(node.type.quals & q_ref))
             {
                 let expr = cgNode(init.items.only);
                 if (node.type.quals & q_trivial)
-                    return head + ' = ' + expr;
+                    return head + " = " + expr;
 
-                return head + ' { ' + expr + ' }';
+                return head + " { " + expr + " }";
             }
 
             // Definit.
-            if (init.kind == 'definit' && !(init.type.quals & q_ref) && init.type == node.type)
-                return head + ' {}';
+            if (init.kind == "definit" && !(init.type.quals & q_ref) && init.type == node.type)
+                return head + " {}";
 
-            return head + ' = ' + cgNode(init);
+            return head + " = " + cgNode(init);
         }
 
-        return head + ' {}';
+        return head + " {}";
     }
 
     fn cgLet(node: SolvedNode): string
@@ -750,28 +750,28 @@ pub fn cpp_codegen(
         // Nasty tempfix -
         //  can't have [&] in global space.
         src = src.replace(
-            all: '([&](', with: '([](');
+            all: "([&](", with: "([](");
 
         // cpp17 inline const syntax sugars.
-        if (src.starts(with: 'const '))
+        if (src.starts(with: "const "))
             src = src.slice(6);
 
         //
-        _fdef  += '\n                                #ifndef DEF_' + node.value
-                + '\n                                #define DEF_' + node.value
-                + '\ninline const ' + src + ';'
-                + '\n                                #endif\n';
+        _fdef  += "\n                                #ifndef DEF_" + node.value
+                + "\n                                #define DEF_" + node.value
+                + "\ninline const " + src + ";"
+                + "\n                                #endif\n";
 
-        return '';
+        return "";
     }
 
     fn cgForeignGlobal(target: Target): void
     {
-        let key = target.modid + '#' + target.index;
+        let key = target.modid + "#" + target.index;
         if (_ffwd.has(key))
             return;
 
-        _ffwd[key] = '';
+        _ffwd[key] = "";
         let o = GET(target);
         cgGlobal(o.constant);
     }
@@ -785,16 +785,16 @@ pub fn cpp_codegen(
             if (head.type == t_never)
                 return src;
 
-            return 'return ' + src;
+            return "return " + src;
         }
 
-        return 'return';
+        return "return";
     }
 
     fn cgJump(node: SolvedNode): string
     {
         if (node.value)
-            return 'goto L_' + node.value + '_' + node.kind[0];
+            return "goto L_" + node.value + "_" + node.kind[0];
 
         return node.kind;
     }
@@ -804,22 +804,22 @@ pub fn cpp_codegen(
         annotateString();
 
         // TODO FIX
-        mut esc = '';
+        mut esc = "";
         for (mut i = 0; i < node.value.len; i++)
         {
             let c = node.value[i];
 
-                 if (c == '\n') esc += '\\n';
-            else if (c == '\r') esc += '\\r';
-            else if (c == '\t') esc += '\\t';
-            else if (c == '\v') esc += '\\v';
-            else if (c == '\\') esc += '\\\\';
-            else if (c ==  '"') esc += '\\"';
+                 if (c == "\n") esc += "\\n";
+            else if (c == "\r") esc += "\\r";
+            else if (c == "\t") esc += "\\t";
+            else if (c == "\v") esc += "\\v";
+            else if (c == "\\") esc += "\\\\";
+            else if (c == "\"") esc += "\\\"";
 
             else                esc += c;
         }
 
-        return '"' + esc + '"_fu';
+        return "\"" + esc + "\"_fu";
     }
 
     fn cgArrayLiteral(node: SolvedNode): string
@@ -832,9 +832,9 @@ pub fn cpp_codegen(
         let itemAnnot = typeAnnot(itemType);
 
         let arrayAnnot = typeAnnot(node.type);
-        return arrayAnnot + ' { ' + arrayAnnot
-            + '::INIT<' + items.len + '> { '
-                + items.join(', ') + ' } }';
+        return arrayAnnot + " { " + arrayAnnot
+            + "::INIT<" + items.len + "> { "
+                + items.join(", ") + " } }";
     }
 
     fn cgDefaultInit(node: SolvedNode): string
@@ -847,9 +847,9 @@ pub fn cpp_codegen(
         for (mut i = 0; i < id.len; i++)
         {
             let c = id[i];
-            if (c == '_' || c >= 'a' && c <= 'z'
-                         || c >= 'A' && c <= 'Z'
-                         || c >= '0' && c <= '9')
+            if (c == "_" || c >= "a" && c <= "z"
+                         || c >= "A" && c <= "Z"
+                         || c >= "0" && c <= "9")
             {
                 //
             }
@@ -868,19 +868,19 @@ pub fn cpp_codegen(
         mut items  = cgNodes(node.items);
 
         // Builtin specs.
-        if (target.kind == '__native' && target.template.node.items)
+        if (target.kind == "__native" && target.template.node.items)
         {
             mut id = target.template.node.items[0].value;
-            if (id[0] == '<')
+            if (id[0] == "<")
             {
                 include(id);
                 id = target.template.node.items[1].value;
             }
 
-            if (id[0] == '.')
+            if (id[0] == ".")
             {
                 if (items.len > 1)
-                    return items[0] + id + '(' + items.slice(1).join(', ') + ')';
+                    return items[0] + id + "(" + items.slice(1).join(", ") + ")";
 
                 return items[0] + id;
             }
@@ -888,35 +888,35 @@ pub fn cpp_codegen(
             if (items)
             {
                 if (id.hasIdentifierChars)
-                    return id + '(' + items.join(', ') + ')';
+                    return id + "(" + items.join(", ") + ")";
 
-                return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+                return "(" + items[0] + " " + id + " " + items[1] + ")";
             }
 
             return id;
         }
 
         //
-        if (target.kind == 'defctor')
+        if (target.kind == "defctor")
         {
             let head = (target.type || fail());
             let type = lookupType(head) || fail();
 
             //
-            mut open = ' { ';
-            mut close = ' }';
+            mut open = " { ";
+            mut close = " }";
             if (type.flags & F_DESTRUCTOR)
             {
-                open = ' { ' + head.canon + '::Data { ';
-                close = ' }}';
+                open = " { " + head.canon + "::Data { ";
+                close = " }}";
             }
 
-            return head.canon + open + items.join(', ') + close;
+            return head.canon + open + items.join(", ") + close;
         }
 
         let id = target.name || fail();
 
-        if (target.kind == 'global')
+        if (target.kind == "global")
         {
             if (node.target.modid != module.modid)
                 cgForeignGlobal(node.target);
@@ -924,19 +924,19 @@ pub fn cpp_codegen(
             return ID(id); // TODO ensure const emit.
         }
 
-        if (target.kind == 'var' ||
-            target.kind == 'arg' ||
-            target.kind == 'ref')
+        if (target.kind == "var" ||
+            target.kind == "arg" ||
+            target.kind == "ref")
         {
             return ID(id);
         }
 
-        if (target.kind == 'field')
+        if (target.kind == "field")
         {
-            mut sep = '.';
+            mut sep = ".";
             let parent = lookupType(node.items[0].type);
             if (parent.flags & F_DESTRUCTOR)
-                sep = '.data.';
+                sep = ".data.";
 
             return items[0] + sep + ID(id);
         }
@@ -958,93 +958,93 @@ pub fn cpp_codegen(
 
             if (items.len == 2)
             {
-                if (id == '[]')
+                if (id == "[]")
                 {
                     // The new cow_vec is here.
                     if (node.type.quals & q_mutref)
-                        return items[0] + '.mutref(' + items[1] + ')';
+                        return items[0] + ".mutref(" + items[1] + ")";
 
-                    return items[0] + '[' + items[1] + ']';
+                    return items[0] + "[" + items[1] + "]";
                 }
 
                 // This is hellish but should cover our asses for a little while -
                 //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
-                if (id == '=')
+                if (id == "=")
                 {
-                    if (head.kind == 'call' && head.value == '[]' && head.items.len == 2)
+                    if (head.kind == "call" && head.value == "[]" && head.items.len == 2)
                     {
                         if (type_isMap((head.items[0] || fail()).type))
                         {
-                            return '(' + cgNode(head.items[0] || fail()) +
-                                '.upsert(' + cgNode(head.items[1] || fail()) + ') = ' +
-                                    items[1] + ')';
+                            return "(" + cgNode(head.items[0] || fail()) +
+                                ".upsert(" + cgNode(head.items[1] || fail()) + ") = " +
+                                    items[1] + ")";
                         }
                     }
                 }
 
                 // Conditional lazy assignment,
                 //  notice again the special casing for std::maps.
-                if (id == '||=')
+                if (id == "||=")
                 {
-                    if (head.kind == 'call' && head.value == '[]' && head.items.len == 2)
+                    if (head.kind == "call" && head.value == "[]" && head.items.len == 2)
                     {
                         if (type_isMap((head.items[0] || fail()).type))
                             items[0] = cgNode(head.items[0] || fail()) +
-                                '.upsert(' + cgNode(head.items[1] || fail()) + ')';
+                                ".upsert(" + cgNode(head.items[1] || fail()) + ")";
                     }
 
                     let annot = typeAnnot(head.type);
 
-                    return '([&](' + annot + ' _) -> ' + annot + ' { if (!' +
-                        boolWrap(head.type, '_') + ') _ = ' +
-                            items[1] + '; return _; } (' + items[0] + '))';
+                    return "([&](" + annot + " _) -> " + annot + " { if (!" +
+                        boolWrap(head.type, "_") + ") _ = " +
+                            items[1] + "; return _; } (" + items[0] + "))";
                 }
 
                 // Collapse (a += b + c) into (a += b, a += c),
                 //  totally surprised at how little if any impact this has.
-                if (id == '+=')
+                if (id == "+=")
                     if (type_isArray(head.type) && isFieldChain(node.items[0]))
-                        if (node.items[1].value == '+' && node.items[1].type.canon == head.type.canon)
+                        if (node.items[1].value == "+" && node.items[1].type.canon == head.type.canon)
                             return cgAppend(node, items[0]);
 
                 // Skip some of the ridiculous parens.
                 if (mode & M_STMT)
-                    return items[0] + ' ' + id + ' ' + items[1];
+                    return items[0] + " " + id + " " + items[1];
                 else
-                    return '(' + items[0] + ' ' + id + ' ' + items[1] + ')';
+                    return "(" + items[0] + " " + id + " " + items[1] + ")";
             }
         }
 
-        if (id == 'char' && items.len == 2)
+        if (id == "char" && items.len == 2)
         {
             // TODO FIX
             let head = node.items[0] || fail();
             if (type_isArray(head.type))
-                return 'int(' + items[0] + '[' + items[1] + '])';
+                return "int(" + items[0] + "[" + items[1] + "])";
         }
 
-        if (id == 'CLONE' && items.len == 1)
+        if (id == "CLONE" && items.len == 1)
             return cgClone(node.type, items[0]);
 
-        if (id == 'STEAL' && items.len == 1)
+        if (id == "STEAL" && items.len == 1)
             return cgSteal(items[0]);
 
-        if (id == 'SWAP' && items.len == 2)
+        if (id == "SWAP" && items.len == 2)
             return cgSwap(items);
 
-        if (id == 'print')
+        if (id == "print")
             return cgPrint(items);
 
-        id != '__native' || assert();
+        id != "__native" || assert();
 
-        return ID(id) + '(' + items.join(', ') + ')';
+        return ID(id) + "(" + items.join(", ") + ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
     {
-        mut src = '(';
+        mut src = "(";
         cgAppend_visit(node.type.canon, into, node.items[1], src);
-        src += ')';
+        src += ")";
 
         return src;
     }
@@ -1053,13 +1053,13 @@ pub fn cpp_codegen(
         canon: string, into: string,
         stuff: SolvedNode, src: &mut string)
     {
-        if (stuff.kind != 'call' || stuff.value != '+' || stuff.type.canon != canon || stuff.items.len != 2)
+        if (stuff.kind != "call" || stuff.value != "+" || stuff.type.canon != canon || stuff.items.len != 2)
         {
             let val = cgNode(stuff);
             if (src.len > 1)
-                src += ', ';
+                src += ", ";
 
-            src += into + ' += ' + val;
+            src += into + " += " + val;
         }
         else
         {
@@ -1070,11 +1070,11 @@ pub fn cpp_codegen(
 
     fn cgPrint(items: string[]): string
     {
-        include('<iostream>');
+        include("<iostream>");
 
-        mut src = '(std::cout';
+        mut src = "(std::cout";
         for (mut i = 0; i < items.len; i++)
-            src += ' << ' + items[i];
+            src += " << " + items[i];
 
         src += ' << "\\n")';
         return src;
@@ -1082,16 +1082,16 @@ pub fn cpp_codegen(
 
     fn annotateString(): string
     {
-        include('<fu/str.h>');
+        include("<fu/str.h>");
 
-        return 'fu_STR';
+        return "fu_STR";
     }
 
     fn annotateNever(): string
     {
-        include('<fu/never.h>');
+        include("<fu/never.h>");
 
-        return 'fu::never';
+        return "fu::never";
     }
 
     fn cgLiteral(node: SolvedNode): string
@@ -1101,7 +1101,7 @@ pub fn cpp_codegen(
 
     fn cgEmpty(): string
     {
-        return '';
+        return "";
     }
 
 
@@ -1116,8 +1116,8 @@ pub fn cpp_codegen(
         let stmt = !!(mode & M_STMT);
 
         fn blockWrap_unlessIf(node: SolvedNode)
-            node.kind == 'if'
-                ? ' ' + cgNode(node, M_STMT)
+            node.kind == "if"
+                ? " " + cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
         let cond = n0 && boolWrap(n0.type, cgNode(n0, M_RETBOOL));
@@ -1125,18 +1125,18 @@ pub fn cpp_codegen(
         let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
         if (stmt)
-            return 'if (' + cond + ')' + cons + (alt ? _indent + 'else' + alt : '');
+            return "if (" + cond + ")" + cons + (alt ? _indent + "else" + alt : "");
 
         if (cons && alt)
-            return '(' + cond + ' ? ' + cons + ' : ' + alt + ')';
+            return "(" + cond + " ? " + cons + " : " + alt + ")";
 
         if (cons)
-            return '(' + cond + ' && ' + cons + ')';
+            return "(" + cond + " && " + cons + ")";
 
         if (alt)
-            return '(' + cond + ' || ' + alt + ')';
+            return "(" + cond + " || " + alt + ")";
 
-        return fail('TODO');
+        return fail("TODO");
     }
 
 
@@ -1149,7 +1149,7 @@ pub fn cpp_codegen(
     {
         if (type) {}
         // if (type_isString(type) || type_isArray(type))
-        //     return src + '.size()';
+        //     return src + ".size()";
 
         return src;
     }
@@ -1159,16 +1159,16 @@ pub fn cpp_codegen(
 
     fn cgDefault(type: Type): string
     {
-        type.quals & q_mutref && fail('Cannot definit mutrefs.');
+        type.quals & q_mutref && fail("Cannot definit mutrefs.");
 
         if (type.quals & q_ref)
         {
-            include('<fu/default.h>');
+            include("<fu/default.h>");
 
-            return 'fu::Default<' + typeAnnot(clear_refs(type)) + '>::value';
+            return "fu::Default<" + typeAnnot(clear_refs(type)) + ">::value";
         }
 
-        return typeAnnot(type) + '{}';
+        return typeAnnot(type) + "{}";
     }
 
     fn cgAnd(node: SolvedNode): string
@@ -1184,58 +1184,58 @@ pub fn cpp_codegen(
                         ? items.len - 2
                         : items.len - 1;
 
-            mut src = '';
+            mut src = "";
 
             if (condEnd)
             {
-                src += 'if (';
+                src += "if (";
 
                 for (mut i = 0; i < condEnd; i++)
                 {
                     let item = items[i];
-                    if (i) src += ' && ';
+                    if (i) src += " && ";
                     src += boolWrap(item.type, cgNode(item, M_RETBOOL));
                 }
 
-                src += ') ';
+                src += ") ";
             }
 
             let tail = cgNode(items[condEnd]);
 
             if (retSecondLast)
             {
-                src += '{ ' + typeAnnot(type) + ' _ = ' + tail + '; ';
-                src += 'if (!' + boolWrap(type, '_') + ') return _; } ';
-                src += cgNode(items[items.len - 1]) + ';'; //FAIL
+                src += "{ " + typeAnnot(type) + " _ = " + tail + "; ";
+                src += "if (!" + boolWrap(type, "_") + ") return _; } ";
+                src += cgNode(items[items.len - 1]) + ";"; //FAIL
             }
             else
             {
-                src += 'return ' + tail + ';'; //TRUTHY
-                src += ' else return ' + cgDefault(type) + ';';
+                src += "return " + tail + ";"; //TRUTHY
+                src += " else return " + cgDefault(type) + ";";
             }
 
-            src = '([&]() -> ' + typeAnnot(type) + ' { ' + src + ' }())';
+            src = "([&]() -> " + typeAnnot(type) + " { " + src + " }())";
 
             return src;
         }
 
-        mut src = '(';
+        mut src = "(";
         let items = node.items;
         for (mut i = 0; i < items.len; i++)
         {
             let item = items[i];
 
-            if (i) src += ' && ';
+            if (i) src += " && ";
             src += boolWrap(item.type, cgNode(item, M_RETBOOL));
         }
 
-        return src + ')';
+        return src + ")";
     }
 
     fn cgNot(node: SolvedNode): string
     {
         let item = node.items[0];
-        return '!' + boolWrap(
+        return "!" + boolWrap(
             item.type, cgNode(item, M_RETBOOL));
     }
 
@@ -1256,15 +1256,15 @@ pub fn cpp_codegen(
 
                 if (ternary)
                 {
-                    mut src = '(';
+                    mut src = "(";
                     for (mut i = 0; i < node.items.len - 1; i++)
                     {
                         let n = node.items[i];
                         let item = cgNode(n);
-                        src += boolWrap(n.type, item) + ' ? ' + item + ' : ';
+                        src += boolWrap(n.type, item) + " ? " + item + " : ";
                     }
 
-                    src += cgNode(node.items[node.items.len - 1]) + ')';
+                    src += cgNode(node.items[node.items.len - 1]) + ")";
                     return src;
                 }
             }
@@ -1272,7 +1272,7 @@ pub fn cpp_codegen(
             //
             let annot = typeAnnot(type);
 
-            mut src = '([&]() -> ' + annot + ' {';
+            mut src = "([&]() -> " + annot + " {";
 
             let items = node.items;
             for (mut i = 0; i < items.len - 1; i++)
@@ -1282,60 +1282,60 @@ pub fn cpp_codegen(
 
                 // Here's the `a && b || c` pattern,
                 //  actually works quite well.
-                if (item.kind == 'and')
+                if (item.kind == "and")
                 {
                     let items = item.items;
                     tail = items[items.len - 1] || fail();
 
-                    src += ' if (';
+                    src += " if (";
                     for (mut i = 0; i < items.len - 1; i++)
                     {
                         if (i)
-                            src += ' && ';
+                            src += " && ";
 
                         let item = items[i] || fail();
                         src += boolWrap(item.type, cgNode(item, M_RETBOOL));
                     }
 
-                    src += ')';
+                    src += ")";
                 }
 
-                src += ' { ' + annot + ' _ = ' + cgNode(tail) + '; if (' + boolWrap(tail.type, '_') + ') return _; }';
+                src += " { " + annot + " _ = " + cgNode(tail) + "; if (" + boolWrap(tail.type, "_") + ") return _; }";
             }
 
             let tail = items[items.len - 1] || fail();
             if (!(tail.type == t_never))
-                src += ' return';
+                src += " return";
 
-            src += ' ' + cgNode(tail) + '; }())';
+            src += " " + cgNode(tail) + "; }())";
             return src;
         }
 
-        mut src = '(';
+        mut src = "(";
         let items = node.items;
         for (mut i = 0; i < items.len; i++)
         {
             let item = items[i];
-            if (i) src += ' || ';
+            if (i) src += " || ";
             src += boolWrap(item.type, cgNode(item, M_RETBOOL));
         }
 
-        return src + ')';
+        return src + ")";
     }
 
     fn isFieldChain(node: SolvedNode): bool
     {
-        if (node.kind != 'call')
+        if (node.kind != "call")
             return false;
 
         let t = GET(node.target);
-        if (t.kind == 'field')
+        if (t.kind == "field")
             return isFieldChain(node.items.only);
 
-        if (t.kind == 'var'     ||
-            t.kind == 'global'  ||
-            t.kind == 'arg'     ||
-            t.kind == 'ref')
+        if (t.kind == "var"     ||
+            t.kind == "global"  ||
+            t.kind == "arg"     ||
+            t.kind == "ref")
         {
             return true;
         }
@@ -1348,8 +1348,8 @@ pub fn cpp_codegen(
 
     fn postfixBlock(src: string, postfix: string): string
     {
-        src[src.len - 1] == '}' || fail();
-        return src.slice(0, src.len - 1) + postfix + '}';
+        src[src.len - 1] == "}" || fail();
+        return src.slice(0, src.len - 1) + postfix + "}";
     }
 
     fn cgLoop(node: SolvedNode): string
@@ -1367,31 +1367,31 @@ pub fn cpp_codegen(
         let post = n_post && cgNode(n_post);
         mut body = n_body && blockWrapSubstatement(n_body);
         let pcnd = n_pcnd && boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
-        mut breakLabel = '';
+        mut breakLabel = "";
 
         if (body && node.value)
         {
-            let brk = 'L_' + node.value + '_b';
-            let cnt = 'L_' + node.value + '_c';
+            let brk = "L_" + node.value + "_b";
+            let cnt = "L_" + node.value + "_c";
 
             if (body.has(cnt))
-                body = '{' + postfixBlock(body, _indent +     '    }' + cnt + ':;');
+                body = "{" + postfixBlock(body, _indent +     "    }" + cnt + ":;");
             if (body.has(brk))
-                breakLabel = _indent + '    ' + brk + ':;';
+                breakLabel = _indent + "    " + brk + ":;";
         }
 
         if (pcnd)
         {
             if (init || post || cond)
-                fail('TODO extended loop.');
+                fail("TODO extended loop.");
 
-            return 'do' + body + _indent + 'while (' + pcnd + ')' + breakLabel;
+            return "do" + body + _indent + "while (" + pcnd + ")" + breakLabel;
         }
 
         if (init || post || !cond)
-            return 'for (' + init + '; ' + cond + '; ' + post + ')' + body + breakLabel;
+            return "for (" + init + "; " + cond + "; " + post + ")" + body + breakLabel;
 
-        return 'while (' + cond + ')' + body + breakLabel;
+        return "while (" + cond + ")" + body + breakLabel;
     }
 
     fn cgCatch(node: SolvedNode): string
@@ -1403,16 +1403,16 @@ pub fn cpp_codegen(
         let err_id      = items[1].value;
         let catch_body  = blockWrapSubstatement(items[2]);
 
-        mut src =        binding(let_main, forceMut: true) + ';';
-        src += _indent + 'try';
-        src += _indent + '{';
-        src += _indent + '    ' + let_main.value + ' = ' + let_init + ';';
-        src += _indent + '}';
-        src += _indent + 'catch (const std::exception& o_0)';
-        src += _indent + '{';
-        src += _indent + '    const ' + annotateString() + '& ' + err_id + ' = fu_TO_STR(o_0.what());';
+        mut src =        binding(let_main, forceMut: true) + ";";
+        src += _indent + "try";
+        src += _indent + "{";
+        src += _indent + "    " + let_main.value + " = " + let_init + ";";
+        src += _indent + "}";
+        src += _indent + "catch (const std::exception& o_0)";
+        src += _indent + "{";
+        src += _indent + "    const " + annotateString() + "& " + err_id + " = fu_TO_STR(o_0.what());";
         src += _indent + catch_body;
-        src += _indent + '}\n';
+        src += _indent + "}\n";
 
         return src;
     }
@@ -1424,38 +1424,38 @@ pub fn cpp_codegen(
     {
         let k = node.kind;
 
-        if (k == 'root')        return cgRoot(node);
-        if (k == 'block')       return cgBlock(node);
-        if (k == 'fn')          return cgFn(node);
-        if (k == 'return')      return cgReturn(node);
-        if (k == 'break')       return cgJump(node);
-        if (k == 'continue')    return cgJump(node);
-        if (k == 'call')        return cgCall(node, mode);
-        if (k == 'let')         return cgLet(node);
-        if (k == 'global')      return cgGlobal(node);
-        if (k == 'if')          return cgIf(node, mode);
-        if (k == '!')           return cgNot(node);
-        if (k == 'or')          return cgOr(node);
-        if (k == 'and')         return cgAnd(node);
-        if (k == 'loop')        return cgLoop(node);
-        if (k == 'int')         return cgLiteral(node);
-        if (k == 'num')         return cgLiteral(node);
-        if (k == 'str')         return cgStringLiteral(node);
-        if (k == 'arrlit')      return cgArrayLiteral(node);
-        if (k == 'definit')     return cgDefaultInit(node);
-        if (k == 'empty')       return cgEmpty();
+        if (k == "root")        return cgRoot(node);
+        if (k == "block")       return cgBlock(node);
+        if (k == "fn")          return cgFn(node);
+        if (k == "return")      return cgReturn(node);
+        if (k == "break")       return cgJump(node);
+        if (k == "continue")    return cgJump(node);
+        if (k == "call")        return cgCall(node, mode);
+        if (k == "let")         return cgLet(node);
+        if (k == "global")      return cgGlobal(node);
+        if (k == "if")          return cgIf(node, mode);
+        if (k == "!")           return cgNot(node);
+        if (k == "or")          return cgOr(node);
+        if (k == "and")         return cgAnd(node);
+        if (k == "loop")        return cgLoop(node);
+        if (k == "int")         return cgLiteral(node);
+        if (k == "num")         return cgLiteral(node);
+        if (k == "str")         return cgStringLiteral(node);
+        if (k == "arrlit")      return cgArrayLiteral(node);
+        if (k == "definit")     return cgDefaultInit(node);
+        if (k == "empty")       return cgEmpty();
 
-        if (k == 'comma')       return cgParens(node);
-        if (k == 'parens')      return cgParens(node);
-        if (k == 'label')       return cgParens(node);
-        if (k == 'struct')      return cgEmpty();
+        if (k == "comma")       return cgParens(node);
+        if (k == "parens")      return cgParens(node);
+        if (k == "label")       return cgParens(node);
+        if (k == "struct")      return cgEmpty();
 
-        if (k == 'copy')        return cgCopyMove(node);
-        if (k == 'move')        return cgCopyMove(node);
-        if (k == 'nrvo')        return cgCopyMove(node);
-        if (k == 'catch')       return cgCatch(node);
+        if (k == "copy")        return cgCopyMove(node);
+        if (k == "move")        return cgCopyMove(node);
+        if (k == "nrvo")        return cgCopyMove(node);
+        if (k == "catch")       return cgCatch(node);
 
-        return fail('TODO: ' + k);
+        return fail("TODO: " + k);
     }
 
 
@@ -1465,10 +1465,10 @@ pub fn cpp_codegen(
     {
         let a = cgNode(node.items[0] || fail());
 
-        if (node.kind == 'nrvo')
+        if (node.kind == "nrvo")
             return a;
 
-        if (node.kind == 'move')
+        if (node.kind == "move")
             return cgSteal(a);
 
         return cgClone(node.type, a);
@@ -1476,19 +1476,19 @@ pub fn cpp_codegen(
 
     fn cgSteal(src: string): string
     {
-        include('<utility>');
-        return 'std::move(' + src + ')';
+        include("<utility>");
+        return "std::move(" + src + ")";
     }
 
     fn cgSwap(items: string[]): string
     {
-        include('<utility>');
-        return 'std::swap(' + items.join(', ') + ')';
+        include("<utility>");
+        return "std::swap(" + items.join(", ") + ")";
     }
 
     fn cgClone(type: Type, src: string): string
     {
-        return typeAnnotBase(type) + '(' + src + ')';
+        return typeAnnotBase(type) + "(" + src + ")";
     }
 
 
@@ -1501,7 +1501,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < nodes.len; i++)
         {
             let node  = nodes[i];
-            let src   = node ? cgNode(node, mode) : '';
+            let src   = node ? cgNode(node, mode) : "";
 
             result.push(src);
         }
@@ -1512,7 +1512,7 @@ pub fn cpp_codegen(
 
     //
 
-    root.kind == 'root' || fail();
+    root.kind == "root" || fail();
 
     let src = cgNode(root);
     return src;

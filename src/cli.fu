@@ -1,6 +1,6 @@
-#import 'helpers';
-#import 'compiler';
-#import 'tests';
+#import "helpers";
+#import "compiler";
+#import "tests";
 
 fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 {
@@ -11,7 +11,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         if (i < argv.len)
             return argv[i];
 
-        return '';
+        return "";
     }
 
     // Router.
@@ -20,20 +20,20 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     // Exit 0 on no command, else we fail build-checks.
     if (argv.len == 1)
     {
-        print('\n\tHello! ', self);
-        print(  '\tNothing to do, running a quick self test.\n');
+        print("\n\tHello! ", self);
+        print(  "\tNothing to do, running a quick self test.\n");
 
         self_test();
-        print('\tEverything checks out.');
-        print('\tTry `fu file.fu`.\n');
+        print("\tEverything checks out.");
+        print("\tTry `fu file.fu`.\n");
 
         return 0;
     }
 
     // Full test suite.
-    if (argv.len == 2 && argv[1] == 'self')
+    if (argv.len == 2 && argv[1] == "self")
     {
-        print('\n\tRunning test suite and rebuilding self ...\n');
+        print("\n\tRunning test suite and rebuilding self ...\n");
 
         self_test();
         runTestsAndBuildCompiler();
@@ -41,7 +41,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     }
 
     fn abs(path: string)
-        path    && path[0] != '-'
+        path    && path[0] != "-"
                 && path_join(cwd, path);
 
     // A silly option parser.
@@ -60,12 +60,12 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     //
     mut val = next();
-    while (val.len > 1 && val[0] == '-') {
+    while (val.len > 1 && val[0] == "-") {
         mut opt = val;
-        if (opt[1] != '-') {
+        if (opt[1] != "-") {
             opt = [ opt[1] ];
-            val = '-' + val.slice(2);
-            if (val == '-')
+            val = "-" + val.slice(2);
+            if (val == "-")
                 val = next();
         }
         else {
@@ -76,39 +76,39 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
             if (opt == short || opt == long) {
                 options |= o;
                 if (opt == long) {
-                    dir && throw(opt + ': already set to `' + dir + '`.');
+                    dir && throw(opt + ": already set to `" + dir + "`.");
                     dir = abs(val) || throw(
-                        'Option ' + long + ' expects a path,' +
-                        '\n\tgot `' + val + '`,' +
-                        '\n\ttry `' + long + ' rel/or/abs/dir/`.');
+                        "Option " + long + " expects a path," +
+                        "\n\tgot `" + val + "`," +
+                        "\n\ttry `" + long + " rel/or/abs/dir/`.");
 
                     val = next();
                 }
 
-                opt = '';
+                opt = "";
             }
         }
 
-        option('-', '--src',        0, dir_src);
-        option('c', '--cpp', EMIT_CPP, dir_cpp);
-        option('o', '--obj', EMIT_OBJ, dir_obj);
-        option('b', '--bin', EMIT_BIN,     bin);
+        option("-", "--src",        0, dir_src);
+        option("c", "--cpp", EMIT_CPP, dir_cpp);
+        option("o", "--obj", EMIT_OBJ, dir_obj);
+        option("b", "--bin", EMIT_BIN,     bin);
 
         // Scheme.
-        if (opt == '--debug' || opt == '--reldeb' || opt == '--release' || opt == '--retail') {
-            scheme && throw(opt + ': Scheme already set to `' + opt + '`.');
+        if (opt == "--debug" || opt == "--reldeb" || opt == "--release" || opt == "--retail") {
+            scheme && throw(opt + ": Scheme already set to `" + opt + "`.");
             scheme = opt.slice(2);
             continue;
         }
 
         // Run or don't.
-        if (opt == '--run' || opt == 'r') {
+        if (opt == "--run" || opt == "r") {
             run = true;
             continue;
         }
 
         else if (opt)
-            throw('Unknown option: `' + opt + '`.');
+            throw("Unknown option: `" + opt + "`.");
     }
 
     // Defaulting.
@@ -119,20 +119,20 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     // Do the work.
     let fname = abs(val) || throw(
-        'Missing filename argument, a valid example is:' +
-        '\n\t`fu file.fu`.');
+        "Missing filename argument, a valid example is:" +
+        "\n\t`fu file.fu`.");
 
     let dir_wrk = DEFAULT_WORKSPACE;
 
     if (options & EMIT_BIN)
-        bin ||= fname.ends(with: '.fu')
-                ? fname.slice(0, fname.len - '.fu'.len)
-                : fname + '.exe';
+        bin ||= fname.ends(with: ".fu")
+                ? fname.slice(0, fname.len - ".fu".len)
+                : fname + ".exe";
 
     //
     {
         let val = next();
-        if (val) throw('Leftover option: `' + val + '`.');
+        if (val) throw("Leftover option: `" + val + "`.");
     }
 
     // Go.
@@ -153,10 +153,10 @@ fn runTestsAndBuildCompiler()
 {
     runTests();
 
-    #import 'hello';
+    #import "hello";
     saySomethingNice();
 
     cli_handle(
         cwd: PRJDIR,
-        [ 'fu', '--bin', 'bin/fu', '-c', 'src/cli.fu' ]);
+        [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
 }

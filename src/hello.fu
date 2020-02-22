@@ -32,12 +32,12 @@ fn saySomethingNice()
 
     if (sec % 5 && !NEW_STUFF)
     {
-        mut str = '';
+        mut str = "";
         for (mut i = 0; i < 3; i++)
             if (sec & (1 << i))
-                str += '🍒';
+                str += "🍒";
             else
-                str += '🍊';
+                str += "🍊";
 
         print(str);
     }

@@ -1,4 +1,4 @@
-#import 'compiler';
+#import "compiler";
 
 
 // A quick self-test without I/O.
@@ -26,7 +26,7 @@ fn self_test(): i32
 {
     let cpp = compile_snippet(TEST_SRC);
 
-    return cpp.find('int main()') ? 0 : 101;
+    return cpp.find("int main()") ? 0 : 101;
 }
 
 
@@ -636,11 +636,11 @@ fn runTests()
         operation: string,
         mut assertion: string)
     {
-        assertion = '(' + assertion + ')';
+        assertion = "(" + assertion + ")";
 
         fn EXPR(varname: string)
             assertion.replace(
-                all: '@', with: varname);
+                all: "@", with: varname);
 
         mut src: string;
 
@@ -713,10 +713,10 @@ fn runTests()
     //
 
     ZERO(`
-        let OPERATORS = [ '+', '-', '*', '/' ];
+        let OPERATORS = [ "+", "-", "*", "/" ];
 
         fn main()
-            OPERATORS[2] == '*' ? 0 : 1;
+            OPERATORS[2] == "*" ? 0 : 1;
     `);
 
     ZERO(`
@@ -751,30 +751,30 @@ fn runTests()
     // Strings.
 
     ZERO(`
-        mut str = 'hello ';
-        str += 'world';
+        mut str = "hello ";
+        str += "world";
 
         return str.len - 11;
     `);
 
     ZERO(`
-        let str = 'hello ' + 'world';
+        let str = "hello " + "world";
 
-        return str.starts(with: 'hel')
+        return str.starts(with: "hel")
              ? str.len - 11
              : 171;
     `);
 
     ZERO(`
-        let str = 'a' + 1710010;
+        let str = "a" + 1710010;
 
-        return str == 'a1710010'
+        return str == "a1710010"
              ? 0 : 101;
     `);
 
     ZERO(`
-        let str = 'hello world';
-        mut cpy = '';
+        let str = "hello world";
+        mut cpy = "";
         for (mut i = 0; i < str.len; i++)
             cpy += str[i];
 
@@ -782,39 +782,39 @@ fn runTests()
     `);
 
     ZERO(`
-        return 'hello world'.find('world')
+        return "hello world".find("world")
              - 2 * [1, 7, 13, 14, 19].find(14);
     `);
 
     ZERO(`
-        return ('hello world'.has('world') ? 1 : 0)
+        return ("hello world".has("world") ? 1 : 0)
              + ([1, 14, 96, 2].has(14)     ? 2 : 0)
              - 3;
     `);
 
     ZERO(`
-        let hw = 'hello world!';
+        let hw = "hello world!";
         let a = hw.slice(6, 6 + 5);
         let b = hw.substr(6, 5);
-        return a == b && a == 'world' ? a.len - 5 : 1;
+        return a == b && a == "world" ? a.len - 5 : 1;
     `);
 
     ZERO(`
         let tests =
         [
-            '',
-            ' ',
-            '  ',
-            'hey you duders',
-            ' hey you duders',
-            'hey you duders ',
-            '  hey you duders ',
-            '  hey you  duders ',
-            '  hey you  duders  '
+            "",
+            " ",
+            "  ",
+            "hey you duders",
+            " hey you duders",
+            "hey you duders ",
+            "  hey you duders ",
+            "  hey you  duders ",
+            "  hey you  duders  "
         ];
 
         fn test(item: string)
-            item == item.split(' ').join(' ')
+            item == item.split(" ").join(" ")
                 ? 0
                 : item.len;
 
@@ -829,25 +829,25 @@ fn runTests()
     // String opti checkers.
 
     ZERO(`
-        let strA = '0123456789abcdef0123456789ABCDEF';
+        let strA = "0123456789abcdef0123456789ABCDEF";
 
         fn main()
         {
             let a0 = ALLOC_STAT_COUNT();
-            strA.slice(0, 26) == '0123456789abcdef0123456789' || throw('bad slice');
+            strA.slice(0, 26) == "0123456789abcdef0123456789" || throw("bad slice");
 
             let a1 = ALLOC_STAT_COUNT();
-            a0 == a1 || throw('did alloc');
+            a0 == a1 || throw("did alloc");
 
             return 0;
         }
     `);
 
     ZERO(`
-        let strA = '0123456789abcdef0123456789ABCDEF';
+        let strA = "0123456789abcdef0123456789ABCDEF";
 
         fn main()
-            strA.slice(26, 32) == 'ABCDEF'
+            strA.slice(26, 32) == "ABCDEF"
                 ? 0 : 1;
     `);
 
@@ -857,27 +857,27 @@ fn runTests()
     ZERO(`
         mut x: Map(string, i32);
 
-        x['hello'] = 1;
-        x['world'] = 2;
+        x["hello"] = 1;
+        x["world"] = 2;
 
-        return x['hello'] - x['world'] + 1;
+        return x["hello"] - x["world"] + 1;
     `);
 
     ZERO(`
         mut x: Map(string, i32);
 
-        x['hello'] = 1;
-        x['world'] = 2;
+        x["hello"] = 1;
+        x["world"] = 2;
 
-        let b = 'hello world';
+        let b = "hello world";
         mut offset = 0;
 
         fn pop(): string {
-            mut a = '';
+            mut a = "";
 
             while (offset < b.len) {
                 let c = b[offset++];
-                if (c == ' ')
+                if (c == " ")
                     break;
 
                 a += c;
@@ -960,12 +960,12 @@ fn runTests()
     `);
 
     ZERO(`
-        let s = 'hello';
+        let s = "hello";
         return s ? 0 : 1;
     `);
 
     ZERO(`
-        let s = '';
+        let s = "";
         return s ? 1 : 0;
     `);
 
@@ -1043,45 +1043,45 @@ fn runTests()
     // Logical selectors.
 
     ZERO(`
-        let x = 'hello';
-        let y = 'world';
+        let x = "hello";
+        let y = "world";
         let w = x || y;
 
-        return w == 'hello' ? 0 : 1;
+        return w == "hello" ? 0 : 1;
     `);
 
     ZERO(`
-        let x = 'hello';
-        let y = 'world';
+        let x = "hello";
+        let y = "world";
         let w = x && y;
 
-        return w == 'world' ? 0 : 1;
+        return w == "world" ? 0 : 1;
     `);
 
     ZERO(`
-        let x = 'hello';
-        let y = 'world';
+        let x = "hello";
+        let y = "world";
         let w = 3 && x || y;
 
-        return w == 'hello' ? 0 : 1;
+        return w == "hello" ? 0 : 1;
     `);
 
     ZERO(`
-        let x = 'hello';
-        let y = 'world';
+        let x = "hello";
+        let y = "world";
         let arr: i32[];
         let w = arr && x || y;
 
-        return w == 'world' ? 0 : 1;
+        return w == "world" ? 0 : 1;
     `);
 
     ZERO(`
-        let x = 'hello';
-        let y = 'world';
+        let x = "hello";
+        let y = "world";
         let arr: i32[];
         let w = arr && x || y || throw("Nope.");
 
-        return w == 'world' ? 0 : 1;
+        return w == "world" ? 0 : 1;
     `);
 
 
@@ -1105,11 +1105,11 @@ fn runTests()
         mut m: Map(string, string);
         mut g = 0;
 
-        m['hello'] = 'world';
+        m["hello"] = "world";
         fn f() (
-            g++, 'cruel world');
+            g++, "cruel world");
 
-        m['hello'] ||= f();
+        m["hello"] ||= f();
         return g;
     `);
 
@@ -1117,11 +1117,11 @@ fn runTests()
         mut m: Map(string, string);
         mut g = 0;
 
-        m['_not_hello_'] = 'world';
+        m["_not_hello_"] = "world";
         fn f() (
-            g++, 'cruel world');
+            g++, "cruel world");
 
-        m['hello'] ||= f();
+        m["hello"] ||= f();
         return g - 1;
     `);
 
@@ -1180,13 +1180,13 @@ fn runTests()
         fn binop(op: string)
             out.P[op] = 7;
 
-        binop(',');
+        binop(",");
 
         return out;
     }
 
     let BINOP   = setupOperators();
-    let P_COMMA = BINOP.P[','] || assert();
+    let P_COMMA = BINOP.P[","] || assert();
 
     fn main() P_COMMA - 7;
 
@@ -1198,10 +1198,10 @@ fn runTests()
         // This converted to a ref-returning
         // logical chain for some reason.
         let hex = true;
-        let trail = 'x';
-        if (!(trail >= '0' && trail <= '9') &&
-            !(hex && (trail >= 'a' && trail <= 'f'
-                   || trail >= 'A' && trail <= 'F')))
+        let trail = "x";
+        if (!(trail >= "0" && trail <= "9") &&
+            !(hex && (trail >= "a" && trail <= "f"
+                   || trail >= "A" && trail <= "F")))
         {
             return 0;
         }
@@ -1233,7 +1233,7 @@ fn runTests()
         {
             // Broken arg re-arrange.
             return SolvedNode(
-                kind: 'definit',
+                kind: "definit",
                 token: _here,
                 :type);
         }
@@ -1276,15 +1276,15 @@ fn runTests()
 
         return Scope_add(
             _scope,
-            '', id, t_template,
+            "", id, t_template,
             min, max, arg_n,
             :template);
     `);
 
     ZERO(`
         let i = 0;
-        let items = [ '' ];
-        i == items.len - 1 || throw('what?');
+        let items = [ "" ];
+        i == items.len - 1 || throw("what?");
         return i;
     `);
 
@@ -1299,27 +1299,27 @@ fn runTests()
     ZERO(`
 
         fn path_normalize(p: string): string {
-            mut path = p.split('/');
+            mut path = p.split("/");
 
             for (mut i = path.len; i --> 0; ) {
                 let part = path[i];
-                if (part == '.' || !part && i > 0 && i < path.len - 1)
+                if (part == "." || !part && i > 0 && i < path.len - 1)
                     path.splice(i, 1);
             }
 
             for (mut i = 1; i < path.len; i++) {
-                if (path[i] == '..')
+                if (path[i] == "..")
                     path.splice(--i, 2);
             }
 
-            return path.join('/');
+            return path.join("/");
         }
 
         fn path_join(a: string, b: string)
-            path_normalize(a + '/' + b);
+            path_normalize(a + "/" + b);
 
         fn main()
-            path_join('hello/hey', './../you//') == 'hello/you/'
+            path_join("hello/hey", "./../you//") == "hello/you/"
                 ? 0 : 1;
     `);
 
@@ -1340,23 +1340,23 @@ fn runTests()
 
         return a.i
             || (b || S(4)).i * 2 - (a || S(6)).i
-            && throw('woot');
+            && throw("woot");
     `);
 
     ZERO(`
 
         struct TrueStory { kind: string; value: string; };
 
-        mut specialized = TrueStory(kind: 'fn', value: 'val');
+        mut specialized = TrueStory(kind: "fn", value: "val");
 
-        specialized.kind == 'fn' && specialized.value || throw('nope');
+        specialized.kind == "fn" && specialized.value || throw("nope");
 
-        let v: &mut string = specialized.kind == 'fn'
+        let v: &mut string = specialized.kind == "fn"
                           && specialized.value
-                          || throw('nope');
-        v += 'ue';
+                          || throw("nope");
+        v += "ue";
 
-        return specialized.value == 'value' ? 0 : 1;
+        return specialized.value == "value" ? 0 : 1;
 
     `);
 
@@ -1366,7 +1366,7 @@ fn runTests()
         };
 
         fn consume(): Token {
-            return Token('hey');
+            return Token("hey");
         };
 
         fn main(): i32 {
@@ -1482,12 +1482,12 @@ fn runTests()
     `);
 
     ZERO(`
-        return 0 > 1 ? throw('should type check') : 0;
+        return 0 > 1 ? throw("should type check") : 0;
     `);
 
     ZERO(`
         fn throw_hey(): i32 {
-            throw('hey');
+            throw("hey");
             return 1;
         }
 
@@ -1503,7 +1503,7 @@ fn runTests()
     ZERO(`
 
         fn main()
-            cli_handle([ 'hello', 'you' ]);
+            cli_handle([ "hello", "you" ]);
 
         fn cli_handle(args: string[]): i32
         {
@@ -1514,7 +1514,7 @@ fn runTests()
                 if (i < args.len)
                     return args[i];
 
-                return '';
+                return "";
             }
 
             // Router.
