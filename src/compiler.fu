@@ -198,16 +198,16 @@ pub fn build(
     scheme: string = ""): void
 {
     // Where we do our dirtywork.
-    if (dir_wrk.if_last != "/")
+    if (dir_wrk.if_last != '/')
     {
         dir_wrk || throw ("No workspace directory provided.");
-        dir_wrk += "/";
+        dir_wrk += '/';
     }
 
     //
-    if (dir_obj && dir_obj.if_last != "/") dir_obj += "/";
-    if (dir_src && dir_src.if_last != "/") dir_src += "/";
-    if (dir_cpp && dir_cpp.if_last != "/") dir_cpp += "/";
+    if (dir_obj && dir_obj.if_last != '/') dir_obj += '/';
+    if (dir_src && dir_src.if_last != '/') dir_src += '/';
+    if (dir_cpp && dir_cpp.if_last != '/') dir_cpp += '/';
 
     //
     mut code:   i32;
@@ -514,7 +514,7 @@ pub fn build(
 ////////     Test & rebuild self.
 
 fn absdir(a: string)
-    a.if_last == "/" ? a : a + "/";
+    a.if_last == '/' ? a : a + '/';
 
 let HOME = absdir(env_get("HOME"));
 

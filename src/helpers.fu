@@ -16,9 +16,9 @@ fn hasIdentifierChars(id: string) {
     for (mut i = 0; i < id.len; i++)
     {
         let c = id[i];
-        if (c == "_" || c >= "a" && c <= "z"
-                     || c >= "A" && c <= "Z"
-                     || c >= "0" && c <= "9")
+        if (c == '_' || c >= 'a' && c <= 'z'
+                     || c >= 'A' && c <= 'Z'
+                     || c >= '0' && c <= '9')
         {
             return true;
         }
@@ -32,8 +32,8 @@ fn path_ext(path: string): string
     for (mut i = path.len; i --> 0; )
     {
         let c = path[i];
-        if (c == ".") return path.slice(i);
-        if (c == "/") break;
+        if (c == '.') return path.slice(i);
+        if (c == '/') break;
     }
 
     return "";
@@ -44,8 +44,8 @@ fn path_noext(path: string): string
     for (mut i = path.len; i --> 0; )
     {
         let c = path[i];
-        if (c == ".") return path.slice(0, i);
-        if (c == "/") break;
+        if (c == '.') return path.slice(0, i);
+        if (c == '/') break;
     }
 
     return "";
@@ -54,7 +54,7 @@ fn path_noext(path: string): string
 fn path_dirname(path: string): string
 {
     for (mut i = path.len; i --> 0; )
-        if (path[i] == "/")
+        if (path[i] == '/')
             return path.slice(0, i + 1);
 
     return "";
@@ -63,7 +63,7 @@ fn path_dirname(path: string): string
 fn path_filename(path: string): string
 {
     for (mut i = path.len; i --> 0; )
-        if (path[i] == "/")
+        if (path[i] == '/')
             return path.slice(i + 1);
 
     return path;
@@ -97,13 +97,13 @@ fn path_relative(from: string, to: string): string {
         if (b != a)
             break;
 
-        if (b == "/")
+        if (b == '/')
             same = i + 1;
     }
 
     mut res: string;
     for (mut i = same; i < from.len; i++)
-        if (from[i] == "/")
+        if (from[i] == '/')
             res += "../";
 
     res += to.slice(same);
@@ -111,5 +111,5 @@ fn path_relative(from: string, to: string): string {
 }
 
 fn path_join(a: string, b: string)
-    b && b[0] == "/"    ? path_normalize(b)
-                        : path_normalize(a + "/" + b);
+    b && b[0] == '/'    ? path_normalize(b)
+                        : path_normalize(a + '/' + b);

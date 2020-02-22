@@ -177,12 +177,7 @@ fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
 // String likes.
 
 fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
-fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
-fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
-
 fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
-fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
-fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
 
 fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
 fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
@@ -206,18 +201,6 @@ fn  >(a: string, b: string): bool __native("<fu/vec/cmp.h>",  ">");
 fn  <(a: string, b: string): bool __native("<fu/vec/cmp.h>",  "<");
 fn >=(a: string, b: string): bool __native("<fu/vec/cmp.h>", ">=");
 fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
-
-fn  >(a: string, b: byte): bool __native("<fu/vec/cmp.h>",  ">");
-fn  <(a: string, b: byte): bool __native("<fu/vec/cmp.h>",  "<");
-fn >=(a: string, b: byte): bool __native("<fu/vec/cmp.h>", ">=");
-fn <=(a: string, b: byte): bool __native("<fu/vec/cmp.h>", "<=");
-
-fn  >(a: byte, b: string): bool __native("<fu/vec/cmp.h>",  ">");
-fn  <(a: byte, b: string): bool __native("<fu/vec/cmp.h>",  "<");
-fn >=(a: byte, b: string): bool __native("<fu/vec/cmp.h>", ">=");
-fn <=(a: byte, b: string): bool __native("<fu/vec/cmp.h>", "<=");
-
-fn char(a: string, i0: i32): i32 __native;
 
 // TODO: .replace() is a faster impl of .split().join().
 //  How do we express this so that .split.joins are automatically promoted?
@@ -253,7 +236,6 @@ fn [](a: Map($K, $V), b: &$K)
 fn keys  (a: Map($K, $V)): $K[] __native(".m_keys");
 fn values(a: Map($K, $V)): $V[] __native(".m_values");
 fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
-fn count (a: Map($K, $V)): i32 __native(".size()");
 
 
 // Assertions, bugs & fails.

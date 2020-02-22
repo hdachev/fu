@@ -1391,7 +1391,7 @@ struct sf_solve
             if (((type == t_i64) || (type == t_i16) || (type == t_i8)))
                 return solved(node, type, fu_VEC<s_SolvedNode>{});
 
-            if ((node.value[0] != "-"_fu))
+            if ((node.value[0] != std::byte('-')))
             {
                 if (((type == t_u32) || (type == t_u64) || (type == t_u16) || (type == t_u8)))
                     return solved(node, type, fu_VEC<s_SolvedNode>{});

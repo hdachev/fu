@@ -253,7 +253,7 @@ pub fn cpp_codegen(
         {
             // Prelude?
             let k = keys[i];
-            if (k[0] == "0")
+            if (k[0] == '0')
                 continue;
 
             // Emit.
@@ -265,14 +265,14 @@ pub fn cpp_codegen(
                 {
                     let c = k[i];
 
-                    if (c >= "0" && c <= "9" ||
-                        c >= "a" && c <= "z" || c >= "A" && c <= "Z")
+                    if (c >= '0' && c <= '9' ||
+                        c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
                     {
                         dedupe += c;
                     }
                     else
                     {
-                        dedupe += "_";
+                        dedupe += '_';
                     }
                 }
 
@@ -358,7 +358,7 @@ pub fn cpp_codegen(
         {
             let line = lines[i];
             if (line)
-                src += _indent + line + (line.if_last == ";" ? "\n" : ";");
+                src += _indent + line + (line.if_last == ';' ? '\n' : ';');
         }
 
         return src;
@@ -875,9 +875,9 @@ pub fn cpp_codegen(
         for (mut i = 0; i < id.len; i++)
         {
             let c = id[i];
-            if (c == "_" || c >= "a" && c <= "z"
-                         || c >= "A" && c <= "Z"
-                         || c >= "0" && c <= "9")
+            if (c == '_' || c >= 'a' && c <= 'z'
+                         || c >= 'A' && c <= 'Z'
+                         || c >= '0' && c <= '9')
             {
                 //
             }
@@ -899,13 +899,13 @@ pub fn cpp_codegen(
         if (target.kind == "__native" && target.template.node.items)
         {
             mut id = target.template.node.items[0].value;
-            if (id[0] == "<")
+            if (id[0] == '<')
             {
                 include(id);
                 id = target.template.node.items[1].value;
             }
 
-            if (id[0] == ".")
+            if (id[0] == '.')
             {
                 if (items.len > 1)
                     return items[0] + id + "(" + items.slice(1).join(", ") + ")";
@@ -1041,14 +1041,6 @@ pub fn cpp_codegen(
                 else
                     return "(" + items[0] + " " + id + " " + items[1] + ")";
             }
-        }
-
-        if (id == "char" && items.len == 2)
-        {
-            // TODO FIX
-            let head = node.items[0] || fail();
-            if (type_isArray(head.type))
-                return "int(" + items[0] + "[" + items[1] + "])";
         }
 
         if (id == "CLONE" && items.len == 1)
@@ -1376,8 +1368,8 @@ pub fn cpp_codegen(
 
     fn postfixBlock(src: string, postfix: string): string
     {
-        src[src.len - 1] == "}" || fail();
-        return src.slice(0, src.len - 1) + postfix + "}";
+        src[src.len - 1] == '}' || fail();
+        return src.slice(0, src.len - 1) + postfix + '}';
     }
 
     fn cgLoop(node: SolvedNode): string

@@ -3,6 +3,7 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/join.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/split.h>
@@ -12,7 +13,7 @@ bool hasIdentifierChars(const fu_STR& id)
     for (int i = 0; (i < id.size()); i++)
     {
         const std::byte c = id[i];
-        if (((c == "_"_fu) || ((c >= "a"_fu) && (c <= "z"_fu)) || ((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "0"_fu) && (c <= "9"_fu))))
+        if (((c == std::byte('_')) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('0')) && (c <= std::byte('9')))))
             return true;
 
     };
@@ -24,10 +25,10 @@ fu_STR path_ext(const fu_STR& path)
     for (int i = path.size(); (i-- > 0); )
     {
         const std::byte c = path[i];
-        if ((c == "."_fu))
+        if ((c == std::byte('.')))
             return fu::slice(path, i);
 
-        if ((c == "/"_fu))
+        if ((c == std::byte('/')))
         {
             break;
         };
@@ -40,10 +41,10 @@ fu_STR path_noext(const fu_STR& path)
     for (int i = path.size(); (i-- > 0); )
     {
         const std::byte c = path[i];
-        if ((c == "."_fu))
+        if ((c == std::byte('.')))
             return fu::slice(path, 0, i);
 
-        if ((c == "/"_fu))
+        if ((c == std::byte('/')))
         {
             break;
         };
@@ -55,7 +56,7 @@ fu_STR path_dirname(const fu_STR& path)
 {
     for (int i = path.size(); (i-- > 0); )
     {
-        if ((path[i] == "/"_fu))
+        if ((path[i] == std::byte('/')))
             return fu::slice(path, 0, (i + 1));
 
     };
@@ -66,7 +67,7 @@ fu_STR path_filename(const fu_STR& path)
 {
     for (int i = path.size(); (i-- > 0); )
     {
-        if ((path[i] == "/"_fu))
+        if ((path[i] == std::byte('/')))
             return fu::slice(path, (i + 1));
 
     };
@@ -104,14 +105,14 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
         {
             break;
         };
-        if ((b == "/"_fu))
+        if ((b == std::byte('/')))
             same = (i + 1);
 
     };
     fu_STR res {};
     for (int i = same; (i < from.size()); i++)
     {
-        if ((from[i] == "/"_fu))
+        if ((from[i] == std::byte('/')))
             (res += "../"_fu);
 
     };
@@ -121,5 +122,5 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
 
 fu_STR path_join(const fu_STR& a, const fu_STR& b)
 {
-    return ((b && (b[0] == "/"_fu)) ? path_normalize(b) : path_normalize(((a + "/"_fu) + b)));
+    return ((b && (b[0] == std::byte('/'))) ? path_normalize(b) : path_normalize(((a + std::byte('/')) + b)));
 }

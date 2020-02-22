@@ -5,6 +5,7 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <iostream>
@@ -63,7 +64,7 @@ struct sf_cli_handle
         };
         const auto& abs = [&](const fu_STR& path) -> fu_STR
         {
-            return ([&]() -> fu_STR { if (path && (path[0] != "-"_fu)) return path_join(cwd, path); else return fu_STR{}; }());
+            return ([&]() -> fu_STR { if (path && (path[0] != std::byte('-'))) return path_join(cwd, path); else return fu_STR{}; }());
         };
         const int EMIT_CPP = (1 << 0);
         const int EMIT_OBJ = (1 << 1);
@@ -76,13 +77,13 @@ struct sf_cli_handle
         fu_STR scheme {};
         bool run {};
         fu_STR val = next();
-        while (((val.size() > 1) && (val.mutref(0) == "-"_fu)))
+        while (((val.size() > 1) && (val.mutref(0) == std::byte('-'))))
         {
             fu_STR opt { val };
-            if ((opt.mutref(1) != "-"_fu))
+            if ((opt.mutref(1) != std::byte('-')))
             {
                 opt = fu_STR { fu_STR::INIT<1> { opt.mutref(1) } };
-                val = ("-"_fu + fu::slice(val, 2));
+                val = (std::byte('-') + fu::slice(val, 2));
                 if ((val == "-"_fu))
                     val = next();
 

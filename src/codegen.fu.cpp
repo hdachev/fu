@@ -921,7 +921,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < keys.size()); i++)
         {
             const fu_STR& k = keys[i];
-            if ((k[0] == "0"_fu))
+            if ((k[0] == std::byte('0')))
             {
                 continue;
             };
@@ -932,10 +932,10 @@ struct sf_cpp_codegen
                 for (int i = 0; (i < k.size()); i++)
                 {
                     const std::byte c = k[i];
-                    if ((((c >= "0"_fu) && (c <= "9"_fu)) || ((c >= "a"_fu) && (c <= "z"_fu)) || ((c >= "A"_fu) && (c <= "Z"_fu))))
+                    if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z')))))
                         (dedupe += c);
                     else
-                        (dedupe += "_"_fu);
+                        (dedupe += std::byte('_'));
 
                 };
                 (src += (((((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe) + "\n"_fu) + cgNode(s, 0)) + "\n                                #endif\n"_fu));
@@ -1005,7 +1005,7 @@ struct sf_cpp_codegen
         {
             const fu_STR& line = lines[i];
             if (line)
-                (src += ((_indent + line) + ((if_last(line) == ";"_fu) ? "\n"_fu : ";"_fu)));
+                (src += ((_indent + line) + ((if_last(line) == std::byte(';')) ? std::byte('\n') : std::byte(';'))));
 
         };
         return src;
@@ -1381,7 +1381,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < id.size()); i++)
         {
             const std::byte c = id[i];
-            if (((c == "_"_fu) || ((c >= "a"_fu) && (c <= "z"_fu)) || ((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "0"_fu) && (c <= "9"_fu))))
+            if (((c == std::byte('_')) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('0')) && (c <= std::byte('9')))))
             {
             }
             else
@@ -1397,12 +1397,12 @@ struct sf_cpp_codegen
         if (((target.kind == "__native"_fu) && target.tEmplate.node.items))
         {
             fu_STR id { target.tEmplate.node.items[0].value };
-            if ((id.mutref(0) == "<"_fu))
+            if ((id.mutref(0) == std::byte('<')))
             {
                 include(id);
                 id = target.tEmplate.node.items[1].value;
             };
-            if ((id.mutref(0) == "."_fu))
+            if ((id.mutref(0) == std::byte('.')))
             {
                 if ((items.size() > 1))
                     return ((((items.mutref(0) + id) + "("_fu) + fu::join(fu::slice(items, 1), ", "_fu)) + ")"_fu);
@@ -1505,13 +1505,6 @@ struct sf_cpp_codegen
                     return (((((("("_fu + items.mutref(0)) + " "_fu) + id) + " "_fu) + items.mutref(1)) + ")"_fu);
 
             };
-        };
-        if (((id == "char"_fu) && (items.size() == 2)))
-        {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
-            if (type_isArray(head.type))
-                return (((("int("_fu + items.mutref(0)) + "["_fu) + items.mutref(1)) + "])"_fu);
-
         };
         if (((id == "CLONE"_fu) && (items.size() == 1)))
             return cgClone(node.type, items[0]);
@@ -1766,8 +1759,8 @@ struct sf_cpp_codegen
     };
     fu_STR postfixBlock(const fu_STR& src, const fu_STR& postfix)
     {
-        ((src[(src.size() - 1)] == "}"_fu) || fail(fu_STR{}));
-        return ((fu::slice(src, 0, (src.size() - 1)) + postfix) + "}"_fu);
+        ((src[(src.size() - 1)] == std::byte('}')) || fail(fu_STR{}));
+        return ((fu::slice(src, 0, (src.size() - 1)) + postfix) + std::byte('}'));
     };
     fu_STR cgLoop(const s_SolvedNode& node)
     {
