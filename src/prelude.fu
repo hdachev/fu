@@ -176,13 +176,13 @@ fn sort(a: &mut $T[]): void __native('<fu/vec/sort.h>', 'fu::sort');
 
 // String likes.
 
-fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
-fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
-fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '==');
+fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
+fn ==(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
+fn ==(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '==');
 
-fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
-fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
-fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/str.h>', '!=');
+fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
+fn !=(a: $T  , b: $T[]) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
+fn !=(a: $T[], b: $T  ) case ($T -> @primitive): bool __native('<fu/vec/cmp.h>', '!=');
 
 fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::lmatch');
 fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native('<fu/vec/find.h>', 'fu::rmatch');
@@ -202,20 +202,20 @@ fn has (a: $T[], b: $T): bool __native('<fu/vec/find.h>', 'fu::has');
 
 typedef string = byte[];
 
-fn  >(a: string, b: string): bool __native('<fu/str.h>',  '>');
-fn  <(a: string, b: string): bool __native('<fu/str.h>',  '<');
-fn >=(a: string, b: string): bool __native('<fu/str.h>', '>=');
-fn <=(a: string, b: string): bool __native('<fu/str.h>', '<=');
+fn  >(a: string, b: string): bool __native('<fu/vec/cmp.h>',  '>');
+fn  <(a: string, b: string): bool __native('<fu/vec/cmp.h>',  '<');
+fn >=(a: string, b: string): bool __native('<fu/vec/cmp.h>', '>=');
+fn <=(a: string, b: string): bool __native('<fu/vec/cmp.h>', '<=');
 
-fn  >(a: string, b: byte): bool __native('<fu/str.h>',  '>');
-fn  <(a: string, b: byte): bool __native('<fu/str.h>',  '<');
-fn >=(a: string, b: byte): bool __native('<fu/str.h>', '>=');
-fn <=(a: string, b: byte): bool __native('<fu/str.h>', '<=');
+fn  >(a: string, b: byte): bool __native('<fu/vec/cmp.h>',  '>');
+fn  <(a: string, b: byte): bool __native('<fu/vec/cmp.h>',  '<');
+fn >=(a: string, b: byte): bool __native('<fu/vec/cmp.h>', '>=');
+fn <=(a: string, b: byte): bool __native('<fu/vec/cmp.h>', '<=');
 
-fn  >(a: byte, b: string): bool __native('<fu/str.h>',  '>');
-fn  <(a: byte, b: string): bool __native('<fu/str.h>',  '<');
-fn >=(a: byte, b: string): bool __native('<fu/str.h>', '>=');
-fn <=(a: byte, b: string): bool __native('<fu/str.h>', '<=');
+fn  >(a: byte, b: string): bool __native('<fu/vec/cmp.h>',  '>');
+fn  <(a: byte, b: string): bool __native('<fu/vec/cmp.h>',  '<');
+fn >=(a: byte, b: string): bool __native('<fu/vec/cmp.h>', '>=');
+fn <=(a: byte, b: string): bool __native('<fu/vec/cmp.h>', '<=');
 
 fn char(a: string, i0: i32): i32 __native;
 

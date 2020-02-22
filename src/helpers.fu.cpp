@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/join.h>
 #include <fu/vec/slice.h>

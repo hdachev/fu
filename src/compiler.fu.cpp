@@ -9,6 +9,7 @@
 #include <fu/str.h>
 #include <fu/tea.h>
 #include <fu/vec.h>
+#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
