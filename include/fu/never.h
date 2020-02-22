@@ -13,7 +13,7 @@ struct never
     void operator=(const never&) = delete;
 
     template<typename T>
-    [[noreturn]] operator T() const
+    [[noreturn]] operator T&() const
     {
         throw std::runtime_error("fu::never");
     }
