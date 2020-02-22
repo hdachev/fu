@@ -90,15 +90,15 @@ struct sf_cli_handle
             else
                 val = next();
 
-            const auto& option = [&](const fu_STR& Q_short, const fu_STR& Q_long, const int o, fu_STR& dir) -> void
+            const auto& option = [&](const fu_STR& sHort, const fu_STR& lOng, const int o, fu_STR& dir) -> void
             {
-                if (((opt == Q_short) || (opt == Q_long)))
+                if (((opt == sHort) || (opt == lOng)))
                 {
                     options |= o;
-                    if ((opt == Q_long))
+                    if ((opt == lOng))
                     {
                         (dir && fu::fail((((opt + ": already set to `"_fu) + dir) + "`."_fu)));
-                        dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail((((((((("Option "_fu + Q_long) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + Q_long) + " rel/or/abs/dir/`."_fu)); }());
+                        dir = ([&]() -> fu_STR { { fu_STR _ = abs(val); if (_) return _; } fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)); }());
                         val = next();
                     };
                     opt = fu_STR{};

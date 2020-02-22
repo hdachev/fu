@@ -362,7 +362,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template Q_template;
+    s_Template tEmplate;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -376,7 +376,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || Q_template
+            || tEmplate
             || constant
         ;
     }

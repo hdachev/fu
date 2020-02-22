@@ -1,6 +1,8 @@
 #pragma once
 
+#include "vec.h"
 #include "vec/cmp.h"
+
 #include "default.h"
 
 

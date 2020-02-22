@@ -402,7 +402,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template Q_template;
+    s_Template tEmplate;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -416,7 +416,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || Q_template
+            || tEmplate
             || constant
         ;
     }
@@ -894,7 +894,7 @@ struct sf_solve
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
         const int max = ((node.kind == "fn"_fu) ? 0xffffff : int(min));
-        s_Template Q_template = s_Template { s_Node(node) };
+        s_Template tEmplate = s_Template { s_Node(node) };
         fu_VEC<fu_STR> arg_n {};
         if ((node.kind == "fn"_fu))
         {
@@ -908,7 +908,7 @@ struct sf_solve
                 arg_n.push(name);
             };
         };
-        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, Q_template, s_Partial{}, s_SolvedNode{}, module);
+        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node, const s_Node& native)
     {
@@ -938,8 +938,8 @@ struct sf_solve
 
             };
         };
-        s_Template Q_template = s_Template { s_Node(native) };
-        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, Q_template, s_Partial{}, s_SolvedNode{}, module);
+        s_Template tEmplate = s_Template { s_Node(native) };
+        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, tEmplate, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
     };
@@ -1152,7 +1152,7 @@ struct sf_solve
                             fail("TODO handle argument reorder in template specialization."_fu);
 
                         s_Overload o = GET(overloadIdx, module, ctx);
-                        s_Target specIdx = trySpecialize(overloadIdx, o.Q_template, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
+                        s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -1314,6 +1314,9 @@ struct sf_solve
         if ((k == "str"_fu))
             return solveStr(node);
 
+        if ((k == "char"_fu))
+            return solveChar(node);
+
         if ((k == "empty"_fu))
             return createEmpty();
 
@@ -1403,6 +1406,10 @@ struct sf_solve
             return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
 
         return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
+    };
+    s_SolvedNode solveChar(const s_Node& node)
+    {
+        return solved(node, t_byte, fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode solveStr(const s_Node& node)
     {
@@ -1544,22 +1551,22 @@ struct sf_solve
         };
         return mangle;
     };
-    s_Target trySpecialize(const s_Target& target, const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
+    s_Target trySpecialize(const s_Target& target, const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
     {
         fu_STR mangle = ((target.modid + "#"_fu) + target.index);
         (mangle += mangled_args);
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
-            s_SolvedNode spec = doTrySpecialize(Q_template, args);
+            s_SolvedNode spec = doTrySpecialize(tEmplate, args);
             (module.out.specs.upsert(mangle) = spec);
             return std::move(spec.target);
         };
         return std::move(spec.target);
     };
-    s_SolvedNode doTrySpecialize(const s_Template& Q_template, const fu_VEC<s_SolvedNode>& args)
+    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args)
     {
-        const s_Node& node = Q_template.node;
+        const s_Node& node = tEmplate.node;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         s_SolvedNode result = trySpecializeFn(node, args);
         if (!result)
@@ -1765,10 +1772,10 @@ struct sf_solve
         s_SolvedNode var_ok = solveNode(node.items[0], s_Type{});
         const int scope0 = Scope_push(_scope);
         s_SolvedNode var_err = solveNode(node.items[1], s_Type{});
-        s_SolvedNode Q_catch = solveNode(node.items[2], s_Type{});
+        s_SolvedNode cAtch = solveNode(node.items[2], s_Type{});
         Scope_pop(_scope, scope0);
         (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, t_string())) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
-        return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, Q_catch } });
+        return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, cAtch } });
     };
     s_SolvedNode solveImport(const s_Node& node)
     {

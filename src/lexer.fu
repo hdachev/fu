@@ -56,7 +56,7 @@ pub fn lex(src: string, fname: string): LexerOutput
     fn err_str(kind: string, idx0: i32, reason: string)
     {
         // exit to nearest whitespace
-        while (idx < end && src[idx] > " ")
+        while (idx < end && src[idx] > ' ')
             idx++;
 
         let col = idx0 - lidx;
@@ -84,10 +84,10 @@ pub fn lex(src: string, fname: string): LexerOutput
             {
                 let c1 = src[++i];
 
-                if      (c1 == "n") out += "\n";
-                else if (c1 == "r") out += '\r';
-                else if (c1 == "t") out += "\t";
-                else if (c1 == "v") out += "\v";
+                if      (c1 == 'n') out += '\n';
+                else if (c1 == 'r') out += '\r';
+                else if (c1 == 't') out += '\t';
+                else if (c1 == 'v') out += '\v';
                 else                out += c1;
             }
             else
@@ -105,9 +105,9 @@ pub fn lex(src: string, fname: string): LexerOutput
         let c = src[idx++];
 
         // whitespace
-        if (c <= " ")
+        if (c <= ' ')
         {
-            if (c == "\n")
+            if (c == '\n')
             {
                 line++;
                 lidx = idx - 1;
@@ -115,12 +115,12 @@ pub fn lex(src: string, fname: string): LexerOutput
         }
 
         // identifiers & keywords
-        else if (c >= "A" && c <= "Z" || c >= "a" && c <= "z" || c == "_")
+        else if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_')
         {
             while (idx < end)
             {
                 let c = src[idx++];
-                if (c >= "A" && c <= "Z" || c >= "a" && c <= "z" || c == "_" || c >= "0" && c <= "9")
+                if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || c >= '0' && c <= '9')
                 {
                     //
                 }
@@ -139,16 +139,16 @@ pub fn lex(src: string, fname: string): LexerOutput
         }
 
         // numeric literals
-        else if (c >= "0" && c <= "9")
+        else if (c >= '0' && c <= '9')
         {
             mut hex = false;
             mut dot = false;
             mut exp = false;
 
-            if (c == "0")
+            if (c == '0')
             {
                 let c = idx < end && src[idx];
-                if (c == "x" || c == "X")
+                if (c == 'x' || c == 'X')
                 {
                     hex = true;
                     idx++;
@@ -159,21 +159,21 @@ pub fn lex(src: string, fname: string): LexerOutput
             {
                 let c = src[idx++];
 
-                if (c >= "0" && c <= "9"
-                      || hex && (c >= "a" && c <= "f"
-                             || (c >= "A" && c <= "F")))
+                if (c >= '0' && c <= '9'
+                      || hex && (c >= 'a' && c <= 'f'
+                             || (c >= 'A' && c <= 'F')))
                 {
                     // Looks good.
                 }
-                else if (c == ".")
+                else if (c == '.')
                 {
                     // Don't munch dots unless followed by a digit -
                     //  So you can"t do 1.e1 but that"s the same as 1e1 or 1.0e1.
 
                     let c = idx < end && src[idx];
-                    if !(c >= "0" && c <= "9"
-                           || hex && (c >= "a" && c <= "f"
-                                  || (c >= "A" && c <= "F")))
+                    if !(c >= '0' && c <= '9'
+                           || hex && (c >= 'a' && c <= 'f'
+                                  || (c >= 'A' && c <= 'F')))
                     {
                         idx--;
                         break;
@@ -187,8 +187,8 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                     dot = true;
                 }
-                else if (hex ? c == "p" || c == "P"
-                             : c == "e" || c == "E")
+                else if (hex ? c == 'p' || c == 'P'
+                             : c == 'e' || c == 'E')
                 {
                     if (exp)
                     {
@@ -196,7 +196,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                         break;
                     }
 
-                    if (idx < end && (src[idx] == "-" || src[idx] == "+"))
+                    if (idx < end && (src[idx] == '-' || src[idx] == '+'))
                         idx++;
 
                     exp = true;
@@ -209,9 +209,9 @@ pub fn lex(src: string, fname: string): LexerOutput
             }
 
             let trail = src[idx - 1];
-            if (!(trail >= "0" && trail <= "9") &&
-                !(hex && (trail >= "a" && trail <= "f"
-                       || trail >= "A" && trail <= "F")))
+            if (!(trail >= '0' && trail <= '9') &&
+                !(hex && (trail >= 'a' && trail <= 'f'
+                       || trail >= 'A' && trail <= 'F')))
             {
                 err("num", idx0, idx - 1);
             }
@@ -236,7 +236,7 @@ pub fn lex(src: string, fname: string): LexerOutput
         }
 
         // string literals
-        else if (c == "'" || c == "\"" || c == "`")
+        else if (c == '\'' || c == '"' || c == '`')
         {
             mut esc = false;
             mut ok  = false;
@@ -254,7 +254,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                     esc = true;
                     idx++;
                 }
-                else if (c1 == "\n")
+                else if (c1 == '\n')
                 {
                     line++;
                     lidx = idx - 1;
@@ -271,20 +271,31 @@ pub fn lex(src: string, fname: string): LexerOutput
                 let str  = esc  ? unescapeStr(src, idx0, idx1)
                                 : src.slice(idx0 + 1, idx1 - 1);
 
-                token(
-                    "str", str,
-                    idx0, idx1);
+                let char = c == '\'';
+                let kind = char ? "char" : "str";
+
+                if (char && str.len != 1)
+                {
+                    err_str("char", idx0,
+                        "Char literal len != 1: " + str.len);
+                }
+                else
+                {
+                    token(
+                        kind, str,
+                        idx0, idx1);
+                }
             }
         }
 
         // comments
-        else if (c == "/" && idx < end && src[idx] == "/")
+        else if (c == '/' && idx < end && src[idx] == '/')
         {
             idx++;
             while (idx < end)
             {
                 let c1 = src[idx++];
-                if (c1 == "\n")
+                if (c1 == '\n')
                 {
                     line++;
                     lidx = idx - 1;
@@ -294,18 +305,18 @@ pub fn lex(src: string, fname: string): LexerOutput
         }
 
         // multiline comments
-        else if (c == "/" && idx < end && src[idx] == "*")
+        else if (c == '/' && idx < end && src[idx] == '*')
         {
             idx++;
             while (idx < end)
             {
                 let c = src[idx++];
-                if (c == "\n")
+                if (c == '\n')
                 {
                     line++;
                     lidx = idx - 1;
                 }
-                else if (c == "*" && idx < end && src[idx] == "/")
+                else if (c == '*' && idx < end && src[idx] == '/')
                 {
                     idx++;
                     break;

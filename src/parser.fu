@@ -880,7 +880,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             let k = token.kind;
 
             // Literals.
-            if (k == "int" || k == "num" || k == "str")
+            if (k == "int" || k == "num" || k == "str" || k == "char")
                 return createLeaf(
                     token.kind, token.value);
 

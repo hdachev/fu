@@ -774,8 +774,8 @@ struct sf_parse
         if (tryConsume("id"_fu, "catch"_fu))
         {
             s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
-            s_Node Q_catch = parseStatement();
-            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, Q_catch } }, 0, fu_STR{});
+            s_Node cAtch = parseStatement();
+            return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cAtch } }, 0, fu_STR{});
         };
         consume("op"_fu, ";"_fu);
         return ret;
@@ -912,7 +912,7 @@ struct sf_parse
         
         {
             const fu_STR& k = token.kind;
-            if (((k == "int"_fu) || (k == "num"_fu) || (k == "str"_fu)))
+            if (((k == "int"_fu) || (k == "num"_fu) || (k == "str"_fu) || (k == "char"_fu)))
                 return createLeaf(token.kind, token.value);
 
             if ((k == "id"_fu))
@@ -1130,10 +1130,10 @@ struct sf_parse
     };
     s_Node parseIf()
     {
-        s_Token Q_not = tryConsume("op"_fu, "!"_fu);
+        s_Token nOt = tryConsume("op"_fu, "!"_fu);
         consume("op"_fu, "("_fu);
         s_Node cond = parseExpression(int(_precedence));
-        if (Q_not)
+        if (nOt)
             cond = createNot(cond);
 
         consume("op"_fu, ")"_fu);

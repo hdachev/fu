@@ -335,15 +335,16 @@ pub fn cpp_codegen(
 
     fn ID(id: string): string
     {
-        if (id == "this")       return "Q_this";
-        if (id == "template")   return "Q_template";
-        if (id == "catch")      return "Q_catch";
-        if (id == "not")        return "Q_not";
-        if (id == "and")        return "Q_and";
-        if (id == "or")         return "Q_or";
-        if (id == "int")        return "Q_int";
-        if (id == "short")      return "Q_short";
-        if (id == "long")       return "Q_long";
+        if (id == "this")       return "tHis";
+        if (id == "template")   return "tEmplate";
+        if (id == "catch")      return "cAtch";
+        if (id == "not")        return "nOt";
+        if (id == "and")        return "aNd";
+        if (id == "or")         return "oR";
+        if (id == "int")        return "iNt";
+        if (id == "char")       return "cHar";
+        if (id == "short")      return "sHort";
+        if (id == "long")       return "lOng";
 
         return id;
     }
@@ -799,6 +800,9 @@ pub fn cpp_codegen(
         return node.kind;
     }
 
+
+    // TODO FIX BOTH
+
     fn cgStringLiteral(node: SolvedNode): string
     {
         annotateString();
@@ -809,18 +813,42 @@ pub fn cpp_codegen(
         {
             let c = node.value[i];
 
-                 if (c == "\n") esc += "\\n";
-            else if (c == "\r") esc += "\\r";
-            else if (c == "\t") esc += "\\t";
-            else if (c == "\v") esc += "\\v";
-            else if (c == "\\") esc += "\\\\";
-            else if (c == "\"") esc += "\\\"";
+                 if (c == '\n') esc += "\\n";
+            else if (c == '\r') esc += "\\r";
+            else if (c == '\t') esc += "\\t";
+            else if (c == '\v') esc += "\\v";
+            else if (c == '\\') esc += "\\\\";
+            else if (c == '"')  esc += "\\\"";
 
             else                esc += c;
         }
 
         return "\"" + esc + "\"_fu";
     }
+
+    fn cgCharLiteral(node: SolvedNode): string
+    {
+        // TODO FIX
+        mut esc = "";
+        for (mut i = 0; i < node.value.len; i++)
+        {
+            let c = node.value[i];
+
+                 if (c == '\n') esc += "\\n";
+            else if (c == '\r') esc += "\\r";
+            else if (c == '\t') esc += "\\t";
+            else if (c == '\v') esc += "\\v";
+            else if (c == '\\') esc += "\\\\";
+            else if (c == '\'') esc += "\\'";
+
+            else                esc += c;
+        }
+
+        return "std::byte('" + esc + "')";
+    }
+
+
+    //
 
     fn cgArrayLiteral(node: SolvedNode): string
     {
@@ -1076,7 +1104,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < items.len; i++)
             src += " << " + items[i];
 
-        src += ' << "\\n")';
+        src += " << \"\\n\")";
         return src;
     }
 
@@ -1440,6 +1468,7 @@ pub fn cpp_codegen(
         if (k == "loop")        return cgLoop(node);
         if (k == "int")         return cgLiteral(node);
         if (k == "num")         return cgLiteral(node);
+        if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node);
         if (k == "definit")     return cgDefaultInit(node);

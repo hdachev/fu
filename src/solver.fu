@@ -669,6 +669,7 @@ fn solve(
         if (k == "int")         return solveInt(node, type);
         if (k == "num")         return solveNum(node, type);
         if (k == "str")         return solveStr(node);
+        if (k == "char")        return solveChar(node);
         if (k == "empty")       return createEmpty();
 
         if (k == "definit")     return solveDefinit(type);
@@ -762,6 +763,11 @@ fn solve(
             return solved(node, t_f32);
 
         return solved(node, t_f64);
+    }
+
+    fn solveChar(node: Node): SolvedNode
+    {
+        return solved(node, t_byte);
     }
 
     fn solveStr(node: Node): SolvedNode

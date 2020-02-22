@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cmp.h"
 #include "../util.h"
 #include "../algo/fbstring_lfind.h"
 

@@ -3,7 +3,6 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
-#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
@@ -80,7 +79,7 @@ struct sf_lex
     };
     void err_str(const fu_STR& kind, const int idx0, const fu_STR& reason)
     {
-        while (((idx < end) && (src[idx] > " "_fu)))
+        while (((idx < end) && (src[idx] > std::byte(' '))))
             idx++;
 
         const int col = (idx0 - lidx);
@@ -89,7 +88,7 @@ struct sf_lex
     };
     void err(const fu_STR& kind, const int idx0, const int reason)
     {
-        err_str(kind, idx0, (("`"_fu + src[reason]) + "'"_fu));
+        err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu));
     };
     fu_STR unescapeStr(const fu_STR& src, const int idx0, const int idx1)
     {
@@ -98,17 +97,17 @@ struct sf_lex
         for (int i = (idx0 + 1); (i < n); i++)
         {
             const std::byte c = src[i];
-            if ((c == "\\"_fu))
+            if ((c == std::byte('\\')))
             {
                 const std::byte c1 = src[++i];
-                if ((c1 == "n"_fu))
-                    (out += "\n"_fu);
-                else if ((c1 == "r"_fu))
-                    (out += "\r"_fu);
-                else if ((c1 == "t"_fu))
-                    (out += "\t"_fu);
-                else if ((c1 == "v"_fu))
-                    (out += "\v"_fu);
+                if ((c1 == std::byte('n')))
+                    (out += std::byte('\n'));
+                else if ((c1 == std::byte('r')))
+                    (out += std::byte('\r'));
+                else if ((c1 == std::byte('t')))
+                    (out += std::byte('\t'));
+                else if ((c1 == std::byte('v')))
+                    (out += std::byte('\v'));
                 else
                     (out += c1);
 
@@ -125,20 +124,20 @@ struct sf_lex
         {
             const int idx0 = idx;
             const std::byte c = src[idx++];
-            if ((c <= " "_fu))
+            if ((c <= std::byte(' ')))
             {
-                if ((c == "\n"_fu))
+                if ((c == std::byte('\n')))
                 {
                     line++;
                     lidx = (idx - 1);
                 };
             }
-            else if ((((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "a"_fu) && (c <= "z"_fu)) || (c == "_"_fu)))
+            else if ((((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_'))))
             {
                 while ((idx < end))
                 {
                     const std::byte c = src[idx++];
-                    if ((((c >= "A"_fu) && (c <= "Z"_fu)) || ((c >= "a"_fu) && (c <= "z"_fu)) || (c == "_"_fu) || ((c >= "0"_fu) && (c <= "9"_fu))))
+                    if ((((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_')) || ((c >= std::byte('0')) && (c <= std::byte('9')))))
                     {
                     }
                     else
@@ -150,15 +149,15 @@ struct sf_lex
                 const int idx1 = idx;
                 token("id"_fu, fu::slice(src, idx0, idx1), idx0, idx1);
             }
-            else if (((c >= "0"_fu) && (c <= "9"_fu)))
+            else if (((c >= std::byte('0')) && (c <= std::byte('9'))))
             {
                 bool hex = false;
                 bool dot = false;
                 bool exp = false;
-                if ((c == "0"_fu))
+                if ((c == std::byte('0')))
                 {
                     const std::byte c = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
-                    if (((c == "x"_fu) || (c == "X"_fu)))
+                    if (((c == std::byte('x')) || (c == std::byte('X'))))
                     {
                         hex = true;
                         idx++;
@@ -167,13 +166,13 @@ struct sf_lex
                 while ((idx < end))
                 {
                     const std::byte c = src[idx++];
-                    if ((((c >= "0"_fu) && (c <= "9"_fu)) || (hex && (((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))))
+                    if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
                     {
                     }
-                    else if ((c == "."_fu))
+                    else if ((c == std::byte('.')))
                     {
                         const std::byte c = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
-                        if (!(((c >= "0"_fu) && (c <= "9"_fu)) || (hex && (((c >= "a"_fu) && (c <= "f"_fu)) || ((c >= "A"_fu) && (c <= "F"_fu))))))
+                        if (!(((c >= std::byte('0')) && (c <= std::byte('9'))) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
                         {
                             idx--;
                             break;
@@ -185,14 +184,14 @@ struct sf_lex
                         };
                         dot = true;
                     }
-                    else if ((hex ? ((c == "p"_fu) || (c == "P"_fu)) : ((c == "e"_fu) || (c == "E"_fu))))
+                    else if ((hex ? ((c == std::byte('p')) || (c == std::byte('P'))) : ((c == std::byte('e')) || (c == std::byte('E')))))
                     {
                         if (exp)
                         {
                             err("num"_fu, idx0, (idx - 1));
                             break;
                         };
-                        if (((idx < end) && ((src[idx] == "-"_fu) || (src[idx] == "+"_fu))))
+                        if (((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+')))))
                             idx++;
 
                         exp = true;
@@ -204,7 +203,7 @@ struct sf_lex
                     };
                 };
                 const std::byte trail = src[(idx - 1)];
-                if ((!((trail >= "0"_fu) && (trail <= "9"_fu)) && !(hex && (((trail >= "a"_fu) && (trail <= "f"_fu)) || ((trail >= "A"_fu) && (trail <= "F"_fu))))))
+                if ((!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F')))))))
                     err("num"_fu, idx0, (idx - 1));
                 else
                 {
@@ -217,7 +216,7 @@ struct sf_lex
 
                 };
             }
-            else if (((c == "'"_fu) || (c == "\""_fu) || (c == "`"_fu)))
+            else if (((c == std::byte('\'')) || (c == std::byte('"')) || (c == std::byte('`'))))
             {
                 bool esc = false;
                 bool ok = false;
@@ -229,12 +228,12 @@ struct sf_lex
                         ok = true;
                         break;
                     }
-                    else if ((c1 == "\\"_fu))
+                    else if ((c1 == std::byte('\\')))
                     {
                         esc = true;
                         idx++;
                     }
-                    else if ((c1 == "\n"_fu))
+                    else if ((c1 == std::byte('\n')))
                     {
                         line++;
                         lidx = (idx - 1);
@@ -246,16 +245,22 @@ struct sf_lex
                 {
                     const int idx1 = idx;
                     fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
-                    token("str"_fu, str, idx0, idx1);
+                    const bool cHar = (c == std::byte('\''));
+                    fu_STR kind = (cHar ? "char"_fu : "str"_fu);
+                    if ((cHar && (str.size() != 1)))
+                        err_str("char"_fu, idx0, ("Char literal len != 1: "_fu + str.size()));
+                    else
+                        token(kind, str, idx0, idx1);
+
                 };
             }
-            else if (((c == "/"_fu) && (idx < end) && (src[idx] == "/"_fu)))
+            else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('/'))))
             {
                 idx++;
                 while ((idx < end))
                 {
                     const std::byte c1 = src[idx++];
-                    if ((c1 == "\n"_fu))
+                    if ((c1 == std::byte('\n')))
                     {
                         line++;
                         lidx = (idx - 1);
@@ -263,18 +268,18 @@ struct sf_lex
                     };
                 };
             }
-            else if (((c == "/"_fu) && (idx < end) && (src[idx] == "*"_fu)))
+            else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('*'))))
             {
                 idx++;
                 while ((idx < end))
                 {
                     const std::byte c = src[idx++];
-                    if ((c == "\n"_fu))
+                    if ((c == std::byte('\n')))
                     {
                         line++;
                         lidx = (idx - 1);
                     }
-                    else if (((c == "*"_fu) && (idx < end) && (src[idx] == "/"_fu)))
+                    else if (((c == std::byte('*')) && (idx < end) && (src[idx] == std::byte('/'))))
                     {
                         idx++;
                         break;

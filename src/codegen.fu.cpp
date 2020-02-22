@@ -284,7 +284,7 @@ struct s_Overload
     fu_VEC<fu_STR> names;
     fu_VEC<s_SolvedNode> defaults;
     s_Partial partial;
-    s_Template Q_template;
+    s_Template tEmplate;
     s_SolvedNode constant;
     explicit operator bool() const noexcept
     {
@@ -298,7 +298,7 @@ struct s_Overload
             || names
             || defaults
             || partial
-            || Q_template
+            || tEmplate
             || constant
         ;
     }
@@ -966,31 +966,34 @@ struct sf_cpp_codegen
     fu_STR ID(const fu_STR& id)
     {
         if ((id == "this"_fu))
-            return "Q_this"_fu;
+            return "tHis"_fu;
 
         if ((id == "template"_fu))
-            return "Q_template"_fu;
+            return "tEmplate"_fu;
 
         if ((id == "catch"_fu))
-            return "Q_catch"_fu;
+            return "cAtch"_fu;
 
         if ((id == "not"_fu))
-            return "Q_not"_fu;
+            return "nOt"_fu;
 
         if ((id == "and"_fu))
-            return "Q_and"_fu;
+            return "aNd"_fu;
 
         if ((id == "or"_fu))
-            return "Q_or"_fu;
+            return "oR"_fu;
 
         if ((id == "int"_fu))
-            return "Q_int"_fu;
+            return "iNt"_fu;
+
+        if ((id == "char"_fu))
+            return "cHar"_fu;
 
         if ((id == "short"_fu))
-            return "Q_short"_fu;
+            return "sHort"_fu;
 
         if ((id == "long"_fu))
-            return "Q_long"_fu;
+            return "lOng"_fu;
 
         return id;
     };
@@ -1316,23 +1319,47 @@ struct sf_cpp_codegen
         for (int i = 0; (i < node.value.size()); i++)
         {
             const std::byte c = node.value[i];
-            if ((c == "\n"_fu))
+            if ((c == std::byte('\n')))
                 (esc += "\\n"_fu);
-            else if ((c == "\r"_fu))
+            else if ((c == std::byte('\r')))
                 (esc += "\\r"_fu);
-            else if ((c == "\t"_fu))
+            else if ((c == std::byte('\t')))
                 (esc += "\\t"_fu);
-            else if ((c == "\v"_fu))
+            else if ((c == std::byte('\v')))
                 (esc += "\\v"_fu);
-            else if ((c == "\\"_fu))
+            else if ((c == std::byte('\\')))
                 (esc += "\\\\"_fu);
-            else if ((c == "\""_fu))
+            else if ((c == std::byte('"')))
                 (esc += "\\\""_fu);
             else
                 (esc += c);
 
         };
         return (("\""_fu + esc) + "\"_fu"_fu);
+    };
+    fu_STR cgCharLiteral(const s_SolvedNode& node)
+    {
+        fu_STR esc {};
+        for (int i = 0; (i < node.value.size()); i++)
+        {
+            const std::byte c = node.value[i];
+            if ((c == std::byte('\n')))
+                (esc += "\\n"_fu);
+            else if ((c == std::byte('\r')))
+                (esc += "\\r"_fu);
+            else if ((c == std::byte('\t')))
+                (esc += "\\t"_fu);
+            else if ((c == std::byte('\v')))
+                (esc += "\\v"_fu);
+            else if ((c == std::byte('\\')))
+                (esc += "\\\\"_fu);
+            else if ((c == std::byte('\'')))
+                (esc += "\\'"_fu);
+            else
+                (esc += c);
+
+        };
+        return (("std::byte('"_fu + esc) + "')"_fu);
     };
     fu_STR cgArrayLiteral(const s_SolvedNode& node)
     {
@@ -1367,13 +1394,13 @@ struct sf_cpp_codegen
     {
         s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(fu_STR{}); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
-        if (((target.kind == "__native"_fu) && target.Q_template.node.items))
+        if (((target.kind == "__native"_fu) && target.tEmplate.node.items))
         {
-            fu_STR id { target.Q_template.node.items[0].value };
+            fu_STR id { target.tEmplate.node.items[0].value };
             if ((id.mutref(0) == "<"_fu))
             {
                 include(id);
-                id = target.Q_template.node.items[1].value;
+                id = target.tEmplate.node.items[1].value;
             };
             if ((id.mutref(0) == "."_fu))
             {
@@ -1848,6 +1875,9 @@ struct sf_cpp_codegen
 
         if ((k == "num"_fu))
             return cgLiteral(node);
+
+        if ((k == "char"_fu))
+            return cgCharLiteral(node);
 
         if ((k == "str"_fu))
             return cgStringLiteral(node);
