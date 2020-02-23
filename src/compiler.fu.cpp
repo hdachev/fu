@@ -685,10 +685,10 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
         };
         fname = (dir_out + fu::slice(fname, dir_src.size()));
     };
-    if ((fu::file_read(fname) == data))
+    if ((fu::file_read(fu_STR(fname)) == data))
         return;
 
-    const int err = fu::file_write(fname, data);
+    const int err = fu::file_write(fu_STR(fname), data);
     if (err)
         fu::fail(((("Failed to write `"_fu + fname) + "`, error: #"_fu) + err));
 
@@ -732,7 +732,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         Fs.push(F);
         len_all += cpp.size();
     };
-    fu::fs_mkdir_p(dir_wrk);
+    fu::fs_mkdir_p(fu_STR(dir_wrk));
     fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     const auto& ERR = [&](fu_STR&& cpp) -> fu::never
     {
@@ -744,14 +744,14 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         };
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
         (std::cout << ("  WRITE "_fu + fname) << "\n");
-        fu::file_write(fname, cpp);
+        fu::file_write(fu_STR(fname), cpp);
         if (!stdout)
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
         fu::fail(stdout);
     };
     fu_VEC<int> link_order = getLinkOrder(ctx.modules);
-    if (((fu::file_size(F_exe) < 1) && (bin || run)))
+    if (((fu::file_size(fu_STR(F_exe)) < 1) && (bin || run)))
     {
         for (int i = 0; (i < Fs.size()); i++)
         {
@@ -759,11 +759,11 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
             fu_STR F_cpp = (F + ".cpp"_fu);
             fu_STR F_tmp = (F + ".o.tmp"_fu);
             fu_STR F_obj = (F + ".o"_fu);
-            if ((fu::file_size(F_obj) < 1))
+            if ((fu::file_size(fu_STR(F_obj)) < 1))
             {
                 const s_Module& module = ctx.modules[(i + 1)];
                 const fu_STR& cpp = module.out.cpp;
-                fu::file_write(F_cpp, cpp);
+                fu::file_write(fu_STR(F_cpp), cpp);
                 (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
                 const double t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
@@ -800,14 +800,14 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
 
     };
     if (run)
-        code = fu::shell_exec(F_exe, stdout);
+        code = fu::shell_exec(fu_STR(F_exe), stdout);
 
     if (code)
         ERR(fu_STR{});
 
     if ((dir_cpp && dir_src))
     {
-        fu::fs_mkdir_p(dir_cpp);
+        fu::fs_mkdir_p(fu_STR(dir_cpp));
         fu_VEC<fu_STR> cpp_files {};
         for (int i = 1; (i < ctx.modules.size()); i++)
         {
@@ -919,7 +919,7 @@ fu_STR locate_PRJDIR()
 {
     fu_STR dir = (HOME + "fu/"_fu);
     fu_STR fn = (dir + "src/compiler.fu"_fu);
-    const int fs = fu::file_size(fn);
+    const int fs = fu::file_size(fu_STR(fn));
     ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
     (std::cout << ("PRJDIR: "_fu + dir) << "\n");
     return dir;

@@ -554,7 +554,7 @@ fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
 
 fu_STR& getFile(const fu_STR& path, s_Context& ctx)
 {
-    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(path); return _; } (ctx.files.upsert(path)));
+    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(fu_STR(path)); return _; } (ctx.files.upsert(path)));
 }
 
 s_Module& getModule(const fu_STR& fname, s_Context& ctx)

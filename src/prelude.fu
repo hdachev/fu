@@ -242,6 +242,10 @@ fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
 
 fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
 fn assert(): never __native("<fu/never.h>", "fu::fail()");
+fn exit(code: i32): never __native("<cstdlib>", "std::exit");
+
+fn ALLOC_STAT_COUNT(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
+fn ALLOC_STAT_BYTES(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
 
 
 // TODO move these out in separate imports,
@@ -250,28 +254,29 @@ fn assert(): never __native("<fu/never.h>", "fu::fail()");
 fn now_hr (): f64 __native("<fu/now.h>", "fu::now_hr()");
 fn now_utc(): f64 __native("<fu/now.h>", "fu::now_utc()");
 
-fn env_get(key: string): string __native("<fu/env.h>", "fu::env_get");
 
-fn file_size(path: string): i32 __native("<fu/io.h>", "fu::file_size");
-fn file_read(path: string): string __native("<fu/io.h>", "fu::file_read");
-fn file_write(path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
-
-fn fs_cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
-fn fs_mkdir_p(path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
-fn fs_mkdir_p(path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
-
-fn shell_exec(cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
-fn shell_exec(cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");
+// TODO port this in our thing,
+//  we've got all we need now.
 
 fn hash_tea(str: string): string __native("<fu/tea.h>", "fu::hash_tea");
 
-fn exit(code: i32): never __native;
 
+// TODO all of these should annotate 'str: string |> c_str',
+//  or '.c_str', or '|> c_str' - the c-str conversion can cheap append a nullchar,
+//   which will be alloc-free in 99% of the cases.
 
-//
+fn env_get(mut key: string): string __native("<fu/env.h>", "fu::env_get");
 
-fn ALLOC_STAT_COUNT(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
-fn ALLOC_STAT_BYTES(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
+fn file_size(mut path: string): i32 __native("<fu/io.h>", "fu::file_size");
+fn file_read(mut path: string): string __native("<fu/io.h>", "fu::file_read");
+fn file_write(mut path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
+
+fn fs_cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
+fn fs_mkdir_p(mut path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
+fn fs_mkdir_p(mut path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
+
+fn shell_exec(mut cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
+fn shell_exec(mut cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");
 
 `;
 
