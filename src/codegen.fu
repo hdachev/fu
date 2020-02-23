@@ -212,9 +212,8 @@ pub fn cpp_codegen(
 
         for (mut i = 0; i < fields.len; i++)
             def += "\n            || "
-                + boolWrap(fields[i].type,
-                    (s.flags & F_DESTRUCTOR ? "data." : "")
-                        + ID(fields[i].id));
+                + (s.flags & F_DESTRUCTOR ? "data." : "")
+                + ID(fields[i].id);
 
         def += "\n        ;";
         def += "\n    }";
@@ -1023,9 +1022,9 @@ pub fn cpp_codegen(
 
                     let annot = typeAnnot(head.type);
 
-                    return "([&](" + annot + " _) -> " + annot + " { if (!" +
-                        boolWrap(head.type, "_") + ") _ = " +
-                            items[1] + "; return _; } (" + items[0] + "))";
+                    return "([&](" + annot + " _) -> " + annot
+                         + " { if (!_) _ = " + items[1]
+                         + "; return _; } (" + items[0] + "))";
                 }
 
                 // Collapse (a += b + c) into (a += b, a += c),
@@ -1140,7 +1139,7 @@ pub fn cpp_codegen(
                 ? " " + cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
-        let cond = n0 && boolWrap(n0.type, cgNode(n0, M_RETBOOL));
+        let cond = n0 && cgNode(n0, M_RETBOOL);
         let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
         let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
@@ -1157,21 +1156,6 @@ pub fn cpp_codegen(
             return "(" + cond + " || " + alt + ")";
 
         return fail("TODO");
-    }
-
-
-    //
-
-    fn boolWrap(value: ValueType, src: string): string
-        boolWrap(Type(value), src);
-
-    fn boolWrap(type: Type, src: string): string
-    {
-        if (type) {}
-        // if (type_isString(type) || type_isArray(type))
-        //     return src + ".size()";
-
-        return src;
     }
 
 
@@ -1214,7 +1198,7 @@ pub fn cpp_codegen(
                 {
                     let item = items[i];
                     if (i) src += " && ";
-                    src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+                    src += cgNode(item, M_RETBOOL);
                 }
 
                 src += ") ";
@@ -1225,7 +1209,7 @@ pub fn cpp_codegen(
             if (retSecondLast)
             {
                 src += "{ " + typeAnnot(type) + " _ = " + tail + "; ";
-                src += "if (!" + boolWrap(type, "_") + ") return _; } ";
+                src += "if (!_) return _; } ";
                 src += cgNode(items[items.len - 1]) + ";"; //FAIL
             }
             else
@@ -1246,7 +1230,7 @@ pub fn cpp_codegen(
             let item = items[i];
 
             if (i) src += " && ";
-            src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+            src += cgNode(item, M_RETBOOL);
         }
 
         return src + ")";
@@ -1255,8 +1239,7 @@ pub fn cpp_codegen(
     fn cgNot(node: SolvedNode): string
     {
         let item = node.items[0];
-        return "!" + boolWrap(
-            item.type, cgNode(item, M_RETBOOL));
+        return "!" + cgNode(item, M_RETBOOL);
     }
 
     fn cgOr(node: SolvedNode): string
@@ -1281,7 +1264,7 @@ pub fn cpp_codegen(
                     {
                         let n = node.items[i];
                         let item = cgNode(n);
-                        src += boolWrap(n.type, item) + " ? " + item + " : ";
+                        src += item + " ? " + item + " : ";
                     }
 
                     src += cgNode(node.items[node.items.len - 1]) + ")";
@@ -1314,13 +1297,13 @@ pub fn cpp_codegen(
                             src += " && ";
 
                         let item = items[i] || fail();
-                        src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+                        src += cgNode(item, M_RETBOOL);
                     }
 
                     src += ")";
                 }
 
-                src += " { " + annot + " _ = " + cgNode(tail) + "; if (" + boolWrap(tail.type, "_") + ") return _; }";
+                src += " { " + annot + " _ = " + cgNode(tail) + "; if (_) return _; }";
             }
 
             let tail = items[items.len - 1] || fail();
@@ -1337,7 +1320,7 @@ pub fn cpp_codegen(
         {
             let item = items[i];
             if (i) src += " || ";
-            src += boolWrap(item.type, cgNode(item, M_RETBOOL));
+            src += cgNode(item, M_RETBOOL);
         }
 
         return src + ")";
@@ -1383,10 +1366,10 @@ pub fn cpp_codegen(
         let n_pcnd = items[LOOP_POST_COND];
 
         let init = n_init && cgNode(n_init);
-        let cond = n_cond && boolWrap(n_cond.type, cgNode(n_cond, M_RETBOOL));
+        let cond = n_cond && cgNode(n_cond, M_RETBOOL);
         let post = n_post && cgNode(n_post);
         mut body = n_body && blockWrapSubstatement(n_body);
-        let pcnd = n_pcnd && boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL));
+        let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL);
         mut breakLabel = "";
 
         if (body && node.value)

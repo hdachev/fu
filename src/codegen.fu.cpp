@@ -896,7 +896,7 @@ struct sf_cpp_codegen
         (def += "\n    {"_fu);
         (def += "\n        return false"_fu);
         for (int i = 0; (i < fields.size()); i++)
-            (def += ("\n            || "_fu + boolWrap(fields[i].type, (((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{}) + ID(fields[i].id)))));
+            (def += (("\n            || "_fu + ((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{})) + ID(fields[i].id)));
 
         (def += "\n        ;"_fu);
         (def += "\n    }"_fu);
@@ -1488,7 +1488,7 @@ struct sf_cpp_codegen
 
                     };
                     fu_STR annot = typeAnnot(head.type, 0);
-                    return (((((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!"_fu) + boolWrap(head.type, "_"_fu)) + ") _ = "_fu) + items.mutref(1)) + "; return _; } ("_fu) + items.mutref(0)) + "))"_fu);
+                    return (((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!_) _ = "_fu) + items.mutref(1)) + "; return _; } ("_fu) + items.mutref(0)) + "))"_fu);
                 };
                 if ((id == "+="_fu))
                 {
@@ -1582,7 +1582,7 @@ struct sf_cpp_codegen
         {
             return ((node.kind == "if"_fu) ? (" "_fu + cgNode(node, M_STMT)) : blockWrapSubstatement(node));
         };
-        fu_STR cond = ([&]() -> fu_STR { if (n0) return boolWrap(n0.type, cgNode(n0, M_RETBOOL)); else return fu_STR{}; }());
+        fu_STR cond = ([&]() -> fu_STR { if (n0) return cgNode(n0, M_RETBOOL); else return fu_STR{}; }());
         fu_STR cons = ([&]() -> fu_STR { if (n1) return (stmt ? blockWrapSubstatement(n1) : cgNode(n1, 0)); else return fu_STR{}; }());
         fu_STR alt = ([&]() -> fu_STR { if (n2) return (stmt ? blockWrap_unlessIf(n2) : cgNode(n2, 0)); else return fu_STR{}; }());
         if (stmt)
@@ -1598,17 +1598,6 @@ struct sf_cpp_codegen
             return (((("("_fu + cond) + " || "_fu) + alt) + ")"_fu);
 
         fail("TODO"_fu);
-    };
-    fu_STR boolWrap(const s_ValueType& value, const fu_STR& src)
-    {
-        return boolWrap(s_Type { s_ValueType(value), s_Lifetime{}, s_Effects{} }, src);
-    };
-    fu_STR boolWrap(const s_Type& type, const fu_STR& src)
-    {
-        if (type)
-        {
-        };
-        return src;
     };
     fu_STR cgDefault(const s_Type& type)
     {
@@ -1638,7 +1627,7 @@ struct sf_cpp_codegen
                     if (i)
                         (src += " && "_fu);
 
-                    (src += boolWrap(item.type, cgNode(item, M_RETBOOL)));
+                    (src += cgNode(item, M_RETBOOL));
                 };
                 (src += ") "_fu);
             };
@@ -1646,7 +1635,7 @@ struct sf_cpp_codegen
             if (retSecondLast)
             {
                 (src += (((("{ "_fu + typeAnnot(type, 0)) + " _ = "_fu) + tail) + "; "_fu));
-                (src += (("if (!"_fu + boolWrap(type, "_"_fu)) + ") return _; } "_fu));
+                (src += "if (!_) return _; } "_fu);
                 (src += (cgNode(items[(items.size() - 1)], 0) + ";"_fu));
             }
             else
@@ -1665,14 +1654,14 @@ struct sf_cpp_codegen
             if (i)
                 (src += " && "_fu);
 
-            (src += boolWrap(item.type, cgNode(item, M_RETBOOL)));
+            (src += cgNode(item, M_RETBOOL));
         };
         return (src + ")"_fu);
     };
     fu_STR cgNot(const s_SolvedNode& node)
     {
         const s_SolvedNode& item = node.items[0];
-        return ("!"_fu + boolWrap(item.type, cgNode(item, M_RETBOOL)));
+        return ("!"_fu + cgNode(item, M_RETBOOL));
     };
     fu_STR cgOr(const s_SolvedNode& node)
     {
@@ -1694,7 +1683,7 @@ struct sf_cpp_codegen
                     {
                         const s_SolvedNode& n = node.items[i];
                         fu_STR item = cgNode(n, 0);
-                        (src += (((boolWrap(n.type, item) + " ? "_fu) + item) + " : "_fu));
+                        (src += (((item + " ? "_fu) + item) + " : "_fu));
                     };
                     (src += (cgNode(node.items[(node.items.size() - 1)], 0) + ")"_fu));
                     return src;
@@ -1718,11 +1707,11 @@ struct sf_cpp_codegen
                             (src += " && "_fu);
 
                         const s_SolvedNode& item = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
-                        (src += boolWrap(item.type, cgNode(item, M_RETBOOL)));
+                        (src += cgNode(item, M_RETBOOL));
                     };
                     (src += ")"_fu);
                 };
-                (src += ((((((" { "_fu + annot) + " _ = "_fu) + cgNode(tail, 0)) + "; if ("_fu) + boolWrap(tail.type, "_"_fu)) + ") return _; }"_fu));
+                (src += ((((" { "_fu + annot) + " _ = "_fu) + cgNode(tail, 0)) + "; if (_) return _; }"_fu));
             };
             const s_SolvedNode& tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
             if (!(tail.type == t_never))
@@ -1739,7 +1728,7 @@ struct sf_cpp_codegen
             if (i)
                 (src += " || "_fu);
 
-            (src += boolWrap(item.type, cgNode(item, M_RETBOOL)));
+            (src += cgNode(item, M_RETBOOL));
         };
         return (src + ")"_fu);
     };
@@ -1771,10 +1760,10 @@ struct sf_cpp_codegen
         const s_SolvedNode& n_body = items[LOOP_BODY];
         const s_SolvedNode& n_pcnd = items[LOOP_POST_COND];
         fu_STR init = ([&]() -> fu_STR { if (n_init) return cgNode(n_init, 0); else return fu_STR{}; }());
-        fu_STR cond = ([&]() -> fu_STR { if (n_cond) return boolWrap(n_cond.type, cgNode(n_cond, M_RETBOOL)); else return fu_STR{}; }());
+        fu_STR cond = ([&]() -> fu_STR { if (n_cond) return cgNode(n_cond, M_RETBOOL); else return fu_STR{}; }());
         fu_STR post = ([&]() -> fu_STR { if (n_post) return cgNode(n_post, 0); else return fu_STR{}; }());
         fu_STR body = ([&]() -> fu_STR { if (n_body) return blockWrapSubstatement(n_body); else return fu_STR{}; }());
-        fu_STR pcnd = ([&]() -> fu_STR { if (n_pcnd) return boolWrap(n_pcnd.type, cgNode(n_pcnd, M_RETBOOL)); else return fu_STR{}; }());
+        fu_STR pcnd = ([&]() -> fu_STR { if (n_pcnd) return cgNode(n_pcnd, M_RETBOOL); else return fu_STR{}; }());
         fu_STR breakLabel {};
         if ((body && node.value))
         {
