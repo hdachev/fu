@@ -414,7 +414,8 @@ fn solve(
         return result;
     }
 
-    fn scope_tryMatch__mutargs(
+    fn tryMatch__mutargs(
+        scope: Scope,
         id: string, args: &mut SolvedNode[],
         flags: i32 = 0, retType: Type = []): Target
     {
@@ -428,7 +429,7 @@ fn solve(
             mut overloadIdx: Target;
 
             while (overloadIdx =
-                Scope_search(_scope, id, scope_iterator))
+                scope.search(id, scope_iterator))
             {
                 if (GET(overloadIdx).min == 0)
                 {
@@ -468,7 +469,7 @@ fn solve(
 
             :NEXT
             while (overloadIdx =
-                Scope_search(_scope, id, scope_iterator))
+                scope.search(id, scope_iterator))
             {
                 mut overload = GET(overloadIdx);
 
@@ -606,24 +607,28 @@ fn solve(
 
     //
 
-    fn scope_match__mutargs(id: string, args: &mut SolvedNode[], flags: i32): Target
+    fn match__mutargs(
+        scope: Scope,
+        id: string, args: &mut SolvedNode[], flags: i32): Target
     {
-        let ret = scope_tryMatch__mutargs(:id, :args, :flags);
+        let ret = scope.tryMatch__mutargs(:id, :args, :flags);
         if (ret)
             return ret;
 
-        let debug = scope_tryMatch__mutargs(:id, :args, :flags);
+        let debug = scope.tryMatch__mutargs(:id, :args, :flags);
         if (debug)
             return debug;
 
-        return NICERR_scopeMismatch(id, args);
+        return scope.NICERR_mismatch(:id, :args);
     }
 
-    fn NICERR_scopeMismatch(id: string, args: SolvedNode[]): never
+    fn NICERR_mismatch(
+        scope: Scope,
+        id: string, args: SolvedNode[]): never
     {
         // We should do everything possible to be helpful here,
         //  do whatever you need, this is compile-fail path.
-        let overloads = Scope_lookup(_scope, id);
+        let overloads = Scope_lookup(scope, id);
 
         mut min = 0xffffff;
         for (mut i = 0; i < overloads.len; i++)
@@ -1604,7 +1609,7 @@ fn solve(
         let id          = node.value; id || fail();
         mut args        = solveNodes(node.items);
 
-        mut callTargIdx = scope_match__mutargs(id, args, node.flags);
+        mut callTargIdx = _scope.match__mutargs(id, args, node.flags);
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.
@@ -1761,7 +1766,7 @@ fn solve(
     fn getImplicit(id: string, type: Type): Target
     {
         mut args: SolvedNode[];
-        mut matched = scope_tryMatch__mutargs(
+        mut matched = _scope.tryMatch__mutargs(
             :id, :args, retType: type);
 
         if (!matched)

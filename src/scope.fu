@@ -371,7 +371,7 @@ pub fn Scope_lookup(scope: Scope, id: string): Target[]
     return results;
 }
 
-pub fn Scope_search(
+pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32): Target
 {

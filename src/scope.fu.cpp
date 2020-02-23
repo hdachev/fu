@@ -723,7 +723,7 @@ fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target Scope_search(const s_Scope& scope, const fu_STR& id, int& scope_iterator)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator)
 {
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)

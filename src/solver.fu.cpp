@@ -49,7 +49,7 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
 s_Type createMap(const s_Type&, const s_Type&, s_Module&);
 s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
-s_Target Scope_search(const s_Scope&, const fu_STR&, int&);
+s_Target search(const s_Scope&, const fu_STR&, int&);
 int MODID(const s_Module&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
@@ -1094,14 +1094,14 @@ struct sf_solve
         result.clear();
         return result;
     };
-    s_Target scope_tryMatch__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
+    s_Target tryMatch__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
     {
         s_Target matchIdx {};
         if (!args)
         {
             int scope_iterator {};
             s_Target overloadIdx {};
-            while ((overloadIdx = Scope_search(_scope, id, scope_iterator)))
+            while ((overloadIdx = search(scope, id, scope_iterator)))
             {
                 if ((GET(overloadIdx, module, ctx).min == 0))
                 {
@@ -1128,7 +1128,7 @@ struct sf_solve
             fu_STR args_mangled {};
             int scope_iterator {};
             s_Target overloadIdx {};
-            while ((overloadIdx = Scope_search(_scope, id, scope_iterator))){
+            while ((overloadIdx = search(scope, id, scope_iterator))){
             {
                 s_Overload overload = GET(overloadIdx, module, ctx);
                 while (true){
@@ -1232,21 +1232,21 @@ struct sf_solve
         };
         return matchIdx;
     };
-    s_Target scope_match__mutargs(const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
+    s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
     {
-        s_Target ret = scope_tryMatch__mutargs(id, args, flags, s_Type{});
+        s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{});
         if (ret)
             return ret;
 
-        s_Target debug = scope_tryMatch__mutargs(id, args, flags, s_Type{});
+        s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{});
         if (debug)
             return debug;
 
-        NICERR_scopeMismatch(id, args);
+        NICERR_mismatch(scope, id, args);
     };
-    [[noreturn]] fu::never NICERR_scopeMismatch(const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
+    [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
-        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
+        fu_VEC<s_Target> overloads = Scope_lookup(scope, id);
         int min = 0xffffff;
         for (int i = 0; (i < overloads.size()); i++)
         {
@@ -1951,7 +1951,7 @@ struct sf_solve
         const fu_STR& id = node.value;
         (id || fail(fu_STR{}));
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        s_Target callTargIdx = scope_match__mutargs(id, args, node.flags);
+        s_Target callTargIdx = match__mutargs(_scope, id, args, node.flags);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
         {
@@ -2038,7 +2038,7 @@ struct sf_solve
     s_Target getImplicit(const fu_STR& id, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> args {};
-        s_Target matched = scope_tryMatch__mutargs(id, args, 0, type);
+        s_Target matched = tryMatch__mutargs(_scope, id, args, 0, type);
         if (!matched)
         {
             if (!_current_fn)
