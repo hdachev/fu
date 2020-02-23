@@ -13,7 +13,8 @@
 
 namespace fu {
 
-inline int file_write(fu_STR path, const fu_STR& body)
+inline int file_write(
+    fu_STR&& path, const fu_STR& body)
 {
     path.push(std::byte('\0'));
     auto cpath = (const char*)path.data();
@@ -35,7 +36,8 @@ inline int file_write(fu_STR path, const fu_STR& body)
     return err;
 }
 
-inline fu_STR file_read(fu_STR path, fu_STR& output)
+inline fu_STR file_read(
+    fu_STR&& path, fu_STR& output)
 {
     path.push(std::byte('\0'));
     auto cpath = (const char*)path.data();
@@ -54,7 +56,8 @@ inline fu_STR file_read(fu_STR path, fu_STR& output)
     return output;
 }
 
-inline int file_size(fu_STR path)
+inline int file_size(
+    fu_STR&& path)
 {
     path.push(std::byte('\0'));
     auto cpath = (const char*)path.data();
@@ -66,10 +69,15 @@ inline int file_size(fu_STR path)
     return -1;
 }
 
-inline fu_STR file_read(const fu_STR& path)
+inline fu_STR file_read(
+    fu_STR&& path)
 {
     fu_STR output;
-    file_read(path, output);
+
+    file_read(
+        static_cast<fu_STR&&>(path),
+        output);
+
     return output;
 }
 
@@ -83,7 +91,7 @@ inline fu_STR fs_cwd()
 }
 
 inline int fs_mkdir_p(
-    fu_STR path,
+    fu_STR&& path,
     int mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 {
     // Cstr.

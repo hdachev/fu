@@ -7,7 +7,7 @@
 
 namespace fu {
 
-int shell_exec(fu_STR cmd, fu_STR& stdout)
+int shell_exec(fu_STR&& cmd, fu_STR& stdout)
 {
     cmd.push(std::byte('\0'));
     auto ccmd = (const char*)cmd.data();
@@ -30,10 +30,12 @@ int shell_exec(fu_STR cmd, fu_STR& stdout)
     return -1;
 }
 
-int shell_exec(const fu_STR& cmd)
+int shell_exec(fu_STR&& cmd)
 {
     fu_STR stdout;
-    return shell_exec(cmd, stdout);
+    return shell_exec(
+        static_cast<fu_STR&&>(cmd),
+        stdout);
 }
 
 } // namespace
