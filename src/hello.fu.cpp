@@ -24,9 +24,9 @@ void saySomethingNice()
                 (str += "🍊"_fu);
 
         };
-        (std::cout << str << "\n");
+        (std::cout << str << '\n');
     }
     else
-        (std::cout << NICE_THINGS[((sec >> 6) & 0xf)] << "\n");
+        (std::cout << NICE_THINGS[((sec >> 6) & 0xf)] << '\n');
 
 }

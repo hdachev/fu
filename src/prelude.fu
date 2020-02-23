@@ -12,12 +12,13 @@ fn STEAL (a: &mut $T): $T __native;
 fn CLONE (a: &    $T): $T __native;
 fn SWAP  (a: &mut $T, b: &mut $T): void __native;
 
-fn print(a: $A): void __native;
-fn print(a: $A, b: $B): void __native;
-fn print(a: $A, b: $B, c: $C): void __native;
-fn print(a: $A, b: $B, c: $C, d: $D): void __native;
-fn print(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;
-fn print(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;
+fn println(): void __native;
+fn println(a: $A): void __native;
+fn println(a: $A, b: $B): void __native;
+fn println(a: $A, b: $B, c: $C): void __native;
+fn println(a: $A, b: $B, c: $C, d: $D): void __native;
+fn println(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;
+fn println(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;
 
 
 // Arithmetics.

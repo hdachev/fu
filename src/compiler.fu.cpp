@@ -680,7 +680,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     {
         if (!fu::lmatch(fname, dir_src))
         {
-            (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << "\n");
+            (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << '\n');
             return;
         };
         fname = (dir_out + fu::slice(fname, dir_src.size()));
@@ -692,7 +692,7 @@ void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, cons
     if (err)
         fu::fail(((("Failed to write `"_fu + fname) + "`, error: #"_fu) + err));
 
-    (std::cout << ("  WROTE "_fu + fname) << "\n");
+    (std::cout << ("  WROTE "_fu + fname) << '\n');
 }
 
 void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
@@ -743,7 +743,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
 
         };
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
-        (std::cout << ("  WRITE "_fu + fname) << "\n");
+        (std::cout << ("  WRITE "_fu + fname) << '\n');
         fu::file_write(fu_STR(fname), cpp);
         if (!stdout)
             stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
@@ -764,14 +764,14 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 const s_Module& module = ctx.modules[(i + 1)];
                 const fu_STR& cpp = module.out.cpp;
                 fu::file_write(fu_STR(F_cpp), cpp);
-                (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << "\n");
+                (std::cout << "  BUILD "_fu << path_filename(module.fname) << " "_fu << F_cpp << '\n');
                 const double t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
                     ERR(fu_STR(cpp));
 
                 const double t1 = fu::now_hr();
-                (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
+                (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
             };
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
@@ -781,16 +781,16 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
 
         
         {
-            (std::cout << "   LINK "_fu << F_exe << "\n");
+            (std::cout << "   LINK "_fu << F_exe << '\n');
             const double t0 = fu::now_hr();
             code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
             if (code)
             {
-                (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << "\n");
+                (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
                 ERR(fu_STR{});
             };
             const double t1 = fu::now_hr();
-            (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << "\n");
+            (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
         };
         if ((Fs.size() == 1))
             code = fu::shell_exec((("rm "_fu + Fs.mutref(0)) + ".o 2>&1"_fu), stdout);
@@ -876,7 +876,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     s_Context ctx { CTX_PRELUDE };
     
     {
-        (std::cout << "COMPILE "_fu << fname << "\n");
+        (std::cout << "COMPILE "_fu << fname << '\n');
         const double t0 = fu::now_hr();
         compile(fname, fu_STR{}, ctx);
         const double t1 = fu::now_hr();
@@ -900,7 +900,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
             ModuleStat_print(solve, "  solve "_fu, fu_STR{});
             ModuleStat_print(codegen, "codegen "_fu, "\n"_fu);
         };
-        (std::cout << "        "_fu << tt << "s\n"_fu << "\n");
+        (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
     };
     return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
 }
@@ -921,7 +921,7 @@ fu_STR locate_PRJDIR()
     fu_STR fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fu_STR(fn));
     ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
-    (std::cout << ("PRJDIR: "_fu + dir) << "\n");
+    (std::cout << ("PRJDIR: "_fu + dir) << '\n');
     return dir;
 }
 

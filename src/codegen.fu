@@ -1051,7 +1051,7 @@ pub fn cpp_codegen(
         if (id == "SWAP" && items.len == 2)
             return cgSwap(items);
 
-        if (id == "print")
+        if (id == "println")
             return cgPrint(items);
 
         id != "__native" || assert();
@@ -1095,7 +1095,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < items.len; i++)
             src += " << " + items[i];
 
-        src += " << \"\\n\")";
+        src += " << '\\n')";
         return src;
     }
 

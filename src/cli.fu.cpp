@@ -48,16 +48,16 @@ struct sf_cli_handle
     {
         if ((argv.size() == 1))
         {
-            (std::cout << "\n\tHello! "_fu << self << "\n");
-            (std::cout << "\tNothing to do, running a quick self test.\n"_fu << "\n");
+            (std::cout << "\n\tHello! "_fu << self << '\n');
+            (std::cout << "\tNothing to do, running a quick self test.\n"_fu << '\n');
             self_test();
-            (std::cout << "\tEverything checks out."_fu << "\n");
-            (std::cout << "\tTry `fu file.fu`.\n"_fu << "\n");
+            (std::cout << "\tEverything checks out."_fu << '\n');
+            (std::cout << "\tTry `fu file.fu`.\n"_fu << '\n');
             return 0;
         };
         if (((argv.size() == 2) && (argv[1] == "self"_fu)))
         {
-            (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << "\n");
+            (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << '\n');
             self_test();
             runTestsAndBuildCompiler();
             return 0;

@@ -39,10 +39,10 @@ fn saySomethingNice()
             else
                 str += "🍊";
 
-        print(str);
+        println(str);
     }
     else
     {
-        print(NICE_THINGS[(sec >> 6) & 0xf]);
+        println(NICE_THINGS[(sec >> 6) & 0xf]);
     }
 }

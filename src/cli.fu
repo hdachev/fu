@@ -20,12 +20,12 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     // Exit 0 on no command, else we fail build-checks.
     if (argv.len == 1)
     {
-        print("\n\tHello! ", self);
-        print(  "\tNothing to do, running a quick self test.\n");
+        println("\n\tHello! ", self);
+        println(  "\tNothing to do, running a quick self test.\n");
 
         self_test();
-        print("\tEverything checks out.");
-        print("\tTry `fu file.fu`.\n");
+        println("\tEverything checks out.");
+        println("\tTry `fu file.fu`.\n");
 
         return 0;
     }
@@ -33,7 +33,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
     // Full test suite.
     if (argv.len == 2 && argv[1] == "self")
     {
-        print("\n\tRunning test suite and rebuilding self ...\n");
+        println("\n\tRunning test suite and rebuilding self ...\n");
 
         self_test();
         runTestsAndBuildCompiler();

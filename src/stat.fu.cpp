@@ -48,5 +48,5 @@ s_ModuleStat ModuleStat_now()
 
 void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, const fu_STR& suffix)
 {
-    (std::cout << prefix << a.time << " s\t"_fu << ((((a.alloc_count + " allocs\t"_fu) + a.alloc_bytes) + " bytes"_fu) + suffix) << "\n");
+    (std::cout << prefix << a.time << " s\t"_fu << ((((a.alloc_count + " allocs\t"_fu) + a.alloc_bytes) + " bytes"_fu) + suffix) << '\n');
 }

@@ -1515,7 +1515,7 @@ struct sf_cpp_codegen
         if (((id == "SWAP"_fu) && (items.size() == 2)))
             return cgSwap(items);
 
-        if ((id == "print"_fu))
+        if ((id == "println"_fu))
             return cgPrint(items);
 
         ((id != "__native"_fu) || fu::fail());
@@ -1551,7 +1551,7 @@ struct sf_cpp_codegen
         for (int i = 0; (i < items.size()); i++)
             (src += (" << "_fu + items[i]));
 
-        (src += " << \"\\n\")"_fu);
+        (src += " << '\\n')"_fu);
         return src;
     };
     fu_STR annotateString()

@@ -166,7 +166,7 @@ fn update_file(
     {
         if (!fname.starts(with: dir_src))
         {
-            print("NOWRITE ", fname, ": not within ", dir_src);
+            println("NOWRITE ", fname, ": not within ", dir_src);
             return;
         }
 
@@ -180,7 +180,7 @@ fn update_file(
     if (err)
         throw("Failed to write `" + fname + "`, error: #" + err);
 
-    print("  WROTE " + fname);
+    println("  WROTE " + fname);
 }
 
 pub fn build(
@@ -263,7 +263,7 @@ pub fn build(
                 cpp += "#include \"" + Fs[i] + ".cpp\"\n";
 
         let fname = dir_wrk + "failing-testcase.cpp";
-        print("  WRITE " + fname);
+        println("  WRITE " + fname);
         file_write(fname, cpp);
 
         //
@@ -293,7 +293,7 @@ pub fn build(
 
                 file_write(F_cpp, cpp);
 
-                print("  BUILD ", module.fname.path_filename, " ", F_cpp);
+                println("  BUILD ", module.fname.path_filename, " ", F_cpp);
 
                 let t0 = now_hr();
 
@@ -303,7 +303,7 @@ pub fn build(
                 if (code) return ERR(cpp);
 
                 let t1 = now_hr();
-                print("     OK ", t1 - t0, "s");
+                println("     OK ", t1 - t0, "s");
             }
         }
 
@@ -315,7 +315,7 @@ pub fn build(
             cmd += Fs[link_order[i]] + ".o ";
 
         {
-            print("   LINK ", F_exe);
+            println("   LINK ", F_exe);
             let t0 = now_hr();
 
             code = shell_exec(cmd + " 2>&1", stdout)
@@ -324,12 +324,12 @@ pub fn build(
 
             if (code)
             {
-                print("   FAIL " + Fs.join("\n        " + "\n"));
+                println("   FAIL " + Fs.join("\n        " + "\n"));
                 return ERR;
             }
 
             let t1 = now_hr();
-            print("     OK ", t1 - t0, "s");
+            println("     OK ", t1 - t0, "s");
         }
 
         // Delete single object file.
@@ -464,7 +464,7 @@ pub fn build(
     let implicit mut ctx = CTX_PRELUDE;
 
     {
-        print("COMPILE ", fname);
+        println("COMPILE ", fname);
 
         let t0 = now_hr();
         compile(:fname);
@@ -493,7 +493,7 @@ pub fn build(
             ModuleStat_print(codegen, "codegen ", "\n");
         }
 
-        print("        ", tt, "s\n");
+        println("        ", tt, "s\n");
     }
 
     return build(ctx, :run, :bin, :scheme,
@@ -525,7 +525,7 @@ fn locate_PRJDIR(): string
     let fs  = file_size(fn);
         fs  > 1000 || throw("Bad compiler.fu: " + fn + ": " + fs);
 
-    print("PRJDIR: " + dir);
+    println("PRJDIR: " + dir);
     return dir;
 }
 

@@ -29,5 +29,5 @@ pub fn ModuleStat_now()
 
 pub fn ModuleStat_print(a: ModuleStat, prefix: string, suffix = "")
 {
-    print(prefix, a.time, " s\t", a.alloc_count + " allocs\t" + a.alloc_bytes + " bytes" + suffix);
+    println(prefix, a.time, " s\t", a.alloc_count + " allocs\t" + a.alloc_bytes + " bytes" + suffix);
 }

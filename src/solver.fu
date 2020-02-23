@@ -2060,7 +2060,7 @@ fn solve(
         if (WARN_ON_IMPLICIT_COPY)
         {
             // if !(node.type.quals & q_trivial)
-            //     print("WARN ", _here.line, ":", _here.col, ":\timplicit copy ", node.type.canon);
+            //     println("WARN ", _here.line, ":", _here.col, ":\timplicit copy ", node.type.canon);
         }
 
         //
