@@ -147,6 +147,11 @@ inline const int F_ID = (1 << 5);
 inline const int F_INDEX = (1 << 6);
                                 #endif
 
+                                #ifndef DEF_F_QUALIFIED
+                                #define DEF_F_QUALIFIED
+inline const int F_QUALIFIED = (1 << 7);
+                                #endif
+
                                 #ifndef DEF_F_LOCAL
                                 #define DEF_F_LOCAL
 inline const int F_LOCAL = (1 << 8);
@@ -365,6 +370,20 @@ struct sf_parse
     fu_STR _structName {};
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
+    fu_STR registerImport(fu_STR&& value)
+    {
+        if (!path_ext(value))
+            (value += ".fu"_fu);
+
+        if (!path_dirname(value))
+            value = ("./"_fu + value);
+
+        value = path_join(path_dirname(fname), value);
+        if (!fu::has(_imports, value))
+            _imports.push(value);
+
+        return std::move(value);
+    };
     [[noreturn]] fu::never fail(fu_STR&& reason)
     {
         const s_Token& loc = tokens[_loc];
@@ -606,16 +625,7 @@ struct sf_parse
     {
         fu_STR value = consume("str"_fu, fu_STR{}).value;
         consume("op"_fu, ";"_fu);
-        if (!path_ext(value))
-            (value += ".fu"_fu);
-
-        if (!path_dirname(value))
-            value = ("./"_fu + value);
-
-        value = path_join(path_dirname(fname), value);
-        if (!fu::has(_imports, value))
-            _imports.push(value);
-
+        value = registerImport(fu_STR(value));
         return make("import"_fu, fu_VEC<s_Node>{}, 0, value);
     };
     s_Node parseLabelledStatement()
@@ -903,6 +913,9 @@ struct sf_parse
             if (fu::has(POSTFIX, v))
                 return createCall(v, F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { head } });
 
+            if ((v == "::"_fu))
+                return parseQualifierChain(s_Node(head));
+
         };
         return ((void)_idx--, miss());
     };
@@ -1001,6 +1014,27 @@ struct sf_parse
     s_Node parseAccessExpression(const s_Node& expr)
     {
         return createCall(consume("id"_fu, fu_STR{}).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
+    };
+    s_Node parseQualifierChain(s_Node&& expr)
+    {
+        if (((expr.kind != "call"_fu) || expr.items || (expr.flags & F_QUALIFIED)))
+        {
+            _idx--;
+            fail(fu_STR{});
+        };
+        expr.flags |= F_QUALIFIED;
+        fu_STR path { expr.value };
+        while (true)
+        {
+            fu_STR id = consume("id"_fu, fu_STR{}).value;
+            if (!tryConsume("op"_fu, "::"_fu))
+            {
+                path = registerImport(fu_STR(path));
+                expr.value = ((path + "\v"_fu) + id);
+                return std::move(expr);
+            };
+            (path += ("/"_fu + id));
+        };
     };
     int parseCallArgs(const fu_STR& endop, fu_VEC<s_Node>& out_args)
     {
