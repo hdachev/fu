@@ -363,7 +363,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let col00 = _col0;
 
         mut items: Node[] = [];
-        while (true)
+        for (;;)
         {
             let token = tokens[_idx];
             if (token.kind == endKind && token.value == endVal)
@@ -680,7 +680,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         mut implicit: Node[];
         mut defaults = false;
 
-        while (true)
+        for (;;)
         {
             if (tryConsume(endk, endv))
                 break;
@@ -1027,7 +1027,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         expr.flags |= F_QUALIFIED;
 
         mut path = expr.value;
-        while (true)
+        for (;;)
         {
             let id = consume("id").value;
             if (!tryConsume("op", "::"))
@@ -1050,7 +1050,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         mut flags = 0;
 
         mut first = true;
-        while (true)
+        for (;;)
         {
             if (tryConsume("op", endop))
                 break;
@@ -1289,8 +1289,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         consume("op", "(");
 
         tryConsume("id", "let");
-        let init = parseLetStmt();
-        let cond = parseExpressionStatement();
+        let init = !tryConsume("op", ";") && parseLetStmt();
+        let cond = !tryConsume("op", ";") && parseExpressionStatement();
 
         let token = tokens[_idx];
         let post = token.kind == "op" && token.value == ")"

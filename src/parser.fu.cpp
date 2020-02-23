@@ -494,7 +494,7 @@ struct sf_parse
         const int line0 = tokens[_idx].line;
         const int col00 = _col0;
         fu_VEC<s_Node> items {};
-        while (true)
+        for (; ; )
         {
             const s_Token& token = tokens[_idx];
             if (((token.kind == endKind) && (token.value == endVal)))
@@ -738,7 +738,7 @@ struct sf_parse
         int outFlags = 0;
         fu_VEC<s_Node> implicit {};
         bool defaults = false;
-        while (true)
+        for (; ; )
         {
             if (tryConsume(endk, endv))
             {
@@ -1024,7 +1024,7 @@ struct sf_parse
         };
         expr.flags |= F_QUALIFIED;
         fu_STR path { expr.value };
-        while (true)
+        for (; ; )
         {
             fu_STR id = consume("id"_fu, fu_STR{}).value;
             if (!tryConsume("op"_fu, "::"_fu))
@@ -1040,7 +1040,7 @@ struct sf_parse
     {
         int flags = 0;
         bool first = true;
-        while (true)
+        for (; ; )
         {
             if (tryConsume("op"_fu, endop))
             {
@@ -1198,8 +1198,8 @@ struct sf_parse
     {
         consume("op"_fu, "("_fu);
         tryConsume("id"_fu, "let"_fu);
-        s_Node init = parseLetStmt();
-        s_Node cond = parseExpressionStatement();
+        s_Node init = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseLetStmt(); else return s_Node{}; }());
+        s_Node cond = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseExpressionStatement(); else return s_Node{}; }());
         const s_Token& token = tokens[_idx];
         s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(int(_precedence)));
         consume("op"_fu, ")"_fu);
