@@ -145,6 +145,9 @@ pub fn lex(src: string, fname: string): LexerOutput
             mut dot = false;
             mut exp = false;
 
+            mut ob = false;
+            mut max = '9';
+
             if (c == '0')
             {
                 let c = idx < end && src[idx];
@@ -153,17 +156,40 @@ pub fn lex(src: string, fname: string): LexerOutput
                     hex = true;
                     idx++;
                 }
+                else if (c == 'o' || c == 'O')
+                {
+                    ob = true;
+                    max = '7';
+                    idx++;
+                }
+                else if (c == 'b' || c == 'B')
+                {
+                    ob = true;
+                    max = '1';
+                    idx++;
+                }
+                else if (c >= '0' && c <= '9')
+                {
+                    err_str("num", idx0,
+                        "Leading `0` in numeric literal,"
+                            + " perhaps you meant `0x`, `0b` or `0o`.");
+                }
             }
 
             while (idx < end)
             {
                 let c = src[idx++];
 
-                if (c >= '0' && c <= '9'
+                if (c >= '0' && c <= max
                       || hex && (c >= 'a' && c <= 'f'
                              || (c >= 'A' && c <= 'F')))
                 {
                     // Looks good.
+                }
+                else if (ob)
+                {
+                    idx--;
+                    break;
                 }
                 else if (c == '.')
                 {
@@ -218,7 +244,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             else
             {
                 let idx1 = idx;
-                let str = src.slice(idx0, idx1);
+                mut str = src.slice(idx0, idx1);
 
                 if (hex && dot && !exp)
                 {
@@ -228,6 +254,10 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else
                 {
+                    // TODO FIX fixing up octal literals to cpp-style, this is nonsense here.
+                    if (ob && str[1] == 'o')
+                        str.splice(1, 1);
+
                     token(
                         dot || exp ? "num" : "int", str,
                         idx0, idx1);

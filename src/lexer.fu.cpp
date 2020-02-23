@@ -154,6 +154,8 @@ struct sf_lex
                 bool hex = false;
                 bool dot = false;
                 bool exp = false;
+                bool ob = false;
+                std::byte max = std::byte('9');
                 if ((c == std::byte('0')))
                 {
                     const std::byte c = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
@@ -161,13 +163,33 @@ struct sf_lex
                     {
                         hex = true;
                         idx++;
-                    };
+                    }
+                    else if (((c == std::byte('o')) || (c == std::byte('O'))))
+                    {
+                        ob = true;
+                        max = std::byte('7');
+                        idx++;
+                    }
+                    else if (((c == std::byte('b')) || (c == std::byte('B'))))
+                    {
+                        ob = true;
+                        max = std::byte('1');
+                        idx++;
+                    }
+                    else if (((c >= std::byte('0')) && (c <= std::byte('9'))))
+                        err_str("num"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
+
                 };
                 while ((idx < end))
                 {
                     const std::byte c = src[idx++];
-                    if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
+                    if ((((c >= std::byte('0')) && (c <= max)) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
                     {
+                    }
+                    else if (ob)
+                    {
+                        idx--;
+                        break;
                     }
                     else if ((c == std::byte('.')))
                     {
@@ -212,8 +234,12 @@ struct sf_lex
                     if ((hex && dot && !exp))
                         err_str("num"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                     else
-                        token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
+                    {
+                        if ((ob && (str.mutref(1) == std::byte('o'))))
+                            str.splice(1, 1);
 
+                        token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
+                    };
                 };
             }
             else if (((c == std::byte('\'')) || (c == std::byte('"')) || (c == std::byte('`'))))
