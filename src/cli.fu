@@ -153,8 +153,7 @@ fn runTestsAndBuildCompiler()
 {
     runTests();
 
-    #import "hello";
-    saySomethingNice();
+    hello::saySomethingNice();
 
     cli_handle(
         cwd: PRJDIR,

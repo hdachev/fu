@@ -1102,7 +1102,7 @@ struct sf_parse
             return createCall((expr.value ? expr.value : fail(fu_STR{})), (F_METHOD | argFlags), args);
         };
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
-            return createCall((expr.value ? expr.value : fail(fu_STR{})), argFlags, args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), (argFlags | (expr.flags & ~F_ID)), args);
 
         fail("TODO dynamic call"_fu);
     };

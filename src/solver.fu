@@ -1369,21 +1369,26 @@ fn solve(
             [ var_ok, var_err, catch ]);
     }
 
-    fn solveImport(node: Node): SolvedNode
+    fn findModule(fname: string): &Module
     {
-        let fname = node.value;
         let modules = ctx.modules;
-
         for (mut i = 1; i < modules.len; i++)
         {
-            if (modules[i].fname == fname)
-            {
-                Scope_import(i);
-                return createEmpty();
-            }
+            let module = modules[i];
+            if (module.fname == fname)
+                return module;
         }
 
         assert();
+    }
+
+    fn solveImport(node: Node): SolvedNode
+    {
+        let fname = node.value;
+        let module = findModule(fname);
+
+        Scope_import(module.modid);
+        return createEmpty();
     }
 
 
@@ -1604,12 +1609,28 @@ fn solve(
             token:  (_here || fail()));
     }
 
+    fn qualid_extractFName(id: &mut string): string
+    {
+        let split = id.find('\v');
+            split >= 0 || fail();
+
+        let fname = id.slice(0, split);
+            id    = id.slice(split + 1);
+
+        return fname;
+    }
+
     fn solveCall(node: Node): SolvedNode
     {
-        let id          = node.value; id || fail();
-        mut args        = solveNodes(node.items);
+        mut id = node.value || fail();
 
-        mut callTargIdx = _scope.match__mutargs(id, args, node.flags);
+        // Qualified?
+        let scope = node.flags & F_QUALIFIED
+            ? findModule(qualid_extractFName(id)).out.solve.scope
+            : _scope;
+
+        mut args        = solveNodes(node.items);
+        mut callTargIdx = scope.match__mutargs(id, args, node.flags);
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.

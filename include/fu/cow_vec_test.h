@@ -245,7 +245,7 @@ void cow_vec_tests()
 
     //
     fu_STR hey = fu_TO_STR("you");
-    hey += " cruel " + fu_TO_STR("world");
+    hey += " cruel "_fu + fu_TO_STR("world");
 
     fu_STR hey2 = fu_TO_STR("you cruel world");
 

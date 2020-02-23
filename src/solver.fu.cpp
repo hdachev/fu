@@ -807,6 +807,11 @@ inline const int F_USING = (1 << 18);
 inline const int F_ID = (1 << 5);
                                 #endif
 
+                                #ifndef DEF_F_QUALIFIED
+                                #define DEF_F_QUALIFIED
+inline const int F_QUALIFIED = (1 << 7);
+                                #endif
+
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
 inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
@@ -1777,19 +1782,24 @@ struct sf_solve
         (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, t_string())) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
         return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, cAtch } });
     };
-    s_SolvedNode solveImport(const s_Node& node)
+    const s_Module& findModule(const fu_STR& fname)
     {
-        const fu_STR& fname = node.value;
         const fu_VEC<s_Module>& modules = ctx.modules;
         for (int i = 1; (i < modules.size()); i++)
         {
-            if ((modules[i].fname == fname))
-            {
-                Scope_import(i);
-                return createEmpty();
-            };
+            const s_Module& module = modules[i];
+            if ((module.fname == fname))
+                return module;
+
         };
         fu::fail();
+    };
+    s_SolvedNode solveImport(const s_Node& node)
+    {
+        const fu_STR& fname = node.value;
+        const s_Module& module = findModule(fname);
+        Scope_import(module.modid);
+        return createEmpty();
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
@@ -1946,12 +1956,20 @@ struct sf_solve
     {
         return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))) };
     };
+    fu_STR qualid_extractFName(fu_STR& id)
+    {
+        const int split = fu::lfind(id, std::byte('\v'));
+        ((split >= 0) || fail(fu_STR{}));
+        fu_STR fname = fu::slice(id, 0, split);
+        id = fu::slice(id, (split + 1));
+        return fname;
+    };
     s_SolvedNode solveCall(const s_Node& node)
     {
-        const fu_STR& id = node.value;
-        (id || fail(fu_STR{}));
+        fu_STR id { (node.value ? node.value : fail(fu_STR{})) };
+        const s_Scope& scope = ((node.flags & F_QUALIFIED) ? findModule(qualid_extractFName(id)).out.solve.scope : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        s_Target callTargIdx = match__mutargs(_scope, id, args, node.flags);
+        s_Target callTargIdx = match__mutargs(scope, id, args, node.flags);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
         {
