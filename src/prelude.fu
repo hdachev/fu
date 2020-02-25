@@ -80,18 +80,20 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 
 // Numeric conversions.
 
-fn  i8(v: $T) case ($T -> @arithmetic):  i8 __native;
-fn i16(v: $T) case ($T -> @arithmetic): i16 __native("short");
-fn i32(v: $T) case ($T -> @arithmetic): i32 __native("int");
-fn i64(v: $T) case ($T -> @arithmetic): i64 __native;
+fn  i8(v: $T) case ($T -> @primitive):  i8 __native;
+fn i16(v: $T) case ($T -> @primitive): i16 __native("short");
+fn i32(v: $T) case ($T -> @primitive): i32 __native("int");
+fn i64(v: $T) case ($T -> @primitive): i64 __native;
 
-fn  u8(v: $T) case ($T -> @arithmetic):  u8 __native;
-fn u16(v: $T) case ($T -> @arithmetic): u16 __native;
-fn u32(v: $T) case ($T -> @arithmetic): u32 __native;
-fn u64(v: $T) case ($T -> @arithmetic): u64 __native;
+fn  u8(v: $T) case ($T -> @primitive):  u8 __native;
+fn u16(v: $T) case ($T -> @primitive): u16 __native;
+fn u32(v: $T) case ($T -> @primitive): u32 __native;
+fn u64(v: $T) case ($T -> @primitive): u64 __native;
 
-fn f32(v: $T) case ($T -> @arithmetic): f32 __native("float");
-fn f64(v: $T) case ($T -> @arithmetic): f64 __native("double");
+fn f32(v: $T) case ($T -> @primitive): f32 __native("float");
+fn f64(v: $T) case ($T -> @primitive): f64 __native("double");
+
+fn byte(v: $T) case ($T -> @primitive): byte __native("<cstddef>", "std::byte");
 
 
 // Math.

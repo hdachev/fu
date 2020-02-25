@@ -113,3 +113,29 @@ fn path_relative(from: string, to: string): string {
 fn path_join(a: string, b: string)
     b && b[0] == '/'    ? path_normalize(b)
                         : path_normalize(a + '/' + b);
+
+fn ascii_lower(a: string): string
+{
+    let lower = 'a'.i32 - 'A'.i32;
+
+    for (mut i = 0; i < a.len; i++)
+    {
+        let c = a[i];
+        if (c >= 'A' && c <= 'Z')
+        {
+            mut b = a.slice(0, i) + byte(c.i32 + lower);
+            for (mut j = i + 1; j < a.len; i++)
+            {
+                mut c = a[j];
+                if (c >= 'A' && c <= 'Z')
+                    c = byte(c.i32 + lower);
+
+                b += c;
+            }
+
+            return b;
+        }
+    }
+
+    return a;
+}

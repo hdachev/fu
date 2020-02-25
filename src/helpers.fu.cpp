@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdint>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -123,4 +124,27 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
 fu_STR path_join(const fu_STR& a, const fu_STR& b)
 {
     return ((b && (b[0] == std::byte('/'))) ? path_normalize(b) : path_normalize(((a + std::byte('/')) + b)));
+}
+
+fu_STR ascii_lower(const fu_STR& a)
+{
+    const int lower = (int(std::byte('a')) - int(std::byte('A')));
+    for (int i = 0; (i < a.size()); i++)
+    {
+        const std::byte c = a[i];
+        if (((c >= std::byte('A')) && (c <= std::byte('Z'))))
+        {
+            fu_STR b = (fu::slice(a, 0, i) + std::byte((int(c) + lower)));
+            for (int j = (i + 1); (j < a.size()); i++)
+            {
+                std::byte c = a[j];
+                if (((c >= std::byte('A')) && (c <= std::byte('Z'))))
+                    c = std::byte((int(c) + lower));
+
+                (b += c);
+            };
+            return b;
+        };
+    };
+    return a;
 }
