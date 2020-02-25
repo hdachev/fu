@@ -1,7 +1,13 @@
 
 fn only(s: $T[]): $T
     s.len == 1 ? s[0] : throw (
-        "LEN != 1: " + s.len);
+        "len != 1: " + s.len);
+
+fn first(s: $T[]): $T
+    s.len ? s[0] : throw("len == 0");
+
+fn last(s: $T[]): $T
+    s.len ? s[s.len - 1] : throw("len == 0");
 
 fn if_only(s: $T[]): $T
     s.len == 1 && s[0];
@@ -116,26 +122,15 @@ fn path_join(a: string, b: string)
 
 fn ascii_lower(a: string): string
 {
-    let lower = 'a'.i32 - 'A'.i32;
+    let offset = 'a'.i32 - 'A'.i32;
 
-    for (mut i = 0; i < a.len; i++)
+    mut res = a;
+    for (mut i = 0; i < res.len; i++)
     {
-        let c = a[i];
+        let c = res[i];
         if (c >= 'A' && c <= 'Z')
-        {
-            mut b = a.slice(0, i) + byte(c.i32 + lower);
-            for (mut j = i + 1; j < a.len; i++)
-            {
-                mut c = a[j];
-                if (c >= 'A' && c <= 'Z')
-                    c = byte(c.i32 + lower);
-
-                b += c;
-            }
-
-            return b;
-        }
+            res[i] = byte(c.i32 + offset);
     }
 
-    return a;
+    return res;
 }

@@ -128,23 +128,14 @@ fu_STR path_join(const fu_STR& a, const fu_STR& b)
 
 fu_STR ascii_lower(const fu_STR& a)
 {
-    const int lower = (int(std::byte('a')) - int(std::byte('A')));
-    for (int i = 0; (i < a.size()); i++)
+    const int offset = (int(std::byte('a')) - int(std::byte('A')));
+    fu_STR res { a };
+    for (int i = 0; (i < res.size()); i++)
     {
-        const std::byte c = a[i];
+        const std::byte c = res[i];
         if (((c >= std::byte('A')) && (c <= std::byte('Z'))))
-        {
-            fu_STR b = (fu::slice(a, 0, i) + std::byte((int(c) + lower)));
-            for (int j = (i + 1); (j < a.size()); i++)
-            {
-                std::byte c = a[j];
-                if (((c >= std::byte('A')) && (c <= std::byte('Z'))))
-                    c = std::byte((int(c) + lower));
+            res.mutref(i) = std::byte((int(c) + offset));
 
-                (b += c);
-            };
-            return b;
-        };
     };
-    return a;
+    return res;
 }

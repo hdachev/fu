@@ -573,7 +573,7 @@ struct s_MapFields
                                 #define DEFt_2_1v_s_Node_4__6
 inline s_Node only(const fu_VEC<s_Node>& s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
@@ -664,7 +664,7 @@ inline const int Arithmetic = (Primitive | q_arithmetic);
 
                                 #ifndef DEF_q_floating_pt
                                 #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 8);
+inline const int q_floating_pt = (1 << 9);
                                 #endif
 
                                 #ifndef DEF_q_signed
@@ -702,6 +702,11 @@ inline const int Integral = (Arithmetic | q_integral);
 inline const int SignedInt = (Integral | q_signed);
                                 #endif
 
+                                #ifndef DEF_t_i32
+                                #define DEF_t_i32
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
+                                #endif
+
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
 inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
@@ -717,9 +722,14 @@ inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_
 inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
+                                #ifndef DEF_q_unsigned
+                                #define DEF_q_unsigned
+inline const int q_unsigned = (1 << 8);
+                                #endif
+
                                 #ifndef DEF_UnsignedInt
                                 #define DEF_UnsignedInt
-inline const int UnsignedInt = Integral;
+inline const int UnsignedInt = (Integral | q_unsigned);
                                 #endif
 
                                 #ifndef DEF_t_u32
@@ -740,11 +750,6 @@ inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
 inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i32
-                                #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -898,7 +903,7 @@ struct sf_solve
         const fu_STR& id = node.value;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
-        const int max = ((node.kind == "fn"_fu) ? 0xffffff : int(min));
+        const int max = ((node.kind == "fn"_fu) ? int(0xffffffu) : int(min));
         s_Template tEmplate = s_Template { s_Node(node) };
         fu_VEC<fu_STR> arg_n {};
         if ((node.kind == "fn"_fu))
@@ -1252,7 +1257,7 @@ struct sf_solve
     [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
         fu_VEC<s_Target> overloads = Scope_lookup(scope, id);
-        int min = 0xffffff;
+        int min = int(0xffffffu);
         for (int i = 0; (i < overloads.size()); i++)
         {
             const int arity = GET(overloads[i], module, ctx).min;
@@ -1388,21 +1393,31 @@ struct sf_solve
     };
     s_SolvedNode solveInt(const s_Node& node, const s_Type& type)
     {
+        const fu_STR& v = node.value;
+        const bool U = (fu::lmatch(v, "0x"_fu) || fu::lmatch(v, "0o"_fu) || fu::lmatch(v, "0b"_fu) || fu::rmatch(v, std::byte('u')));
+        const bool S = (fu::lmatch(v, std::byte('-')) || fu::lmatch(v, std::byte('+')) || fu::rmatch(v, std::byte('i')));
+        (U && S && fail("Ambiguous int literal: cannot decide if signed or unsigned."_fu));
         if (type)
         {
             if (((type == t_f32) || (type == t_f64)))
                 return solved(node, type, fu_VEC<s_SolvedNode>{});
 
-            if (((type == t_i64) || (type == t_i16) || (type == t_i8)))
-                return solved(node, type, fu_VEC<s_SolvedNode>{});
-
-            if ((node.value[0] != std::byte('-')))
+            if (((type == t_i32) || (type == t_i64) || (type == t_i16) || (type == t_i8)))
             {
-                if (((type == t_u32) || (type == t_u64) || (type == t_u16) || (type == t_u8)))
+                if (!U)
+                    return solved(node, type, fu_VEC<s_SolvedNode>{});
+
+            };
+            if (((type == t_u32) || (type == t_u64) || (type == t_u16) || (type == t_u8)))
+            {
+                if (!S)
                     return solved(node, type, fu_VEC<s_SolvedNode>{});
 
             };
         };
+        if (U)
+            return solved(node, t_u32, fu_VEC<s_SolvedNode>{});
+
         return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode solveNum(const s_Node& node, const s_Type& type)

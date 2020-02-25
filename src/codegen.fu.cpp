@@ -533,12 +533,12 @@ struct s_Context
                                 #define DEFt_2_1v_s_StructField_4__6
 inline s_StructField only(const fu_VEC<s_StructField>& s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-                                #ifndef DEFt_2_4v_byte_28__6
-                                #define DEFt_2_4v_byte_28__6
+                                #ifndef DEFt_2_6v_byte_28__6
+                                #define DEFt_2_6v_byte_28__6
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
@@ -549,7 +549,7 @@ inline std::byte if_last(const fu_STR& s)
                                 #define DEFt_2_1v_s_SolvedNode_4__6
 inline s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(("LEN != 1: "_fu + s.size())));
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
@@ -686,6 +686,11 @@ inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_L
                                 #ifndef DEF_F_POSTFIX
                                 #define DEF_F_POSTFIX
 inline const int F_POSTFIX = (1 << 3);
+                                #endif
+
+                                #ifndef DEF_q_unsigned
+                                #define DEF_q_unsigned
+inline const int q_unsigned = (1 << 8);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -994,6 +999,12 @@ struct sf_cpp_codegen
 
         if ((id == "long"_fu))
             return "lOng"_fu;
+
+        if ((id == "signed"_fu))
+            return "sIgned"_fu;
+
+        if ((id == "unsigned"_fu))
+            return "uNsigned"_fu;
 
         return id;
     };
@@ -1566,7 +1577,17 @@ struct sf_cpp_codegen
     };
     fu_STR cgLiteral(const s_SolvedNode& node)
     {
-        return (node.value ? node.value : fail(fu_STR{}));
+        fu_STR src { node.value };
+        if ((node.type.value.quals & q_unsigned))
+        {
+            if (!fu::has(src, std::byte('u')))
+                (src += std::byte('u'));
+
+        };
+        if (fu::lmatch(src, "0o"_fu))
+            src.splice(1, 1);
+
+        return src;
     };
     fu_STR cgEmpty()
     {

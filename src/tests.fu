@@ -1291,17 +1291,17 @@ fn runTests()
     ZERO(`
 
         return false /* test */
-             ? 0xffffff // what is this
+             ? 0xffffff.i32 // what is this
              : 0 // madness
              ;
     `);
 
     ZERO(`
-        return 0b101 - 5;
+        return 0b101.i32 - 5;
     `);
 
     ZERO(`
-        return 0o101 - 65;
+        return 0o101.i32 - 65;
     `);
 
     ZERO(`

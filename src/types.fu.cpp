@@ -134,14 +134,19 @@ inline const int q_integral = (1 << 6);
 inline const int q_signed = (1 << 7);
                                 #endif
 
+                                #ifndef DEF_q_unsigned
+                                #define DEF_q_unsigned
+inline const int q_unsigned = (1 << 8);
+                                #endif
+
                                 #ifndef DEF_q_floating_pt
                                 #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 8);
+inline const int q_floating_pt = (1 << 9);
                                 #endif
 
                                 #ifndef DEF_TAGS
                                 #define DEF_TAGS
-inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<9> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "floating_point"_fu } };
+inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu } };
                                 #endif
 
                                 #ifndef DEF_e_exit
@@ -226,7 +231,7 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_UnsignedInt
                                 #define DEF_UnsignedInt
-inline const int UnsignedInt = Integral;
+inline const int UnsignedInt = (Integral | q_unsigned);
                                 #endif
 
                                 #ifndef DEF_FloatingPt

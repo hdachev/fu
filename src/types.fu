@@ -10,7 +10,8 @@ pub let q_primitive     = 1 << 4;
 pub let q_arithmetic    = 1 << 5;
 pub let q_integral      = 1 << 6;
 pub let q_signed        = 1 << 7;
-pub let q_floating_pt   = 1 << 8;
+pub let q_unsigned      = 1 << 8;
+pub let q_floating_pt   = 1 << 9;
 
 let TAGS =
 [
@@ -24,6 +25,7 @@ let TAGS =
     "arithmetic",
     "integral",
     "signed",
+    "unsigned",
     "floating_point",
 ];
 
@@ -88,7 +90,7 @@ pub let Primitive   = Trivial    | q_primitive   ;
 pub let Arithmetic  = Primitive  | q_arithmetic  ;
 pub let Integral    = Arithmetic | q_integral    ;
 pub let SignedInt   = Integral   | q_signed      ;
-pub let UnsignedInt = Integral                   ;
+pub let UnsignedInt = Integral   | q_unsigned    ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
 pub let t_i8        = Type(ValueType(canon: "i8",  quals: SignedInt));

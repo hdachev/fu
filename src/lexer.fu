@@ -254,12 +254,9 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else
                 {
-                    // TODO FIX fixing up octal literals to cpp-style, this is nonsense here.
-                    if (ob && str[1] == 'o')
-                        str.splice(1, 1);
-
                     token(
-                        dot || exp ? "num" : "int", str,
+                        dot || exp ? "num" : "int",
+                        helpers::ascii_lower(str),
                         idx0, idx1);
                 }
             }

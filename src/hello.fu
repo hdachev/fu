@@ -43,6 +43,6 @@ fn saySomethingNice()
     }
     else
     {
-        println(NICE_THINGS[(sec >> 6) & 0xf]);
+        println(NICE_THINGS[(sec >> 6) & 0xf.i32]);
     }
 }

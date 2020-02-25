@@ -344,6 +344,8 @@ pub fn cpp_codegen(
         if (id == "char")       return "cHar";
         if (id == "short")      return "sHort";
         if (id == "long")       return "lOng";
+        if (id == "signed")     return "sIgned";
+        if (id == "unsigned")   return "uNsigned";
 
         return id;
     }
@@ -1115,7 +1117,16 @@ pub fn cpp_codegen(
 
     fn cgLiteral(node: SolvedNode): string
     {
-        return node.value || fail();
+        mut src = node.value;
+
+        if (node.type.quals & q_unsigned)
+            if (!src.has('u'))
+                src += 'u';
+
+        if (src.starts(with: "0o"))
+            src.splice(1, 1);
+
+        return src;
     }
 
     fn cgEmpty(): string

@@ -51,11 +51,11 @@ s_ModuleStat ModuleStat_now();
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 s_Context solvePrelude();
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
+fu_STR path_noext(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
-fu_STR path_noext(const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);
@@ -545,16 +545,16 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEFt_2_4v_byte_28__7
-                                #define DEFt_2_4v_byte_28__7
+                                #ifndef DEFt_2_6v_byte_28__7
+                                #define DEFt_2_6v_byte_28__7
 inline std::byte if_last(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_4v_byte_28__6
-                                #define DEFt_2_4v_byte_28__6
+                                #ifndef DEFt_2_6v_byte_28__6
+                                #define DEFt_2_6v_byte_28__6
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());

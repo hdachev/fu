@@ -27,6 +27,6 @@ void saySomethingNice()
         (std::cout << str << '\n');
     }
     else
-        (std::cout << NICE_THINGS[((sec >> 6) & 0xf)] << '\n');
+        (std::cout << NICE_THINGS[((sec >> 6) & int(0xfu))] << '\n');
 
 }

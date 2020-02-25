@@ -122,5 +122,19 @@ bool rmatch(const H& haystack, const N& needle, S start = S(0)) noexcept
     return true;
 }
 
+// starts with char
+template <  typename V,
+            typename S = decltype(((V*)1)->size())
+                >
+bool rmatch(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
+{
+    auto* data = vec.data();
+    auto size  = vec.size();
+    start = start >= S(0) ? start : S(0);
+    start = start <= size ? start : size;
+
+    return size > start && data[size - 1 - start] == item;
+}
+
 }
 // namespace fu

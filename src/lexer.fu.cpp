@@ -11,6 +11,7 @@
 
 struct s_LexerOutput;
 struct s_Token;
+fu_STR ascii_lower(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -234,12 +235,8 @@ struct sf_lex
                     if ((hex && dot && !exp))
                         err_str("num"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                     else
-                    {
-                        if ((ob && (str.mutref(1) == std::byte('o'))))
-                            str.splice(1, 1);
+                        token(((dot || exp) ? "num"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
 
-                        token(((dot || exp) ? "num"_fu : "int"_fu), str, idx0, idx1);
-                    };
                 };
             }
             else if (((c == std::byte('\'')) || (c == std::byte('"')) || (c == std::byte('`'))))
