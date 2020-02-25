@@ -36,7 +36,7 @@ inline int file_write(
     return err;
 }
 
-inline fu_STR file_read(
+inline bool file_read(
     fu_STR&& path, fu_STR& output)
 {
     path.push(std::byte('\0'));
@@ -51,9 +51,11 @@ inline fu_STR file_read(
         while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, file)))
             output.append_copy(
                 fu_ZERO(), buffer, int(count));
+
+        return true;
     }
 
-    return output;
+    return false;
 }
 
 inline int file_size(
