@@ -1251,8 +1251,7 @@ fn solve(
 
         if (out.items)
             maybeCopyOrMove(out.items[0],
-                prev.type || next.type,
-                isReturn: true);
+                prev.type || next.type);
 
         return out;
     }
@@ -2039,7 +2038,6 @@ fn solve(
     }
 
     fn maybeCopyOrMove(node: &mut SolvedNode, slot: Type,
-        isReturn = false,
         isArgument = false): void
     {
         let q = slot.quals;
@@ -2079,10 +2077,6 @@ fn solve(
             // if !(node.type.quals & q_trivial)
             //     println("WARN ", _here.line, ":", _here.col, ":\timplicit copy ", node.type.canon);
         }
-
-        //
-        if (isReturn)
-            return;
 
         // Here we go.
         node = createCopy(node);

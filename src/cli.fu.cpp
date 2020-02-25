@@ -39,7 +39,7 @@ struct sf_cli_handle
     {
         const int i = idx++;
         if ((i < argv.size()))
-            return argv[i];
+            return fu_STR(argv[i]);
 
         return fu_STR{};
     };

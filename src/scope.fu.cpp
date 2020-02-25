@@ -539,17 +539,17 @@ struct s_MapFields
 
 int MODID(const s_Module& module)
 {
-    return module.modid;
+    return int(module.modid);
 }
 
 s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
 {
-    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+    return s_Token(ctx.modules[idx.modid].in.lex.tokens[idx.tokidx]);
 }
 
 fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
 {
-    return ctx.modules[idx.modid].fname;
+    return fu_STR(ctx.modules[idx.modid].fname);
 }
 
 fu_STR& getFile(const fu_STR& path, s_Context& ctx)
@@ -627,7 +627,7 @@ int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
         return 0;
 
-    return q_copy;
+    return int(q_copy);
 }
 
 bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
@@ -733,7 +733,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator)
     {
         const s_ScopeItem& item = items[scope_iterator];
         if ((item.id == id))
-            return item.target;
+            return s_Target(item.target);
 
     };
     return s_Target { int{}, int{} };

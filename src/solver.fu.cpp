@@ -571,7 +571,7 @@ struct s_MapFields
 
                                 #ifndef DEFt_2_1v_s_Node_4__6
                                 #define DEFt_2_1v_s_Node_4__6
-inline s_Node only(const fu_VEC<s_Node>& s)
+inline const s_Node& only(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -848,7 +848,7 @@ struct sf_solve
     s_Type _t_string {};
     s_Type t_string()
     {
-        return ([&](s_Type& _) -> s_Type& { if (!_) _ = fast_createArray(t_byte); return _; } (_t_string));
+        return s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = fast_createArray(t_byte); return _; } (_t_string)));
     };
     void Scope_import(const int modid)
     {
@@ -865,9 +865,9 @@ struct sf_solve
     {
         ((target.index > 0) || fu::fail());
         if ((target.modid == module.modid))
-            return _scope.overloads[(target.index - 1)];
+            return s_Overload(_scope.overloads[(target.index - 1)]);
 
-        return ctx.modules[target.modid].out.solve.scope.overloads[(target.index - 1)];
+        return s_Overload(ctx.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
     };
     s_Overload& GET_mut(const s_Target& target)
     {
@@ -1369,7 +1369,7 @@ struct sf_solve
             return uSolveStruct(node, prep);
 
         if ((k == "typedef"_fu))
-            return (prep ? prep : fail(fu_STR{}));
+            return s_SolvedNode((prep ? prep : fail(fu_STR{})));
 
         fail(("TODO: "_fu + k));
     };
@@ -1464,7 +1464,7 @@ struct sf_solve
         else if ((n_fn.flags & F_TEMPLATE))
         {
             if (solve)
-                return (prep ? prep : fail(fu_STR{}));
+                return s_SolvedNode((prep ? prep : fail(fu_STR{})));
 
             s_Target tDecl = TemplateDecl(n_fn);
             s_SolvedNode out = solved(n_fn, t_void, fu_VEC<s_SolvedNode>{});
@@ -1724,7 +1724,7 @@ struct sf_solve
             _current_fn.items.mutref(retIdx) = (next ? next : fail(fu_STR{}));
 
         if (out.items)
-            maybeCopyOrMove(out.items.mutref(0), (prev.type ? prev.type : next.type), true, false);
+            maybeCopyOrMove(out.items.mutref(0), (prev.type ? prev.type : next.type), false);
 
         return out;
     };
@@ -1745,7 +1745,7 @@ struct sf_solve
             (isAssignable(annot.type, init.type) || fail((((((("Type annotation does not match init expression: `"_fu + node.value) + ": "_fu) + serializeType(annot.type)) + " = "_fu) + serializeType(init.type)) + "`."_fu)));
         };
         if (init)
-            maybeCopyOrMove(init, t_let, false, false);
+            maybeCopyOrMove(init, t_let, false);
 
         s_SolvedNode out = solved(node, t_let, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { (annot ? annot : init), init } });
         if (!(_current_fn || (node.flags & F_FIELD)))
@@ -2099,10 +2099,10 @@ struct sf_solve
             type = (!secType ? s_Type(priType) : type_tryInter(priType, secType));
             (type || fail((((("[if] No common supertype: `"_fu + serializeType(priType)) + " : "_fu) + serializeType(secType)) + "`."_fu)));
             if (cons)
-                maybeCopyOrMove(cons, type, false, false);
+                maybeCopyOrMove(cons, type, false);
 
             if (alt)
-                maybeCopyOrMove(alt, type, false, false);
+                maybeCopyOrMove(alt, type, false);
 
         };
         return solved(node, (type ? type : fail(fu_STR{})), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { cond, cons, alt } });
@@ -2146,7 +2146,7 @@ struct sf_solve
             if (sumType)
             {
                 for (int i = 0; (i < items.size()); i++)
-                    maybeCopyOrMove(items.mutref(i), sumType, false, false);
+                    maybeCopyOrMove(items.mutref(i), sumType, false);
 
                 type = sumType;
             }
@@ -2211,7 +2211,7 @@ struct sf_solve
         {
             const fu_VEC<s_Type>& arg_t = (overload.args ? overload.args : fail(fu_STR{}));
             for (int i = 0; (i < args.size()); i++)
-                maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(fu_STR{}); }()), arg_t[i], false, true);
+                maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(fu_STR{}); }()), arg_t[i], true);
 
             type.lifetime = Lifetime_fromCallArgs(type.lifetime, args);
         };
@@ -2219,7 +2219,7 @@ struct sf_solve
         out.target = target;
         return out;
     };
-    void maybeCopyOrMove(s_SolvedNode& node, const s_Type& slot, const bool isReturn, const bool isArgument)
+    void maybeCopyOrMove(s_SolvedNode& node, const s_Type& slot, const bool isArgument)
     {
         const int q = slot.value.quals;
         if (!(q & q_mutref))
@@ -2246,9 +2246,6 @@ struct sf_solve
         if (WARN_ON_IMPLICIT_COPY)
         {
         };
-        if (isReturn)
-            return;
-
         node = createCopy(node);
     };
     s_SolvedNode createCopy(const s_SolvedNode& node)

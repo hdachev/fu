@@ -399,7 +399,7 @@ fu_STR serializeType(const s_Type& type)
     if (type.value.quals)
         return ((type.value.canon + "+"_fu) + type.value.quals);
 
-    return type.value.canon;
+    return fu_STR(type.value.canon);
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)

@@ -72,7 +72,7 @@ fu_STR path_filename(const fu_STR& path)
             return fu::slice(path, (i + 1));
 
     };
-    return path;
+    return fu_STR(path);
 }
 
 fu_STR path_normalize(const fu_STR& p)

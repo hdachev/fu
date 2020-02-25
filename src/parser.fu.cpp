@@ -416,7 +416,7 @@ struct sf_parse
         if (((token.kind == kind) && (!value || (token.value == value))))
         {
             _idx++;
-            return token;
+            return s_Token(token);
         };
         fail((((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
     };
@@ -426,7 +426,7 @@ struct sf_parse
         if (((token.kind == kind) && (!value || (token.value == value))))
         {
             _idx++;
-            return token;
+            return s_Token(token);
         };
         return s_Token { fu_STR{}, fu_STR{}, int{}, int{}, int{}, int{} };
     };
@@ -1080,7 +1080,7 @@ struct sf_parse
     fu_STR getAutoName(const s_Node& expr)
     {
         if (((expr.kind == "call"_fu) && hasIdentifierChars(expr.value)))
-            return expr.value;
+            return fu_STR(expr.value);
 
         if (expr.items)
             return getAutoName(expr.items[0]);

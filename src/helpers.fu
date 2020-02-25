@@ -1,21 +1,21 @@
 
-fn only(s: $T[]): $T
+fn only(s: $T[])
     s.len == 1 ? s[0] : throw (
         "len != 1: " + s.len);
 
-fn first(s: $T[]): $T
+fn first(s: $T[])
     s.len ? s[0] : throw("len == 0");
 
-fn last(s: $T[]): $T
+fn last(s: $T[])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-fn if_only(s: $T[]): $T
+fn if_only(s: $T[])
     s.len == 1 && s[0];
 
-fn if_first(s: $T[]): $T
+fn if_first(s: $T[])
     s.len && s[0];
 
-fn if_last(s: $T[]): $T
+fn if_last(s: $T[])
     s.len && s[s.len - 1];
 
 fn hasIdentifierChars(id: string) {

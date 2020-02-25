@@ -531,7 +531,7 @@ struct s_Context
 
                                 #ifndef DEFt_2_1v_s_StructField_4__6
                                 #define DEFt_2_1v_s_StructField_4__6
-inline s_StructField only(const fu_VEC<s_StructField>& s)
+inline const s_StructField& only(const fu_VEC<s_StructField>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -547,7 +547,7 @@ inline std::byte if_last(const fu_STR& s)
 
                                 #ifndef DEFt_2_1v_s_SolvedNode_4__6
                                 #define DEFt_2_1v_s_SolvedNode_4__6
-inline s_SolvedNode only(const fu_VEC<s_SolvedNode>& s)
+inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -746,7 +746,7 @@ struct sf_cpp_codegen
     {
         ((target.index > 0) || fu::fail());
         const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
-        return m.out.solve.scope.overloads[(target.index - 1)];
+        return s_Overload(m.out.solve.scope.overloads[(target.index - 1)]);
     };
     [[noreturn]] fu::never fail(const fu_STR& reason)
     {
@@ -848,7 +848,7 @@ struct sf_cpp_codegen
                 (_tfwd.upsert(type.value.canon) = (("\nstruct "_fu + type.value.canon) + ";"_fu));
                 (_tdef += declareStruct(type, tdef));
             };
-            return type.value.canon;
+            return fu_STR(type.value.canon);
         };
         if ((k == "array"_fu))
         {
@@ -1006,7 +1006,7 @@ struct sf_cpp_codegen
         if ((id == "unsigned"_fu))
             return "uNsigned"_fu;
 
-        return id;
+        return fu_STR(id);
     };
     fu_STR cgStatements(const fu_VEC<s_SolvedNode>& nodes)
     {
@@ -1321,7 +1321,7 @@ struct sf_cpp_codegen
         if (node.value)
             return ((("goto L_"_fu + node.value) + "_"_fu) + node.kind[0]);
 
-        return node.kind;
+        return fu_STR(node.kind);
     };
     fu_STR cgStringLiteral(const s_SolvedNode& node)
     {
