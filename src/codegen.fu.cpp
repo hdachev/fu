@@ -910,7 +910,7 @@ struct sf_cpp_codegen
     fu_STR collectDedupes(const fu_COW_MAP<fu_STR, fu_STR>& dedupes)
     {
         fu_STR out {};
-        fu_VEC<fu_STR> keys = dedupes.m_keys;
+        fu_VEC<fu_STR> keys { dedupes.m_keys };
         fu::sort(keys);
         for (int i = 0; (i < keys.size()); i++)
             (out += dedupes[keys.mutref(i)]);
@@ -922,7 +922,7 @@ struct sf_cpp_codegen
         fu_STR src {};
         _isModuleSpecs++;
         const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
-        fu_VEC<fu_STR> keys = specs.m_keys;
+        const fu_VEC<fu_STR>& keys = specs.m_keys;
         for (int i = 0; (i < keys.size()); i++)
         {
             const fu_STR& k = keys[i];

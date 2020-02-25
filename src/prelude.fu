@@ -236,8 +236,8 @@ fn [](a: Map($K, $V), b: &$K)
     case ($a -> &    Map($K, $V)): &    $V __native;
     case ($a ->      Map($K, $V)):      $V __native;
 
-fn keys  (a: Map($K, $V)): $K[] __native(".m_keys");
-fn values(a: Map($K, $V)): $V[] __native(".m_values");
+fn keys  (a: &Map($K, $V)): &$K[] __native(".m_keys");
+fn values(a: &Map($K, $V)): &$V[] __native(".m_values");
 fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
 
 
