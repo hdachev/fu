@@ -1686,9 +1686,22 @@ fn runTests()
     // Trivial equality.
 
     ZERO(`
-        struct Triv { a: i32; b: i32; };
         let a = [1, 2];
         fn eq(a: i32[], b: i32[]) a == b;
+        fn main() eq(a, a) ? 0 : 1;
+    `);
+
+    ZERO(`
+        struct Triv { a: i32; b: i32; };
+        let a = [ Triv(1, 2), Triv(2, 3) ];
+        fn eq(a: Triv[], b: Triv[]) a == b;
+        fn main() eq(a, a) ? 0 : 1;
+    `);
+
+    ZERO(`
+        struct Triv { a: i32; b: i32; };
+        let a = [ Triv(1, 2), Triv(2, 3) ];
+        fn eq(a: $T[], b: $T[]) a == b;
         fn main() eq(a, a) ? 0 : 1;
     `);
 }
