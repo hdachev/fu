@@ -42,13 +42,13 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 bool type_isMap(const s_Type&);
+const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
+s_Type clear_refs(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
 bool operator==(const s_Type&, const s_Type&);
-s_Type clear_refs(const s_Type&);
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType

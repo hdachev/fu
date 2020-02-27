@@ -2146,17 +2146,44 @@ fn solve(
                 }
 
                 _here       = node.token || _here;
-                result[i]   = unorderedPrep(node);
+
+                if (node.kind != "fn")
+                    result[i] = unorderedPrep(node);
             }
 
-            // Second pass, do the remaining work.
-            for (mut i = i0; i < i1; i++)
+            // TODO fix this shit
             {
-                let node = nodes[i];
-                if (node)
+                // Second pass - solve types.
+                for (mut i = i0; i < i1; i++)
                 {
-                    _here       = node.token || _here;
-                    result[i]   = unorderedSolve(node, result[i]);
+                    let node = nodes[i];
+                    if (node && node.kind != "fn")
+                    {
+                        _here       = node.token || _here;
+                        result[i]   = unorderedSolve(node, result[i]);
+                    }
+                }
+
+                // Third pass - prep fns.
+                for (mut i = i0; i < i1; i++)
+                {
+                    let node = nodes[i];
+                    if (node.kind == "fn")
+                    {
+                        _here       = node.token || _here;
+                        result[i]   = unorderedPrep(node);
+                    }
+                }
+
+                // Finally - prep fns.
+                for (mut i = i0; i < i1; i++)
+                {
+                    let node = nodes[i];
+                    if (node.kind == "fn")
+                    {
+                        _here       = node.token || _here;
+                        result[i]   = unorderedSolve(node, result[i]);
+                    }
                 }
             }
 

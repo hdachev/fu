@@ -38,24 +38,27 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-s_Token _token(const s_TokenIdx&, const s_Context&);
-fu_STR _fname(const s_TokenIdx&, const s_Context&);
-s_Type initStruct(const fu_STR&, int, s_Module&);
-void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-bool isTemplate(const s_Overload&);
 s_Type createArray(const s_Type&, s_Module&);
 s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
-s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
 s_Type createMap(const s_Type&, const s_Type&, s_Module&);
 s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&);
-int MODID(const s_Module&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
+s_Type initStruct(const fu_STR&, int, s_Module&);
+bool isTemplate(const s_Overload&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
+int MODID(const s_Module&);
+s_Token _token(const s_TokenIdx&, const s_Context&);
+fu_STR _fname(const s_TokenIdx&, const s_Context&);
+void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+s_Type add_ref(const s_Type&, const s_Lifetime&);
+s_Type add_mutref(const s_Type&, const s_Lifetime&);
+s_Type clear_refs(const s_Type&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
@@ -66,9 +69,6 @@ fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
-s_Type add_ref(const s_Type&, const s_Lifetime&);
-s_Type add_mutref(const s_Type&, const s_Lifetime&);
-s_Type clear_refs(const s_Type&);
 s_Lifetime Lifetime_static();
 s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromScopeIdx(int);
@@ -2289,15 +2289,38 @@ struct sf_solve
                     break;
                 };
                 _here = (node.token ? node.token : _here);
-                result.mutref(i) = unorderedPrep(node);
+                if ((node.kind != "fn"_fu))
+                    result.mutref(i) = unorderedPrep(node);
+
             };
-            for (int i = i0; (i < i1); i++)
+            
             {
-                const s_Node& node = nodes[i];
-                if (node)
+                for (int i = i0; (i < i1); i++)
                 {
-                    _here = (node.token ? node.token : _here);
-                    result.mutref(i) = unorderedSolve(node, result[i]);
+                    const s_Node& node = nodes[i];
+                    if ((node && (node.kind != "fn"_fu)))
+                    {
+                        _here = (node.token ? node.token : _here);
+                        result.mutref(i) = unorderedSolve(node, result[i]);
+                    };
+                };
+                for (int i = i0; (i < i1); i++)
+                {
+                    const s_Node& node = nodes[i];
+                    if ((node.kind == "fn"_fu))
+                    {
+                        _here = (node.token ? node.token : _here);
+                        result.mutref(i) = unorderedPrep(node);
+                    };
+                };
+                for (int i = i0; (i < i1); i++)
+                {
+                    const s_Node& node = nodes[i];
+                    if ((node.kind == "fn"_fu))
+                    {
+                        _here = (node.token ? node.token : _here);
+                        result.mutref(i) = unorderedSolve(node, result[i]);
+                    };
                 };
             };
             ((i1 > i0) || fail(fu_STR{}));
