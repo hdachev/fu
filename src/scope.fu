@@ -139,12 +139,19 @@ pub fn initStruct(id: string, flags: i32)
     return Type(ValueType(:canon, copyOrMove(flags, def.fields), MODID));
 }
 
-pub fn finalizeStruct(id: string, fields: StructField[])
+pub fn finalizeStruct(
+    id: string, fields: StructField[]): i32
 {
+    mut quals: i32 = 0;
+
     let canon = "s_" + id;
     let def: &mut Struct = lookupType_mut(canon);
-
     def.fields = fields || throw("TODO empty structs?");
+
+    if (!fields.someFieldNonTrivial)
+        quals |= q_trivial;
+
+    return quals;
 }
 
 
@@ -169,7 +176,7 @@ fn someFieldNonCopy(fields: StructField[]): bool
     return false;
 }
 
-fn someFieldNotTrivial(fields: StructField[]): bool
+fn someFieldNonTrivial(fields: StructField[]): bool
 {
     for (mut i = 0; i < fields.len; i++)
         if !(fields[i].type.quals & q_trivial)

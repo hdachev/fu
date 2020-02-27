@@ -568,11 +568,11 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     {
         module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_COW_MAP<fu_STR, s_Struct>{}, fu_COW_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
         fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
-        s_ModuleStat stat0 = ModuleStat_now();
+        const s_ModuleStat stat0 = ModuleStat_now();
         s_LexerOutput lexer_result = lex(src, fname);
-        s_ModuleStat stat1 = ModuleStat_now();
+        const s_ModuleStat stat1 = ModuleStat_now();
         s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
-        s_ModuleStat stat2 = ModuleStat_now();
+        const s_ModuleStat stat2 = ModuleStat_now();
         module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
         module.stats.lex = (stat1 - stat0);
         module.stats.parse = (stat2 - stat1);
@@ -588,11 +588,11 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 
     if (!module.out)
     {
-        s_ModuleStat stat0 = ModuleStat_now();
+        const s_ModuleStat stat0 = ModuleStat_now();
         module.out.solve = solve(module.in.parse.root, ctx, module);
-        s_ModuleStat stat1 = ModuleStat_now();
+        const s_ModuleStat stat1 = ModuleStat_now();
         module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
-        s_ModuleStat stat2 = ModuleStat_now();
+        const s_ModuleStat stat2 = ModuleStat_now();
         module.stats.solve = (stat1 - stat0);
         module.stats.codegen = (stat2 - stat1);
         setModule(module, ctx);

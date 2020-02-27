@@ -1681,4 +1681,14 @@ fn runTests()
         fn hello() list.if_first.if_first;
         fn main() hello - 3;
     `);
+
+
+    // Trivial equality.
+
+    ZERO(`
+        struct Triv { a: i32; b: i32; };
+        let a = [1, 2];
+        fn eq(a: i32[], b: i32[]) a == b;
+        fn main() eq(a, a) ? 0 : 1;
+    `);
 }

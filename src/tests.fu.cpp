@@ -709,4 +709,5 @@ void runTests()
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n\n        fn list(): i32[][] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n\n        fn list(): X[] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
+    ZERO("\n        struct Triv { a: i32; b: i32; };\n        let a = [1, 2];\n        fn eq(a: i32[], b: i32[]) a == b;\n        fn main() eq(a, a) ? 0 : 1;\n    "_fu);
 }

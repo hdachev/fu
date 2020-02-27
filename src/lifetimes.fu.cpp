@@ -38,24 +38,24 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEFt_2_4v_s_Region_4__6
-                                #define DEFt_2_4v_s_Region_4__6
+                                #ifndef DEFt_2_4v_s_Region_12__6
+                                #define DEFt_2_4v_s_Region_12__6
 inline const s_Region& if_only(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_5v_s_Region_4__6
-                                #define DEFt_2_5v_s_Region_4__6
+                                #ifndef DEFt_2_5v_s_Region_12__6
+                                #define DEFt_2_5v_s_Region_12__6
 inline const s_Region& if_first(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1v_s_Region_4__6
-                                #define DEFt_2_1v_s_Region_4__6
+                                #ifndef DEFt_2_1v_s_Region_12__6
+                                #define DEFt_2_1v_s_Region_12__6
 inline const s_Region& only(const fu_VEC<s_Region>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -106,7 +106,7 @@ s_Lifetime inter_args(s_Lifetime&& a, const s_Lifetime& b)
         const s_Region& br = b.regions[i];
         for (int i = 0; (i < a.regions.size()); i++)
         {
-            s_Region ar { a.regions[i] };
+            const s_Region ar = a.regions[i];
             if ((ar.index == br.index))
             {
                 if ((ar.relax > br.relax))

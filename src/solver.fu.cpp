@@ -55,7 +55,7 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
 int MODID(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
-void finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -949,7 +949,7 @@ struct sf_solve
             };
         };
         s_Template tEmplate = s_Template { s_Node(native) };
-        s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, tEmplate, s_Partial{}, s_SolvedNode{}, module);
+        const s_Target overload = Scope_add(_scope, kind, id, ret, min, max, arg_n, arg_t, arg_d, tEmplate, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
     };
@@ -1162,7 +1162,7 @@ struct sf_solve
                             fail("TODO handle argument reorder in template specialization."_fu);
 
                         s_Overload o = GET(overloadIdx, module, ctx);
-                        s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
+                        const s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
                         if (!specIdx)
                         {
                             goto L_NEXT_c;
@@ -1244,11 +1244,11 @@ struct sf_solve
     };
     s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
     {
-        s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{});
+        const s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{});
         if (ret)
             return ret;
 
-        s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{});
+        const s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{});
         if (debug)
             return debug;
 
@@ -1466,7 +1466,7 @@ struct sf_solve
             if (solve)
                 return s_SolvedNode((prep ? prep : fail(fu_STR{})));
 
-            s_Target tDecl = TemplateDecl(n_fn);
+            const s_Target tDecl = TemplateDecl(n_fn);
             s_SolvedNode out = solved(n_fn, t_void, fu_VEC<s_SolvedNode>{});
             out.target = tDecl;
             return out;
@@ -1686,7 +1686,8 @@ struct sf_solve
                     fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_ValueType((item.type.value ? item.type.value : fail(fu_STR{}))) });
                 };
             };
-            finalizeStruct(id, fields, module);
+            structType.value.quals |= finalizeStruct(id, fields, module);
+            GET_mut(out.target).type.value.quals = structType.value.quals;
             DefaultCtor(id, structType, members);
         };
         return out;
@@ -1771,7 +1772,7 @@ struct sf_solve
             lifetime = Lifetime_next();
 
         fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.value.quals & q_ref) ? "ref"_fu : "var"_fu)));
-        s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), fu_STR(kind), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
+        const s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), fu_STR(kind), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -1780,7 +1781,7 @@ struct sf_solve
     s_SolvedNode solveField(const s_Type& structType, const s_Node& node)
     {
         s_SolvedNode out = solveBinding(node, Lifetime_fromArgIndex(0));
-        s_Target overload = Field(out.value, structType, out.type);
+        const s_Target overload = Field(out.value, structType, out.type);
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -1989,7 +1990,7 @@ struct sf_solve
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
-            s_Partial partial { (callTarg.partial ? callTarg.partial : fail(fu_STR{})) };
+            const s_Partial partial = (callTarg.partial ? callTarg.partial : fail(fu_STR{}));
             const s_Target& viaIdx = (partial.via ? partial.via : fail(fu_STR{}));
             callTargIdx = (partial.target ? partial.target : fail(fu_STR{}));
             s_Overload via = GET(viaIdx, module, ctx);
@@ -2034,7 +2035,7 @@ struct sf_solve
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
         const int scope0 = Scope_push(_scope);
-        s_Target ret = Binding(id, type, "var"_fu, s_SolvedNode{});
+        const s_Target ret = Binding(id, type, "var"_fu, s_SolvedNode{});
         Scope_pop(_scope, scope0);
         
         {
@@ -2259,7 +2260,7 @@ struct sf_solve
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> result {};
-        s_TokenIdx here0 { _here };
+        const s_TokenIdx here0 = _here;
         result.resize(nodes.size());
         for (int i = 0; (i < nodes.size()); i++)
         {

@@ -1154,11 +1154,11 @@ fn solve(
         mut out         = prep || solved(node, t_void);
 
         let id          = node.value || fail("TODO anonymous structs");
-        let structType  = initStruct(id, node.flags);
+        mut structType  = initStruct(id, node.flags);
 
         // Add the arity-0 type entry.
         if (!prep)
-            out.target  = Scope_Typedef(_scope, id, structType);
+            out.target = Scope_Typedef(_scope, id, structType);
 
         if (!solve)
             return out;
@@ -1188,8 +1188,11 @@ fn solve(
                 }
             }
 
-            finalizeStruct(id, fields);
+            //
+            structType.quals |= finalizeStruct(id, fields);
+            GET_mut(out.target).type.quals = structType.quals;
 
+            //
             DefaultCtor(id, structType, members);
         }
 

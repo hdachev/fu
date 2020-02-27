@@ -3,13 +3,12 @@
 
 // Eq.
 
-#define A_B_STRINGLIKE() template <typename A, typename B, \
+#define A_B_VECLIKE() template <typename A, typename B, \
     typename A1 = typename A::fu_ANY_value_type, \
     typename B1 = typename A::fu_ANY_value_type, \
-    typename = decltype(*((A1**)1)=((B1*)2)), \
-    typename = decltype(*((std::byte**)1)=((A1*)2))>
+    typename = decltype(*((A1**)1)=((B1*)2))>
 
-A_B_STRINGLIKE()
+A_B_VECLIKE()
 inline bool operator==(const A& a, const B& b) noexcept
 {
     int s = a.size();
@@ -17,7 +16,7 @@ inline bool operator==(const A& a, const B& b) noexcept
         && memcmp(a.data(), b.data(), size_t(s)) == 0;
 }
 
-A_B_STRINGLIKE()
+A_B_VECLIKE()
 fu_INL bool operator!=(const A& a, const B& b) noexcept
 {
     int s = a.size();
@@ -27,6 +26,12 @@ fu_INL bool operator!=(const A& a, const B& b) noexcept
 
 
 // Cmp.
+
+#define A_B_STRINGLIKE() template <typename A, typename B, \
+    typename A1 = typename A::fu_ANY_value_type, \
+    typename B1 = typename A::fu_ANY_value_type, \
+    typename = decltype(*((A1**)1)=((B1*)2)), \
+    typename = decltype(*((std::byte**)1)=((A1*)2))>
 
 inline int strcmp(const std::byte* d0, int s0, const std::byte* d1, int s1) noexcept
 {

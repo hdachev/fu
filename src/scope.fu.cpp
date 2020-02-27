@@ -35,6 +35,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 fu_STR serializeType(const s_Type&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
@@ -605,11 +606,21 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
     return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
 
-void finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline const int q_trivial = (1 << 3);
+                                #endif
+
+int finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
 {
+    int quals = 0;
     fu_STR canon = ("s_"_fu + id);
     s_Struct& def = lookupType_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
+    if (!someFieldNonTrivial(fields))
+        quals |= q_trivial;
+
+    return quals;
 }
 
                                 #ifndef DEF_F_DESTRUCTOR
@@ -641,12 +652,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
     return false;
 }
 
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
-                                #endif
-
-bool someFieldNotTrivial(const fu_VEC<s_StructField>& fields)
+bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
@@ -752,7 +758,7 @@ void Scope_pop(s_Scope& scope, const int memo)
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
-    s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
+    const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
