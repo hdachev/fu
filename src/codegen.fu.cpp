@@ -42,13 +42,29 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-bool type_isArray(const s_Type&);
-s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 bool type_isMap(const s_Type&);
 const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
+bool type_isArray(const s_Type&);
+s_Type tryClear_array(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
 bool operator==(const s_Type&, const s_Type&);
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -62,38 +78,6 @@ struct s_ValueType
             || quals
             || modid
             || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_ValueType type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
         ;
     }
 };
@@ -395,6 +379,22 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
+struct s_StructField
+{
+    fu_STR id;
+    s_ValueType type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || type
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -529,24 +529,16 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEFt_2_1v_s_StructField_4__6
-                                #define DEFt_2_1v_s_StructField_4__6
-inline const s_StructField& only(const fu_VEC<s_StructField>& s)
-{
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
-                                #ifndef DEFt_2_6v_byte_28__6
-                                #define DEFt_2_6v_byte_28__6
+                                #ifndef DEFt_2_6_6___28byte
+                                #define DEFt_2_6_6___28byte
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1v_s_SolvedNode_4__6
-                                #define DEFt_2_1v_s_SolvedNode_4__6
+                                #ifndef DEFt_2_1_6__7_4s_SolvedNode
+                                #define DEFt_2_1_6__7_4s_SolvedNode
 inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -833,12 +825,19 @@ struct sf_cpp_codegen
         if ((c == "void"_fu))
             return "void"_fu;
 
-        if ((c == "string"_fu))
-            return annotateString();
-
         if ((c == "never"_fu))
             return annotateNever();
 
+        s_Type arrayItem = tryClear_array(type);
+        if (arrayItem)
+        {
+            if ((arrayItem.value == t_byte.value))
+                return annotateString();
+
+            fu_STR itemAnnot = typeAnnot(arrayItem, 0);
+            include("<fu/vec.h>"_fu);
+            return (("fu_VEC<"_fu + itemAnnot) + ">"_fu);
+        };
         const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
         const fu_STR& k = tdef.kind;
         if ((k == "struct"_fu))
@@ -849,15 +848,6 @@ struct sf_cpp_codegen
                 (_tdef += declareStruct(type, tdef));
             };
             return fu_STR(type.value.canon);
-        };
-        if ((k == "array"_fu))
-        {
-            if ((only(tdef.fields).type == t_byte.value))
-                return annotateString();
-
-            fu_STR item = typeAnnot(tdef.fields[0].type);
-            include("<fu/vec.h>"_fu);
-            return (("fu_VEC<"_fu + item) + ">"_fu);
         };
         if ((k == "map"_fu))
         {
@@ -1378,7 +1368,7 @@ struct sf_cpp_codegen
         if (!items.size())
             return cgDefault(node.type);
 
-        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type, module, ctx); if (_) return _; } fail(fu_STR{}); }());
+        s_Type itemType = ([&]() -> s_Type { { s_Type _ = tryClear_array(node.type); if (_) return _; } fail(fu_STR{}); }());
         fu_STR itemAnnot = typeAnnot(itemType, 0);
         fu_STR arrayAnnot = typeAnnot(node.type, 0);
         return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu::join(items, ", "_fu)) + " } }"_fu);

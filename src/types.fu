@@ -232,15 +232,83 @@ pub fn add_refs(from: Type, mut to: Type)
 }
 
 
-//
+// Type serialization:
+//  `modid` `+quals` `canon`: a very compact repr.
 
 pub fn serializeType(type: Type)
 {
-    if (type.quals)
-        return type.canon + "+" + type.quals;
+    mut prefix: string;
 
-    return type.canon;
+    if (type.modid) prefix += type.modid;
+    if (type.quals) prefix += "+" + type.quals;
+
+    return prefix + type.canon;
 }
+
+pub fn parse10i32(offset: &mut i32, str: string): i32
+{
+    mut result: i32;
+    for (;;)
+    {
+        let c = offset < str.len && str[offset];
+        if (c < '0' || c > '9')
+            break;
+
+        offset++;
+        result = result * 10 + (c.i32 - '0'.i32);
+    }
+
+    return result;
+}
+
+pub fn parseType(str: string): ValueType
+{
+    mut offset: i32;
+
+    let modid = parse10i32(offset, str);
+    mut quals = 0;
+    if (str[offset] == '+')
+    {
+        offset++;
+        quals = parse10i32(offset, str);
+    }
+
+    let canon = str.slice(offset);
+
+    return ValueType(
+        :modid, :canon, :quals);
+}
+
+
+//
+
+pub fn type_isArray(type: Type): bool
+{
+    return type.canon.starts(with: "[]");
+}
+
+pub fn createArray(item: Type): Type
+{
+    let canon = "[]" + serializeType(item);
+    let quals = q_copy;
+    let modid = 0;
+
+    return Type(
+        ValueType(:canon, :quals, :modid),
+            :item.lifetime);
+}
+
+pub fn tryClear_array(type: Type): Type
+{
+    if (!type_isArray(type))
+        return Type();
+
+    let value = parseType(type.canon.slice(2));
+    return Type(:value, :type.lifetime);
+}
+
+
+//
 
 pub fn type_has(type: Type, tag: string)
 {
@@ -274,7 +342,7 @@ pub fn type_tryInter(a: Type, b: Type)
 
 pub struct Struct
 {
-    kind:   string; // "struct"|"array"|"map";
+    kind:   string; // "struct"|"map";
     id:     string;
     fields: StructField[];
     flags:  i32;

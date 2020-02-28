@@ -188,49 +188,6 @@ fn someFieldNonTrivial(fields: StructField[]): bool
 
 //
 
-pub fn createArray(item: Type): Type
-{
-    let flags = 0;
-    let fields: StructField[] =
-    [
-        StructField(
-            id:  "Item",
-            type: item.value),
-    ];
-
-    let canon = "v(" + serializeType(item) + ")";
-
-    registerType(canon, Struct(
-        kind:   "array",
-        id:     canon,
-        :fields,
-        :flags));
-
-    return Type(
-        ValueType(:canon, copyOrMove(flags, fields), MODID),
-            :item.lifetime);
-}
-
-pub fn type_isArray(type: Type): bool
-{
-    return type.canon.starts(with: "v(");
-}
-
-pub fn tryClear_array(type: Type): Type
-{
-    if (!type_isArray(type))
-        return Type();
-
-    let def = lookupType(type);
-
-    return Type(
-        value: def.kind == "array" && def.fields[0].type || assert(),
-        :type.lifetime);
-}
-
-
-//
-
 pub fn type_isMap(type: Type): bool
 {
     return type.canon.starts(with: "m(");

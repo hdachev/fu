@@ -129,12 +129,24 @@ pub fn cpp_codegen(
         }
 
         if (c == "void")   return "void";
-        if (c == "string") return annotateString();
         if (c == "never")  return annotateNever();
 
+        // Arrays & strings.
+        let arrayItem = tryClear_array(type);
+        if (arrayItem)
+        {
+            if (arrayItem.value == t_byte.value)
+                return annotateString();
+
+            let itemAnnot = typeAnnot(arrayItem);
+
+            include("<fu/vec.h>");
+            return "fu_VEC<" + itemAnnot + ">";
+        }
+
+        //
         let tdef = lookupType(type) || fail("TODO: " + type.canon);
         let k = tdef.kind;
-
         if (k == "struct")
         {
             if (!_tfwd.has(type.canon))
@@ -145,17 +157,6 @@ pub fn cpp_codegen(
             }
 
             return type.canon;
-        }
-
-        if (k == "array")
-        {
-            if (tdef.fields.only.type == t_byte.value)
-                return annotateString();
-
-            let item = typeAnnot(tdef.fields[0].type);
-
-            include("<fu/vec.h>");
-            return "fu_VEC<" + item + ">";
         }
 
         if (k == "map")

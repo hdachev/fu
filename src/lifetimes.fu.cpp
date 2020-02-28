@@ -38,24 +38,24 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEFt_2_4v_s_Region_12__6
-                                #define DEFt_2_4v_s_Region_12__6
+                                #ifndef DEFt_2_4_6__9_12s_Region
+                                #define DEFt_2_4_6__9_12s_Region
 inline const s_Region& if_only(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_5v_s_Region_12__6
-                                #define DEFt_2_5v_s_Region_12__6
+                                #ifndef DEFt_2_5_6__9_12s_Region
+                                #define DEFt_2_5_6__9_12s_Region
 inline const s_Region& if_first(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1v_s_Region_12__6
-                                #define DEFt_2_1v_s_Region_12__6
+                                #ifndef DEFt_2_1_6__9_12s_Region
+                                #define DEFt_2_1_6__9_12s_Region
 inline const s_Region& only(const fu_VEC<s_Region>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));

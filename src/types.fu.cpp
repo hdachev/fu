@@ -1,3 +1,5 @@
+#include <cstdint>
+#include <fu/default.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -5,6 +7,7 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
+#include <fu/vec/slice.h>
 #include <utility>
 
 struct s_Effects;
@@ -396,10 +399,66 @@ s_Type add_refs(const s_Type& from, s_Type&& to)
 
 fu_STR serializeType(const s_Type& type)
 {
-    if (type.value.quals)
-        return ((type.value.canon + "+"_fu) + type.value.quals);
+    fu_STR prefix {};
+    if (type.value.modid)
+        (prefix += type.value.modid);
 
-    return fu_STR(type.value.canon);
+    if (type.value.quals)
+        (prefix += ("+"_fu + type.value.quals));
+
+    return (prefix + type.value.canon);
+}
+
+int parse10i32(int& offset, const fu_STR& str)
+{
+    int result {};
+    for (; ; )
+    {
+        const std::byte c = ([&]() -> std::byte { if ((offset < str.size())) return str[offset]; else return fu::Default<std::byte>::value; }());
+        if (((c < std::byte('0')) || (c > std::byte('9'))))
+        {
+            break;
+        };
+        offset++;
+        result = ((result * 10) + (int(c) - int(std::byte('0'))));
+    };
+    return result;
+}
+
+s_ValueType parseType(const fu_STR& str)
+{
+    int offset {};
+    const int modid = parse10i32(offset, str);
+    int quals = 0;
+    if ((str[offset] == std::byte('+')))
+    {
+        offset++;
+        quals = parse10i32(offset, str);
+    };
+    fu_STR canon = fu::slice(str, offset);
+    return s_ValueType { int(quals), int(modid), fu_STR(canon) };
+}
+
+bool type_isArray(const s_Type& type)
+{
+    return fu::lmatch(type.value.canon, "[]"_fu);
+}
+
+s_Type createArray(const s_Type& item)
+{
+    fu_STR canon = ("[]"_fu + serializeType(item));
+    const int quals = q_copy;
+    const int modid = 0;
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
+}
+
+s_Type tryClear_array(const s_Type& type)
+{
+    if (!type_isArray(type))
+        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+
+    s_ValueType value = parseType(fu::slice(type.value.canon, 2));
+    return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)

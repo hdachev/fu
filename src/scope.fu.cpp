@@ -663,29 +663,6 @@ bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
     return false;
 }
 
-s_Type createArray(const s_Type& item, s_Module& module)
-{
-    const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<1> { s_StructField { "Item"_fu, s_ValueType(item.value) } } };
-    fu_STR canon = (("v("_fu + serializeType(item)) + ")"_fu);
-    registerType(canon, s_Struct { "array"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
-}
-
-bool type_isArray(const s_Type& type)
-{
-    return fu::lmatch(type.value.canon, "v("_fu);
-}
-
-s_Type tryClear_array(const s_Type& type, const s_Module& module, const s_Context& ctx)
-{
-    if (!type_isArray(type))
-        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
-
-    const s_Struct& def = lookupType(type, module, ctx);
-    return s_Type { s_ValueType(([&]() -> const s_ValueType& { if ((def.kind == "array"_fu)) { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} };
-}
-
 bool type_isMap(const s_Type& type)
 {
     return fu::lmatch(type.value.canon, "m("_fu);

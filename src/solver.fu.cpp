@@ -38,8 +38,6 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-s_Type createArray(const s_Type&, s_Module&);
-s_Type tryClear_array(const s_Type&, const s_Module&, const s_Context&);
 s_Type createMap(const s_Type&, const s_Type&, s_Module&);
 s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
@@ -59,6 +57,8 @@ int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
+s_Type createArray(const s_Type&);
+s_Type tryClear_array(const s_Type&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
@@ -569,8 +569,8 @@ struct s_MapFields
 };
                                 #endif
 
-                                #ifndef DEFt_2_1v_s_Node_4__6
-                                #define DEFt_2_1v_s_Node_4__6
+                                #ifndef DEFt_2_1_6__5_4s_Node
+                                #define DEFt_2_1_6__5_4s_Node
 inline const s_Node& only(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -843,7 +843,7 @@ struct sf_solve
     fu_COW_MAP<s_Type, s_Type> _array_cache {};
     s_Type& fast_createArray(const s_Type& type)
     {
-        return ([&](s_Type& _) -> s_Type& { if (!_) _ = createArray(type, module); return _; } (_array_cache.upsert(type)));
+        return ([&](s_Type& _) -> s_Type& { if (!_) _ = createArray(type); return _; } (_array_cache.upsert(type)));
     };
     s_Type _t_string {};
     s_Type t_string()
@@ -1883,7 +1883,7 @@ struct sf_solve
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type, module, ctx) : ((void)fail("TODO"_fu), s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO"_fu), s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }))));
                     if (!t)
                         return false;
 
@@ -2011,7 +2011,7 @@ struct sf_solve
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
-        s_Type itemType = ([&]() -> s_Type { if (type) return tryClear_array(type, module, ctx); else return s_Type{}; }());
+        s_Type itemType = ([&]() -> s_Type { if (type) return tryClear_array(type); else return s_Type{}; }());
         int startAt = 0;
         if ((!itemType && items.size()))
         {
