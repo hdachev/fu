@@ -19,6 +19,7 @@ struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
+struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -42,11 +43,12 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-bool type_isMap(const s_Type&);
-const s_Struct& lookupType(const s_Type&, const s_Module&, const s_Context&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
+bool type_isMap(const s_Type&);
+s_MapFields tryClear_map(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
 bool operator==(const s_Type&, const s_Type&);
                                 #ifndef DEF_s_TokenIdx
@@ -399,14 +401,12 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR kind;
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
             || id
             || fields
             || flags
@@ -524,6 +524,22 @@ struct s_Context
         return false
             || modules
             || files
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_MapFields
+                                #define DEF_s_MapFields
+struct s_MapFields
+{
+    s_Type key;
+    s_Type value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || key
+            || value
         ;
     }
 };
@@ -838,25 +854,21 @@ struct sf_cpp_codegen
             include("<fu/vec.h>"_fu);
             return (("fu_VEC<"_fu + itemAnnot) + ">"_fu);
         };
-        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
-        const fu_STR& k = tdef.kind;
-        if ((k == "struct"_fu))
+        s_MapFields mapPair = tryClear_map(type);
+        if (mapPair)
         {
-            if (!fu::has(_tfwd, type.value.canon))
-            {
-                (_tfwd.upsert(type.value.canon) = (("\nstruct "_fu + type.value.canon) + ";"_fu));
-                (_tdef += declareStruct(type, tdef));
-            };
-            return fu_STR(type.value.canon);
-        };
-        if ((k == "map"_fu))
-        {
-            fu_STR k = typeAnnot(tdef.fields[0].type);
-            fu_STR v = typeAnnot(tdef.fields[1].type);
+            fu_STR k = typeAnnot(mapPair.key, 0);
+            fu_STR v = typeAnnot(mapPair.value, 0);
             include("<fu/map.h>"_fu);
             return (((("fu_COW_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
         };
-        fail(("TODO: "_fu + tdef.kind));
+        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
+        if (!fu::has(_tfwd, type.value.canon))
+        {
+            (_tfwd.upsert(type.value.canon) = (("\nstruct "_fu + type.value.canon) + ";"_fu));
+            (_tdef += declareStruct(type, tdef));
+        };
+        return fu_STR(type.value.canon);
     };
     fu_STR declareStruct(const s_Type& t, const s_Struct& s)
     {
@@ -1422,7 +1434,7 @@ struct sf_cpp_codegen
         if ((target.kind == "defctor"_fu))
         {
             const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
-            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupType(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
+            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
             fu_STR open = " { "_fu;
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))
@@ -1446,7 +1458,7 @@ struct sf_cpp_codegen
         if ((target.kind == "field"_fu))
         {
             fu_STR sep = "."_fu;
-            const s_Struct& parent = lookupType(node.items[0].type, module, ctx);
+            const s_Struct& parent = lookupStruct(node.items[0].type, module, ctx);
             if ((parent.flags & F_DESTRUCTOR))
                 sep = ".data."_fu;
 

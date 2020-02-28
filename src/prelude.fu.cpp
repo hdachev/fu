@@ -183,14 +183,12 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR kind;
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
             || id
             || fields
             || flags

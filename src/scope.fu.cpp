@@ -5,13 +5,11 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/find.h>
 
 struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
-struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -34,10 +32,9 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
-int copyOrMove(int, const fu_VEC<s_StructField>&);
-fu_STR serializeType(const s_Type&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -192,14 +189,12 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR kind;
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
             || id
             || fields
             || flags
@@ -522,22 +517,6 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEF_s_MapFields
-                                #define DEF_s_MapFields
-struct s_MapFields
-{
-    s_Type key;
-    s_Type value;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || key
-            || value
-        ;
-    }
-};
-                                #endif
-
 int MODID(const s_Module& module)
 {
     return int(module.modid);
@@ -585,7 +564,7 @@ void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
     (module.out.types.upsert(canon) = def);
 }
 
-const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if ((type.value.modid == module.modid))
         return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
@@ -593,7 +572,7 @@ const s_Struct& lookupType(const s_Type& type, const s_Module& module, const s_C
     return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
 }
 
-s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
+s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
 {
     return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail(); }());
 }
@@ -601,7 +580,7 @@ s_Struct& lookupType_mut(const fu_STR& canon, s_Module& module)
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { "struct"_fu, fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
+    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
     registerType(canon, def, module);
     return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
@@ -615,7 +594,7 @@ int finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Modu
 {
     int quals = 0;
     fu_STR canon = ("s_"_fu + id);
-    s_Struct& def = lookupType_mut(canon, module);
+    s_Struct& def = lookupStruct_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
     if (!someFieldNonTrivial(fields))
         quals |= q_trivial;
@@ -661,30 +640,6 @@ bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
 
     };
     return false;
-}
-
-bool type_isMap(const s_Type& type)
-{
-    return fu::lmatch(type.value.canon, "m("_fu);
-}
-
-s_Type createMap(const s_Type& key, const s_Type& value, s_Module& module)
-{
-    const int flags = 0;
-    fu_VEC<s_StructField> fields = fu_VEC<s_StructField> { fu_VEC<s_StructField>::INIT<2> { s_StructField { "Key"_fu, s_ValueType(key.value) }, s_StructField { "Value"_fu, s_ValueType(value.value) } } };
-    fu_STR canon = (((("m("_fu + serializeType(key)) + ","_fu) + serializeType(value)) + ")"_fu);
-    registerType(canon, s_Struct { "map"_fu, fu_STR(canon), fu_VEC<s_StructField>(fields), int(flags) }, module);
-    return s_Type { s_ValueType { copyOrMove(flags, fields), MODID(module), fu_STR(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
-}
-
-s_MapFields tryClear_map(const s_Type& type, const s_Module& module, const s_Context& ctx)
-{
-    if (!type_isMap(type))
-        return s_MapFields { s_Type{}, s_Type{} };
-
-    const s_Struct& def = lookupType(type, module, ctx);
-    ((def.kind == "map"_fu) || fu::fail());
-    return s_MapFields { s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[0].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { s_ValueType(([&]() -> const s_ValueType& { { const s_ValueType& _ = def.fields[1].type; if (_) return _; } fu::fail(); }())), s_Lifetime(type.lifetime), s_Effects{} } };
 }
 
 bool isTemplate(const s_Overload& o)

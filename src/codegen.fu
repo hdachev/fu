@@ -144,31 +144,25 @@ pub fn cpp_codegen(
             return "fu_VEC<" + itemAnnot + ">";
         }
 
-        //
-        let tdef = lookupType(type) || fail("TODO: " + type.canon);
-        let k = tdef.kind;
-        if (k == "struct")
+        let mapPair = tryClear_map(type);
+        if (mapPair)
         {
-            if (!_tfwd.has(type.canon))
-            {
-                _tfwd[type.canon] = "\nstruct " + type.canon + ";";
-
-                _tdef += declareStruct(type, tdef);
-            }
-
-            return type.canon;
-        }
-
-        if (k == "map")
-        {
-            let k = typeAnnot(tdef.fields[0].type);
-            let v = typeAnnot(tdef.fields[1].type);
+            let k = typeAnnot(mapPair.key);
+            let v = typeAnnot(mapPair.value);
 
             include("<fu/map.h>");
             return "fu_COW_MAP<" + k + ", " + v + ">";
         }
 
-        return fail("TODO: " + tdef.kind);
+        //
+        let tdef = lookupStruct(type) || fail("TODO: " + type.canon);
+        if (!_tfwd.has(type.canon))
+        {
+            _tfwd[type.canon] = "\nstruct " + type.canon + ";";
+            _tdef += declareStruct(type, tdef);
+        }
+
+        return type.canon;
     }
 
     fn declareStruct(t: Type, s: Struct): string
@@ -930,7 +924,7 @@ pub fn cpp_codegen(
         if (target.kind == "defctor")
         {
             let head = (target.type || fail());
-            let type = lookupType(head) || fail();
+            let type = lookupStruct(head) || fail();
 
             //
             mut open = " { ";
@@ -964,7 +958,7 @@ pub fn cpp_codegen(
         if (target.kind == "field")
         {
             mut sep = ".";
-            let parent = lookupType(node.items[0].type);
+            let parent = lookupStruct(node.items[0].type);
             if (parent.flags & F_DESTRUCTOR)
                 sep = ".data.";
 

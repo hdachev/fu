@@ -102,7 +102,7 @@ fn registerType(
     module.out.types[canon] = def;
 }
 
-pub fn lookupType(
+pub fn lookupStruct(
     implicit module: Module,
     implicit ctx: Context,
     type: Type)
@@ -115,7 +115,7 @@ pub fn lookupType(
         || assert();
 }
 
-pub fn lookupType_mut(
+pub fn lookupStruct_mut(
     implicit module: &mut Module,
     canon: string)
 {
@@ -129,10 +129,8 @@ pub fn initStruct(id: string, flags: i32)
 {
     let canon = "s_" + id;
     let def = Struct(
-        kind:   "struct",
         id:     id      || throw("TODO anonymous structs?"),
-        flags:  flags|0,
-    );
+        flags:  flags|0);
 
     registerType(canon, def);
 
@@ -145,7 +143,7 @@ pub fn finalizeStruct(
     mut quals: i32 = 0;
 
     let canon = "s_" + id;
-    let def: &mut Struct = lookupType_mut(canon);
+    let def: &mut Struct = lookupStruct_mut(canon);
     def.fields = fields || throw("TODO empty structs?");
 
     if (!fields.someFieldNonTrivial)
@@ -183,58 +181,6 @@ fn someFieldNonTrivial(fields: StructField[]): bool
             return true;
 
     return false;
-}
-
-
-//
-
-pub fn type_isMap(type: Type): bool
-{
-    return type.canon.starts(with: "m(");
-}
-
-pub fn createMap(key: Type, value: Type): Type
-{
-    let flags  = 0;
-    let fields =
-    [
-        StructField(id:  "Key",   type: key.value  ),
-        StructField(id:  "Value", type: value.value),
-    ];
-
-    let canon = "m(" + serializeType(key) + "," + serializeType(value) + ")";
-
-    registerType(canon, Struct(
-        kind:   "map",
-        id:     canon,
-        :fields,
-        :flags,
-    ));
-
-    return Type(
-        ValueType(:canon, copyOrMove(flags, fields), MODID),
-            lifetime: type_inter( key.lifetime,
-                                value.lifetime ));
-}
-
-pub struct MapFields
-{
-    key:   Type;
-    value: Type;
-}
-
-pub fn tryClear_map(type: Type): MapFields
-{
-    if (!type_isMap(type))
-        return MapFields();
-
-    let def = lookupType(type);
-        def.kind == "map" || assert();
-
-    //
-    return MapFields(
-        key:   Type(value: def.fields[0].type || assert(), :type.lifetime),
-        value: Type(value: def.fields[1].type || assert(), :type.lifetime));
 }
 
 

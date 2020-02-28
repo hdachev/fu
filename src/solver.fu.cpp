@@ -38,8 +38,6 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-s_Type createMap(const s_Type&, const s_Type&, s_Module&);
-s_MapFields tryClear_map(const s_Type&, const s_Module&, const s_Context&);
 fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&);
 int Scope_push(s_Scope&);
@@ -59,6 +57,8 @@ s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
 s_Type createArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
+s_Type createMap(const s_Type&, const s_Type&);
+s_MapFields tryClear_map(const s_Type&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
@@ -223,14 +223,12 @@ struct s_StructField
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR kind;
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
             || id
             || fields
             || flags
@@ -1844,7 +1842,7 @@ struct sf_solve
                     s_Type b = evalTypeAnnot(items[1]).type;
                     ((a && b) || fail(fu_STR{}));
                     if ((node.value == "Map"_fu))
-                        return solved(node, createMap(a, b, module), fu_VEC<s_SolvedNode>{});
+                        return solved(node, createMap(a, b), fu_VEC<s_SolvedNode>{});
 
                 };
             }
@@ -1893,7 +1891,7 @@ struct sf_solve
                 {
                     if ((node.value == "Map"_fu))
                     {
-                        s_MapFields kv = tryClear_map(type, module, ctx);
+                        s_MapFields kv = tryClear_map(type);
                         if (!kv)
                             return false;
 

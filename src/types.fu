@@ -290,7 +290,7 @@ pub fn type_isArray(type: Type): bool
 pub fn createArray(item: Type): Type
 {
     let canon = "[]" + serializeType(item);
-    let quals = q_copy;
+    let quals = item.quals & q_copy;
     let modid = 0;
 
     return Type(
@@ -305,6 +305,63 @@ pub fn tryClear_array(type: Type): Type
 
     let value = parseType(type.canon.slice(2));
     return Type(:value, :type.lifetime);
+}
+
+
+//
+
+pub fn type_isMap(type: Type): bool
+{
+    return type.canon.starts(with: '{');
+}
+
+pub fn createMap(key: Type, value: Type): Type
+{
+    let canon = "{" + serializeType(key) + "}"
+                    + serializeType(value);
+
+    let quals = key.quals & value.quals & q_copy;
+    let modid = 0;
+
+    return Type(
+        ValueType(:canon, :quals, :modid),
+            lifetime: type_inter(key.lifetime, value.lifetime));
+}
+
+pub struct MapFields
+{
+    key:   Type;
+    value: Type;
+}
+
+pub fn tryClear_map(type: Type): MapFields
+{
+    if (!type_isMap(type))
+        return MapFields();
+
+    mut depth = 0;
+    for (mut i = 1; i < type.canon.len; i++)
+    {
+        let c = type.canon[i];
+        if (c == '{')
+        {
+            depth++;
+        }
+        else if (c == '}')
+        {
+            if (depth--)
+                continue;
+
+            let ckey = type.canon.slice(1,  i);
+            let cval = type.canon.slice(i + 1);
+
+            return MapFields(
+                key:   Type(value: parseType(ckey), :type.lifetime),
+                value: Type(value: parseType(cval), :type.lifetime));
+        }
+    }
+
+    assert();
 }
 
 
@@ -342,7 +399,6 @@ pub fn type_tryInter(a: Type, b: Type)
 
 pub struct Struct
 {
-    kind:   string; // "struct"|"map";
     id:     string;
     fields: StructField[];
     flags:  i32;

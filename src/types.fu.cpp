@@ -12,6 +12,7 @@
 
 struct s_Effects;
 struct s_Lifetime;
+struct s_MapFields;
 struct s_Region;
 struct s_Type;
 struct s_ValueType;
@@ -92,6 +93,22 @@ struct s_Type
             || value
             || lifetime
             || effects
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_MapFields
+                                #define DEF_s_MapFields
+struct s_MapFields
+{
+    s_Type key;
+    s_Type value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || key
+            || value
         ;
     }
 };
@@ -447,7 +464,7 @@ bool type_isArray(const s_Type& type)
 s_Type createArray(const s_Type& item)
 {
     fu_STR canon = ("[]"_fu + serializeType(item));
-    const int quals = q_copy;
+    const int quals = (item.value.quals & q_copy);
     const int modid = 0;
     return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
@@ -459,6 +476,44 @@ s_Type tryClear_array(const s_Type& type)
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));
     return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
+}
+
+bool type_isMap(const s_Type& type)
+{
+    return fu::lmatch(type.value.canon, std::byte('{'));
+}
+
+s_Type createMap(const s_Type& key, const s_Type& value)
+{
+    fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(value));
+    const int quals = ((key.value.quals & value.value.quals) & q_copy);
+    const int modid = 0;
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
+}
+
+s_MapFields tryClear_map(const s_Type& type)
+{
+    if (!type_isMap(type))
+        return s_MapFields { s_Type{}, s_Type{} };
+
+    int depth = 0;
+    for (int i = 1; (i < type.value.canon.size()); i++)
+    {
+        const std::byte c = type.value.canon[i];
+        if ((c == std::byte('{')))
+            depth++;
+        else if ((c == std::byte('}')))
+        {
+            if (depth--)
+            {
+                continue;
+            };
+            fu_STR ckey = fu::slice(type.value.canon, 1, i);
+            fu_STR cval = fu::slice(type.value.canon, (i + 1));
+            return s_MapFields { s_Type { parseType(ckey), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { parseType(cval), s_Lifetime(type.lifetime), s_Effects{} } };
+        };
+    };
+    fu::fail();
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)
