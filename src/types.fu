@@ -128,6 +128,7 @@ pub let t_byte      = Type(ValueType(canon: "byte",     quals: Primitive));
 pub fn isAssignable(host: Type, guest: Type)
 {
     return host.canon == guest.canon
+        && host.modid == guest.modid
             && (host.quals == guest.quals ||
                   !(host.quals & q_mutref) // mut invariance
                     && (host.quals & guest.quals) == host.quals)
@@ -380,7 +381,7 @@ pub fn type_has(type: Type, tag: string)
 
 pub fn type_tryInter(a: Type, b: Type)
 {
-    if (a.canon != b.canon)
+    if (a.canon != b.canon || a.modid != b.modid)
         return a == t_never ? b
              : b == t_never ? a
              : Type();

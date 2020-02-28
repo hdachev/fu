@@ -336,7 +336,7 @@ inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return (((host.value.canon == guest.value.canon) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || ((guest == t_never) && (guest.value.quals == 0)));
+    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || ((guest == t_never) && (guest.value.quals == 0)));
 }
 
 bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
@@ -526,7 +526,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
-    if ((a.value.canon != b.value.canon))
+    if (((a.value.canon != b.value.canon) || (a.value.modid != b.value.modid)))
         return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
