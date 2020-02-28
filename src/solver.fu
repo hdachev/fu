@@ -1189,7 +1189,7 @@ fn solve(
             }
 
             //
-            structType.quals |= finalizeStruct(id, fields);
+            structType.quals |= finalizeStruct(structType.canon, fields);
             GET_mut(out.target).type.quals = structType.quals;
 
             //

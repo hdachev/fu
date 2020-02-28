@@ -95,13 +95,6 @@ pub fn setModule(
         current = module;
 }
 
-fn registerType(
-    implicit module: &mut Module,
-    canon: string, def: Struct): void
-{
-    module.out.types[canon] = def;
-}
-
 pub fn lookupStruct(
     implicit module: Module,
     implicit ctx: Context,
@@ -125,24 +118,33 @@ pub fn lookupStruct_mut(
 
 //
 
-pub fn initStruct(id: string, flags: i32)
+pub fn isStruct(type: Type)
 {
-    let canon = "s_" + id;
-    let def = Struct(
-        id:     id      || throw("TODO anonymous structs?"),
-        flags:  flags|0);
+    return type.canon[0] == '$';
+}
 
-    registerType(canon, def);
+pub fn initStruct(
+    implicit module: &mut Module,
+    id: string, flags: i32)
+{
+    let canon = "$" + module.modid + id;
+
+    let def = Struct(
+        :id || throw("TODO anonymous structs?"),
+        :flags);
+
+    // REGISTER STRUCT ///////////
+    module.out.types[canon] = def;
+    //////////////////////////////
 
     return Type(ValueType(:canon, copyOrMove(flags, def.fields), MODID));
 }
 
 pub fn finalizeStruct(
-    id: string, fields: StructField[]): i32
+    canon: string, fields: StructField[]): i32
 {
     mut quals: i32 = 0;
 
-    let canon = "s_" + id;
     let def: &mut Struct = lookupStruct_mut(canon);
     def.fields = fields || throw("TODO empty structs?");
 

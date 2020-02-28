@@ -156,20 +156,41 @@ pub fn cpp_codegen(
 
         //
         let tdef = lookupStruct(type) || fail("TODO: " + type.canon);
-        if (!_tfwd.has(type.canon))
+        let id   = structId(type);
+
+        if (!_tfwd.has(c))
         {
-            _tfwd[type.canon] = "\nstruct " + type.canon + ";";
+            _tfwd[c] = "\nstruct " + id + ";";
             _tdef += declareStruct(type, tdef);
         }
 
-        return type.canon;
+        return id;
+    }
+
+    fn structId(t: Type): string
+    {
+        for (mut i = 0; i < t.canon.len; i++)
+        {
+            let x = t.canon[i];
+            if (x >= 'a' && x <= 'z' ||
+                x >= 'A' && x <= 'Z' ||
+                x == '_')
+            {
+                return "s_" + t.canon.slice(i);
+                break;
+            }
+        }
+
+        fail("Bad structId: `" + t.canon + "`.");
     }
 
     fn declareStruct(t: Type, s: Struct): string
     {
-        mut def = "\n                                #ifndef DEF_" + t.canon
-                + "\n                                #define DEF_" + t.canon
-                + "\nstruct " + t.canon + "\n{";
+        let id = structId(t);
+
+        mut def = "\n                                #ifndef DEF_" + id
+                + "\n                                #define DEF_" + id
+                + "\nstruct " + id + "\n{";
 
         mut indent = "\n    ";
 
@@ -193,12 +214,12 @@ pub fn cpp_codegen(
             def += "\n    Data data;";
             def += "\n    bool dtor = false;";
             def += "\n";
-            def += "\n    ~" + t.canon + "() noexcept;";
-            def += "\n    inline " + t.canon + "(Data data) noexcept : data(data) {};";
-            def += "\n    " + t.canon + "(const " + t.canon + "&) = delete;";
-            def += "\n    " + t.canon + "& operator=(const " + t.canon + "&) = delete;";
-            def += "\n    " + t.canon + "(" + t.canon + "&&) noexcept;";
-            def += "\n    " + t.canon + "& operator=(" + t.canon + "&&) noexcept;";
+            def += "\n    ~" + id + "() noexcept;";
+            def += "\n    inline " + id + "(Data data) noexcept : data(data) {};";
+            def += "\n    " + id + "(const " + id + "&) = delete;";
+            def += "\n    " + id + "& operator=(const " + id + "&) = delete;";
+            def += "\n    " + id + "(" + id + "&&) noexcept;";
+            def += "\n    " + id + "& operator=(" + id + "&&) noexcept;";
         }
 
         def += "\n    explicit operator bool() const noexcept";
@@ -653,9 +674,9 @@ pub fn cpp_codegen(
         if (fn.flags & F_DESTRUCTOR)
         {
             let head = items[0] || fail();
-            let name = head.type.canon;
+            let id = structId(head.type);
 
-            src += "\n\n" + name + "::~" + name + "() noexcept";
+            src += "\n\n" + id + "::~" + id + "() noexcept";
             src += "\n{";
             src += "\n    if (!dtor)";
             src += "\n    {";
@@ -667,7 +688,7 @@ pub fn cpp_codegen(
             include("<cassert>");
             include("<utility>");
 
-            src += "\n\n" + name + "::" + name + "(" + name + "&& src) noexcept";
+            src += "\n\n" + id + "::" + id + "(" + id + "&& src) noexcept";
             src += "\n    : data(std::move(src.data))";
             src += "\n{";
             src += "\n    assert(!src.dtor);";
@@ -677,15 +698,15 @@ pub fn cpp_codegen(
 
             include("<cstring>");
 
-            src += "\n\n" + name + "& " + name + "::operator=(" + name + "&& src) noexcept";
+            src += "\n\n" + id + "& " + id + "::operator=(" + id + "&& src) noexcept";
             src += "\n{";
-            src += "\n    char temp[sizeof(" + name + ")];";
+            src += "\n    char temp[sizeof(" + id + ")];";
             src += "\n    char* a = (char*) this;";
             src += "\n    char* b = (char*) &src;";
             src += "\n";
-            src += "\n    std::memcpy (temp, a, sizeof(" + name + "));";
-            src += "\n    std::memmove(a,    b, sizeof(" + name + "));";
-            src += "\n    std::memcpy (b, temp, sizeof(" + name + "));";
+            src += "\n    std::memcpy (temp, a, sizeof(" + id + "));";
+            src += "\n    std::memmove(a,    b, sizeof(" + id + "));";
+            src += "\n    std::memcpy (b, temp, sizeof(" + id + "));";
             src += "\n";
             src += "\n    return *this;";
             src += "\n}";
@@ -925,17 +946,18 @@ pub fn cpp_codegen(
         {
             let head = (target.type || fail());
             let type = lookupStruct(head) || fail();
+            let id = structId(head);
 
             //
             mut open = " { ";
             mut close = " }";
             if (type.flags & F_DESTRUCTOR)
             {
-                open = " { " + head.canon + "::Data { ";
+                open = " { " + id + "::Data { ";
                 close = " }}";
             }
 
-            return head.canon + open + items.join(", ") + close;
+            return id + open + items.join(", ") + close;
         }
 
         let id = target.name || fail();

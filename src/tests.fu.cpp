@@ -5,32 +5,32 @@
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 
-struct s_Context;
-struct s_Effects;
+struct s_ModuleStat;
 struct s_LexerOutput;
-struct s_Lifetime;
+struct s_Token;
+struct s_Node;
+struct s_ParserOutput;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
-struct s_ModuleStat;
 struct s_ModuleStats;
-struct s_Node;
 struct s_Overload;
-struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_Effects;
+struct s_Struct;
+struct s_StructField;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 s_Context ZERO(const fu_STR&);
 int FAIL(const fu_STR&);
 fu_STR compile_snippet(const fu_STR&);

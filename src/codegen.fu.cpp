@@ -15,33 +15,33 @@
 #include <fu/vec/sort.h>
 #include <utility>
 
-struct s_Context;
-struct s_Effects;
+struct s_ModuleStat;
 struct s_LexerOutput;
-struct s_Lifetime;
-struct s_MapFields;
+struct s_Token;
+struct s_Node;
+struct s_ParserOutput;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
-struct s_ModuleStat;
 struct s_ModuleStats;
-struct s_Node;
 struct s_Overload;
-struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_Effects;
+struct s_MapFields;
+struct s_Struct;
+struct s_StructField;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 bool hasIdentifierChars(const fu_STR&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
@@ -553,8 +553,8 @@ inline std::byte if_last(const fu_STR& s)
 }
                                 #endif
 
-                                #ifndef DEFt_2_1_6__7_4s_SolvedNode
-                                #define DEFt_2_1_6__7_4s_SolvedNode
+                                #ifndef DEFt_2_1_6__7_4_7SolvedNode
+                                #define DEFt_2_1_6__7_4_7SolvedNode
 inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -863,16 +863,31 @@ struct sf_cpp_codegen
             return (((("fu_COW_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
         };
         const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
-        if (!fu::has(_tfwd, type.value.canon))
+        fu_STR id = structId(type);
+        if (!fu::has(_tfwd, c))
         {
-            (_tfwd.upsert(type.value.canon) = (("\nstruct "_fu + type.value.canon) + ";"_fu));
+            (_tfwd.upsert(c) = (("\nstruct "_fu + id) + ";"_fu));
             (_tdef += declareStruct(type, tdef));
         };
-        return fu_STR(type.value.canon);
+        return id;
+    };
+    fu_STR structId(const s_Type& t)
+    {
+        for (int i = 0; (i < t.value.canon.size()); i++)
+        {
+            const std::byte x = t.value.canon[i];
+            if ((((x >= std::byte('a')) && (x <= std::byte('z'))) || ((x >= std::byte('A')) && (x <= std::byte('Z'))) || (x == std::byte('_'))))
+            {
+                return ("s_"_fu + fu::slice(t.value.canon, i));
+                break;
+            };
+        };
+        fail((("Bad structId: `"_fu + t.value.canon) + "`."_fu));
     };
     fu_STR declareStruct(const s_Type& t, const s_Struct& s)
     {
-        fu_STR def = (((((("\n                                #ifndef DEF_"_fu + t.value.canon) + "\n                                #define DEF_"_fu) + t.value.canon) + "\nstruct "_fu) + t.value.canon) + "\n{"_fu);
+        fu_STR id = structId(t);
+        fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\nstruct "_fu) + id) + "\n{"_fu);
         fu_STR indent = "\n    "_fu;
         if ((s.flags & F_DESTRUCTOR))
         {
@@ -892,12 +907,12 @@ struct sf_cpp_codegen
             (def += "\n    Data data;"_fu);
             (def += "\n    bool dtor = false;"_fu);
             (def += "\n"_fu);
-            (def += (("\n    ~"_fu + t.value.canon) + "() noexcept;"_fu));
-            (def += (("\n    inline "_fu + t.value.canon) + "(Data data) noexcept : data(data) {};"_fu));
-            (def += (((("\n    "_fu + t.value.canon) + "(const "_fu) + t.value.canon) + "&) = delete;"_fu));
-            (def += (((("\n    "_fu + t.value.canon) + "& operator=(const "_fu) + t.value.canon) + "&) = delete;"_fu));
-            (def += (((("\n    "_fu + t.value.canon) + "("_fu) + t.value.canon) + "&&) noexcept;"_fu));
-            (def += (((("\n    "_fu + t.value.canon) + "& operator=("_fu) + t.value.canon) + "&&) noexcept;"_fu));
+            (def += (("\n    ~"_fu + id) + "() noexcept;"_fu));
+            (def += (("\n    inline "_fu + id) + "(Data data) noexcept : data(data) {};"_fu));
+            (def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = delete;"_fu));
+            (def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu));
+            (def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) noexcept;"_fu));
+            (def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) noexcept;"_fu));
         };
         (def += "\n    explicit operator bool() const noexcept"_fu);
         (def += "\n    {"_fu);
@@ -1217,8 +1232,8 @@ struct sf_cpp_codegen
         if ((fn.flags & F_DESTRUCTOR))
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
-            const fu_STR& name = head.type.value.canon;
-            (src += (((("\n\n"_fu + name) + "::~"_fu) + name) + "() noexcept"_fu));
+            fu_STR id = structId(head.type);
+            (src += (((("\n\n"_fu + id) + "::~"_fu) + id) + "() noexcept"_fu));
             (src += "\n{"_fu);
             (src += "\n    if (!dtor)"_fu);
             (src += "\n    {"_fu);
@@ -1228,7 +1243,7 @@ struct sf_cpp_codegen
             (src += "\n}"_fu);
             include("<cassert>"_fu);
             include("<utility>"_fu);
-            (src += (((((("\n\n"_fu + name) + "::"_fu) + name) + "("_fu) + name) + "&& src) noexcept"_fu));
+            (src += (((((("\n\n"_fu + id) + "::"_fu) + id) + "("_fu) + id) + "&& src) noexcept"_fu));
             (src += "\n    : data(std::move(src.data))"_fu);
             (src += "\n{"_fu);
             (src += "\n    assert(!src.dtor);"_fu);
@@ -1236,15 +1251,15 @@ struct sf_cpp_codegen
             (src += "\n    src.dtor = true;"_fu);
             (src += "\n}"_fu);
             include("<cstring>"_fu);
-            (src += (((((("\n\n"_fu + name) + "& "_fu) + name) + "::operator=("_fu) + name) + "&& src) noexcept"_fu));
+            (src += (((((("\n\n"_fu + id) + "& "_fu) + id) + "::operator=("_fu) + id) + "&& src) noexcept"_fu));
             (src += "\n{"_fu);
-            (src += (("\n    char temp[sizeof("_fu + name) + ")];"_fu));
+            (src += (("\n    char temp[sizeof("_fu + id) + ")];"_fu));
             (src += "\n    char* a = (char*) this;"_fu);
             (src += "\n    char* b = (char*) &src;"_fu);
             (src += "\n"_fu);
-            (src += (("\n    std::memcpy (temp, a, sizeof("_fu + name) + "));"_fu));
-            (src += (("\n    std::memmove(a,    b, sizeof("_fu + name) + "));"_fu));
-            (src += (("\n    std::memcpy (b, temp, sizeof("_fu + name) + "));"_fu));
+            (src += (("\n    std::memcpy (temp, a, sizeof("_fu + id) + "));"_fu));
+            (src += (("\n    std::memmove(a,    b, sizeof("_fu + id) + "));"_fu));
+            (src += (("\n    std::memcpy (b, temp, sizeof("_fu + id) + "));"_fu));
             (src += "\n"_fu);
             (src += "\n    return *this;"_fu);
             (src += "\n}"_fu);
@@ -1435,14 +1450,15 @@ struct sf_cpp_codegen
         {
             const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
             const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
+            fu_STR id = structId(head);
             fu_STR open = " { "_fu;
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))
             {
-                open = ((" { "_fu + head.value.canon) + "::Data { "_fu);
+                open = ((" { "_fu + id) + "::Data { "_fu);
                 close = " }}"_fu;
             };
-            return (((head.value.canon + open) + fu::join(items, ", "_fu)) + close);
+            return (((id + open) + fu::join(items, ", "_fu)) + close);
         };
         const fu_STR& id = (target.name ? target.name : fail(fu_STR{}));
         if ((target.kind == "global"_fu))

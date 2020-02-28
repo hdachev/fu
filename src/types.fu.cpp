@@ -11,11 +11,11 @@
 #include <utility>
 
 struct s_Effects;
-struct s_Lifetime;
 struct s_MapFields;
-struct s_Region;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 bool operator==(const s_Type&, const s_Type&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Effects

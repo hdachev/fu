@@ -10,35 +10,34 @@
 #include <fu/vec/slice.h>
 #include <utility>
 
-struct s_Context;
-struct s_Effects;
+struct s_ModuleStat;
 struct s_LexerOutput;
-struct s_Lifetime;
-struct s_MapFields;
+struct s_Token;
+struct s_Node;
+struct s_ParserOutput;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
-struct s_ModuleStat;
 struct s_ModuleStats;
-struct s_Node;
 struct s_Overload;
-struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_Effects;
+struct s_MapFields;
+struct s_Struct;
+struct s_StructField;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 bool hasIdentifierChars(const fu_STR&);
-fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
@@ -52,6 +51,7 @@ int MODID(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -567,8 +567,8 @@ struct s_MapFields
 };
                                 #endif
 
-                                #ifndef DEFt_2_1_6__5_4s_Node
-                                #define DEFt_2_1_6__5_4s_Node
+                                #ifndef DEFt_2_1_6__5_4_5Node
+                                #define DEFt_2_1_6__5_4_5Node
 inline const s_Node& only(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -1684,7 +1684,7 @@ struct sf_solve
                     fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_ValueType((item.type.value ? item.type.value : fail(fu_STR{}))) });
                 };
             };
-            structType.value.quals |= finalizeStruct(id, fields, module);
+            structType.value.quals |= finalizeStruct(structType.value.canon, fields, module);
             GET_mut(out.target).type.value.quals = structType.value.quals;
             DefaultCtor(id, structType, members);
         };

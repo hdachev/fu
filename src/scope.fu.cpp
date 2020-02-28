@@ -5,33 +5,34 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
 
-struct s_Context;
-struct s_Effects;
+struct s_ModuleStat;
 struct s_LexerOutput;
-struct s_Lifetime;
+struct s_Token;
+struct s_Node;
+struct s_ParserOutput;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
-struct s_ModuleStat;
 struct s_ModuleStats;
-struct s_Node;
 struct s_Overload;
-struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_Effects;
+struct s_Struct;
+struct s_StructField;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
@@ -559,11 +560,6 @@ void setModule(const s_Module& module, s_Context& ctx)
     current = module;
 }
 
-void registerType(const fu_STR& canon, const s_Struct& def, s_Module& module)
-{
-    (module.out.types.upsert(canon) = def);
-}
-
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if ((type.value.modid == module.modid))
@@ -577,11 +573,16 @@ s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
     return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail(); }());
 }
 
+bool isStruct(const s_Type& type)
+{
+    return (type.value.canon[0] == std::byte('$'));
+}
+
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
-    fu_STR canon = ("s_"_fu + id);
-    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, (flags | 0) };
-    registerType(canon, def, module);
+    fu_STR canon = (("$"_fu + module.modid) + id);
+    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags) };
+    (module.out.types.upsert(canon) = def);
     return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
 
@@ -590,10 +591,9 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 inline const int q_trivial = (1 << 3);
                                 #endif
 
-int finalizeStruct(const fu_STR& id, const fu_VEC<s_StructField>& fields, s_Module& module)
+int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, s_Module& module)
 {
     int quals = 0;
-    fu_STR canon = ("s_"_fu + id);
     s_Struct& def = lookupStruct_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
     if (!someFieldNonTrivial(fields))
