@@ -55,6 +55,8 @@ fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
 fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
 fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
+fn *=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
+fn /=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 
 fn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 fn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;

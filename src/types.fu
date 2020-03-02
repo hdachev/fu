@@ -78,9 +78,7 @@ fn ==(a: ValueType, b: ValueType)
     a.canon == b.canon;
 
 fn ==(a: Type, b: Type)
-    a.quals == b.quals &&
-    a.modid == b.modid &&
-    a.canon == b.canon;
+    a.value == b.value;
 
 
 //
