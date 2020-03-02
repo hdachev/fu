@@ -219,7 +219,7 @@ pub fn build(
 
     // Optimization level.
     mut O_lvl   = scheme != "debug"
-                ? "-O3 -DNDEBUG "
+                ? "-O3 -DNDEBUG -fno-math-errno "
                 : "-Og "
                 ;
 
@@ -417,8 +417,6 @@ pub fn build(
                 data += "set(FU_INPUTS\n    "  + inputs .join("\n    ") + ")\n\n";
                 data += "set(FU_OUTPUTS\n    " + outputs.join("\n    ") + ")\n\n";
 
-                data += "include_directories (~/fu/include/)\n\n";
-
                 data += "add_custom_command(\n"
                       + "    OUTPUT ${FU_OUTPUTS}\n"
                       + "    COMMAND $ENV{HOME}/fu/bin/fu\n"
@@ -430,6 +428,8 @@ pub fn build(
                 let libname = path_noext(path_filename(main));
 
                 data += "add_library(" + libname + " ${FU_OUTPUTS})\n";
+
+                data += "target_include_directories (" + libname + " PUBLIC ~/fu/include/)\n\n";
 
                 update_file(
                     fname: CMakeLists, :data,

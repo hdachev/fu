@@ -713,7 +713,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     fu_STR stdout {};
     fu_VEC<fu_STR> Fs {};
     int len_all {};
-    fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG "_fu : "-Og "_fu);
+    fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
     if (((scheme == "debug"_fu) || (scheme == "reldeb"_fu)))
         (O_lvl += "-g "_fu);
 
@@ -851,10 +851,10 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 (data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu));
                 (data += (("set(FU_INPUTS\n    "_fu + fu::join(inputs, "\n    "_fu)) + ")\n\n"_fu));
                 (data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu));
-                (data += "include_directories (~/fu/include/)\n\n"_fu);
                 (data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu));
                 fu_STR libname = path_noext(path_filename(main));
                 (data += (("add_library("_fu + libname) + " ${FU_OUTPUTS})\n"_fu));
+                (data += (("target_include_directories ("_fu + libname) + " PUBLIC ~/fu/include/)\n\n"_fu));
                 update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
             };
         };

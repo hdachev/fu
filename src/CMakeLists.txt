@@ -34,8 +34,6 @@ set(FU_OUTPUTS
     ${CMAKE_CURRENT_SOURCE_DIR}/hello.fu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cli.fu.cpp)
 
-include_directories (~/fu/include/)
-
 add_custom_command(
     OUTPUT ${FU_OUTPUTS}
     COMMAND $ENV{HOME}/fu/bin/fu
@@ -45,3 +43,5 @@ add_custom_command(
     VERBATIM)
 
 add_library(cli ${FU_OUTPUTS})
+target_include_directories (cli PUBLIC ~/fu/include/)
+

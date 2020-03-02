@@ -221,7 +221,7 @@ bool operator==(const s_ValueType& a, const s_ValueType& b)
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
-    return ((a.value.quals == b.value.quals) && (a.value.modid == b.value.modid) && (a.value.canon == b.value.canon));
+    return (a.value == b.value);
 }
 
                                 #ifndef DEF_Trivial
