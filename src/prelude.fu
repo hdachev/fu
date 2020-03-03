@@ -60,10 +60,27 @@ fn /=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
 
 fn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 fn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+
 fn > (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 fn < (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 fn >=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
 fn <=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+
+fn > (a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): bool __native;
+    case ($A -> @integral && $B -> @floating_point): bool __native;
+
+fn < (a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): bool __native;
+    case ($A -> @integral && $B -> @floating_point): bool __native;
+
+fn >=(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): bool __native;
+    case ($A -> @integral && $B -> @floating_point): bool __native;
+
+fn <=(a: $A, b: $B)
+    case ($A -> @floating_point && $B -> @integral): bool __native;
+    case ($A -> @integral && $B -> @floating_point): bool __native;
 
 
 // Bitwise.
