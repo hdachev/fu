@@ -853,8 +853,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 (data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu));
                 (data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu));
                 fu_STR libname = path_noext(path_filename(main));
-                (data += (("add_library("_fu + libname) + " ${FU_OUTPUTS})\n"_fu));
-                (data += (("target_include_directories ("_fu + libname) + " PUBLIC ~/fu/include/)\n\n"_fu));
+                (data += ((((("add_library("_fu + libname) + " ${FU_OUTPUTS})\n\n"_fu) + "target_include_directories("_fu) + libname) + " PUBLIC ~/fu/include/)\n"_fu));
                 update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
             };
         };

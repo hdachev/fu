@@ -1395,32 +1395,55 @@ struct sf_solve
         const bool U = (fu::lmatch(v, "0x"_fu) || fu::lmatch(v, "0o"_fu) || fu::lmatch(v, "0b"_fu) || fu::rmatch(v, std::byte('u')));
         const bool S = (fu::lmatch(v, std::byte('-')) || fu::lmatch(v, std::byte('+')) || fu::rmatch(v, std::byte('i')));
         (U && S && fail("Ambiguous int literal: cannot decide if signed or unsigned."_fu));
-        if (type)
+        const auto& want = [&](const s_Type& t) -> bool
         {
-            if (((type == t_f32) || (type == t_f64)))
-                return solved(node, type, fu_VEC<s_SolvedNode>{});
-
-            if (((type == t_i32) || (type == t_i64) || (type == t_i16) || (type == t_i8)))
-            {
-                if (!U)
-                    return solved(node, type, fu_VEC<s_SolvedNode>{});
-
-            };
-            if (((type == t_u32) || (type == t_u64) || (type == t_u16) || (type == t_u8)))
-            {
-                if (!S)
-                    return solved(node, type, fu_VEC<s_SolvedNode>{});
-
-            };
+            return (type.value.canon == t.value.canon);
         };
-        if (U)
-            return solved(node, t_u32, fu_VEC<s_SolvedNode>{});
+        if (!U)
+        {
+            if (want(t_f32))
+                return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
 
-        return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
+            if (want(t_f64))
+                return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_i32))
+                return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_i64))
+                return solved(node, t_i64, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_i16))
+                return solved(node, t_i16, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_i8))
+                return solved(node, t_i8, fu_VEC<s_SolvedNode>{});
+
+        };
+        if (!S)
+        {
+            if (want(t_u32))
+                return solved(node, t_u32, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_u64))
+                return solved(node, t_u64, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_u16))
+                return solved(node, t_u16, fu_VEC<s_SolvedNode>{});
+
+            if (want(t_u8))
+                return solved(node, t_u8, fu_VEC<s_SolvedNode>{});
+
+        };
+        return (U ? solved(node, t_u32, fu_VEC<s_SolvedNode>{}) : solved(node, t_i32, fu_VEC<s_SolvedNode>{}));
     };
     s_SolvedNode solveNum(const s_Node& node, const s_Type& type)
     {
-        if ((type == t_f32))
+        const auto& want = [&](const s_Type& t) -> bool
+        {
+            return (type.value.canon == t.value.canon);
+        };
+        if (want(t_f32))
             return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
 
         return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
@@ -1553,7 +1576,7 @@ struct sf_solve
         };
         if ((solve && !native))
         {
-            ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = out.items.mutref((out.items.size() + FN_BODY_BACK)); if (_) return _; } fail(fu_STR{}); }());
+            (out.items.mutref((out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
         };
         return out;
     };
@@ -2087,8 +2110,8 @@ struct sf_solve
         const s_Node& n1 = node.items[1];
         const s_Node& n2 = node.items[2];
         s_SolvedNode cond = solveNode(n0, t_bool);
-        s_SolvedNode cons = (n1 ? solveNode(n1, s_Type{}) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
-        s_SolvedNode alt = (n2 ? solveNode(n2, cons.type) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+        s_SolvedNode cons = ([&]() -> s_SolvedNode { if (n1) return solveNode(n1, type); else return s_SolvedNode{}; }());
+        s_SolvedNode alt = ([&]() -> s_SolvedNode { if (n2) return solveNode(n2, (cons.type ? cons.type : type)); else return s_SolvedNode{}; }());
         s_SolvedNode priExpr { (cons ? cons : alt ? alt : fail(fu_STR{})) };
         s_SolvedNode secExpr { ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;

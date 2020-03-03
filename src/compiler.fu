@@ -427,9 +427,8 @@ pub fn build(
 
                 let libname = path_noext(path_filename(main));
 
-                data += "add_library(" + libname + " ${FU_OUTPUTS})\n";
-
-                data += "target_include_directories (" + libname + " PUBLIC ~/fu/include/)\n\n";
+                data += "add_library(" + libname + " ${FU_OUTPUTS})\n\n"
+                      + "target_include_directories(" + libname + " PUBLIC ~/fu/include/)\n";
 
                 update_file(
                     fname: CMakeLists, :data,

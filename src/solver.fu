@@ -759,30 +759,36 @@ fn solve(
         U && S && fail(
             "Ambiguous int literal: cannot decide if signed or unsigned.");
 
-        if (type)
+        fn want(t: Type)
+            type.canon == t.canon;
+
+        if (!U)
         {
-            if (type == t_f32 || type == t_f64)
-                return solved(node, type);
+            if (want(t_f32)) return solved(node, t_f32);
+            if (want(t_f64)) return solved(node, t_f64);
 
-            if (type == t_i32 || type == t_i64 || type == t_i16 || type == t_i8)
-                if (!U)
-                    return solved(node, type);
-
-            if (type == t_u32 || type == t_u64 || type == t_u16 || type == t_u8)
-                if (!S)
-                    return solved(node, type);
+            if (want(t_i32)) return solved(node, t_i32);
+            if (want(t_i64)) return solved(node, t_i64);
+            if (want(t_i16)) return solved(node, t_i16);
+            if (want(t_i8 )) return solved(node, t_i8 );
         }
 
-        if (U)
-            return solved(node, t_u32);
+        if (!S)
+        {
+            if (want(t_u32)) return solved(node, t_u32);
+            if (want(t_u64)) return solved(node, t_u64);
+            if (want(t_u16)) return solved(node, t_u16);
+            if (want(t_u8 )) return solved(node, t_u8 );
+        }
 
-        return solved(node, t_i32);
+        return U ? solved(node, t_u32)
+                 : solved(node, t_i32);
     }
 
     fn solveNum(node: Node, type: Type): SolvedNode
     {
-        if (type == t_f32)
-            return solved(node, t_f32);
+        fn want(t: Type) type.canon == t.canon;
+        if (want(t_f32)) return solved(node, t_f32);
 
         return solved(node, t_f64);
     }
@@ -1833,8 +1839,8 @@ fn solve(
         let n2      = node.items[2];
 
         let cond    = solveNode(n0, t_bool);
-        mut cons    = n1 ? solveNode(n1)            : SolvedNode;
-        mut alt     = n2 ? solveNode(n2, cons.type) : SolvedNode;
+        mut cons    = n1 && solveNode(n1, type);
+        mut alt     = n2 && solveNode(n2, cons.type || type);
 
         let priExpr = cons || alt || fail();
         let secExpr = cons && alt || cons;
