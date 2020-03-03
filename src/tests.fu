@@ -1637,6 +1637,11 @@ fn runTests()
         let x = 1.f32; fn main() 1 - x.i32;
     `);
 
+    ZERO(`
+        fn gt0(x: f32) x > 0;
+        fn main() gt0(1.f32) ? 0 : 1;
+    `);
+
 
     // Typedefs.
 
