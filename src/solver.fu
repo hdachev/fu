@@ -555,6 +555,9 @@ fn solve(
                     {
                         let arg: &mut SolvedNode = args[callsiteIndex];
 
+                        if (arg.kind == "label")
+                            arg = arg.items.only;
+
                         let replacement
                             = arg.kind == "int" ? solveInt(arg.value, expect)
                             : arg.kind == "num" ? solveNum(arg.value, expect)

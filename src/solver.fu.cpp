@@ -89,102 +89,6 @@ struct s_TokenIdx
 };
                                 #endif
 
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_Node> items;
-    s_TokenIdx token;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
-{
-    fu_STR kind;
-    fu_STR value;
-    int idx0;
-    int idx1;
-    int line;
-    int col;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || value
-            || idx0
-            || idx1
-            || line
-            || col
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
-{
-    fu_STR fname;
-    fu_VEC<s_Token> tokens;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || fname
-            || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ParserOutput
-                                #define DEF_s_ParserOutput
-struct s_ParserOutput
-{
-    s_Node root;
-    fu_VEC<fu_STR> imports;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || root
-            || imports
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ModuleInputs
-                                #define DEF_s_ModuleInputs
-struct s_ModuleInputs
-{
-    fu_STR src;
-    s_LexerOutput lex;
-    s_ParserOutput parse;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || src
-            || lex
-            || parse
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -198,40 +102,6 @@ struct s_ValueType
             || quals
             || modid
             || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_ValueType type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || fields
-            || flags
         ;
     }
 };
@@ -336,6 +206,136 @@ struct s_SolvedNode
             || token
             || type
             || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_Node> items;
+    s_TokenIdx token;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Token
+                                #define DEF_s_Token
+struct s_Token
+{
+    fu_STR kind;
+    fu_STR value;
+    int idx0;
+    int idx1;
+    int line;
+    int col;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || value
+            || idx0
+            || idx1
+            || line
+            || col
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_LexerOutput
+                                #define DEF_s_LexerOutput
+struct s_LexerOutput
+{
+    fu_STR fname;
+    fu_VEC<s_Token> tokens;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || fname
+            || tokens
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ParserOutput
+                                #define DEF_s_ParserOutput
+struct s_ParserOutput
+{
+    s_Node root;
+    fu_VEC<fu_STR> imports;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || root
+            || imports
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleInputs
+                                #define DEF_s_ModuleInputs
+struct s_ModuleInputs
+{
+    fu_STR src;
+    s_LexerOutput lex;
+    s_ParserOutput parse;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || src
+            || lex
+            || parse
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_StructField
+                                #define DEF_s_StructField
+struct s_StructField
+{
+    fu_STR id;
+    s_ValueType type;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || type
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || fields
+            || flags
         ;
     }
 };
@@ -565,6 +565,14 @@ struct s_MapFields
         ;
     }
 };
+                                #endif
+
+                                #ifndef DEFt_2_1_7__7_4_7SolvedNode
+                                #define DEFt_2_1_7__7_4_7SolvedNode
+inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
+}
                                 #endif
 
                                 #ifndef DEFt_2_1_6__5_4_5Node
@@ -1195,6 +1203,9 @@ struct sf_solve
                     if ((!ok && ((expect.value.quals & actual.value.quals) & q_primitive)))
                     {
                         s_SolvedNode& arg = args.mutref(callsiteIndex);
+                        if ((arg.kind == "label"_fu))
+                            arg = only(arg.items);
+
                         s_Type replacement = ((arg.kind == "int"_fu) ? solveInt(arg.value, expect) : ((arg.kind == "num"_fu) ? solveNum(arg.value, expect) : s_Type{}));
                         ok = isAssignableAsArgument(expect, s_Type(replacement));
                         if (ok)
