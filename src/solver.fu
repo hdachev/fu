@@ -522,6 +522,12 @@ fn solve(
                 let N = reorder ? reorder.len
                                 : args.len;
 
+                /////////////////
+                // Literal fixup.
+                let undo_literal_fixup = args;
+                //        /LITFIX
+                /////////////////
+
                 for (mut i = 0; i < N; i++)
                 {
                     let callsiteIndex = reorder ? reorder[i]
@@ -538,8 +544,35 @@ fn solve(
                         continue;
                     }
 
-                    if (!isAssignableAsArgument(arg_t[i], args[callsiteIndex].type || fail()))
+                    let expect = arg_t[i];
+                    let actual = args[callsiteIndex].type;
+
+                    mut ok = isAssignableAsArgument(expect, actual);
+
+                    /////////////////
+                    // Literal fixup.
+                    if (!ok && expect.quals & actual.quals & q_primitive)
+                    {
+                        let arg: &mut SolvedNode = args[callsiteIndex];
+
+                        let replacement
+                            = arg.kind == "int" ? solveInt(arg.value, expect)
+                            : arg.kind == "num" ? solveNum(arg.value, expect)
+                            : [];
+
+                        ok = isAssignableAsArgument(expect, replacement);
+
+                        if (ok)
+                            arg.type = replacement;
+                    }
+                    //        /LITFIX
+                    /////////////////
+
+                    if (!ok)
+                    {
+                        args = undo_literal_fixup;
                         continue :NEXT;
+                    }
                 }
 
                 // Forbid ambiguity.
@@ -743,10 +776,8 @@ fn solve(
 
     //
 
-    fn solveInt(node: Node, type: Type): SolvedNode
+    fn solveInt(v: string, type: Type): Type
     {
-        let v = node.value;
-
         let U = v.starts(with: "0x")
             ||  v.starts(with: "0o")
             ||  v.starts(with: "0b")
@@ -764,34 +795,50 @@ fn solve(
 
         if (!U)
         {
-            if (want(t_f32)) return solved(node, t_f32);
-            if (want(t_f64)) return solved(node, t_f64);
+            if (want(t_f32)) return t_f32;
+            if (want(t_f64)) return t_f64;
 
-            if (want(t_i32)) return solved(node, t_i32);
-            if (want(t_i64)) return solved(node, t_i64);
-            if (want(t_i16)) return solved(node, t_i16);
-            if (want(t_i8 )) return solved(node, t_i8 );
+            if (want(t_i32)) return t_i32;
+            if (want(t_i64)) return t_i64;
+            if (want(t_i16)) return t_i16;
+            if (want(t_i8 )) return t_i8 ;
         }
 
         if (!S)
         {
-            if (want(t_u32)) return solved(node, t_u32);
-            if (want(t_u64)) return solved(node, t_u64);
-            if (want(t_u16)) return solved(node, t_u16);
-            if (want(t_u8 )) return solved(node, t_u8 );
+            if (want(t_u32)) return t_u32;
+            if (want(t_u64)) return t_u64;
+            if (want(t_u16)) return t_u16;
+            if (want(t_u8 )) return t_u8 ;
         }
 
-        return U ? solved(node, t_u32)
-                 : solved(node, t_i32);
+        return U ? t_u32 : t_i32;
     }
+
+    fn solveNum(v: string, type: Type): Type
+    {
+        // TODO `f` suffix
+        if (v) {}
+
+        fn want(t: Type) type.canon == t.canon;
+        if (want(t_f32)) return t_f32;
+
+        return t_f64;
+    }
+
+
+    //
+
+    fn solveInt(node: Node, type: Type): SolvedNode
+        solved(node,
+             solveInt(node.value, type));
 
     fn solveNum(node: Node, type: Type): SolvedNode
-    {
-        fn want(t: Type) type.canon == t.canon;
-        if (want(t_f32)) return solved(node, t_f32);
+        solved(node,
+             solveNum(node.value, type));
 
-        return solved(node, t_f64);
-    }
+
+    //
 
     fn solveChar(node: Node): SolvedNode
     {

@@ -1177,6 +1177,7 @@ struct sf_solve
                 fu_VEC<s_Type> arg_t { (overload.args ? overload.args : fail(fu_STR{})) };
                 fu_VEC<s_SolvedNode> arg_d { overload.defaults };
                 const int N = (reorder ? reorder.size() : args.size());
+                fu_VEC<s_SolvedNode> undo_literal_fixup { args };
                 for (int i = 0; (i < N); i++)
                 {
                     const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
@@ -1188,8 +1189,21 @@ struct sf_solve
                         };
                         continue;
                     };
-                    if (!isAssignableAsArgument(arg_t[i], s_Type(([&]() -> const s_Type& { { const s_Type& _ = args.mutref(callsiteIndex).type; if (_) return _; } fail(fu_STR{}); }()))))
+                    const s_Type& expect = arg_t[i];
+                    s_Type actual { args.mutref(callsiteIndex).type };
+                    bool ok = isAssignableAsArgument(expect, s_Type(actual));
+                    if ((!ok && ((expect.value.quals & actual.value.quals) & q_primitive)))
                     {
+                        s_SolvedNode& arg = args.mutref(callsiteIndex);
+                        s_Type replacement = ((arg.kind == "int"_fu) ? solveInt(arg.value, expect) : ((arg.kind == "num"_fu) ? solveNum(arg.value, expect) : s_Type{}));
+                        ok = isAssignableAsArgument(expect, s_Type(replacement));
+                        if (ok)
+                            arg.type = replacement;
+
+                    };
+                    if (!ok)
+                    {
+                        args = undo_literal_fixup;
                         goto L_NEXT_c;
                     };
                 };
@@ -1389,9 +1403,8 @@ struct sf_solve
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
         return solved(node, (last.type ? last.type : fail(fu_STR{})), items);
     };
-    s_SolvedNode solveInt(const s_Node& node, const s_Type& type)
+    s_Type solveInt(const fu_STR& v, const s_Type& type)
     {
-        const fu_STR& v = node.value;
         const bool U = (fu::lmatch(v, "0x"_fu) || fu::lmatch(v, "0o"_fu) || fu::lmatch(v, "0b"_fu) || fu::rmatch(v, std::byte('u')));
         const bool S = (fu::lmatch(v, std::byte('-')) || fu::lmatch(v, std::byte('+')) || fu::rmatch(v, std::byte('i')));
         (U && S && fail("Ambiguous int literal: cannot decide if signed or unsigned."_fu));
@@ -1402,51 +1415,62 @@ struct sf_solve
         if (!U)
         {
             if (want(t_f32))
-                return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_f32);
 
             if (want(t_f64))
-                return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_f64);
 
             if (want(t_i32))
-                return solved(node, t_i32, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_i32);
 
             if (want(t_i64))
-                return solved(node, t_i64, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_i64);
 
             if (want(t_i16))
-                return solved(node, t_i16, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_i16);
 
             if (want(t_i8))
-                return solved(node, t_i8, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_i8);
 
         };
         if (!S)
         {
             if (want(t_u32))
-                return solved(node, t_u32, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_u32);
 
             if (want(t_u64))
-                return solved(node, t_u64, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_u64);
 
             if (want(t_u16))
-                return solved(node, t_u16, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_u16);
 
             if (want(t_u8))
-                return solved(node, t_u8, fu_VEC<s_SolvedNode>{});
+                return s_Type(t_u8);
 
         };
-        return (U ? solved(node, t_u32, fu_VEC<s_SolvedNode>{}) : solved(node, t_i32, fu_VEC<s_SolvedNode>{}));
+        return s_Type((U ? t_u32 : t_i32));
     };
-    s_SolvedNode solveNum(const s_Node& node, const s_Type& type)
+    s_Type solveNum(const fu_STR& v, const s_Type& type)
     {
+        if (v)
+        {
+        };
         const auto& want = [&](const s_Type& t) -> bool
         {
             return (type.value.canon == t.value.canon);
         };
         if (want(t_f32))
-            return solved(node, t_f32, fu_VEC<s_SolvedNode>{});
+            return s_Type(t_f32);
 
-        return solved(node, t_f64, fu_VEC<s_SolvedNode>{});
+        return s_Type(t_f64);
+    };
+    s_SolvedNode solveInt(const s_Node& node, const s_Type& type)
+    {
+        return solved(node, solveInt(node.value, type), fu_VEC<s_SolvedNode>{});
+    };
+    s_SolvedNode solveNum(const s_Node& node, const s_Type& type)
+    {
+        return solved(node, solveNum(node.value, type), fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode solveChar(const s_Node& node)
     {

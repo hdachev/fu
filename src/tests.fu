@@ -1642,6 +1642,12 @@ fn runTests()
         fn main() gt0(1.f32) ? 0 : 1;
     `);
 
+    ZERO(`
+        struct Hey { x: f32; };
+        fn hey() Hey(1);
+        fn main() hey.x.i32 - 1;
+    `);
+
 
     // Typedefs.
 
