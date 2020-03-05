@@ -705,6 +705,7 @@ void runTests()
     ZERO("\n        fn gt0(x: f32) x > 0;\n        fn main() gt0(1.f32) ? 0 : 1;\n    "_fu);
     ZERO("\n        struct Hey { x: f32; };\n        fn hey() Hey(1);\n        fn main() hey.x.i32 - 1;\n    "_fu);
     ZERO("\n        struct vec3 { x: f32; y: f32; z: f32; };\n        fn test(i: i32) vec3(x: (i - 2).f32, z: 1);\n        fn main() {\n            let v = test(1);\n            return (v.x + v.z).i32;\n        }\n    "_fu);
+    ZERO("\n        struct vec3 { x: f32; y: f32; z: f32; };\n        fn test(f: f32) vec3(x: f, z: -1);\n        fn main() {\n            let v = test(-1);\n            return (v.x - v.z).i32;\n        }\n    "_fu);
     ZERO("\n        typedef Test = i32[];\n        fn yo(t: Test) t[0] + t[1];\n        fn main() yo([-1, +1]);\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        fn hello(a: i32[]) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);

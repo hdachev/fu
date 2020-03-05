@@ -1657,6 +1657,15 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        struct vec3 { x: f32; y: f32; z: f32; };
+        fn test(f: f32) vec3(x: f, z: -1);
+        fn main() {
+            let v = test(-1);
+            return (v.x - v.z).i32;
+        }
+    `);
+
 
     // Typedefs.
 

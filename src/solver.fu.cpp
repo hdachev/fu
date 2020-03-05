@@ -69,10 +69,10 @@ fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
-s_Lifetime Lifetime_static();
 s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromScopeIdx(int);
 bool killedBy(const s_Lifetime&, int);
+s_Lifetime Lifetime_static();
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx

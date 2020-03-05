@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/default.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -110,6 +111,14 @@ struct s_ParserOutput
         ;
     }
 };
+                                #endif
+
+                                #ifndef DEFt_2_1_6___28byte
+                                #define DEFt_2_1_6___28byte
+inline std::byte only(const fu_STR& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
                                 #endif
 
                                 #ifndef DEF_F_METHOD
@@ -1000,11 +1009,21 @@ struct sf_parse
     {
         return parseExpression(int(P_PREFIX_UNARY));
     };
-    s_Node createPrefix(const fu_STR& op, const s_Node& expr)
+    s_Node createPrefix(const fu_STR& op, s_Node&& expr)
     {
         if ((op == "!"_fu))
             return createNot(expr);
 
+        if ((((op == "+"_fu) || (op == "-"_fu)) && ((expr.kind == "int"_fu) || (expr.kind == "num"_fu))))
+        {
+            const std::byte sign = expr.value[0];
+            if (((sign == std::byte('+')) || (sign == std::byte('-'))))
+                expr.value.mutref(0) = ((sign == only(op)) ? std::byte('+') : std::byte('-'));
+            else
+                expr.value = (op + expr.value);
+
+            return std::move(expr);
+        };
         return createCall(op, F_PREFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
     };
     s_Node createNot(const s_Node& expr)

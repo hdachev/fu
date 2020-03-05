@@ -989,10 +989,23 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return parseExpression(P_PREFIX_UNARY);
     }
 
-    fn createPrefix(op: string, expr: Node): Node
+    fn createPrefix(op: string, mut expr: Node): Node
     {
         if (op == "!")
             return createNot(expr);
+
+        // Moving `-` and `+` into unary literals.
+        if ((op == "+" || op == "-") &&
+            (expr.kind == "int" || expr.kind == "num"))
+        {
+            let sign = expr.value[0];
+            if (sign == '+' || sign == '-')
+                expr.value[0] = sign == op.only ? '+' : '-';
+            else
+                expr.value = op + expr.value;
+
+            return expr;
+        }
 
         return createCall(op, F_PREFIX, [ expr ]);
     }
