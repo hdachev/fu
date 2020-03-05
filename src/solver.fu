@@ -551,7 +551,7 @@ fn solve(
 
                     /////////////////
                     // Literal fixup.
-                    if (!ok && expect.quals & actual.quals & q_primitive)
+                    if (!ok && considerRetyping(expect, actual))
                     {
                         let arg: &mut SolvedNode = args[callsiteIndex];
 
@@ -565,15 +565,11 @@ fn solve(
                             arg = inner;
                         }
 
-                        let replacement
-                            = arg.kind == "int" ? solveInt(arg.value, expect)
-                            : arg.kind == "num" ? solveNum(arg.value, expect)
-                            : [];
-
-                        ok = isAssignableAsArgument(expect, replacement);
+                        let retype  = tryRetyping(arg, expect);
+                            ok      = isAssignableAsArgument(expect, retype);
 
                         if (ok)
-                            arg.type = replacement;
+                            arg.type = retype;
                     }
                     //        /LITFIX
                     /////////////////
@@ -645,6 +641,21 @@ fn solve(
         }
 
         return matchIdx;
+    }
+
+
+    //
+
+    fn considerRetyping(expect: Type, actual: Type): bool
+    {
+        return expect.quals & actual.quals & q_arithmetic != 0;
+    }
+
+    fn tryRetyping(node: SolvedNode, expect: Type): Type
+    {
+        return node.kind == "int" ? solveInt(node.value, expect)
+             : node.kind == "num" ? solveNum(node.value, expect)
+             : [];
     }
 
 
@@ -1712,6 +1723,23 @@ fn solve(
             : _scope;
 
         mut args        = solveNodes(node.items);
+
+        /////////////////
+        // Literal fixup.
+        if (args.len == 2 && node.flags & F_INFIX)
+        {
+            if (considerRetyping(args[0].type, args[1].type))
+            {
+                let a = tryRetyping(args[0], args[1].type);
+                let b = tryRetyping(args[1], args[0].type);
+                if (a && !b) args[0].type = a;
+                if (b && !a) args[1].type = b;
+            }
+        }
+        //        /LITFIX
+        /////////////////
+
+        //
         mut callTargIdx = scope.match__mutargs(id, args, node.flags);
         mut callTarg    = GET(callTargIdx);
 

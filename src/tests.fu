@@ -1666,6 +1666,11 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        fn hey(i: f32) i.f32 + 0.5;
+        fn main() hey(1).i32 - 1;
+    `);
+
 
     // Typedefs.
 

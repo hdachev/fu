@@ -653,14 +653,14 @@ inline const int q_mutref = (1 << 0);
 inline const int F_NAMED_ARGS = (1 << 25);
                                 #endif
 
-                                #ifndef DEF_t_void
-                                #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
                                 #ifndef DEF_q_arithmetic
                                 #define DEF_q_arithmetic
 inline const int q_arithmetic = (1 << 5);
+                                #endif
+
+                                #ifndef DEF_t_void
+                                #define DEF_t_void
+inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_Arithmetic
@@ -821,6 +821,11 @@ inline const int F_ID = (1 << 5);
                                 #ifndef DEF_F_QUALIFIED
                                 #define DEF_F_QUALIFIED
 inline const int F_QUALIFIED = (1 << 7);
+                                #endif
+
+                                #ifndef DEF_F_INFIX
+                                #define DEF_F_INFIX
+inline const int F_INFIX = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -1200,7 +1205,7 @@ struct sf_solve
                     const s_Type& expect = arg_t[i];
                     s_Type actual { args.mutref(callsiteIndex).type };
                     bool ok = isAssignableAsArgument(expect, s_Type(actual));
-                    if ((!ok && ((expect.value.quals & actual.value.quals) & q_primitive)))
+                    if ((!ok && considerRetyping(expect, actual)))
                     {
                         s_SolvedNode& arg = args.mutref(callsiteIndex);
                         if ((arg.kind == "label"_fu))
@@ -1208,10 +1213,10 @@ struct sf_solve
                             s_SolvedNode inner { only(arg.items) };
                             arg = inner;
                         };
-                        s_Type replacement = ((arg.kind == "int"_fu) ? solveInt(arg.value, expect) : ((arg.kind == "num"_fu) ? solveNum(arg.value, expect) : s_Type{}));
-                        ok = isAssignableAsArgument(expect, s_Type(replacement));
+                        s_Type retype = tryRetyping(arg, expect);
+                        ok = isAssignableAsArgument(expect, s_Type(retype));
                         if (ok)
-                            arg.type = replacement;
+                            arg.type = retype;
 
                     };
                     if (!ok)
@@ -1266,6 +1271,14 @@ struct sf_solve
             };
         };
         return matchIdx;
+    };
+    bool considerRetyping(const s_Type& expect, const s_Type& actual)
+    {
+        return (((expect.value.quals & actual.value.quals) & q_arithmetic) != 0);
+    };
+    s_Type tryRetyping(const s_SolvedNode& node, const s_Type& expect)
+    {
+        return ((node.kind == "int"_fu) ? solveInt(node.value, expect) : ((node.kind == "num"_fu) ? solveNum(node.value, expect) : s_Type{}));
     };
     s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
     {
@@ -2043,6 +2056,20 @@ struct sf_solve
         fu_STR id { (node.value ? node.value : fail(fu_STR{})) };
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? findModule(qualid_extractFName(id)).out.solve.scope : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
+        if (((args.size() == 2) && (node.flags & F_INFIX)))
+        {
+            if (considerRetyping(args.mutref(0).type, args.mutref(1).type))
+            {
+                s_Type a = tryRetyping(args[0], args.mutref(1).type);
+                s_Type b = tryRetyping(args[1], args.mutref(0).type);
+                if ((a && !b))
+                    args.mutref(0).type = a;
+
+                if ((b && !a))
+                    args.mutref(1).type = b;
+
+            };
+        };
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
