@@ -556,7 +556,14 @@ fn solve(
                         let arg: &mut SolvedNode = args[callsiteIndex];
 
                         if (arg.kind == "label")
-                            arg = arg.items.only;
+                        {
+                            // SEGV fix -
+                            //  how do we deal with this in general?
+                            //   might as well discontinue copy assignment
+                            //    in favor of cpy->mov.
+                            let inner = arg.items.only;
+                            arg = inner;
+                        }
 
                         let replacement
                             = arg.kind == "int" ? solveInt(arg.value, expect)

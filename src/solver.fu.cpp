@@ -1204,8 +1204,10 @@ struct sf_solve
                     {
                         s_SolvedNode& arg = args.mutref(callsiteIndex);
                         if ((arg.kind == "label"_fu))
-                            arg = only(arg.items);
-
+                        {
+                            s_SolvedNode inner { only(arg.items) };
+                            arg = inner;
+                        };
                         s_Type replacement = ((arg.kind == "int"_fu) ? solveInt(arg.value, expect) : ((arg.kind == "num"_fu) ? solveNum(arg.value, expect) : s_Type{}));
                         ok = isAssignableAsArgument(expect, s_Type(replacement));
                         if (ok)
