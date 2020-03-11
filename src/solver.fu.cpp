@@ -38,6 +38,7 @@ struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
 bool hasIdentifierChars(const fu_STR&);
+const s_Node& only(const fu_VEC<s_Node>&);
 s_Target search(const s_Scope&, const fu_STR&, int&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
@@ -2075,7 +2076,7 @@ struct sf_solve
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
-            const s_Partial partial = (callTarg.partial ? callTarg.partial : fail(fu_STR{}));
+            const s_Partial partial { (callTarg.partial ? callTarg.partial : fail(fu_STR{})) };
             const s_Target& viaIdx = (partial.via ? partial.via : fail(fu_STR{}));
             callTargIdx = (partial.target ? partial.target : fail(fu_STR{}));
             s_Overload via = GET(viaIdx, module, ctx);
@@ -2345,7 +2346,7 @@ struct sf_solve
     fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> result {};
-        const s_TokenIdx here0 = _here;
+        const s_TokenIdx here0 { _here };
         result.resize(nodes.size());
         for (int i = 0; (i < nodes.size()); i++)
         {

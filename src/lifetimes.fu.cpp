@@ -7,6 +7,7 @@
 
 struct s_Lifetime;
 struct s_Region;
+const s_Region& only(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Region
                                 #define DEF_s_Region
@@ -106,7 +107,7 @@ s_Lifetime inter_args(s_Lifetime&& a, const s_Lifetime& b)
         const s_Region& br = b.regions[i];
         for (int i = 0; (i < a.regions.size()); i++)
         {
-            const s_Region ar = a.regions[i];
+            const s_Region ar { a.regions[i] };
             if ((ar.index == br.index))
             {
                 if ((ar.relax > br.relax))

@@ -331,7 +331,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseStructMethod(): Node
     {
-        mut fnNode = parseFnDecl();
+        mut fnNode = parseFnDecl(0);
 
         // `this` arg annotation -
         //  -----------------------------------
@@ -483,12 +483,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             if (v == "break")       return parseJump("break");
             if (v == "continue")    return parseJump("continue");
 
-            if (v == "fn")          return parseFnDecl();
+            if (v == "fn")          return parseFnDecl(0);
             if (v == "struct")      return parseStructDecl();
             if (v == "typedef")     return parseTypedef();
 
             // Ignore pubs for now.
             if (v == "pub")         return parsePub();
+
+            if (v == "inline" && tryConsume("id", "fn"))
+                return parseFnDecl(F_TEMPLATE);
         }
 
         ////////////
@@ -546,7 +549,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return expr;
     }
 
-    fn parseFnDecl(): Node
+    fn parseFnDecl(mut flags: i32): Node
     {
         ////////////////////////////////
         let dollars0    = _dollars;
@@ -561,7 +564,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         consume("op", "(");
 
         mut items: Node[];
-        mut flags = parseArgsDecl(items, "op", ")");
+        flags |= parseArgsDecl(items, "op", ")");
 
         ////////////////////////////////
         _fnDepth++;

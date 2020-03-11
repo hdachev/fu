@@ -91,7 +91,7 @@ pub fn cpp_codegen(
         if ((mode & M_CONST) && (type.quals & q_trivial))
             return "const " + fwd;
 
-        if ((mode & M_ARGUMENT) && !(type.quals & q_trivial))
+        if ((mode & M_ARGUMENT) && !(type.quals & q_primitive))
             return fwd + "&&";
 
         return fwd;
@@ -254,10 +254,8 @@ pub fn cpp_codegen(
         return out;
     }
 
-    fn cgSpecs(): string
+    fn cgSpecs(): void
     {
-        mut src = "";
-
         /////////////////
         _isModuleSpecs++;
         /////////////////
@@ -291,23 +289,21 @@ pub fn cpp_codegen(
                     }
                 }
 
-                src  += "\n                                #ifndef DEFt_" + dedupe
-                      + "\n                                #define DEFt_" + dedupe
-                      + "\n" + cgNode(s)
-                      + "\n                                #endif\n";
+                _fdef += "\n                                #ifndef DEFt_" + dedupe
+                       + "\n                                #define DEFt_" + dedupe
+                       + "\n" + cgNode(s)
+                       + "\n                                #endif\n";
             }
         }
 
         /////////////////
         _isModuleSpecs--;
         /////////////////
-
-        return src;
     }
 
     fn cgRoot(root: SolvedNode): string
     {
-        let specs  = cgSpecs();
+        cgSpecs();
         let src    = cgStatements(root.items);
         let main   = cgMain();
 
@@ -315,7 +311,6 @@ pub fn cpp_codegen(
                    + collectDedupes(_tfwd)
                    + collectDedupes(_ffwd)
                    +               (_tdef)
-                   +               (specs)
                    +               (_fdef)
                    ;
 
@@ -740,7 +735,7 @@ pub fn cpp_codegen(
             if (init.kind == "copy" && !(node.type.quals & q_ref))
             {
                 let expr = cgNode(init.items.only);
-                if (node.type.quals & q_trivial)
+                if (node.type.quals & q_primitive)
                     return head + " = " + expr;
 
                 return head + " { " + expr + " }";

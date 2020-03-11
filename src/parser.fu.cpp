@@ -191,6 +191,11 @@ inline const int F_IMPLICIT = (1 << 17);
 inline const int F_USING = (1 << 18);
                                 #endif
 
+                                #ifndef DEF_F_INLINE
+                                #define DEF_F_INLINE
+inline const int F_INLINE = (1 << 19);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -492,7 +497,7 @@ struct sf_parse
     };
     s_Node parseStructMethod()
     {
-        s_Node fnNode = parseFnDecl();
+        s_Node fnNode = parseFnDecl(0);
         s_Node typeAnnot = createPrefix("&"_fu, createRead((_structName ? _structName : fail(fu_STR{}))));
         fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
         fnNode.flags |= F_METHOD;
@@ -606,7 +611,7 @@ struct sf_parse
                 return parseJump("continue"_fu);
 
             if ((v == "fn"_fu))
-                return parseFnDecl();
+                return parseFnDecl(0);
 
             if ((v == "struct"_fu))
                 return parseStructDecl();
@@ -616,6 +621,9 @@ struct sf_parse
 
             if ((v == "pub"_fu))
                 return parsePub();
+
+            if (((v == "inline"_fu) && tryConsume("id"_fu, "fn"_fu)))
+                return parseFnDecl(int(F_TEMPLATE));
 
         };
         _idx--;
@@ -659,14 +667,14 @@ struct sf_parse
         consume("op"_fu, ";"_fu);
         return expr;
     };
-    s_Node parseFnDecl()
+    s_Node parseFnDecl(int flags)
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
         s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return tryConsume("op"_fu, fu_STR{}); }());
         consume("op"_fu, "("_fu);
         fu_VEC<s_Node> items {};
-        int flags = parseArgsDecl(items, "op"_fu, ")"_fu);
+        flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
         _fnDepth++;
         s_Node type = tryPopTypeAnnot();
         const int retIdx = items.size();

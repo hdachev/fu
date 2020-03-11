@@ -789,7 +789,7 @@ struct sf_cpp_codegen
         if (((mode & M_CONST) && (type.value.quals & q_trivial)))
             return ("const "_fu + fwd);
 
-        if (((mode & M_ARGUMENT) && !(type.value.quals & q_trivial)))
+        if (((mode & M_ARGUMENT) && !(type.value.quals & q_primitive)))
             return (fwd + "&&"_fu);
 
         return fwd;
@@ -934,9 +934,8 @@ struct sf_cpp_codegen
 
         return out;
     };
-    fu_STR cgSpecs()
+    void cgSpecs()
     {
-        fu_STR src {};
         _isModuleSpecs++;
         const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
         const fu_VEC<fu_STR>& keys = specs.m_keys;
@@ -960,18 +959,17 @@ struct sf_cpp_codegen
                         (dedupe += std::byte('_'));
 
                 };
-                (src += (((((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe) + "\n"_fu) + cgNode(s, 0)) + "\n                                #endif\n"_fu));
+                (_fdef += (((((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe) + "\n"_fu) + cgNode(s, 0)) + "\n                                #endif\n"_fu));
             };
         };
         _isModuleSpecs--;
-        return src;
     };
     fu_STR cgRoot(const s_SolvedNode& root)
     {
-        fu_STR specs = cgSpecs();
+        cgSpecs();
         fu_STR src = cgStatements(root.items);
         fu_STR main = cgMain();
-        fu_STR header = (((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + specs) + _fdef);
+        fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + _fdef);
         return ((header + src) + main);
     };
     fu_STR cgMain()
@@ -1284,7 +1282,7 @@ struct sf_cpp_codegen
             if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
             {
                 fu_STR expr = cgNode(only(init.items), 0);
-                if ((node.type.value.quals & q_trivial))
+                if ((node.type.value.quals & q_primitive))
                     return ((head + " = "_fu) + expr);
 
                 return (((head + " { "_fu) + expr) + " }"_fu);
