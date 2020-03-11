@@ -191,11 +191,6 @@ inline const int F_IMPLICIT = (1 << 17);
 inline const int F_USING = (1 << 18);
                                 #endif
 
-                                #ifndef DEF_F_INLINE
-                                #define DEF_F_INLINE
-inline const int F_INLINE = (1 << 19);
-                                #endif
-
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);

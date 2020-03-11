@@ -1103,9 +1103,16 @@ fn solve(
             : SolvedNode
     {
         let node = template.node;
+            node.kind == "fn" || fail("TODO");
 
-        node.kind == "fn" || fail("TODO");
         mut result = trySpecializeFn(node, args);
+        if (result)
+        {
+            let o = GET(result.target);
+            if (o.min > args.len || o.max < args.len)
+                result = SolvedNode;
+        }
+
         if (!result)
             result.kind = "spec-fail";
 

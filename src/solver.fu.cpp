@@ -1661,6 +1661,13 @@ struct sf_solve
         const s_Node& node = tEmplate.node;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         s_SolvedNode result = trySpecializeFn(node, args);
+        if (result)
+        {
+            s_Overload o = GET(result.target, module, ctx);
+            if (((o.min > args.size()) || (o.max < args.size())))
+                result = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+
+        };
         if (!result)
             result.kind = "spec-fail"_fu;
 
