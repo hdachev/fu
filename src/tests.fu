@@ -1671,6 +1671,19 @@ fn runTests()
         fn main() hey(1).i32 - 1;
     `);
 
+    ZERO(`
+        fn lin2srgb(l: f32): f32
+            l <= 0.0031308
+                ? l * 12.92
+                : 1.055 * pow(l, 1/2.4.f32) - 0.055;
+
+        fn lin255(v: f32) u32 <|
+            v.lin2srgb.max(0.f32).min(1.f32) * 255.99;
+
+        fn main() i32 <|
+            lin255(1) - 255;
+    `);
+
 
     // Typedefs.
 

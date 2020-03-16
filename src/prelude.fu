@@ -75,15 +75,15 @@ fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 
 // Numeric conversions.
 
-fn  i8(v: $T) case ($T -> @primitive):  i8 __native;
+fn  i8(v: $T) case ($T -> @primitive):  i8 __native("<cstdint>",  "int8_t");
 fn i16(v: $T) case ($T -> @primitive): i16 __native("short");
 fn i32(v: $T) case ($T -> @primitive): i32 __native("int");
-fn i64(v: $T) case ($T -> @primitive): i64 __native;
+fn i64(v: $T) case ($T -> @primitive): i64 __native("<cstdint>", "int64_t");
 
-fn  u8(v: $T) case ($T -> @primitive):  u8 __native;
-fn u16(v: $T) case ($T -> @primitive): u16 __native;
-fn u32(v: $T) case ($T -> @primitive): u32 __native;
-fn u64(v: $T) case ($T -> @primitive): u64 __native;
+fn  u8(v: $T) case ($T -> @primitive):  u8 __native("<cstdint>",  "uint8_t");
+fn u16(v: $T) case ($T -> @primitive): u16 __native("<cstdint>", "uint16_t");
+fn u32(v: $T) case ($T -> @primitive): u32 __native("<cstdint>", "uint32_t");
+fn u64(v: $T) case ($T -> @primitive): u64 __native("<cstdint>", "uint64_t");
 
 fn f32(v: $T) case ($T -> @primitive): f32 __native("float");
 fn f64(v: $T) case ($T -> @primitive): f64 __native("double");
