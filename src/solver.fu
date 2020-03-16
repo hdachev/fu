@@ -651,6 +651,12 @@ fn solve(
         return expect.quals & actual.quals & q_arithmetic != 0;
     }
 
+    fn couldRetype(node: SolvedNode): bool
+    {
+        return node.kind == "int"
+            || node.kind == "num";
+    }
+
     fn tryRetyping(node: SolvedNode, expect: Type): Type
     {
         return node.kind == "int" ? solveInt(node.value, expect)
@@ -1079,7 +1085,7 @@ fn solve(
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = target.modid + "#" + target.index;
+        mut mangle = target.modid + "#" + target.index + " ";
             mangle += mangled_args;
 
         // TODO FIX THIS MESS -
@@ -1090,7 +1096,7 @@ fn solve(
         let spec = module.out.specs[mangle] ||= SolvedNode;
         if (!spec)
         {
-            let spec = doTrySpecialize(template, args);
+            let spec = doTrySpecialize(template, args, mangle);
             module.out.specs[mangle] = spec;
             return spec.target;
         }
@@ -1099,13 +1105,13 @@ fn solve(
     }
 
     fn doTrySpecialize(
-        template: Template, args: SolvedNode[])
+        template: Template, args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
         let node = template.node;
             node.kind == "fn" || fail("TODO");
 
-        mut result = trySpecializeFn(node, args);
+        mut result = trySpecializeFn(node, args, mangle);
         if (result)
         {
             let o = GET(result.target);
@@ -1123,52 +1129,121 @@ fn solve(
     //
 
     fn trySpecializeFn(
-        node: Node, args: SolvedNode[])
+        node: Node, mut args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
-        let items = node.items;
+        mut ok      = true;
+
+        let items   = node.items;
+        let numArgs = items.len + FN_ARGS_BACK;
         mut typeParams: Map(string, Type);
 
+        /////////////////
+        // Literal fixup.
+        mut retypeIndices: i32[];
+        mut remangle = false;
+
         // First off, solve type params.
-        let numArgs = items.len + FN_ARGS_BACK;
-        for (mut i = 0; i < numArgs; i++)
+        for (   mut pass_retype  = 0;
+                    pass_retype == 0 || pass_retype == 1 && retypeIndices;
+                    pass_retype++)
         {
-            let argNode = items[i] || fail();
-            argNode.kind == "let"  || fail();
+        //        /LITFIX
+        /////////////////
 
-            mut inType = args.len > i && args[i].type;
-
-            if (inType)
+            for (mut i = 0; i < numArgs; i++)
             {
-                // All fnargs are referable.
-                inType.lifetime = Lifetime_fromArgIndex(i);
+                if (pass_retype)
+                {
+                    // TODO fix, .try_shift instead.
+                    if (!retypeIndices.has(i))
+                        continue;
+                }
 
-                //
-                let argName = argNode.value || fail();
+                let inValue = args.len > i && args[i];
+                mut inType  = inValue.type;
 
-                // Same pattern - grabs a mutref.
-                let argName_typeParam: &mut Type =
-                    typeParams[argName] ||= Type;
+                let argNode = items[i] || fail();
+                let annot   = argNode.items[LET_TYPE];
 
-                argName_typeParam && fail(
-                    "Type param name collision with argument: `" + argName + "`.")
-                        = inType;
+                /////////////////
+                // Literal fixup.
+                if (couldRetype(inValue))
+                {
+                    let paramType =
+                        annot.kind == "typeparam"
+                            ? typeParams[annot.value] ||= Type
+                            : annot.kind == "call" && !annot.items
+                                && Scope_lookupType(annot.value);
 
-                //
-                inType.quals |= q_ref;
-            }
+                    // Ignore literals if possible.
+                    if (paramType)
+                    {
+                        let retype = tryRetyping(inValue, paramType);
+                        if (retype && retype.canon != inType.canon)
+                        {
+                            inType   = args[i].type = retype;
+                            remangle = true;
+                        }
+                    }
 
-            // Type check.
-            let annot = argNode.items[LET_TYPE];
-            if (annot)
-            {
-                let ok = inType && trySolveTypeParams(
-                    annot, inType, typeParams);
+                    // Defer for second pass.
+                    else if (!pass_retype)
+                    {
+                        retypeIndices.push(i);
+                        continue;
+                    }
+                }
+                //        /LITFIX
+                /////////////////
 
-                if (!ok)
-                    return SolvedNode();
+                argNode.kind == "let"  || fail();
+
+                if (inType)
+                {
+                    // All fnargs are referable.
+                    inType.lifetime = Lifetime_fromArgIndex(i);
+
+                    //
+                    let argName = argNode.value || fail();
+
+                    // Same pattern - grabs a mutref.
+                    let argName_typeParam: &mut Type =
+                        typeParams[argName] ||= Type;
+
+                    argName_typeParam && fail(
+                        "Type param name collision with argument: `" + argName + "`.")
+                            = inType;
+
+                    //
+                    inType.quals |= q_ref;
+                }
+
+                // Type check.
+                if (annot)
+                {
+                    let argOk = inType && trySolveTypeParams(
+                        annot, inType, typeParams);
+
+                    ok = ok && argOk;
+                    if (!ok && !remangle)
+                        break;
+                }
             }
         }
+
+        /////////////////
+        // Literal fixup.
+        if (remangle)
+        {
+            let start   = mangle.find(' ') + 1 || fail();
+                mangle  = mangle.slice(0, start) + mangleArguments(args);
+        }
+        //        /LITFIX
+        /////////////////
+
+        if (!ok)
+            return SolvedNode();
 
         // Match pattern arm here.
         mut caseIdx = -1;
@@ -1205,7 +1280,7 @@ fn solve(
         ////////////////////////////////
 
         let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
-        specialized || fail();
+            specialized || fail();
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
@@ -1494,6 +1569,26 @@ fn solve(
 
     //
 
+    fn Scope_tryLookupType(id: string): Type
+    {
+        let overloads = Scope_lookup(_scope, id);
+
+        for (mut i = 0; i < overloads.len; i++)
+        {
+            let maybe = GET(overloads[i]);
+            if (maybe.kind == "type")
+                return maybe.type || fail();
+        }
+
+        return Type;
+    }
+
+    fn Scope_lookupType(id: string): Type
+    {
+        return Scope_tryLookupType(id) || fail(
+            "No type `" + id + "` in scope.");
+    }
+
     fn evalTypeAnnot(node: Node): SolvedNode
     {
         if (node.kind == "call")
@@ -1527,20 +1622,8 @@ fn solve(
             }
             else
             {
-                let id        = node.value || fail();
-                let overloads = Scope_lookup(_scope, id);
-
-                if (overloads)
-                {
-                    for (mut i = 0; i < overloads.len; i++)
-                    {
-                        let maybe = GET(overloads[i]);
-                        if (maybe.kind == "type")
-                            return solved(node, maybe.type || fail());
-                    }
-                }
-
-                fail("No type `" + id + "` in scope.");
+                return solved(node,
+                    Scope_lookupType(node.value));
             }
         }
         else if (node.kind == "typeparam")
@@ -1594,20 +1677,9 @@ fn solve(
             }
             else
             {
-                let id        = node.value || fail();
-                let overloads = Scope_lookup(_scope, id);
-
-                if (overloads)
-                {
-                    for (mut i = 0; i < overloads.len; i++)
-                    {
-                        let maybe = GET(overloads[i]);
-                        if (maybe.kind == "type")
-                            return isAssignable(maybe.type || fail(), type);
-                    }
-                }
-
-                fail("No type `" + id + "` in scope.");
+                return isAssignable(
+                    Scope_lookupType(node.value),
+                        type);
             }
         }
         else if (node.kind == "typeparam")
@@ -1729,22 +1801,7 @@ fn solve(
             ? findModule(qualid_extractFName(id)).out.solve.scope
             : _scope;
 
-        mut args        = solveNodes(node.items);
-
-        /////////////////
-        // Literal fixup.
-        if (args.len == 2 && node.flags & F_INFIX)
-        {
-            if (considerRetyping(args[0].type, args[1].type))
-            {
-                let a = tryRetyping(args[0], args[1].type);
-                let b = tryRetyping(args[1], args[0].type);
-                if (a && !b) args[0].type = a;
-                if (b && !a) args[1].type = b;
-            }
-        }
-        //        /LITFIX
-        /////////////////
+        mut args = solveNodes(node.items);
 
         //
         mut callTargIdx = scope.match__mutargs(id, args, node.flags);

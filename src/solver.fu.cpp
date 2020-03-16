@@ -568,16 +568,16 @@ struct s_MapFields
 };
                                 #endif
 
-                                #ifndef DEFt_2_1_7__7_4_7SolvedNode
-                                #define DEFt_2_1_7__7_4_7SolvedNode
+                                #ifndef DEFt_2_1__7__7_4_7SolvedNode
+                                #define DEFt_2_1__7__7_4_7SolvedNode
 inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-                                #ifndef DEFt_2_1_6__5_4_5Node
-                                #define DEFt_2_1_6__5_4_5Node
+                                #ifndef DEFt_2_1__6__5_4_5Node
+                                #define DEFt_2_1__6__5_4_5Node
 inline const s_Node& only(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -822,11 +822,6 @@ inline const int F_ID = (1 << 5);
                                 #ifndef DEF_F_QUALIFIED
                                 #define DEF_F_QUALIFIED
 inline const int F_QUALIFIED = (1 << 7);
-                                #endif
-
-                                #ifndef DEF_F_INFIX
-                                #define DEF_F_INFIX
-inline const int F_INFIX = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -1277,6 +1272,10 @@ struct sf_solve
     {
         return (((expect.value.quals & actual.value.quals) & q_arithmetic) != 0);
     };
+    bool couldRetype(const s_SolvedNode& node)
+    {
+        return ((node.kind == "int"_fu) || (node.kind == "num"_fu));
+    };
     s_Type tryRetyping(const s_SolvedNode& node, const s_Type& expect)
     {
         return ((node.kind == "int"_fu) ? solveInt(node.value, expect) : ((node.kind == "num"_fu) ? solveNum(node.value, expect) : s_Type{}));
@@ -1645,22 +1644,22 @@ struct sf_solve
     };
     s_Target trySpecialize(const s_Target& target, const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
     {
-        fu_STR mangle = ((target.modid + "#"_fu) + target.index);
+        fu_STR mangle = (((target.modid + "#"_fu) + target.index) + " "_fu);
         (mangle += mangled_args);
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
-            s_SolvedNode spec = doTrySpecialize(tEmplate, args);
+            s_SolvedNode spec = doTrySpecialize(tEmplate, args, mangle);
             (module.out.specs.upsert(mangle) = spec);
             return std::move(spec.target);
         };
         return std::move(spec.target);
     };
-    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args)
+    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, fu_STR& mangle)
     {
         const s_Node& node = tEmplate.node;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
-        s_SolvedNode result = trySpecializeFn(node, args);
+        s_SolvedNode result = trySpecializeFn(node, fu_VEC<s_SolvedNode>(args), mangle);
         if (result)
         {
             s_Overload o = GET(result.target, module, ctx);
@@ -1673,33 +1672,75 @@ struct sf_solve
 
         return result;
     };
-    s_SolvedNode trySpecializeFn(const s_Node& node, const fu_VEC<s_SolvedNode>& args)
+    s_SolvedNode trySpecializeFn(const s_Node& node, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
     {
+        bool ok = true;
         const fu_VEC<s_Node>& items = node.items;
-        fu_COW_MAP<fu_STR, s_Type> typeParams {};
         const int numArgs = (items.size() + FN_ARGS_BACK);
-        for (int i = 0; (i < numArgs); i++)
+        fu_COW_MAP<fu_STR, s_Type> typeParams {};
+        fu_VEC<int> retypeIndices {};
+        bool remangle = false;
+        for (int pass_retype = 0; ((pass_retype == 0) || ((pass_retype == 1) && retypeIndices)); pass_retype++)
         {
-            const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
-            ((argNode.kind == "let"_fu) || fail(fu_STR{}));
-            s_Type inType { ([&]() -> const s_Type& { if ((args.size() > i)) return args[i].type; else return fu::Default<s_Type>::value; }()) };
-            if (inType)
+            for (int i = 0; (i < numArgs); i++)
             {
-                inType.lifetime = Lifetime_fromArgIndex(i);
-                const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
-                s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
-                ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
-                inType.value.quals |= q_ref;
-            };
-            const s_Node& annot = argNode.items[LET_TYPE];
-            if (annot)
-            {
-                const bool ok = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
-                if (!ok)
-                    return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
-
+                if (pass_retype)
+                {
+                    if (!fu::has(retypeIndices, i))
+                    {
+                        continue;
+                    };
+                };
+                const s_SolvedNode& inValue = ([&]() -> const s_SolvedNode& { if ((args.size() > i)) return args.mutref(i); else return fu::Default<s_SolvedNode>::value; }());
+                s_Type inType { inValue.type };
+                const s_Node& argNode = ([&]() -> const s_Node& { { const s_Node& _ = items[i]; if (_) return _; } fail(fu_STR{}); }());
+                const s_Node& annot = argNode.items[LET_TYPE];
+                if (couldRetype(inValue))
+                {
+                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
+                    if (paramType)
+                    {
+                        s_Type retype = tryRetyping(inValue, paramType);
+                        if ((retype && (retype.value.canon != inType.value.canon)))
+                        {
+                            inType = (args.mutref(i).type = retype);
+                            remangle = true;
+                        };
+                    }
+                    else if (!pass_retype)
+                    {
+                        retypeIndices.push(i);
+                        continue;
+                    };
+                };
+                ((argNode.kind == "let"_fu) || fail(fu_STR{}));
+                if (inType)
+                {
+                    inType.lifetime = Lifetime_fromArgIndex(i);
+                    const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
+                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
+                    ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
+                    inType.value.quals |= q_ref;
+                };
+                if (annot)
+                {
+                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
+                    ok = ([&]() -> bool { if (ok) return argOk; else return fu::Default<bool>::value; }());
+                    if ((!ok && !remangle))
+                    {
+                        break;
+                    };
+                };
             };
         };
+        if (remangle)
+        {
+            const int start = ([&]() -> int { { int _ = (fu::lfind(mangle, std::byte(' ')) + 1); if (_) return _; } fail(fu_STR{}); }());
+            mangle = (fu::slice(mangle, 0, start) + mangleArguments(args));
+        };
+        if (!ok)
+            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+
         int caseIdx = -1;
         const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
         if ((pattern.kind == "pattern"_fu))
@@ -1896,6 +1937,22 @@ struct sf_solve
         Scope_import(module.modid);
         return createEmpty();
     };
+    s_Type Scope_tryLookupType(const fu_STR& id)
+    {
+        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
+        for (int i = 0; (i < overloads.size()); i++)
+        {
+            s_Overload maybe = GET(overloads[i], module, ctx);
+            if ((maybe.kind == "type"_fu))
+                return std::move((maybe.type ? maybe.type : fail(fu_STR{})));
+
+        };
+        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+    };
+    s_Type Scope_lookupType(const fu_STR& id)
+    {
+        return ([&]() -> s_Type { { s_Type _ = Scope_tryLookupType(id); if (_) return _; } fail((("No type `"_fu + id) + "` in scope."_fu)); }());
+    };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
         if ((node.kind == "call"_fu))
@@ -1928,21 +1985,8 @@ struct sf_solve
                 };
             }
             else
-            {
-                const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
-                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
-                if (overloads)
-                {
-                    for (int i = 0; (i < overloads.size()); i++)
-                    {
-                        s_Overload maybe = GET(overloads[i], module, ctx);
-                        if ((maybe.kind == "type"_fu))
-                            return solved(node, (maybe.type ? maybe.type : fail(fu_STR{})), fu_VEC<s_SolvedNode>{});
+                return solved(node, Scope_lookupType(node.value), fu_VEC<s_SolvedNode>{});
 
-                    };
-                };
-                fail((("No type `"_fu + id) + "` in scope."_fu));
-            };
         }
         else if ((node.kind == "typeparam"_fu))
         {
@@ -1981,21 +2025,8 @@ struct sf_solve
                 };
             }
             else
-            {
-                const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
-                fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
-                if (overloads)
-                {
-                    for (int i = 0; (i < overloads.size()); i++)
-                    {
-                        s_Overload maybe = GET(overloads[i], module, ctx);
-                        if ((maybe.kind == "type"_fu))
-                            return isAssignable((maybe.type ? maybe.type : fail(fu_STR{})), type);
+                return isAssignable(Scope_lookupType(node.value), type);
 
-                    };
-                };
-                fail((("No type `"_fu + id) + "` in scope."_fu));
-            };
         }
         else if ((node.kind == "typeparam"_fu))
         {
@@ -2064,20 +2095,6 @@ struct sf_solve
         fu_STR id { (node.value ? node.value : fail(fu_STR{})) };
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? findModule(qualid_extractFName(id)).out.solve.scope : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        if (((args.size() == 2) && (node.flags & F_INFIX)))
-        {
-            if (considerRetyping(args.mutref(0).type, args.mutref(1).type))
-            {
-                s_Type a = tryRetyping(args[0], args.mutref(1).type);
-                s_Type b = tryRetyping(args[1], args.mutref(0).type);
-                if ((a && !b))
-                    args.mutref(0).type = a;
-
-                if ((b && !a))
-                    args.mutref(1).type = b;
-
-            };
-        };
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)

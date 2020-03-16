@@ -270,6 +270,7 @@ pub struct Scope
 
 pub fn Scope_lookup(scope: Scope, id: string): Target[]
 {
+    id || assert();
     mut results: Target[] = [];
 
     let items = scope.items;

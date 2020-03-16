@@ -545,16 +545,16 @@ struct s_MapFields
 };
                                 #endif
 
-                                #ifndef DEFt_2_6_6___28byte
-                                #define DEFt_2_6_6___28byte
+                                #ifndef DEFt_2_6__6___28byte
+                                #define DEFt_2_6__6___28byte
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1_6__7_4_7SolvedNode
-                                #define DEFt_2_1_6__7_4_7SolvedNode
+                                #ifndef DEFt_2_1__6__7_4_7SolvedNode
+                                #define DEFt_2_1__6__7_4_7SolvedNode
 inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -699,6 +699,11 @@ inline const int F_POSTFIX = (1 << 3);
                                 #ifndef DEF_q_unsigned
                                 #define DEF_q_unsigned
 inline const int q_unsigned = (1 << 8);
+                                #endif
+
+                                #ifndef DEF_q_floating_pt
+                                #define DEF_q_floating_pt
+inline const int q_floating_pt = (1 << 9);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -1598,6 +1603,23 @@ struct sf_cpp_codegen
         {
             if (!fu::has(src, std::byte('u')))
                 (src += std::byte('u'));
+
+        };
+        if ((node.type.value.quals & q_floating_pt))
+        {
+            if (!fu::has(src, std::byte('.')))
+                (src += ".0"_fu);
+
+            if ((node.type.value.canon == "f32"_fu))
+            {
+                if (fu::has(src, std::byte('x')))
+                    src = (("float("_fu + src) + ")"_fu);
+                else
+                    (src += "f"_fu);
+
+            }
+            else if ((node.type.value.canon != "f64"_fu))
+                fu::fail();
 
         };
         if (fu::lmatch(src, "0o"_fu))

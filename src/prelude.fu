@@ -31,14 +31,6 @@ fn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
 fn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
 fn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
 
-fn *(a: $A, b: $B)
-    case ($A -> @floating_point && $B -> @integral): $A __native;
-    case ($A -> @integral && $B -> @floating_point): $B __native;
-
-fn /(a: $A, b: $B)
-    case ($A -> @floating_point && $B -> @integral): $A __native;
-    case ($A -> @integral && $B -> @floating_point): $B __native;
-
 fn %(a: $T, b: $T)
     case ($T -> @integral): $T __native;
     case ($T -> @floating_point): $T __native("<cmath>", "std::fmod");

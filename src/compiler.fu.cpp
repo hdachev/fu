@@ -544,16 +544,16 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEFt_2_6_7___28byte
-                                #define DEFt_2_6_7___28byte
+                                #ifndef DEFt_2_6__7___28byte
+                                #define DEFt_2_6__7___28byte
 inline std::byte if_last(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_6_6___28byte
-                                #define DEFt_2_6_6___28byte
+                                #ifndef DEFt_2_6__6___28byte
+                                #define DEFt_2_6__6___28byte
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());

@@ -1135,6 +1135,24 @@ pub fn cpp_codegen(
             if (!src.has('u'))
                 src += 'u';
 
+        if (node.type.quals & q_floating_pt)
+        {
+            if (!src.has('.'))
+                src += ".0";
+
+            if (node.type.canon == "f32")
+            {
+                if (src.has('x'))
+                    src = "float(" + src + ")";
+                else
+                    src += "f";
+            }
+            else if (node.type.canon != "f64")
+            {
+                assert();
+            }
+        }
+
         if (src.starts(with: "0o"))
             src.splice(1, 1);
 

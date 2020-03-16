@@ -649,6 +649,7 @@ bool isTemplate(const s_Overload& o)
 
 fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
 {
+    (id || fu::fail());
     fu_VEC<s_Target> results {};
     const fu_VEC<s_ScopeItem>& items = scope.items;
     for (int i = 0; (i < items.size()); i++)
