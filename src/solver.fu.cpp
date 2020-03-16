@@ -60,6 +60,9 @@ s_Type createArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type createMap(const s_Type&, const s_Type&);
 s_MapFields tryClear_map(const s_Type&);
+bool is_never(const s_Type&);
+bool is_void(const s_Type&);
+bool is_bool(const s_Type&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 s_Type tryClear_mutref(const s_Type&);
@@ -69,7 +72,6 @@ s_Type add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
-bool operator==(const s_Type&, const s_Type&);
 s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromScopeIdx(int);
 bool killedBy(const s_Lifetime&, int);
@@ -629,11 +631,6 @@ inline const int FN_RET_BACK = -2;
 inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
-                                #ifndef DEF_t_template
-                                #define DEF_t_template
-inline const s_Type t_template = s_Type { s_ValueType { 0, int{}, "template"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
                                 #ifndef DEF_F_IMPLICIT
                                 #define DEF_F_IMPLICIT
 inline const int F_IMPLICIT = (1 << 17);
@@ -829,11 +826,6 @@ inline const int F_QUALIFIED = (1 << 7);
 inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
-                                #ifndef DEF_t_never
-                                #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
 namespace {
 
 struct sf_solve
@@ -916,7 +908,7 @@ struct sf_solve
                 arg_n.push(name);
             };
         };
-        return Scope_add(_scope, "template"_fu, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{}, s_SolvedNode{}, module);
+        return Scope_add(_scope, "template"_fu, id, s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node, const s_Node& native)
     {
@@ -2196,7 +2188,7 @@ struct sf_solve
         s_SolvedNode secExpr { ([&]() -> const s_SolvedNode& { if (cons) { const s_SolvedNode& _ = alt; if (_) return _; } return cons; }()) };
         const s_Type& priType = priExpr.type;
         const s_Type& secType = secExpr.type;
-        if (!((type == t_void) || (type == t_bool)))
+        if ((!is_void(type) && !is_bool(type)))
         {
             type = (!secType ? s_Type(priType) : type_tryInter(priType, secType));
             (type || fail((((("[if] No common supertype: `"_fu + serializeType(priType)) + " : "_fu) + serializeType(secType)) + "`."_fu)));
@@ -2216,23 +2208,23 @@ struct sf_solve
     s_SolvedNode solveOr(const s_Node& node, s_Type&& type)
     {
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, type);
-        if ((type == t_void))
+        if (is_void(type))
             type = t_bool;
 
-        if (!(type == t_bool))
+        if (!is_bool(type))
         {
             s_Type sumType {};
             bool hasNever = false;
             for (int i = items.size(); (i-- > 0); )
             {
                 s_SolvedNode item { items[i] };
-                if ((item.type == t_never))
+                if (is_never(item.type))
                 {
                     hasNever = true;
                     continue;
                 };
                 const s_SolvedNode& andLast = ([&]() -> const s_SolvedNode& { if (hasNever && (item.kind == "and"_fu) && item.items) return item.items[(item.items.size() - 1)]; else return fu::Default<s_SolvedNode>::value; }());
-                const s_Type& itemType = ((andLast && !(andLast.type == t_never)) ? andLast.type : item.type);
+                const s_Type& itemType = ((andLast && !is_never(andLast.type)) ? andLast.type : item.type);
                 if (sumType)
                 {
                     sumType = type_tryInter(sumType, itemType);
@@ -2261,16 +2253,16 @@ struct sf_solve
     s_SolvedNode solveAnd(const s_Node& node, s_Type&& type)
     {
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
-        if ((type == t_void))
+        if (is_void(type))
             type = t_bool;
 
-        if (!(type == t_bool))
+        if (!is_bool(type))
         {
             s_Type sumType {};
             for (int i = items.size(); (i-- > 0); )
             {
                 const s_SolvedNode& item = items[i];
-                if ((item.type == t_never))
+                if (is_never(item.type))
                 {
                     continue;
                 };

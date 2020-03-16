@@ -143,7 +143,7 @@ fn solve(
 
         return Scope_add(
             _scope,
-            "template", :id, t_template,
+            "template", :id, Type,
             :min, :max, arg_n, :template);
     }
 
@@ -1991,7 +1991,7 @@ fn solve(
         let priType = priExpr.type;
         let secType = secExpr.type;
 
-        if !(type == t_void || type == t_bool)
+        if (!type.is_void && !type.is_bool)
         {
             type = !secType ? priType
                             : type_tryInter(priType, secType);
@@ -2024,11 +2024,11 @@ fn solve(
         mut items = solveNodes(node.items, type);
 
         // Statement mode.
-        if (type == t_void)
+        if (type.is_void)
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if !(type == t_bool)
+        if (!type.is_bool)
         {
             mut sumType: Type;
             mut hasNever = false;
@@ -2037,7 +2037,7 @@ fn solve(
             for (mut i = items.len; i --> 0; )
             {
                 let item = items[i];
-                if (item.type == t_never)
+                if (item.type.is_never)
                 {
                     hasNever = true;
                     continue;
@@ -2045,7 +2045,7 @@ fn solve(
 
                 // a && b || never: b can be mutref!
                 let andLast = hasNever && item.kind == "and" && item.items && item.items[item.items.len - 1];
-                let itemType = andLast && !(andLast.type == t_never)
+                let itemType = andLast && !andLast.type.is_never
                     ? andLast.type
                     : item.type;
 
@@ -2086,11 +2086,11 @@ fn solve(
         let items = solveNodes(node.items);
 
         // Statement mode.
-        if (type == t_void)
+        if (type.is_void)
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if !(type == t_bool)
+        if (!type.is_bool)
         {
             mut sumType: Type;
 
@@ -2099,7 +2099,7 @@ fn solve(
             for (mut i = items.len; i --> 0; )
             {
                 let item = items[i];
-                if (item.type == t_never)
+                if (item.type.is_never)
                     continue;
 
                 if (sumType)

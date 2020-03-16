@@ -16,7 +16,6 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-bool operator==(const s_Type&, const s_Type&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
@@ -219,11 +218,6 @@ bool operator==(const s_ValueType& a, const s_ValueType& b)
     return ((a.quals == b.quals) && (a.modid == b.modid) && (a.canon == b.canon));
 }
 
-bool operator==(const s_Type& a, const s_Type& b)
-{
-    return (a.value == b.value);
-}
-
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
 inline const int Trivial = (q_copy | q_trivial);
@@ -324,19 +318,29 @@ inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool
 inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
-                                #ifndef DEF_t_template
-                                #define DEF_t_template
-inline const s_Type t_template = s_Type { s_ValueType { 0, int{}, "template"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
 inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
+bool is_never(const s_Type& t)
+{
+    return (t.value == t_never.value);
+}
+
+bool is_void(const s_Type& t)
+{
+    return (t.value == t_void.value);
+}
+
+bool is_bool(const s_Type& t)
+{
+    return (t.value == t_bool.value);
+}
+
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || ((guest == t_never) && (guest.value.quals == 0)));
+    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || is_never(guest));
 }
 
 bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
@@ -527,7 +531,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if (((a.value.canon != b.value.canon) || (a.value.modid != b.value.modid)))
-        return ((a == t_never) ? s_Type(b) : ((b == t_never) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
+        return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }

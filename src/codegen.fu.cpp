@@ -49,8 +49,9 @@ bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 bool type_isMap(const s_Type&);
 s_MapFields tryClear_map(const s_Type&);
+bool is_never(const s_Type&);
+bool is_bool(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
-bool operator==(const s_Type&, const s_Type&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -686,11 +687,6 @@ inline const int F_ARG = (1 << 9);
 inline const int LET_INIT = 1;
                                 #endif
 
-                                #ifndef DEF_t_never
-                                #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
                                 #ifndef DEF_F_POSTFIX
                                 #define DEF_F_POSTFIX
 inline const int F_POSTFIX = (1 << 3);
@@ -704,11 +700,6 @@ inline const int q_unsigned = (1 << 8);
                                 #ifndef DEF_q_floating_pt
                                 #define DEF_q_floating_pt
 inline const int q_floating_pt = (1 << 9);
-                                #endif
-
-                                #ifndef DEF_t_bool
-                                #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
@@ -1292,7 +1283,7 @@ struct sf_cpp_codegen
 
                 return (((head + " { "_fu) + expr) + " }"_fu);
             };
-            if (((init.kind == "definit"_fu) && !(init.type.value.quals & q_ref) && (init.type == node.type)))
+            if (((init.kind == "definit"_fu) && !(init.type.value.quals & q_ref) && (init.type.value == node.type.value)))
                 return (head + " {}"_fu);
 
             return ((head + " = "_fu) + cgNode(init, 0));
@@ -1329,7 +1320,7 @@ struct sf_cpp_codegen
         {
             const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
             fu_STR src = cgNode(head, 0);
-            if ((head.type == t_never))
+            if (is_never(head.type))
                 return src;
 
             return ("return "_fu + src);
@@ -1671,10 +1662,10 @@ struct sf_cpp_codegen
     fu_STR cgAnd(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
-        if (!(type == t_bool))
+        if (!is_bool(type))
         {
             const fu_VEC<s_SolvedNode>& items = node.items;
-            const bool retSecondLast = (items[(items.size() - 1)].type == t_never);
+            const bool retSecondLast = is_never(items[(items.size() - 1)].type);
             const int condEnd = (retSecondLast ? (items.size() - 2) : (items.size() - 1));
             fu_STR src {};
             if (condEnd)
@@ -1725,7 +1716,7 @@ struct sf_cpp_codegen
     fu_STR cgOr(const s_SolvedNode& node)
     {
         const s_Type& type = node.type;
-        if (!(type == t_bool))
+        if (!is_bool(type))
         {
             bool ternary = true;
             for (int i = 0; (i < (node.items.size() - 1)); i++)
@@ -1773,7 +1764,7 @@ struct sf_cpp_codegen
                 (src += ((((" { "_fu + annot) + " _ = "_fu) + cgNode(tail, 0)) + "; if (_) return _; }"_fu));
             };
             const s_SolvedNode& tail = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
-            if (!(tail.type == t_never))
+            if (!is_never(tail.type))
                 (src += " return"_fu);
 
             (src += ((" "_fu + cgNode(tail, 0)) + "; }())"_fu));

@@ -742,8 +742,12 @@ pub fn cpp_codegen(
             }
 
             // Definit.
-            if (init.kind == "definit" && !(init.type.quals & q_ref) && init.type == node.type)
+            if (init.kind == "definit"
+                    && !(init.type.quals & q_ref)
+                    && init.type.value == node.type.value)
+            {
                 return head + " {}";
+            }
 
             return head + " = " + cgNode(init);
         }
@@ -795,7 +799,7 @@ pub fn cpp_codegen(
         {
             let head = node.items[0] || fail();
             let src = cgNode(head);
-            if (head.type == t_never)
+            if (head.type.is_never)
                 return src;
 
             return "return " + src;
@@ -1219,11 +1223,11 @@ pub fn cpp_codegen(
     fn cgAnd(node: SolvedNode): string
     {
         let type = node.type;
-        if (!(type == t_bool))
+        if (!type.is_bool)
         {
             let items = node.items;
 
-            let retSecondLast = items[items.len - 1].type == t_never;
+            let retSecondLast = items[items.len - 1].type.is_never;
 
             let condEnd = retSecondLast
                         ? items.len - 2
@@ -1286,7 +1290,7 @@ pub fn cpp_codegen(
     fn cgOr(node: SolvedNode): string
     {
         let type = node.type;
-        if (!(type == t_bool))
+        if (!type.is_bool)
         {
             // Try a ?: chain.
             mut ternary = true;
@@ -1348,7 +1352,7 @@ pub fn cpp_codegen(
             }
 
             let tail = items[items.len - 1] || fail();
-            if (!(tail.type == t_never))
+            if (!tail.type.is_never)
                 src += " return";
 
             src += " " + cgNode(tail) + "; }())";

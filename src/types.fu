@@ -77,9 +77,6 @@ fn ==(a: ValueType, b: ValueType)
     a.modid == b.modid &&
     a.canon == b.canon;
 
-fn ==(a: Type, b: Type)
-    a.value == b.value;
-
 
 //
 
@@ -104,12 +101,18 @@ pub let t_u64       = Type(ValueType(canon: "u64", quals: UnsignedInt));
 pub let t_f32       = Type(ValueType(canon: "f32", quals: FloatingPt));
 pub let t_f64       = Type(ValueType(canon: "f64", quals: FloatingPt));
 
-pub let t_void      = Type(ValueType(canon: "void", quals: 0));
-pub let t_bool      = Type(ValueType(canon: "bool", quals: Primitive));
+pub let t_void      = Type(ValueType(canon: "void",  quals: 0));
+pub let t_bool      = Type(ValueType(canon: "bool",  quals: Primitive));
+pub let t_never     = Type(ValueType(canon: "never", quals: 0));
 
-pub let t_never     = Type(ValueType(canon: "never",    quals: 0));
-pub let t_template  = Type(ValueType(canon: "template", quals: 0));
 pub let t_byte      = Type(ValueType(canon: "byte",     quals: Primitive));
+
+
+//
+
+fn is_never(t: Type) t.value == t_never.value;
+fn is_void (t: Type) t.value == t_void .value;
+fn is_bool (t: Type) t.value == t_bool .value;
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -130,8 +133,7 @@ pub fn isAssignable(host: Type, guest: Type)
             && (host.quals == guest.quals ||
                   !(host.quals & q_mutref) // mut invariance
                     && (host.quals & guest.quals) == host.quals)
-        || guest == t_never
-            && guest.quals == 0;
+        || guest.is_never;
 }
 
 
@@ -380,8 +382,8 @@ pub fn type_has(type: Type, tag: string)
 pub fn type_tryInter(a: Type, b: Type)
 {
     if (a.canon != b.canon || a.modid != b.modid)
-        return a == t_never ? b
-             : b == t_never ? a
+        return a.is_never ? b
+             : b.is_never ? a
              : Type();
 
     return Type(
