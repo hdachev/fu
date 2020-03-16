@@ -166,8 +166,8 @@ fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
 
 // String likes.
 
-fn ==(a: $T[], b: $T[]) case ($T -> @trivial): bool __native("<fu/vec/cmp.h>", "==");
-fn !=(a: $T[], b: $T[]) case ($T -> @trivial): bool __native("<fu/vec/cmp.h>", "!=");
+fn ==(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
+fn !=(a: $T[], b: $T[]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
 
 fn starts(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
 fn   ends(a: $T[], with: $T[]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");

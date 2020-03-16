@@ -847,16 +847,7 @@ struct sf_solve
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
     bool TEST_expectImplicits = false;
-    fu_COW_MAP<s_Type, s_Type> _array_cache {};
-    s_Type& fast_createArray(const s_Type& type)
-    {
-        return ([&](s_Type& _) -> s_Type& { if (!_) _ = createArray(type); return _; } (_array_cache.upsert(type)));
-    };
-    s_Type _t_string {};
-    s_Type t_string()
-    {
-        return s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = fast_createArray(t_byte); return _; } (_t_string)));
-    };
+    s_Type t_string = createArray(t_byte);
     void Scope_import(const int modid)
     {
         const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
@@ -1505,9 +1496,9 @@ struct sf_solve
     s_SolvedNode solveStr(const s_Node& node)
     {
         if (!node.value)
-            return createDefaultInit(add_ref(t_string(), Lifetime_static()));
+            return createDefaultInit(add_ref(t_string, Lifetime_static()));
 
-        return solved(node, t_string(), fu_VEC<s_SolvedNode>{});
+        return solved(node, t_string, fu_VEC<s_SolvedNode>{});
     };
     s_SolvedNode createEmpty()
     {
@@ -1915,7 +1906,7 @@ struct sf_solve
         s_SolvedNode var_err = solveNode(node.items[1], s_Type{});
         s_SolvedNode cAtch = solveNode(node.items[2], s_Type{});
         Scope_pop(_scope, scope0);
-        (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, t_string())) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
+        (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, s_Type(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
         return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, cAtch } });
     };
     const s_Module& findModule(const fu_STR& fname)
@@ -1971,7 +1962,7 @@ struct sf_solve
                         return solved(node, add_mutref(t, Lifetime_static()), fu_VEC<s_SolvedNode>{});
 
                     if ((node.value == "[]"_fu))
-                        return solved(node, fast_createArray(t), fu_VEC<s_SolvedNode>{});
+                        return solved(node, createArray(t), fu_VEC<s_SolvedNode>{});
 
                 }
                 else if ((items.size() == 2))
@@ -2136,7 +2127,7 @@ struct sf_solve
             itemType = type_tryInter(itemType, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }()).type);
             (itemType || fail("[array literal] No common supertype."_fu));
         };
-        return solved(node, fast_createArray(itemType), items);
+        return solved(node, createArray(itemType), items);
     };
     s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int flags)
     {

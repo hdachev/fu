@@ -38,13 +38,7 @@ fn solve(
 
     //
 
-    mut _array_cache: Map(Type, Type);
-    fn fast_createArray(type: Type)
-        _array_cache[type] ||= createArray(type);
-
-    mut _t_string: Type;
-    fn t_string(): Type
-        _t_string ||= fast_createArray(t_byte);
+    let t_string = createArray(t_byte);
 
 
     //
@@ -1608,7 +1602,7 @@ fn solve(
                         return solved(node, add_mutref(t, Lifetime_static));
 
                     if (node.value == "[]")
-                        return solved(node, fast_createArray(t));
+                        return solved(node, createArray(t));
                 }
                 else if (items.len == 2)
                 {
@@ -1879,7 +1873,7 @@ fn solve(
                 "[array literal] No common supertype.");
         }
 
-        return solved(node, fast_createArray(itemType), items);
+        return solved(node, createArray(itemType), items);
     }
 
 
