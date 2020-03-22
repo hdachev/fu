@@ -2103,8 +2103,8 @@ struct sf_solve
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
         s_Type itemType = ([&]() -> s_Type { if (type) return tryClear_array(type); else return s_Type{}; }());
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType);
         int startAt = 0;
         if ((!itemType && items.size()))
         {

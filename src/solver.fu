@@ -1851,8 +1851,9 @@ fn solve(
 
     fn solveArrayLiteral(node: Node, type: Type): SolvedNode
     {
-        let items       = solveNodes(node.items);
         mut itemType    = type && tryClear_array(type);
+
+        let items       = solveNodes(node.items, itemType);
         mut startAt     = 0;
 
         if (!itemType && items.len)
