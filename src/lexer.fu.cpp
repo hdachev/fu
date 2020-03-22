@@ -52,6 +52,8 @@ struct s_LexerOutput
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEF_OPTOKENS
                                 #define DEF_OPTOKENS
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
@@ -361,3 +363,5 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
     return (sf_lex { src, fname }).lex_EVAL();
 }
 
+
+#endif

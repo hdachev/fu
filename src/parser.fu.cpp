@@ -113,6 +113,8 @@ struct s_ParserOutput
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEFt_2_1__6___28byte
                                 #define DEFt_2_1__6___28byte
 inline std::byte only(const fu_STR& s)
@@ -1265,3 +1267,5 @@ s_ParserOutput parse(const int modid, const fu_STR& fname, const fu_VEC<s_Token>
     return (sf_parse { modid, fname, tokens }).parse_EVAL();
 }
 
+
+#endif

@@ -307,11 +307,13 @@ pub fn cpp_codegen(
         let src    = cgStatements(root.items);
         let main   = cgMain();
 
+
+
         mut header = collectDedupes(_libs)
                    + collectDedupes(_tfwd)
                    + collectDedupes(_ffwd)
                    +               (_tdef)
-                   +               (_fdef)
+                   + (_fdef && "\n#ifndef FU_NO_FDEFs\n"+ _fdef + "\n#endif\n")
                    ;
 
         return header + src + main;

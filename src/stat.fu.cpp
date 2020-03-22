@@ -24,6 +24,8 @@ struct s_ModuleStat
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
 s_ModuleStat operator+(const s_ModuleStat& a, const s_ModuleStat& b)
 {
     return s_ModuleStat { (a.time + b.time), (a.alloc_count + b.alloc_count), (a.alloc_bytes + b.alloc_bytes) };
@@ -50,3 +52,5 @@ void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, const fu_STR&
 {
     (std::cout << prefix << a.time << " s\t"_fu << ((((a.alloc_count + " allocs\t"_fu) + a.alloc_bytes) + " bytes"_fu) + suffix) << '\n');
 }
+
+#endif

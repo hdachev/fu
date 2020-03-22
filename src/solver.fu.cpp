@@ -570,6 +570,8 @@ struct s_MapFields
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEFt_2_1__7__7_4_7SolvedNode
                                 #define DEFt_2_1__7__7_4_7SolvedNode
 inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
@@ -2442,3 +2444,5 @@ s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module
     return (sf_solve { parse, ctx, module }).solve_EVAL();
 }
 
+
+#endif

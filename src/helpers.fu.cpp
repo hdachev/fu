@@ -9,6 +9,8 @@
 #include <fu/vec/slice.h>
 #include <fu/vec/split.h>
 
+#ifndef FU_NO_FDEFs
+
 bool hasIdentifierChars(const fu_STR& id)
 {
     for (int i = 0; (i < id.size()); i++)
@@ -139,3 +141,5 @@ fu_STR ascii_lower(const fu_STR& a)
     };
     return res;
 }
+
+#endif

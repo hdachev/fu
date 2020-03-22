@@ -546,6 +546,8 @@ struct s_MapFields
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEFt_2_6__6___28byte
                                 #define DEFt_2_6__6___28byte
 inline std::byte if_last(const fu_STR& s)
@@ -965,7 +967,7 @@ struct sf_cpp_codegen
         cgSpecs();
         fu_STR src = cgStatements(root.items);
         fu_STR main = cgMain();
-        fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + _fdef);
+        fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
         return ((header + src) + main);
     };
     fu_STR cgMain()
@@ -2000,3 +2002,5 @@ fu_STR cpp_codegen(const s_SolvedNode& root, const s_Scope& scope, const s_Modul
     return (sf_cpp_codegen { root, scope, module, ctx }).cpp_codegen_EVAL();
 }
 
+
+#endif

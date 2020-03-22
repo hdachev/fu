@@ -18,6 +18,8 @@ void saySomethingNice();
 fu_STR path_join(const fu_STR&, const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEF_PRJDIR
                                 #define DEF_PRJDIR
 inline const fu_STR PRJDIR = locate_PRJDIR();
@@ -169,6 +171,8 @@ void runTestsAndBuildCompiler()
     saySomethingNice();
     cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, fu_STR(PRJDIR));
 }
+
+#endif
 
 
 int main(int argc, char* argv[])

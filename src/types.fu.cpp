@@ -113,6 +113,8 @@ struct s_MapFields
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEF_q_mutref
                                 #define DEF_q_mutref
 inline const int q_mutref = (1 << 0);
@@ -535,3 +537,5 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }
+
+#endif

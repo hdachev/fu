@@ -39,6 +39,8 @@ struct s_Lifetime
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEFt_2_4__6__9_12_9Region
                                 #define DEFt_2_4__6__9_12_9Region
 inline const s_Region& if_only(const fu_VEC<s_Region>& s)
@@ -167,3 +169,5 @@ s_Lifetime Lifetime_relaxCallArg(s_Lifetime&& lifetime, const int relax)
     };
     return std::move(lifetime);
 }
+
+#endif

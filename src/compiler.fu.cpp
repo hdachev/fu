@@ -544,6 +544,8 @@ struct s_Context
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
                                 #ifndef DEFt_2_6__7___28byte
                                 #define DEFt_2_6__7___28byte
 inline std::byte if_last(fu_STR& s)
@@ -958,3 +960,5 @@ int FAIL(const fu_STR& src)
 ;
     fu::fail(("DID NOT THROW: "_fu + cpp));
 }
+
+#endif

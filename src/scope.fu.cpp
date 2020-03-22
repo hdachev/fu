@@ -518,6 +518,8 @@ struct s_Context
 };
                                 #endif
 
+#ifndef FU_NO_FDEFs
+
 int MODID(const s_Module& module)
 {
     return int(module.modid);
@@ -876,3 +878,5 @@ s_Scope listGlobals(const s_Module& module)
     Scope_Typedef(scope, "never"_fu, t_never, module);
     return scope;
 }
+
+#endif
