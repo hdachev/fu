@@ -185,6 +185,10 @@ struct fu_VEC
         return big.size;
     }
 
+    fu_INL size_t bytesize() const noexcept {
+        return size_t(size()) * sizeof(T);
+    }
+
     fu_INL explicit operator bool() const noexcept {
         return size() != 0;
     }
