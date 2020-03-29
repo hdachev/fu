@@ -1449,6 +1449,68 @@ fn runTests()
         return b.ARR_LAST - [3].ARR_LAST;
     `);
 
+    ZERO(`
+        struct vec3 { x: f32; y: f32; z: f32; };
+
+        struct mat34 {
+            mx: vec3; my: vec3; mz: vec3;
+            mo: vec3;
+        };
+
+        inline fn mat34_identity()
+            mat34(
+                vec3(x: 1),
+                vec3(y: 1),
+                vec3(z: 1), vec3 /*point3*/);
+
+        // What broke is this using reports a conflict,
+        //  because 'determinant' got expanded within 'inverse',
+        //   and there's another using mat34 there.
+        //    Basically we totally don't want it to expand there.
+        inline fn determinant(using _: mat34): f32
+            - mz.x * my.y * mx.z + my.x * mz.y * mx.z + mz.x * mx.y * my.z
+            - mx.x * mz.y * my.z - my.x * mx.y * mz.z + mx.x * my.y * mz.z;
+
+        fn inverse(using mat: mat34): mat34
+        {
+            let idet = 1 / mat.determinant;
+
+            let i_mx = vec3(
+                idet * (- mz.y * my.z + my.y * mz.z),
+                idet * (+ mz.y * mx.z - mx.y * mz.z),
+                idet * (- my.y * mx.z + mx.y * my.z));
+
+            let i_my = vec3(
+                idet * (+ mz.x * my.z - my.x * mz.z),
+                idet * (- mz.x * mx.z + mx.x * mz.z),
+                idet * (+ my.x * mx.z - mx.x * my.z));
+
+            let i_mz = vec3(
+                idet * (- mz.x * my.y + my.x * mz.y),
+                idet * (+ mz.x * mx.y - mx.x * mz.y),
+                idet * (- my.x * mx.y + mx.x * my.y));
+
+            return mat34(
+                i_mx, i_my, i_mz,
+
+                vec3( // point3
+                      mo.x * -i_mx.x
+                    + mo.y * -i_my.x
+                    + mo.z * -i_mz.x,
+
+                      mo.x * -i_mx.y
+                    + mo.y * -i_my.y
+                    + mo.z * -i_mz.y,
+
+                      mo.x * -i_mx.z
+                    + mo.y * -i_my.z
+                    + mo.z * -i_mz.z));
+        }
+
+        fn main() i32 <|
+            mat34_identity.inverse.determinant - 1;
+    `);
+
 
     // Let's try something new.
 
