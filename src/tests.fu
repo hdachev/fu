@@ -1450,6 +1450,23 @@ fn runTests()
     `);
 
     ZERO(`
+        struct mat4 { i: i32; };
+        struct RenderFrame { u_mat4_VP: mat4; };
+
+        inline fn mat4_identity() mat4(1);
+
+        fn test(output: &mut RenderFrame) {
+            output.u_mat4_VP = mat4_identity;
+        }
+
+        fn main() {
+            mut ret: RenderFrame;
+            test(ret);
+            return ret.u_mat4_VP.i - 1;
+        }
+    `);
+
+    ZERO(`
         struct vec3 { x: f32; y: f32; z: f32; };
 
         struct mat34 {
