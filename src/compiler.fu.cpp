@@ -15,6 +15,7 @@
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
+#include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
 #include <iostream>
 #include <utility>
@@ -955,7 +956,7 @@ int FAIL(const fu_STR& src)
     {
         const fu_STR& e = fu_TO_STR(o_0.what());
     
-        return e.size();
+        return ([&]() -> int { if (ZERO(fu::replace(src, "//*F"_fu, "/*"_fu))) return e.size(); else return int{}; }());
     }
 ;
     fu::fail(("DID NOT THROW: "_fu + cpp));

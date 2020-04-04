@@ -25,6 +25,7 @@ struct s_Overload;
 struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Target;
@@ -39,7 +40,8 @@ struct s_Lifetime;
 struct s_Region;
 bool hasIdentifierChars(const fu_STR&);
 const s_Node& only(const fu_VEC<s_Node>&);
-s_Target search(const s_Scope&, const fu_STR&, int&);
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
@@ -52,7 +54,6 @@ int MODID(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-fu_VEC<s_Target> Scope_lookup(const s_Scope&, const fu_STR&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -554,6 +555,22 @@ struct s_Context
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkip
+                                #define DEF_s_ScopeSkip
+struct s_ScopeSkip
+{
+    int start;
+    int end;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || start
+            || end
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_MapFields
                                 #define DEF_s_MapFields
 struct s_MapFields
@@ -840,6 +857,8 @@ struct sf_solve
     int _return_idx {};
     s_SolvedNode _current_fn {};
     fu_COW_MAP<fu_STR, s_Type> _typeParams {};
+    int _root_scope {};
+    s_ScopeSkip _scope_skip {};
     bool TEST_expectImplicits = false;
     s_Type t_string = createArray(t_byte);
     void Scope_import(const int modid)
@@ -1050,6 +1069,14 @@ struct sf_solve
             {
                 for (int i = 0; (i < _scope.items.size()); i++)
                 {
+                    if ((i == _scope_skip.start))
+                    {
+                        i = _scope_skip.end;
+                        if ((i >= _scope.items.size()))
+                        {
+                            break;
+                        };
+                    };
                     s_ScopeItem o { _scope.items[i] };
                     if ((o.id == item.id))
                     {
@@ -1063,9 +1090,10 @@ struct sf_solve
             Partial(item.id, viaIdx, overloadIdx);
         };
     };
-    fu_VEC<int> getNamedArgReorder(const fu_VEC<fu_STR>& names, const fu_VEC<fu_STR>& arg_n)
+    bool getNamedArgReorder(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, const fu_VEC<fu_STR>& arg_n)
     {
-        fu_VEC<int> result {};
+        result.clear();
+        int used = 0;
         int offset = 0;
         for (int i = 0; (i < arg_n.size()); i++)
         {
@@ -1081,8 +1109,23 @@ struct sf_solve
                         break;
                     };
                 };
-            };
+            }
+            else
+                used++;
+
             result.push(idx);
+        };
+        if ((used != names.size()))
+        {
+            for (int i = 0; (i < names.size()); i++)
+            {
+                if (!names[i])
+                    used++;
+
+            };
+            if ((used != names.size()))
+                return false;
+
         };
         while ((result && (result.mutref((result.size() - 1)) < 0)))
             result.pop();
@@ -1090,29 +1133,16 @@ struct sf_solve
         for (int i = 0; (i < result.size()); i++)
         {
             if ((result.mutref(i) != i))
-                return result;
+                return true;
 
         };
         result.clear();
-        return result;
+        return true;
     };
     s_Target tryMatch__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
     {
         s_Target matchIdx {};
-        if (!args)
-        {
-            int scope_iterator {};
-            s_Target overloadIdx {};
-            while ((overloadIdx = search(scope, id, scope_iterator)))
-            {
-                if ((GET(overloadIdx, module, ctx).min == 0))
-                {
-                    matchIdx = overloadIdx;
-                    break;
-                };
-            };
-        }
-        else
+        
         {
             const int arity = args.size();
             fu_VEC<fu_STR> names {};
@@ -1130,7 +1160,7 @@ struct sf_solve
             fu_STR args_mangled {};
             int scope_iterator {};
             s_Target overloadIdx {};
-            while ((overloadIdx = search(scope, id, scope_iterator))){
+            while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip))){
             {
                 s_Overload overload = GET(overloadIdx, module, ctx);
                 while (true){
@@ -1143,11 +1173,10 @@ struct sf_solve
                     {
                         goto L_NEXT_c;
                     };
-                    if ((names && overload.names))
-                        reorder = getNamedArgReorder(names, overload.names);
-                    else
-                        reorder.clear();
-
+                    if ((names && !getNamedArgReorder(reorder, names, overload.names)))
+                    {
+                        goto L_NEXT_c;
+                    };
                     if (isTemplate(overload))
                     {
                         if (reorder)
@@ -1168,60 +1197,67 @@ struct sf_solve
                     }L_TEST_AGAIN_c:;}
                     L_TEST_AGAIN_b:;
 
-                fu_VEC<s_Type> arg_t { (overload.args ? overload.args : fail(fu_STR{})) };
-                fu_VEC<s_SolvedNode> arg_d { overload.defaults };
-                const int N = (reorder ? reorder.size() : args.size());
-                fu_VEC<s_SolvedNode> undo_literal_fixup { args };
-                for (int i = 0; (i < N); i++)
+                if (args)
                 {
-                    const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
-                    if ((callsiteIndex < 0))
+                    fu_VEC<s_Type> arg_t { overload.args };
+                    fu_VEC<s_SolvedNode> arg_d { overload.defaults };
+                    const int N = (reorder ? reorder.size() : args.size());
+                    fu_VEC<s_SolvedNode> undo_literal_fixup { args };
+                    for (int i = 0; (i < N); i++)
                     {
-                        if (!(arg_d && arg_d[i]))
+                        const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
+                        if ((callsiteIndex < 0))
                         {
+                            if (!(arg_d && arg_d[i]))
+                            {
+                                goto L_NEXT_c;
+                            };
+                            continue;
+                        };
+                        const s_Type& expect = arg_t[i];
+                        s_Type actual { args.mutref(callsiteIndex).type };
+                        bool ok = isAssignableAsArgument(expect, s_Type(actual));
+                        if ((!ok && considerRetyping(expect, actual)))
+                        {
+                            s_SolvedNode& arg = args.mutref(callsiteIndex);
+                            if ((arg.kind == "label"_fu))
+                            {
+                                s_SolvedNode inner { only(arg.items) };
+                                arg = inner;
+                            };
+                            s_Type retype = tryRetyping(arg, expect);
+                            ok = isAssignableAsArgument(expect, s_Type(retype));
+                            if (ok)
+                                arg.type = retype;
+
+                        };
+                        if (!ok)
+                        {
+                            args = undo_literal_fixup;
                             goto L_NEXT_c;
                         };
-                        continue;
                     };
-                    const s_Type& expect = arg_t[i];
-                    s_Type actual { args.mutref(callsiteIndex).type };
-                    bool ok = isAssignableAsArgument(expect, s_Type(actual));
-                    if ((!ok && considerRetyping(expect, actual)))
-                    {
-                        s_SolvedNode& arg = args.mutref(callsiteIndex);
-                        if ((arg.kind == "label"_fu))
-                        {
-                            s_SolvedNode inner { only(arg.items) };
-                            arg = inner;
-                        };
-                        s_Type retype = tryRetyping(arg, expect);
-                        ok = isAssignableAsArgument(expect, s_Type(retype));
-                        if (ok)
-                            arg.type = retype;
+                    if (matchIdx)
+                        fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
 
-                    };
-                    if (!ok)
+                    if (reorder)
                     {
-                        args = undo_literal_fixup;
-                        goto L_NEXT_c;
+                        fu_VEC<s_SolvedNode> new_args {};
+                        new_args.resize(reorder.size());
+                        for (int i = 0; (i < reorder.size()); i++)
+                        {
+                            const int idx = reorder[i];
+                            if ((idx >= 0))
+                                new_args.mutref(i) = args.mutref(idx);
+
+                        };
+                        args = new_args;
                     };
                 };
-                if (matchIdx)
-                    fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
-
                 matchIdx = overloadIdx;
-                if (reorder)
+                if (!arity)
                 {
-                    fu_VEC<s_SolvedNode> new_args {};
-                    new_args.resize(reorder.size());
-                    for (int i = 0; (i < reorder.size()); i++)
-                    {
-                        const int idx = reorder[i];
-                        if ((idx >= 0))
-                            new_args.mutref(i) = args.mutref(idx);
-
-                    };
-                    args = new_args;
+                    break;
                 };
             
                 }L_NEXT_c:;};
@@ -1279,7 +1315,7 @@ struct sf_solve
     };
     [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
-        fu_VEC<s_Target> overloads = Scope_lookup(scope, id);
+        fu_VEC<s_Target> overloads = DEPREC_lookup(scope, id);
         int min = int(0xffffffu);
         for (int i = 0; (i < overloads.size()); i++)
         {
@@ -1545,6 +1581,10 @@ struct sf_solve
         {
             const int return_idx0 = _return_idx;
             _return_idx = Scope_push(_scope);
+            const int root_scope0 = _root_scope;
+            if (!root_scope0)
+                _root_scope = _return_idx;
+
             std::swap(_current_fn, out);
             fu_VEC<s_SolvedNode>& outItems = _current_fn.items;
             for (int i = 0; (i < (inItems.size() + FN_ARGS_BACK)); i++)
@@ -1603,6 +1643,7 @@ struct sf_solve
             std::swap(_current_fn, out);
             Scope_pop(_scope, _return_idx);
             _return_idx = return_idx0;
+            _root_scope = root_scope0;
         };
         if (!prep)
         {
@@ -1627,10 +1668,10 @@ struct sf_solve
         };
         return mangle;
     };
-    s_Target trySpecialize(const s_Target& target, const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, const fu_STR& mangled_args)
+    s_Target trySpecialize(const s_Target& target, const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, const fu_STR& args_mangled)
     {
         fu_STR mangle = (((target.modid + "#"_fu) + target.index) + " "_fu);
-        (mangle += mangled_args);
+        (mangle += args_mangled);
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
@@ -1750,11 +1791,14 @@ struct sf_solve
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         const int scope0 = Scope_push(_scope);
+        const s_ScopeSkip scope_skip0 { _scope_skip };
+        _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
         s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }, caseIdx);
         (specialized || fail(fu_STR{}));
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         Scope_pop(_scope, scope0);
+        _scope_skip = scope_skip0;
         return specialized;
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
@@ -1924,10 +1968,11 @@ struct sf_solve
     };
     s_Type Scope_tryLookupType(const fu_STR& id)
     {
-        fu_VEC<s_Target> overloads = Scope_lookup(_scope, id);
-        for (int i = 0; (i < overloads.size()); i++)
+        int scope_iterator {};
+        s_Target overloadIdx {};
+        while ((overloadIdx = search(_scope, id, scope_iterator, _scope_skip)))
         {
-            s_Overload maybe = GET(overloads[i], module, ctx);
+            s_Overload maybe = GET(overloadIdx, module, ctx);
             if ((maybe.kind == "type"_fu))
                 return std::move((maybe.type ? maybe.type : fail(fu_STR{})));
 

@@ -22,6 +22,7 @@ struct s_Overload;
 struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Target;
@@ -518,6 +519,22 @@ struct s_Context
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkip
+                                #define DEF_s_ScopeSkip
+struct s_ScopeSkip
+{
+    int start;
+    int end;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || start
+            || end
+        ;
+    }
+};
+                                #endif
+
 #ifndef FU_NO_FDEFs
 
 int MODID(const s_Module& module)
@@ -649,7 +666,7 @@ bool isTemplate(const s_Overload& o)
     return (o.kind == "template"_fu);
 }
 
-fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
 {
     (id || fu::fail());
     fu_VEC<s_Target> results {};
@@ -664,14 +681,19 @@ fu_VEC<s_Target> Scope_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& skip)
 {
+    const int skip0 = (skip.start - 1);
+    const int skip1 = (skip.end - 1);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)
         scope_iterator = items.size();
 
     while ((scope_iterator-- > 0))
     {
+        if ((scope_iterator == skip1))
+            scope_iterator = skip0;
+
         const s_ScopeItem& item = items[scope_iterator];
         if ((item.id == id))
             return s_Target(item.target);
