@@ -669,6 +669,12 @@ fn solve(
         scope: Scope,
         id: string, args: SolvedNode[]): never
     {
+        // TODO instead of this -
+        //  run tryMatch__mutargs again with an error output attached,
+        //   this way we don't need the second pass for debugging,
+        //    we can #bake alla jblow the if (explain) parts,
+        //     and we can rid ourselves of Scope_lookup altogether.
+
         // We should do everything possible to be helpful here,
         //  do whatever you need, this is compile-fail path.
         let overloads = Scope_lookup(scope, id);
@@ -1554,11 +1560,13 @@ fn solve(
 
     fn Scope_tryLookupType(id: string): Type
     {
-        let overloads = Scope_lookup(_scope, id);
+        mut scope_iterator: i32;
+        mut overloadIdx: Target;
 
-        for (mut i = 0; i < overloads.len; i++)
+        while (overloadIdx =
+            _scope.search(id, scope_iterator))
         {
-            let maybe = GET(overloads[i]);
+            let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
                 return maybe.type || fail();
         }
