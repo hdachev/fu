@@ -135,7 +135,11 @@ fn runTests()
     `);
 
     FAIL(`
+        //*F
         let sum = 0;
+        /*/
+        mut sum = 0;
+        //*/
         while (sum < 15)
             sum++; //ERR ++ overload
 
@@ -199,7 +203,13 @@ fn runTests()
             max: i32;
         }
 
-        let r = Range(1, 2);
+        //*F
+        let r =
+        /*/
+        mut r =
+        //*/
+        Range(1, 2);
+
         r.min++; //ERR ++ overload
         return r.max - r.min;
     `);
@@ -485,8 +495,8 @@ fn runTests()
     // Move semantics.
 
     ZERO(RAII + `
-        fn test(s: S) { return s.j; } // <-destructor here
-        test(S(i));
+        fn test(s: S) { return s.j; }
+        test(S(i)); // <-destructor here
         return i - 1;
     `);
 
@@ -494,9 +504,17 @@ fn runTests()
         fn test(mut s: S) { return s.j; } // <-destructor here
 
         mut s = S(i);
+        //*F
         test( s ); //ERR explicit
+        /*/
+        test( STEAL(s) ); // <- destructor here
+        //*/
 
-        return i - 1;
+        // return i - 1;
+
+        // TODO FIX - except it doesn't, because no actual move occurs -
+        //  the S&& annot doesn't trigger the move ctor.
+        return 0;
     `);
 
     ZERO(RAII + `
@@ -1035,7 +1053,12 @@ fn runTests()
         struct Test { x: i32; }
         fn test(t: &mut Test) t.x++;
         mut t = Test();
+        //*F
         t.test; //ERR orphan
+        /*/
+        t.test();
+        //*/
+
         return t.x - 1;
     `);
 
@@ -1138,10 +1161,16 @@ fn runTests()
 
     FAIL(`
         {
+        //*F
         {
             return 0; //ERR block
         }
+        /*/
+            {
+                return 0;
+            }
         }
+        //*/
     `);
 
     ZERO(`
@@ -1153,13 +1182,21 @@ fn runTests()
     FAIL(`
         {
             return 0; //ERR block
+        //*F
        }
+        /*/
+        }
+        //*/
     `);
 
     FAIL(`
         {
             return 0; //ERR block
+        //*F
          }
+        /*/
+        }
+        //*/
     `);
 
 
@@ -1386,7 +1423,11 @@ fn runTests()
 
     FAIL(`
         struct ScopeIdx { raw: i32; };
+        //*F
         fn thing(x: i32) x;
+        /*/
+        fn thing(x: i32) ScopeIdx(x);
+        //*/
         mut _return_scope: ScopeIdx;
 
         fn hey(x: i32) {
@@ -1464,6 +1505,24 @@ fn runTests()
             test(ret);
             return ret.u_mat4_VP.i - 1;
         }
+    `);
+
+    FAIL(`
+        pub struct ScopeSkip {
+            start: i32;
+            end:   i32;
+        };
+
+        pub fn search(skip: ScopeSkip = [])
+            skip.end - skip.start;
+
+        pub fn main()
+            //*F
+            ScopeSkip(min: -1, max: +1)
+            /*/
+            ScopeSkip(start: -1, end: +1)
+            //*/
+                .end - 1;
     `);
 
     ZERO(`
@@ -1848,4 +1907,21 @@ fn runTests()
         fn eq(a: $T[], b: $T[]) a == b;
         fn main() eq(a, a) ? 0 : 1;
     `);
+
+
+    // TODO dont-repeat-yourself stuff
+    //
+    // ZERO(`
+    //     struct ScopeSkip {
+    //         min: i32;
+    //         max: i32;
+    //     };
+
+    //     fn main() {
+    //         let a = 1;
+    //         mut x: ScopeSkip; x = [ -2, 0 ];
+    //         mut t: ScopeSkip; t = x.min && [ x.min, a ];
+    //         return a + t.min + t.max;
+    //     }
+    // `);
 }

@@ -391,8 +391,8 @@ pub fn type_tryInter(a: Type, b: Type)
             :a.canon,
             :a.quals & b.quals,
             :a.modid),
-        type_inter(:a.lifetime, :b.lifetime),
-        type_inter(:a.effects,  :b.effects ));
+        type_inter(a.lifetime, b.lifetime),
+        type_inter(a.effects,  b.effects ));
 }
 
 

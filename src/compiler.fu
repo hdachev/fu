@@ -546,7 +546,10 @@ fn FAIL(src: string)
 {
     let cpp = compile_snippet(src)
         catch e
-            return e.len; // TODO validate
+            return ZERO(src.replace(
+                all:  "//*F",
+                with: "/*"))
+                    && e.len; // <- use evar, super sloppy
 
     throw("DID NOT THROW: " + cpp);
 }

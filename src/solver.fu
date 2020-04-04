@@ -31,6 +31,8 @@ fn solve(
     mut _return_idx:    i32;
     mut _current_fn:    SolvedNode;
     mut _typeParams:    Map(string, Type);
+    mut _root_scope:    i32;
+    mut _scope_skip:    ScopeSkip;
 
     //
     mut TEST_expectImplicits: bool = false;
@@ -351,6 +353,13 @@ fn solve(
                 //  no other arity-0 entries are allowable.
                 for (mut i = 0; i < _scope.items.len; i++)
                 {
+                    if (i == _scope_skip.start)
+                    {
+                        i = _scope_skip.end;
+                        if (i >= _scope.items.len)
+                            break;
+                    }
+
                     let o = _scope.items[i];
                     if (o.id == item.id)
                     {
@@ -370,11 +379,14 @@ fn solve(
     //
 
     fn getNamedArgReorder(
+        result: &mut i32[],
         names: string[],
-        arg_n: string[]): i32[]
+        arg_n: string[]): bool
     {
-        mut result: i32[] = [];
+        result.clear();
 
+        //
+        mut used   = 0;
         mut offset = 0;
         for (mut i = 0; i < arg_n.len; i++)
         {
@@ -391,8 +403,24 @@ fn solve(
                     }
                 }
             }
+            else
+            {
+                used++;
+            }
 
             result.push(idx);
+        }
+
+        // Fail if some name ended up unused.
+        //  TODO FIX THIS MESS
+        if (used != names.len)
+        {
+            for (mut i = 0; i < names.len; i++)
+                if (!names[i])
+                    used++;
+
+            if (used != names.len)
+                return false;
         }
 
         // Drop trailing misses.
@@ -402,10 +430,10 @@ fn solve(
         // Return nothing if not needed.
         for (mut i = 0; i < result.len; i++)
             if (result[i] != i)
-                return result;
+                return true;
 
         result.clear();
-        return result;
+        return true;
     }
 
     fn tryMatch__mutargs(
@@ -445,7 +473,8 @@ fn solve(
 
             :NEXT
             while (overloadIdx =
-                scope.search(id, scope_iterator))
+                scope.search(id, scope_iterator,
+                    skip: _scope_skip))
             {
                 mut overload = GET(overloadIdx);
 
@@ -459,12 +488,9 @@ fn solve(
                     if (retType && !isAssignable(retType, overload.type || fail()))
                         continue :NEXT;
 
-                    //
-                    if (names && overload.names)
-                        reorder = getNamedArgReorder(
-                            names, overload.names);
-                    else
-                        reorder.clear();
+                    // Match by argnames.
+                    if (names && !getNamedArgReorder(reorder, names, overload.names))
+                        continue :NEXT;
 
                     // Specialize.
                     if (overload.isTemplate)
@@ -941,6 +967,10 @@ fn solve(
             let return_idx0 = _return_idx;
             _return_idx = Scope_push(_scope);
 
+            let root_scope0 = _root_scope;
+            if (!root_scope0)
+                _root_scope = _return_idx;
+
             SWAP(_current_fn, out);
             let outItems: &mut SolvedNode[] = _current_fn.items;
 
@@ -1031,6 +1061,7 @@ fn solve(
 
             Scope_pop(_scope, _return_idx);
             _return_idx = return_idx0;
+            _root_scope = root_scope0;
         }
         //////////////////////////
 
@@ -1070,12 +1101,12 @@ fn solve(
 
     fn trySpecialize(
         target: Target, template: Template, args: SolvedNode[],
-        mangled_args: string)
+        args_mangled: string)
             : Target
     {
         // TODO memoize the whole mangle.
         mut mangle = target.modid + "#" + target.index + " ";
-            mangle += mangled_args;
+            mangle += args_mangled;
 
         // TODO FIX THIS MESS -
         //  A. Not recursion capable: use the general prep-vs-solve approach here too.
@@ -1266,7 +1297,12 @@ fn solve(
         SWAP(_typeParams, typeParams);
 
         let scope0 = Scope_push(_scope);
+        let scope_skip0 = _scope_skip;
         ////////////////////////////////
+
+        _scope_skip = _root_scope && ScopeSkip(
+            start: _root_scope,
+              end: scope0);
 
         let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
             specialized || fail();
@@ -1276,6 +1312,7 @@ fn solve(
         SWAP(_typeParams, typeParams);
 
         Scope_pop(_scope, scope0);
+        _scope_skip = scope_skip0;
         ////////////////////////////////
 
         return specialized;
@@ -1564,7 +1601,8 @@ fn solve(
         mut overloadIdx: Target;
 
         while (overloadIdx =
-            _scope.search(id, scope_iterator))
+            _scope.search(id, scope_iterator,
+                skip: _scope_skip))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
