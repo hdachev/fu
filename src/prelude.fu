@@ -9,7 +9,7 @@ let prelude_src = `
 // Some lolcode.
 
 fn STEAL (a: &mut $T): $T __native;
-fn CLONE (a: &    $T): $T __native;
+fn CLONE (a: &    $T) case ($T -> @copy): $T __native;
 fn SWAP  (a: &mut $T, b: &mut $T): void __native;
 
 fn println(): void __native;
@@ -133,8 +133,8 @@ fn false(): bool __native("false");
 
 // Assignment.
 
-fn   =(a: &mut $T, b: $T): &mut $T __native;
-fn ||=(a: &mut $T, b: $T): &mut $T __native;
+fn   =(a: &mut $T, b: $T) case ($T -> @copy): &mut $T __native;
+fn ||=(a: &mut $T, b: $T) case ($T -> @copy): &mut $T __native;
 
 
 // Arrays.
