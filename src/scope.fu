@@ -268,7 +268,7 @@ pub struct Scope
 
 ////////////////////////////////
 
-pub fn Scope_lookup(scope: Scope, id: string): Target[]
+pub fn DEPREC_lookup(scope: Scope, id: string): Target[]
 {
     id || assert();
     mut results: Target[] = [];
@@ -284,17 +284,28 @@ pub fn Scope_lookup(scope: Scope, id: string): Target[]
     return results;
 }
 
+pub struct ScopeSkip {
+    start: i32;
+    end:   i32;
+};
+
 pub fn search(
     scope: Scope, id: string,
-    scope_iterator: &mut i32): Target
+    scope_iterator: &mut i32,
+    skip: ScopeSkip = []): Target
 {
-    let items = scope.items;
+    let skip0 = skip.start - 1;
+    let skip1 = skip.end   - 1;
 
+    let items = scope.items;
     if (!scope_iterator)
         scope_iterator = items.len;
 
     while (scope_iterator --> 0)
     {
+        if (scope_iterator == skip1)
+            scope_iterator  = skip0;
+
         let item = items[scope_iterator];
         if (item.id == id)
             return item.target;

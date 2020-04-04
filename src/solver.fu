@@ -677,7 +677,7 @@ fn solve(
 
         // We should do everything possible to be helpful here,
         //  do whatever you need, this is compile-fail path.
-        let overloads = Scope_lookup(scope, id);
+        let overloads = DEPREC_lookup(scope, id);
 
         mut min = 0xffffff.i32;
         for (mut i = 0; i < overloads.len; i++)
