@@ -415,24 +415,6 @@ fn solve(
     {
         mut matchIdx: Target;
 
-        // Arity 0 - blind head match.
-        // Allows simple shadowing of variables and such, latest wins.
-        if (!args)
-        {
-            mut scope_iterator: i32;
-            mut overloadIdx: Target;
-
-            while (overloadIdx =
-                scope.search(id, scope_iterator))
-            {
-                if (GET(overloadIdx).min == 0)
-                {
-                    matchIdx = overloadIdx;
-                    break;
-                }
-            }
-        }
-        else
         {
             let arity = args.len;
 
@@ -509,96 +491,103 @@ fn solve(
                     break :TEST_AGAIN;
                 }
 
-                // Type check args.
-                let arg_t = overload.args || fail();
-                let arg_d = overload.defaults;
-
-                let N = reorder ? reorder.len
-                                : args.len;
-
-                /////////////////
-                // Literal fixup.
-                let undo_literal_fixup = args;
-                //        /LITFIX
-                /////////////////
-
-                for (mut i = 0; i < N; i++)
+                if (args)
                 {
-                    let callsiteIndex = reorder ? reorder[i]
-                                                : i;
-                    if (callsiteIndex < 0)
-                    {
-                        // Argument may not be defaulted -
-                        //  we might be supplying defaults via names
-                        //   before we've actually exhausted
-                        //    all the non-defaulted stuff.
-                        if !(arg_d && arg_d[i])
-                            continue :NEXT;
+                    // Type check args.
+                    let arg_t = overload.args;
+                    let arg_d = overload.defaults;
 
-                        continue;
-                    }
-
-                    let expect = arg_t[i];
-                    let actual = args[callsiteIndex].type;
-
-                    mut ok = isAssignableAsArgument(expect, actual);
+                    let N = reorder ? reorder.len
+                                    : args.len;
 
                     /////////////////
                     // Literal fixup.
-                    if (!ok && considerRetyping(expect, actual))
-                    {
-                        let arg: &mut SolvedNode = args[callsiteIndex];
-
-                        if (arg.kind == "label")
-                        {
-                            // SEGV fix -
-                            //  how do we deal with this in general?
-                            //   might as well discontinue copy assignment
-                            //    in favor of cpy->mov.
-                            let inner = arg.items.only;
-                            arg = inner;
-                        }
-
-                        let retype  = tryRetyping(arg, expect);
-                            ok      = isAssignableAsArgument(expect, retype);
-
-                        if (ok)
-                            arg.type = retype;
-                    }
+                    let undo_literal_fixup = args;
                     //        /LITFIX
                     /////////////////
 
-                    if (!ok)
+                    for (mut i = 0; i < N; i++)
                     {
-                        args = undo_literal_fixup;
-                        continue :NEXT;
+                        let callsiteIndex = reorder ? reorder[i]
+                                                    : i;
+                        if (callsiteIndex < 0)
+                        {
+                            // Argument may not be defaulted -
+                            //  we might be supplying defaults via names
+                            //   before we've actually exhausted
+                            //    all the non-defaulted stuff.
+                            if !(arg_d && arg_d[i])
+                                continue :NEXT;
+
+                            continue;
+                        }
+
+                        let expect = arg_t[i];
+                        let actual = args[callsiteIndex].type;
+
+                        mut ok = isAssignableAsArgument(expect, actual);
+
+                        /////////////////
+                        // Literal fixup.
+                        if (!ok && considerRetyping(expect, actual))
+                        {
+                            let arg: &mut SolvedNode = args[callsiteIndex];
+
+                            if (arg.kind == "label")
+                            {
+                                // SEGV fix -
+                                //  how do we deal with this in general?
+                                //   might as well discontinue copy assignment
+                                //    in favor of cpy->mov.
+                                let inner = arg.items.only;
+                                arg = inner;
+                            }
+
+                            let retype  = tryRetyping(arg, expect);
+                                ok      = isAssignableAsArgument(expect, retype);
+
+                            if (ok)
+                                arg.type = retype;
+                        }
+                        //        /LITFIX
+                        /////////////////
+
+                        if (!ok)
+                        {
+                            args = undo_literal_fixup;
+                            continue :NEXT;
+                        }
+                    }
+
+                    // Forbid ambiguity.
+                    if (matchIdx)
+                        fail("Ambiguous callsite, matches multiple functions in scope: `" + id + "`.");
+
+                    // Do reorder.
+                    if (reorder)
+                    {
+                        // TODO:
+                        // I shouldn't need this pass, just swaps must do.
+                        mut new_args: SolvedNode[];
+                        new_args.resize(reorder.len);
+
+                        for (mut i = 0; i < reorder.len; i++)
+                        {
+                            let idx = reorder[i];
+                            if (idx >= 0)
+                                new_args[i] = args[idx];
+                        }
+
+                        args = new_args;
                     }
                 }
-
-                // Forbid ambiguity.
-                if (matchIdx)
-                    fail("Ambiguous callsite, matches multiple functions in scope: `" + id + "`.");
 
                 // Done!
                 matchIdx = overloadIdx;
 
-                // Do reorder.
-                if (reorder)
-                {
-                    // TODO:
-                    // I shouldn't need this pass, just swaps must do.
-                    mut new_args: SolvedNode[];
-                    new_args.resize(reorder.len);
-
-                    for (mut i = 0; i < reorder.len; i++)
-                    {
-                        let idx = reorder[i];
-                        if (idx >= 0)
-                            new_args[i] = args[idx];
-                    }
-
-                    args = new_args;
-                }
+                // Arity 0 auto-shadows.
+                if (!arity)
+                    break;
             }
         }
 
