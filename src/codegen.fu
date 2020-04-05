@@ -71,11 +71,14 @@ pub fn cpp_codegen(
         if (mode & M_RETVAL && type.canon == "never" && !(mode & M_CLOSURE))
             return "[[noreturn]] " + fwd;
 
-        if (type.quals & q_mutref)
-            return fwd + "&";
-
         if (type.quals & q_ref)
         {
+            if (fwd.starts(with: "fu::view"))
+                return fwd;
+
+            if (type.quals & q_mutref)
+                return fwd + "&";
+
             // Pass primitives by value.
             if (type.quals & q_primitive)
                 return (mode & M_ARGUMENT | mode & M_CONST) && !(mode & M_FWDECL)
@@ -142,6 +145,18 @@ pub fn cpp_codegen(
 
             include("<fu/vec.h>");
             return "fu_VEC<" + itemAnnot + ">";
+        }
+
+        let sliceItem = tryClear_slice(type);
+        if (sliceItem)
+        {
+            let itemAnnot = typeAnnot(sliceItem);
+
+            include("<fu/view.h>");
+            if (type.quals & q_mutref)
+                return "fu::view_mut<" + itemAnnot + ">";
+            else
+                return "fu::view<" + itemAnnot + ">";
         }
 
         let mapPair = tryClear_map(type);

@@ -1909,6 +1909,17 @@ fn runTests()
     `);
 
 
+    // Slices, pass one.
+
+    ZERO(`
+        fn test(hey: [i32])
+            hey[0] + hey[1];
+
+        fn main()
+            test([-1, +1]);
+    `);
+
+
     // TODO dont-repeat-yourself stuff
     //
     // ZERO(`

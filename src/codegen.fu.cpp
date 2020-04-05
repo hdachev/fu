@@ -47,6 +47,7 @@ const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
+s_Type tryClear_slice(const s_Type&);
 bool type_isMap(const s_Type&);
 s_MapFields tryClear_map(const s_Type&);
 bool is_never(const s_Type&);
@@ -548,16 +549,16 @@ struct s_MapFields
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_6__6___28byte
-                                #define DEFt_2_6__6___28byte
+                                #ifndef DEFt_2_6__1030___28byte
+                                #define DEFt_2_6__1030___28byte
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1__6__7_4_7SolvedNode
-                                #define DEFt_2_1__6__7_4_7SolvedNode
+                                #ifndef DEFt_2_1__1030__7_4_7SolvedNode
+                                #define DEFt_2_1__1030__7_4_7SolvedNode
 inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -599,14 +600,14 @@ inline const int M_CLOSURE = (1 << 5);
 inline const int M_FWDECL = (1 << 6);
                                 #endif
 
-                                #ifndef DEF_q_mutref
-                                #define DEF_q_mutref
-inline const int q_mutref = (1 << 0);
-                                #endif
-
                                 #ifndef DEF_q_ref
                                 #define DEF_q_ref
 inline const int q_ref = (1 << 1);
+                                #endif
+
+                                #ifndef DEF_q_mutref
+                                #define DEF_q_mutref
+inline const int q_mutref = (1 << 0);
                                 #endif
 
                                 #ifndef DEF_q_primitive
@@ -774,11 +775,14 @@ struct sf_cpp_codegen
         if (((mode & M_RETVAL) && (type.value.canon == "never"_fu) && !(mode & M_CLOSURE)))
             return ("[[noreturn]] "_fu + fwd);
 
-        if ((type.value.quals & q_mutref))
-            return (fwd + "&"_fu);
-
         if ((type.value.quals & q_ref))
         {
+            if (fu::lmatch(fwd, "fu::view"_fu))
+                return fwd;
+
+            if ((type.value.quals & q_mutref))
+                return (fwd + "&"_fu);
+
             if ((type.value.quals & q_primitive))
                 return ((((mode & M_ARGUMENT) | (mode & M_CONST)) && !(mode & M_FWDECL)) ? ("const "_fu + fwd) : fu_STR(fwd));
 
@@ -851,6 +855,17 @@ struct sf_cpp_codegen
             fu_STR itemAnnot = typeAnnot(arrayItem, 0);
             include("<fu/vec.h>"_fu);
             return (("fu_VEC<"_fu + itemAnnot) + ">"_fu);
+        };
+        s_Type sliceItem = tryClear_slice(type);
+        if (sliceItem)
+        {
+            fu_STR itemAnnot = typeAnnot(sliceItem, 0);
+            include("<fu/view.h>"_fu);
+            if ((type.value.quals & q_mutref))
+                return (("fu::view_mut<"_fu + itemAnnot) + ">"_fu);
+            else
+                return (("fu::view<"_fu + itemAnnot) + ">"_fu);
+
         };
         s_MapFields mapPair = tryClear_map(type);
         if (mapPair)

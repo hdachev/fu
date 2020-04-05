@@ -1667,6 +1667,12 @@ fn solve(
 
             return solved(node, type);
         }
+        else if (node.kind == "arrlit" && node.items.len == 1)
+        {
+            // Slice.
+            let t = evalTypeAnnot(node.items[0]).type;
+            return solved(node, createSlice(t));
+        }
 
         return fail("TODO");
     }
@@ -1741,6 +1747,13 @@ fn solve(
             _param = clear_refs(type);
 
             return true;
+        }
+        else if (node.kind == "arrlit" && node.items.len == 1)
+        {
+            // Slice.
+            let t = tryClear_slice(type);
+            return t && trySolveTypeParams(
+                node.items[0] || fail(), t, typeParams);
         }
 
         return fail("TODO");

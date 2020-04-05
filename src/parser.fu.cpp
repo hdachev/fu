@@ -115,8 +115,8 @@ struct s_ParserOutput
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_1__6___28byte
-                                #define DEFt_2_1__6___28byte
+                                #ifndef DEFt_2_1__1030___28byte
+                                #define DEFt_2_1__1030___28byte
 inline std::byte only(const fu_STR& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));

@@ -165,6 +165,11 @@ inline const int q_unsigned = (1 << 8);
 inline const int q_floating_pt = (1 << 9);
                                 #endif
 
+                                #ifndef DEF_q_resize
+                                #define DEF_q_resize
+inline const int q_resize = (1 << 10);
+                                #endif
+
                                 #ifndef DEF_TAGS
                                 #define DEF_TAGS
 inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu } };
@@ -464,13 +469,13 @@ s_ValueType parseType(const fu_STR& str)
 
 bool type_isArray(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, "[]"_fu);
+    return ((type.value.quals & q_resize) && fu::lmatch(type.value.canon, "[]"_fu));
 }
 
 s_Type createArray(const s_Type& item)
 {
     fu_STR canon = ("[]"_fu + serializeType(item));
-    const int quals = (item.value.quals & q_copy);
+    const int quals = ((item.value.quals & q_copy) | q_resize);
     const int modid = 0;
     return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
@@ -478,6 +483,28 @@ s_Type createArray(const s_Type& item)
 s_Type tryClear_array(const s_Type& type)
 {
     if (!type_isArray(type))
+        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+
+    s_ValueType value = parseType(fu::slice(type.value.canon, 2));
+    return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
+}
+
+bool type_isSlice(const s_Type& type)
+{
+    return ((type.value.quals & q_ref) && fu::lmatch(type.value.canon, "[]"_fu));
+}
+
+s_Type createSlice(const s_Type& item)
+{
+    s_Type out = createArray(item);
+    out.value.quals &= ~(q_copy | q_resize);
+    out.value.quals |= q_ref;
+    return out;
+}
+
+s_Type tryClear_slice(const s_Type& type)
+{
+    if (!type_isSlice(type))
         return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));

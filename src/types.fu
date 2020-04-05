@@ -13,6 +13,8 @@ pub let q_signed        = 1 << 7;
 pub let q_unsigned      = 1 << 8;
 pub let q_floating_pt   = 1 << 9;
 
+pub let q_resize        = 1 << 10;
+
 let TAGS =
 [
     "mutref",
@@ -285,13 +287,14 @@ pub fn parseType(str: string): ValueType
 
 pub fn type_isArray(type: Type): bool
 {
-    return type.canon.starts(with: "[]");
+    return type.quals & q_resize
+        && type.canon.starts(with: "[]");
 }
 
 pub fn createArray(item: Type): Type
 {
     let canon = "[]" + serializeType(item);
-    let quals = item.quals & q_copy;
+    let quals = (item.quals & q_copy) | q_resize;
     let modid = 0;
 
     return Type(
@@ -302,6 +305,34 @@ pub fn createArray(item: Type): Type
 pub fn tryClear_array(type: Type): Type
 {
     if (!type_isArray(type))
+        return Type();
+
+    let value = parseType(type.canon.slice(2));
+    return Type(:value, :type.lifetime);
+}
+
+
+// Experimental -
+//  Slices are refs to arrays,
+//   with revoked copy & resize priviledges.
+
+pub fn type_isSlice(type: Type): bool
+{
+    return type.quals & q_ref
+        && type.canon.starts(with: "[]");
+}
+
+pub fn createSlice(item: Type): Type
+{
+    mut out = createArray(item);
+    out.quals &= ~(q_copy | q_resize);
+    out.quals |= q_ref;
+    return out;
+}
+
+pub fn tryClear_slice(type: Type): Type
+{
+    if (!type_isSlice(type))
         return Type();
 
     let value = parseType(type.canon.slice(2));

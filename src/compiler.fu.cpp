@@ -547,16 +547,16 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_6__7___28byte
-                                #define DEFt_2_6__7___28byte
+                                #ifndef DEFt_2_6__1031___28byte
+                                #define DEFt_2_6__1031___28byte
 inline std::byte if_last(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_6__6___28byte
-                                #define DEFt_2_6__6___28byte
+                                #ifndef DEFt_2_6__1030___28byte
+                                #define DEFt_2_6__1030___28byte
 inline std::byte if_last(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());

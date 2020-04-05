@@ -59,6 +59,8 @@ s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
 s_Type createArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
+s_Type createSlice(const s_Type&);
+s_Type tryClear_slice(const s_Type&);
 s_Type createMap(const s_Type&, const s_Type&);
 s_MapFields tryClear_map(const s_Type&);
 bool is_never(const s_Type&);
@@ -589,16 +591,16 @@ struct s_MapFields
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_1__7__7_4_7SolvedNode
-                                #define DEFt_2_1__7__7_4_7SolvedNode
+                                #ifndef DEFt_2_1__1031__7_4_7SolvedNode
+                                #define DEFt_2_1__1031__7_4_7SolvedNode
 inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-                                #ifndef DEFt_2_1__6__5_4_5Node
-                                #define DEFt_2_1__6__5_4_5Node
+                                #ifndef DEFt_2_1__1030__5_4_5Node
+                                #define DEFt_2_1__1030__5_4_5Node
 inline const s_Node& only(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -2024,6 +2026,11 @@ struct sf_solve
             (_typeParams || fail((("Unexpected type param: `$"_fu + id) + "`."_fu)));
             s_Type type { ([&]() -> const s_Type& { if (_typeParams) { const s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
             return solved(node, type, fu_VEC<s_SolvedNode>{});
+        }
+        else if (((node.kind == "arrlit"_fu) && (node.items.size() == 1)))
+        {
+            s_Type t = evalTypeAnnot(node.items[0]).type;
+            return solved(node, createSlice(t), fu_VEC<s_SolvedNode>{});
         };
         fail("TODO"_fu);
     };
@@ -2072,6 +2079,11 @@ struct sf_solve
             };
             _param = clear_refs(type);
             return true;
+        }
+        else if (((node.kind == "arrlit"_fu) && (node.items.size() == 1)))
+        {
+            s_Type t = tryClear_slice(type);
+            return (t && trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }()), s_Type(t), typeParams));
         };
         fail("TODO"_fu);
     };
