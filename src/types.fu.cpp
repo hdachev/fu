@@ -125,9 +125,9 @@ inline const int q_mutref = (1 << 0);
 inline const int q_ref = (1 << 1);
                                 #endif
 
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_q_trivial
@@ -165,14 +165,24 @@ inline const int q_unsigned = (1 << 8);
 inline const int q_floating_pt = (1 << 9);
                                 #endif
 
-                                #ifndef DEF_q_resize
-                                #define DEF_q_resize
-inline const int q_resize = (1 << 10);
+                                #ifndef DEF_q_rx_resize
+                                #define DEF_q_rx_resize
+inline const int q_rx_resize = (1 << 10);
                                 #endif
 
                                 #ifndef DEF_TAGS
                                 #define DEF_TAGS
-inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu } };
+inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu, "resize"_fu } };
+                                #endif
+
+                                #ifndef DEF_q_REF_EXTENSIONS
+                                #define DEF_q_REF_EXTENSIONS
+inline const int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
+                                #endif
+
+                                #ifndef DEF_q_MUTINVAR
+                                #define DEF_q_MUTINVAR
+inline const int q_MUTINVAR = ~q_REF_EXTENSIONS;
                                 #endif
 
                                 #ifndef DEF_e_exit
@@ -227,7 +237,7 @@ bool operator==(const s_ValueType& a, const s_ValueType& b)
 
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
-inline const int Trivial = (q_copy | q_trivial);
+inline const int Trivial = (q_rx_copy | q_trivial);
                                 #endif
 
                                 #ifndef DEF_Primitive
@@ -347,7 +357,7 @@ bool is_bool(const s_Type& t)
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals == guest.value.quals) || (!(host.value.quals & q_mutref) && ((host.value.quals & guest.value.quals) == host.value.quals)))) || is_never(guest));
+    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals & guest.value.quals) == host.value.quals) && (!(host.value.quals & q_mutref) || ((host.value.quals & q_MUTINVAR) == (guest.value.quals & q_MUTINVAR)))) || is_never(guest));
 }
 
 bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
@@ -469,13 +479,13 @@ s_ValueType parseType(const fu_STR& str)
 
 bool type_isArray(const s_Type& type)
 {
-    return ((type.value.quals & q_resize) && fu::lmatch(type.value.canon, "[]"_fu));
+    return ((type.value.quals & q_rx_resize) && fu::lmatch(type.value.canon, "[]"_fu));
 }
 
 s_Type createArray(const s_Type& item)
 {
     fu_STR canon = ("[]"_fu + serializeType(item));
-    const int quals = ((item.value.quals & q_copy) | q_resize);
+    const int quals = ((item.value.quals & q_rx_copy) | q_rx_resize);
     const int modid = 0;
     return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
@@ -497,7 +507,7 @@ bool type_isSlice(const s_Type& type)
 s_Type createSlice(const s_Type& item)
 {
     s_Type out = createArray(item);
-    out.value.quals &= ~(q_copy | q_resize);
+    out.value.quals &= ~(q_rx_copy | q_rx_resize);
     out.value.quals |= q_ref;
     return out;
 }
@@ -519,7 +529,7 @@ bool type_isMap(const s_Type& type)
 s_Type createMap(const s_Type& key, const s_Type& value)
 {
     fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(value));
-    const int quals = ((key.value.quals & value.value.quals) & q_copy);
+    const int quals = ((key.value.quals & value.value.quals) & q_rx_copy);
     const int modid = 0;
     return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
 }

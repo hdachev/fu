@@ -164,13 +164,13 @@ fn copyOrMove(
     if (flags & F_DESTRUCTOR || someFieldNonCopy(fields))
         return 0;
 
-    return q_copy;
+    return q_rx_copy;
 }
 
 fn someFieldNonCopy(fields: StructField[]): bool
 {
     for (mut i = 0; i < fields.len; i++)
-        if !(fields[i].type.quals & q_copy)
+        if !(fields[i].type.quals & q_rx_copy)
             return true;
 
     return false;

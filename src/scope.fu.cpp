@@ -626,9 +626,9 @@ int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, s_M
 inline const int F_DESTRUCTOR = (1 << 31);
                                 #endif
 
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
                                 #endif
 
 int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
@@ -636,14 +636,14 @@ int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
         return 0;
 
-    return int(q_copy);
+    return int(q_rx_copy);
 }
 
 bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
-        if (!(fields[i].type.quals & q_copy))
+        if (!(fields[i].type.quals & q_rx_copy))
             return true;
 
     };
@@ -748,7 +748,7 @@ s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_Solv
 
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
-inline const int Trivial = (q_copy | q_trivial);
+inline const int Trivial = (q_rx_copy | q_trivial);
                                 #endif
 
                                 #ifndef DEF_q_primitive

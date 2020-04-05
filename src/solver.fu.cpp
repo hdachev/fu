@@ -612,9 +612,9 @@ inline const s_Node& only(const fu_VEC<s_Node>& s)
 inline const bool WARN_ON_IMPLICIT_COPY = false;
                                 #endif
 
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_q_trivial
@@ -624,7 +624,7 @@ inline const int q_trivial = (1 << 3);
 
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
-inline const int Trivial = (q_copy | q_trivial);
+inline const int Trivial = (q_rx_copy | q_trivial);
                                 #endif
 
                                 #ifndef DEF_q_primitive
@@ -2393,7 +2393,7 @@ struct sf_solve
             node.type.value.quals &= ~q_ref;
             return;
         };
-        if (!(q & q_copy))
+        if (!(q & q_rx_copy))
             fail("Needs an explicit STEAL or CLONE."_fu);
 
         if (WARN_ON_IMPLICIT_COPY)

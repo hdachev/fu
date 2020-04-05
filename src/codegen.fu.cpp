@@ -620,14 +620,14 @@ inline const int q_primitive = (1 << 4);
 inline const int q_trivial = (1 << 3);
                                 #endif
 
-                                #ifndef DEF_q_copy
-                                #define DEF_q_copy
-inline const int q_copy = (1 << 2);
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
-inline const int Trivial = (q_copy | q_trivial);
+inline const int Trivial = (q_rx_copy | q_trivial);
                                 #endif
 
                                 #ifndef DEF_Primitive

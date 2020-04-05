@@ -2271,7 +2271,7 @@ fn solve(
             return;
         }
 
-        if !(q & q_copy)
+        if !(q & q_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
         if (WARN_ON_IMPLICIT_COPY)

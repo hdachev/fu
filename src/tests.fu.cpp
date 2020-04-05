@@ -723,6 +723,7 @@ void runTests()
     ZERO("\n        let a = [1, 2];\n        fn eq(a: i32[], b: i32[]) a == b;\n        fn main() eq(a, a) ? 0 : 1;\n    "_fu);
     ZERO("\n        let a = [1, 2];\n        fn eq(a: $T[], b: $T[]) a == b;\n        fn main() eq(a, a) ? 0 : 1;\n    "_fu);
     ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main()\n            test([-1, +1]);\n    "_fu);
+    ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [-1, +1];\n            return hey.test();\n        }\n    "_fu);
 }
 
 #endif
