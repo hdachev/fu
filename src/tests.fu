@@ -1929,6 +1929,16 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(hey: byte[])
+            hey.u32_view[0];
+
+        fn main() {
+            mut hey: byte[] = [ byte(1), byte(1), byte(1), byte(1) ];
+            return (hey.test - 0x1010101).i32;
+        }
+    `);
+
 
     // TODO dont-repeat-yourself stuff
     //

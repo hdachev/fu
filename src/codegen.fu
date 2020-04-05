@@ -374,6 +374,7 @@ pub fn cpp_codegen(
         if (id == "long")       return "lOng";
         if (id == "signed")     return "sIgned";
         if (id == "unsigned")   return "uNsigned";
+        if (id == "assert")     return "aSsert";
 
         return id;
     }

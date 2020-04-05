@@ -14,13 +14,18 @@ struct view
     const T* m_data;
     int32_t m_size;
 
+    fu_INL view(T* data, int32_t size)
+        : m_data { data }
+        , m_size { size }
+    {}
+
     template <typename V>
-    view(const V& vec) noexcept
+    fu_INL view(const V& vec) noexcept
         : m_data { vec.data() }
         , m_size { vec.size() }
     {}
 
-    const T* data() const noexcept {
+    fu_INL const T* data() const noexcept {
         return m_data;
     }
 
@@ -42,21 +47,6 @@ struct view
 
         #endif
     }
-
-    fu_INL T& mutref(i32 idx) noexcept
-    {
-        T* ok = (T*) data() + idx;
-
-        #if fu_RETAIL
-        return *ok;
-
-        #else
-        return (u32) idx < (u32) size()
-             ? *ok
-             : *((T*)1);
-
-        #endif
-    }
 };
 
 template <typename T>
@@ -69,17 +59,22 @@ struct view_mut
     T* m_data;
     int32_t m_size;
 
+    fu_INL view_mut(T* data, int32_t size)
+        : m_data { data }
+        , m_size { size }
+    {}
+
     template <typename V>
-    view_mut(V& vec) noexcept
+    fu_INL view_mut(V& vec) noexcept
         : m_data { vec.mut_data() }
         , m_size { vec.size() }
     {}
 
-    const T* data() const noexcept {
+    fu_INL const T* data() const noexcept {
         return m_data;
     }
 
-    T* mut_data() noexcept {
+    fu_INL T* mut_data() noexcept {
         return m_data;
     }
 
@@ -117,5 +112,43 @@ struct view_mut
         #endif
     }
 };
+
+
+// Experimental -
+//  reinterpret cast for views over trivial data.
+
+template <typename Dest, typename V, typename Src = typename V::value_type>
+view<Dest> into_view(const V& src)
+{
+    char* start = (char*) src.data();
+
+    size_t  src_size = src.size();
+    size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
+
+    // Exact fit.
+    assert(size_t(start) % alignof(Dest) == 0
+        && dest_size * sizeof(Dest) / sizeof(Src) == src_size);
+
+    return view<Dest>(
+        (Dest*) start,
+                dest_size);
+}
+
+template <typename Dest, typename V, typename Src = typename V::value_type>
+view_mut<Dest> into_view_mut(V& src)
+{
+    char* start = (char*) src.data_mut();
+
+    size_t  src_size = src.size();
+    size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
+
+    // Exact fit.
+    assert(size_t(start) % alignof(Dest) == 0
+        && dest_size * sizeof(Dest) / sizeof(Src) == src_size);
+
+    return view_mut<Dest>(
+        (Dest*) start,
+                dest_size);
+}
 
 } // namespace

@@ -1034,6 +1034,9 @@ struct sf_cpp_codegen
         if ((id == "unsigned"_fu))
             return "uNsigned"_fu;
 
+        if ((id == "assert"_fu))
+            return "aSsert"_fu;
+
         return fu_STR(id);
     };
     fu_STR cgStatements(const fu_VEC<s_SolvedNode>& nodes)
