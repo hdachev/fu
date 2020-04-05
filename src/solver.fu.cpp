@@ -795,6 +795,11 @@ inline const int F_HAS_CLOSURE = (1 << 28);
 inline const int F_CLOSURE = (1 << 27);
                                 #endif
 
+                                #ifndef DEF_F_MUT
+                                #define DEF_F_MUT
+inline const int F_MUT = (1 << 16);
+                                #endif
+
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
 inline const int LET_TYPE = 0;
@@ -803,11 +808,6 @@ inline const int LET_TYPE = 0;
                                 #ifndef DEF_q_ref
                                 #define DEF_q_ref
 inline const int q_ref = (1 << 1);
-                                #endif
-
-                                #ifndef DEF_F_MUT
-                                #define DEF_F_MUT
-inline const int F_MUT = (1 << 16);
                                 #endif
 
                                 #ifndef DEF_FN_BODY_BACK
@@ -1592,7 +1592,7 @@ struct sf_solve
                 const s_Node& n_arg = ([&]() -> const s_Node& { { const s_Node& _ = inItems[i]; if (_) return _; } fail(fu_STR{}); }());
                 ((n_arg.kind == "let"_fu) || fail(fu_STR{}));
                 s_Lifetime lifetime = Lifetime_fromArgIndex(i);
-                if (spec)
+                if ((spec && !(n_arg.flags & F_MUT)))
                 {
                     s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);

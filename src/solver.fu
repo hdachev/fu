@@ -982,7 +982,8 @@ fn solve(
 
                 let lifetime = Lifetime_fromArgIndex(i);
 
-                if (spec)
+                // If spec and unless argument explicitly wants a value -
+                if (spec && !(n_arg.flags & F_MUT))
                 {
                     // Specialize with actuals.
                     mut mut_arg = n_arg;
