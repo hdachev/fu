@@ -725,6 +725,8 @@ void runTests()
     ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main()\n            test([-1, +1]);\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [-1, +1];\n            return hey.test();\n        }\n    "_fu);
     ZERO("\n        fn test(hey: byte[])\n            hey.u32_view[0];\n\n        fn main() {\n            mut hey: byte[] = [ byte(1), byte(1), byte(1), byte(1) ];\n            return (hey.test - 0x1010101).i32;\n        }\n    "_fu);
+    ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main() {\n            let hey = [7, -1, +1];\n            return test(hey[1, 3]);\n        }\n    "_fu);
+    ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [7, -1, +1];\n            return hey[1, 3].test();\n        }\n    "_fu);
 }
 
 #endif

@@ -14,7 +14,7 @@ struct view
     const T* m_data;
     int32_t m_size;
 
-    fu_INL view(T* data, int32_t size)
+    fu_INL view(const T* data, int32_t size)
         : m_data { data }
         , m_size { size }
     {}
@@ -66,7 +66,7 @@ struct view_mut
 
     template <typename V>
     fu_INL view_mut(V& vec) noexcept
-        : m_data { vec.mut_data() }
+        : m_data { vec.data_mut() }
         , m_size { vec.size() }
     {}
 
@@ -74,7 +74,7 @@ struct view_mut
         return m_data;
     }
 
-    fu_INL T* mut_data() noexcept {
+    fu_INL T* data_mut() noexcept {
         return m_data;
     }
 
@@ -112,6 +112,43 @@ struct view_mut
         #endif
     }
 };
+
+
+// Slice api -
+
+template <typename V, typename T = typename V::value_type>
+view<T> get_view(const V& v, int32_t start, int32_t end)
+{
+    auto size = v.size();
+    assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
+
+    end     = end   > 0 ? end   : 0;
+    start   = start > 0 ? start : 0;
+
+    end     = (uint32_t)end <= (uint32_t)size ? end : size;
+    start   = start < end ? start : end;
+
+    return view<T>(
+        v.data() + start,
+        end - start);
+}
+
+template <typename V, typename T = typename V::value_type>
+view_mut<T> get_view_mut(V& v, int32_t start, int32_t end)
+{
+    auto size = v.size();
+    assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
+
+    end     = end   > 0 ? end   : 0;
+    start   = start > 0 ? start : 0;
+
+    end     = (uint32_t)end <= (uint32_t)size ? end : size;
+    start   = start < end ? start : end;
+
+    return view_mut<T>(
+        v.data_mut() + start,
+        end - start);
+}
 
 
 // Experimental -

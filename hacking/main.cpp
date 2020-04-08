@@ -1,4 +1,4 @@
-// #define ISOLATE_FAILING_TESTCASE
+#define ISOLATE_FAILING_TESTCASE
 
 #ifdef ISOLATE_FAILING_TESTCASE
 #include "../build.cpp/failing-testcase.cpp"

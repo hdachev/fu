@@ -996,7 +996,7 @@ struct fu_VEC
 
     //
 
-    fu_INL T* mut_data() noexcept {
+    fu_INL T* data_mut() noexcept {
         reserve();
         return (T*)data();
     }

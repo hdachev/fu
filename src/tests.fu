@@ -1939,6 +1939,26 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(hey: [i32])
+            hey[0] + hey[1];
+
+        fn main() {
+            let hey = [7, -1, +1];
+            return test(hey[1, 3]);
+        }
+    `);
+
+    ZERO(`
+        fn test(hey: &mut [i32])
+            hey[0] += hey[1];
+
+        fn main() {
+            mut hey = [7, -1, +1];
+            return hey[1, 3].test();
+        }
+    `);
+
 
     // TODO dont-repeat-yourself stuff
     //
