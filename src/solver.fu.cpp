@@ -2047,6 +2047,9 @@ struct sf_solve
                     if (!t)
                         return false;
 
+                    if (((node.value == "&mut"_fu) && (items[0].kind == "arrlit"_fu) && (items[0].items.size() == 1)))
+                        t.value.quals |= q_ref;
+
                     return trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_STR{}); }()), s_Type(t), typeParams);
                 }
                 else if ((items.size() == 2))

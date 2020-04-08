@@ -1687,13 +1687,18 @@ fn solve(
             {
                 if (items.len == 1)
                 {
-                    let t   = node.value == "&"    ? tryClear_ref(type)
+                    mut t   = node.value == "&"    ? tryClear_ref(type)
                             : node.value == "&mut" ? tryClear_mutref(type)
                             : node.value == "[]"   ? tryClear_array(type)
                             : (fail("TODO"), Type);
 
                     if (!t)
                         return false;
+
+                    // HACK TODO FIX!
+                    //  keep the ref around for clear-slice to work.
+                    if (node.value == "&mut" && items[0].kind == "arrlit" && items[0].items.len == 1)
+                        t.quals |= q_ref;
 
                     return trySolveTypeParams(
                         items[0] || fail(), t, typeParams);
