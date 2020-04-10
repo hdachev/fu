@@ -442,11 +442,18 @@ pub fn type_tryInter(a: Type, b: Type)
 
 //
 
+pub struct Target
+{
+    modid:  i32;
+    index:  i32;
+};
+
 pub struct Struct
 {
     id:     string;
     fields: StructField[];
     flags:  i32;
+    ctor:   Target;
 };
 
 pub struct StructField

@@ -32,12 +32,12 @@ struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Target;
 struct s_Template;
 struct s_Effects;
 struct s_MapFields;
 struct s_Struct;
 struct s_StructField;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
@@ -406,12 +406,14 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target ctor;
     explicit operator bool() const noexcept
     {
         return false
             || id
             || fields
             || flags
+            || ctor
         ;
     }
 };
@@ -1403,8 +1405,11 @@ struct sf_cpp_codegen
         };
         return (("std::byte('"_fu + esc) + "')"_fu);
     };
-    fu_STR cgArrayLiteral(const s_SolvedNode& node)
+    fu_STR cgArrayLiteral(const s_SolvedNode& node, const int mode)
     {
+        if (node.target)
+            return cgCall(node, mode);
+
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
         if (!items.size())
             return cgDefault(node.type);
@@ -1414,9 +1419,9 @@ struct sf_cpp_codegen
         fu_STR arrayAnnot = typeAnnot(node.type, 0);
         return (((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu::join(items, ", "_fu)) + " } }"_fu);
     };
-    fu_STR cgDefaultInit(const s_SolvedNode& node)
+    fu_STR cgDefaultInit(const s_SolvedNode& node, const int mode)
     {
-        return cgArrayLiteral(node);
+        return cgArrayLiteral(node, mode);
     };
     bool hasNonIdentifierChars(const fu_STR& id)
     {
@@ -1935,10 +1940,10 @@ struct sf_cpp_codegen
             return cgStringLiteral(node);
 
         if ((k == "arrlit"_fu))
-            return cgArrayLiteral(node);
+            return cgArrayLiteral(node, mode);
 
         if ((k == "definit"_fu))
-            return cgDefaultInit(node);
+            return cgDefaultInit(node, mode);
 
         if ((k == "empty"_fu))
             return cgEmpty();

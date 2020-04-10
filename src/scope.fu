@@ -120,7 +120,7 @@ pub fn lookupStruct_mut(
 
 pub fn isStruct(type: Type)
 {
-    return type.canon[0] == '$';
+    return type.canon.starts(with: '$');
 }
 
 pub fn initStruct(
@@ -196,8 +196,6 @@ fn someFieldNonTrivial(fields: StructField[]): bool
 ////////
 ////////
 ////////     Scope.
-
-pub struct Target { modid: i32; index: i32; }
 
 pub struct SolvedNode
 {
@@ -292,8 +290,20 @@ pub struct ScopeSkip {
 pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32,
-    skip: ScopeSkip): Target
+    skip: ScopeSkip,
+    target: Target = []): Target
 {
+    // Searching & forcing results the same way.
+    if (target)
+    {
+        if (scope_iterator)
+            return Target;
+
+        scope_iterator--;
+        return target;
+    }
+
+    // Search.
     let skip0 = skip.start - 1;
     let skip1 = skip.end   - 1;
 

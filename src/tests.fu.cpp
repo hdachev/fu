@@ -22,11 +22,11 @@ struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Target;
 struct s_Template;
 struct s_Effects;
 struct s_Struct;
 struct s_StructField;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
@@ -180,6 +180,22 @@ struct s_StructField
 };
                                 #endif
 
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -187,12 +203,14 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target ctor;
     explicit operator bool() const noexcept
     {
         return false
             || id
             || fields
             || flags
+            || ctor
         ;
     }
 };
@@ -255,22 +273,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
         ;
     }
 };
@@ -728,7 +730,7 @@ void runTests()
     ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main() {\n            let hey = [7, -1, +1];\n            return test(hey[1, 3]);\n        }\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [7, -1, +1];\n            return hey[1, 3].test();\n        }\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey.= [2, -3];\n\n        fn main() {\n            mut hey = [1, 0, 0];\n            test(hey[1, 3]);\n            return hey[0] + hey[1] + hey[2];\n        }\n    "_fu);
-    ZERO("\n        struct Hey {\n            i: i32;\n        }\n\n        fn main(a: i32) {\n            let r: Hey = a && [ a ];\n            return r.i;\n        }\n    "_fu);
+    ZERO("\n        struct Hey {\n            i: i32;\n        }\n\n        fn main() {\n            let a = 1;\n            let r: Hey = a && [ a ];\n            return r.i - 1;\n        }\n    "_fu);
     ZERO("\n        struct Hey {\n            i: i32;\n        }\n\n        fn main() {\n            let a: Hey[] = [ [ -1 ], [ +1 ] ];\n            return a[0].i + a[1].i;\n        }\n    "_fu);
 }
 

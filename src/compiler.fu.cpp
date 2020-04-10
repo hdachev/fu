@@ -37,11 +37,11 @@ struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Target;
 struct s_Template;
 struct s_Effects;
 struct s_Struct;
 struct s_StructField;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
@@ -213,6 +213,22 @@ struct s_StructField
 };
                                 #endif
 
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -220,12 +236,14 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target ctor;
     explicit operator bool() const noexcept
     {
         return false
             || id
             || fields
             || flags
+            || ctor
         ;
     }
 };
@@ -288,22 +306,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
         ;
     }
 };

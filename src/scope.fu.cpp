@@ -6,6 +6,7 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
+#include <fu/vec/find.h>
 
 struct s_ModuleStat;
 struct s_LexerOutput;
@@ -25,11 +26,11 @@ struct s_ScopeItem;
 struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Target;
 struct s_Template;
 struct s_Effects;
 struct s_Struct;
 struct s_StructField;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
@@ -187,6 +188,22 @@ struct s_StructField
 };
                                 #endif
 
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -194,12 +211,14 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target ctor;
     explicit operator bool() const noexcept
     {
         return false
             || id
             || fields
             || flags
+            || ctor
         ;
     }
 };
@@ -262,22 +281,6 @@ struct s_Type
             || value
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
         ;
     }
 };
@@ -594,13 +597,13 @@ s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
 
 bool isStruct(const s_Type& type)
 {
-    return (type.value.canon[0] == std::byte('$'));
+    return fu::lmatch(type.value.canon, std::byte('$'));
 }
 
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = (("$"_fu + module.modid) + id);
-    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags) };
+    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{} };
     (module.out.types.upsert(canon) = def);
     return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
@@ -681,8 +684,16 @@ fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& skip)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& skip, const s_Target& target)
 {
+    if (target)
+    {
+        if (scope_iterator)
+            return s_Target { int{}, int{} };
+
+        scope_iterator--;
+        return s_Target(target);
+    };
     const int skip0 = (skip.start - 1);
     const int skip1 = (skip.end - 1);
     const fu_VEC<s_ScopeItem>& items = scope.items;

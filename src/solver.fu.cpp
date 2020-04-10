@@ -28,25 +28,27 @@ struct s_ScopeItem;
 struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
-struct s_Target;
 struct s_Template;
 struct s_Effects;
 struct s_MapFields;
 struct s_Struct;
 struct s_StructField;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
 bool hasIdentifierChars(const fu_STR&);
 const s_Node& only(const fu_VEC<s_Node>&);
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
 int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, const fu_VEC<fu_STR>&, const fu_VEC<s_Type>&, const fu_VEC<s_SolvedNode>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
+s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
+bool isStruct(const s_Type&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
 bool isTemplate(const s_Overload&);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, const s_Module&);
@@ -54,6 +56,7 @@ int MODID(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -336,12 +339,14 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target ctor;
     explicit operator bool() const noexcept
     {
         return false
             || id
             || fields
             || flags
+            || ctor
         ;
     }
 };
@@ -1141,7 +1146,7 @@ struct sf_solve
         result.clear();
         return true;
     };
-    s_Target tryMatch__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType)
+    s_Target tryMatch__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType, const s_Target& target)
     {
         s_Target matchIdx {};
         
@@ -1162,7 +1167,7 @@ struct sf_solve
             fu_STR args_mangled {};
             int scope_iterator {};
             s_Target overloadIdx {};
-            while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip))){
+            while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target))){
             {
                 s_Overload overload = GET(overloadIdx, module, ctx);
                 while (true){
@@ -1303,13 +1308,13 @@ struct sf_solve
     {
         return ((node.kind == "int"_fu) ? solveInt(node.value, expect) : ((node.kind == "num"_fu) ? solveNum(node.value, expect) : s_Type{}));
     };
-    s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags)
+    s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Target& target)
     {
-        const s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{});
+        const s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{}, target);
         if (ret)
             return ret;
 
-        const s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{});
+        const s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{}, target);
         if (debug)
             return debug;
 
@@ -1347,7 +1352,7 @@ struct sf_solve
             return solveLet(node, Lifetime_static());
 
         if ((k == "call"_fu))
-            return solveCall(node);
+            return solveCall(node, s_Target{});
 
         if ((k == "arrlit"_fu))
             return solveArrayLiteral(node, type);
@@ -1839,7 +1844,8 @@ struct sf_solve
             };
             structType.value.quals |= finalizeStruct(structType.value.canon, fields, module);
             GET_mut(out.target).type.value.quals = structType.value.quals;
-            DefaultCtor(id, structType, members);
+            const s_Target ctor = DefaultCtor(id, structType, members);
+            lookupStruct_mut(structType.value.canon, module).ctor = ctor;
         };
         return out;
     };
@@ -1972,7 +1978,7 @@ struct sf_solve
     {
         int scope_iterator {};
         s_Target overloadIdx {};
-        while ((overloadIdx = search(_scope, id, scope_iterator, _scope_skip)))
+        while ((overloadIdx = search(_scope, id, scope_iterator, _scope_skip, s_Target{})))
         {
             s_Overload maybe = GET(overloadIdx, module, ctx);
             if ((maybe.kind == "type"_fu))
@@ -2135,12 +2141,16 @@ struct sf_solve
         id = fu::slice(id, (split + 1));
         return fname;
     };
-    s_SolvedNode solveCall(const s_Node& node)
+    s_SolvedNode solveCall(const s_Node& node, const s_Target& target)
     {
-        fu_STR id { (node.value ? node.value : fail(fu_STR{})) };
+        fu_STR id { node.value };
+        if (!id)
+        {
+            (target || fail(fu_STR{}));
+        };
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? findModule(qualid_extractFName(id)).out.solve.scope : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
-        s_Target callTargIdx = match__mutargs(scope, id, args, node.flags);
+        s_Target callTargIdx = match__mutargs(scope, id, args, node.flags, target);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
         {
@@ -2166,6 +2176,9 @@ struct sf_solve
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
         s_Type itemType = ([&]() -> s_Type { if (type) return tryClear_array(type); else return s_Type{}; }());
+        if ((!itemType && isStruct(type)))
+            return solveCall(node, lookupStruct(type, module, ctx).ctor);
+
         fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType);
         int startAt = 0;
         if ((!itemType && items.size()))
@@ -2227,7 +2240,7 @@ struct sf_solve
     s_Target getImplicit(const fu_STR& id, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> args {};
-        s_Target matched = tryMatch__mutargs(_scope, id, args, 0, type);
+        s_Target matched = tryMatch__mutargs(_scope, id, args, 0, type, s_Target{});
         if (!matched)
         {
             if (!_current_fn)
@@ -2314,7 +2327,7 @@ struct sf_solve
     };
     s_SolvedNode solveAnd(const s_Node& node, s_Type&& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type);
         if (is_void(type))
             type = t_bool;
 

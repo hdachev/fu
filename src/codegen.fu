@@ -884,8 +884,11 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgArrayLiteral(node: SolvedNode): string
+    fn cgArrayLiteral(node: SolvedNode, mode: i32): string
     {
+        if (node.target)
+            return cgCall(node, mode);
+
         let items = cgNodes(node.items);
         if (!items.len)
             return cgDefault(node.type);
@@ -899,9 +902,9 @@ pub fn cpp_codegen(
                 + items.join(", ") + " } }";
     }
 
-    fn cgDefaultInit(node: SolvedNode): string
+    fn cgDefaultInit(node: SolvedNode, mode: i32): string
     {
-        return cgArrayLiteral(node);
+        return cgArrayLiteral(node, mode);
     }
 
     fn hasNonIdentifierChars(id: string)
@@ -1508,8 +1511,8 @@ pub fn cpp_codegen(
         if (k == "num")         return cgLiteral(node);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
-        if (k == "arrlit")      return cgArrayLiteral(node);
-        if (k == "definit")     return cgDefaultInit(node);
+        if (k == "arrlit")      return cgArrayLiteral(node, mode);
+        if (k == "definit")     return cgDefaultInit(node, mode);
         if (k == "empty")       return cgEmpty();
 
         if (k == "comma")       return cgParens(node);
