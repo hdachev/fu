@@ -295,7 +295,7 @@ fn u8_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [u8] __native("<fu/view.h>", "fu::into_view_mut<u8>");
     case ($a ->      [$T] && $T -> @trivial):      [u8] __native("<fu/view.h>", "fu::into_view<u8>");
 
-fn set(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native(".set");
+fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native(".set");
 
 `;
 

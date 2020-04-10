@@ -1961,7 +1961,7 @@ fn runTests()
 
     ZERO(`
         fn test(hey: &mut [i32])
-            hey.set([2, -3]);
+            hey.= [2, -3];
 
         fn main() {
             mut hey = [1, 0, 0];
