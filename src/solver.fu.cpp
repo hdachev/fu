@@ -1865,24 +1865,28 @@ struct sf_solve
     };
     s_SolvedNode solveReturn(const s_Node& node)
     {
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, s_Type{}));
+        const auto& retIdx = [&]() -> int
+        {
+            return (_current_fn.items.size() + FN_RET_BACK);
+        };
+        s_Type prevType { _current_fn.items.mutref(retIdx()).type };
+        ((node.items.size() <= 1) || fail(fu_STR{}));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
         if ((killedBy(next.type.lifetime, _return_idx) && (next.type.value.quals & q_ref)))
         {
             const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
             next = createMove(next, bool(nrvo));
         };
-        const int retIdx = (_current_fn.items.size() + FN_RET_BACK);
-        s_SolvedNode prev { _current_fn.items[retIdx] };
-        if (prev.type)
+        if (prevType)
         {
-            (isAssignable(prev.type, next.type) || fail(((("Non-assignable return types: "_fu + serializeType(prev.type)) + " <- "_fu) + serializeType(next.type))));
+            (isAssignable(prevType, next.type) || fail(((("Non-assignable return types: "_fu + serializeType(prevType)) + " <- "_fu) + serializeType(next.type))));
         }
         else
-            _current_fn.items.mutref(retIdx) = (next ? next : fail(fu_STR{}));
+            _current_fn.items.mutref(retIdx()) = (next ? next : fail(fu_STR{}));
 
         if (out.items)
-            maybeCopyOrMove(out.items.mutref(0), (prev.type ? prev.type : next.type), false);
+            maybeCopyOrMove(out.items.mutref(0), (prevType ? prevType : next.type), false);
 
         return out;
     };

@@ -1971,12 +1971,10 @@ fn runTests()
     `);
 
 
-    // TODO dont-repeat-yourself stuff
+    // Don't repeat yourself ctors.
 
     ZERO(`
-        struct Hey {
-            i: i32;
-        }
+        struct Hey { i: i32; }
 
         fn main() {
             let a = 1;
@@ -1986,14 +1984,22 @@ fn runTests()
     `);
 
     ZERO(`
-        struct Hey {
-            i: i32;
-        }
+        struct Hey { i: i32; }
 
         fn main() {
             let a: Hey[] = [ [ -1 ], [ +1 ] ];
             return a[0].i + a[1].i;
         }
+    `);
+
+    ZERO(`
+        struct Hey { i: i32; }
+
+        fn test(): Hey {
+            return [ 0 ];
+        }
+
+        fn main() test.i;
     `);
 
 

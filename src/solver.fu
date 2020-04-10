@@ -1406,8 +1406,16 @@ fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
-        mut out = solved(
-            node, t_void, solveNodes(node.items));
+        // Solving the stuff below might inject implicit args -
+        //  which would shift the retidx back.
+        fn retIdx()
+            _current_fn.items.len + FN_RET_BACK;
+
+        let prevType = _current_fn.items[retIdx].type;
+
+        node.items.len <= 1 || fail();
+        mut out = solved(node, t_void,
+            solveNodes(node.items, prevType));
 
         let next: &mut SolvedNode =
             out.items   ? out.items[0]
@@ -1429,18 +1437,15 @@ fn solve(
         }                                                   //
         //////////////////////////////////////////////////////
 
-        let retIdx = _current_fn.items.len + FN_RET_BACK;
-        let prev   = _current_fn.items[retIdx];
-
-        if (prev.type)
-            isAssignable(prev.type, next.type)
-                || fail("Non-assignable return types: " + serializeType(prev.type) + " <- " + serializeType(next.type));
+        if (prevType)
+            isAssignable(prevType, next.type)
+                || fail("Non-assignable return types: " + serializeType(prevType) + " <- " + serializeType(next.type));
         else
             _current_fn.items[retIdx] = next || fail();
 
         if (out.items)
             maybeCopyOrMove(out.items[0],
-                prev.type || next.type);
+                prevType || next.type);
 
         return out;
     }
