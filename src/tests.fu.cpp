@@ -728,6 +728,8 @@ void runTests()
     ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main() {\n            let hey = [7, -1, +1];\n            return test(hey[1, 3]);\n        }\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [7, -1, +1];\n            return hey[1, 3].test();\n        }\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey.= [2, -3];\n\n        fn main() {\n            mut hey = [1, 0, 0];\n            test(hey[1, 3]);\n            return hey[0] + hey[1] + hey[2];\n        }\n    "_fu);
+    ZERO("\n        struct Hey {\n            i: i32;\n        }\n\n        fn main(a: i32) {\n            let r: Hey = a && [ a ];\n            return r.i;\n        }\n    "_fu);
+    ZERO("\n        struct Hey {\n            i: i32;\n        }\n\n        fn main() {\n            let a: Hey[] = [ [ -1 ], [ +1 ] ];\n            return a[0].i + a[1].i;\n        }\n    "_fu);
 }
 
 #endif

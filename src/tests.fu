@@ -1972,7 +1972,29 @@ fn runTests()
 
 
     // TODO dont-repeat-yourself stuff
-    //
+
+    ZERO(`
+        struct Hey {
+            i: i32;
+        }
+
+        fn main(a: i32) {
+            let r: Hey = a && [ a ];
+            return r.i;
+        }
+    `);
+
+    ZERO(`
+        struct Hey {
+            i: i32;
+        }
+
+        fn main() {
+            let a: Hey[] = [ [ -1 ], [ +1 ] ];
+            return a[0].i + a[1].i;
+        }
+    `);
+
     // ZERO(`
     //     struct ScopeSkip {
     //         min: i32;
