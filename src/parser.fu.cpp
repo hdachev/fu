@@ -728,6 +728,7 @@ struct sf_parse
     };
     s_Node parseFnBodyBranch()
     {
+        tryConsume("op"_fu, "="_fu);
         s_Node body = parseStatement();
         if ((body.kind == "block"_fu))
             return body;

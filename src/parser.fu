@@ -615,10 +615,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseFnBodyOrPattern(
         out_push_body: &mut Node[]): i32
     {
+        //
         mut flags = 0;
         mut body: Node;
-        //
 
+        //
         if (tryConsume("id", "case"))
         {
             mut branches: Node[] = [];
@@ -650,6 +651,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseFnBodyBranch(): Node
     {
+        // Allow a leading `=` before body.
+        //  We'll transition to this thing fulltime
+        //   in the presence of type annots.
+        tryConsume("op", "=");
+
+        //
         let body = parseStatement();
 
         if (body.kind == "block")
