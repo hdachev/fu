@@ -1849,16 +1849,27 @@ fn runTests()
     `);
 
     ZERO(`
-        pub let A_u8:  u8 = 0x0;
-        pub let A_i16: u8 = 0x1;
-        pub let A_u32: u8 = 0x2;
-        pub let A_f32: u8 = 0x3;
+        fn test(a: bool): u8 = a ? 1 : 0;
+
+        fn main() test(false).i32;
+    `);
+
+    ZERO(`
+        fn test(a: bool): u8 = a && 1;
+
+        fn main() test(false).i32;
+    `);
+
+    ZERO(`
+        pub let A_u8: u8 = 0x0;
 
         fn ATTRIB(type: u8, count: i32, srgb = false): u8
-            = type & 0x3
-            | count.u8 << 2
-            | (srgb && 0x80) // only relevant for textures
-            ;
+            = type & 0x3 | count.u8 << 2
+
+            // TODO can't deep-retype the last cast unfortunately:
+            //  we need another hint to drive typing here,
+            //   perhaps monogenous signatures, or else.
+            | (srgb && 0x80.u8);
 
         fn main() ATTRIB(A_u8, 4).i32 - 16;
     `);

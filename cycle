@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ./bin/fu self
 ./bin/fu self
