@@ -429,8 +429,8 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Struct> types;
+    fu_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -511,7 +511,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false

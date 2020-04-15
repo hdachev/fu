@@ -440,8 +440,8 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Struct> types;
+    fu_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -522,7 +522,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -740,9 +740,9 @@ struct sf_cpp_codegen
     const s_Scope& scope;
     const s_Module& module;
     const s_Context& ctx;
-    fu_COW_MAP<fu_STR, fu_STR> _libs {};
-    fu_COW_MAP<fu_STR, fu_STR> _tfwd {};
-    fu_COW_MAP<fu_STR, fu_STR> _ffwd {};
+    fu_MAP<fu_STR, fu_STR> _libs {};
+    fu_MAP<fu_STR, fu_STR> _tfwd {};
+    fu_MAP<fu_STR, fu_STR> _ffwd {};
     fu_STR _tdef {};
     fu_STR _fdef {};
     fu_STR _indent = "\n"_fu;
@@ -875,7 +875,7 @@ struct sf_cpp_codegen
             fu_STR k = typeAnnot(mapPair.key, 0);
             fu_STR v = typeAnnot(mapPair.value, 0);
             include("<fu/map.h>"_fu);
-            return (((("fu_COW_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
+            return (((("fu_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
         };
         const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
         fu_STR id = structId(type);
@@ -939,7 +939,7 @@ struct sf_cpp_codegen
         (def += "\n    }"_fu);
         return (def + "\n};\n                                #endif\n"_fu);
     };
-    fu_STR collectDedupes(const fu_COW_MAP<fu_STR, fu_STR>& dedupes)
+    fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes)
     {
         fu_STR out {};
         fu_VEC<fu_STR> keys { dedupes.m_keys };
@@ -952,7 +952,7 @@ struct sf_cpp_codegen
     void cgSpecs()
     {
         _isModuleSpecs++;
-        const fu_COW_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
+        const fu_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
         const fu_VEC<fu_STR>& keys = specs.m_keys;
         for (int i = 0; (i < keys.size()); i++)
         {

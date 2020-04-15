@@ -23,8 +23,8 @@ fu_STR path_ext(const fu_STR&);
                                 #define DEF_s_BINOP
 struct s_BINOP
 {
-    fu_COW_MAP<fu_STR, int> PRECEDENCE;
-    fu_COW_MAP<int, bool> RIGHT_TO_LEFT;
+    fu_MAP<fu_STR, int> PRECEDENCE;
+    fu_MAP<int, bool> RIGHT_TO_LEFT;
     explicit operator bool() const noexcept
     {
         return false

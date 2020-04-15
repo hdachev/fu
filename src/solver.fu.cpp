@@ -469,8 +469,8 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Struct> types;
+    fu_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -551,7 +551,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -863,7 +863,7 @@ struct sf_solve
     s_TokenIdx _here {};
     int _return_idx {};
     s_SolvedNode _current_fn {};
-    fu_COW_MAP<fu_STR, s_Type> _typeParams {};
+    fu_MAP<fu_STR, s_Type> _typeParams {};
     int _root_scope {};
     s_ScopeSkip _scope_skip {};
     bool TEST_expectImplicits = false;
@@ -1710,7 +1710,7 @@ struct sf_solve
         bool ok = true;
         const fu_VEC<s_Node>& items = node.items;
         const int numArgs = (items.size() + FN_ARGS_BACK);
-        fu_COW_MAP<fu_STR, s_Type> typeParams {};
+        fu_MAP<fu_STR, s_Type> typeParams {};
         fu_VEC<int> retypeIndices {};
         bool remangle = false;
         for (int pass_retype = 0; ((pass_retype == 0) || ((pass_retype == 1) && retypeIndices)); pass_retype++)
@@ -2044,7 +2044,7 @@ struct sf_solve
         };
         fail("TODO"_fu);
     };
-    bool trySolveTypeParams(const s_Node& node, s_Type&& type, fu_COW_MAP<fu_STR, s_Type>& typeParams)
+    bool trySolveTypeParams(const s_Node& node, s_Type&& type, fu_MAP<fu_STR, s_Type>& typeParams)
     {
         if ((node.kind == "call"_fu))
         {
@@ -2100,7 +2100,7 @@ struct sf_solve
         };
         fail("TODO"_fu);
     };
-    bool evalTypePattern(const s_Node& node, const fu_COW_MAP<fu_STR, s_Type>& typeParams)
+    bool evalTypePattern(const s_Node& node, const fu_MAP<fu_STR, s_Type>& typeParams)
     {
         const fu_VEC<s_Node>& items = node.items;
         if ((items.size() == 2))
@@ -2117,7 +2117,7 @@ struct sf_solve
                 }
                 else
                 {
-                    fu_COW_MAP<fu_STR, s_Type> typeParams0 { _typeParams };
+                    fu_MAP<fu_STR, s_Type> typeParams0 { _typeParams };
                     _typeParams = typeParams;
                     s_Type expect = evalTypeAnnot(right).type;
                     s_Type actual = evalTypeAnnot(left).type;

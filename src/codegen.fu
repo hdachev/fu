@@ -166,7 +166,7 @@ pub fn cpp_codegen(
             let v = typeAnnot(mapPair.value);
 
             include("<fu/map.h>");
-            return "fu_COW_MAP<" + k + ", " + v + ">";
+            return "fu_MAP<" + k + ", " + v + ">";
         }
 
         //

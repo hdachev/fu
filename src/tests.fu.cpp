@@ -421,8 +421,8 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_COW_MAP<fu_STR, s_Struct> types;
-    fu_COW_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Struct> types;
+    fu_MAP<fu_STR, s_SolvedNode> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -503,7 +503,7 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_COW_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> files;
     explicit operator bool() const noexcept
     {
         return false
@@ -719,7 +719,7 @@ void runTests()
     ZERO("\n        let QUAD_DATA: f32[] =\n        [\n            -1, -1, 0,      0, 0, 1,    0, 0, 0,\n            +1, +1, 0,      0, 0, 1,    1, 1, 0,\n            -1, +1, 0,      0, 0, 1,    0, 1, 0,\n\n            -1, -1, 0,      0, 0, 1,    0, 0, 0,\n            +1, -1, 0,      0, 0, 1,    1, 0, 0,\n            +1, +1, 0,      0, 0, 1,    1, 1, 0,\n        ];\n\n        fn main() QUAD_DATA.len - 6 * 9;\n    "_fu);
     ZERO("\n        fn test(a: bool): u8 = a ? 1 : 0;\n\n        fn main() test(false).i32;\n    "_fu);
     ZERO("\n        fn test(a: bool): u8 = a && 1;\n\n        fn main() test(false).i32;\n    "_fu);
-    ZERO("\n        pub let A_u8: u8 = 0x0;\n\n        fn ATTRIB(type: u8, count: i32, srgb = false): u8\n            = type & 0x3 | count.u8 << 2\n\n            // TODO can't deep-retype the last cast unfortunately:\n            //  we need another hint to propagate retype attempt\n            //   perhaps monogenous signatures, or else.\n            | (srgb && 0x80.u8);\n\n        fn main() ATTRIB(A_u8, 4).i32 - 16;\n    "_fu);
+    ZERO("\n        pub let A_u8: u8 = 0x0;\n\n        fn ATTRIB(type: u8, count: i32, srgb = false): u8\n            = type & 0x3 | count.u8 << 2\n\n            // TODO can't deep-retype the last cast unfortunately:\n            //  we need another hint to drive typing here,\n            //   perhaps monogenous signatures, or else.\n            | (srgb && 0x80.u8);\n\n        fn main() ATTRIB(A_u8, 4).i32 - 16;\n    "_fu);
     ZERO("\n        typedef Test = i32[];\n        fn yo(t: Test) t[0] + t[1];\n        fn main() yo([-1, +1]);\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        fn hello(a: i32[]) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        typedef X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);

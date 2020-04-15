@@ -9,7 +9,7 @@
 //
 
 template <typename K, typename V>
-struct fu_COW_MAP
+struct fu_MAP
 {
     fu_VEC<K> m_keys;
     fu_VEC<V> m_values;

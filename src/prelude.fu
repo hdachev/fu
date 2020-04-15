@@ -283,6 +283,10 @@ fn f32_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [f32] __native("<fu/view.h>", "fu::into_view_mut<f32>");
     case ($a ->      [$T] && $T -> @trivial):      [f32] __native("<fu/view.h>", "fu::into_view<f32>");
 
+fn i32_view(a: [$T])
+    case ($a -> &mut [$T] && $T -> @trivial): &mut [i32] __native("<fu/view.h>", "fu::into_view_mut<i32>");
+    case ($a ->      [$T] && $T -> @trivial):      [i32] __native("<fu/view.h>", "fu::into_view<i32>");
+
 fn u32_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [u32] __native("<fu/view.h>", "fu::into_view_mut<u32>");
     case ($a ->      [$T] && $T -> @trivial):      [u32] __native("<fu/view.h>", "fu::into_view<u32>");
