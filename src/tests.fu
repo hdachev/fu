@@ -1587,6 +1587,39 @@ fn runTests()
             mat34_identity.inverse.determinant - 1;
     `);
 
+    ZERO(`
+        struct TEA
+        {
+            v0: u32;
+            v1: u32;
+        }
+
+        inline fn r4(using _: &mut TEA, sum: &mut u32)
+        {
+            mut delta: u32 = 0x9e3779b9;
+
+            for (mut i = 0; i < 4; i++) {
+                sum += delta;
+
+                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
+                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
+            }
+        }
+
+        // Stack overflow solving this,
+        //  argmax is +inf, and it just
+        //   re-enters and re-enters.
+        inline fn r4(tea: &mut TEA) {
+            mut sum: u32; tea.r4(sum);
+        }
+
+        fn main() {
+            mut tea: TEA;
+            tea.r4();
+            return tea.v0 ^ tea.v0;
+        }
+    `);
+
 
     // Let's try something new.
 
