@@ -63,6 +63,8 @@ fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;
 fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
 fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
+fn <<=(a: &mut $T, b: $T)   case ($T -> @integral):     &mut $T __native;
+fn >>=(a: &mut $T, b: $T)   case ($T -> @integral):     &mut $T __native;
 
 
 // Numeric conversions.
