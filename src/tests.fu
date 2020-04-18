@@ -1996,6 +1996,22 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Hey {
+            i: i32;
+        };
+
+        fn test(out: &mut [Hey]) {
+            out.u8_view .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];
+        }
+
+        fn main() {
+            mut a = [ Hey ];
+            a.test();
+            return a[0].i - 16843009;
+        }
+    `);
+
 
     // Don't repeat yourself ctors.
 
