@@ -2045,6 +2045,33 @@ fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Hey {
+            i: i32;
+        };
+
+        fn test(x: &mut [i32], y: [ Hey ])
+            x .= y.i32_view;
+
+        fn main() {
+            mut a = [ 0 ];
+            test(a, [ Hey(13) ]);
+            return a[0] - 13;
+        }
+    `);
+
+    // ZERO(`
+    //     struct Hey {
+    //         i: i32;
+    //     };
+
+    //     fn main() {
+    //         mut a = [ 0 ];
+    //         a .= [ Hey(13) ].i32_view;
+    //         return a[0] - 13;
+    //     }
+    // `);
+
 
     // Don't repeat yourself ctors.
 
