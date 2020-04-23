@@ -78,10 +78,10 @@ s_Type add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
-s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromScopeIdx(int);
 bool killedBy(const s_Lifetime&, int);
 s_Lifetime Lifetime_static();
+s_Lifetime Lifetime_fromArgIndex(int);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -921,7 +921,7 @@ struct sf_solve
         const fu_STR& id = node.value;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
-        const int max = ((node.kind == "fn"_fu) ? int(0xffffffu) : int(min));
+        const int max = min;
         s_Template tEmplate = s_Template { s_Node(node) };
         fu_VEC<fu_STR> arg_n {};
         if ((node.kind == "fn"_fu))

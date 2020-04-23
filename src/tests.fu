@@ -1616,7 +1616,7 @@ fn runTests()
         fn main() {
             mut tea: TEA;
             tea.r4();
-            return tea.v0 ^ tea.v0;
+            return (tea.v0 ^ tea.v0).i32;
         }
     `);
 

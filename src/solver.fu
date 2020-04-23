@@ -121,12 +121,13 @@ fn solve(
         let id = node.value;
 
         node.kind == "fn" || fail("TODO");
+
+        // TODO FIX What is this nonsense.
+        //  This is wrong on so many levels.
         let min = node.items.len + FN_ARGS_BACK;
+        let max = min;
 
-        let max = node.kind == "fn"
-            ? 0xffffff.i32 // implicit args etc, dunno whats happening, allow it all
-            : min;
-
+        //
         let template = Template(node);
 
         mut arg_n: string[];
