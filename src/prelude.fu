@@ -283,25 +283,25 @@ fn shell_exec(mut cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>"
 
 fn f32_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [f32] __native("<fu/view.h>", "fu::into_view_mut<f32>");
-    case ($a ->      [$T] && $T -> @trivial):      [f32] __native("<fu/view.h>", "fu::into_view<f32>");
+    case (                   $T -> @trivial):      [f32] __native("<fu/view.h>", "fu::into_view<f32>");
 
 fn i32_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [i32] __native("<fu/view.h>", "fu::into_view_mut<i32>");
-    case ($a ->      [$T] && $T -> @trivial):      [i32] __native("<fu/view.h>", "fu::into_view<i32>");
+    case (                   $T -> @trivial):      [i32] __native("<fu/view.h>", "fu::into_view<i32>");
 
 fn u32_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [u32] __native("<fu/view.h>", "fu::into_view_mut<u32>");
-    case ($a ->      [$T] && $T -> @trivial):      [u32] __native("<fu/view.h>", "fu::into_view<u32>");
+    case (                   $T -> @trivial):      [u32] __native("<fu/view.h>", "fu::into_view<u32>");
 
 fn i16_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [i16] __native("<fu/view.h>", "fu::into_view_mut<i16>");
-    case ($a ->      [$T] && $T -> @trivial):      [i16] __native("<fu/view.h>", "fu::into_view<i16>");
+    case (                   $T -> @trivial):      [i16] __native("<fu/view.h>", "fu::into_view<i16>");
 
 fn u8_view(a: [$T])
     case ($a -> &mut [$T] && $T -> @trivial): &mut [u8] __native("<fu/view.h>", "fu::into_view_mut<u8>");
-    case ($a ->      [$T] && $T -> @trivial):      [u8] __native("<fu/view.h>", "fu::into_view<u8>");
+    case (                   $T -> @trivial):      [u8] __native("<fu/view.h>", "fu::into_view<u8>");
 
-fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native(".set");
+fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "fu::view_assign");
 
 `;
 

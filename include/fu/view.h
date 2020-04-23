@@ -113,23 +113,6 @@ struct view_mut
 
         #endif
     }
-
-
-    //
-
-    template <typename V>
-    fu_INL void set(V&& v) noexcept
-    {
-        static_assert(
-            std::is_trivially_destructible<T>::value,
-                "TODO non-trivial view-set");
-
-        int32_t s = v.size();
-        assert(s == m_size);
-
-        s = m_size > s ? s : m_size;
-        std::memcpy(m_data, v.data(), size_t(s) * sizeof(T));
-    }
 };
 
 
@@ -217,6 +200,33 @@ template <typename Dest, typename T>
 fu_INL view_mut<Dest> into_view_mut(view_mut<T>&& src) noexcept
 {
     return into_view_mut<Dest>(src);
+}
+
+
+//
+
+template <typename V0, typename V1,
+    typename T0 = typename V0::value_type,
+    typename T1 = typename V1::value_type>
+fu_INL void view_assign(V0& a, const V1& b) noexcept
+{
+    static_assert(
+        std::is_trivially_destructible<T0>::value &&
+        std::is_trivially_destructible<T1>::value,
+            "TODO non-trivial view-set");
+
+    auto s0 = a.size() * sizeof(T0);
+    auto s1 = b.size() * sizeof(T1);
+    assert(s0 == s1);
+
+    auto s = s0 < s1 ? s0 : s1;
+    std::memmove(a.data_mut(), b.data(), s);
+}
+
+template <typename V0, typename V1>
+fu_INL void view_assign(V0&& a, const V1& b) noexcept
+{
+    return view_assign(a, b);
 }
 
 } // namespace
