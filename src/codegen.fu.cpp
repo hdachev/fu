@@ -1229,7 +1229,10 @@ struct sf_cpp_codegen
             _clsrN++;
 
         const fu_VEC<s_SolvedNode>& items = fn.items;
-        const s_SolvedNode& body = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
+        const s_SolvedNode& body = items[(items.size() + FN_BODY_BACK)];
+        if (!body)
+            return (("\n// fn "_fu + fn.value) + " has no body.\n"_fu);
+
         if (!(fn.flags & F_CLOSURE))
             _indent = "\n"_fu;
 

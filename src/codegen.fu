@@ -663,7 +663,11 @@ pub fn cpp_codegen(
 
         //
         let items = fn.items;
-        let body  = items[items.len + FN_BODY_BACK] || fail();
+        let body  = items[items.len + FN_BODY_BACK];
+
+        // Custom __natives.
+        if (!body)
+            return "\n// fn " + fn.value + " has no body.\n";
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
