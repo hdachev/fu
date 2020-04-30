@@ -843,6 +843,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 fu_VEC<fu_STR> outputs {};
                 ((link_order.size() == cpp_files.size()) || fu::fail());
                 fu_STR main {};
+                fu_STR includes {};
                 for (int i = 0; (i < link_order.size()); i++)
                 {
                     const int moduleIdx = (link_order[i] + 1);
@@ -851,15 +852,23 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                     if ((moduleIdx == 1))
                         main = input;
 
+                    fu_STR custom = (module.fname + ".cmake"_fu);
+                    if ((fu::file_size(fu_STR(custom)) > 0))
+                        (includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu));
+
                     inputs.push(input);
                     outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_files[link_order[i]])));
                 };
+                fu_STR libname = path_noext(path_filename(main));
+                (data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu));
                 (data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu));
                 (data += (("set(FU_INPUTS\n    "_fu + fu::join(inputs, "\n    "_fu)) + ")\n\n"_fu));
                 (data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu));
                 (data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu));
-                fu_STR libname = path_noext(path_filename(main));
-                (data += ((((("add_library("_fu + libname) + " ${FU_OUTPUTS})\n\n"_fu) + "target_include_directories("_fu) + libname) + " PUBLIC ~/fu/include/)\n"_fu));
+                (data += ("add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"_fu + "target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)\n\n"_fu));
+                if (includes)
+                    (data += (includes + "\n"_fu));
+
                 update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
             };
         };

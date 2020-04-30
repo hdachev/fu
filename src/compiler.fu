@@ -399,6 +399,7 @@ pub fn build(
                 link_order.len == cpp_files.len || assert();
 
                 mut main: string;
+                mut includes: string;
 
                 for (mut i = 0; i < link_order.len; i++)
                 {
@@ -409,9 +410,18 @@ pub fn build(
                     if (moduleIdx == 1)
                         main = input;
 
+                    // Check for custom cmake files.
+                    let custom = module.fname + ".cmake";
+                    if (file_size(custom) > 0)
+                        includes += "include(" + path_relative(CMakeLists, custom) + ")\n";
+
                     inputs.push(input);
                     outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, cpp_files[link_order[i]]));
                 }
+
+                let libname = path_noext(path_filename(main));
+
+                data += "set(FU_TARGET " + libname + ")\n\n";
 
                 data += "set(FU_MAIN "         + main                   + ")\n\n";
                 data += "set(FU_INPUTS\n    "  + inputs .join("\n    ") + ")\n\n";
@@ -425,10 +435,11 @@ pub fn build(
                       + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
                       + "    VERBATIM)\n\n";
 
-                let libname = path_noext(path_filename(main));
+                data += "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"
+                      + "target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)\n\n";
 
-                data += "add_library(" + libname + " ${FU_OUTPUTS})\n\n"
-                      + "target_include_directories(" + libname + " PUBLIC ~/fu/include/)\n";
+                if (includes)
+                    data += includes + "\n";
 
                 update_file(
                     fname: CMakeLists, :data,

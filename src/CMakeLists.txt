@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
+set(FU_TARGET cli)
+
 set(FU_MAIN cli.fu)
 
 set(FU_INPUTS
@@ -42,6 +44,7 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     VERBATIM)
 
-add_library(cli ${FU_OUTPUTS})
+add_library(${FU_TARGET} ${FU_OUTPUTS})
 
-target_include_directories(cli PUBLIC ~/fu/include/)
+target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)
+
