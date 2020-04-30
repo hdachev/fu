@@ -1444,7 +1444,7 @@ struct sf_cpp_codegen
         if (((target.kind == "__native"_fu) && target.tEmplate.node.items))
         {
             fu_STR id { target.tEmplate.node.items[0].value };
-            if ((id.mutref(0) == std::byte('<')))
+            if ((target.tEmplate.node.items.size() > 1))
             {
                 include(id);
                 id = target.tEmplate.node.items[1].value;

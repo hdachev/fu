@@ -936,7 +936,7 @@ pub fn cpp_codegen(
         if (target.kind == "__native" && target.template.node.items)
         {
             mut id = target.template.node.items[0].value;
-            if (id[0] == '<')
+            if (target.template.node.items.len > 1)
             {
                 include(id);
                 id = target.template.node.items[1].value;
