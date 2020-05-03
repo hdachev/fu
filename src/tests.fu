@@ -1334,6 +1334,11 @@ fn runTests()
     `);
 
     ZERO(`
+        fn test(id: i32) id;
+        return test(/*id*/0); // <- bad parse
+    `);
+
+    ZERO(`
         return 0b101.i32 - 5;
     `);
 
