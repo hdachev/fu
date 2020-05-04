@@ -59,9 +59,9 @@ struct s_LexerOutput
 inline const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
                                 #endif
 
-                                #ifndef DEF_OPERATORS
-                                #define DEF_OPERATORS
-inline const fu_VEC<fu_STR> OPERATORS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<66> { "+"_fu, "++"_fu, "-"_fu, "--"_fu, "*"_fu, "**"_fu, "/"_fu, "%"_fu, "<"_fu, "<<"_fu, "<<<"_fu, ">"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "!"_fu, "?"_fu, "??"_fu, "."_fu, ".."_fu, "..."_fu, ":"_fu, "::"_fu, ","_fu, ";"_fu, "&"_fu, "&&"_fu, "|"_fu, "||"_fu, "^"_fu, "~"_fu, "{"_fu, "}"_fu, "["_fu, "]"_fu, "("_fu, ")"_fu, "[]"_fu, "="_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "&&="_fu, "||="_fu, "@"_fu, "#"_fu, "$"_fu, ".="_fu } };
+                                #ifndef DEF_MBOPS
+                                #define DEF_MBOPS
+inline const fu_VEC<fu_STR> MBOPS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<39> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "&&="_fu, "||="_fu, ".="_fu } };
                                 #endif
 
 namespace {
@@ -313,37 +313,23 @@ struct sf_lex
             }
             else if (fu::has(OPTOKENS, c))
             {
+                fu_STR candidate = fu_STR { fu_STR::INIT<1> { c } };
                 while ((idx < end))
                 {
                     const std::byte c = src[idx++];
-                    if (!fu::has(OPTOKENS, c))
+                    if (fu::has(OPTOKENS, c))
                     {
-                        idx--;
-                        break;
-                    };
-                };
-                
-                {
-                    int begin = idx0;
-                    int end = idx;
-                    while ((begin < end))
-                    {
-                        fu_STR candidate = fu::slice(src, begin, end);
-                        const bool ok = fu::has(OPERATORS, candidate);
-                        if (((end > (begin + 1)) && !ok))
+                        fu_STR c1 = (candidate + c);
+                        if (fu::has(MBOPS, c1))
                         {
-                            end--;
+                            candidate = c1;
                             continue;
                         };
-                        if (!ok)
-                            err("op"_fu, begin, end);
-                        else
-                            token("op"_fu, candidate, begin, end);
-
-                        begin = end;
-                        end = idx;
                     };
+                    idx--;
+                    break;
                 };
+                token("op"_fu, candidate, idx0, idx);
             }
             else
                 err("?"_fu, idx0, idx0);

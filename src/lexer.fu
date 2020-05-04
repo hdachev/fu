@@ -1,22 +1,19 @@
 
 let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
 
-let OPERATORS =
+let MBOPS =
 [
-    "+", "++", "-", "--",
-    "*", "**", "/", "%",
-    "<", "<<", "<<<", ">", ">>", ">>>",
+    "++", "--",
+    "**",
+    "<<", "<<<", ">>", ">>>",
     "===", "==", "!=", "!==", "<=", ">=",
     "=>", "->", "<=>", "|>", "<|",
-    "!", "?", "??",
-    ".", "..", "...", ":", "::", ",", ";",
-    "&", "&&", "|", "||", "^", "~",
-    "{", "}", "[", "]", "(", ")", "[]",
-    "=",
+    "??",
+    "..", "...", "::",
+    "&&", "||", "[]",
     "+=", "-=", "*=", "**=", "/=", "%=",
     "&=", "|=", "^=", "<<=", ">>=",
     "&&=", "||=",
-    "@", "#", "$",
     ".=",
 ];
 
@@ -355,41 +352,28 @@ pub fn lex(src: string, fname: string): LexerOutput
         // operators
         else if (OPTOKENS.has(c))
         {
+            mut candidate: string = [ c ];
+
             while (idx < end)
             {
                 let c = src[idx++];
-                if (!OPTOKENS.has(c))
+                if (OPTOKENS.has(c))
                 {
-                    idx--;
-                    break;
-                }
-            }
-
-            // split off adjacent operators
-            {
-                mut begin   = idx0;
-                mut end     = idx;
-                while (begin < end)
-                {
-                    let candidate = src.slice(begin, end);
-                    let ok = OPERATORS.has(candidate);
-                    if (end > begin + 1 && !ok)
+                    let c1 = candidate + c;
+                    if (MBOPS.has(c1))
                     {
-                        end--;
+                        candidate = c1;
                         continue;
                     }
-
-                    if (!ok)
-                        err("op", begin, end);
-                    else
-                        token(
-                            "op", candidate,
-                            begin, end);
-
-                    begin = end;
-                    end = idx;
                 }
+
+                idx--;
+                break;
             }
+
+            token(
+                "op", candidate,
+                idx0, idx);
         }
 
         // dunno
