@@ -6,7 +6,7 @@
 
 namespace fu {
 
-fu_STRLIT env_get(fu_STR name)
+inline fu_STRLIT env_get(fu_STR name)
 {
     name.push(std::byte('\0'));
     auto cname = (const char*)name.data();
