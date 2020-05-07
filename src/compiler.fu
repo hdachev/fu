@@ -423,9 +423,13 @@ pub fn build(
 
                 data += "set(FU_TARGET " + libname + ")\n\n";
 
-                data += "set(FU_MAIN "         + main                   + ")\n\n";
-                data += "set(FU_INPUTS\n    "  + inputs .join("\n    ") + ")\n\n";
-                data += "set(FU_OUTPUTS\n    " + outputs.join("\n    ") + ")\n\n";
+                data += "set(FU_MAIN " + main + ")\n\n";
+                data += "set(FU_INPUTS\n    " + inputs .join("\n    ") + ")\n\n";
+
+                if (unity)
+                    data += "set(FU_OUTPUTS\n    " + "${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, unity) + ".unity.cpp)\n\n";
+                else
+                    data += "set(FU_OUTPUTS\n    " + outputs.join("\n    ") + ")\n\n";
 
                 data += "add_custom_command(\n"
                       + "    OUTPUT ${FU_OUTPUTS}\n"

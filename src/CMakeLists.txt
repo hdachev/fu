@@ -21,20 +21,7 @@ set(FU_INPUTS
     cli.fu)
 
 set(FU_OUTPUTS
-    ${CMAKE_CURRENT_SOURCE_DIR}/helpers.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lexer.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/parser.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lifetimes.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/types.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/stat.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scope.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/solver.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/prelude.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/compiler.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hello.fu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cli.fu.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli.fu.unity.cpp)
 
 add_custom_command(
     OUTPUT ${FU_OUTPUTS}
