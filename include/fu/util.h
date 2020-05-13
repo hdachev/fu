@@ -45,6 +45,16 @@ const int     fu_ERR_FS_BadPath     = -102;
 
 /////////////////////////////////////////////
 
+#ifdef _MSC_VER
+    #define fu_EXPORT __declspec(dllexport)
+    #define fu_IMPORT __declspec(dllimport)
+#else
+    #define fu_EXPORT __attribute__((__visibility__("default")))
+    #define fu_IMPORT
+#endif
+
+/////////////////////////////////////////////
+
 struct fu_ZERO
 {
     fu_INL constexpr operator int() const noexcept {
