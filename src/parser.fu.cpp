@@ -193,6 +193,11 @@ inline const int F_IMPLICIT = (1 << 17);
 inline const int F_USING = (1 << 18);
                                 #endif
 
+                                #ifndef DEF_F_MUSTNAME
+                                #define DEF_F_MUSTNAME
+inline const int F_MUSTNAME = (1 << 19);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -805,7 +810,7 @@ struct sf_parse
         consume("op"_fu, ";"_fu);
         return ret;
     };
-    s_Node parseLet(const bool allow_optional)
+    s_Node parseLet(const bool argdecl)
     {
         int flags = F_LOCAL;
         const int numDollars0 = _dollars.size();
@@ -820,13 +825,17 @@ struct sf_parse
 
         fu_STR id = consume("id"_fu, fu_STR{}).value;
         bool optional = false;
-        s_Node type = ([&]() -> s_Node { if ((tryConsume("op"_fu, ":"_fu) || ([&]() -> bool { if (allow_optional && tryConsume("op"_fu, "?:"_fu)) return (optional = true); else return fu::Default<bool>::value; }()))) return parseTypeAnnot(); else return s_Node{}; }());
+        bool mustname = false;
+        s_Node type = ([&]() -> s_Node { if ((tryConsume("op"_fu, ":"_fu) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "?:"_fu)) return (optional = true); else return fu::Default<bool>::value; }()) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "!:"_fu)) return (mustname = true); else return fu::Default<bool>::value; }()))) return parseTypeAnnot(); else return s_Node{}; }());
         s_Node init = ([&]() -> s_Node { if (optional) { s_Node _ = createDefinit(); if (_) return _; } return ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA)); else return s_Node{}; }()); }());
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
         if ((flags & F_IMPLICIT))
             _implicits++;
+
+        if (mustname)
+            flags |= F_MUSTNAME;
 
         return createLet(id, flags, type, init);
     };
