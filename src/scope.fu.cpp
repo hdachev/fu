@@ -14,6 +14,7 @@ struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
+struct s_Argument;
 struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
@@ -328,6 +329,26 @@ struct s_ScopeItem
 };
                                 #endif
 
+                                #ifndef DEF_s_Argument
+                                #define DEF_s_Argument
+struct s_Argument
+{
+    fu_STR name;
+    s_Type type;
+    s_SolvedNode dEfault;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || name
+            || type
+            || dEfault
+            || flags
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Partial
                                 #define DEF_s_Partial
 struct s_Partial
@@ -367,9 +388,7 @@ struct s_Overload
     s_Type type;
     int min;
     int max;
-    fu_VEC<s_Type> args;
-    fu_VEC<fu_STR> names;
-    fu_VEC<s_SolvedNode> defaults;
+    fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode constant;
@@ -382,8 +401,6 @@ struct s_Overload
             || min
             || max
             || args
-            || names
-            || defaults
             || partial
             || tEmplate
             || constant
@@ -721,11 +738,11 @@ void Scope_pop(s_Scope& scope, const int memo)
     scope.items.shrink(memo);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Type>(arg_t), fu_VEC<fu_STR>(arg_n), fu_VEC<s_SolvedNode>(arg_d), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;
@@ -733,7 +750,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
 
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, 0, 0, fu_VEC<fu_STR>{}, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+    return Scope_add(scope, "type"_fu, id, type, int{}, int{}, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
 }
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)

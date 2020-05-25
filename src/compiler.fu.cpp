@@ -26,6 +26,7 @@ struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
+struct s_Argument;
 struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
@@ -353,6 +354,26 @@ struct s_ScopeItem
 };
                                 #endif
 
+                                #ifndef DEF_s_Argument
+                                #define DEF_s_Argument
+struct s_Argument
+{
+    fu_STR name;
+    s_Type type;
+    s_SolvedNode dEfault;
+    int flags;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || name
+            || type
+            || dEfault
+            || flags
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Partial
                                 #define DEF_s_Partial
 struct s_Partial
@@ -392,9 +413,7 @@ struct s_Overload
     s_Type type;
     int min;
     int max;
-    fu_VEC<s_Type> args;
-    fu_VEC<fu_STR> names;
-    fu_VEC<s_SolvedNode> defaults;
+    fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode constant;
@@ -407,8 +426,6 @@ struct s_Overload
             || min
             || max
             || args
-            || names
-            || defaults
             || partial
             || tEmplate
             || constant
