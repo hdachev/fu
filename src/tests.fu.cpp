@@ -760,6 +760,10 @@ void runTests()
     FAIL("\n        struct Test {\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n\n            b: i32;\n        };\n\n        return Test(b: 1).a;\n    "_fu);
     FAIL("\n        struct Test {\n            b: i32;\n\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n        };\n\n        return Test(1).a;\n    "_fu);
     ZERO("\n        struct Test {\n            a = 1;\n            b = 2;\n        };\n\n        fn test(t: Test)\n            t.a * 2 - t.b;\n\n        return Test.test;\n    "_fu);
+    ZERO("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        return test(-1);\n    "_fu);
+    FAIL("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        //*F\n        return test(-2, +2);\n        /*/\n        return test(-2, b: +2);\n        //*/\n    "_fu);
+    ZERO("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        return Test(-1).test;\n    "_fu);
+    FAIL("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        //*F\n        return Test(-2, +2).test;\n        /*/\n        return Test(-2, b: +2).test;\n        //*/\n    "_fu);
 }
 
 #endif

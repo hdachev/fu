@@ -684,6 +684,11 @@ inline const int F_IMPLICIT = (1 << 17);
 inline const int LET_INIT = 1;
                                 #endif
 
+                                #ifndef DEF_F_MUSTNAME
+                                #define DEF_F_MUSTNAME
+inline const int F_MUSTNAME = (1 << 19);
+                                #endif
+
                                 #ifndef DEF_q_mutref
                                 #define DEF_q_mutref
 inline const int q_mutref = (1 << 0);
@@ -969,7 +974,7 @@ struct sf_solve
             const s_SolvedNode& node = argNodes[i];
             ((node.kind == "let"_fu) || fail(fu_STR{}));
             const bool isImplicit = !!(node.flags & F_IMPLICIT);
-            s_Argument arg = s_Argument { fu_STR((node.value ? node.value : fail(fu_STR{}))), s_Type((node.type ? node.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(([&]() -> int { if (isImplicit) return F_IMPLICIT; else return fu::Default<int>::value; }())) };
+            s_Argument arg = s_Argument { fu_STR((node.value ? node.value : fail(fu_STR{}))), s_Type((node.type ? node.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(node.flags) };
             if ((!arg.dEfault && !isImplicit))
                 min++;
 
@@ -988,7 +993,7 @@ struct sf_solve
         for (int i = 0; (i < members.size()); i++)
         {
             const s_SolvedNode& member = members[i];
-            s_Argument arg = s_Argument { fu_STR((member.value ? member.value : fail(fu_STR{}))), s_Type((member.type ? member.type : fail(fu_STR{}))), s_SolvedNode(member.items[LET_INIT]), int{} };
+            s_Argument arg = s_Argument { fu_STR((member.value ? member.value : fail(fu_STR{}))), s_Type((member.type ? member.type : fail(fu_STR{}))), s_SolvedNode(member.items[LET_INIT]), (member.flags & F_MUSTNAME) };
             if (!arg.dEfault)
                 min++;
 
@@ -1207,6 +1212,13 @@ struct sf_solve
                                 goto L_NEXT_c;
                             };
                             continue;
+                        }
+                        else if ((host_arg.flags & F_MUSTNAME))
+                        {
+                            if (((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex)))
+                            {
+                                goto L_NEXT_c;
+                            };
                         };
                         const s_Type& expect = host_arg.type;
                         s_Type actual { args.mutref(callsiteIndex).type };
