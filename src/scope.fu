@@ -213,36 +213,40 @@ pub struct SolvedNode
 
 pub struct Template
 {
-    node: Node;
+    node:       Node;
 };
 
 pub struct Partial
 {
-    via:    Target;
-    target: Target;
+    via:        Target;
+    target:     Target;
+};
+
+pub struct Argument
+{
+    name:       string;
+    type:       Type;
+    default:    SolvedNode;
+    flags:      i32;
 };
 
 pub struct Overload
 {
-    kind: string;
-    name: string;
-    type: Type;
+    kind:       string;
+    name:       string;
+    type:       Type;
 
     // Arity.
-    min: i32;
-    max: i32;
-
-    // TODO pack in single array.
-    args: Type[];
-    names: string[];
-    defaults: SolvedNode[];
+    min:        i32;
+    max:        i32;
+    args:       Argument[];
 
     // TODO move exotic bloat over to module,
     //  all trailers can fit in the same
     //   [ modid / thing ] slot here.
-    partial: Partial;
-    template: Template;
-    constant: SolvedNode;
+    partial:    Partial;
+    template:   Template;
+    constant:   SolvedNode;
 };
 
 pub fn isTemplate(o: Overload)
