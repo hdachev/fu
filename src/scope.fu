@@ -224,10 +224,10 @@ pub struct Partial
 
 pub struct Argument
 {
-    name:       string;
-    type:       Type;
-    default:    SolvedNode;
-    flags:      i32;
+    name?:      string;
+    type?:      Type;
+    default?:   SolvedNode;
+    flags?:     i32;
 };
 
 pub struct Overload
@@ -345,14 +345,12 @@ pub fn Scope_add(
     scope: &mut Scope,
     kind: string, id: string, type: Type,
 
-    min: i32                = 0,
-    max: i32                = 0,
-    arg_n: string[]         = [],
-    arg_t: Type[]           = [],
-    arg_d: SolvedNode[]     = [],
-    template: Template      = [],
-    partial: Partial        = [],
-    constant: SolvedNode    = []): Target
+    min?:           i32,
+    max?:           i32,
+    args?:          Argument[],
+    template?:      Template,
+    partial?:       Partial,
+    constant?:      SolvedNode): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -361,8 +359,7 @@ pub fn Scope_add(
     let item = Overload(
         :kind,
         name: id, :type,
-        :min, :max, args: arg_t,
-        names: arg_n, defaults: arg_d,
+        :min, :max, :args,
         :partial, :template, :constant);
 
     scope.items.push(

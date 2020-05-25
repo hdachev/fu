@@ -113,7 +113,7 @@ fn solve(
         return Scope_add(
             _scope, "field",
             :id || fail(), fieldType || fail(),
-            1, 1, [ "this" ], [ structType || fail() ]);
+            1, 1, [ Argument(name: "this", type: structType) ]);
     }
 
     fn TemplateDecl(node: Node)
@@ -130,7 +130,7 @@ fn solve(
         //
         let template = Template(node);
 
-        mut arg_n: string[];
+        mut args: Argument[];
         if (node.kind == "fn")
         {
             let items = node.items;
@@ -140,14 +140,14 @@ fn solve(
                 let arg = items[i] || fail();
                 arg.kind == "let" || fail();
                 let name = arg.value || fail();
-                arg_n.push(name);
+                args.push(Argument(:name));
             }
         }
 
         return Scope_add(
             _scope,
             "template", :id, Type,
-            :min, :max, arg_n, :template);
+            :min, :max, :args, :template);
     }
 
     fn FnDecl(kind: string, id: string, node: &mut SolvedNode, native: Node): Target
@@ -156,34 +156,26 @@ fn solve(
         let rnode = items[items.len + FN_RET_BACK];
         let ret   = rnode && rnode.type || fail();
 
-        let max   = items.len + FN_RET_BACK;
-        let args  = items.slice(0, max);
+        mut min         = 0;
+        let max         = items.len + FN_RET_BACK;
+        let argNodes    = items.slice(0, max);
 
-        mut arg_t: Type[]       = [];
-        mut arg_n: string[]     = [];
-        mut arg_d: SolvedNode[] = [];
-
-        mut min = 0;
+        mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
-            let arg = args[i]    || fail();
-            arg.kind == "let"    || fail();
-            arg_t.push(arg.type  || fail());
-            arg_n.push(arg.value || fail());
+            let node = argNodes[i];
+            node.kind == "let" || fail();
 
-            //
-            let isImplicit = !!(arg.flags & F_IMPLICIT);
+            let isImplicit = !!(node.flags & F_IMPLICIT);
+            let arg = Argument(
+                type: node.type  || fail(),
+                name: node.value || fail(),
+                default: !isImplicit && node.items[LET_INIT]);
 
-            // Non-implicit, non-defaulted argument?
-            if (!isImplicit)
-            {
-                arg_d.len >= i || fail();
+            if (!arg.default && !isImplicit)
+                min++;
 
-                let def = arg.items[LET_INIT];
-                arg_d.push(def);
-                if (!def)
-                    min++;
-            }
+            args.push(arg);
         }
 
         let template = Template(node: native);
@@ -191,7 +183,7 @@ fn solve(
         let overload = Scope_add(
             _scope,
             :kind, :id, ret,
-            :min, :max, arg_n, arg_t, arg_d,
+            :min, :max, :args,
             :template);
 
         node.target = overload;
@@ -201,40 +193,29 @@ fn solve(
 
     fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
     {
-        mut arg_t:   Type[] = [];
-        mut arg_n: string[] = [];
+        let max = members.len;
+        mut min = 0;
+        mut args: Argument[];
 
         for (mut i = 0; i < members.len; i++)
         {
             let member = members[i];
 
-            arg_t.push(member.type  || fail());
-            arg_n.push(member.value || fail());
-        }
+            let arg = Argument(
+                name: member.value || fail(),
+                type: member.type  || fail(),
+                default: member.items[LET_INIT]);
 
-        //
-        let max   = members.len;
-        mut min   = 0;
-        mut arg_d: SolvedNode[];
-
-        for (mut i = 0; i < members.len; i++)
-        {
-            let member = members[i];
-            let init = member.items[LET_INIT];
-            if (!init)
+            if (!arg.default)
                 min++;
 
-            arg_d.push(init);
+            args.push(arg);
         }
 
-        if (min == max)
-            arg_d.clear();
-
-        //
         return Scope_add(
             _scope,
             "defctor", :id, :type,
-            :min, :max, arg_n, arg_t, arg_d);
+            :min, :max, :args);
     }
 
     fn tryDefaultInit(type: Type): SolvedNode
@@ -277,9 +258,7 @@ fn solve(
         mut max = overload.max - 1;
         min >= 0 && max >= min || fail();
 
-        mut arg_t = overload.args     ? overload.args    .slice(1) : overload.args;
-        mut arg_n = overload.names    ? overload.names   .slice(1) : overload.names;
-        mut arg_d = overload.defaults ? overload.defaults.slice(1) : overload.defaults;
+        mut args = overload.args.slice(1);
 
         // Everything that's not a local/namespace/static/constant
         //  needs a value through which to activate.
@@ -292,20 +271,17 @@ fn solve(
             min++;
             max++;
 
-            let via_t = via.args && via.args[0] || fail();
+            mut arg = Argument(
+                type: via.args[0].type,
+                name: "using");
 
-            //
-            arg_t.unshift(via_t);
-            if (arg_n)
-                arg_n.unshift("using");
-            if (arg_d)
-                arg_d.unshift(SolvedNode());
+            args.unshift(arg);
         }
 
         return Scope_add(
             _scope,
             :kind, :id, :overload.type,
-            :min, :max, arg_n, arg_t, arg_d,
+            :min, :max, :args,
             partial: Partial(viaIdx, overloadIdx));
     }
 
@@ -338,7 +314,7 @@ fn solve(
 
             // See if we fit.
             let expect = overload.args[0] || fail();
-            if (!isAssignableAsArgument(expect, actual))
+            if (!isAssignableAsArgument(expect.type, actual))
                 continue;
 
             // Enforce no-collide.
@@ -376,16 +352,16 @@ fn solve(
     fn getNamedArgReorder(
         result: &mut i32[],
         names: string[],
-        arg_n: string[]): bool
+        host_args: Argument[]): bool
     {
         result.clear();
 
         //
         mut used   = 0;
         mut offset = 0;
-        for (mut i = 0; i < arg_n.len; i++)
+        for (mut i = 0; i < host_args.len; i++)
         {
-            mut idx = names.find(arg_n[i]);
+            mut idx = names.find(host_args[i].name);
             if (idx < 0)
             {
                 for (mut i = offset; i < names.len; i++)
@@ -485,7 +461,7 @@ fn solve(
                         continue :NEXT;
 
                     // Match by argnames.
-                    if (names && !getNamedArgReorder(reorder, names, overload.names))
+                    if (names && !getNamedArgReorder(reorder, names, overload.args))
                         continue :NEXT;
 
                     // Specialize.
@@ -516,8 +492,7 @@ fn solve(
                 if (args)
                 {
                     // Type check args.
-                    let arg_t = overload.args;
-                    let arg_d = overload.defaults;
+                    let host_args = overload.args;
 
                     let N = reorder ? reorder.len
                                     : args.len;
@@ -530,6 +505,8 @@ fn solve(
 
                     for (mut i = 0; i < N; i++)
                     {
+                        let host_arg = host_args[i];
+
                         let callsiteIndex = reorder ? reorder[i]
                                                     : i;
                         if (callsiteIndex < 0)
@@ -538,13 +515,13 @@ fn solve(
                             //  we might be supplying defaults via names
                             //   before we've actually exhausted
                             //    all the non-defaulted stuff.
-                            if !(arg_d && arg_d[i])
+                            if (!host_arg.default && !(host_arg.flags & F_IMPLICIT))
                                 continue :NEXT;
 
                             continue;
                         }
 
-                        let expect = arg_t[i];
+                        let expect = host_arg.type;
                         let actual = args[callsiteIndex].type;
 
                         mut ok = isAssignableAsArgument(expect, actual);
@@ -618,29 +595,19 @@ fn solve(
             let matched = GET(matchIdx);
 
             // Mutate call args last thing.
-            let arg_d = matched.defaults;
-            if (arg_d)
+            let host_args = matched.args;
+            if (host_args.len > args.len)
+                args.resize(host_args.len);
+
+            // Defaults & implicit argument injection.
+            for (mut i = 0; i < args.len; i++)
             {
-                if (args.len < arg_d.len)
-                    args.resize(arg_d.len);
-
-                for (mut i = 0; i < arg_d.len; i++)
-                    args[i] = args[i] || arg_d && arg_d[i] || fail();
-            }
-
-            // Implicit argument injection.
-            let arg_t = matched.args;
-
-            if (arg_t && args.len < arg_t.len)
-            {
-                let arg_n = matched.names || fail();
-                for (mut i = args.len; i < arg_t.len; i++)
+                if (!args[i])
                 {
-                    let id   = arg_n[i];
-                    let type = arg_t[i];
-
-                    // Propagate implicit.
-                    bindImplicitArg(args, i, id, type);
+                    let host_arg = host_args[i];
+                    args[i] = host_arg.default || bindImplicitArg(
+                        :host_arg.name,
+                        :host_arg.type);
                 }
             }
         }
@@ -1994,28 +1961,23 @@ fn solve(
 
             // We'll be mutating the overload.
             o.kind == "fn" || fail();
-
-            o.names.len == o.args.len || fail();
-
-            o.args .push(type);
-            o.names.push(id);
+            o.args.push(
+                Argument(
+                    name: id, :type,
+                    flags: F_IMPLICIT));
         }
 
         return ret;
     }
 
-    fn bindImplicitArg(
-        mut args: &mut SolvedNode[],
-        argIdx: i32, id: string, type: Type)
+    fn bindImplicitArg(name: string, type: Type): SolvedNode
     {
         TEST_expectImplicits || fail(
             "Attempting to propagate implicit arguments.");
 
-        args.len >= argIdx || fail();
-
-        args.insert(argIdx, CallerNode(
-            createRead(id), :type,
-            target: getImplicit(id, type)));
+        return CallerNode(
+            createRead(name), :type,
+            target: getImplicit(name, type));
     }
 
     fn getImplicit(id: string, type: Type): Target
@@ -2239,10 +2201,10 @@ fn solve(
         // Tag copies and moves.
         else if (args.len)
         {
-            let arg_t = overload.args || fail();
+            let host_args = overload.args || fail();
             for (mut i = 0; i < args.len; i++)
                 maybeCopyOrMove(
-                    args[i] || fail(), arg_t[i],
+                    args[i] || fail(), host_args[i].type,
                     isArgument: true);
 
             type.lifetime = Lifetime_fromCallArgs(

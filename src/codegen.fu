@@ -508,13 +508,13 @@ pub fn cpp_codegen(
                 ? "\n" + annot + " operator" + id + "("
                 : "\n" + annot + " " + id + "(";
 
-        let arg_t = overload.args;
-        for (mut i = 0; i < arg_t.len; i++)
+        let args = overload.args;
+        for (mut i = 0; i < args.len; i++)
         {
             if (i)
                 src += ", ";
 
-            src += typeAnnot(arg_t[i], M_ARGUMENT | M_FWDECL);
+            src += typeAnnot(args[i].type, M_ARGUMENT | M_FWDECL);
         }
 
         src += ");";
