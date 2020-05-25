@@ -487,7 +487,7 @@ struct sf_parse
 
         };
         _idx--;
-        s_Node member = parseLet();
+        s_Node member = parseLet(true);
         member.flags |= F_FIELD;
         consume("op"_fu, ";"_fu);
         return member;
@@ -763,7 +763,7 @@ struct sf_parse
                 consume("op"_fu, ","_fu);
 
             first = false;
-            s_Node arg = parseLet();
+            s_Node arg = parseLet(true);
             if (!arg.items.mutref(LET_TYPE))
                 outFlags |= F_UNTYPED_ARGS;
 
@@ -795,7 +795,7 @@ struct sf_parse
     };
     s_Node parseLetStmt()
     {
-        s_Node ret = parseLet();
+        s_Node ret = parseLet(false);
         if (tryConsume("id"_fu, "catch"_fu))
         {
             s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
@@ -805,7 +805,7 @@ struct sf_parse
         consume("op"_fu, ";"_fu);
         return ret;
     };
-    s_Node parseLet()
+    s_Node parseLet(const bool allow_optional)
     {
         int flags = F_LOCAL;
         const int numDollars0 = _dollars.size();
@@ -819,8 +819,9 @@ struct sf_parse
             flags |= F_MUT;
 
         fu_STR id = consume("id"_fu, fu_STR{}).value;
-        s_Node type = tryPopTypeAnnot();
-        s_Node init = (tryConsume("op"_fu, "="_fu) ? parseExpression(int(P_COMMA)) : s_Node { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_Node>{}, s_TokenIdx{} });
+        bool optional = false;
+        s_Node type = ([&]() -> s_Node { if ((tryConsume("op"_fu, ":"_fu) || ([&]() -> bool { if (allow_optional && tryConsume("op"_fu, "?:"_fu)) return (optional = true); else return fu::Default<bool>::value; }()))) return parseTypeAnnot(); else return s_Node{}; }());
+        s_Node init = ([&]() -> s_Node { if (optional) { s_Node _ = createDefinit(); if (_) return _; } return ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA)); else return s_Node{}; }()); }());
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -962,13 +963,17 @@ struct sf_parse
                     return parseTypeTag();
 
                 if ((v == "[]"_fu))
-                    return make("definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
+                    return createDefinit();
 
                 return parsePrefix(fu_STR(token.value));
             };
         };
         _idx--;
         fail(fu_STR{});
+    };
+    s_Node createDefinit()
+    {
+        return make("definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
     };
     s_Node parseParens()
     {

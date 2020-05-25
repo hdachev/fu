@@ -323,7 +323,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         _idx--;
         //////////////////////////////
 
-        mut member = parseLet();
+        mut member = parseLet(allow_optional: true);
         member.flags |= F_FIELD;
 
         consume("op", ";");
@@ -701,7 +701,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             first = false;
 
-            mut arg = parseLet();
+            mut arg = parseLet(allow_optional: true);
 
             if (!arg.items[LET_TYPE])
                 outFlags |= F_UNTYPED_ARGS;
@@ -755,7 +755,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return ret;
     }
 
-    fn parseLet(): Node
+    fn parseLet(allow_optional = false): Node
     {
         mut flags = F_LOCAL;
 
@@ -765,11 +765,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (tryConsume("id", "implicit")) flags |= F_IMPLICIT;
         if (tryConsume("id", "mut"     )) flags |= F_MUT;
 
-        let id      = consume("id").value;
-        let type    = tryPopTypeAnnot();
-        let init    = tryConsume("op", "=")
-                    ? parseExpression(P_COMMA)
-                    : Node();
+        let id          = consume("id").value;
+
+        mut optional    = false;
+        let type        = (tryConsume("op", ":") || (allow_optional && tryConsume("op", "?:") && (optional = true)))
+                        && parseTypeAnnot();
+
+        let init        = optional && createDefinit()
+                        || tryConsume("op", "=") && parseExpression(P_COMMA);
 
         if (numDollars0 != _dollars.len)
             flags |= F_TEMPLATE;
@@ -925,7 +928,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
                 if (v ==  "@") return parseTypeTag();
-                if (v == "[]") return make("definit");
+                if (v == "[]") return createDefinit();
 
                 return parsePrefix(token.value);
             }
@@ -936,6 +939,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         ///////
 
         return fail();
+    }
+
+    fn createDefinit(): Node
+    {
+        return make("definit");
     }
 
     fn parseParens(): Node
