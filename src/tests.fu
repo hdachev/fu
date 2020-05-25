@@ -2101,23 +2101,6 @@ fn runTests()
     `);
 
 
-    // We have to deduce the rh-types from the assignment calls.
-    //
-    // ZERO(`
-    //     struct ScopeSkip {
-    //         min: i32;
-    //         max: i32;
-    //     };
-    //
-    //     fn main() {
-    //         let a = 1;
-    //         mut x: ScopeSkip; x = [ -2, 0 ];
-    //         mut t: ScopeSkip; t = x.min && [ x.min, a ];
-    //         return a + t.min + t.max;
-    //     }
-    // `);
-
-
     // Non-defaulted struct members.
 
     FAIL(`
@@ -2151,4 +2134,33 @@ fn runTests()
 
         return Test(1).a;
     `);
+
+    ZERO(`
+        struct Test {
+            a = 1;
+            b = 2;
+        };
+
+        fn test(t: Test)
+            t.a * 2 - t.b;
+
+        return Test.test;
+    `);
+
+
+    // We have to deduce the rh-types from the assignment calls.
+    //
+    // ZERO(`
+    //     struct ScopeSkip {
+    //         min: i32;
+    //         max: i32;
+    //     };
+    //
+    //     fn main() {
+    //         let a = 1;
+    //         mut x: ScopeSkip; x = [ -2, 0 ];
+    //         mut t: ScopeSkip; t = x.min && [ x.min, a ];
+    //         return a + t.min + t.max;
+    //     }
+    // `);
 }

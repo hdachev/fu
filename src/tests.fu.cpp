@@ -742,6 +742,7 @@ void runTests()
     ZERO("\n        struct Hey { i: i32; }\n\n        fn test(): Hey {\n            return [ 0 ];\n        }\n\n        fn main() test.i;\n    "_fu);
     FAIL("\n        struct Test {\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n\n            b: i32;\n        };\n\n        return Test(b: 1).a;\n    "_fu);
     FAIL("\n        struct Test {\n            b: i32;\n\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n        };\n\n        return Test(1).a;\n    "_fu);
+    ZERO("\n        struct Test {\n            a = 1;\n            b = 2;\n        };\n\n        fn test(t: Test)\n            t.a * 2 - t.b;\n\n        return Test.test;\n    "_fu);
 }
 
 #endif
