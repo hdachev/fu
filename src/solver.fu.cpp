@@ -1059,6 +1059,10 @@ struct sf_solve
             {
                 continue;
             };
+            if ((overload.kind == "defctor"_fu))
+            {
+                continue;
+            };
             const s_Argument& expect = ([&]() -> const s_Argument& { { const s_Argument& _ = overload.args[0]; if (_) return _; } fail(fu_STR{}); }());
             if (!isAssignableAsArgument(expect.type, s_Type(actual)))
             {

@@ -314,6 +314,13 @@ fn solve(
             if (overload.isTemplate)
                 continue;
 
+            // Skip over defctors -
+            //  we really only want this for fields & properties,
+            //   but there's no way to tell a property from a fn,
+            //    this at least is easy to disambiguate.
+            if (overload.kind == "defctor")
+                continue;
+
             // See if we fit.
             let expect = overload.args[0] || fail();
             if (!isAssignableAsArgument(expect.type, actual))
