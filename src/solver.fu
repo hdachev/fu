@@ -168,9 +168,10 @@ fn solve(
 
             let isImplicit = !!(node.flags & F_IMPLICIT);
             let arg = Argument(
-                type: node.type  || fail(),
-                name: node.value || fail(),
-                default: !isImplicit && node.items[LET_INIT]);
+                type:       node.type  || fail(),
+                name:       node.value || fail(),
+                default:    !isImplicit && node.items[LET_INIT],
+                flags:      isImplicit && F_IMPLICIT);
 
             if (!arg.default && !isImplicit)
                 min++;

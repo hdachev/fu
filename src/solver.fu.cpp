@@ -969,7 +969,7 @@ struct sf_solve
             const s_SolvedNode& node = argNodes[i];
             ((node.kind == "let"_fu) || fail(fu_STR{}));
             const bool isImplicit = !!(node.flags & F_IMPLICIT);
-            s_Argument arg = s_Argument { fu_STR((node.value ? node.value : fail(fu_STR{}))), s_Type((node.type ? node.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int{} };
+            s_Argument arg = s_Argument { fu_STR((node.value ? node.value : fail(fu_STR{}))), s_Type((node.type ? node.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(([&]() -> int { if (isImplicit) return F_IMPLICIT; else return fu::Default<int>::value; }())) };
             if ((!arg.dEfault && !isImplicit))
                 min++;
 
