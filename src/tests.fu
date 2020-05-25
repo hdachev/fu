@@ -926,37 +926,37 @@ fn runTests()
     `);
 
     ZERO(`
-        struct Test { a: i32; b: i32; }
+        struct Test { a?: i32; b?: i32; }
         let t = Test(1);
         return t.a - 1 + t.b * 7;
     `);
 
     ZERO(`
-        struct Test { a: i32; b: i32; }
+        struct Test { a?: i32; b?: i32; }
         let t = Test(1);
         return t.b;
     `);
 
     ZERO(`
-        struct Test { a: i32; b: i32; }
+        struct Test { a?: i32; b?: i32; }
         let t = Test(a: 1);
         return t.a - 1 + t.b * 7;
     `);
 
     ZERO(`
-        struct Test { a: i32; b: i32; }
+        struct Test { a?: i32; b?: i32; }
         let t = Test(b: 1);
         return t.b - 1 + t.a * 7;
     `);
 
     ZERO(`
-        struct Test { x: i32; };
+        struct Test { x?: i32; };
         fn hey() Test();
         return hey.x;
     `);
 
     ZERO(`
-        struct Test { x: i32; };
+        struct Test { x?: i32; };
         fn hey(y: i32 = 0)
             y   ? Test(1)
                 : Test();
@@ -1040,14 +1040,6 @@ fn runTests()
 
 
     // Lint.
-
-    ZERO(`
-        struct Test { x: i32; }
-        fn test(t: &mut Test) t.x++;
-        mut t = Test();
-        t.test();
-        return t.x - 1;
-    `);
 
     FAIL(`
         struct Test { x: i32; }
@@ -1255,13 +1247,13 @@ fn runTests()
         struct SolvedNode
         {
             kind:       string;
-            flags:      i32;
-            value:      string;
-            items:      SolvedNode[];
+            flags?:     i32;
+            value?:     string;
+            items?:     SolvedNode[];
             token:      Token;
 
             type:       Type;
-            target:     ScopeIdx;
+            target?:    ScopeIdx;
         };
 
         let _here: Token;
@@ -1531,7 +1523,7 @@ fn runTests()
     `);
 
     ZERO(`
-        struct vec3 { x: f32; y: f32; z: f32; };
+        struct vec3 { x?: f32; y?: f32; z?: f32; };
 
         struct mat34 {
             mx: vec3; my: vec3; mz: vec3;
@@ -1632,7 +1624,7 @@ fn runTests()
 
         struct SolvedNode {
             value: i32;
-            items: SolvedNode[];
+            items?: SolvedNode[];
         };
 
         fn visitNodes(_v: &mut $V, _n: SolvedNode) {
@@ -1825,7 +1817,7 @@ fn runTests()
     `);
 
     ZERO(`
-        struct vec3 { x: f32; y: f32; z: f32; };
+        struct vec3 { x?: f32; y?: f32; z?: f32; };
         fn test(i: i32) vec3(x: (i - 2).f32, z: 1);
         fn main() {
             let v = test(1);
@@ -1834,7 +1826,7 @@ fn runTests()
     `);
 
     ZERO(`
-        struct vec3 { x: f32; y: f32; z: f32; };
+        struct vec3 { x?: f32; y?: f32; z?: f32; };
         fn test(f: f32) vec3(x: f, z: -1);
         fn main() {
             let v = test(-1);
@@ -1861,8 +1853,7 @@ fn runTests()
     `);
 
     ZERO(`
-        struct vec3 {
-            x: f32; y: f32; z: f32; };
+        struct vec3 { x?: f32; y?: f32; z?: f32; };
 
         inline fn /(a: f32, b: vec3)
             vec3(a / b.x, a / b.y, a / b.z);
@@ -2125,4 +2116,39 @@ fn runTests()
     //         return a + t.min + t.max;
     //     }
     // `);
+
+
+    // Non-defaulted struct members.
+
+    FAIL(`
+        struct Test {
+            a
+        //*F
+            :
+        /*/
+            ?:
+        //*/
+            i32;
+
+            b: i32;
+        };
+
+        return Test(b: 1).a;
+    `);
+
+    FAIL(`
+        struct Test {
+            b: i32;
+
+            a
+        //*F
+            :
+        /*/
+            ?:
+        //*/
+            i32;
+        };
+
+        return Test(1).a;
+    `);
 }

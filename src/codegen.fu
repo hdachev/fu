@@ -966,11 +966,11 @@ pub fn cpp_codegen(
         }
 
         //
-        if (target.kind == "defctor")
+        if (target.kind == "defctor" || target.kind == "type")
         {
             let head = (target.type || fail());
             let type = lookupStruct(head) || fail();
-            let id = structId(head);
+            let id   = typeAnnotBase(head);
 
             //
             mut open = " { ";

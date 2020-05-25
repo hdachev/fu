@@ -36,9 +36,9 @@ pub struct Module
     modid:      i32;
     fname:      string;
 
-    in:         ModuleInputs;
-    out:        ModuleOutputs;
-    stats:      ModuleStats;
+    in?:        ModuleInputs;
+    out?:       ModuleOutputs;
+    stats?:     ModuleStats;
 };
 
 pub fn MODID(implicit module: Module): i32
@@ -79,10 +79,7 @@ pub fn getModule(
             return ctx.modules[i];
 
     let i = ctx.modules.len;
-    mut module = Module(modid: i);
-        module.fname = fname;
-
-    ctx.modules.push(module);
+    ctx.modules.push(Module(modid: i, :fname));
     return ctx.modules[i];
 }
 
@@ -199,19 +196,19 @@ fn someFieldNonTrivial(fields: StructField[]): bool
 
 pub struct SolvedNode
 {
-    kind:   string;
-    flags:  i32;
+    kind:       string;
+    flags?:     i32;
 
     ////////////////////////////////
     // room for one more i32 here //
     ////////////////////////////////
 
-    value:  string;
-    items:  SolvedNode[];
-    token:  TokenIdx;
+    value?:     string;
+    items?:     SolvedNode[];
+    token:      TokenIdx;
 
-    type:   Type;
-    target: Target;
+    type:       Type;
+    target?:    Target;
 };
 
 pub struct Template

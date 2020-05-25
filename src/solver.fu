@@ -199,7 +199,7 @@ fn solve(
         return overload;
     }
 
-    fn DefaultCtor(id: string, type: Type, members: SolvedNode[]): Target
+    fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
     {
         mut arg_t:   Type[] = [];
         mut arg_n: string[] = [];
@@ -217,26 +217,20 @@ fn solve(
         mut min   = 0;
         mut arg_d: SolvedNode[];
 
+        for (mut i = 0; i < members.len; i++)
         {
-            for (mut i = 0; i < members.len; i++)
-            {
-                let member = members[i];
+            let member = members[i];
+            let init = member.items[LET_INIT];
+            if (!init)
+                min++;
 
-                let init = member.items[LET_INIT]
-                        || tryDefaultInit(member.type);
-
-                // Disable defaulting if any member is non-defaulted.
-                if (!init)
-                {
-                    min = max;
-                    arg_d.clear();
-                    break;
-                }
-
-                arg_d.push(init);
-            }
+            arg_d.push(init);
         }
 
+        if (min == max)
+            arg_d.clear();
+
+        //
         return Scope_add(
             _scope,
             "defctor", :id, :type,
@@ -902,7 +896,8 @@ fn solve(
     fn createEmpty(): SolvedNode
     {
         return SolvedNode(
-            kind: "empty", type: t_void);
+            kind: "empty", type: t_void,
+            token: (_here || fail()));
     }
 
 
@@ -1379,7 +1374,7 @@ fn solve(
             GET_mut(out.target).type.quals = structType.quals;
 
             // Link up the constructor.
-            let ctor = DefaultCtor(id, structType, members);
+            let ctor = DefCtor(id, structType, members);
             lookupStruct_mut(structType.canon).ctor = ctor;
         }
 

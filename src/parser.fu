@@ -13,9 +13,9 @@ pub struct TokenIdx // 8b vs 48b, nobrainer
 pub struct Node
 {
     kind:       string;
-    flags:      i32;
+    flags?:     i32;
     value:      string;
-    items:      Node[];
+    items?:     Node[];
     token:      TokenIdx;
 };
 

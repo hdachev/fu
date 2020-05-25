@@ -6,8 +6,8 @@
 //  - relax depth: which is the count of ptr derefs within the referenced scope item.
 
 pub struct Region {
-    index: i32;
-    relax: i32;
+    index:  i32;
+    relax?: i32;
 };
 
 pub struct Lifetime {

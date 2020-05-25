@@ -77,8 +77,8 @@ pub struct Effects
 pub struct Type
 {
     using value:    ValueType;
-    lifetime:       Lifetime;
-    effects:        Effects;
+    lifetime?:      Lifetime;
+    effects?:       Effects;
 };
 
 fn type_inter(a: Effects, b: Effects)
@@ -103,24 +103,24 @@ pub let SignedInt   = Integral   | q_signed      ;
 pub let UnsignedInt = Integral   | q_unsigned    ;
 pub let FloatingPt  = Arithmetic | q_floating_pt | q_signed;
 
-pub let t_i8        = Type(ValueType(canon: "i8",  quals: SignedInt));
-pub let t_i16       = Type(ValueType(canon: "i16", quals: SignedInt));
-pub let t_i32       = Type(ValueType(canon: "i32", quals: SignedInt));
-pub let t_i64       = Type(ValueType(canon: "i64", quals: SignedInt));
+pub let t_i8        = Type(ValueType(modid: 0, canon: "i8",  quals: SignedInt));
+pub let t_i16       = Type(ValueType(modid: 0, canon: "i16", quals: SignedInt));
+pub let t_i32       = Type(ValueType(modid: 0, canon: "i32", quals: SignedInt));
+pub let t_i64       = Type(ValueType(modid: 0, canon: "i64", quals: SignedInt));
 
-pub let t_u8        = Type(ValueType(canon: "u8",  quals: UnsignedInt));
-pub let t_u16       = Type(ValueType(canon: "u16", quals: UnsignedInt));
-pub let t_u32       = Type(ValueType(canon: "u32", quals: UnsignedInt));
-pub let t_u64       = Type(ValueType(canon: "u64", quals: UnsignedInt));
+pub let t_u8        = Type(ValueType(modid: 0, canon: "u8",  quals: UnsignedInt));
+pub let t_u16       = Type(ValueType(modid: 0, canon: "u16", quals: UnsignedInt));
+pub let t_u32       = Type(ValueType(modid: 0, canon: "u32", quals: UnsignedInt));
+pub let t_u64       = Type(ValueType(modid: 0, canon: "u64", quals: UnsignedInt));
 
-pub let t_f32       = Type(ValueType(canon: "f32", quals: FloatingPt));
-pub let t_f64       = Type(ValueType(canon: "f64", quals: FloatingPt));
+pub let t_f32       = Type(ValueType(modid: 0, canon: "f32", quals: FloatingPt));
+pub let t_f64       = Type(ValueType(modid: 0, canon: "f64", quals: FloatingPt));
 
-pub let t_void      = Type(ValueType(canon: "void",  quals: 0));
-pub let t_bool      = Type(ValueType(canon: "bool",  quals: Primitive));
-pub let t_never     = Type(ValueType(canon: "never", quals: 0));
+pub let t_void      = Type(ValueType(modid: 0, canon: "void",  quals: 0));
+pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",  quals: Primitive));
+pub let t_never     = Type(ValueType(modid: 0, canon: "never", quals: 0));
 
-pub let t_byte      = Type(ValueType(canon: "byte",     quals: Primitive));
+pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",     quals: Primitive));
 
 
 //
@@ -450,10 +450,10 @@ pub struct Target
 
 pub struct Struct
 {
-    id:     string;
-    fields: StructField[];
-    flags:  i32;
-    ctor:   Target;
+    id:         string;
+    fields?:    StructField[];
+    flags:      i32;
+    ctor?:      Target;
 };
 
 pub struct StructField
