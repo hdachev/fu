@@ -2148,6 +2148,39 @@ fn runTests()
     `);
 
 
+    // Explicit arguments & struct members.
+
+    ZERO(`
+        fn test(a: i32, b!: i32 = 1) a + b;
+        return test(-1);
+    `);
+
+    FAIL(`
+        fn test(a: i32, b!: i32 = 1) a + b;
+        //*F
+        return test(-2, +2);
+        /*/
+        return test(-2, b: +2);
+        //*/
+    `);
+
+    ZERO(`
+        struct Test { a: i32 = 0; b!: i32 = 1; };
+        fn test(t: Test) t.a + t.b;
+        return Test(-1).test;
+    `);
+
+    FAIL(`
+        struct Test { a: i32 = 0; b!: i32 = 1; };
+        fn test(t: Test) t.a + t.b;
+        //*F
+        return Test(-2, +2).test;
+        /*/
+        return Test(-2, b: +2).test;
+        //*/
+    `);
+
+
     // We have to deduce the rh-types from the assignment calls.
     //
     // ZERO(`

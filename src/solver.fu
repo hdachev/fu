@@ -171,7 +171,7 @@ fn solve(
                 type:       node.type  || fail(),
                 name:       node.value || fail(),
                 default:    !isImplicit && node.items[LET_INIT],
-                flags:      isImplicit && F_IMPLICIT);
+                flags:      node.flags);
 
             if (!arg.default && !isImplicit)
                 min++;
@@ -203,9 +203,10 @@ fn solve(
             let member = members[i];
 
             let arg = Argument(
-                name: member.value || fail(),
-                type: member.type  || fail(),
-                default: member.items[LET_INIT]);
+                name:       member.value || fail(),
+                type:       member.type  || fail(),
+                default:    member.items[LET_INIT],
+                flags:      member.flags & F_MUSTNAME);
 
             if (!arg.default)
                 min++;
@@ -520,6 +521,13 @@ fn solve(
                                 continue :NEXT;
 
                             continue;
+                        }
+
+                        // Explicit argname requirements.
+                        else if (host_arg.flags & F_MUSTNAME)
+                        {
+                            if (names.len <= callsiteIndex || !names[callsiteIndex])
+                                continue :NEXT;
                         }
 
                         let expect = host_arg.type;
