@@ -644,7 +644,7 @@ inline const int Primitive = (Trivial | q_primitive);
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_FN_RET_BACK
@@ -684,7 +684,7 @@ inline const int q_arithmetic = (1 << 5);
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_Arithmetic
@@ -709,12 +709,12 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_integral
@@ -734,22 +734,22 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_unsigned
@@ -764,22 +764,22 @@ inline const int UnsignedInt = (Integral | q_unsigned);
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -849,7 +849,7 @@ inline const int F_QUALIFIED = (1 << 7);
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 namespace {
@@ -936,7 +936,7 @@ struct sf_solve
                 arg_n.push(name);
             };
         };
-        return Scope_add(_scope, "template"_fu, id, s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{}, s_SolvedNode{}, module);
+        return Scope_add(_scope, "template"_fu, id, s_Type {  }, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target FnDecl(const fu_STR& kind, const fu_STR& id, s_SolvedNode& node, const s_Node& native)
     {
@@ -971,7 +971,7 @@ struct sf_solve
         node.target = overload;
         return overload;
     };
-    s_Target DefaultCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
+    s_Target DefCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
     {
         fu_VEC<s_Type> arg_t {};
         fu_VEC<fu_STR> arg_n {};
@@ -984,27 +984,24 @@ struct sf_solve
         const int max = members.size();
         int min = 0;
         fu_VEC<s_SolvedNode> arg_d {};
-        
+        for (int i = 0; (i < members.size()); i++)
         {
-            for (int i = 0; (i < members.size()); i++)
-            {
-                const s_SolvedNode& member = members[i];
-                s_SolvedNode init = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(member.items[LET_INIT]); if (_) return _; } return tryDefaultInit(member.type); }());
-                if (!init)
-                {
-                    min = max;
-                    arg_d.clear();
-                    break;
-                };
-                arg_d.push(init);
-            };
+            const s_SolvedNode& member = members[i];
+            const s_SolvedNode& init = member.items[LET_INIT];
+            if (!init)
+                min++;
+
+            arg_d.push(init);
         };
+        if ((min == max))
+            arg_d.clear();
+
         return Scope_add(_scope, "defctor"_fu, id, type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_SolvedNode tryDefaultInit(const s_Type& type)
     {
         if ((type.value.quals & q_mutref))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+            return s_SolvedNode {  };
 
         return createDefaultInit(type);
     };
@@ -1041,7 +1038,7 @@ struct sf_solve
                 arg_n.unshift("using"_fu);
 
             if (arg_d)
-                arg_d.unshift(s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+                arg_d.unshift(s_SolvedNode {  });
 
         };
         return Scope_add(_scope, kind, id, overload.type, min, max, arg_n, arg_t, arg_d, s_Template{}, s_Partial { s_Target(viaIdx), s_Target(overloadIdx) }, s_SolvedNode{}, module);
@@ -1539,7 +1536,7 @@ struct sf_solve
     };
     s_SolvedNode createEmpty()
     {
-        return s_SolvedNode { "empty"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type(t_void), s_Target{} };
+        return s_SolvedNode { "empty"_fu, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(t_void), s_Target{} };
     };
     s_Node createTypeParam(const fu_STR& value)
     {
@@ -1547,7 +1544,7 @@ struct sf_solve
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
-        return __solveFn(false, false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }, -1);
+        return __solveFn(false, false, node, s_SolvedNode {  }, -1);
     };
     s_SolvedNode uSolveFn(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -1571,7 +1568,7 @@ struct sf_solve
             return out;
         };
         if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+            return s_SolvedNode {  };
 
         const fu_VEC<s_Node>& inItems = n_fn.items;
         ((inItems.size() >= FN_RET_BACK) || fail(fu_STR{}));
@@ -1638,7 +1635,7 @@ struct sf_solve
             };
             
             {
-                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+                s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode {  });
                 outItems.mutref((outItems.size() + FN_RET_BACK)) = s_ret;
             };
             if ((solve && !native))
@@ -1679,7 +1676,7 @@ struct sf_solve
     {
         fu_STR mangle = (((target.modid + "#"_fu) + target.index) + " "_fu);
         (mangle += args_mangled);
-        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }; return _; } (module.out.specs.upsert(mangle))) };
+        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode {  }; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
             s_SolvedNode spec = doTrySpecialize(tEmplate, args, mangle);
@@ -1697,7 +1694,7 @@ struct sf_solve
         {
             s_Overload o = GET(result.target, module, ctx);
             if (((o.min > args.size()) || (o.max < args.size())))
-                result = s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+                result = s_SolvedNode {  };
 
         };
         if (!result)
@@ -1730,7 +1727,7 @@ struct sf_solve
                 const s_Node& annot = argNode.items[LET_TYPE];
                 if (couldRetype(inValue))
                 {
-                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
+                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type {  }; return _; } (typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
                     if (paramType)
                     {
                         s_Type retype = tryRetyping(inValue, paramType);
@@ -1751,7 +1748,7 @@ struct sf_solve
                 {
                     inType.lifetime = Lifetime_fromArgIndex(i);
                     const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
-                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(argName)));
+                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type {  }; return _; } (typeParams.upsert(argName)));
                     ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
                     inType.value.quals |= q_ref;
                 };
@@ -1772,7 +1769,7 @@ struct sf_solve
             mangle = (fu::slice(mangle, 0, start) + mangleArguments(args));
         };
         if (!ok)
-            return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+            return s_SolvedNode {  };
 
         int caseIdx = -1;
         const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
@@ -1791,7 +1788,7 @@ struct sf_solve
                 };
             };
             if ((caseIdx < 0))
-                return s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} };
+                return s_SolvedNode {  };
 
         };
         s_SolvedNode current_fn0 {};
@@ -1800,7 +1797,7 @@ struct sf_solve
         const int scope0 = Scope_push(_scope);
         const s_ScopeSkip scope_skip0 { _scope_skip };
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
-        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} }, caseIdx);
+        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode {  }, caseIdx);
         (specialized || fail(fu_STR{}));
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
@@ -1810,7 +1807,7 @@ struct sf_solve
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
     {
-        return __solveStruct(false, node, s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+        return __solveStruct(false, node, s_SolvedNode {  });
     };
     s_SolvedNode uSolveStruct(const s_Node& node, const s_SolvedNode& prep)
     {
@@ -1844,7 +1841,7 @@ struct sf_solve
             };
             structType.value.quals |= finalizeStruct(structType.value.canon, fields, module);
             GET_mut(out.target).type.value.quals = structType.value.quals;
-            const s_Target ctor = DefaultCtor(id, structType, members);
+            const s_Target ctor = DefCtor(id, structType, members);
             lookupStruct_mut(structType.value.canon, module).ctor = ctor;
         };
         return out;
@@ -1989,7 +1986,7 @@ struct sf_solve
                 return std::move((maybe.type ? maybe.type : fail(fu_STR{})));
 
         };
-        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+        return s_Type {  };
     };
     s_Type Scope_lookupType(const fu_STR& id)
     {
@@ -2053,7 +2050,7 @@ struct sf_solve
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO"_fu), s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO"_fu), s_Type {  }))));
                     if (!t)
                         return false;
 
@@ -2081,7 +2078,7 @@ struct sf_solve
         else if ((node.kind == "typeparam"_fu))
         {
             const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
-            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }; return _; } (typeParams.upsert(id)));
+            s_Type& _param = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type {  }; return _; } (typeParams.upsert(id)));
             if (_param)
             {
                 s_Type inter = type_tryInter(_param, type);

@@ -570,7 +570,7 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
     {
-        module.out = s_ModuleOutputs { fu_VEC<int>{}, fu_MAP<fu_STR, s_Struct>{}, fu_MAP<fu_STR, s_SolvedNode>{}, s_SolverOutput{}, fu_STR{} };
+        module.out = s_ModuleOutputs {  };
         fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const s_ModuleStat stat0 = ModuleStat_now();
         s_LexerOutput lexer_result = lex(src, fname);

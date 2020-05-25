@@ -569,9 +569,7 @@ s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 
     };
     const int i = ctx.modules.size();
-    s_Module module = s_Module { int(i), fu_STR{}, s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} };
-    module.fname = fname;
-    ctx.modules.push(module);
+    ctx.modules.push(s_Module { int(i), fu_STR(fname), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
     return ctx.modules.mutref(i);
 }
 
@@ -689,7 +687,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     if (target)
     {
         if (scope_iterator)
-            return s_Target { int{}, int{} };
+            return s_Target {  };
 
         scope_iterator--;
         return s_Target(target);
@@ -710,7 +708,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
             return s_Target(item.target);
 
     };
-    return s_Target { int{}, int{} };
+    return s_Target {  };
 }
 
 int Scope_push(s_Scope& scope)
@@ -804,22 +802,22 @@ inline const int SignedInt = (Integral | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_unsigned
@@ -834,22 +832,22 @@ inline const int UnsignedInt = (Integral | q_unsigned);
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_q_floating_pt
@@ -864,32 +862,32 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 s_Scope listGlobals(const s_Module& module)

@@ -639,7 +639,7 @@ inline const int Primitive = (Trivial | q_primitive);
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_DESTRUCTOR
@@ -669,7 +669,7 @@ inline const int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
@@ -1294,7 +1294,7 @@ struct sf_cpp_codegen
         const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id));
-        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode { fu_STR{}, int{}, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx{}, s_Type{}, s_Target{} });
+        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode {  });
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
@@ -1468,11 +1468,11 @@ struct sf_cpp_codegen
             };
             return id;
         };
-        if ((target.kind == "defctor"_fu))
+        if (((target.kind == "defctor"_fu) || (target.kind == "type"_fu)))
         {
             const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
             const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
-            fu_STR id = structId(head);
+            fu_STR id = typeAnnotBase(head);
             fu_STR open = " { "_fu;
             fu_STR close = " }"_fu;
             if ((type.flags & F_DESTRUCTOR))

@@ -272,72 +272,72 @@ inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), int{}, "i8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), int{}, "i16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), int{}, "i32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), int{}, "i64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u8"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u16"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), int{}, "u64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), int{}, "f32"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), int{}, "f64"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, int{}, "void"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), int{}, "bool"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, int{}, "never"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), int{}, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
 bool is_never(const s_Type& t)
@@ -381,7 +381,7 @@ bool qhas(const s_Type& type, const int q)
 s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
-        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+        return s_Type {  };
 
     return qsub(type, q);
 }
@@ -493,7 +493,7 @@ s_Type createArray(const s_Type& item)
 s_Type tryClear_array(const s_Type& type)
 {
     if (!type_isArray(type))
-        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+        return s_Type {  };
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));
     return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
@@ -515,7 +515,7 @@ s_Type createSlice(const s_Type& item)
 s_Type tryClear_slice(const s_Type& type)
 {
     if (!type_isSlice(type))
-        return s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} };
+        return s_Type {  };
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));
     return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
@@ -537,7 +537,7 @@ s_Type createMap(const s_Type& key, const s_Type& value)
 s_MapFields tryClear_map(const s_Type& type)
 {
     if (!type_isMap(type))
-        return s_MapFields { s_Type{}, s_Type{} };
+        return s_MapFields {  };
 
     int depth = 0;
     for (int i = 1; (i < type.value.canon.size()); i++)
@@ -570,7 +570,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if (((a.value.canon != b.value.canon) || (a.value.modid != b.value.modid)))
-        return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type { s_ValueType{}, s_Lifetime{}, s_Effects{} }));
+        return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type {  }));
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }
