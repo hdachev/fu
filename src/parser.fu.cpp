@@ -198,6 +198,11 @@ inline const int F_USING = (1 << 18);
 inline const int F_MUSTNAME = (1 << 19);
                                 #endif
 
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -560,7 +565,9 @@ struct sf_parse
     s_Node parsePub()
     {
         (_fnDepth && fail("Cannot publish from within a fn."_fu));
-        return parseStatement();
+        s_Node out = parseStatement();
+        out.flags |= F_PUB;
+        return out;
     };
     s_Node parseStatement()
     {
