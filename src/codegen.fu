@@ -363,6 +363,7 @@ pub fn cpp_codegen(
     fn ID(id: string): string
     {
         if (id == "this")       return "tHis";
+        if (id == "default")    return "dEfault";
         if (id == "template")   return "tEmplate";
         if (id == "catch")      return "cAtch";
         if (id == "not")        return "nOt";
