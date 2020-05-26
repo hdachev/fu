@@ -235,6 +235,7 @@ pub struct Overload
     kind:       string;
     name:       string;
     type:       Type;
+    flags:      i32;
 
     // Arity.
     min:        i32;
@@ -263,6 +264,26 @@ pub struct Scope
     items:      ScopeItem[];
     overloads:  Overload[];
 };
+
+pub fn Scope_exports(scope: Scope, modid: i32)
+{
+    mut result: ScopeItem[] = [];
+
+    for (mut i = 0; i < scope.items.len; i++)
+    {
+        let item = scope.items[i];
+        if (item.target.modid == modid)
+        {
+            let overload = scope.overloads[item.target.index - 1];
+            if (!modid || overload.flags & F_PUB)
+                result.push(item);
+        }
+    }
+
+    return Scope(
+        items: result,
+        :scope.overloads);
+}
 
 
 ////////////////////////////////
@@ -344,6 +365,7 @@ pub fn Scope_pop(scope: &mut Scope, memo: i32): void
 pub fn Scope_add(
     scope: &mut Scope,
     kind: string, id: string, type: Type,
+    flags!: i32,
 
     min?:           i32,
     max?:           i32,
@@ -357,7 +379,7 @@ pub fn Scope_add(
         index: scope.overloads.len + 1);
 
     let item = Overload(
-        :kind,
+        :kind, :flags,
         name: id, :type,
         :min, :max, :args,
         :partial, :template, :constant);
@@ -370,9 +392,9 @@ pub fn Scope_add(
     return target;
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type)
+pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags: i32 = F_PUB)
 {
-    return Scope_add(scope, "type", id, type);
+    return Scope_add(:scope, "type", :id, :type, :flags);
 }
 
 
