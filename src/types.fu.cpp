@@ -222,7 +222,7 @@ inline const int e_malloc = (1 << 12);
 inline const int e_memcpy = (1 << 13);
                                 #endif
 
-s_Effects type_inter(const s_Effects& a, const s_Effects& b)
+static s_Effects type_inter(const s_Effects& a, const s_Effects& b)
 {
     return s_Effects { (a.raw | b.raw) };
 }
@@ -375,7 +375,7 @@ bool qhas(const s_Type& type, const int q)
     return ((type.value.quals & q) == q);
 }
 
-s_Type tryClear(const s_Type& type, const int q)
+static s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
         return s_Type {  };

@@ -532,7 +532,7 @@ fn absdir(a: string)
 
 let HOME = absdir(env_get("HOME"));
 
-fn locate_PRJDIR(): string
+pub fn locate_PRJDIR(): string
 {
     let dir = HOME + "fu/";
     let fn  = dir  + "src/compiler.fu";

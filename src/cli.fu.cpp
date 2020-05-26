@@ -11,7 +11,7 @@
 #include <iostream>
 #include <utility>
 
-void runTestsAndBuildCompiler();
+static void runTestsAndBuildCompiler();
 int self_test();
 void runTests();
 void saySomethingNice();
@@ -160,12 +160,12 @@ int cli_handle(const fu_VEC<fu_STR>& argv, fu_STR&& cwd)
 }
 
 
-int fu_MAIN(const fu_VEC<fu_STR>& argv)
+static int fu_MAIN(const fu_VEC<fu_STR>& argv)
 {
     return cli_handle(argv, fu::fs_cwd());
 }
 
-void runTestsAndBuildCompiler()
+static void runTestsAndBuildCompiler()
 {
     runTests();
     saySomethingNice();

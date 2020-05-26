@@ -308,7 +308,7 @@ fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "f
 
 //
 
-fn solvePrelude(): Context
+pub fn solvePrelude(): Context
 {
     // In order to keep the prelude around,
     //  I"m thinking we"ll just prep a ready-to-copy template,

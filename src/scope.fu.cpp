@@ -36,9 +36,9 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
-int copyOrMove(int, const fu_VEC<s_StructField>&);
-bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+static bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
+static int copyOrMove(int, const fu_VEC<s_StructField>&);
+static bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -651,7 +651,7 @@ inline const int F_DESTRUCTOR = (1 << 31);
 inline const int q_rx_copy = (1 << 2);
                                 #endif
 
-int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
+static int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
 {
     if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
         return 0;
@@ -659,7 +659,7 @@ int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
     return int(q_rx_copy);
 }
 
-bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
+static bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {
@@ -670,7 +670,7 @@ bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
     return false;
 }
 
-bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
+static bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
 {
     for (int i = 0; (i < fields.size()); i++)
     {

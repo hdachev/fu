@@ -584,7 +584,7 @@ inline std::byte if_last(const fu_STR& s)
 }
                                 #endif
 
-void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
+static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
     if (!module.in)
@@ -627,7 +627,7 @@ void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
-s_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
+static s_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
 {
     if (!fu::has(src, "fn main("_fu))
         src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
@@ -697,7 +697,7 @@ fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules)
 }
 
 
-void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+static void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
     if ((dir_src && dir_out))
     {
@@ -940,7 +940,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
 }
 
-fu_STR absdir(const fu_STR& a)
+static fu_STR absdir(const fu_STR& a)
 {
     return ((if_last(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
 }

@@ -470,8 +470,13 @@ pub fn cpp_codegen(
         if (!id.hasIdentifierChars)
             src = annot + " operator" + id + "(";
 
-        if (_isModuleSpecs && !closure)
-            src = "inline " + src;
+        if (!closure)
+        {
+            if (_isModuleSpecs)
+                src = "inline " + src;
+            else if (!(fn.flags & F_PUB) && !_faasN)
+                src = "static " + src;
+        }
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
@@ -504,9 +509,10 @@ pub fn cpp_codegen(
 
         let isOp    = !id.hasIdentifierChars;
 
-        mut src = isOp
-                ? "\n" + annot + " operator" + id + "("
-                : "\n" + annot + " " + id + "(";
+        let name    = isOp ? "operator" + id : id;
+        let linkage = overload.flags & F_PUB ? "" : "static ";
+
+        mut src = "\n" + linkage + annot + " " + name + "(";
 
         let args = overload.args;
         for (mut i = 0; i < args.len; i++)

@@ -660,6 +660,11 @@ inline const int F_CLOSURE = (1 << 27);
 inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
+                                #endif
+
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
 inline const int FN_BODY_BACK = -1;
@@ -688,11 +693,6 @@ inline const int F_ARG = (1 << 9);
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
 inline const int LET_INIT = 1;
-                                #endif
-
-                                #ifndef DEF_F_PUB
-                                #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -1117,9 +1117,14 @@ struct sf_cpp_codegen
         if (!hasIdentifierChars(id))
             src = (((annot + " operator"_fu) + id) + "("_fu);
 
-        if ((_isModuleSpecs && !closure))
-            src = ("inline "_fu + src);
+        if (!closure)
+        {
+            if (_isModuleSpecs)
+                src = ("inline "_fu + src);
+            else if ((!(fn.flags & F_PUB) && !_faasN))
+                src = ("static "_fu + src);
 
+        };
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
         {
             if (i)
@@ -1144,7 +1149,9 @@ struct sf_cpp_codegen
         const s_Type& ret = (overload.type ? overload.type : fail(fu_STR{}));
         fu_STR annot = typeAnnot(ret, M_RETVAL);
         const bool isOp = !hasIdentifierChars(id);
-        fu_STR src = (isOp ? (((("\n"_fu + annot) + " operator"_fu) + id) + "("_fu) : (((("\n"_fu + annot) + " "_fu) + id) + "("_fu));
+        fu_STR name = (isOp ? ("operator"_fu + id) : fu_STR(id));
+        fu_STR linkage = ((overload.flags & F_PUB) ? fu_STR{} : "static "_fu);
+        fu_STR src = ((((("\n"_fu + linkage) + annot) + " "_fu) + name) + "("_fu);
         const fu_VEC<s_Argument>& args = overload.args;
         for (int i = 0; (i < args.size()); i++)
         {
