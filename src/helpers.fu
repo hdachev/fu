@@ -1,24 +1,24 @@
 
-fn only(s: $T[])
+pub fn only(s: $T[])
     s.len == 1 ? s[0] : throw (
         "len != 1: " + s.len);
 
-fn first(s: $T[])
+pub fn first(s: $T[])
     s.len ? s[0] : throw("len == 0");
 
-fn last(s: $T[])
+pub fn last(s: $T[])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-fn if_only(s: $T[])
+pub fn if_only(s: $T[])
     s.len == 1 && s[0];
 
-fn if_first(s: $T[])
+pub fn if_first(s: $T[])
     s.len && s[0];
 
-fn if_last(s: $T[])
+pub fn if_last(s: $T[])
     s.len && s[s.len - 1];
 
-fn hasIdentifierChars(id: string) {
+pub fn hasIdentifierChars(id: string) {
     for (mut i = 0; i < id.len; i++)
     {
         let c = id[i];
@@ -33,7 +33,7 @@ fn hasIdentifierChars(id: string) {
     return false;
 }
 
-fn path_ext(path: string): string
+pub fn path_ext(path: string): string
 {
     for (mut i = path.len; i --> 0; )
     {
@@ -45,7 +45,7 @@ fn path_ext(path: string): string
     return "";
 }
 
-fn path_noext(path: string): string
+pub fn path_noext(path: string): string
 {
     for (mut i = path.len; i --> 0; )
     {
@@ -57,7 +57,7 @@ fn path_noext(path: string): string
     return "";
 }
 
-fn path_dirname(path: string): string
+pub fn path_dirname(path: string): string
 {
     for (mut i = path.len; i --> 0; )
         if (path[i] == '/')
@@ -66,7 +66,7 @@ fn path_dirname(path: string): string
     return "";
 }
 
-fn path_filename(path: string): string
+pub fn path_filename(path: string): string
 {
     for (mut i = path.len; i --> 0; )
         if (path[i] == '/')
@@ -75,7 +75,7 @@ fn path_filename(path: string): string
     return path;
 }
 
-fn path_normalize(p: string): string {
+pub fn path_normalize(p: string): string {
     mut path = p.split("/");
 
     for (mut i = path.len; i --> 0; ) {
@@ -92,7 +92,7 @@ fn path_normalize(p: string): string {
     return path.join("/");
 }
 
-fn path_relative(from: string, to: string): string {
+pub fn path_relative(from: string, to: string): string {
     let min = from.len < to.len ? from.len : to.len;
 
     mut same = 0;
@@ -116,11 +116,11 @@ fn path_relative(from: string, to: string): string {
     return res;
 }
 
-fn path_join(a: string, b: string)
+pub fn path_join(a: string, b: string)
     b && b[0] == '/'    ? path_normalize(b)
                         : path_normalize(a + '/' + b);
 
-fn ascii_lower(a: string): string
+pub fn ascii_lower(a: string): string
 {
     let offset = 'a'.i32 - 'A'.i32;
 

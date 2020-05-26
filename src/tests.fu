@@ -22,7 +22,7 @@ let TEST_SRC = `
     }
 `;
 
-fn self_test(): i32
+pub fn self_test(): i32
 {
     let cpp = compile_snippet(TEST_SRC);
 
@@ -32,7 +32,7 @@ fn self_test(): i32
 
 // Run the whole battery & build self.
 
-fn runTests()
+pub fn runTests()
 {
     ZERO(`
         return 1 - 1;

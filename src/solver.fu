@@ -18,7 +18,7 @@ let WARN_ON_IMPLICIT_COPY = false;
 ////////
 ////////     Solver.
 
-fn solve(
+pub fn solve(
     implicit ctx: Context,
     implicit module: &mut Module,
     parse: Node): SolverOutput

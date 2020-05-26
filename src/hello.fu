@@ -22,7 +22,7 @@ let NICE_THINGS =
     "XOXO !",
 ];
 
-fn saySomethingNice()
+pub fn saySomethingNice()
 {
     let sec = i32(now_utc());
 

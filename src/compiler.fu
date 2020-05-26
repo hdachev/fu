@@ -95,7 +95,7 @@ fn compile_snippet(mut src: string, fname: string): Context
     return ctx;
 }
 
-fn compile_snippet(src: string): string
+pub fn compile_snippet(src: string): string
 {
     let fname = "testcase";
     let ctx = compile_snippet(src, fname);
@@ -543,10 +543,10 @@ fn locate_PRJDIR(): string
     return dir;
 }
 
-    let PRJDIR              = locate_PRJDIR();
+pub let PRJDIR              = locate_PRJDIR();
 pub let DEFAULT_WORKSPACE   = PRJDIR + "build.cpp/";
 
-fn ZERO(src: string): Context
+pub fn ZERO(src: string): Context
 {
     let fname = "testcase.ZERO";
     let ctx = compile_snippet(:src, :fname);
@@ -557,7 +557,7 @@ fn ZERO(src: string): Context
     return ctx;
 }
 
-fn FAIL(src: string)
+pub fn FAIL(src: string)
 {
     let cpp = compile_snippet(src)
         catch e

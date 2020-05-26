@@ -87,7 +87,7 @@ fn type_inter(a: Effects, b: Effects)
 
 //
 
-fn ==(a: ValueType, b: ValueType)
+pub fn ==(a: ValueType, b: ValueType)
     a.quals == b.quals &&
     a.modid == b.modid &&
     a.canon == b.canon;
@@ -125,9 +125,9 @@ pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",     quals: Primiti
 
 //
 
-fn is_never(t: Type) t.value == t_never.value;
-fn is_void (t: Type) t.value == t_void .value;
-fn is_bool (t: Type) t.value == t_bool .value;
+pub fn is_never(t: Type) t.value == t_never.value;
+pub fn is_void (t: Type) t.value == t_void .value;
+pub fn is_bool (t: Type) t.value == t_bool .value;
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
