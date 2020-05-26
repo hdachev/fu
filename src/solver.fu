@@ -693,10 +693,48 @@ fn solve(
                 min = arity;
         }
 
+        fn expectedArgs(targets: Target[]): string
+        {
+            mut result = "";
+
+            for (mut i = 0; i < targets.len; i++)
+            {
+                if (result)
+                    result += "\n\t\t";
+                else if (targets.len > 1)
+                    result += ", available overloads:\n\t\t";
+                else
+                    result += ", expects: ";
+
+                let overload = GET(targets[i]);
+
+                result += overload.name + "(";
+
+                for (mut i = 0; i < overload.args.len; i++)
+                {
+                    let arg = overload.args[i];
+                    if (i)
+                        result += ", ";
+
+                    result +=  arg.name
+                            + (arg.flags & F_MUSTNAME ? "!" : "")
+                            + (arg.default ? "?: " : ": ")
+                            + (arg.type ? serializeType(arg.type) : "$");
+                }
+
+                result += ")";
+            }
+
+            return result || ".";
+        }
+
+        let expected =
+            expectedArgs(overloads);
+
         return overloads
              ? args.len < min
-                ? fail("`" + id + "` expects " + min + " arguments, " + args.len + " provided.")
-                : fail("`" + id + "` bad args, provided: " + mangleArguments(args))
+                ? fail("`" + id + "` expects " + min + " arguments, " + args.len + " provided" + expected)
+                : fail("`" + id + "` bad args, provided: " + mangleArguments(args) + expected)
              : fail("`" + id + "` is not defined.");
     }
 
