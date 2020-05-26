@@ -377,6 +377,7 @@ struct s_Overload
     fu_STR kind;
     fu_STR name;
     s_Type type;
+    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
@@ -389,6 +390,7 @@ struct s_Overload
             || kind
             || name
             || type
+            || flags
             || min
             || max
             || args

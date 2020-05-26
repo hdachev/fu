@@ -36,9 +36,9 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
 int copyOrMove(int, const fu_VEC<s_StructField>&);
 bool someFieldNonCopy(const fu_VEC<s_StructField>&);
-bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -386,6 +386,7 @@ struct s_Overload
     fu_STR kind;
     fu_STR name;
     s_Type type;
+    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
@@ -398,6 +399,7 @@ struct s_Overload
             || kind
             || name
             || type
+            || flags
             || min
             || max
             || args
@@ -684,6 +686,28 @@ bool isTemplate(const s_Overload& o)
     return (o.kind == "template"_fu);
 }
 
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
+                                #endif
+
+s_Scope Scope_exports(const s_Scope& scope, const int modid)
+{
+    fu_VEC<s_ScopeItem> result {};
+    for (int i = 0; (i < scope.items.size()); i++)
+    {
+        const s_ScopeItem& item = scope.items[i];
+        if ((item.target.modid == modid))
+        {
+            const s_Overload& overload = scope.overloads[(item.target.index - 1)];
+            if ((!modid || (overload.flags & F_PUB)))
+                result.push(item);
+
+        };
+    };
+    return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads) };
+}
+
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
 {
     (id || fu::fail());
@@ -738,19 +762,19 @@ void Scope_pop(s_Scope& scope, const int memo)
     scope.items.shrink(memo);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;
 }
 
-s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Module& module)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, int{}, int{}, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+    return Scope_add(scope, "type"_fu, id, type, flags, int{}, int{}, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
 }
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
@@ -910,20 +934,20 @@ inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifet
 s_Scope listGlobals(const s_Module& module)
 {
     s_Scope scope {};
-    Scope_Typedef(scope, "i8"_fu, t_i8, module);
-    Scope_Typedef(scope, "i16"_fu, t_i16, module);
-    Scope_Typedef(scope, "i32"_fu, t_i32, module);
-    Scope_Typedef(scope, "i64"_fu, t_i64, module);
-    Scope_Typedef(scope, "u8"_fu, t_u8, module);
-    Scope_Typedef(scope, "u16"_fu, t_u16, module);
-    Scope_Typedef(scope, "u32"_fu, t_u32, module);
-    Scope_Typedef(scope, "u64"_fu, t_u64, module);
-    Scope_Typedef(scope, "f32"_fu, t_f32, module);
-    Scope_Typedef(scope, "f64"_fu, t_f64, module);
-    Scope_Typedef(scope, "bool"_fu, t_bool, module);
-    Scope_Typedef(scope, "byte"_fu, t_byte, module);
-    Scope_Typedef(scope, "void"_fu, t_void, module);
-    Scope_Typedef(scope, "never"_fu, t_never, module);
+    Scope_Typedef(scope, "i8"_fu, t_i8, F_PUB, module);
+    Scope_Typedef(scope, "i16"_fu, t_i16, F_PUB, module);
+    Scope_Typedef(scope, "i32"_fu, t_i32, F_PUB, module);
+    Scope_Typedef(scope, "i64"_fu, t_i64, F_PUB, module);
+    Scope_Typedef(scope, "u8"_fu, t_u8, F_PUB, module);
+    Scope_Typedef(scope, "u16"_fu, t_u16, F_PUB, module);
+    Scope_Typedef(scope, "u32"_fu, t_u32, F_PUB, module);
+    Scope_Typedef(scope, "u64"_fu, t_u64, F_PUB, module);
+    Scope_Typedef(scope, "f32"_fu, t_f32, F_PUB, module);
+    Scope_Typedef(scope, "f64"_fu, t_f64, F_PUB, module);
+    Scope_Typedef(scope, "bool"_fu, t_bool, F_PUB, module);
+    Scope_Typedef(scope, "byte"_fu, t_byte, F_PUB, module);
+    Scope_Typedef(scope, "void"_fu, t_void, F_PUB, module);
+    Scope_Typedef(scope, "never"_fu, t_never, F_PUB, module);
     return scope;
 }
 
