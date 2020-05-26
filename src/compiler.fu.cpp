@@ -945,10 +945,7 @@ fu_STR absdir(const fu_STR& a)
     return ((if_last(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
 }
 
-                                #ifndef DEF_HOME
-                                #define DEF_HOME
-inline const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
-                                #endif
+static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
 
 fu_STR locate_PRJDIR()
 {

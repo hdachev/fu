@@ -170,10 +170,7 @@ inline const int q_floating_pt = (1 << 9);
 inline const int q_rx_resize = (1 << 10);
                                 #endif
 
-                                #ifndef DEF_TAGS
-                                #define DEF_TAGS
-inline const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu, "resize"_fu } };
-                                #endif
+static const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu, "resize"_fu } };
 
                                 #ifndef DEF_q_REF_EXTENSIONS
                                 #define DEF_q_REF_EXTENSIONS

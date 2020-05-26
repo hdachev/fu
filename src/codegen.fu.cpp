@@ -586,40 +586,19 @@ inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
 }
                                 #endif
 
-                                #ifndef DEF_M_STMT
-                                #define DEF_M_STMT
-inline const int M_STMT = (1 << 0);
-                                #endif
+static const int M_STMT = (1 << 0);
 
-                                #ifndef DEF_M_RETBOOL
-                                #define DEF_M_RETBOOL
-inline const int M_RETBOOL = (1 << 1);
-                                #endif
+static const int M_RETBOOL = (1 << 1);
 
-                                #ifndef DEF_M_CONST
-                                #define DEF_M_CONST
-inline const int M_CONST = (1 << 2);
-                                #endif
+static const int M_CONST = (1 << 2);
 
-                                #ifndef DEF_M_RETVAL
-                                #define DEF_M_RETVAL
-inline const int M_RETVAL = (1 << 3);
-                                #endif
+static const int M_RETVAL = (1 << 3);
 
-                                #ifndef DEF_M_ARGUMENT
-                                #define DEF_M_ARGUMENT
-inline const int M_ARGUMENT = (1 << 4);
-                                #endif
+static const int M_ARGUMENT = (1 << 4);
 
-                                #ifndef DEF_M_CLOSURE
-                                #define DEF_M_CLOSURE
-inline const int M_CLOSURE = (1 << 5);
-                                #endif
+static const int M_CLOSURE = (1 << 5);
 
-                                #ifndef DEF_M_FWDECL
-                                #define DEF_M_FWDECL
-inline const int M_FWDECL = (1 << 6);
-                                #endif
+static const int M_FWDECL = (1 << 6);
 
                                 #ifndef DEF_q_ref
                                 #define DEF_q_ref
@@ -709,6 +688,11 @@ inline const int F_ARG = (1 << 9);
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
 inline const int LET_INIT = 1;
+                                #endif
+
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -1348,7 +1332,11 @@ struct sf_cpp_codegen
         if (fu::lmatch(src, "const "_fu))
             src = fu::slice(src, 6);
 
-        (_fdef += ((((((("\n                                #ifndef DEF_"_fu + node.value) + "\n                                #define DEF_"_fu) + node.value) + "\ninline const "_fu) + src) + ";"_fu) + "\n                                #endif\n"_fu));
+        if (!(node.flags & F_PUB))
+            (_fdef += (("\nstatic const "_fu + src) + ";\n"_fu));
+        else
+            (_fdef += ((((((("\n                                #ifndef DEF_"_fu + node.value) + "\n                                #define DEF_"_fu) + node.value) + "\ninline const "_fu) + src) + ";"_fu) + "\n                                #endif\n"_fu));
+
         return fu_STR{};
     };
     void cgForeignGlobal(const s_Target& target)

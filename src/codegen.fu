@@ -796,12 +796,20 @@ pub fn cpp_codegen(
         if (src.starts(with: "const "))
             src = src.slice(6);
 
-        //
-        _fdef  += "\n                                #ifndef DEF_" + node.value
-                + "\n                                #define DEF_" + node.value
-                + "\ninline const " + src + ";"
-                + "\n                                #endif\n";
+        // Hide when possible.
+        if (!(node.flags & F_PUB))
+        {
+            _fdef  += "\nstatic const " + src + ";\n";
+        }
+        else
+        {
+            _fdef  += "\n                                #ifndef DEF_" + node.value
+                    + "\n                                #define DEF_" + node.value
+                    + "\ninline const " + src + ";"
+                    + "\n                                #endif\n";
+        }
 
+        //
         return "";
     }
 

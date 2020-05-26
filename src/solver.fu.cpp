@@ -632,10 +632,7 @@ inline const s_Node& only(const fu_VEC<s_Node>& s)
 }
                                 #endif
 
-                                #ifndef DEF_WARN_ON_IMPLICIT_COPY
-                                #define DEF_WARN_ON_IMPLICIT_COPY
-inline const bool WARN_ON_IMPLICIT_COPY = false;
-                                #endif
+static const bool WARN_ON_IMPLICIT_COPY = false;
 
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy

@@ -243,25 +243,13 @@ inline const int F_TEMPLATE = (1 << 30);
 inline const int F_DESTRUCTOR = (1 << 31);
                                 #endif
 
-                                #ifndef DEF_P_RESET
-                                #define DEF_P_RESET
-inline const int P_RESET = 1000;
-                                #endif
+static const int P_RESET = 1000;
 
-                                #ifndef DEF_P_PREFIX_UNARY
-                                #define DEF_P_PREFIX_UNARY
-inline const int P_PREFIX_UNARY = 3;
-                                #endif
+static const int P_PREFIX_UNARY = 3;
 
-                                #ifndef DEF_PREFIX
-                                #define DEF_PREFIX
-inline const fu_VEC<fu_STR> PREFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
-                                #endif
+static const fu_VEC<fu_STR> PREFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
 
-                                #ifndef DEF_POSTFIX
-                                #define DEF_POSTFIX
-inline const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
-                                #endif
+static const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
 
 namespace {
 
@@ -314,15 +302,9 @@ s_BINOP setupOperators()
 }
 
 
-                                #ifndef DEF_BINOP
-                                #define DEF_BINOP
-inline const s_BINOP BINOP = setupOperators();
-                                #endif
+static const s_BINOP BINOP = setupOperators();
 
-                                #ifndef DEF_P_COMMA
-                                #define DEF_P_COMMA
-inline const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail(); }());
-                                #endif
+static const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail(); }());
 
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
