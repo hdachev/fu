@@ -939,15 +939,17 @@ pub fn solve(
 
     fn uPrepFn(node: Node): SolvedNode
     {
-        return __solveFn(false, false, node, SolvedNode, -1);
+        return __solveFn(node, SolvedNode,
+            solve: false, spec: false, caseIdx: -1);
     }
 
     fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
     {
-        return __solveFn(true, false, node, prep, -1);
+        return __solveFn(node, prep,
+            solve: true, spec: false, caseIdx: -1);
     }
 
-    fn __solveFn(solve: bool, spec: bool, n_fn: Node, prep: SolvedNode, caseIdx: i32): SolvedNode
+    fn __solveFn(solve!: bool, spec!: bool, n_fn: Node, prep: SolvedNode, caseIdx!: i32): SolvedNode
     {
         let id = n_fn.value || fail("TODO anonymous fns");
 
@@ -1331,8 +1333,10 @@ pub fn solve(
             start: _root_scope,
               end: scope0);
 
-        let specialized = __solveFn(true, true, node, SolvedNode(), caseIdx);
-            specialized || fail();
+        let specialized = __solveFn(
+            node, SolvedNode,
+            solve: true, spec: true, :caseIdx)
+                || fail();
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);

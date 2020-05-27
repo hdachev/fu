@@ -1877,8 +1877,7 @@ struct sf_solve
         const int scope0 = Scope_push(_scope);
         const s_ScopeSkip scope_skip0 { _scope_skip };
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
-        s_SolvedNode specialized = __solveFn(true, true, node, s_SolvedNode{}, caseIdx);
-        (specialized || fail(fu_STR{}));
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, node, s_SolvedNode{}, caseIdx); if (_) return _; } fail(fu_STR{}); }());
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         Scope_pop(_scope, scope0);
