@@ -3,6 +3,7 @@
 #import "types";
 #import "scope";
 #import "solver";
+#import "intlit";
 
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
@@ -1202,6 +1203,14 @@ pub fn cpp_codegen(
 
         if (src.starts(with: "0o"))
             src.splice(1, 1);
+
+        // One of those paradoxes.
+        if (src.len > 16)
+        {
+            let parse = Intlit(src);
+            if (parse.negative && parse.absval == 0x8000000000000000)
+                return "(-9223372036854775807-1)";
+        }
 
         return src;
     }

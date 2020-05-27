@@ -768,6 +768,10 @@ void runTests()
     FAIL("\n        fn main() {\n            let ret: i16 =\n            //*F\n            32768\n            /*/\n            32767\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i32 =\n            //*F\n            2147483648\n            /*/\n            2147483647\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i64 =\n            //*F\n            9223372036854775808\n            /*/\n            9223372036854775807\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i8 =\n            //*F\n            -129\n            /*/\n            -128\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i16 =\n            //*F\n            -32769\n            /*/\n            -32768\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i32 =\n            //*F\n            -2147483649\n            /*/\n            -2147483648\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i64 =\n            //*F\n            -9223372036854775809\n            /*/\n            -9223372036854775808\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
 }
 
 #endif

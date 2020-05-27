@@ -13,9 +13,11 @@
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/sort.h>
+#include <fu/view.h>
 #include <utility>
 
 struct s_ModuleStat;
+struct s_Intlit;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
@@ -43,6 +45,7 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+s_Intlit Intlit(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
@@ -563,6 +566,36 @@ struct s_MapFields
         return false
             || key
             || value
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Intlit
+                                #define DEF_s_Intlit
+struct s_Intlit
+{
+    uint8_t base;
+    uint8_t minsize_i;
+    uint8_t minsize_u;
+    uint8_t minsize_f;
+    bool sIgned;
+    bool uNsigned;
+    bool negative;
+    uint64_t absval;
+    fu_STR error;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || base
+            || minsize_i
+            || minsize_u
+            || minsize_f
+            || sIgned
+            || uNsigned
+            || negative
+            || absval
+            || error
         ;
     }
 };
@@ -1664,6 +1697,13 @@ struct sf_cpp_codegen
         if (fu::lmatch(src, "0o"_fu))
             src.splice(1, 1);
 
+        if ((src.size() > 16))
+        {
+            s_Intlit parse = Intlit(src);
+            if ((parse.negative && (parse.absval == 0x8000000000000000u)))
+                return "(-9223372036854775807-1)"_fu;
+
+        };
         return src;
     };
     fu_STR cgEmpty()
