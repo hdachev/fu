@@ -411,7 +411,7 @@ struct sf_parse
     };
     s_Node miss()
     {
-        return s_Node {  };
+        return s_Node{};
     };
     s_Token consume(const fu_STR& kind, const fu_STR& value)
     {
@@ -431,7 +431,7 @@ struct sf_parse
             _idx++;
             return s_Token(token);
         };
-        return s_Token {  };
+        return s_Token{};
     };
     s_Node parseRoot()
     {
@@ -792,7 +792,7 @@ struct sf_parse
         s_Node ret = parseLet(false);
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node {  });
+            s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node{});
             s_Node cAtch = parseStatement();
             return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cAtch } }, 0, fu_STR{});
         };
@@ -1168,7 +1168,7 @@ struct sf_parse
         ((_fnDepth > 0) || ((void)_idx--, fail(fu_STR{})));
         _numReturns++;
         if (tryConsume("op"_fu, ";"_fu))
-            return createReturn(s_Node {  });
+            return createReturn(s_Node{});
 
         return createReturn(parseExpressionStatement());
     };

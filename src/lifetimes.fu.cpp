@@ -141,7 +141,7 @@ s_Lifetime type_inter(const s_Lifetime& a, const s_Region& b)
 
 s_Lifetime Lifetime_static()
 {
-    return s_Lifetime {  };
+    return s_Lifetime{};
 }
 
 s_Lifetime Lifetime_fromArgIndex(const int argIdx)

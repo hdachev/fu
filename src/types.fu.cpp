@@ -378,7 +378,7 @@ bool qhas(const s_Type& type, const int q)
 static s_Type tryClear(const s_Type& type, const int q)
 {
     if ((!type || !qhas(type, q)))
-        return s_Type {  };
+        return s_Type{};
 
     return qsub(type, q);
 }
@@ -490,7 +490,7 @@ s_Type createArray(const s_Type& item)
 s_Type tryClear_array(const s_Type& type)
 {
     if (!type_isArray(type))
-        return s_Type {  };
+        return s_Type{};
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));
     return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
@@ -512,7 +512,7 @@ s_Type createSlice(const s_Type& item)
 s_Type tryClear_slice(const s_Type& type)
 {
     if (!type_isSlice(type))
-        return s_Type {  };
+        return s_Type{};
 
     s_ValueType value = parseType(fu::slice(type.value.canon, 2));
     return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
@@ -534,7 +534,7 @@ s_Type createMap(const s_Type& key, const s_Type& value)
 s_MapFields tryClear_map(const s_Type& type)
 {
     if (!type_isMap(type))
-        return s_MapFields {  };
+        return s_MapFields{};
 
     int depth = 0;
     for (int i = 1; (i < type.value.canon.size()); i++)
@@ -567,7 +567,7 @@ bool type_has(const s_Type& type, const fu_STR& tag)
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if (((a.value.canon != b.value.canon) || (a.value.modid != b.value.modid)))
-        return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type {  }));
+        return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type{}));
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }

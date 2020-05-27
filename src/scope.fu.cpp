@@ -728,7 +728,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     if (target)
     {
         if (scope_iterator)
-            return s_Target {  };
+            return s_Target{};
 
         scope_iterator--;
         return s_Target(target);
@@ -753,7 +753,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
             return s_Target(item.target);
         };
     };
-    return s_Target {  };
+    return s_Target{};
 }
 
 int Scope_push(s_Scope& scope)

@@ -983,6 +983,9 @@ pub fn cpp_codegen(
         //
         if (target.kind == "defctor" || target.kind == "type")
         {
+            if (!items)
+                return cgDefault(target.type);
+
             let head = (target.type || fail());
             let type = lookupStruct(head) || fail();
             let id   = typeAnnotBase(head);

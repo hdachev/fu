@@ -1307,7 +1307,7 @@ struct sf_cpp_codegen
         const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id));
-        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode {  });
+        s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode{});
         if ((!doInit || (node.flags & F_ARG)))
             return head;
 
@@ -1487,6 +1487,9 @@ struct sf_cpp_codegen
         };
         if (((target.kind == "defctor"_fu) || (target.kind == "type"_fu)))
         {
+            if (!items)
+                return cgDefault(target.type);
+
             const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
             const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
             fu_STR id = typeAnnotBase(head);
