@@ -1353,7 +1353,7 @@ struct sf_solve
     [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
         fu_VEC<s_Target> overloads = DEPREC_lookup(scope, id);
-        int min = int(0xffffff);
+        int min = int(0xffffffu);
         for (int i = 0; (i < overloads.size()); i++)
         {
             const int arity = GET(overloads[i], module, ctx).min;

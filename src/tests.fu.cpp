@@ -764,6 +764,10 @@ void runTests()
     FAIL("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        //*F\n        return test(-2, +2);\n        /*/\n        return test(-2, b: +2);\n        //*/\n    "_fu);
     ZERO("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        return Test(-1).test;\n    "_fu);
     FAIL("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        //*F\n        return Test(-2, +2).test;\n        /*/\n        return Test(-2, b: +2).test;\n        //*/\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i8 =\n            //*F\n            128\n            /*/\n            127\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i16 =\n            //*F\n            32768\n            /*/\n            32767\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i32 =\n            //*F\n            2147483648\n            /*/\n            2147483647\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
+    FAIL("\n        fn main() {\n            let ret: i64 =\n            //*F\n            9223372036854775808\n            /*/\n            9223372036854775807\n            //*/\n            ;\n\n            return (ret - ret).i32;\n        }\n    "_fu);
 }
 
 #endif

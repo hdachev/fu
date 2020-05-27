@@ -40,7 +40,7 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
 {
     const std::byte c_sign = sign_prefix_value_suffix[0];
     const std::byte sign = ([&]() -> std::byte { if (((c_sign == std::byte('-')) || (c_sign == std::byte('+')))) return c_sign; else return fu::Default<std::byte>::value; }());
-    fu::view<std::byte> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ([&]() -> int { if ((c_sign != std::byte{})) return 1; else return int{}; }()), sign_prefix_value_suffix.size());
+    fu::view<std::byte> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ([&]() -> int { if ((sign != std::byte{})) return 1; else return int{}; }()), sign_prefix_value_suffix.size());
     const std::byte c_prefix = ([&]() -> std::byte { if ((prefix_value_suffix.size() > 1)) return prefix_value_suffix[1]; else return fu::Default<std::byte>::value; }());
     const std::byte prefix = ([&]() -> std::byte { if (((c_prefix == std::byte('x')) || (c_prefix == std::byte('o')) || (c_prefix == std::byte('b'))) && (prefix_value_suffix[0] == std::byte('0'))) return c_prefix; else return fu::Default<std::byte>::value; }());
     fu::view<std::byte> value_suffix = fu::get_view(prefix_value_suffix, ([&]() -> int { if ((prefix != std::byte{})) return 2; else return int{}; }()), prefix_value_suffix.size());
@@ -56,7 +56,7 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
         {
             continue;
         };
-        const uint64_t ci = (uint64_t(c) - ((c <= std::byte('a')) ? uint64_t(std::byte('0')) : uint64_t(std::byte('a'))));
+        const uint64_t ci = (uint64_t(c) - ((c < std::byte('a')) ? uint64_t(std::byte('0')) : uint64_t(std::byte('a'))));
         absval *= base;
         absval += ci;
     };

@@ -25,7 +25,7 @@ pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
 {
     let c_sign                  = sign_prefix_value_suffix[0];
     let sign                    = (c_sign == '-' || c_sign == '+') && c_sign;
-    let prefix_value_suffix     = sign_prefix_value_suffix[c_sign != byte && 1, sign_prefix_value_suffix.len];
+    let prefix_value_suffix     = sign_prefix_value_suffix[sign != byte && 1, sign_prefix_value_suffix.len];
 
     let c_prefix                = prefix_value_suffix.len > 1 && prefix_value_suffix[1];
     let prefix                  = (c_prefix == 'x' || c_prefix == 'o' || c_prefix == 'b')
@@ -51,7 +51,7 @@ pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
         if (c == '_')
             continue;
 
-        let ci = c.u64 - (c <= 'a' ? '0'.u64 : 'a'.u64);
+        let ci = c.u64 - (c < 'a' ? '0'.u64 : 'a'.u64);
         absval *= base;
         absval += ci;
     }

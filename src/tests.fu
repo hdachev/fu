@@ -2224,6 +2224,65 @@ pub fn runTests()
     `);
 
 
+    // Intlit sizechecks.
+
+    FAIL(`
+        fn main() {
+            let ret: i8 =
+            //*F
+            128
+            /*/
+            127
+            //*/
+            ;
+
+            return (ret - ret).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: i16 =
+            //*F
+            32768
+            /*/
+            32767
+            //*/
+            ;
+
+            return (ret - ret).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: i32 =
+            //*F
+            2147483648
+            /*/
+            2147483647
+            //*/
+            ;
+
+            return (ret - ret).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: i64 =
+            //*F
+            9223372036854775808
+            /*/
+            9223372036854775807
+            //*/
+            ;
+
+            return (ret - ret).i32;
+        }
+    `);
+
+
     // We have to deduce the rh-types from the assignment calls.
     //
     // ZERO(`
