@@ -1,0 +1,99 @@
+#import "helpers";
+
+
+// A breakdown of integer literal values.
+
+pub struct Intlit
+{
+    base:       u8;
+    minsize_i:  u8;
+    minsize_u:  u8;
+    minsize_f:  u8;
+
+    signed:     bool;
+    unsigned:   bool;
+    negative:   bool;
+
+    absval:     u64;
+    error:      string;
+};
+
+
+//
+
+pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
+{
+    let c_sign                  = sign_prefix_value_suffix[0];
+    let sign                    = (c_sign == '-' || c_sign == '+') && c_sign;
+    let prefix_value_suffix     = sign_prefix_value_suffix[c_sign != byte && 1, sign_prefix_value_suffix.len];
+
+    let c_prefix                = prefix_value_suffix.len > 1 && prefix_value_suffix[1];
+    let prefix                  = (c_prefix == 'x' || c_prefix == 'o' || c_prefix == 'b')
+                                                        && prefix_value_suffix[0] == '0'
+                                                        && c_prefix;
+
+    let value_suffix            = prefix_value_suffix[prefix != byte && 2, prefix_value_suffix.len];
+
+    let c_suffix                = value_suffix.len && value_suffix[value_suffix.len - 1];
+    let suffix                  = c_suffix == 'u' && c_suffix;
+
+    let value                   = value_suffix[0, value_suffix.len - (suffix != byte && 1)];
+
+    // Done parsing out the various bits.
+    let base        = prefix == 'x' ? 16.u64
+                    : prefix == 'o' ?  8.u64
+                    : prefix == 'b' ?  2.u64 : 10.u64;
+
+    mut absval: u64;
+    for (mut i = 0; i < value.len; i++)
+    {
+        let c = value[i];
+        if (c == '_')
+            continue;
+
+        let ci = c.u64 - (c <= 'a' ? '0'.u64 : 'a'.u64);
+        absval *= base;
+        absval += ci;
+    }
+
+    // Decide on signededness.
+    let unsigned    = suffix == 'u' || base != 10;
+    let negative    = sign == '-';
+    let signed      = negative || suffix == 'i';
+
+    mut error       = signed && unsigned &&
+        "Ambiguous int literal: cannot decide if signed or unsigned.";
+
+    // Minimum size that can fit value.
+    let sizeval     = negative && absval ? absval - 1 : absval;
+
+    let minsize_i   = sizeval < 0x80                ? 8
+                    : sizeval < 0x8000              ? 16
+                    : sizeval < 0x80000000          ? 32
+                    : sizeval < 0x8000000000000000  ? 64
+                                                    : 128;
+
+    let minsize_u   = negative                      ? 255
+                    : absval < 0x100                ? 8
+                    : absval < 0x10000              ? 16
+                    : absval < 0x100000000          ? 32
+                                                    : 64;
+
+    let minsize_f   = absval < 0x1000000            ? 32
+                                                    : 64;
+
+    error ||= signed
+        ? minsize_i > 64 && "Oversized signed int literal."
+        : minsize_u > 64 && "Oversized unsigned int literal.";
+
+    return Intlit(
+        base:       base.u8,
+        minsize_i:  minsize_i.u8,
+        minsize_u:  minsize_u.u8,
+        minsize_f:  minsize_f.u8,
+            :signed,
+            :unsigned,
+            :negative,
+            :absval,
+            :error);
+}

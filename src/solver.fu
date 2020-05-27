@@ -4,6 +4,7 @@
 #import "scope";
 #import "types";
 #import "lifetimes";
+#import "intlit";
 
 let WARN_ON_IMPLICIT_COPY = false;
 
@@ -839,41 +840,46 @@ pub fn solve(
 
     fn solveInt(v: string, type: Type): Type
     {
-        let U = v.starts(with: "0x")
-            ||  v.starts(with: "0o")
-            ||  v.starts(with: "0b")
-            ||  v.ends  (with: 'u');
+        let parse = Intlit(v);
+        parse.error && fail(parse.error);
 
-        let S = v.starts(with: '-')
-            ||  v.starts(with: '+')
-            ||  v.ends  (with: 'i');
-
-        U && S && fail(
-            "Ambiguous int literal: cannot decide if signed or unsigned.");
-
-        fn want(t: Type)
-            type.canon == t.canon;
-
-        if (!U)
+        if (type)
         {
-            if (want(t_f32)) return t_f32;
-            if (want(t_f64)) return t_f64;
+            fn want(t: Type)
+                type.canon == t.canon;
 
-            if (want(t_i32)) return t_i32;
-            if (want(t_i64)) return t_i64;
-            if (want(t_i16)) return t_i16;
-            if (want(t_i8 )) return t_i8 ;
+            if (!parse.unsigned)
+            {
+                if (want(t_f32) && parse.minsize_f <= 32) return t_f32;
+                if (want(t_f64) && parse.minsize_f <= 64) return t_f64;
+
+                if (want(t_i32) && parse.minsize_i <= 32) return t_i32;
+                if (want(t_i64) && parse.minsize_i <= 64) return t_i64;
+                if (want(t_i16) && parse.minsize_i <= 16) return t_i16;
+                if (want(t_i8 ) && parse.minsize_i <= 8 ) return t_i8 ;
+            }
+
+            if (!parse.signed)
+            {
+                if (want(t_u32) && parse.minsize_u <= 32) return t_u32;
+                if (want(t_u64) && parse.minsize_u <= 64) return t_u64;
+                if (want(t_u16) && parse.minsize_u <= 16) return t_u16;
+                if (want(t_u8 ) && parse.minsize_u <= 8 ) return t_u8 ;
+            }
         }
 
-        if (!S)
+        if (parse.unsigned)
         {
-            if (want(t_u32)) return t_u32;
-            if (want(t_u64)) return t_u64;
-            if (want(t_u16)) return t_u16;
-            if (want(t_u8 )) return t_u8 ;
+            if (parse.minsize_u <= 32) return t_u32;
+            if (parse.minsize_u <= 64) return t_u64;
+        }
+        else
+        {
+            if (parse.minsize_i <= 32) return t_i32;
+            if (parse.minsize_i <= 64) return t_i64;
         }
 
-        return U ? t_u32 : t_i32;
+        return fail("Bad int literal.");
     }
 
     fn solveNum(v: string, type: Type): Type
