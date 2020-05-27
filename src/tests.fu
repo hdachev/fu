@@ -2236,7 +2236,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret - 100).i32 - 27;
         }
     `);
 
@@ -2250,7 +2250,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret - 32700).i32 - 67;
         }
     `);
 
@@ -2264,7 +2264,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret - 2147483600).i32 - 47;
         }
     `);
 
@@ -2278,7 +2278,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret - 9223372036854775800).i32 - 7;
         }
     `);
 
@@ -2292,7 +2292,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret + 100).i32 + 28;
         }
     `);
 
@@ -2306,7 +2306,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret + 32700).i32 + 68;
         }
     `);
 
@@ -2320,7 +2320,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret + 2147483600).i32 + 48;
         }
     `);
 
@@ -2334,7 +2334,7 @@ pub fn runTests()
             //*/
             ;
 
-            return (ret - ret).i32;
+            return (ret + 9223372036854775800).i32 + 8;
         }
     `);
 
