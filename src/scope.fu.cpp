@@ -746,8 +746,12 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
 
         const s_ScopeItem& item = items[scope_iterator];
         if ((item.id == id))
-            return s_Target(item.target);
+        {
+            if (!scope_iterator)
+                scope_iterator = -1;
 
+            return s_Target(item.target);
+        };
     };
     return s_Target {  };
 }

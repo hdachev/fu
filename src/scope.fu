@@ -340,7 +340,14 @@ pub fn search(
 
         let item = items[scope_iterator];
         if (item.id == id)
+        {
+            // Prevent re-entry, otherwise we loop forever
+            //  if we're matching the very first item in scope.
+            if (!scope_iterator)
+                scope_iterator = -1;
+
             return item.target;
+        }
     }
 
     return Target;
