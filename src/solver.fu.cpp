@@ -44,7 +44,7 @@ struct s_Lifetime;
 struct s_Region;
 s_Intlit Intlit(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
-const s_Node& only(const fu_VEC<s_Node>&);
+inline const s_Node& only(const fu_VEC<s_Node>&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
 int Scope_push(s_Scope&);

@@ -511,7 +511,9 @@ pub fn cpp_codegen(
         let isOp    = !id.hasIdentifierChars;
 
         let name    = isOp ? "operator" + id : id;
-        let linkage = overload.flags & F_PUB ? "" : "static ";
+        let linkage = overload.flags & F_TEMPLATE   ? "inline "
+                    : overload.flags & F_PUB        ? ""
+                                                    : "static ";
 
         mut src = "\n" + linkage + annot + " " + name + "(";
 

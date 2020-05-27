@@ -698,6 +698,11 @@ inline const int FN_ARGS_BACK = FN_RET_BACK;
 inline const int F_PUB = (1 << 20);
                                 #endif
 
+                                #ifndef DEF_F_TEMPLATE
+                                #define DEF_F_TEMPLATE
+inline const int F_TEMPLATE = (1 << 30);
+                                #endif
+
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
 inline const int FN_BODY_BACK = -1;
@@ -1183,7 +1188,7 @@ struct sf_cpp_codegen
         fu_STR annot = typeAnnot(ret, M_RETVAL);
         const bool isOp = !hasIdentifierChars(id);
         fu_STR name = (isOp ? ("operator"_fu + id) : fu_STR(id));
-        fu_STR linkage = ((overload.flags & F_PUB) ? fu_STR{} : "static "_fu);
+        fu_STR linkage = ((overload.flags & F_TEMPLATE) ? "inline "_fu : ((overload.flags & F_PUB) ? fu_STR{} : "static "_fu));
         fu_STR src = ((((("\n"_fu + linkage) + annot) + " "_fu) + name) + "("_fu);
         const fu_VEC<s_Argument>& args = overload.args;
         for (int i = 0; (i < args.size()); i++)

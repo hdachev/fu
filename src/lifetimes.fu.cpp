@@ -7,7 +7,7 @@
 
 struct s_Lifetime;
 struct s_Region;
-const s_Region& only(const fu_VEC<s_Region>&);
+inline const s_Region& only(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Region
                                 #define DEF_s_Region
