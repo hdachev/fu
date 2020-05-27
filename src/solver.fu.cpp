@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/default.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -8,9 +9,11 @@
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 #include <utility>
 
 struct s_ModuleStat;
+struct s_Intlit;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
@@ -39,6 +42,7 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+s_Intlit Intlit(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
 const s_Node& only(const fu_VEC<s_Node>&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
@@ -593,6 +597,36 @@ struct s_ScopeSkip
         return false
             || start
             || end
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Intlit
+                                #define DEF_s_Intlit
+struct s_Intlit
+{
+    uint8_t base;
+    uint8_t minsize_i;
+    uint8_t minsize_u;
+    uint8_t minsize_f;
+    bool sIgned;
+    bool uNsigned;
+    bool negative;
+    uint64_t absval;
+    fu_STR error;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || base
+            || minsize_i
+            || minsize_u
+            || minsize_f
+            || sIgned
+            || uNsigned
+            || negative
+            || absval
+            || error
         ;
     }
 };
@@ -1319,7 +1353,7 @@ struct sf_solve
     [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
         fu_VEC<s_Target> overloads = DEPREC_lookup(scope, id);
-        int min = int(0xffffffu);
+        int min = int(0xffffff);
         for (int i = 0; (i < overloads.size()); i++)
         {
             const int arity = GET(overloads[i], module, ctx).min;
@@ -1482,50 +1516,70 @@ struct sf_solve
     };
     s_Type solveInt(const fu_STR& v, const s_Type& type)
     {
-        const bool U = (fu::lmatch(v, "0x"_fu) || fu::lmatch(v, "0o"_fu) || fu::lmatch(v, "0b"_fu) || fu::rmatch(v, std::byte('u')));
-        const bool S = (fu::lmatch(v, std::byte('-')) || fu::lmatch(v, std::byte('+')) || fu::rmatch(v, std::byte('i')));
-        (U && S && fail("Ambiguous int literal: cannot decide if signed or unsigned."_fu));
-        const auto& want = [&](const s_Type& t) -> bool
+        s_Intlit parse = Intlit(v);
+        (parse.error && fail(fu_STR(parse.error)));
+        if (type)
         {
-            return (type.value.canon == t.value.canon);
+            const auto& want = [&](const s_Type& t) -> bool
+            {
+                return (type.value.canon == t.value.canon);
+            };
+            if (!parse.uNsigned)
+            {
+                if ((want(t_f32) && (parse.minsize_f <= 32u)))
+                    return s_Type(t_f32);
+
+                if ((want(t_f64) && (parse.minsize_f <= 64u)))
+                    return s_Type(t_f64);
+
+                if ((want(t_i32) && (parse.minsize_i <= 32u)))
+                    return s_Type(t_i32);
+
+                if ((want(t_i64) && (parse.minsize_i <= 64u)))
+                    return s_Type(t_i64);
+
+                if ((want(t_i16) && (parse.minsize_i <= 16u)))
+                    return s_Type(t_i16);
+
+                if ((want(t_i8) && (parse.minsize_i <= 8u)))
+                    return s_Type(t_i8);
+
+            };
+            if (!parse.sIgned)
+            {
+                if ((want(t_u32) && (parse.minsize_u <= 32u)))
+                    return s_Type(t_u32);
+
+                if ((want(t_u64) && (parse.minsize_u <= 64u)))
+                    return s_Type(t_u64);
+
+                if ((want(t_u16) && (parse.minsize_u <= 16u)))
+                    return s_Type(t_u16);
+
+                if ((want(t_u8) && (parse.minsize_u <= 8u)))
+                    return s_Type(t_u8);
+
+            };
         };
-        if (!U)
+        if (parse.uNsigned)
         {
-            if (want(t_f32))
-                return s_Type(t_f32);
-
-            if (want(t_f64))
-                return s_Type(t_f64);
-
-            if (want(t_i32))
-                return s_Type(t_i32);
-
-            if (want(t_i64))
-                return s_Type(t_i64);
-
-            if (want(t_i16))
-                return s_Type(t_i16);
-
-            if (want(t_i8))
-                return s_Type(t_i8);
-
-        };
-        if (!S)
-        {
-            if (want(t_u32))
+            if ((parse.minsize_u <= 32u))
                 return s_Type(t_u32);
 
-            if (want(t_u64))
+            if ((parse.minsize_u <= 64u))
                 return s_Type(t_u64);
 
-            if (want(t_u16))
-                return s_Type(t_u16);
+        }
+        else
+        {
+            if ((parse.minsize_i <= 32u))
+                return s_Type(t_i32);
 
-            if (want(t_u8))
-                return s_Type(t_u8);
+            if ((parse.minsize_i <= 64u))
+                return s_Type(t_i64);
 
         };
-        return s_Type((U ? t_u32 : t_i32));
+        fail("Bad int literal."_fu);
     };
     s_Type solveNum(const fu_STR& v, const s_Type& type)
     {
