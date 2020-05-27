@@ -2338,6 +2338,62 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        fn main() {
+            let ret: u8 =
+            //*F
+            256
+            /*/
+            255
+            //*/
+            ;
+
+            return (ret - 0xff).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: u16 =
+            //*F
+            65536
+            /*/
+            65535
+            //*/
+            ;
+
+            return (ret - 0xffff).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: u32 =
+            //*F
+            4294967296
+            /*/
+            4294967295
+            //*/
+            ;
+
+            return (ret - 0xffffffff).i32;
+        }
+    `);
+
+    FAIL(`
+        fn main() {
+            let ret: u64 =
+            //*F
+            18446744073709551616
+            /*/
+            18446744073709551615
+            //*/
+            ;
+
+            return (ret - 0xffffffffffffffff).i32;
+        }
+    `);
+
 
     // We have to deduce the rh-types from the assignment calls.
     //

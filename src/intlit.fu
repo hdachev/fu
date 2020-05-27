@@ -44,6 +44,7 @@ pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
                     : prefix == 'o' ?  8.u64
                     : prefix == 'b' ?  2.u64 : 10.u64;
 
+    mut error: string;
     mut absval: u64;
     for (mut i = 0; i < value.len; i++)
     {
@@ -52,8 +53,13 @@ pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
             continue;
 
         let ci = c.u64 - (c < 'a' ? '0'.u64 : 'a'.u64);
+
+        let last = absval;
         absval *= base;
         absval += ci;
+
+        error ||= last != absval / base &&
+            "Integer literal overflows a u64.";
     }
 
     // Decide on signededness.
@@ -61,7 +67,7 @@ pub fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
     let negative    = sign == '-';
     let signed      = negative || suffix == 'i';
 
-    mut error       = signed && unsigned &&
+    error ||= signed && unsigned &&
         "Ambiguous int literal: cannot decide if signed or unsigned.";
 
     // Minimum size that can fit value.
