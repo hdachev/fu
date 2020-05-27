@@ -1,5 +1,5 @@
-#import "helpers";
-#import "lexer";
+import "helpers";
+import "lexer";
 
 
 //
@@ -470,8 +470,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             if (v == "{")           return parseBlock();
             if (v == ";")           return parseEmpty();
             if (v == ":")           return parseLabelledStatement();
-
-            if (v == "#")           return parsePragma();
         }
         else if (token.kind == "id")
         {
@@ -493,6 +491,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             if (v == "typedef")     return parseTypedef();
 
             if (v == "pub")         return parsePub();
+            if (v == "import")      return parseImport();
 
             if (v == "inline" && tryConsume("id", "fn"))
                 return parseFnDecl(F_TEMPLATE);
@@ -505,15 +504,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         // Expression statement, followed by a semi.
         return parseExpressionStatement();
-    }
-
-    fn parsePragma(): Node
-    {
-        let v = consume("id").value;
-        if (v == "import")
-            return parseImport();
-
-        return fail("Unknown #pragma: `" + v + "`.");
     }
 
     fn parseImport(): Node

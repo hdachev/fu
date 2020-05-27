@@ -1,4 +1,4 @@
-#import "compiler";
+import "compiler";
 
 
 // A quick self-test without I/O.

@@ -1,8 +1,8 @@
-#import "lexer";
-#import "parser";
-#import "types";
-#import "lifetimes";
-#import "stat";
+import "lexer";
+import "parser";
+import "types";
+import "lifetimes";
+import "stat";
 
 
 // Build service primitives.

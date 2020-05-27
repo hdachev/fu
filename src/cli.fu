@@ -1,6 +1,6 @@
-#import "helpers";
-#import "compiler";
-#import "tests";
+import "helpers";
+import "compiler";
+import "tests";
 
 fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 {

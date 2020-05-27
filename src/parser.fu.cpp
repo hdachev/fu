@@ -567,9 +567,6 @@ struct sf_parse
             if ((v == ":"_fu))
                 return parseLabelledStatement();
 
-            if ((v == "#"_fu))
-                return parsePragma();
-
         }
         else if ((token.kind == "id"_fu))
         {
@@ -613,6 +610,9 @@ struct sf_parse
             if ((v == "pub"_fu))
                 return parsePub();
 
+            if ((v == "import"_fu))
+                return parseImport();
+
             if (((v == "inline"_fu) && tryConsume("id"_fu, "fn"_fu)))
                 return parseFnDecl(int(F_TEMPLATE));
 
@@ -620,14 +620,6 @@ struct sf_parse
         _idx--;
         _loc = loc0;
         return parseExpressionStatement();
-    };
-    s_Node parsePragma()
-    {
-        fu_STR v = consume("id"_fu, fu_STR{}).value;
-        if ((v == "import"_fu))
-            return parseImport();
-
-        fail((("Unknown #pragma: `"_fu + v) + "`."_fu));
     };
     s_Node parseImport()
     {

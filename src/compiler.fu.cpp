@@ -590,7 +590,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     if (!module.in)
     {
         module.out = s_ModuleOutputs{};
-        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("#import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
+        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
         const s_ModuleStat stat0 = ModuleStat_now();
         s_LexerOutput lexer_result = lex(src, fname);
         const s_ModuleStat stat1 = ModuleStat_now();
@@ -603,7 +603,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     }
     else
     {
-        (module.out || fu::fail(((("#import circle: `"_fu + via) + fname) + "`."_fu)));
+        (module.out || fu::fail(((("import circle: `"_fu + via) + fname) + "`."_fu)));
     };
     fu_VEC<fu_STR> imports { module.in.parse.imports };
     for (int i = 0; (i < imports.size()); i++)

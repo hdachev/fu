@@ -1,11 +1,11 @@
-#import "helpers";
-#import "lexer";
-#import "parser";
-#import "solver";
-#import "scope";
-#import "stat";
-#import "prelude";
-#import "codegen";
+import "helpers";
+import "lexer";
+import "parser";
+import "solver";
+import "scope";
+import "stat";
+import "prelude";
+import "codegen";
 
 
 //
@@ -21,7 +21,7 @@ fn compile(fname: string, via: string = "")
         module.out = ModuleOutputs;
 
         let src = getFile(fname) || throw (
-            "#import badfile: `" + via + fname + "`.");
+            "import badfile: `" + via + fname + "`.");
 
         let stat0 = ModuleStat_now();
         let lexer_result =
@@ -45,10 +45,10 @@ fn compile(fname: string, via: string = "")
     }
     else
     {
-        // Having input stuff solved but no output stuff means circular #import -
+        // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
         module.out || throw (
-            "#import circle: `" + via + fname + "`.");
+            "import circle: `" + via + fname + "`.");
     }
 
     //
