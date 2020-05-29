@@ -51,16 +51,17 @@ fn compile(fname: string, via: string = "")
             "import circle: `" + via + fname + "`.");
     }
 
-    //
-    let imports = module.in.parse.imports;
-    for (mut i = 0; i < imports.len; i++)
-        compile(
-            fname: imports[i],
-              via: fname + " <- " + via);
-
     // We're good to go here.
     if (!module.out)
     {
+        // Ensure dependencies.
+        let imports = module.in.parse.imports;
+        for (mut i = 0; i < imports.len; i++)
+            compile(
+                fname: imports[i],
+                  via: fname + " <- " + via);
+
+        //
         let stat0 = ModuleStat_now();
         module.out.solve = solve(
             module.in.parse.root);
