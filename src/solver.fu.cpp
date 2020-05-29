@@ -45,6 +45,7 @@ struct s_Region;
 s_Intlit Intlit(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
 inline const s_Node& only(const fu_VEC<s_Node>&);
+int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
 int Scope_push(s_Scope&);
@@ -52,6 +53,7 @@ void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
+const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
 bool isStruct(const s_Type&);
@@ -62,7 +64,6 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Modu
 int MODID(const s_Module&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
-int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -293,12 +294,12 @@ struct s_LexerOutput
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_STR> fuzimports;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || imports
+            || fuzimports
         ;
     }
 };
@@ -576,11 +577,13 @@ struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> fuzzy;
     explicit operator bool() const noexcept
     {
         return false
             || modules
             || files
+            || fuzzy
         ;
     }
 };
@@ -2035,8 +2038,9 @@ struct sf_solve
         (((var_err.kind == "let"_fu) && isAssignableAsArgument(var_err.type, s_Type(t_string))) || fail(("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
         return solved(node, var_ok.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { var_ok, var_err, cAtch } });
     };
-    const s_Module& findModule(const fu_STR& fname)
+    const s_Module& findModule(const fu_STR& fuzimport)
     {
+        const fu_STR& fname = resolveFile_x(fuzimport, ctx);
         const fu_VEC<s_Module>& modules = ctx.modules;
         for (int i = 1; (i < modules.size()); i++)
         {
@@ -2045,12 +2049,11 @@ struct sf_solve
                 return module;
 
         };
-        fu::fail();
+        fail(("Cannot locate: "_fu + fname));
     };
     s_SolvedNode solveImport(const s_Node& node)
     {
-        const fu_STR& fname = node.value;
-        const s_Module& module = findModule(fname);
+        const s_Module& module = findModule(node.value);
         Scope_import(module.modid);
         return createEmpty();
     };
@@ -2215,7 +2218,7 @@ struct sf_solve
     };
     fu_STR qualid_extractFName(fu_STR& id)
     {
-        const int split = fu::lfind(id, std::byte('\v'));
+        const int split = fu::lfind(id, std::byte('\t'));
         ((split >= 0) || fail(fu_STR{}));
         fu_STR fname = fu::slice(id, 0, split);
         id = fu::slice(id, (split + 1));

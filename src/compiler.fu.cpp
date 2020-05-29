@@ -65,9 +65,11 @@ fu_STR compile_snippet(const fu_STR&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-fu_STR& getFile(const fu_STR&, s_Context&);
-s_Module& getModule(const fu_STR&, s_Context&);
 void setModule(const s_Module&, s_Context&);
+const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
+s_Module& getModule(const fu_STR&, s_Context&);
+fu_STR resolveFile(const fu_STR&, s_Context&);
+fu_STR getFile(fu_STR&&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -151,12 +153,12 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_STR> fuzimports;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || imports
+            || fuzimports
         ;
     }
 };
@@ -556,11 +558,13 @@ struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> fuzzy;
     explicit operator bool() const noexcept
     {
         return false
             || modules
             || files
+            || fuzzy
         ;
     }
 };
@@ -590,7 +594,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     if (!module.in)
     {
         module.out = s_ModuleOutputs{};
-        fu_STR src { ([&]() -> const fu_STR& { { const fu_STR& _ = getFile(fname, ctx); if (_) return _; } fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)); }()) };
+        fu_STR src = ([&]() -> fu_STR { { fu_STR _ = getFile(fu_STR(fname), ctx); if (_) return _; } fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)); }());
         const s_ModuleStat stat0 = ModuleStat_now();
         s_LexerOutput lexer_result = lex(src, fname);
         const s_ModuleStat stat1 = ModuleStat_now();
@@ -605,12 +609,12 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     {
         (module.out || fu::fail(((("import circle: `"_fu + via) + fname) + "`."_fu)));
     };
-    fu_VEC<fu_STR> imports { module.in.parse.imports };
-    for (int i = 0; (i < imports.size()); i++)
-        compile(imports[i], ((fname + " <- "_fu) + via), ctx);
-
     if (!module.out)
     {
+        fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
+        for (int i = 0; (i < fuzimports.size()); i++)
+            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), ctx);
+
         const s_ModuleStat stat0 = ModuleStat_now();
         module.out.solve = solve(module.in.parse.root, ctx, module);
         const s_ModuleStat stat1 = ModuleStat_now();
@@ -656,23 +660,24 @@ namespace {
 struct sf_getLinkOrder
 {
     const fu_VEC<s_Module>& modules;
+    const s_Context& ctx {};
     fu_VEC<int> link_order {};
-    void visit(const s_Module& module)
+    void visit(const s_Module& module, const s_Context& ctx)
     {
         const int link_id = (module.modid - 1);
         if (fu::has(link_order, link_id))
             return;
 
-        const fu_VEC<fu_STR>& imports = module.in.parse.imports;
-        for (int i = 0; (i < imports.size()); i++)
+        const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
+        for (int i = 0; (i < fuzimports.size()); i++)
         {
-            const fu_STR& fname = imports[i];
+            const fu_STR& fname = resolveFile_x(fuzimports[i], ctx);
             for (int i = 1; (i < modules.size()); i++)
             {
                 const s_Module& module = modules[i];
                 if ((module.fname == fname))
                 {
-                    visit(module);
+                    visit(module, ctx);
                     break;
                 };
             };
@@ -683,7 +688,7 @@ struct sf_getLinkOrder
     fu_VEC<int> getLinkOrder_EVAL()
     {
         for (int i = 1; (i < modules.size()); i++)
-            visit(modules[i]);
+            visit(modules[i], ctx);
 
         return link_order;
     };
@@ -691,9 +696,9 @@ struct sf_getLinkOrder
 
 } // namespace
 
-fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules)
+fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
 {
-    return (sf_getLinkOrder { modules }).getLinkOrder_EVAL();
+    return (sf_getLinkOrder { modules, ctx }).getLinkOrder_EVAL();
 }
 
 
@@ -773,7 +778,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
 
         fu::fail(stdout);
     };
-    fu_VEC<int> link_order = getLinkOrder(ctx.modules);
+    fu_VEC<int> link_order = getLinkOrder(ctx.modules, ctx);
     if (((fu::file_size(fu_STR(F_exe)) < 1) && (bin || run)))
     {
         for (int i = 0; (i < Fs.size()); i++)

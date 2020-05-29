@@ -57,13 +57,13 @@ fu_STR path_noext(const fu_STR& path)
 
 fu_STR path_dirname(const fu_STR& path)
 {
-    for (int i = path.size(); (i-- > 0); )
+    for (int i = (path.size() - 1); (i-- > 0); )
     {
         if ((path[i] == std::byte('/')))
             return fu::slice(path, 0, (i + 1));
 
     };
-    return fu_STR{};
+    return "/"_fu;
 }
 
 fu_STR path_filename(const fu_STR& path)

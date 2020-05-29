@@ -1,3 +1,4 @@
+#include <fu/default.h>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -7,6 +8,9 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
+#include <fu/vec/replace.h>
+#include <fu/vec/slice.h>
+#include <utility>
 
 struct s_ModuleStat;
 struct s_LexerOutput;
@@ -36,9 +40,11 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-static bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
+fu_STR path_dirname(const fu_STR&);
 static int copyOrMove(int, const fu_VEC<s_StructField>&);
 static bool someFieldNonCopy(const fu_VEC<s_StructField>&);
+static bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
+fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -126,12 +132,12 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_STR> fuzimports;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || imports
+            || fuzimports
         ;
     }
 };
@@ -531,11 +537,13 @@ struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> fuzzy;
     explicit operator bool() const noexcept
     {
         return false
             || modules
             || files
+            || fuzzy
         ;
     }
 };
@@ -574,9 +582,66 @@ fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return fu_STR(ctx.modules[idx.modid].fname);
 }
 
-fu_STR& getFile(const fu_STR& path, s_Context& ctx)
+static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
-    return ([&](fu_STR& _) -> fu_STR& { if (!_) _ = fu::file_read(fu_STR(path)); return _; } (ctx.files.upsert(path)));
+    fu_STR path = (from + name);
+    fu_STR cached { ctx.fuzzy[path] };
+    if (cached)
+        return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
+
+    const auto& tryResolve = [&]() -> fu_STR
+    {
+        const bool exists = (fu::file_size(fu_STR(path)) >= 0);
+        if (exists)
+            return fu_STR(path);
+
+        fu_STR fallback = path_dirname(from);
+        if ((!fallback || (fallback.size() >= from.size())))
+            return fu_STR{};
+
+        return resolveFile(fallback, name, ctx);
+    };
+    fu_STR resolve = tryResolve();
+    (ctx.fuzzy.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(resolve); if (_) return _; } return "\v"_fu; }()));
+    return resolve;
+}
+
+fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
+{
+    const int fuzzy = fu::lfind(path, std::byte('\v'));
+    if ((fuzzy > 0))
+    {
+        fu_STR from = fu::slice(path, 0, fuzzy);
+        fu_STR name = fu::slice(path, (fuzzy + 1));
+        if ((from && name && !fu::has(name, std::byte('\v'))))
+        {
+            fu_STR res = resolveFile(from, name, ctx);
+            if (res)
+                return res;
+
+        };
+    };
+    return fu_STR(path);
+}
+
+const fu_STR& resolveFile_x(const fu_STR& path, const s_Context& ctx)
+{
+    const fu_STR& match = ctx.fuzzy[fu::replace(path, "\v"_fu, fu_STR{})];
+    if ((match && (match != "\v"_fu)))
+        return match;
+
+    return path;
+}
+
+fu_STR getFile(fu_STR&& path, s_Context& ctx)
+{
+    fu_STR cached { ctx.files[path] };
+    if (cached)
+        return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
+
+    fu_STR read = fu::file_read(fu_STR(path));
+    (ctx.files.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(read); if (_) return _; } return "\v"_fu; }()));
+    return read;
 }
 
 s_Module& getModule(const fu_STR& fname, s_Context& ctx)

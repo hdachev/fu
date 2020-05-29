@@ -6,6 +6,7 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <utility>
@@ -102,12 +103,12 @@ struct s_Node
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_STR> fuzimports;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || imports
+            || fuzimports
         ;
     }
 };
@@ -378,10 +379,8 @@ struct sf_parse
         if (!path_ext(value))
             (value += ".fu"_fu);
 
-        if (!path_dirname(value))
-            value = ("./"_fu + value);
-
-        value = path_join(path_dirname(fname), value);
+        fu_STR dir = path_dirname(fname);
+        value = (fu::lmatch(value, "."_fu) ? path_join(dir, value) : ((dir + std::byte('\v')) + value));
         if (!fu::has(_imports, value))
             _imports.push(value);
 
@@ -1050,7 +1049,7 @@ struct sf_parse
             if (!tryConsume("op"_fu, "::"_fu))
             {
                 path = registerImport(fu_STR(path));
-                expr.value = ((path + "\v"_fu) + id);
+                expr.value = ((path + "\t"_fu) + id);
                 return std::move(expr);
             };
             (path += ("/"_fu + id));

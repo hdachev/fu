@@ -376,12 +376,12 @@ struct s_LexerOutput
 struct s_ParserOutput
 {
     s_Node root;
-    fu_VEC<fu_STR> imports;
+    fu_VEC<fu_STR> fuzimports;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || imports
+            || fuzimports
         ;
     }
 };
@@ -545,11 +545,13 @@ struct s_Context
 {
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
+    fu_MAP<fu_STR, fu_STR> fuzzy;
     explicit operator bool() const noexcept
     {
         return false
             || modules
             || files
+            || fuzzy
         ;
     }
 };
