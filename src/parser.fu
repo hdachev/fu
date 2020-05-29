@@ -142,7 +142,7 @@ pub let LOOP_POST_COND = 4;
 pub struct ParserOutput
 {
     root:       Node;
-    imports:    string[];
+    fuzimports: string[];
 }
 
 pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
@@ -164,11 +164,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn registerImport(mut value: string): string
     {
-        if (!value.path_ext)     value += ".fu";
-        if (!value.path_dirname) value = "./" + value;
+        if (!value.path_ext)
+            value += ".fu";
 
-        value = path_join(
-            path_dirname(fname), value);
+        // Exact relative or fuzzy?
+        let dir = path_dirname(fname);
+        value   = value.starts(with: ".")
+                ? path_join(dir, value)
+                : dir + '\v' + value;
 
         if (!_imports.has(value))
             _imports.push(value);
@@ -1065,7 +1068,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             {
                 path = registerImport(path);
 
-                expr.value = path + "\v" + id;
+                expr.value = path + "\t" + id;
                 return expr;
             }
 
@@ -1376,5 +1379,5 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     let root = parseRoot();
 
     return ParserOutput(
-        :root, _imports);
+        :root, fuzimports: _imports);
 }

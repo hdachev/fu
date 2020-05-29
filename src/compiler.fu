@@ -55,10 +55,10 @@ fn compile(fname: string, via: string = "")
     if (!module.out)
     {
         // Ensure dependencies.
-        let imports = module.in.parse.imports;
-        for (mut i = 0; i < imports.len; i++)
+        let fuzimports = module.in.parse.fuzimports;
+        for (mut i = 0; i < fuzimports.len; i++)
             compile(
-                fname: imports[i],
+                fname: resolveFile(fuzimports[i]),
                   via: fname + " <- " + via);
 
         //
@@ -120,10 +120,10 @@ fn getLinkOrder(modules: Module[]): i32[]
         if (link_order.has(link_id))
             return;
 
-        let imports = module.in.parse.imports;
-        for (mut i = 0; i < imports.len; i++)
+        let fuzimports = module.in.parse.fuzimports;
+        for (mut i = 0; i < fuzimports.len; i++)
         {
-            let fname = imports[i];
+            let fname = resolveFile_x(fuzimports[i]);
             for (mut i = 1; i < modules.len; i++)
             {
                 let module = modules[i];

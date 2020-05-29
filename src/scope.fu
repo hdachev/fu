@@ -3,6 +3,7 @@ import "parser";
 import "types";
 import "lifetimes";
 import "stat";
+import "helpers";
 
 
 // Build service primitives.
@@ -54,7 +55,10 @@ pub fn MODID(implicit module: Module): i32
 pub struct Context
 {
     modules: Module[];
+
+    // FS facts.
     files: Map(string, string);
+    fuzzy: Map(string, string);
 };
 
 pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
@@ -63,11 +67,83 @@ pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
 pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
 
-pub fn getFile(
+
+//
+
+fn resolveFile(
     implicit ctx: &mut Context,
+    from: string, name: string): string
+{
+    let path    = from + name;
+    let cached  = ctx.fuzzy[path];
+    if (cached)
+        return cached == "\v" ? "" : cached;
+
+    fn tryResolve(): string
+    {
+        let exists = file_size(path) >= 0;
+        if (exists)
+            return path;
+
+        let fallback = from.path_dirname;
+        if (!fallback || fallback.len >= from.len)
+            return "";
+
+        return resolveFile(
+            from: fallback, :name);
+    };
+
+    let resolve = tryResolve();
+    ctx.fuzzy[path] = resolve || "\v";
+    return resolve;
+}
+
+pub fn resolveFile(
+    implicit ctx: &mut Context,
+    path: string): string
+{
+    let fuzzy = path.find('\v');
+    if (fuzzy > 0)
+    {
+        let from = path.slice(0, fuzzy);
+        let name = path.slice(fuzzy + 1);
+        if (from && name && !name.has('\v'))
+        {
+            let res = resolveFile(:from, :name);
+            if (res)
+                return res;
+        }
+    }
+
+    return path;
+}
+
+pub fn resolveFile_x(
+    implicit ctx: Context,
     path: string)
 {
-    return ctx.files[path] ||= file_read(path);
+    // TODO FIX
+    let match = ctx.fuzzy[path.replace(all: "\v", "")];
+    if (match && match != "\v")
+        return match;
+
+    return path;
+}
+
+
+//
+
+pub fn getFile(
+    implicit ctx: &mut Context,
+    mut path: string): string
+{
+    let cached = ctx.files[path];
+    if (cached)
+        return cached == "\v" ? "" : cached;
+
+    let read = file_read(path);
+    ctx.files[path] = read || "\v";
+    return read;
 }
 
 pub fn getModule(

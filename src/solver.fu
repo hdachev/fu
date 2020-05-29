@@ -1607,8 +1607,10 @@ pub fn solve(
             [ var_ok, var_err, catch ]);
     }
 
-    fn findModule(fname: string): &Module
+    fn findModule(fuzimport: string): &Module
     {
+        let fname = resolveFile_x(fuzimport);
+
         let modules = ctx.modules;
         for (mut i = 1; i < modules.len; i++)
         {
@@ -1617,14 +1619,12 @@ pub fn solve(
                 return module;
         }
 
-        assert();
+        fail("Cannot locate: " + fname);
     }
 
     fn solveImport(node: Node): SolvedNode
     {
-        let fname = node.value;
-        let module = findModule(fname);
-
+        let module = findModule(fuzimport: node.value);
         Scope_import(module.modid);
         return createEmpty();
     }
@@ -1867,7 +1867,7 @@ pub fn solve(
 
     fn qualid_extractFName(id: &mut string): string
     {
-        let split = id.find('\v');
+        let split = id.find('\t');
             split >= 0 || fail();
 
         let fname = id.slice(0, split);
@@ -1883,7 +1883,7 @@ pub fn solve(
 
         // Qualified?
         let scope = node.flags & F_QUALIFIED
-            ? findModule(qualid_extractFName(id)).out.solve.scope
+            ? findModule(fuzimport: qualid_extractFName(id)).out.solve.scope
             : _scope;
 
         mut args = solveNodes(node.items);

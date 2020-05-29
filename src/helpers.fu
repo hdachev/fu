@@ -59,11 +59,11 @@ pub fn path_noext(path: string): string
 
 pub fn path_dirname(path: string): string
 {
-    for (mut i = path.len; i --> 0; )
+    for (mut i = path.len - 1; i --> 0; )
         if (path[i] == '/')
             return path.slice(0, i + 1);
 
-    return "";
+    return "/";
 }
 
 pub fn path_filename(path: string): string
