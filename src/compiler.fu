@@ -81,32 +81,6 @@ fn compile(fname: string, via: string = "")
     }
 }
 
-fn compile_snippet(mut src: string, fname: string): Context
-{
-    // Some nonsense.
-    if (!src.has("fn main("))
-        src = "\n\nfn main(): i32 {\n" + src + "\n}\n";
-
-    //
-    let implicit mut ctx = CTX_PRELUDE;
-        ctx.files[fname] = src;
-
-    compile(:fname);
-
-    return ctx;
-}
-
-pub fn compile_snippet(src: string): string
-{
-    let fname = "testcase";
-    let ctx = compile_snippet(src, fname);
-    for (mut i = 1; i < ctx.modules.len; i++)
-        if (ctx.modules[i].fname == fname)
-            return ctx.modules[i].out.cpp;
-
-    assert();
-}
-
 
 //
 
@@ -547,10 +521,51 @@ pub fn locate_PRJDIR(): string
 pub let PRJDIR              = locate_PRJDIR();
 pub let DEFAULT_WORKSPACE   = PRJDIR + "build.cpp/";
 
-pub fn ZERO(src: string): Context
+
+// Test running infra.
+
+pub fn compile_snippets(sources: string[], fnames?: string[]): Context
 {
-    let fname = "testcase.ZERO";
-    let ctx = compile_snippet(:src, :fname);
+    fn ensure_main(src: string)
+        src.has("fn main(")
+            ? src
+            : "\n\nfn main(): i32 {\n" + src + "\n}\n";
+
+    let implicit mut ctx = CTX_PRELUDE;
+    for (mut i = 0; i < sources.len; i++)
+    {
+        let snippet = sources[i];
+        let src     = i == sources.len - 1
+                    ? ensure_main(snippet)
+                    : snippet;
+
+        let fname   = fnames.len > i ? fnames[i] : "/" + i + ".fu";
+
+        ctx.files[fname] = src;
+        compile(:fname);
+    }
+
+    return ctx;
+}
+
+pub fn snippet2cpp(src: string): string
+{
+    let fname = "SNIPPET";
+
+    let ctx = compile_snippets([ src ], [ fname ]);
+    for (mut i = 0; i < ctx.modules.len; i++)
+    {
+        let module = ctx.modules[i];
+        if (module.fname == fname)
+            return module.out.cpp;
+    }
+
+    return "";
+}
+
+pub fn ZERO(sources: string[]): Context
+{
+    let ctx = compile_snippets(:sources);
 
     build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE, scheme: "debug");
     build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
@@ -558,14 +573,37 @@ pub fn ZERO(src: string): Context
     return ctx;
 }
 
-pub fn FAIL(src: string)
+fn FAIL_replace(mut sources: string[]): string[]
 {
-    let cpp = compile_snippet(src)
-        catch e
-            return ZERO(src.replace(
-                all:  "//*F",
-                with: "/*"))
-                    && e.len; // <- use evar, super sloppy
+    for (mut i = 0; i < sources.len; i++)
+        sources[i] = sources[i]
+            .replace(all: "//*F", with: "/*");
 
-    throw("DID NOT THROW: " + cpp);
+    return sources;
 }
+
+pub fn FAIL(sources: string[]): string
+{
+    let ctx = compile_snippets(sources)
+        catch e
+            return ZERO(FAIL_replace(sources)) && e;
+
+    fn indent(src: string): string
+        src.replace(all: "\n", with: "\n\t");
+
+    mut bad = "\nDID NOT THROW:\n";
+
+    for (mut i = 1; i < ctx.modules.len; i++)
+    {
+        let module = ctx.modules[i];
+        bad += "\n#" + i + ": "         + module.fname + "\n";
+        bad += "\nfu  [" + i + "]:\n\t" + module.in .src.indent
+             + "\ncpp [" + i + "]:\n\t" + module.out.cpp.indent
+             + "\n";
+    }
+
+    return throw(bad);
+}
+
+pub fn ZERO(src: string) ZERO(sources: [ src ]);
+pub fn FAIL(src: string) FAIL(sources: [ src ]);

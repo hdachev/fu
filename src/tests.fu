@@ -24,8 +24,7 @@ let TEST_SRC = `
 
 pub fn self_test(): i32
 {
-    let cpp = compile_snippet(TEST_SRC);
-
+    let cpp = snippet2cpp(TEST_SRC);
     return cpp.find("int main()") ? 0 : 101;
 }
 
@@ -2393,6 +2392,25 @@ pub fn runTests()
             return (ret - 0xffffffffffffffff).i32;
         }
     `);
+
+
+    // Imports & pubs.
+
+    FAIL([
+    `
+        //*F
+
+        /*/
+        pub
+
+        //*/
+        fn hello() 3;
+    `,
+    `
+        import "./0";
+        fn main() 6 - hello * 2;
+    `
+    ]);
 
 
     // We have to deduce the rh-types from the assignment calls.
