@@ -2399,10 +2399,8 @@ pub fn runTests()
     FAIL([
     `
         //*F
-
         /*/
         pub
-
         //*/
         fn hello() 3;
     `,

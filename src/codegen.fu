@@ -290,25 +290,31 @@ pub fn cpp_codegen(
             if (s.target)
             {
                 mut dedupe = "";
-                for (mut i = 0; i < k.len; i++)
+                if (s.flags & F_PUB)
                 {
-                    let c = k[i];
+                    for (mut i = 0; i < k.len; i++)
+                    {
+                        let c = k[i];
 
-                    if (c >= '0' && c <= '9' ||
-                        c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
-                    {
-                        dedupe += c;
+                        if (c >= '0' && c <= '9' ||
+                            c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+                        {
+                            dedupe += c;
+                        }
+                        else
+                        {
+                            dedupe += '_';
+                        }
                     }
-                    else
-                    {
-                        dedupe += '_';
-                    }
+
+                    _fdef += "\n                                #ifndef DEFt_" + dedupe
+                           + "\n                                #define DEFt_" + dedupe;
                 }
 
-                _fdef += "\n                                #ifndef DEFt_" + dedupe
-                       + "\n                                #define DEFt_" + dedupe
-                       + "\n" + cgNode(s)
-                       + "\n                                #endif\n";
+                _fdef += "\n" + cgNode(s);
+
+                if (dedupe)
+                    _fdef += "\n                                #endif\n";
             }
         }
 
@@ -473,10 +479,10 @@ pub fn cpp_codegen(
 
         if (!closure)
         {
-            if (_isModuleSpecs)
-                src = "inline " + src;
-            else if (!(fn.flags & F_PUB) && !_faasN)
-                src = "static " + src;
+            let linkage = (_isModuleSpecs                 && "inline ")
+                        + (!(fn.flags & F_PUB) && !_faasN && "static ");
+
+            src = linkage + src;
         }
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
@@ -511,9 +517,8 @@ pub fn cpp_codegen(
         let isOp    = !id.hasIdentifierChars;
 
         let name    = isOp ? "operator" + id : id;
-        let linkage = overload.flags & F_TEMPLATE   ? "inline "
-                    : overload.flags & F_PUB        ? ""
-                                                    : "static ";
+        let linkage = (overload.flags & F_TEMPLATE && "inline ")
+                  + (!(overload.flags & F_PUB)     && "static ");
 
         mut src = "\n" + linkage + annot + " " + name + "(";
 

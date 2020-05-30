@@ -1371,7 +1371,7 @@ pub fn solve(
 
         // Add the arity-0 type entry.
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, structType);
+            out.target = Scope_Typedef(_scope, id, structType, node.flags);
 
         if (!solve)
             return out;
@@ -1530,7 +1530,7 @@ pub fn solve(
     fn solveTypedef(node: Node): SolvedNode
     {
         let annot = evalTypeAnnot(node.items.only);
-        Scope_Typedef(_scope, node.value, annot.type);
+        Scope_Typedef(_scope, node.value, annot.type, node.flags);
         return createEmpty();
     }
 
