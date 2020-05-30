@@ -32,9 +32,10 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+fu_STR snippet2cpp(const fu_STR&);
+fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
-int FAIL(const fu_STR&);
-fu_STR compile_snippet(const fu_STR&);
+fu_STR FAIL(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -541,7 +542,7 @@ static const fu_STR TEST_SRC = "\n    fn test(one: i32) {\n        let zero = on
 
 int self_test()
 {
-    fu_STR cpp = compile_snippet(TEST_SRC);
+    fu_STR cpp = snippet2cpp(TEST_SRC);
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
 }
 
@@ -778,6 +779,7 @@ void runTests()
     FAIL("\n        fn main() {\n            let ret: u16 =\n            //*F\n            65536\n            /*/\n            65535\n            //*/\n            ;\n\n            return (ret - 0xffff).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: u32 =\n            //*F\n            4294967296\n            /*/\n            4294967295\n            //*/\n            ;\n\n            return (ret - 0xffffffff).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: u64 =\n            //*F\n            18446744073709551616\n            /*/\n            18446744073709551615\n            //*/\n            ;\n\n            return (ret - 0xffffffffffffffff).i32;\n        }\n    "_fu);
+    FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        //*F\n\n        /*/\n        pub\n\n        //*/\n        fn hello() 3;\n    "_fu, "\n        import \"./0\";\n        fn main() 6 - hello * 2;\n    "_fu } });
 }
 
 #endif

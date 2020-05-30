@@ -60,8 +60,9 @@ fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 inline std::byte if_last(const fu_STR&);
-int FAIL(const fu_STR&);
-fu_STR compile_snippet(const fu_STR&);
+fu_STR FAIL(const fu_VEC<fu_STR>&);
+s_Context ZERO(const fu_STR&);
+fu_STR FAIL(const fu_STR&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
@@ -626,35 +627,6 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     };
 }
 
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-inline const s_Context CTX_PRELUDE = solvePrelude();
-                                #endif
-
-static s_Context compile_snippet(fu_STR&& src, const fu_STR& fname)
-{
-    if (!fu::has(src, "fn main("_fu))
-        src = (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu);
-
-    s_Context ctx { CTX_PRELUDE };
-    (ctx.files.upsert(fname) = src);
-    compile(fname, fu_STR{}, ctx);
-    return ctx;
-}
-
-fu_STR compile_snippet(const fu_STR& src)
-{
-    fu_STR fname = "testcase"_fu;
-    s_Context ctx = compile_snippet(fu_STR(src), fname);
-    for (int i = 1; (i < ctx.modules.size()); i++)
-    {
-        if ((ctx.modules[i].fname == fname))
-            return std::move(ctx.modules[i].out.cpp);
-
-    };
-    fu::fail();
-}
-
 namespace {
 
 struct sf_getLinkOrder
@@ -911,6 +883,11 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
 
 }
 
+                                #ifndef DEF_CTX_PRELUDE
+                                #define DEF_CTX_PRELUDE
+inline const s_Context CTX_PRELUDE = solvePrelude();
+                                #endif
+
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
 {
     s_Context ctx { CTX_PRELUDE };
@@ -972,30 +949,105 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
                                 #endif
 
-s_Context ZERO(const fu_STR& src)
+namespace {
+
+struct sf_compile_snippets
 {
-    fu_STR fname = "testcase.ZERO"_fu;
-    s_Context ctx = compile_snippet(fu_STR(src), fname);
+    const fu_VEC<fu_STR>& sources;
+    const fu_VEC<fu_STR>& fnames;
+    fu_STR ensure_main(const fu_STR& src)
+    {
+        return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
+    };
+    s_Context ctx { CTX_PRELUDE };
+    s_Context compile_snippets_EVAL()
+    {
+        for (int i = 0; (i < sources.size()); i++)
+        {
+            const fu_STR& snippet = sources[i];
+            fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
+            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (("/"_fu + i) + ".fu"_fu));
+            (ctx.files.upsert(fname) = src);
+            compile(fname, fu_STR{}, ctx);
+        };
+        return ctx;
+    };
+};
+
+} // namespace
+
+s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
+{
+    return (sf_compile_snippets { sources, fnames }).compile_snippets_EVAL();
+}
+
+
+fu_STR snippet2cpp(const fu_STR& src)
+{
+    fu_STR fname = "SNIPPET"_fu;
+    s_Context ctx = compile_snippets(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } }, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fname } });
+    for (int i = 0; (i < ctx.modules.size()); i++)
+    {
+        const s_Module& module = ctx.modules[i];
+        if ((module.fname == fname))
+            return std::move(module.out.cpp);
+
+    };
+    return fu_STR{};
+}
+
+s_Context ZERO(const fu_VEC<fu_STR>& sources)
+{
+    s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
     build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu);
     build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }
 
-int FAIL(const fu_STR& src)
+static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
 {
-    fu_STR cpp;
+    for (int i = 0; (i < sources.size()); i++)
+        sources.mutref(i) = fu::replace(sources[i], "//*F"_fu, "/*"_fu);
+
+    return std::move(sources);
+}
+
+fu_STR FAIL(const fu_VEC<fu_STR>& sources)
+{
+    s_Context ctx;
     try
     {
-        cpp = compile_snippet(src);
+        ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
     }
     catch (const std::exception& o_0)
     {
         const fu_STR& e = fu_TO_STR(o_0.what());
     
-        return ([&]() -> int { if (ZERO(fu::replace(src, "//*F"_fu, "/*"_fu))) return e.size(); else return int{}; }());
+        return std::move(([&]() -> const fu_STR& { if (ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)))) return e; else return fu::Default<fu_STR>::value; }()));
     }
 ;
-    fu::fail(("DID NOT THROW: "_fu + cpp));
+    const auto& indent = [&](const fu_STR& src) -> fu_STR
+    {
+        return fu::replace(src, "\n"_fu, "\n\t"_fu);
+    };
+    fu_STR bad = "\nDID NOT THROW:\n"_fu;
+    for (int i = 1; (i < ctx.modules.size()); i++)
+    {
+        const s_Module& module = ctx.modules[i];
+        (bad += (((("\n#"_fu + i) + ": "_fu) + module.fname) + "\n"_fu));
+        (bad += (((((((("\nfu  ["_fu + i) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu) + i) + "]:\n\t"_fu) + indent(module.out.cpp)) + "\n"_fu));
+    };
+    fu::fail(bad);
+}
+
+s_Context ZERO(const fu_STR& src)
+{
+    return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
+}
+
+fu_STR FAIL(const fu_STR& src)
+{
+    return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
 }
 
 #endif
