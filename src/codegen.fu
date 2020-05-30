@@ -1019,7 +1019,7 @@ pub fn cpp_codegen(
             target.kind == "arg" ||
             target.kind == "ref")
         {
-            return ID(id);
+            return ID(target.name);
         }
 
         if (target.kind == "field")
