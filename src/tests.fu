@@ -2411,6 +2411,15 @@ pub fn runTests()
     ]);
 
 
+    // Let's start having fun.
+
+    ZERO(`
+        let a = 1;
+        let a = a + 1;
+        return a - 2;
+    `);
+
+
     // We have to deduce the rh-types from the assignment calls.
     //
     // ZERO(`
