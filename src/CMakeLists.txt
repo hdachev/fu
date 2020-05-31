@@ -13,6 +13,7 @@ set(FU_INPUTS
     stat.fu
     scope.fu
     intlit.fu
+    tea.fu
     solver.fu
     prelude.fu
     codegen.fu

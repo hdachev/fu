@@ -779,7 +779,7 @@ void runTests()
     FAIL("\n        fn main() {\n            let ret: u16 =\n            //*F\n            65536\n            /*/\n            65535\n            //*/\n            ;\n\n            return (ret - 0xffff).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: u32 =\n            //*F\n            4294967296\n            /*/\n            4294967295\n            //*/\n            ;\n\n            return (ret - 0xffffffff).i32;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: u64 =\n            //*F\n            18446744073709551616\n            /*/\n            18446744073709551615\n            //*/\n            ;\n\n            return (ret - 0xffffffffffffffff).i32;\n        }\n    "_fu);
-    FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        //*F\n\n        /*/\n        pub\n\n        //*/\n        fn hello() 3;\n    "_fu, "\n        import \"./0\";\n        fn main() 6 - hello * 2;\n    "_fu } });
+    FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        //*F\n        /*/\n        pub\n        //*/\n        fn hello() 3;\n    "_fu, "\n        import \"./0\";\n        fn main() 6 - hello * 2;\n    "_fu } });
 }
 
 #endif

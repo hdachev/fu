@@ -59,7 +59,6 @@ fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
-inline std::byte if_last(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
@@ -575,7 +574,7 @@ struct s_Context
 
                                 #ifndef DEFt_2_6__1031___28byte
                                 #define DEFt_2_6__1031___28byte
-inline std::byte if_last(fu_STR& s)
+inline std::byte if_last_bcSl(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
@@ -583,7 +582,7 @@ inline std::byte if_last(fu_STR& s)
 
                                 #ifndef DEFt_2_6__1030___28byte
                                 #define DEFt_2_6__1030___28byte
-inline std::byte if_last(const fu_STR& s)
+inline std::byte if_last_y0NH(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
@@ -697,18 +696,18 @@ static void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_sr
 
 void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
 {
-    if ((if_last(dir_wrk) != std::byte('/')))
+    if ((if_last_bcSl(dir_wrk) != std::byte('/')))
     {
         (dir_wrk || fu::fail("No workspace directory provided."_fu));
         (dir_wrk += std::byte('/'));
     };
-    if ((dir_obj && (if_last(dir_obj) != std::byte('/'))))
+    if ((dir_obj && (if_last_bcSl(dir_obj) != std::byte('/'))))
         (dir_obj += std::byte('/'));
 
-    if ((dir_src && (if_last(dir_src) != std::byte('/'))))
+    if ((dir_src && (if_last_bcSl(dir_src) != std::byte('/'))))
         (dir_src += std::byte('/'));
 
-    if ((dir_cpp && (if_last(dir_cpp) != std::byte('/'))))
+    if ((dir_cpp && (if_last_bcSl(dir_cpp) != std::byte('/'))))
         (dir_cpp += std::byte('/'));
 
     int code {};
@@ -924,7 +923,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
 
 static fu_STR absdir(const fu_STR& a)
 {
-    return ((if_last(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
+    return ((if_last_y0NH(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
 }
 
 static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));

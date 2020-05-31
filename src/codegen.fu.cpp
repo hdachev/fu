@@ -607,7 +607,7 @@ struct s_Intlit
 
                                 #ifndef DEFt_2_6__1030___28byte
                                 #define DEFt_2_6__1030___28byte
-inline std::byte if_last(const fu_STR& s)
+inline std::byte if_last_y0NH(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
@@ -615,7 +615,7 @@ inline std::byte if_last(const fu_STR& s)
 
                                 #ifndef DEFt_2_1__1030__7_4_7SolvedNode
                                 #define DEFt_2_1__1030__7_4_7SolvedNode
-inline const s_SolvedNode& only(const fu_VEC<s_SolvedNode>& s)
+inline const s_SolvedNode& only_LOzw(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -680,6 +680,11 @@ inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu
 inline const int F_DESTRUCTOR = (1 << 31);
                                 #endif
 
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
+                                #endif
+
                                 #ifndef DEF_FN_RET_BACK
                                 #define DEF_FN_RET_BACK
 inline const int FN_RET_BACK = -2;
@@ -693,11 +698,6 @@ inline const int F_CLOSURE = (1 << 27);
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
 inline const int FN_ARGS_BACK = FN_RET_BACK;
-                                #endif
-
-                                #ifndef DEF_F_PUB
-                                #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -1008,16 +1008,23 @@ struct sf_cpp_codegen
             if (s.target)
             {
                 fu_STR dedupe {};
-                for (int i = 0; (i < k.size()); i++)
+                if ((s.flags & F_PUB))
                 {
-                    const std::byte c = k[i];
-                    if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z')))))
-                        (dedupe += c);
-                    else
-                        (dedupe += std::byte('_'));
+                    for (int i = 0; (i < k.size()); i++)
+                    {
+                        const std::byte c = k[i];
+                        if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z')))))
+                            (dedupe += c);
+                        else
+                            (dedupe += std::byte('_'));
 
+                    };
+                    (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
                 };
-                (_fdef += (((((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe) + "\n"_fu) + cgNode(s, 0)) + "\n                                #endif\n"_fu));
+                (_fdef += ("\n"_fu + cgNode(s, 0)));
+                if (dedupe)
+                    (_fdef += "\n                                #endif\n"_fu);
+
             };
         };
         _isModuleSpecs--;
@@ -1095,7 +1102,7 @@ struct sf_cpp_codegen
         {
             const fu_STR& line = lines[i];
             if (line)
-                (src += ((_indent + line) + ((if_last(line) == std::byte(';')) ? std::byte('\n') : std::byte(';'))));
+                (src += ((_indent + line) + ((if_last_y0NH(line) == std::byte(';')) ? std::byte('\n') : std::byte(';'))));
 
         };
         return src;
@@ -1159,11 +1166,8 @@ struct sf_cpp_codegen
 
         if (!closure)
         {
-            if (_isModuleSpecs)
-                src = ("inline "_fu + src);
-            else if ((!(fn.flags & F_PUB) && !_faasN))
-                src = ("static "_fu + src);
-
+            fu_STR linkage = (([&]() -> fu_STR { if (_isModuleSpecs) return "inline "_fu; else return fu_STR{}; }()) + ([&]() -> fu_STR { if (!(fn.flags & F_PUB) && !_faasN) return "static "_fu; else return fu_STR{}; }()));
+            src = (linkage + src);
         };
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
         {
@@ -1190,7 +1194,7 @@ struct sf_cpp_codegen
         fu_STR annot = typeAnnot(ret, M_RETVAL);
         const bool isOp = !hasIdentifierChars(id);
         fu_STR name = (isOp ? ("operator"_fu + id) : fu_STR(id));
-        fu_STR linkage = ((overload.flags & F_TEMPLATE) ? "inline "_fu : ((overload.flags & F_PUB) ? fu_STR{} : "static "_fu));
+        fu_STR linkage = (([&]() -> fu_STR { if ((overload.flags & F_TEMPLATE)) return "inline "_fu; else return fu_STR{}; }()) + ([&]() -> fu_STR { if (!(overload.flags & F_PUB)) return "static "_fu; else return fu_STR{}; }()));
         fu_STR src = ((((("\n"_fu + linkage) + annot) + " "_fu) + name) + "("_fu);
         const fu_VEC<s_Argument>& args = overload.args;
         for (int i = 0; (i < args.size()); i++)
@@ -1355,7 +1359,7 @@ struct sf_cpp_codegen
         {
             if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
             {
-                fu_STR expr = cgNode(only(init.items), 0);
+                fu_STR expr = cgNode(only_LOzw(init.items), 0);
                 if ((node.type.value.quals & q_primitive))
                     return ((head + " = "_fu) + expr);
 
@@ -1551,7 +1555,7 @@ struct sf_cpp_codegen
             return ID(id);
         };
         if (((target.kind == "var"_fu) || (target.kind == "arg"_fu) || (target.kind == "ref"_fu)))
-            return ID(id);
+            return ID(target.name);
 
         if ((target.kind == "field"_fu))
         {
@@ -1884,7 +1888,7 @@ struct sf_cpp_codegen
 
         s_Overload t = GET(node.target, module, ctx);
         if ((t.kind == "field"_fu))
-            return isFieldChain(only(node.items));
+            return isFieldChain(only_LOzw(node.items));
 
         if (((t.kind == "var"_fu) || (t.kind == "global"_fu) || (t.kind == "arg"_fu) || (t.kind == "ref"_fu)))
             return true;

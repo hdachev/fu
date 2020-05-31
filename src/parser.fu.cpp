@@ -118,7 +118,7 @@ struct s_ParserOutput
 
                                 #ifndef DEFt_2_1__1030___28byte
                                 #define DEFt_2_1__1030___28byte
-inline std::byte only(const fu_STR& s)
+inline std::byte only_y0NH(const fu_STR& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1018,7 +1018,7 @@ struct sf_parse
         {
             const std::byte sign = expr.value[0];
             if (((sign == std::byte('+')) || (sign == std::byte('-'))))
-                expr.value.mutref(0) = ((sign == only(op)) ? std::byte('+') : std::byte('-'));
+                expr.value.mutref(0) = ((sign == only_y0NH(op)) ? std::byte('+') : std::byte('-'));
             else
                 expr.value = (op + expr.value);
 

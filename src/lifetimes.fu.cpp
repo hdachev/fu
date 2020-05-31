@@ -7,7 +7,7 @@
 
 struct s_Lifetime;
 struct s_Region;
-inline const s_Region& only(const fu_VEC<s_Region>&);
+inline const s_Region& only_SR6n(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Region
                                 #define DEF_s_Region
@@ -43,7 +43,7 @@ struct s_Lifetime
 
                                 #ifndef DEFt_2_4__1030__9_12_9Region
                                 #define DEFt_2_4__1030__9_12_9Region
-inline const s_Region& if_only(const fu_VEC<s_Region>& s)
+inline const s_Region& if_only_SR6n(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
@@ -51,7 +51,7 @@ inline const s_Region& if_only(const fu_VEC<s_Region>& s)
 
                                 #ifndef DEFt_2_5__1030__9_12_9Region
                                 #define DEFt_2_5__1030__9_12_9Region
-inline const s_Region& if_first(const fu_VEC<s_Region>& s)
+inline const s_Region& if_first_SR6n(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
 }
@@ -59,7 +59,7 @@ inline const s_Region& if_first(const fu_VEC<s_Region>& s)
 
                                 #ifndef DEFt_2_1__1030__9_12_9Region
                                 #define DEFt_2_1__1030__9_12_9Region
-inline const s_Region& only(const fu_VEC<s_Region>& s)
+inline const s_Region& only_SR6n(const fu_VEC<s_Region>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -72,7 +72,7 @@ bool isStatic(const s_Lifetime& l)
 
 bool isLocal(const s_Lifetime& l)
 {
-    return (if_only(l.regions).index > 0);
+    return (if_only_SR6n(l.regions).index > 0);
 }
 
 bool isArgument(const s_Region& r)
@@ -82,7 +82,7 @@ bool isArgument(const s_Region& r)
 
 bool isArgumentUnion(const s_Lifetime& l)
 {
-    return isArgument(if_first(l.regions));
+    return isArgument(if_first_SR6n(l.regions));
 }
 
 s_Region Region_fromArgIndex(const int argIdx)
@@ -97,8 +97,8 @@ int Region_toArgIndex(const s_Region& r)
 
 const s_Lifetime& inter_locals(const s_Lifetime& a, const s_Lifetime& b)
 {
-    const s_Region& ar = only(a.regions);
-    const s_Region& br = only(b.regions);
+    const s_Region& ar = only_SR6n(a.regions);
+    const s_Region& br = only_SR6n(b.regions);
     return (((ar.index > br.index) || ((ar.index == br.index) && (ar.relax <= br.relax))) ? a : b);
 }
 
@@ -156,7 +156,7 @@ s_Lifetime Lifetime_fromScopeIdx(const int index)
 
 bool killedBy(const s_Lifetime& lifetime, const int returnIdx)
 {
-    return (isLocal(lifetime) && (only(lifetime.regions).index > returnIdx));
+    return (isLocal(lifetime) && (only_SR6n(lifetime.regions).index > returnIdx));
 }
 
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&& lifetime, const int relax)

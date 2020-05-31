@@ -43,8 +43,8 @@ struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
 s_Intlit Intlit(fu::view<std::byte>);
+fu_STR hash62(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
-inline const s_Node& only(const fu_VEC<s_Node>&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
@@ -655,7 +655,7 @@ struct s_MapFields
 
                                 #ifndef DEFt_2_1__1031__7_4_7SolvedNode
                                 #define DEFt_2_1__1031__7_4_7SolvedNode
-inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
+inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -663,7 +663,7 @@ inline s_SolvedNode& only(fu_VEC<s_SolvedNode>& s)
 
                                 #ifndef DEFt_2_1__1030__5_4_5Node
                                 #define DEFt_2_1__1030__5_4_5Node
-inline const s_Node& only(const fu_VEC<s_Node>& s)
+inline const s_Node& only_N1qL(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1271,7 +1271,7 @@ struct sf_solve
                             s_SolvedNode& arg = args.mutref(callsiteIndex);
                             if ((arg.kind == "label"_fu))
                             {
-                                s_SolvedNode inner { only(arg.items) };
+                                s_SolvedNode inner { only_kt4Y(arg.items) };
                                 arg = inner;
                             };
                             s_Type retype = tryRetyping(arg, expect);
@@ -1735,7 +1735,16 @@ struct sf_solve
         if (!prep)
         {
             fu_STR kind = (native ? "__native"_fu : "fn"_fu);
-            FnDecl(kind, id, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
+            fu_STR name { id };
+            if ((spec && hasIdentifierChars(id) && !native))
+            {
+                fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.items, 0, (out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
+                fu_STR hash = hash62(sig);
+                (name += ("_"_fu + hash));
+                ((out.value == id) || fu::fail());
+                out.value = name;
+            };
+            FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
         };
         if ((solve && !native))
         {
@@ -1743,7 +1752,7 @@ struct sf_solve
         };
         return out;
     };
-    fu_STR mangleArguments(const fu_VEC<s_SolvedNode>& args)
+    fu_STR mangleArguments(fu::view<s_SolvedNode> args)
     {
         fu_STR mangle {};
         for (int i = 0; (i < args.size()); i++)
@@ -1901,7 +1910,7 @@ struct sf_solve
         const fu_STR& id = (node.value ? node.value : fail("TODO anonymous structs"_fu));
         s_Type structType = initStruct(id, node.flags, module);
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, structType, F_PUB, module);
+            out.target = Scope_Typedef(_scope, id, structType, node.flags, module);
 
         if (!solve)
             return out;
@@ -2000,8 +2009,8 @@ struct sf_solve
     };
     s_SolvedNode solveTypedef(const s_Node& node)
     {
-        s_SolvedNode annot = evalTypeAnnot(only(node.items));
-        Scope_Typedef(_scope, node.value, annot.type, F_PUB, module);
+        s_SolvedNode annot = evalTypeAnnot(only_N1qL(node.items));
+        Scope_Typedef(_scope, node.value, annot.type, node.flags, module);
         return createEmpty();
     };
     s_SolvedNode solveLet(const s_Node& node, s_Lifetime&& lifetime)
