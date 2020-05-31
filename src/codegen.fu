@@ -754,7 +754,9 @@ pub fn cpp_codegen(
 
     fn binding(node: SolvedNode, doInit = false, forceMut = false): string
     {
-        let id    = node.value || fail();
+        let overload = GET(node.target);
+
+        let id = overload.name || fail();
         let annot = typeAnnot(
             node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
                      | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));

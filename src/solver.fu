@@ -96,11 +96,11 @@ pub fn solve(
     fn Lifetime_next(): Lifetime
         Lifetime_fromScopeIdx( _scope.items.len + 1 );
 
-    fn Binding(id: string, type: Type, flags!: i32, kind = "var", constant?: SolvedNode)
+    fn Binding(id: string, type: Type, flags!: i32, kind = "var")
     {
         return Scope_add(
             _scope, :kind,
-            :id || fail(), :type || fail(), :constant, :flags);
+            :id || fail(), :type || fail(), :flags);
     }
 
     fn Field(id: string, structType: Type, fieldType: Type)
@@ -1339,11 +1339,14 @@ pub fn solve(
 
         let scope0 = Scope_push(_scope);
         let scope_skip0 = _scope_skip;
+        let root_scope0 = _root_scope;
         ////////////////////////////////
 
         _scope_skip = _root_scope && ScopeSkip(
             start: _root_scope,
               end: scope0);
+
+        _root_scope = scope0;
 
         let specialized = __solveFn(
             node, SolvedNode,
@@ -1356,6 +1359,7 @@ pub fn solve(
 
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
+        _root_scope = root_scope0;
         ////////////////////////////////
 
         return specialized;
@@ -1548,7 +1552,7 @@ pub fn solve(
 
     fn solveLet(node: Node, mut lifetime: Lifetime): SolvedNode
     {
-        let out         = solveBinding(node, lifetime);
+        mut out         = solveBinding(node, lifetime);
         let global      = out.kind == "global";
 
         //////////////////////////////////////////////////////
@@ -1566,13 +1570,27 @@ pub fn solve(
                  : out.type.quals & q_ref   ? "ref"
                                             : "var";
 
-        let overload    = Binding(
-            id: out.value, :kind, :node.flags,
-            constant: global && out,
+        let id = out.value;
+        let overload = out.target = Binding(
+            :id, :kind, :node.flags,
 
             node.flags & F_MUT
                 ? add_mutref(out.type, lifetime)
                 : add_ref(out.type, lifetime));
+
+        if (_root_scope)
+        {
+            mut same = 0;
+            for (mut i = _root_scope; i < _scope.items.len - 1; i++)
+                if (_scope.items[i].id == id)
+                    same++;
+
+            if (same)
+                GET_mut(overload).name += "_" + same;
+        }
+
+        if (global)
+            GET_mut(overload).constant = out;
 
         if (out.flags & F_USING)
             scope_using(overload);
@@ -1989,13 +2007,13 @@ pub fn solve(
 
     //
 
-    fn createLet(id: string, type: Type, flags: i32 = 0): SolvedNode
+    fn createLet(target: Target, flags: i32 = 0): SolvedNode
     {
+        let overload = GET(target);
+
         return SolvedNode(
-            kind:   "let",
-            flags:  flags,
-            value:  id,
-            token:  _here || fail(), :type);
+            kind: "let", :flags, token: _here || fail(),
+            value: overload.name, :overload.type, :target);
     }
 
     fn injectImplicitArg__mutfn(
@@ -2025,7 +2043,7 @@ pub fn solve(
             }
 
             let newArgIdx   = fnNode.items.len + FN_RET_BACK;
-            let newArgNode  = createLet(id, type, F_IMPLICIT);
+            let newArgNode  = createLet(ret, F_IMPLICIT);
 
             fnNode.items.insert(newArgIdx, newArgNode);
         }
