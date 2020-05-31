@@ -939,12 +939,12 @@ struct sf_solve
             _scope.items.push(items[i]);
 
     };
-    s_Overload GET(const s_Target& target, const s_Module& module, const s_Context& ctx)
+    s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
     {
-        if ((target.modid == module.modid))
+        if ((target.modid == module_1.modid))
             return s_Overload(_scope.overloads[(target.index - 1)]);
 
-        return s_Overload(ctx.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
+        return s_Overload(ctx_1.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
     };
     s_Overload& GET_mut(const s_Target& target)
     {
@@ -967,9 +967,9 @@ struct sf_solve
     {
         return Lifetime_fromScopeIdx((_scope.items.size() + 1));
     };
-    s_Target Binding(const fu_STR& id, const s_Type& type, const int flags, fu_STR&& kind, const s_SolvedNode& constant)
+    s_Target Binding(const fu_STR& id, const s_Type& type, const int flags, fu_STR&& kind)
     {
-        return Scope_add(_scope, kind, (id ? id : fail(fu_STR{})), (type ? type : fail(fu_STR{})), flags, int{}, int{}, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, constant, module);
+        return Scope_add(_scope, kind, (id ? id : fail(fu_STR{})), (type ? type : fail(fu_STR{})), flags, int{}, int{}, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_Target Field(const fu_STR& id, const s_Type& structType, const s_Type& fieldType)
     {
@@ -1008,10 +1008,10 @@ struct sf_solve
         fu_VEC<s_Argument> args {};
         for (int i = 0; (i < max); i++)
         {
-            const s_SolvedNode& node = argNodes[i];
-            ((node.kind == "let"_fu) || fail(fu_STR{}));
-            const bool isImplicit = !!(node.flags & F_IMPLICIT);
-            s_Argument arg = s_Argument { fu_STR((node.value ? node.value : fail(fu_STR{}))), s_Type((node.type ? node.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(node.flags) };
+            const s_SolvedNode& node_1 = argNodes[i];
+            ((node_1.kind == "let"_fu) || fail(fu_STR{}));
+            const bool isImplicit = !!(node_1.flags & F_IMPLICIT);
+            s_Argument arg = s_Argument { fu_STR((node_1.value ? node_1.value : fail(fu_STR{}))), s_Type((node_1.type ? node_1.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node_1.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(node_1.flags) };
             if ((!arg.dEfault && !isImplicit))
                 min++;
 
@@ -1109,17 +1109,17 @@ struct sf_solve
             };
             if ((overload.min < 2))
             {
-                for (int i = 0; (i < _scope.items.size()); i++)
+                for (int i_1 = 0; (i_1 < _scope.items.size()); i_1++)
                 {
-                    if ((i == _scope_skip.start))
+                    if ((i_1 == _scope_skip.start))
                     {
-                        i = _scope_skip.end;
-                        if ((i >= _scope.items.size()))
+                        i_1 = _scope_skip.end;
+                        if ((i_1 >= _scope.items.size()))
                         {
                             break;
                         };
                     };
-                    s_ScopeItem o { _scope.items[i] };
+                    s_ScopeItem o { _scope.items[i_1] };
                     if ((o.id == item.id))
                     {
                         s_Overload other = GET(o.target, module, ctx);
@@ -1142,12 +1142,12 @@ struct sf_solve
             int idx = fu::lfind(names, host_args[i].name);
             if ((idx < 0))
             {
-                for (int i = offset; (i < names.size()); i++)
+                for (int i_1 = offset; (i_1 < names.size()); i_1++)
                 {
                     offset++;
-                    if (!names[i])
+                    if (!names[i_1])
                     {
-                        idx = i;
+                        idx = i_1;
                         break;
                     };
                 };
@@ -1378,10 +1378,10 @@ struct sf_solve
 
                 s_Overload overload = GET(targets[i], module, ctx);
                 (result += (overload.name + "("_fu));
-                for (int i = 0; (i < overload.args.size()); i++)
+                for (int i_1 = 0; (i_1 < overload.args.size()); i_1++)
                 {
-                    const s_Argument& arg = overload.args[i];
-                    if (i)
+                    const s_Argument& arg = overload.args[i_1];
+                    if (i_1)
                         (result += ", "_fu);
 
                     (result += (((arg.name + ((arg.flags & F_MUSTNAME) ? "!"_fu : fu_STR{})) + (arg.dEfault ? "?: "_fu : ": "_fu)) + (arg.type ? serializeType(arg.type) : "$"_fu)));
@@ -1519,66 +1519,66 @@ struct sf_solve
     };
     s_Type solveInt(const fu_STR& v, const s_Type& type)
     {
-        s_Intlit parse = Intlit(v);
-        (parse.error && fail(fu_STR(parse.error)));
+        s_Intlit parse_1 = Intlit(v);
+        (parse_1.error && fail(fu_STR(parse_1.error)));
         if (type)
         {
             const auto& want = [&](const s_Type& t) -> bool
             {
                 return (type.value.canon == t.value.canon);
             };
-            if (!parse.uNsigned)
+            if (!parse_1.uNsigned)
             {
-                if ((want(t_f32) && (parse.minsize_f <= 32u)))
+                if ((want(t_f32) && (parse_1.minsize_f <= 32u)))
                     return s_Type(t_f32);
 
-                if ((want(t_f64) && (parse.minsize_f <= 64u)))
+                if ((want(t_f64) && (parse_1.minsize_f <= 64u)))
                     return s_Type(t_f64);
 
-                if ((want(t_i32) && (parse.minsize_i <= 32u)))
+                if ((want(t_i32) && (parse_1.minsize_i <= 32u)))
                     return s_Type(t_i32);
 
-                if ((want(t_i64) && (parse.minsize_i <= 64u)))
+                if ((want(t_i64) && (parse_1.minsize_i <= 64u)))
                     return s_Type(t_i64);
 
-                if ((want(t_i16) && (parse.minsize_i <= 16u)))
+                if ((want(t_i16) && (parse_1.minsize_i <= 16u)))
                     return s_Type(t_i16);
 
-                if ((want(t_i8) && (parse.minsize_i <= 8u)))
+                if ((want(t_i8) && (parse_1.minsize_i <= 8u)))
                     return s_Type(t_i8);
 
             };
-            if (!parse.sIgned)
+            if (!parse_1.sIgned)
             {
-                if ((want(t_u32) && (parse.minsize_u <= 32u)))
+                if ((want(t_u32) && (parse_1.minsize_u <= 32u)))
                     return s_Type(t_u32);
 
-                if ((want(t_u64) && (parse.minsize_u <= 64u)))
+                if ((want(t_u64) && (parse_1.minsize_u <= 64u)))
                     return s_Type(t_u64);
 
-                if ((want(t_u16) && (parse.minsize_u <= 16u)))
+                if ((want(t_u16) && (parse_1.minsize_u <= 16u)))
                     return s_Type(t_u16);
 
-                if ((want(t_u8) && (parse.minsize_u <= 8u)))
+                if ((want(t_u8) && (parse_1.minsize_u <= 8u)))
                     return s_Type(t_u8);
 
             };
         };
-        if (parse.uNsigned)
+        if (parse_1.uNsigned)
         {
-            if ((parse.minsize_u <= 32u))
+            if ((parse_1.minsize_u <= 32u))
                 return s_Type(t_u32);
 
-            if ((parse.minsize_u <= 64u))
+            if ((parse_1.minsize_u <= 64u))
                 return s_Type(t_u64);
 
         }
         else
         {
-            if ((parse.minsize_i <= 32u))
+            if ((parse_1.minsize_i <= 32u))
                 return s_Type(t_i32);
 
-            if ((parse.minsize_i <= 64u))
+            if ((parse_1.minsize_i <= 64u))
                 return s_Type(t_i64);
 
         };
@@ -1771,9 +1771,9 @@ struct sf_solve
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode{}; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
-            s_SolvedNode spec = doTrySpecialize(tEmplate, args, mangle);
-            (module.out.specs.upsert(mangle) = spec);
-            return std::move(spec.target);
+            s_SolvedNode spec_1 = doTrySpecialize(tEmplate, args, mangle);
+            (module.out.specs.upsert(mangle) = spec_1);
+            return std::move(spec_1.target);
         };
         return std::move(spec.target);
     };
@@ -1871,8 +1871,8 @@ struct sf_solve
             for (int i = 0; (i < branches.size()); i++)
             {
                 const s_Node& branch = branches[i];
-                const fu_VEC<s_Node>& items = (branch ? branch : fail(fu_STR{})).items;
-                const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
+                const fu_VEC<s_Node>& items_1 = (branch ? branch : fail(fu_STR{})).items;
+                const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items_1[0]; if (_) return _; } fail(fu_STR{}); }());
                 if (evalTypePattern(cond, typeParams))
                 {
                     caseIdx = i;
@@ -1888,12 +1888,15 @@ struct sf_solve
         std::swap(_typeParams, typeParams);
         const int scope0 = Scope_push(_scope);
         const s_ScopeSkip scope_skip0 { _scope_skip };
+        const int root_scope0 = _root_scope;
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
+        _root_scope = scope0;
         s_SolvedNode specialized = ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, node, s_SolvedNode{}, caseIdx); if (_) return _; } fail(fu_STR{}); }());
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
+        _root_scope = root_scope0;
         return specialized;
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
@@ -2021,7 +2024,24 @@ struct sf_solve
             lifetime = Lifetime_next();
 
         fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.value.quals & q_ref) ? "ref"_fu : "var"_fu)));
-        const s_Target overload = Binding(out.value, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), node.flags, fu_STR(kind), ([&]() -> const s_SolvedNode& { if (global) return out; else return fu::Default<s_SolvedNode>::value; }()));
+        fu_STR id { out.value };
+        const s_Target overload { (out.target = Binding(id, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), node.flags, fu_STR(kind))) };
+        if (_root_scope)
+        {
+            int same = 0;
+            for (int i = _root_scope; (i < (_scope.items.size() - 1)); i++)
+            {
+                if ((_scope.items.mutref(i).id == id))
+                    same++;
+
+            };
+            if (same)
+                (GET_mut(overload).name += ("_"_fu + same));
+
+        };
+        if (global)
+            GET_mut(overload).constant = out;
+
         if ((out.flags & F_USING))
             scope_using(overload);
 
@@ -2053,17 +2073,17 @@ struct sf_solve
         const fu_VEC<s_Module>& modules = ctx.modules;
         for (int i = 1; (i < modules.size()); i++)
         {
-            const s_Module& module = modules[i];
-            if ((module.fname == fname))
-                return module;
+            const s_Module& module_1 = modules[i];
+            if ((module_1.fname == fname))
+                return module_1;
 
         };
         fail(("Cannot locate: "_fu + fname));
     };
     s_SolvedNode solveImport(const s_Node& node)
     {
-        const s_Module& module = findModule(node.value);
-        Scope_import(module.modid);
+        const s_Module& module_1 = findModule(node.value);
+        Scope_import(module_1.modid);
         return createEmpty();
     };
     s_Type Scope_tryLookupType(const fu_STR& id)
@@ -2288,14 +2308,15 @@ struct sf_solve
         };
         return solved(node, createArray(itemType), items);
     };
-    s_SolvedNode createLet(const fu_STR& id, const s_Type& type, const int flags)
+    s_SolvedNode createLet(const s_Target& target, const int flags)
     {
-        return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
+        s_Overload overload = GET(target, module, ctx);
+        return s_SolvedNode { "let"_fu, int(flags), fu_STR(overload.name), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(overload.type), s_Target(target) };
     };
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
         const int scope0 = Scope_push(_scope);
-        const s_Target ret = Binding(id, type, F_IMPLICIT, "var"_fu, s_SolvedNode{});
+        const s_Target ret = Binding(id, type, F_IMPLICIT, "var"_fu);
         Scope_pop(_scope, scope0);
         
         {
@@ -2310,7 +2331,7 @@ struct sf_solve
                 };
             };
             const int newArgIdx = (fnNode.items.size() + FN_RET_BACK);
-            s_SolvedNode newArgNode = createLet(id, type, F_IMPLICIT);
+            s_SolvedNode newArgNode = createLet(ret, F_IMPLICIT);
             fnNode.items.insert(newArgIdx, newArgNode);
         };
         if (fnNode.target)
@@ -2534,50 +2555,50 @@ struct sf_solve
             };
             const int i0 = i;
             int i1 = nodes.size();
-            for (int i = i0; (i < nodes.size()); i++)
+            for (int i_1 = i0; (i_1 < nodes.size()); i_1++)
             {
-                const s_Node& node = nodes[i];
-                if (!node)
+                const s_Node& node_1 = nodes[i_1];
+                if (!node_1)
                 {
                     continue;
                 };
-                if (!isUnordered(node.kind))
+                if (!isUnordered(node_1.kind))
                 {
-                    i1 = i;
+                    i1 = i_1;
                     break;
                 };
-                _here = (node.token ? node.token : _here);
-                if ((node.kind != "fn"_fu))
-                    result.mutref(i) = unorderedPrep(node);
+                _here = (node_1.token ? node_1.token : _here);
+                if ((node_1.kind != "fn"_fu))
+                    result.mutref(i_1) = unorderedPrep(node_1);
 
             };
             
             {
-                for (int i = i0; (i < i1); i++)
+                for (int i_1 = i0; (i_1 < i1); i_1++)
                 {
-                    const s_Node& node = nodes[i];
-                    if ((node && (node.kind != "fn"_fu)))
+                    const s_Node& node_1 = nodes[i_1];
+                    if ((node_1 && (node_1.kind != "fn"_fu)))
                     {
-                        _here = (node.token ? node.token : _here);
-                        result.mutref(i) = unorderedSolve(node, result[i]);
+                        _here = (node_1.token ? node_1.token : _here);
+                        result.mutref(i_1) = unorderedSolve(node_1, result[i_1]);
                     };
                 };
-                for (int i = i0; (i < i1); i++)
+                for (int i_1 = i0; (i_1 < i1); i_1++)
                 {
-                    const s_Node& node = nodes[i];
-                    if ((node.kind == "fn"_fu))
+                    const s_Node& node_1 = nodes[i_1];
+                    if ((node_1.kind == "fn"_fu))
                     {
-                        _here = (node.token ? node.token : _here);
-                        result.mutref(i) = unorderedPrep(node);
+                        _here = (node_1.token ? node_1.token : _here);
+                        result.mutref(i_1) = unorderedPrep(node_1);
                     };
                 };
-                for (int i = i0; (i < i1); i++)
+                for (int i_1 = i0; (i_1 < i1); i_1++)
                 {
-                    const s_Node& node = nodes[i];
-                    if ((node.kind == "fn"_fu))
+                    const s_Node& node_1 = nodes[i_1];
+                    if ((node_1.kind == "fn"_fu))
                     {
-                        _here = (node.token ? node.token : _here);
-                        result.mutref(i) = unorderedSolve(node, result[i]);
+                        _here = (node_1.token ? node_1.token : _here);
+                        result.mutref(i_1) = unorderedSolve(node_1, result[i_1]);
                     };
                 };
             };

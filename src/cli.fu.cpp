@@ -142,9 +142,9 @@ struct sf_cli_handle
 
         
         {
-            fu_STR val = next();
-            if (val)
-                fu::fail((("Leftover option: `"_fu + val) + "`."_fu));
+            fu_STR val_1 = next();
+            if (val_1)
+                fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 
         };
         build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme);

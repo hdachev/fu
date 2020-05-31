@@ -87,16 +87,16 @@ struct sf_lex
     {
         err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu));
     };
-    fu_STR unescapeStr(const fu_STR& src, const int idx0, const int idx1)
+    fu_STR unescapeStr(const fu_STR& src_1, const int idx0, const int idx1)
     {
         fu_STR out {};
         const int n = (idx1 - 1);
         for (int i = (idx0 + 1); (i < n); i++)
         {
-            const std::byte c = src[i];
+            const std::byte c = src_1[i];
             if ((c == std::byte('\\')))
             {
-                const std::byte c1 = src[++i];
+                const std::byte c1 = src_1[++i];
                 if ((c1 == std::byte('n')))
                     (out += std::byte('\n'));
                 else if ((c1 == std::byte('r')))
@@ -133,8 +133,8 @@ struct sf_lex
             {
                 while ((idx < end))
                 {
-                    const std::byte c = src[idx++];
-                    if ((((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_')) || ((c >= std::byte('0')) && (c <= std::byte('9')))))
+                    const std::byte c_1 = src[idx++];
+                    if ((((c_1 >= std::byte('A')) && (c_1 <= std::byte('Z'))) || ((c_1 >= std::byte('a')) && (c_1 <= std::byte('z'))) || (c_1 == std::byte('_')) || ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))))
                     {
                     }
                     else
@@ -155,32 +155,32 @@ struct sf_lex
                 std::byte max = std::byte('9');
                 if ((c == std::byte('0')))
                 {
-                    const std::byte c = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
-                    if (((c == std::byte('x')) || (c == std::byte('X'))))
+                    const std::byte c_1 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
+                    if (((c_1 == std::byte('x')) || (c_1 == std::byte('X'))))
                     {
                         hex = true;
                         idx++;
                     }
-                    else if (((c == std::byte('o')) || (c == std::byte('O'))))
+                    else if (((c_1 == std::byte('o')) || (c_1 == std::byte('O'))))
                     {
                         ob = true;
                         max = std::byte('7');
                         idx++;
                     }
-                    else if (((c == std::byte('b')) || (c == std::byte('B'))))
+                    else if (((c_1 == std::byte('b')) || (c_1 == std::byte('B'))))
                     {
                         ob = true;
                         max = std::byte('1');
                         idx++;
                     }
-                    else if (((c >= std::byte('0')) && (c <= std::byte('9'))))
+                    else if (((c_1 >= std::byte('0')) && (c_1 <= std::byte('9'))))
                         err_str("num"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
 
                 };
                 while ((idx < end))
                 {
-                    const std::byte c = src[idx++];
-                    if ((((c >= std::byte('0')) && (c <= max)) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
+                    const std::byte c_1 = src[idx++];
+                    if ((((c_1 >= std::byte('0')) && (c_1 <= max)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F')))))))
                     {
                     }
                     else if (ob)
@@ -188,10 +188,10 @@ struct sf_lex
                         idx--;
                         break;
                     }
-                    else if ((c == std::byte('.')))
+                    else if ((c_1 == std::byte('.')))
                     {
-                        const std::byte c = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
-                        if (!(((c >= std::byte('0')) && (c <= std::byte('9'))) || (hex && (((c >= std::byte('a')) && (c <= std::byte('f'))) || ((c >= std::byte('A')) && (c <= std::byte('F')))))))
+                        const std::byte c_2 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
+                        if (!(((c_2 >= std::byte('0')) && (c_2 <= std::byte('9'))) || (hex && (((c_2 >= std::byte('a')) && (c_2 <= std::byte('f'))) || ((c_2 >= std::byte('A')) && (c_2 <= std::byte('F')))))))
                         {
                             idx--;
                             break;
@@ -203,7 +203,7 @@ struct sf_lex
                         };
                         dot = true;
                     }
-                    else if ((hex ? ((c == std::byte('p')) || (c == std::byte('P'))) : ((c == std::byte('e')) || (c == std::byte('E')))))
+                    else if ((hex ? ((c_1 == std::byte('p')) || (c_1 == std::byte('P'))) : ((c_1 == std::byte('e')) || (c_1 == std::byte('E')))))
                     {
                         if (exp)
                         {
@@ -292,13 +292,13 @@ struct sf_lex
                 idx++;
                 while ((idx < end))
                 {
-                    const std::byte c = src[idx++];
-                    if ((c == std::byte('\n')))
+                    const std::byte c_1 = src[idx++];
+                    if ((c_1 == std::byte('\n')))
                     {
                         line++;
                         lidx = (idx - 1);
                     }
-                    else if (((c == std::byte('*')) && (idx < end) && (src[idx] == std::byte('/'))))
+                    else if (((c_1 == std::byte('*')) && (idx < end) && (src[idx] == std::byte('/'))))
                     {
                         idx++;
                         break;
@@ -310,10 +310,10 @@ struct sf_lex
                 fu_STR candidate = fu_STR { fu_STR::INIT<1> { c } };
                 while ((idx < end))
                 {
-                    const std::byte c = src[idx++];
-                    if (fu::has(OPTOKENS, c))
+                    const std::byte c_1 = src[idx++];
+                    if (fu::has(OPTOKENS, c_1))
                     {
-                        fu_STR c1 = (candidate + c);
+                        fu_STR c1 = (candidate + c_1);
                         if (fu::has(MBOPS, c1))
                         {
                             candidate = c1;

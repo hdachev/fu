@@ -699,8 +699,8 @@ struct sf_parse
             {
                 s_Node cond = parseUnaryExpression();
                 s_Node type = tryPopTypeAnnot();
-                s_Node body = parseFnBodyBranch();
-                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body } }, 0, fu_STR{}));
+                s_Node body_1 = parseFnBodyBranch();
+                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body_1 } }, 0, fu_STR{}));
             }
             while (tryConsume("id"_fu, "case"_fu));
             body = make("pattern"_fu, branches, 0, fu_STR{});

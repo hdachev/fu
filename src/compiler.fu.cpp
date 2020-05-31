@@ -643,12 +643,12 @@ struct sf_getLinkOrder
         for (int i = 0; (i < fuzimports.size()); i++)
         {
             const fu_STR& fname = resolveFile_x(fuzimports[i], ctx);
-            for (int i = 1; (i < modules.size()); i++)
+            for (int i_1 = 1; (i_1 < modules.size()); i_1++)
             {
-                const s_Module& module = modules[i];
-                if ((module.fname == fname))
+                const s_Module& module_1 = modules[i_1];
+                if ((module_1.fname == fname))
                 {
-                    visit(module, ctx);
+                    visit(module_1, ctx);
                     break;
                 };
             };
