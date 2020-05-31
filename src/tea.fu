@@ -1,0 +1,141 @@
+
+pub struct TEA
+{
+    v0: u32;
+    v1: u32;
+}
+
+pub inline fn r4(using _: &mut TEA, sum: &mut u32)
+{
+    mut delta: u32 = 0x9e3779b9;
+
+    for (mut i = 0; i < 4; i++) {
+        sum += delta;
+
+        v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
+        v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
+    }
+}
+
+pub inline fn r8(using _: &mut TEA, sum: &mut u32)
+{
+    mut delta: u32 = 0x9e3779b9;
+
+    for (mut i = 0; i < 8; i++) {
+        sum += delta;
+
+        v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
+        v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
+    }
+}
+
+pub inline fn r16(using _: &mut TEA, sum: &mut u32)
+{
+    mut delta: u32 = 0x9e3779b9;
+
+    for (mut i = 0; i < 16; i++) {
+        sum += delta;
+
+        v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
+        v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
+    }
+}
+
+
+// Shorthands.
+
+pub inline fn r4(tea: &mut TEA) {
+    mut sum: u32; tea.r4(sum);
+}
+
+pub inline fn r8(tea: &mut TEA) {
+    mut sum: u32; tea.r8(sum);
+}
+
+pub inline fn r16(tea: &mut TEA) {
+    mut sum: u32; tea.r16(sum);
+}
+
+
+//
+
+pub inline fn u64(tea: TEA)
+    tea.v0.u64 | (tea.v1.u64 << 32);
+
+
+// Don't return 1F.
+//  This doesn't use the head byte
+//   which allows you to pick bools without correlation.
+
+pub inline fn uniform_f01(u: u32)
+    (u & 0xffffff).f32 * (1 / 0x1000000 .f32);
+
+pub inline fn uniform_f11(u: u32)
+    u.uniform_f01 * (u & 0x1000000 ? -1.f32 : +1.f32);
+
+
+// Let's put our cooler features to use.
+
+pub fn hash(mut res: TEA, u8view: [byte])
+{
+    // First off, a view over most of the array as u32s.
+    let u32len = u8view.len & ~3;
+
+    let u32view = u8view[0, u32len].u32_view;
+
+    // First, tuples.
+    for (mut i = 1; i < u32view.len; i += 2)
+    {
+        res.v0 ^= u32view[i - 1];
+        res.v1 ^= u32view[i];
+        res.r4();
+    }
+
+    // A lone trailer.
+    if (u32view.len & 1)
+        res.v0 ^= u32view[u32view.len - 1];
+
+    // The trailing bytes.
+    {
+        mut last: u32;
+        for (mut i = u32len; i < u8view.len; i++)
+        {
+            last <<= 8;
+            last |= u8view[i].u32;
+        }
+
+        res.v1 ^= last;
+    }
+
+    // Finally, let's go for a good final shuffle.
+    res.r16();
+
+    return res;
+}
+
+pub fn hash(u8view: [byte])
+{
+    mut res: TEA;
+    res = res.hash(u8view);
+    return res;
+}
+
+pub fn hash62(str: [byte]): string
+{
+    mut res: string;
+    mut v = str.hash.u64;
+    for (mut i = 0; i < 4; i++)
+    {
+        let c = v % 62;
+        v = v / 62;
+
+        if (c < 10)
+            res += byte(c -  0 + '0'.u64);
+        else if (c < 36)
+            res += byte(c - 10 + 'a'.u64);
+        else
+            res += byte(c - 36 + 'A'.u64);
+    }
+
+    return res;
+}

@@ -1098,8 +1098,20 @@ pub fn solve(
         {
             mut kind = native ? "__native" : "fn";
 
+            // TODO FIX currently we only hash template names.
+            mut name = id;
+            if (spec && id.hasIdentifierChars && !native)
+            {
+                let sig = mangleArguments(out.items[0, out.items.len + FN_BODY_BACK]) || fail();
+                let hash = tea::hash62(sig);
+                name += "_" + hash;
+
+                out.value == id || assert();
+                out.value = name;
+            }
+
             //
-            FnDecl(:kind, :id, out, native && n_body);
+            FnDecl(:kind, id: name, out, native && n_body);
         }
 
         if (solve && !native)
@@ -1111,7 +1123,7 @@ pub fn solve(
 
     //
 
-    fn mangleArguments(args: SolvedNode[]): string
+    fn mangleArguments(args: [SolvedNode]): string
     {
         mut mangle = "";
         for (mut i = 0; i < args.len; i++)
