@@ -2,6 +2,7 @@ import "helpers";
 import "parser";
 import "types";
 import "scope";
+import "context";
 import "solver";
 import "intlit";
 

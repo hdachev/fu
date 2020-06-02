@@ -2,6 +2,7 @@ import "helpers";
 import "lexer";
 import "parser";
 import "scope";
+import "context";
 import "types";
 import "lifetimes";
 import "intlit";

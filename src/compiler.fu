@@ -3,6 +3,7 @@ import "lexer";
 import "parser";
 import "solver";
 import "scope";
+import "context";
 import "stat";
 import "prelude";
 import "codegen";
