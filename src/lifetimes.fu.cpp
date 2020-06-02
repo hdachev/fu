@@ -7,6 +7,8 @@
 
 struct s_Lifetime;
 struct s_Region;
+inline const s_Region& if_only_SR6n(const fu_VEC<s_Region>&);
+inline const s_Region& if_first_SR6n(const fu_VEC<s_Region>&);
 inline const s_Region& only_SR6n(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
                                 #ifndef DEF_s_Region
@@ -41,24 +43,24 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_4__1030__9_12_9Region
-                                #define DEFt_2_4__1030__9_12_9Region
+                                #ifndef DEFt_if_only_SR6n
+                                #define DEFt_if_only_SR6n
 inline const s_Region& if_only_SR6n(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_5__1030__9_12_9Region
-                                #define DEFt_2_5__1030__9_12_9Region
+                                #ifndef DEFt_if_first_SR6n
+                                #define DEFt_if_first_SR6n
 inline const s_Region& if_first_SR6n(const fu_VEC<s_Region>& s)
 {
     return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1__1030__9_12_9Region
-                                #define DEFt_2_1__1030__9_12_9Region
+                                #ifndef DEFt_only_SR6n
+                                #define DEFt_only_SR6n
 inline const s_Region& only_SR6n(const fu_VEC<s_Region>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));

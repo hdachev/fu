@@ -20,6 +20,7 @@ fu_STR path_dirname(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 bool hasIdentifierChars(const fu_STR&);
 fu_STR path_ext(const fu_STR&);
+inline std::byte only_y0NH(const fu_STR&);
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP
 struct s_BINOP
@@ -116,8 +117,8 @@ struct s_ParserOutput
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_1__1030___28byte
-                                #define DEFt_2_1__1030___28byte
+                                #ifndef DEFt_only_y0NH
+                                #define DEFt_only_y0NH
 inline std::byte only_y0NH(const fu_STR& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));

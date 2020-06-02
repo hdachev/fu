@@ -47,6 +47,8 @@ struct s_Lifetime;
 struct s_Region;
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
+inline std::byte if_last_y0NH(const fu_STR&);
+inline const s_SolvedNode& only_LOzw(const fu_VEC<s_SolvedNode>&);
 bool hasIdentifierChars(const fu_STR&);
 s_Type clear_refs(const s_Type&);
 bool type_isArray(const s_Type&);
@@ -605,16 +607,16 @@ struct s_Intlit
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_6__1030___28byte
-                                #define DEFt_2_6__1030___28byte
+                                #ifndef DEFt_if_last_y0NH
+                                #define DEFt_if_last_y0NH
 inline std::byte if_last_y0NH(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_1__1030__7_4_7SolvedNode
-                                #define DEFt_2_1__1030__7_4_7SolvedNode
+                                #ifndef DEFt_only_LOzw
+                                #define DEFt_only_LOzw
 inline const s_SolvedNode& only_LOzw(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
@@ -1007,22 +1009,11 @@ struct sf_cpp_codegen
             const s_SolvedNode& s = specs[k];
             if (s.target)
             {
-                fu_STR dedupe {};
                 if ((s.flags & F_PUB))
-                {
-                    for (int i_1 = 0; (i_1 < k.size()); i_1++)
-                    {
-                        const std::byte c = k[i_1];
-                        if ((((c >= std::byte('0')) && (c <= std::byte('9'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z')))))
-                            (dedupe += c);
-                        else
-                            (dedupe += std::byte('_'));
+                    (_fdef += ((("\n                                #ifndef DEFt_"_fu + s.value) + "\n                                #define DEFt_"_fu) + s.value));
 
-                    };
-                    (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
-                };
                 (_fdef += ("\n"_fu + cgNode(s, 0)));
-                if (dedupe)
+                if ((s.flags & F_PUB))
                     (_fdef += "\n                                #endif\n"_fu);
 
             };

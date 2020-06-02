@@ -49,6 +49,8 @@ const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
 fu_STR hash62(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
+inline const s_Node& only_N1qL(const fu_VEC<s_Node>&);
+inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
@@ -654,16 +656,16 @@ struct s_MapFields
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_1__1031__7_4_7SolvedNode
-                                #define DEFt_2_1__1031__7_4_7SolvedNode
+                                #ifndef DEFt_only_kt4Y
+                                #define DEFt_only_kt4Y
 inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-                                #ifndef DEFt_2_1__1030__5_4_5Node
-                                #define DEFt_2_1__1030__5_4_5Node
+                                #ifndef DEFt_only_N1qL
+                                #define DEFt_only_N1qL
 inline const s_Node& only_N1qL(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));

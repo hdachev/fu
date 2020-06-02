@@ -290,31 +290,13 @@ pub fn cpp_codegen(
             let s = specs[k];
             if (s.target)
             {
-                mut dedupe = "";
                 if (s.flags & F_PUB)
-                {
-                    for (mut i = 0; i < k.len; i++)
-                    {
-                        let c = k[i];
-
-                        if (c >= '0' && c <= '9' ||
-                            c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
-                        {
-                            dedupe += c;
-                        }
-                        else
-                        {
-                            dedupe += '_';
-                        }
-                    }
-
-                    _fdef += "\n                                #ifndef DEFt_" + dedupe
-                           + "\n                                #define DEFt_" + dedupe;
-                }
+                    _fdef += "\n                                #ifndef DEFt_" + s.value
+                           + "\n                                #define DEFt_" + s.value;
 
                 _fdef += "\n" + cgNode(s);
 
-                if (dedupe)
+                if (s.flags & F_PUB)
                     _fdef += "\n                                #endif\n";
             }
         }

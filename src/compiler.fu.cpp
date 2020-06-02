@@ -63,7 +63,9 @@ fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
+inline std::byte if_last_bcSl(fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+inline std::byte if_last_y0NH(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
@@ -572,16 +574,16 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_2_6__1031___28byte
-                                #define DEFt_2_6__1031___28byte
+                                #ifndef DEFt_if_last_bcSl
+                                #define DEFt_if_last_bcSl
 inline std::byte if_last_bcSl(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_2_6__1030___28byte
-                                #define DEFt_2_6__1030___28byte
+                                #ifndef DEFt_if_last_y0NH
+                                #define DEFt_if_last_y0NH
 inline std::byte if_last_y0NH(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());

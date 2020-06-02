@@ -7,8 +7,11 @@
 
 struct s_TEA;
 inline void r16_8qHD(s_TEA&, uint32_t&);
+inline void r16_U2k2(s_TEA&);
 s_TEA hash(fu::view<std::byte>);
+inline uint64_t u64_SxuS(s_TEA&&);
 inline void r4_8qHD(s_TEA&, uint32_t&);
+inline void r4_U2k2(s_TEA&);
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
 struct s_TEA
@@ -27,8 +30,8 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_13_8_13_15_13TEA
-                                #define DEFt_13_8_13_15_13TEA
+                                #ifndef DEFt_r4_U2k2
+                                #define DEFt_r4_U2k2
 inline void r4_U2k2(s_TEA& tea)
 {
     uint32_t sum {};
@@ -36,8 +39,8 @@ inline void r4_U2k2(s_TEA& tea)
 }
                                 #endif
 
-                                #ifndef DEFt_13_5_13_15_13TEA__383u32
-                                #define DEFt_13_5_13_15_13TEA__383u32
+                                #ifndef DEFt_r4_8qHD
+                                #define DEFt_r4_8qHD
 inline void r4_8qHD(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
@@ -50,8 +53,8 @@ inline void r4_8qHD(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_13_10_13_15_13TEA
-                                #define DEFt_13_10_13_15_13TEA
+                                #ifndef DEFt_r16_U2k2
+                                #define DEFt_r16_U2k2
 inline void r16_U2k2(s_TEA& tea)
 {
     uint32_t sum {};
@@ -59,8 +62,8 @@ inline void r16_U2k2(s_TEA& tea)
 }
                                 #endif
 
-                                #ifndef DEFt_13_7_13_15_13TEA__383u32
-                                #define DEFt_13_7_13_15_13TEA__383u32
+                                #ifndef DEFt_r16_8qHD
+                                #define DEFt_r16_8qHD
 inline void r16_8qHD(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
@@ -73,8 +76,8 @@ inline void r16_8qHD(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_13_11_13_12_13TEA
-                                #define DEFt_13_11_13_12_13TEA
+                                #ifndef DEFt_u64_SxuS
+                                #define DEFt_u64_SxuS
 inline uint64_t u64_SxuS(s_TEA&& tea)
 {
     return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
