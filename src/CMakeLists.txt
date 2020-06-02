@@ -12,6 +12,7 @@ set(FU_INPUTS
     types.fu
     stat.fu
     scope.fu
+    context.fu
     intlit.fu
     tea.fu
     solver.fu

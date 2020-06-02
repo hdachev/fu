@@ -17,6 +17,7 @@
 #include <utility>
 
 struct s_ModuleStat;
+struct s_Context;
 struct s_Intlit;
 struct s_LexerOutput;
 struct s_Token;
@@ -24,7 +25,6 @@ struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
 struct s_Argument;
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -45,9 +45,9 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);

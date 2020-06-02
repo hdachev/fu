@@ -13,6 +13,7 @@
 #include <utility>
 
 struct s_ModuleStat;
+struct s_Context;
 struct s_Intlit;
 struct s_LexerOutput;
 struct s_Token;
@@ -20,7 +21,6 @@ struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
 struct s_Argument;
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -42,19 +42,17 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+fu_STR _fname(const s_TokenIdx&, const s_Context&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
+s_Token _token(const s_TokenIdx&, const s_Context&);
+const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
 fu_STR hash62(fu::view<std::byte>);
 bool hasIdentifierChars(const fu_STR&);
-int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
-int Scope_push(s_Scope&);
 void Scope_pop(s_Scope&, int);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
-const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
 bool isStruct(const s_Type&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
@@ -62,8 +60,10 @@ bool isTemplate(const s_Overload&);
 s_Scope Scope_exports(const s_Scope&, int);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
 int MODID(const s_Module&);
-s_Token _token(const s_TokenIdx&, const s_Context&);
-fu_STR _fname(const s_TokenIdx&, const s_Context&);
+int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
+int Scope_push(s_Scope&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -1357,12 +1357,16 @@ struct sf_solve
     [[noreturn]] fu::never NICERR_mismatch(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_SolvedNode>& args)
     {
         fu_VEC<s_Target> overloads = DEPREC_lookup(scope, id);
-        int min = int(0xffffffu);
+        int min = int(0x7fffffffu);
+        int max = 0;
         for (int i = 0; (i < overloads.size()); i++)
         {
-            const int arity = GET(overloads[i], module, ctx).min;
-            if ((min > arity))
-                min = arity;
+            s_Overload o = GET(overloads[i], module, ctx);
+            if ((min > o.min))
+                min = o.min;
+
+            if ((max < o.max))
+                max = o.max;
 
         };
         const auto& expectedArgs = [&](const fu_VEC<s_Target>& targets) -> fu_STR
@@ -1385,14 +1389,30 @@ struct sf_solve
                     if (i_1)
                         (result += ", "_fu);
 
-                    (result += (((arg.name + ((arg.flags & F_MUSTNAME) ? "!"_fu : fu_STR{})) + (arg.dEfault ? "?: "_fu : ": "_fu)) + (arg.type ? serializeType(arg.type) : "$"_fu)));
+                    (result += (((arg.name + ((arg.flags & F_MUSTNAME) ? "!"_fu : fu_STR{})) + (arg.dEfault ? "?: "_fu : ": "_fu)) + (arg.type ? humanizeType(arg.type) : "$"_fu)));
                 };
                 (result += ")"_fu);
             };
             return ([&]() -> fu_STR { { fu_STR _ = fu_STR(result); if (_) return _; } return "."_fu; }());
         };
-        fu_STR expected = expectedArgs(overloads);
-        (overloads ? ((args.size() < min) ? fail(((((((("`"_fu + id) + "` expects "_fu) + min) + " arguments, "_fu) + args.size()) + " provided"_fu) + expected)) : fail((((("`"_fu + id) + "` bad args, provided: "_fu) + mangleArguments(args)) + expected))) : fail((("`"_fu + id) + "` is not defined."_fu)));
+        const auto& actualArgs = [&](const fu_VEC<s_SolvedNode>& args_1) -> fu_STR
+        {
+            fu_STR result = "\nActual: ("_fu;
+            for (int i = 0; (i < args_1.size()); i++)
+            {
+                const s_SolvedNode& arg = args_1[i];
+                if (i)
+                    (result += ","_fu);
+
+                (result += "\n\t"_fu);
+                if ((arg.kind == "label"_fu))
+                    (result += (arg.value + ": "_fu));
+
+                (result += humanizeType(arg.type));
+            };
+            return (result + ")."_fu);
+        };
+        (overloads ? ((args.size() < min) ? fail(((((((("`"_fu + id) + "` expects at least "_fu) + min) + " arguments, "_fu) + args.size()) + " provided"_fu) + expectedArgs(overloads))) : ((args.size() > max) ? fail(((((((("`"_fu + id) + "` expects at most "_fu) + max) + " arguments, "_fu) + args.size()) + " provided"_fu) + expectedArgs(overloads))) : fail((((("`"_fu + id) + "` bad args"_fu) + expectedArgs(overloads)) + actualArgs(args))))) : fail((("`"_fu + id) + "` is not defined in this scope."_fu)));
     };
     s_SolvedNode solveNode(const s_Node& node, const s_Type& type)
     {

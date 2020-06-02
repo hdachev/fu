@@ -3,13 +3,13 @@
 #include <fu/vec.h>
 
 struct s_ModuleStat;
+struct s_Context;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
 struct s_Argument;
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -29,11 +29,11 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
+s_Module& getModule(const fu_STR&, s_Context&);
+void setModule(const s_Module&, s_Context&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-void setModule(const s_Module&, s_Context&);
-s_Module& getModule(const fu_STR&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

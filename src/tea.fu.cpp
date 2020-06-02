@@ -6,9 +6,9 @@
 #include <utility>
 
 struct s_TEA;
-inline void r16_IvEF(s_TEA&, uint32_t&);
+inline void r16_8qHD(s_TEA&, uint32_t&);
 s_TEA hash(fu::view<std::byte>);
-inline void r4_IvEF(s_TEA&, uint32_t&);
+inline void r4_8qHD(s_TEA&, uint32_t&);
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
 struct s_TEA
@@ -27,18 +27,18 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_12_8_12_15_12TEA
-                                #define DEFt_12_8_12_15_12TEA
-inline void r4_ugGK(s_TEA& tea)
+                                #ifndef DEFt_13_8_13_15_13TEA
+                                #define DEFt_13_8_13_15_13TEA
+inline void r4_U2k2(s_TEA& tea)
 {
     uint32_t sum {};
-    r4_IvEF(tea, sum);
+    r4_8qHD(tea, sum);
 }
                                 #endif
 
-                                #ifndef DEFt_12_5_12_15_12TEA__383u32
-                                #define DEFt_12_5_12_15_12TEA__383u32
-inline void r4_IvEF(s_TEA& _, uint32_t& sum)
+                                #ifndef DEFt_13_5_13_15_13TEA__383u32
+                                #define DEFt_13_5_13_15_13TEA__383u32
+inline void r4_8qHD(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
     for (int i = 0; (i < 4); i++)
@@ -50,18 +50,18 @@ inline void r4_IvEF(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_12_10_12_15_12TEA
-                                #define DEFt_12_10_12_15_12TEA
-inline void r16_ugGK(s_TEA& tea)
+                                #ifndef DEFt_13_10_13_15_13TEA
+                                #define DEFt_13_10_13_15_13TEA
+inline void r16_U2k2(s_TEA& tea)
 {
     uint32_t sum {};
-    r16_IvEF(tea, sum);
+    r16_8qHD(tea, sum);
 }
                                 #endif
 
-                                #ifndef DEFt_12_7_12_15_12TEA__383u32
-                                #define DEFt_12_7_12_15_12TEA__383u32
-inline void r16_IvEF(s_TEA& _, uint32_t& sum)
+                                #ifndef DEFt_13_7_13_15_13TEA__383u32
+                                #define DEFt_13_7_13_15_13TEA__383u32
+inline void r16_8qHD(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
     for (int i = 0; (i < 16); i++)
@@ -73,9 +73,9 @@ inline void r16_IvEF(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_12_11_12_12_12TEA
-                                #define DEFt_12_11_12_12_12TEA
-inline uint64_t u64_3l27(s_TEA&& tea)
+                                #ifndef DEFt_13_11_13_12_13TEA
+                                #define DEFt_13_11_13_12_13TEA
+inline uint64_t u64_SxuS(s_TEA&& tea)
 {
     return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
 }
@@ -89,7 +89,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r4_ugGK(res);
+        r4_U2k2(res);
     };
     if ((u32view.size() & 1))
         res.v0 ^= u32view[(u32view.size() - 1)];
@@ -104,7 +104,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
         };
         res.v1 ^= last;
     };
-    r16_ugGK(res);
+    r16_U2k2(res);
     return std::move(res);
 }
 
@@ -118,7 +118,7 @@ s_TEA hash(fu::view<std::byte> u8view)
 fu_STR hash62(fu::view<std::byte> str)
 {
     fu_STR res {};
-    uint64_t v = u64_3l27(hash(str));
+    uint64_t v = u64_SxuS(hash(str));
     for (int i = 0; (i < 4); i++)
     {
         const uint64_t c = (v % 62u);

@@ -6,13 +6,13 @@
 #include <fu/vec/replace.h>
 
 struct s_ModuleStat;
+struct s_Context;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
 struct s_Argument;
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;

@@ -7,6 +7,7 @@
 #include "types.fu.cpp"
 #include "stat.fu.cpp"
 #include "scope.fu.cpp"
+#include "context.fu.cpp"
 #include "intlit.fu.cpp"
 #include "tea.fu.cpp"
 #include "solver.fu.cpp"

@@ -446,17 +446,21 @@ fu_STR serializeType(const s_Type& type)
 
 fu_STR humanizeType(const s_Type& type)
 {
-    fu_STR prefix {};
-    for (int i = 0; (i < TAGS.size()); i++)
-    {
-        if ((type.value.quals & (1 << i)))
-            (prefix += (TAGS[i] + " "_fu));
-
-    };
+    fu_STR result { type.value.canon };
     if (type.value.modid)
-        (prefix += ((" "_fu + type.value.modid) + "#"_fu));
+        result = ((type.value.modid + ":"_fu) + result);
 
-    return (prefix + type.value.canon);
+    if (type.value.quals)
+    {
+        (result += ":"_fu);
+        for (int i = 0; (i < TAGS.size()); i++)
+        {
+            if ((type.value.quals & (1 << i)))
+                (result += (" "_fu + TAGS[i]));
+
+        };
+    };
+    return result;
 }
 
 static int parse10i32(int& offset, const fu_STR& str)

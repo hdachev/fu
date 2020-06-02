@@ -1,5 +1,3 @@
-#include <fu/default.h>
-#include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -8,9 +6,6 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
-#include <fu/vec/replace.h>
-#include <fu/vec/slice.h>
-#include <utility>
 
 struct s_ModuleStat;
 struct s_LexerOutput;
@@ -19,7 +14,6 @@ struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
 struct s_Argument;
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -40,11 +34,9 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-fu_STR path_dirname(const fu_STR&);
 static int copyOrMove(int, const fu_VEC<s_StructField>&);
 static bool someFieldNonCopy(const fu_VEC<s_StructField>&);
 static bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
-fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -531,24 +523,6 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Context
-                                #define DEF_s_Context
-struct s_Context
-{
-    fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modules
-            || files
-            || fuzzy
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ScopeSkip
                                 #define DEF_s_ScopeSkip
 struct s_ScopeSkip
@@ -570,106 +544,6 @@ struct s_ScopeSkip
 int MODID(const s_Module& module)
 {
     return int(module.modid);
-}
-
-s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
-{
-    return s_Token(ctx.modules[idx.modid].in.lex.tokens[idx.tokidx]);
-}
-
-fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
-{
-    return fu_STR(ctx.modules[idx.modid].fname);
-}
-
-static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)
-{
-    fu_STR path = (from + name);
-    fu_STR cached { ctx.fuzzy[path] };
-    if (cached)
-        return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
-
-    const auto& tryResolve = [&]() -> fu_STR
-    {
-        const bool exists = (fu::file_size(fu_STR(path)) >= 0);
-        if (exists)
-            return fu_STR(path);
-
-        fu_STR fallback = path_dirname(from);
-        if ((!fallback || (fallback.size() >= from.size())))
-            return fu_STR{};
-
-        return resolveFile(fallback, name, ctx);
-    };
-    fu_STR resolve = tryResolve();
-    (ctx.fuzzy.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(resolve); if (_) return _; } return "\v"_fu; }()));
-    return resolve;
-}
-
-fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
-{
-    const int fuzzy = fu::lfind(path, std::byte('\v'));
-    if ((fuzzy > 0))
-    {
-        fu_STR from = fu::slice(path, 0, fuzzy);
-        fu_STR name = fu::slice(path, (fuzzy + 1));
-        if ((from && name && !fu::has(name, std::byte('\v'))))
-        {
-            fu_STR res = resolveFile(from, name, ctx);
-            if (res)
-                return res;
-
-        };
-    };
-    return fu_STR(path);
-}
-
-const fu_STR& resolveFile_x(const fu_STR& path, const s_Context& ctx)
-{
-    const fu_STR& match = ctx.fuzzy[fu::replace(path, "\v"_fu, fu_STR{})];
-    if ((match && (match != "\v"_fu)))
-        return match;
-
-    return path;
-}
-
-fu_STR getFile(fu_STR&& path, s_Context& ctx)
-{
-    fu_STR cached { ctx.files[path] };
-    if (cached)
-        return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
-
-    fu_STR read = fu::file_read(fu_STR(path));
-    (ctx.files.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(read); if (_) return _; } return "\v"_fu; }()));
-    return read;
-}
-
-s_Module& getModule(const fu_STR& fname, s_Context& ctx)
-{
-    for (int i = 0; (i < ctx.modules.size()); i++)
-    {
-        if ((ctx.modules.mutref(i).fname == fname))
-            return ctx.modules.mutref(i);
-
-    };
-    const int i = ctx.modules.size();
-    ctx.modules.push(s_Module { int(i), fu_STR(fname), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
-    return ctx.modules.mutref(i);
-}
-
-void setModule(const s_Module& module, s_Context& ctx)
-{
-    s_Module& current = ctx.modules.mutref(module.modid);
-    ((current.fname == module.fname) || fu::fail());
-    current = module;
-}
-
-const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
-{
-    if ((type.value.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
-
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
 }
 
 s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
