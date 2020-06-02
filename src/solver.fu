@@ -1482,8 +1482,8 @@ pub fn solve(
         //////////////////////////////////////////////////////
 
         if (prevType)
-            isAssignable(prevType, next.type)
-                || fail("Non-assignable return types: " + serializeType(prevType) + " <- " + serializeType(next.type));
+            checkAssignable(host: prevType, next.type,
+                "Non-assignable return types");
         else
             _current_fn.items[retIdx] = next || fail();
 
@@ -1492,6 +1492,18 @@ pub fn solve(
                 prevType || next.type);
 
         return out;
+    }
+
+    fn checkAssignable(
+        host: Type, guest: Type, err: string,
+        id?: string, sep?: string)
+    {
+        isAssignable(
+            :host   || fail("Bad host type."),
+            :guest  || fail("Bad guest type."))
+                    || fail(err + (id && " `" + id + "`") + ": "
+                                + host .humanizeType() + (sep || " <- ")
+                                + guest.humanizeType());
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -1522,9 +1534,9 @@ pub fn solve(
                             : init.type;
 
         if (annot.type && init.type)
-            isAssignable(annot.type, init.type) || fail(
-                "Type annotation does not match init expression: `"
-                    + node.value + ": " + serializeType(annot.type) + " = " + serializeType(init.type) + "`.");
+            checkAssignable(host: annot.type, init.type,
+                "Type annotation does not match init expression",
+                    node.value, "=");
 
         if (init)
             maybeCopyOrMove(init, t_let);
@@ -2035,8 +2047,8 @@ pub fn solve(
                 let arg: &mut SolvedNode = fnNode.items[i];
                 if (arg.value == id)
                 {
-                    isAssignable(type, arg.type)
-                        || fail("Implicit arg collision: `" + id + "`.");
+                    checkAssignable(host: type, arg.type,
+                        "Implicit arg collision", id);
 
                     return ret;
                 }

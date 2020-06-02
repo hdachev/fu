@@ -83,6 +83,7 @@ s_Type tryClear_ref(const s_Type&);
 s_Type clear_mutref(const s_Type&);
 s_Type add_refs(const s_Type&, s_Type&&);
 fu_STR serializeType(const s_Type&);
+fu_STR humanizeType(const s_Type&);
 bool type_has(const s_Type&, const fu_STR&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
 s_Lifetime Lifetime_fromScopeIdx(int);
@@ -1970,9 +1971,7 @@ struct sf_solve
             next = createMove(next, bool(nrvo));
         };
         if (prevType)
-        {
-            (isAssignable(prevType, next.type) || fail(((("Non-assignable return types: "_fu + serializeType(prevType)) + " <- "_fu) + serializeType(next.type))));
-        }
+            checkAssignable(prevType, next.type, "Non-assignable return types"_fu, fu_STR{}, fu_STR{});
         else
             _current_fn.items.mutref(retIdx()) = (next ? next : fail(fu_STR{}));
 
@@ -1980,6 +1979,10 @@ struct sf_solve
             maybeCopyOrMove(out.items.mutref(0), (prevType ? prevType : next.type), false);
 
         return out;
+    };
+    void checkAssignable(const s_Type& host, const s_Type& guest, const fu_STR& err, const fu_STR& id, const fu_STR& sep)
+    {
+        (isAssignable((host ? host : fail("Bad host type."_fu)), (guest ? guest : fail("Bad guest type."_fu))) || fail((((((err + ([&]() -> fu_STR { if (id) return ((" `"_fu + id) + "`"_fu); else return fu_STR{}; }())) + ": "_fu) + humanizeType(host)) + ([&]() -> fu_STR { { fu_STR _ = fu_STR(sep); if (_) return _; } return " <- "_fu; }())) + humanizeType(guest))));
     };
     s_SolvedNode solveJump(const s_Node& node)
     {
@@ -1994,9 +1997,8 @@ struct sf_solve
         (annot.type || init.type || fail("Variable declarations without type annotations must be initialized."_fu));
         s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.value.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(init.type) : s_Type(init.type)));
         if ((annot.type && init.type))
-        {
-            (isAssignable(annot.type, init.type) || fail((((((("Type annotation does not match init expression: `"_fu + node.value) + ": "_fu) + serializeType(annot.type)) + " = "_fu) + serializeType(init.type)) + "`."_fu)));
-        };
+            checkAssignable(annot.type, init.type, "Type annotation does not match init expression"_fu, node.value, "="_fu);
+
         if (init)
             maybeCopyOrMove(init, t_let, false);
 
@@ -2326,7 +2328,7 @@ struct sf_solve
                 s_SolvedNode& arg = fnNode.items.mutref(i);
                 if ((arg.value == id))
                 {
-                    (isAssignable(type, arg.type) || fail((("Implicit arg collision: `"_fu + id) + "`."_fu)));
+                    checkAssignable(type, arg.type, "Implicit arg collision"_fu, id, fu_STR{});
                     return ret;
                 };
             };
