@@ -687,12 +687,13 @@ pub fn solve(
         //  do whatever you need, this is compile-fail path.
         let overloads = DEPREC_lookup(scope, id);
 
-        mut min = 0xffffff.i32;
+        mut min = 0x7fffffff.i32;
+        mut max = 0;
         for (mut i = 0; i < overloads.len; i++)
         {
-            let arity = GET(overloads[i]).min;
-            if (min > arity)
-                min = arity;
+            let o = GET(overloads[i]);
+            if (min > o.min) min = o.min;
+            if (max < o.max) max = o.max;
         }
 
         fn expectedArgs(targets: Target[]): string
@@ -721,7 +722,7 @@ pub fn solve(
                     result +=  arg.name
                             + (arg.flags & F_MUSTNAME ? "!" : "")
                             + (arg.default ? "?: " : ": ")
-                            + (arg.type ? serializeType(arg.type) : "$");
+                            + (arg.type ? humanizeType(arg.type) : "$");
                 }
 
                 result += ")";
@@ -730,14 +731,31 @@ pub fn solve(
             return result || ".";
         }
 
-        let expected =
-            expectedArgs(overloads);
+        fn actualArgs(args: SolvedNode[]): string
+        {
+            mut result = "\nActual: (";
+
+            for (mut i = 0; i < args.len; i++)
+            {
+                let arg = args[i];
+                if (i)
+                    result += ",";
+
+                result += "\n\t";
+                if (arg.kind == "label")
+                    result += arg.value + ": ";
+
+                result += humanizeType(arg.type);
+            }
+
+            return result + ").";
+        }
 
         return overloads
-             ? args.len < min
-                ? fail("`" + id + "` expects " + min + " arguments, " + args.len + " provided" + expected)
-                : fail("`" + id + "` bad args, provided: " + mangleArguments(args) + expected)
-             : fail("`" + id + "` is not defined.");
+                ? args.len < min ? fail("`" + id + "` expects at least " + min + " arguments, " + args.len + " provided" + expectedArgs(overloads))
+                : args.len > max ? fail("`" + id + "` expects at most " + max + " arguments, " + args.len + " provided" + expectedArgs(overloads))
+                : fail("`" + id + "` bad args" + expectedArgs(overloads) + actualArgs(args))
+             : fail("`" + id + "` is not defined in this scope.");
     }
 
 

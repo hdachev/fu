@@ -265,16 +265,20 @@ pub fn serializeType(type: Type)
 
 pub fn humanizeType(type: Type)
 {
-    mut prefix: string;
-
-    for (mut i = 0; i < TAGS.len; i++)
-        if (type.quals & (1 << i))
-            prefix += TAGS[i] + " ";
+    mut result: string = type.canon;
 
     if (type.modid)
-        prefix += " " + type.modid + "#";
+        result = type.modid + ":" + result;
 
-    return prefix + type.canon;
+    if (type.quals)
+    {
+        result += ":";
+        for (mut i = 0; i < TAGS.len; i++)
+            if (type.quals & (1 << i))
+                result += " " + TAGS[i];
+    }
+
+    return result;
 }
 
 fn parse10i32(offset: &mut i32, str: string): i32
