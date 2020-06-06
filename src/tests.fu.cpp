@@ -781,6 +781,7 @@ void runTests()
     FAIL("\n        fn main() {\n            let ret: u64 =\n            //*F\n            18446744073709551616\n            /*/\n            18446744073709551615\n            //*/\n            ;\n\n            return (ret - 0xffffffffffffffff).i32;\n        }\n    "_fu);
     FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        //*F\n        /*/\n        pub\n        //*/\n        fn hello() 3;\n    "_fu, "\n        import \"./0\";\n        fn main() 6 - hello * 2;\n    "_fu } });
     ZERO("\n        let a =     1;\n        let a = a + 1;\n        return  a - 2;\n    "_fu);
+    ZERO("\n        struct X { i: i32; };\n\n        fn        ++(using x: &mut X) ++i;\n        fn postfix++(using x: &mut X) i++;\n\n        fn main() {\n            mut x: X;\n            let a = x++;\n            let b = ++x;\n            return a || b - 2;\n        }\n    "_fu);
 }
 
 #endif

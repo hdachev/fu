@@ -36,36 +36,39 @@ fn %(a: $T, b: $T)
     case ($T -> @integral): $T __native;
     case ($T -> @floating_point): $T __native("<cmath>", "std::fmod");
 
-fn ++(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
-fn --(a: &mut $T)           case ($T -> @arithmetic):   $T __native;
-fn +=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
-fn -=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
-fn *=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
-fn /=(a: &mut $T, b: $T)    case ($T -> @arithmetic):   &mut $T __native;
+fn ++(a: &mut $T) case ($T -> @arithmetic): $T __native;
+fn --(a: &mut $T) case ($T -> @arithmetic): $T __native;
+fn postfix ++(a: &mut $T) case ($T -> @arithmetic): $T __native;
+fn postfix --(a: &mut $T) case ($T -> @arithmetic): $T __native;
 
-fn ==(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
-fn !=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn +=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
+fn -=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
+fn *=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
+fn /=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
 
-fn > (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
-fn < (a: $T, b: $T)         case ($T -> @primitive):    bool __native;
-fn >=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
-fn <=(a: $T, b: $T)         case ($T -> @primitive):    bool __native;
+fn ==(a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn !=(a: $T, b: $T) case ($T -> @primitive): bool __native;
+
+fn > (a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn < (a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn >=(a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn <=(a: $T, b: $T) case ($T -> @primitive): bool __native;
 
 
 // Bitwise.
 
-fn ~(a: $T)                 case ($T -> @integral):     $T __native;
-fn &(a: $T, b: $T)          case ($T -> @integral):     $T __native;
-fn |(a: $T, b: $T)          case ($T -> @integral):     $T __native;
-fn ^(a: $T, b: $T)          case ($T -> @integral):     $T __native;
-fn <<(a: $T, b: $T)         case ($T -> @integral):     $T __native;
-fn >>(a: $T, b: $T)         case ($T -> @integral):     $T __native;
+fn  ~(a: $T)        case ($T -> @integral): $T __native;
+fn  &(a: $T, b: $T) case ($T -> @integral): $T __native;
+fn  |(a: $T, b: $T) case ($T -> @integral): $T __native;
+fn  ^(a: $T, b: $T) case ($T -> @integral): $T __native;
+fn <<(a: $T, b: $T) case ($T -> @integral): $T __native;
+fn >>(a: $T, b: $T) case ($T -> @integral): $T __native;
 
-fn &=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
-fn |=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
-fn ^=(a: &mut $T, b: $T)    case ($T -> @integral):     &mut $T __native;
-fn <<=(a: &mut $T, b: $T)   case ($T -> @integral):     &mut $T __native;
-fn >>=(a: &mut $T, b: $T)   case ($T -> @integral):     &mut $T __native;
+fn  &=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
+fn  |=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
+fn  ^=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
+fn <<=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
+fn >>=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
 
 
 // Numeric conversions.

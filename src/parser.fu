@@ -478,27 +478,36 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         else if (token.kind == "id")
         {
             let v = token.value;
+            let peek = tokens[_idx];
 
-            if (v == "let")         return parseLetStmt();
-            if (v == "mut")         return (_idx--, parseLetStmt());
-            if (v == "if")          return parseIf();
-            if (v == "return")      return parseReturn();
+            if (!_fnDepth || peek.kind == "id")
+            {
+                if (v == "let")         return parseLetStmt();
+                if (v == "mut")         return (_idx--, parseLetStmt());
+                if (v == "struct")      return parseStructDecl();
+                if (v == "pub")         return parsePub();
+                if (v == "typedef")     return parseTypedef();
 
-            if (v == "for")         return parseFor();
-            if (v == "while")       return parseWhile();
-            if (v == "do")          return parseDoWhile();
-            if (v == "break")       return parseJump("break");
-            if (v == "continue")    return parseJump("continue");
+                if (v == "inline" && tryConsume("id", "fn"))
+                    return parseFnDecl(F_TEMPLATE);
 
-            if (v == "fn")          return parseFnDecl(0);
-            if (v == "struct")      return parseStructDecl();
-            if (v == "typedef")     return parseTypedef();
+                if (v == "fn")          return parseFnDecl(0);
+            }
 
-            if (v == "pub")         return parsePub();
-            if (v == "import")      return parseImport();
+            if (_fnDepth)
+            {
+                if (v == "if")          return parseIf();
+                if (v == "return")      return parseReturn();
 
-            if (v == "inline" && tryConsume("id", "fn"))
-                return parseFnDecl(F_TEMPLATE);
+                if (v == "for")         return parseFor();
+                if (v == "while")       return parseWhile();
+                if (v == "do")          return parseDoWhile();
+                if (v == "break")       return parseJump("break");
+                if (v == "continue")    return parseJump("continue");
+            }
+
+            if (v == "import" && (peek.kind == "id" || peek.kind == "str"))
+                return parseImport();
         }
 
         ////////////
@@ -555,11 +564,31 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         ////////////////////////////////
 
         // fn hello(), fn +()
-        let name = tryConsume("id")
-                || (flags |= F_OPERATOR, consume("op"));
+        mut name = tryConsume("id").value;
 
-        // Opening parens.
-        consume("op", "(");
+        // No opening parens?
+        if (!name || !tryConsume("op", "("))
+        {
+            !name || name == "infix" || name == "prefix" || name == "postfix"
+                || fail("Unexpected `" + name + "`.");
+
+            let postfix = name == "postfix";
+            name = consume("op").value;
+
+            if (postfix)
+            {
+                name == "++" || name == "--"
+                    || fail("No such postfix operator: `" + name + "`.");
+
+                name += "postfix";
+                flags |= F_POSTFIX;
+            }
+
+            flags |= F_OPERATOR;
+
+            // Opening parens!
+            consume("op", "(");
+        }
 
         mut items: Node[];
         flags |= parseArgsDecl(items, "op", ")");
@@ -582,7 +611,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             items[retIdx] = type = createRead("void");
 
         // Ensure main: i32, kinda lame doing it here.
-        if (name.value == "main" && _fnDepth == 1)
+        if (name == "main" && _fnDepth == 1)
         {
             if (!type)
                 items[retIdx] = type = createRead("i32");
@@ -606,7 +635,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
         ////////////////////////////////
 
-        return make("fn", items, flags, name.value);
+        return make("fn", items, flags, name);
     }
 
     fn parseFnBodyOrPattern(
@@ -894,7 +923,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 return (_idx--, tryParseBinary(head, v, p1));
 
             if (POSTFIX.has(v))
-                return createCall(v, F_POSTFIX, [ head ]);
+                return createCall(
+                    v == "++" || v == "--" ? v + "postfix" : v,
+                        F_POSTFIX, [ head ]);
 
             if (v == "::")
                 return parseQualifierChain(head);

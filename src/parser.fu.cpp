@@ -576,50 +576,57 @@ struct sf_parse
         else if ((token.kind == "id"_fu))
         {
             const fu_STR& v = token.value;
-            if ((v == "let"_fu))
-                return parseLetStmt();
+            const s_Token& peek = tokens[_idx];
+            if ((!_fnDepth || (peek.kind == "id"_fu)))
+            {
+                if ((v == "let"_fu))
+                    return parseLetStmt();
 
-            if ((v == "mut"_fu))
-                return ((void)_idx--, parseLetStmt());
+                if ((v == "mut"_fu))
+                    return ((void)_idx--, parseLetStmt());
 
-            if ((v == "if"_fu))
-                return parseIf();
+                if ((v == "struct"_fu))
+                    return parseStructDecl();
 
-            if ((v == "return"_fu))
-                return parseReturn();
+                if ((v == "pub"_fu))
+                    return parsePub();
 
-            if ((v == "for"_fu))
-                return parseFor();
+                if ((v == "typedef"_fu))
+                    return parseTypedef();
 
-            if ((v == "while"_fu))
-                return parseWhile();
+                if (((v == "inline"_fu) && tryConsume("id"_fu, "fn"_fu)))
+                    return parseFnDecl(int(F_TEMPLATE));
 
-            if ((v == "do"_fu))
-                return parseDoWhile();
+                if ((v == "fn"_fu))
+                    return parseFnDecl(0);
 
-            if ((v == "break"_fu))
-                return parseJump("break"_fu);
+            };
+            if (_fnDepth)
+            {
+                if ((v == "if"_fu))
+                    return parseIf();
 
-            if ((v == "continue"_fu))
-                return parseJump("continue"_fu);
+                if ((v == "return"_fu))
+                    return parseReturn();
 
-            if ((v == "fn"_fu))
-                return parseFnDecl(0);
+                if ((v == "for"_fu))
+                    return parseFor();
 
-            if ((v == "struct"_fu))
-                return parseStructDecl();
+                if ((v == "while"_fu))
+                    return parseWhile();
 
-            if ((v == "typedef"_fu))
-                return parseTypedef();
+                if ((v == "do"_fu))
+                    return parseDoWhile();
 
-            if ((v == "pub"_fu))
-                return parsePub();
+                if ((v == "break"_fu))
+                    return parseJump("break"_fu);
 
-            if ((v == "import"_fu))
+                if ((v == "continue"_fu))
+                    return parseJump("continue"_fu);
+
+            };
+            if (((v == "import"_fu) && ((peek.kind == "id"_fu) || (peek.kind == "str"_fu))))
                 return parseImport();
-
-            if (((v == "inline"_fu) && tryConsume("id"_fu, "fn"_fu)))
-                return parseFnDecl(int(F_TEMPLATE));
 
         };
         _idx--;
@@ -659,8 +666,21 @@ struct sf_parse
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return ((void)(flags |= F_OPERATOR), consume("op"_fu, fu_STR{})); }());
-        consume("op"_fu, "("_fu);
+        fu_STR name = tryConsume("id"_fu, fu_STR{}).value;
+        if ((!name || !tryConsume("op"_fu, "("_fu)))
+        {
+            (!name || (name == "infix"_fu) || (name == "prefix"_fu) || (name == "postfix"_fu) || fail((("Unexpected `"_fu + name) + "`."_fu)));
+            const bool postfix = (name == "postfix"_fu);
+            name = consume("op"_fu, fu_STR{}).value;
+            if (postfix)
+            {
+                ((name == "++"_fu) || (name == "--"_fu) || fail((("No such postfix operator: `"_fu + name) + "`."_fu)));
+                (name += "postfix"_fu);
+                flags |= F_POSTFIX;
+            };
+            flags |= F_OPERATOR;
+            consume("op"_fu, "("_fu);
+        };
         fu_VEC<s_Node> items {};
         flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
         _fnDepth++;
@@ -671,7 +691,7 @@ struct sf_parse
         if ((!type && (_numReturns == numReturns0)))
             items.mutref(retIdx) = (type = createRead("void"_fu));
 
-        if (((name.value == "main"_fu) && (_fnDepth == 1)))
+        if (((name == "main"_fu) && (_fnDepth == 1)))
         {
             if (!type)
                 items.mutref(retIdx) = (type = createRead("i32"_fu));
@@ -691,7 +711,7 @@ struct sf_parse
 
             _dollars = dollars0;
         };
-        return make("fn"_fu, items, flags, name.value);
+        return make("fn"_fu, items, flags, name);
     };
     int parseFnBodyOrPattern(fu_VEC<s_Node>& out_push_body)
     {
@@ -922,7 +942,7 @@ struct sf_parse
                 return ((void)_idx--, tryParseBinary(head, v, p1));
 
             if (fu::has(POSTFIX, v))
-                return createCall(v, F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { head } });
+                return createCall((((v == "++"_fu) || (v == "--"_fu)) ? (v + "postfix"_fu) : fu_STR(v)), F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { head } });
 
             if ((v == "::"_fu))
                 return parseQualifierChain(s_Node(head));

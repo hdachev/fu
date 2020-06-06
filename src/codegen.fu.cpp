@@ -708,6 +708,11 @@ inline const int FN_ARGS_BACK = FN_RET_BACK;
 inline const int F_OPERATOR = (1 << 21);
                                 #endif
 
+                                #ifndef DEF_F_POSTFIX
+                                #define DEF_F_POSTFIX
+inline const int F_POSTFIX = (1 << 3);
+                                #endif
+
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
 inline const int F_TEMPLATE = (1 << 30);
@@ -741,11 +746,6 @@ inline const int F_ARG = (1 << 9);
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
 inline const int LET_INIT = 1;
-                                #endif
-
-                                #ifndef DEF_F_POSTFIX
-                                #define DEF_F_POSTFIX
-inline const int F_POSTFIX = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_q_unsigned
@@ -1205,6 +1205,11 @@ struct sf_cpp_codegen
                 (src += ", "_fu);
 
             (src += binding(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[i]; if (_) return _; } fail(fu_STR{}); }()), false, false));
+        };
+        if ((overload.flags & F_POSTFIX))
+        {
+            ((overload.flags & F_OPERATOR) || fu::fail());
+            (src += ", /*postfix*/int "_fu);
         };
         (src += (closure ? (") -> "_fu + annot) : ")"_fu));
         return src;

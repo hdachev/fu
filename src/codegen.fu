@@ -524,6 +524,12 @@ pub fn cpp_codegen(
             src += binding(items[i] || fail());
         }
 
+        if (overload.flags & F_POSTFIX)
+        {
+            overload.flags & F_OPERATOR || assert();
+            src += ", /*postfix*/int ";
+        }
+
         src += closure
              ? ") -> " + annot
              : ")";
