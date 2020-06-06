@@ -42,6 +42,7 @@ pub let F_IMPLICIT      = 1 << 17;
 pub let F_USING         = 1 << 18;
 pub let F_MUSTNAME      = 1 << 19;
 pub let F_PUB           = 1 << 20;
+pub let F_OPERATOR      = 1 << 21;
 // ...
 
 pub let F_UNTYPED_ARGS  = 1 << 24;
@@ -555,7 +556,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         // fn hello(), fn +()
         let name = tryConsume("id")
-                || tryConsume("op");
+                || (flags |= F_OPERATOR, consume("op"));
 
         // Opening parens.
         consume("op", "(");

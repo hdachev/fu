@@ -1759,13 +1759,11 @@ struct sf_solve
         {
             fu_STR kind = (native ? "__native"_fu : "fn"_fu);
             fu_STR name { id };
-            if ((spec && hasIdentifierChars(id) && !native))
+            if ((spec && !native))
             {
                 fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.items, 0, (out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
                 fu_STR hash = hash62(sig);
                 (name += ("_"_fu + hash));
-                ((out.value == id) || fu::fail());
-                out.value = name;
             };
             FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
         };
@@ -2633,7 +2631,7 @@ struct sf_solve
         _here = here0;
         return result;
     };
-    s_SolverOutput solve_EVAL()
+    s_SolverOutput solve()
     {
         if (module.modid)
             Scope_import(0);
@@ -2653,7 +2651,7 @@ struct sf_solve
 
 s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module)
 {
-    return (sf_solve { parse, ctx, module }).solve_EVAL();
+    return (sf_solve { parse, ctx, module }).solve();
 }
 
 

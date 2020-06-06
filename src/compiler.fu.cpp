@@ -658,7 +658,7 @@ struct sf_getLinkOrder
         (fu::has(link_order, link_id) && fu::fail());
         link_order.push(link_id);
     };
-    fu_VEC<int> getLinkOrder_EVAL()
+    fu_VEC<int> getLinkOrder()
     {
         for (int i = 1; (i < modules.size()); i++)
             visit(modules[i], ctx);
@@ -671,7 +671,7 @@ struct sf_getLinkOrder
 
 fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
 {
-    return (sf_getLinkOrder { modules, ctx }).getLinkOrder_EVAL();
+    return (sf_getLinkOrder { modules, ctx }).getLinkOrder();
 }
 
 
@@ -961,7 +961,7 @@ struct sf_compile_snippets
         return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
     };
     s_Context ctx { CTX_PRELUDE };
-    s_Context compile_snippets_EVAL()
+    s_Context compile_snippets()
     {
         for (int i = 0; (i < sources.size()); i++)
         {
@@ -979,7 +979,7 @@ struct sf_compile_snippets
 
 s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
 {
-    return (sf_compile_snippets { sources, fnames }).compile_snippets_EVAL();
+    return (sf_compile_snippets { sources, fnames }).compile_snippets();
 }
 
 

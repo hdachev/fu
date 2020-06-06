@@ -205,6 +205,11 @@ inline const int F_MUSTNAME = (1 << 19);
 inline const int F_PUB = (1 << 20);
                                 #endif
 
+                                #ifndef DEF_F_OPERATOR
+                                #define DEF_F_OPERATOR
+inline const int F_OPERATOR = (1 << 21);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -268,7 +273,7 @@ struct sf_setupOperators
             (out.PRECEDENCE.upsert(ops[i]) = precedence);
 
     };
-    s_BINOP setupOperators_EVAL()
+    s_BINOP setupOperators()
     {
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "as"_fu, "is"_fu } });
         rightToLeft = true;
@@ -300,7 +305,7 @@ struct sf_setupOperators
 
 s_BINOP setupOperators()
 {
-    return (sf_setupOperators {  }).setupOperators_EVAL();
+    return (sf_setupOperators {  }).setupOperators();
 }
 
 
@@ -654,7 +659,7 @@ struct sf_parse
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return tryConsume("op"_fu, fu_STR{}); }());
+        s_Token name = ([&]() -> s_Token { { s_Token _ = tryConsume("id"_fu, fu_STR{}); if (_) return _; } return ((void)(flags |= F_OPERATOR), consume("op"_fu, fu_STR{})); }());
         consume("op"_fu, "("_fu);
         fu_VEC<s_Node> items {};
         flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
@@ -1248,7 +1253,7 @@ struct sf_parse
     {
         return make("loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { init, cond, post, body, postcond } }, 0, fu_STR{});
     };
-    s_ParserOutput parse_EVAL()
+    s_ParserOutput parse()
     {
         ((tokens[(tokens.size() - 1)].kind == "eof"_fu) || fail("Missing `eof` token."_fu));
         s_Node root = parseRoot();
@@ -1260,7 +1265,7 @@ struct sf_parse
 
 s_ParserOutput parse(const int modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens)
 {
-    return (sf_parse { modid, fname, tokens }).parse_EVAL();
+    return (sf_parse { modid, fname, tokens }).parse();
 }
 
 

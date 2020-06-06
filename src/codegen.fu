@@ -290,13 +290,16 @@ pub fn cpp_codegen(
             let s = specs[k];
             if (s.target)
             {
-                if (s.flags & F_PUB)
-                    _fdef += "\n                                #ifndef DEFt_" + s.value
-                           + "\n                                #define DEFt_" + s.value;
+                let dedupe = s.flags & F_PUB
+                    && GET(s.target).name.valid_identifier;
+
+                if (dedupe)
+                    _fdef += "\n                                #ifndef DEFt_" + dedupe
+                           + "\n                                #define DEFt_" + dedupe;
 
                 _fdef += "\n" + cgNode(s);
 
-                if (s.flags & F_PUB)
+                if (dedupe)
                     _fdef += "\n                                #endif\n";
             }
         }
@@ -304,6 +307,49 @@ pub fn cpp_codegen(
         /////////////////
         _isModuleSpecs--;
         /////////////////
+    }
+
+    fn valid_operator(str: string): string
+    {
+        for (mut i = 0; i < str.len; i++)
+        {
+            let c = str[i];
+            if (c >= 'a' && c <= 'z' ||
+                c >= 'A' && c <= 'Z' ||
+                c >= '0' && c <= '9' ||
+                c == '_')
+            {
+                return str.slice(0, i);
+            }
+        }
+
+        return str;
+    }
+
+    fn valid_identifier(mut str: string): string
+    {
+        for (mut i = str.len; i --> 0; )
+        {
+            let c = str[i];
+            if (c >= 'a' && c <= 'z' ||
+                c >= 'A' && c <= 'Z' ||
+                c >= '0' && c <= '9' ||
+                c == '_') continue;
+
+            let c       = c.u32;
+            let b0      = (c >> 0) & 0xf;
+            let b1      = (c >> 4) & 0xf;
+
+            fn hex(c: u32)
+                c < 10 ? ('0'.u32 + c).byte
+                       : ('A'.u32 + c).byte;
+
+            str = str[0, i]
+                + 'b' + b0.hex + b1.hex
+                + str[i + 1, str.len];
+        }
+
+        return str;
     }
 
     fn cgRoot(root: SolvedNode): string
@@ -446,8 +492,10 @@ pub fn cpp_codegen(
             ret.type || fail(),
             M_RETVAL | (closure ? M_CLOSURE : 0));
 
-        mut id = fn.value;
-        if (id == "main" && !closure)
+        let overload = GET(fn.target);
+
+        mut id = overload.name;
+        if (id == "main" && !closure && !_faasN)
         {
             _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
             id = "fu_MAIN";
@@ -457,8 +505,8 @@ pub fn cpp_codegen(
                 ? "const auto& " + id + " = [&]("
                 : annot + " " + id + "(";
 
-        if (!id.hasIdentifierChars)
-            src = annot + " operator" + id + "(";
+        if (overload.flags & F_OPERATOR)
+            src = annot + " operator" + id.valid_operator + "(";
 
         if (!closure)
         {
@@ -497,9 +545,9 @@ pub fn cpp_codegen(
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
 
-        let isOp    = !id.hasIdentifierChars;
+        let isOp    = overload.flags & F_OPERATOR;
 
-        let name    = isOp ? "operator" + id : id;
+        let name    = isOp ? "operator" + id.valid_operator : id;
         let linkage = (overload.flags & F_TEMPLATE && "inline ")
                   + (!(overload.flags & F_PUB)     && "static ");
 
@@ -530,6 +578,8 @@ pub fn cpp_codegen(
             return "";
 
         let items = body.items;
+        let overload = GET(fn.target);
+        let id = overload.name;
 
         // We need at least one closure
         //  in the function "header"
@@ -556,14 +606,12 @@ pub fn cpp_codegen(
             return "";
 
         // Ok - refactor time.
-        let evalName = fn.value + "_EVAL";
-
         let restFn = SolvedNode(
 
             kind: "fn", type: t_void,
             flags: fn.flags | F_CLOSURE,
             token: fn.token,
-            value: evalName,
+            target: fn.target,
 
             items:
             [
@@ -585,7 +633,7 @@ pub fn cpp_codegen(
         _clsrN--; // -1, so root closures come up at 0.
         //////////////////////
 
-        let structName = "sf_" + fn.value;
+        let structName = "sf_" + id;
         mut src = "\nnamespace {\n\nstruct " + structName
                 + blockWrap(head) + ";\n";
 
@@ -607,10 +655,10 @@ pub fn cpp_codegen(
 
             src += "\n} // namespace\n\n";
             src += cgFnSignature(fn);
-            src += "\n{\n    return (" + structName + " { " + args.join(", ") + " })." + evalName + "();\n}\n\n";
+            src += "\n{\n    return (" + structName + " { " + args.join(", ") + " })." + id + "();\n}\n\n";
         }
 
-        if (_fdef.has(fn.value || fail()))
+        if (_fdef.has(id || fail()))
             ensureFwdDecl(fn.target);
 
         //////////////////////
@@ -663,16 +711,19 @@ pub fn cpp_codegen(
         let items = fn.items;
         let body  = items[items.len + FN_BODY_BACK];
 
+        let overload = GET(fn.target);
+        let id = overload.name;
+
         // Custom __natives.
         if (!body)
-            return "\n// fn " + fn.value + " has no body.\n";
+            return "\n// fn " + id + " has no body.\n";
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
             _indent = "\n";
 
         mut src = cgFnSignature(fn);
-        if (!(fn.flags & F_CLOSURE) && _fdef.has(fn.value || fail()))
+        if (!(fn.flags & F_CLOSURE) && _fdef.has(id || fail()))
             ensureFwdDecl(fn.target);
 
         if (body.kind == "block")
@@ -1022,10 +1073,10 @@ pub fn cpp_codegen(
             return items[0] + sep + ID(id);
         }
 
-        if (node.target.modid && node.target.modid != module.modid)
+        if (node.target.modid && (node.target.modid != module.modid || target.flags & F_OPERATOR))
             ensureFwdDecl(node.target);
 
-        if (hasNonIdentifierChars(id))
+        if (target.flags & F_OPERATOR)
         {
             let nodes = node.items  || fail();
             let head  = nodes[0]    || fail();
@@ -1033,8 +1084,8 @@ pub fn cpp_codegen(
             if (items.len == 1)
             {
                 return node.flags & F_POSTFIX
-                     ? items[0] + id
-                     : id + items[0];
+                     ? items[0] + id.valid_operator
+                     : id.valid_operator + items[0];
             }
 
             if (items.len == 2)
@@ -1090,9 +1141,9 @@ pub fn cpp_codegen(
 
                 // Skip some of the ridiculous parens.
                 if (mode & M_STMT)
-                    return items[0] + " " + id + " " + items[1];
+                    return items[0] + " " + id.valid_operator + " " + items[1];
                 else
-                    return "(" + items[0] + " " + id + " " + items[1] + ")";
+                    return "(" + items[0] + " " + id.valid_operator + " " + items[1] + ")";
             }
         }
 

@@ -115,7 +115,7 @@ struct sf_lex
         };
         return out;
     };
-    s_LexerOutput lex_EVAL()
+    s_LexerOutput lex()
     {
         while ((idx < end))
         {
@@ -340,7 +340,7 @@ struct sf_lex
 
 s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
 {
-    return (sf_lex { src, fname }).lex_EVAL();
+    return (sf_lex { src, fname }).lex();
 }
 
 

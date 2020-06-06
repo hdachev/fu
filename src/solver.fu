@@ -1119,14 +1119,11 @@ pub fn solve(
 
             // TODO FIX currently we only hash template names.
             mut name = id;
-            if (spec && id.hasIdentifierChars && !native)
+            if (spec && !native)
             {
                 let sig = mangleArguments(out.items[0, out.items.len + FN_BODY_BACK]) || fail();
                 let hash = tea::hash62(sig);
                 name += "_" + hash;
-
-                out.value == id || assert();
-                out.value = name;
             }
 
             //

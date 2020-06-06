@@ -46,7 +46,7 @@ struct sf_cli_handle
         return fu_STR{};
     };
     fu_STR self = next();
-    int cli_handle_EVAL()
+    int cli_handle()
     {
         if ((argv.size() == 1))
         {
@@ -156,7 +156,7 @@ struct sf_cli_handle
 
 int cli_handle(const fu_VEC<fu_STR>& argv, fu_STR&& cwd)
 {
-    return (sf_cli_handle { argv, std::move(cwd) }).cli_handle_EVAL();
+    return (sf_cli_handle { argv, std::move(cwd) }).cli_handle();
 }
 
 
