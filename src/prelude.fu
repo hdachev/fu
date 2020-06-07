@@ -214,18 +214,18 @@ fn    join(a: string[], sep: string): string __native("<fu/vec/join.h>", "fu::jo
 fn replace(in: string, all: string, with: string): string __native("<fu/vec/replace.h>", "fu::replace");
 
 
-// Concats.
+// D-style concats.
 
-fn +(a: [$T], b: [$T]): $T[] __native("<fu/vec/concat.h>", "+");
-fn +(a: [$T], b:  $T ): $T[] __native("<fu/vec/concat_one.h>", "+");
-fn +(a:  $T , b: [$T]): $T[] __native("<fu/vec/concat_one.h>", "+");
+fn ~(a: [$T], b: [$T]): $T[] __native("<fu/vec/concat.h>",     "+");
+fn ~(a: [$T], b:  $T ): $T[] __native("<fu/vec/concat_one.h>", "+");
+fn ~(a:  $T , b: [$T]): $T[] __native("<fu/vec/concat_one.h>", "+");
 
-fn +=(a: &mut $T[], b: [$T]): &mut $T[] __native("<fu/vec/concat.h>", "+=");
-fn +=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
+fn ~=(a: &mut $T[], b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
+fn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
-fn + (a: string, b: $T)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
-fn + (a: $T, b: string)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
-fn +=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native("<fu/vec/concat_str.h>", "+=");
+fn ~ (a: string, b: $T)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
+fn ~ (a: $T, b: string)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
+fn ~=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native("<fu/vec/concat_str.h>", "+=");
 
 
 // Maps.

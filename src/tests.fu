@@ -769,13 +769,13 @@ pub fn runTests()
 
     ZERO(`
         mut str = "hello ";
-        str += "world";
+        str ~= "world";
 
         return str.len - 11;
     `);
 
     ZERO(`
-        let str = "hello " + "world";
+        let str = "hello " ~ "world";
 
         return str.starts(with: "hel")
              ? str.len - 11
@@ -783,7 +783,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        let str = "a" + 1710010;
+        let str = "a" ~ 1710010;
 
         return str == "a1710010"
              ? 0 : 101;
@@ -793,7 +793,7 @@ pub fn runTests()
         let str = "hello world";
         mut cpy = "";
         for (mut i = 0; i < str.len; i++)
-            cpy += str[i];
+            cpy ~= str[i];
 
         return (cpy.len - 11) + (cpy == str ? 0 : 1);
     `);
@@ -897,7 +897,7 @@ pub fn runTests()
                 if (c == ' ')
                     break;
 
-                a += c;
+                a ~= c;
             }
 
             return a;
@@ -1357,7 +1357,7 @@ pub fn runTests()
         }
 
         fn path_join(a: string, b: string)
-            path_normalize(a + "/" + b);
+            path_normalize(a ~ "/" ~ b);
 
         fn main()
             path_join("hello/hey", "./../you//") == "hello/you/"
@@ -1395,7 +1395,7 @@ pub fn runTests()
         let v: &mut string = specialized.kind == "fn"
                           && specialized.value
                           || throw("nope");
-        v += "ue";
+        v ~= "ue";
 
         return specialized.value == "value" ? 0 : 1;
 

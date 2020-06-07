@@ -285,14 +285,16 @@ struct sf_setupOperators
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "&"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "^"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "~"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<=>"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<4> { "<"_fu, "<="_fu, ">"_fu, ">="_fu } });
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "=="_fu, "!="_fu, "<=>"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "=="_fu, "!="_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "->"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "&&"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "||"_fu } });
         rightToLeft = true;
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "?"_fu } });
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<15> { "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu, ".="_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<16> { "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu, ".="_fu, "~="_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<|"_fu } });
         rightToLeft = false;
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|>"_fu } });
