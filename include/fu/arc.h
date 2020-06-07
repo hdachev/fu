@@ -105,15 +105,6 @@ struct alignas(16) fu_ARC
         }
         #endif
 
-        #ifndef NDEBUG
-        {
-            char* start = ((char*)this) + sizeof(fu_ARC);
-            char* end   = start + bytes;
-            for (char* i = start; i < end; i++)
-                *i = (char)(long long)i;
-        }
-        #endif
-
         fu::pow2mem_free((char*) this, bytes);
     }
 
