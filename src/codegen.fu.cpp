@@ -2127,7 +2127,7 @@ struct sf_cpp_codegen
     {
         ((root.kind == "root"_fu) || fail(fu_STR{}));
         fu_STR src = cgNode(root, 0);
-        return ([&]() -> fu_STR { { fu_STR _ = fu_STR(src); if (_) return _; } return "\n"_fu; }());
+        return src;
     };
 };
 

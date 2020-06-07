@@ -51,11 +51,11 @@ void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
 s_ModuleStat ModuleStat_now();
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
+const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 s_Module& getModule(const fu_STR&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 void setModule(const s_Module&, s_Context&);
-const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 s_Context solvePrelude();
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
 fu_STR path_noext(const fu_STR&);
@@ -729,7 +729,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = module.out.cpp;
-        fu_STR F = ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size());
+        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
         Fs.push(F);
         len_all += cpp.size();
     };
@@ -740,8 +740,11 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         if (!cpp)
         {
             for (int i = Fs.size(); (i-- > 0); )
-                (cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu));
+            {
+                if (Fs.mutref(i))
+                    (cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu));
 
+            };
         };
         fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
         (std::cout << ("  WRITE "_fu + fname) << '\n');
@@ -757,6 +760,10 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         for (int i = 0; (i < Fs.size()); i++)
         {
             fu_STR F { Fs[i] };
+            if (!F)
+            {
+                continue;
+            };
             fu_STR F_cpp = (F + ".cpp"_fu);
             fu_STR F_tmp = (F + ".o.tmp"_fu);
             fu_STR F_obj = (F + ".o"_fu);
@@ -778,8 +785,12 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
         for (int i = 0; (i < link_order.size()); i++)
-            (cmd += (Fs.mutref(link_order[i]) + ".o "_fu));
+        {
+            fu_STR F { Fs[link_order[i]] };
+            if (F)
+                (cmd += (F + ".o "_fu));
 
+        };
         
         {
             (std::cout << "   LINK "_fu << F_exe << '\n');
@@ -793,7 +804,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
         };
-        if ((Fs.size() == 1))
+        if (((Fs.size() == 1) && Fs.mutref(0)))
             code = fu::shell_exec((("rm "_fu + Fs.mutref(0)) + ".o 2>&1"_fu), stdout);
 
         if (code)
@@ -813,9 +824,11 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
         for (int i = 1; (i < ctx.modules.size()); i++)
         {
             const s_Module& module = ctx.modules[i];
-            fu_STR fname = (module.fname + ".cpp"_fu);
             const fu_STR& data = module.out.cpp;
-            update_file(fu_STR(fname), data, dir_src, dir_cpp);
+            fu_STR fname = ([&]() -> fu_STR { if (data) return (module.fname + ".cpp"_fu); else return fu_STR{}; }());
+            if (data)
+                update_file(fu_STR(fname), data, dir_src, dir_cpp);
+
             cpp_files.push(fname);
         };
         fu_STR CMakeLists = ([&]() -> fu_STR { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_STR{}; }());
@@ -828,8 +841,9 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 for (int i = 0; (i < link_order.size()); i++)
                 {
                     fu_STR incl { cpp_files[link_order[i]] };
-                    fu_STR rel = path_relative(unity, incl);
-                    (data += (("#include \""_fu + rel) + "\"\n"_fu));
+                    if (incl)
+                        (data += (("#include \""_fu + path_relative(unity, incl)) + "\"\n"_fu));
+
                 };
                 update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
@@ -853,8 +867,12 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                     if ((fu::file_size(fu_STR(custom)) > 0))
                         (includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu));
 
-                    inputs.push(input);
-                    outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_files[link_order[i]])));
+                    fu_STR cpp_file { cpp_files[(moduleIdx - 1)] };
+                    if (cpp_file)
+                    {
+                        inputs.push(input);
+                        outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_file)));
+                    };
                 };
                 fu_STR libname = path_noext(path_filename(main));
                 (data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu));
@@ -967,7 +985,7 @@ struct sf_compile_snippets
         {
             const fu_STR& snippet = sources[i];
             fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
-            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (("/"_fu + i) + ".fu"_fu));
+            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/"_fu) + i) + ".fu"_fu));
             (ctx.files.upsert(fname) = src);
             compile(fname, fu_STR{}, ctx);
         };

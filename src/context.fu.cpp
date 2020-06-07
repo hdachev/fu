@@ -565,6 +565,30 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
         if (exists)
             return fu_STR(path);
 
+        
+        {
+            fu_STR path_1 = ((from + "lib/"_fu) + name);
+            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            if (exists_1)
+                return path_1;
+
+        };
+        
+        {
+            fu_STR path_1 = ((from + "vendor/"_fu) + name);
+            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            if (exists_1)
+                return path_1;
+
+        };
+        
+        {
+            fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
+            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            if (exists_1)
+                return path_1;
+
+        };
         fu_STR fallback = path_dirname(from);
         if ((!fallback || (fallback.size() >= from.size())))
             return fu_STR{};
