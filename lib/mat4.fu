@@ -1,0 +1,77 @@
+import "mat34";
+
+pub struct mat4
+{
+    m0: f32; m1: f32; m2: f32; m3: f32;
+    m4: f32; m5: f32; m6: f32; m7: f32;
+    m8: f32; m9: f32; mA: f32; mB: f32;
+    mC: f32; mD: f32; mE: f32; mF: f32;
+};
+
+pub inline fn mat4(using m: mat34)
+    mat4(
+        mx.x, mx.y, mx.z, 0,
+        my.x, my.y, my.z, 0,
+        mz.x, mz.y, mz.z, 0,
+        mo.x, mo.y, mo.z, 1);
+
+pub let mat4_identity = mat4(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1);
+
+pub inline fn mmul(a: mat4, b: mat34): mat4
+    mmul(a, mat4(b));
+
+pub fn mmul(using a: mat4, b: mat4)
+    mat4(
+        m0 * b.m0 + m4 * b.m1 + m8 * b.m2 + mC * b.m3,
+        m1 * b.m0 + m5 * b.m1 + m9 * b.m2 + mD * b.m3,
+        m2 * b.m0 + m6 * b.m1 + mA * b.m2 + mE * b.m3,
+        m3 * b.m0 + m7 * b.m1 + mB * b.m2 + mF * b.m3,
+        m0 * b.m4 + m4 * b.m5 + m8 * b.m6 + mC * b.m7,
+        m1 * b.m4 + m5 * b.m5 + m9 * b.m6 + mD * b.m7,
+        m2 * b.m4 + m6 * b.m5 + mA * b.m6 + mE * b.m7,
+        m3 * b.m4 + m7 * b.m5 + mB * b.m6 + mF * b.m7,
+        m0 * b.m8 + m4 * b.m9 + m8 * b.mA + mC * b.mB,
+        m1 * b.m8 + m5 * b.m9 + m9 * b.mA + mD * b.mB,
+        m2 * b.m8 + m6 * b.m9 + mA * b.mA + mE * b.mB,
+        m3 * b.m8 + m7 * b.m9 + mB * b.mA + mF * b.mB,
+        m0 * b.mC + m4 * b.mD + m8 * b.mE + mC * b.mF,
+        m1 * b.mC + m5 * b.mD + m9 * b.mE + mD * b.mF,
+        m2 * b.mC + m6 * b.mD + mA * b.mE + mE * b.mF,
+        m3 * b.mC + m7 * b.mD + mB * b.mE + mF * b.mF);
+
+pub fn determinant(using _: mat4)
+    + mC * m9 * m6 * m3 - m8 * mD * m6 * m3 - mC * m5 * mA * m3
+    + m4 * mD * mA * m3 + m8 * m5 * mE * m3 - m4 * m9 * mE * m3
+    - mC * m9 * m2 * m7 + m8 * mD * m2 * m7 + mC * m1 * mA * m7
+    - m0 * mD * mA * m7 - m8 * m1 * mE * m7 + m0 * m9 * mE * m7
+    + mC * m5 * m2 * mB - m4 * mD * m2 * mB - mC * m1 * m6 * mB
+    + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB
+    - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF
+    - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
+
+pub fn inverse(using m: mat4) {
+    let idet = 1.0 / m.determinant;
+
+    return mat4(
+        idet * (- mD * mA * m7 + m9 * mE * m7 + mD * m6 * mB - m5 * mE * mB - m9 * m6 * mF + m5 * mA * mF),
+        idet * (+ mD * mA * m3 - m9 * mE * m3 - mD * m2 * mB + m1 * mE * mB + m9 * m2 * mF - m1 * mA * mF),
+        idet * (- mD * m6 * m3 + m5 * mE * m3 + mD * m2 * m7 - m1 * mE * m7 - m5 * m2 * mF + m1 * m6 * mF),
+        idet * (+ m9 * m6 * m3 - m5 * mA * m3 - m9 * m2 * m7 + m1 * mA * m7 + m5 * m2 * mB - m1 * m6 * mB),
+        idet * (+ mC * mA * m7 - m8 * mE * m7 - mC * m6 * mB + m4 * mE * mB + m8 * m6 * mF - m4 * mA * mF),
+        idet * (- mC * mA * m3 + m8 * mE * m3 + mC * m2 * mB - m0 * mE * mB - m8 * m2 * mF + m0 * mA * mF),
+        idet * (+ mC * m6 * m3 - m4 * mE * m3 - mC * m2 * m7 + m0 * mE * m7 + m4 * m2 * mF - m0 * m6 * mF),
+        idet * (- m8 * m6 * m3 + m4 * mA * m3 + m8 * m2 * m7 - m0 * mA * m7 - m4 * m2 * mB + m0 * m6 * mB),
+        idet * (- mC * m9 * m7 + m8 * mD * m7 + mC * m5 * mB - m4 * mD * mB - m8 * m5 * mF + m4 * m9 * mF),
+        idet * (+ mC * m9 * m3 - m8 * mD * m3 - mC * m1 * mB + m0 * mD * mB + m8 * m1 * mF - m0 * m9 * mF),
+        idet * (- mC * m5 * m3 + m4 * mD * m3 + mC * m1 * m7 - m0 * mD * m7 - m4 * m1 * mF + m0 * m5 * mF),
+        idet * (+ m8 * m5 * m3 - m4 * m9 * m3 - m8 * m1 * m7 + m0 * m9 * m7 + m4 * m1 * mB - m0 * m5 * mB),
+        idet * (+ mC * m9 * m6 - m8 * mD * m6 - mC * m5 * mA + m4 * mD * mA + m8 * m5 * mE - m4 * m9 * mE),
+        idet * (- mC * m9 * m2 + m8 * mD * m2 + mC * m1 * mA - m0 * mD * mA - m8 * m1 * mE + m0 * m9 * mE),
+        idet * (+ mC * m5 * m2 - m4 * mD * m2 - mC * m1 * m6 + m0 * mD * m6 + m4 * m1 * mE - m0 * m5 * mE),
+        idet * (- m8 * m5 * m2 + m4 * m9 * m2 + m8 * m1 * m6 - m0 * m9 * m6 - m4 * m1 * mA + m0 * m5 * mA),
+    );
+};

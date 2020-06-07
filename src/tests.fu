@@ -2433,6 +2433,11 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        import "vec3";
+        return vec3.maxc;
+    `);
+
 
     // We have to deduce the rh-types from the assignment calls.
     //

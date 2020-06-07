@@ -1,0 +1,125 @@
+import "vec3";
+
+pub struct mat34
+{
+    mx: vec3;
+    my: vec3;
+    mz: vec3;
+    mo: vec3;
+};
+
+pub inline fn mat34_identity()
+    mat34(
+        vec3(x: 1),
+        vec3(y: 1),
+        vec3(z: 1), vec3 /*point3*/);
+
+pub inline fn pmul(using _0: mat34, using _1: point3)
+    vec3( // point3(
+        x * mx.x + y * my.x + z * mz.x + mo.x,
+        x * mx.y + y * my.y + z * mz.y + mo.y,
+        x * mx.z + y * my.z + z * mz.z + mo.z);
+
+pub inline fn vmul(using _0: mat34, using _1: vec3)
+    vec3(
+        x * mx.x + y * my.x + z * mz.x,
+        x * mx.y + y * my.y + z * mz.y,
+        x * mx.z + y * my.z + z * mz.z);
+
+pub inline fn determinant(using _: mat34): f32
+    - mz.x * my.y * mx.z + my.x * mz.y * mx.z + mz.x * mx.y * my.z
+    - mx.x * mz.y * my.z - my.x * mx.y * mz.z + mx.x * my.y * mz.z;
+
+pub fn inverse(using mat: mat34): mat34
+{
+    let idet = 1 / mat.determinant;
+
+    let i_mx = vec3(
+        idet * (- mz.y * my.z + my.y * mz.z),
+        idet * (+ mz.y * mx.z - mx.y * mz.z),
+        idet * (- my.y * mx.z + mx.y * my.z));
+
+    let i_my = vec3(
+        idet * (+ mz.x * my.z - my.x * mz.z),
+        idet * (- mz.x * mx.z + mx.x * mz.z),
+        idet * (+ my.x * mx.z - mx.x * my.z));
+
+    let i_mz = vec3(
+        idet * (- mz.x * my.y + my.x * mz.y),
+        idet * (+ mz.x * mx.y - mx.x * mz.y),
+        idet * (- my.x * mx.y + mx.x * my.y));
+
+    return mat34(
+        i_mx, i_my, i_mz,
+
+        vec3( // point3
+              mo.x * -i_mx.x
+            + mo.y * -i_my.x
+            + mo.z * -i_mz.x,
+
+              mo.x * -i_mx.y
+            + mo.y * -i_my.y
+            + mo.z * -i_mz.y,
+
+              mo.x * -i_mx.z
+            + mo.y * -i_my.z
+            + mo.z * -i_mz.z));
+}
+
+pub fn inverse_det1(using mat: mat34): mat34
+{
+    let i_mx = vec3(
+        - mz.y * my.z + my.y * mz.z,
+        + mz.y * mx.z - mx.y * mz.z,
+        - my.y * mx.z + mx.y * my.z);
+
+    let i_my = vec3(
+        + mz.x * my.z - my.x * mz.z,
+        - mz.x * mx.z + mx.x * mz.z,
+        + my.x * mx.z - mx.x * my.z);
+
+    let i_mz = vec3(
+        - mz.x * my.y + my.x * mz.y,
+        + mz.x * mx.y - mx.x * mz.y,
+        - my.x * mx.y + mx.x * my.y);
+
+    return mat34(
+        i_mx, i_my, i_mz,
+
+        vec3( // point3
+              mo.x * -i_mx.x
+            + mo.y * -i_my.x
+            + mo.z * -i_mz.x,
+
+              mo.x * -i_mx.y
+            + mo.y * -i_my.y
+            + mo.z * -i_mz.y,
+
+              mo.x * -i_mx.z
+            + mo.y * -i_my.z
+            + mo.z * -i_mz.z));
+}
+
+// Right to left args:
+//  mul(outer, inner), so:
+//   mul(translation, rotation, scale) means:
+//    we scale first, rotate next, translate last.
+
+pub fn mmul(out: mat34, in: mat34)
+    mat34(
+        vec3(
+            out.mx.x * in.mx.x + out.my.x * in.mx.y + out.mz.x * in.mx.z,
+            out.mx.y * in.mx.x + out.my.y * in.mx.y + out.mz.y * in.mx.z,
+            out.mx.z * in.mx.x + out.my.z * in.mx.y + out.mz.z * in.mx.z),
+        vec3(
+            out.mx.x * in.my.x + out.my.x * in.my.y + out.mz.x * in.my.z,
+            out.mx.y * in.my.x + out.my.y * in.my.y + out.mz.y * in.my.z,
+            out.mx.z * in.my.x + out.my.z * in.my.y + out.mz.z * in.my.z),
+        vec3(
+            out.mx.x * in.mz.x + out.my.x * in.mz.y + out.mz.x * in.mz.z,
+            out.mx.y * in.mz.x + out.my.y * in.mz.y + out.mz.y * in.mz.z,
+            out.mx.z * in.mz.x + out.my.z * in.mz.y + out.mz.z * in.mz.z),
+        vec3( // point3
+            out.mx.x * in.mo.x + out.my.x * in.mo.y + out.mz.x * in.mo.z + out.mo.x,
+            out.mx.y * in.mo.x + out.my.y * in.mo.y + out.mz.y * in.mo.z + out.mo.y,
+            out.mx.z * in.mo.x + out.my.z * in.mo.y + out.mz.z * in.mo.z + out.mo.z));
