@@ -1644,11 +1644,11 @@ struct sf_cpp_codegen
                     fu_STR annot = typeAnnot(head.type, 0);
                     return (((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!_) _ = "_fu) + items.mutref(1)) + "; return _; } ("_fu) + items.mutref(0)) + "))"_fu);
                 };
-                if ((id == "+="_fu))
+                if ((id == "~="_fu))
                 {
                     if ((type_isArray(head.type) && isFieldChain(node.items[0])))
                     {
-                        if (((node.items[1].value == "+"_fu) && (node.items[1].type.value.canon == head.type.value.canon)))
+                        if (((node.items[1].value == "~"_fu) && (node.items[1].type.value.canon == head.type.value.canon)))
                             return cgAppend(node, items[0]);
 
                     };
@@ -1684,7 +1684,7 @@ struct sf_cpp_codegen
     };
     void cgAppend_visit(const fu_STR& canon, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src)
     {
-        if (((stuff.kind != "call"_fu) || (stuff.value != "+"_fu) || (stuff.type.value.canon != canon) || (stuff.items.size() != 2)))
+        if (((stuff.kind != "call"_fu) || (stuff.value != "~"_fu) || (stuff.type.value.canon != canon) || (stuff.items.size() != 2)))
         {
             fu_STR val = cgNode(stuff, 0);
             if ((src.size() > 1))

@@ -1238,7 +1238,7 @@ struct sf_parse
     {
         const fu_STR& k_left = left.kind;
         const fu_STR& k_right = right.kind;
-        fu_VEC<s_Node> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { right } }) : ((k_right == kind) ? (fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { left } } + right.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } })));
+        fu_VEC<s_Node> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + right) : ((k_right == kind) ? (left + right.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } })));
         return make(kind, items, 0, fu_STR{});
     };
     s_Node parseFor()
