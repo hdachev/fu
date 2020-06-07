@@ -1,7 +1,7 @@
 
 pub fn only(s: $T[])
     s.len == 1 ? s[0] : throw (
-        "len != 1: " + s.len);
+        "len != 1: " ~ s.len);
 
 pub fn first(s: $T[])
     s.len ? s[0] : throw("len == 0");
@@ -110,15 +110,15 @@ pub fn path_relative(from: string, to: string): string {
     mut res: string;
     for (mut i = same; i < from.len; i++)
         if (from[i] == '/')
-            res += "../";
+            res ~= "../";
 
-    res += to.slice(same);
+    res ~= to.slice(same);
     return res;
 }
 
 pub fn path_join(a: string, b: string)
     b && b[0] == '/'    ? path_normalize(b)
-                        : path_normalize(a + '/' + b);
+                        : path_normalize(a ~ '/' ~ b);
 
 pub fn ascii_lower(a: string): string
 {

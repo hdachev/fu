@@ -27,7 +27,7 @@ fn resolveFile(
     implicit ctx: &mut Context,
     from: string, name: string): string
 {
-    let path    = from + name;
+    let path    = from ~ name;
     let cached  = ctx.fuzzy[path];
     if (cached)
         return cached == "\v" ? "" : cached;
@@ -40,7 +40,7 @@ fn resolveFile(
 
         // TODO FIX
         {
-            let path = from + "lib/" + name;
+            let path = from ~ "lib/" ~ name;
             let exists = file_size(path) >= 0;
             if (exists)
                 return path;
@@ -48,7 +48,7 @@ fn resolveFile(
 
         // TODO FIX
         {
-            let path = from + "vendor/" + name;
+            let path = from ~ "vendor/" ~ name;
             let exists = file_size(path) >= 0;
             if (exists)
                 return path;
@@ -56,7 +56,7 @@ fn resolveFile(
 
         // TODO FIX
         {
-            let path = from + "fu/lib/" + name;
+            let path = from ~ "fu/lib/" ~ name;
             let exists = file_size(path) >= 0;
             if (exists)
                 return path;

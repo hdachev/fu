@@ -80,15 +80,15 @@ pub fn solve(
         let here = _here._token;
 
         if (!reason)
-            reason = "Unexpected `" + here.value + "`.";
+            reason = "Unexpected `" ~ here.value ~ "`.";
 
         let fname = _here._fname;
         let l0 = here.line;
         let c0 = here.col;
 
-        let addr = "@" + l0 + ":" + c0;
+        let addr = "@" ~ l0 ~ ":" ~ c0;
 
-        return throw(fname + " " + addr + ":\n\t" + reason);
+        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
     }
 
 
@@ -244,7 +244,7 @@ pub fn solve(
                 "Cannot solve definit, no inferred type.");
 
         return tryDefaultInit(type)
-            || fail("Cannot definit: " + serializeType(type));
+            || fail("Cannot definit: " ~ serializeType(type));
     }
 
 
@@ -348,7 +348,7 @@ pub fn solve(
                     {
                         let other = GET(o.target);
                         if (other.min < 1)
-                            fail("`using` ambiguity: `" + item.id + "`.");
+                            fail("`using` ambiguity: `" ~ item.id ~ "`.");
                     }
                 }
             }
@@ -579,7 +579,7 @@ pub fn solve(
 
                     // Forbid ambiguity.
                     if (matchIdx)
-                        fail("Ambiguous callsite, matches multiple functions in scope: `" + id + "`.");
+                        fail("Ambiguous callsite, matches multiple functions in scope: `" ~ id ~ "`.");
 
                     // Do reorder.
                     if (reorder)
@@ -704,29 +704,29 @@ pub fn solve(
             for (mut i = 0; i < targets.len; i++)
             {
                 if (result)
-                    result += "\n\t\t";
+                    result ~= "\n\t\t";
                 else if (targets.len > 1)
-                    result += ", available overloads:\n\t\t";
+                    result ~= ", available overloads:\n\t\t";
                 else
-                    result += ", expects: ";
+                    result ~= ", expects: ";
 
                 let overload = GET(targets[i]);
 
-                result += overload.name + "(";
+                result ~= overload.name ~ "(";
 
                 for (mut i = 0; i < overload.args.len; i++)
                 {
                     let arg = overload.args[i];
                     if (i)
-                        result += ", ";
+                        result ~= ", ";
 
-                    result +=  arg.name
-                            + (arg.flags & F_MUSTNAME ? "!" : "")
-                            + (arg.default ? "?: " : ": ")
-                            + (arg.type ? humanizeType(arg.type) : "$");
+                    result ~=  arg.name
+                            ~ (arg.flags & F_MUSTNAME ? "!" : "")
+                            ~ (arg.default ? "?: " : ": ")
+                            ~ (arg.type ? humanizeType(arg.type) : "$");
                 }
 
-                result += ")";
+                result ~= ")";
             }
 
             return result || ".";
@@ -740,23 +740,23 @@ pub fn solve(
             {
                 let arg = args[i];
                 if (i)
-                    result += ",";
+                    result ~= ",";
 
-                result += "\n\t";
+                result ~= "\n\t";
                 if (arg.kind == "label")
-                    result += arg.value + ": ";
+                    result ~= arg.value ~ ": ";
 
-                result += humanizeType(arg.type);
+                result ~= humanizeType(arg.type);
             }
 
-            return result + ").";
+            return result ~ ").";
         }
 
         return overloads
-                ? args.len < min ? fail("`" + id + "` expects at least " + min + " arguments, " + args.len + " provided" + expectedArgs(overloads))
-                : args.len > max ? fail("`" + id + "` expects at most " + max + " arguments, " + args.len + " provided" + expectedArgs(overloads))
-                : fail("`" + id + "` bad args" + expectedArgs(overloads) + actualArgs(args))
-             : fail("`" + id + "` is not defined in this scope.");
+                ? args.len < min ? fail("`" ~ id ~ "` expects at least " ~ min ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
+                : args.len > max ? fail("`" ~ id ~ "` expects at most " ~ max ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
+                : fail("`" ~ id ~ "` bad args" ~ expectedArgs(overloads) ~ actualArgs(args))
+             : fail("`" ~ id ~ "` is not defined in this scope.");
     }
 
 
@@ -796,7 +796,7 @@ pub fn solve(
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
 
-        return fail("TODO: " + k);
+        return fail("TODO: " ~ k);
     }
 
     fn isUnordered(kind: string)
@@ -814,7 +814,7 @@ pub fn solve(
         if (k == "struct")      return uPrepStruct(node);
         if (k == "typedef")     return solveTypedef(node);
 
-        return fail("TODO: " + k);
+        return fail("TODO: " ~ k);
     }
 
     fn unorderedSolve(node: Node, prep: SolvedNode)
@@ -825,7 +825,7 @@ pub fn solve(
         if (k == "struct")      return uSolveStruct(node, prep);
         if (k == "typedef")     return prep || fail();
 
-        return fail("TODO: " + k);
+        return fail("TODO: " ~ k);
     }
 
 
@@ -1123,7 +1123,7 @@ pub fn solve(
             {
                 let sig = mangleArguments(out.items[0, out.items.len + FN_BODY_BACK]) || fail();
                 let hash = tea::hash62(sig);
-                name += "_" + hash;
+                name ~= "_" ~ hash;
             }
 
             //
@@ -1145,9 +1145,9 @@ pub fn solve(
         for (mut i = 0; i < args.len; i++)
         {
             if (i)
-                mangle += ",";
+                mangle ~= ",";
 
-            mangle += serializeType((args[i] || fail()).type);
+            mangle ~= serializeType((args[i] || fail()).type);
         }
 
         return mangle;
@@ -1162,8 +1162,8 @@ pub fn solve(
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = target.modid + "#" + target.index + " ";
-            mangle += args_mangled;
+        mut mangle = target.modid ~ "#" ~ target.index ~ " ";
+            mangle ~= args_mangled;
 
         // TODO FIX THIS MESS -
         //  A. Not recursion capable: use the general prep-vs-solve approach here too.
@@ -1289,7 +1289,7 @@ pub fn solve(
                         typeParams[argName] ||= Type;
 
                     argName_typeParam && fail(
-                        "Type param name collision with argument: `" + argName + "`.")
+                        "Type param name collision with argument: `" ~ argName ~ "`.")
                             = inType;
 
                     //
@@ -1314,7 +1314,7 @@ pub fn solve(
         if (remangle)
         {
             let start   = mangle.find(' ') + 1 || fail();
-                mangle  = mangle.slice(0, start) + mangleArguments(args);
+                mangle  = mangle.slice(0, start) ~ mangleArguments(args);
         }
         //        /LITFIX
         /////////////////
@@ -1455,7 +1455,7 @@ pub fn solve(
             if (node.kind == "let")
                 out.push(solveField(:node, :structType));
             else
-                fail("TODO: " + node.kind);
+                fail("TODO: " ~ node.kind);
         }
 
         return out;
@@ -1517,9 +1517,9 @@ pub fn solve(
         isAssignable(
             :host   || fail("Bad host type."),
             :guest  || fail("Bad guest type."))
-                    || fail(err + (id && " `" + id + "`") + ": "
-                                + host .humanizeType() + (sep || " <- ")
-                                + guest.humanizeType());
+                    || fail(err ~ (id && " `" ~ id ~ "`") ~ ": "
+                                ~ host .humanizeType() ~ (sep || " <- ")
+                                ~ guest.humanizeType());
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -1614,7 +1614,7 @@ pub fn solve(
                     same++;
 
             if (same)
-                GET_mut(overload).name += "_" + same;
+                GET_mut(overload).name ~= "_" ~ same;
         }
 
         if (global)
@@ -1659,7 +1659,7 @@ pub fn solve(
         var_err.kind == "let" && isAssignableAsArgument(
             var_err.type, t_string) || fail(
                 "catch: exceptions are strings,"
-                    + " consider dropping the annotation.");
+                    ~ " consider dropping the annotation.");
 
         return solved(node, var_ok.type,
             [ var_ok, var_err, catch ]);
@@ -1677,7 +1677,7 @@ pub fn solve(
                 return module;
         }
 
-        fail("Cannot locate: " + fname);
+        fail("Cannot locate: " ~ fname);
     }
 
     fn solveImport(node: Node): SolvedNode
@@ -1710,7 +1710,7 @@ pub fn solve(
     fn Scope_lookupType(id: string): Type
     {
         return Scope_tryLookupType(id) || fail(
-            "No type `" + id + "` in scope.");
+            "No type `" ~ id ~ "` in scope.");
     }
 
     fn evalTypeAnnot(node: Node): SolvedNode
@@ -1754,10 +1754,10 @@ pub fn solve(
         {
             let id = node.value || fail();
             _typeParams || fail(
-                "Unexpected type param: `$" + id + "`.");
+                "Unexpected type param: `$" ~ id ~ "`.");
 
             let type = _typeParams && _typeParams[id] || fail(
-                "No type param `$" + id + "` in scope.");
+                "No type param `$" ~ id ~ "` in scope.");
 
             return solved(node, type);
         }
@@ -1873,7 +1873,7 @@ pub fn solve(
                 {
                     let tag   = right.value || fail();
                     let type  = left.value && typeParams[left.value] || fail(
-                        "No type param `$" + left.value + "` in scope.");
+                        "No type param `$" ~ left.value ~ "` in scope.");
 
                     return type_has(type, tag);
                 }
@@ -2112,7 +2112,7 @@ pub fn solve(
         if (!matched)
         {
             if (!_current_fn)
-                return fail("No implicit `" + id + "` in scope.");
+                return fail("No implicit `" ~ id ~ "` in scope.");
 
             matched = injectImplicitArg__mutfn(
                 _current_fn, id, type);
@@ -2147,7 +2147,7 @@ pub fn solve(
             type = !secType ? priType
                             : type_tryInter(priType, secType);
 
-            type || fail("[if] No common supertype: `" + serializeType(priType) + " : " + serializeType(secType) + "`.");
+            type || fail("[if] No common supertype: `" ~ serializeType(priType) ~ " : " ~ serializeType(secType) ~ "`.");
 
             if (cons)
                 maybeCopyOrMove(cons, type);

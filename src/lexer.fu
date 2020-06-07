@@ -61,14 +61,14 @@ pub fn lex(src: string, fname: string): LexerOutput
         let col = idx0 - lidx;
         let value = src.slice(idx0, idx);
 
-        throw("LEX ERROR: " + fname + "@" + line + ":" + col
-            + ":\n\t" + reason
-            + "\n\t" + kind + ": `" + value + "`");
+        throw("LEX ERROR: " ~ fname ~ "@" ~ line ~ ":" ~ col
+            ~ ":\n\t" ~ reason
+            ~ "\n\t" ~ kind ~ ": `" ~ value ~ "`");
     }
 
     fn err(kind: string, idx0: i32, reason: i32)
     {
-        err_str(kind, idx0, "`" + src[reason] + "`");
+        err_str(kind, idx0, "`" ~ src[reason] ~ "`");
     }
 
     fn unescapeStr(src: string, idx0: i32, idx1: i32): string
@@ -83,15 +83,15 @@ pub fn lex(src: string, fname: string): LexerOutput
             {
                 let c1 = src[++i];
 
-                if      (c1 == 'n') out += '\n';
-                else if (c1 == 'r') out += '\r';
-                else if (c1 == 't') out += '\t';
-                else if (c1 == 'v') out += '\v';
-                else                out += c1;
+                if      (c1 == 'n') out ~= '\n';
+                else if (c1 == 'r') out ~= '\r';
+                else if (c1 == 't') out ~= '\t';
+                else if (c1 == 'v') out ~= '\v';
+                else                out ~= c1;
             }
             else
             {
-                out += c;
+                out ~= c;
             }
         }
 
@@ -171,7 +171,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 {
                     err_str("num", idx0,
                         "Leading `0` in numeric literal,"
-                            + " perhaps you meant `0x`, `0b` or `0o`.");
+                            ~ " perhaps you meant `0x`, `0b` or `0o`.");
                 }
             }
 
@@ -249,7 +249,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 {
                     err_str("num", idx0,
                         "The exponent is never optional"
-                            + " for hexadecimal floating-point literals.");
+                            ~ " for hexadecimal floating-point literals.");
                 }
                 else
                 {
@@ -303,7 +303,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 if (char && str.len != 1)
                 {
                     err_str("char", idx0,
-                        "Char literal len != 1: " + str.len);
+                        "Char literal len != 1: " ~ str.len);
                 }
                 else
                 {
@@ -360,7 +360,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 let c = src[idx++];
                 if (OPTOKENS.has(c))
                 {
-                    let c1 = candidate + c;
+                    let c1 = candidate ~ c;
                     if (MBOPS.has(c1))
                     {
                         candidate = c1;

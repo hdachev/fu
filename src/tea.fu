@@ -130,11 +130,11 @@ pub fn hash62(str: [byte]): string
         v = v / 62;
 
         if (c < 10)
-            res += byte(c -  0 + '0'.u64);
+            res ~= byte(c -  0 + '0'.u64);
         else if (c < 36)
-            res += byte(c - 10 + 'a'.u64);
+            res ~= byte(c - 10 + 'a'.u64);
         else
-            res += byte(c - 36 + 'A'.u64);
+            res ~= byte(c - 36 + 'A'.u64);
     }
 
     return res;

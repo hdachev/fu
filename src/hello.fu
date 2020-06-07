@@ -35,9 +35,9 @@ pub fn saySomethingNice()
         mut str = "";
         for (mut i = 0; i < 3; i++)
             if (sec & (1 << i))
-                str += "🍒";
+                str ~= "🍒";
             else
-                str += "🍊";
+                str ~= "🍊";
 
         println(str);
     }

@@ -22,7 +22,7 @@ fn compile(fname: string, via: string = "")
         module.out = ModuleOutputs;
 
         let src = getFile(fname) || throw (
-            "import badfile: `" + via + fname + "`.");
+            "import badfile: `" ~ via ~ fname ~ "`.");
 
         let stat0 = ModuleStat_now();
         let lexer_result =
@@ -49,7 +49,7 @@ fn compile(fname: string, via: string = "")
         // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
         module.out || throw (
-            "import circle: `" + via + fname + "`.");
+            "import circle: `" ~ via ~ fname ~ "`.");
     }
 
     // We're good to go here.
@@ -60,7 +60,7 @@ fn compile(fname: string, via: string = "")
         for (mut i = 0; i < fuzimports.len; i++)
             compile(
                 fname: resolveFile(fuzimports[i]),
-                  via: fname + " <- " + via);
+                  via: fname ~ " <- " ~ via);
 
         //
         let stat0 = ModuleStat_now();
@@ -146,7 +146,7 @@ fn update_file(
             return;
         }
 
-        fname = dir_out + fname.slice(dir_src.len);
+        fname = dir_out ~ fname.slice(dir_src.len);
     }
 
     if (file_read(fname) == data)
@@ -154,9 +154,9 @@ fn update_file(
 
     let err = file_write(fname, data);
     if (err)
-        throw("Failed to write `" + fname + "`, error: #" + err);
+        throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
 
-    println("  WROTE " + fname);
+    println("  WROTE " ~ fname);
 }
 
 pub fn build(
@@ -177,13 +177,13 @@ pub fn build(
     if (dir_wrk.if_last != '/')
     {
         dir_wrk || throw ("No workspace directory provided.");
-        dir_wrk += '/';
+        dir_wrk ~= '/';
     }
 
     //
-    if (dir_obj && dir_obj.if_last != '/') dir_obj += '/';
-    if (dir_src && dir_src.if_last != '/') dir_src += '/';
-    if (dir_cpp && dir_cpp.if_last != '/') dir_cpp += '/';
+    if (dir_obj && dir_obj.if_last != '/') dir_obj ~= '/';
+    if (dir_src && dir_src.if_last != '/') dir_src ~= '/';
+    if (dir_cpp && dir_cpp.if_last != '/') dir_cpp ~= '/';
 
     //
     mut code:   i32;
@@ -201,16 +201,16 @@ pub fn build(
 
     // Debug symbols.
     if (scheme == "debug" || scheme == "reldeb")
-        O_lvl += "-g ";
+        O_lvl ~= "-g ";
 
     if (scheme == "retail")
-        O_lvl += "-Dfu_RETAIL ";
+        O_lvl ~= "-Dfu_RETAIL ";
 
     let INCLUDE = "-I ~/fu/include ";
 
-    let GCC_CMD = "g++ -std=c++1z " + O_lvl
-                + "-pedantic-errors -Wall -Wextra -Werror " // opt-in
-                + "-Wno-parentheses-equality " // opt-out
+    let GCC_CMD = "g++ -std=c++1z " ~ O_lvl
+                ~ "-pedantic-errors -Wall -Wextra -Werror " // opt-in
+                ~ "-Wno-parentheses-equality " // opt-out
                 ;
 
     // Starting after prelude.
@@ -218,8 +218,8 @@ pub fn build(
     {
         let module  = ctx.modules[i];
         let cpp     = module.out.cpp;
-        let F       = cpp &&    dir_wrk + "o-" + hash_tea(GCC_CMD + cpp)
-                                        + "-" + cpp.len;
+        let F       = cpp &&    dir_wrk ~ "o-" ~ hash_tea(GCC_CMD ~ cpp)
+                                        ~ "-" ~ cpp.len;
 
         Fs.push(F);
         len_all += cpp.len;
@@ -228,8 +228,8 @@ pub fn build(
     //
     fs_mkdir_p(dir_wrk);
 
-    let F_exe = dir_wrk + "b-" + hash_tea(Fs.join("/"))
-                        +  "-" + len_all + "-" + Fs.len;
+    let F_exe = dir_wrk ~ "b-" ~ hash_tea(Fs.join("/"))
+                        ~  "-" ~ len_all ~ "-" ~ Fs.len;
 
     //
     fn ERR(mut cpp: string = "")
@@ -237,15 +237,15 @@ pub fn build(
         if (!cpp)
             for (mut i = Fs.len; i --> 0; )
                 if (Fs[i])
-                    cpp += "#include \"" + Fs[i] + ".cpp\"\n";
+                    cpp ~= "#include \"" ~ Fs[i] ~ ".cpp\"\n";
 
-        let fname = dir_wrk + "failing-testcase.cpp";
-        println("  WRITE " + fname);
+        let fname = dir_wrk ~ "failing-testcase.cpp";
+        println("  WRITE " ~ fname);
         file_write(fname, cpp);
 
         //
         if (!stdout)
-            stdout = "[ EXIT CODE " + code + " ]";
+            stdout = "[ EXIT CODE " ~ code ~ " ]";
 
         return throw(stdout);
     }
@@ -261,9 +261,9 @@ pub fn build(
             if (!F)
                 continue;
 
-            let F_cpp = F + ".cpp";
-            let F_tmp = F + ".o.tmp";
-            let F_obj = F + ".o";
+            let F_cpp = F ~ ".cpp";
+            let F_tmp = F ~ ".o.tmp";
+            let F_obj = F ~ ".o";
 
             if (file_size(F_obj) < 1)
             {
@@ -277,8 +277,8 @@ pub fn build(
 
                 let t0 = now_hr();
 
-                code = shell_exec(GCC_CMD + INCLUDE + "-c -o " + F_tmp + " " + F_cpp + " 2>&1", stdout)
-                    || shell_exec("mv " + F_tmp + " " + F_obj + " 2>&1", stdout);
+                code = shell_exec(GCC_CMD ~ INCLUDE ~ "-c -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1", stdout)
+                    || shell_exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
 
                 if (code) return ERR(cpp);
 
@@ -288,27 +288,27 @@ pub fn build(
         }
 
         // Link.
-        let F_tmp = F_exe + ".tmp";
+        let F_tmp = F_exe ~ ".tmp";
 
-        mut cmd = GCC_CMD + "-o " + F_tmp + " ";
+        mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
         for (mut i = 0; i < link_order.len; i++)
         {
             let F = Fs[link_order[i]];
             if (F)
-                cmd += F + ".o ";
+                cmd ~= F ~ ".o ";
         }
 
         {
             println("   LINK ", F_exe);
             let t0 = now_hr();
 
-            code = shell_exec(cmd + " 2>&1", stdout)
-                || shell_exec("chmod 755 " + F_tmp + " 2>&1", stdout)
-                || shell_exec("mv " + F_tmp + " " + F_exe + " 2>&1", stdout);
+            code = shell_exec(cmd ~ " 2>&1", stdout)
+                || shell_exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
+                || shell_exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
 
             if (code)
             {
-                println("   FAIL " + Fs.join("\n        " + "\n"));
+                println("   FAIL " ~ Fs.join("\n        " ~ "\n"));
                 return ERR;
             }
 
@@ -318,7 +318,7 @@ pub fn build(
 
         // Delete single object file.
         if (Fs.len == 1 && Fs[0])
-            code = shell_exec("rm " + Fs[0] + ".o 2>&1", stdout);
+            code = shell_exec("rm " ~ Fs[0] ~ ".o 2>&1", stdout);
 
         if (code) return ERR;
     }
@@ -340,7 +340,7 @@ pub fn build(
         {
             let module  = ctx.modules[i];
             let data    = module.out.cpp;
-            let fname   = data && module.fname + ".cpp";
+            let fname   = data && module.fname ~ ".cpp";
 
             if (data)
                 update_file(
@@ -365,11 +365,11 @@ pub fn build(
                 {
                     let incl = cpp_files[link_order[i]];
                     if (incl)
-                        data += "#include \"" + path_relative(unity, incl) + "\"\n";
+                        data ~= "#include \"" ~ path_relative(unity, incl) ~ "\"\n";
                 }
 
                 update_file(
-                    fname: unity + ".unity.cpp", :data,
+                    fname: unity ~ ".unity.cpp", :data,
                     :dir_src, dir_out: dir_cpp);
             }
 
@@ -396,43 +396,43 @@ pub fn build(
                         main = input;
 
                     // Check for custom cmake files.
-                    let custom = module.fname + ".cmake";
+                    let custom = module.fname ~ ".cmake";
                     if (file_size(custom) > 0)
-                        includes += "include(" + path_relative(CMakeLists, custom) + ")\n";
+                        includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
 
                     let cpp_file = cpp_files[moduleIdx - /*prelude*/1];
                     if (cpp_file)
                     {
                         inputs.push(input);
-                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, cpp_file));
+                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
                     }
                 }
 
                 let libname = path_noext(path_filename(main));
 
-                data += "set(FU_TARGET " + libname + ")\n\n";
+                data ~= "set(FU_TARGET " ~ libname ~ ")\n\n";
 
-                data += "set(FU_MAIN " + main + ")\n\n";
-                data += "set(FU_INPUTS\n    " + inputs .join("\n    ") + ")\n\n";
+                data ~= "set(FU_MAIN " ~ main ~ ")\n\n";
+                data ~= "set(FU_INPUTS\n    " ~ inputs .join("\n    ") ~ ")\n\n";
 
                 if (unity)
-                    data += "set(FU_OUTPUTS\n    " + "${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, unity) + ".unity.cpp)\n\n";
+                    data ~= "set(FU_OUTPUTS\n    " ~ "${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, unity) ~ ".unity.cpp)\n\n";
                 else
-                    data += "set(FU_OUTPUTS\n    " + outputs.join("\n    ") + ")\n\n";
+                    data ~= "set(FU_OUTPUTS\n    " ~ outputs.join("\n    ") ~ ")\n\n";
 
-                data += "add_custom_command(\n"
-                      + "    OUTPUT ${FU_OUTPUTS}\n"
-                      + "    COMMAND $ENV{HOME}/fu/bin/fu\n"
-                      + "    ARGS -c ${FU_MAIN}\n"
-                      + "    DEPENDS ${FU_INPUTS}\n"
-                      + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
-                      + "    VERBATIM)\n\n";
+                data ~= "add_custom_command(\n"
+                      ~ "    OUTPUT ${FU_OUTPUTS}\n"
+                      ~ "    COMMAND $ENV{HOME}/fu/bin/fu\n"
+                      ~ "    ARGS -c ${FU_MAIN}\n"
+                      ~ "    DEPENDS ${FU_INPUTS}\n"
+                      ~ "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
+                      ~ "    VERBATIM)\n\n";
 
-                data += "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"
-                      + "target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)\n\n";
+                data ~= "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"
+                      ~ "target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)\n\n";
 
                 if (includes)
-                    data += includes + "\n";
+                    data ~= includes ~ "\n";
 
                 update_file(
                     fname: CMakeLists, :data,
@@ -446,7 +446,7 @@ pub fn build(
     {
         fs_mkdir_p( path_dirname(bin) );
 
-        code = shell_exec("mv " + F_exe + " " + bin + " 2>&1", stdout);
+        code = shell_exec("mv " ~ F_exe ~ " " ~ bin ~ " 2>&1", stdout);
     }
 
     if (code) return ERR;
@@ -517,23 +517,23 @@ pub fn build(
 ////////     Test & rebuild self.
 
 fn absdir(a: string)
-    a.if_last == '/' ? a : a + '/';
+    a.if_last == '/' ? a : a ~ '/';
 
 let HOME = absdir(env_get("HOME"));
 
 pub fn locate_PRJDIR(): string
 {
-    let dir = HOME + "fu/";
-    let fn  = dir  + "src/compiler.fu";
+    let dir = HOME ~ "fu/";
+    let fn  = dir  ~ "src/compiler.fu";
     let fs  = file_size(fn);
-        fs  > 1000 || throw("Bad compiler.fu: " + fn + ": " + fs);
+        fs  > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
 
-    println("PRJDIR: " + dir);
+    println("PRJDIR: " ~ dir);
     return dir;
 }
 
 pub let PRJDIR              = locate_PRJDIR();
-pub let DEFAULT_WORKSPACE   = PRJDIR + "build.cpp/";
+pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build.cpp/";
 
 
 // Test running infra.
@@ -543,7 +543,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
     fn ensure_main(src: string)
         src.has("fn main(")
             ? src
-            : "\n\nfn main(): i32 {\n" + src + "\n}\n";
+            : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
     let implicit mut ctx = CTX_PRELUDE;
     for (mut i = 0; i < sources.len; i++)
@@ -553,7 +553,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
                     ? ensure_main(snippet)
                     : snippet;
 
-        let fname   = fnames.len > i ? fnames[i] : PRJDIR + "__tests__/" + i + ".fu";
+        let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/" ~ i ~ ".fu";
 
         ctx.files[fname] = src;
         compile(:fname);
@@ -610,10 +610,10 @@ pub fn FAIL(sources: string[]): string
     for (mut i = 1; i < ctx.modules.len; i++)
     {
         let module = ctx.modules[i];
-        bad += "\n#" + i + ": "         + module.fname + "\n";
-        bad += "\nfu  [" + i + "]:\n\t" + module.in .src.indent
-             + "\ncpp [" + i + "]:\n\t" + module.out.cpp.indent
-             + "\n";
+        bad ~= "\n#" ~ i ~ ": "         ~ module.fname ~ "\n";
+        bad ~= "\nfu  [" ~ i ~ "]:\n\t" ~ module.in .src.indent
+             ~ "\ncpp [" ~ i ~ "]:\n\t" ~ module.out.cpp.indent
+             ~ "\n";
     }
 
     return throw(bad);

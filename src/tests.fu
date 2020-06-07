@@ -465,24 +465,24 @@ pub fn runTests()
         }
     `;
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         let s = S(i);
         return i;
         // <-destructor here
     `);
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         { let s = S(i); } // <-destructor here
         return i - 1;
     `);
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         fn test(s: &S) { return s.j; }
         test(S(i)); // <-destructor here
         return i - 1;
     `);
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         fn test(s: &S) { return s.j; }
         let s = S(i);
         test(s);
@@ -493,13 +493,13 @@ pub fn runTests()
 
     // Move semantics.
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         fn test(s: S) { return s.j; }
         test(S(i)); // <-destructor here
         return i - 1;
     `);
 
-    FAIL(RAII + `
+    FAIL(RAII ~ `
         fn test(mut s: S) { return s.j; } // <-destructor here
 
         mut s = S(i);
@@ -516,7 +516,7 @@ pub fn runTests()
         return 0;
     `);
 
-    ZERO(RAII + `
+    ZERO(RAII ~ `
         fn test(mut s: S) {
             let x = STEAL (s);
             return x.j; // <-destructor here
@@ -530,7 +530,7 @@ pub fn runTests()
 
     /*
 
-    FAIL(RAII + `
+    FAIL(RAII ~ `
         fn test(s: S) {} // <-destructor here
         let s = S(i);
         test(s); // s is moved in
@@ -547,31 +547,31 @@ pub fn runTests()
         }
     `;
 
-    FAIL(BORROW + `
+    FAIL(BORROW ~ `
         let mut b: Borrow;
         return b.x; //ERR initialize
     `);
 
-    ZERO(BORROW + `
+    ZERO(BORROW ~ `
         let mut b: Borrow;
         let i = 0;
         b = Borrow(i);
         return b.x;
     `);
 
-    FAIL(BORROW + `
+    FAIL(BORROW ~ `
         let b = Borrow(0); //ERR outlive
         return b.x;
     `);
 
-    ZERO(BORROW + `
+    ZERO(BORROW ~ `
         let i = -1;
         let b = Borrow(i);
         b.x++;
         return i;
     `);
 
-    FAIL(BORROW + `
+    FAIL(BORROW ~ `
         let b: Borrow;
         {
             let i = -1;
@@ -580,7 +580,7 @@ pub fn runTests()
         return ++b.x;
     `);
 
-    FAIL(BORROW + `
+    FAIL(BORROW ~ `
         let b: Borrow;
 
         fn test() {
@@ -592,7 +592,7 @@ pub fn runTests()
         return ++b.x;
     `);
 
-    FAIL(BORROW + `
+    FAIL(BORROW ~ `
         fn test() {
             let i = -1;
             return Borrow(i); //ERR outlive
@@ -653,7 +653,7 @@ pub fn runTests()
         operation: string,
         mut assertion: string)
     {
-        assertion = "(" + assertion + ")";
+        assertion = "(" ~ assertion ~ ")";
 
         fn EXPR(varname: string)
             assertion.replace(
@@ -661,30 +661,30 @@ pub fn runTests()
 
         mut src: string;
 
-        src += "\n";
-        src += "\n    {";
-        src += "\n        mut arr0 = [" + literal + "];";
-        src += "\n        arr0." + operation + ";";
-        src += "\n        if (" + EXPR("arr0") + " != 0) return 13;";
-        src += "\n    }";
-        src += "\n";
-        src += "\n    mut orig = [" + literal + "];";
-        src += "\n";
-        src += "\n    {";
-        src += "\n        mut arr1 = CLONE(orig);";
-        src += "\n        arr1." + operation + ";";
-        src += "\n        if (" + EXPR("arr1") + " != 0) return 17;";
-        src += "\n    }";
-        src += "\n";
-        src += "\n    {";
-        src += "\n        mut arr2 = STEAL(orig);";
-        src += "\n        if (orig.len) return 19;";
-        src += "\n        arr2." + operation + ";";
-        src += "\n        if (" + EXPR("arr2") + " != 0) return 23;";
-        src += "\n    }";
-        src += "\n";
-        src += "\n    return 0;";
-        src += "\n";
+        src ~= "\n";
+        src ~= "\n    {";
+        src ~= "\n        mut arr0 = [" ~ literal ~ "];";
+        src ~= "\n        arr0." ~ operation ~ ";";
+        src ~= "\n        if (" ~ EXPR("arr0") ~ " != 0) return 13;";
+        src ~= "\n    }";
+        src ~= "\n";
+        src ~= "\n    mut orig = [" ~ literal ~ "];";
+        src ~= "\n";
+        src ~= "\n    {";
+        src ~= "\n        mut arr1 = CLONE(orig);";
+        src ~= "\n        arr1." ~ operation ~ ";";
+        src ~= "\n        if (" ~ EXPR("arr1") ~ " != 0) return 17;";
+        src ~= "\n    }";
+        src ~= "\n";
+        src ~= "\n    {";
+        src ~= "\n        mut arr2 = STEAL(orig);";
+        src ~= "\n        if (orig.len) return 19;";
+        src ~= "\n        arr2." ~ operation ~ ";";
+        src ~= "\n        if (" ~ EXPR("arr2") ~ " != 0) return 23;";
+        src ~= "\n    }";
+        src ~= "\n";
+        src ~= "\n    return 0;";
+        src ~= "\n";
 
         ZERO(src);
     };

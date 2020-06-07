@@ -64,7 +64,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         mut opt = val;
         if (opt[1] != '-') {
             opt = [ opt[1] ];
-            val = '-' + val.slice(2);
+            val = '-' ~ val.slice(2);
             if (val == "-")
                 val = next();
         }
@@ -76,11 +76,11 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
             if (opt == short || opt == long) {
                 options |= o;
                 if (opt == long) {
-                    dir && throw(opt + ": already set to `" + dir + "`.");
+                    dir && throw(opt ~ ": already set to `" ~ dir ~ "`.");
                     dir = abs(val) || throw(
-                        "Option " + long + " expects a path," +
-                        "\n\tgot `" + val + "`," +
-                        "\n\ttry `" + long + " rel/or/abs/dir/`.");
+                        "Option " ~ long ~ " expects a path,"
+                            ~ "\n\tgot `" ~ val ~ "`,"
+                            ~ "\n\ttry `" ~ long ~ " rel/or/abs/dir/`.");
 
                     val = next();
                 }
@@ -96,7 +96,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
         // Scheme.
         if (opt == "--debug" || opt == "--reldeb" || opt == "--release" || opt == "--retail") {
-            scheme && throw(opt + ": Scheme already set to `" + opt + "`.");
+            scheme && throw(opt ~ ": Scheme already set to `" ~ opt ~ "`.");
             scheme = opt.slice(2);
             continue;
         }
@@ -108,7 +108,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
         }
 
         else if (opt)
-            throw("Unknown option: `" + opt + "`.");
+            throw("Unknown option: `" ~ opt ~ "`.");
     }
 
     // Defaulting.
@@ -119,20 +119,20 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     // Do the work.
     let fname = abs(val) || throw(
-        "Missing filename argument, a valid example is:" +
-        "\n\t`fu file.fu`.");
+        "Missing filename argument, a valid example is:"
+            ~ "\n\t`fu file.fu`.");
 
     let dir_wrk = DEFAULT_WORKSPACE;
 
     if (options & EMIT_BIN)
         bin ||= fname.ends(with: ".fu")
                 ? fname.slice(0, fname.len - ".fu".len)
-                : fname + ".exe";
+                : fname ~ ".exe";
 
     //
     {
         let val = next();
-        if (val) throw("Leftover option: `" + val + "`.");
+        if (val) throw("Leftover option: `" ~ val ~ "`.");
     }
 
     // Go.
