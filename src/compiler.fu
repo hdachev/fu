@@ -218,8 +218,8 @@ pub fn build(
     {
         let module  = ctx.modules[i];
         let cpp     = module.out.cpp;
-        let F       = dir_wrk   + "o-" + hash_tea(GCC_CMD + cpp)
-                                + "-" + cpp.len;
+        let F       = cpp &&    dir_wrk + "o-" + hash_tea(GCC_CMD + cpp)
+                                        + "-" + cpp.len;
 
         Fs.push(F);
         len_all += cpp.len;
@@ -236,7 +236,8 @@ pub fn build(
     {
         if (!cpp)
             for (mut i = Fs.len; i --> 0; )
-                cpp += "#include \"" + Fs[i] + ".cpp\"\n";
+                if (Fs[i])
+                    cpp += "#include \"" + Fs[i] + ".cpp\"\n";
 
         let fname = dir_wrk + "failing-testcase.cpp";
         println("  WRITE " + fname);
@@ -257,6 +258,9 @@ pub fn build(
         for (mut i = 0; i < Fs.len; i++)
         {
             let F     = Fs[i];
+            if (!F)
+                continue;
+
             let F_cpp = F + ".cpp";
             let F_tmp = F + ".o.tmp";
             let F_obj = F + ".o";
@@ -288,7 +292,11 @@ pub fn build(
 
         mut cmd = GCC_CMD + "-o " + F_tmp + " ";
         for (mut i = 0; i < link_order.len; i++)
-            cmd += Fs[link_order[i]] + ".o ";
+        {
+            let F = Fs[link_order[i]];
+            if (F)
+                cmd += F + ".o ";
+        }
 
         {
             println("   LINK ", F_exe);
@@ -309,7 +317,7 @@ pub fn build(
         }
 
         // Delete single object file.
-        if (Fs.len == 1)
+        if (Fs.len == 1 && Fs[0])
             code = shell_exec("rm " + Fs[0] + ".o 2>&1", stdout);
 
         if (code) return ERR;
@@ -331,12 +339,13 @@ pub fn build(
         for (mut i = 1/*prelude*/; i < ctx.modules.len; i++)
         {
             let module  = ctx.modules[i];
-            let fname   = module.fname + ".cpp";
             let data    = module.out.cpp;
+            let fname   = data && module.fname + ".cpp";
 
-            update_file(
-                :fname, :data,
-                :dir_src, dir_out: dir_cpp);
+            if (data)
+                update_file(
+                    :fname, :data,
+                    :dir_src, dir_out: dir_cpp);
 
             cpp_files.push(fname);
         }
@@ -355,8 +364,8 @@ pub fn build(
                 for (mut i = 0; i < link_order.len; i++)
                 {
                     let incl = cpp_files[link_order[i]];
-                    let rel = path_relative(unity, incl);
-                    data += "#include \"" + rel + "\"\n";
+                    if (incl)
+                        data += "#include \"" + path_relative(unity, incl) + "\"\n";
                 }
 
                 update_file(
@@ -391,8 +400,12 @@ pub fn build(
                     if (file_size(custom) > 0)
                         includes += "include(" + path_relative(CMakeLists, custom) + ")\n";
 
-                    inputs.push(input);
-                    outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, cpp_files[link_order[i]]));
+                    let cpp_file = cpp_files[moduleIdx - /*prelude*/1];
+                    if (cpp_file)
+                    {
+                        inputs.push(input);
+                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" + path_relative(CMakeLists, cpp_file));
+                    }
                 }
 
                 let libname = path_noext(path_filename(main));
@@ -540,7 +553,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
                     ? ensure_main(snippet)
                     : snippet;
 
-        let fname   = fnames.len > i ? fnames[i] : "/" + i + ".fu";
+        let fname   = fnames.len > i ? fnames[i] : PRJDIR + "__tests__/" + i + ".fu";
 
         ctx.files[fname] = src;
         compile(:fname);

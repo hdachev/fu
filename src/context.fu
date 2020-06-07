@@ -38,6 +38,31 @@ fn resolveFile(
         if (exists)
             return path;
 
+        // TODO FIX
+        {
+            let path = from + "lib/" + name;
+            let exists = file_size(path) >= 0;
+            if (exists)
+                return path;
+        }
+
+        // TODO FIX
+        {
+            let path = from + "vendor/" + name;
+            let exists = file_size(path) >= 0;
+            if (exists)
+                return path;
+        }
+
+        // TODO FIX
+        {
+            let path = from + "fu/lib/" + name;
+            let exists = file_size(path) >= 0;
+            if (exists)
+                return path;
+        }
+
+        /////////////////////////////////
         let fallback = from.path_dirname;
         if (!fallback || fallback.len >= from.len)
             return "";

@@ -2435,7 +2435,7 @@ pub fn runTests()
 
     ZERO(`
         import "vec3";
-        return vec3.maxc;
+        return vec3.maxc.i32;
     `);
 
 

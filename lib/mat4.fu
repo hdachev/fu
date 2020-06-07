@@ -15,16 +15,17 @@ pub inline fn mat4(using m: mat34)
         mz.x, mz.y, mz.z, 0,
         mo.x, mo.y, mo.z, 1);
 
-pub let mat4_identity = mat4(
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1);
+pub inline fn mat4_identity()
+    mat4(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1);
 
 pub inline fn mmul(a: mat4, b: mat34): mat4
     mmul(a, mat4(b));
 
-pub fn mmul(using a: mat4, b: mat4)
+pub inline fn mmul(using a: mat4, b: mat4)
     mat4(
         m0 * b.m0 + m4 * b.m1 + m8 * b.m2 + mC * b.m3,
         m1 * b.m0 + m5 * b.m1 + m9 * b.m2 + mD * b.m3,
@@ -43,7 +44,7 @@ pub fn mmul(using a: mat4, b: mat4)
         m2 * b.mC + m6 * b.mD + mA * b.mE + mE * b.mF,
         m3 * b.mC + m7 * b.mD + mB * b.mE + mF * b.mF);
 
-pub fn determinant(using _: mat4)
+pub inline fn determinant(using _: mat4)
     + mC * m9 * m6 * m3 - m8 * mD * m6 * m3 - mC * m5 * mA * m3
     + m4 * mD * mA * m3 + m8 * m5 * mE * m3 - m4 * m9 * mE * m3
     - mC * m9 * m2 * m7 + m8 * mD * m2 * m7 + mC * m1 * mA * m7
@@ -53,7 +54,7 @@ pub fn determinant(using _: mat4)
     - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF
     - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
 
-pub fn inverse(using m: mat4) {
+pub inline fn inverse(using m: mat4) {
     let idet = 1.0 / m.determinant;
 
     return mat4(

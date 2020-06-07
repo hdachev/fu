@@ -1665,5 +1665,5 @@ pub fn cpp_codegen(
     root.kind == "root" || fail();
 
     let src = cgNode(root);
-    return src || "\n";
+    return src;
 }
