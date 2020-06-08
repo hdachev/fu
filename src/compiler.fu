@@ -395,6 +395,8 @@ pub fn build(
                     if (moduleIdx == 1)
                         main = input;
 
+                    inputs.push(input);
+
                     // Check for custom cmake files.
                     let custom = module.fname ~ ".cmake";
                     if (file_size(custom) > 0)
@@ -402,10 +404,7 @@ pub fn build(
 
                     let cpp_file = cpp_files[moduleIdx - /*prelude*/1];
                     if (cpp_file)
-                    {
-                        inputs.push(input);
                         outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
-                    }
                 }
 
                 let libname = path_noext(path_filename(main));
@@ -413,7 +412,7 @@ pub fn build(
                 data ~= "set(FU_TARGET " ~ libname ~ ")\n\n";
 
                 data ~= "set(FU_MAIN " ~ main ~ ")\n\n";
-                data ~= "set(FU_INPUTS\n    " ~ inputs .join("\n    ") ~ ")\n\n";
+                data ~= "set(FU_INPUTS\n    " ~ inputs.join("\n    ") ~ ")\n\n";
 
                 if (unity)
                     data ~= "set(FU_OUTPUTS\n    " ~ "${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, unity) ~ ".unity.cpp)\n\n";
