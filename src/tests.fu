@@ -2410,6 +2410,71 @@ pub fn runTests()
     `
     ]);
 
+    ZERO([
+    `
+        pub struct vec3 {
+            x?: f32;
+            y?: f32;
+            z?: f32;
+        };
+    `,
+    `
+        import "./0";
+
+        pub struct mat34 {
+            mx: vec3;
+            my: vec3;
+            mz: vec3;
+            mo: vec3;
+        };
+
+        pub inline fn mat34_identity()
+            mat34(
+                vec3(x: 1),
+                vec3(y: 1),
+                vec3(z: 1), vec3 /*point3*/);
+    `,
+    `
+        import "./1";
+
+        pub struct mat4 {
+            m0: f32; m1: f32; m2: f32; m3: f32;
+            m4: f32; m5: f32; m6: f32; m7: f32;
+            m8: f32; m9: f32; mA: f32; mB: f32;
+            mC: f32; mD: f32; mE: f32; mF: f32;
+        };
+
+        pub inline fn mat4(using m: mat34)
+            mat4(
+                mx.x, mx.y, mx.z, 0,
+                my.x, my.y, my.z, 0,
+                mz.x, mz.y, mz.z, 0,
+                mo.x, mo.y, mo.z, 1);
+
+        pub fn determinant(using _: mat4)
+            + mC * m9 * m6 * m3 - m8 * mD * m6 * m3 - mC * m5 * mA * m3
+            + m4 * mD * mA * m3 + m8 * m5 * mE * m3 - m4 * m9 * mE * m3
+            - mC * m9 * m2 * m7 + m8 * mD * m2 * m7 + mC * m1 * mA * m7
+            - m0 * mD * mA * m7 - m8 * m1 * mE * m7 + m0 * m9 * mE * m7
+            + mC * m5 * m2 * mB - m4 * mD * m2 * mB - mC * m1 * m6 * mB
+            + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB
+            - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF
+            - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
+    `,
+    `
+        import "./1";
+        import "./2";
+
+        pub fn main()
+        {
+            let m34 = mat34_identity;
+            let m44 = mat4(m34);
+
+            return m44.determinant.i32 - 1;
+        }
+    `
+    ]);
+
 
     // Let's start having fun.
 
