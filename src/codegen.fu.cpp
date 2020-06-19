@@ -277,10 +277,12 @@ struct s_Node
 struct s_Template
 {
     s_Node node;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
+            || imports
         ;
     }
 };

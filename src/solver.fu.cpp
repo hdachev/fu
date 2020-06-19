@@ -6,6 +6,7 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
@@ -419,10 +420,12 @@ struct s_Partial
 struct s_Template
 {
     s_Node node;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
+            || imports
         ;
     }
 };
@@ -933,10 +936,14 @@ struct sf_solve
     fu_MAP<fu_STR, s_Type> _typeParams {};
     int _root_scope {};
     s_ScopeSkip _scope_skip {};
+    fu_VEC<int> _root_imports = ([&]() -> fu_VEC<int> { if (module.modid) return fu_VEC<int> { fu_VEC<int>::INIT<1> { module.modid } }; else return fu_VEC<int>{}; }());
     bool TEST_expectImplicits = false;
     s_Type t_string = createArray(t_byte);
     void Scope_import(const int modid)
     {
+        if (fu::has(_root_imports, modid))
+            return;
+
         const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
         for (int i = 0; (i < items.size()); i++)
             _scope.items.push(items[i]);
@@ -984,7 +991,7 @@ struct sf_solve
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
         const int max = min;
-        s_Template tEmplate = s_Template { s_Node(node) };
+        s_Template tEmplate = s_Template { s_Node(node), fu_VEC<int>(_root_imports) };
         fu_VEC<s_Argument> args {};
         if ((node.kind == "fn"_fu))
         {
@@ -1020,7 +1027,8 @@ struct sf_solve
 
             args.push(arg);
         };
-        s_Template tEmplate = s_Template { s_Node(native) };
+        fu_VEC<int> NO_IMPORTS {};
+        s_Template tEmplate = s_Template { s_Node(native), fu_VEC<int>(NO_IMPORTS) };
         const s_Target overload = Scope_add(_scope, kind, id, ret, node.flags, min, max, args, tEmplate, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
         return overload;
@@ -1800,9 +1808,8 @@ struct sf_solve
     };
     s_SolvedNode doTrySpecialize(const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, fu_STR& mangle)
     {
-        const s_Node& node = tEmplate.node;
-        ((node.kind == "fn"_fu) || fail("TODO"_fu));
-        s_SolvedNode result = trySpecializeFn(node, fu_VEC<s_SolvedNode>(args), mangle);
+        ((tEmplate.node.kind == "fn"_fu) || fail("TODO: non-fn templates"_fu));
+        s_SolvedNode result = trySpecializeFn(tEmplate, fu_VEC<s_SolvedNode>(args), mangle);
         if (result)
         {
             s_Overload o = GET(result.target, module, ctx);
@@ -1815,10 +1822,10 @@ struct sf_solve
 
         return result;
     };
-    s_SolvedNode trySpecializeFn(const s_Node& node, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
+    s_SolvedNode trySpecializeFn(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
     {
         bool ok = true;
-        const fu_VEC<s_Node>& items = node.items;
+        const fu_VEC<s_Node>& items = tEmplate.node.items;
         const int numArgs = (items.size() + FN_ARGS_BACK);
         fu_MAP<fu_STR, s_Type> typeParams {};
         fu_VEC<int> retypeIndices {};
@@ -1912,7 +1919,10 @@ struct sf_solve
         const int root_scope0 = _root_scope;
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
         _root_scope = scope0;
-        s_SolvedNode specialized = ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, node, s_SolvedNode{}, caseIdx); if (_) return _; } fail(fu_STR{}); }());
+        for (int i = 0; (i < tEmplate.imports.size()); i++)
+            Scope_import(tEmplate.imports[i]);
+
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, tEmplate.node, s_SolvedNode{}, caseIdx); if (_) return _; } fail(fu_STR{}); }());
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
         Scope_pop(_scope, scope0);
@@ -2106,6 +2116,12 @@ struct sf_solve
     {
         const s_Module& module_1 = findModule(node.value);
         Scope_import(module_1.modid);
+        if ((_root_scope == 0))
+        {
+            if (!fu::has(_root_imports, module_1.modid))
+                (_root_imports += module_1.modid);
+
+        };
         return createEmpty();
     };
     s_Type Scope_tryLookupType(const fu_STR& id)

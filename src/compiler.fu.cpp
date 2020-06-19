@@ -399,10 +399,12 @@ struct s_Partial
 struct s_Template
 {
     s_Node node;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
+            || imports
         ;
     }
 };
@@ -863,16 +865,15 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                     if ((moduleIdx == 1))
                         main = input;
 
+                    inputs.push(input);
                     fu_STR custom = (module.fname + ".cmake"_fu);
                     if ((fu::file_size(fu_STR(custom)) > 0))
                         (includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu));
 
                     fu_STR cpp_file { cpp_files[(moduleIdx - 1)] };
                     if (cpp_file)
-                    {
-                        inputs.push(input);
                         outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_file)));
-                    };
+
                 };
                 fu_STR libname = path_noext(path_filename(main));
                 (data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu));
