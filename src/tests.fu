@@ -2435,7 +2435,8 @@ pub fn runTests()
                 vec3(z: 1), vec3 /*point3*/);
     `,
     `
-        import "./1";
+        import "./0"; // TODO we dont want to import vec3 here.
+        import "./1"; //  needed by the mat4 constructor hitting .x/y/z, but it feels kinda off.
 
         pub struct mat4 {
             m0: f32; m1: f32; m2: f32; m3: f32;
@@ -2500,7 +2501,8 @@ pub fn runTests()
 
     ZERO(`
         import "vec3";
-        return vec3.maxc.i32;
+
+        fn main() vec3.maxc.i32;
     `);
 
 

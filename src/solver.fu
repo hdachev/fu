@@ -36,6 +36,9 @@ pub fn solve(
     mut _root_scope:    i32;
     mut _scope_skip:    ScopeSkip;
 
+    mut _root_imports: i32[] =
+        module.modid && [ module.modid ];
+
     //
     mut TEST_expectImplicits: bool = false;
 
@@ -49,6 +52,9 @@ pub fn solve(
 
     fn Scope_import(modid: i32): void
     {
+        if (_root_imports.has(modid))
+            return;
+
         let items = ctx.modules[modid].out.solve.scope.items;
         for (mut i = 0; i < items.len; i++)
             _scope.items.push(items[i]);
@@ -125,7 +131,7 @@ pub fn solve(
         let max = min;
 
         //
-        let template = Template(node);
+        let template = Template(node, imports: _root_imports);
 
         mut args: Argument[];
         if (node.kind == "fn")
@@ -177,7 +183,8 @@ pub fn solve(
             args.push(arg);
         }
 
-        let template = Template(node: native);
+        let NO_IMPORTS: i32[];
+        let template = Template(node: native, imports: NO_IMPORTS);
 
         let overload = Scope_add(
             _scope,
@@ -1185,10 +1192,9 @@ pub fn solve(
         template: Template, args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
-        let node = template.node;
-            node.kind == "fn" || fail("TODO");
+        template.node.kind == "fn" || fail("TODO: non-fn templates");
 
-        mut result = trySpecializeFn(node, args, mangle);
+        mut result = trySpecializeFn(:template, args, mangle);
         if (result)
         {
             let o = GET(result.target);
@@ -1206,12 +1212,12 @@ pub fn solve(
     //
 
     fn trySpecializeFn(
-        node: Node, mut args: SolvedNode[], mangle: &mut string)
+        template: Template, mut args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
         mut ok      = true;
 
-        let items   = node.items;
+        let items   = template.node.items;
         let numArgs = items.len + FN_ARGS_BACK;
         mut typeParams: Map(string, Type);
 
@@ -1364,8 +1370,11 @@ pub fn solve(
 
         _root_scope = scope0;
 
+        for (mut i = 0; i < template.imports.len; i++)
+            Scope_import(template.imports[i]);
+
         let specialized = __solveFn(
-            node, SolvedNode,
+            template.node, SolvedNode,
             solve: true, spec: true, :caseIdx)
                 || fail();
 
@@ -1684,6 +1693,13 @@ pub fn solve(
     {
         let module = findModule(fuzimport: node.value);
         Scope_import(module.modid);
+
+        //
+        if (_root_scope == 0)
+            if (!_root_imports.has(module.modid))
+                _root_imports ~= module.modid;
+
+        //
         return createEmpty();
     }
 

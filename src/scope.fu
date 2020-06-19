@@ -154,6 +154,7 @@ pub struct SolvedNode
 pub struct Template
 {
     node:       Node;
+    imports:    i32[];
 };
 
 pub struct Partial
