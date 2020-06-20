@@ -1,4 +1,4 @@
-import "vec3";
+import vec3;
 
 pub struct mat34
 {

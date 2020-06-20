@@ -1,9 +1,9 @@
-import "lexer";
-import "parser";
-import "types";
-import "lifetimes";
-import "stat";
-import "helpers";
+import lexer;
+import parser;
+import types;
+import lifetimes;
+import stat;
+import helpers;
 
 
 // Build service primitives.

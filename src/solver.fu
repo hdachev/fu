@@ -1,11 +1,11 @@
-import "helpers";
-import "lexer";
-import "parser";
-import "scope";
-import "context";
-import "types";
-import "lifetimes";
-import "intlit";
+import helpers;
+import lexer;
+import parser;
+import scope;
+import context;
+import types;
+import lifetimes;
+import intlit;
 
 let WARN_ON_IMPLICIT_COPY = false;
 

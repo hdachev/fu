@@ -1,8 +1,8 @@
-import "lexer";
-import "parser";
-import "types";
-import "scope";
-import "helpers";
+import lexer;
+import parser;
+import types;
+import scope;
+import helpers;
 
 pub struct Context
 {

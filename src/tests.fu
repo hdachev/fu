@@ -1,4 +1,4 @@
-import "compiler";
+import compiler;
 
 
 // A quick self-test without I/O.
@@ -2405,7 +2405,7 @@ pub fn runTests()
         fn hello() 3;
     `,
     `
-        import "_0";
+        import _0;
         fn main() 6 - hello * 2;
     `
     ]);
@@ -2419,7 +2419,7 @@ pub fn runTests()
         };
     `,
     `
-        import "_0";
+        import _0;
 
         pub struct mat34 {
             mx: vec3;
@@ -2435,8 +2435,8 @@ pub fn runTests()
                 vec3(z: 1), vec3 /*point3*/);
     `,
     `
-        import "_0";    // TODO we dont want to import vec3 here.
-        import "_1";    //  needed by the mat4 constructor hitting .x/y/z, but it feels kinda off.
+        import _0;    // TODO we dont want to import vec3 here.
+        import _1;    //  needed by the mat4 constructor hitting .x/y/z, but it feels kinda off.
                         //   What we could have is auto imports
                         //    for .field and .method invokes on first arg,
                         //     when you dont want it you can simply free(fn) call.
@@ -2470,8 +2470,8 @@ pub fn runTests()
             - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
     `,
     `
-        import "_1";
-        import "_2";
+        import _1;
+        import _2;
 
         pub fn main()
         {
@@ -2507,7 +2507,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        import "vec3";
+        import vec3;
 
         fn main() vec3.maxc.i32;
     `);
