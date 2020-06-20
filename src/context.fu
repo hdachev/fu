@@ -90,6 +90,12 @@ pub fn resolveFile(
             let res = resolveFile(:from, :name);
             if (res)
                 return res;
+
+            // Tests have the files prepopulated,
+            //  we only pay the cost of lookup when about to fail compile.
+            let prepopulated = from ~ name;
+            if (ctx.files.has(prepopulated))
+                return prepopulated;
         }
     }
 
@@ -101,11 +107,12 @@ pub fn resolveFile_x(
     path: string)
 {
     // TODO FIX
-    let match = ctx.fuzzy[path.replace(all: "\v", "")];
-    if (match && match != "\v")
-        return match;
+    let clean = path.replace(all: "\v", "");
+    let match = ctx.fuzzy[clean];
 
-    return path;
+    return match && match != "\v"
+         ? match
+         : clean;
 }
 
 

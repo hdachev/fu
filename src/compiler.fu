@@ -552,7 +552,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
                     ? ensure_main(snippet)
                     : snippet;
 
-        let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/" ~ i ~ ".fu";
+        let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
 
         ctx.files[fname] = src;
         compile(:fname);
