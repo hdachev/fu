@@ -615,18 +615,20 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
             if (res)
                 return res;
 
+            fu_STR prepopulated = (from + name);
+            if (fu::has(ctx.files, prepopulated))
+                return prepopulated;
+
         };
     };
     return fu_STR(path);
 }
 
-const fu_STR& resolveFile_x(const fu_STR& path, const s_Context& ctx)
+fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 {
-    const fu_STR& match = ctx.fuzzy[fu::replace(path, "\v"_fu, fu_STR{})];
-    if ((match && (match != "\v"_fu)))
-        return match;
-
-    return path;
+    fu_STR clean = fu::replace(path, "\v"_fu, fu_STR{});
+    const fu_STR& match = ctx.fuzzy[clean];
+    return std::move(((match && (match != "\v"_fu)) ? match : clean));
 }
 
 fu_STR getFile(fu_STR&& path, s_Context& ctx)

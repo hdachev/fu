@@ -43,8 +43,8 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
+fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
@@ -2101,7 +2101,7 @@ struct sf_solve
     };
     const s_Module& findModule(const fu_STR& fuzimport)
     {
-        const fu_STR& fname = resolveFile_x(fuzimport, ctx);
+        fu_STR fname = resolveFile_x(fuzimport, ctx);
         const fu_VEC<s_Module>& modules = ctx.modules;
         for (int i = 1; (i < modules.size()); i++)
         {

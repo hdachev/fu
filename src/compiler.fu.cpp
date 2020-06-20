@@ -51,7 +51,7 @@ void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
 s_ModuleStat ModuleStat_now();
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
-const fu_STR& resolveFile_x(const fu_STR&, const s_Context&);
+fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 s_Module& getModule(const fu_STR&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
@@ -646,7 +646,7 @@ struct sf_getLinkOrder
         const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
         for (int i = 0; (i < fuzimports.size()); i++)
         {
-            const fu_STR& fname = resolveFile_x(fuzimports[i], ctx);
+            fu_STR fname = resolveFile_x(fuzimports[i], ctx);
             for (int i_1 = 1; (i_1 < modules.size()); i_1++)
             {
                 const s_Module& module_1 = modules[i_1];
@@ -986,7 +986,7 @@ struct sf_compile_snippets
         {
             const fu_STR& snippet = sources[i];
             fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
-            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/"_fu) + i) + ".fu"_fu));
+            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
             (ctx.files.upsert(fname) = src);
             compile(fname, fu_STR{}, ctx);
         };
