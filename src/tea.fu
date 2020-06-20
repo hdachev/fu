@@ -120,11 +120,11 @@ pub fn hash(u8view: [byte])
     return res;
 }
 
-pub fn hash62(str: [byte]): string
+pub fn hash62(str: [byte], chars = 11): string
 {
     mut res: string;
     mut v = str.hash.u64;
-    for (mut i = 0; i < 4; i++)
+    for (mut i = 0; i < chars; i++)
     {
         let c = v % 62;
         v = v / 62;

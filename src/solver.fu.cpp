@@ -48,7 +48,7 @@ fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
-fu_STR hash62(fu::view<std::byte>);
+fu_STR hash62(fu::view<std::byte>, int);
 bool hasIdentifierChars(const fu_STR&);
 inline const s_Node& only_N1qL(const fu_VEC<s_Node>&);
 inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>&);
@@ -1770,7 +1770,7 @@ struct sf_solve
             if ((spec && !native))
             {
                 fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.items, 0, (out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
-                fu_STR hash = hash62(sig);
+                fu_STR hash = hash62(sig, 4);
                 (name += ("_"_fu + hash));
             };
             FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));

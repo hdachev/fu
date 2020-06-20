@@ -118,11 +118,11 @@ s_TEA hash(fu::view<std::byte> u8view)
     return res;
 }
 
-fu_STR hash62(fu::view<std::byte> str)
+fu_STR hash62(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
     uint64_t v = u64_SxuS(hash(str));
-    for (int i = 0; (i < 4); i++)
+    for (int i = 0; (i < chars); i++)
     {
         const uint64_t c = (v % 62u);
         v = (v / 62u);
