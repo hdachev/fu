@@ -523,11 +523,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseImport(): Node
     {
-        mut value = consume("str").value;
-                    consume("op", ";");
+        mut value = tryConsume("id").value;
+        if (value)
+        {
+            while (tryConsume("op", "::"))
+                value ~= "/" ~ consume("id").value;
+        }
+        else
+        {
+            value = consume("str").value;
+        }
 
+        consume("op", ";");
         value = registerImport(value);
-
         return make("import", :value);
     }
 

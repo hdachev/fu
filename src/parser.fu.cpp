@@ -637,7 +637,16 @@ struct sf_parse
     };
     s_Node parseImport()
     {
-        fu_STR value = consume("str"_fu, fu_STR{}).value;
+        fu_STR value = tryConsume("id"_fu, fu_STR{}).value;
+        if (value)
+        {
+            while (tryConsume("op"_fu, "::"_fu))
+                (value += ("/"_fu + consume("id"_fu, fu_STR{}).value));
+
+        }
+        else
+            value = consume("str"_fu, fu_STR{}).value;
+
         consume("op"_fu, ";"_fu);
         value = registerImport(fu_STR(value));
         return make("import"_fu, fu_VEC<s_Node>{}, 0, value);
