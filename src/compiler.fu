@@ -132,31 +132,38 @@ fn getLinkOrder(modules: Module[]): i32[]
 ////////
 ////////     Orchestration.
 
-fn update_file(
-    mut fname   : string,
-        data    : string,
-        dir_src : string = "",
-        dir_out : string = "")
+fn ensure_local_fname(fname: string, dir_src: string): string
 {
-    if (dir_src && dir_out)
-    {
-        if (!fname.starts(with: dir_src))
-        {
-            println("NOWRITE ", fname, ": not within ", dir_src);
-            return;
-        }
+    if (fname.starts(with: dir_src))
+        return fname;
 
-        fname = dir_out ~ fname.slice(dir_src.len);
+    let rel = path_relative(from: dir_src, to: fname)
+        .replace(all: "../", with: "up__")
+        .replace(all: "/", with: "__");
+
+    return dir_src ~ rel;
+}
+
+fn update_file(
+    fname   !: string,
+    data    !: string,
+    dir_src !: string,
+    dir_out !: string)
+{
+    let fname = ensure_local_fname(:fname, :dir_src);
+        fname.starts(with: dir_src) || assert();
+
+    let fname = dir_out ~ fname.slice(dir_src.len);
+    if (file_read(fname) != data)
+    {
+        let err = file_write(fname, data);
+        if (err)
+            throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
+
+        println("  WROTE " ~ fname);
     }
 
-    if (file_read(fname) == data)
-        return;
-
-    let err = file_write(fname, data);
-    if (err)
-        throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
-
-    println("  WROTE " ~ fname);
+    return fname;
 }
 
 pub fn build(
@@ -340,12 +347,11 @@ pub fn build(
         {
             let module  = ctx.modules[i];
             let data    = module.out.cpp;
-            let fname   = data && module.fname ~ ".cpp";
 
-            if (data)
-                update_file(
-                    :fname, :data,
-                    :dir_src, dir_out: dir_cpp);
+            let fname   = data && module.fname ~ ".cpp";
+            let fname   = fname && update_file(
+                :fname, :data,
+                :dir_src, dir_out: dir_cpp);
 
             cpp_files.push(fname);
         }
