@@ -9,7 +9,7 @@
 #include "scope.fu.cpp"
 #include "context.fu.cpp"
 #include "intlit.fu.cpp"
-#include "tea.fu.cpp"
+#include "../lib/tea.fu.cpp"
 #include "solver.fu.cpp"
 #include "prelude.fu.cpp"
 #include "codegen.fu.cpp"

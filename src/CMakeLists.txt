@@ -14,7 +14,7 @@ set(FU_INPUTS
     scope.fu
     context.fu
     intlit.fu
-    tea.fu
+    ../lib/tea.fu
     solver.fu
     prelude.fu
     codegen.fu

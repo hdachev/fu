@@ -137,11 +137,14 @@ fn ensure_local_fname(fname: string, dir_src: string): string
     if (fname.starts(with: dir_src))
         return fname;
 
+    let foreign = dir_src ~ ".foreign/";
+    fs_mkdir_p(foreign);
+
     let rel = path_relative(from: dir_src, to: fname)
         .replace(all: "../", with: "up__")
-        .replace(all: "/", with: "__");
+        .replace(all:   "/", with:   "__");
 
-    return dir_src ~ rel;
+    return foreign ~ rel;
 }
 
 fn update_file(

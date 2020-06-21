@@ -677,25 +677,31 @@ fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
 }
 
 
-static void update_file(fu_STR&& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
 {
-    if ((dir_src && dir_out))
+    if (fu::lmatch(fname, dir_src))
+        return fu_STR(fname);
+
+    fu_STR foreign = (dir_src + ".foreign/"_fu);
+    fu::fs_mkdir_p(fu_STR(foreign));
+    fu_STR rel = fu::replace(fu::replace(path_relative(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
+    return (foreign + rel);
+}
+
+static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+{
+    fu_STR fname_1 = ensure_local_fname(fname, dir_src);
+    (fu::lmatch(fname_1, dir_src) || fu::fail());
+    fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
+    if ((fu::file_read(fu_STR(fname_2)) != data))
     {
-        if (!fu::lmatch(fname, dir_src))
-        {
-            (std::cout << "NOWRITE "_fu << fname << ": not within "_fu << dir_src << '\n');
-            return;
-        };
-        fname = (dir_out + fu::slice(fname, dir_src.size()));
+        const int err = fu::file_write(fu_STR(fname_2), data);
+        if (err)
+            fu::fail(((("Failed to write `"_fu + fname_2) + "`, error: #"_fu) + err));
+
+        (std::cout << ("  WROTE "_fu + fname_2) << '\n');
     };
-    if ((fu::file_read(fu_STR(fname)) == data))
-        return;
-
-    const int err = fu::file_write(fu_STR(fname), data);
-    if (err)
-        fu::fail(((("Failed to write `"_fu + fname) + "`, error: #"_fu) + err));
-
-    (std::cout << ("  WROTE "_fu + fname) << '\n');
+    return fname_2;
 }
 
 void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
@@ -828,10 +834,8 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
             const s_Module& module = ctx.modules[i];
             const fu_STR& data = module.out.cpp;
             fu_STR fname = ([&]() -> fu_STR { if (data) return (module.fname + ".cpp"_fu); else return fu_STR{}; }());
-            if (data)
-                update_file(fu_STR(fname), data, dir_src, dir_cpp);
-
-            cpp_files.push(fname);
+            fu_STR fname_1 = ([&]() -> fu_STR { if (fname) return update_file(fname, data, dir_src, dir_cpp); else return fu_STR{}; }());
+            cpp_files.push(fname_1);
         };
         fu_STR CMakeLists = ([&]() -> fu_STR { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_STR{}; }());
         if ((unity || CMakeLists))
@@ -889,7 +893,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, fu_STR&& bin,
                 if (includes)
                     (data += (includes + "\n"_fu));
 
-                update_file(fu_STR(CMakeLists), data, dir_src, dir_cpp);
+                update_file(CMakeLists, data, dir_src, dir_cpp);
             };
         };
     };
