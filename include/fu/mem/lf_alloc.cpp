@@ -3,8 +3,10 @@
 #include <cassert>
 #include <stdlib.h>
 
-
-//
+/*  TODO study jemalloc's mmap usage here:
+        https://github.com/jemalloc/jemalloc/
+            mmap stuff is in pages.c
+*/
 
 namespace
 {
