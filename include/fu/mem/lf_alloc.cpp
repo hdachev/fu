@@ -16,7 +16,7 @@ namespace
 
     //
 
-    class LockFree_StackOf_45BitPtrs
+    class LockFree_StackOf_44BitPtrs
     {
         struct Node
         {
@@ -31,26 +31,26 @@ namespace
         inline u64 tag(const Node* ptr, i32 lastID)
         {
             // Ptrs are 48bit vals,
-            //  ours are 45bit because 16-byte align,
-            //   so we use the rest for a u19 ABA tag.
+            //  ours are 44bit because 16-byte align,
+            //   so we use the rest for a u20 ABA tag.
 
             assert(!(u64(ptr) & ~0xfffffffffff0)
-                && "LockFree_StackOf_45BitPtrs: Not a 45bit ptr.");
+                && "LockFree_StackOf_44BitPtrs: Not a 44bit ptr.");
 
-            return  (u64(ptr)         >>     3)
-                 | ((u64(lastID) + 1) << (48-3));
+            return  (u64(ptr)         >>     4)
+                 | ((u64(lastID) + 1) << (48-4));
         }
 
         inline Node* untag(u64 tagged_ptr)
         {
             return (Node*)(
-                (tagged_ptr << 3)
+                (tagged_ptr << 4)
                     & 0xffffffffffff);
         }
 
         inline i32 tagof(u64 tagged_ptr)
         {
-            return i32(u64(tagged_ptr) >> (48-3));
+            return i32(u64(tagged_ptr) >> (48-4));
         }
 
 
@@ -134,7 +134,7 @@ namespace
 
         struct alignas(MAX_CACHELINE_bytes) Bucket
         {
-            LockFree_StackOf_45BitPtrs m_stack;
+            LockFree_StackOf_44BitPtrs m_stack;
         };
 
         Bucket m_buckets[NUM_BUCKETS];
@@ -168,7 +168,7 @@ namespace
             // Try fragmenting what we currently have,
             //  without resorting to breaking down much bigger chunks.
             {
-                u32 end = start + 3;
+                u32 end = start + 3; // no more than 8x the size
 
                 const u32   i_grow = log2_GrowAlloc - log2_MinAlloc;
                 end = end > i_grow
