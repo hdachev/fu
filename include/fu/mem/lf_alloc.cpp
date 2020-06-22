@@ -8,6 +8,11 @@
 
 namespace {
 
+typedef int32_t i32;
+
+typedef uint32_t u32;
+typedef uint64_t u64;
+
 
 //
 
@@ -15,7 +20,7 @@ class LockFree_StackOf_45BitPtrs
 {
     struct Node
     {
-        uint64_t m_NEXT;
+        u64 m_NEXT;
     };
 
     std::atomic_uint64_t m_HEAD;
@@ -23,29 +28,29 @@ class LockFree_StackOf_45BitPtrs
 
     // Pointer tagging.
 
-    inline uint64_t tag(const Node* ptr, int lastID)
+    inline u64 tag(const Node* ptr, i32 lastID)
     {
         // Ptrs are 48bit vals,
         //  ours are 45bit because 16-byte align,
         //   so we use the rest for a u19 ABA tag.
 
-        assert(!(~uint64_t(ptr) & 0xfffffffffff0)
-            && "Not a 45bit pointer.");
+        assert(!(~u64(ptr) & 0xfffffffffff0)
+            && "LockFree_StackOf_45BitPtrs: Not a 45bit ptr.");
 
-        return  (uint64_t(ptr)         >>     3)
-             | ((uint64_t(lastID) + 1) << (48-3));
+        return  (u64(ptr)         >>     3)
+             | ((u64(lastID) + 1) << (48-3));
     }
 
-    inline Node* untag(uint64_t tagged_ptr)
+    inline Node* untag(u64 tagged_ptr)
     {
         return (Node*)(
             (tagged_ptr << 3)
                 & 0xffffffffffff);
     }
 
-    inline int tagof(uint64_t tagged_ptr)
+    inline i32 tagof(u64 tagged_ptr)
     {
-        return int(uint64_t(tagged_ptr) >> (48-3));
+        return i32(u64(tagged_ptr) >> (48-3));
     }
 
 
@@ -56,13 +61,13 @@ public:
     {
         Node* node = (Node*)mem;
 
-        uint64_t state0 = m_HEAD.load(
+        u64 state0 = m_HEAD.load(
             std::memory_order_relaxed);
 
         Retry:
         {
             node->m_NEXT = state0;
-            const uint64_t state1 = tag(node, tagof(state0));
+            const u64 state1 = tag(node, tagof(state0));
 
             if (!m_HEAD.compare_exchange_weak(
                 state0, state1,
@@ -76,7 +81,7 @@ public:
 
     inline char* try_pop()
     {
-        uint64_t state0 = m_HEAD.load(
+        u64 state0 = m_HEAD.load(
             std::memory_order_relaxed);
 
         Retry:
@@ -84,7 +89,7 @@ public:
             Node* node = untag(state0);
             if (node)
             {
-                const uint64_t state1 = node->m_NEXT;
+                const u64 state1 = node->m_NEXT;
 
                 if (!m_HEAD.compare_exchange_weak(
                     state0, state1,
@@ -104,17 +109,22 @@ public:
 //
 
 template <
-    int log2_MinAlloc  =  7 /* 128 bytes */,
-    int log2_MaxAlloc  = 31 /*   2 gb    */,
-    int log2_GrowAlloc = 26 /*  64 mb    */>
+    u32 log2_MinAlloc  =  7 /* 128 bytes */,
+    u32 log2_MaxAlloc  = 31 /*   2 gb    */,
+    u32 log2_GrowAlloc = 26 /*  64 mb    */>
 
 struct LockFree_Pow2Heap
 {
-    static constexpr int MAX_CACHELINE_bytes    = 128;
-    static constexpr int          PAGE_bytes    = 4096;
+    static constexpr u32 MAX_CACHELINE_bytes = 128;
+    static constexpr u32          PAGE_bytes = 4096;
 
-    static constexpr int NUM_BUCKETS            = log2_MaxAlloc - log2_MinAlloc + 1;
-    static constexpr int MIN_ALLOC              = 1 << log2_MinAlloc;
+    static constexpr u32 NUM_BUCKETS = log2_MaxAlloc - log2_MinAlloc + 1u;
+
+    static constexpr u32 MIN_ALLOC = 1u << log2_MinAlloc;
+    static constexpr u32 MAX_ALLOC = 1u << log2_MaxAlloc;
+
+    static constexpr u32 MIN_LOG2 = log2_MinAlloc;
+    static constexpr u32 MAX_LOG2 = log2_MaxAlloc;
 
 
     //
@@ -129,11 +139,11 @@ struct LockFree_Pow2Heap
 
     //
 
-    inline char* try_alloc(const int log2_bytes)
+    inline char* try_alloc(const u32 log2_bytes)
     {
         // Fast path.
-        int start = log2_bytes - log2_MinAlloc;
-        char* mem = m_buckets[start].pop();
+        u32 start = log2_bytes - log2_MinAlloc;
+        char* mem = m_buckets[start].m_stack.try_pop();
         if (mem)
             return mem;
 
@@ -141,24 +151,30 @@ struct LockFree_Pow2Heap
         return fallback(start);
     }
 
+    inline void free(char* mem, const u32 log2_bytes)
+    {
+        u32 start = log2_bytes - log2_MinAlloc;
+        m_buckets[start].m_stack.push(mem);
+    }
+
 
     //
 
-    char* fallback(const int start)
+    char* fallback(const u32 start)
     {
         // Try fragmenting what we currently have,
         //  without resorting to breaking down much bigger chunks.
         {
-            int end = start + 8;
+            u32 end = start + 3;
 
-            const int   i_grow = log2_GrowAlloc - log2_MinAlloc;
+            const u32   i_grow = log2_GrowAlloc - log2_MinAlloc;
             end = end > i_grow
                 ? end : i_grow;
 
             end = end < NUM_BUCKETS
                 ? end : NUM_BUCKETS;
 
-            char* mem = fallback_split(start + 1, end);
+            char* mem = try_fallback_split(start + 1, end);
             if (mem)
                 return mem;
         }
@@ -167,16 +183,16 @@ struct LockFree_Pow2Heap
         return fallback_allocate(start);
     }
 
-    char* fallback_allocate(const int start)
+    char* fallback_allocate(const u32 start)
     {
-        int log2_bytes = start + log2_MinAlloc;
+        u32 log2_bytes = start + log2_MinAlloc;
 
         log2_bytes = log2_bytes > log2_GrowAlloc
                    ? log2_bytes : log2_GrowAlloc;
 
         // Allocate.
-        size_t bytes = size_t(1 << log2_bytes);
-        char* mem = (char*)malloc(bytes);
+        u32 bytes = 1u << log2_bytes;
+        char* mem = (char*)std::malloc(bytes);
 
         // In case we're out of memory,
         //  we might try to free up some of our bigger slots.
@@ -184,36 +200,36 @@ struct LockFree_Pow2Heap
             return mem;
 
         // Return if exact match (>= growsize).
-        int index = log2_bytes - log2_MinAlloc;
+        u32 index = log2_bytes - log2_MinAlloc;
         if (index == start)
             return mem;
 
         // Else store on the heap and try again.
-        m_buckets[index].push(mem);
+        m_buckets[index].m_stack.push(mem);
         return try_alloc(start);
     }
 
 
     //
 
-    char* fallback_split(const int i, const int end)
+    char* try_fallback_split(const u32 i, const u32 end)
     {
         if (i >= end)
             return nullptr;
 
-        char* mem = m_buckets[i].pop();
+        char* mem = m_buckets[i].m_stack.try_pop();
         if (!mem)
-            mem = fallback_split(i + 1, end);
+            mem = try_fallback_split(i + 1, end);
 
         if (mem)
         {
             // Chop off and link up the right half of the alloc.
-            int log2 = i + log2_MinAlloc;
-            int size = 1 << log2;
-            int half = (size >> 1);
+            u32 log2 = i + log2_MinAlloc;
+            u32 size = 1u << log2;
+            u32 half = (size >> 1);
 
             char* right = mem + half;
-            m_buckets[i - 1].push(right);
+            m_buckets[i - 1].m_stack.push(right);
         }
 
         return mem;
@@ -221,4 +237,67 @@ struct LockFree_Pow2Heap
 
 };
 
+
+//
+
+static LockFree_Pow2Heap s_heap;
+
+
 } // namespace;
+
+
+// Utils.
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_BitScanReverse)
+#endif
+
+static inline u32 next_log2(u32 a) // a must be >= 2
+{
+#ifdef _MSC_VER
+    u32 bit;
+    _BitScanReverse(&bit, a - 1);
+    return bit + 1;
+#else
+    return 32 - u32( __builtin_clz(a - 1));
+#endif
+}
+
+static inline u32 log2_coerce(u32 bytes)
+{
+    u32 log2 = next_log2(u32(bytes));
+    log2 = log2 > s_heap.MIN_LOG2
+         ? log2 : s_heap.MIN_LOG2;
+
+    return log2;
+}
+
+
+// Long story short, we use malloc/free directly for oversized allocations,
+//  and otherwise round up to the nearest power of two and hit the lock free heap.
+
+char* POW2_Alloc(size_t* out_bytes)
+{
+    size_t bytes = *out_bytes;
+
+    // malloc if too big.
+    if (bytes > s_heap.MAX_ALLOC)
+        return (char*)std::malloc(bytes);
+
+    //
+    u32 log2_bytes = log2_coerce(u32(bytes));
+    *out_bytes = 1u << log2_bytes;
+    return s_heap.try_alloc(log2_bytes);
+}
+
+void POW2_Free(char* mem, size_t bytes)
+{
+    // free oversized.
+    if (bytes > s_heap.MAX_ALLOC)
+        return std::free(mem);
+
+    //
+    u32 log2_bytes = log2_coerce(u32(bytes));
+    return s_heap.free(mem, log2_bytes);
+}
