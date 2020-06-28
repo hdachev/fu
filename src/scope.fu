@@ -259,7 +259,8 @@ pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip,
-    target: Target = []): Target
+    target: Target = [],
+    extra_items: ScopeItem[] = []): Target
 {
     // Searching & forcing results the same way.
     if (target)
@@ -277,14 +278,17 @@ pub fn search(
 
     let items = scope.items;
     if (!scope_iterator)
-        scope_iterator = items.len;
+        scope_iterator = items.len + extra_items.len;
 
     while (scope_iterator --> 0)
     {
         if (scope_iterator == skip1)
             scope_iterator  = skip0;
 
-        let item = items[scope_iterator];
+        let item = scope_iterator >= items.len
+            ? extra_items[scope_iterator - items.len]
+            : items[scope_iterator];
+
         if (item.id == id)
         {
             // Prevent re-entry, otherwise we loop forever

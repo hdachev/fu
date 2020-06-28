@@ -434,186 +434,191 @@ pub fn solve(
     {
         mut matchIdx: Target;
 
+        let arity = args.len;
+
+        // Prep labelled args for remap.
+        mut names: string[];
+        if (flags & F_NAMED_ARGS)
         {
-            let arity = args.len;
+            mut some = false;
 
-            // Prep labelled args for remap.
-            mut names: string[];
-            if (flags & F_NAMED_ARGS)
+            for (mut i = 0; i < arity; i++)
             {
-                mut some = false;
-
-                for (mut i = 0; i < arity; i++)
-                {
-                    let arg = args[i];
-                    names.push(arg.kind == "label"
-                        ? (some = true, arg.value) || fail()
-                        : "");
-                }
-
-                some || fail();
+                let arg = args[i];
+                names.push(arg.kind == "label"
+                    ? (some = true, arg.value) || fail()
+                    : "");
             }
 
-            //
-            mut reorder: i32[];
-            mut args_mangled: string;
+            some || fail();
+        }
 
-            //
-            mut scope_iterator: i32;
-            mut overloadIdx: Target;
+        //
+        let extra_modid = flags & F_ACCESS && args.if_first.type.modid;
+        let extra_items = extra_modid
+                        && !_scope.imports.has(extra_modid)
+                        && ctx.modules[extra_modid].out.solve.scope.items;
 
-            :NEXT
-            while (overloadIdx =
-                scope.search(id, scope_iterator,
-                    scope_skip: _scope_skip, :target))
+        //
+        mut reorder: i32[];
+        mut args_mangled: string;
+
+        //
+        mut scope_iterator: i32;
+        mut overloadIdx: Target;
+
+        :NEXT
+        while (overloadIdx =
+            scope.search(id, scope_iterator,
+                scope_skip: _scope_skip, :target,
+                :extra_items))
+        {
+            mut overload = GET(overloadIdx);
+
+            :TEST_AGAIN
+            while (true)
             {
-                mut overload = GET(overloadIdx);
+                if (overload.min > arity || overload.max < arity)
+                    continue :NEXT;
 
-                :TEST_AGAIN
-                while (true)
+                // Match by return.
+                if (retType && !isAssignable(retType, overload.type || fail()))
+                    continue :NEXT;
+
+                // Match by argnames.
+                if (names && !getNamedArgReorder(reorder, names, overload.args))
+                    continue :NEXT;
+
+                // Specialize.
+                if (overload.isTemplate)
                 {
-                    if (overload.min > arity || overload.max < arity)
+                    if (reorder)
+                        fail("TODO handle argument reorder in template specialization.");
+
+                    let o = GET(overloadIdx);
+                    let specIdx = trySpecialize(
+                        overloadIdx, :o.template, :args,
+                        :args_mangled ||= mangleArguments(args));
+
+                    if (!specIdx)
                         continue :NEXT;
 
-                    // Match by return.
-                    if (retType && !isAssignable(retType, overload.type || fail()))
-                        continue :NEXT;
+                    overloadIdx = specIdx;
+                    overload = GET(specIdx);
 
-                    // Match by argnames.
-                    if (names && !getNamedArgReorder(reorder, names, overload.args))
-                        continue :NEXT;
-
-                    // Specialize.
-                    if (overload.isTemplate)
-                    {
-                        if (reorder)
-                            fail("TODO handle argument reorder in template specialization.");
-
-                        let o = GET(overloadIdx);
-                        let specIdx = trySpecialize(
-                            overloadIdx, :o.template, :args,
-                            :args_mangled ||= mangleArguments(args));
-
-                        if (!specIdx)
-                            continue :NEXT;
-
-                        overloadIdx = specIdx;
-                        overload = GET(specIdx);
-
-                        // Repeat arity checks and such.
-                        continue :TEST_AGAIN;
-                    }
-
-                    // Done here.
-                    break :TEST_AGAIN;
+                    // Repeat arity checks and such.
+                    continue :TEST_AGAIN;
                 }
 
-                if (args)
-                {
-                    // Type check args.
-                    let host_args = overload.args;
+                // Done here.
+                break :TEST_AGAIN;
+            }
 
-                    let N = reorder ? reorder.len
-                                    : args.len;
+            if (args)
+            {
+                // Type check args.
+                let host_args = overload.args;
+
+                let N = reorder ? reorder.len
+                                : args.len;
+
+                /////////////////
+                // Literal fixup.
+                let undo_literal_fixup = args;
+                //        /LITFIX
+                /////////////////
+
+                for (mut i = 0; i < N; i++)
+                {
+                    let host_arg = host_args[i];
+
+                    let callsiteIndex = reorder ? reorder[i]
+                                                : i;
+                    if (callsiteIndex < 0)
+                    {
+                        // Argument may not be defaulted -
+                        //  we might be supplying defaults via names
+                        //   before we've actually exhausted
+                        //    all the non-defaulted stuff.
+                        if (!host_arg.default && !(host_arg.flags & F_IMPLICIT))
+                            continue :NEXT;
+
+                        continue;
+                    }
+
+                    // Explicit argname requirements.
+                    else if (host_arg.flags & F_MUSTNAME)
+                    {
+                        if (names.len <= callsiteIndex || !names[callsiteIndex])
+                            continue :NEXT;
+                    }
+
+                    let expect = host_arg.type;
+                    let actual = args[callsiteIndex].type;
+
+                    mut ok = isAssignableAsArgument(expect, actual);
 
                     /////////////////
                     // Literal fixup.
-                    let undo_literal_fixup = args;
+                    if (!ok && considerRetyping(expect, actual))
+                    {
+                        let arg: &mut SolvedNode = args[callsiteIndex];
+
+                        if (arg.kind == "label")
+                        {
+                            // SEGV fix -
+                            //  how do we deal with this in general?
+                            //   might as well discontinue copy assignment
+                            //    in favor of cpy->mov.
+                            let inner = arg.items.only;
+                            arg = inner;
+                        }
+
+                        let retype  = tryRetyping(arg, expect);
+                            ok      = isAssignableAsArgument(expect, retype);
+
+                        if (ok)
+                            arg.type = retype;
+                    }
                     //        /LITFIX
                     /////////////////
 
-                    for (mut i = 0; i < N; i++)
+                    if (!ok)
                     {
-                        let host_arg = host_args[i];
-
-                        let callsiteIndex = reorder ? reorder[i]
-                                                    : i;
-                        if (callsiteIndex < 0)
-                        {
-                            // Argument may not be defaulted -
-                            //  we might be supplying defaults via names
-                            //   before we've actually exhausted
-                            //    all the non-defaulted stuff.
-                            if (!host_arg.default && !(host_arg.flags & F_IMPLICIT))
-                                continue :NEXT;
-
-                            continue;
-                        }
-
-                        // Explicit argname requirements.
-                        else if (host_arg.flags & F_MUSTNAME)
-                        {
-                            if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                continue :NEXT;
-                        }
-
-                        let expect = host_arg.type;
-                        let actual = args[callsiteIndex].type;
-
-                        mut ok = isAssignableAsArgument(expect, actual);
-
-                        /////////////////
-                        // Literal fixup.
-                        if (!ok && considerRetyping(expect, actual))
-                        {
-                            let arg: &mut SolvedNode = args[callsiteIndex];
-
-                            if (arg.kind == "label")
-                            {
-                                // SEGV fix -
-                                //  how do we deal with this in general?
-                                //   might as well discontinue copy assignment
-                                //    in favor of cpy->mov.
-                                let inner = arg.items.only;
-                                arg = inner;
-                            }
-
-                            let retype  = tryRetyping(arg, expect);
-                                ok      = isAssignableAsArgument(expect, retype);
-
-                            if (ok)
-                                arg.type = retype;
-                        }
-                        //        /LITFIX
-                        /////////////////
-
-                        if (!ok)
-                        {
-                            args = undo_literal_fixup;
-                            continue :NEXT;
-                        }
-                    }
-
-                    // Forbid ambiguity.
-                    if (matchIdx)
-                        fail("Ambiguous callsite, matches multiple functions in scope: `" ~ id ~ "`.");
-
-                    // Do reorder.
-                    if (reorder)
-                    {
-                        // TODO:
-                        // I shouldn't need this pass, just swaps must do.
-                        mut new_args: SolvedNode[];
-                        new_args.resize(reorder.len);
-
-                        for (mut i = 0; i < reorder.len; i++)
-                        {
-                            let idx = reorder[i];
-                            if (idx >= 0)
-                                new_args[i] = args[idx];
-                        }
-
-                        args = new_args;
+                        args = undo_literal_fixup;
+                        continue :NEXT;
                     }
                 }
 
-                // Done!
-                matchIdx = overloadIdx;
+                // Forbid ambiguity.
+                if (matchIdx)
+                    fail("Ambiguous callsite, matches multiple functions in scope: `" ~ id ~ "`.");
 
-                // Arity 0 auto-shadows.
-                if (!arity)
-                    break;
+                // Do reorder.
+                if (reorder)
+                {
+                    // TODO:
+                    // I shouldn't need this pass, just swaps must do.
+                    mut new_args: SolvedNode[];
+                    new_args.resize(reorder.len);
+
+                    for (mut i = 0; i < reorder.len; i++)
+                    {
+                        let idx = reorder[i];
+                        if (idx >= 0)
+                            new_args[i] = args[idx];
+                    }
+
+                    args = new_args;
+                }
             }
+
+            // Done!
+            matchIdx = overloadIdx;
+
+            // Arity 0 auto-shadows.
+            if (!arity)
+                break;
         }
 
         if (matchIdx)
