@@ -25,20 +25,15 @@ pub fn solve(
     implicit module: &mut Module,
     parse: Node): SolverOutput
 {
-    // TODO FIX next
-    mut _scope: Scope;
-    mut _here:  TokenIdx;
+    mut _here:          TokenIdx;
+    mut _scope:         Scope;
 
-    // Needs template reset.
     mut _root_scope:    ScopeMemo;
     mut _return_idx:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
 
     mut _current_fn:    SolvedNode;
     mut _typeParams:    Map(string, Type);
-
-    mut _root_imports: i32[] =
-        module.modid && [ module.modid ];
 
     //
     mut TEST_expectImplicits: bool = false;
@@ -51,14 +46,18 @@ pub fn solve(
 
     //
 
+    fn _Scope_import__forceCopy(modid: i32): void
+    {
+        _scope.items ~= ctx.modules[modid].out.solve.scope.items;
+    }
+
     fn Scope_import(modid: i32): void
     {
-        if (_root_imports.has(modid))
-            return;
+        if (_scope.imports.has(modid)) return;
 
-        let items = ctx.modules[modid].out.solve.scope.items;
-        for (mut i = 0; i < items.len; i++)
-            _scope.items.push(items[i]);
+        modid || fail("Attempting to import modid-0.");
+        _scope.imports ~= modid;
+        _Scope_import__forceCopy(modid);
     }
 
     fn GET(
@@ -132,7 +131,7 @@ pub fn solve(
         let max = min;
 
         //
-        let template = Template(node, imports: _root_imports);
+        let template = Template(node, imports: _scope.imports);
 
         mut args: Argument[];
         if (node.kind == "fn")
@@ -1697,11 +1696,6 @@ pub fn solve(
         Scope_import(module.modid);
 
         //
-        if (!_root_scope)
-            if (!_root_imports.has(module.modid))
-                _root_imports ~= module.modid;
-
-        //
         return createEmpty();
     }
 
@@ -2525,14 +2519,23 @@ pub fn solve(
 
     // Import prelude / inject builtins.
     if (module.modid)
-        Scope_import(0);
+    {
+        // Ensure can't reimport self.
+        _scope.imports ~= module.modid;
+
+        // Load prelude.
+        _Scope_import__forceCopy(0);
+    }
     else
+    {
+        // Pre-populate prelude with primitive types and such.
         _scope = listGlobals();
+    }
 
     // Solve.
     {
         let root = solveNode(parse);
-        let scope = Scope_exports(_scope, module.modid);
+        let scope = Scope_exports(_scope, :module.modid);
 
         // Run the thing.
         return SolverOutput(:root, :scope);

@@ -204,9 +204,10 @@ pub struct Scope
 {
     items:      ScopeItem[];
     overloads:  Overload[];
+    imports:    i32[];
 };
 
-pub fn Scope_exports(scope: Scope, modid: i32)
+pub fn Scope_exports(scope: Scope, modid!: i32)
 {
     mut result: ScopeItem[] = [];
 
@@ -221,9 +222,12 @@ pub fn Scope_exports(scope: Scope, modid: i32)
         }
     }
 
+    let no_imports: i32[];
+
     return Scope(
         items: result,
-        :scope.overloads);
+        :scope.overloads,
+        imports: no_imports);
 }
 
 
@@ -245,7 +249,8 @@ pub fn DEPREC_lookup(scope: Scope, id: string): Target[]
     return results;
 }
 
-pub struct ScopeSkip {
+pub struct ScopeSkip
+{
     start: ScopeMemo;
     end:   ScopeMemo;
 };
@@ -300,13 +305,19 @@ pub fn search(
 pub struct ScopeMemo
 {
     items_len: i32;
+    imports_len: i32;
 };
 
 pub fn Scope_push(scope: &mut Scope)
-    ScopeMemo(scope.items.len);
+    ScopeMemo(
+        items_len:   scope.items  .len,
+        imports_len: scope.imports.len);
 
 pub fn Scope_pop(scope: &mut Scope, memo: ScopeMemo)
-    scope.items.shrink(memo.items_len);
+{
+    scope.items  .shrink(memo.items_len);
+    scope.imports.shrink(memo.imports_len);
+}
 
 
 ////////////////////////////////
