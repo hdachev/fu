@@ -2444,15 +2444,7 @@ pub fn runTests()
                 vec3(z: 1), vec3 /*point3*/);
     `,
     `
-        import _0;    // TODO we dont want to import vec3 here.
-        import _1;    //  needed by the mat4 constructor hitting .x/y/z, but it feels kinda off.
-                        //   What we could have is auto imports
-                        //    for .field and .method invokes on first arg,
-                        //     when you dont want it you can simply free(fn) call.
-                        //      Unfortunately that won't work for operators.
-                        //       What we don't want are fallback cascades,
-                        //        we want overload resolution to be absolute,
-                        //         no weird shit.
+        import _1;
 
         pub struct mat4 {
             m0: f32; m1: f32; m2: f32; m3: f32;
@@ -2480,12 +2472,11 @@ pub fn runTests()
     `,
     `
         import _1;
-        import _2;
 
         pub fn main()
         {
             let m34 = mat34_identity;
-            let m44 = mat4(m34);
+            let m44 = _2::mat4(m34);
 
             return m44.determinant.i32 - 1;
         }
