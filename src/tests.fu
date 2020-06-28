@@ -2412,6 +2412,15 @@ pub fn runTests()
 
     ZERO([
     `
+        pub struct Hey { i = 1; };
+    `,
+    `
+        fn main() _0::Hey.i - 1;
+    `
+    ]);
+
+    ZERO([
+    `
         pub struct vec3 {
             x?: f32;
             y?: f32;
