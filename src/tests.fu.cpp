@@ -413,11 +413,13 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || items
             || overloads
+            || imports
         ;
     }
 };

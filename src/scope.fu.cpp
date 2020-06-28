@@ -22,6 +22,7 @@ struct s_Overload;
 struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
@@ -417,11 +418,13 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || items
             || overloads
+            || imports
         ;
     }
 };
@@ -525,12 +528,28 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ScopeSkip
                                 #define DEF_s_ScopeSkip
 struct s_ScopeSkip
 {
-    int start;
-    int end;
+    s_ScopeMemo start;
+    s_ScopeMemo end;
     explicit operator bool() const noexcept
     {
         return false
@@ -646,7 +665,8 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid)
 
         };
     };
-    return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads) };
+    fu_VEC<int> no_imports {};
+    return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads), fu_VEC<int>(no_imports) };
 }
 
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
@@ -664,7 +684,7 @@ fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& skip, const s_Target& target)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target)
 {
     if (target)
     {
@@ -674,8 +694,8 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
         scope_iterator--;
         return s_Target(target);
     };
-    const int skip0 = (skip.start - 1);
-    const int skip1 = (skip.end - 1);
+    const int skip0 = (scope_skip.start.items_len - 1);
+    const int skip1 = (scope_skip.end.items_len - 1);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)
         scope_iterator = items.size();
@@ -697,14 +717,15 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     return s_Target{};
 }
 
-int Scope_push(s_Scope& scope)
+s_ScopeMemo Scope_push(s_Scope& scope)
 {
-    return scope.items.size();
+    return s_ScopeMemo { scope.items.size(), scope.imports.size() };
 }
 
-void Scope_pop(s_Scope& scope, const int memo)
+void Scope_pop(s_Scope& scope, const s_ScopeMemo& memo)
 {
-    scope.items.shrink(memo);
+    scope.items.shrink(memo.items_len);
+    scope.imports.shrink(memo.imports_len);
 }
 
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)

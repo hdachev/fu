@@ -30,6 +30,7 @@ struct s_Overload;
 struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
@@ -52,7 +53,8 @@ fu_STR hash62(fu::view<std::byte>, int);
 bool hasIdentifierChars(const fu_STR&);
 inline const s_Node& only_N1qL(const fu_VEC<s_Node>&);
 inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>&);
-void Scope_pop(s_Scope&, int);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
+void Scope_pop(s_Scope&, const s_ScopeMemo&);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
 s_Scope listGlobals(const s_Module&);
@@ -61,12 +63,11 @@ bool isStruct(const s_Type&);
 s_Type initStruct(const fu_STR&, int, s_Module&);
 bool isTemplate(const s_Overload&);
 s_Scope Scope_exports(const s_Scope&, int);
+s_ScopeMemo Scope_push(s_Scope&);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
 int MODID(const s_Module&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&);
-int Scope_push(s_Scope&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -469,11 +470,13 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<int> imports;
     explicit operator bool() const noexcept
     {
         return false
             || items
             || overloads
+            || imports
         ;
     }
 };
@@ -595,12 +598,28 @@ struct s_Context
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ScopeSkip
                                 #define DEF_s_ScopeSkip
 struct s_ScopeSkip
 {
-    int start;
-    int end;
+    s_ScopeMemo start;
+    s_ScopeMemo end;
     explicit operator bool() const noexcept
     {
         return false
@@ -929,25 +948,27 @@ struct sf_solve
     const s_Node& parse;
     const s_Context& ctx;
     s_Module& module;
-    s_Scope _scope {};
     s_TokenIdx _here {};
-    int _return_idx {};
+    s_Scope _scope {};
+    s_ScopeMemo _root_scope {};
+    s_ScopeMemo _return_idx {};
+    s_ScopeSkip _scope_skip {};
     s_SolvedNode _current_fn {};
     fu_MAP<fu_STR, s_Type> _typeParams {};
-    int _root_scope {};
-    s_ScopeSkip _scope_skip {};
-    fu_VEC<int> _root_imports = ([&]() -> fu_VEC<int> { if (module.modid) return fu_VEC<int> { fu_VEC<int>::INIT<1> { module.modid } }; else return fu_VEC<int>{}; }());
     bool TEST_expectImplicits = false;
     s_Type t_string = createArray(t_byte);
+    void _Scope_import__forceCopy(const int modid)
+    {
+        (_scope.items += ctx.modules[modid].out.solve.scope.items);
+    };
     void Scope_import(const int modid)
     {
-        if (fu::has(_root_imports, modid))
+        if (fu::has(_scope.imports, modid))
             return;
 
-        const fu_VEC<s_ScopeItem>& items = ctx.modules[modid].out.solve.scope.items;
-        for (int i = 0; (i < items.size()); i++)
-            _scope.items.push(items[i]);
-
+        (modid || fail("Attempting to import modid-0."_fu));
+        (_scope.imports += modid);
+        _Scope_import__forceCopy(modid);
     };
     s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
     {
@@ -991,7 +1012,7 @@ struct sf_solve
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
         const int min = (node.items.size() + FN_ARGS_BACK);
         const int max = min;
-        s_Template tEmplate = s_Template { s_Node(node), fu_VEC<int>(_root_imports) };
+        s_Template tEmplate = s_Template { s_Node(node), fu_VEC<int>(_scope.imports) };
         fu_VEC<s_Argument> args {};
         if ((node.kind == "fn"_fu))
         {
@@ -1122,9 +1143,9 @@ struct sf_solve
             {
                 for (int i_1 = 0; (i_1 < _scope.items.size()); i_1++)
                 {
-                    if ((i_1 == _scope_skip.start))
+                    if ((i_1 == _scope_skip.start.items_len))
                     {
-                        i_1 = _scope_skip.end;
+                        i_1 = _scope_skip.end.items_len;
                         if ((i_1 >= _scope.items.size()))
                         {
                             break;
@@ -1537,7 +1558,7 @@ struct sf_solve
     };
     s_SolvedNode solveBlock(const s_Node& node)
     {
-        const int scope0 = Scope_push(_scope);
+        const s_ScopeMemo scope0 = Scope_push(_scope);
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, t_void));
         Scope_pop(_scope, scope0);
         return out;
@@ -1697,9 +1718,10 @@ struct sf_solve
         s_Node n_body {};
         
         {
-            const int return_idx0 = _return_idx;
-            _return_idx = Scope_push(_scope);
-            const int root_scope0 = _root_scope;
+            const s_ScopeMemo return_idx0 { _return_idx };
+            const s_ScopeMemo scope0 = Scope_push(_scope);
+            _return_idx = scope0;
+            const s_ScopeMemo root_scope0 { _root_scope };
             if (!root_scope0)
                 _root_scope = _return_idx;
 
@@ -1759,7 +1781,7 @@ struct sf_solve
                 outItems.mutref((outItems.size() + FN_BODY_BACK)) = s_body;
             };
             std::swap(_current_fn, out);
-            Scope_pop(_scope, _return_idx);
+            Scope_pop(_scope, scope0);
             _return_idx = return_idx0;
             _root_scope = root_scope0;
         };
@@ -1914,10 +1936,10 @@ struct sf_solve
         s_SolvedNode current_fn0 {};
         std::swap(_current_fn, current_fn0);
         std::swap(_typeParams, typeParams);
-        const int scope0 = Scope_push(_scope);
-        const s_ScopeSkip scope_skip0 { _scope_skip };
-        const int root_scope0 = _root_scope;
-        _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { int(_root_scope), int(scope0) }; else return s_ScopeSkip{}; }());
+        const s_ScopeMemo scope0 = Scope_push(_scope);
+        s_ScopeSkip scope_skip0 { _scope_skip };
+        const s_ScopeMemo root_scope0 { _root_scope };
+        _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
         _root_scope = scope0;
         for (int i = 0; (i < tEmplate.imports.size()); i++)
             Scope_import(tEmplate.imports[i]);
@@ -1995,7 +2017,7 @@ struct sf_solve
         ((node.items.size() <= 1) || fail(fu_STR{}));
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
-        if ((killedBy(next.type.lifetime, _return_idx) && (next.type.value.quals & q_ref)))
+        if ((killedBy(next.type.lifetime, _return_idx.items_len) && (next.type.value.quals & q_ref)))
         {
             const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
             next = createMove(next, bool(nrvo));
@@ -2061,7 +2083,7 @@ struct sf_solve
         if (_root_scope)
         {
             int same = 0;
-            for (int i = _root_scope; (i < (_scope.items.size() - 1)); i++)
+            for (int i = _root_scope.items_len; (i < (_scope.items.size() - 1)); i++)
             {
                 if ((_scope.items.mutref(i).id == id))
                     same++;
@@ -2092,7 +2114,7 @@ struct sf_solve
     {
         ((node.items.size() == 3) || fail(fu_STR{}));
         s_SolvedNode var_ok = solveNode(node.items[0], s_Type{});
-        const int scope0 = Scope_push(_scope);
+        const s_ScopeMemo scope0 = Scope_push(_scope);
         s_SolvedNode var_err = solveNode(node.items[1], s_Type{});
         s_SolvedNode cAtch = solveNode(node.items[2], s_Type{});
         Scope_pop(_scope, scope0);
@@ -2116,12 +2138,6 @@ struct sf_solve
     {
         const s_Module& module_1 = findModule(node.value);
         Scope_import(module_1.modid);
-        if ((_root_scope == 0))
-        {
-            if (!fu::has(_root_imports, module_1.modid))
-                (_root_imports += module_1.modid);
-
-        };
         return createEmpty();
     };
     s_Type Scope_tryLookupType(const fu_STR& id)
@@ -2353,7 +2369,7 @@ struct sf_solve
     };
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
     {
-        const int scope0 = Scope_push(_scope);
+        const s_ScopeMemo scope0 = Scope_push(_scope);
         const s_Target ret = Binding(id, type, F_IMPLICIT, "var"_fu);
         Scope_pop(_scope, scope0);
         
@@ -2650,7 +2666,10 @@ struct sf_solve
     s_SolverOutput solve()
     {
         if (module.modid)
-            Scope_import(0);
+        {
+            (_scope.imports += module.modid);
+            _Scope_import__forceCopy(0);
+        }
         else
             _scope = listGlobals(module);
 
