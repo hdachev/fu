@@ -797,12 +797,12 @@ struct fu_VEC
         DEF_initRange(new_data + old_size, new_data + new_size);
     }
 
-    void clear() noexcept {
-        MUT_clear();
-    }
-
     void shrink(i32 s1) noexcept {
         MUT_back(size() - s1, Zero);
+    }
+
+    void clear() noexcept {
+        MUT_clear();
     }
 
     void pop() noexcept {

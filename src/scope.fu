@@ -246,14 +246,14 @@ pub fn DEPREC_lookup(scope: Scope, id: string): Target[]
 }
 
 pub struct ScopeSkip {
-    start: i32;
-    end:   i32;
+    start: ScopeMemo;
+    end:   ScopeMemo;
 };
 
 pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32,
-    skip: ScopeSkip,
+    scope_skip: ScopeSkip,
     target: Target = []): Target
 {
     // Searching & forcing results the same way.
@@ -267,8 +267,8 @@ pub fn search(
     }
 
     // Search.
-    let skip0 = skip.start - 1;
-    let skip1 = skip.end   - 1;
+    let skip0 = scope_skip.start.items_len - 1;
+    let skip1 = scope_skip.end  .items_len - 1;
 
     let items = scope.items;
     if (!scope_iterator)
@@ -297,15 +297,16 @@ pub fn search(
 
 ////////////////////////////////
 
-pub fn Scope_push(scope: &mut Scope): i32
+pub struct ScopeMemo
 {
-    return scope.items.len;
-}
+    items_len: i32;
+};
 
-pub fn Scope_pop(scope: &mut Scope, memo: i32): void
-{
-    scope.items.shrink(memo);
-}
+pub fn Scope_push(scope: &mut Scope)
+    ScopeMemo(scope.items.len);
+
+pub fn Scope_pop(scope: &mut Scope, memo: ScopeMemo)
+    scope.items.shrink(memo.items_len);
 
 
 ////////////////////////////////

@@ -30,11 +30,12 @@ pub fn solve(
     mut _here:  TokenIdx;
 
     // Needs template reset.
-    mut _return_idx:    i32;
+    mut _root_scope:    ScopeMemo;
+    mut _return_idx:    ScopeMemo;
+    mut _scope_skip:    ScopeSkip;
+
     mut _current_fn:    SolvedNode;
     mut _typeParams:    Map(string, Type);
-    mut _root_scope:    i32;
-    mut _scope_skip:    ScopeSkip;
 
     mut _root_imports: i32[] =
         module.modid && [ module.modid ];
@@ -343,9 +344,9 @@ pub fn solve(
                 //  no other arity-0 entries are allowable.
                 for (mut i = 0; i < _scope.items.len; i++)
                 {
-                    if (i == _scope_skip.start)
+                    if (i == _scope_skip.start.items_len)
                     {
-                        i = _scope_skip.end;
+                        i = _scope_skip.end.items_len;
                         if (i >= _scope.items.len)
                             break;
                     }
@@ -465,7 +466,7 @@ pub fn solve(
             :NEXT
             while (overloadIdx =
                 scope.search(id, scope_iterator,
-                    skip: _scope_skip, :target))
+                    scope_skip: _scope_skip, :target))
             {
                 mut overload = GET(overloadIdx);
 
@@ -1019,7 +1020,8 @@ pub fn solve(
 
         {
             let return_idx0 = _return_idx;
-            _return_idx = Scope_push(_scope);
+            let scope0      = Scope_push(_scope);
+            _return_idx     = scope0;
 
             let root_scope0 = _root_scope;
             if (!root_scope0)
@@ -1114,7 +1116,7 @@ pub fn solve(
 
             SWAP(_current_fn, out);
 
-            Scope_pop(_scope, _return_idx);
+            Scope_pop(_scope, scope0);
             _return_idx = return_idx0;
             _root_scope = root_scope0;
         }
@@ -1495,7 +1497,7 @@ pub fn solve(
         // TODO LIFETIMES   this doesn't work               //
         //                  for deeply referential types.   //
                                                             //
-        if (next.type.lifetime.killedBy(_return_idx) &&     //
+        if (next.type.lifetime.killedBy(_return_idx.items_len) &&     //
             next.type.quals & q_ref)                        //
         {                                                   //
             let nrvo = next.kind == "call"                  //
@@ -1618,7 +1620,7 @@ pub fn solve(
         if (_root_scope)
         {
             mut same = 0;
-            for (mut i = _root_scope; i < _scope.items.len - 1; i++)
+            for (mut i = _root_scope.items_len; i < _scope.items.len - 1; i++)
                 if (_scope.items[i].id == id)
                     same++;
 
@@ -1695,7 +1697,7 @@ pub fn solve(
         Scope_import(module.modid);
 
         //
-        if (_root_scope == 0)
+        if (!_root_scope)
             if (!_root_imports.has(module.modid))
                 _root_imports ~= module.modid;
 
@@ -1713,7 +1715,7 @@ pub fn solve(
 
         while (overloadIdx =
             _scope.search(id, scope_iterator,
-                skip: _scope_skip))
+                scope_skip: _scope_skip))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
