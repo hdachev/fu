@@ -684,7 +684,7 @@ fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target, const fu_VEC<s_ScopeItem>& extra_items)
 {
     if (target)
     {
@@ -698,14 +698,14 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     const int skip1 = (scope_skip.end.items_len - 1);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)
-        scope_iterator = items.size();
+        scope_iterator = (items.size() + extra_items.size());
 
     while ((scope_iterator-- > 0))
     {
         if ((scope_iterator == skip1))
             scope_iterator = skip0;
 
-        const s_ScopeItem& item = items[scope_iterator];
+        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? extra_items[(scope_iterator - items.size())] : items[scope_iterator]);
         if ((item.id == id))
         {
             if (!scope_iterator)
