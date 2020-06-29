@@ -305,36 +305,34 @@ pub fn solve(
         let via     = GET(viaIdx);
         let actual  = via.type || fail();
 
-        for (mut i = 0; i < _scope.items.len; i++)
+        fn visit(item: ScopeItem)
         {
-            let item = _scope.items[i];
-
             // Skip over operators.
             if (!item.id.hasIdentifierChars)
-                continue;
+                return;
 
             let overloadIdx = item.target;
             let overload = GET(overloadIdx);
 
             // Needs at least one argument.
             if (overload.min < 1)
-                continue;
+                return;
 
             // TODO using + templates, the fuck do we do?
             if (overload.isTemplate)
-                continue;
+                return;
 
             // Skip over defctors -
             //  we really only want this for fields & properties,
             //   but there's no way to tell a property from a fn,
             //    this at least is easy to disambiguate.
             if (overload.kind == "defctor")
-                continue;
+                return;
 
             // See if we fit.
             let expect = overload.args[0] || fail();
             if (!isAssignableAsArgument(expect.type, actual))
-                continue;
+                return;
 
             // Enforce no-collide.
             if (overload.min < 2)
@@ -362,6 +360,19 @@ pub fn solve(
 
             //
             Partial(item.id, viaIdx, overloadIdx);
+        }
+
+        // Visit stuff currently in scope.
+        for (mut i = 0; i < _scope.items.len; i++)
+            visit(_scope.items[i]);
+
+        // Also bring in stuff from the module of origin.
+        let extra_modid = actual.modid;
+        if (!_scope.imports.has(extra_modid))
+        {
+            let items = ctx.modules[extra_modid].out.solve.scope.items;
+            for (mut i = 0; i < items.len; i++)
+                visit(items[i]);
         }
     }
 

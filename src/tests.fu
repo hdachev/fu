@@ -2471,8 +2471,6 @@ pub fn runTests()
                 vec3(z: 1), vec3 /*point3*/);
     `,
     `
-        import _1;
-
         pub struct mat4 {
             m0: f32; m1: f32; m2: f32; m3: f32;
             m4: f32; m5: f32; m6: f32; m7: f32;
@@ -2480,7 +2478,7 @@ pub fn runTests()
             mC: f32; mD: f32; mE: f32; mF: f32;
         };
 
-        pub inline fn mat4(using m: mat34)
+        pub inline fn mat4(using m: _1::mat34)
             mat4(
                 mx.x, mx.y, mx.z, 0,
                 my.x, my.y, my.z, 0,
