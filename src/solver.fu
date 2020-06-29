@@ -1221,11 +1221,33 @@ pub fn solve(
         template: Template, mut args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
-        mut ok      = true;
+        mut ok = true;
+        mut typeParams0: Map(string, Type);
 
+        ////////////////////////////////
+        mut current_fn0: SolvedNode;
+
+        SWAP(_current_fn, current_fn0);
+        SWAP(_typeParams, typeParams0);
+
+        let scope0 = Scope_push(_scope);
+        let scope_skip0 = _scope_skip;
+        let root_scope0 = _root_scope;
+        ////////////////////////////////
+
+        //
+        _scope_skip = _root_scope && ScopeSkip(
+            start: _root_scope,
+              end: scope0);
+
+        _root_scope = scope0;
+
+        for (mut i = 0; i < template.imports.len; i++)
+            Scope_import(template.imports[i]);
+
+        //
         let items   = template.node.items;
         let numArgs = items.len + FN_ARGS_BACK;
-        mut typeParams: Map(string, Type);
 
         /////////////////
         // Literal fixup.
@@ -1261,7 +1283,7 @@ pub fn solve(
                 {
                     let paramType =
                         annot.kind == "typeparam"
-                            ? typeParams[annot.value] ||= Type
+                            ? _typeParams[annot.value] ||= Type
                             : annot.kind == "call" && !annot.items
                                 && Scope_lookupType(annot.value);
 
@@ -1298,7 +1320,7 @@ pub fn solve(
 
                     // Same pattern - grabs a mutref.
                     let argName_typeParam: &mut Type =
-                        typeParams[argName] ||= Type;
+                        _typeParams[argName] ||= Type;
 
                     argName_typeParam && fail(
                         "Type param name collision with argument: `" ~ argName ~ "`.")
@@ -1312,7 +1334,7 @@ pub fn solve(
                 if (annot)
                 {
                     let argOk = inType && trySolveTypeParams(
-                        annot, inType, typeParams);
+                        annot, inType, _typeParams);
 
                     ok = ok && argOk;
                     if (!ok && !remangle)
@@ -1331,55 +1353,33 @@ pub fn solve(
         //        /LITFIX
         /////////////////
 
-        if (!ok)
-            return SolvedNode();
-
         // Match pattern arm here.
         mut caseIdx = -1;
-        mut ok = true;
 
-        ////////////////////////////////
-        mut current_fn0: SolvedNode;
-
-        SWAP(_current_fn, current_fn0);
-        SWAP(_typeParams, typeParams);
-
-        let scope0 = Scope_push(_scope);
-        let scope_skip0 = _scope_skip;
-        let root_scope0 = _root_scope;
-        ////////////////////////////////
-
-        _scope_skip = _root_scope && ScopeSkip(
-            start: _root_scope,
-              end: scope0);
-
-        _root_scope = scope0;
-
-        for (mut i = 0; i < template.imports.len; i++)
-            Scope_import(template.imports[i]);
-
-        //
-        let pattern = items[items.len + FN_BODY_BACK] || fail();
-        if (pattern.kind == "pattern")
+        if (ok)
         {
-            let branches = pattern.items;
-            for (mut i = 0; i < branches.len; i++)
+            let pattern = items[items.len + FN_BODY_BACK] || fail();
+            if (pattern.kind == "pattern")
             {
-                let branch = branches[i];
-                let items = (branch || fail()).items;
-                let cond = items[0] || fail();
-
-                if (evalTypePattern(cond))
+                let branches = pattern.items;
+                for (mut i = 0; i < branches.len; i++)
                 {
-                    caseIdx = i;
-                    break;
-                }
-            }
+                    let branch = branches[i];
+                    let items = (branch || fail()).items;
+                    let cond = items[0] || fail();
 
-            // All branches mismatch?
-            //  Can't return, faking RAII here.
-            if (caseIdx < 0)
-                ok = false;
+                    if (evalTypePattern(cond))
+                    {
+                        caseIdx = i;
+                        break;
+                    }
+                }
+
+                // All branches mismatch?
+                //  Can't return, faking RAII here.
+                if (caseIdx < 0)
+                    ok = false;
+            }
         }
 
         let specialized = ok && (__solveFn(
@@ -1389,7 +1389,7 @@ pub fn solve(
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
-        SWAP(_typeParams, typeParams);
+        SWAP(_typeParams, typeParams0);
 
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;

@@ -2485,11 +2485,9 @@ pub fn runTests()
             - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
     `,
     `
-        import _1;
-
         pub fn main()
         {
-            let m34 = mat34_identity;
+            let m34 = _1::mat34_identity;
             let m44 = _2::mat4(m34);
 
             return m44.determinant.i32 - 1;
