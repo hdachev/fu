@@ -940,14 +940,14 @@ inline const int F_ARG = (1 << 9);
 inline const int F_USING = (1 << 18);
                                 #endif
 
-                                #ifndef DEF_F_ID
-                                #define DEF_F_ID
-inline const int F_ID = (1 << 5);
-                                #endif
-
                                 #ifndef DEF_F_QUALIFIED
                                 #define DEF_F_QUALIFIED
 inline const int F_QUALIFIED = (1 << 7);
+                                #endif
+
+                                #ifndef DEF_F_ID
+                                #define DEF_F_ID
+inline const int F_ID = (1 << 5);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -1893,7 +1893,7 @@ struct sf_solve
                 const s_Node& annot = argNode.items[LET_TYPE];
                 if (couldRetype(inValue))
                 {
-                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
+                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot); else return s_Type{}; }()));
                     if (paramType)
                     {
                         s_Type retype = tryRetyping(inValue, paramType);
@@ -2153,11 +2153,13 @@ struct sf_solve
         Scope_import(module_1.modid);
         return createEmpty();
     };
-    s_Type Scope_tryLookupType(const fu_STR& id)
+    s_Type Scope_tryLookupType(const s_Node& annot)
     {
         int scope_iterator {};
         s_Target overloadIdx {};
-        while ((overloadIdx = search(_scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{})))
+        fu_STR id { annot.value };
+        const s_Scope& scope = ((annot.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
+        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{})))
         {
             s_Overload maybe = GET(overloadIdx, module, ctx);
             if ((maybe.kind == "type"_fu))
@@ -2166,9 +2168,9 @@ struct sf_solve
         };
         return s_Type{};
     };
-    s_Type Scope_lookupType(const fu_STR& id)
+    s_Type Scope_lookupType(const s_Node& annot)
     {
-        return ([&]() -> s_Type { { s_Type _ = Scope_tryLookupType(id); if (_) return _; } fail((("No type `"_fu + id) + "` in scope."_fu)); }());
+        return ([&]() -> s_Type { { s_Type _ = Scope_tryLookupType(annot); if (_) return _; } fail((("No type `"_fu + annot.value) + "` in scope."_fu)); }());
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
@@ -2202,7 +2204,7 @@ struct sf_solve
                 };
             }
             else
-                return solved(node, Scope_lookupType(node.value), fu_VEC<s_SolvedNode>{});
+                return solved(node, Scope_lookupType(node), fu_VEC<s_SolvedNode>{});
 
         }
         else if ((node.kind == "typeparam"_fu))
@@ -2250,7 +2252,7 @@ struct sf_solve
                 };
             }
             else
-                return isAssignable(Scope_lookupType(node.value), type);
+                return isAssignable(Scope_lookupType(node), type);
 
         }
         else if ((node.kind == "typeparam"_fu))
@@ -2309,13 +2311,17 @@ struct sf_solve
     {
         return s_Node { "call"_fu, int(F_ID), fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))) };
     };
-    fu_STR qualid_extractFName(fu_STR& id)
+    const s_Scope& dequalify_andGetScope(fu_STR& id)
     {
         const int split = fu::lfind(id, std::byte('\t'));
         ((split >= 0) || fail(fu_STR{}));
         fu_STR fname = fu::slice(id, 0, split);
         id = fu::slice(id, (split + 1));
-        return fname;
+        const s_Module& other = findModule(fname);
+        if ((other.modid != module.modid))
+            return other.out.solve.scope;
+
+        return _scope;
     };
     s_SolvedNode solveCall(const s_Node& node, const s_Target& target)
     {
@@ -2324,7 +2330,7 @@ struct sf_solve
         {
             (target || fail(fu_STR{}));
         };
-        const s_Scope& scope = ((node.flags & F_QUALIFIED) ? findModule(qualid_extractFName(id)).out.solve.scope : _scope);
+        const s_Scope& scope = ((node.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags, target);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
