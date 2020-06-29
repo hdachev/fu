@@ -2435,6 +2435,19 @@ pub fn runTests()
 
     ZERO([
     `
+        pub struct Hey { i = 1; };
+    `,
+    `
+        pub inline fn test(h: _0::Hey) h.i + 2;
+    `,
+    `
+        import _1;
+        fn main() _0::Hey.test - 3;
+    `
+    ]);
+
+    ZERO([
+    `
         pub struct vec3 {
             x?: f32;
             y?: f32;
