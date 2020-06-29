@@ -1285,7 +1285,7 @@ pub fn solve(
                         annot.kind == "typeparam"
                             ? _typeParams[annot.value] ||= Type
                             : annot.kind == "call" && !annot.items
-                                && Scope_lookupType(annot.value);
+                                && Scope_lookupType(annot);
 
                     // Ignore literals if possible.
                     if (paramType)
@@ -1710,13 +1710,18 @@ pub fn solve(
 
     //
 
-    fn Scope_tryLookupType(id: string): Type
+    fn Scope_tryLookupType(annot: Node): Type
     {
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
+        mut id = annot.value;
+        let scope = annot.flags & F_QUALIFIED
+            ? dequalify_andGetScope(id)
+            : _scope;
+
         while (overloadIdx =
-            _scope.search(id, scope_iterator,
+            scope.search(id, scope_iterator,
                 scope_skip: _scope_skip))
         {
             let maybe = GET(overloadIdx);
@@ -1727,10 +1732,10 @@ pub fn solve(
         return Type;
     }
 
-    fn Scope_lookupType(id: string): Type
+    fn Scope_lookupType(annot: Node): Type
     {
-        return Scope_tryLookupType(id) || fail(
-            "No type `" ~ id ~ "` in scope.");
+        return Scope_tryLookupType(annot) || fail(
+            "No type `" ~ annot.value ~ "` in scope.");
     }
 
     fn evalTypeAnnot(node: Node): SolvedNode
@@ -1767,7 +1772,7 @@ pub fn solve(
             else
             {
                 return solved(node,
-                    Scope_lookupType(node.value));
+                    Scope_lookupType(node));
             }
         }
         else if (node.kind == "typeparam")
@@ -1833,7 +1838,7 @@ pub fn solve(
             else
             {
                 return isAssignable(
-                    Scope_lookupType(node.value),
+                    Scope_lookupType(node),
                         type);
             }
         }
@@ -1934,7 +1939,7 @@ pub fn solve(
             token:  (_here || fail()));
     }
 
-    fn qualid_extractFName(id: &mut string): string
+    fn dequalify_andGetScope(id: &mut string): &Scope
     {
         let split = id.find('\t');
             split >= 0 || fail();
@@ -1942,7 +1947,11 @@ pub fn solve(
         let fname = id.slice(0, split);
             id    = id.slice(split + 1);
 
-        return fname;
+        let other = findModule(fuzimport: fname);
+        if (other.modid != module.modid)
+            return other.out.solve.scope;
+
+        return _scope;
     }
 
     fn solveCall(node: Node, target: Target = []): SolvedNode
@@ -1952,7 +1961,7 @@ pub fn solve(
 
         // Qualified?
         let scope = node.flags & F_QUALIFIED
-            ? findModule(fuzimport: qualid_extractFName(id)).out.solve.scope
+            ? dequalify_andGetScope(id)
             : _scope;
 
         mut args = solveNodes(node.items);
