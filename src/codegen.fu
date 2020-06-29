@@ -90,14 +90,14 @@ pub fn cpp_codegen(
             return "const " ~ fwd ~ "&";
         }
 
+        if ((mode & M_ARGUMENT) && !(type.quals & q_primitive))
+            return fwd ~ "&&";
+
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
         //   Currently this is more of a way to validate the codegen.
         if ((mode & M_CONST) && (type.quals & q_trivial))
             return "const " ~ fwd;
-
-        if ((mode & M_ARGUMENT) && !(type.quals & q_primitive))
-            return fwd ~ "&&";
 
         return fwd;
     }

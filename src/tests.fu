@@ -2470,7 +2470,7 @@ pub fn runTests()
         pub struct You { i = 3; };
     `,
     `
-        pub struct Hey { using you: _0::You; };
+        pub struct Hey { using you = _0::You; };
     `,
     `
         pub inline fn test(using h = _1::Hey) i + 7;

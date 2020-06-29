@@ -127,8 +127,11 @@ pub fn solve(
 
         // TODO FIX What is this nonsense.
         //  This is wrong on so many levels.
-        let min = node.items.len + FN_ARGS_BACK;
-        let max = min;
+        let max = node.items.len + FN_ARGS_BACK;
+        mut min = 0;
+        for (mut i = 0; i < max; i++)
+            if (!node.items[i].items[LET_INIT])
+                min++;
 
         //
         let template = Template(node, imports: _scope.imports);
@@ -1054,7 +1057,8 @@ pub fn solve(
                 let lifetime = Lifetime_fromArgIndex(i);
 
                 // If spec and unless argument explicitly wants a value -
-                if (spec && !(n_arg.flags & F_MUT))
+                if (spec && !(n_arg.flags & F_MUT)
+                         && !(n_arg.items[LET_INIT]))
                 {
                     // Specialize with actuals.
                     mut mut_arg = n_arg;
