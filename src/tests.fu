@@ -2448,6 +2448,34 @@ pub fn runTests()
 
     ZERO([
     `
+        pub struct Hey { i = 1; };
+    `,
+    `
+        pub inline fn test(h: _0::Hey) h.i + 2;
+    `,
+    `
+        fn main() _0::Hey._1::test - 3;
+    `
+    ]);
+
+    // ZERO([
+    // `
+    //     pub struct You { i = 3; };
+    // `,
+    // `
+    //     pub struct Hey { you: _0::You; };
+    // `,
+    // `
+    //     pub inline fn test(h: _1::Hey) h.you.i + 7;
+    // `,
+    // `
+    //     import _1;
+    //     fn main() _0::Hey.test - 10;
+    // `
+    // ]);
+
+    ZERO([
+    `
         pub struct vec3 {
             x?: f32;
             y?: f32;

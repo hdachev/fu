@@ -1088,12 +1088,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     // This is some hacky business -
     //  might actually perform well though -
-    //   path[\v]id so we can cheap-slice the path.
+    //   path[\t]id so we can cheap-slice the path.
 
     fn parseQualifierChain(mut expr: Node): Node
     {
         if (expr.kind != "call" ||
-            expr.items          ||
+            expr.items && (expr.items.len != 1 || !(expr.flags & F_ACCESS)) ||
             expr.flags & F_QUALIFIED)
         {
             _idx--;
