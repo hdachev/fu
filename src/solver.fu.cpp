@@ -1127,45 +1127,39 @@ struct sf_solve
     {
         s_Overload via = GET(viaIdx, module, ctx);
         const s_Type& actual = (via.type ? via.type : fail(fu_STR{}));
-        for (int i = 0; (i < _scope.items.size()); i++)
+        const auto& visit = [&](const s_ScopeItem& item) -> void
         {
-            s_ScopeItem item { _scope.items[i] };
             if (!hasIdentifierChars(item.id))
-            {
-                continue;
-            };
+                return;
+
             const s_Target& overloadIdx = item.target;
             s_Overload overload = GET(overloadIdx, module, ctx);
             if ((overload.min < 1))
-            {
-                continue;
-            };
+                return;
+
             if (isTemplate(overload))
-            {
-                continue;
-            };
+                return;
+
             if ((overload.kind == "defctor"_fu))
-            {
-                continue;
-            };
+                return;
+
             const s_Argument& expect = ([&]() -> const s_Argument& { { const s_Argument& _ = overload.args[0]; if (_) return _; } fail(fu_STR{}); }());
             if (!isAssignableAsArgument(expect.type, s_Type(actual)))
-            {
-                continue;
-            };
+                return;
+
             if ((overload.min < 2))
             {
-                for (int i_1 = 0; (i_1 < _scope.items.size()); i_1++)
+                for (int i = 0; (i < _scope.items.size()); i++)
                 {
-                    if ((i_1 == _scope_skip.start.items_len))
+                    if ((i == _scope_skip.start.items_len))
                     {
-                        i_1 = _scope_skip.end.items_len;
-                        if ((i_1 >= _scope.items.size()))
+                        i = _scope_skip.end.items_len;
+                        if ((i >= _scope.items.size()))
                         {
                             break;
                         };
                     };
-                    s_ScopeItem o { _scope.items[i_1] };
+                    s_ScopeItem o { _scope.items[i] };
                     if ((o.id == item.id))
                     {
                         s_Overload other = GET(o.target, module, ctx);
@@ -1176,6 +1170,17 @@ struct sf_solve
                 };
             };
             Partial(item.id, viaIdx, overloadIdx);
+        };
+        for (int i = 0; (i < _scope.items.size()); i++)
+            visit(_scope.items[i]);
+
+        const int extra_modid = actual.value.modid;
+        if (!fu::has(_scope.imports, extra_modid))
+        {
+            const fu_VEC<s_ScopeItem>& items = ctx.modules[extra_modid].out.solve.scope.items;
+            for (int i = 0; (i < items.size()); i++)
+                visit(items[i]);
+
         };
     };
     bool getNamedArgReorder(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, const fu_VEC<s_Argument>& host_args)
