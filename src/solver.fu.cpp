@@ -1860,9 +1860,20 @@ struct sf_solve
     s_SolvedNode trySpecializeFn(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
     {
         bool ok = true;
+        fu_MAP<fu_STR, s_Type> typeParams0 {};
+        s_SolvedNode current_fn0 {};
+        std::swap(_current_fn, current_fn0);
+        std::swap(_typeParams, typeParams0);
+        const s_ScopeMemo scope0 = Scope_push(_scope);
+        s_ScopeSkip scope_skip0 { _scope_skip };
+        const s_ScopeMemo root_scope0 { _root_scope };
+        _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
+        _root_scope = scope0;
+        for (int i = 0; (i < tEmplate.imports.size()); i++)
+            Scope_import(tEmplate.imports[i]);
+
         const fu_VEC<s_Node>& items = tEmplate.node.items;
         const int numArgs = (items.size() + FN_ARGS_BACK);
-        fu_MAP<fu_STR, s_Type> typeParams {};
         fu_VEC<int> retypeIndices {};
         bool remangle = false;
         for (int pass_retype = 0; ((pass_retype == 0) || ((pass_retype == 1) && retypeIndices)); pass_retype++)
@@ -1882,7 +1893,7 @@ struct sf_solve
                 const s_Node& annot = argNode.items[LET_TYPE];
                 if (couldRetype(inValue))
                 {
-                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
+                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot.value); else return s_Type{}; }()));
                     if (paramType)
                     {
                         s_Type retype = tryRetyping(inValue, paramType);
@@ -1903,13 +1914,13 @@ struct sf_solve
                 {
                     inType.lifetime = Lifetime_fromArgIndex(i);
                     const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
-                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (typeParams.upsert(argName)));
+                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(argName)));
                     ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
                     inType.value.quals |= q_ref;
                 };
                 if (annot)
                 {
-                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
+                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), _typeParams));
                     ok = ([&]() -> bool { if (ok) return argOk; else return fu::Default<bool>::value; }());
                     if ((!ok && !remangle))
                     {
@@ -1923,43 +1934,32 @@ struct sf_solve
             const int start = ([&]() -> int { { int _ = (fu::lfind(mangle, std::byte(' ')) + 1); if (_) return _; } fail(fu_STR{}); }());
             mangle = (fu::slice(mangle, 0, start) + mangleArguments(args));
         };
-        if (!ok)
-            return s_SolvedNode{};
-
         int caseIdx = -1;
-        const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
-        if ((pattern.kind == "pattern"_fu))
+        if (ok)
         {
-            const fu_VEC<s_Node>& branches = pattern.items;
-            for (int i = 0; (i < branches.size()); i++)
+            const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
+            if ((pattern.kind == "pattern"_fu))
             {
-                const s_Node& branch = branches[i];
-                const fu_VEC<s_Node>& items_1 = (branch ? branch : fail(fu_STR{})).items;
-                const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items_1[0]; if (_) return _; } fail(fu_STR{}); }());
-                if (evalTypePattern(cond, typeParams))
+                const fu_VEC<s_Node>& branches = pattern.items;
+                for (int i = 0; (i < branches.size()); i++)
                 {
-                    caseIdx = i;
-                    break;
+                    const s_Node& branch = branches[i];
+                    const fu_VEC<s_Node>& items_1 = (branch ? branch : fail(fu_STR{})).items;
+                    const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items_1[0]; if (_) return _; } fail(fu_STR{}); }());
+                    if (evalTypePattern(cond))
+                    {
+                        caseIdx = i;
+                        break;
+                    };
                 };
+                if ((caseIdx < 0))
+                    ok = false;
+
             };
-            if ((caseIdx < 0))
-                return s_SolvedNode{};
-
         };
-        s_SolvedNode current_fn0 {};
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, tEmplate.node, s_SolvedNode{}, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()); else return s_SolvedNode{}; }());
         std::swap(_current_fn, current_fn0);
-        std::swap(_typeParams, typeParams);
-        const s_ScopeMemo scope0 = Scope_push(_scope);
-        s_ScopeSkip scope_skip0 { _scope_skip };
-        const s_ScopeMemo root_scope0 { _root_scope };
-        _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
-        _root_scope = scope0;
-        for (int i = 0; (i < tEmplate.imports.size()); i++)
-            Scope_import(tEmplate.imports[i]);
-
-        s_SolvedNode specialized = ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, tEmplate.node, s_SolvedNode{}, caseIdx); if (_) return _; } fail(fu_STR{}); }());
-        std::swap(_current_fn, current_fn0);
-        std::swap(_typeParams, typeParams);
+        std::swap(_typeParams, typeParams0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
         _root_scope = root_scope0;
@@ -2275,7 +2275,7 @@ struct sf_solve
         };
         fail("TODO"_fu);
     };
-    bool evalTypePattern(const s_Node& node, const fu_MAP<fu_STR, s_Type>& typeParams)
+    bool evalTypePattern(const s_Node& node)
     {
         const fu_VEC<s_Node>& items = node.items;
         if ((items.size() == 2))
@@ -2287,23 +2287,20 @@ struct sf_solve
                 if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
                 {
                     const fu_STR& tag = (right.value ? right.value : fail(fu_STR{}));
-                    const s_Type& type = ([&]() -> const s_Type& { if (left.value) { const s_Type& _ = typeParams[left.value]; if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
+                    s_Type type { ([&]() -> const s_Type& { if (left.value) { const s_Type& _ = _typeParams.mutref(left.value); if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }()) };
                     return type_has(type, tag);
                 }
                 else
                 {
-                    fu_MAP<fu_STR, s_Type> typeParams0 { _typeParams };
-                    _typeParams = typeParams;
                     s_Type expect = evalTypeAnnot(right).type;
                     s_Type actual = evalTypeAnnot(left).type;
-                    _typeParams = typeParams0;
                     return isAssignable(expect, actual);
                 };
             }
             else if ((node.kind == "and"_fu))
-                return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
+                return (evalTypePattern(left) && evalTypePattern(right));
             else if ((node.kind == "or"_fu))
-                return (evalTypePattern(left, typeParams) && evalTypePattern(right, typeParams));
+                return (evalTypePattern(left) && evalTypePattern(right));
 
         };
         fail("TODO"_fu);
