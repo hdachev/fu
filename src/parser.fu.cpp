@@ -1073,7 +1073,7 @@ struct sf_parse
     };
     s_Node parseQualifierChain(s_Node&& expr)
     {
-        if (((expr.kind != "call"_fu) || expr.items || (expr.flags & F_QUALIFIED)))
+        if (((expr.kind != "call"_fu) || (expr.items && ((expr.items.size() != 1) || !(expr.flags & F_ACCESS))) || (expr.flags & F_QUALIFIED)))
         {
             _idx--;
             fail(fu_STR{});
