@@ -453,6 +453,13 @@ pub fn runTests()
     //     return div3by(2) - 1;
     // )");
 
+    ZERO(`
+        fn add3(a: $T, b = 3) a + b;
+        struct v1 { x = 2; };
+        fn +(a: v1, b: i32) v1(a.x + b);
+        fn main() add3(v1).x - 5;
+    `);
+
 
     // Destructor basics.
 
@@ -2458,21 +2465,20 @@ pub fn runTests()
     `
     ]);
 
-    // ZERO([
-    // `
-    //     pub struct You { i = 3; };
-    // `,
-    // `
-    //     pub struct Hey { you: _0::You; };
-    // `,
-    // `
-    //     pub inline fn test(h: _1::Hey) h.you.i + 7;
-    // `,
-    // `
-    //     import _1;
-    //     fn main() _0::Hey.test - 10;
-    // `
-    // ]);
+    ZERO([
+    `
+        pub struct You { i = 3; };
+    `,
+    `
+        pub struct Hey { using you: _0::You; };
+    `,
+    `
+        pub inline fn test(using h = _1::Hey) i + 7;
+    `,
+    `
+        fn main() _2::test - 10;
+    `
+    ]);
 
     ZERO([
     `
