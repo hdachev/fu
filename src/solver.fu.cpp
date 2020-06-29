@@ -750,14 +750,14 @@ inline const int FN_RET_BACK = -2;
 inline const int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
-                                #ifndef DEF_F_IMPLICIT
-                                #define DEF_F_IMPLICIT
-inline const int F_IMPLICIT = (1 << 17);
-                                #endif
-
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
 inline const int LET_INIT = 1;
+                                #endif
+
+                                #ifndef DEF_F_IMPLICIT
+                                #define DEF_F_IMPLICIT
+inline const int F_IMPLICIT = (1 << 17);
                                 #endif
 
                                 #ifndef DEF_F_MUSTNAME
@@ -1024,8 +1024,14 @@ struct sf_solve
     {
         const fu_STR& id = node.value;
         ((node.kind == "fn"_fu) || fail("TODO"_fu));
-        const int min = (node.items.size() + FN_ARGS_BACK);
-        const int max = min;
+        const int max = (node.items.size() + FN_ARGS_BACK);
+        int min = 0;
+        for (int i = 0; (i < max); i++)
+        {
+            if (!node.items[i].items[LET_INIT])
+                min++;
+
+        };
         s_Template tEmplate = s_Template { s_Node(node), fu_VEC<int>(_scope.imports) };
         fu_VEC<s_Argument> args {};
         if ((node.kind == "fn"_fu))
@@ -1750,7 +1756,7 @@ struct sf_solve
                 const s_Node& n_arg = ([&]() -> const s_Node& { { const s_Node& _ = inItems[i]; if (_) return _; } fail(fu_STR{}); }());
                 ((n_arg.kind == "let"_fu) || fail(fu_STR{}));
                 s_Lifetime lifetime = Lifetime_fromArgIndex(i);
-                if ((spec && !(n_arg.flags & F_MUT)))
+                if ((spec && !(n_arg.flags & F_MUT) && !n_arg.items[LET_INIT]))
                 {
                     s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);

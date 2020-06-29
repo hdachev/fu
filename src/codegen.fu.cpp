@@ -845,11 +845,11 @@ struct sf_cpp_codegen
 
             return (("const "_fu + fwd) + "&"_fu);
         };
-        if (((mode & M_CONST) && (type.value.quals & q_trivial)))
-            return ("const "_fu + fwd);
-
         if (((mode & M_ARGUMENT) && !(type.value.quals & q_primitive)))
             return (fwd + "&&"_fu);
+
+        if (((mode & M_CONST) && (type.value.quals & q_trivial)))
+            return ("const "_fu + fwd);
 
         return fwd;
     };
