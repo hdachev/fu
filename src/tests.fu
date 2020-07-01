@@ -2540,6 +2540,16 @@ pub fn runTests()
     `
     ]);
 
+    ZERO(`
+        import vec3;
+
+        fn main() vec3.maxc.i32;
+    `);
+
+    ZERO(`
+        fn main() ::vec3.maxc.i32;
+    `);
+
 
     // Let's start having fun.
 
@@ -2561,12 +2571,6 @@ pub fn runTests()
             let b = ++x;
             return a || b - 2;
         }
-    `);
-
-    ZERO(`
-        import vec3;
-
-        fn main() vec3.maxc.i32;
     `);
 
 

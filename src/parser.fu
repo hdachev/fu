@@ -974,6 +974,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v ==  "@") return parseTypeTag();
                 if (v == "[]") return createDefinit();
 
+                if (v == "::")
+                {
+                    // This is hacky but kinda great -
+                    //  we peek the id, take a step back
+                    //   and allow things to do their thing as usual.
+                    let id = consume("id").value;
+                    _idx -= 2;
+                    return createRead(id);
+                }
+
                 return parsePrefix(token.value);
             }
         }
