@@ -991,6 +991,12 @@ struct sf_parse
                 if ((v == "[]"_fu))
                     return createDefinit();
 
+                if ((v == "::"_fu))
+                {
+                    fu_STR id = consume("id"_fu, fu_STR{}).value;
+                    _idx -= 2;
+                    return createRead(id);
+                };
                 return parsePrefix(fu_STR(token.value));
             };
         };
