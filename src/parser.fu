@@ -1090,8 +1090,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseAccessExpression(expr: Node): Node
     {
+        mut id = tryConsume("id");
+        if (!id)
+        {
+            consume("op", "::");
+            id = consume("id");
+            _idx -= 2;
+        }
+
         return createCall(
-            consume("id").value,
+            id.value,
             F_ACCESS, [ expr ]);
     }
 

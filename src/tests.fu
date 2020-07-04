@@ -2550,6 +2550,15 @@ pub fn runTests()
         fn main() ::vec3.maxc.i32;
     `);
 
+    ZERO([
+    `
+        pub fn _0(i: i32) i + 1;
+    `,
+    `
+        fn main() (-1).::_0;
+    `
+    ]);
+
 
     // Let's start having fun.
 
