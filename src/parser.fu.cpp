@@ -275,9 +275,6 @@ struct sf_setupOperators
     };
     s_BINOP setupOperators()
     {
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "as"_fu, "is"_fu } });
-        rightToLeft = true;
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "**"_fu } });
         rightToLeft = false;
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "*"_fu, "/"_fu, "%"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "+"_fu, "-"_fu } });
@@ -287,6 +284,7 @@ struct sf_setupOperators
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "~"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<=>"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "in"_fu, "is"_fu, "as"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<4> { "<"_fu, "<="_fu, ">"_fu, ">="_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "=="_fu, "!="_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "->"_fu } });
@@ -364,6 +362,8 @@ inline const int LOOP_BODY = 3;
                                 #define DEF_LOOP_POST_COND
 inline const int LOOP_POST_COND = 4;
                                 #endif
+
+static const int M_LINT_UNARY_PRECEDENCE = (1 << 0);
 
 namespace {
 
@@ -669,7 +669,7 @@ struct sf_parse
     };
     s_Node parseExpressionStatement()
     {
-        s_Node expr = parseExpression(int(P_RESET));
+        s_Node expr = parseExpression(int(P_RESET), 0);
         consume("op"_fu, ";"_fu);
         return expr;
     };
@@ -734,7 +734,7 @@ struct sf_parse
             flags |= F_PATTERN;
             do
             {
-                s_Node cond = parseUnaryExpression();
+                s_Node cond = parseUnaryExpression(0);
                 s_Node type = tryPopTypeAnnot();
                 s_Node body_1 = parseFnBodyBranch();
                 branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body_1 } }, 0, fu_STR{}));
@@ -767,7 +767,7 @@ struct sf_parse
     };
     s_Node parseTypeAnnot()
     {
-        return parseUnaryExpression();
+        return parseUnaryExpression(0);
     };
     int parseArgsDecl(fu_VEC<s_Node>& outArgs, const fu_STR& endk, const fu_STR& endv)
     {
@@ -844,7 +844,7 @@ struct sf_parse
         bool optional = false;
         bool mustname = false;
         s_Node type = ([&]() -> s_Node { if ((tryConsume("op"_fu, ":"_fu) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "?:"_fu)) return (optional = true); else return fu::Default<bool>::value; }()) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "!:"_fu)) return (mustname = true); else return fu::Default<bool>::value; }()))) return parseTypeAnnot(); else return s_Node{}; }());
-        s_Node init = ([&]() -> s_Node { if (optional) { s_Node _ = createDefinit(); if (_) return _; } return ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA)); else return s_Node{}; }()); }());
+        s_Node init = ([&]() -> s_Node { if (optional) { s_Node _ = createDefinit(); if (_) return _; } return ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()); }());
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -860,7 +860,7 @@ struct sf_parse
     {
         return make("let"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { type, init } }, flags, id);
     };
-    s_Node parseExpression(const int p1)
+    s_Node parseExpression(const int p1, const int mode)
     {
         const int p0 = _precedence;
         const int loc0 = _loc;
@@ -869,8 +869,9 @@ struct sf_parse
         s_Node head = parseExpressionHead();
         
         {
+            const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == "int"_fu) || (head.kind == "num"_fu))) ? int(mode) : (mode & ~M_LINT_UNARY_PRECEDENCE));
             s_Node out {};
-            while ((out = tryParseExpressionTail(head)))
+            while ((out = tryParseExpressionTail(head, mode_1)))
             {
                 _loc = _idx;
                 head = out;
@@ -889,10 +890,10 @@ struct sf_parse
         s_Node mid {};
         if ((op == "?"_fu))
         {
-            mid = parseExpression(int(_precedence));
+            mid = parseExpression(int(_precedence), 0);
             consume("op"_fu, ":"_fu);
         };
-        s_Node right = parseExpression(int(p1));
+        s_Node right = parseExpression(int(p1), 0);
         if (mid)
             return createIf(left, mid, right);
 
@@ -930,23 +931,27 @@ struct sf_parse
         left.items.push(right);
         return std::move(left);
     };
-    s_Node tryParseExpressionTail(const s_Node& head)
+    s_Node tryParseExpressionTail(const s_Node& head, const int mode)
     {
         const s_Token& token = tokens[_idx++];
         if ((token.kind == "op"_fu))
         {
             const fu_STR& v = token.value;
+            const auto& lint = [&]() -> int
+            {
+                return ([&]() -> int { { int _ = (mode & M_LINT_UNARY_PRECEDENCE); if (!_) return _; } fail_Lint((("Here the unary -/+ separates from the numeric literal,"_fu + " and wraps around the whole expression."_fu) + " Please parenthesize explicitly to make this obvious."_fu)); }());
+            };
             if ((v == ";"_fu))
                 return ((void)_idx--, miss());
 
             if ((v == "."_fu))
-                return parseAccessExpression(head);
+                return ((void)lint(), parseAccessExpression(head));
 
             if ((v == "("_fu))
-                return parseCallExpression(head);
+                return ((void)lint(), parseCallExpression(head));
 
             if ((v == "["_fu))
-                return parseIndexExpression(head);
+                return ((void)lint(), parseIndexExpression(head));
 
             const int p1 = BINOP.PRECEDENCE[v];
             if (p1)
@@ -1011,7 +1016,7 @@ struct sf_parse
     {
         fu_VEC<s_Node> items {};
         do
-            items.push(parseExpression(int(P_COMMA)));
+            items.push(parseExpression(int(P_COMMA), 0));
         while (tryConsume("op"_fu, ","_fu));
         consume("op"_fu, ")"_fu);
         return ((items.size() > 1) ? createComma(items) : s_Node(items[0]));
@@ -1046,11 +1051,12 @@ struct sf_parse
         if (((op == "&"_fu) && tryConsume("id"_fu, "mut"_fu)))
             op = "&mut"_fu;
 
-        return createPrefix(op, parseUnaryExpression());
+        const int mode = (((op == "-"_fu) || (op == "+"_fu)) ? int(M_LINT_UNARY_PRECEDENCE) : 0);
+        return createPrefix(op, parseUnaryExpression(mode));
     };
-    s_Node parseUnaryExpression()
+    s_Node parseUnaryExpression(const int mode)
     {
-        return parseExpression(int(P_PREFIX_UNARY));
+        return parseExpression(int(P_PREFIX_UNARY), mode);
     };
     s_Node createPrefix(const fu_STR& op, s_Node&& expr)
     {
@@ -1138,7 +1144,7 @@ struct sf_parse
                 _idx++;
                 flags |= F_NAMED_ARGS;
             };
-            s_Node expr = parseExpression(int(P_COMMA));
+            s_Node expr = parseExpression(int(P_COMMA), 0);
             if (autoName)
                 name = getAutoName(expr);
 
@@ -1235,7 +1241,7 @@ struct sf_parse
     {
         s_Token nOt = tryConsume("op"_fu, "!"_fu);
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(int(_precedence));
+        s_Node cond = parseExpression(int(_precedence), 0);
         if (nOt)
             cond = createNot(cond);
 
@@ -1270,7 +1276,7 @@ struct sf_parse
         s_Node init = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseLetStmt(); else return s_Node{}; }());
         s_Node cond = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseExpressionStatement(); else return s_Node{}; }());
         const s_Token& token = tokens[_idx];
-        s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(int(_precedence)));
+        s_Node post = (((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseEmpty() : parseExpression(int(_precedence), 0));
         consume("op"_fu, ")"_fu);
         s_Node body = parseStatement();
         return createLoop(init, cond, post, body, miss());
@@ -1278,7 +1284,7 @@ struct sf_parse
     s_Node parseWhile()
     {
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(int(_precedence));
+        s_Node cond = parseExpression(int(_precedence), 0);
         consume("op"_fu, ")"_fu);
         s_Node body = parseStatement();
         return createLoop(miss(), cond, miss(), body, miss());
@@ -1288,7 +1294,7 @@ struct sf_parse
         s_Node body = parseStatement();
         consume("id"_fu, "while"_fu);
         consume("op"_fu, "("_fu);
-        s_Node cond = parseExpression(int(_precedence));
+        s_Node cond = parseExpression(int(_precedence), 0);
         consume("op"_fu, ")"_fu);
         consume("op"_fu, ";"_fu);
         return createLoop(miss(), miss(), miss(), body, cond);
