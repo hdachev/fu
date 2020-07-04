@@ -773,6 +773,7 @@ void runTests()
     FAIL("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        //*F\n        return test(-2, +2);\n        /*/\n        return test(-2, b: +2);\n        //*/\n    "_fu);
     ZERO("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        return Test(-1).test;\n    "_fu);
     FAIL("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        //*F\n        return Test(-2, +2).test;\n        /*/\n        return Test(-2, b: +2).test;\n        //*/\n    "_fu);
+    ZERO("\n        let _precedence = 0;\n        fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;\n        fn main() parseExpression();\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i8 =\n            //*F\n            128\n            /*/\n            127\n            //*/\n            ;\n\n            return (ret - 100).i32 - 27;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i16 =\n            //*F\n            32768\n            /*/\n            32767\n            //*/\n            ;\n\n            return (ret - 32700).i32 - 67;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i32 =\n            //*F\n            2147483648\n            /*/\n            2147483647\n            //*/\n            ;\n\n            return (ret - 2147483600).i32 - 47;\n        }\n    "_fu);

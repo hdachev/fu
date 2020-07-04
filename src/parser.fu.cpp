@@ -841,10 +841,10 @@ struct sf_parse
             flags |= F_MUT;
 
         fu_STR id = consume("id"_fu, fu_STR{}).value;
-        bool optional = false;
-        bool mustname = false;
-        s_Node type = ([&]() -> s_Node { if ((tryConsume("op"_fu, ":"_fu) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "?:"_fu)) return (optional = true); else return fu::Default<bool>::value; }()) || ([&]() -> bool { if (argdecl && tryConsume("op"_fu, "!:"_fu)) return (mustname = true); else return fu::Default<bool>::value; }()))) return parseTypeAnnot(); else return s_Node{}; }());
-        s_Node init = ([&]() -> s_Node { if (optional) { s_Node _ = createDefinit(); if (_) return _; } return ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()); }());
+        s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
+        s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
+        s_Node type = tryPopTypeAnnot();
+        s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()));
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
