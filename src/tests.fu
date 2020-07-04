@@ -2229,6 +2229,13 @@ pub fn runTests()
         //*/
     `);
 
+    // TODO
+    // ZERO(`
+    //     let _precedence = 0;
+    //     fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;
+    //     fn main() parseExpression();
+    // `);
+
 
     // Intlit sizechecks.
 
@@ -2580,6 +2587,36 @@ pub fn runTests()
             let b = ++x;
             return a || b - 2;
         }
+    `);
+
+    FAIL(`
+        //
+        // The -1.abs problem.
+        //
+        // Ruby lexes the minus into the numeric literal.
+        //  This is kinda inconsistent, altough it does make sense.
+        //
+        // Rust & all c-likes lex to -abs(1).
+        //  Rust linters warn about this.
+        //
+        // One thing we can do is change the precedence of some unaries
+        //  to above method call - others, like ! benefit from usual precedence.
+        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
+        //    but the & op usually works the way you want it to.
+        //     So introducing more precedence rules is a really questionable idea.
+        //
+        // We'll go the rust way for starters,
+        //  this will be a compile time error for now.
+        //
+        fn test()
+        //*F
+            -1.0
+        /*/
+            (-1.0)
+        //*/
+                .abs;
+
+        fn main() test ? 0 : 7;
     `);
 
 

@@ -84,10 +84,14 @@ fn setupOperators(): BINOP
             out.PRECEDENCE[ops[i]] = precedence;
     }
 
-    binop([ "as", "is" ]);
-
-    rightToLeft = true;
-    binop([ "**" ]);
+    // TODO not so simple,
+    //  must be stronger than unary - and +,
+    //   or alternatively also fail lint.
+    //
+    // See: https://stackoverflow.com/questions/47068812/javascript-exponentiation-unary-operator-design-decision
+    //
+    // rightToLeft = true;
+    // binop([ "**" ]);
 
     rightToLeft = false;
     binop([ "*", "/", "%" ]);
@@ -98,6 +102,7 @@ fn setupOperators(): BINOP
     binop([ "|" ]);
     binop([ "~" ]); // concat operator
     binop([ "<=>" ]);
+    binop([ "in", "is", "as" ]); // see c# as, is and js in, instanceof
     binop([ "<", "<=", ">", ">=" ]);
     binop([ "==", "!=" ]);
     binop([ "->" ]);
@@ -138,6 +143,11 @@ pub let LOOP_COND      = 1;
 pub let LOOP_POST      = 2;
 pub let LOOP_BODY      = 3;
 pub let LOOP_POST_COND = 4;
+
+
+// Descent modes.
+
+let M_LINT_UNARY_PRECEDENCE = 1 << 0;
 
 
 //
@@ -832,7 +842,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("let", [ type, init ], flags, id);
     }
 
-    fn parseExpression(p1 = _precedence): Node
+    fn parseExpression(p1 = _precedence, mode!: i32 = 0): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -843,8 +853,18 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         mut head = parseExpressionHead();
         {
+            //////////////////////////////////////////////
+            // Lint, this looks crazy but its fine really,
+            //  powers the -1.abs error.
+            let mode =
+                mode & M_LINT_UNARY_PRECEDENCE
+                    && (head.kind == "int" || head.kind == "num")
+                        ? mode
+                        : mode &~ M_LINT_UNARY_PRECEDENCE;
+            //////////////////////////////////////////////
+
             mut out: Node;
-            while (out = tryParseExpressionTail(head))
+            while (out = tryParseExpressionTail(:head, :mode))
             {
                 _loc = _idx;
                 head = out;
@@ -915,7 +935,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return left;
     }
 
-    fn tryParseExpressionTail(head: Node): Node
+    fn tryParseExpressionTail(head: Node, mode: i32): Node
     {
         // Consume.
         let token = tokens[_idx++];
@@ -923,10 +943,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         {
             let v = token.value;
 
+            fn lint()
+                mode & M_LINT_UNARY_PRECEDENCE && fail_Lint(
+                    "Here the unary -/+ separates from the numeric literal,"
+                        ~ " and wraps around the whole expression."
+                        ~ " Please parenthesize explicitly to make this obvious.");
+
             if (v == ";") return (_idx--, miss);
-            if (v == ".") return parseAccessExpression(head);
-            if (v == "(") return parseCallExpression(head);
-            if (v == "[") return parseIndexExpression(head);
+            if (v == ".") return (lint(), parseAccessExpression(head));
+            if (v == "(") return (lint(), parseCallExpression(head));
+            if (v == "[") return (lint(), parseIndexExpression(head));
 
             let p1 = BINOP.PRECEDENCE[v];
             if (p1)
@@ -1053,13 +1079,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (op == "&" && tryConsume("id", "mut"))
             op = "&mut";
 
+        let mode = op == "-" || op == "+"
+            ? M_LINT_UNARY_PRECEDENCE
+            : 0;
+
         return createPrefix(
-            op, parseUnaryExpression());
+            op, parseUnaryExpression(:mode));
     }
 
-    fn parseUnaryExpression(): Node
+    fn parseUnaryExpression(mode!: i32 = 0): Node
     {
-        return parseExpression(P_PREFIX_UNARY);
+        return parseExpression(P_PREFIX_UNARY, :mode);
     }
 
     fn createPrefix(op: string, mut expr: Node): Node

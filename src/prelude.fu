@@ -91,7 +91,7 @@ fn byte(v: $T) case ($T -> @primitive): byte __native("<cstddef>", "std::byte");
 
 // Math.
 
-fn abs(v: $T) case ($T -> @arithmetic): $T __native("<cmath>", "std::abs");
+fn abs(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::abs");
 fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::max");
 fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::min");
 

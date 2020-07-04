@@ -71,7 +71,10 @@ pub inline fn uniform_f01(u: u32)
     (u & 0xffffff).f32 * (1 / 0x1000000 .f32);
 
 pub inline fn uniform_f11(u: u32)
-    u.uniform_f01 * (u & 0x1000000 ? -1.f32 : +1.f32);
+{
+    let f01 = u.uniform_f01;
+    return u & 0x1000000 ? -f01 : +f01;
+}
 
 
 // Let's put our cooler features to use.
