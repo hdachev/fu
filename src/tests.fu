@@ -2235,6 +2235,24 @@ pub fn runTests()
         fn main() parseExpression();
     `);
 
+    ZERO_SAME([
+    `
+        fn A(x!: i32 = 0) x;
+        fn B(x: i32 = 0) A(:x);
+        fn main() A + B;
+    `,
+    `
+        fn A(x!?: i32) x;
+        fn B(x?: i32) A(:x);
+        fn main() A + B;
+    `,
+    `
+        fn A(x! = 0) x;
+        fn B(x = 0) A(:x);
+        fn main() A + B;
+    `
+    ]);
+
 
     // Intlit sizechecks.
 

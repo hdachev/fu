@@ -604,14 +604,14 @@ fn FAIL_replace(mut sources: string[]): string[]
     return sources;
 }
 
+fn indent(src: string): string
+    src.replace(all: "\n", with: "\n\t");
+
 pub fn FAIL(sources: string[]): string
 {
     let ctx = compile_snippets(sources)
         catch e
             return ZERO(FAIL_replace(sources)) && e;
-
-    fn indent(src: string): string
-        src.replace(all: "\n", with: "\n\t");
 
     mut bad = "\nDID NOT THROW:\n";
 
@@ -627,5 +627,39 @@ pub fn FAIL(sources: string[]): string
     return throw(bad);
 }
 
+pub fn ZERO_SAME(alts: string[][])
+{
+    let expect = ZERO(alts[0]).modules;
+
+    for (mut i = 1; i < alts.len; i++)
+    {
+        let actual = compile_snippets(sources: alts[i]).modules;
+        if (expect.len != actual.len)
+            throw("ZERO_SAME: expect/actual len mismatch.");
+
+        for (mut m = 0; m < actual.len; m++)
+        {
+            let x = expect[m].out.cpp;
+            let a = actual[m].out.cpp;
+
+            if (x != a)
+                throw(
+                    "ZERO_SAME: alts[" ~ i ~ "] mismatch at:\n"
+                        ~ "\nexpect[" ~ m ~ "]:\n\t" ~ x.indent
+                        ~ "\nactual[" ~ m ~ "]:\n\t" ~ a.indent
+                        ~ "\n");
+        }
+    }
+}
+
 pub fn ZERO(src: string) ZERO(sources: [ src ]);
 pub fn FAIL(src: string) FAIL(sources: [ src ]);
+
+pub fn ZERO_SAME(alts: string[])
+{
+    mut wrap: string[][];
+    for (mut i = 0; i < alts.len; i++)
+        wrap ~= [ alts[i] ];
+
+    return ZERO_SAME(wrap);
+}
