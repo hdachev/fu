@@ -1590,7 +1590,9 @@ pub fn solve(
                               : annot.type
                         : init.type.quals & q_mutref || node.flags & F_MUT
                             ? clear_refs(init.type)
-                            : init.type;
+                            : node.flags & F_ARG && !(node.flags & F_MUT)
+                              ? add_ref(init.type, lifetime)
+                              : init.type;
 
         if (annot.type && init.type)
             checkAssignable(host: annot.type, init.type,
