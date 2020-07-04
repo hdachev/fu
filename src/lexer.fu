@@ -168,7 +168,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else if (c >= '0' && c <= '9')
                 {
-                    err_str("num", idx0,
+                    err_str("real", idx0,
                         "Leading `0` in numeric literal,"
                             ~ " perhaps you meant `0x`, `0b` or `0o`.");
                 }
@@ -205,7 +205,7 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                     if (dot || exp)
                     {
-                        err("num", idx0, idx - 1);
+                        err("real", idx0, idx - 1);
                         break;
                     }
 
@@ -216,7 +216,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 {
                     if (exp)
                     {
-                        err("num", idx0, idx - 1);
+                        err("real", idx0, idx - 1);
                         break;
                     }
 
@@ -237,7 +237,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 !(hex && (trail >= 'a' && trail <= 'f'
                        || trail >= 'A' && trail <= 'F')))
             {
-                err("num", idx0, idx - 1);
+                err("real", idx0, idx - 1);
             }
             else
             {
@@ -246,14 +246,14 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                 if (hex && dot && !exp)
                 {
-                    err_str("num", idx0,
+                    err_str("real", idx0,
                         "The exponent is never optional"
                             ~ " for hexadecimal floating-point literals.");
                 }
                 else
                 {
                     token(
-                        dot || exp ? "num" : "int",
+                        dot || exp ? "real" : "int",
                         helpers::ascii_lower(str),
                         idx0, idx1);
                 }

@@ -1588,7 +1588,7 @@ pub fn cpp_codegen(
         if (k == "and")         return cgAnd(node);
         if (k == "loop")        return cgLoop(node);
         if (k == "int")         return cgLiteral(node);
-        if (k == "num")         return cgLiteral(node);
+        if (k == "real")        return cgLiteral(node);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, mode);

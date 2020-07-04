@@ -855,7 +855,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             //  powers the -1.abs error.
             let mode =
                 mode & M_LINT_UNARY_PRECEDENCE
-                    && (head.kind == "int" || head.kind == "num")
+                    && (head.kind == "int" || head.kind == "real")
                         ? mode
                         : mode &~ M_LINT_UNARY_PRECEDENCE;
             //////////////////////////////////////////////
@@ -978,7 +978,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             let k = token.kind;
 
             // Literals.
-            if (k == "int" || k == "num" || k == "str" || k == "char")
+            if (k == "int" || k == "real" || k == "str" || k == "char")
                 return createLeaf(
                     token.kind, token.value);
 
@@ -1096,7 +1096,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         // Moving `-` and `+` into unary literals.
         if ((op == "+" || op == "-") &&
-            (expr.kind == "int" || expr.kind == "num"))
+            (expr.kind == "int" || expr.kind == "real"))
         {
             let sign = expr.value[0];
             if (sign == '+' || sign == '-')

@@ -230,21 +230,31 @@ pub fn solve(
             flags: F_PUB);
     }
 
-    fn tryDefaultInit(type: Type): SolvedNode
+    fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
         if (type.quals & q_mutref)
             return SolvedNode();
 
-        return createDefaultInit(type);
+        return createDefinit(type);
     }
 
-    fn createDefaultInit(type: Type): SolvedNode
+    fn createDefinit(type: Type): SolvedNode
     {
+        let token = _here || fail();
+
+        if (type.quals & q_integral)
+            return SolvedNode(
+                kind: "int", :token, :type,
+                value: "0");
+
+        if (type.quals & q_floating_pt)
+            return SolvedNode(
+                kind: "real", :token, :type,
+                value: "0");
+
         return SolvedNode(
-            kind: "definit",
-            token: _here || fail(),
-            :type);
+            kind: "definit", :token, :type);
     }
 
     fn solveDefinit(type: Type): SolvedNode
@@ -253,7 +263,7 @@ pub fn solve(
             return fail(
                 "Cannot solve definit, no inferred type.");
 
-        return tryDefaultInit(type)
+        return tryCreateDefinit(type)
             || fail("Cannot definit: " ~ serializeType(type));
     }
 
@@ -671,13 +681,13 @@ pub fn solve(
     fn couldRetype(node: SolvedNode): bool
     {
         return node.kind == "int"
-            || node.kind == "num";
+            || node.kind == "real";
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
     {
-        return node.kind == "int" ? solveInt(node.value, expect)
-             : node.kind == "num" ? solveNum(node.value, expect)
+        return node.kind == "int"  ? solveInt(node.value, expect)
+             : node.kind == "real" ? solveNum(node.value, expect)
              : [];
     }
 
@@ -812,7 +822,7 @@ pub fn solve(
         if (k == "continue")    return solveJump(node);
 
         if (k == "int")         return solveInt(node, type);
-        if (k == "num")         return solveNum(node, type);
+        if (k == "real")        return solveNum(node, type);
         if (k == "str")         return solveStr(node);
         if (k == "char")        return solveChar(node);
         if (k == "empty")       return createEmpty();
@@ -960,7 +970,7 @@ pub fn solve(
     fn solveStr(node: Node): SolvedNode
     {
         if (!node.value)
-            return createDefaultInit(
+            return createDefinit(
                 add_ref(t_string, Lifetime_static));
 
         return solved(node, t_string);
