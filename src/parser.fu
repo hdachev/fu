@@ -813,15 +813,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         let id          = consume("id").value;
 
-        mut optional    = false;
-        mut mustname    = false;
-        let type        = (tryConsume("op", ":")
-            || (argdecl && tryConsume("op", "?:") && (optional = true))
-            || (argdecl && tryConsume("op", "!:") && (mustname = true))
-                      ) && parseTypeAnnot();
-
-        let init        = optional && createDefinit()
-                        || tryConsume("op", "=") && parseExpression(P_COMMA);
+        let mustname    = argdecl && tryConsume("op", "!");
+        let optional    = argdecl && tryConsume("op", "?");
+        let type        = tryPopTypeAnnot();
+        let init        = optional
+            ? createDefinit()
+            : tryConsume("op", "=") && parseExpression(P_COMMA);
 
         if (numDollars0 != _dollars.len)
             flags |= F_TEMPLATE;

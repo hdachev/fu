@@ -2229,12 +2229,11 @@ pub fn runTests()
         //*/
     `);
 
-    // TODO
-    // ZERO(`
-    //     let _precedence = 0;
-    //     fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;
-    //     fn main() parseExpression();
-    // `);
+    ZERO(`
+        let _precedence = 0;
+        fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;
+        fn main() parseExpression();
+    `);
 
 
     // Intlit sizechecks.
