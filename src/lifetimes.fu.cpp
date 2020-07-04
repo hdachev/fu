@@ -89,7 +89,7 @@ bool isArgumentUnion(const s_Lifetime& l)
 
 s_Region Region_fromArgIndex(const int argIdx)
 {
-    return s_Region { (-1 - argIdx), int{} };
+    return s_Region { (-1 - argIdx), 0 };
 }
 
 int Region_toArgIndex(const s_Region& r)
@@ -153,7 +153,7 @@ s_Lifetime Lifetime_fromArgIndex(const int argIdx)
 
 s_Lifetime Lifetime_fromScopeIdx(const int index)
 {
-    return s_Lifetime { fu_VEC<s_Region> { fu_VEC<s_Region>::INIT<1> { s_Region { int(index), int{} } } } };
+    return s_Lifetime { fu_VEC<s_Region> { fu_VEC<s_Region>::INIT<1> { s_Region { int(index), 0 } } } };
 }
 
 bool killedBy(const s_Lifetime& lifetime, const int returnIdx)

@@ -174,7 +174,7 @@ struct sf_lex
                         idx++;
                     }
                     else if (((c_1 >= std::byte('0')) && (c_1 <= std::byte('9'))))
-                        err_str("num"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
+                        err_str("real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
 
                 };
                 while ((idx < end))
@@ -198,7 +198,7 @@ struct sf_lex
                         };
                         if ((dot || exp))
                         {
-                            err("num"_fu, idx0, (idx - 1));
+                            err("real"_fu, idx0, (idx - 1));
                             break;
                         };
                         dot = true;
@@ -207,7 +207,7 @@ struct sf_lex
                     {
                         if (exp)
                         {
-                            err("num"_fu, idx0, (idx - 1));
+                            err("real"_fu, idx0, (idx - 1));
                             break;
                         };
                         if (((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+')))))
@@ -223,15 +223,15 @@ struct sf_lex
                 };
                 const std::byte trail = src[(idx - 1)];
                 if ((!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F')))))))
-                    err("num"_fu, idx0, (idx - 1));
+                    err("real"_fu, idx0, (idx - 1));
                 else
                 {
                     const int idx1 = idx;
                     fu_STR str = fu::slice(src, idx0, idx1);
                     if ((hex && dot && !exp))
-                        err_str("num"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
+                        err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                     else
-                        token(((dot || exp) ? "num"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
+                        token(((dot || exp) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
 
                 };
             }

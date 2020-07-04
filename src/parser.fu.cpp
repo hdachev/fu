@@ -869,7 +869,7 @@ struct sf_parse
         s_Node head = parseExpressionHead();
         
         {
-            const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == "int"_fu) || (head.kind == "num"_fu))) ? int(mode) : (mode & ~M_LINT_UNARY_PRECEDENCE));
+            const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == "int"_fu) || (head.kind == "real"_fu))) ? int(mode) : (mode & ~M_LINT_UNARY_PRECEDENCE));
             s_Node out {};
             while ((out = tryParseExpressionTail(head, mode_1)))
             {
@@ -972,7 +972,7 @@ struct sf_parse
         
         {
             const fu_STR& k = token.kind;
-            if (((k == "int"_fu) || (k == "num"_fu) || (k == "str"_fu) || (k == "char"_fu)))
+            if (((k == "int"_fu) || (k == "real"_fu) || (k == "str"_fu) || (k == "char"_fu)))
                 return createLeaf(token.kind, token.value);
 
             if ((k == "id"_fu))
@@ -1063,7 +1063,7 @@ struct sf_parse
         if ((op == "!"_fu))
             return createNot(expr);
 
-        if ((((op == "+"_fu) || (op == "-"_fu)) && ((expr.kind == "int"_fu) || (expr.kind == "num"_fu))))
+        if ((((op == "+"_fu) || (op == "-"_fu)) && ((expr.kind == "int"_fu) || (expr.kind == "real"_fu))))
         {
             const std::byte sign = expr.value[0];
             if (((sign == std::byte('+')) || (sign == std::byte('-'))))

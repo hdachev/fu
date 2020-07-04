@@ -69,6 +69,7 @@ inline std::byte if_last_y0NH(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
+void ZERO_SAME(const fu_VEC<fu_STR>&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
@@ -1038,6 +1039,11 @@ static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
     return std::move(sources);
 }
 
+static fu_STR indent(const fu_STR& src)
+{
+    return fu::replace(src, "\n"_fu, "\n\t"_fu);
+}
+
 fu_STR FAIL(const fu_VEC<fu_STR>& sources)
 {
     s_Context ctx;
@@ -1052,10 +1058,6 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources)
         return std::move(([&]() -> const fu_STR& { if (ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)))) return e; else return fu::Default<fu_STR>::value; }()));
     }
 ;
-    const auto& indent = [&](const fu_STR& src) -> fu_STR
-    {
-        return fu::replace(src, "\n"_fu, "\n\t"_fu);
-    };
     fu_STR bad = "\nDID NOT THROW:\n"_fu;
     for (int i = 1; (i < ctx.modules.size()); i++)
     {
@@ -1066,6 +1068,26 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources)
     fu::fail(bad);
 }
 
+void ZERO_SAME(const fu_VEC<fu_VEC<fu_STR>>& alts)
+{
+    fu_VEC<s_Module> expect = ZERO(alts[0]).modules;
+    for (int i = 1; (i < alts.size()); i++)
+    {
+        fu_VEC<s_Module> actual = compile_snippets(alts[i], fu_VEC<fu_STR>{}).modules;
+        if ((expect.size() != actual.size()))
+            fu::fail("ZERO_SAME: expect/actual len mismatch."_fu);
+
+        for (int m = 0; (m < actual.size()); m++)
+        {
+            const fu_STR& x = expect[m].out.cpp;
+            const fu_STR& a = actual[m].out.cpp;
+            if ((x != a))
+                fu::fail(((((((((((("ZERO_SAME: alts["_fu + i) + "] mismatch at:\n"_fu) + "\nexpect["_fu) + m) + "]:\n\t"_fu) + indent(x)) + "\nactual["_fu) + m) + "]:\n\t"_fu) + indent(a)) + "\n"_fu));
+
+        };
+    };
+}
+
 s_Context ZERO(const fu_STR& src)
 {
     return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
@@ -1074,6 +1096,15 @@ s_Context ZERO(const fu_STR& src)
 fu_STR FAIL(const fu_STR& src)
 {
     return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
+}
+
+void ZERO_SAME(const fu_VEC<fu_STR>& alts)
+{
+    fu_VEC<fu_VEC<fu_STR>> wrap {};
+    for (int i = 0; (i < alts.size()); i++)
+        (wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { alts[i] } });
+
+    return ZERO_SAME(wrap);
 }
 
 #endif

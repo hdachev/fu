@@ -37,6 +37,7 @@ s_Context ZERO(const fu_VEC<fu_STR>&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
+void ZERO_SAME(const fu_VEC<fu_STR>&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -774,6 +775,7 @@ void runTests()
     ZERO("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        return Test(-1).test;\n    "_fu);
     FAIL("\n        struct Test { a: i32 = 0; b!: i32 = 1; };\n        fn test(t: Test) t.a + t.b;\n        //*F\n        return Test(-2, +2).test;\n        /*/\n        return Test(-2, b: +2).test;\n        //*/\n    "_fu);
     ZERO("\n        let _precedence = 0;\n        fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;\n        fn main() parseExpression();\n    "_fu);
+    ZERO_SAME(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "\n        fn A(x!: i32 = 0) x;\n        fn B(x: i32 = 0) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x!?: i32) x;\n        fn B(x?: i32) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x! = 0) x;\n        fn B(x = 0) A(:x);\n        fn main() A + B;\n    "_fu } });
     FAIL("\n        fn main() {\n            let ret: i8 =\n            //*F\n            128\n            /*/\n            127\n            //*/\n            ;\n\n            return (ret - 100).i32 - 27;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i16 =\n            //*F\n            32768\n            /*/\n            32767\n            //*/\n            ;\n\n            return (ret - 32700).i32 - 67;\n        }\n    "_fu);
     FAIL("\n        fn main() {\n            let ret: i32 =\n            //*F\n            2147483648\n            /*/\n            2147483647\n            //*/\n            ;\n\n            return (ret - 2147483600).i32 - 47;\n        }\n    "_fu);

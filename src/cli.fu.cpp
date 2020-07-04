@@ -9,7 +9,6 @@
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <iostream>
-#include <utility>
 
 static void runTestsAndBuildCompiler();
 int self_test();
@@ -35,7 +34,7 @@ namespace {
 struct sf_cli_handle
 {
     const fu_VEC<fu_STR>& argv;
-    fu_STR&& cwd;
+    const fu_STR& cwd;
     int idx = 0;
     fu_STR next()
     {
@@ -154,9 +153,9 @@ struct sf_cli_handle
 
 } // namespace
 
-int cli_handle(const fu_VEC<fu_STR>& argv, fu_STR&& cwd)
+int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 {
-    return (sf_cli_handle { argv, std::move(cwd) }).cli_handle();
+    return (sf_cli_handle { argv, cwd }).cli_handle();
 }
 
 
@@ -169,7 +168,7 @@ static void runTestsAndBuildCompiler()
 {
     runTests();
     saySomethingNice();
-    cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, fu_STR(PRJDIR));
+    cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, PRJDIR);
 }
 
 #endif
