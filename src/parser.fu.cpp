@@ -1075,7 +1075,14 @@ struct sf_parse
     };
     s_Node parseAccessExpression(const s_Node& expr)
     {
-        return createCall(consume("id"_fu, fu_STR{}).value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
+        s_Token id = tryConsume("id"_fu, fu_STR{});
+        if (!id)
+        {
+            consume("op"_fu, "::"_fu);
+            id = consume("id"_fu, fu_STR{});
+            _idx -= 2;
+        };
+        return createCall(id.value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
     };
     s_Node parseQualifierChain(s_Node&& expr)
     {
