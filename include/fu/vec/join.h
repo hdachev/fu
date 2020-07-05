@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../str.h"
-#include "concat.h"
+#include "./concat.h"
 
 namespace fu {
 

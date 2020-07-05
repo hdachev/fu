@@ -5,22 +5,19 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "defer.h"
-
-#include "str.h"
-#include "vec/slice.h"
-#include "vec/concat_one.h"
+#include "./defer.h"
+#include "./str.h"
+#include "./vec/slice.h"
+#include "./vec/concat_one.h"
+#include "./vec/c_str.h"
 
 namespace fu {
 
 inline int file_write(
-    fu_STR&& path, const fu_STR& body)
+    const fu_STR& path, const fu_STR& body)
 {
-    path.push(std::byte('\0'));
-    auto cpath = (const char*)path.data();
-
     errno = 0;
-    FILE* file = fopen(cpath, "w");
+    FILE* file = fopen(FU_TEMP_CSTR(path), "w");
     int err = errno;
     err = err ? err : fu_ERR_UnknownError;
 
@@ -37,12 +34,9 @@ inline int file_write(
 }
 
 inline bool file_read(
-    fu_STR&& path, fu_STR& output)
+    const fu_STR& path, fu_STR& output)
 {
-    path.push(std::byte('\0'));
-    auto cpath = (const char*)path.data();
-
-    auto file = fopen(cpath, "r");
+    auto file = fopen(FU_TEMP_CSTR(path), "r");
     fu::defer _fclose { [&]() { if (file) fclose(file); } };
 
     if (file) {
@@ -59,27 +53,20 @@ inline bool file_read(
 }
 
 inline int file_size(
-    fu_STR&& path)
+    const fu_STR& path)
 {
-    path.push(std::byte('\0'));
-    auto cpath = (const char*)path.data();
-
     struct stat sb;
-    if (stat(cpath, &sb) == 0)
+    if (stat(FU_TEMP_CSTR(path), &sb) == 0)
         return int(sb.st_size);
 
     return -1;
 }
 
 inline fu_STR file_read(
-    fu_STR&& path)
+    const fu_STR& path)
 {
     fu_STR output;
-
-    file_read(
-        static_cast<fu_STR&&>(path),
-        output);
-
+    file_read(path, output);
     return output;
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "std.h"
-#include "cfg.h"
+#include "./std.h"
+#include "./cfg.h"
 
 /////////////////////////////////////////////
 //

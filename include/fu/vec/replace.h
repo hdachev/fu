@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../vec.h"
-#include "find.h"
+#include "./find.h"
 
 namespace fu {
 

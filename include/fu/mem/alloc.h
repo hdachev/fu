@@ -5,7 +5,7 @@
 // #define fu_TEST_FREE_LIST
 
 #ifdef fu_TEST_FREE_LIST
-#include "lf_free_list.h"
+#include "./lf_free_list.h"
 #endif
 
 namespace fu {

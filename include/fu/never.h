@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-// TODO FIX
-#include <string>
+#include "./str.h"
+#include "./vec/c_str.h"
 
 namespace fu {
 
@@ -24,12 +24,15 @@ struct never
     throw std::runtime_error(what);
 }
 
-template <typename T>
-[[noreturn]] never fail(const T& what)
+[[noreturn]] never fail(const fu_STR& what)
 {
-    throw std::runtime_error( // TODO FIX
-        std::string(
-            (const char*)what.data(), size_t(what.size())));
+    return fail(FU_TEMP_CSTR(what));
+}
+
+[[noreturn]] never fail(fu_STR&& what)
+{
+    what.push(std::byte(0));
+    return fail((const char*)what.data());
 }
 
 } // namespace

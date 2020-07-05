@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../str.h"
-#include "find.h"
-#include "slice.h"
+#include "./find.h"
+#include "./slice.h"
 
 namespace fu {
 

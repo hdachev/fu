@@ -2,16 +2,14 @@
 
 #include <cstdlib>
 
-#include "str.h"
+#include "./str.h"
+#include "./vec/c_str.h"
 
 namespace fu {
 
 inline fu_STRLIT env_get(fu_STR name)
 {
-    name.push(std::byte('\0'));
-    auto cname = (const char*)name.data();
-
-    const char* value = getenv(cname);
+    const char* value = getenv(FU_TEMP_CSTR(name));
     return fu_STRLIT { value, (int) strlen(value) };
 }
 

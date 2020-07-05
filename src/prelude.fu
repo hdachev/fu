@@ -270,9 +270,9 @@ fn hash_tea(str: string): string __native("<fu/tea.h>", "fu::hash_tea");
 
 fn env_get(mut key: string): string __native("<fu/env.h>", "fu::env_get");
 
-fn file_size(mut path: string): i32 __native("<fu/io.h>", "fu::file_size");
-fn file_read(mut path: string): string __native("<fu/io.h>", "fu::file_read");
-fn file_write(mut path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
+fn file_size (path: string): i32 __native("<fu/io.h>", "fu::file_size");
+fn file_read (path: string): string __native("<fu/io.h>", "fu::file_read");
+fn file_write(path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
 
 fn fs_cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
 fn fs_mkdir_p(mut path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");

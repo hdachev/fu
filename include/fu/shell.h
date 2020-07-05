@@ -2,17 +2,15 @@
 
 #include <stdio.h>
 
-#include "str.h"
-#include "defer.h"
+#include "./str.h"
+#include "./vec/c_str.h"
+#include "./defer.h"
 
 namespace fu {
 
 int shell_exec(fu_STR&& cmd, fu_STR& stdout)
 {
-    cmd.push(std::byte('\0'));
-    auto ccmd = (const char*)cmd.data();
-
-    auto pipe = popen(ccmd, "r");
+    auto pipe = popen(FU_TEMP_CSTR(cmd), "r");
     fu::defer _pclose { [&]() { if (pipe) pclose(pipe); } };
 
     if (pipe) {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "vec.h"
-#include "vec/cmp.h"
+#include "./vec.h"
+#include "./vec/cmp.h"
 
-#include "default.h"
+#include "./default.h"
 
 
 //

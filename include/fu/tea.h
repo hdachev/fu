@@ -1,10 +1,10 @@
 #pragma once
 
-#include "std.h"
+#include "./std.h"
 
-#include "str.h"
-#include "vec/concat_str.h"
-#include "vec/concat_one.h"
+#include "./str.h"
+#include "./vec/concat_str.h"
+#include "./vec/concat_one.h"
 
 namespace fu {
 
