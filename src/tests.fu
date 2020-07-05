@@ -2154,14 +2154,11 @@ pub fn runTests()
 
     FAIL(`
         struct Test {
-            a
         //*F
-            :
+            a: i32;
         /*/
-            ?:
+            a?: i32;
         //*/
-            i32;
-
             b: i32;
         };
 
@@ -2171,14 +2168,11 @@ pub fn runTests()
     FAIL(`
         struct Test {
             b: i32;
-
-            a
         //*F
-            :
+            a: i32;
         /*/
-            ?:
+            a?: i32;
         //*/
-            i32;
         };
 
         return Test(1).a;

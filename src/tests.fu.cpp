@@ -767,8 +767,8 @@ void runTests()
     ZERO("\n        struct Hey { i: i32; }\n\n        fn main() {\n            let a = 1;\n            let r: Hey = a && [ a ];\n            return r.i - 1;\n        }\n    "_fu);
     ZERO("\n        struct Hey { i: i32; }\n\n        fn main() {\n            let a: Hey[] = [ [ -1 ], [ +1 ] ];\n            return a[0].i + a[1].i;\n        }\n    "_fu);
     ZERO("\n        struct Hey { i: i32; }\n\n        fn test(): Hey {\n            return [ 0 ];\n        }\n\n        fn main() test.i;\n    "_fu);
-    FAIL("\n        struct Test {\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n\n            b: i32;\n        };\n\n        return Test(b: 1).a;\n    "_fu);
-    FAIL("\n        struct Test {\n            b: i32;\n\n            a\n        //*F\n            :\n        /*/\n            ?:\n        //*/\n            i32;\n        };\n\n        return Test(1).a;\n    "_fu);
+    FAIL("\n        struct Test {\n        //*F\n            a: i32;\n        /*/\n            a?: i32;\n        //*/\n            b: i32;\n        };\n\n        return Test(b: 1).a;\n    "_fu);
+    FAIL("\n        struct Test {\n            b: i32;\n        //*F\n            a: i32;\n        /*/\n            a?: i32;\n        //*/\n        };\n\n        return Test(1).a;\n    "_fu);
     ZERO("\n        struct Test {\n            a = 1;\n            b = 2;\n        };\n\n        fn test(t: Test)\n            t.a * 2 - t.b;\n\n        return Test.test;\n    "_fu);
     ZERO("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        return test(-1);\n    "_fu);
     FAIL("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        //*F\n        return test(-2, +2);\n        /*/\n        return test(-2, b: +2);\n        //*/\n    "_fu);
