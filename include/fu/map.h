@@ -15,16 +15,7 @@ struct fu_MAP
     fu_VEC<V> m_values;
 
 
-    // Const API.
-
-    const V& operator[](const K& key) const noexcept
-    {
-        for (int i = 0; i < m_keys.size(); i++)
-            if (m_keys[i] == key)
-                return m_values[i];
-
-        return fu::Default<V>::value;
-    }
+    // Misc.
 
     inline int size() const noexcept
     {
@@ -36,28 +27,59 @@ struct fu_MAP
         return m_keys.size() > 0;
     }
 
+
+    // Search.
+
     int find(const K& key) const noexcept
     {
-        auto* i0 = m_keys.data();
-        auto* i1 = i0 + m_keys.size();
-        for (auto* i = i0; i < i1; i++)
-            if (*i == key)
-                return int(i - i0);
+        {
+            auto* i0 =      m_keys.data();
+            auto* i1 = i0 + m_keys.size();
+            for (auto* i = i0; i < i1; i++)
+                if (*i == key)
+                    return int(i - i0);
+        }
 
         return -1;
     }
 
+    const V& operator[](const K& key) const noexcept
+    {
+        {
+            auto* i0 =      m_keys.data();
+            auto* i1 = i0 + m_keys.size();
+            for (auto* i = i0; i < i1; i++)
+                if (*i == key)
+                    return m_values[int(i - i0)];
+        }
 
-    // Mut API.
+        return fu::Default<V>::value;
+    }
+
+    V& mutref(const K& key) noexcept
+    {
+        {
+            auto* i0 =      m_keys.data();
+            auto* i1 = i0 + m_keys.size();
+            for (auto* i = i0; i < i1; i++)
+                if (*i == key)
+                    return m_values.mutref(int(i - i0));
+        }
+
+        assert(false);
+        return *((V*)1);
+    }
 
     V& upsert(const K& key) noexcept
     {
-        // Update?
-        for (int i = 0; i < m_keys.size(); i++)
-            if (m_keys[i] == key)
-                return m_values.mutref(i);
+        {
+            auto* i0 =      m_keys.data();
+            auto* i1 = i0 + m_keys.size();
+            for (auto* i = i0; i < i1; i++)
+                if (*i == key)
+                    return m_values.mutref(int(i - i0));
+        }
 
-        // Insert.
         {
             int i = m_values.size();
 
@@ -66,15 +88,5 @@ struct fu_MAP
 
             return m_values.mutref(i);
         }
-    }
-
-    V& mutref(const K& key) noexcept
-    {
-        for (int i = 0; i < m_keys.size(); i++)
-            if (m_keys[i] == key)
-                return m_values.mutref(i);
-
-        assert(false);
-        return *((V*)1);
     }
 };
