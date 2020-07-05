@@ -565,14 +565,14 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
 
     const auto& tryResolve = [&]() -> fu_STR
     {
-        const bool exists = (fu::file_size(fu_STR(path)) >= 0);
+        const bool exists = (fu::file_size(path) >= 0);
         if (exists)
             return fu_STR(path);
 
         
         {
             fu_STR path_1 = ((from + "lib/"_fu) + name);
-            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            const bool exists_1 = (fu::file_size(path_1) >= 0);
             if (exists_1)
                 return path_1;
 
@@ -580,7 +580,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
         
         {
             fu_STR path_1 = ((from + "vendor/"_fu) + name);
-            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            const bool exists_1 = (fu::file_size(path_1) >= 0);
             if (exists_1)
                 return path_1;
 
@@ -588,7 +588,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
         
         {
             fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
-            const bool exists_1 = (fu::file_size(fu_STR(path_1)) >= 0);
+            const bool exists_1 = (fu::file_size(path_1) >= 0);
             if (exists_1)
                 return path_1;
 
@@ -639,7 +639,7 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
     if (cached)
         return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
 
-    fu_STR read = fu::file_read(fu_STR(path));
+    fu_STR read = fu::file_read(path);
     (ctx.files.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(read); if (_) return _; } return "\v"_fu; }()));
     return read;
 }
