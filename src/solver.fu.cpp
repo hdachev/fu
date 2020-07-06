@@ -969,7 +969,6 @@ struct sf_solve
     s_ScopeSkip _scope_skip {};
     s_SolvedNode _current_fn {};
     fu_MAP<fu_STR, s_Type> _typeParams {};
-    bool TEST_expectImplicits = false;
     s_Type t_string = createArray(t_byte);
     void _Scope_import__forceCopy(const int modid)
     {
@@ -1584,7 +1583,6 @@ struct sf_solve
     };
     s_SolvedNode solveRoot(const s_Node& node)
     {
-        TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
         return solved(node, t_void, solveNodes(node.items, t_void));
     };
     s_SolvedNode solveBlock(const s_Node& node)
@@ -2432,7 +2430,6 @@ struct sf_solve
     };
     s_SolvedNode bindImplicitArg(const fu_STR& name, const s_Type& type)
     {
-        (TEST_expectImplicits || fail("Attempting to propagate implicit arguments."_fu));
         return CallerNode(createRead(name), s_Type(type), getImplicit(name, type), fu_VEC<s_SolvedNode>{});
     };
     s_Target getImplicit(const fu_STR& id, const s_Type& type)

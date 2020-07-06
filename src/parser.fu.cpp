@@ -378,7 +378,6 @@ struct sf_parse
     int _precedence = P_RESET;
     int _fnDepth = 0;
     int _numReturns = 0;
-    int _implicits = 0;
     fu_STR _structName {};
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
@@ -444,9 +443,6 @@ struct sf_parse
     {
         _loc = _idx;
         s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, fu_STR{}), 0, fu_STR{});
-        if (_implicits)
-            out.flags |= F_IMPLICIT;
-
         return out;
     };
     s_Node parseBlock()
@@ -847,9 +843,6 @@ struct sf_parse
         s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()));
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
-
-        if ((flags & F_IMPLICIT))
-            _implicits++;
 
         if (mustname)
             flags |= F_MUSTNAME;
