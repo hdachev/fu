@@ -3,7 +3,6 @@ import parser;
 import types;
 import scope;
 import context;
-import solver;
 import intlit;
 
 let M_STMT              = 1 << 0;
