@@ -14,13 +14,22 @@
 #include <utility>
 
 struct s_ModuleStat;
-struct s_Context;
 struct s_Intlit;
+struct s_Context;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
+struct s_Effects;
+struct s_MapFields;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
+struct s_Type;
+struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 struct s_Argument;
 struct s_Module;
 struct s_ModuleInputs;
@@ -35,40 +44,16 @@ struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Template;
-struct s_Effects;
-struct s_MapFields;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
+inline const s_Node& only_TAKM(const fu_VEC<s_Node>&);
+inline const s_SolvedNode& if_first_OiWy(fu_VEC<s_SolvedNode>&);
+inline s_SolvedNode& only_WBEL(fu_VEC<s_SolvedNode>&);
+s_Intlit Intlit(fu::view<std::byte>);
+fu_STR hash62(fu::view<std::byte>, int);
+bool hasIdentifierChars(const fu_STR&);
 fu_STR _fname(const s_TokenIdx&, const s_Context&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
-s_Intlit Intlit(fu::view<std::byte>);
-fu_STR hash62(fu::view<std::byte>, int);
-bool hasIdentifierChars(const fu_STR&);
-inline const s_Node& only_N1qL(const fu_VEC<s_Node>&);
-inline const s_SolvedNode& if_first_MpHa(fu_VEC<s_SolvedNode>&);
-inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
-void Scope_pop(s_Scope&, const s_ScopeMemo&);
-s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
-s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
-s_Scope listGlobals(const s_Module&);
-s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
-bool isStruct(const s_Type&);
-s_Type initStruct(const fu_STR&, int, s_Module&);
-bool isTemplate(const s_Overload&);
-s_Scope Scope_exports(const s_Scope&, int);
-s_ScopeMemo Scope_push(s_Scope&);
-s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
-int MODID(const s_Module&);
-int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
@@ -95,6 +80,21 @@ s_Lifetime Lifetime_fromScopeIdx(int);
 bool killedBy(const s_Lifetime&, int);
 s_Lifetime Lifetime_static();
 s_Lifetime Lifetime_fromArgIndex(int);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
+void Scope_pop(s_Scope&, const s_ScopeMemo&);
+s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
+s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
+s_Scope listGlobals(const s_Module&);
+s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
+bool isStruct(const s_Type&);
+s_Type initStruct(const fu_STR&, int, s_Module&);
+bool isTemplate(const s_Overload&);
+s_Scope Scope_exports(const s_Scope&, int);
+s_ScopeMemo Scope_push(s_Scope&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
+int MODID(const s_Module&);
+int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -679,25 +679,25 @@ struct s_MapFields
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_first_MpHa
-                                #define DEFt_if_first_MpHa
-inline const s_SolvedNode& if_first_MpHa(fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_if_first_OiWy
+                                #define DEFt_if_first_OiWy
+inline const s_SolvedNode& if_first_OiWy(fu_VEC<s_SolvedNode>& s)
 {
     return ([&]() -> const s_SolvedNode& { if (s.size()) return s.mutref(0); else return fu::Default<s_SolvedNode>::value; }());
 }
                                 #endif
 
-                                #ifndef DEFt_only_kt4Y
-                                #define DEFt_only_kt4Y
-inline s_SolvedNode& only_kt4Y(fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_only_WBEL
+                                #define DEFt_only_WBEL
+inline s_SolvedNode& only_WBEL(fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-                                #ifndef DEFt_only_N1qL
-                                #define DEFt_only_N1qL
-inline const s_Node& only_N1qL(const fu_VEC<s_Node>& s)
+                                #ifndef DEFt_only_TAKM
+                                #define DEFt_only_TAKM
+inline const s_Node& only_TAKM(const fu_VEC<s_Node>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1259,7 +1259,7 @@ struct sf_solve
             };
             (some || fail(fu_STR{}));
         };
-        const int extra_modid = ([&]() -> int { if ((flags & F_ACCESS)) return if_first_MpHa(args).type.value.modid; else return int{}; }());
+        const int extra_modid = ([&]() -> int { if ((flags & F_ACCESS)) return if_first_OiWy(args).type.value.modid; else return int{}; }());
         const fu_VEC<s_ScopeItem>& extra_items = ([&]() -> const fu_VEC<s_ScopeItem>& { if (extra_modid && !fu::has(_scope.imports, extra_modid)) return ctx.modules[extra_modid].out.solve.scope.items; else return fu::Default<fu_VEC<s_ScopeItem>>::value; }());
         fu_VEC<int> reorder {};
         fu_STR args_mangled {};
@@ -1334,7 +1334,7 @@ struct sf_solve
                         s_SolvedNode& arg = args.mutref(callsiteIndex);
                         if ((arg.kind == "label"_fu))
                         {
-                            s_SolvedNode inner { only_kt4Y(arg.items) };
+                            s_SolvedNode inner { only_WBEL(arg.items) };
                             arg = inner;
                         };
                         s_Type retype = tryRetyping(arg, expect);
@@ -2095,7 +2095,7 @@ struct sf_solve
     };
     s_SolvedNode solveTypedef(const s_Node& node)
     {
-        s_SolvedNode annot = evalTypeAnnot(only_N1qL(node.items));
+        s_SolvedNode annot = evalTypeAnnot(only_TAKM(node.items));
         Scope_Typedef(_scope, node.value, annot.type, node.flags, module);
         return createEmpty();
     };

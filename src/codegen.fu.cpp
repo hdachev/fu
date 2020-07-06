@@ -18,13 +18,22 @@
 #include <utility>
 
 struct s_ModuleStat;
-struct s_Context;
 struct s_Intlit;
+struct s_Context;
 struct s_LexerOutput;
 struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
+struct s_Effects;
+struct s_MapFields;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
+struct s_Type;
+struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 struct s_Argument;
 struct s_Module;
 struct s_ModuleInputs;
@@ -37,20 +46,11 @@ struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Template;
-struct s_Effects;
-struct s_MapFields;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
 inline std::byte if_last_y0NH(const fu_STR&);
-inline const s_SolvedNode& only_LOzw(const fu_VEC<s_SolvedNode>&);
+inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>&);
 bool hasIdentifierChars(const fu_STR&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Type clear_refs(const s_Type&);
 bool type_isArray(const s_Type&);
 s_Type tryClear_array(const s_Type&);
@@ -620,9 +620,9 @@ inline std::byte if_last_y0NH(const fu_STR& s)
 }
                                 #endif
 
-                                #ifndef DEFt_only_LOzw
-                                #define DEFt_only_LOzw
-inline const s_SolvedNode& only_LOzw(const fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_only_gII0
+                                #define DEFt_only_gII0
+inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1402,7 +1402,7 @@ struct sf_cpp_codegen
         {
             if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
             {
-                fu_STR expr = cgNode(only_LOzw(init.items), 0);
+                fu_STR expr = cgNode(only_gII0(init.items), 0);
                 if ((node.type.value.quals & q_primitive))
                     return ((head + " = "_fu) + expr);
 
@@ -1931,7 +1931,7 @@ struct sf_cpp_codegen
 
         s_Overload t = GET(node.target, module, ctx);
         if ((t.kind == "field"_fu))
-            return isFieldChain(only_LOzw(node.items));
+            return isFieldChain(only_gII0(node.items));
 
         if (((t.kind == "var"_fu) || (t.kind == "global"_fu) || (t.kind == "arg"_fu) || (t.kind == "ref"_fu)))
             return true;

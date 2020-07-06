@@ -25,6 +25,14 @@ struct s_Token;
 struct s_Node;
 struct s_ParserOutput;
 struct s_TokenIdx;
+struct s_Effects;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
+struct s_Type;
+struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 struct s_Argument;
 struct s_Module;
 struct s_ModuleInputs;
@@ -37,21 +45,13 @@ struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Template;
-struct s_Effects;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
-fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 inline std::byte if_last_bcSl(fu_STR&);
 fu_STR path_noext(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
+fu_STR resolveFile_x(const fu_STR&, const s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
