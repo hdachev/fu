@@ -24,15 +24,15 @@ struct never
     throw std::runtime_error(what);
 }
 
-[[noreturn]] never fail(const fu_STR& what)
+[[noreturn]] inline never fail(const fu_STR& what)
 {
-    return fail(FU_TEMP_CSTR(what));
+    fail(FU_TEMP_CSTR(what));
 }
 
-[[noreturn]] never fail(fu_STR&& what)
+[[noreturn]] inline never fail(fu_STR&& what)
 {
     what.push(std::byte(0));
-    return fail((const char*)what.data());
+    fail((const char*)what.data());
 }
 
 } // namespace
