@@ -15,8 +15,8 @@ int self_test();
 void runTests();
 void saySomethingNice();
 fu_STR path_join(const fu_STR&, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 fu_STR locate_PRJDIR();
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 #ifndef FU_NO_FDEFs
 
                                 #ifndef DEF_PRJDIR

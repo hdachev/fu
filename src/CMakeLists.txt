@@ -18,6 +18,7 @@ set(FU_INPUTS
     solver.fu
     prelude.fu
     codegen.fu
+    build.fu
     compiler.fu
     tests.fu
     hello.fu
