@@ -1,6 +1,3 @@
-import lexer;
-import parser;
-import solver;
 import context;
 
 let prelude_src = `
@@ -320,9 +317,9 @@ pub fn solvePrelude(): Context
     let implicit mut ctx: Context;
     let implicit mut module = getModule("");
 
-    let lexed   = lex(prelude_src, "__prelude");
-    let root    = parse(0, "__prelude", :lexed.tokens).root;
-    let solved  = solve(root);
+    let lexed   = lexer::lex(prelude_src, "__prelude");
+    let root    = parser::parse(0, "__prelude", :lexed.tokens).root;
+    let solved  = solver::solve(root);
 
     module.out.solve = solved;
     setModule(module);

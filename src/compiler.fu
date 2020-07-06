@@ -1,13 +1,6 @@
 import helpers;
-import lexer;
-import parser;
-import solver;
-import scope;
 import context;
 import stat;
-import prelude;
-import codegen;
-import build;
 
 
 //
@@ -20,21 +13,20 @@ fn compile(fname: string, via: string = "")
     if (!module.in)
     {
         // Invalidate outputs.
-        module.out = ModuleOutputs;
+        module.out = scope::ModuleOutputs;
 
         let src = getFile(fname) || throw (
             "import badfile: `" ~ via ~ fname ~ "`.");
 
         let stat0 = ModuleStat_now();
-        let lexer_result =
-            lex(:fname, :src);
+        let lexer_result = lexer::lex(:fname, :src);
 
         let stat1 = ModuleStat_now();
-        let parser_result = parse( :module.modid, :fname, :lexer_result.tokens );
+        let parser_result = parser::parse( :module.modid, :fname, :lexer_result.tokens );
 
         let stat2 = ModuleStat_now();
 
-        module.in = ModuleInputs(
+        module.in = scope::ModuleInputs(
             :src, lex: lexer_result,
             parse: parser_result);
 
@@ -65,11 +57,11 @@ fn compile(fname: string, via: string = "")
 
         //
         let stat0 = ModuleStat_now();
-        module.out.solve = solve(
+        module.out.solve = solver::solve(
             module.in.parse.root);
 
         let stat1 = ModuleStat_now();
-        module.out.cpp = cpp_codegen(
+        module.out.cpp = codegen::cpp_codegen(
             module.out.solve.root,
             module.out.solve.scope);
 
@@ -98,7 +90,7 @@ pub fn build(
     dir_cpp = "",
     scheme  = "")
 {
-    let implicit mut ctx = CTX_PRELUDE;
+    let implicit mut ctx = prelude::CTX_PRELUDE;
 
     {
         println("COMPILE ", fname);
@@ -133,7 +125,8 @@ pub fn build(
         println("        ", tt, "s\n");
     }
 
-    return build(ctx, :run, :bin, :scheme,
+    return ::build(
+        ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         unity: fname);
 }
@@ -179,7 +172,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
             ? src
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
-    let implicit mut ctx = CTX_PRELUDE;
+    let implicit mut ctx = prelude::CTX_PRELUDE;
     for (mut i = 0; i < sources.len; i++)
     {
         let snippet = sources[i];
@@ -215,8 +208,8 @@ pub fn ZERO(sources: string[]): Context
 {
     let ctx = compile_snippets(:sources);
 
-    build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE, scheme: "debug");
-    build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
+    ::build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE, scheme: "debug");
+    ::build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
 
     return ctx;
 }

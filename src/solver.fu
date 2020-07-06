@@ -4,7 +4,6 @@ import scope;
 import context;
 import types;
 import lifetimes;
-import intlit;
 
 let WARN_ON_IMPLICIT_COPY = false;
 
@@ -889,7 +888,7 @@ pub fn solve(
 
     fn solveInt(v: string, type: Type): Type
     {
-        let parse = Intlit(v);
+        let parse = intlit::Intlit(v);
         parse.error && fail(parse.error);
 
         if (type)

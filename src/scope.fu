@@ -1,8 +1,6 @@
-import lexer;
 import parser;
 import types;
 import lifetimes;
-import stat;
 
 
 // Build service primitives.
@@ -10,7 +8,7 @@ import stat;
 pub struct ModuleInputs
 {
     src:        string;
-    lex:        LexerOutput;
+    lex:        lexer::LexerOutput;
     parse:      ParserOutput;
 };
 
@@ -25,10 +23,10 @@ pub struct ModuleOutputs
 
 pub struct ModuleStats
 {
-    lex:        ModuleStat;
-    parse:      ModuleStat;
-    solve:      ModuleStat;
-    codegen:    ModuleStat;
+    lex:        stat::ModuleStat;
+    parse:      stat::ModuleStat;
+    solve:      stat::ModuleStat;
+    codegen:    stat::ModuleStat;
 };
 
 pub struct Module
