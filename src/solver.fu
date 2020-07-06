@@ -34,9 +34,6 @@ pub fn solve(
     mut _current_fn:    SolvedNode;
     mut _typeParams:    Map(string, Type);
 
-    //
-    mut TEST_expectImplicits: bool = false;
-
 
     //
 
@@ -868,8 +865,6 @@ pub fn solve(
 
     fn solveRoot(node: Node): SolvedNode
     {
-        TEST_expectImplicits = !!(node.flags & F_IMPLICIT);
-
         return solved(node, t_void, solveNodes(node.items, t_void));
     }
 
@@ -2141,9 +2136,6 @@ pub fn solve(
 
     fn bindImplicitArg(name: string, type: Type): SolvedNode
     {
-        TEST_expectImplicits || fail(
-            "Attempting to propagate implicit arguments.");
-
         return CallerNode(
             createRead(name), :type,
             target: getImplicit(name, type));

@@ -166,7 +166,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
     mut _numReturns = 0;
-    mut _implicits  = 0;
     mut _structName = "";
     mut _dollars    : string[];
 
@@ -271,9 +270,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         mut out = make("root",
             parseBlockLike("eof", "eof"));
-
-        if (_implicits)
-            out.flags |= F_IMPLICIT;
 
         return out;
     }
@@ -822,9 +818,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         if (numDollars0 != _dollars.len)
             flags |= F_TEMPLATE;
-
-        if (flags & F_IMPLICIT)
-            _implicits++;
 
         if (mustname)
             flags |= F_MUSTNAME;
