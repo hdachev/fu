@@ -2,7 +2,8 @@
 
 #include <type_traits>
 
-#include "./arc.h"
+#include "./util.h"
+#include "./mem/arc.h"
 
 template <typename T>
 struct fu_CONFIG
@@ -253,7 +254,7 @@ struct fu_VEC
                 old_data,
                 old_data + old_size);
 
-            arc->dealloc(old_capa * sizeof(T));
+            fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
         }
     }
 
@@ -280,7 +281,7 @@ struct fu_VEC
         assert(arc->decr() && "not unique");
         #endif
 
-        arc->dealloc(old_capa * sizeof(T));
+        fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
     }
 
 
@@ -516,7 +517,7 @@ struct fu_VEC
         else
         {
             i32 new_capa = new_size + HAS_SMALL;
-            fu_ARC::alloc(new_data, new_capa);
+            fu_ARC_ALLOC(new_data, new_capa);
             UNSAFE__EnsureActualLooksBig(new_capa);
             assert(new_capa >= new_size);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./mem/alloc.h"
+#include "../util.h"
 
 
 //
@@ -90,73 +90,6 @@ struct alignas(16) fu_ARC
     inline static int ALLOC_STAT_BYTES() { return 0; }
     #endif
 
-    fu_NEVER_INLINE void dealloc(size_t bytes)
-    {
-        assert((int)bytes <= DEBUG_bytes
-                  && this == DEBUG_self);
-
-        #if fu_ARC__DETECT_MEMORY_LEAKS
-        {
-            CDOWN_count.m_cnt -= 1;
-            CDOWN_bytes.m_cnt -= (int)DEBUG_bytes;
-
-            DEBUG_bytes = -11;
-            DEBUG_self  = nullptr;
-        }
-        #endif
-
-        fu::pow2mem_free((char*) this, bytes);
-    }
-
-    fu_NEVER_INLINE static char* alloc(size_t& inout_bytes)
-    {
-        size_t bytes = inout_bytes;
-
-        // Round up.
-        bytes += sizeof(fu_ARC);
-        char* mem = fu::pow2mem_alloc(bytes);
-        bytes -= sizeof(fu_ARC);
-
-        // Must fit in i32.
-        if (inout_bytes > 0x7fffffffu)
-            std::exit(fu_EXIT_BadAlloc);
-
-        fu_ARC* header = (fu_ARC*) mem;
-        new (header) fu_ARC();
-
-        #if fu_ARC__DETECT_MEMORY_LEAKS
-        {
-            header->DEBUG_bytes = (int)bytes;
-            header->DEBUG_self  = mem;
-
-            CDOWN_count.m_cnt += 1;
-            CDOWN_bytes.m_cnt += (int)bytes;
-        }
-        #endif
-
-        #if fu_ARC__PROFILE_MEMORY
-        STAT_count.m_cnt++;
-        STAT_bytes.m_cnt += (int)bytes;
-        #endif
-
-        inout_bytes = bytes;
-        return mem + sizeof(fu_ARC);
-    }
-
-    template <typename T>
-    static void alloc(T*& out_ptr, int& inout_cnt)
-    {
-        assert(inout_cnt > 0);
-
-        int cnt = inout_cnt;
-            cnt = cnt > 1
-                ? cnt : 1;
-
-        size_t bytes    = cnt * sizeof(T);
-        out_ptr         = (T*)  alloc(bytes);
-        inout_cnt       = (int) bytes / sizeof(T);
-    }
-
     fu_INL void incr() noexcept {
         m_arc.fetch_add(
             +1, std::memory_order_relaxed );
@@ -182,3 +115,23 @@ struct alignas(16) fu_ARC
 static_assert(sizeof(int)    == 4);
 static_assert(sizeof(fu_ARC) == 16);
 static_assert(sizeof(fu_ARC) < fu::ARC_MIN_ALLOC);
+
+
+//
+
+extern "C" void  fu_ARC_DEALLOC(fu_ARC* arc, size_t bytes);
+extern "C" char* fu_ARC_ALLOC  (size_t* inout_bytes);
+
+template <typename T>
+inline void fu_ARC_ALLOC(T*& out_ptr, int& inout_cnt)
+{
+    assert(inout_cnt > 0);
+
+    int cnt = inout_cnt;
+        cnt = cnt > 1
+            ? cnt : 1;
+
+    size_t bytes    = cnt * sizeof(T);
+    out_ptr         = (T*)fu_ARC_ALLOC(&bytes);
+    inout_cnt       = int(bytes / sizeof(T));
+}

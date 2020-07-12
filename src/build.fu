@@ -24,7 +24,7 @@ fn update_file(
     dir_out !: string)
 {
     let fname = ensure_local_fname(:fname, :dir_src);
-        fname.starts(with: dir_src) || assert();
+        fname.starts(with: dir_src) || throw("ensure_local_fname broken");
 
     let fname = dir_out ~ fname.slice(dir_src.len);
     if (file_read(fname) != data)
@@ -41,11 +41,11 @@ fn update_file(
 
 fn getLinkOrder(modules: Module[]): i32[]
 {
-    mut link_order: i32[] = [];
+    mut link_order: i32[] = [ 0 ];
 
     fn visit(module: Module): void
     {
-        let link_id = module.modid - 1;
+        let link_id = module.modid;
         if (link_order.has(link_id))
             return;
 
@@ -64,7 +64,7 @@ fn getLinkOrder(modules: Module[]): i32[]
             }
         }
 
-        link_order.has(link_id) && assert();
+        link_order.has(link_id) && throw("link order broken");
         link_order.push(link_id);
     }
 
@@ -81,15 +81,15 @@ pub fn build(
     ctx: Context,
     run: bool,
 
-    mut dir_wrk: string,
+    mut dir_wrk !: string,
+        fulib   !: string,
 
-    mut bin     = "",
-    mut dir_obj = "",
-    mut dir_src = "",
-    mut dir_cpp = "",
-
-    unity:  string = "",
-    scheme: string = ""): void
+    mut bin     ! = "",
+    mut dir_obj ! = "",
+    mut dir_src ! = "",
+    mut dir_cpp ! = "",
+        unity   ! = "",
+        scheme  ! = ""): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -102,14 +102,6 @@ pub fn build(
     if (dir_obj && dir_obj.if_last != '/') dir_obj ~= '/';
     if (dir_src && dir_src.if_last != '/') dir_src ~= '/';
     if (dir_cpp && dir_cpp.if_last != '/') dir_cpp ~= '/';
-
-    //
-    mut code:   i32;
-    mut stdout: string;
-
-    //
-    mut Fs: string[];
-    mut len_all: i32;
 
     // Optimization level.
     mut O_lvl   = scheme != "debug"
@@ -131,11 +123,18 @@ pub fn build(
                 ~ "-Wno-parentheses-equality " // opt-out
                 ;
 
-    // Starting after prelude.
-    for (mut i = 1; i < ctx.modules.len; i++)
+    //
+    mut Fs: string[];
+    mut len_all: i32;
+
+    let fulib_cpp = file_read(fulib);
+
+    for (mut i = 0; i < ctx.modules.len; i++)
     {
         let module  = ctx.modules[i];
-        let cpp     = module.out.cpp;
+        let cpp     = i ? module.out.cpp
+                        : fulib_cpp;
+
         let F       = cpp &&    dir_wrk ~ "o-" ~ hash_tea(GCC_CMD ~ cpp)
                                         ~ "-" ~ cpp.len;
 
@@ -150,6 +149,9 @@ pub fn build(
                         ~  "-" ~ len_all ~ "-" ~ Fs.len;
 
     //
+    mut code:   i32;
+    mut stdout: string;
+
     fn ERR(mut cpp: string = "")
     {
         if (!cpp)
@@ -165,7 +167,7 @@ pub fn build(
         if (!stdout)
             stdout = "[ EXIT CODE " ~ code ~ " ]";
 
-        return throw(stdout);
+        return throw("Smth broke: " ~ stdout);
     }
 
     //
@@ -175,7 +177,7 @@ pub fn build(
         // Build.
         for (mut i = 0; i < Fs.len; i++)
         {
-            let F     = Fs[i];
+            let F = Fs[i];
             if (!F)
                 continue;
 
@@ -186,12 +188,16 @@ pub fn build(
             if (file_size(F_obj) < 1)
             {
                 // Prelude @ 0.
-                let module = ctx.modules[i + 1];
-                let cpp = module.out.cpp;
+                let human = i
+                    ? ctx.modules[i].fname.path_filename
+                    : "fulib runtime";
+
+                let cpp = i ? ctx.modules[i].out.cpp
+                            : fulib_cpp;
 
                 file_write(F_cpp, cpp);
 
-                println("  BUILD ", module.fname.path_filename, " ", F_cpp);
+                println("  BUILD ", human, " ", F_cpp);
 
                 let t0 = now_hr();
 
@@ -235,8 +241,8 @@ pub fn build(
         }
 
         // Delete single object file.
-        if (Fs.len == 1 && Fs[0])
-            code = shell_exec("rm " ~ Fs[0] ~ ".o 2>&1", stdout);
+        if (Fs.len == 2 && Fs[1])
+            code = shell_exec("rm " ~ Fs[1] ~ ".o 2>&1", stdout);
 
         if (code) return ERR;
     }
@@ -254,10 +260,10 @@ pub fn build(
 
         mut cpp_files: string[];
 
-        for (mut i = 1/*prelude*/; i < ctx.modules.len; i++)
+        for (mut i = 0; i < ctx.modules.len; i++)
         {
             let module  = ctx.modules[i];
-            let data    = module.out.cpp;
+            let data    = i && module.out.cpp;
 
             let fname   = data && module.fname ~ ".cpp";
             let fname   = fname && update_file(
@@ -277,7 +283,7 @@ pub fn build(
             {
                 mut data = "#pragma once\n\n";
 
-                link_order.len == cpp_files.len || assert();
+                link_order.len == cpp_files.len || throw("lo.len != cf.len");
                 for (mut i = 0; i < link_order.len; i++)
                 {
                     let incl = cpp_files[link_order[i]];
@@ -298,14 +304,14 @@ pub fn build(
                 mut inputs:  string[];
                 mut outputs: string[];
 
-                link_order.len == cpp_files.len || assert();
+                link_order.len == cpp_files.len || throw("lo.len != cf.len (2)");
 
                 mut main: string;
                 mut includes: string;
 
-                for (mut i = 0; i < link_order.len; i++)
+                for (mut i = 1; i < link_order.len; i++)
                 {
-                    let moduleIdx = link_order[i] + /*prelude*/1;
+                    let moduleIdx = link_order[i];
                     let module = ctx.modules[moduleIdx];
 
                     let input = path_relative(CMakeLists, module.fname);
@@ -319,7 +325,7 @@ pub fn build(
                     if (file_size(custom) > 0)
                         includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
 
-                    let cpp_file = cpp_files[moduleIdx - /*prelude*/1];
+                    let cpp_file = cpp_files[moduleIdx];
                     if (cpp_file)
                         outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
                 }
@@ -344,8 +350,11 @@ pub fn build(
                       ~ "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
                       ~ "    VERBATIM)\n\n";
 
-                data ~= "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"
-                      ~ "target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)\n\n";
+                data ~= "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n";
+
+                data ~= "add_library(fulib SHARED $ENV{HOME}/fu/include/fu/_fulib.cpp)\n"
+                      ~ "target_include_directories(fulib PUBLIC $ENV{HOME}/fu/include/)\n"
+                      ~ "target_link_libraries(${FU_TARGET} PUBLIC fulib)\n\n";
 
                 if (includes)
                     data ~= includes ~ "\n";

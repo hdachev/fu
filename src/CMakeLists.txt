@@ -37,5 +37,7 @@ add_custom_command(
 
 add_library(${FU_TARGET} ${FU_OUTPUTS})
 
-target_include_directories(${FU_TARGET} PUBLIC ~/fu/include/)
+add_library(fulib SHARED $ENV{HOME}/fu/include/fu/_fulib.cpp)
+target_include_directories(fulib PUBLIC $ENV{HOME}/fu/include/)
+target_link_libraries(${FU_TARGET} PUBLIC fulib)
 

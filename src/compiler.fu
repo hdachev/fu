@@ -78,6 +78,29 @@ fn compile(fname: string, via: string = "")
 
 //
 
+fn absdir(a: string)
+    a.if_last == '/' ? a : a ~ '/';
+
+let HOME = absdir(env_get("HOME"));
+
+pub fn locate_PRJDIR(): string
+{
+    let dir = HOME ~ "fu/";
+    let fn  = dir  ~ "src/compiler.fu";
+    let fs  = file_size(fn);
+        fs  > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
+
+    println("PRJDIR: " ~ dir);
+    return dir;
+}
+
+pub let PRJDIR              = locate_PRJDIR();
+pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build.cpp/";
+pub let FULIB               = PRJDIR ~ "include/fu/_fulib.cpp";
+
+
+//
+
 pub fn build(
       fname: string,
         run: bool,
@@ -128,39 +151,8 @@ pub fn build(
     return ::build(
         ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
-        unity: fname);
+        unity: fname, fulib: FULIB);
 }
-
-
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Test & rebuild self.
-
-fn absdir(a: string)
-    a.if_last == '/' ? a : a ~ '/';
-
-let HOME = absdir(env_get("HOME"));
-
-pub fn locate_PRJDIR(): string
-{
-    let dir = HOME ~ "fu/";
-    let fn  = dir  ~ "src/compiler.fu";
-    let fs  = file_size(fn);
-        fs  > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
-
-    println("PRJDIR: " ~ dir);
-    return dir;
-}
-
-pub let PRJDIR              = locate_PRJDIR();
-pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build.cpp/";
 
 
 // Test running infra.
@@ -208,8 +200,12 @@ pub fn ZERO(sources: string[]): Context
 {
     let ctx = compile_snippets(:sources);
 
-    ::build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE, scheme: "debug");
-    ::build(:ctx, run: true, dir_wrk: DEFAULT_WORKSPACE);
+    let run = true;
+    let fulib = FULIB;
+    let dir_wrk = DEFAULT_WORKSPACE;
+
+    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug");
+    ::build(:ctx, :run, :fulib, :dir_wrk);
 
     return ctx;
 }

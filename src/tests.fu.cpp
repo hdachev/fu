@@ -32,12 +32,12 @@ struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Template;
-fu_STR snippet2cpp(const fu_STR&);
 s_Context ZERO(const fu_VEC<fu_STR>&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
+fu_STR snippet2cpp(const fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

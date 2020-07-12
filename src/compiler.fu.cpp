@@ -50,12 +50,13 @@ void operator+=(s_ModuleStat&, const s_ModuleStat&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
 s_Context solvePrelude();
-void build(const s_Context&, bool, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&);
-inline std::byte if_last_y0NH(const fu_STR&);
+void build(const s_Context&, bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 s_Context ZERO(const fu_STR&);
 fu_STR FAIL(const fu_STR&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
+inline std::byte if_last_y0NH(const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
@@ -614,6 +615,38 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     };
 }
 
+static fu_STR absdir(const fu_STR& a)
+{
+    return ((if_last_y0NH(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
+}
+
+static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
+
+fu_STR locate_PRJDIR()
+{
+    fu_STR dir = (HOME + "fu/"_fu);
+    fu_STR fn = (dir + "src/compiler.fu"_fu);
+    const int fs = fu::file_size(fn);
+    ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
+    (std::cout << ("PRJDIR: "_fu + dir) << '\n');
+    return dir;
+}
+
+                                #ifndef DEF_PRJDIR
+                                #define DEF_PRJDIR
+inline const fu_STR PRJDIR = locate_PRJDIR();
+                                #endif
+
+                                #ifndef DEF_DEFAULT_WORKSPACE
+                                #define DEF_DEFAULT_WORKSPACE
+inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
+                                #endif
+
+                                #ifndef DEF_FULIB
+                                #define DEF_FULIB
+inline const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
+                                #endif
+
                                 #ifndef DEF_CTX_PRELUDE
                                 #define DEF_CTX_PRELUDE
 inline const s_Context CTX_PRELUDE = solvePrelude();
@@ -650,35 +683,8 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
     };
-    return build(ctx, run, fu_STR(dir_wrk), fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
+    return build(ctx, run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
 }
-
-static fu_STR absdir(const fu_STR& a)
-{
-    return ((if_last_y0NH(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
-}
-
-static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
-
-fu_STR locate_PRJDIR()
-{
-    fu_STR dir = (HOME + "fu/"_fu);
-    fu_STR fn = (dir + "src/compiler.fu"_fu);
-    const int fs = fu::file_size(fn);
-    ((fs > 1000) || fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs)));
-    (std::cout << ("PRJDIR: "_fu + dir) << '\n');
-    return dir;
-}
-
-                                #ifndef DEF_PRJDIR
-                                #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
-                                #endif
-
-                                #ifndef DEF_DEFAULT_WORKSPACE
-                                #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
-                                #endif
 
 namespace {
 
@@ -730,8 +736,11 @@ fu_STR snippet2cpp(const fu_STR& src)
 s_Context ZERO(const fu_VEC<fu_STR>& sources)
 {
     s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu);
-    build(ctx, true, fu_STR(DEFAULT_WORKSPACE), fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
+    const bool run = true;
+    const fu_STR& fulib = FULIB;
+    const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
+    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu);
+    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
     return ctx;
 }
 

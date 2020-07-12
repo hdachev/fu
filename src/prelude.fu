@@ -243,8 +243,8 @@ fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
 fn assert(): never __native("<fu/never.h>", "fu::fail()");
 fn exit(code: i32): never __native("<cstdlib>", "std::exit");
 
-fn ALLOC_STAT_COUNT(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
-fn ALLOC_STAT_BYTES(): i32 __native("<fu/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
+fn ALLOC_STAT_COUNT(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
+fn ALLOC_STAT_BYTES(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
 
 
 // TODO move these out in separate imports,
