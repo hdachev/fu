@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef FU_UNITY_INCLUDE_FULIB
+#include <fu/_fulib.cpp>
+#endif
+
 #include "helpers.fu.cpp"
 #include "lexer.fu.cpp"
 #include "parser.fu.cpp"
