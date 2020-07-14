@@ -2040,7 +2040,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(hey: byte[])
-            hey.u32_view[0];
+            hey.view(u32)[0];
 
         fn main() {
             mut hey: byte[] = [ byte(1), byte(1), byte(1), byte(1) ];
@@ -2085,7 +2085,7 @@ pub fn runTests()
         };
 
         fn test(out: &mut [Hey]) {
-            out.u8_view .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];
+            out.view(u8) .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];
         }
 
         fn main() {
@@ -2101,7 +2101,7 @@ pub fn runTests()
         };
 
         fn test(x: &mut [i32], y: [ Hey ])
-            x .= y.i32_view;
+            x .= y.view(i32);
 
         fn main() {
             mut a = [ 0 ];
@@ -2117,7 +2117,7 @@ pub fn runTests()
 
         fn main() {
             mut a = [ 0 ];
-            a .= [ Hey(13) ].i32_view;
+            a .= [ Hey(13) ].view(i32);
             return a[0] - 13;
         }
     `);
