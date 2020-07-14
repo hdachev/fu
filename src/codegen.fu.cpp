@@ -1789,7 +1789,7 @@ struct sf_cpp_codegen
         if (alt)
             return (((("("_fu + cond) + " || "_fu) + alt) + ")"_fu);
 
-        fail("TODO"_fu);
+        fail("TODO cgIf no const/alt"_fu);
     };
     fu_STR cgDefault(const s_Type& type)
     {

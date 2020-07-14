@@ -1022,7 +1022,7 @@ struct sf_solve
     s_Target TemplateDecl(const s_Node& node)
     {
         const fu_STR& id = node.value;
-        ((node.kind == "fn"_fu) || fail("TODO"_fu));
+        ((node.kind == "fn"_fu) || fail("TODO TemplateDecl non-fn"_fu));
         const int max = (node.items.size() + FN_ARGS_BACK);
         int min = 0;
         for (int i = 0; (i < max); i++)
@@ -2235,7 +2235,7 @@ struct sf_solve
             s_Type t = evalTypeAnnot(node.items[0]).type;
             return solved(node, createSlice(t), fu_VEC<s_SolvedNode>{});
         };
-        fail("TODO"_fu);
+        fail("TODO evalTypeAnnot"_fu);
     };
     bool trySolveTypeParams(const s_Node& node, s_Type&& type, fu_MAP<fu_STR, s_Type>& typeParams)
     {
@@ -2246,7 +2246,7 @@ struct sf_solve
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO"_fu), s_Type{}))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO trySolveTypeParams unary call"_fu), s_Type{}))));
                     if (!t)
                         return false;
 
@@ -2291,16 +2291,35 @@ struct sf_solve
             s_Type t = tryClear_slice(type);
             return (t && trySolveTypeParams(([&]() -> const s_Node& { { const s_Node& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }()), s_Type(t), typeParams));
         };
-        fail("TODO"_fu);
+        fail("TODO trySolveTypeParams fallthrough"_fu);
     };
     bool evalTypePattern(const s_Node& node)
     {
-        const fu_VEC<s_Node>& items = node.items;
-        if ((items.size() == 2))
+        if ((node.kind == "and"_fu))
         {
-            const s_Node& left = ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
-            const s_Node& right = ([&]() -> const s_Node& { { const s_Node& _ = items[1]; if (_) return _; } fail(fu_STR{}); }());
-            if (((node.kind == "call"_fu) && (node.value == "->"_fu)))
+            for (int i = 0; (i < node.items.size()); i++)
+            {
+                if (!evalTypePattern(node.items[i]))
+                    return false;
+
+            };
+            return true;
+        }
+        else if ((node.kind == "or"_fu))
+        {
+            for (int i = 0; (i < node.items.size()); i++)
+            {
+                if (evalTypePattern(node.items[i]))
+                    return true;
+
+            };
+            return false;
+        }
+        else if (((node.kind == "call"_fu) && (node.items.size() == 2)))
+        {
+            const s_Node& left = ([&]() -> const s_Node& { { const s_Node& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
+            const s_Node& right = ([&]() -> const s_Node& { { const s_Node& _ = node.items[1]; if (_) return _; } fail(fu_STR{}); }());
+            if ((node.value == "->"_fu))
             {
                 if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
                 {
@@ -2314,14 +2333,9 @@ struct sf_solve
                     s_Type actual = evalTypeAnnot(left).type;
                     return isAssignable(expect, actual);
                 };
-            }
-            else if ((node.kind == "and"_fu))
-                return (evalTypePattern(left) && evalTypePattern(right));
-            else if ((node.kind == "or"_fu))
-                return (evalTypePattern(left) && evalTypePattern(right));
-
+            };
         };
-        fail("TODO"_fu);
+        fail((((("TODO evalTypePattern fallthrough: "_fu + node.kind) + "("_fu) + node.items.size()) + ")"_fu));
     };
     s_Node createRead(const fu_STR& id)
     {
