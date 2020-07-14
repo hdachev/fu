@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef FU_UNITY_INCLUDE_FULIB
+#ifdef fu_UNITY_FULIB
 #include <fu/_fulib.cpp>
 #endif
 

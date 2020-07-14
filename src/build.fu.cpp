@@ -780,7 +780,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, const fu_STR&
             if (unity)
             {
                 fu_STR data = "#pragma once\n\n"_fu;
-                (data += (("#ifdef FU_UNITY_INCLUDE_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu));
+                (data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu));
                 ((link_order.size() == cpp_files.size()) || fu::fail("lo.len != cf.len"_fu));
                 for (int i = 0; (i < link_order.size()); i++)
                 {

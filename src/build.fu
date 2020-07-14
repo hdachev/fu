@@ -283,7 +283,7 @@ pub fn build(
             {
                 mut data = "#pragma once\n\n";
 
-                data ~= "#ifdef FU_UNITY_INCLUDE_FULIB\n"
+                data ~= "#ifdef fu_UNITY_FULIB\n"
                       ~ "#include <fu/_fulib.cpp>\n"
                       ~ "#endif\n\n";
 
