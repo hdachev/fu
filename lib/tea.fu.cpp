@@ -87,7 +87,7 @@ inline uint64_t u64_SxuS(s_TEA&& tea)
 s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
 {
     const int u32len = (u8view.size() & ~3);
-    fu::view<uint32_t> u32view = fu::into_view<u32>(fu::get_view(u8view, 0, u32len));
+    fu::view<uint32_t> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), uint32_t{});
     for (int i = 1; (i < u32view.size()); (i += 2))
     {
         res.v0 ^= u32view[(i - 1)];
