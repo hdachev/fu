@@ -2034,6 +2034,11 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn test(i: i32) [ i, i + 1 ];
+        fn main() test(0)[1] - 1;
+    `);
+
+    ZERO(`
         fn test(hey: byte[])
             hey.u32_view[0];
 

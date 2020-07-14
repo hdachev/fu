@@ -1299,7 +1299,7 @@ pub fn cpp_codegen(
         if (alt)
             return "(" ~ cond ~ " || " ~ alt ~ ")";
 
-        return fail("TODO");
+        return fail("TODO cgIf no const/alt");
     }
 
 

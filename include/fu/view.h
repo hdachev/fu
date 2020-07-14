@@ -196,8 +196,23 @@ view_mut<Dest> into_view_mut(V& src) noexcept
                 dest_size);
 }
 
-template <typename Dest, typename T>
-fu_INL view_mut<Dest> into_view_mut(view_mut<T>&& src) noexcept
+template <typename Dest, typename V>
+fu_INL view_mut<Dest> into_view_mut(V&& src) noexcept
+{
+    return into_view_mut<Dest>(src);
+}
+
+
+//
+
+template <typename Dest, typename V>
+fu_INL view<Dest> view_of(const V& src, const Dest&) noexcept
+{
+    return into_view<Dest>(src);
+}
+
+template <typename Dest, typename V>
+fu_INL view_mut<Dest> view_of_mut(V&& src, const Dest&) noexcept
 {
     return into_view_mut<Dest>(src);
 }

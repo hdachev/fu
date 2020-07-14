@@ -118,7 +118,7 @@ pub fn solve(
     {
         let id = node.value;
 
-        node.kind == "fn" || fail("TODO");
+        node.kind == "fn" || fail("TODO TemplateDecl non-fn");
 
         // TODO FIX What is this nonsense.
         //  This is wrong on so many levels.
@@ -1813,7 +1813,7 @@ pub fn solve(
             return solved(node, createSlice(t));
         }
 
-        return fail("TODO");
+        return fail("TODO evalTypeAnnot");
     }
 
     fn trySolveTypeParams(
@@ -1829,7 +1829,7 @@ pub fn solve(
                     mut t   = node.value == "&"    ? tryClear_ref(type)
                             : node.value == "&mut" ? tryClear_mutref(type)
                             : node.value == "[]"   ? tryClear_array(type)
-                            : (fail("TODO"), Type);
+                            : (fail("TODO trySolveTypeParams unary call"), Type);
 
                     if (!t)
                         return false;
@@ -1900,18 +1900,33 @@ pub fn solve(
                 node.items[0] || fail(), t, typeParams);
         }
 
-        return fail("TODO");
+        return fail("TODO trySolveTypeParams fallthrough");
     }
 
     fn evalTypePattern(node: Node): bool
     {
-        let items = node.items;
-        if (items.len == 2)
+        if (node.kind == "and")
         {
-            let left  = items[0] || fail();
-            let right = items[1] || fail();
+            for (mut i = 0; i < node.items.len; i++)
+                if (!evalTypePattern(node.items[i]))
+                    return false;
 
-            if (node.kind == "call" && node.value == "->")
+            return true;
+        }
+        else if (node.kind == "or")
+        {
+            for (mut i = 0; i < node.items.len; i++)
+                if (evalTypePattern(node.items[i]))
+                    return true;
+
+            return false;
+        }
+        else if (node.kind == "call" && node.items.len == 2)
+        {
+            let left  = node.items[0] || fail();
+            let right = node.items[1] || fail();
+
+            if (node.value == "->")
             {
                 if (left.kind  == "typeparam" &&
                     right.kind == "typetag")
@@ -1932,19 +1947,10 @@ pub fn solve(
                     return isAssignable(expect, actual);
                 }
             }
-            else if (node.kind == "and")
-            {
-                return evalTypePattern(left )
-                    && evalTypePattern(right);
-            }
-            else if (node.kind == "or")
-            {
-                return evalTypePattern(left )
-                    && evalTypePattern(right);
-            }
         }
 
-        return fail("TODO");
+        return fail("TODO evalTypePattern fallthrough: "
+                    ~ node.kind ~ "(" ~ node.items.len ~ ")");
     }
 
 
