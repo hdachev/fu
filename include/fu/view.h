@@ -228,14 +228,27 @@ fu_INL void view_assign(V0& a, const V1& b) noexcept
     static_assert(
         std::is_trivially_destructible<T0>::value &&
         std::is_trivially_destructible<T1>::value,
-            "TODO non-trivial view-set");
+            "TODO view_assign: non-trivial view assign.");
+
+    static_assert(
+        sizeof(T0) % sizeof(T1) == 0 ||
+        sizeof(T1) % sizeof(T0) == 0,
+            "view_assign: neither T0/T1 is size-mod the other.");
 
     auto s0 = a.size() * sizeof(T0);
     auto s1 = b.size() * sizeof(T1);
     assert(s0 == s1);
 
-    auto s = s0 < s1 ? s0 : s1;
-    std::memmove(a.data_mut(), b.data(), s);
+    auto s  = s0 < s1 ? s0 : s1;
+    auto pd = a.data_mut();
+    auto ps = b.data();
+
+    assert((pd >= ps + s || pd + s <= ps)
+        && "TODO view_assign: memcpy instead of memmove,"
+           " we shouldnt be able to pass in overlapping ranges.");
+
+    if (pd != ps && s)
+        std::memmove(pd, ps, s);
 }
 
 template <typename V0, typename V1>
