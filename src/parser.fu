@@ -309,7 +309,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let name = tryConsume("id");
         let id = name && name.value || fail("Anon structs.");
 
-        ////////////////////////////////
+        //////////////////////////////
         let structName0 = _structName;
         _structName = id;
 
@@ -318,7 +318,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             "op", "}", "struct");
 
         _structName = structName0;
-        //////////////////////////
+        //////////////////////////////
 
         return make(
             "struct", items, 0,
