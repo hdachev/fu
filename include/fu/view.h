@@ -240,12 +240,12 @@ fu_INL void view_assign(V0& a, const V1& b) noexcept
     assert(s0 == s1);
 
     auto s  = s0 < s1 ? s0 : s1;
-    auto pd = a.data_mut();
-    auto ps = b.data();
+    auto pd = reinterpret_cast<char*>       (a.data_mut());
+    auto ps = reinterpret_cast<const char*> (b.data()    );
 
-    assert((pd >= ps + s || pd + s <= ps)
-        && "TODO view_assign: memcpy instead of memmove,"
-           " we shouldnt be able to pass in overlapping ranges.");
+    assert((pd <= ps - s || pd >= ps + s) &&
+        "view_assign: mutptr aliasing, "
+        "TODO use memcpy instead of memmove.");
 
     if (pd != ps && s)
         std::memmove(pd, ps, s);
