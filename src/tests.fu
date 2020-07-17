@@ -226,34 +226,11 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct Range {
-            min: i32;
-            max: i32;
-
-            fn size()
-                max - min;
-        }
-
-        let r = Range(14, 21);
-
-        return size(r) - 7;
-    `);
-
-    ZERO(`
         struct X {
             a: i32;
-            fn test(b: i32) a + b;
         }
 
-        return X(1).test(-1);
-    `);
-
-    ZERO(`
-        struct X {
-            a: i32;
-            fn test(b: i32) a + b;
-        }
-
+        fn test(using x: X, b: i32) a + b;
         fn hey(using x: X) test(-1);
 
         return X(1).hey;
@@ -270,24 +247,6 @@ pub fn runTests()
 
         fn dist(using p: Player, other: Player)
             x - other.x;
-
-        let a = Player(Pos(10));
-        let b = Player(Pos( 4));
-
-        return dist(a, b) - 6;
-    `);
-
-    ZERO(`
-        struct Pos {
-            x: i32;
-        }
-
-        struct Player {
-            using pos: Pos;
-
-            fn dist(other: Player)
-                x - other.x;
-        }
 
         let a = Player(Pos(10));
         let b = Player(Pos( 4));
@@ -460,156 +419,6 @@ pub fn runTests()
         fn main() add3(v1).x - 5;
     `);
 
-
-    // Destructor basics.
-
-    let RAII = `
-        let mut i = 0;
-        struct S {
-            j: &mut i32;
-            fn free()
-                j += j + 1;
-        }
-    `;
-
-    ZERO(RAII ~ `
-        let s = S(i);
-        return i;
-        // <-destructor here
-    `);
-
-    ZERO(RAII ~ `
-        { let s = S(i); } // <-destructor here
-        return i - 1;
-    `);
-
-    ZERO(RAII ~ `
-        fn test(s: &S) { return s.j; }
-        test(S(i)); // <-destructor here
-        return i - 1;
-    `);
-
-    ZERO(RAII ~ `
-        fn test(s: &S) { return s.j; }
-        let s = S(i);
-        test(s);
-        return i;
-        // <-destructor here
-    `);
-
-
-    // Move semantics.
-
-    ZERO(RAII ~ `
-        fn test(s: S) { return s.j; }
-        test(S(i)); // <-destructor here
-        return i - 1;
-    `);
-
-    FAIL(RAII ~ `
-        fn test(mut s: S) { return s.j; } // <-destructor here
-
-        mut s = S(i);
-        //*F
-        test( s ); //ERR explicit
-        /*/
-        test( STEAL(s) ); // <- destructor here
-        //*/
-
-        // return i - 1;
-
-        // TODO FIX - except it doesn't, because no actual move occurs -
-        //  the S&& annot doesn't trigger the move ctor.
-        return 0;
-    `);
-
-    ZERO(RAII ~ `
-        fn test(mut s: S) {
-            let x = STEAL (s);
-            return x.j; // <-destructor here
-        }
-
-        mut s = S(i);
-        test( STEAL(s) );
-
-        return i - 1;
-    `);
-
-    /*
-
-    FAIL(RAII ~ `
-        fn test(s: S) {} // <-destructor here
-        let s = S(i);
-        test(s); // s is moved in
-        test(s); //ERR moved
-        return i - 1;
-    `);
-
-
-    // Borrow checker.
-
-    const BORROW = `
-        struct Borrow {
-            x: &i32;
-        }
-    `;
-
-    FAIL(BORROW ~ `
-        let mut b: Borrow;
-        return b.x; //ERR initialize
-    `);
-
-    ZERO(BORROW ~ `
-        let mut b: Borrow;
-        let i = 0;
-        b = Borrow(i);
-        return b.x;
-    `);
-
-    FAIL(BORROW ~ `
-        let b = Borrow(0); //ERR outlive
-        return b.x;
-    `);
-
-    ZERO(BORROW ~ `
-        let i = -1;
-        let b = Borrow(i);
-        b.x++;
-        return i;
-    `);
-
-    FAIL(BORROW ~ `
-        let b: Borrow;
-        {
-            let i = -1;
-            b = Borrow(i); //ERR outlive
-        }
-        return ++b.x;
-    `);
-
-    FAIL(BORROW ~ `
-        let b: Borrow;
-
-        fn test() {
-            let i = -1;
-            b = Borrow(i); //ERR outlive
-        }
-
-        test();
-        return ++b.x;
-    `);
-
-    FAIL(BORROW ~ `
-        fn test() {
-            let i = -1;
-            return Borrow(i); //ERR outlive
-        }
-
-        let b = test();
-        return ++b.x;
-    `);
-
-    // */
 
     // Arrays.
 

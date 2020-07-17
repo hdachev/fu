@@ -80,7 +80,6 @@ s_Lifetime Lifetime_fromScopeIdx(int);
 bool killedBy(const s_Lifetime&, int);
 s_Lifetime Lifetime_static();
 s_Lifetime Lifetime_fromArgIndex(int);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
 void Scope_pop(s_Scope&, const s_ScopeMemo&);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
@@ -95,6 +94,7 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Modu
 int MODID(const s_Module&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -1738,7 +1738,7 @@ struct sf_solve
         ((inItems.size() >= FN_RET_BACK) || fail(fu_STR{}));
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }());
         out.items.resize(inItems.size());
-        if ((_current_fn && (id != "free"_fu)))
+        if (_current_fn)
         {
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;

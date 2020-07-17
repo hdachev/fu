@@ -378,7 +378,6 @@ struct sf_parse
     int _precedence = P_RESET;
     int _fnDepth = 0;
     int _numReturns = 0;
-    fu_STR _structName {};
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
     fu_STR registerImport(fu_STR&& value)
@@ -464,36 +463,16 @@ struct sf_parse
     s_Node parseStructDecl()
     {
         s_Token name = tryConsume("id"_fu, fu_STR{});
-        const fu_STR& id = ([&]() -> const fu_STR& { if (name) { const fu_STR& _ = name.value; if (_) return _; } fail("Anon structs."_fu); }());
-        fu_STR structName0 { _structName };
-        _structName = id;
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
-        _structName = structName0;
         return make("struct"_fu, items, 0, (name ? name.value : fu::Default<fu_STR>::value));
     };
     s_Node parseStructItem()
     {
-        const s_Token& token = tokens[_idx++];
-        if (((token.kind == "op"_fu) || (token.kind == "id"_fu)))
-        {
-            if ((token.value == "fn"_fu))
-                return parseStructMethod();
-
-        };
-        _idx--;
         s_Node member = parseLet(true);
         member.flags |= F_FIELD;
         consume("op"_fu, ";"_fu);
         return member;
-    };
-    s_Node parseStructMethod()
-    {
-        s_Node fnNode = parseFnDecl(0);
-        s_Node typeAnnot = createPrefix("&"_fu, createRead((_structName ? _structName : fail(fu_STR{}))));
-        fnNode.items.unshift(createLet("this"_fu, F_USING, typeAnnot, miss()));
-        fnNode.flags |= F_METHOD;
-        return fnNode;
     };
     fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
     {
@@ -516,36 +495,11 @@ struct sf_parse
             ((_col0 > col00) || fail_Lint((((("Bad indent, expecting more than "_fu + col00) + ". Block starts on line "_fu) + line0) + "."_fu)));
             s_Node expr = (mode ? parseStructItem() : parseStatement());
             ((expr.kind != "call"_fu) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || fail_Lint("Orphan pure-looking expression."_fu));
-            const int exprIdx = items.size();
             if ((expr.kind != "empty"_fu))
                 items.push(expr);
 
-            if ((expr.kind == "struct"_fu))
-                unwrapStructMethods(items, exprIdx);
-
         };
         return items;
-    };
-    void unwrapStructMethods(fu_VEC<s_Node>& out, const int structNodeIdx)
-    {
-        s_Node structNode { out[structNodeIdx] };
-        fu_VEC<s_Node>& members = structNode.items;
-        for (int i = 0; (i < members.size()); i++)
-        {
-            s_Node& item = members.mutref(i);
-            if ((item.kind == "fn"_fu))
-            {
-                if ((item.value == "free"_fu))
-                {
-                    structNode.flags |= F_DESTRUCTOR;
-                    item.flags |= F_DESTRUCTOR;
-                };
-                ((item.items.size() >= 2) || fail(fu_STR{}));
-                out.push(item);
-                members.splice(i--, 1);
-            };
-        };
-        out.mutref(structNodeIdx) = structNode;
     };
     s_Node parsePub()
     {

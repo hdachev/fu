@@ -209,12 +209,6 @@ pub fn cpp_codegen(
 
         mut indent = "\n    ";
 
-        if (s.flags & F_DESTRUCTOR)
-        {
-            def ~= "\n    struct Data\n    {";
-            indent ~= "    ";
-        }
-
         let fields = s.fields;
         for (mut i = 0; i < fields.len; i++)
         {
@@ -222,29 +216,12 @@ pub fn cpp_codegen(
             def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.id) ~ ";";
         }
 
-        if (s.flags & F_DESTRUCTOR)
-        {
-            def ~= "\n    };";
-            def ~= "\n";
-            def ~= "\n    Data data;";
-            def ~= "\n    bool dtor = false;";
-            def ~= "\n";
-            def ~= "\n    ~" ~ id ~ "() noexcept;";
-            def ~= "\n    inline " ~ id ~ "(Data data) noexcept : data(data) {};";
-            def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = delete;";
-            def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
-            def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) noexcept;";
-            def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) noexcept;";
-        }
-
         def ~= "\n    explicit operator bool() const noexcept";
         def ~= "\n    {";
         def ~= "\n        return false";
 
         for (mut i = 0; i < fields.len; i++)
-            def ~= "\n            || "
-                ~ (s.flags & F_DESTRUCTOR ? "data." : "")
-                ~ ID(fields[i].id);
+            def ~= "\n            || " ~ ID(fields[i].id);
 
         def ~= "\n        ;";
         def ~= "\n    }";
@@ -741,47 +718,6 @@ pub fn cpp_codegen(
         _indent = indent0;
         //////////////
 
-        if (fn.flags & F_DESTRUCTOR)
-        {
-            let head = items[0] || fail();
-            let id = structId(head.type);
-
-            src ~= "\n\n" ~ id ~ "::~" ~ id ~ "() noexcept";
-            src ~= "\n{";
-            src ~= "\n    if (!dtor)";
-            src ~= "\n    {";
-            src ~= "\n        dtor = true;";
-            src ~= "\n        free(*this);";
-            src ~= "\n    }";
-            src ~= "\n}";
-
-            include("<cassert>");
-            include("<utility>");
-
-            src ~= "\n\n" ~ id ~ "::" ~ id ~ "(" ~ id ~ "&& src) noexcept";
-            src ~= "\n    : data(std::move(src.data))";
-            src ~= "\n{";
-            src ~= "\n    assert(!src.dtor);";
-            src ~= "\n    dtor = src.dtor;";
-            src ~= "\n    src.dtor = true;";
-            src ~= "\n}";
-
-            include("<cstring>");
-
-            src ~= "\n\n" ~ id ~ "& " ~ id ~ "::operator=(" ~ id ~ "&& src) noexcept";
-            src ~= "\n{";
-            src ~= "\n    char temp[sizeof(" ~ id ~ ")];";
-            src ~= "\n    char* a = (char*) this;";
-            src ~= "\n    char* b = (char*) &src;";
-            src ~= "\n";
-            src ~= "\n    std::memcpy (temp, a, sizeof(" ~ id ~ "));";
-            src ~= "\n    std::memmove(a,    b, sizeof(" ~ id ~ "));";
-            src ~= "\n    std::memcpy (b, temp, sizeof(" ~ id ~ "));";
-            src ~= "\n";
-            src ~= "\n    return *this;";
-            src ~= "\n}";
-        }
-
         // This covers both closures & try_cgTryFnAsStruct:
         if (fn.flags & F_CLOSURE || _isModuleSpecs)
             return src;
@@ -1034,20 +970,10 @@ pub fn cpp_codegen(
             if (!items)
                 return cgDefault(target.type);
 
-            let head = (target.type || fail());
-            let type = lookupStruct(head) || fail();
-            let id   = typeAnnotBase(head);
+            target.type.isStruct || fail(
+                "cgCall: defctor/type not a struct.");
 
-            //
-            mut open = " { ";
-            mut close = " }";
-            if (type.flags & F_DESTRUCTOR)
-            {
-                open = " { " ~ id ~ "::Data { ";
-                close = " }}";
-            }
-
-            return id ~ open ~ items.join(", ") ~ close;
+            return typeAnnotBase(target.type) ~ " { " ~ items.join(", ") ~ " }";
         }
 
         let id = target.name || fail();
@@ -1069,12 +995,7 @@ pub fn cpp_codegen(
 
         if (target.kind == "field")
         {
-            mut sep = ".";
-            let parent = lookupStruct(node.items[0].type);
-            if (parent.flags & F_DESTRUCTOR)
-                sep = ".data.";
-
-            return items[0] ~ sep ~ ID(id);
+            return items[0] ~ "." ~ ID(id);
         }
 
         if (node.target.modid && (node.target.modid != module.modid || target.flags & F_OPERATOR))

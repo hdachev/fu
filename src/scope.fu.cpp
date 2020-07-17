@@ -39,9 +39,7 @@ s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
-static int copyOrMove(int, const fu_VEC<s_StructField>&);
-static bool someFieldNonCopy(const fu_VEC<s_StructField>&);
-static bool someFieldNonTrivial(const fu_VEC<s_StructField>&);
+static int commonQuals(const fu_VEC<s_StructField>&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -577,12 +575,18 @@ bool isStruct(const s_Type& type)
     return fu::lmatch(type.value.canon, std::byte('$'));
 }
 
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
+                                #endif
+
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = (("$"_fu + module.modid) + id);
     s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{} };
     (module.out.types.upsert(canon) = def);
-    return s_Type { s_ValueType { copyOrMove(flags, def.fields), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
+    const int TODO_FIX_allTypesAreCopiable = q_rx_copy;
+    return s_Type { s_ValueType { int(TODO_FIX_allTypesAreCopiable), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
 
                                 #ifndef DEF_q_trivial
@@ -592,53 +596,18 @@ inline const int q_trivial = (1 << 3);
 
 int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, s_Module& module)
 {
-    int quals = 0;
     s_Struct& def = lookupStruct_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
-    if (!someFieldNonTrivial(fields))
-        quals |= q_trivial;
-
-    return quals;
+    return (commonQuals(fields) & (q_rx_copy | q_trivial));
 }
 
-                                #ifndef DEF_F_DESTRUCTOR
-                                #define DEF_F_DESTRUCTOR
-inline const int F_DESTRUCTOR = (1 << 31);
-                                #endif
-
-                                #ifndef DEF_q_rx_copy
-                                #define DEF_q_rx_copy
-inline const int q_rx_copy = (1 << 2);
-                                #endif
-
-static int copyOrMove(const int flags, const fu_VEC<s_StructField>& fields)
+static int commonQuals(const fu_VEC<s_StructField>& fields)
 {
-    if (((flags & F_DESTRUCTOR) || someFieldNonCopy(fields)))
-        return 0;
-
-    return int(q_rx_copy);
-}
-
-static bool someFieldNonCopy(const fu_VEC<s_StructField>& fields)
-{
+    int commonQuals = -1;
     for (int i = 0; (i < fields.size()); i++)
-    {
-        if (!(fields[i].type.quals & q_rx_copy))
-            return true;
+        commonQuals &= fields[i].type.quals;
 
-    };
-    return false;
-}
-
-static bool someFieldNonTrivial(const fu_VEC<s_StructField>& fields)
-{
-    for (int i = 0; (i < fields.size()); i++)
-    {
-        if (!(fields[i].type.quals & q_trivial))
-            return true;
-
-    };
-    return false;
+    return commonQuals;
 }
 
 bool isTemplate(const s_Overload& o)

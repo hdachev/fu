@@ -60,6 +60,7 @@ s_MapFields tryClear_map(const s_Type&);
 bool is_never(const s_Type&);
 bool is_bool(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
+bool isStruct(const s_Type&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -682,11 +683,6 @@ inline const int Primitive = (Trivial | q_primitive);
 inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
-                                #ifndef DEF_F_DESTRUCTOR
-                                #define DEF_F_DESTRUCTOR
-inline const int F_DESTRUCTOR = (1 << 31);
-                                #endif
-
                                 #ifndef DEF_F_PUB
                                 #define DEF_F_PUB
 inline const int F_PUB = (1 << 20);
@@ -959,36 +955,17 @@ struct sf_cpp_codegen
         fu_STR id = structId(t);
         fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\nstruct "_fu) + id) + "\n{"_fu);
         fu_STR indent = "\n    "_fu;
-        if ((s.flags & F_DESTRUCTOR))
-        {
-            (def += "\n    struct Data\n    {"_fu);
-            (indent += "    "_fu);
-        };
         const fu_VEC<s_StructField>& fields = s.fields;
         for (int i = 0; (i < fields.size()); i++)
         {
             const s_StructField& field = fields[i];
             (def += ((((indent + typeAnnot(field.type)) + " "_fu) + ID(field.id)) + ";"_fu));
         };
-        if ((s.flags & F_DESTRUCTOR))
-        {
-            (def += "\n    };"_fu);
-            (def += "\n"_fu);
-            (def += "\n    Data data;"_fu);
-            (def += "\n    bool dtor = false;"_fu);
-            (def += "\n"_fu);
-            (def += (("\n    ~"_fu + id) + "() noexcept;"_fu));
-            (def += (("\n    inline "_fu + id) + "(Data data) noexcept : data(data) {};"_fu));
-            (def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = delete;"_fu));
-            (def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu));
-            (def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) noexcept;"_fu));
-            (def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) noexcept;"_fu));
-        };
         (def += "\n    explicit operator bool() const noexcept"_fu);
         (def += "\n    {"_fu);
         (def += "\n        return false"_fu);
         for (int i = 0; (i < fields.size()); i++)
-            (def += (("\n            || "_fu + ((s.flags & F_DESTRUCTOR) ? "data."_fu : fu_STR{})) + ID(fields[i].id)));
+            (def += ("\n            || "_fu + ID(fields[i].id)));
 
         (def += "\n        ;"_fu);
         (def += "\n    }"_fu);
@@ -1347,41 +1324,6 @@ struct sf_cpp_codegen
         _fnN = f0;
         _clsrN = c0;
         _indent = indent0;
-        if ((fn.flags & F_DESTRUCTOR))
-        {
-            const s_SolvedNode& head = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[0]; if (_) return _; } fail(fu_STR{}); }());
-            fu_STR id_1 = structId(head.type);
-            (src += (((("\n\n"_fu + id_1) + "::~"_fu) + id_1) + "() noexcept"_fu));
-            (src += "\n{"_fu);
-            (src += "\n    if (!dtor)"_fu);
-            (src += "\n    {"_fu);
-            (src += "\n        dtor = true;"_fu);
-            (src += "\n        free(*this);"_fu);
-            (src += "\n    }"_fu);
-            (src += "\n}"_fu);
-            include("<cassert>"_fu);
-            include("<utility>"_fu);
-            (src += (((((("\n\n"_fu + id_1) + "::"_fu) + id_1) + "("_fu) + id_1) + "&& src) noexcept"_fu));
-            (src += "\n    : data(std::move(src.data))"_fu);
-            (src += "\n{"_fu);
-            (src += "\n    assert(!src.dtor);"_fu);
-            (src += "\n    dtor = src.dtor;"_fu);
-            (src += "\n    src.dtor = true;"_fu);
-            (src += "\n}"_fu);
-            include("<cstring>"_fu);
-            (src += (((((("\n\n"_fu + id_1) + "& "_fu) + id_1) + "::operator=("_fu) + id_1) + "&& src) noexcept"_fu));
-            (src += "\n{"_fu);
-            (src += (("\n    char temp[sizeof("_fu + id_1) + ")];"_fu));
-            (src += "\n    char* a = (char*) this;"_fu);
-            (src += "\n    char* b = (char*) &src;"_fu);
-            (src += "\n"_fu);
-            (src += (("\n    std::memcpy (temp, a, sizeof("_fu + id_1) + "));"_fu));
-            (src += (("\n    std::memmove(a,    b, sizeof("_fu + id_1) + "));"_fu));
-            (src += (("\n    std::memcpy (b, temp, sizeof("_fu + id_1) + "));"_fu));
-            (src += "\n"_fu);
-            (src += "\n    return *this;"_fu);
-            (src += "\n}"_fu);
-        };
         if (((fn.flags & F_CLOSURE) || _isModuleSpecs))
             return src;
 
@@ -1577,17 +1519,8 @@ struct sf_cpp_codegen
             if (!items)
                 return cgDefault(target.type);
 
-            const s_Type& head = (target.type ? target.type : fail(fu_STR{}));
-            const s_Struct& type = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(head, module, ctx); if (_) return _; } fail(fu_STR{}); }());
-            fu_STR id = typeAnnotBase(head);
-            fu_STR open = " { "_fu;
-            fu_STR close = " }"_fu;
-            if ((type.flags & F_DESTRUCTOR))
-            {
-                open = ((" { "_fu + id) + "::Data { "_fu);
-                close = " }}"_fu;
-            };
-            return (((id + open) + fu::join(items, ", "_fu)) + close);
+            (isStruct(target.type) || fail("cgCall: defctor/type not a struct."_fu));
+            return (((typeAnnotBase(target.type) + " { "_fu) + fu::join(items, ", "_fu)) + " }"_fu);
         };
         const fu_STR& id = (target.name ? target.name : fail(fu_STR{}));
         if ((target.kind == "global"_fu))
@@ -1601,14 +1534,8 @@ struct sf_cpp_codegen
             return ID(target.name);
 
         if ((target.kind == "field"_fu))
-        {
-            fu_STR sep = "."_fu;
-            const s_Struct& parent = lookupStruct(node.items[0].type, module, ctx);
-            if ((parent.flags & F_DESTRUCTOR))
-                sep = ".data."_fu;
+            return ((items.mutref(0) + "."_fu) + ID(id));
 
-            return ((items.mutref(0) + sep) + ID(id));
-        };
         if ((node.target.modid && ((node.target.modid != module.modid) || (target.flags & F_OPERATOR))))
             ensureFwdDecl(node.target);
 

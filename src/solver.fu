@@ -1029,7 +1029,7 @@ pub fn solve(
         out.items.resize(inItems.len);
 
         //
-        if (_current_fn && id != "free")
+        if (_current_fn)
         {
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;

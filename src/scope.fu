@@ -71,52 +71,29 @@ pub fn initStruct(
     module.out.types[canon] = def;
     //////////////////////////////
 
-    return Type(ValueType(:canon, copyOrMove(flags, def.fields), MODID));
+    let TODO_FIX_allTypesAreCopiable = q_rx_copy;
+
+    return Type(ValueType(:canon, MODID,
+        quals: TODO_FIX_allTypesAreCopiable));
 }
 
 pub fn finalizeStruct(
     canon: string, fields: StructField[]): i32
 {
-    mut quals: i32 = 0;
-
     let def: &mut Struct = lookupStruct_mut(canon);
     def.fields = fields || throw("TODO empty structs?");
 
-    if (!fields.someFieldNonTrivial)
-        quals |= q_trivial;
-
-    return quals;
+    return fields.commonQuals() & (q_rx_copy | q_trivial);
 }
 
-
-//
-
-fn copyOrMove(
-    flags: i32,
-    fields: StructField[]): i32
+fn commonQuals(fields: StructField[]): i32
 {
-    if (flags & F_DESTRUCTOR || someFieldNonCopy(fields))
-        return 0;
+    mut commonQuals = -1;
 
-    return q_rx_copy;
-}
-
-fn someFieldNonCopy(fields: StructField[]): bool
-{
     for (mut i = 0; i < fields.len; i++)
-        if !(fields[i].type.quals & q_rx_copy)
-            return true;
+        commonQuals &= fields[i].type.quals;
 
-    return false;
-}
-
-fn someFieldNonTrivial(fields: StructField[]): bool
-{
-    for (mut i = 0; i < fields.len; i++)
-        if !(fields[i].type.quals & q_trivial)
-            return true;
-
-    return false;
+    return commonQuals;
 }
 
 
