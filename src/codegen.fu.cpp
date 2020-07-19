@@ -1063,6 +1063,9 @@ struct sf_cpp_codegen
         if ((id == "this"_fu))
             return "tHis"_fu;
 
+        if ((id == "struct"_fu))
+            return "sTruct"_fu;
+
         if ((id == "default"_fu))
             return "dEfault"_fu;
 

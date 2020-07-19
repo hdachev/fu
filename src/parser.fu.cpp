@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <fu/default.h>
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -462,10 +461,18 @@ struct sf_parse
     };
     s_Node parseStructDecl()
     {
-        s_Token name = tryConsume("id"_fu, fu_STR{});
+        fu_STR name = consume("id"_fu, fu_STR{}).value;
+        fu_VEC<s_Node> templateParams {};
+        const int templateFlags = ([&]() -> int { if (tryConsume("op"_fu, "("_fu)) return parseArgsDecl(templateParams, "op"_fu, ")"_fu); else return int{}; }());
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
-        return make("struct"_fu, items, 0, (name ? name.value : fu::Default<fu_STR>::value));
+        s_Node sTruct = make("struct"_fu, items, 0, name);
+        if (templateParams)
+        {
+            (templateParams += sTruct);
+            return make("typector"_fu, templateParams, templateFlags, fu_STR{});
+        };
+        return sTruct;
     };
     s_Node parseStructItem()
     {

@@ -305,15 +305,25 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseStructDecl(): Node
     {
-        let name = tryConsume("id");
+        let name = consume("id").value;
+
+        // Template params.
+        mut templateParams: Node[];
+        let templateFlags = tryConsume("op", "(")
+            && parseArgsDecl(templateParams, "op", ")");
 
         consume("op", "{");
-        let items = parseBlockLike(
-            "op", "}", "struct");
+        let items = parseBlockLike("op", "}", "struct");
+        let struct = make("struct", items, 0, name);
 
-        return make(
-            "struct", items, 0,
-                name ? name.value : "");
+        // typector(struct).
+        if (templateParams)
+        {
+            templateParams ~= struct;
+            return make("typector", templateParams, templateFlags);
+        }
+
+        return struct;
     }
 
     fn parseStructItem(): Node
