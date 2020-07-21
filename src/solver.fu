@@ -29,9 +29,7 @@ pub fn solve(
     mut _root_scope:    ScopeMemo;
     mut _return_idx:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
-
     mut _current_fn:    SolvedNode;
-    mut _typeParams:    Map(string, Type);
 
 
     //
@@ -985,6 +983,9 @@ pub fn solve(
             :value, token: _here || fail());
     }
 
+
+    //
+
     fn uPrepFn(node: Node): SolvedNode
     {
         return __solveFn(node, SolvedNode,
@@ -1068,7 +1069,7 @@ pub fn solve(
                     mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
 
                     // Emit value-taking specializations.
-                    let type = _typeParams[mut_arg.value];
+                    let type = typeParam_get(mut_arg.value);
                     if !(type.quals & q_ref)
                         mut_arg.flags |= F_MUT;
 
@@ -1246,12 +1247,14 @@ pub fn solve(
         mut current_fn0: SolvedNode;
 
         SWAP(_current_fn, current_fn0);
-        SWAP(_typeParams, typeParams0);
 
         let scope0 = Scope_push(_scope);
         let scope_skip0 = _scope_skip;
         let root_scope0 = _root_scope;
         ////////////////////////////////
+
+        //
+        mut typeParams: Map(string, Type);
 
         //
         _scope_skip = _root_scope && ScopeSkip(
@@ -1301,7 +1304,7 @@ pub fn solve(
                 {
                     let paramType =
                         annot.kind == "typeparam"
-                            ? _typeParams[annot.value] ||= Type
+                            ? typeParams[annot.value] ||= Type
                             : annot.kind == "call" && !annot.items
                                 && Scope_lookupType(annot);
 
@@ -1338,7 +1341,7 @@ pub fn solve(
 
                     // Same pattern - grabs a mutref.
                     let argName_typeParam: &mut Type =
-                        _typeParams[argName] ||= Type;
+                        typeParams[argName] ||= Type;
 
                     argName_typeParam && fail(
                         "Type param name collision with argument: `" ~ argName ~ "`.")
@@ -1352,7 +1355,7 @@ pub fn solve(
                 if (annot)
                 {
                     let argOk = inType && trySolveTypeParams(
-                        annot, inType, _typeParams);
+                        annot, inType, typeParams);
 
                     ok = ok && argOk;
                     if (!ok && !remangle)
@@ -1376,6 +1379,17 @@ pub fn solve(
 
         if (ok)
         {
+            // Unpack type params in scope.
+            {
+                mut keys = typeParams.keys;
+                for (mut i = 0; i < keys.len; i++)
+                {
+                    let key = keys[i];
+                    Scope_Typedef(_scope, "$" ~ key, typeParams[key], flags: 0);
+                }
+            }
+
+            //
             let pattern = items[items.len + FN_BODY_BACK] || fail();
             if (pattern.kind == "pattern")
             {
@@ -1407,7 +1421,6 @@ pub fn solve(
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
-        SWAP(_typeParams, typeParams0);
 
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
@@ -1730,13 +1743,12 @@ pub fn solve(
 
     //
 
-    fn Scope_tryLookupType(annot: Node): Type
+    fn Scope_lookupType(mut id: string, flags: i32 = 0): Type
     {
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
-        mut id = annot.value;
-        let scope = annot.flags & F_QUALIFIED
+        let scope = flags & F_QUALIFIED
             ? dequalify_andGetScope(id)
             : _scope;
 
@@ -1749,14 +1761,21 @@ pub fn solve(
                 return maybe.type || fail();
         }
 
-        return Type;
+        return fail("No type `" ~ id ~ "` in scope.");
     }
 
     fn Scope_lookupType(annot: Node): Type
     {
-        return Scope_tryLookupType(annot) || fail(
-            "No type `" ~ annot.value ~ "` in scope.");
+        return Scope_lookupType(annot.value, :annot.flags);
     }
+
+    fn typeParam_get(id: string): Type
+    {
+        return Scope_lookupType("$" ~ id);
+    }
+
+
+    //
 
     fn evalTypeAnnot(node: Node): SolvedNode
     {
@@ -1798,10 +1817,7 @@ pub fn solve(
         else if (node.kind == "typeparam")
         {
             let id = node.value || fail();
-            _typeParams || fail(
-                "Unexpected type param: `$" ~ id ~ "`.");
-
-            let type = _typeParams && _typeParams[id] || fail(
+            let type = typeParam_get(id) || fail(
                 "No type param `$" ~ id ~ "` in scope.");
 
             return solved(node, type);
@@ -1932,7 +1948,7 @@ pub fn solve(
                     right.kind == "typetag")
                 {
                     let tag   = right.value || fail();
-                    let type  = left.value && _typeParams[left.value] || fail(
+                    let type  = typeParam_get(left.value) || fail(
                         "No type param `$" ~ left.value ~ "` in scope.");
 
                     return type_has(type, tag);
