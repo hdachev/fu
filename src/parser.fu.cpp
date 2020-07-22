@@ -283,10 +283,9 @@ struct sf_setupOperators
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "~"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<=>"_fu } });
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "in"_fu, "is"_fu, "as"_fu } });
+        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<4> { "in"_fu, "is"_fu, "as"_fu, "->"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<4> { "<"_fu, "<="_fu, ">"_fu, ">="_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "=="_fu, "!="_fu } });
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "->"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "&&"_fu } });
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "||"_fu } });
         rightToLeft = true;
@@ -863,7 +862,14 @@ struct sf_parse
         if ((op == "<|"_fu))
             return pipelineLeft(s_Node(left), right);
 
+        if ((op == "->"_fu))
+            return typeAssert(left, right);
+
         return createCall(op, F_INFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { left, right } });
+    };
+    s_Node typeAssert(const s_Node& actual, const s_Node& expect)
+    {
+        return make("typeassert"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { actual, expect } }, 0, fu_STR{});
     };
     s_Node pipelineRight(const s_Node& left, s_Node&& right)
     {

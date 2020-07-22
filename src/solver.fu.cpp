@@ -1113,6 +1113,15 @@ struct sf_solve
 
         return ([&]() -> s_SolvedNode { { s_SolvedNode _ = tryCreateDefinit(type); if (_) return _; } fail(("Cannot definit: "_fu + serializeType(type))); }());
     };
+    s_SolvedNode solveTypeAssert(const s_Node& node)
+    {
+        const s_Node& left = node.items[0];
+        const s_Node& right = node.items[1];
+        s_Type expect = evalTypeAnnot(right).type;
+        s_SolvedNode actual = solveNode(left, expect);
+        checkAssignable(expect, actual.type, "Type assertion failed"_fu, fu_STR{}, fu_STR{});
+        return actual;
+    };
     s_Target Partial(const fu_STR& id, const s_Target& viaIdx, const s_Target& overloadIdx)
     {
         s_Overload via = GET(viaIdx, module, ctx);
@@ -1545,6 +1554,9 @@ struct sf_solve
 
         if ((k == "import"_fu))
             return solveImport(node);
+
+        if ((k == "typeassert"_fu))
+            return solveTypeAssert(node);
 
         fail(("TODO: "_fu + k));
     };
@@ -2324,24 +2336,21 @@ struct sf_solve
             };
             return false;
         }
-        else if (((node.kind == "call"_fu) && (node.items.size() == 2)))
+        else if ((node.kind == "typeassert"_fu))
         {
             const s_Node& left = ([&]() -> const s_Node& { { const s_Node& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }());
             const s_Node& right = ([&]() -> const s_Node& { { const s_Node& _ = node.items[1]; if (_) return _; } fail(fu_STR{}); }());
-            if ((node.value == "->"_fu))
+            if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
             {
-                if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
-                {
-                    const fu_STR& tag = (right.value ? right.value : fail(fu_STR{}));
-                    s_Type type = ([&]() -> s_Type { { s_Type _ = typeParam_get(left.value); if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
-                    return type_has(type, tag);
-                }
-                else
-                {
-                    s_Type expect = evalTypeAnnot(right).type;
-                    s_Type actual = evalTypeAnnot(left).type;
-                    return isAssignable(expect, actual);
-                };
+                const fu_STR& tag = (right.value ? right.value : fail(fu_STR{}));
+                s_Type type = ([&]() -> s_Type { { s_Type _ = typeParam_get(left.value); if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
+                return type_has(type, tag);
+            }
+            else
+            {
+                s_Type expect = evalTypeAnnot(right).type;
+                s_Type actual = evalTypeAnnot(left).type;
+                return isAssignable(expect, actual);
             };
         };
         fail((((("TODO evalTypePattern fallthrough: "_fu + node.kind) + "("_fu) + node.items.size()) + ")"_fu));
