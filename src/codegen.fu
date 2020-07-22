@@ -237,11 +237,10 @@ pub fn cpp_codegen(
     {
         mut out = "";
 
-        mut keys = dedupes.keys();
-        keys.sort();
-
-        for (mut i = 0; i < keys.len; i++)
-            out ~= dedupes[keys[i]];
+        mut values = dedupes.values();
+        values.sort();
+        for (mut i = 0; i < values.len; i++)
+            out ~= values[i];
 
         return out;
     }
