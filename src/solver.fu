@@ -260,6 +260,21 @@ pub fn solve(
             || fail("Cannot definit: " ~ serializeType(type));
     }
 
+    fn solveTypeAssert(node: Node): SolvedNode
+    {
+        let left   = node.items[0];
+        let right  = node.items[1];
+
+        // left -> right.
+        let expect = evalTypeAnnot(right).type;
+        let actual = solveNode(left, expect);
+
+        checkAssignable(host: expect, actual.type,
+            "Type assertion failed");
+
+        return actual;
+    }
+
 
     //
 
@@ -824,6 +839,8 @@ pub fn solve(
 
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
+
+        if (k == "typeassert")  return solveTypeAssert(node);
 
         return fail("TODO: " ~ k);
     }
@@ -1937,31 +1954,28 @@ pub fn solve(
 
             return false;
         }
-        else if (node.kind == "call" && node.items.len == 2)
+        else if (node.kind == "typeassert")
         {
             let left  = node.items[0] || fail();
             let right = node.items[1] || fail();
 
-            if (node.value == "->")
+            if (left.kind  == "typeparam" &&
+                right.kind == "typetag")
             {
-                if (left.kind  == "typeparam" &&
-                    right.kind == "typetag")
-                {
-                    let tag   = right.value || fail();
-                    let type  = typeParam_get(left.value) || fail(
-                        "No type param `$" ~ left.value ~ "` in scope.");
+                let tag   = right.value || fail();
+                let type  = typeParam_get(left.value) || fail(
+                    "No type param `$" ~ left.value ~ "` in scope.");
 
-                    return type_has(type, tag);
-                }
-                else
-                {
-                    //               is                //
-                    // (actual) left -> right (expect) //
-                    let expect = evalTypeAnnot(right).type;
-                    let actual = evalTypeAnnot(left ).type;
+                return type_has(type, tag);
+            }
+            else
+            {
+                //               is                //
+                // (actual) left -> right (expect) //
+                let expect = evalTypeAnnot(right).type;
+                let actual = evalTypeAnnot(left ).type;
 
-                    return isAssignable(expect, actual);
-                }
+                return isAssignable(expect, actual);
             }
         }
 
