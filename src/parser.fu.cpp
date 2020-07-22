@@ -10,15 +10,15 @@
 #include <fu/vec/find.h>
 #include <utility>
 
-struct s_Token;
 struct s_BINOP;
 struct s_Node;
 struct s_ParserOutput;
+struct s_Token;
 struct s_TokenIdx;
-fu_STR path_dirname(const fu_STR&);
-fu_STR path_join(const fu_STR&, const fu_STR&);
 bool hasIdentifierChars(const fu_STR&);
+fu_STR path_dirname(const fu_STR&);
 fu_STR path_ext(const fu_STR&);
+fu_STR path_join(const fu_STR&, const fu_STR&);
 inline std::byte only_y0NH(const fu_STR&);
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP

@@ -13,88 +13,88 @@
 #include <fu/view.h>
 #include <utility>
 
-struct s_ModuleStat;
-struct s_Intlit;
-struct s_Context;
-struct s_LexerOutput;
-struct s_Token;
-struct s_Node;
-struct s_ParserOutput;
-struct s_TokenIdx;
-struct s_Effects;
-struct s_MapFields;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
 struct s_Argument;
+struct s_Context;
+struct s_Effects;
+struct s_Intlit;
+struct s_LexerOutput;
+struct s_Lifetime;
+struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
+struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
 struct s_Template;
+struct s_Token;
+struct s_TokenIdx;
+struct s_Type;
+struct s_ValueType;
+bool hasIdentifierChars(const fu_STR&);
+bool isAssignable(const s_Type&, const s_Type&);
+bool isAssignableAsArgument(const s_Type&, s_Type&&);
+bool isStruct(const s_Type&);
+bool isTemplate(const s_Overload&);
+bool is_bool(const s_Type&);
+bool is_never(const s_Type&);
+bool is_void(const s_Type&);
+bool killedBy(const s_Lifetime&, int);
+bool type_has(const s_Type&, const fu_STR&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
+fu_STR _fname(const s_TokenIdx&, const s_Context&);
+fu_STR hash62(fu::view<std::byte>, int);
+fu_STR humanizeType(const s_Type&);
+fu_STR resolveFile_x(const fu_STR&, const s_Context&);
+fu_STR serializeType(const s_Type&);
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 inline const s_Node& only_TAKM(const fu_VEC<s_Node>&);
 inline const s_SolvedNode& if_first_OiWy(fu_VEC<s_SolvedNode>&);
 inline s_SolvedNode& only_WBEL(fu_VEC<s_SolvedNode>&);
-s_Intlit Intlit(fu::view<std::byte>);
-fu_STR hash62(fu::view<std::byte>, int);
-bool hasIdentifierChars(const fu_STR&);
-fu_STR _fname(const s_TokenIdx&, const s_Context&);
-fu_STR resolveFile_x(const fu_STR&, const s_Context&);
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
-s_Token _token(const s_TokenIdx&, const s_Context&);
-s_Type add_ref(const s_Type&, const s_Lifetime&);
-s_Type add_mutref(const s_Type&, const s_Lifetime&);
-s_Type clear_refs(const s_Type&);
-s_Type createArray(const s_Type&);
-s_Type tryClear_array(const s_Type&);
-s_Type createSlice(const s_Type&);
-s_Type tryClear_slice(const s_Type&);
-s_Type createMap(const s_Type&, const s_Type&);
-s_MapFields tryClear_map(const s_Type&);
-bool is_never(const s_Type&);
-bool is_void(const s_Type&);
-bool is_bool(const s_Type&);
-bool isAssignable(const s_Type&, const s_Type&);
-bool isAssignableAsArgument(const s_Type&, s_Type&&);
-s_Type tryClear_mutref(const s_Type&);
-s_Type tryClear_ref(const s_Type&);
-s_Type clear_mutref(const s_Type&);
-s_Type add_refs(const s_Type&, s_Type&&);
-fu_STR serializeType(const s_Type&);
-fu_STR humanizeType(const s_Type&);
-bool type_has(const s_Type&, const fu_STR&);
-s_Type type_tryInter(const s_Type&, const s_Type&);
-s_Lifetime Lifetime_fromScopeIdx(int);
-bool killedBy(const s_Lifetime&, int);
-s_Lifetime Lifetime_static();
-s_Lifetime Lifetime_fromArgIndex(int);
-void Scope_pop(s_Scope&, const s_ScopeMemo&);
-s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
-s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
-s_Scope listGlobals(const s_Module&);
-s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
-bool isStruct(const s_Type&);
-s_Type initStruct(const fu_STR&, int, s_Module&);
-bool isTemplate(const s_Overload&);
-s_Scope Scope_exports(const s_Scope&, int);
-s_ScopeMemo Scope_push(s_Scope&);
-s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
 int MODID(const s_Module&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
+s_Intlit Intlit(fu::view<std::byte>);
+s_Lifetime Lifetime_fromArgIndex(int);
+s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
+s_Lifetime Lifetime_fromScopeIdx(int);
+s_Lifetime Lifetime_static();
+s_MapFields tryClear_map(const s_Type&);
+s_Scope Scope_exports(const s_Scope&, int);
+s_Scope listGlobals(const s_Module&);
+s_ScopeMemo Scope_push(s_Scope&);
+s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
+s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
+s_Token _token(const s_TokenIdx&, const s_Context&);
+s_Type add_mutref(const s_Type&, const s_Lifetime&);
+s_Type add_ref(const s_Type&, const s_Lifetime&);
+s_Type add_refs(const s_Type&, s_Type&&);
+s_Type clear_mutref(const s_Type&);
+s_Type clear_refs(const s_Type&);
+s_Type createArray(const s_Type&);
+s_Type createMap(const s_Type&, const s_Type&);
+s_Type createSlice(const s_Type&);
+s_Type initStruct(const fu_STR&, int, s_Module&);
+s_Type tryClear_array(const s_Type&);
+s_Type tryClear_mutref(const s_Type&);
+s_Type tryClear_ref(const s_Type&);
+s_Type tryClear_slice(const s_Type&);
+s_Type type_tryInter(const s_Type&, const s_Type&);
+void Scope_pop(s_Scope&, const s_ScopeMemo&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -968,7 +968,6 @@ struct sf_solve
     s_ScopeMemo _return_idx {};
     s_ScopeSkip _scope_skip {};
     s_SolvedNode _current_fn {};
-    fu_MAP<fu_STR, s_Type> _typeParams {};
     s_Type t_string = createArray(t_byte);
     void _Scope_import__forceCopy(const int modid)
     {
@@ -1765,7 +1764,7 @@ struct sf_solve
                 {
                     s_Node mut_arg { n_arg };
                     mut_arg.items.mutref(LET_TYPE) = createTypeParam(mut_arg.value);
-                    s_Type type { _typeParams[mut_arg.value] };
+                    s_Type type = typeParam_get(mut_arg.value);
                     if (!(type.value.quals & q_ref))
                         mut_arg.flags |= F_MUT;
 
@@ -1879,10 +1878,10 @@ struct sf_solve
         fu_MAP<fu_STR, s_Type> typeParams0 {};
         s_SolvedNode current_fn0 {};
         std::swap(_current_fn, current_fn0);
-        std::swap(_typeParams, typeParams0);
         const s_ScopeMemo scope0 = Scope_push(_scope);
         s_ScopeSkip scope_skip0 { _scope_skip };
         const s_ScopeMemo root_scope0 { _root_scope };
+        fu_MAP<fu_STR, s_Type> typeParams {};
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
         _root_scope = scope0;
         for (int i = 0; (i < tEmplate.imports.size()); i++)
@@ -1909,7 +1908,7 @@ struct sf_solve
                 const s_Node& annot = argNode.items[LET_TYPE];
                 if (couldRetype(inValue))
                 {
-                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot); else return s_Type{}; }()));
+                    s_Type paramType = ((annot.kind == "typeparam"_fu) ? s_Type(([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (typeParams.upsert(annot.value)))) : ([&]() -> s_Type { if ((annot.kind == "call"_fu) && !annot.items) return Scope_lookupType(annot); else return s_Type{}; }()));
                     if (paramType)
                     {
                         s_Type retype = tryRetyping(inValue, paramType);
@@ -1930,13 +1929,13 @@ struct sf_solve
                 {
                     inType.lifetime = Lifetime_fromArgIndex(i);
                     const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}));
-                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (_typeParams.upsert(argName)));
+                    s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (typeParams.upsert(argName)));
                     ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
                     inType.value.quals |= q_ref;
                 };
                 if (annot)
                 {
-                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), _typeParams));
+                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
                     ok = ([&]() -> bool { if (ok) return argOk; else return fu::Default<bool>::value; }());
                     if ((!ok && !remangle))
                     {
@@ -1953,6 +1952,15 @@ struct sf_solve
         int caseIdx = -1;
         if (ok)
         {
+            
+            {
+                fu_VEC<fu_STR> keys { typeParams.m_keys };
+                for (int i = 0; (i < keys.size()); i++)
+                {
+                    fu_STR key { keys[i] };
+                    Scope_Typedef(_scope, ("$"_fu + key), typeParams[key], 0, module);
+                };
+            };
             const s_Node& pattern = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_BODY_BACK)]; if (_) return _; } fail(fu_STR{}); }());
             if ((pattern.kind == "pattern"_fu))
             {
@@ -1975,7 +1983,6 @@ struct sf_solve
         };
         s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, tEmplate.node, s_SolvedNode{}, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()); else return s_SolvedNode{}; }());
         std::swap(_current_fn, current_fn0);
-        std::swap(_typeParams, typeParams0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
         _root_scope = root_scope0;
@@ -2169,12 +2176,11 @@ struct sf_solve
         Scope_import(module_1.modid);
         return createEmpty();
     };
-    s_Type Scope_tryLookupType(const s_Node& annot)
+    s_Type Scope_lookupType(fu_STR&& id, const int flags)
     {
         int scope_iterator {};
         s_Target overloadIdx {};
-        fu_STR id { annot.value };
-        const s_Scope& scope = ((annot.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
+        const s_Scope& scope = ((flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
         while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{})))
         {
             s_Overload maybe = GET(overloadIdx, module, ctx);
@@ -2182,11 +2188,15 @@ struct sf_solve
                 return std::move((maybe.type ? maybe.type : fail(fu_STR{})));
 
         };
-        return s_Type{};
+        fail((("No type `"_fu + id) + "` in scope."_fu));
     };
     s_Type Scope_lookupType(const s_Node& annot)
     {
-        return ([&]() -> s_Type { { s_Type _ = Scope_tryLookupType(annot); if (_) return _; } fail((("No type `"_fu + annot.value) + "` in scope."_fu)); }());
+        return Scope_lookupType(fu_STR(annot.value), annot.flags);
+    };
+    s_Type typeParam_get(const fu_STR& id)
+    {
+        return Scope_lookupType(("$"_fu + id), 0);
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
@@ -2226,8 +2236,7 @@ struct sf_solve
         else if ((node.kind == "typeparam"_fu))
         {
             const fu_STR& id = (node.value ? node.value : fail(fu_STR{}));
-            (_typeParams || fail((("Unexpected type param: `$"_fu + id) + "`."_fu)));
-            s_Type type { ([&]() -> const s_Type& { if (_typeParams) { const s_Type& _ = _typeParams.mutref(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }()) };
+            s_Type type = ([&]() -> s_Type { { s_Type _ = typeParam_get(id); if (_) return _; } fail((("No type param `$"_fu + id) + "` in scope."_fu)); }());
             return solved(node, type, fu_VEC<s_SolvedNode>{});
         }
         else if (((node.kind == "arrlit"_fu) && (node.items.size() == 1)))
@@ -2324,7 +2333,7 @@ struct sf_solve
                 if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
                 {
                     const fu_STR& tag = (right.value ? right.value : fail(fu_STR{}));
-                    s_Type type { ([&]() -> const s_Type& { if (left.value) { const s_Type& _ = _typeParams.mutref(left.value); if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }()) };
+                    s_Type type = ([&]() -> s_Type { { s_Type _ = typeParam_get(left.value); if (_) return _; } fail((("No type param `$"_fu + left.value) + "` in scope."_fu)); }());
                     return type_has(type, tag);
                 }
                 else

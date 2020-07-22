@@ -5,39 +5,39 @@
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 
-struct s_ModuleStat;
-struct s_Context;
-struct s_LexerOutput;
-struct s_Token;
-struct s_Node;
-struct s_ParserOutput;
-struct s_TokenIdx;
-struct s_Effects;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
 struct s_Argument;
+struct s_Context;
+struct s_Effects;
+struct s_LexerOutput;
+struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
+struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
 struct s_Template;
-s_Context ZERO(const fu_VEC<fu_STR>&);
-fu_STR FAIL(const fu_VEC<fu_STR>&);
-s_Context ZERO(const fu_STR&);
+struct s_Token;
+struct s_TokenIdx;
+struct s_Type;
+struct s_ValueType;
 fu_STR FAIL(const fu_STR&);
-void ZERO_SAME(const fu_VEC<fu_STR>&);
+fu_STR FAIL(const fu_VEC<fu_STR>&);
 fu_STR snippet2cpp(const fu_STR&);
+s_Context ZERO(const fu_STR&);
+s_Context ZERO(const fu_VEC<fu_STR>&);
+void ZERO_SAME(const fu_VEC<fu_STR>&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

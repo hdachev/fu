@@ -17,50 +17,50 @@
 #include <fu/view.h>
 #include <utility>
 
-struct s_ModuleStat;
-struct s_Intlit;
-struct s_Context;
-struct s_LexerOutput;
-struct s_Token;
-struct s_Node;
-struct s_ParserOutput;
-struct s_TokenIdx;
-struct s_Effects;
-struct s_MapFields;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
 struct s_Argument;
+struct s_Context;
+struct s_Effects;
+struct s_Intlit;
+struct s_LexerOutput;
+struct s_Lifetime;
+struct s_MapFields;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
+struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
 struct s_Template;
-s_Intlit Intlit(fu::view<std::byte>);
-inline std::byte if_last_y0NH(const fu_STR&);
-inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>&);
+struct s_Token;
+struct s_TokenIdx;
+struct s_Type;
+struct s_ValueType;
 bool hasIdentifierChars(const fu_STR&);
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
-s_Type clear_refs(const s_Type&);
+bool isStruct(const s_Type&);
+bool is_bool(const s_Type&);
+bool is_never(const s_Type&);
+bool operator==(const s_ValueType&, const s_ValueType&);
 bool type_isArray(const s_Type&);
+bool type_isMap(const s_Type&);
+const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
+inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>&);
+inline std::byte if_last_y0NH(const fu_STR&);
+s_Intlit Intlit(fu::view<std::byte>);
+s_MapFields tryClear_map(const s_Type&);
+s_Type clear_refs(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
-bool type_isMap(const s_Type&);
-s_MapFields tryClear_map(const s_Type&);
-bool is_never(const s_Type&);
-bool is_bool(const s_Type&);
-bool operator==(const s_ValueType&, const s_ValueType&);
-bool isStruct(const s_Type&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -974,10 +974,10 @@ struct sf_cpp_codegen
     fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes)
     {
         fu_STR out {};
-        fu_VEC<fu_STR> keys { dedupes.m_keys };
-        fu::sort(keys);
-        for (int i = 0; (i < keys.size()); i++)
-            (out += dedupes[keys.mutref(i)]);
+        fu_VEC<fu_STR> values { dedupes.m_values };
+        fu::sort(values);
+        for (int i = 0; (i < values.size()); i++)
+            (out += values.mutref(i));
 
         return out;
     };

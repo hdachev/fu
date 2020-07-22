@@ -10,13 +10,13 @@
 #include <fu/vec/slice.h>
 #include <iostream>
 
-static void runTestsAndBuildCompiler();
+fu_STR locate_PRJDIR();
+fu_STR path_join(const fu_STR&, const fu_STR&);
 int self_test();
+static void runTestsAndBuildCompiler();
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 void runTests();
 void saySomethingNice();
-fu_STR path_join(const fu_STR&, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
-fu_STR locate_PRJDIR();
 #ifndef FU_NO_FDEFs
 
                                 #ifndef DEF_PRJDIR

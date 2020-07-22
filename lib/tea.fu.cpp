@@ -6,12 +6,12 @@
 #include <utility>
 
 struct s_TEA;
+inline uint64_t u64_SxuS(s_TEA&&);
 inline void r16_8qHD(s_TEA&, uint32_t&);
 inline void r16_U2k2(s_TEA&);
-s_TEA hash(fu::view<std::byte>);
-inline uint64_t u64_SxuS(s_TEA&&);
 inline void r4_8qHD(s_TEA&, uint32_t&);
 inline void r4_U2k2(s_TEA&);
+s_TEA hash(fu::view<std::byte>);
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
 struct s_TEA

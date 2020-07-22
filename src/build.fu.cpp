@@ -18,40 +18,40 @@
 #include <fu/vec/slice.h>
 #include <iostream>
 
-struct s_ModuleStat;
-struct s_Context;
-struct s_LexerOutput;
-struct s_Token;
-struct s_Node;
-struct s_ParserOutput;
-struct s_TokenIdx;
-struct s_Effects;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
 struct s_Argument;
+struct s_Context;
+struct s_Effects;
+struct s_LexerOutput;
+struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
+struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
 struct s_Template;
-inline std::byte if_last_bcSl(fu_STR&);
-fu_STR path_noext(const fu_STR&);
+struct s_Token;
+struct s_TokenIdx;
+struct s_Type;
+struct s_ValueType;
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
+fu_STR path_noext(const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
+inline std::byte if_last_bcSl(fu_STR&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

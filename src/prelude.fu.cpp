@@ -2,38 +2,38 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 
-struct s_ModuleStat;
-struct s_Context;
-struct s_LexerOutput;
-struct s_Token;
-struct s_Node;
-struct s_ParserOutput;
-struct s_TokenIdx;
-struct s_Effects;
-struct s_Struct;
-struct s_StructField;
-struct s_Target;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-struct s_Region;
 struct s_Argument;
+struct s_Context;
+struct s_Effects;
+struct s_LexerOutput;
+struct s_Lifetime;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
+struct s_ModuleStat;
 struct s_ModuleStats;
+struct s_Node;
 struct s_Overload;
+struct s_ParserOutput;
 struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_SolvedNode;
 struct s_SolverOutput;
+struct s_Struct;
+struct s_StructField;
+struct s_Target;
 struct s_Template;
-s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-s_Module& getModule(const fu_STR&, s_Context&);
-void setModule(const s_Module&, s_Context&);
+struct s_Token;
+struct s_TokenIdx;
+struct s_Type;
+struct s_ValueType;
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
+s_Module& getModule(const fu_STR&, s_Context&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
+s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
+void setModule(const s_Module&, s_Context&);
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
