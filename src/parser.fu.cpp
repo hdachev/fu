@@ -797,8 +797,8 @@ struct sf_parse
             flags |= F_MUT;
 
         fu_STR id = consume("id"_fu, fu_STR{}).value;
-        s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
+        s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Node type = tryPopTypeAnnot();
         s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()));
         if ((numDollars0 != _dollars.size()))

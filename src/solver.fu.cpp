@@ -2151,6 +2151,7 @@ struct sf_solve
     };
     s_SolvedNode solveField(const s_Type& structType, const s_Node& node)
     {
+        (node.items[LET_INIT] && (node.items[LET_INIT].kind != "definit"_fu) && fail(((("All structs must be zerofilled by default."_fu + " Please remove the initializer of struct member `"_fu) + node.value) + "`."_fu)));
         s_SolvedNode out = solveBinding(node, Lifetime_fromArgIndex(0));
         const s_Target overload = Field(out.value, structType, out.type);
         if ((out.flags & F_USING))
