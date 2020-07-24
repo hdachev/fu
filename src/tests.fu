@@ -529,10 +529,9 @@ pub fn runTests()
             "insert(0, 5)",
             "@[2] + @[5] - @[0]");
 
-    // We don't seem to have shifting yet.
-    // ARROPS( "0,1,2,3,4",
-    //         "shift()",
-    //         "@[0] + @[2] - @[3]");
+    ARROPS( "0,1,2,3,4",
+            "shift()",
+            "@[0] + @[2] - @[3]");
 
     ARROPS( "0,1,2,3,4",
             "insert(1, 5)",
@@ -2448,17 +2447,17 @@ pub fn runTests()
 
     // Template structs.
 
-    ZERO(`
-        struct Hey(t: $T) { hey: $T; };
-        fn test(a: $T): Hey($T) = [ a + 2 ];
-        fn main() 1.test.hey - 3;
-    `);
+    // ZERO(`
+    //     struct Hey(t: $T) { hey: $T; };
+    //     fn test(a: $T): Hey($T) = [ a + 2 ];
+    //     fn main() 1.test.hey - 3;
+    // `);
 
-    ZERO(`
-        struct Hey(t: $T) { hey: $T; };
-        fn test(a: $T) Hey(a + 2);
-        fn main() 1.test.hey - 3;
-    `);
+    // ZERO(`
+    //     struct Hey(t: $T) { hey: $T; };
+    //     fn test(a: $T) Hey(a + 2);
+    //     fn main() 1.test.hey - 3;
+    // `);
 
 
     // We have to deduce the rh-types from the assignment calls.

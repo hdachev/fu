@@ -164,6 +164,7 @@ fn substr(a: $T[], i0: i32, i1: i32): $T[] __native("<fu/vec/slice.h>", "fu::sub
 
 fn splice(a: &mut $T[], i: i32, N: i32): void  __native(".splice");
 fn    pop(a: &mut $T[]): void __native(".pop()");
+fn  shift(a: &mut $T[]): void __native(".shift()");
 
 fn  clear(a: &mut $T[]): void __native(".clear()");
 fn resize(a: &mut $T[], len: i32): void __native(".resize");
