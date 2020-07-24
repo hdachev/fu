@@ -1696,6 +1696,11 @@ pub fn solve(
 
     fn solveField(structType: Type, node: Node): SolvedNode
     {
+        node.items[LET_INIT] &&
+        node.items[LET_INIT].kind != "definit" &&
+            fail("All structs must be zerofilled by default."
+                ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+
         let out = solveBinding(node, Lifetime_fromArgIndex(0));
         let overload = Field(
             id: out.value,

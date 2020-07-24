@@ -414,9 +414,9 @@ pub fn runTests()
 
     ZERO(`
         fn add3(a: $T, b = 3) a + b;
-        struct v1 { x = 2; };
+        struct v1 { x: i32; };
         fn +(a: v1, b: i32) v1(a.x + b);
-        fn main() add3(v1).x - 5;
+        fn main() add3(2.v1).x - 5;
     `);
 
 
@@ -1992,18 +1992,6 @@ pub fn runTests()
         return Test(1).a;
     `);
 
-    ZERO(`
-        struct Test {
-            a = 1;
-            b = 2;
-        };
-
-        fn test(t: Test)
-            t.a * 2 - t.b;
-
-        return Test.test;
-    `);
-
 
     // Explicit arguments & struct members.
 
@@ -2021,19 +2009,23 @@ pub fn runTests()
         //*/
     `);
 
-    ZERO(`
-        struct Test { a: i32 = 0; b!: i32 = 1; };
-        fn test(t: Test) t.a + t.b;
-        return Test(-1).test;
-    `);
-
     FAIL(`
-        struct Test { a: i32 = 0; b!: i32 = 1; };
+        struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
         //*F
         return Test(-2, +2).test;
         /*/
         return Test(-2, b: +2).test;
+        //*/
+    `);
+
+    FAIL(`
+        struct Test { a?: i32; b?!: i32; };
+        fn test(t: Test) t.a + t.b;
+        //*F
+        return Test(-2, +2).test;
+        /*/
+        return Test(b: +2).test - 2;
         //*/
     `);
 
@@ -2050,7 +2042,7 @@ pub fn runTests()
         fn main() A + B;
     `,
     `
-        fn A(x!?: i32) x;
+        fn A(x?!: i32) x;
         fn B(x?: i32) A(:x);
         fn main() A + B;
     `,
@@ -2251,16 +2243,16 @@ pub fn runTests()
 
     ZERO([
     `
-        pub struct Hey { i = 1; };
+        pub struct Hey { i: i32; };
     `,
     `
-        fn main() _0::Hey.i - 1;
+        fn main() 1._0::Hey.i - 1;
     `
     ]);
 
     ZERO([
     `
-        pub struct Hey { i = 1; };
+        pub struct Hey { i: i32; };
     `,
     `
         import _0;
@@ -2268,44 +2260,45 @@ pub fn runTests()
     `,
     `
         import _1;
-        fn main() _0::Hey.test - 3;
+        fn main() 1._0::Hey.test - 3;
     `
     ]);
 
     ZERO([
     `
-        pub struct Hey { i = 1; };
+        pub struct Hey { i: i32; };
     `,
     `
         pub inline fn test(h: _0::Hey) h.i + 2;
     `,
     `
         import _1;
-        fn main() _0::Hey.test - 3;
+        fn main() 1._0::Hey.test - 3;
     `
     ]);
 
     ZERO([
     `
-        pub struct Hey { i = 1; };
+        pub struct Hey { i: i32; };
     `,
     `
         pub inline fn test(h: _0::Hey) h.i + 2;
     `,
     `
-        fn main() _0::Hey._1::test - 3;
+        fn main() 1._0::Hey._1::test - 3;
     `
     ]);
 
     ZERO([
     `
-        pub struct You { i = 3; };
+        pub struct You { i: i32; };
     `,
     `
-        pub struct Hey { using you = _0::You; };
+        pub struct Hey { using you: _0::You; };
+        pub fn init3(): Hey = [ _0::You(3) ];
     `,
     `
-        pub inline fn test(using h = _1::Hey) i + 7;
+        pub inline fn test(using h = _1::init3) i + 7;
     `,
     `
         fn main() _2::test - 10;

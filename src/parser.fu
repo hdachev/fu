@@ -743,8 +743,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         let id          = consume("id").value;
 
-        let mustname    = argdecl && tryConsume("op", "!");
         let optional    = argdecl && tryConsume("op", "?");
+        let mustname    = argdecl && tryConsume("op", "!");
         let type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
