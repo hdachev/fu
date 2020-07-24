@@ -2455,20 +2455,17 @@ pub fn runTests()
 
     // Template structs.
 
-    // ZERO(`
-    //     struct Hey(t: $T) { hey: $T; };
+    ZERO(`
+        struct Hey(t: $T) { hey: $T; };
+        fn test(a: $T): Hey($T) = [ a + 2 ];
+        fn main() 1.test.hey - 3;
+    `);
 
-    //     fn A(a: $T) {
-    //         let result: Hey($T) = [ a ];
-    //         return result;
-    //     }
-
-    //     fn B(a: $T): Hey($T) [ a ];
-
-    //     fn main() A (-1).hey
-    //             + B (-2).hey
-    //             + Hey(3).hey;
-    // `);
+    ZERO(`
+        struct Hey(t: $T) { hey: $T; };
+        fn test(a: $T) Hey(a + 2);
+        fn main() 1.test.hey - 3;
+    `);
 
 
     // We have to deduce the rh-types from the assignment calls.
