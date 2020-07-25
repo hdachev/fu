@@ -458,8 +458,7 @@ pub fn solve(
     fn tryMatch__mutargs(
         scope: Scope,
         id: string, args: &mut SolvedNode[],
-        flags: i32 = 0, retType: Type = [],
-        target: Target = []): Target
+        flags?!: i32, retType?!: Type, target?!: Target, typector?!: bool): Target
     {
         mut matchIdx: Target;
 
@@ -538,6 +537,10 @@ pub fn solve(
                     // Repeat arity checks and such.
                     continue :TEST_AGAIN;
                 }
+
+                // Typector?
+                if ((overload.kind == "typector") != typector)
+                    continue :NEXT;
 
                 // Done here.
                 break :TEST_AGAIN;
@@ -702,13 +705,13 @@ pub fn solve(
     fn match__mutargs(
         scope: Scope,
         id: string, args: &mut SolvedNode[],
-        flags: i32, target: Target): Target
+        flags: i32, target: Target, typector: bool): Target
     {
-        let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target);
+        let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target, :typector);
         if (ret)
             return ret;
 
-        let debug = scope.tryMatch__mutargs(:id, :args, :flags, :target);
+        let debug = scope.tryMatch__mutargs(:id, :args, :flags, :target, :typector);
         if (debug)
             return debug;
 
@@ -1833,8 +1836,8 @@ pub fn solve(
                         return solved(node, createMap(T(0), T(1)));
                 }
 
-                //// Locate & parametrize type-ctor.
-                //// TODO
+                // Type constructor call.
+                return solveCall(:node, typector: true);
             }
             else
             {
@@ -2008,7 +2011,7 @@ pub fn solve(
         return _scope;
     }
 
-    fn solveCall(node: Node, target: Target = []): SolvedNode
+    fn solveCall(node: Node, target?!: Target, typector?!: bool): SolvedNode
     {
         mut id = node.value;
         if (!id) target || fail();
@@ -2021,7 +2024,7 @@ pub fn solve(
         mut args = solveNodes(node.items);
 
         //
-        mut callTargIdx = scope.match__mutargs(id, args, node.flags, :target);
+        mut callTargIdx = scope.match__mutargs(id, args, node.flags, :target, :typector);
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.
