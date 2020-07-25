@@ -317,8 +317,8 @@ pub fn Scope_add(
         index: scope.overloads.len + 1);
 
     let item = Overload(
-        :kind, :flags,
-        name: id, :type,
+        name: id || throw("Falsy Scope_add(id)."),
+        :kind, :flags, :type,
         :min, :max, :args,
         :partial, :template, :constant);
 

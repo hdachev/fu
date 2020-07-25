@@ -130,18 +130,20 @@ let P_COMMA   = BINOP.PRECEDENCE[","] || assert();
 
 // Commons.
 
-pub let LET_TYPE       = 0;
-pub let LET_INIT       = 1;
+pub let LET_TYPE        = 0;
+pub let LET_INIT        = 1;
 
-pub let FN_RET_BACK    = -2;
-pub let FN_BODY_BACK   = -1;
-pub let FN_ARGS_BACK   = FN_RET_BACK;
+pub let FN_RET_BACK     = -2;
+pub let FN_BODY_BACK    = -1;
+pub let FN_ARGS_BACK    = FN_RET_BACK;
 
-pub let LOOP_INIT      = 0;
-pub let LOOP_COND      = 1;
-pub let LOOP_POST      = 2;
-pub let LOOP_BODY      = 3;
-pub let LOOP_POST_COND = 4;
+pub let TYPECTOR_BACK   = -1;
+
+pub let LOOP_INIT       = 0;
+pub let LOOP_COND       = 1;
+pub let LOOP_POST       = 2;
+pub let LOOP_BODY       = 3;
+pub let LOOP_POST_COND  = 4;
 
 
 // Descent modes.
@@ -165,6 +167,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
     mut _numReturns = 0;
+
+    mut _dollarAuto = 0;
     mut _dollars    : string[];
 
 
@@ -306,6 +310,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         let name = consume("id").value;
 
+        ////////////////////////
+        let dollars0 = _dollars;
+        ////////////////////////
+
         // Template params.
         mut templateParams: Node[];
         let templateFlags = tryConsume("op", "(")
@@ -315,11 +323,21 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let items = parseBlockLike("op", "}", "struct");
         let struct = make("struct", items, 0, name);
 
+        // We ignore these ...
+        //  there's a bit of an assymetry here
+        //   re: fn & struct templates.
+        //
+        ////////////////////
+        _dollars = dollars0;
+        ////////////////////
+
         // typector(struct).
         if (templateParams)
         {
             templateParams ~= struct;
-            return make("typector", templateParams, templateFlags);
+            return make("typector",
+                templateParams, templateFlags,
+                value: struct.value);
         }
 
         return struct;
@@ -667,6 +685,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         mut implicit: Node[];
         mut defaults = false;
 
+        //////////////
+        _dollarAuto++;
+        //////////////
+
         for (;;)
         {
             if (tryConsume(endk, endv))
@@ -702,6 +724,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             else
                 outArgs.push(arg);
         }
+
+        //////////////
+        _dollarAuto--;
+        //////////////
 
         // Ensures implicit arguments always come last.
         if (implicit)
@@ -983,7 +1009,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseTypeParam(): Node
     {
         let value = consume("id").value;
-        if (!_dollars.has(value))
+        if (!_dollars.has(value) && _dollarAuto)
             _dollars.push(value);
 
         return createTypeParam(value);
