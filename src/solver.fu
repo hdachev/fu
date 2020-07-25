@@ -841,6 +841,7 @@ pub fn solve(
         if (k == "import")      return solveImport(node);
 
         if (k == "typeassert")  return solveTypeAssert(node);
+        if (k == "typeparam")   return solveTypeParam(node);
         if (k == "typector")    return solveTypeCtor(node);
 
         return fail("TODO: " ~ k);
@@ -1087,7 +1088,7 @@ pub fn solve(
                     mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
 
                     // Emit value-taking specializations.
-                    let type = typeParam_get(mut_arg.value);
+                    let type = evalTypeParam(mut_arg.value);
                     if !(type.quals & q_ref)
                         mut_arg.flags |= F_MUT;
 
@@ -1800,11 +1801,19 @@ pub fn solve(
         return Scope_lookupType(annot.value, :annot.flags);
     }
 
-    fn typeParam_get(id: string): Type
+
+    //
+
+    fn evalTypeParam(id: string): Type
     {
         return Scope_lookupType(
             "$" ~ (id   || fail("Falsy type param id.")))
                         || fail("No type param `$" ~ id ~ "` in scope.");
+    }
+
+    fn solveTypeParam(node: Node): SolvedNode
+    {
+        return solved(node, evalTypeParam(node.value));
     }
 
 
@@ -1846,7 +1855,7 @@ pub fn solve(
         }
         else if (node.kind == "typeparam")
         {
-            return solved(node, typeParam_get(node.value));
+            return solved(node, evalTypeParam(node.value));
         }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
@@ -1972,7 +1981,7 @@ pub fn solve(
             //   we could subtype it with the desired quals.
             if (left.kind  == "typeparam" && right.kind == "typetag")
                 return type_has(
-                    typeParam_get(left.value),
+                    evalTypeParam(left.value),
                     right.value || fail("Falsy type tag."));
             else
                 return isAssignable(
