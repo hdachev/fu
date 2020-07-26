@@ -61,7 +61,7 @@ pub fn initStruct(
     implicit module: &mut Module,
     id: string, flags: i32)
 {
-    let canon = "$" ~ module.modid ~ id;
+    let canon = "$" ~ id;
 
     let def = Struct(
         :id || throw("TODO anonymous structs?"),
