@@ -573,7 +573,7 @@ s_MapFields tryClear_map(const s_Type& type)
             return s_MapFields { s_Type { parseType(ckey), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { parseType(cval), s_Lifetime(type.lifetime), s_Effects{} } };
         };
     };
-    fu::fail();
+    fu_ASSERT();
 }
 
 bool type_has(const s_Type& type, const fu_STR& tag)

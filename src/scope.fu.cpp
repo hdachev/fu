@@ -4,7 +4,6 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 
 struct s_Argument;
@@ -567,7 +566,7 @@ int MODID(const s_Module& module)
 
 s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
 {
-    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu::fail(); }());
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_ASSERT(); }());
 }
 
 bool isStruct(const s_Type& type)
@@ -582,7 +581,7 @@ inline const int q_rx_copy = (1 << 2);
 
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
-    fu_STR canon = (("$"_fu + module.modid) + id);
+    fu_STR canon = ("$"_fu + id);
     s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{} };
     (module.out.types.upsert(canon) = def);
     const int TODO_FIX_allTypesAreCopiable = q_rx_copy;
@@ -640,7 +639,7 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid)
 
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
 {
-    (id || fu::fail());
+    (id || fu_ASSERT());
     fu_VEC<s_Target> results {};
     const fu_VEC<s_ScopeItem>& items = scope.items;
     for (int i = 0; (i < items.size()); i++)
@@ -701,7 +700,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR(id), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
     scope.overloads.push(item);
     return target;

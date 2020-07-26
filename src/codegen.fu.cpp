@@ -54,7 +54,7 @@ bool operator==(const s_ValueType&, const s_ValueType&);
 bool type_isArray(const s_Type&);
 bool type_isMap(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
-inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>&);
+inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>&);
 inline std::byte if_last_y0NH(const fu_STR&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_MapFields tryClear_map(const s_Type&);
@@ -621,9 +621,9 @@ inline std::byte if_last_y0NH(const fu_STR& s)
 }
                                 #endif
 
-                                #ifndef DEFt_only_gII0
-                                #define DEFt_only_gII0
-inline const s_SolvedNode& only_gII0(const fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_only_4UAi
+                                #define DEFt_only_4UAi
+inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -804,7 +804,7 @@ struct sf_cpp_codegen
     int _isModuleSpecs {};
     s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
     {
-        ((target.index > 0) || fu::fail());
+        ((target.index > 0) || fu_ASSERT());
         const s_Module& m = ((target.modid == module_1.modid) ? module_1 : ctx_1.modules[target.modid]);
         return s_Overload(m.out.solve.scope.overloads[(target.index - 1)]);
     };
@@ -1192,7 +1192,7 @@ struct sf_cpp_codegen
         };
         if ((overload.flags & F_POSTFIX))
         {
-            ((overload.flags & F_OPERATOR) || fu::fail());
+            ((overload.flags & F_OPERATOR) || fu_ASSERT());
             (src += ", /*postfix*/int "_fu);
         };
         (src += (closure ? (") -> "_fu + annot) : ")"_fu));
@@ -1347,7 +1347,7 @@ struct sf_cpp_codegen
         {
             if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
             {
-                fu_STR expr = cgNode(only_gII0(init.items), 0);
+                fu_STR expr = cgNode(only_4UAi(init.items), 0);
                 if ((node.type.value.quals & q_primitive))
                     return ((head + " = "_fu) + expr);
 
@@ -1606,7 +1606,7 @@ struct sf_cpp_codegen
         if ((id == "println"_fu))
             return cgPrint(items);
 
-        ((id != "__native"_fu) || fu::fail());
+        ((id != "__native"_fu) || fu_ASSERT());
         return (((ID(id) + "("_fu) + fu::join(items, ", "_fu)) + ")"_fu);
     };
     fu_STR cgAppend(const s_SolvedNode& node, const fu_STR& into)
@@ -1675,7 +1675,7 @@ struct sf_cpp_codegen
 
             }
             else if ((node.type.value.canon != "f64"_fu))
-                fu::fail();
+                fu_ASSERT();
 
         };
         if (fu::lmatch(src, "0o"_fu))
@@ -1861,7 +1861,7 @@ struct sf_cpp_codegen
 
         s_Overload t = GET(node.target, module, ctx);
         if ((t.kind == "field"_fu))
-            return isFieldChain(only_gII0(node.items));
+            return isFieldChain(only_4UAi(node.items));
 
         if (((t.kind == "var"_fu) || (t.kind == "global"_fu) || (t.kind == "arg"_fu) || (t.kind == "ref"_fu)))
             return true;

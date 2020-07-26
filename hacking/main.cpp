@@ -4,6 +4,7 @@
 #include "../build.cpp/failing-testcase.cpp"
 #endif
 
+#define fu_UNITY_FULIB
 #ifndef ISOLATE_FAILING_TESTCASE
 
 #define main cli_main

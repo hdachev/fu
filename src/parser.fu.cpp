@@ -309,7 +309,7 @@ s_BINOP setupOperators()
 
 static const s_BINOP BINOP = setupOperators();
 
-static const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu::fail(); }());
+static const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu_ASSERT(); }());
 
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
@@ -334,6 +334,11 @@ inline const int FN_BODY_BACK = -1;
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
 inline const int FN_ARGS_BACK = FN_RET_BACK;
+                                #endif
+
+                                #ifndef DEF_TYPECTOR_BACK
+                                #define DEF_TYPECTOR_BACK
+inline const int TYPECTOR_BACK = -1;
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
@@ -376,6 +381,7 @@ struct sf_parse
     int _precedence = P_RESET;
     int _fnDepth = 0;
     int _numReturns = 0;
+    int _dollarAuto = 0;
     fu_VEC<fu_STR> _dollars {};
     fu_VEC<fu_STR> _imports {};
     fu_STR registerImport(fu_STR&& value)
@@ -461,15 +467,17 @@ struct sf_parse
     s_Node parseStructDecl()
     {
         fu_STR name = consume("id"_fu, fu_STR{}).value;
+        fu_VEC<fu_STR> dollars0 { _dollars };
         fu_VEC<s_Node> templateParams {};
         const int templateFlags = ([&]() -> int { if (tryConsume("op"_fu, "("_fu)) return parseArgsDecl(templateParams, "op"_fu, ")"_fu); else return int{}; }());
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
         s_Node sTruct = make("struct"_fu, items, 0, name);
+        _dollars = dollars0;
         if (templateParams)
         {
             (templateParams += sTruct);
-            return make("typector"_fu, templateParams, templateFlags, fu_STR{});
+            return make("typector"_fu, templateParams, templateFlags, sTruct.value);
         };
         return sTruct;
     };
@@ -731,6 +739,7 @@ struct sf_parse
         int outFlags = 0;
         fu_VEC<s_Node> implicit {};
         bool defaults = false;
+        _dollarAuto++;
         for (; ; )
         {
             if (tryConsume(endk, endv))
@@ -763,6 +772,7 @@ struct sf_parse
                 outArgs.push(arg);
 
         };
+        _dollarAuto--;
         if (implicit)
         {
             for (int i = 0; (i < implicit.size()); i++)
@@ -988,7 +998,7 @@ struct sf_parse
     s_Node parseTypeParam()
     {
         fu_STR value = consume("id"_fu, fu_STR{}).value;
-        if (!fu::has(_dollars, value))
+        if ((!fu::has(_dollars, value) && _dollarAuto))
             _dollars.push(value);
 
         return createTypeParam(value);

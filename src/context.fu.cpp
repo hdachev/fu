@@ -660,16 +660,16 @@ s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 void setModule(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
-    ((current.fname == module.fname) || fu::fail());
+    ((current.fname == module.fname) || fu_ASSERT());
     current = module;
 }
 
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     if ((type.value.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu_ASSERT(); }());
 
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu::fail(); }());
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu_ASSERT(); }());
 }
 
 #endif
