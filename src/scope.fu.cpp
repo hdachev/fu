@@ -609,11 +609,6 @@ static int commonQuals(const fu_VEC<s_StructField>& fields)
     return commonQuals;
 }
 
-bool isTemplate(const s_Overload& o)
-{
-    return (o.kind == "template"_fu);
-}
-
                                 #ifndef DEF_F_PUB
                                 #define DEF_F_PUB
 inline const int F_PUB = (1 << 20);

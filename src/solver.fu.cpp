@@ -48,7 +48,6 @@ bool hasIdentifierChars(const fu_STR&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
 bool isStruct(const s_Type&);
-bool isTemplate(const s_Overload&);
 bool is_bool(const s_Type&);
 bool is_never(const s_Type&);
 bool is_void(const s_Type&);
@@ -1155,7 +1154,7 @@ struct sf_solve
             if ((overload.min < 1))
                 return;
 
-            if (isTemplate(overload))
+            if ((overload.kind == "template"_fu))
                 return;
 
             if ((overload.kind == "defctor"_fu))
@@ -1288,7 +1287,7 @@ struct sf_solve
                 {
                     goto L_NEXT_c;
                 };
-                if (isTemplate(overload))
+                if ((overload.kind == (typector ? "typector"_fu : "template"_fu)))
                 {
                     if (reorder)
                         fail("TODO handle argument reorder in template specialization."_fu);
@@ -1299,11 +1298,14 @@ struct sf_solve
                     {
                         goto L_NEXT_c;
                     };
+                    if (typector)
+                        return specIdx;
+
                     overloadIdx = specIdx;
                     overload = GET(specIdx, module, ctx);
                     goto L_TEST_AGAIN_c;
                 };
-                if (((overload.kind == "typector"_fu) != typector))
+                if ((overload.kind == "typector"_fu))
                 {
                     goto L_NEXT_c;
                 };
@@ -1727,13 +1729,13 @@ struct sf_solve
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
-        return __solveFn(false, false, node, s_SolvedNode{}, -1);
+        return __solveFn(node, false, s_SolvedNode{}, bool{}, -1);
     };
     s_SolvedNode uSolveFn(const s_Node& node, const s_SolvedNode& prep)
     {
-        return __solveFn(true, false, node, prep, -1);
+        return __solveFn(node, true, prep, bool{}, -1);
     };
-    s_SolvedNode __solveFn(const bool solve, const bool spec, const s_Node& n_fn, const s_SolvedNode& prep, const int caseIdx)
+    s_SolvedNode __solveFn(const s_Node& n_fn, const bool solve, const s_SolvedNode& prep, const bool spec, const int caseIdx)
     {
         const fu_STR& id = (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu));
         if (spec)
@@ -1870,29 +1872,16 @@ struct sf_solve
         s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode{}; return _; } (module.out.specs.upsert(mangle))) };
         if (!spec)
         {
-            s_SolvedNode spec_1 = doTrySpecialize(tEmplate, args, mangle);
+            s_SolvedNode spec_1 = doTrySpecialize(tEmplate, fu_VEC<s_SolvedNode>(args), mangle);
+            if (!spec_1)
+                spec_1.kind = "spec-fail"_fu;
+
             (module.out.specs.upsert(mangle) = spec_1);
             return std::move(spec_1.target);
         };
         return std::move(spec.target);
     };
-    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, const fu_VEC<s_SolvedNode>& args, fu_STR& mangle)
-    {
-        ((tEmplate.node.kind == "fn"_fu) || fail("TODO: non-fn templates"_fu));
-        s_SolvedNode result = trySpecializeFn(tEmplate, fu_VEC<s_SolvedNode>(args), mangle);
-        if (result)
-        {
-            s_Overload o = GET(result.target, module, ctx);
-            if (((o.min > args.size()) || (o.max < args.size())))
-                result = s_SolvedNode{};
-
-        };
-        if (!result)
-            result.kind = "spec-fail"_fu;
-
-        return result;
-    };
-    s_SolvedNode trySpecializeFn(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
+    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
     {
         bool ok = true;
         fu_MAP<fu_STR, s_Type> typeParams0 {};
@@ -1907,8 +1896,9 @@ struct sf_solve
         for (int i = 0; (i < tEmplate.imports.size()); i++)
             Scope_import(tEmplate.imports[i]);
 
+        const fu_STR& kind = tEmplate.node.kind;
         const fu_VEC<s_Node>& items = tEmplate.node.items;
-        const int numArgs = (items.size() + FN_ARGS_BACK);
+        const int numArgs = ((kind == "fn"_fu) ? (items.size() + FN_ARGS_BACK) : ((kind == "typector"_fu) ? (items.size() + TYPECTOR_BACK) : fail(("TODO numArgs for template:"_fu + kind))));
         fu_VEC<int> retypeIndices {};
         bool remangle = false;
         for (int pass_retype = 0; ((pass_retype == 0) || ((pass_retype == 1) && retypeIndices)); pass_retype++)
@@ -2001,7 +1991,7 @@ struct sf_solve
 
             };
         };
-        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(true, true, tEmplate.node, s_SolvedNode{}, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()); else return s_SolvedNode{}; }());
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ((kind == "fn"_fu) ? ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(tEmplate.node, true, s_SolvedNode{}, true, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()) : ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveStruct(true, tEmplate.node, s_SolvedNode{}, true, caseIdx); if (_) return _; } fail("__solveStruct spec:true is not expected to fail."_fu); }())); else return s_SolvedNode{}; }());
         std::swap(_current_fn, current_fn0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
@@ -2017,13 +2007,13 @@ struct sf_solve
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
     {
-        return __solveStruct(false, node, s_SolvedNode{});
+        return __solveStruct(false, node, s_SolvedNode{}, bool{}, -1);
     };
     s_SolvedNode uSolveStruct(const s_Node& node, const s_SolvedNode& prep)
     {
-        return __solveStruct(true, node, prep);
+        return __solveStruct(true, node, prep, bool{}, -1);
     };
-    s_SolvedNode __solveStruct(const bool solve, const s_Node& node, const s_SolvedNode& prep)
+    s_SolvedNode __solveStruct(const bool solve, const s_Node& node, const s_SolvedNode& prep, const bool spec, const int caseIdx)
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
         const fu_STR& id = (node.value ? node.value : fail("TODO anonymous structs"_fu));
@@ -2034,24 +2024,26 @@ struct sf_solve
         if (!solve)
             return out;
 
-        out.items = solveStructMembers(node.items, structType);
+        const fu_VEC<s_Node>& members = (spec ? ((caseIdx >= 0) ? fail("TODO struct case"_fu) : node.items[(node.items.size() - 1)].items) : node.items);
+        fu_VEC<s_SolvedNode> items = solveStructMembers(members, structType);
+        out.items = items;
         
         {
-            fu_VEC<s_SolvedNode> members {};
-            fu_VEC<s_SolvedNode> items { out.items };
+            fu_VEC<s_SolvedNode> members_1 {};
             fu_VEC<s_StructField> fields {};
-            for (int i = 0; (i < items.size()); i++)
+            fu_VEC<s_SolvedNode> items_1 { out.items };
+            for (int i = 0; (i < items_1.size()); i++)
             {
-                const s_SolvedNode& item = items[i];
+                const s_SolvedNode& item = items_1[i];
                 if ((item && (item.kind == "let"_fu) && (item.flags & F_FIELD)))
                 {
-                    members.push(item);
+                    members_1.push(item);
                     fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_ValueType((item.type.value ? item.type.value : fail(fu_STR{}))) });
                 };
             };
             structType.value.quals |= finalizeStruct(structType.value.canon, fields, module);
             GET_mut(out.target).type.value.quals = structType.value.quals;
-            const s_Target ctor = DefCtor(id, structType, members);
+            const s_Target ctor = DefCtor(id, structType, members_1);
             lookupStruct_mut(structType.value.canon, module).ctor = ctor;
         };
         return out;
@@ -2408,7 +2400,7 @@ struct sf_solve
                 args.mutref(0) = argNode;
 
         };
-        return CallerNode(node, s_Type((callTarg.type ? callTarg.type : fail(fu_STR{}))), callTargIdx, fu_VEC<s_SolvedNode>(args));
+        return CallerNode(node, s_Type((callTarg.type ? callTarg.type : fail(fu_STR{}))), callTargIdx, fu_VEC<s_SolvedNode>(([&]() -> const fu_VEC<s_SolvedNode>& { if (!typector) return args; else return fu::Default<fu_VEC<s_SolvedNode>>::value; }())));
     };
     s_SolvedNode solveArrayLiteral(const s_Node& node, const s_Type& type)
     {
@@ -2612,7 +2604,7 @@ struct sf_solve
         }
         else if (args.size())
         {
-            const fu_VEC<s_Argument>& host_args = (overload.args ? overload.args : fail(fu_STR{}));
+            const fu_VEC<s_Argument>& host_args = (overload.args ? overload.args : fail("CallerNode: no host args."_fu));
             for (int i = 0; (i < args.size()); i++)
                 maybeCopyOrMove(([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(i); if (_) return _; } fail(fu_STR{}); }()), host_args[i].type, true);
 
