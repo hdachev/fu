@@ -165,9 +165,6 @@ pub struct Overload
     constant:   SolvedNode;
 };
 
-pub fn isTemplate(o: Overload)
-    o.kind == "template";
-
 pub struct ScopeItem
 {
     id:         string;

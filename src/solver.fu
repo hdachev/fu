@@ -337,7 +337,7 @@ pub fn solve(
                 return;
 
             // TODO using + templates, the fuck do we do?
-            if (overload.isTemplate)
+            if (overload.kind == "template")
                 return;
 
             // Skip over defctors -
@@ -518,7 +518,7 @@ pub fn solve(
                     continue :NEXT;
 
                 // Specialize.
-                if (overload.isTemplate)
+                if (overload.kind == (typector ? "typector" : "template"))
                 {
                     if (reorder)
                         fail("TODO handle argument reorder in template specialization.");
@@ -531,6 +531,11 @@ pub fn solve(
                     if (!specIdx)
                         continue :NEXT;
 
+                    // ???????????????? //
+                    if (typector)
+                        return specIdx;
+                    // ???????????????? //
+
                     overloadIdx = specIdx;
                     overload = GET(specIdx);
 
@@ -539,7 +544,7 @@ pub fn solve(
                 }
 
                 // Typector?
-                if ((overload.kind == "typector") != typector)
+                if (overload.kind == "typector")
                     continue :NEXT;
 
                 // Done here.
@@ -1007,17 +1012,15 @@ pub fn solve(
 
     fn uPrepFn(node: Node): SolvedNode
     {
-        return __solveFn(node, SolvedNode,
-            solve: false, spec: false, caseIdx: -1);
+        return __solveFn(node, solve: false);
     }
 
     fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
     {
-        return __solveFn(node, prep,
-            solve: true, spec: false, caseIdx: -1);
+        return __solveFn(node, :prep, solve: true);
     }
 
-    fn __solveFn(solve!: bool, spec!: bool, n_fn: Node, prep: SolvedNode, caseIdx!: i32): SolvedNode
+    fn __solveFn(n_fn: Node, solve!: bool, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1): SolvedNode
     {
         let id = n_fn.value || fail("TODO anonymous fns");
 
@@ -1224,7 +1227,10 @@ pub fn solve(
         let spec = module.out.specs[mangle] ||= SolvedNode;
         if (!spec)
         {
-            let spec = doTrySpecialize(template, args, mangle);
+            mut spec = doTrySpecialize(template, args, mangle);
+            if (!spec)
+                spec.kind = "spec-fail";
+
             module.out.specs[mangle] = spec;
             return spec.target;
         }
@@ -1232,30 +1238,10 @@ pub fn solve(
         return spec.target;
     }
 
+
+    // Let's try to run all specs through here for starters.
+
     fn doTrySpecialize(
-        template: Template, args: SolvedNode[], mangle: &mut string)
-            : SolvedNode
-    {
-        template.node.kind == "fn" || fail("TODO: non-fn templates");
-
-        mut result = trySpecializeFn(:template, args, mangle);
-        if (result)
-        {
-            let o = GET(result.target);
-            if (o.min > args.len || o.max < args.len)
-                result = SolvedNode;
-        }
-
-        if (!result)
-            result.kind = "spec-fail";
-
-        return result;
-    }
-
-
-    //
-
-    fn trySpecializeFn(
         template: Template, mut args: SolvedNode[], mangle: &mut string)
             : SolvedNode
     {
@@ -1286,8 +1272,11 @@ pub fn solve(
             Scope_import(template.imports[i]);
 
         //
+        let kind    = template.node.kind;
         let items   = template.node.items;
-        let numArgs = items.len + FN_ARGS_BACK;
+        let numArgs = kind == "fn"          ? items.len + FN_ARGS_BACK
+                    : kind == "typector"    ? items.len + TYPECTOR_BACK
+                    : fail("TODO numArgs for template:" ~ kind);
 
         /////////////////
         // Literal fixup.
@@ -1433,10 +1422,13 @@ pub fn solve(
             }
         }
 
-        let specialized = ok && (__solveFn(
-            template.node, SolvedNode,
-            solve: true, spec: true, :caseIdx) || fail(
-                "__solveFn spec:true is not expected to fail."));
+        let specialized = ok && (kind == "fn"
+            ? __solveFn(
+                template.node, solve: true, spec: true, :caseIdx)
+                    || fail("__solveFn spec:true is not expected to fail.")
+            : __solveStruct(
+                template.node, solve: true, spec: true, :caseIdx)
+                    || fail("__solveStruct spec:true is not expected to fail."));
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
@@ -1462,15 +1454,15 @@ pub fn solve(
 
     fn uPrepStruct(node: Node): SolvedNode
     {
-        return __solveStruct(false, node, SolvedNode());
+        return __solveStruct(solve: false, :node);
     }
 
     fn uSolveStruct(node: Node, prep: SolvedNode): SolvedNode
     {
-        return __solveStruct(true, node, prep);
+        return __solveStruct(solve: true, :node, :prep);
     }
 
-    fn __solveStruct(solve: bool, node: Node, prep: SolvedNode): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1): SolvedNode
     {
         mut out         = prep || solved(node, t_void);
 
@@ -1479,22 +1471,25 @@ pub fn solve(
 
         // Add the arity-0 type entry.
         if (!prep)
-            out.target = Scope_Typedef(_scope, id, structType, node.flags);
+            out.target  = Scope_Typedef(_scope, id, structType, node.flags);
 
         if (!solve)
             return out;
 
         // Struct fields only.
-        out.items = solveStructMembers(
-            node.items, :structType);
+        let members = spec  ? caseIdx >= 0  ? fail("TODO struct case")
+                                            : node.items[node.items.len - 1].items
+                            : node.items;
+
+        let items = solveStructMembers(:members, :structType);
+        out.items = items;
 
         // Add a default constructor.
         {
             mut members: SolvedNode[];
-            let items = out.items;
-
             mut fields: StructField[];
 
+            let items = out.items;
             for (mut i = 0; i < items.len; i++)
             {
                 let item = items[i];
@@ -2077,7 +2072,7 @@ pub fn solve(
             node,
             callTarg.type || fail(),
             callTargIdx,
-            args);
+            !typector && args);
     }
 
 
@@ -2407,7 +2402,7 @@ pub fn solve(
         // Tag copies and moves.
         else if (args.len)
         {
-            let host_args = overload.args || fail();
+            let host_args = overload.args || fail("CallerNode: no host args.");
             for (mut i = 0; i < args.len; i++)
                 maybeCopyOrMove(
                     args[i] || fail(), host_args[i].type,
