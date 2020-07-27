@@ -1272,9 +1272,9 @@ struct sf_solve
         s_Target overloadIdx {};
         while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target, extra_items))){
         {
-            s_Overload overload = GET(overloadIdx, module, ctx);
             while (true){
             {
+                s_Overload overload = GET(overloadIdx, module, ctx);
                 if (((overload.min > arity) || (overload.max < arity)))
                 {
                     goto L_NEXT_c;
@@ -1302,89 +1302,90 @@ struct sf_solve
                         return specIdx;
 
                     overloadIdx = specIdx;
-                    overload = GET(specIdx, module, ctx);
                     goto L_TEST_AGAIN_c;
                 };
                 if ((overload.kind == "typector"_fu))
                 {
                     goto L_NEXT_c;
                 };
+                if (args)
+                {
+                    const fu_VEC<s_Argument>& host_args = overload.args;
+                    const int N = (reorder ? reorder.size() : args.size());
+                    fu_VEC<s_SolvedNode> undo_literal_fixup { args };
+                    for (int i = 0; (i < N); i++)
+                    {
+                        const s_Argument& host_arg = host_args[i];
+                        const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
+                        if ((callsiteIndex < 0))
+                        {
+                            if ((!host_arg.dEfault && !(host_arg.flags & F_IMPLICIT)))
+                            {
+                                goto L_NEXT_c;
+                            };
+                            continue;
+                        }
+                        else if ((host_arg.flags & F_MUSTNAME))
+                        {
+                            if (((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex)))
+                            {
+                                goto L_NEXT_c;
+                            };
+                        };
+                        const s_Type& expect = host_arg.type;
+                        s_Type actual { args.mutref(callsiteIndex).type };
+                        bool ok = isAssignableAsArgument(expect, s_Type(actual));
+                        if ((!ok && considerRetyping(expect, actual)))
+                        {
+                            s_SolvedNode& arg = args.mutref(callsiteIndex);
+                            if ((arg.kind == "label"_fu))
+                            {
+                                s_SolvedNode inner { only_o0k6(arg.items) };
+                                arg = inner;
+                            };
+                            s_Type retype = tryRetyping(arg, expect);
+                            ok = isAssignableAsArgument(expect, s_Type(retype));
+                            if (ok)
+                                arg.type = retype;
+
+                        };
+                        if (!ok)
+                        {
+                            args = undo_literal_fixup;
+                            goto L_NEXT_c;
+                        };
+                    };
+                    if (matchIdx)
+                        fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
+
+                    if (reorder)
+                    {
+                        fu_VEC<s_SolvedNode> new_args {};
+                        new_args.resize(reorder.size());
+                        for (int i = 0; (i < reorder.size()); i++)
+                        {
+                            const int idx = reorder[i];
+                            if ((idx >= 0))
+                                new_args.mutref(i) = args.mutref(idx);
+
+                        };
+                        args = new_args;
+                    };
+                };
+                matchIdx = overloadIdx;
+                if (!arity)
+                {
+                    goto L_NEXT_b;
+                };
                 goto L_TEST_AGAIN_b;
             
                 }L_TEST_AGAIN_c:;}
                 L_TEST_AGAIN_b:;
 
-            if (args)
-            {
-                fu_VEC<s_Argument> host_args { overload.args };
-                const int N = (reorder ? reorder.size() : args.size());
-                fu_VEC<s_SolvedNode> undo_literal_fixup { args };
-                for (int i = 0; (i < N); i++)
-                {
-                    const s_Argument& host_arg = host_args[i];
-                    const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
-                    if ((callsiteIndex < 0))
-                    {
-                        if ((!host_arg.dEfault && !(host_arg.flags & F_IMPLICIT)))
-                        {
-                            goto L_NEXT_c;
-                        };
-                        continue;
-                    }
-                    else if ((host_arg.flags & F_MUSTNAME))
-                    {
-                        if (((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex)))
-                        {
-                            goto L_NEXT_c;
-                        };
-                    };
-                    const s_Type& expect = host_arg.type;
-                    s_Type actual { args.mutref(callsiteIndex).type };
-                    bool ok = isAssignableAsArgument(expect, s_Type(actual));
-                    if ((!ok && considerRetyping(expect, actual)))
-                    {
-                        s_SolvedNode& arg = args.mutref(callsiteIndex);
-                        if ((arg.kind == "label"_fu))
-                        {
-                            s_SolvedNode inner { only_o0k6(arg.items) };
-                            arg = inner;
-                        };
-                        s_Type retype = tryRetyping(arg, expect);
-                        ok = isAssignableAsArgument(expect, s_Type(retype));
-                        if (ok)
-                            arg.type = retype;
-
-                    };
-                    if (!ok)
-                    {
-                        args = undo_literal_fixup;
-                        goto L_NEXT_c;
-                    };
-                };
-                if (matchIdx)
-                    fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
-
-                if (reorder)
-                {
-                    fu_VEC<s_SolvedNode> new_args {};
-                    new_args.resize(reorder.size());
-                    for (int i = 0; (i < reorder.size()); i++)
-                    {
-                        const int idx = reorder[i];
-                        if ((idx >= 0))
-                            new_args.mutref(i) = args.mutref(idx);
-
-                    };
-                    args = new_args;
-                };
-            };
-            matchIdx = overloadIdx;
-            if (!arity)
-            {
-                break;
-            };
         
-            }L_NEXT_c:;};
+            }L_NEXT_c:;}
+            L_NEXT_b:;
+
         if (matchIdx)
         {
             s_Overload matched = GET(matchIdx, module, ctx);
