@@ -1249,7 +1249,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         args.unshift(expr);
 
         return createCall("[]",
-            F_INDEX & argFlags, args);
+            F_INDEX | argFlags, args);
     }
 
     fn createLeaf(kind: string, value: string): Node

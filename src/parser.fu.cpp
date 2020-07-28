@@ -1166,7 +1166,7 @@ struct sf_parse
         fu_VEC<s_Node> args {};
         const int argFlags = parseCallArgs("]"_fu, args);
         args.unshift(expr);
-        return createCall("[]"_fu, (F_INDEX & argFlags), args);
+        return createCall("[]"_fu, (F_INDEX | argFlags), args);
     };
     s_Node createLeaf(const fu_STR& kind, const fu_STR& value)
     {
