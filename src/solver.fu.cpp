@@ -1893,7 +1893,7 @@ struct sf_solve
         const s_ScopeMemo root_scope0 { _root_scope };
         fu_MAP<fu_STR, s_Type> typeParams {};
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
-        _root_scope = scope0;
+        _root_scope = s_ScopeMemo{};
         for (int i = 0; (i < tEmplate.imports.size()); i++)
             Scope_import(tEmplate.imports[i]);
 
