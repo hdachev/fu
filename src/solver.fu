@@ -1265,7 +1265,7 @@ pub fn solve(
             start: _root_scope,
               end: scope0);
 
-        _root_scope = scope0;
+        _root_scope = ScopeMemo();
 
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
