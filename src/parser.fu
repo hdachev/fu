@@ -446,6 +446,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "mut")         return (_idx--, parseLetStmt());
                 if (v == "struct")      return parseStructDecl();
                 if (v == "pub")         return parsePub();
+
+                if (v == "type")        return parseTypedef();
                 if (v == "typedef")     return parseTypedef();
 
                 if (v == "inline" && tryConsume("id", "fn"))

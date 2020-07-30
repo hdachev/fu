@@ -195,7 +195,7 @@ fn has (a: $T[], b: $T): bool __native("<fu/vec/find.h>", "fu::has");
 
 // Strings.
 
-typedef string = byte[];
+type string = byte[];
 
 fn  >(a: string, b: string): bool __native("<fu/vec/cmp.h>",  ">");
 fn  <(a: string, b: string): bool __native("<fu/vec/cmp.h>",  "<");
