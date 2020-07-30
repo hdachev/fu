@@ -467,17 +467,3 @@ pub struct Target
     modid:  i32;
     index:  i32;
 };
-
-pub struct Struct
-{
-    id:         string;
-    fields?:    StructField[];
-    flags:      i32;
-    ctor?:      Target;
-};
-
-pub struct StructField
-{
-    id:     string;
-    type:   ValueType;
-};

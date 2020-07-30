@@ -392,6 +392,14 @@ pub fn solve(
             for (mut i = 0; i < items.len; i++)
                 visit(items[i]);
         }
+
+        // Struct members.
+        if (actual.isStruct)
+        {
+            let items = lookupStruct(actual).items;
+            for (mut i = 0; i < items.len; i++)
+                visit(items[i]);
+        }
     }
 
 
@@ -495,11 +503,14 @@ pub fn solve(
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
+        let unary_arg_t = arity == 1 && args[0].type;
+        let field_items = unary_arg_t.isStruct && lookupStruct(unary_arg_t).items;
+
         :NEXT
         while (overloadIdx =
             scope.search(id, scope_iterator,
                 scope_skip: _scope_skip, :target,
-                :extra_items))
+                :extra_items, :field_items))
         {
             :TEST_AGAIN
             while (true)
@@ -1480,7 +1491,9 @@ pub fn solve(
                                             : node.items[node.items.len - 1].items
                             : node.items;
 
-        let items = solveStructMembers(:members, :structType);
+        mut innerScope: ScopeItem[];
+
+        let items = solveStructMembers(:members, :structType, innerScope);
         out.items = items;
 
         // Add a default constructor.
@@ -1504,7 +1517,7 @@ pub fn solve(
             }
 
             //
-            structType.quals |= finalizeStruct(structType.canon, fields);
+            structType.quals |= finalizeStruct(structType.canon, fields, innerScope);
             GET_mut(out.target).type.quals = structType.quals;
 
             // Link up the constructor.
@@ -1515,7 +1528,7 @@ pub fn solve(
         return out;
     }
 
-    fn solveStructMembers(members: Node[], structType: Type): SolvedNode[]
+    fn solveStructMembers(members: Node[], structType: Type, innerScope: &mut ScopeItem[]): SolvedNode[]
     {
         mut out: SolvedNode[];
 
@@ -1523,7 +1536,7 @@ pub fn solve(
         {
             let node = members[i];
             if (node.kind == "let")
-                out.push(solveField(:node, :structType));
+                out.push(solveField(:node, :structType, innerScope));
             else
                 fail("TODO: " ~ node.kind);
         }
@@ -1698,20 +1711,21 @@ pub fn solve(
         return out;
     }
 
-    fn solveField(structType: Type, node: Node): SolvedNode
+    fn solveField(structType: Type, node: Node, innerScope: &mut ScopeItem[]): SolvedNode
     {
         node.items[LET_INIT] &&
         node.items[LET_INIT].kind != "definit" &&
             fail("All structs must be zerofilled by default."
                 ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
+        let id = node.value;
         let out = solveBinding(node, Lifetime_fromArgIndex(0));
-        let overload = Field(
-            id: out.value,
-            :structType, fieldType: out.type);
+        let target = Field(:id, :structType, fieldType: out.type);
+
+        innerScope.push(ScopeItem(:id, :target));
 
         if (out.flags & F_USING)
-            scope_using(overload);
+            scope_using(target);
 
         return out;
     }

@@ -2447,11 +2447,11 @@ pub fn runTests()
 
     // Template structs.
 
-    // ZERO(`
-    //     struct Hey(t: $T) { hey: $T; };
-    //     fn test(a: $T): Hey($T) = [ a + 2 ];
-    //     fn main() 1.test.hey - 3;
-    // `);
+    ZERO(`
+        struct Hey(t: $T) { hey: $T; };
+        fn test(a: $T): Hey($T) = [ a + 2 ];
+        fn main() 1.test.hey - 3;
+    `);
 
     // ZERO(`
     //     struct Hey(t: $T) { hey: $T; };
@@ -2479,26 +2479,26 @@ pub fn runTests()
 
     // A mutref fail.
 
-    ZERO(`
-        struct Arg { i: i32; };
+    // ZERO(`
+    //     struct Arg { i: i32; };
 
-        fn mutargs(args: &mut Arg[])
-        {
-            // This miscompiles to ref into args,
-            //  after which we invalidate the reference.
-            //
-            // Notice the "let" would bind cleanly,
-            //  if it weren't for the "&&", which loses the mutrefsness.
-            //
-            let arg_t = args.len && args[0];
-            args = [ Arg(11) ];
-            return arg_t.i;
-        }
+    //     fn mutargs(args: &mut Arg[])
+    //     {
+    //         // This miscompiles to ref into args,
+    //         //  after which we invalidate the reference.
+    //         //
+    //         // Notice the "let" would bind cleanly,
+    //         //  if it weren't for the "&&", which loses the mutrefsness.
+    //         //
+    //         let arg_t = args.len && args[0];
+    //         args = [ Arg(11) ];
+    //         return arg_t.i;
+    //     }
 
-        fn main()
-        {
-            mut args = [ Arg(7) ];
-            return mutargs(args) - 7;
-        }
-    `);
+    //     fn main()
+    //     {
+    //         mut args = [ Arg(7) ];
+    //         return mutargs(args) - 7;
+    //     }
+    // `);
 }

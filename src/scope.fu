@@ -42,15 +42,33 @@ pub struct Module
 pub fn MODID(implicit module: Module): i32
     module.modid;
 
-pub fn lookupStruct_mut(
-    implicit module: &mut Module,
-    canon: string)
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Scope.
+
+pub struct Struct
 {
-    return module.out.types[canon] || assert();
-}
+    id:         string;
+    fields?:    StructField[];
+    flags:      i32;
+    ctor?:      Target;
 
+    items?:     ScopeItem[];
+};
 
-//
+pub struct StructField
+{
+    id:         string;
+    type:       ValueType;
+};
 
 pub fn isStruct(type: Type)
 {
@@ -77,11 +95,17 @@ pub fn initStruct(
         quals: TODO_FIX_allTypesAreCopiable));
 }
 
-pub fn finalizeStruct(
-    canon: string, fields: StructField[]): i32
+pub fn lookupStruct_mut(implicit module: &mut Module, canon: string)
 {
-    let def: &mut Struct = lookupStruct_mut(canon);
-    def.fields = fields || throw("TODO empty structs?");
+    return module.out.types[canon] || assert();
+}
+
+pub fn finalizeStruct(
+    canon: string, fields: StructField[], items: ScopeItem[]): i32
+{
+    let def: &mut Struct    = lookupStruct_mut(canon);
+        def.fields          = fields || throw("TODO empty structs (fields) ?");
+        def.items           = items  || throw("TODO empty structs (items)  ?");
 
     return fields.commonQuals() & (q_rx_copy | q_trivial);
 }
@@ -230,8 +254,9 @@ pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip,
-    target: Target = [],
-    extra_items: ScopeItem[] = []): Target
+    target?: Target,
+    extra_items?: ScopeItem[],
+    field_items?: ScopeItem[]): Target
 {
     // Searching & forcing results the same way.
     if (target)
@@ -249,15 +274,18 @@ pub fn search(
 
     let items = scope.items;
     if (!scope_iterator)
-        scope_iterator = items.len + extra_items.len;
+        scope_iterator = items.len + extra_items.len + field_items.len;
 
     while (scope_iterator --> 0)
     {
         if (scope_iterator == skip1)
             scope_iterator  = skip0;
 
+        // TODO clean this up
         let item = scope_iterator >= items.len
-            ? extra_items[scope_iterator - items.len]
+            ? scope_iterator >= items.len + extra_items.len
+            ? field_items[scope_iterator - items.len - extra_items.len]
+            : extra_items[scope_iterator - items.len]
             : items[scope_iterator];
 
         if (item.id == id)
@@ -319,8 +347,9 @@ pub fn Scope_add(
         :min, :max, :args,
         :partial, :template, :constant);
 
-    scope.items.push(
-        ScopeItem( :id, :target ));
+    if (kind != "field")
+        scope.items.push(
+            ScopeItem( :id, :target ));
 
     scope.overloads.push(item);
 
