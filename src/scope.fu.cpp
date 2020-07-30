@@ -201,6 +201,22 @@ struct s_Target
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu_STR id;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -209,6 +225,7 @@ struct s_Struct
     fu_VEC<s_StructField> fields;
     int flags;
     s_Target ctor;
+    fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
@@ -216,6 +233,7 @@ struct s_Struct
             || fields
             || flags
             || ctor
+            || items
         ;
     }
 };
@@ -303,22 +321,6 @@ struct s_SolvedNode
             || items
             || token
             || type
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu_STR id;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
             || target
         ;
     }
@@ -564,11 +566,6 @@ int MODID(const s_Module& module)
     return int(module.modid);
 }
 
-s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
-{
-    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_ASSERT(); }());
-}
-
 bool isStruct(const s_Type& type)
 {
     return fu::lmatch(type.value.canon, std::byte('$'));
@@ -582,10 +579,15 @@ inline const int q_rx_copy = (1 << 2);
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = ("$"_fu + id);
-    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{} };
+    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, fu_VEC<s_ScopeItem>{} };
     (module.out.types.upsert(canon) = def);
     const int TODO_FIX_allTypesAreCopiable = q_rx_copy;
     return s_Type { s_ValueType { int(TODO_FIX_allTypesAreCopiable), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
+}
+
+s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
+{
+    return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_ASSERT(); }());
 }
 
                                 #ifndef DEF_q_trivial
@@ -593,10 +595,11 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 inline const int q_trivial = (1 << 3);
                                 #endif
 
-int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, s_Module& module)
+int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, const fu_VEC<s_ScopeItem>& items, s_Module& module)
 {
     s_Struct& def = lookupStruct_mut(canon, module);
-    def.fields = (fields ? fields : fu::fail("TODO empty structs?"_fu));
+    def.fields = (fields ? fields : fu::fail("TODO empty structs (fields) ?"_fu));
+    def.items = (items ? items : fu::fail("TODO empty structs (items)  ?"_fu));
     return (commonQuals(fields) & (q_rx_copy | q_trivial));
 }
 
@@ -647,7 +650,7 @@ fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target, const fu_VEC<s_ScopeItem>& extra_items)
+s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target, const fu_VEC<s_ScopeItem>& extra_items, const fu_VEC<s_ScopeItem>& field_items)
 {
     if (target)
     {
@@ -661,14 +664,14 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     const int skip1 = (scope_skip.end.items_len - 1);
     const fu_VEC<s_ScopeItem>& items = scope.items;
     if (!scope_iterator)
-        scope_iterator = (items.size() + extra_items.size());
+        scope_iterator = ((items.size() + extra_items.size()) + field_items.size());
 
     while ((scope_iterator-- > 0))
     {
         if ((scope_iterator == skip1))
             scope_iterator = skip0;
 
-        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? extra_items[(scope_iterator - items.size())] : items[scope_iterator]);
+        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : extra_items[(scope_iterator - items.size())]) : items[scope_iterator]);
         if ((item.id == id))
         {
             if (!scope_iterator)
@@ -696,7 +699,9 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
-    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
+    if ((kind != "field"_fu))
+        scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
+
     scope.overloads.push(item);
     return target;
 }

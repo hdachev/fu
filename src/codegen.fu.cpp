@@ -437,6 +437,7 @@ struct s_Struct
     fu_VEC<s_StructField> fields;
     int flags;
     s_Target ctor;
+    fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
@@ -444,6 +445,7 @@ struct s_Struct
             || fields
             || flags
             || ctor
+            || items
         ;
     }
 };
@@ -2005,6 +2007,9 @@ struct sf_cpp_codegen
             return cgParens(node);
 
         if ((k == "struct"_fu))
+            return cgEmpty();
+
+        if ((k == "typector"_fu))
             return cgEmpty();
 
         if ((k == "copy"_fu))

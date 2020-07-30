@@ -200,6 +200,22 @@ struct s_Target
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu_STR id;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -208,6 +224,7 @@ struct s_Struct
     fu_VEC<s_StructField> fields;
     int flags;
     s_Target ctor;
+    fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
@@ -215,6 +232,7 @@ struct s_Struct
             || fields
             || flags
             || ctor
+            || items
         ;
     }
 };
@@ -302,22 +320,6 @@ struct s_SolvedNode
             || items
             || token
             || type
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu_STR id;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
             || target
         ;
     }
@@ -792,6 +794,7 @@ void runTests()
     ZERO("\n        struct X { i: i32; };\n\n        fn        ++(using x: &mut X) ++i;\n        fn postfix++(using x: &mut X) i++;\n\n        fn main() {\n            mut x: X;\n            let a = x++;\n            let b = ++x;\n            return a || b - 2;\n        }\n    "_fu);
     FAIL("\n        //\n        // The -1.abs problem.\n        //\n        // Ruby lexes the minus into the numeric literal.\n        //  This is kinda inconsistent, altough it does make sense.\n        //\n        // Rust & all c-likes lex to -abs(1).\n        //  Rust linters warn about this.\n        //\n        // One thing we can do is change the precedence of some unaries\n        //  to above method call - others, like ! benefit from usual precedence.\n        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,\n        //    but the & op usually works the way you want it to.\n        //     So introducing more precedence rules is a really questionable idea.\n        //\n        // We'll go the rust way for starters,\n        //  this will be a compile time error for now.\n        //\n        fn test()\n        //*F\n            -1.0\n        /*/\n            (-1.0)\n        //*/\n                .abs;\n\n        fn main() test ? 0 : 7;\n    "_fu);
     ZERO("\n        fn test() [] -> i32;\n        fn main() test;\n    "_fu);
+    ZERO("\n        struct Hey(t: $T) { hey: $T; };\n        fn test(a: $T): Hey($T) = [ a + 2 ];\n        fn main() 1.test.hey - 3;\n    "_fu);
 }
 
 #endif

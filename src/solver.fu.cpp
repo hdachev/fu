@@ -64,7 +64,7 @@ inline const s_Node& only_zET6(const fu_VEC<s_Node>&);
 inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>&);
 inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
-int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, s_Module&);
+int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, const fu_VEC<s_ScopeItem>&, s_Module&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_Lifetime Lifetime_fromArgIndex(int);
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime&, const fu_VEC<s_SolvedNode>&);
@@ -77,7 +77,7 @@ s_ScopeMemo Scope_push(s_Scope&);
 s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Module&);
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
@@ -344,26 +344,6 @@ struct s_StructField
 };
                                 #endif
 
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    s_Target ctor;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || fields
-            || flags
-            || ctor
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ScopeItem
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
@@ -375,6 +355,28 @@ struct s_ScopeItem
         return false
             || id
             || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    fu_STR id;
+    fu_VEC<s_StructField> fields;
+    int flags;
+    s_Target ctor;
+    fu_VEC<s_ScopeItem> items;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || fields
+            || flags
+            || ctor
+            || items
         ;
     }
 };
@@ -1199,6 +1201,13 @@ struct sf_solve
                 visit(items[i]);
 
         };
+        if (isStruct(actual))
+        {
+            const fu_VEC<s_ScopeItem>& items = lookupStruct(actual, module, ctx).items;
+            for (int i = 0; (i < items.size()); i++)
+                visit(items[i]);
+
+        };
     };
     bool getNamedArgReorder(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, const fu_VEC<s_Argument>& host_args)
     {
@@ -1270,7 +1279,9 @@ struct sf_solve
         fu_STR args_mangled {};
         int scope_iterator {};
         s_Target overloadIdx {};
-        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target, extra_items))){
+        const s_Type& unary_arg_t = ([&]() -> const s_Type& { if ((arity == 1)) return args.mutref(0).type; else return fu::Default<s_Type>::value; }());
+        const fu_VEC<s_ScopeItem>& field_items = ([&]() -> const fu_VEC<s_ScopeItem>& { if (isStruct(unary_arg_t)) return lookupStruct(unary_arg_t, module, ctx).items; else return fu::Default<fu_VEC<s_ScopeItem>>::value; }());
+        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target, extra_items, field_items))){
         {
             while (true){
             {
@@ -2026,7 +2037,8 @@ struct sf_solve
             return out;
 
         const fu_VEC<s_Node>& members = (spec ? ((caseIdx >= 0) ? fail("TODO struct case"_fu) : node.items[(node.items.size() - 1)].items) : node.items);
-        fu_VEC<s_SolvedNode> items = solveStructMembers(members, structType);
+        fu_VEC<s_ScopeItem> innerScope {};
+        fu_VEC<s_SolvedNode> items = solveStructMembers(members, structType, innerScope);
         out.items = items;
         
         {
@@ -2042,21 +2054,21 @@ struct sf_solve
                     fields.push(s_StructField { fu_STR((item.value ? item.value : fail(fu_STR{}))), s_ValueType((item.type.value ? item.type.value : fail(fu_STR{}))) });
                 };
             };
-            structType.value.quals |= finalizeStruct(structType.value.canon, fields, module);
+            structType.value.quals |= finalizeStruct(structType.value.canon, fields, innerScope, module);
             GET_mut(out.target).type.value.quals = structType.value.quals;
             const s_Target ctor = DefCtor(id, structType, members_1);
             lookupStruct_mut(structType.value.canon, module).ctor = ctor;
         };
         return out;
     };
-    fu_VEC<s_SolvedNode> solveStructMembers(const fu_VEC<s_Node>& members, const s_Type& structType)
+    fu_VEC<s_SolvedNode> solveStructMembers(const fu_VEC<s_Node>& members, const s_Type& structType, fu_VEC<s_ScopeItem>& innerScope)
     {
         fu_VEC<s_SolvedNode> out {};
         for (int i = 0; (i < members.size()); i++)
         {
             const s_Node& node = members[i];
             if ((node.kind == "let"_fu))
-                out.push(solveField(structType, node));
+                out.push(solveField(structType, node, innerScope));
             else
                 fail(("TODO: "_fu + node.kind));
 
@@ -2157,13 +2169,15 @@ struct sf_solve
 
         return out;
     };
-    s_SolvedNode solveField(const s_Type& structType, const s_Node& node)
+    s_SolvedNode solveField(const s_Type& structType, const s_Node& node, fu_VEC<s_ScopeItem>& innerScope)
     {
         (node.items[LET_INIT] && (node.items[LET_INIT].kind != "definit"_fu) && fail(((("All structs must be zerofilled by default."_fu + " Please remove the initializer of struct member `"_fu) + node.value) + "`."_fu)));
+        const fu_STR& id = node.value;
         s_SolvedNode out = solveBinding(node, Lifetime_fromArgIndex(0));
-        const s_Target overload = Field(out.value, structType, out.type);
+        const s_Target target = Field(id, structType, out.type);
+        innerScope.push(s_ScopeItem { fu_STR(id), s_Target(target) });
         if ((out.flags & F_USING))
-            scope_using(overload);
+            scope_using(target);
 
         return out;
     };
@@ -2202,7 +2216,7 @@ struct sf_solve
         int scope_iterator {};
         s_Target overloadIdx {};
         const s_Scope& scope = ((flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
-        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{})))
+        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<s_ScopeItem>{})))
         {
             s_Overload maybe = GET(overloadIdx, module, ctx);
             if ((maybe.kind == "type"_fu))

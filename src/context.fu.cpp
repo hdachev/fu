@@ -202,6 +202,22 @@ struct s_Target
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu_STR id;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Struct
                                 #define DEF_s_Struct
 struct s_Struct
@@ -210,6 +226,7 @@ struct s_Struct
     fu_VEC<s_StructField> fields;
     int flags;
     s_Target ctor;
+    fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
@@ -217,6 +234,7 @@ struct s_Struct
             || fields
             || flags
             || ctor
+            || items
         ;
     }
 };
@@ -304,22 +322,6 @@ struct s_SolvedNode
             || items
             || token
             || type
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu_STR id;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
             || target
         ;
     }
