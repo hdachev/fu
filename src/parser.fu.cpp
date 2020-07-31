@@ -557,6 +557,9 @@ struct sf_parse
                 if ((v == "pub"_fu))
                     return parsePub();
 
+                if ((v == "type"_fu))
+                    return parseTypedef();
+
                 if ((v == "typedef"_fu))
                     return parseTypedef();
 
