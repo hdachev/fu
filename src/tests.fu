@@ -2460,6 +2460,103 @@ pub fn runTests()
     // `);
 
 
+    // Enum basics.
+
+    // FAIL(`
+    //     enum Test: i32 { A; B; C; };
+    //     fn main() C.i32 - 2;
+    //         //*F
+    //         C - 2;
+    //         /*/
+    //         C.i32 - 2;
+    //         //*/
+    // `);
+
+    // FAIL(`
+    //     //*F
+    //     /*/
+    //     flags //*/
+    //     enum Test: i32 { A; B; };
+    //     fn main() (A | B).i32 - 3;
+    // `);
+
+    // ZERO(`
+    //     enum Test: i32 { A = 1; };
+    //     fn main() A.i32 - 1;
+    // `);
+
+    // ZERO(`
+    //     enum Test { A = 1; B; };
+    //     fn main() B.i32 - 2;
+    // `);
+
+    // ZERO(`
+    //     enum Test { A; B = 2; C; };
+    //     fn main() C.i32 - 3;
+    // `);
+
+    // ZERO(`
+    //     enum Test { A; B = A; C; };
+    //     fn main() C.i32 - 1;
+    // `);
+
+    // ZERO(`
+    //     //*F
+    //     /*/
+    //     arithmetic //*/
+    //     enum Test { A; B; };
+    //     fn main() (B - A).i32 - 1;
+    // `);
+
+    // ZERO(`
+    //     enum Thing {
+    //         None;
+    //         enum Animal { Cat; Dog; }
+    //         enum Food { Apple; Orange; }
+    //     };
+    //
+    //     fn main() Apple.i32 - Dog.i32 - 1;
+    // `);
+
+    // ZERO(`
+    //     tuple enum TextureType: u32 {
+    //
+    //         enum Kind {
+    //             None;
+    //
+    //             T_unorm; T_snorm;  T_uint; T_int;
+    //             T_float; T_ufloat; T_srgb; T_depth;
+    //         };
+    //
+    //         enum Size {
+    //             None;
+    //
+    //             T_8x4; T_16x4; T_32x4;
+    //             T_8x3; T_16x3; T_32x3;
+    //             T_8x2; T_16x2; T_32x2;
+    //             T_8x1; T_16x1; T_32x1;
+    //
+    //             T_10x3_2; T_11x2_10; T_24x1_8;
+    //         };
+    //
+    //         flags enum Usage {
+    //             T_nosample;
+    //             T_nomips;
+    //             T_fmin_nearest;
+    //             T_fmag_nearest;
+    //             T_clamp_u;
+    //             T_clamp_v;
+    //         };
+    //     };
+    //
+    //     pub let T_d24_s8            = T_24x1_8 | T_depth;
+    //     pub let T_DepthRenderBuffer = T_d24_s8 | T_nosample;
+    //
+    //     fn main()
+    //         TODO;
+    // `);
+
+
     // We have to deduce the rh-types from the assignment calls.
     //
     // ZERO(`
