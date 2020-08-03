@@ -2003,7 +2003,7 @@ struct sf_solve
 
             };
         };
-        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ((kind == "fn"_fu) ? ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(tEmplate.node, true, s_SolvedNode{}, true, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()) : ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveStruct(true, tEmplate.node, s_SolvedNode{}, true, caseIdx); if (_) return _; } fail("__solveStruct spec:true is not expected to fail."_fu); }())); else return s_SolvedNode{}; }());
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return ((kind == "fn"_fu) ? ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveFn(tEmplate.node, true, s_SolvedNode{}, true, caseIdx); if (_) return _; } fail("__solveFn spec:true is not expected to fail."_fu); }()) : ([&]() -> s_SolvedNode { { s_SolvedNode _ = __solveStruct(true, tEmplate.node, s_SolvedNode{}, ("_"_fu + hash62(mangle, 4)), caseIdx); if (_) return _; } fail("__solveStruct spec:true is not expected to fail."_fu); }())); else return s_SolvedNode{}; }());
         std::swap(_current_fn, current_fn0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
@@ -2019,16 +2019,16 @@ struct sf_solve
     };
     s_SolvedNode uPrepStruct(const s_Node& node)
     {
-        return __solveStruct(false, node, s_SolvedNode{}, bool{}, -1);
+        return __solveStruct(false, node, s_SolvedNode{}, fu_STR{}, -1);
     };
     s_SolvedNode uSolveStruct(const s_Node& node, const s_SolvedNode& prep)
     {
-        return __solveStruct(true, node, prep, bool{}, -1);
+        return __solveStruct(true, node, prep, fu_STR{}, -1);
     };
-    s_SolvedNode __solveStruct(const bool solve, const s_Node& node, const s_SolvedNode& prep, const bool spec, const int caseIdx)
+    s_SolvedNode __solveStruct(const bool solve, const s_Node& node, const s_SolvedNode& prep, const fu_STR& spec, const int caseIdx)
     {
         s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, t_void, fu_VEC<s_SolvedNode>{}); }());
-        const fu_STR& id = (node.value ? node.value : fail("TODO anonymous structs"_fu));
+        fu_STR id = (([&]() -> fu_STR { { fu_STR _ = fu_STR(node.value); if (_) return _; } return "Anon"_fu; }()) + spec);
         s_Type structType = initStruct(id, node.flags, module);
         if (!prep)
             out.target = Scope_Typedef(_scope, id, structType, node.flags, module);
