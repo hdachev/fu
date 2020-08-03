@@ -2453,6 +2453,21 @@ pub fn runTests()
         fn main() 1.test.hey - 3;
     `);
 
+    FAIL(`
+        struct Hey(t: $T) { hey: $T; };
+        fn test(a: $T): Hey($T) = [ a + 2 ];
+        fn main() 1.test.hey - 1.u32.test.hey //*F
+            /*/
+            .i32;
+            //*/
+    `);
+
+    // ZERO(`
+    //     struct Hey(t: $T) { hey: $T; };
+    //     fn test(a: $T) Hey(a + 2);
+    //     fn main() 1.test.hey - 3;
+    // `);
+
     // ZERO(`
     //     struct Hey(t: $T) { a: $T; b: $T; };
     //     fn test(a: $T) Hey(a, 2);
@@ -2460,21 +2475,6 @@ pub fn runTests()
     //         let r = (-2).test;
     //         return r.a - r.b;
     //     }
-    // `);
-
-    // FAIL(`
-    //     struct Hey(t: $T) { hey: $T; };
-    //     fn test(a: $T): Hey($T) = [ a + 2 ];
-    //     fn main() 1.test.hey - 1.u32.test.hey //*F
-    //         /*/
-    //         .i32;
-    //         //*/
-    // `);
-
-    // ZERO(`
-    //     struct Hey(t: $T) { hey: $T; };
-    //     fn test(a: $T) Hey(a + 2);
-    //     fn main() 1.test.hey - 3;
     // `);
 
 

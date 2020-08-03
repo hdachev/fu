@@ -1437,7 +1437,7 @@ pub fn solve(
                 template.node, solve: true, spec: true, :caseIdx)
                     || fail("__solveFn spec:true is not expected to fail.")
             : __solveStruct(
-                template.node, solve: true, spec: true, :caseIdx)
+                template.node, solve: true, spec: "_" ~ tea::hash62(mangle, chars: 4), :caseIdx)
                     || fail("__solveStruct spec:true is not expected to fail."));
 
         ////////////////////////////////
@@ -1472,11 +1472,11 @@ pub fn solve(
         return __solveStruct(solve: true, :node, :prep);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode, spec?!: string, caseIdx! = -1): SolvedNode
     {
         mut out         = prep || solved(node, t_void);
 
-        let id          = node.value || fail("TODO anonymous structs");
+        let id          = (node.value || "Anon") ~ spec;
         mut structType  = initStruct(id, node.flags);
 
         // Add the arity-0 type entry.
