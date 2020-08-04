@@ -58,6 +58,7 @@ inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>&);
 inline std::byte if_last_y0NH(const fu_STR&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_MapFields tryClear_map(const s_Type&);
+s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
@@ -911,7 +912,7 @@ struct sf_cpp_codegen
             include("<fu/vec.h>"_fu);
             return (("fu_VEC<"_fu + itemAnnot) + ">"_fu);
         };
-        s_Type sliceItem = tryClear_slice(type);
+        s_Type sliceItem = tryClear_slice(add_ref(type, s_Lifetime{}));
         if (sliceItem)
         {
             fu_STR itemAnnot = typeAnnot(sliceItem, 0);

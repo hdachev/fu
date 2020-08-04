@@ -8,6 +8,7 @@
 #include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
+#include <fu/view.h>
 #include <utility>
 
 struct s_BINOP;
@@ -427,7 +428,7 @@ struct sf_parse
     {
         return s_Node{};
     };
-    s_Token consume(const fu_STR& kind, const fu_STR& value)
+    s_Token consume(fu::view<std::byte> kind, fu::view<std::byte> value)
     {
         const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value || (token.value == value))))
@@ -437,7 +438,7 @@ struct sf_parse
         };
         fail((((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
     };
-    s_Token tryConsume(const fu_STR& kind, const fu_STR& value)
+    s_Token tryConsume(fu::view<std::byte> kind, fu::view<std::byte> value)
     {
         const s_Token& token = tokens[_idx];
         if (((token.kind == kind) && (!value || (token.value == value))))
@@ -463,7 +464,7 @@ struct sf_parse
     };
     s_Node parseTypedef()
     {
-        fu_STR name = consume("id"_fu, fu_STR{}).value;
+        fu_STR name = consume("id"_fu, fu::view<std::byte>{}).value;
         consume("op"_fu, "="_fu);
         s_Node annot = parseTypeAnnot();
         consume("op"_fu, ";"_fu);
@@ -471,7 +472,7 @@ struct sf_parse
     };
     s_Node parseStructDecl()
     {
-        fu_STR name = consume("id"_fu, fu_STR{}).value;
+        fu_STR name = consume("id"_fu, fu::view<std::byte>{}).value;
         fu_VEC<fu_STR> dollars0 { _dollars };
         fu_VEC<s_Node> templateParams {};
         const int templateFlags = ([&]() -> int { if (tryConsume("op"_fu, "("_fu)) return parseArgsDecl(templateParams, "op"_fu, ")"_fu); else return int{}; }());
@@ -612,15 +613,15 @@ struct sf_parse
     };
     s_Node parseImport()
     {
-        fu_STR value = tryConsume("id"_fu, fu_STR{}).value;
+        fu_STR value = tryConsume("id"_fu, fu::view<std::byte>{}).value;
         if (value)
         {
             while (tryConsume("op"_fu, "::"_fu))
-                (value += ("/"_fu + consume("id"_fu, fu_STR{}).value));
+                (value += ("/"_fu + consume("id"_fu, fu::view<std::byte>{}).value));
 
         }
         else
-            value = consume("str"_fu, fu_STR{}).value;
+            value = consume("str"_fu, fu::view<std::byte>{}).value;
 
         consume("op"_fu, ";"_fu);
         value = registerImport(fu_STR(value));
@@ -628,7 +629,7 @@ struct sf_parse
     };
     s_Node parseLabelledStatement()
     {
-        s_Token label = consume("id"_fu, fu_STR{});
+        s_Token label = consume("id"_fu, fu::view<std::byte>{});
         s_Node stmt = parseStatement();
         if ((stmt.kind == "loop"_fu))
         {
@@ -652,12 +653,12 @@ struct sf_parse
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        fu_STR name = tryConsume("id"_fu, fu_STR{}).value;
+        fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
         if ((!name || !tryConsume("op"_fu, "("_fu)))
         {
             (!name || (name == "infix"_fu) || (name == "prefix"_fu) || (name == "postfix"_fu) || fail((("Unexpected `"_fu + name) + "`."_fu)));
             const bool postfix = (name == "postfix"_fu);
-            name = consume("op"_fu, fu_STR{}).value;
+            name = consume("op"_fu, fu::view<std::byte>{}).value;
             if (postfix)
             {
                 ((name == "++"_fu) || (name == "--"_fu) || fail((("No such postfix operator: `"_fu + name) + "`."_fu)));
@@ -797,7 +798,7 @@ struct sf_parse
         s_Node ret = parseLet(false);
         if (tryConsume("id"_fu, "catch"_fu))
         {
-            s_Node err = createLet(consume("id"_fu, fu_STR{}).value, 0, createRead("string"_fu), s_Node{});
+            s_Node err = createLet(consume("id"_fu, fu::view<std::byte>{}).value, 0, createRead("string"_fu), s_Node{});
             s_Node cAtch = parseStatement();
             return make("catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { ret, err, cAtch } }, 0, fu_STR{});
         };
@@ -820,7 +821,7 @@ struct sf_parse
         if (tryConsume("id"_fu, "ref"_fu))
             flags |= F_REF;
 
-        fu_STR id = consume("id"_fu, fu_STR{}).value;
+        fu_STR id = consume("id"_fu, fu::view<std::byte>{}).value;
         s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
         s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Node type = tryPopTypeAnnot();
@@ -982,7 +983,7 @@ struct sf_parse
 
                 if ((v == "::"_fu))
                 {
-                    fu_STR id = consume("id"_fu, fu_STR{}).value;
+                    fu_STR id = consume("id"_fu, fu::view<std::byte>{}).value;
                     _idx -= 2;
                     return createRead(id);
                 };
@@ -1011,7 +1012,7 @@ struct sf_parse
     };
     s_Node parseTypeParam()
     {
-        fu_STR value = consume("id"_fu, fu_STR{}).value;
+        fu_STR value = consume("id"_fu, fu::view<std::byte>{}).value;
         if ((!fu::has(_dollars, value) && _dollarAuto))
             _dollars.push(value);
 
@@ -1023,7 +1024,7 @@ struct sf_parse
     };
     s_Node parseTypeTag()
     {
-        return createTypeTag(consume("id"_fu, fu_STR{}).value);
+        return createTypeTag(consume("id"_fu, fu::view<std::byte>{}).value);
     };
     s_Node createTypeTag(const fu_STR& value)
     {
@@ -1065,11 +1066,11 @@ struct sf_parse
     };
     s_Node parseAccessExpression(const s_Node& expr)
     {
-        s_Token id = tryConsume("id"_fu, fu_STR{});
+        s_Token id = tryConsume("id"_fu, fu::view<std::byte>{});
         if (!id)
         {
             consume("op"_fu, "::"_fu);
-            id = consume("id"_fu, fu_STR{});
+            id = consume("id"_fu, fu::view<std::byte>{});
             _idx -= 2;
         };
         return createCall(id.value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { expr } });
@@ -1085,7 +1086,7 @@ struct sf_parse
         fu_STR path { expr.value };
         for (; ; )
         {
-            fu_STR id = consume("id"_fu, fu_STR{}).value;
+            fu_STR id = consume("id"_fu, fu::view<std::byte>{}).value;
             if (!tryConsume("op"_fu, "::"_fu))
             {
                 path = registerImport(fu_STR(path));
@@ -1212,7 +1213,7 @@ struct sf_parse
     };
     s_Node parseJump(const fu_STR& kind)
     {
-        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, fu_STR{}); else return s_Token{}; }());
+        s_Token label = ([&]() -> s_Token { if (tryConsume("op"_fu, ":"_fu)) return consume("id"_fu, fu::view<std::byte>{}); else return s_Token{}; }());
         s_Node jump = createJump(kind, label.value);
         consume("op"_fu, ";"_fu);
         return jump;

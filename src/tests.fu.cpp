@@ -757,6 +757,7 @@ void runTests()
     ZERO("\n        struct Hey {\n            i: i32;\n        };\n\n        fn test(out: &mut [Hey]) {\n            out.view(u8) .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];\n        }\n\n        fn main() {\n            mut a = [ Hey ];\n            a.test();\n            return a[0].i - 16843009;\n        }\n    "_fu);
     ZERO("\n        struct Hey {\n            i: i32;\n        };\n\n        fn test(x: &mut [i32], y: [ Hey ])\n            x .= y.view(i32);\n\n        fn main() {\n            mut a = [ 0 ];\n            test(a, [ Hey(13) ]);\n            return a[0] - 13;\n        }\n    "_fu);
     ZERO("\n        struct Hey {\n            i: i32;\n        };\n\n        fn main() {\n            mut a = [ 0 ];\n            a .= [ Hey(13) ].view(i32);\n            return a[0] - 13;\n        }\n    "_fu);
+    ZERO("\n        fn test(a: [byte], b?: [byte]) a == b;\n        fn main() test(\"\") ? 0 : 1;\n    "_fu);
     ZERO("\n        struct Hey { i: i32; }\n\n        fn main() {\n            let a = 1;\n            let r: Hey = a && [ a ];\n            return r.i - 1;\n        }\n    "_fu);
     ZERO("\n        struct Hey { i: i32; }\n\n        fn main() {\n            let a: Hey[] = [ [ -1 ], [ +1 ] ];\n            return a[0].i + a[1].i;\n        }\n    "_fu);
     ZERO("\n        struct Hey { i: i32; }\n\n        fn test(): Hey {\n            return [ 0 ];\n        }\n\n        fn main() test.i;\n    "_fu);
