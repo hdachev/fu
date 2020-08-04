@@ -209,6 +209,11 @@ inline const int F_PUB = (1 << 20);
 inline const int F_OPERATOR = (1 << 21);
                                 #endif
 
+                                #ifndef DEF_F_REF
+                                #define DEF_F_REF
+inline const int F_REF = (1 << 22);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -551,6 +556,9 @@ struct sf_parse
                 if ((v == "mut"_fu))
                     return ((void)_idx--, parseLetStmt());
 
+                if ((v == "ref"_fu))
+                    return ((void)_idx--, parseLetStmt());
+
                 if ((v == "struct"_fu))
                     return parseStructDecl();
 
@@ -808,6 +816,9 @@ struct sf_parse
 
         if (tryConsume("id"_fu, "mut"_fu))
             flags |= F_MUT;
+
+        if (tryConsume("id"_fu, "ref"_fu))
+            flags |= F_REF;
 
         fu_STR id = consume("id"_fu, fu_STR{}).value;
         s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
