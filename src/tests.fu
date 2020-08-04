@@ -109,6 +109,15 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn decr(ref num: i32)
+            num--;
+
+        mut res = 0;
+        decr(res);
+        return res + 1;
+    `);
+
+    ZERO(`
         mut res = 0;
         fn decr()
             res--;
