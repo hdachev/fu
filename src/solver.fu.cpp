@@ -936,6 +936,11 @@ inline const int FN_BODY_BACK = -1;
 inline const int F_FIELD = (1 << 10);
                                 #endif
 
+                                #ifndef DEF_F_REF
+                                #define DEF_F_REF
+inline const int F_REF = (1 << 22);
+                                #endif
+
                                 #ifndef DEF_F_ARG
                                 #define DEF_F_ARG
 inline const int F_ARG = (1 << 9);
@@ -2113,12 +2118,19 @@ struct sf_solve
         const s_Node& n_annot = node.items[LET_TYPE];
         const s_Node& n_init = node.items[LET_INIT];
         s_SolvedNode annot = ([&]() -> s_SolvedNode { if (n_annot) return evalTypeAnnot(n_annot); else return s_SolvedNode{}; }());
+        if ((annot.type && (node.flags & F_REF)))
+            annot.type = add_mutref(annot.type, lifetime);
+
         s_SolvedNode init = ([&]() -> s_SolvedNode { if (n_init) return solveNode(n_init, annot.type); else return s_SolvedNode{}; }());
         (annot.type || init.type || fail("Variable declarations without type annotations must be initialized."_fu));
-        s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.value.quals & q_mutref) || (node.flags & F_MUT)) ? clear_refs(init.type) : (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(init.type, lifetime) : s_Type(init.type))));
+        s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(annot.type, lifetime) : s_Type(annot.type)) : (((init.type.value.quals & q_mutref) || (node.flags & F_MUT)) ? ((node.flags & F_REF) ? s_Type(init.type) : clear_refs(init.type)) : (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(init.type, lifetime) : s_Type(init.type))));
         if ((annot.type && init.type))
             checkAssignable(annot.type, init.type, "Type annotation does not match init expression"_fu, node.value, "="_fu);
 
+        if ((node.flags & F_REF))
+        {
+            ((init.type.value.quals & q_mutref) || (!init && (node.flags & F_ARG)) || fail("`ref` variables must be initialized to a mutable reference."_fu));
+        };
         if (init)
             maybeCopyOrMove(init, t_let, false);
 
