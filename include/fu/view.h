@@ -9,12 +9,17 @@ namespace fu {
 template <typename T>
 struct view
 {
-    typedef const T value_type;
-    typedef const T fu_VIEW_value_type;
-    typedef const T fu_ANY_value_type;
+    typedef T value_type;
+    typedef T fu_VIEW_value_type;
+    typedef T fu_ANY_value_type;
 
     const T* m_data;
     int32_t m_size;
+
+    fu_INL view() noexcept
+        : m_data { nullptr }
+        , m_size { 0 }
+    {}
 
     fu_INL view(const T* data, int32_t size) noexcept
         : m_data { data }
@@ -48,6 +53,11 @@ struct view
              : *((T*)1);
 
         #endif
+    }
+
+    fu_INL explicit operator bool() const noexcept
+    {
+        return m_size != 0;
     }
 };
 
@@ -112,6 +122,11 @@ struct view_mut
              : *((T*)1);
 
         #endif
+    }
+
+    fu_INL explicit operator bool() const noexcept
+    {
+        return m_size != 0;
     }
 };
 

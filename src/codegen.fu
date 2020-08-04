@@ -147,7 +147,8 @@ pub fn cpp_codegen(
             return "fu_VEC<" ~ itemAnnot ~ ">";
         }
 
-        let sliceItem = tryClear_slice(type);
+        // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
+        let sliceItem = tryClear_slice(add_ref(type, lifetimes::Lifetime));
         if (sliceItem)
         {
             let itemAnnot = typeAnnot(sliceItem);
