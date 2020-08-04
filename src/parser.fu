@@ -611,7 +611,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     }
 
     fn parseFnBodyOrPattern(
-        out_push_body: &mut Node[]): i32
+        ref out_push_body: Node[]): i32
     {
         //
         mut flags = 0;
@@ -680,7 +680,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     }
 
     fn parseArgsDecl(
-        outArgs: &mut Node[],
+        ref outArgs: Node[],
         endk: string, endv: string): i32
     {
         mut first = true;
@@ -1132,7 +1132,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn parseCallArgs(endop: string, out_args: &mut Node[]): i32
+    fn parseCallArgs(endop: string, ref out_args: Node[]): i32
     {
         mut flags = 0;
 

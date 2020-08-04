@@ -23,15 +23,15 @@ pub inline fn -(a: f32, b: vec3) vec3(a - b.x, a - b.y, a - b.z);
 pub inline fn *(a: f32, b: vec3) vec3(a * b.x, a * b.y, a * b.z);
 pub inline fn /(a: f32, b: vec3) vec3(a / b.x, a / b.y, a / b.z);
 
-pub inline fn +=(a: &mut vec3, b: vec3): &mut vec3 { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
-pub inline fn -=(a: &mut vec3, b: vec3): &mut vec3 { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
-pub inline fn *=(a: &mut vec3, b: vec3): &mut vec3 { a.x *= b.x; a.y *= b.y; a.z *= b.z; return a; }
-pub inline fn /=(a: &mut vec3, b: vec3): &mut vec3 { a.x /= b.x; a.y /= b.y; a.z /= b.z; return a; }
+pub inline fn +=(ref a: vec3, b: vec3) { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
+pub inline fn -=(ref a: vec3, b: vec3) { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
+pub inline fn *=(ref a: vec3, b: vec3) { a.x *= b.x; a.y *= b.y; a.z *= b.z; return a; }
+pub inline fn /=(ref a: vec3, b: vec3) { a.x /= b.x; a.y /= b.y; a.z /= b.z; return a; }
 
-pub inline fn +=(a: &mut vec3, b: f32): &mut vec3 { a.x += b; a.y += b; a.z += b; return a; }
-pub inline fn -=(a: &mut vec3, b: f32): &mut vec3 { a.x -= b; a.y -= b; a.z -= b; return a; }
-pub inline fn *=(a: &mut vec3, b: f32): &mut vec3 { a.x *= b; a.y *= b; a.z *= b; return a; }
-pub inline fn /=(a: &mut vec3, b: f32): &mut vec3 { a.x /= b; a.y /= b; a.z /= b; return a; }
+pub inline fn +=(ref a: vec3, b: f32) { a.x += b; a.y += b; a.z += b; return a; }
+pub inline fn -=(ref a: vec3, b: f32) { a.x -= b; a.y -= b; a.z -= b; return a; }
+pub inline fn *=(ref a: vec3, b: f32) { a.x *= b; a.y *= b; a.z *= b; return a; }
+pub inline fn /=(ref a: vec3, b: f32) { a.x /= b; a.y /= b; a.z /= b; return a; }
 
 pub inline fn dot  (a: vec3, b: vec3) a.x * b.x + a.y * b.y + a.z * b.z;
 pub inline fn lensq(a: vec3)          a.x * a.x + a.y * a.y + a.z * a.z;
@@ -46,7 +46,7 @@ pub inline fn norm(a: vec3)
     return a * n;
 }
 
-pub inline fn normalize(a: &mut vec3)
+pub inline fn normalize(ref a: vec3)
 {
     let l = a.len;
 
@@ -99,8 +99,8 @@ pub inline fn maxc(using _: vec3)
 
 pub inline fn quadratic(
     a: f32, b: f32, c: f32,
-    x0: &mut f32,
-    x1: &mut f32)
+    ref x0: f32,
+    ref x1: f32)
 {
     let discr = b * b - 4 * a * c;
     if (discr < 0) {

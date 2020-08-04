@@ -20,7 +20,7 @@ let WARN_ON_IMPLICIT_COPY = false;
 
 pub fn solve(
     implicit ctx: Context,
-    implicit module: &mut Module,
+    implicit ref module: Module,
     parse: Node): SolverOutput
 {
     mut _here:          TokenIdx;
@@ -147,7 +147,7 @@ pub fn solve(
             :node.flags);
     }
 
-    fn FnDecl(kind: string, id: string, node: &mut SolvedNode, native: Node): Target
+    fn FnDecl(kind: string, id: string, ref node: SolvedNode, native: Node): Target
     {
         let items = node.items;
         let rnode = items[items.len + FN_RET_BACK];
@@ -406,7 +406,7 @@ pub fn solve(
     //
 
     fn getNamedArgReorder(
-        result: &mut i32[],
+        ref result: i32[],
         names: string[],
         host_args: Argument[]): bool
     {
@@ -465,7 +465,7 @@ pub fn solve(
 
     fn tryMatch__mutargs(
         scope: Scope,
-        id: string, args: &mut SolvedNode[],
+        id: string, ref args: SolvedNode[],
         flags?!: i32, retType?!: Type, target?!: Target, typector?!: bool): Target
     {
         mut matchIdx: Target;
@@ -605,8 +605,7 @@ pub fn solve(
                         // Literal fixup.
                         if (!ok && considerRetyping(expect, actual))
                         {
-                            let arg: &mut SolvedNode = args[callsiteIndex];
-
+                            ref arg = args[callsiteIndex];
                             if (arg.kind == "label")
                             {
                                 // SEGV fix -
@@ -719,7 +718,7 @@ pub fn solve(
 
     fn match__mutargs(
         scope: Scope,
-        id: string, args: &mut SolvedNode[],
+        id: string, ref args: SolvedNode[],
         flags: i32, target: Target, typector: bool): Target
     {
         let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target, :typector);
@@ -1082,7 +1081,7 @@ pub fn solve(
                 _root_scope = _return_idx;
 
             SWAP(_current_fn, out);
-            let outItems: &mut SolvedNode[] = _current_fn.items;
+            ref outItems = _current_fn.items;
 
             // Arg decls.
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
@@ -1252,7 +1251,7 @@ pub fn solve(
     // Let's try to run all specs through here for starters.
 
     fn doTrySpecialize(
-        template: Template, mut args: SolvedNode[], mangle: &mut string)
+        template: Template, mut args: SolvedNode[], ref mangle: string)
             : SolvedNode
     {
         mut ok = true;
@@ -1358,7 +1357,7 @@ pub fn solve(
                     let argName = argNode.value || fail();
 
                     // Same pattern - grabs a mutref.
-                    let argName_typeParam: &mut Type =
+                    ref argName_typeParam =
                         typeParams[argName] ||= Type;
 
                     argName_typeParam && fail(
@@ -1528,7 +1527,7 @@ pub fn solve(
         return out;
     }
 
-    fn solveStructMembers(members: Node[], structType: Type, innerScope: &mut ScopeItem[]): SolvedNode[]
+    fn solveStructMembers(members: Node[], structType: Type, ref innerScope: ScopeItem[]): SolvedNode[]
     {
         mut out: SolvedNode[];
 
@@ -1560,7 +1559,7 @@ pub fn solve(
         mut out = solved(node, t_void,
             solveNodes(node.items, prevType));
 
-        let next: &mut SolvedNode =
+        ref next =
             out.items   ? out.items[0]
                         : out;
 
@@ -1720,7 +1719,7 @@ pub fn solve(
         return out;
     }
 
-    fn solveField(structType: Type, node: Node, innerScope: &mut ScopeItem[]): SolvedNode
+    fn solveField(structType: Type, node: Node, ref innerScope: ScopeItem[]): SolvedNode
     {
         node.items[LET_INIT] &&
         node.items[LET_INIT].kind != "definit" &&
@@ -1884,7 +1883,7 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, typeParams: &mut Map(string, Type)): bool
+        node: Node, mut type: Type, ref typeParams: Map(string, Type)): bool
     {
         if (node.kind == "call")
         {
@@ -1935,9 +1934,7 @@ pub fn solve(
 
             // What is happening here?
             // This is crazy, no?
-            let _param: &mut Type =
-                (typeParams[id] ||= Type);
-
+            ref _param = (typeParams[id] ||= Type);
             if (_param)
             {
                 let inter = type_tryInter(_param, type);
@@ -2022,7 +2019,7 @@ pub fn solve(
             token:  (_here || fail()));
     }
 
-    fn dequalify_andGetScope(id: &mut string): &Scope
+    fn dequalify_andGetScope(ref id: string): &Scope
     {
         let split = id.find('\t');
             split >= 0 || fail();
@@ -2148,7 +2145,7 @@ pub fn solve(
     }
 
     fn injectImplicitArg__mutfn(
-        fnNode: &mut SolvedNode,
+        ref fnNode: SolvedNode,
         id: string, type: Type): Target
     {
         ///////////////////////////////////////////
@@ -2163,7 +2160,7 @@ pub fn solve(
             let n = fnNode.items.len;
             for (mut i = 0; i < n; i++)
             {
-                let arg: &mut SolvedNode = fnNode.items[i];
+                ref arg = fnNode.items[i];
                 if (arg.value == id)
                 {
                     checkAssignable(host: type, arg.type,
@@ -2183,7 +2180,7 @@ pub fn solve(
         //  there's nothing else to do here.
         if (fnNode.target)
         {
-            let o: &mut Overload = GET_mut(fnNode.target);
+            ref o = GET_mut(fnNode.target);
 
             // We'll be mutating the overload.
             o.kind == "fn" || fail();
@@ -2440,7 +2437,7 @@ pub fn solve(
         return out;
     }
 
-    fn maybeCopyOrMove(node: &mut SolvedNode, slot: Type,
+    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
         isArgument = false): void
     {
         let q = slot.quals;

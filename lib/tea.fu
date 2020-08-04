@@ -5,7 +5,7 @@ pub struct TEA
     v1: u32;
 }
 
-pub inline fn r4(using _: &mut TEA, sum: &mut u32)
+pub inline fn r4(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -17,7 +17,7 @@ pub inline fn r4(using _: &mut TEA, sum: &mut u32)
     }
 }
 
-pub inline fn r8(using _: &mut TEA, sum: &mut u32)
+pub inline fn r8(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -29,7 +29,7 @@ pub inline fn r8(using _: &mut TEA, sum: &mut u32)
     }
 }
 
-pub inline fn r16(using _: &mut TEA, sum: &mut u32)
+pub inline fn r16(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -44,15 +44,15 @@ pub inline fn r16(using _: &mut TEA, sum: &mut u32)
 
 // Shorthands.
 
-pub inline fn r4(tea: &mut TEA) {
+pub inline fn r4(ref tea: TEA) {
     mut sum: u32; tea.r4(sum);
 }
 
-pub inline fn r8(tea: &mut TEA) {
+pub inline fn r8(ref tea: TEA) {
     mut sum: u32; tea.r8(sum);
 }
 
-pub inline fn r16(tea: &mut TEA) {
+pub inline fn r16(ref tea: TEA) {
     mut sum: u32; tea.r16(sum);
 }
 
