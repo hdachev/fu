@@ -213,6 +213,9 @@ pub fn solve(
             args.push(arg);
         }
 
+        if (!max) return Target();
+        if (!min) min++;
+
         return Scope_add(
             _scope,
             "defctor", :id, :type,

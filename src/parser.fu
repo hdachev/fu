@@ -64,13 +64,13 @@ let P_PREFIX_UNARY    = 3   ;
 let PREFIX:  string[] = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
 let POSTFIX: string[] = [ "++", "--", "[]" ];
 
-struct BINOP {
-    PRECEDENCE:     Map(string, i32);
-    RIGHT_TO_LEFT:  Map(i32,   bool);
-};
-
-fn setupOperators(): BINOP
+fn setupOperators()
 {
+    struct BINOP {
+        PRECEDENCE:     Map(string, i32);
+        RIGHT_TO_LEFT:  Map(i32,   bool);
+    };
+
     mut out: BINOP;
 
     mut precedence  = P_PREFIX_UNARY;
@@ -574,12 +574,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             consume("op", "(");
         }
 
-        mut items: Node[];
-        flags |= parseArgsDecl(items, "op", ")");
-
         ////////////////////////////////
         _fnDepth++;
         ////////////////////////////////
+
+        mut items: Node[];
+        flags |= parseArgsDecl(items, "op", ")");
 
         // Return type annot.
         mut type = tryPopTypeAnnot();

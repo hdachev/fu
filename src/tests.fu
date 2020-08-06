@@ -1037,7 +1037,7 @@ pub fn runTests()
         return out;
     }
 
-    let BINOP   = setupOperators();
+    shadow let BINOP = setupOperators();
     let P_COMMA = BINOP.P[","] || assert();
 
     fn main() P_COMMA - 7;
