@@ -796,6 +796,11 @@ inline const int F_NAMED_ARGS = (1 << 25);
 inline const int F_ACCESS = (1 << 4);
                                 #endif
 
+                                #ifndef DEF_F_SHADOW
+                                #define DEF_F_SHADOW
+inline const int F_SHADOW = (1 << 23);
+                                #endif
+
                                 #ifndef DEF_q_arithmetic
                                 #define DEF_q_arithmetic
 inline const int q_arithmetic = (1 << 5);
@@ -1090,6 +1095,12 @@ struct sf_solve
 
             args.push(arg);
         };
+        if (!max)
+            return s_Target{};
+
+        if (!min)
+            min++;
+
         return Scope_add(_scope, "defctor"_fu, id, type, F_PUB, min, max, args, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
     };
     s_SolvedNode tryCreateDefinit(const s_Type& type)
@@ -1387,9 +1398,12 @@ struct sf_solve
                         };
                         args = new_args;
                     };
-                };
+                }
+                else if (matchIdx)
+                    fail((("Ambiguous callsite, matches multiple items in scope: `"_fu + id) + "`."_fu));
+
                 matchIdx = overloadIdx;
-                if (!arity)
+                if ((overload.flags & F_SHADOW))
                 {
                     goto L_NEXT_b;
                 };

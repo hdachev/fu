@@ -215,6 +215,11 @@ inline const int F_OPERATOR = (1 << 21);
 inline const int F_REF = (1 << 22);
                                 #endif
 
+                                #ifndef DEF_F_SHADOW
+                                #define DEF_F_SHADOW
+inline const int F_SHADOW = (1 << 23);
+                                #endif
+
                                 #ifndef DEF_F_UNTYPED_ARGS
                                 #define DEF_F_UNTYPED_ARGS
 inline const int F_UNTYPED_ARGS = (1 << 24);
@@ -523,9 +528,17 @@ struct sf_parse
     };
     s_Node parsePub()
     {
-        (_fnDepth && fail("Cannot publish from within a fn."_fu));
+        (_fnDepth && fail("Cannot pub from within a fn."_fu));
         s_Node out = parseStatement();
         out.flags |= F_PUB;
+        ((out.flags & F_SHADOW) && fail("Cannot pub a shadow."_fu));
+        return out;
+    };
+    s_Node parseShadow()
+    {
+        s_Node out = parseStatement();
+        out.flags |= F_SHADOW;
+        ((out.flags & F_PUB) && fail("Cannot shadow a pub."_fu));
         return out;
     };
     s_Node parseStatement()
@@ -565,6 +578,9 @@ struct sf_parse
 
                 if ((v == "pub"_fu))
                     return parsePub();
+
+                if ((v == "shadow"_fu))
+                    return parseShadow();
 
                 if ((v == "type"_fu))
                     return parseTypedef();
@@ -668,9 +684,9 @@ struct sf_parse
             flags |= F_OPERATOR;
             consume("op"_fu, "("_fu);
         };
+        _fnDepth++;
         fu_VEC<s_Node> items {};
         flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
-        _fnDepth++;
         s_Node type = tryPopTypeAnnot();
         const int retIdx = items.size();
         items.push(type);
@@ -831,6 +847,9 @@ struct sf_parse
 
         if (mustname)
             flags |= F_MUSTNAME;
+
+        if (_fnDepth)
+            flags |= F_SHADOW;
 
         return createLet(id, flags, type, init);
     };
