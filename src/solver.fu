@@ -655,11 +655,17 @@ pub fn solve(
                     }
                 }
 
+                // Forbid ambiguity.
+                else if (matchIdx)
+                {
+                    fail("Ambiguous callsite, matches multiple items in scope: `" ~ id ~ "`.");
+                }
+
                 // Done!
                 matchIdx = overloadIdx;
 
                 // Arity 0 auto-shadows.
-                if (!arity)
+                if (overload.flags & F_SHADOW)
                     break :NEXT;
 
                 // Done here.

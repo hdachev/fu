@@ -44,7 +44,7 @@ pub let F_MUSTNAME      = 1 << 19;
 pub let F_PUB           = 1 << 20;
 pub let F_OPERATOR      = 1 << 21;
 pub let F_REF           = 1 << 22;
-// ...
+pub let F_SHADOW        = 1 << 23;
 
 pub let F_UNTYPED_ARGS  = 1 << 24;
 pub let F_NAMED_ARGS    = 1 << 25;
@@ -409,17 +409,28 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     }
 
 
-    //
+    // Watch out, we want to not allow pubs & shadows together.
 
     fn parsePub(): Node
     {
-        _fnDepth && fail(
-            "Cannot publish from within a fn.");
+        _fnDepth && fail("Cannot pub from within a fn.");
 
         mut out = parseStatement();
         out.flags |= F_PUB;
+        out.flags & F_SHADOW && fail("Cannot pub a shadow.");
         return out;
     }
+
+    fn parseShadow(): Node
+    {
+        mut out = parseStatement();
+        out.flags |= F_SHADOW;
+        out.flags & F_PUB && fail("Cannot shadow a pub.");
+        return out;
+    }
+
+
+    //
 
     fn parseStatement(): Node
     {
@@ -448,6 +459,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "ref")         return (_idx--, parseLetStmt());
                 if (v == "struct")      return parseStructDecl();
                 if (v == "pub")         return parsePub();
+                if (v == "shadow")      return parseShadow();
 
                 if (v == "type")        return parseTypedef();
                 if (v == "typedef")     return parseTypedef();
@@ -767,10 +779,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         let numDollars0 = _dollars.len;
 
-        if (tryConsume("id", "using"   )) flags |= F_USING;
-        if (tryConsume("id", "implicit")) flags |= F_IMPLICIT;
-        if (tryConsume("id", "mut"     )) flags |= F_MUT;
-        if (tryConsume("id", "ref"     )) flags |= F_REF;
+        if (tryConsume("id", "using"   ))   flags |= F_USING;
+        if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
+        if (tryConsume("id", "mut"     ))   flags |= F_MUT;
+        if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
         let id          = consume("id").value;
 
@@ -781,11 +793,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             ? createDefinit()
             : tryConsume("op", "=") && parseExpression(P_COMMA);
 
-        if (numDollars0 != _dollars.len)
-            flags |= F_TEMPLATE;
-
-        if (mustname)
-            flags |= F_MUSTNAME;
+        if (numDollars0 != _dollars.len)    flags |= F_TEMPLATE;
+        if (mustname)                       flags |= F_MUSTNAME;
+        if (_fnDepth)                       flags |= F_SHADOW;
 
         return createLet(id, flags, type, init);
     }
