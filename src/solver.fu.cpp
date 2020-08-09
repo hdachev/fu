@@ -62,6 +62,7 @@ fu_STR serializeType(const s_Type&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
 inline const s_Node& only_zET6(const fu_VEC<s_Node>&);
 inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>&);
+inline fu_STR& last_Kz6K(fu_VEC<fu_STR>&);
 inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, const fu_VEC<s_ScopeItem>&, s_Module&);
@@ -696,6 +697,14 @@ inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>& s)
 }
                                 #endif
 
+                                #ifndef DEFt_last_Kz6K
+                                #define DEFt_last_Kz6K
+inline fu_STR& last_Kz6K(fu_VEC<fu_STR>& s)
+{
+    return (s.size() ? s.mutref((s.size() - 1)) : fu::fail("len == 0"_fu));
+}
+                                #endif
+
                                 #ifndef DEFt_only_zET6
                                 #define DEFt_only_zET6
 inline const s_Node& only_zET6(const fu_VEC<s_Node>& s)
@@ -1274,7 +1283,7 @@ struct sf_solve
         result.clear();
         return true;
     };
-    s_Target tryMatch__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType, const s_Target& target, const bool typector)
+    s_Target tryMatch__mutargs(const s_Scope& scope, fu_STR&& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Type& retType, const s_Target& target, const bool typector)
     {
         s_Target matchIdx {};
         const int arity = args.size();
@@ -1289,133 +1298,150 @@ struct sf_solve
             };
             (some || fail(fu_STR{}));
         };
-        const int extra_modid = ([&]() -> int { if ((flags & F_ACCESS)) return if_first_fyyZ(args).type.value.modid; else return int{}; }());
-        const fu_VEC<s_ScopeItem>& extra_items = ([&]() -> const fu_VEC<s_ScopeItem>& { if (extra_modid && !fu::has(_scope.imports, extra_modid)) return ctx.modules[extra_modid].out.solve.scope.items; else return fu::Default<fu_VEC<s_ScopeItem>>::value; }());
         fu_VEC<int> reorder {};
         fu_STR args_mangled {};
-        int scope_iterator {};
-        s_Target overloadIdx {};
+        const int extra_modid = ([&]() -> int { if ((flags & F_ACCESS)) return if_first_fyyZ(args).type.value.modid; else return int{}; }());
+        const fu_VEC<s_ScopeItem>& extra_items = ([&]() -> const fu_VEC<s_ScopeItem>& { if (extra_modid && !fu::has(_scope.imports, extra_modid)) return ctx.modules[extra_modid].out.solve.scope.items; else return fu::Default<fu_VEC<s_ScopeItem>>::value; }());
         const s_Type& unary_arg_t = ([&]() -> const s_Type& { if ((arity == 1)) return args.mutref(0).type; else return fu::Default<s_Type>::value; }());
         const fu_VEC<s_ScopeItem>& field_items = ([&]() -> const fu_VEC<s_ScopeItem>& { if (isStruct(unary_arg_t)) return lookupStruct(unary_arg_t, module, ctx).items; else return fu::Default<fu_VEC<s_ScopeItem>>::value; }());
-        while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target, extra_items, field_items))){
+        fu_VEC<fu_STR> alternate_ids {};
+        for (; ; )
         {
-            while (true){
+            int scope_iterator {};
+            s_Target overloadIdx {};
+            while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, target, extra_items, field_items))){
             {
-                s_Overload overload = GET(overloadIdx, module, ctx);
-                if (((overload.min > arity) || (overload.max < arity)))
+                while (true){
                 {
-                    goto L_NEXT_c;
-                };
-                if ((retType && !isAssignable(retType, (overload.type ? overload.type : fail(fu_STR{})))))
-                {
-                    goto L_NEXT_c;
-                };
-                if ((names && !getNamedArgReorder(reorder, names, overload.args)))
-                {
-                    goto L_NEXT_c;
-                };
-                if ((overload.kind == (typector ? "typector"_fu : "template"_fu)))
-                {
-                    if (reorder)
-                        fail("TODO handle argument reorder in template specialization."_fu);
+                    s_Overload overload = GET(overloadIdx, module, ctx);
+                    if ((arity && (overload.kind == "type"_fu)))
+                    {
+                        const fu_STR& alt = overload.type.value.canon;
+                        if ((alt != id))
+                            alternate_ids.push(alt);
 
-                    s_Overload o = GET(overloadIdx, module, ctx);
-                    const s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
-                    if (!specIdx)
+                    };
+                    if (((overload.min > arity) || (overload.max < arity)))
                     {
                         goto L_NEXT_c;
                     };
-                    if (typector)
-                        return specIdx;
-
-                    overloadIdx = specIdx;
-                    goto L_TEST_AGAIN_c;
-                };
-                if ((overload.kind == "typector"_fu))
-                {
-                    goto L_NEXT_c;
-                };
-                if (args)
-                {
-                    const fu_VEC<s_Argument>& host_args = overload.args;
-                    const int N = (reorder ? reorder.size() : args.size());
-                    fu_VEC<s_SolvedNode> undo_literal_fixup { args };
-                    for (int i = 0; (i < N); i++)
+                    if ((retType && !isAssignable(retType, (overload.type ? overload.type : fail(fu_STR{})))))
                     {
-                        const s_Argument& host_arg = host_args[i];
-                        const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
-                        if ((callsiteIndex < 0))
-                        {
-                            if ((!host_arg.dEfault && !(host_arg.flags & F_IMPLICIT)))
-                            {
-                                goto L_NEXT_c;
-                            };
-                            continue;
-                        }
-                        else if ((host_arg.flags & F_MUSTNAME))
-                        {
-                            if (((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex)))
-                            {
-                                goto L_NEXT_c;
-                            };
-                        };
-                        const s_Type& expect = host_arg.type;
-                        s_Type actual { args.mutref(callsiteIndex).type };
-                        bool ok = isAssignableAsArgument(expect, s_Type(actual));
-                        if ((!ok && considerRetyping(expect, actual)))
-                        {
-                            s_SolvedNode& arg = args.mutref(callsiteIndex);
-                            if ((arg.kind == "label"_fu))
-                            {
-                                s_SolvedNode inner { only_o0k6(arg.items) };
-                                arg = inner;
-                            };
-                            s_Type retype = tryRetyping(arg, expect);
-                            ok = isAssignableAsArgument(expect, s_Type(retype));
-                            if (ok)
-                                arg.type = retype;
+                        goto L_NEXT_c;
+                    };
+                    if ((names && !getNamedArgReorder(reorder, names, overload.args)))
+                    {
+                        goto L_NEXT_c;
+                    };
+                    if ((overload.kind == (typector ? "typector"_fu : "template"_fu)))
+                    {
+                        if (reorder)
+                            fail("TODO handle argument reorder in template specialization."_fu);
 
-                        };
-                        if (!ok)
+                        s_Overload o = GET(overloadIdx, module, ctx);
+                        const s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
+                        if (!specIdx)
                         {
-                            args = undo_literal_fixup;
                             goto L_NEXT_c;
                         };
-                    };
-                    if (matchIdx)
-                        fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
+                        if (typector)
+                            return specIdx;
 
-                    if (reorder)
+                        overloadIdx = specIdx;
+                        goto L_TEST_AGAIN_c;
+                    };
+                    if ((overload.kind == "typector"_fu))
                     {
-                        fu_VEC<s_SolvedNode> new_args {};
-                        new_args.resize(reorder.size());
-                        for (int i = 0; (i < reorder.size()); i++)
-                        {
-                            const int idx = reorder[i];
-                            if ((idx >= 0))
-                                new_args.mutref(i) = args.mutref(idx);
-
-                        };
-                        args = new_args;
+                        goto L_NEXT_c;
                     };
-                }
-                else if (matchIdx)
-                    fail((("Ambiguous callsite, matches multiple items in scope: `"_fu + id) + "`."_fu));
+                    if (args)
+                    {
+                        const fu_VEC<s_Argument>& host_args = overload.args;
+                        const int N = (reorder ? reorder.size() : args.size());
+                        fu_VEC<s_SolvedNode> undo_literal_fixup { args };
+                        for (int i = 0; (i < N); i++)
+                        {
+                            const s_Argument& host_arg = host_args[i];
+                            const int callsiteIndex = (reorder ? reorder.mutref(i) : i);
+                            if ((callsiteIndex < 0))
+                            {
+                                if ((!host_arg.dEfault && !(host_arg.flags & F_IMPLICIT)))
+                                {
+                                    goto L_NEXT_c;
+                                };
+                                continue;
+                            }
+                            else if ((host_arg.flags & F_MUSTNAME))
+                            {
+                                if (((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex)))
+                                {
+                                    goto L_NEXT_c;
+                                };
+                            };
+                            const s_Type& expect = host_arg.type;
+                            s_Type actual { args.mutref(callsiteIndex).type };
+                            bool ok = isAssignableAsArgument(expect, s_Type(actual));
+                            if ((!ok && considerRetyping(expect, actual)))
+                            {
+                                s_SolvedNode& arg = args.mutref(callsiteIndex);
+                                if ((arg.kind == "label"_fu))
+                                {
+                                    s_SolvedNode inner { only_o0k6(arg.items) };
+                                    arg = inner;
+                                };
+                                s_Type retype = tryRetyping(arg, expect);
+                                ok = isAssignableAsArgument(expect, s_Type(retype));
+                                if (ok)
+                                    arg.type = retype;
 
-                matchIdx = overloadIdx;
-                if ((overload.flags & F_SHADOW))
-                {
-                    goto L_NEXT_b;
-                };
-                goto L_TEST_AGAIN_b;
+                            };
+                            if (!ok)
+                            {
+                                args = undo_literal_fixup;
+                                goto L_NEXT_c;
+                            };
+                        };
+                        if (matchIdx)
+                            fail((("Ambiguous callsite, matches multiple functions in scope: `"_fu + id) + "`."_fu));
+
+                        if (reorder)
+                        {
+                            fu_VEC<s_SolvedNode> new_args {};
+                            new_args.resize(reorder.size());
+                            for (int i = 0; (i < reorder.size()); i++)
+                            {
+                                const int idx = reorder[i];
+                                if ((idx >= 0))
+                                    new_args.mutref(i) = args.mutref(idx);
+
+                            };
+                            args = new_args;
+                        };
+                    }
+                    else if (matchIdx)
+                        fail((("Ambiguous callsite, matches multiple items in scope: `"_fu + id) + "`."_fu));
+
+                    matchIdx = overloadIdx;
+                    if ((overload.flags & F_SHADOW))
+                    {
+                        goto L_NEXT_b;
+                    };
+                    goto L_TEST_AGAIN_b;
+                
+                    }L_TEST_AGAIN_c:;}
+                    L_TEST_AGAIN_b:;
+
             
-                }L_TEST_AGAIN_c:;}
-                L_TEST_AGAIN_b:;
+                }L_NEXT_c:;}
+                L_NEXT_b:;
 
-        
-            }L_NEXT_c:;}
-            L_NEXT_b:;
-
+            if (!alternate_ids)
+            {
+                break;
+            };
+            id = last_Kz6K(alternate_ids);
+            alternate_ids.pop();
+        };
         if (matchIdx)
         {
             s_Overload matched = GET(matchIdx, module, ctx);
@@ -1448,11 +1474,11 @@ struct sf_solve
     };
     s_Target match__mutargs(const s_Scope& scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, const int flags, const s_Target& target, const bool typector)
     {
-        const s_Target ret = tryMatch__mutargs(scope, id, args, flags, s_Type{}, target, typector);
+        const s_Target ret = tryMatch__mutargs(scope, fu_STR(id), args, flags, s_Type{}, target, typector);
         if (ret)
             return ret;
 
-        const s_Target debug = tryMatch__mutargs(scope, id, args, flags, s_Type{}, target, typector);
+        const s_Target debug = tryMatch__mutargs(scope, fu_STR(id), args, flags, s_Type{}, target, typector);
         if (debug)
             return debug;
 
@@ -2507,7 +2533,7 @@ struct sf_solve
     s_Target getImplicit(const fu_STR& id, const s_Type& type)
     {
         fu_VEC<s_SolvedNode> args {};
-        s_Target matched = tryMatch__mutargs(_scope, id, args, 0, type, s_Target{}, bool{});
+        s_Target matched = tryMatch__mutargs(_scope, fu_STR(id), args, 0, type, s_Target{}, bool{});
         if (!matched)
         {
             if (!_current_fn)

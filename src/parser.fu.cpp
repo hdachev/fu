@@ -1183,6 +1183,9 @@ struct sf_parse
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
             return createCall((expr.value ? expr.value : fail(fu_STR{})), (argFlags | (expr.flags & ~F_ID)), args);
 
+        if ((expr.kind == "typeparam"_fu))
+            return createCall(("$"_fu + (expr.value ? expr.value : fail(fu_STR{}))), argFlags, args);
+
         fail("TODO dynamic call"_fu);
     };
     s_Node parseArrayLiteral()
