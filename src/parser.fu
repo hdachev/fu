@@ -1240,6 +1240,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 argFlags | expr.flags &~ F_ID,
                 args);
 
+        if (expr.kind == "typeparam")
+            return createCall(
+                "$" ~ (expr.value || fail()), argFlags, args);
+
         return fail("TODO dynamic call");
     }
 
