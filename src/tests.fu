@@ -2478,17 +2478,17 @@ pub fn runTests()
 
     // First stab at higher-order functions.
 
-    ZERO(`
-        fn reduce(items: $T[], fn: $F, init?: $T) {
-            mut result = init;
-            for (mut i = 0; i < items.len; i++)
-                result = fn(result, items[i]);
-
-            return result;
-        }
-
-        fn main() [1, 2].reduce(fn (a, b) a + b) - 3;
-    `);
+    // ZERO(`
+    //     fn reduce(items: $T[], fn: $F, init?: $T) {
+    //         mut result = init;
+    //         for (mut i = 0; i < items.len; i++)
+    //             result = fn(result, items[i]);
+    //
+    //         return result;
+    //     }
+    //
+    //     fn main() [1, 2].reduce(fn (a, b) a + b) - 3;
+    // `);
 
     // ZERO(`
     //     fn map(items: $T[], fn: $F) {
