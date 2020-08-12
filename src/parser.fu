@@ -309,37 +309,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseStructDecl(): Node
     {
-        let name = consume("id").value;
-
-        ////////////////////////
-        let dollars0 = _dollars;
-        ////////////////////////
-
-        // Template params.
-        mut templateParams: Node[];
-        let templateFlags = tryConsume("op", "(")
-            && parseArgsDecl(templateParams, "op", ")");
+        let name = tryConsume("id").value;
 
         consume("op", "{");
         let items = parseBlockLike("op", "}", "struct");
         let struct = make("struct", items, 0, name);
-
-        // We ignore these ...
-        //  there's a bit of an assymetry here
-        //   re: fn & struct templates.
-        //
-        ////////////////////
-        _dollars = dollars0;
-        ////////////////////
-
-        // typector(struct).
-        if (templateParams)
-        {
-            templateParams ~= struct;
-            return make("typector",
-                templateParams, templateFlags,
-                value: struct.value);
-        }
 
         return struct;
     }

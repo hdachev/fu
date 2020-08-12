@@ -118,9 +118,8 @@ pub fn solve(
         let items   = node.items;
 
         mut min     = 0;
-        let max     = node.kind == "fn"       ? items.len + FN_ARGS_BACK
-                    : node.kind == "typector" ? items.len + TYPECTOR_BACK
-                    : fail("TemplateDecl: non-fn/non-typector mode.");
+        let max     = node.kind == "fn" ? items.len + FN_ARGS_BACK
+                    : fail("TemplateDecl: non-fn node.");
 
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
@@ -135,10 +134,7 @@ pub fn solve(
         }
 
         //
-        let kind = node.kind == "fn"
-            ? "template"
-            : "typector";
-
+        let kind = "template";
         let template = Template(node, imports: _scope.imports);
         return Scope_add(
             _scope,
@@ -217,6 +213,7 @@ pub fn solve(
         if (!max) return Target();
         if (!min) min++;
 
+        // TODO don't Scope_add when templated.
         return Scope_add(
             _scope,
             "defctor", :id, :type,
@@ -470,7 +467,7 @@ pub fn solve(
     fn tryMatch__mutargs(
         scope: Scope,
         mut id: string, ref args: SolvedNode[],
-        flags?!: i32, retType?!: Type, target?!: Target, typector?!: bool): Target
+        flags?!: i32, retType?!: Type, target?!: Target): Target
     {
         mut matchIdx: Target;
 
@@ -548,7 +545,7 @@ pub fn solve(
                         continue :NEXT;
 
                     // Specialize.
-                    if (overload.kind == (typector ? "typector" : "template"))
+                    if (overload.kind == "template")
                     {
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization.");
@@ -561,19 +558,10 @@ pub fn solve(
                         if (!specIdx)
                             continue :NEXT;
 
-                        // ???????????????? //
-                        if (typector)
-                            return specIdx;
-                        // ???????????????? //
-
                         // Repeat arity checks and such.
                         overloadIdx = specIdx;
                         continue :TEST_AGAIN;
                     }
-
-                    // Typector?
-                    if (overload.kind == "typector")
-                        continue :NEXT;
 
                     if (args)
                     {
@@ -753,13 +741,13 @@ pub fn solve(
     fn match__mutargs(
         scope: Scope,
         id: string, ref args: SolvedNode[],
-        flags: i32, target: Target, typector: bool): Target
+        flags: i32, target: Target): Target
     {
-        let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target, :typector);
+        let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target);
         if (ret)
             return ret;
 
-        let debug = scope.tryMatch__mutargs(:id, :args, :flags, :target, :typector);
+        let debug = scope.tryMatch__mutargs(:id, :args, :flags, :target);
         if (debug)
             return debug;
 
@@ -890,7 +878,6 @@ pub fn solve(
 
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
-        if (k == "typector")    return solveTypeCtor(node);
 
         return fail("TODO: " ~ k);
     }
@@ -1321,8 +1308,7 @@ pub fn solve(
         //
         let kind    = template.node.kind;
         let items   = template.node.items;
-        let numArgs = kind == "fn"          ? items.len + FN_ARGS_BACK
-                    : kind == "typector"    ? items.len + TYPECTOR_BACK
+        let numArgs = kind == "fn" ? items.len + FN_ARGS_BACK
                     : fail("TODO numArgs for template:" ~ kind);
 
         /////////////////
@@ -1469,13 +1455,8 @@ pub fn solve(
             }
         }
 
-        let specialized = ok && (kind == "fn"
-            ? __solveFn(
-                template.node, solve: true, spec: true, :caseIdx)
-                    || fail("__solveFn spec:true is not expected to fail.")
-            : __solveStruct(
-                template.node, solve: true, spec: "_" ~ tea::hash62(mangle, chars: 4), :caseIdx)
-                    || fail("__solveStruct spec:true is not expected to fail."));
+        kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
+        let specialized = ok && __solveFn(template.node, solve: true, spec: true, :caseIdx);
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
@@ -1509,29 +1490,35 @@ pub fn solve(
         return __solveStruct(solve: true, :node, :prep);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode, spec?!: string, caseIdx! = -1): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode): SolvedNode
     {
-        mut out         = prep || solved(node, t_void);
+        mut out = prep || solved(node, t_void);
+        mut structType: Type;
 
-        let id          = (node.value || "Anon") ~ spec;
-        mut structType  = initStruct(id, node.flags);
+        mut id = node.value;
+        let origId = id;
+        if (!origId)
+            id = _current_fn.value || "Anon";
 
         // Add the arity-0 type entry.
-        if (!prep)
-            out.target  = Scope_Typedef(_scope, id, structType, node.flags);
+        if (!(_current_fn.flags & F_TEMPLATE))
+        {
+            structType = initStruct(id, node.flags);
+            if (!prep && origId)
+                out.target = Scope_Typedef(_scope, origId, structType, node.flags);
+        }
 
         if (!solve)
             return out;
 
         // Struct fields only.
-        let members = spec  ? caseIdx >= 0  ? fail("TODO struct case")
-                                            : node.items[node.items.len - 1].items
-                            : node.items;
-
+        let members = node.items;
         mut innerScope: ScopeItem[];
-
-        let items = solveStructMembers(:members, :structType, innerScope);
+        let items = solveStructMembers(:id, :node.flags, :structType, :members, :innerScope);
         out.items = items;
+
+        if (!out.target && origId)
+            out.target = Scope_Typedef(_scope, origId, structType, node.flags);
 
         // Add a default constructor.
         {
@@ -1558,27 +1545,74 @@ pub fn solve(
             GET_mut(out.target).type.quals = structType.quals;
 
             // Link up the constructor.
+            // TODO don't Scope_add when templated.
             let ctor = DefCtor(id, structType, members);
             lookupStruct_mut(structType.canon).ctor = ctor;
+        }
+
+        // So we can type x = struct { what };
+        out.type = structType;
+
+        return out;
+    }
+
+    fn solveStructMembers(
+        ref id: string, flags: i32,
+        members: Node[], ref structType: Type, ref innerScope: ScopeItem[]): SolvedNode[]
+    {
+        mut out: SolvedNode[];
+
+        // Pass 0.
+        for (mut i = 0; i < members.len; i++)
+        {
+            let node = members[i];
+            if (node.kind == "let")
+                out.push(solveField(:node));
+            else
+                fail("solveStructMembers_1: " ~ node.kind);
+        }
+
+        if (!structType)
+        {
+            let sig     = mangleArguments(out);
+            let hash    = tea::hash62(sig, chars: 4);
+            id         ~= "_" ~ hash;
+
+            structType  = initStruct(:id, :flags);
+        }
+
+        // Pass 1.
+        for (mut i = 0; i < out.len; i++)
+        {
+            let node = out[i];
+            if (node.kind == "let")
+                solveField(:node, :structType, :innerScope);
+            else
+                fail("solveStructMembers_2: " ~ node.kind);
         }
 
         return out;
     }
 
-    fn solveStructMembers(members: Node[], structType: Type, ref innerScope: ScopeItem[]): SolvedNode[]
+    fn solveField(node: Node): SolvedNode
     {
-        mut out: SolvedNode[];
+        node.items[LET_INIT] &&
+        node.items[LET_INIT].kind != "definit" &&
+            fail("All structs must be zerofilled by default."
+                ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
-        for (mut i = 0; i < members.len; i++)
-        {
-            let node = members[i];
-            if (node.kind == "let")
-                out.push(solveField(:node, :structType, innerScope));
-            else
-                fail("TODO: " ~ node.kind);
-        }
+        return solveBinding(node, Lifetime_fromArgIndex(0));
+    }
 
-        return out;
+    fn solveField(structType: Type, node: SolvedNode, ref innerScope: ScopeItem[])
+    {
+        let id = node.value;
+        let target = Field(:id, :structType, fieldType: node.type);
+
+        innerScope.push(ScopeItem(:id, :target));
+
+        if (node.flags & F_USING)
+            scope_using(target);
     }
 
 
@@ -1757,25 +1791,6 @@ pub fn solve(
         return out;
     }
 
-    fn solveField(structType: Type, node: Node, ref innerScope: ScopeItem[]): SolvedNode
-    {
-        node.items[LET_INIT] &&
-        node.items[LET_INIT].kind != "definit" &&
-            fail("All structs must be zerofilled by default."
-                ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
-
-        let id = node.value;
-        let out = solveBinding(node, Lifetime_fromArgIndex(0));
-        let target = Field(:id, :structType, fieldType: out.type);
-
-        innerScope.push(ScopeItem(:id, :target));
-
-        if (out.flags & F_USING)
-            scope_using(target);
-
-        return out;
-    }
-
     fn solveCatch(node: Node): SolvedNode
     {
         node.items.len == 3 || fail();
@@ -1880,32 +1895,24 @@ pub fn solve(
         if (node.kind == "call")
         {
             let items = node.items;
-            if (items.len)
+            if (items.len == 1)
             {
-                if (items.len == 1)
-                {
-                    if (node.value == "&")
-                        return solved(node, add_ref(T, Lifetime_static));
+                if (node.value == "&")
+                    return solved(node, add_ref(T, Lifetime_static));
 
-                    if (node.value == "&mut")
-                        return solved(node, add_mutref(T, Lifetime_static));
+                if (node.value == "&mut")
+                    return solved(node, add_mutref(T, Lifetime_static));
 
-                    if (node.value == "[]")
-                        return solved(node, createArray(T));
-                }
-                else if (items.len == 2)
-                {
-                    if (node.value == "Map")
-                        return solved(node, createMap(T(0), T(1)));
-                }
-
-                // Type constructor call.
-                return solveCall(:node, typector: true);
+                if (node.value == "[]")
+                    return solved(node, createArray(T));
             }
-            else
+            else if (items.len == 2)
             {
-                return solved(node, Scope_lookupType(node));
+                if (node.value == "Map")
+                    return solved(node, createMap(T(0), T(1)));
             }
+
+            return solveCall(node);
         }
         else if (node.kind == "typeparam")
         {
@@ -2072,7 +2079,7 @@ pub fn solve(
         return _scope;
     }
 
-    fn solveCall(node: Node, target?!: Target, typector?!: bool): SolvedNode
+    fn solveCall(node: Node, target?!: Target): SolvedNode
     {
         mut id = node.value;
         if (!id) target || fail();
@@ -2085,7 +2092,7 @@ pub fn solve(
         mut args = solveNodes(node.items);
 
         //
-        mut callTargIdx = scope.match__mutargs(id, args, node.flags, :target, :typector);
+        mut callTargIdx = scope.match__mutargs(id, args, node.flags, :target);
         mut callTarg    = GET(callTargIdx);
 
         // `using` codegen.
@@ -2129,7 +2136,7 @@ pub fn solve(
             node,
             callTarg.type || fail(),
             callTargIdx,
-            !typector && args);
+            args);
     }
 
 

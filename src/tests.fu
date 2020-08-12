@@ -2508,15 +2508,17 @@ pub fn runTests()
     // Template structs.
 
     ZERO(`
-        struct Hey(t: $T) { hey: $T; };
-        fn test(a: $T): Hey($T) = [ a + 2 ];
-        fn main() 1.test.hey - 3;
+        fn sA(t: $T) struct sA { hey: $T; };
+
+        fn fA(a: $T): sA($T) = [ a + 2 ];
+        fn main() 1.fA.hey - 3;
     `);
 
     FAIL(`
-        struct Hey(t: $T) { hey: $T; };
-        fn test(a: $T): Hey($T) = [ a + 2 ];
-        fn main() 1.test.hey - 1.u32.test.hey //*F
+        fn sB(t: $T) struct sB { hey: $T; };
+
+        fn fB(a: $T): sB($T) = [ a + 2 ];
+        fn main() 1.fB.hey - 1.u32.fB.hey //*F
             ;
             /*/
             .i32;

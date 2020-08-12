@@ -1503,7 +1503,6 @@ pub fn cpp_codegen(
         if (k == "label")       return cgParens(node);
 
         if (k == "struct")      return cgEmpty();
-        if (k == "typector")    return cgEmpty();
 
         if (k == "copy")        return cgCopyMove(node);
         if (k == "move")        return cgCopyMove(node);
