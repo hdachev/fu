@@ -257,17 +257,24 @@ pub fn cpp_codegen(
                 continue;
 
             // Emit.
-            let s = specs[k];
-            if (s.target)
+            // TODO FIX should just walk map, this is needlessly expensive.
+            let target = specs[k];
+            if (target.modid >= 0)
             {
-                let dedupe = s.flags & F_PUB
-                    && GET(s.target).name.valid_identifier;
+                let overload    = GET(target);
+
+                // TODO not needed after typectors
+                if (overload.kind == "type")
+                    continue;
+
+                let node        = overload.solved;
+                let dedupe      = node.flags & F_PUB && overload.name.valid_identifier;
 
                 if (dedupe)
                     _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
                            ~ "\n                                #define DEFt_" ~ dedupe;
 
-                _fdef ~= "\n" ~ cgNode(s);
+                _fdef ~= "\n" ~ cgNode(node);
 
                 if (dedupe)
                     _fdef ~= "\n                                #endif\n";

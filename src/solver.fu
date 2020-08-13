@@ -187,6 +187,7 @@ pub fn solve(
             :node.flags);
 
         node.target = overload;
+        GET_mut(overload).solved = node;
 
         return overload;
     }
@@ -1271,18 +1272,17 @@ pub fn solve(
         //  B. The multiple map taps here are because stuff
         //      moves around while doTrySpecialize does its work -
         //      if maps values didn"t move around we"d be good.
-        let spec = module.out.specs[mangle] ||= SolvedNode;
+        let spec = module.out.specs[mangle];
+
+        let SPEC_FAILED = -1;
         if (!spec)
         {
-            mut spec = doTrySpecialize(template, args, mangle);
-            if (!spec)
-                spec.kind = "spec-fail";
-
-            module.out.specs[mangle] = spec;
-            return spec.target;
+            let spec = doTrySpecialize(template, args, mangle);
+            module.out.specs[mangle] = spec ? spec : Target(modid: SPEC_FAILED, index: 0);
+            return spec;
         }
 
-        return spec.target;
+        return spec.modid != SPEC_FAILED ? spec : Target();
     }
 
 
@@ -1290,7 +1290,7 @@ pub fn solve(
 
     fn doTrySpecialize(
         template: Template, mut args: SolvedNode[], ref mangle: string)
-            : SolvedNode
+            : Target
     {
         mut ok = true;
         mut typeParams0: Map(string, Type);
@@ -1485,7 +1485,7 @@ pub fn solve(
         _root_scope = root_scope0;
         ////////////////////////////////
 
-        return specialized;
+        return specialized.target;
     }
 
 

@@ -15,8 +15,8 @@ pub struct ModuleInputs
 pub struct ModuleOutputs
 {
     deps:       i32[];
-    types:      Map(string, Struct);        // canon  -> type info
-    specs:      Map(string, SolvedNode);    // mangle -> spec
+    types:      Map(string, Struct); // canon  -> type info
+    specs:      Map(string, Target); // mangle -> spec
     solve:      SolverOutput;
     cpp:        string;
 };
