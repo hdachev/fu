@@ -711,14 +711,14 @@ inline const int FN_ARGS_BACK = FN_RET_BACK;
 inline const int F_OPERATOR = (1 << 21);
                                 #endif
 
-                                #ifndef DEF_F_POSTFIX
-                                #define DEF_F_POSTFIX
-inline const int F_POSTFIX = (1 << 3);
-                                #endif
-
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
 inline const int F_TEMPLATE = (1 << 30);
+                                #endif
+
+                                #ifndef DEF_F_POSTFIX
+                                #define DEF_F_POSTFIX
+inline const int F_POSTFIX = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_FN_BODY_BACK
@@ -804,7 +804,6 @@ struct sf_cpp_codegen
     int _clsrN {};
     int _faasN {};
     int _hasMain {};
-    int _isModuleSpecs {};
     s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
     {
         ((target.index > 0) || fu_ASSERT());
@@ -986,7 +985,6 @@ struct sf_cpp_codegen
     };
     void cgSpecs()
     {
-        _isModuleSpecs++;
         const fu_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
         const fu_VEC<fu_STR>& keys = specs.m_keys;
         for (int i = 0; (i < keys.size()); i++)
@@ -1009,7 +1007,6 @@ struct sf_cpp_codegen
 
             };
         };
-        _isModuleSpecs--;
     };
     fu_STR valid_operator(const fu_STR& str)
     {
@@ -1183,7 +1180,7 @@ struct sf_cpp_codegen
 
         if (!closure)
         {
-            fu_STR linkage = (([&]() -> fu_STR { if (_isModuleSpecs) return "inline "_fu; else return fu_STR{}; }()) + ([&]() -> fu_STR { if (!(fn.flags & F_PUB) && !_faasN) return "static "_fu; else return fu_STR{}; }()));
+            fu_STR linkage = (([&]() -> fu_STR { if ((fn.flags & F_TEMPLATE)) return "inline "_fu; else return fu_STR{}; }()) + ([&]() -> fu_STR { if (!(fn.flags & F_PUB) && !_faasN) return "static "_fu; else return fu_STR{}; }()));
             src = (linkage + src);
         };
         for (int i = 0; (i < (items.size() + FN_ARGS_BACK)); i++)
@@ -1330,7 +1327,7 @@ struct sf_cpp_codegen
         _fnN = f0;
         _clsrN = c0;
         _indent = indent0;
-        if (((fn.flags & F_CLOSURE) || _isModuleSpecs))
+        if (((fn.flags & F_CLOSURE) || (fn.flags & F_TEMPLATE)))
             return src;
 
         (_fdef += (("\n"_fu + src) + "\n"_fu));

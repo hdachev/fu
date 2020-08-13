@@ -1820,6 +1820,9 @@ struct sf_solve
         {
             _current_fn.flags |= F_HAS_CLOSURE;
             out.flags |= F_CLOSURE;
+            if ((_current_fn.flags & F_TEMPLATE))
+                out.flags |= F_TEMPLATE;
+
         };
         bool native = false;
         s_Node n_body {};
