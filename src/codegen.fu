@@ -31,7 +31,6 @@ pub fn cpp_codegen(
     mut _clsrN: i32;
     mut _faasN: i32;
     mut _hasMain: i32;
-    mut _isModuleSpecs: i32;
 
     fn GET(
         implicit module: Module,
@@ -248,10 +247,6 @@ pub fn cpp_codegen(
 
     fn cgSpecs(): void
     {
-        /////////////////
-        _isModuleSpecs++;
-        /////////////////
-
         let specs = module.out.specs;
         let keys = specs.keys();
         for (mut i = 0; i < keys.len; i++)
@@ -278,10 +273,6 @@ pub fn cpp_codegen(
                     _fdef ~= "\n                                #endif\n";
             }
         }
-
-        /////////////////
-        _isModuleSpecs--;
-        /////////////////
     }
 
     fn valid_operator(str: string): string
@@ -486,7 +477,7 @@ pub fn cpp_codegen(
 
         if (!closure)
         {
-            let linkage = (_isModuleSpecs                 && "inline ")
+            let linkage = (  fn.flags & F_TEMPLATE        && "inline ")
                         ~ (!(fn.flags & F_PUB) && !_faasN && "static ");
 
             src = linkage ~ src;
@@ -720,7 +711,7 @@ pub fn cpp_codegen(
         //////////////
 
         // This covers both closures & try_cgTryFnAsStruct:
-        if (fn.flags & F_CLOSURE || _isModuleSpecs)
+        if (fn.flags & F_CLOSURE || fn.flags & F_TEMPLATE)
             return src;
 
         _fdef ~= "\n" ~ src ~ "\n";
