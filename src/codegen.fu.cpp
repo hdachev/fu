@@ -2003,9 +2003,6 @@ struct sf_cpp_codegen
         if ((k == "struct"_fu))
             return cgEmpty();
 
-        if ((k == "typector"_fu))
-            return cgEmpty();
-
         if ((k == "copy"_fu))
             return cgCopyMove(node);
 

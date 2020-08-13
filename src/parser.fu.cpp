@@ -477,19 +477,10 @@ struct sf_parse
     };
     s_Node parseStructDecl()
     {
-        fu_STR name = consume("id"_fu, fu::view<std::byte>{}).value;
-        fu_VEC<fu_STR> dollars0 { _dollars };
-        fu_VEC<s_Node> templateParams {};
-        const int templateFlags = ([&]() -> int { if (tryConsume("op"_fu, "("_fu)) return parseArgsDecl(templateParams, "op"_fu, ")"_fu); else return int{}; }());
+        fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
         consume("op"_fu, "{"_fu);
         fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
         s_Node sTruct = make("struct"_fu, items, 0, name);
-        _dollars = dollars0;
-        if (templateParams)
-        {
-            (templateParams += sTruct);
-            return make("typector"_fu, templateParams, templateFlags, sTruct.value);
-        };
         return sTruct;
     };
     s_Node parseStructItem()
