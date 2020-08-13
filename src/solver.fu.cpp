@@ -111,128 +111,6 @@ struct s_TokenIdx
 };
                                 #endif
 
-                                #ifndef DEF_s_ValueType
-                                #define DEF_s_ValueType
-struct s_ValueType
-{
-    int quals;
-    int modid;
-    fu_STR canon;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || quals
-            || modid
-            || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu_VEC<s_Region> regions;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || regions
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Type
-                                #define DEF_s_Type
-struct s_Type
-{
-    s_ValueType value;
-    s_Lifetime lifetime;
-    s_Effects effects;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || value
-            || lifetime
-            || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Node
                                 #define DEF_s_Node
 struct s_Node
@@ -329,6 +207,24 @@ struct s_ModuleInputs
 };
                                 #endif
 
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    int quals;
+    int modid;
+    fu_STR canon;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || quals
+            || modid
+            || canon
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_StructField
                                 #define DEF_s_StructField
 struct s_StructField
@@ -340,6 +236,22 @@ struct s_StructField
         return false
             || id
             || type
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
         ;
     }
 };
@@ -378,6 +290,94 @@ struct s_Struct
             || flags
             || ctor
             || items
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    int relax;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+            || relax
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu_VEC<s_Region> regions;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || regions
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Type
+                                #define DEF_s_Type
+struct s_Type
+{
+    s_ValueType value;
+    s_Lifetime lifetime;
+    s_Effects effects;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || value
+            || lifetime
+            || effects
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
         ;
     }
 };
@@ -681,38 +681,6 @@ struct s_MapFields
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_first_fyyZ
-                                #define DEFt_if_first_fyyZ
-inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>& s)
-{
-    return ([&]() -> const s_SolvedNode& { if (s.size()) return s.mutref(0); else return fu::Default<s_SolvedNode>::value; }());
-}
-                                #endif
-
-                                #ifndef DEFt_only_o0k6
-                                #define DEFt_only_o0k6
-inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>& s)
-{
-    return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
-                                #ifndef DEFt_last_Kz6K
-                                #define DEFt_last_Kz6K
-inline fu_STR& last_Kz6K(fu_VEC<fu_STR>& s)
-{
-    return (s.size() ? s.mutref((s.size() - 1)) : fu::fail("len == 0"_fu));
-}
-                                #endif
-
-                                #ifndef DEFt_only_zET6
-                                #define DEFt_only_zET6
-inline const s_Node& only_zET6(const fu_VEC<s_Node>& s)
-{
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
 static const bool WARN_ON_IMPLICIT_COPY = false;
 
                                 #ifndef DEF_q_rx_copy
@@ -805,9 +773,33 @@ inline const int F_NAMED_ARGS = (1 << 25);
 inline const int F_ACCESS = (1 << 4);
                                 #endif
 
+                                #ifndef DEFt_if_first_fyyZ
+                                #define DEFt_if_first_fyyZ
+inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>& s)
+{
+    return ([&]() -> const s_SolvedNode& { if (s.size()) return s.mutref(0); else return fu::Default<s_SolvedNode>::value; }());
+}
+                                #endif
+
+                                #ifndef DEFt_only_o0k6
+                                #define DEFt_only_o0k6
+inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
+}
+                                #endif
+
                                 #ifndef DEF_F_SHADOW
                                 #define DEF_F_SHADOW
 inline const int F_SHADOW = (1 << 23);
+                                #endif
+
+                                #ifndef DEFt_last_Kz6K
+                                #define DEFt_last_Kz6K
+inline fu_STR& last_Kz6K(fu_VEC<fu_STR>& s)
+{
+    return (s.size() ? s.mutref((s.size() - 1)) : fu::fail("len == 0"_fu));
+}
                                 #endif
 
                                 #ifndef DEF_q_arithmetic
@@ -958,6 +950,14 @@ inline const int F_REF = (1 << 22);
                                 #ifndef DEF_F_ARG
                                 #define DEF_F_ARG
 inline const int F_ARG = (1 << 9);
+                                #endif
+
+                                #ifndef DEFt_only_zET6
+                                #define DEFt_only_zET6
+inline const s_Node& only_zET6(const fu_VEC<s_Node>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
                                 #endif
 
                                 #ifndef DEF_F_USING

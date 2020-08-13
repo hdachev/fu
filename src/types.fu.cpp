@@ -14,10 +14,12 @@ struct s_Effects;
 struct s_Lifetime;
 struct s_MapFields;
 struct s_Region;
+struct s_Target;
 struct s_Type;
 struct s_ValueType;
 bool operator==(const s_ValueType&, const s_ValueType&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
+uint64_t u64(const s_Target&);
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
 struct s_Effects
@@ -109,6 +111,22 @@ struct s_MapFields
         return false
             || key
             || value
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
         ;
     }
 };
@@ -590,6 +608,11 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
         return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type{}));
 
     return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
+}
+
+uint64_t u64(const s_Target& t)
+{
+    return ((uint64_t(t.modid) << 32u) | uint64_t(t.index));
 }
 
 #endif

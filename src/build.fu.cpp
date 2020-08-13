@@ -560,14 +560,6 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_bcSl
-                                #define DEFt_if_last_bcSl
-inline std::byte if_last_bcSl(fu_STR& s)
-{
-    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
-}
-                                #endif
-
 static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
 {
     if (fu::lmatch(fname, dir_src))
@@ -641,6 +633,14 @@ fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
     return (sf_getLinkOrder { modules, ctx }).getLinkOrder();
 }
 
+
+                                #ifndef DEFt_if_last_bcSl
+                                #define DEFt_if_last_bcSl
+inline std::byte if_last_bcSl(fu_STR& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
+}
+                                #endif
 
 void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme)
 {

@@ -571,14 +571,6 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_y0NH
-                                #define DEFt_if_last_y0NH
-inline std::byte if_last_y0NH(const fu_STR& s)
-{
-    return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
-}
-                                #endif
-
 static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
@@ -616,6 +608,14 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
         setModule(module, ctx);
     };
 }
+
+                                #ifndef DEFt_if_last_y0NH
+                                #define DEFt_if_last_y0NH
+inline std::byte if_last_y0NH(const fu_STR& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
+}
+                                #endif
 
 static fu_STR absdir(const fu_STR& a)
 {

@@ -62,6 +62,7 @@ s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
+uint64_t u64(const s_Target&);
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -616,22 +617,6 @@ struct s_Intlit
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_y0NH
-                                #define DEFt_if_last_y0NH
-inline std::byte if_last_y0NH(const fu_STR& s)
-{
-    return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
-}
-                                #endif
-
-                                #ifndef DEFt_only_4UAi
-                                #define DEFt_only_4UAi
-inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>& s)
-{
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
 static const int M_STMT = (1 << 0);
 
 static const int M_RETBOOL = (1 << 1);
@@ -686,9 +671,12 @@ inline const int Primitive = (Trivial | q_primitive);
 inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
-                                #ifndef DEF_F_PUB
-                                #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
+                                #ifndef DEFt_if_last_y0NH
+                                #define DEFt_if_last_y0NH
+inline std::byte if_last_y0NH(const fu_STR& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
+}
                                 #endif
 
                                 #ifndef DEF_FN_RET_BACK
@@ -714,6 +702,11 @@ inline const int F_OPERATOR = (1 << 21);
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
 inline const int F_TEMPLATE = (1 << 30);
+                                #endif
+
+                                #ifndef DEF_F_PUB
+                                #define DEF_F_PUB
+inline const int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
@@ -749,6 +742,14 @@ inline const int F_ARG = (1 << 9);
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
 inline const int LET_INIT = 1;
+                                #endif
+
+                                #ifndef DEFt_only_4UAi
+                                #define DEFt_only_4UAi
+inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
                                 #endif
 
                                 #ifndef DEF_q_unsigned
@@ -797,6 +798,7 @@ struct sf_cpp_codegen
     fu_MAP<fu_STR, fu_STR> _libs {};
     fu_MAP<fu_STR, fu_STR> _tfwd {};
     fu_MAP<fu_STR, fu_STR> _ffwd {};
+    fu_MAP<uint64_t, bool> _idef {};
     fu_STR _tdef {};
     fu_STR _fdef {};
     fu_STR _indent = "\n"_fu;
@@ -983,37 +985,6 @@ struct sf_cpp_codegen
 
         return out;
     };
-    void cgSpecs()
-    {
-        const fu_MAP<fu_STR, s_Target>& specs = module.out.specs;
-        const fu_VEC<fu_STR>& keys = specs.m_keys;
-        for (int i = 0; (i < keys.size()); i++)
-        {
-            const fu_STR& k = keys[i];
-            if ((k[0] == std::byte('0')))
-            {
-                continue;
-            };
-            const s_Target& target = specs[k];
-            if ((target.modid >= 0))
-            {
-                s_Overload overload = GET(target, module, ctx);
-                if ((overload.kind == "type"_fu))
-                {
-                    continue;
-                };
-                const s_SolvedNode& node = overload.solved;
-                fu_STR dedupe = ([&]() -> fu_STR { if ((node.flags & F_PUB)) return valid_identifier(fu_STR(overload.name)); else return fu_STR{}; }());
-                if (dedupe)
-                    (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
-
-                (_fdef += ("\n"_fu + cgNode(node, 0)));
-                if (dedupe)
-                    (_fdef += "\n                                #endif\n"_fu);
-
-            };
-        };
-    };
     fu_STR valid_operator(const fu_STR& str)
     {
         for (int i = 0; (i < str.size()); i++)
@@ -1047,7 +1018,6 @@ struct sf_cpp_codegen
     };
     fu_STR cgRoot(const s_SolvedNode& root_1)
     {
-        cgSpecs();
         fu_STR src = cgStatements(root_1.items);
         fu_STR main = cgMain();
         fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
@@ -1232,6 +1202,23 @@ struct sf_cpp_codegen
         (src += ");"_fu);
         (_ffwd.upsert(ffwdKey) = src);
         return;
+    };
+    void ensureTemplateFn(const s_Target& target, const s_Overload& overload)
+    {
+        bool def = false;
+        ([&](bool& _) -> bool& { if (!_) _ = (def = true); return _; } (_idef.upsert(u64(target))));
+        if (!def)
+            return;
+
+        const s_SolvedNode& node = overload.solved;
+        fu_STR dedupe = ([&]() -> fu_STR { if ((node.flags & F_PUB)) return valid_identifier(fu_STR(overload.name)); else return fu_STR{}; }());
+        if (dedupe)
+            (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
+
+        (_fdef += ("\n"_fu + cgNode(node, 0)));
+        if (dedupe)
+            (_fdef += "\n                                #endif\n"_fu);
+
     };
     fu_STR try_cgFnAsStruct(const s_SolvedNode& fn)
     {
@@ -1547,6 +1534,9 @@ struct sf_cpp_codegen
 
         if ((node.target.modid && ((node.target.modid != module.modid) || (target.flags & F_OPERATOR))))
             ensureFwdDecl(node.target);
+
+        if (((node.target.modid == module.modid) && (target.solved.flags & F_TEMPLATE) && (target.kind == "fn"_fu)))
+            ensureTemplateFn(node.target, target);
 
         if ((target.flags & F_OPERATOR))
         {

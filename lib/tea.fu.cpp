@@ -30,6 +30,8 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_r4_72yr
+                                #define DEFt_r4_72yr
                                 #ifndef DEFt_r4_gDfi
                                 #define DEFt_r4_gDfi
 inline void r4_gDfi(s_TEA& _, uint32_t& sum)
@@ -44,8 +46,6 @@ inline void r4_gDfi(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_r4_72yr
-                                #define DEFt_r4_72yr
 inline void r4_72yr(s_TEA& tea)
 {
     uint32_t sum {};
@@ -53,6 +53,8 @@ inline void r4_72yr(s_TEA& tea)
 }
                                 #endif
 
+                                #ifndef DEFt_r16_72yr
+                                #define DEFt_r16_72yr
                                 #ifndef DEFt_r16_gDfi
                                 #define DEFt_r16_gDfi
 inline void r16_gDfi(s_TEA& _, uint32_t& sum)
@@ -67,20 +69,10 @@ inline void r16_gDfi(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_r16_72yr
-                                #define DEFt_r16_72yr
 inline void r16_72yr(s_TEA& tea)
 {
     uint32_t sum {};
     r16_gDfi(tea, sum);
-}
-                                #endif
-
-                                #ifndef DEFt_u64_F1nT
-                                #define DEFt_u64_F1nT
-inline uint64_t u64_F1nT(s_TEA&& tea)
-{
-    return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
 }
                                 #endif
 
@@ -117,6 +109,14 @@ s_TEA hash(fu::view<std::byte> u8view)
     res = hash(s_TEA(res), u8view);
     return res;
 }
+
+                                #ifndef DEFt_u64_F1nT
+                                #define DEFt_u64_F1nT
+inline uint64_t u64_F1nT(s_TEA&& tea)
+{
+    return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
+}
+                                #endif
 
 fu_STR hash62(fu::view<std::byte> str, const int chars)
 {

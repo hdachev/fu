@@ -43,6 +43,11 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
+bool isStatic(const s_Lifetime& l)
+{
+    return !l.regions;
+}
+
                                 #ifndef DEFt_if_only_AyJp
                                 #define DEFt_if_only_AyJp
 inline const s_Region& if_only_AyJp(const fu_VEC<s_Region>& s)
@@ -50,27 +55,6 @@ inline const s_Region& if_only_AyJp(const fu_VEC<s_Region>& s)
     return ([&]() -> const s_Region& { if ((s.size() == 1)) return s[0]; else return fu::Default<s_Region>::value; }());
 }
                                 #endif
-
-                                #ifndef DEFt_if_first_AyJp
-                                #define DEFt_if_first_AyJp
-inline const s_Region& if_first_AyJp(const fu_VEC<s_Region>& s)
-{
-    return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
-}
-                                #endif
-
-                                #ifndef DEFt_only_AyJp
-                                #define DEFt_only_AyJp
-inline const s_Region& only_AyJp(const fu_VEC<s_Region>& s)
-{
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
-bool isStatic(const s_Lifetime& l)
-{
-    return !l.regions;
-}
 
 bool isLocal(const s_Lifetime& l)
 {
@@ -81,6 +65,14 @@ bool isArgument(const s_Region& r)
 {
     return (r.index < 0);
 }
+
+                                #ifndef DEFt_if_first_AyJp
+                                #define DEFt_if_first_AyJp
+inline const s_Region& if_first_AyJp(const fu_VEC<s_Region>& s)
+{
+    return ([&]() -> const s_Region& { if (s.size()) return s[0]; else return fu::Default<s_Region>::value; }());
+}
+                                #endif
 
 bool isArgumentUnion(const s_Lifetime& l)
 {
@@ -96,6 +88,14 @@ int Region_toArgIndex(const s_Region& r)
 {
     return (-1 - r.index);
 }
+
+                                #ifndef DEFt_only_AyJp
+                                #define DEFt_only_AyJp
+inline const s_Region& only_AyJp(const fu_VEC<s_Region>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
+                                #endif
 
 const s_Lifetime& inter_locals(const s_Lifetime& a, const s_Lifetime& b)
 {

@@ -117,14 +117,6 @@ struct s_ParserOutput
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_only_y0NH
-                                #define DEFt_only_y0NH
-inline std::byte only_y0NH(const fu_STR& s)
-{
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
-}
-                                #endif
-
                                 #ifndef DEF_F_METHOD
                                 #define DEF_F_METHOD
 inline const int F_METHOD = (1 << 0);
@@ -378,6 +370,14 @@ inline const int LOOP_POST_COND = 4;
                                 #endif
 
 static const int M_LINT_UNARY_PRECEDENCE = (1 << 0);
+
+                                #ifndef DEFt_only_y0NH
+                                #define DEFt_only_y0NH
+inline std::byte only_y0NH(const fu_STR& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
+                                #endif
 
 namespace {
 
