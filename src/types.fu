@@ -467,3 +467,5 @@ pub struct Target
     modid:  i32;
     index:  i32;
 };
+
+pub fn u64(t: Target): u64 = t.modid.u64 << 32 | t.index.u64;

@@ -23,6 +23,7 @@ pub fn cpp_codegen(
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
     mut _ffwd: Map(string, string);
+    mut _idef: Map(u64, bool);
     mut _tdef: string;
     mut _fdef: string;
 
@@ -245,43 +246,6 @@ pub fn cpp_codegen(
         return out;
     }
 
-    fn cgSpecs(): void
-    {
-        let specs = module.out.specs;
-        let keys = specs.keys();
-        for (mut i = 0; i < keys.len; i++)
-        {
-            // Prelude?
-            let k = keys[i];
-            if (k[0] == '0')
-                continue;
-
-            // Emit.
-            // TODO FIX should just walk map, this is needlessly expensive.
-            let target = specs[k];
-            if (target.modid >= 0)
-            {
-                let overload    = GET(target);
-
-                // TODO not needed after typectors
-                if (overload.kind == "type")
-                    continue;
-
-                let node        = overload.solved;
-                let dedupe      = node.flags & F_PUB && overload.name.valid_identifier;
-
-                if (dedupe)
-                    _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
-                           ~ "\n                                #define DEFt_" ~ dedupe;
-
-                _fdef ~= "\n" ~ cgNode(node);
-
-                if (dedupe)
-                    _fdef ~= "\n                                #endif\n";
-            }
-        }
-    }
-
     fn valid_operator(str: string): string
     {
         for (mut i = 0; i < str.len; i++)
@@ -327,13 +291,10 @@ pub fn cpp_codegen(
 
     fn cgRoot(root: SolvedNode): string
     {
-        cgSpecs();
         let src    = cgStatements(root.items);
         let main   = cgMain();
 
-
-
-        mut header = collectDedupes(_libs)
+        let header = collectDedupes(_libs)
                    ~ collectDedupes(_tfwd)
                    ~ collectDedupes(_ffwd)
                    ~               (_tdef)
@@ -546,6 +507,27 @@ pub fn cpp_codegen(
         _ffwd[ffwdKey] = src;
 
         return;
+    }
+
+    fn ensureTemplateFn(target: Target, overload: Overload)
+    {
+        mut def = false;
+        _idef[target.u64] ||= (def = true);
+        if (!def)
+            return;
+
+        // Go!
+        let node    = overload.solved;
+        let dedupe  = node.flags & F_PUB && overload.name.valid_identifier;
+
+        if (dedupe)
+            _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
+                   ~ "\n                                #define DEFt_" ~ dedupe;
+
+        _fdef ~= "\n" ~ cgNode(node);
+
+        if (dedupe)
+            _fdef ~= "\n                                #endif\n";
     }
 
 
@@ -999,6 +981,9 @@ pub fn cpp_codegen(
 
         if (node.target.modid && (node.target.modid != module.modid || target.flags & F_OPERATOR))
             ensureFwdDecl(node.target);
+
+        if (node.target.modid == module.modid && target.solved.flags & F_TEMPLATE && target.kind == "fn")
+            ensureTemplateFn(node.target, target);
 
         if (target.flags & F_OPERATOR)
         {
