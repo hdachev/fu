@@ -1749,7 +1749,7 @@ pub fn solve(
         }
 
         if (global)
-            GET_mut(overload).constant = out;
+            GET_mut(overload).solved = out;
 
         if (out.flags & F_USING)
             scope_using(overload);

@@ -186,7 +186,7 @@ pub struct Overload
     //   [ modid / thing ] slot here.
     partial:    Partial;
     template:   Template;
-    constant:   SolvedNode;
+    solved:     SolvedNode;
 };
 
 pub struct ScopeItem
@@ -335,7 +335,7 @@ pub fn Scope_add(
     args?:          Argument[],
     template?:      Template,
     partial?:       Partial,
-    constant?:      SolvedNode): Target
+    solved?:        SolvedNode): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -345,7 +345,7 @@ pub fn Scope_add(
         name: id || throw("Falsy Scope_add(id)."),
         :kind, :flags, :type,
         :min, :max, :args,
-        :partial, :template, :constant);
+        :partial, :template, :solved);
 
     if (kind != "field")
         scope.items.push(

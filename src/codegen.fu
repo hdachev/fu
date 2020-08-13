@@ -803,7 +803,7 @@ pub fn cpp_codegen(
 
         _ffwd[key] = "";
         let o = GET(target);
-        cgGlobal(o.constant);
+        cgGlobal(o.solved);
     }
 
     fn cgReturn(node: SolvedNode): string
