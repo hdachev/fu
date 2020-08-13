@@ -387,7 +387,7 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
-    s_SolvedNode constant;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -400,7 +400,7 @@ struct s_Overload
             || args
             || partial
             || tEmplate
-            || constant
+            || solved
         ;
     }
 };

@@ -448,7 +448,7 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
-    s_SolvedNode constant;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -461,7 +461,7 @@ struct s_Overload
             || args
             || partial
             || tEmplate
-            || constant
+            || solved
         ;
     }
 };
@@ -2217,7 +2217,7 @@ struct sf_solve
 
         };
         if (global)
-            GET_mut(overload).constant = out;
+            GET_mut(overload).solved = out;
 
         if ((out.flags & F_USING))
             scope_using(overload);

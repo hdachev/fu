@@ -303,7 +303,7 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
-    s_SolvedNode constant;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -316,7 +316,7 @@ struct s_Overload
             || args
             || partial
             || tEmplate
-            || constant
+            || solved
         ;
     }
 };
@@ -1386,7 +1386,7 @@ struct sf_cpp_codegen
 
         (_ffwd.upsert(key) = fu_STR{});
         s_Overload o = GET(target, module, ctx);
-        cgGlobal(o.constant);
+        cgGlobal(o.solved);
     };
     fu_STR cgReturn(const s_SolvedNode& node)
     {

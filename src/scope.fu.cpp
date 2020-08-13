@@ -392,7 +392,7 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Partial partial;
     s_Template tEmplate;
-    s_SolvedNode constant;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -405,7 +405,7 @@ struct s_Overload
             || args
             || partial
             || tEmplate
-            || constant
+            || solved
         ;
     }
 };
@@ -694,11 +694,11 @@ void Scope_pop(s_Scope& scope, const s_ScopeMemo& memo)
     scope.imports.shrink(memo.imports_len);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& constant, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& solved, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(constant) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved) };
     if ((kind != "field"_fu))
         scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 
