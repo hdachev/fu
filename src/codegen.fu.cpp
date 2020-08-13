@@ -474,7 +474,7 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_MAP<fu_STR, s_Struct> types;
-    fu_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -985,7 +985,7 @@ struct sf_cpp_codegen
     };
     void cgSpecs()
     {
-        const fu_MAP<fu_STR, s_SolvedNode>& specs = module.out.specs;
+        const fu_MAP<fu_STR, s_Target>& specs = module.out.specs;
         const fu_VEC<fu_STR>& keys = specs.m_keys;
         for (int i = 0; (i < keys.size()); i++)
         {
@@ -994,14 +994,20 @@ struct sf_cpp_codegen
             {
                 continue;
             };
-            const s_SolvedNode& s = specs[k];
-            if (s.target)
+            const s_Target& target = specs[k];
+            if ((target.modid >= 0))
             {
-                fu_STR dedupe = ([&]() -> fu_STR { if ((s.flags & F_PUB)) return valid_identifier(GET(s.target, module, ctx).name); else return fu_STR{}; }());
+                s_Overload overload = GET(target, module, ctx);
+                if ((overload.kind == "type"_fu))
+                {
+                    continue;
+                };
+                const s_SolvedNode& node = overload.solved;
+                fu_STR dedupe = ([&]() -> fu_STR { if ((node.flags & F_PUB)) return valid_identifier(fu_STR(overload.name)); else return fu_STR{}; }());
                 if (dedupe)
                     (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
 
-                (_fdef += ("\n"_fu + cgNode(s, 0)));
+                (_fdef += ("\n"_fu + cgNode(node, 0)));
                 if (dedupe)
                     (_fdef += "\n                                #endif\n"_fu);
 

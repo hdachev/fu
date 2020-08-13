@@ -452,7 +452,7 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_MAP<fu_STR, s_Struct> types;
-    fu_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept

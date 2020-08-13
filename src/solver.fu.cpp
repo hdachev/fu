@@ -507,7 +507,7 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_MAP<fu_STR, s_Struct> types;
-    fu_MAP<fu_STR, s_SolvedNode> specs;
+    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     explicit operator bool() const noexcept
@@ -1088,6 +1088,7 @@ struct sf_solve
         s_Template tEmplate = s_Template { s_Node(native), fu_VEC<int>(NO_IMPORTS) };
         const s_Target overload = Scope_add(_scope, kind, id, ret, node.flags, min, max, args, tEmplate, s_Partial{}, s_SolvedNode{}, module);
         node.target = overload;
+        GET_mut(overload).solved = node;
         return overload;
     };
     s_Target DefCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
@@ -1929,19 +1930,17 @@ struct sf_solve
     {
         fu_STR mangle = (((target.modid + "#"_fu) + target.index) + " "_fu);
         (mangle += args_mangled);
-        s_SolvedNode spec { ([&](s_SolvedNode& _) -> s_SolvedNode& { if (!_) _ = s_SolvedNode{}; return _; } (module.out.specs.upsert(mangle))) };
+        const s_Target spec { module.out.specs[mangle] };
+        const int SPEC_FAILED = -1;
         if (!spec)
         {
-            s_SolvedNode spec_1 = doTrySpecialize(tEmplate, fu_VEC<s_SolvedNode>(args), mangle);
-            if (!spec_1)
-                spec_1.kind = "spec-fail"_fu;
-
-            (module.out.specs.upsert(mangle) = spec_1);
-            return std::move(spec_1.target);
+            const s_Target spec_1 = doTrySpecialize(tEmplate, fu_VEC<s_SolvedNode>(args), mangle);
+            (module.out.specs.upsert(mangle) = (spec_1 ? s_Target(spec_1) : s_Target { int(SPEC_FAILED), 0 }));
+            return spec_1;
         };
-        return std::move(spec.target);
+        return ((spec.modid != SPEC_FAILED) ? s_Target(spec) : s_Target{});
     };
-    s_SolvedNode doTrySpecialize(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
+    s_Target doTrySpecialize(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
     {
         bool ok = true;
         fu_MAP<fu_STR, s_Type> typeParams0 {};
@@ -2056,7 +2055,7 @@ struct sf_solve
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
         _root_scope = root_scope0;
-        return specialized;
+        return std::move(specialized.target);
     };
     s_SolvedNode solveTypeCtor(const s_Node& node)
     {

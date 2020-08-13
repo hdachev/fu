@@ -30,15 +30,6 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_r4_72yr
-                                #define DEFt_r4_72yr
-inline void r4_72yr(s_TEA& tea)
-{
-    uint32_t sum {};
-    r4_gDfi(tea, sum);
-}
-                                #endif
-
                                 #ifndef DEFt_r4_gDfi
                                 #define DEFt_r4_gDfi
 inline void r4_gDfi(s_TEA& _, uint32_t& sum)
@@ -53,12 +44,12 @@ inline void r4_gDfi(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_r16_72yr
-                                #define DEFt_r16_72yr
-inline void r16_72yr(s_TEA& tea)
+                                #ifndef DEFt_r4_72yr
+                                #define DEFt_r4_72yr
+inline void r4_72yr(s_TEA& tea)
 {
     uint32_t sum {};
-    r16_gDfi(tea, sum);
+    r4_gDfi(tea, sum);
 }
                                 #endif
 
@@ -73,6 +64,15 @@ inline void r16_gDfi(s_TEA& _, uint32_t& sum)
         _.v0 += ((((_.v1 << 4u) + 0xa341316cu) ^ (_.v1 + sum)) ^ ((_.v1 >> 5u) + 0xc8013ea4u));
         _.v1 += ((((_.v0 << 4u) + 0xad90777du) ^ (_.v0 + sum)) ^ ((_.v0 >> 5u) + 0x7e95761eu));
     };
+}
+                                #endif
+
+                                #ifndef DEFt_r16_72yr
+                                #define DEFt_r16_72yr
+inline void r16_72yr(s_TEA& tea)
+{
+    uint32_t sum {};
+    r16_gDfi(tea, sum);
 }
                                 #endif
 
