@@ -366,14 +366,17 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn blockWrap(nodes: SolvedNode[], skipCurlies: bool = false): string
+    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool): string
     {
         let indent0 = _indent;
         _indent ~= "    ";
 
+        let open  = gnuStmtExpr ? "(__extension__ ({" : "{";
+        let close = gnuStmtExpr ? "}))" : "}";
+
         mut src = cgStatements(nodes);
         if (!skipCurlies || nodes.len != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
-            src = indent0 ~ "{" ~ src ~ indent0 ~ "}";
+            src = indent0 ~ open ~ src ~ indent0 ~ close;
 
         _indent = indent0;
         return src;
@@ -381,14 +384,34 @@ pub fn cpp_codegen(
 
     fn blockWrapSubstatement(node: SolvedNode): string
     {
-        return node.kind != "block" ? blockWrap([ node ], true)
+        return node.kind != "block" ? blockWrap([ node ], skipCurlies: true)
              : node.items.len == 1  ? blockWrapSubstatement(node.items[0])
-                                    : cgBlock(node);
+                                    : cgBlock(node, M_STMT);
     }
 
-    fn cgBlock(block: SolvedNode): string
+    fn cgBlock(block: SolvedNode, mode: i32): string
     {
-        return blockWrap(block.items);
+        mut expr = !(mode & M_STMT);
+        if (expr)
+        {
+            fn isExpr(node: SolvedNode)
+                node.kind == "call";
+
+            mut ok = true;
+            for (mut i = 0; i < block.items.len; i++)
+            {
+                if (!block.items[i].isExpr)
+                {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+                return cgParens(block);
+        }
+
+        return blockWrap(block.items, gnuStmtExpr: !(mode & M_STMT));
     }
 
     fn cgParens(node: SolvedNode): string
@@ -689,7 +712,7 @@ pub fn cpp_codegen(
             ensureFwdDecl(fn.target);
 
         if (body.kind == "block")
-            src ~= cgBlock(body);
+            src ~= cgBlock(body, M_STMT);
         else
             src ~= blockWrap([ body ]);
 
@@ -1476,8 +1499,6 @@ pub fn cpp_codegen(
     {
         let k = node.kind;
 
-        if (k == "root")        return cgRoot(node);
-        if (k == "block")       return cgBlock(node);
         if (k == "fn")          return cgFn(node);
         if (k == "return")      return cgReturn(node);
         if (k == "break")       return cgJump(node);
@@ -1496,13 +1517,15 @@ pub fn cpp_codegen(
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, mode);
         if (k == "definit")     return cgDefaultInit(node, mode);
-        if (k == "empty")       return cgEmpty();
 
+        if (k == "root")        return cgRoot(node);
+        if (k == "block")       return cgBlock(node, mode);
         if (k == "comma")       return cgParens(node);
         if (k == "parens")      return cgParens(node);
         if (k == "label")       return cgParens(node);
 
         if (k == "struct")      return cgEmpty();
+        if (k == "empty")       return cgEmpty();
 
         if (k == "copy")        return cgCopyMove(node);
         if (k == "move")        return cgCopyMove(node);

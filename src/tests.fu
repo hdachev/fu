@@ -2478,6 +2478,11 @@ pub fn runTests()
 
     // First stab at higher-order functions.
 
+    ZERO(`
+        let x = { mut z = 0; z++; z };
+        return x - 1;
+    `);
+
     // ZERO(`
     //     fn reduce(items: $T[], fn: $F, init?: $T) {
     //         mut result = init;

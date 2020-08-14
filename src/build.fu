@@ -118,7 +118,10 @@ pub fn build(
 
     let INCLUDE = "-I ~/fu/include ";
 
-    let GCC_CMD = "g++ -std=c++1z " ~ O_lvl
+    let GCChash = "g++ -std=c++1z " ~ O_lvl;
+
+    // Not considering warnings when hashing files.
+    let GCC_CMD = GCChash
                 ~ "-pedantic-errors -Wall -Wextra -Werror " // opt-in
                 ~ "-Wno-parentheses-equality " // opt-out
                 ;
@@ -135,7 +138,7 @@ pub fn build(
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
 
-        let F       = cpp &&    dir_wrk ~ "o-" ~ hash_tea(GCC_CMD ~ cpp)
+        let F       = cpp &&    dir_wrk ~ "o-" ~ hash_tea(GCChash ~ cpp)
                                         ~ "-" ~ cpp.len;
 
         Fs.push(F);

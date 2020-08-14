@@ -847,7 +847,7 @@ pub fn solve(
         let k = node.kind;
 
         if (k == "root")        return solveRoot(node);
-        if (k == "block")       return solveBlock(node);
+        if (k == "block")       return solveBlock(node, :type);
         if (k == "label")       return solveComma(node);
         if (k == "comma")       return solveComma(node);
 
@@ -919,11 +919,29 @@ pub fn solve(
         return solved(node, t_void, solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(node: Node): SolvedNode
+    fn solveBlock(node: Node, type?: Type): SolvedNode
     {
+        ////////////////////////////////
         let scope0 = Scope_push(_scope);
-        let out = solved(node, t_void, solveNodes(node.items, t_void));
+        ////////////////////////////////
+
+        let expr = !!(node.items.if_last.flags & F_NODISCARD);
+
+        let items = solveNodes(
+            node.items,
+            type_all:       t_void,
+            type_last:      type,
+            use_type_last:  expr);
+
+        let type = expr && items.len
+            ? items.last.type : t_void;
+
+        let out = solved(:node, :type, :items);
+
+        //////////////////////////
         Scope_pop(_scope, scope0);
+        //////////////////////////
+
         return out;
     }
 
@@ -2545,7 +2563,10 @@ pub fn solve(
 
     //
 
-    fn solveNodes(nodes: Node[], type: Type = []): SolvedNode[]
+    fn solveNodes(
+        nodes: Node[],
+        type_all?: Type, type_last?!: Type,
+        use_type_last?!: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -2563,7 +2584,10 @@ pub fn solve(
             if (!isUnordered(node.kind))
             {
                 _here       = node.token || _here;
-                result[i]   = solveNode(node, type);
+                result[i]   = solveNode(:node, type:
+                    i == nodes.len - 1 && use_type_last
+                        ? type_last : type_all);
+
                 continue;
             }
 

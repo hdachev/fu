@@ -35,6 +35,7 @@ pub let F_QUALIFIED     = 1 << 7;
 pub let F_LOCAL         = 1 << 8;
 pub let F_ARG           = 1 << 9;
 pub let F_FIELD         = 1 << 10;
+pub let F_NODISCARD     = 1 << 11;
 // ...
 
 pub let F_MUT           = 1 << 16;
@@ -288,7 +289,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn createBlock(items: Node[]): Node
     {
-        return make("block", items);
+        return make("block", :items);
     }
 
 
@@ -312,7 +313,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let name = tryConsume("id").value;
 
         consume("op", "{");
-        let items = parseBlockLike("op", "}", "struct");
+        let items = parseBlockLike("op", "}", struct: true);
         let struct = make("struct", items, 0, name);
 
         return struct;
@@ -332,7 +333,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseBlockLike(
         endKind: string, endVal: string,
-        mode: string = ""): Node[]
+        struct! = false): Node[]
     {
         let line0 = tokens[_idx].line;
         let col00 = _col0;
@@ -365,12 +366,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 "Bad indent, expecting more than " ~ col00
                     ~ ". Block starts on line " ~ line0 ~ ".");
 
-            let expr = mode /*== "struct"*/
+            let expr = struct
                 ? parseStructItem()
                 : parseStatement();
 
+            // Maybe we should get rid of this.
             expr.kind != "call"
                 || ((expr.flags & (F_ID | F_ACCESS)) == 0)
+                || expr.flags & F_NODISCARD
                 || expr.items.len > 1
                 || fail_Lint("Orphan pure-looking expression.");
 
@@ -514,8 +517,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseExpressionStatement(): Node
     {
-        let expr = parseExpression(P_RESET);
-        consume("op", ";");
+        mut expr = parseExpression(P_RESET);
+
+        let peek = tokens[_idx];
+        if (peek.kind == "op" && peek.value == "}")
+            expr.flags |= F_NODISCARD;
+        else if (peek.kind == "op" && peek.value == ";")
+            _idx++;
+        else
+            fail_Lint("Missing semicollon.");
+
         return expr;
     }
 
@@ -947,6 +958,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 let v = token.value;
 
                 if (v ==  "(") return parseParens();
+                if (v ==  "{") return parseBlock();
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
                 if (v ==  "@") return parseTypeTag();
