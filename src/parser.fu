@@ -444,6 +444,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "fn")          return parseFnDecl(0);
             }
 
+            if (peek.kind == "op" && peek.value == "{")
+            {
+                if (v == "struct")      return parseStructDecl();
+            }
+
             if (_fnDepth)
             {
                 if (v == "if")          return parseIf();

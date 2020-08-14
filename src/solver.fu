@@ -1542,7 +1542,8 @@ pub fn solve(
 
             //
             structType.quals |= finalizeStruct(structType.canon, fields, innerScope);
-            GET_mut(out.target).type.quals = structType.quals;
+            if (out.target)
+                GET_mut(out.target).type.quals = structType.quals;
 
             // Link up the constructor.
             // TODO don't Scope_add when templated.
