@@ -586,6 +586,12 @@ struct sf_parse
                     return parseFnDecl(0);
 
             };
+            if (((peek.kind == "op"_fu) && (peek.value == "{"_fu)))
+            {
+                if ((v == "struct"_fu))
+                    return parseStructDecl();
+
+            };
             if (_fnDepth)
             {
                 if ((v == "if"_fu))

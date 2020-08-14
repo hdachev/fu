@@ -2099,7 +2099,9 @@ struct sf_solve
                 };
             };
             structType.value.quals |= finalizeStruct(structType.value.canon, fields, innerScope, module);
-            GET_mut(out.target).type.value.quals = structType.value.quals;
+            if (out.target)
+                GET_mut(out.target).type.value.quals = structType.value.quals;
+
             const s_Target ctor = DefCtor(id, structType, members_1);
             lookupStruct_mut(structType.value.canon, module).ctor = ctor;
         };
