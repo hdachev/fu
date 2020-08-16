@@ -1568,9 +1568,6 @@ struct sf_solve
         if ((k == "label"_fu))
             return solveComma(node);
 
-        if ((k == "comma"_fu))
-            return solveComma(node);
-
         if ((k == "let"_fu))
             return solveLet(node, Lifetime_static());
 
@@ -2380,7 +2377,7 @@ struct sf_solve
             {
                 if ((items.size() == 1))
                 {
-                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : ((void)fail("TODO trySolveTypeParams unary call"_fu), s_Type{}))));
+                    s_Type t = ((node.value == "&"_fu) ? tryClear_ref(type) : ((node.value == "&mut"_fu) ? tryClear_mutref(type) : ((node.value == "[]"_fu) ? tryClear_array(type) : fail("TODO trySolveTypeParams unary call"_fu))));
                     if (!t)
                         return false;
 

@@ -2010,9 +2010,6 @@ struct sf_cpp_codegen
         if ((k == "block"_fu))
             return cgBlock(node, mode);
 
-        if ((k == "comma"_fu))
-            return cgParens(node);
-
         if ((k == "parens"_fu))
             return cgParens(node);
 

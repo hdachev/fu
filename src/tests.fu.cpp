@@ -673,7 +673,6 @@ void runTests()
     ZERO("\n        struct S { x: i32; }\n        let s: S = S(1);\n        return s ? 0 : 1;\n    "_fu);
     ZERO("\n        struct S { x: i32; }\n        let s: S;\n        return s ? 1 : 0;\n    "_fu);
     ZERO("\n        mut sum = 0;\n\n        :outer for (mut y = 1; y < 10; y++)\n        {\n            sum += y * 10; // 10, 20\n            for (mut x = 1; x < 10; x++)\n            {\n                sum += x; // 1, 1, 2\n                if (y == 1) continue :outer;\n                if (x == 2) break    :outer;\n            }\n        }\n\n        return sum - 34;\n    "_fu);
-    ZERO("\n        mut a = 0;\n        return (a++, a - 1);\n    "_fu);
     FAIL("\n        struct Test { x: i32; }\n        fn test(t: &mut Test) t.x++;\n        mut t = Test();\n        //*F\n        t.test; //ERR orphan\n        /*/\n        t.test();\n        //*/\n\n        return t.x - 1;\n    "_fu);
     ZERO("\n        let x = \"hello\";\n        let y = \"world\";\n        let w = x || y;\n\n        return w == \"hello\" ? 0 : 1;\n    "_fu);
     ZERO("\n        let x = \"hello\";\n        let y = \"world\";\n        let w = x && y;\n\n        return w == \"world\" ? 0 : 1;\n    "_fu);
@@ -682,8 +681,8 @@ void runTests()
     ZERO("\n        let x = \"hello\";\n        let y = \"world\";\n        let arr: i32[];\n        let w = arr && x || y || throw(\"Nope.\");\n\n        return w == \"world\" ? 0 : 1;\n    "_fu);
     ZERO("\n        mut i = 7;\n        i ||= 11;\n        return i - 7;\n    "_fu);
     ZERO("\n        mut i = 0;\n        i ||= 11;\n        return i - 11;\n    "_fu);
-    ZERO("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"hello\"] = \"world\";\n        fn f() (\n            g++, \"cruel world\");\n\n        m[\"hello\"] ||= f();\n        return g;\n    "_fu);
-    ZERO("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"_not_hello_\"] = \"world\";\n        fn f() (\n            g++, \"cruel world\");\n\n        m[\"hello\"] ||= f();\n        return g - 1;\n    "_fu);
+    ZERO("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"hello\"] = \"world\";\n        fn f() {\n            g++;\n            return \"cruel world\";\n        }\n\n        m[\"hello\"] ||= f();\n        return g;\n    "_fu);
+    ZERO("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"_not_hello_\"] = \"world\";\n        fn f() {\n            g++;\n            return \"cruel world\";\n        }\n\n        m[\"hello\"] ||= f();\n        return g - 1;\n    "_fu);
     ZERO("\n        {\n            {\n                return 0;\n            }\n        }\n    "_fu);
     FAIL("\n        {\n        //*F\n        {\n            return 0; //ERR block\n        }\n        /*/\n            {\n                return 0;\n            }\n        }\n        //*/\n    "_fu);
     ZERO("\n        {\n            return 0;\n        }\n    "_fu);

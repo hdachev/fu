@@ -302,7 +302,6 @@ struct sf_setupOperators
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "<|"_fu } });
         rightToLeft = false;
         binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "|>"_fu } });
-        binop(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { ","_fu } });
         return out;
     };
 };
@@ -316,8 +315,6 @@ s_BINOP setupOperators()
 
 
 static const s_BINOP BINOP = setupOperators();
-
-static const int P_COMMA = ([]() -> int { { int _ = BINOP.PRECEDENCE[","_fu]; if (_) return _; } fu_ASSERT(); }());
 
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
@@ -850,7 +847,7 @@ struct sf_parse
         s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
         s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Node type = tryPopTypeAnnot();
-        s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_COMMA), 0); else return s_Node{}; }()));
+        s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_RESET), 0); else return s_Node{}; }()));
         if ((numDollars0 != _dollars.size()))
             flags |= F_TEMPLATE;
 
@@ -1030,16 +1027,9 @@ struct sf_parse
     };
     s_Node parseParens()
     {
-        fu_VEC<s_Node> items {};
-        do
-            items.push(parseExpression(int(P_COMMA), 0));
-        while (tryConsume("op"_fu, ","_fu));
+        s_Node out = parseExpression(int(P_RESET), 0);
         consume("op"_fu, ")"_fu);
-        return ((items.size() > 1) ? createComma(items) : s_Node(items[0]));
-    };
-    s_Node createComma(const fu_VEC<s_Node>& nodes)
-    {
-        return make("comma"_fu, nodes, 0, fu_STR{});
+        return out;
     };
     s_Node parseTypeParam()
     {
@@ -1160,7 +1150,7 @@ struct sf_parse
                 _idx++;
                 flags |= F_NAMED_ARGS;
             };
-            s_Node expr = parseExpression(int(P_COMMA), 0);
+            s_Node expr = parseExpression(int(P_RESET), 0);
             if (autoName)
                 name = getAutoName(expr);
 
