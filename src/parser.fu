@@ -628,10 +628,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             {
                 let cond = parseUnaryExpression();
                 let type = tryPopTypeAnnot();
-                let body = parseFnBodyBranch();
+                let cons = parseFnBodyBranch();
 
                 branches.push(
-                    make("fnbranch", [ cond, type, body ]));
+                    make("fnbranch", [ cond, type, cons ]));
             }
             while (tryConsume("id", "case"));
 
@@ -809,7 +809,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             //////////////////////////////////////////////
             // Lint, this looks crazy but its fine really,
             //  powers the -1.abs error.
-            let mode =
+            shadow let mode =
                 mode & M_LINT_UNARY_PRECEDENCE
                     && (head.kind == "int" || head.kind == "real")
                         ? mode

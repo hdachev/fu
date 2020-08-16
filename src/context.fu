@@ -40,24 +40,24 @@ fn resolveFile(
 
         // TODO FIX
         {
-            let path = from ~ "lib/" ~ name;
-            let exists = file_size(path) >= 0;
+            shadow let path = from ~ "lib/" ~ name;
+            shadow let exists = file_size(path) >= 0;
             if (exists)
                 return path;
         }
 
         // TODO FIX
         {
-            let path = from ~ "vendor/" ~ name;
-            let exists = file_size(path) >= 0;
+            shadow let path = from ~ "vendor/" ~ name;
+            shadow let exists = file_size(path) >= 0;
             if (exists)
                 return path;
         }
 
         // TODO FIX
         {
-            let path = from ~ "fu/lib/" ~ name;
-            let exists = file_size(path) >= 0;
+            shadow let path = from ~ "fu/lib/" ~ name;
+            shadow let exists = file_size(path) >= 0;
             if (exists)
                 return path;
         }

@@ -131,7 +131,7 @@ fn cli_handle(argv: string[], cwd = fs_cwd()): i32
 
     //
     {
-        let val = next();
+        shadow let val = next();
         if (val) throw("Leftover option: `" ~ val ~ "`.");
     }
 

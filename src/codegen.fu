@@ -33,10 +33,7 @@ pub fn cpp_codegen(
     mut _faasN: i32;
     mut _hasMain: i32;
 
-    fn GET(
-        implicit module: Module,
-        implicit ctx: Context,
-        target: Target): Overload
+    fn GET(target: Target): Overload
     {
         target.index > 0 || assert();
 
@@ -273,13 +270,13 @@ pub fn cpp_codegen(
                 c >= '0' && c <= '9' ||
                 c == '_') continue;
 
-            let c       = c.u32;
-            let b0      = (c >> 0) & 0xf;
-            let b1      = (c >> 4) & 0xf;
+            shadow let c = c.u32;
+            let b0 = (c >> 0) & 0xf;
+            let b1 = (c >> 4) & 0xf;
 
-            fn hex(c: u32)
-                c < 10 ? ('0'.u32 + c).byte
-                       : ('A'.u32 + c).byte;
+            fn hex(x: u32)
+                x < 10 ? ('0'.u32 + x).byte
+                       : ('A'.u32 + x).byte;
 
             str = str[0, i]
                 ~ 'b' ~ b0.hex ~ b1.hex
@@ -289,7 +286,7 @@ pub fn cpp_codegen(
         return str;
     }
 
-    fn cgRoot(root: SolvedNode): string
+    fn cgRoot(shadow root: SolvedNode): string
     {
         let src    = cgStatements(root.items);
         let main   = cgMain();
@@ -1206,7 +1203,7 @@ pub fn cpp_codegen(
 
         let stmt = !!(mode & M_STMT);
 
-        fn blockWrap_unlessIf(node: SolvedNode)
+        fn blockWrap_unlessIf(shadow node: SolvedNode)
             node.kind == "if"
                 ? " " ~ cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
@@ -1332,7 +1329,7 @@ pub fn cpp_codegen(
                 if (ternary)
                 {
                     mut src = "(";
-                    for (mut i = 0; i < node.items.len - 1; i++)
+                    for (shadow mut i = 0; i < node.items.len - 1; i++)
                     {
                         let n = node.items[i];
                         let item = cgNode(n);
@@ -1359,17 +1356,16 @@ pub fn cpp_codegen(
                 //  actually works quite well.
                 if (item.kind == "and")
                 {
-                    let items = item.items;
+                    shadow let items = item.items;
                     tail = items[items.len - 1] || fail();
 
                     src ~= " if (";
-                    for (mut i = 0; i < items.len - 1; i++)
+                    for (shadow mut i = 0; i < items.len - 1; i++)
                     {
                         if (i)
                             src ~= " && ";
 
-                        let item = items[i] || fail();
-                        src ~= cgNode(item, M_RETBOOL);
+                        src ~= cgNode(items[i] || fail(), M_RETBOOL);
                     }
 
                     src ~= ")";

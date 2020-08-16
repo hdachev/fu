@@ -62,7 +62,7 @@ pub fn inter_args(mut a: Lifetime, b: Lifetime)
     for (mut i = 0; i < b.regions.len; i++)
     {
         let br = b.regions[i];
-        for (mut i = 0; i < a.regions.len; i++)
+        for (shadow mut i = 0; i < a.regions.len; i++)
         {
             let ar = a.regions[i];
             if (ar.index == br.index)

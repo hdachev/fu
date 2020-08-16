@@ -53,10 +53,7 @@ pub fn solve(
         _Scope_import__forceCopy(modid);
     }
 
-    fn GET(
-        implicit module: Module,
-        implicit ctx: Context,
-        target: Target): Overload
+    fn GET(target: Target): Overload
     {
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
@@ -156,15 +153,15 @@ pub fn solve(
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
-            let node = argNodes[i];
-            node.kind == "let" || fail();
+            let argNode = argNodes[i];
+            argNode.kind == "let" || fail();
 
-            let isImplicit = !!(node.flags & F_IMPLICIT);
+            let isImplicit = !!(argNode.flags & F_IMPLICIT);
             let arg = Argument(
-                type:       node.type  || fail(),
-                name:       node.value || fail(),
-                default:    !isImplicit && node.items[LET_INIT],
-                flags:      node.flags);
+                type:       argNode.type  || fail(),
+                name:       argNode.value || fail(),
+                default:    !isImplicit && argNode.items[LET_INIT],
+                flags:      argNode.flags);
 
             if (!arg.default && !isImplicit)
                 min++;
@@ -421,7 +418,7 @@ pub fn solve(
             mut idx = names.find(host_args[i].name);
             if (idx < 0)
             {
-                for (mut i = offset; i < names.len; i++)
+                for (shadow mut i = offset; i < names.len; i++)
                 {
                     offset++;
                     if (!names[i])
@@ -777,7 +774,7 @@ pub fn solve(
             if (max < o.max) max = o.max;
         }
 
-        fn expectedArgs(targets: Target[]): string
+        fn expectedArgs(shadow targets: Target[]): string
         {
             mut result = "";
 
@@ -794,7 +791,7 @@ pub fn solve(
 
                 result ~= overload.name ~ "(";
 
-                for (mut i = 0; i < overload.args.len; i++)
+                for (shadow mut i = 0; i < overload.args.len; i++)
                 {
                     let arg = overload.args[i];
                     if (i)
@@ -812,7 +809,7 @@ pub fn solve(
             return result || ".";
         }
 
-        fn actualArgs(args: SolvedNode[]): string
+        fn actualArgs(shadow args: SolvedNode[]): string
         {
             mut result = "\nActual: (";
 
@@ -932,7 +929,7 @@ pub fn solve(
             type_last:      type,
             use_type_last:  expr);
 
-        let type = expr && items.len
+        shadow let type = expr && items.len
             ? items.last.type : t_void;
 
         let out = solved(:node, :type, :items);
@@ -957,7 +954,7 @@ pub fn solve(
 
     fn solveInt(v: string, type: Type): Type
     {
-        let parse = intlit::Intlit(v);
+        shadow let parse = intlit::Intlit(v);
         parse.error && fail(parse.error);
 
         if (type)
@@ -1281,7 +1278,7 @@ pub fn solve(
         let SPEC_FAILED = -1;
         if (!spec)
         {
-            let spec = doTrySpecialize(template, args, mangle);
+            shadow let spec = doTrySpecialize(template, args, mangle);
             module.out.specs[mangle] = spec ? spec : Target(modid: SPEC_FAILED, index: 0);
             return spec;
         }
@@ -1451,10 +1448,7 @@ pub fn solve(
                 let branches = pattern.items;
                 for (mut i = 0; i < branches.len; i++)
                 {
-                    let branch = branches[i];
-                    let items = (branch || fail()).items;
-                    let cond = items[0] || fail();
-
+                    let cond = branches[i].items[0] || fail();
                     if (evalTypePattern(cond))
                     {
                         caseIdx = i;
@@ -1535,10 +1529,10 @@ pub fn solve(
 
         // Add a default constructor.
         {
-            mut members: SolvedNode[];
+            shadow mut members: SolvedNode[];
             mut fields: StructField[];
 
-            let items = out.items;
+            shadow let items = out.items;
             for (mut i = 0; i < items.len; i++)
             {
                 let item = items[i];
@@ -1838,9 +1832,9 @@ pub fn solve(
         let modules = ctx.modules;
         for (mut i = 1; i < modules.len; i++)
         {
-            let module = modules[i];
-            if (module.fname == fname)
-                return module;
+            let m = modules[i];
+            if (m.fname == fname)
+                return m;
         }
 
         fail("Cannot locate: " ~ fname);
@@ -1848,8 +1842,8 @@ pub fn solve(
 
     fn solveImport(node: Node): SolvedNode
     {
-        let module = findModule(fuzimport: node.value);
-        Scope_import(module.modid);
+        let m = findModule(fuzimport: node.value);
+        Scope_import(m.modid);
 
         //
         return createEmpty();
@@ -2598,9 +2592,9 @@ pub fn solve(
 
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
-            for (mut i = i0; i < nodes.len; i++)
+            for (shadow mut i = i0; i < nodes.len; i++)
             {
-                let node = nodes[i];
+                shadow let node = nodes[i];
                 if (!node)
                     continue;
 
@@ -2619,9 +2613,9 @@ pub fn solve(
             // TODO fix this shit
             {
                 // Second pass - solve types.
-                for (mut i = i0; i < i1; i++)
+                for (shadow mut i = i0; i < i1; i++)
                 {
-                    let node = nodes[i];
+                    shadow let node = nodes[i];
                     if (node && node.kind != "fn")
                     {
                         _here       = node.token || _here;
@@ -2630,9 +2624,9 @@ pub fn solve(
                 }
 
                 // Third pass - prep fns.
-                for (mut i = i0; i < i1; i++)
+                for (shadow mut i = i0; i < i1; i++)
                 {
-                    let node = nodes[i];
+                    shadow let node = nodes[i];
                     if (node.kind == "fn")
                     {
                         _here       = node.token || _here;
@@ -2640,10 +2634,10 @@ pub fn solve(
                     }
                 }
 
-                // Finally - prep fns.
-                for (mut i = i0; i < i1; i++)
+                // Finally - solve fns.
+                for (shadow mut i = i0; i < i1; i++)
                 {
-                    let node = nodes[i];
+                    shadow let node = nodes[i];
                     if (node.kind == "fn")
                     {
                         _here       = node.token || _here;

@@ -23,10 +23,10 @@ fn update_file(
     dir_src !: string,
     dir_out !: string)
 {
-    let fname = ensure_local_fname(:fname, :dir_src);
+    shadow let fname = ensure_local_fname(:fname, :dir_src);
         fname.starts(with: dir_src) || throw("ensure_local_fname broken");
 
-    let fname = dir_out ~ fname.slice(dir_src.len);
+    shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file_read(fname) != data)
     {
         let err = file_write(fname, data);
@@ -53,12 +53,12 @@ fn getLinkOrder(modules: Module[]): i32[]
         for (mut i = 0; i < fuzimports.len; i++)
         {
             let fname = resolveFile_x(fuzimports[i]);
-            for (mut i = 1; i < modules.len; i++)
+            for (shadow mut i = 1; i < modules.len; i++)
             {
-                let module = modules[i];
-                if (module.fname == fname)
+                let m = modules[i];
+                if (m.fname == fname)
                 {
-                    visit(module);
+                    visit(m);
                     break;
                 }
             }
@@ -268,8 +268,8 @@ pub fn build(
             let module  = ctx.modules[i];
             let data    = i && module.out.cpp;
 
-            let fname   = data && module.fname ~ ".cpp";
-            let fname   = fname && update_file(
+            let fname           = data && module.fname ~ ".cpp";
+            shadow let fname    = fname && update_file(
                 :fname, :data,
                 :dir_src, dir_out: dir_cpp);
 
