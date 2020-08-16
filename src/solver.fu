@@ -1306,7 +1306,6 @@ pub fn solve(
 
         let scope0 = Scope_push(_scope);
         let scope_skip0 = _scope_skip;
-        let root_scope0 = _root_scope;
         ////////////////////////////////
 
         //
@@ -1316,8 +1315,6 @@ pub fn solve(
         _scope_skip = _root_scope && ScopeSkip(
             start: _root_scope,
               end: scope0);
-
-        _root_scope = ScopeMemo();
 
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
@@ -1480,7 +1477,6 @@ pub fn solve(
 
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
-        _root_scope = root_scope0;
         ////////////////////////////////
 
         return specialized.target;

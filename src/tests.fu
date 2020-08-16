@@ -2394,13 +2394,29 @@ pub fn runTests()
     ]);
 
 
-    // Let's start having fun.
+    // Explicit shadowing.
 
     ZERO(`
         let a = 1;
         shadow let a = a + 1;
         return a - 2;
     `);
+
+    ZERO(`
+        inline fn outer() inner(); // <- this reset root-scope
+        inline fn inner() {
+            // <- so main::i was visible here
+            for (mut i = 0; i < 10; i++) return i;
+            return 1;
+        }
+        fn main() {
+            for (mut i = 0; i < 10; i++) return outer();
+            return 1;
+        }
+    `);
+
+
+    // Let's start having fun.
 
     ZERO(`
         struct X { i: i32; };
