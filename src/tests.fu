@@ -854,14 +854,6 @@ pub fn runTests()
     `);
 
 
-    // Comma operator.
-
-    ZERO(`
-        mut a = 0;
-        return (a++, a - 1);
-    `);
-
-
     // Lint.
 
     FAIL(`
@@ -944,8 +936,10 @@ pub fn runTests()
         mut g = 0;
 
         m["hello"] = "world";
-        fn f() (
-            g++, "cruel world");
+        fn f() {
+            g++;
+            return "cruel world";
+        }
 
         m["hello"] ||= f();
         return g;
@@ -956,8 +950,10 @@ pub fn runTests()
         mut g = 0;
 
         m["_not_hello_"] = "world";
-        fn f() (
-            g++, "cruel world");
+        fn f() {
+            g++;
+            return "cruel world";
+        }
 
         m["hello"] ||= f();
         return g - 1;

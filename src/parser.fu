@@ -120,14 +120,12 @@ fn setupOperators()
 
     rightToLeft = false;
     binop([ "|>" ]);
-    binop([ "," ]);
 
     //
     return out;
 }
 
 let BINOP     = setupOperators();
-let P_COMMA   = BINOP.PRECEDENCE[","] || assert();
 
 
 // Commons.
@@ -432,8 +430,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             if (!_fnDepth || peek.kind == "id")
             {
                 if (v == "let")         return parseLetStmt();
-                if (v == "mut")         return (_idx--, parseLetStmt());
-                if (v == "ref")         return (_idx--, parseLetStmt());
+                if (v == "mut")         return { _idx--; parseLetStmt() };
+                if (v == "ref")         return { _idx--; parseLetStmt() };
                 if (v == "struct")      return parseStructDecl();
                 if (v == "pub")         return parsePub();
                 if (v == "shadow")      return parseShadow();
@@ -781,7 +779,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
-            : tryConsume("op", "=") && parseExpression(P_COMMA);
+            : tryConsume("op", "=") && parseExpression(P_RESET);
 
         if (numDollars0 != _dollars.len)    flags |= F_TEMPLATE;
         if (mustname)                       flags |= F_MUSTNAME;
@@ -797,7 +795,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("let", [ type, init ], flags, id);
     }
 
-    fn parseExpression(p1 = _precedence, mode!: i32 = 0): Node
+    fn parseExpression(p1 = _precedence, mode! = 0): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -912,14 +910,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                         ~ " and wraps around the whole expression."
                         ~ " Please parenthesize explicitly to make this obvious.");
 
-            if (v == ";") return (_idx--, miss);
-            if (v == ".") return (lint(), parseAccessExpression(head));
-            if (v == "(") return (lint(), parseCallExpression(head));
-            if (v == "[") return (lint(), parseIndexExpression(head));
+            if (v == ";") return { _idx--; miss() };
+            if (v == ".") return { lint(); parseAccessExpression(head) };
+            if (v == "(") return { lint(); parseCallExpression(head) };
+            if (v == "[") return { lint(); parseIndexExpression(head) };
 
             let p1 = BINOP.PRECEDENCE[v];
             if (p1)
-                return (_idx--, tryParseBinary(head, v, p1));
+                return { _idx--; tryParseBinary(head, v, p1) };
 
             if (POSTFIX.has(v))
                 return createCall(
@@ -931,7 +929,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
 
         // Backtrack.
-        return (_idx--, miss);
+        return { _idx--; miss() };
     }
 
     fn parseExpressionHead(): Node
@@ -992,24 +990,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseParens(): Node
     {
-        mut items: Node[] = [];
-
-        do
-        {
-            items.push(parseExpression(P_COMMA));
-        }
-        while (tryConsume("op", ","));
-
+        let out = parseExpression(P_RESET);
         consume("op", ")");
-
-        return items.len > 1
-             ? createComma(items)
-             : items[0];
-    }
-
-    fn createComma(nodes: Node[]): Node
-    {
-        return make("comma", nodes);
+        return out;
     }
 
     fn parseTypeParam(): Node
@@ -1038,7 +1021,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parsePrefix(mut op: string): Node
     {
-        PREFIX.has(op) || (_idx--, fail());
+        PREFIX.has(op) || { _idx--; fail() };
 
         if (op == "&" && tryConsume("id", "mut"))
             op = "&mut";
@@ -1178,7 +1161,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 flags |= F_NAMED_ARGS;
             }
 
-            let expr = parseExpression(P_COMMA);
+            let expr = parseExpression(P_RESET);
             if (autoName)
                 name = getAutoName(expr);
 
@@ -1282,7 +1265,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseReturn(): Node
     {
-        _fnDepth > 0 || (_idx--, fail());
+        _fnDepth > 0 || { _idx--; fail() };
         _numReturns++;
 
         if (tryConsume("op", ";"))

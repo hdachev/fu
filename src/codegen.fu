@@ -1520,7 +1520,6 @@ pub fn cpp_codegen(
 
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);
-        if (k == "comma")       return cgParens(node);
         if (k == "parens")      return cgParens(node);
         if (k == "label")       return cgParens(node);
 
