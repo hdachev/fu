@@ -827,7 +827,7 @@ struct sf_parse
         consume("op"_fu, ";"_fu);
         return ret;
     };
-    s_Node parseLet(const bool argdecl)
+    s_Node parseLet(const bool xqmark)
     {
         int flags = F_LOCAL;
         const int numDollars0 = _dollars.size();
@@ -837,6 +837,9 @@ struct sf_parse
         if (tryConsume("id"_fu, "implicit"_fu))
             flags |= F_IMPLICIT;
 
+        if (tryConsume("id"_fu, "shadow"_fu))
+            flags |= F_SHADOW;
+
         if (tryConsume("id"_fu, "mut"_fu))
             flags |= F_MUT;
 
@@ -844,8 +847,8 @@ struct sf_parse
             flags |= F_REF;
 
         fu_STR id = consume("id"_fu, fu::view<std::byte>{}).value;
-        s_Token optional = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
-        s_Token mustname = ([&]() -> s_Token { if (argdecl) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
+        s_Token optional = ([&]() -> s_Token { if (xqmark) return tryConsume("op"_fu, "?"_fu); else return s_Token{}; }());
+        s_Token mustname = ([&]() -> s_Token { if (xqmark) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Node type = tryPopTypeAnnot();
         s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_RESET), 0); else return s_Node{}; }()));
         if ((numDollars0 != _dollars.size()))
@@ -853,9 +856,6 @@ struct sf_parse
 
         if (mustname)
             flags |= F_MUSTNAME;
-
-        if (_fnDepth)
-            flags |= F_SHADOW;
 
         return createLet(id, flags, type, init);
     };
@@ -1281,7 +1281,6 @@ struct sf_parse
     s_Node parseFor()
     {
         consume("op"_fu, "("_fu);
-        tryConsume("id"_fu, "let"_fu);
         s_Node init = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseLetStmt(); else return s_Node{}; }());
         s_Node cond = ([&]() -> s_Node { if (!tryConsume("op"_fu, ";"_fu)) return parseExpressionStatement(); else return s_Node{}; }());
         const s_Token& token = tokens[_idx];

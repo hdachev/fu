@@ -745,8 +745,8 @@ void runTests()
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        type X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n\n        fn list(): i32[][] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
     ZERO("\n        fn if_first(a: $T[]) a && a[0];\n        type X = i32[];\n\n        fn list(): X[] {\n            return [[ 3 ]];\n        }\n\n        fn hello() list.if_first.if_first;\n        fn main() hello - 3;\n    "_fu);
-    ZERO("\n        let a = [1, 2];\n        fn eq(a: i32[], b: i32[]) a == b;\n        fn main() eq(a, a) ? 0 : 1;\n    "_fu);
-    ZERO("\n        let a = [1, 2];\n        fn eq(a: $T[], b: $T[]) a == b;\n        fn main() eq(a, a) ? 0 : 1;\n    "_fu);
+    ZERO("\n        let arr = [1, 2];\n        fn eq(a: i32[], b: i32[]) a == b;\n        fn main() eq(arr, arr) ? 0 : 1;\n    "_fu);
+    ZERO("\n        let arr = [1, 2];\n        fn eq(a: $T[], b: $T[]) a == b;\n        fn main() eq(arr, arr) ? 0 : 1;\n    "_fu);
     ZERO("\n        fn test(hey: [i32])\n            hey[0] + hey[1];\n\n        fn main()\n            test([-1, +1]);\n    "_fu);
     ZERO("\n        fn test(hey: &mut [i32])\n            hey[0] += hey[1];\n\n        fn main() {\n            mut hey = [-1, +1];\n            return hey.test();\n        }\n    "_fu);
     ZERO("\n        fn test(i: i32) [ i, i + 1 ];\n        fn main() test(0)[1] - 1;\n    "_fu);
@@ -791,7 +791,8 @@ void runTests()
     ZERO("\n        import vec3;\n\n        fn main() vec3.maxc.i32;\n    "_fu);
     ZERO("\n        fn main() ::vec3.maxc.i32;\n    "_fu);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn _0(i: i32) i + 1;\n    "_fu, "\n        fn main() (-1).::_0;\n    "_fu } });
-    ZERO("\n        let a =     1;\n        let a = a + 1;\n        return  a - 2;\n    "_fu);
+    ZERO("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu);
+    ZERO("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu);
     ZERO("\n        struct X { i: i32; };\n\n        fn        ++(using x: &mut X) ++i;\n        fn postfix++(using x: &mut X) i++;\n\n        fn main() {\n            mut x: X;\n            let a = x++;\n            let b = ++x;\n            return a || b - 2;\n        }\n    "_fu);
     FAIL("\n        //\n        // The -1.abs problem.\n        //\n        // Ruby lexes the minus into the numeric literal.\n        //  This is kinda inconsistent, altough it does make sense.\n        //\n        // Rust & all c-likes lex to -abs(1).\n        //  Rust linters warn about this.\n        //\n        // One thing we can do is change the precedence of some unaries\n        //  to above method call - others, like ! benefit from usual precedence.\n        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,\n        //    but the & op usually works the way you want it to.\n        //     So introducing more precedence rules is a really questionable idea.\n        //\n        // We'll go the rust way for starters,\n        //  this will be a compile time error for now.\n        //\n        fn test()\n        //*F\n            -1.0\n        /*/\n            (-1.0)\n        //*/\n                .abs;\n\n        fn main() test ? 0 : 7;\n    "_fu);
     ZERO("\n        fn test() [] -> i32;\n        fn main() test;\n    "_fu);

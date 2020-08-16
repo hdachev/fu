@@ -1956,10 +1956,8 @@ struct sf_solve
         std::swap(_current_fn, current_fn0);
         const s_ScopeMemo scope0 = Scope_push(_scope);
         s_ScopeSkip scope_skip0 { _scope_skip };
-        const s_ScopeMemo root_scope0 { _root_scope };
         fu_MAP<fu_STR, s_Type> typeParams {};
         _scope_skip = ([&]() -> s_ScopeSkip { if (_root_scope) return s_ScopeSkip { s_ScopeMemo(_root_scope), s_ScopeMemo(scope0) }; else return s_ScopeSkip{}; }());
-        _root_scope = s_ScopeMemo{};
         for (int i = 0; (i < tEmplate.imports.size()); i++)
             Scope_import(tEmplate.imports[i]);
 
@@ -2063,7 +2061,6 @@ struct sf_solve
         std::swap(_current_fn, current_fn0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
-        _root_scope = root_scope0;
         return std::move(specialized.target);
     };
     s_SolvedNode solveTypeCtor(const s_Node& node)
