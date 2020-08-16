@@ -1096,24 +1096,46 @@ struct sf_cpp_codegen
         };
         return src;
     };
-    fu_STR blockWrap(const fu_VEC<s_SolvedNode>& nodes, const bool skipCurlies)
+    fu_STR blockWrap(const fu_VEC<s_SolvedNode>& nodes, const bool skipCurlies, const bool gnuStmtExpr)
     {
         fu_STR indent0 { _indent };
         (_indent += "    "_fu);
+        fu_STR open = (gnuStmtExpr ? "(__extension__ ({"_fu : "{"_fu);
+        fu_STR close = (gnuStmtExpr ? "}))"_fu : "}"_fu);
         fu_STR src = cgStatements(nodes);
         if ((!skipCurlies || (nodes.size() != 1) || ((nodes[0].kind != "return"_fu) && (nodes[0].kind != "call"_fu))))
-            src = ((((indent0 + "{"_fu) + src) + indent0) + "}"_fu);
+            src = ((((indent0 + open) + src) + indent0) + close);
 
         _indent = indent0;
         return src;
     };
     fu_STR blockWrapSubstatement(const s_SolvedNode& node)
     {
-        return ((node.kind != "block"_fu) ? blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, true) : ((node.items.size() == 1) ? blockWrapSubstatement(node.items[0]) : cgBlock(node)));
+        return ((node.kind != "block"_fu) ? blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, true, bool{}) : ((node.items.size() == 1) ? blockWrapSubstatement(node.items[0]) : cgBlock(node, M_STMT)));
     };
-    fu_STR cgBlock(const s_SolvedNode& block)
+    fu_STR cgBlock(const s_SolvedNode& block, const int mode)
     {
-        return blockWrap(block.items, false);
+        bool expr = !(mode & M_STMT);
+        if (expr)
+        {
+            const auto& isExpr = [&](const s_SolvedNode& node) -> bool
+            {
+                return (node.kind == "call"_fu);
+            };
+            bool ok = true;
+            for (int i = 0; (i < block.items.size()); i++)
+            {
+                if (!isExpr(block.items[i]))
+                {
+                    ok = false;
+                    break;
+                };
+            };
+            if (ok)
+                return cgParens(block);
+
+        };
+        return blockWrap(block.items, bool{}, !(mode & M_STMT));
     };
     fu_STR cgParens(const s_SolvedNode& node)
     {
@@ -1254,7 +1276,7 @@ struct sf_cpp_codegen
         ((_clsrN == 0) || fail(fu_STR{}));
         _clsrN--;
         fu_STR structName = ("sf_"_fu + id);
-        fu_STR src = ((("\nnamespace {\n\nstruct "_fu + structName) + blockWrap(head, false)) + ";\n"_fu);
+        fu_STR src = ((("\nnamespace {\n\nstruct "_fu + structName) + blockWrap(head, bool{}, bool{})) + ";\n"_fu);
         
         {
             fu_VEC<fu_STR> args {};
@@ -1313,9 +1335,9 @@ struct sf_cpp_codegen
             ensureFwdDecl(fn.target);
 
         if ((body.kind == "block"_fu))
-            (src += cgBlock(body));
+            (src += cgBlock(body, M_STMT));
         else
-            (src += blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { body } }, false));
+            (src += blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { body } }, bool{}, bool{}));
 
         _fnN = f0;
         _clsrN = c0;
@@ -1928,12 +1950,6 @@ struct sf_cpp_codegen
     fu_STR cgNode(const s_SolvedNode& node, const int mode)
     {
         const fu_STR& k = node.kind;
-        if ((k == "root"_fu))
-            return cgRoot(node);
-
-        if ((k == "block"_fu))
-            return cgBlock(node);
-
         if ((k == "fn"_fu))
             return cgFn(node);
 
@@ -1988,8 +2004,11 @@ struct sf_cpp_codegen
         if ((k == "definit"_fu))
             return cgDefaultInit(node, mode);
 
-        if ((k == "empty"_fu))
-            return cgEmpty();
+        if ((k == "root"_fu))
+            return cgRoot(node);
+
+        if ((k == "block"_fu))
+            return cgBlock(node, mode);
 
         if ((k == "comma"_fu))
             return cgParens(node);
@@ -2001,6 +2020,9 @@ struct sf_cpp_codegen
             return cgParens(node);
 
         if ((k == "struct"_fu))
+            return cgEmpty();
+
+        if ((k == "empty"_fu))
             return cgEmpty();
 
         if ((k == "copy"_fu))

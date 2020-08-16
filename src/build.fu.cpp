@@ -666,7 +666,8 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, const fu_STR&
         (O_lvl += "-Dfu_RETAIL "_fu);
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
-    fu_STR GCC_CMD = ((("g++ -std=c++1z "_fu + O_lvl) + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
+    fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
+    fu_STR GCC_CMD = ((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wno-parentheses-equality "_fu);
     fu_VEC<fu_STR> Fs {};
     int len_all {};
     fu_STR fulib_cpp = fu::file_read(fulib);
@@ -674,7 +675,7 @@ void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, const fu_STR&
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = (i ? module.out.cpp : fulib_cpp);
-        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCC_CMD + cpp))) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
+        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCChash + cpp))) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
         Fs.push(F);
         len_all += cpp.size();
     };

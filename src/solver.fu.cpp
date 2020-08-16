@@ -60,8 +60,10 @@ fu_STR humanizeType(const s_Type&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 fu_STR serializeType(const s_Type&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
+inline const s_Node& if_last_zET6(const fu_VEC<s_Node>&);
 inline const s_Node& only_zET6(const fu_VEC<s_Node>&);
 inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>&);
+inline const s_SolvedNode& last_4UAi(const fu_VEC<s_SolvedNode>&);
 inline fu_STR& last_Kz6K(fu_VEC<fu_STR>&);
 inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
@@ -807,6 +809,27 @@ inline const int q_arithmetic = (1 << 5);
 inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
                                 #endif
 
+                                #ifndef DEFt_if_last_zET6
+                                #define DEFt_if_last_zET6
+inline const s_Node& if_last_zET6(const fu_VEC<s_Node>& s)
+{
+    return ([&]() -> const s_Node& { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<s_Node>::value; }());
+}
+                                #endif
+
+                                #ifndef DEF_F_NODISCARD
+                                #define DEF_F_NODISCARD
+inline const int F_NODISCARD = (1 << 11);
+                                #endif
+
+                                #ifndef DEFt_last_4UAi
+                                #define DEFt_last_4UAi
+inline const s_SolvedNode& last_4UAi(const fu_VEC<s_SolvedNode>& s)
+{
+    return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
+}
+                                #endif
+
                                 #ifndef DEF_Arithmetic
                                 #define DEF_Arithmetic
 inline const int Arithmetic = (Primitive | q_arithmetic);
@@ -1540,7 +1563,7 @@ struct sf_solve
             return solveRoot(node);
 
         if ((k == "block"_fu))
-            return solveBlock(node);
+            return solveBlock(node, type);
 
         if ((k == "label"_fu))
             return solveComma(node);
@@ -1573,7 +1596,7 @@ struct sf_solve
             return solveReturn(node);
 
         if ((k == "loop"_fu))
-            return solveBlock(node);
+            return solveBlock(node, s_Type{});
 
         if ((k == "break"_fu))
             return solveJump(node);
@@ -1647,18 +1670,21 @@ struct sf_solve
     };
     s_SolvedNode solveRoot(const s_Node& node)
     {
-        return solved(node, t_void, solveNodes(node.items, t_void));
+        return solved(node, t_void, solveNodes(node.items, t_void, s_Type{}, bool{}));
     };
-    s_SolvedNode solveBlock(const s_Node& node)
+    s_SolvedNode solveBlock(const s_Node& node, const s_Type& type)
     {
         const s_ScopeMemo scope0 = Scope_push(_scope);
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, t_void));
+        const bool expr = !!(if_last_zET6(node.items).flags & F_NODISCARD);
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, t_void, type, expr);
+        const s_Type& type_1 = ((expr && items.size()) ? last_4UAi(items).type : t_void);
+        s_SolvedNode out = solved(node, type_1, items);
         Scope_pop(_scope, scope0);
         return out;
     };
     s_SolvedNode solveComma(const s_Node& node)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{}, s_Type{}, bool{});
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
         return solved(node, (last.type ? last.type : fail(fu_STR{})), items);
     };
@@ -2160,7 +2186,7 @@ struct sf_solve
         };
         s_Type prevType { _current_fn.items.mutref(retIdx()).type };
         ((node.items.size() <= 1) || fail(fu_STR{}));
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType, s_Type{}, bool{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
         if ((killedBy(next.type.lifetime, _return_idx.items_len) && (next.type.value.quals & q_ref)))
         {
@@ -2459,7 +2485,7 @@ struct sf_solve
             (target || fail(fu_STR{}));
         };
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
-        fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{});
+        fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{}, s_Type{}, bool{});
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags, target);
         s_Overload callTarg = GET(callTargIdx, module, ctx);
         while (callTarg.partial)
@@ -2489,7 +2515,7 @@ struct sf_solve
         if ((!itemType && isStruct(type)))
             return solveCall(node, lookupStruct(type, module, ctx).ctor);
 
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType);
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType, s_Type{}, bool{});
         int startAt = 0;
         if ((!itemType && items.size()))
         {
@@ -2589,7 +2615,7 @@ struct sf_solve
     };
     s_SolvedNode solveOr(const s_Node& node, s_Type&& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type);
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{});
         if (is_void(type))
             type = t_bool;
 
@@ -2634,7 +2660,7 @@ struct sf_solve
     };
     s_SolvedNode solveAnd(const s_Node& node, s_Type&& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type);
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{});
         if (is_void(type))
             type = t_bool;
 
@@ -2732,7 +2758,7 @@ struct sf_solve
     {
         return s_SolvedNode { (nrvo ? "nrvo"_fu : "move"_fu), 0, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
     };
-    fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type)
+    fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type_all, const s_Type& type_last, const bool use_type_last)
     {
         fu_VEC<s_SolvedNode> result {};
         const s_TokenIdx here0 { _here };
@@ -2747,7 +2773,7 @@ struct sf_solve
             if (!isUnordered(node.kind))
             {
                 _here = (node.token ? node.token : _here);
-                result.mutref(i) = solveNode(node, type);
+                result.mutref(i) = solveNode(node, (((i == (nodes.size() - 1)) && use_type_last) ? type_last : type_all));
                 continue;
             };
             const int i0 = i;

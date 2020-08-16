@@ -798,6 +798,7 @@ void runTests()
     ZERO("\n        fn test() [] -> i32;\n        fn main() test;\n    "_fu);
     ZERO("\n        type Test = i8;\n        fn main() 256.Test.i32;\n    "_fu);
     FAIL("\n        fn test(a: $A, b: $B) b + //*F\n            a;\n            /*/\n            $B(a);\n            //*/\n        fn main() i8(-1).test(+1);\n    "_fu);
+    ZERO("\n        let x = { mut z = 0; z++; z };\n        return x - 1;\n    "_fu);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ;\n            /*/\n            .i32;\n            //*/\n    "_fu);
 }

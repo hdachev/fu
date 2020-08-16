@@ -172,6 +172,11 @@ inline const int F_ARG = (1 << 9);
 inline const int F_FIELD = (1 << 10);
                                 #endif
 
+                                #ifndef DEF_F_NODISCARD
+                                #define DEF_F_NODISCARD
+inline const int F_NODISCARD = (1 << 11);
+                                #endif
+
                                 #ifndef DEF_F_MUT
                                 #define DEF_F_MUT
 inline const int F_MUT = (1 << 16);
@@ -456,12 +461,12 @@ struct sf_parse
     s_Node parseRoot()
     {
         _loc = _idx;
-        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, fu_STR{}), 0, fu_STR{});
+        s_Node out = make("root"_fu, parseBlockLike("eof"_fu, "eof"_fu, false), 0, fu_STR{});
         return out;
     };
     s_Node parseBlock()
     {
-        return createBlock(parseBlockLike("op"_fu, "}"_fu, fu_STR{}));
+        return createBlock(parseBlockLike("op"_fu, "}"_fu, false));
     };
     s_Node createBlock(const fu_VEC<s_Node>& items)
     {
@@ -479,7 +484,7 @@ struct sf_parse
     {
         fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
         consume("op"_fu, "{"_fu);
-        fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, "struct"_fu);
+        fu_VEC<s_Node> items = parseBlockLike("op"_fu, "}"_fu, true);
         s_Node sTruct = make("struct"_fu, items, 0, name);
         return sTruct;
     };
@@ -490,7 +495,7 @@ struct sf_parse
         consume("op"_fu, ";"_fu);
         return member;
     };
-    fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const fu_STR& mode)
+    fu_VEC<s_Node> parseBlockLike(const fu_STR& endKind, const fu_STR& endVal, const bool sTruct)
     {
         const int line0 = tokens[_idx].line;
         const int col00 = _col0;
@@ -509,8 +514,8 @@ struct sf_parse
             };
             _col0 = token.col;
             ((_col0 > col00) || fail_Lint((((("Bad indent, expecting more than "_fu + col00) + ". Block starts on line "_fu) + line0) + "."_fu)));
-            s_Node expr = (mode ? parseStructItem() : parseStatement());
-            ((expr.kind != "call"_fu) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || fail_Lint("Orphan pure-looking expression."_fu));
+            s_Node expr = (sTruct ? parseStructItem() : parseStatement());
+            ((expr.kind != "call"_fu) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.flags & F_NODISCARD) || (expr.items.size() > 1) || fail_Lint("Orphan pure-looking expression."_fu));
             if ((expr.kind != "empty"_fu))
                 items.push(expr);
 
@@ -659,7 +664,14 @@ struct sf_parse
     s_Node parseExpressionStatement()
     {
         s_Node expr = parseExpression(int(P_RESET), 0);
-        consume("op"_fu, ";"_fu);
+        const s_Token& peek = tokens[_idx];
+        if (((peek.kind == "op"_fu) && (peek.value == "}"_fu)))
+            expr.flags |= F_NODISCARD;
+        else if (((peek.kind == "op"_fu) && (peek.value == ";"_fu)))
+            _idx++;
+        else
+            fail_Lint("Missing semicollon."_fu);
+
         return expr;
     };
     s_Node parseFnDecl(int flags)
@@ -984,6 +996,9 @@ struct sf_parse
                 const fu_STR& v = token.value;
                 if ((v == "("_fu))
                     return parseParens();
+
+                if ((v == "{"_fu))
+                    return parseBlock();
 
                 if ((v == "["_fu))
                     return parseArrayLiteral();
