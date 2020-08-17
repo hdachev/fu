@@ -596,15 +596,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             flags |= F_FULLY_TYPED;
 
         ////////////////////////////////
-        {
-            _fnDepth--;
-            _numReturns = numReturns0;
+        _fnDepth--;
+        _numReturns = numReturns0;
+        ////////////////////////////////
 
-            if (_dollars.len > dollars0.len)
-                flags |= F_TEMPLATE;
+        if (_dollars.len > dollars0.len)
+            flags |= F_TEMPLATE;
 
-            _dollars = dollars0;
-        }
+        ////////////////////////////////
+        _dollars = dollars0;
         ////////////////////////////////
 
         return make("fn", items, flags, name);
@@ -705,7 +705,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             mut arg = parseLet(xqmark: true);
 
-            if (!arg.items[LET_TYPE])
+            let untyped = !arg.items[LET_TYPE];
+            if (untyped)
                 outFlags |= F_UNTYPED_ARGS;
 
             if (arg.items[LET_INIT])
@@ -718,6 +719,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             else if (defaults)
             {
                 fail("TODO non-trailing default arguments");
+            }
+            else if (untyped)
+            {
+                outFlags |= F_TEMPLATE;
             }
 
             arg.flags &= ~F_LOCAL;
@@ -765,8 +770,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         mut flags = F_LOCAL;
 
-        let numDollars0 = _dollars.len;
-
         if (tryConsume("id", "using"   ))   flags |= F_USING;
         if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
         if (tryConsume("id", "shadow"  ))   flags |= F_SHADOW;
@@ -782,7 +785,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             ? createDefinit()
             : tryConsume("op", "=") && parseExpression(P_RESET);
 
-        if (numDollars0 != _dollars.len)    flags |= F_TEMPLATE;
         if (mustname)                       flags |= F_MUSTNAME;
 
         return createLet(id, flags, type, init);

@@ -402,24 +402,25 @@ pub fn runTests()
         return x / 2 - 1;
     `);
 
+    ZERO(`
+        fn hey(a) a * a;
+        fn main() 0.hey;
+    `);
+
     // FAIL(`
     //     fn div3by(a: i32) 3 / a; //ERR overload
     //     return div3by(2) - 1;
-    // )");
+    // `);
 
     ZERO(`
         fn div3by(a: $T) 3 / a;
         return div3by(2) - 1;
     `);
 
-    // It's too early for this test,
-    //  let's get everything else working first,
-    //   not smart working on supersugar so early.
-    //
-    // ZERO(`
-    //     fn div3by(a) 3 / a;
-    //     return div3by(2) - 1;
-    // )");
+    ZERO(`
+        fn div3by(a) 3 / a;
+        return div3by(2) - 1;
+    `);
 
     ZERO(`
         fn add3(a: $T, b = 3) a + b;
