@@ -350,30 +350,6 @@ pub fn solve(
             if (!isAssignableAsArgument(expect.type, actual))
                 return;
 
-            // Enforce no-collide.
-            if (overload.min < 2)
-            {
-                // Scan through -
-                //  no other arity-0 entries are allowable.
-                for (mut i = 0; i < _scope.items.len; i++)
-                {
-                    if (i == _scope_skip.start.items_len)
-                    {
-                        i = _scope_skip.end.items_len;
-                        if (i >= _scope.items.len)
-                            break;
-                    }
-
-                    let o = _scope.items[i];
-                    if (o.id == item.id)
-                    {
-                        let other = GET(o.target);
-                        if (other.min < 1)
-                            fail("`using` ambiguity: `" ~ item.id ~ "`.");
-                    }
-                }
-            }
-
             //
             Partial(item.id, viaIdx, overloadIdx);
         }
