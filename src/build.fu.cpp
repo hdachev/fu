@@ -606,10 +606,10 @@ struct sf_getLinkOrder
             fu_STR fname = resolveFile_x(fuzimports[i], ctx);
             for (int i_1 = 1; (i_1 < modules.size()); i_1++)
             {
-                const s_Module& module_1 = modules[i_1];
-                if ((module_1.fname == fname))
+                const s_Module& m = modules[i_1];
+                if ((m.fname == fname))
                 {
-                    visit(module_1, ctx);
+                    visit(m, ctx);
                     break;
                 };
             };

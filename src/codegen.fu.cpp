@@ -806,10 +806,10 @@ struct sf_cpp_codegen
     int _clsrN {};
     int _faasN {};
     int _hasMain {};
-    s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
+    s_Overload GET(const s_Target& target)
     {
         ((target.index > 0) || fu_ASSERT());
-        const s_Module& m = ((target.modid == module_1.modid) ? module_1 : ctx_1.modules[target.modid]);
+        const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
         return s_Overload(m.out.solve.scope.overloads[(target.index - 1)]);
     };
     [[noreturn]] fu::never fail(const fu_STR& reason)
@@ -1008,9 +1008,9 @@ struct sf_cpp_codegen
             const uint32_t c_1 = uint32_t(c);
             const uint32_t b0 = ((c_1 >> 0u) & 0xfu);
             const uint32_t b1 = ((c_1 >> 4u) & 0xfu);
-            const auto& hex = [&](const uint32_t c_2) -> std::byte
+            const auto& hex = [&](const uint32_t x) -> std::byte
             {
-                return ((c_2 < 10u) ? std::byte((uint32_t(std::byte('0')) + c_2)) : std::byte((uint32_t(std::byte('A')) + c_2)));
+                return ((x < 10u) ? std::byte((uint32_t(std::byte('0')) + x)) : std::byte((uint32_t(std::byte('A')) + x)));
             };
             str = ((((fu::get_view_mut(str, 0, i) + std::byte('b')) + hex(b0)) + hex(b1)) + fu::get_view_mut(str, (i + 1), str.size()));
         };
@@ -1165,7 +1165,7 @@ struct sf_cpp_codegen
         const s_SolvedNode& ret = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } fail(fu_STR{}); }());
         const int closure = ([&]() -> int { if (!!_clsrN) return (fn.flags & F_CLOSURE); else return int{}; }());
         fu_STR annot = typeAnnot((ret.type ? ret.type : fail(fu_STR{})), (M_RETVAL | (closure ? int(M_CLOSURE) : 0)));
-        s_Overload overload = GET(fn.target, module, ctx);
+        s_Overload overload = GET(fn.target);
         fu_STR id { overload.name };
         if (((id == "main"_fu) && !closure && !_faasN))
         {
@@ -1198,7 +1198,7 @@ struct sf_cpp_codegen
     };
     void ensureFwdDecl(const s_Target& target)
     {
-        s_Overload overload = GET(target, module, ctx);
+        s_Overload overload = GET(target);
         if (((overload.kind != "fn"_fu) || (overload.name == "main"_fu)))
             return;
 
@@ -1249,7 +1249,7 @@ struct sf_cpp_codegen
             return fu_STR{};
 
         const fu_VEC<s_SolvedNode>& items = body.items;
-        s_Overload overload = GET(fn.target, module, ctx);
+        s_Overload overload = GET(fn.target);
         const fu_STR& id = overload.name;
         bool hasClosuresInHeader = false;
         int end = 0;
@@ -1284,8 +1284,9 @@ struct sf_cpp_codegen
             {
                 const s_SolvedNode& argNode = fn.items[i];
                 const s_Type& argType = argNode.type;
-                const fu_STR& arg = argNode.value;
-                args.push(((argType.value.quals & q_ref) ? fu_STR(arg) : cgSteal(arg)));
+                s_Overload o = GET(argNode.target);
+                const fu_STR& argName = o.name;
+                args.push(((argType.value.quals & q_ref) ? fu_STR(argName) : cgSteal(argName)));
             };
             (src += "\n} // namespace\n\n"_fu);
             (src += cgFnSignature(fn));
@@ -1322,7 +1323,7 @@ struct sf_cpp_codegen
 
         const fu_VEC<s_SolvedNode>& items = fn.items;
         const s_SolvedNode& body = items[(items.size() + FN_BODY_BACK)];
-        s_Overload overload = GET(fn.target, module, ctx);
+        s_Overload overload = GET(fn.target);
         const fu_STR& id = overload.name;
         if (!body)
             return (("\n// fn "_fu + id) + " has no body.\n"_fu);
@@ -1350,7 +1351,7 @@ struct sf_cpp_codegen
     };
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
-        s_Overload overload = GET(node.target, module, ctx);
+        s_Overload overload = GET(node.target);
         const fu_STR& id = (overload.name ? overload.name : fail(fu_STR{}));
         fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id));
@@ -1400,7 +1401,7 @@ struct sf_cpp_codegen
             return;
 
         (_ffwd.upsert(key) = fu_STR{});
-        s_Overload o = GET(target, module, ctx);
+        s_Overload o = GET(target);
         cgGlobal(o.solved);
     };
     fu_STR cgReturn(const s_SolvedNode& node)
@@ -1506,7 +1507,7 @@ struct sf_cpp_codegen
     };
     fu_STR cgCall(const s_SolvedNode& node, const int mode)
     {
-        s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target, module, ctx); if (_) return _; } fail(fu_STR{}); }());
+        s_Overload target = ([&]() -> s_Overload { { s_Overload _ = GET(node.target); if (_) return _; } fail(fu_STR{}); }());
         fu_VEC<fu_STR> items = cgNodes(node.items, 0);
         if (((target.kind == "__native"_fu) && target.tEmplate.node.items))
         {
@@ -1846,8 +1847,7 @@ struct sf_cpp_codegen
                         if (i_1)
                             (src += " && "_fu);
 
-                        const s_SolvedNode& item_1 = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items_1[i_1]; if (_) return _; } fail(fu_STR{}); }());
-                        (src += cgNode(item_1, M_RETBOOL));
+                        (src += cgNode(([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items_1[i_1]; if (_) return _; } fail(fu_STR{}); }()), M_RETBOOL));
                     };
                     (src += ")"_fu);
                 };
@@ -1877,7 +1877,7 @@ struct sf_cpp_codegen
         if ((node.kind != "call"_fu))
             return false;
 
-        s_Overload t = GET(node.target, module, ctx);
+        s_Overload t = GET(node.target);
         if ((t.kind == "field"_fu))
             return isFieldChain(only_4UAi(node.items));
 

@@ -579,6 +579,7 @@ void runTests()
     ZERO("\n        struct Range {\n            min: i32;\n            max: i32;\n        }\n\n        fn size(using r: Range)\n            max - min;\n\n        return size(Range(14, 21)) - 7;\n    "_fu);
     ZERO("\n        struct X {\n            a: i32;\n        }\n\n        fn test(using x: X, b: i32) a + b;\n        fn hey(using x: X) test(-1);\n\n        return X(1).hey;\n    "_fu);
     ZERO("\n        struct Pos {\n            x: i32;\n        }\n\n        struct Player {\n            using pos: Pos;\n        }\n\n        fn dist(using p: Player, other: Player)\n            x - other.x;\n\n        let a = Player(Pos(10));\n        let b = Player(Pos( 4));\n\n        return dist(a, b) - 6;\n    "_fu);
+    FAIL("\n        struct A { x: i32; y: i32; };\n        struct B { x: i32; z: i32; };\n        fn test(using a: A, using b: B)\n            //*F\n            x + z;\n            /*/\n            y + z;\n            //*/\n\n        fn main() test(A(1, 1), B(-1, -1));\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu);
     ZERO("\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu);
@@ -590,7 +591,9 @@ void runTests()
     ZERO("\n        struct Test {\n            x: &i32;\n        }\n\n        let a = 1;\n        let test = Test(a);\n\n        return test.x - 1;\n    "_fu);
     ZERO("\n        mut a = 0;\n        mut b = a;\n        b++;\n        let c = a = b;\n\n        return a - c;\n    "_fu);
     ZERO("\n        let x = 3;\n        return x / 2 - 1;\n    "_fu);
+    ZERO("\n        fn hey(a) a * a;\n        fn main() 0.hey;\n    "_fu);
     ZERO("\n        fn div3by(a: $T) 3 / a;\n        return div3by(2) - 1;\n    "_fu);
+    ZERO("\n        fn div3by(a) 3 / a;\n        return div3by(2) - 1;\n    "_fu);
     ZERO("\n        fn add3(a: $T, b = 3) a + b;\n        struct v1 { x: i32; };\n        fn +(a: v1, b: i32) v1(a.x + b);\n        fn main() add3(2.v1).x - 5;\n    "_fu);
     ZERO("\n        mut arr = [0, 1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        mut arr: i32[] = [1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);

@@ -1025,12 +1025,12 @@ struct sf_solve
         (_scope.imports += modid);
         _Scope_import__forceCopy(modid);
     };
-    s_Overload GET(const s_Target& target, const s_Module& module_1, const s_Context& ctx_1)
+    s_Overload GET(const s_Target& target)
     {
-        if ((target.modid == module_1.modid))
+        if ((target.modid == module.modid))
             return s_Overload(_scope.overloads[(target.index - 1)]);
 
-        return s_Overload(ctx_1.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
+        return s_Overload(ctx.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
     };
     s_Overload& GET_mut(const s_Target& target)
     {
@@ -1093,10 +1093,10 @@ struct sf_solve
         fu_VEC<s_Argument> args {};
         for (int i = 0; (i < max); i++)
         {
-            const s_SolvedNode& node_1 = argNodes[i];
-            ((node_1.kind == "let"_fu) || fail(fu_STR{}));
-            const bool isImplicit = !!(node_1.flags & F_IMPLICIT);
-            s_Argument arg = s_Argument { fu_STR((node_1.value ? node_1.value : fail(fu_STR{}))), s_Type((node_1.type ? node_1.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return node_1.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(node_1.flags) };
+            const s_SolvedNode& argNode = argNodes[i];
+            ((argNode.kind == "let"_fu) || fail(fu_STR{}));
+            const bool isImplicit = !!(argNode.flags & F_IMPLICIT);
+            s_Argument arg = s_Argument { fu_STR((argNode.value ? argNode.value : fail(fu_STR{}))), s_Type((argNode.type ? argNode.type : fail(fu_STR{}))), s_SolvedNode(([&]() -> const s_SolvedNode& { if (!isImplicit) return argNode.items[LET_INIT]; else return fu::Default<s_SolvedNode>::value; }())), int(argNode.flags) };
             if ((!arg.dEfault && !isImplicit))
                 min++;
 
@@ -1167,8 +1167,8 @@ struct sf_solve
     };
     s_Target Partial(const fu_STR& id, const s_Target& viaIdx, const s_Target& overloadIdx)
     {
-        s_Overload via = GET(viaIdx, module, ctx);
-        s_Overload overload = GET(overloadIdx, module, ctx);
+        s_Overload via = GET(viaIdx);
+        s_Overload overload = GET(overloadIdx);
         fu_STR kind = "p-unshift"_fu;
         int min = (overload.min - 1);
         int max = (overload.max - 1);
@@ -1188,7 +1188,7 @@ struct sf_solve
     };
     void scope_using(const s_Target& viaIdx)
     {
-        s_Overload via = GET(viaIdx, module, ctx);
+        s_Overload via = GET(viaIdx);
         const s_Type& actual = (via.type ? via.type : fail(fu_STR{}));
         const auto& visit = [&](const s_ScopeItem& item) -> void
         {
@@ -1196,7 +1196,7 @@ struct sf_solve
                 return;
 
             const s_Target& overloadIdx = item.target;
-            s_Overload overload = GET(overloadIdx, module, ctx);
+            s_Overload overload = GET(overloadIdx);
             if ((overload.min < 1))
                 return;
 
@@ -1210,33 +1210,15 @@ struct sf_solve
             if (!isAssignableAsArgument(expect.type, s_Type(actual)))
                 return;
 
-            if ((overload.min < 2))
-            {
-                for (int i = 0; (i < _scope.items.size()); i++)
-                {
-                    if ((i == _scope_skip.start.items_len))
-                    {
-                        i = _scope_skip.end.items_len;
-                        if ((i >= _scope.items.size()))
-                        {
-                            break;
-                        };
-                    };
-                    s_ScopeItem o { _scope.items[i] };
-                    if ((o.id == item.id))
-                    {
-                        s_Overload other = GET(o.target, module, ctx);
-                        if ((other.min < 1))
-                            fail((("`using` ambiguity: `"_fu + item.id) + "`."_fu));
-
-                    };
-                };
-            };
             Partial(item.id, viaIdx, overloadIdx);
         };
         for (int i = 0; (i < _scope.items.size()); i++)
-            visit(_scope.items[i]);
+        {
+            if ((i == _scope_skip.start.items_len))
+                i = _scope_skip.end.items_len;
 
+            visit(_scope.items[i]);
+        };
         const int extra_modid = actual.value.modid;
         if (!fu::has(_scope.imports, extra_modid))
         {
@@ -1332,7 +1314,7 @@ struct sf_solve
             {
                 while (true){
                 {
-                    s_Overload overload = GET(overloadIdx, module, ctx);
+                    s_Overload overload = GET(overloadIdx);
                     if ((arity && (overload.kind == "type"_fu)))
                     {
                         const fu_STR& alt = overload.type.value.canon;
@@ -1357,7 +1339,7 @@ struct sf_solve
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization."_fu);
 
-                        s_Overload o = GET(overloadIdx, module, ctx);
+                        s_Overload o = GET(overloadIdx);
                         const s_Target specIdx = trySpecialize(overloadIdx, o.tEmplate, args, ([&](fu_STR& _) -> fu_STR& { if (!_) _ = mangleArguments(args); return _; } (args_mangled)));
                         if (!specIdx)
                         {
@@ -1456,7 +1438,7 @@ struct sf_solve
         };
         if (matchIdx)
         {
-            s_Overload matched = GET(matchIdx, module, ctx);
+            s_Overload matched = GET(matchIdx);
             const fu_VEC<s_Argument>& host_args = matched.args;
             if ((host_args.size() > args.size()))
                 args.resize(host_args.size());
@@ -1503,7 +1485,7 @@ struct sf_solve
         int max = 0;
         for (int i = 0; (i < overloads.size()); i++)
         {
-            s_Overload o = GET(overloads[i], module, ctx);
+            s_Overload o = GET(overloads[i]);
             if ((min > o.min))
                 min = o.min;
 
@@ -1523,7 +1505,7 @@ struct sf_solve
                 else
                     (result += ", expects: "_fu);
 
-                s_Overload overload = GET(targets[i], module, ctx);
+                s_Overload overload = GET(targets[i]);
                 (result += (overload.name + "("_fu));
                 for (int i_1 = 0; (i_1 < overload.args.size()); i_1++)
                 {
@@ -2042,9 +2024,7 @@ struct sf_solve
                 const fu_VEC<s_Node>& branches = pattern.items;
                 for (int i = 0; (i < branches.size()); i++)
                 {
-                    const s_Node& branch = branches[i];
-                    const fu_VEC<s_Node>& items_1 = (branch ? branch : fail(fu_STR{})).items;
-                    const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = items_1[0]; if (_) return _; } fail(fu_STR{}); }());
+                    const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = branches[i].items[0]; if (_) return _; } fail(fu_STR{}); }());
                     if (evalTypePattern(cond))
                     {
                         caseIdx = i;
@@ -2184,7 +2164,7 @@ struct sf_solve
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
         if ((killedBy(next.type.lifetime, _return_idx.items_len) && (next.type.value.quals & q_ref)))
         {
-            const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target, module, ctx).kind == "var"_fu));
+            const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target).kind == "var"_fu));
             next = createMove(next, nrvo);
         };
         if (prevType)
@@ -2255,7 +2235,8 @@ struct sf_solve
         if (_root_scope)
         {
             int same = 0;
-            for (int i = _root_scope.items_len; (i < (_scope.items.size() - 1)); i++)
+            const int start = (_scope_skip.end.items_len ? _scope_skip.end.items_len : _root_scope.items_len);
+            for (int i = start; (i < (_scope.items.size() - 1)); i++)
             {
                 if ((_scope.items.mutref(i).id == id))
                     same++;
@@ -2290,17 +2271,17 @@ struct sf_solve
         const fu_VEC<s_Module>& modules = ctx.modules;
         for (int i = 1; (i < modules.size()); i++)
         {
-            const s_Module& module_1 = modules[i];
-            if ((module_1.fname == fname))
-                return module_1;
+            const s_Module& m = modules[i];
+            if ((m.fname == fname))
+                return m;
 
         };
         fail(("Cannot locate: "_fu + fname));
     };
     s_SolvedNode solveImport(const s_Node& node)
     {
-        const s_Module& module_1 = findModule(node.value);
-        Scope_import(module_1.modid);
+        const s_Module& m = findModule(node.value);
+        Scope_import(m.modid);
         return createEmpty();
     };
     s_Type Scope_lookupType(fu_STR&& id, const int flags)
@@ -2310,7 +2291,7 @@ struct sf_solve
         const s_Scope& scope = ((flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
         while ((overloadIdx = search(scope, id, scope_iterator, _scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<s_ScopeItem>{})))
         {
-            s_Overload maybe = GET(overloadIdx, module, ctx);
+            s_Overload maybe = GET(overloadIdx);
             if ((maybe.kind == "type"_fu))
                 return std::move((maybe.type ? maybe.type : fail(fu_STR{})));
 
@@ -2481,15 +2462,15 @@ struct sf_solve
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
         fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{}, s_Type{}, bool{});
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags, target);
-        s_Overload callTarg = GET(callTargIdx, module, ctx);
+        s_Overload callTarg = GET(callTargIdx);
         while (callTarg.partial)
         {
             const bool unshift = (callTarg.kind == "p-unshift"_fu);
             const s_Partial partial { (callTarg.partial ? callTarg.partial : fail(fu_STR{})) };
             const s_Target& viaIdx = (partial.via ? partial.via : fail(fu_STR{}));
             callTargIdx = (partial.target ? partial.target : fail(fu_STR{}));
-            s_Overload via = GET(viaIdx, module, ctx);
-            callTarg = GET(callTargIdx, module, ctx);
+            s_Overload via = GET(viaIdx);
+            callTarg = GET(callTargIdx);
             fu_VEC<s_SolvedNode> innerArgs {};
             if (!unshift)
                 innerArgs = fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { ([&]() -> s_SolvedNode& { { s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(fu_STR{}); }()) } };
@@ -2528,7 +2509,7 @@ struct sf_solve
     };
     s_SolvedNode createLet(const s_Target& target, const int flags)
     {
-        s_Overload overload = GET(target, module, ctx);
+        s_Overload overload = GET(target);
         return s_SolvedNode { "let"_fu, int(flags), fu_STR(overload.name), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(overload.type), s_Target(target) };
     };
     s_Target injectImplicitArg__mutfn(s_SolvedNode& fnNode, const fu_STR& id, const s_Type& type)
@@ -2696,7 +2677,7 @@ struct sf_solve
     };
     s_SolvedNode CallerNode(const s_Node& node, s_Type&& type, const s_Target& target, fu_VEC<s_SolvedNode>&& args)
     {
-        s_Overload overload = GET(target, module, ctx);
+        s_Overload overload = GET(target);
         if ((overload.kind == "field"_fu))
         {
             s_SolvedNode head { ([&]() -> const s_SolvedNode& { if ((args.size() == 1)) { const s_SolvedNode& _ = args.mutref(0); if (_) return _; } fail(fu_STR{}); }()) };

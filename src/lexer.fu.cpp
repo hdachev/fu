@@ -87,16 +87,16 @@ struct sf_lex
     {
         err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu));
     };
-    fu_STR unescapeStr(const fu_STR& src_1, const int idx0, const int idx1)
+    fu_STR unescapeStr(const fu_STR& esc, const int idx0, const int idx1)
     {
         fu_STR out {};
         const int n = (idx1 - 1);
         for (int i = (idx0 + 1); (i < n); i++)
         {
-            const std::byte c = src_1[i];
+            const std::byte c = esc[i];
             if ((c == std::byte('\\')))
             {
-                const std::byte c1 = src_1[++i];
+                const std::byte c1 = esc[++i];
                 if ((c1 == std::byte('n')))
                     (out += std::byte('\n'));
                 else if ((c1 == std::byte('r')))

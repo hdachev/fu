@@ -711,15 +711,12 @@ struct sf_parse
         if (type)
             flags |= F_FULLY_TYPED;
 
-        
-        {
-            _fnDepth--;
-            _numReturns = numReturns0;
-            if ((_dollars.size() > dollars0.size()))
-                flags |= F_TEMPLATE;
+        _fnDepth--;
+        _numReturns = numReturns0;
+        if ((_dollars.size() > dollars0.size()))
+            flags |= F_TEMPLATE;
 
-            _dollars = dollars0;
-        };
+        _dollars = dollars0;
         return make("fn"_fu, items, flags, name);
     };
     int parseFnBodyOrPattern(fu_VEC<s_Node>& out_push_body)
@@ -734,8 +731,8 @@ struct sf_parse
             {
                 s_Node cond = parseUnaryExpression(0);
                 s_Node type = tryPopTypeAnnot();
-                s_Node body_1 = parseFnBodyBranch();
-                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, body_1 } }, 0, fu_STR{}));
+                s_Node cons = parseFnBodyBranch();
+                branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, cons } }, 0, fu_STR{}));
             }
             while (tryConsume("id"_fu, "case"_fu));
             body = make("pattern"_fu, branches, 0, fu_STR{});
@@ -785,7 +782,8 @@ struct sf_parse
 
             first = false;
             s_Node arg = parseLet(true);
-            if (!arg.items.mutref(LET_TYPE))
+            const bool untyped = !arg.items.mutref(LET_TYPE);
+            if (untyped)
                 outFlags |= F_UNTYPED_ARGS;
 
             if (arg.items.mutref(LET_INIT))
@@ -797,6 +795,8 @@ struct sf_parse
             }
             else if (defaults)
                 fail("TODO non-trailing default arguments"_fu);
+            else if (untyped)
+                outFlags |= F_TEMPLATE;
 
             arg.flags &= ~F_LOCAL;
             arg.flags |= F_ARG;
@@ -830,7 +830,6 @@ struct sf_parse
     s_Node parseLet(const bool xqmark)
     {
         int flags = F_LOCAL;
-        const int numDollars0 = _dollars.size();
         if (tryConsume("id"_fu, "using"_fu))
             flags |= F_USING;
 
@@ -851,9 +850,6 @@ struct sf_parse
         s_Token mustname = ([&]() -> s_Token { if (xqmark) return tryConsume("op"_fu, "!"_fu); else return s_Token{}; }());
         s_Node type = tryPopTypeAnnot();
         s_Node init = (optional ? createDefinit() : ([&]() -> s_Node { if (tryConsume("op"_fu, "="_fu)) return parseExpression(int(P_RESET), 0); else return s_Node{}; }()));
-        if ((numDollars0 != _dollars.size()))
-            flags |= F_TEMPLATE;
-
         if (mustname)
             flags |= F_MUSTNAME;
 
