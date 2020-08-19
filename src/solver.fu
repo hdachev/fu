@@ -356,7 +356,12 @@ pub fn solve(
 
         // Visit stuff currently in scope.
         for (mut i = 0; i < _scope.items.len; i++)
+        {
+            if (i == _scope_skip.start.items_len)
+                i  = _scope_skip.end  .items_len;
+
             visit(_scope.items[i]);
+        }
 
         // Also bring in stuff from the module of origin.
         let extra_modid = actual.modid;
@@ -1758,9 +1763,19 @@ pub fn solve(
         if (_root_scope)
         {
             mut same = 0;
-            for (mut i = _root_scope.items_len; i < _scope.items.len - 1; i++)
+            /*
+            for (mut i = 0; i < _scope.items.len - 1; i++)
+            {
+                if (i == _scope_skip.start.items_len)
+                    i  = _scope_skip.end  .items_len;
+            /*/
+            let start = _scope_skip.end.items_len || _root_scope.items_len;
+            for (mut i = start; i < _scope.items.len - 1; i++)
+            {
+            // */
                 if (_scope.items[i].id == id)
                     same++;
+            }
 
             if (same)
                 GET_mut(overload).name ~= "_" ~ same;

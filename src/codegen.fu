@@ -627,12 +627,13 @@ pub fn cpp_codegen(
             {
                 let argNode = fn.items[i];
                 let argType = argNode.type;
-                let arg     = argNode.value;
+                let o       = GET(argNode.target);
+                let argName = o.name;
 
                 args.push(
                     argType.quals & q_ref
-                        ? arg
-                        : cgSteal(arg));
+                        ? argName
+                        : cgSteal(argName));
             }
 
             src ~= "\n} // namespace\n\n";
@@ -1313,6 +1314,9 @@ pub fn cpp_codegen(
 
     fn cgOr(node: SolvedNode): string
     {
+        // [gnu] Consider:
+        //  (__extension__ (a ?: b))
+
         let type = node.type;
         if (!type.is_bool)
         {
