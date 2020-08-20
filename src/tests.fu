@@ -2509,20 +2509,14 @@ pub fn runTests()
         return x - 1;
     `);
 
-    // ZERO(`
-    //     fn reduce(items: $T[], fn: $F, init?: $T) {
-    //         mut result = init;
-    //         for (mut i = 0; i < items.len; i++)
-    //             result = fn(result, items[i]);
-    //
-    //         return result;
-    //     }
-    //
-    //     fn main() [1, 2].reduce(fn (a, b) a + b) - 3;
-    // `);
+    ZERO(`
+        fn mul2(a) a*2;
+        fn test(b, fn) fn(1 + fn(b));
+        fn main() test(3, fn mul2);
+    `);
 
     // ZERO(`
-    //     fn map(items: $T[], fn: $F) {
+    //     fn map(items: $T[], fn) {
     //         mut result: fn(items[0])[];
     //         for (mut i = 0; i < items.len; i++)
     //             result.push(fn(items));
@@ -2532,7 +2526,19 @@ pub fn runTests()
     //
     //     fn sqr(x) x*x;
     //
-    //     fn main() [1].map(sqr)[0] - 3;
+    //     fn main() [2].map(sqr)[0] - 4;
+    // `);
+
+    // ZERO(`
+    //     fn reduce(items: $T[], fn, init?: $T) {
+    //         mut result = init;
+    //         for (mut i = 0; i < items.len; i++)
+    //             result = fn(result, items[i]);
+    //
+    //         return result;
+    //     }
+    //
+    //     fn main() [1, 2].reduce(fn (a, b) = a + b) - 3;
     // `);
 
 
