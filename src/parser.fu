@@ -545,22 +545,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return parseFixityDecl(F_TEMPLATE);
     }
 
-    fn parseFixityDecl(flags: i32): Node
+    fn parseFixityDecl(flags: i32, expr?: bool): Node
     {
         consume("id", "fn");
-        return parseFnDecl(flags);
+        return parseFnDecl(flags, :expr);
     }
 
 
     //
 
-    fn parseFnDecl(mut flags?: i32): Node
+    fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
     {
-        ////////////////////////////////
-        let dollars0    = _dollars;
-        let numReturns0 = _numReturns;
-        ////////////////////////////////
-
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
         if (!name)
@@ -593,13 +588,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
 
         // Opening parens!
-        consume("op", "(");
+        mut items: Node[];
+
+        if (!expr)
+            consume("op", "(");
+        else if (!tryConsume("op", "("))
+            return make("addroffn", items, flags, name);
 
         ////////////////////////////////
         _fnDepth++;
+        let dollars0 = _dollars;
+        let numReturns0 = _numReturns;
         ////////////////////////////////
 
-        mut items: Node[];
         flags |= parseArgsDecl(items, "op", ")");
 
         // Return type annot.
@@ -628,16 +629,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (type)
             flags |= F_FULLY_TYPED;
 
-        ////////////////////////////////
-        _fnDepth--;
-        _numReturns = numReturns0;
-        ////////////////////////////////
-
         if (_dollars.len > dollars0.len)
             flags |= F_TEMPLATE;
 
         ////////////////////////////////
+        _fnDepth--;
         _dollars = dollars0;
+        _numReturns = numReturns0;
         ////////////////////////////////
 
         return make("fn", items, flags, name);
@@ -975,21 +973,30 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         {
             let k = token.kind;
+            let v = token.value;
 
             // Literals.
             if (k == "int" || k == "real" || k == "str" || k == "char")
-                return createLeaf(
-                    token.kind, token.value);
+                return createLeaf(k, v);
 
             // Identifier expression.
             if (k == "id")
-                return createRead(token.value);
+            {
+                let peek = tokens[_idx];
+                if (peek.kind == "id")
+                {
+                    if (v == "fn")          return parseFnDecl(expr: true);
+                    if (v == "infix")       return parseFixityDecl(F_INFIX, expr: true);
+                    if (v == "prefix")      return parseFixityDecl(F_PREFIX, expr: true);
+                    if (v == "postfix")     return parseFixityDecl(F_POSTFIX, expr: true);
+                }
+
+                return createRead(v);
+            }
 
             // Operators.
             if (k == "op")
             {
-                let v = token.value;
-
                 if (v ==  "(") return parseParens();
                 if (v ==  "{") return parseBlock();
                 if (v ==  "[") return parseArrayLiteral();
@@ -1007,7 +1014,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                     return createRead(id);
                 }
 
-                return parsePrefix(token.value);
+                return parsePrefix(v);
             }
         }
 
