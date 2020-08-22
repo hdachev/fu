@@ -439,10 +439,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "type")        return parseTypedef();
                 if (v == "typedef")     return parseTypedef();
 
-                if (v == "inline" && tryConsume("id", "fn"))
-                    return parseFnDecl(F_TEMPLATE);
-
-                if (v == "fn")          return parseFnDecl(0);
+                if (v == "fn")          return parseFnDecl();
+                if (v == "inline")      return parseInlineDecl();
+                if (v == "infix")       return parseFixityDecl(F_INFIX);
+                if (v == "prefix")      return parseFixityDecl(F_PREFIX);
+                if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
             }
 
             if (peek.kind == "op" && peek.value == "{")
@@ -528,7 +529,32 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return expr;
     }
 
-    fn parseFnDecl(mut flags: i32): Node
+
+    // Fn decorator order -
+    //  fn keyword comes last to disambiguate operators from anonymous functions,
+    //   which makes the parse a bit problematic but whatever.
+
+    fn parseInlineDecl(): Node
+    {
+        let v = consume("id").value;
+        if (v == "infix")       return parseFixityDecl(F_TEMPLATE | F_INFIX);
+        if (v == "prefix")      return parseFixityDecl(F_TEMPLATE | F_PREFIX);
+        if (v == "postfix")     return parseFixityDecl(F_TEMPLATE | F_POSTFIX);
+        _idx--;
+
+        return parseFixityDecl(F_TEMPLATE);
+    }
+
+    fn parseFixityDecl(flags: i32): Node
+    {
+        consume("id", "fn");
+        return parseFnDecl(flags);
+    }
+
+
+    //
+
+    fn parseFnDecl(mut flags?: i32): Node
     {
         ////////////////////////////////
         let dollars0    = _dollars;
@@ -537,14 +563,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
-
-        // No opening parens?
-        if (!name || !tryConsume("op", "("))
+        if (!name)
         {
-            !name || name == "infix" || name == "prefix" || name == "postfix"
-                || fail("Unexpected `" ~ name ~ "`.");
-
-            let postfix = name == "postfix";
+            let postfix = flags & F_POSTFIX;
             name = consume("op").value;
 
             if (postfix)
@@ -553,14 +574,26 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                     || fail("No such postfix operator: `" ~ name ~ "`.");
 
                 name ~= "postfix";
-                flags |= F_POSTFIX;
+            }
+            else if (flags & F_INFIX)
+            {
+                BINOP.PRECEDENCE.has(name) || fail("No such infix operator: `" ~ name ~ "`.");
+            }
+            else if (flags & F_PREFIX)
+            {
+                PREFIX.has(name) || fail("No such prefix operator: `" ~ name ~ "`.");
             }
 
+            flags &= ~(F_INFIX | F_PREFIX);
             flags |= F_OPERATOR;
-
-            // Opening parens!
-            consume("op", "(");
         }
+        else if (flags & (F_INFIX | F_PREFIX | F_POSTFIX))
+        {
+            fail("Not an operator: `" ~ name ~ "`.");
+        }
+
+        // Opening parens!
+        consume("op", "(");
 
         ////////////////////////////////
         _fnDepth++;

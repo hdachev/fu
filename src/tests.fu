@@ -2435,8 +2435,8 @@ pub fn runTests()
     ZERO(`
         struct X { i: i32; };
 
-        fn        ++(using x: &mut X) ++i;
-        fn postfix++(using x: &mut X) i++;
+        fn         ++(using x: &mut X) ++i;
+        postfix fn ++(using x: &mut X) i++;
 
         fn main() {
             mut x: X;
