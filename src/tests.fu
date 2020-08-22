@@ -2562,20 +2562,16 @@ pub fn runTests()
             //*/
     `);
 
-    // ZERO(`
-    //     struct Hey(t: $T) { hey: $T; };
-    //     fn test(a: $T) Hey(a + 2);
-    //     fn main() 1.test.hey - 3;
-    // `);
+    ZERO(`
+        fn sB(t: $T) struct { hey: $T; };
 
-    // ZERO(`
-    //     struct Hey(t: $T) { a: $T; b: $T; };
-    //     fn test(a: $T) Hey(a, 2);
-    //     fn main() {
-    //         let r = (-2).test;
-    //         return r.a - r.b;
-    //     }
-    // `);
+        // Pattern & partial spec, how?
+        fn test(x: sB($T)): $T =
+            x.hey - 1;
+
+        type a = sB(i32);
+        fn main() a(1).test;
+    `);
 
 
     // Enum basics.
