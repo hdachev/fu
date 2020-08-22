@@ -581,11 +581,20 @@ struct sf_parse
                 if ((v == "typedef"_fu))
                     return parseTypedef();
 
-                if (((v == "inline"_fu) && tryConsume("id"_fu, "fn"_fu)))
-                    return parseFnDecl(int(F_TEMPLATE));
-
                 if ((v == "fn"_fu))
                     return parseFnDecl(0);
+
+                if ((v == "inline"_fu))
+                    return parseInlineDecl();
+
+                if ((v == "infix"_fu))
+                    return parseFixityDecl(F_INFIX);
+
+                if ((v == "prefix"_fu))
+                    return parseFixityDecl(F_PREFIX);
+
+                if ((v == "postfix"_fu))
+                    return parseFixityDecl(F_POSTFIX);
 
             };
             if (((peek.kind == "op"_fu) && (peek.value == "{"_fu)))
@@ -671,25 +680,55 @@ struct sf_parse
 
         return expr;
     };
+    s_Node parseInlineDecl()
+    {
+        fu_STR v = consume("id"_fu, fu::view<std::byte>{}).value;
+        if ((v == "infix"_fu))
+            return parseFixityDecl((F_TEMPLATE | F_INFIX));
+
+        if ((v == "prefix"_fu))
+            return parseFixityDecl((F_TEMPLATE | F_PREFIX));
+
+        if ((v == "postfix"_fu))
+            return parseFixityDecl((F_TEMPLATE | F_POSTFIX));
+
+        _idx--;
+        return parseFixityDecl(F_TEMPLATE);
+    };
+    s_Node parseFixityDecl(const int flags)
+    {
+        consume("id"_fu, "fn"_fu);
+        return parseFnDecl(int(flags));
+    };
     s_Node parseFnDecl(int flags)
     {
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
         fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
-        if ((!name || !tryConsume("op"_fu, "("_fu)))
+        if (!name)
         {
-            (!name || (name == "infix"_fu) || (name == "prefix"_fu) || (name == "postfix"_fu) || fail((("Unexpected `"_fu + name) + "`."_fu)));
-            const bool postfix = (name == "postfix"_fu);
+            const int postfix = (flags & F_POSTFIX);
             name = consume("op"_fu, fu::view<std::byte>{}).value;
             if (postfix)
             {
                 ((name == "++"_fu) || (name == "--"_fu) || fail((("No such postfix operator: `"_fu + name) + "`."_fu)));
                 (name += "postfix"_fu);
-                flags |= F_POSTFIX;
+            }
+            else if ((flags & F_INFIX))
+            {
+                (fu::has(BINOP.PRECEDENCE, name) || fail((("No such infix operator: `"_fu + name) + "`."_fu)));
+            }
+            else if ((flags & F_PREFIX))
+            {
+                (fu::has(PREFIX, name) || fail((("No such prefix operator: `"_fu + name) + "`."_fu)));
             };
+            flags &= ~(F_INFIX | F_PREFIX);
             flags |= F_OPERATOR;
-            consume("op"_fu, "("_fu);
-        };
+        }
+        else if ((flags & ((F_INFIX | F_PREFIX) | F_POSTFIX)))
+            fail((("Not an operator: `"_fu + name) + "`."_fu));
+
+        consume("op"_fu, "("_fu);
         _fnDepth++;
         fu_VEC<s_Node> items {};
         flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
