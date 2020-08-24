@@ -803,6 +803,7 @@ void runTests()
     FAIL("\n        fn test(a: $A, b: $B) b + //*F\n            a;\n            /*/\n            $B(a);\n            //*/\n        fn main() i8(-1).test(+1);\n    "_fu);
     ZERO("\n        let x = { mut z = 0; z++; z };\n        return x - 1;\n    "_fu);
     ZERO("\n        fn mul2(a) a*2;\n        fn test(b, fn) fn(1 + fn(b));\n        fn main() 14 - test(3, fn mul2);\n    "_fu);
+    ZERO("\n        fn map(items: $T[], fn) {\n            mut result: fn(items[0])[];\n            for (mut i = 0; i < items.len; i++)\n                result.push(fn(items[i]));\n\n            return result;\n        }\n\n        fn sqr(x) x*x;\n\n        fn main() [2].map(fn sqr)[0] - 4;\n    "_fu);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ;\n            /*/\n            .i32;\n            //*/\n    "_fu);
 }
