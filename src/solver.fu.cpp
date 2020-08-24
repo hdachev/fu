@@ -44,6 +44,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Type&);
 bool hasIdentifierChars(const fu_STR&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, s_Type&&);
@@ -82,6 +83,7 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Modu
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
+s_Type X_solveAddrOfFn(const s_Scope&, const s_ScopeSkip&, const fu_STR&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type add_refs(const s_Type&, s_Type&&);
@@ -1596,7 +1598,7 @@ struct sf_solve
             return solveChar(node);
 
         if ((k == "empty"_fu))
-            return createEmpty();
+            return createEmpty(t_void);
 
         if ((k == "definit"_fu))
             return solveDefinit(type);
@@ -1612,6 +1614,9 @@ struct sf_solve
 
         if ((k == "typeparam"_fu))
             return solveTypeParam(node);
+
+        if ((k == "addroffn"_fu))
+            return solveAddrOfFn(node);
 
         fail(("TODO: "_fu + k));
     };
@@ -1767,9 +1772,9 @@ struct sf_solve
 
         return solved(node, t_string, fu_VEC<s_SolvedNode>{});
     };
-    s_SolvedNode createEmpty()
+    s_SolvedNode createEmpty(const s_Type& type)
     {
-        return s_SolvedNode { "empty"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(t_void), s_Target{} };
+        return s_SolvedNode { "empty"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
     };
     s_Node createTypeParam(const fu_STR& value)
     {
@@ -2220,7 +2225,7 @@ struct sf_solve
     {
         s_SolvedNode annot = evalTypeAnnot(only_zET6(node.items));
         Scope_Typedef(_scope, node.value, annot.type, node.flags, module);
-        return createEmpty();
+        return createEmpty(t_void);
     };
     s_SolvedNode solveLet(const s_Node& node, s_Lifetime&& lifetime)
     {
@@ -2231,27 +2236,30 @@ struct sf_solve
 
         fu_STR kind = (global ? "global"_fu : ((node.flags & F_ARG) ? "arg"_fu : ((out.type.value.quals & q_ref) ? "ref"_fu : "var"_fu)));
         fu_STR id { out.value };
-        const s_Target overload { (out.target = Binding(id, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), node.flags, kind)) };
-        if (_root_scope)
+        if (!X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
-            int same = 0;
-            const int start = (_scope_skip.end.items_len ? _scope_skip.end.items_len : _root_scope.items_len);
-            for (int i = start; (i < (_scope.items.size() - 1)); i++)
+            const s_Target overload { (out.target = Binding(id, ((node.flags & F_MUT) ? add_mutref(out.type, lifetime) : add_ref(out.type, lifetime)), node.flags, kind)) };
+            if (_root_scope)
             {
-                if ((_scope.items.mutref(i).id == id))
-                    same++;
+                int same = 0;
+                const int start = (_scope_skip.end.items_len ? _scope_skip.end.items_len : _root_scope.items_len);
+                for (int i = start; (i < (_scope.items.size() - 1)); i++)
+                {
+                    if ((_scope.items.mutref(i).id == id))
+                        same++;
+
+                };
+                if (same)
+                    (GET_mut(overload).name += ("_"_fu + same));
 
             };
-            if (same)
-                (GET_mut(overload).name += ("_"_fu + same));
+            if (global)
+                GET_mut(overload).solved = out;
+
+            if ((out.flags & F_USING))
+                scope_using(overload);
 
         };
-        if (global)
-            GET_mut(overload).solved = out;
-
-        if ((out.flags & F_USING))
-            scope_using(overload);
-
         return out;
     };
     s_SolvedNode solveCatch(const s_Node& node)
@@ -2282,7 +2290,7 @@ struct sf_solve
     {
         const s_Module& m = findModule(node.value);
         Scope_import(m.modid);
-        return createEmpty();
+        return createEmpty(t_void);
     };
     s_Type Scope_lookupType(fu_STR&& id, const int flags)
     {
@@ -2309,6 +2317,12 @@ struct sf_solve
     s_SolvedNode solveTypeParam(const s_Node& node)
     {
         return solved(node, evalTypeParam(node.value), fu_VEC<s_SolvedNode>{});
+    };
+    s_SolvedNode solveAddrOfFn(const s_Node& node)
+    {
+        const fu_STR& id = node.value;
+        s_Type type = X_solveAddrOfFn(_scope, _scope_skip, id);
+        return createEmpty(type);
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {

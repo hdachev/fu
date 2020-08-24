@@ -53,6 +53,7 @@ bool is_never(const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
 bool type_isArray(const s_Type&);
 bool type_isMap(const s_Type&);
+bool type_isZST(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>&);
 inline std::byte if_last_y0NH(const fu_STR&);
@@ -828,6 +829,9 @@ struct sf_cpp_codegen
     };
     fu_STR typeAnnot(const s_Type& type, const int mode)
     {
+        if (((mode & M_ARGUMENT) && type_isZST(type)))
+            return "int"_fu;
+
         fu_STR fwd = typeAnnotBase(type);
         if (((mode & M_RETVAL) && (type.value.canon == "never"_fu) && !(mode & M_CLOSURE)))
             return ("[[noreturn]] "_fu + fwd);
@@ -1351,9 +1355,12 @@ struct sf_cpp_codegen
     };
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
+        fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
+        if (((node.flags & F_ARG) && type_isZST(node.type)))
+            return annot;
+
         s_Overload overload = GET(node.target);
         const fu_STR& id = (overload.name ? overload.name : fail(fu_STR{}));
-        fu_STR annot = typeAnnot(node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
         fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id));
         s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode{});
         if ((!doInit || (node.flags & F_ARG)))
@@ -1709,9 +1716,9 @@ struct sf_cpp_codegen
         };
         return src;
     };
-    fu_STR cgEmpty()
+    fu_STR cgEmpty(const int mode)
     {
-        return fu_STR{};
+        return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
     };
     fu_STR cgIf(const s_SolvedNode& node, const int mode)
     {
@@ -1899,9 +1906,9 @@ struct sf_cpp_codegen
         const s_SolvedNode& n_post = items[LOOP_POST];
         const s_SolvedNode& n_body = items[LOOP_BODY];
         const s_SolvedNode& n_pcnd = items[LOOP_POST_COND];
-        fu_STR init = ([&]() -> fu_STR { if (n_init) return cgNode(n_init, 0); else return fu_STR{}; }());
+        fu_STR init = ([&]() -> fu_STR { if (n_init) return cgNode(n_init, M_STMT); else return fu_STR{}; }());
         fu_STR cond = ([&]() -> fu_STR { if (n_cond) return cgNode(n_cond, M_RETBOOL); else return fu_STR{}; }());
-        fu_STR post = ([&]() -> fu_STR { if (n_post) return cgNode(n_post, 0); else return fu_STR{}; }());
+        fu_STR post = ([&]() -> fu_STR { if (n_post) return cgNode(n_post, M_STMT); else return fu_STR{}; }());
         fu_STR body = ([&]() -> fu_STR { if (n_body) return blockWrapSubstatement(n_body); else return fu_STR{}; }());
         fu_STR pcnd = ([&]() -> fu_STR { if (n_pcnd) return cgNode(n_pcnd, M_RETBOOL); else return fu_STR{}; }());
         fu_STR breakLabel {};
@@ -2017,10 +2024,10 @@ struct sf_cpp_codegen
             return cgParens(node);
 
         if ((k == "struct"_fu))
-            return cgEmpty();
+            return cgEmpty(mode);
 
         if ((k == "empty"_fu))
-            return cgEmpty();
+            return cgEmpty(mode);
 
         if ((k == "copy"_fu))
             return cgCopyMove(node);

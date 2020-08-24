@@ -14,6 +14,7 @@
 #include "context.fu.cpp"
 #include "intlit.fu.cpp"
 #include "../lib/tea.fu.cpp"
+#include "addroffn.fu.cpp"
 #include "solver.fu.cpp"
 #include "codegen.fu.cpp"
 #include "prelude.fu.cpp"

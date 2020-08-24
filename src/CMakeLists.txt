@@ -15,6 +15,7 @@ set(FU_INPUTS
     context.fu
     intlit.fu
     ../lib/tea.fu
+    addroffn.fu
     solver.fu
     codegen.fu
     prelude.fu

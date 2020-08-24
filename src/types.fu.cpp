@@ -482,7 +482,7 @@ fu_STR humanizeType(const s_Type& type)
     return result;
 }
 
-static int parse10i32(int& offset, const fu_STR& str)
+int parse10i32(int& offset, const fu_STR& str)
 {
     int result {};
     for (; ; )

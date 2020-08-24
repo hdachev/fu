@@ -252,9 +252,9 @@ inline const int F_PATTERN = (1 << 29);
 inline const int F_TEMPLATE = (1 << 30);
                                 #endif
 
-                                #ifndef DEF_F_DESTRUCTOR
-                                #define DEF_F_DESTRUCTOR
-inline const int F_DESTRUCTOR = (1 << 31);
+                                #ifndef DEF_F_INLINE
+                                #define DEF_F_INLINE
+inline const int F_INLINE = (1 << 31);
                                 #endif
 
 static const int P_RESET = 1000;
@@ -582,19 +582,19 @@ struct sf_parse
                     return parseTypedef();
 
                 if ((v == "fn"_fu))
-                    return parseFnDecl(0);
+                    return parseFnDecl(0, bool{});
 
                 if ((v == "inline"_fu))
                     return parseInlineDecl();
 
                 if ((v == "infix"_fu))
-                    return parseFixityDecl(F_INFIX);
+                    return parseFixityDecl(F_INFIX, bool{});
 
                 if ((v == "prefix"_fu))
-                    return parseFixityDecl(F_PREFIX);
+                    return parseFixityDecl(F_PREFIX, bool{});
 
                 if ((v == "postfix"_fu))
-                    return parseFixityDecl(F_POSTFIX);
+                    return parseFixityDecl(F_POSTFIX, bool{});
 
             };
             if (((peek.kind == "op"_fu) && (peek.value == "{"_fu)))
@@ -682,28 +682,27 @@ struct sf_parse
     };
     s_Node parseInlineDecl()
     {
+        const int flags = (F_INLINE | F_TEMPLATE);
         fu_STR v = consume("id"_fu, fu::view<std::byte>{}).value;
         if ((v == "infix"_fu))
-            return parseFixityDecl((F_TEMPLATE | F_INFIX));
+            return parseFixityDecl((flags | F_INFIX), bool{});
 
         if ((v == "prefix"_fu))
-            return parseFixityDecl((F_TEMPLATE | F_PREFIX));
+            return parseFixityDecl((flags | F_PREFIX), bool{});
 
         if ((v == "postfix"_fu))
-            return parseFixityDecl((F_TEMPLATE | F_POSTFIX));
+            return parseFixityDecl((flags | F_POSTFIX), bool{});
 
         _idx--;
-        return parseFixityDecl(F_TEMPLATE);
+        return parseFixityDecl(flags, bool{});
     };
-    s_Node parseFixityDecl(const int flags)
+    s_Node parseFixityDecl(const int flags, const bool expr)
     {
         consume("id"_fu, "fn"_fu);
-        return parseFnDecl(int(flags));
+        return parseFnDecl(int(flags), expr);
     };
-    s_Node parseFnDecl(int flags)
+    s_Node parseFnDecl(int flags, const bool expr)
     {
-        fu_VEC<fu_STR> dollars0 { _dollars };
-        const int numReturns0 = _numReturns;
         fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
         if (!name)
         {
@@ -728,9 +727,15 @@ struct sf_parse
         else if ((flags & ((F_INFIX | F_PREFIX) | F_POSTFIX)))
             fail((("Not an operator: `"_fu + name) + "`."_fu));
 
-        consume("op"_fu, "("_fu);
-        _fnDepth++;
         fu_VEC<s_Node> items {};
+        if (!expr)
+            consume("op"_fu, "("_fu);
+        else if (!tryConsume("op"_fu, "("_fu))
+            return make("addroffn"_fu, items, flags, name);
+
+        _fnDepth++;
+        fu_VEC<fu_STR> dollars0 { _dollars };
+        const int numReturns0 = _numReturns;
         flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
         s_Node type = tryPopTypeAnnot();
         const int retIdx = items.size();
@@ -750,12 +755,12 @@ struct sf_parse
         if (type)
             flags |= F_FULLY_TYPED;
 
-        _fnDepth--;
-        _numReturns = numReturns0;
         if ((_dollars.size() > dollars0.size()))
             flags |= F_TEMPLATE;
 
+        _fnDepth--;
         _dollars = dollars0;
+        _numReturns = numReturns0;
         return make("fn"_fu, items, flags, name);
     };
     int parseFnBodyOrPattern(fu_VEC<s_Node>& out_push_body)
@@ -1017,15 +1022,32 @@ struct sf_parse
         
         {
             const fu_STR& k = token.kind;
+            const fu_STR& v = token.value;
             if (((k == "int"_fu) || (k == "real"_fu) || (k == "str"_fu) || (k == "char"_fu)))
-                return createLeaf(token.kind, token.value);
+                return createLeaf(k, v);
 
             if ((k == "id"_fu))
-                return createRead(token.value);
+            {
+                const s_Token& peek = tokens[_idx];
+                if ((peek.kind == "id"_fu))
+                {
+                    if ((v == "fn"_fu))
+                        return parseFnDecl(0, true);
 
+                    if ((v == "infix"_fu))
+                        return parseFixityDecl(F_INFIX, true);
+
+                    if ((v == "prefix"_fu))
+                        return parseFixityDecl(F_PREFIX, true);
+
+                    if ((v == "postfix"_fu))
+                        return parseFixityDecl(F_POSTFIX, true);
+
+                };
+                return createRead(v);
+            };
             if ((k == "op"_fu))
             {
-                const fu_STR& v = token.value;
                 if ((v == "("_fu))
                     return parseParens();
 
@@ -1050,7 +1072,7 @@ struct sf_parse
                     _idx -= 2;
                     return createRead(id);
                 };
-                return parsePrefix(fu_STR(token.value));
+                return parsePrefix(fu_STR(v));
             };
         };
         _idx--;
