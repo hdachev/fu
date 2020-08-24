@@ -556,6 +556,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
+    fn parseLambda(): Node
+    {
+        return parseFnDecl_cont(endv: "|",
+            flags: F_INLINE | F_TEMPLATE);
+    }
+
     fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
     {
         // fn hello(), fn +()
@@ -589,13 +595,18 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             fail("Not an operator: `" ~ name ~ "`.");
         }
 
-        // Opening parens!
-        mut items: Node[];
-
         if (!expr)
             consume("op", "(");
         else if (!tryConsume("op", "("))
-            return make("addroffn", items, flags, name);
+            return make(kind: "addroffn", :flags, value: name);
+
+        return parseFnDecl_cont(:flags, :name);
+    }
+
+    fn parseFnDecl_cont(mut flags?!: i32, name?!: string, endv! = ")"): Node
+    {
+        // Opening parens!
+        mut items: Node[];
 
         ////////////////////////////////
         _fnDepth++;
@@ -603,7 +614,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let numReturns0 = _numReturns;
         ////////////////////////////////
 
-        flags |= parseArgsDecl(items, "op", ")");
+        flags |= parseArgsDecl(items, "op", :endv);
 
         // Return type annot.
         mut type = tryPopTypeAnnot();
@@ -1004,6 +1015,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
                 if (v ==  "@") return parseTypeTag();
+                if (v ==  "|") return parseLambda();
                 if (v == "[]") return createDefinit();
 
                 if (v == "::")

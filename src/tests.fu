@@ -2529,17 +2529,17 @@ pub fn runTests()
         fn main() [2].map(fn sqr)[0] - 4;
     `);
 
-    // ZERO(`
-    //     fn reduce(items: $T[], fn, init?: $T) {
-    //         mut result = init;
-    //         for (mut i = 0; i < items.len; i++)
-    //             result = fn(result, items[i]);
-    //
-    //         return result;
-    //     }
-    //
-    //     fn main() [1, 2].reduce(|a, b| a + b) - 3;
-    // `);
+    ZERO(`
+        fn reduce(items: $T[], fn, init?: $T) {
+            mut result = init;
+            for (mut i = 0; i < items.len; i++)
+                result = fn(result, items[i]);
+
+            return result;
+        }
+
+        fn main() [1, 2].reduce(|a, b| a + b) - 3;
+    `);
 
 
     // Template structs.
