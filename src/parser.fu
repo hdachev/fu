@@ -54,7 +54,7 @@ pub let F_CLOSURE       = 1 << 27;
 pub let F_HAS_CLOSURE   = 1 << 28;
 pub let F_PATTERN       = 1 << 29;
 pub let F_TEMPLATE      = 1 << 30;
-pub let F_DESTRUCTOR    = 1 << 31;
+pub let F_INLINE        = 1 << 31;
 
 
 // Operator precedence table.
@@ -536,13 +536,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseInlineDecl(): Node
     {
+        let flags = F_INLINE | F_TEMPLATE;
+
         let v = consume("id").value;
-        if (v == "infix")       return parseFixityDecl(F_TEMPLATE | F_INFIX);
-        if (v == "prefix")      return parseFixityDecl(F_TEMPLATE | F_PREFIX);
-        if (v == "postfix")     return parseFixityDecl(F_TEMPLATE | F_POSTFIX);
+        if (v == "infix")       return parseFixityDecl(flags | F_INFIX);
+        if (v == "prefix")      return parseFixityDecl(flags | F_PREFIX);
+        if (v == "postfix")     return parseFixityDecl(flags | F_POSTFIX);
         _idx--;
 
-        return parseFixityDecl(F_TEMPLATE);
+        return parseFixityDecl(flags);
     }
 
     fn parseFixityDecl(flags: i32, expr?: bool): Node
