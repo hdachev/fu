@@ -2515,19 +2515,19 @@ pub fn runTests()
         fn main() 14 - test(3, fn mul2);
     `);
 
-    // ZERO(`
-    //     fn map(items: $T[], fn) {
-    //         mut result: fn(items[0])[];
-    //         for (mut i = 0; i < items.len; i++)
-    //             result.push(fn(items));
-    //
-    //         return result;
-    //     }
-    //
-    //     fn sqr(x) x*x;
-    //
-    //     fn main() [2].map(sqr)[0] - 4;
-    // `);
+    ZERO(`
+        fn map(items: $T[], fn) {
+            mut result: fn(items[0])[];
+            for (mut i = 0; i < items.len; i++)
+                result.push(fn(items[i]));
+
+            return result;
+        }
+
+        fn sqr(x) x*x;
+
+        fn main() [2].map(fn sqr)[0] - 4;
+    `);
 
     // ZERO(`
     //     fn reduce(items: $T[], fn, init?: $T) {
@@ -2538,7 +2538,7 @@ pub fn runTests()
     //         return result;
     //     }
     //
-    //     fn main() [1, 2].reduce(fn (a, b) = a + b) - 3;
+    //     fn main() [1, 2].reduce(|a, b| a + b) - 3;
     // `);
 
 
