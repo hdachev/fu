@@ -63,6 +63,9 @@ pub fn cpp_codegen(
 
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
+        if (mode & M_ARGUMENT && type.addroffn::type_isZST)
+            return "int";
+
         let fwd = typeAnnotBase(type);
 
         if (mode & M_RETVAL && type.canon == "never" && !(mode & M_CLOSURE))
@@ -730,15 +733,18 @@ pub fn cpp_codegen(
 
     fn binding(node: SolvedNode, doInit = false, forceMut = false): string
     {
-        let overload = GET(node.target);
-
-        let id = overload.name || fail();
         let annot = typeAnnot(
             node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
                      | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));
 
-        let head  = (annot || fail()) ~ " " ~ ID(id);
-        let init  = node.items ? node.items[LET_INIT] : SolvedNode;
+        if (node.flags & F_ARG && node.type.addroffn::type_isZST)
+            return annot;
+
+        let overload = GET(node.target);
+        let id = overload.name || fail();
+
+        let head = (annot || fail()) ~ " " ~ ID(id);
+        let init = node.items ? node.items[LET_INIT] : SolvedNode;
 
         if (!doInit || (node.flags & F_ARG))
             return head;
@@ -1188,9 +1194,9 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn cgEmpty(): string
+    fn cgEmpty(mode: i32): string
     {
-        return "";
+        return mode & M_STMT ? "" : "0";
     }
 
 
@@ -1437,9 +1443,9 @@ pub fn cpp_codegen(
         let n_body = items[LOOP_BODY];
         let n_pcnd = items[LOOP_POST_COND];
 
-        let init = n_init && cgNode(n_init);
+        let init = n_init && cgNode(n_init, M_STMT);
         let cond = n_cond && cgNode(n_cond, M_RETBOOL);
-        let post = n_post && cgNode(n_post);
+        let post = n_post && cgNode(n_post, M_STMT);
         mut body = n_body && blockWrapSubstatement(n_body);
         let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL);
         mut breakLabel = "";
@@ -1523,8 +1529,8 @@ pub fn cpp_codegen(
         if (k == "parens")      return cgParens(node);
         if (k == "label")       return cgParens(node);
 
-        if (k == "struct")      return cgEmpty();
-        if (k == "empty")       return cgEmpty();
+        if (k == "struct")      return cgEmpty(mode);
+        if (k == "empty")       return cgEmpty(mode);
 
         if (k == "copy")        return cgCopyMove(node);
         if (k == "move")        return cgCopyMove(node);

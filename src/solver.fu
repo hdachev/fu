@@ -855,6 +855,7 @@ pub fn solve(
 
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
+        if (k == "addroffn")    return solveAddrOfFn(node);
 
         return fail("TODO: " ~ k);
     }
@@ -1016,10 +1017,10 @@ pub fn solve(
         return solved(node, t_string);
     }
 
-    fn createEmpty(): SolvedNode
+    fn createEmpty(type = t_void): SolvedNode
     {
         return SolvedNode(
-            kind: "empty", type: t_void,
+            kind: "empty", :type,
             token: (_here || fail()));
     }
 
@@ -1753,39 +1754,43 @@ pub fn solve(
                                             : "var";
 
         let id = out.value;
-        let overload = out.target = Binding(
-            :id, :kind, :node.flags,
 
-            node.flags & F_MUT
-                ? add_mutref(out.type, lifetime)
-                : add_ref(out.type, lifetime));
-
-        if (_root_scope)
+        if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
-            mut same = 0;
-            /*
-            for (mut i = 0; i < _scope.items.len - 1; i++)
+            let overload = out.target = Binding(
+                :id, :kind, :node.flags,
+
+                node.flags & F_MUT
+                    ? add_mutref(out.type, lifetime)
+                    : add_ref(out.type, lifetime));
+
+            if (_root_scope)
             {
-                if (i == _scope_skip.start.items_len)
-                    i  = _scope_skip.end  .items_len;
-            /*/
-            let start = _scope_skip.end.items_len || _root_scope.items_len;
-            for (mut i = start; i < _scope.items.len - 1; i++)
-            {
-            // */
-                if (_scope.items[i].id == id)
-                    same++;
+                mut same = 0;
+                /*
+                for (mut i = 0; i < _scope.items.len - 1; i++)
+                {
+                    if (i == _scope_skip.start.items_len)
+                        i  = _scope_skip.end  .items_len;
+                /*/
+                let start = _scope_skip.end.items_len || _root_scope.items_len;
+                for (mut i = start; i < _scope.items.len - 1; i++)
+                {
+                // */
+                    if (_scope.items[i].id == id)
+                        same++;
+                }
+
+                if (same)
+                    GET_mut(overload).name ~= "_" ~ same;
             }
 
-            if (same)
-                GET_mut(overload).name ~= "_" ~ same;
+            if (global)
+                GET_mut(overload).solved = out;
+
+            if (out.flags & F_USING)
+                scope_using(overload);
         }
-
-        if (global)
-            GET_mut(overload).solved = out;
-
-        if (out.flags & F_USING)
-            scope_using(overload);
 
         return out;
     }
@@ -1882,6 +1887,13 @@ pub fn solve(
     fn solveTypeParam(node: Node): SolvedNode
     {
         return solved(node, evalTypeParam(node.value));
+    }
+
+    fn solveAddrOfFn(node: Node): SolvedNode
+    {
+        let id = node.value;
+        let type = addroffn::X_solveAddrOfFn(_scope, :id, _scope_skip);
+        return createEmpty(:type);
     }
 
 

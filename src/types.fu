@@ -281,7 +281,7 @@ pub fn humanizeType(type: Type)
     return result;
 }
 
-fn parse10i32(offset: &mut i32, str: string): i32
+pub fn parse10i32(offset: &mut i32, str: string): i32
 {
     mut result: i32;
     for (;;)

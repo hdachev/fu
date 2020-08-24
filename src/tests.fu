@@ -2512,7 +2512,7 @@ pub fn runTests()
     ZERO(`
         fn mul2(a) a*2;
         fn test(b, fn) fn(1 + fn(b));
-        fn main() test(3, fn mul2);
+        fn main() 14 - test(3, fn mul2);
     `);
 
     // ZERO(`
@@ -2562,16 +2562,16 @@ pub fn runTests()
             //*/
     `);
 
-    ZERO(`
-        fn sB(t: $T) struct { hey: $T; };
+    // ZERO(`
+    //     fn sB(t: $T) struct { hey: $T; };
 
-        // Pattern & partial spec, how?
-        fn test(x: sB($T)): $T =
-            x.hey - 1;
+    //     // Pattern & partial spec, how?
+    //     fn test(x: sB($T)): $T =
+    //         x.hey - 1;
 
-        type a = sB(i32);
-        fn main() a(1).test;
-    `);
+    //     type a = sB(i32);
+    //     fn main() a(1).test;
+    // `);
 
 
     // Enum basics.
