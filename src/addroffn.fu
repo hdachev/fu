@@ -71,3 +71,8 @@ pub fn X_solveAddrOfFn(scope: Scope, scope_skip: ScopeSkip, id: string)
 
     return Type(ValueType(quals: 0, modid: 0, canon: packAddrOfFn(targets)));
 }
+
+pub fn X_addrofTarget(target: Target)
+{
+    return Type(ValueType(quals: 0, modid: 0, canon: packAddrOfFn([ target ])));
+}

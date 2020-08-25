@@ -172,17 +172,17 @@ pub fn solve(
         let NO_IMPORTS: i32[];
         let template = Template(node: native, imports: NO_IMPORTS);
 
-        let overload = Scope_add(
+        let target = Scope_add(
             _scope,
             :kind, :id, ret,
             :min, :max, :args,
             :template,
             :node.flags);
 
-        node.target = overload;
-        GET_mut(overload).solved = node;
+        node.target = target;
+        GET_mut(target).solved = node;
 
-        return overload;
+        return target;
     }
 
     fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
@@ -1061,6 +1061,7 @@ pub fn solve(
             let tDecl   = TemplateDecl(n_fn);
             mut out     = solved(n_fn, t_void);
             out.target  = tDecl;
+            out.type    = addroffn::X_addrofTarget(tDecl);
             return out;
         }
 
@@ -1209,7 +1210,9 @@ pub fn solve(
 
             //
             let kind = native ? "__native" : "fn";
-            FnDecl(:kind, id: name, out, native && n_body);
+            let fndecl = FnDecl(:kind, id: name, out, native && n_body);
+
+            out.type = addroffn::X_addrofTarget(fndecl);
         }
 
         if (solve && !native)
