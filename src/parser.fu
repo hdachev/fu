@@ -171,6 +171,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     mut _dollarAuto = 0;
     mut _dollars    : string[];
 
+    mut _anonFns    = 0;
+
 
     //
 
@@ -558,8 +560,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseLambda(): Node
     {
+        let name = "l_" ~ modid ~ "_" ~ _anonFns++;
+
         return parseFnDecl_cont(endv: "|",
-            flags: F_INLINE | F_TEMPLATE, expr: true);
+            flags: F_INLINE | F_TEMPLATE, expr: true, :name);
     }
 
     fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
@@ -603,7 +607,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return parseFnDecl_cont(:flags, :name, :expr);
     }
 
-    fn parseFnDecl_cont(mut flags?!: i32, name?!: string, expr?!: bool, endv! = ")"): Node
+    fn parseFnDecl_cont(name!: string, mut flags?!: i32, expr?!: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];

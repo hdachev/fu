@@ -1048,8 +1048,6 @@ pub fn solve(
 
     fn __solveFn(n_fn: Node, solve!: bool, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1): SolvedNode
     {
-        let id = n_fn.value || fail("TODO anonymous fns");
-
         // Template early exit.
         if (spec)
         {
@@ -1200,10 +1198,8 @@ pub fn solve(
 
         if (!prep)
         {
-            mut kind = native ? "__native" : "fn";
-
             // TODO FIX currently we only hash template names.
-            mut name = id;
+            mut name = n_fn.value || fail("TODO anonymous fns");
             if (spec && !native)
             {
                 let sig = mangleArguments(out.items[0, out.items.len + FN_BODY_BACK]) || fail();
@@ -1212,6 +1208,7 @@ pub fn solve(
             }
 
             //
+            let kind = native ? "__native" : "fn";
             FnDecl(:kind, id: name, out, native && n_body);
         }
 
