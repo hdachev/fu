@@ -547,7 +547,7 @@ pub fn cpp_codegen(
             _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
                    ~ "\n                                #define DEFt_" ~ dedupe;
 
-        _fdef ~= "\n" ~ cgNode(node);
+        _fdef ~= "\n" ~ cgNode(node, M_STMT);
 
         if (dedupe)
             _fdef ~= "\n                                #endif\n";
@@ -657,11 +657,11 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgFn(fn: SolvedNode): string
+    fn cgFn(fn: SolvedNode, mode: i32): string
     {
         // Template? TODO FIX dunno why this is how we tell, looks terrible.
         if (!fn.items.len)
-            return "";
+            return mode & M_STMT ? "" : "0";
 
         // Use like-struct output for top-level functions with closures -
         //  We'll try to "close over" a root-level struct.
@@ -680,7 +680,7 @@ pub fn cpp_codegen(
             if (src)
             {
                 _fdef ~= src;
-                return "";
+                return mode & M_STMT ? "" : "0";
             }
         }
 
@@ -728,7 +728,7 @@ pub fn cpp_codegen(
             return src;
 
         _fdef ~= "\n" ~ src ~ "\n";
-        return "";
+        return mode & M_STMT ? "" : "0";
     }
 
     fn binding(node: SolvedNode, doInit = false, forceMut = false): string
@@ -1505,7 +1505,7 @@ pub fn cpp_codegen(
     {
         let k = node.kind;
 
-        if (k == "fn")          return cgFn(node);
+        if (k == "fn")          return cgFn(node, mode);
         if (k == "return")      return cgReturn(node);
         if (k == "break")       return cgJump(node);
         if (k == "continue")    return cgJump(node);
