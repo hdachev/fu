@@ -559,7 +559,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseLambda(): Node
     {
         return parseFnDecl_cont(endv: "|",
-            flags: F_INLINE | F_TEMPLATE);
+            flags: F_INLINE | F_TEMPLATE, expr: true);
     }
 
     fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
@@ -600,10 +600,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         else if (!tryConsume("op", "("))
             return make(kind: "addroffn", :flags, value: name);
 
-        return parseFnDecl_cont(:flags, :name);
+        return parseFnDecl_cont(:flags, :name, :expr);
     }
 
-    fn parseFnDecl_cont(mut flags?!: i32, name?!: string, endv! = ")"): Node
+    fn parseFnDecl_cont(mut flags?!: i32, name?!: string, expr?!: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];
@@ -622,7 +622,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         items.push(type);
 
         // Body or pattern (case/case).
-        flags |= parseFnBodyOrPattern(items);
+        flags |= parseFnBodyOrPattern(items, :expr);
 
         // Inject `: void` annot here, easy,
         //  one less thing to deal with later.
@@ -655,14 +655,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     }
 
     fn parseFnBodyOrPattern(
-        ref out_push_body: Node[]): i32
+        ref out_push_body: Node[], expr!: bool): i32
     {
         //
         mut flags = 0;
         mut body: Node;
 
         //
-        if (tryConsume("id", "case"))
+        if (!expr && tryConsume("id", "case"))
         {
             mut branches: Node[] = [];
 
@@ -683,7 +683,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
         else
         {
-            body = parseFnBodyBranch();
+            body = parseFnBodyBranch(:expr);
         }
 
         //
@@ -691,7 +691,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return flags;
     }
 
-    fn parseFnBodyBranch(): Node
+    fn parseFnBodyBranch(expr?: bool): Node
     {
         // Allow a leading `=` before body.
         //  We'll transition to this thing fulltime
@@ -699,7 +699,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         tryConsume("op", "=");
 
         //
-        let body = parseStatement();
+        let body = expr
+            ? parseExpression()
+            : parseStatement();
 
         if (body.kind == "block")
             return body;
