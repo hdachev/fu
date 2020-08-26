@@ -442,6 +442,21 @@ pub fn runTests()
         fn main() add3(2.v1).x - 5;
     `);
 
+    ZERO(`
+        fn mul_ab_init(a: $T, b = 0) a*b;
+        fn main() mul_ab_init(1);
+    `);
+
+    ZERO(`
+        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;
+        fn main() mul_ab_annot_init(1);
+    `);
+
+    ZERO(`
+        fn mul_ab_opt(a: $T, b?: $T) a*b;
+        fn main() mul_ab_opt(1);
+    `);
+
 
     // Arrays.
 
@@ -2539,11 +2554,6 @@ pub fn runTests()
         }
 
         fn main() [1, 2].reduce(|a, b| a + b) - 3;
-    `);
-
-    ZERO(`
-        fn mul(a: $T, b?: $T) a*b;
-        fn main() mul2(1);
     `);
 
     // ZERO(`
