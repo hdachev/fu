@@ -1383,17 +1383,17 @@ pub fn solve(
 
                     //
                     inType.quals |= q_ref;
-                }
 
-                // Type check.
-                if (annot)
-                {
-                    let argOk = inType && trySolveTypeParams(
-                        annot, inType, typeParams);
+                    // Type check.
+                    if (annot)
+                    {
+                        let argOk = inType && trySolveTypeParams(
+                            annot, inType, typeParams);
 
-                    ok = ok && argOk;
-                    if (!ok && !remangle)
-                        break;
+                        ok = ok && argOk;
+                        if (!ok && !remangle)
+                            break;
+                    }
                 }
             }
         }
