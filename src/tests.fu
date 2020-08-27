@@ -457,13 +457,13 @@ pub fn runTests()
         fn main() mul_ab_opt(1);
     `);
 
-    ZERO(`
-        fn main() {
-            let a = 1;
-            fn add1(b) a + b;
-            return 2.add1 - 3;
-        }
-    `);
+    // ZERO(`
+    //     fn main() {
+    //         let a = 1;
+    //         fn add1(b) a + b;
+    //         return 2.add1 - 3;
+    //     }
+    // `);
 
 
     // Arrays.
@@ -2564,18 +2564,18 @@ pub fn runTests()
         fn main() [1, 2].reduce(|a, b| a + b) - 3;
     `);
 
-    ZERO(`
-        fn each(items: $T[], fn) {
-            for (mut i = 0; i < items.len; i++)
-                fn(items[i]);
-        }
-
-        fn main() {
-            mut i = 0;
-            [1, 2].each(|x| i += x);
-            return i - 3;
-        }
-    `);
+    // ZERO(`
+    //     fn each(items: $T[], fn) {
+    //         for (mut i = 0; i < items.len; i++)
+    //             fn(items[i]);
+    //     }
+    //
+    //     fn main() {
+    //         mut i = 0;
+    //         [1, 2].each(|x| i += x);
+    //         return i - 3;
+    //     }
+    // `);
 
 
     // Template structs.
