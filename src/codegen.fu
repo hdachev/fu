@@ -176,7 +176,7 @@ pub fn cpp_codegen(
 
         if (!_tfwd.has(c))
         {
-            _tfwd[c] = "\nstruct " ~ id ~ ";";
+            _tfwd[c] = "struct " ~ id ~ ";\n";
             _tdef ~= declareStruct(type, tdef);
         }
 
@@ -234,11 +234,15 @@ pub fn cpp_codegen(
     //
 
     fn collectDedupes(
-        dedupes: Map(string, string)): string
+        dedupes: Map(string, string),
+        leadingNewline?: bool): string
     {
-        mut out = "";
-
         mut values = dedupes.values();
+        if (!values.len)
+            return "";
+
+        mut out = leadingNewline ? "\n" : "";
+
         values.sort();
         for (mut i = 0; i < values.len; i++)
             out ~= values[i];
@@ -295,8 +299,8 @@ pub fn cpp_codegen(
         let main   = cgMain();
 
         let header = collectDedupes(_libs)
-                   ~ collectDedupes(_tfwd)
-                   ~ collectDedupes(_ffwd)
+                   ~ collectDedupes(_tfwd, leadingNewline: true)
+                   ~ collectDedupes(_ffwd, leadingNewline: true)
                    ~               (_tdef)
                    ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
                    ;
@@ -515,7 +519,7 @@ pub fn cpp_codegen(
         let linkage = (overload.flags & F_TEMPLATE && "inline ")
                   ~ (!(overload.flags & F_PUB)     && "static ");
 
-        mut src = "\n" ~ linkage ~ annot ~ " " ~ name ~ "(";
+        mut src = linkage ~ annot ~ " " ~ name ~ "(";
 
         let args = overload.args;
         for (mut i = 0; i < args.len; i++)
@@ -526,7 +530,7 @@ pub fn cpp_codegen(
             src ~= typeAnnot(args[i].type, M_ARGUMENT | M_FWDECL);
         }
 
-        src ~= ");";
+        src ~= ");\n";
         _ffwd[ffwdKey] = src;
 
         return;
@@ -540,17 +544,9 @@ pub fn cpp_codegen(
             return;
 
         // Go!
-        let node    = overload.solved;
-        let dedupe  = node.flags & F_PUB && overload.name.valid_identifier;
-
-        if (dedupe)
-            _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
-                   ~ "\n                                #define DEFt_" ~ dedupe;
-
-        _fdef ~= "\n" ~ cgNode(node, M_STMT);
-
-        if (dedupe)
-            _fdef ~= "\n                                #endif\n";
+        let node = overload.solved;
+        node.kind == "fn" || fail("ensureTemplateFn non-fn");
+        cgFn(node, M_STMT);
     }
 
 
@@ -661,14 +657,12 @@ pub fn cpp_codegen(
     {
         // Use like-struct output for top-level functions with closures -
         //  We'll try to "close over" a root-level struct.
-        if (_faasN == 0 && (fn.flags & F_HAS_CLOSURE))
+        if (_faasN == 0 && fn.flags & F_HAS_CLOSURE)
         {
             /////////
             _faasN++;
             /////////
-
             let src = try_cgFnAsStruct(fn);
-
             /////////
             _faasN--;
             /////////
@@ -698,7 +692,7 @@ pub fn cpp_codegen(
 
         // Custom __natives.
         if (!body)
-            return "\n// fn " ~ id ~ " has no body.\n";
+            return mode & M_STMT ? "\n// fn " ~ id ~ " has no body.\n" : "0";
 
         // Both closures and try_cgFnAsStruct
         if (!(fn.flags & F_CLOSURE))
@@ -719,11 +713,22 @@ pub fn cpp_codegen(
         _indent = indent0;
         //////////////
 
-        // This covers both closures & try_cgTryFnAsStruct:
-        if (fn.flags & F_CLOSURE || fn.flags & F_TEMPLATE)
+        if (fn.flags & F_CLOSURE)
             return src;
 
+        let dedupe = fn.flags & F_PUB
+                  && fn.flags & F_TEMPLATE
+                  && overload.name.valid_identifier;
+
+        if (dedupe)
+            _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
+                   ~ "\n                                #define DEFt_" ~ dedupe;
+
         _fdef ~= "\n" ~ src ~ "\n";
+
+        if (dedupe)
+            _fdef ~= "                                #endif\n";
+
         return mode & M_STMT ? "" : "0";
     }
 
