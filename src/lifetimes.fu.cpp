@@ -7,10 +7,10 @@
 
 struct s_Lifetime;
 struct s_Region;
-inline const s_Region& if_first_AyJp(const fu_VEC<s_Region>&);
-inline const s_Region& if_only_AyJp(const fu_VEC<s_Region>&);
+
 inline const s_Region& only_AyJp(const fu_VEC<s_Region>&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
+
                                 #ifndef DEF_s_Region
                                 #define DEF_s_Region
 struct s_Region

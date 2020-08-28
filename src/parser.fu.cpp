@@ -16,11 +16,12 @@ struct s_Node;
 struct s_ParserOutput;
 struct s_Token;
 struct s_TokenIdx;
+
 bool hasIdentifierChars(const fu_STR&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_ext(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
-inline std::byte only_y0NH(const fu_STR&);
+
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP
 struct s_BINOP
@@ -396,6 +397,7 @@ struct sf_parse
     int _numReturns = 0;
     int _dollarAuto = 0;
     fu_VEC<fu_STR> _dollars {};
+    int _anonFns = 0;
     fu_VEC<fu_STR> _imports {};
     fu_STR registerImport(fu_STR&& value)
     {
@@ -701,6 +703,11 @@ struct sf_parse
         consume("id"_fu, "fn"_fu);
         return parseFnDecl(int(flags), expr);
     };
+    s_Node parseLambda()
+    {
+        fu_STR name = ((("l_"_fu + modid) + "_"_fu) + _anonFns++);
+        return parseFnDecl_cont(name, (F_INLINE | F_TEMPLATE), true, "|"_fu);
+    };
     s_Node parseFnDecl(int flags, const bool expr)
     {
         fu_STR name = tryConsume("id"_fu, fu::view<std::byte>{}).value;
@@ -727,20 +734,24 @@ struct sf_parse
         else if ((flags & ((F_INFIX | F_PREFIX) | F_POSTFIX)))
             fail((("Not an operator: `"_fu + name) + "`."_fu));
 
-        fu_VEC<s_Node> items {};
         if (!expr)
             consume("op"_fu, "("_fu);
         else if (!tryConsume("op"_fu, "("_fu))
-            return make("addroffn"_fu, items, flags, name);
+            return make("addroffn"_fu, fu_VEC<s_Node>{}, flags, name);
 
+        return parseFnDecl_cont(name, int(flags), expr, ")"_fu);
+    };
+    s_Node parseFnDecl_cont(const fu_STR& name, int flags, const bool expr, const fu_STR& endv)
+    {
+        fu_VEC<s_Node> items {};
         _fnDepth++;
         fu_VEC<fu_STR> dollars0 { _dollars };
         const int numReturns0 = _numReturns;
-        flags |= parseArgsDecl(items, "op"_fu, ")"_fu);
+        flags |= parseArgsDecl(items, "op"_fu, endv);
         s_Node type = tryPopTypeAnnot();
         const int retIdx = items.size();
         items.push(type);
-        flags |= parseFnBodyOrPattern(items);
+        flags |= parseFnBodyOrPattern(items, expr);
         if ((!type && (_numReturns == numReturns0)))
             items.mutref(retIdx) = (type = createRead("void"_fu));
 
@@ -763,11 +774,11 @@ struct sf_parse
         _numReturns = numReturns0;
         return make("fn"_fu, items, flags, name);
     };
-    int parseFnBodyOrPattern(fu_VEC<s_Node>& out_push_body)
+    int parseFnBodyOrPattern(fu_VEC<s_Node>& out_push_body, const bool expr)
     {
         int flags = 0;
         s_Node body {};
-        if (tryConsume("id"_fu, "case"_fu))
+        if ((!expr && tryConsume("id"_fu, "case"_fu)))
         {
             fu_VEC<s_Node> branches {};
             flags |= F_PATTERN;
@@ -775,22 +786,22 @@ struct sf_parse
             {
                 s_Node cond = parseUnaryExpression(0);
                 s_Node type = tryPopTypeAnnot();
-                s_Node cons = parseFnBodyBranch();
+                s_Node cons = parseFnBodyBranch(bool{});
                 branches.push(make("fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { cond, type, cons } }, 0, fu_STR{}));
             }
             while (tryConsume("id"_fu, "case"_fu));
             body = make("pattern"_fu, branches, 0, fu_STR{});
         }
         else
-            body = parseFnBodyBranch();
+            body = parseFnBodyBranch(expr);
 
         out_push_body.push(body);
         return flags;
     };
-    s_Node parseFnBodyBranch()
+    s_Node parseFnBodyBranch(const bool expr)
     {
         tryConsume("op"_fu, "="_fu);
-        s_Node body = parseStatement();
+        s_Node body = (expr ? parseExpression(int(_precedence), 0) : parseStatement());
         if ((body.kind == "block"_fu))
             return body;
 
@@ -1062,6 +1073,9 @@ struct sf_parse
 
                 if ((v == "@"_fu))
                     return parseTypeTag();
+
+                if ((v == "|"_fu))
+                    return parseLambda();
 
                 if ((v == "[]"_fu))
                     return createDefinit();

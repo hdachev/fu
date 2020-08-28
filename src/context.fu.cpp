@@ -38,8 +38,10 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 fu_STR path_dirname(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

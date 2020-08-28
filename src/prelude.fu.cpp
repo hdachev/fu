@@ -29,11 +29,13 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 void setModule(const s_Module&, s_Context&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

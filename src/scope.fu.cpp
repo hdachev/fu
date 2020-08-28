@@ -34,11 +34,13 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 int Region_toArgIndex(const s_Region&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
 static int commonQuals(const fu_VEC<s_StructField>&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

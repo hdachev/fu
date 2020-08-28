@@ -17,6 +17,7 @@ static void runTestsAndBuildCompiler();
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 void runTests();
 void saySomethingNice();
+
 #ifndef FU_NO_FDEFs
 
                                 #ifndef DEF_PRJDIR

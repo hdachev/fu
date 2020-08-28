@@ -6,6 +6,7 @@
 #include <iostream>
 
 struct s_ModuleStat;
+
                                 #ifndef DEF_s_ModuleStat
                                 #define DEF_s_ModuleStat
 struct s_ModuleStat

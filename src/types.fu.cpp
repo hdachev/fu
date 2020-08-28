@@ -17,9 +17,11 @@ struct s_Region;
 struct s_Target;
 struct s_Type;
 struct s_ValueType;
+
 bool operator==(const s_ValueType&, const s_ValueType&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
 uint64_t u64(const s_Target&);
+
                                 #ifndef DEF_s_Effects
                                 #define DEF_s_Effects
 struct s_Effects

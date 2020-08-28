@@ -4,6 +4,7 @@
 #include <fu/view.h>
 
 struct s_Intlit;
+
                                 #ifndef DEF_s_Intlit
                                 #define DEF_s_Intlit
 struct s_Intlit

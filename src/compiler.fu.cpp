@@ -43,12 +43,12 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 fu_STR FAIL(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
-inline std::byte if_last_y0NH(const fu_STR&);
 s_Context ZERO(const fu_STR&);
 s_Context solvePrelude();
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
@@ -63,6 +63,7 @@ void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, con
 void build(const s_Context&, bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&);
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void setModule(const s_Module&, s_Context&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

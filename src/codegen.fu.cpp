@@ -46,6 +46,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 bool hasIdentifierChars(const fu_STR&);
 bool isStruct(const s_Type&);
 bool is_bool(const s_Type&);
@@ -55,8 +56,6 @@ bool type_isArray(const s_Type&);
 bool type_isMap(const s_Type&);
 bool type_isZST(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
-inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>&);
-inline std::byte if_last_y0NH(const fu_STR&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_MapFields tryClear_map(const s_Type&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
@@ -64,6 +63,7 @@ s_Type clear_refs(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
 uint64_t u64(const s_Target&);
+
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -940,7 +940,7 @@ struct sf_cpp_codegen
         fu_STR id = structId(type);
         if (!fu::has(_tfwd, c))
         {
-            (_tfwd.upsert(c) = (("\nstruct "_fu + id) + ";"_fu));
+            (_tfwd.upsert(c) = (("struct "_fu + id) + ";\n"_fu));
             (_tdef += declareStruct(type, tdef));
         };
         return id;
@@ -979,10 +979,13 @@ struct sf_cpp_codegen
         (def += "\n    }"_fu);
         return (def + "\n};\n                                #endif\n"_fu);
     };
-    fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes)
+    fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes, const bool leadingNewline)
     {
-        fu_STR out {};
         fu_VEC<fu_STR> values { dedupes.m_values };
+        if (!values.size())
+            return fu_STR{};
+
+        fu_STR out = (leadingNewline ? "\n"_fu : fu_STR{});
         fu::sort(values);
         for (int i = 0; (i < values.size()); i++)
             (out += values.mutref(i));
@@ -1024,7 +1027,7 @@ struct sf_cpp_codegen
     {
         fu_STR src = cgStatements(root_1.items);
         fu_STR main = cgMain();
-        fu_STR header = ((((collectDedupes(_libs) + collectDedupes(_tfwd)) + collectDedupes(_ffwd)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
+        fu_STR header = ((((collectDedupes(_libs, bool{}) + collectDedupes(_tfwd, true)) + collectDedupes(_ffwd, true)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
         return ((header + src) + main);
     };
     fu_STR cgMain()
@@ -1216,7 +1219,7 @@ struct sf_cpp_codegen
         const int isOp = (overload.flags & F_OPERATOR);
         fu_STR name = (isOp ? ("operator"_fu + valid_operator(id)) : fu_STR(id));
         fu_STR linkage = (([&]() -> fu_STR { if ((overload.flags & F_TEMPLATE)) return "inline "_fu; else return fu_STR{}; }()) + ([&]() -> fu_STR { if (!(overload.flags & F_PUB)) return "static "_fu; else return fu_STR{}; }()));
-        fu_STR src = ((((("\n"_fu + linkage) + annot) + " "_fu) + name) + "("_fu);
+        fu_STR src = ((((linkage + annot) + " "_fu) + name) + "("_fu);
         const fu_VEC<s_Argument>& args = overload.args;
         for (int i = 0; (i < args.size()); i++)
         {
@@ -1225,7 +1228,7 @@ struct sf_cpp_codegen
 
             (src += typeAnnot(args[i].type, (M_ARGUMENT | M_FWDECL)));
         };
-        (src += ");"_fu);
+        (src += ");\n"_fu);
         (_ffwd.upsert(ffwdKey) = src);
         return;
     };
@@ -1237,14 +1240,8 @@ struct sf_cpp_codegen
             return;
 
         const s_SolvedNode& node = overload.solved;
-        fu_STR dedupe = ([&]() -> fu_STR { if ((node.flags & F_PUB)) return valid_identifier(fu_STR(overload.name)); else return fu_STR{}; }());
-        if (dedupe)
-            (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
-
-        (_fdef += ("\n"_fu + cgNode(node, 0)));
-        if (dedupe)
-            (_fdef += "\n                                #endif\n"_fu);
-
+        ((node.kind == "fn"_fu) || fail("ensureTemplateFn non-fn"_fu));
+        cgFn(node, M_STMT);
     };
     fu_STR try_cgFnAsStruct(const s_SolvedNode& fn)
     {
@@ -1302,11 +1299,8 @@ struct sf_cpp_codegen
         _clsrN++;
         return src;
     };
-    fu_STR cgFn(const s_SolvedNode& fn)
+    fu_STR cgFn(const s_SolvedNode& fn, const int mode)
     {
-        if (!fn.items.size())
-            return fu_STR{};
-
         if (((_faasN == 0) && (fn.flags & F_HAS_CLOSURE)))
         {
             _faasN++;
@@ -1315,7 +1309,7 @@ struct sf_cpp_codegen
             if (src)
             {
                 (_fdef += src);
-                return fu_STR{};
+                return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
             };
         };
         const int f0 = _fnN;
@@ -1330,7 +1324,7 @@ struct sf_cpp_codegen
         s_Overload overload = GET(fn.target);
         const fu_STR& id = overload.name;
         if (!body)
-            return (("\n// fn "_fu + id) + " has no body.\n"_fu);
+            return ((mode & M_STMT) ? (("\n// fn "_fu + id) + " has no body.\n"_fu) : "0"_fu);
 
         if (!(fn.flags & F_CLOSURE))
             _indent = "\n"_fu;
@@ -1347,11 +1341,18 @@ struct sf_cpp_codegen
         _fnN = f0;
         _clsrN = c0;
         _indent = indent0;
-        if (((fn.flags & F_CLOSURE) || (fn.flags & F_TEMPLATE)))
+        if ((fn.flags & F_CLOSURE))
             return src;
 
+        fu_STR dedupe = ([&]() -> fu_STR { if ((fn.flags & F_PUB) && (fn.flags & F_TEMPLATE)) return valid_identifier(fu_STR(overload.name)); else return fu_STR{}; }());
+        if (dedupe)
+            (_fdef += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe));
+
         (_fdef += (("\n"_fu + src) + "\n"_fu));
-        return fu_STR{};
+        if (dedupe)
+            (_fdef += "                                #endif\n"_fu);
+
+        return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
     };
     fu_STR binding(const s_SolvedNode& node, const bool doInit, const bool forceMut)
     {
@@ -1958,7 +1959,7 @@ struct sf_cpp_codegen
     {
         const fu_STR& k = node.kind;
         if ((k == "fn"_fu))
-            return cgFn(node);
+            return cgFn(node, mode);
 
         if ((k == "return"_fu))
             return cgReturn(node);

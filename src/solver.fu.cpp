@@ -44,6 +44,7 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Type&);
 bool hasIdentifierChars(const fu_STR&);
 bool isAssignable(const s_Type&, const s_Type&);
@@ -61,12 +62,6 @@ fu_STR humanizeType(const s_Type&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 fu_STR serializeType(const s_Type&);
 fu_VEC<s_Target> DEPREC_lookup(const s_Scope&, const fu_STR&);
-inline const s_Node& if_last_zET6(const fu_VEC<s_Node>&);
-inline const s_Node& only_zET6(const fu_VEC<s_Node>&);
-inline const s_SolvedNode& if_first_fyyZ(fu_VEC<s_SolvedNode>&);
-inline const s_SolvedNode& last_4UAi(const fu_VEC<s_SolvedNode>&);
-inline fu_STR& last_Kz6K(fu_VEC<fu_STR>&);
-inline s_SolvedNode& only_o0k6(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
 int finalizeStruct(const fu_STR&, const fu_VEC<s_StructField>&, const fu_VEC<s_ScopeItem>&, s_Module&);
 s_Intlit Intlit(fu::view<std::byte>);
@@ -83,6 +78,7 @@ s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Modu
 s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_Partial&, const s_SolvedNode&, const s_Module&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
+s_Type X_addrofTarget(const s_Target&);
 s_Type X_solveAddrOfFn(const s_Scope&, const s_ScopeSkip&, const fu_STR&);
 s_Type add_mutref(const s_Type&, const s_Lifetime&);
 s_Type add_ref(const s_Type&, const s_Lifetime&);
@@ -99,6 +95,7 @@ s_Type tryClear_ref(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
 s_Type type_tryInter(const s_Type&, const s_Type&);
 void Scope_pop(s_Scope&, const s_ScopeMemo&);
+
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -1106,10 +1103,10 @@ struct sf_solve
         };
         fu_VEC<int> NO_IMPORTS {};
         s_Template tEmplate = s_Template { s_Node(native), fu_VEC<int>(NO_IMPORTS) };
-        const s_Target overload = Scope_add(_scope, kind, id, ret, node.flags, min, max, args, tEmplate, s_Partial{}, s_SolvedNode{}, module);
-        node.target = overload;
-        GET_mut(overload).solved = node;
-        return overload;
+        const s_Target target = Scope_add(_scope, kind, id, ret, node.flags, min, max, args, tEmplate, s_Partial{}, s_SolvedNode{}, module);
+        node.target = target;
+        GET_mut(target).solved = node;
+        return target;
     };
     s_Target DefCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
     {
@@ -1790,7 +1787,6 @@ struct sf_solve
     };
     s_SolvedNode __solveFn(const s_Node& n_fn, const bool solve, const s_SolvedNode& prep, const bool spec, const int caseIdx)
     {
-        const fu_STR& id = (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu));
         if (spec)
         {
             (solve || fail(fu_STR{}));
@@ -1801,9 +1797,7 @@ struct sf_solve
                 return s_SolvedNode((prep ? prep : fail(fu_STR{})));
 
             const s_Target tDecl = TemplateDecl(n_fn);
-            s_SolvedNode out = solved(n_fn, t_void, fu_VEC<s_SolvedNode>{});
-            out.target = tDecl;
-            return out;
+            return createEmpty(X_addrofTarget(tDecl));
         };
         if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
             return s_SolvedNode{};
@@ -1893,15 +1887,16 @@ struct sf_solve
         };
         if (!prep)
         {
-            fu_STR kind = (native ? "__native"_fu : "fn"_fu);
-            fu_STR name { id };
+            fu_STR name { (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu)) };
             if ((spec && !native))
             {
                 fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.items, 0, (out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
                 fu_STR hash = hash62(sig, 4);
                 (name += ("_"_fu + hash));
             };
-            FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
+            fu_STR kind = (native ? "__native"_fu : "fn"_fu);
+            const s_Target fndecl = FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
+            out.type = X_addrofTarget(fndecl);
         };
         if ((solve && !native))
         {
@@ -1994,14 +1989,14 @@ struct sf_solve
                     s_Type& argName_typeParam = ([&](s_Type& _) -> s_Type& { if (!_) _ = s_Type{}; return _; } (typeParams.upsert(argName)));
                     ([&]() -> s_Type& { { s_Type& _ = argName_typeParam; if (!_) return _; } fail((("Type param name collision with argument: `"_fu + argName) + "`."_fu)); }()) = inType;
                     inType.value.quals |= q_ref;
-                };
-                if (annot)
-                {
-                    const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
-                    ok = ([&]() -> bool { if (ok) return argOk; else return fu::Default<bool>::value; }());
-                    if ((!ok && !remangle))
+                    if (annot)
                     {
-                        break;
+                        const bool argOk = (inType && trySolveTypeParams(annot, s_Type(inType), typeParams));
+                        ok = ([&]() -> bool { if (ok) return argOk; else return fu::Default<bool>::value; }());
+                        if ((!ok && !remangle))
+                        {
+                            break;
+                        };
                     };
                 };
             };

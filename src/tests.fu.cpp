@@ -32,12 +32,14 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 fu_STR FAIL(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
 fu_STR snippet2cpp(const fu_STR&);
 s_Context ZERO(const fu_STR&);
 s_Context ZERO(const fu_VEC<fu_STR>&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -595,6 +597,9 @@ void runTests()
     ZERO("\n        fn div3by(a: $T) 3 / a;\n        return div3by(2) - 1;\n    "_fu);
     ZERO("\n        fn div3by(a) 3 / a;\n        return div3by(2) - 1;\n    "_fu);
     ZERO("\n        fn add3(a: $T, b = 3) a + b;\n        struct v1 { x: i32; };\n        fn +(a: v1, b: i32) v1(a.x + b);\n        fn main() add3(2.v1).x - 5;\n    "_fu);
+    ZERO("\n        fn mul_ab_init(a: $T, b = 0) a*b;\n        fn main() mul_ab_init(1);\n    "_fu);
+    ZERO("\n        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;\n        fn main() mul_ab_annot_init(1);\n    "_fu);
+    ZERO("\n        fn mul_ab_opt(a: $T, b?: $T) a*b;\n        fn main() mul_ab_opt(1);\n    "_fu);
     ZERO("\n        mut arr = [0, 1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        mut arr: i32[] = [1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        let x = 5;\n        mut arr = [ -5 ];\n        arr.push(x);\n        return arr[0] + arr[1];\n    "_fu);
@@ -804,6 +809,7 @@ void runTests()
     ZERO("\n        let x = { mut z = 0; z++; z };\n        return x - 1;\n    "_fu);
     ZERO("\n        fn mul2(a) a*2;\n        fn test(b, fn) fn(1 + fn(b));\n        fn main() 14 - test(3, fn mul2);\n    "_fu);
     ZERO("\n        fn map(items: $T[], fn) {\n            mut result: fn(items[0])[];\n            for (mut i = 0; i < items.len; i++)\n                result.push(fn(items[i]));\n\n            return result;\n        }\n\n        fn sqr(x) x*x;\n\n        fn main() [2].map(fn sqr)[0] - 4;\n    "_fu);
+    ZERO("\n        fn reduce(items: $T[], fn, init?: $T) {\n            mut result = init;\n            for (mut i = 0; i < items.len; i++)\n                result = fn(result, items[i]);\n\n            return result;\n        }\n\n        fn main() [1, 2].reduce(|a, b| a + b) - 3;\n    "_fu);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ;\n            /*/\n            .i32;\n            //*/\n    "_fu);
 }

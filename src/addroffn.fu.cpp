@@ -22,8 +22,10 @@ struct s_Template;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 int parse10i32(int&, const fu_STR&);
 s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -398,6 +400,11 @@ s_Type X_solveAddrOfFn(const s_Scope& scope, const s_ScopeSkip& scope_skip, cons
         targets.push(target);
 
     return s_Type { s_ValueType { 0, 0, packAddrOfFn(targets) }, s_Lifetime{}, s_Effects{} };
+}
+
+s_Type X_addrofTarget(const s_Target& target)
+{
+    return s_Type { s_ValueType { 0, 0, packAddrOfFn(fu_VEC<s_Target> { fu_VEC<s_Target>::INIT<1> { target } }) }, s_Lifetime{}, s_Effects{} };
 }
 
 #endif

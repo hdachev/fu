@@ -45,13 +45,14 @@ struct s_Token;
 struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
+
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_noext(const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
-inline std::byte if_last_bcSl(fu_STR&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

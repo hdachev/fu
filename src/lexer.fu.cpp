@@ -11,7 +11,9 @@
 
 struct s_LexerOutput;
 struct s_Token;
+
 fu_STR ascii_lower(const fu_STR&);
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token

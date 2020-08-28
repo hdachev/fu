@@ -6,12 +6,9 @@
 #include <utility>
 
 struct s_TEA;
-inline uint64_t u64_F1nT(s_TEA&&);
-inline void r16_72yr(s_TEA&);
-inline void r16_gDfi(s_TEA&, uint32_t&);
-inline void r4_72yr(s_TEA&);
-inline void r4_gDfi(s_TEA&, uint32_t&);
+
 s_TEA hash(fu::view<std::byte>);
+
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
 struct s_TEA
@@ -30,11 +27,9 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_r4_72yr
-                                #define DEFt_r4_72yr
-                                #ifndef DEFt_r4_gDfi
-                                #define DEFt_r4_gDfi
-inline void r4_gDfi(s_TEA& _, uint32_t& sum)
+                                #ifndef DEFt_r4_ZIoe
+                                #define DEFt_r4_ZIoe
+inline void r4_ZIoe(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
     for (int i = 0; (i < 4); i++)
@@ -46,18 +41,18 @@ inline void r4_gDfi(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-inline void r4_72yr(s_TEA& tea)
+                                #ifndef DEFt_r4_PThh
+                                #define DEFt_r4_PThh
+inline void r4_PThh(s_TEA& tea)
 {
     uint32_t sum {};
-    r4_gDfi(tea, sum);
+    r4_ZIoe(tea, sum);
 }
                                 #endif
 
-                                #ifndef DEFt_r16_72yr
-                                #define DEFt_r16_72yr
-                                #ifndef DEFt_r16_gDfi
-                                #define DEFt_r16_gDfi
-inline void r16_gDfi(s_TEA& _, uint32_t& sum)
+                                #ifndef DEFt_r16_ZIoe
+                                #define DEFt_r16_ZIoe
+inline void r16_ZIoe(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
     for (int i = 0; (i < 16); i++)
@@ -69,10 +64,12 @@ inline void r16_gDfi(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-inline void r16_72yr(s_TEA& tea)
+                                #ifndef DEFt_r16_PThh
+                                #define DEFt_r16_PThh
+inline void r16_PThh(s_TEA& tea)
 {
     uint32_t sum {};
-    r16_gDfi(tea, sum);
+    r16_ZIoe(tea, sum);
 }
                                 #endif
 
@@ -84,7 +81,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r4_72yr(res);
+        r4_PThh(res);
     };
     if ((u32view.size() & 1))
         res.v0 ^= u32view[(u32view.size() - 1)];
@@ -99,7 +96,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
         };
         res.v1 ^= last;
     };
-    r16_72yr(res);
+    r16_PThh(res);
     return std::move(res);
 }
 
@@ -110,9 +107,9 @@ s_TEA hash(fu::view<std::byte> u8view)
     return res;
 }
 
-                                #ifndef DEFt_u64_F1nT
-                                #define DEFt_u64_F1nT
-inline uint64_t u64_F1nT(s_TEA&& tea)
+                                #ifndef DEFt_u64_F9TO
+                                #define DEFt_u64_F9TO
+inline uint64_t u64_F9TO(s_TEA&& tea)
 {
     return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
 }
@@ -121,7 +118,7 @@ inline uint64_t u64_F1nT(s_TEA&& tea)
 fu_STR hash62(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
-    uint64_t v = u64_F1nT(hash(str));
+    uint64_t v = u64_F9TO(hash(str));
     for (int i = 0; (i < chars); i++)
     {
         const uint64_t c = (v % 62u);
