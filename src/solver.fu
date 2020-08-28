@@ -1058,11 +1058,9 @@ pub fn solve(
             if (solve)
                 return prep || fail();
 
-            let tDecl   = TemplateDecl(n_fn);
-            mut out     = solved(n_fn, t_void);
-            out.target  = tDecl;
-            out.type    = addroffn::X_addrofTarget(tDecl);
-            return out;
+            let tDecl = TemplateDecl(n_fn);
+            return createEmpty(
+                type: addroffn::X_addrofTarget(tDecl));
         }
 
         // Prep reject.

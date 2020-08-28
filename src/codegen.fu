@@ -659,10 +659,6 @@ pub fn cpp_codegen(
 
     fn cgFn(fn: SolvedNode, mode: i32): string
     {
-        // Template? TODO FIX dunno why this is how we tell, looks terrible.
-        if (!fn.items.len)
-            return mode & M_STMT ? "" : "0";
-
         // Use like-struct output for top-level functions with closures -
         //  We'll try to "close over" a root-level struct.
         if (_faasN == 0 && (fn.flags & F_HAS_CLOSURE))
