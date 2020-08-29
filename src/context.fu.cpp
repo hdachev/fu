@@ -290,13 +290,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    s_ValueType value;
+    s_ValueType vtype;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || value
+            || vtype
             || lifetime
             || effects
         ;
@@ -670,10 +670,10 @@ void setModule(const s_Module& module, s_Context& ctx)
 
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    if ((type.value.modid == module.modid))
-        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.value.canon]; if (_) return _; } fu_ASSERT(); }());
+    if ((type.vtype.modid == module.modid))
+        return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.vtype.canon]; if (_) return _; } fu_ASSERT(); }());
 
-    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.value.modid].out.types[type.value.canon]; if (_) return _; } fu_ASSERT(); }());
+    return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.vtype.modid].out.types[type.vtype.canon]; if (_) return _; } fu_ASSERT(); }());
 }
 
 #endif

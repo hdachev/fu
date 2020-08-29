@@ -146,13 +146,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    s_ValueType value;
+    s_ValueType vtype;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || value
+            || vtype
             || lifetime
             || effects
         ;
@@ -823,9 +823,9 @@ struct sf_cpp_codegen
             (_libs.upsert(lib) = (("#include "_fu + lib) + "\n"_fu));
 
     };
-    fu_STR typeAnnot(const s_ValueType& value)
+    fu_STR typeAnnot(const s_ValueType& vtype)
     {
-        return typeAnnot(s_Type { s_ValueType(value), s_Lifetime{}, s_Effects{} }, 0);
+        return typeAnnot(s_Type { s_ValueType(vtype), s_Lifetime{}, s_Effects{} }, 0);
     };
     fu_STR typeAnnot(const s_Type& type, const int mode)
     {
@@ -833,34 +833,34 @@ struct sf_cpp_codegen
             return "int"_fu;
 
         fu_STR fwd = typeAnnotBase(type);
-        if (((mode & M_RETVAL) && (type.value.canon == "never"_fu) && !(mode & M_CLOSURE)))
+        if (((mode & M_RETVAL) && (type.vtype.canon == "never"_fu) && !(mode & M_CLOSURE)))
             return ("[[noreturn]] "_fu + fwd);
 
-        if ((type.value.quals & q_ref))
+        if ((type.vtype.quals & q_ref))
         {
             if (fu::lmatch(fwd, "fu::view"_fu))
                 return fwd;
 
-            if ((type.value.quals & q_mutref))
+            if ((type.vtype.quals & q_mutref))
                 return (fwd + "&"_fu);
 
-            if ((type.value.quals & q_primitive))
+            if ((type.vtype.quals & q_primitive))
                 return ((((mode & M_ARGUMENT) | (mode & M_CONST)) && !(mode & M_FWDECL)) ? ("const "_fu + fwd) : fu_STR(fwd));
 
             return (("const "_fu + fwd) + "&"_fu);
         };
-        if (((mode & M_ARGUMENT) && !(type.value.quals & q_primitive)))
+        if (((mode & M_ARGUMENT) && !(type.vtype.quals & q_primitive)))
             return (fwd + "&&"_fu);
 
-        if (((mode & M_CONST) && (type.value.quals & q_trivial)))
+        if (((mode & M_CONST) && (type.vtype.quals & q_trivial)))
             return ("const "_fu + fwd);
 
         return fwd;
     };
     fu_STR typeAnnotBase(const s_Type& type)
     {
-        const fu_STR& c = type.value.canon;
-        if ((type.value.quals & q_primitive))
+        const fu_STR& c = type.vtype.canon;
+        if ((type.vtype.quals & q_primitive))
         {
             if ((c == "i32"_fu))
                 return "int"_fu;
@@ -910,7 +910,7 @@ struct sf_cpp_codegen
         s_Type arrayItem = tryClear_array(type);
         if (arrayItem)
         {
-            if ((arrayItem.value == t_byte.value))
+            if ((arrayItem.vtype == t_byte.vtype))
                 return annotateString();
 
             fu_STR itemAnnot = typeAnnot(arrayItem, 0);
@@ -922,7 +922,7 @@ struct sf_cpp_codegen
         {
             fu_STR itemAnnot = typeAnnot(sliceItem, 0);
             include("<fu/view.h>"_fu);
-            if ((type.value.quals & q_mutref))
+            if ((type.vtype.quals & q_mutref))
                 return (("fu::view_mut<"_fu + itemAnnot) + ">"_fu);
             else
                 return (("fu::view<"_fu + itemAnnot) + ">"_fu);
@@ -936,7 +936,7 @@ struct sf_cpp_codegen
             include("<fu/map.h>"_fu);
             return (((("fu_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu);
         };
-        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.value.canon)); }());
+        const s_Struct& tdef = ([&]() -> const s_Struct& { { const s_Struct& _ = lookupStruct(type, module, ctx); if (_) return _; } fail(("TODO: "_fu + type.vtype.canon)); }());
         fu_STR id = structId(type);
         if (!fu::has(_tfwd, c))
         {
@@ -947,16 +947,16 @@ struct sf_cpp_codegen
     };
     fu_STR structId(const s_Type& t)
     {
-        for (int i = 0; (i < t.value.canon.size()); i++)
+        for (int i = 0; (i < t.vtype.canon.size()); i++)
         {
-            const std::byte x = t.value.canon[i];
+            const std::byte x = t.vtype.canon[i];
             if ((((x >= std::byte('a')) && (x <= std::byte('z'))) || ((x >= std::byte('A')) && (x <= std::byte('Z'))) || (x == std::byte('_'))))
             {
-                return ("s_"_fu + fu::slice(t.value.canon, i));
+                return ("s_"_fu + fu::slice(t.vtype.canon, i));
                 break;
             };
         };
-        fail((("Bad structId: `"_fu + t.value.canon) + "`."_fu));
+        fail((("Bad structId: `"_fu + t.vtype.canon) + "`."_fu));
     };
     fu_STR declareStruct(const s_Type& t, const s_Struct& s)
     {
@@ -1283,7 +1283,7 @@ struct sf_cpp_codegen
                 const s_Type& argType = argNode.type;
                 s_Overload o = GET(argNode.target);
                 const fu_STR& argName = o.name;
-                args.push(((argType.value.quals & q_ref) ? fu_STR(argName) : cgSteal(argName)));
+                args.push(((argType.vtype.quals & q_ref) ? fu_STR(argName) : cgSteal(argName)));
             };
             (src += "\n} // namespace\n\n"_fu);
             (src += cgFnSignature(fn));
@@ -1372,15 +1372,15 @@ struct sf_cpp_codegen
 
         if (init)
         {
-            if (((init.kind == "copy"_fu) && !(node.type.value.quals & q_ref)))
+            if (((init.kind == "copy"_fu) && !(node.type.vtype.quals & q_ref)))
             {
                 fu_STR expr = cgNode(only_4UAi(init.items), 0);
-                if ((node.type.value.quals & q_primitive))
+                if ((node.type.vtype.quals & q_primitive))
                     return ((head + " = "_fu) + expr);
 
                 return (((head + " { "_fu) + expr) + " }"_fu);
             };
-            if (((init.kind == "definit"_fu) && !(init.type.value.quals & q_ref) && (init.type.value == node.type.value)))
+            if (((init.kind == "definit"_fu) && !(init.type.vtype.quals & q_ref) && (init.type.vtype == node.type.vtype)))
                 return (head + " {}"_fu);
 
             return ((head + " = "_fu) + cgNode(init, 0));
@@ -1583,7 +1583,7 @@ struct sf_cpp_codegen
             {
                 if ((id == "[]"_fu))
                 {
-                    if ((node.type.value.quals & q_mutref))
+                    if ((node.type.vtype.quals & q_mutref))
                         return (((items.mutref(0) + ".mutref("_fu) + items.mutref(1)) + ")"_fu);
 
                     return (((items.mutref(0) + "["_fu) + items.mutref(1)) + "]"_fu);
@@ -1612,7 +1612,7 @@ struct sf_cpp_codegen
                 {
                     if ((type_isArray(head.type) && isFieldChain(node.items[0])))
                     {
-                        if (((node.items[1].value == "~"_fu) && (node.items[1].type.value.canon == head.type.value.canon)))
+                        if (((node.items[1].value == "~"_fu) && (node.items[1].type.vtype.canon == head.type.vtype.canon)))
                             return cgAppend(node, items[0]);
 
                     };
@@ -1642,13 +1642,13 @@ struct sf_cpp_codegen
     fu_STR cgAppend(const s_SolvedNode& node, const fu_STR& into)
     {
         fu_STR src = "("_fu;
-        cgAppend_visit(node.type.value.canon, into, node.items[1], src);
+        cgAppend_visit(node.type.vtype.canon, into, node.items[1], src);
         (src += ")"_fu);
         return src;
     };
     void cgAppend_visit(const fu_STR& canon, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src)
     {
-        if (((stuff.kind != "call"_fu) || (stuff.value != "~"_fu) || (stuff.type.value.canon != canon) || (stuff.items.size() != 2)))
+        if (((stuff.kind != "call"_fu) || (stuff.value != "~"_fu) || (stuff.type.vtype.canon != canon) || (stuff.items.size() != 2)))
         {
             fu_STR val = cgNode(stuff, 0);
             if ((src.size() > 1))
@@ -1685,18 +1685,18 @@ struct sf_cpp_codegen
     fu_STR cgLiteral(const s_SolvedNode& node)
     {
         fu_STR src { node.value };
-        if ((node.type.value.quals & q_unsigned))
+        if ((node.type.vtype.quals & q_unsigned))
         {
             if (!fu::has(src, std::byte('u')))
                 (src += std::byte('u'));
 
         };
-        if ((node.type.value.quals & q_floating_pt))
+        if ((node.type.vtype.quals & q_floating_pt))
         {
             if (!fu::has(src, std::byte('.')))
                 (src += ".0"_fu);
 
-            if ((node.type.value.canon == "f32"_fu))
+            if ((node.type.vtype.canon == "f32"_fu))
             {
                 if (fu::has(src, std::byte('x')))
                     src = (("float("_fu + src) + ")"_fu);
@@ -1704,7 +1704,7 @@ struct sf_cpp_codegen
                     (src += "f"_fu);
 
             }
-            else if ((node.type.value.canon != "f64"_fu))
+            else if ((node.type.vtype.canon != "f64"_fu))
                 fu_ASSERT();
 
         };
@@ -1753,8 +1753,8 @@ struct sf_cpp_codegen
     };
     fu_STR cgDefault(const s_Type& type)
     {
-        ((type.value.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
-        if ((type.value.quals & q_ref))
+        ((type.vtype.quals & q_mutref) && fail("Cannot definit mutrefs."_fu));
+        if ((type.vtype.quals & q_ref))
         {
             include("<fu/default.h>"_fu);
             return (("fu::Default<"_fu + typeAnnot(clear_refs(type), 0)) + ">::value"_fu);

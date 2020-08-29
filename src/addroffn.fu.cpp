@@ -92,13 +92,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    s_ValueType value;
+    s_ValueType vtype;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || value
+            || vtype
             || lifetime
             || effects
         ;
@@ -340,7 +340,7 @@ struct s_ScopeSkip
 
 bool type_isAddrOfFn(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, "@"_fu);
+    return fu::lmatch(type.vtype.canon, "@"_fu);
 }
 
 bool type_isZST(const s_Type& type)
@@ -384,7 +384,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s
     if (!type_isAddrOfFn(type))
         return false;
 
-    fu_VEC<s_Target> targets = unpackAddrOfFn(type.value.canon);
+    fu_VEC<s_Target> targets = unpackAddrOfFn(type.vtype.canon);
     for (int i = 0; (i < targets.size()); i++)
         out.push(s_ScopeItem { fu_STR(id), s_Target(targets[i]) });
 

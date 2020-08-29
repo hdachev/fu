@@ -289,13 +289,13 @@ struct s_Effects
                                 #define DEF_s_Type
 struct s_Type
 {
-    s_ValueType value;
+    s_ValueType vtype;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || value
+            || vtype
             || lifetime
             || effects
         ;
@@ -570,7 +570,7 @@ int MODID(const s_Module& module)
 
 bool isStruct(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, std::byte('$'));
+    return fu::lmatch(type.vtype.canon, std::byte('$'));
 }
 
                                 #ifndef DEF_q_rx_copy

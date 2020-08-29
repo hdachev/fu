@@ -88,13 +88,13 @@ struct s_Lifetime
                                 #define DEF_s_Type
 struct s_Type
 {
-    s_ValueType value;
+    s_ValueType vtype;
     s_Lifetime lifetime;
     s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
-            || value
+            || vtype
             || lifetime
             || effects
         ;
@@ -360,40 +360,40 @@ inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu
 
 bool is_never(const s_Type& t)
 {
-    return (t.value == t_never.value);
+    return (t.vtype == t_never.vtype);
 }
 
 bool is_void(const s_Type& t)
 {
-    return (t.value == t_void.value);
+    return (t.vtype == t_void.vtype);
 }
 
 bool is_bool(const s_Type& t)
 {
-    return (t.value == t_bool.value);
+    return (t.vtype == t_bool.vtype);
 }
 
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return (((host.value.canon == guest.value.canon) && (host.value.modid == guest.value.modid) && ((host.value.quals & guest.value.quals) == host.value.quals) && (!(host.value.quals & q_mutref) || ((host.value.quals & q_MUTINVAR) == (guest.value.quals & q_MUTINVAR)))) || is_never(guest));
+    return (((host.vtype.canon == guest.vtype.canon) && (host.vtype.modid == guest.vtype.modid) && ((host.vtype.quals & guest.vtype.quals) == host.vtype.quals) && (!(host.vtype.quals & q_mutref) || ((host.vtype.quals & q_MUTINVAR) == (guest.vtype.quals & q_MUTINVAR)))) || is_never(guest));
 }
 
 bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
 {
-    guest.value.quals |= q_ref;
+    guest.vtype.quals |= q_ref;
     return isAssignable(host, guest);
 }
 
 s_Type qsub(const s_Type& type, const int q)
 {
     s_Type t { type };
-    t.value.quals &= ~q;
+    t.vtype.quals &= ~q;
     return t;
 }
 
 bool qhas(const s_Type& type, const int q)
 {
-    return ((type.value.quals & q) == q);
+    return ((type.vtype.quals & q) == q);
 }
 
 static s_Type tryClear(const s_Type& type, const int q)
@@ -407,7 +407,7 @@ static s_Type tryClear(const s_Type& type, const int q)
 s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 {
     s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.value.quals |= q_ref;
+    t.vtype.quals |= q_ref;
     t.lifetime = type_inter(lifetime, t.lifetime);
     return t;
 }
@@ -415,7 +415,7 @@ s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
 {
     s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.value.quals |= (q_mutref | q_ref);
+    t.vtype.quals |= (q_mutref | q_ref);
     t.lifetime = type_inter(t.lifetime, lifetime);
     return t;
 }
@@ -434,21 +434,21 @@ s_Type tryClear_ref(const s_Type& type)
 s_Type clear_refs(const s_Type& type)
 {
     s_Type t { type };
-    t.value.quals &= ~q_ref;
-    t.value.quals &= ~q_mutref;
+    t.vtype.quals &= ~q_ref;
+    t.vtype.quals &= ~q_mutref;
     return t;
 }
 
 s_Type clear_mutref(const s_Type& type)
 {
     s_Type t { type };
-    t.value.quals &= ~q_mutref;
+    t.vtype.quals &= ~q_mutref;
     return t;
 }
 
 s_Type add_refs(const s_Type& from, s_Type&& to)
 {
-    to.value.quals |= (from.value.quals & (q_ref | q_mutref));
+    to.vtype.quals |= (from.vtype.quals & (q_ref | q_mutref));
     to.lifetime = type_inter(from.lifetime, to.lifetime);
     return std::move(to);
 }
@@ -456,27 +456,27 @@ s_Type add_refs(const s_Type& from, s_Type&& to)
 fu_STR serializeType(const s_Type& type)
 {
     fu_STR prefix {};
-    if (type.value.modid)
-        (prefix += type.value.modid);
+    if (type.vtype.modid)
+        (prefix += type.vtype.modid);
 
-    if (type.value.quals)
-        (prefix += ("+"_fu + type.value.quals));
+    if (type.vtype.quals)
+        (prefix += ("+"_fu + type.vtype.quals));
 
-    return (prefix + type.value.canon);
+    return (prefix + type.vtype.canon);
 }
 
 fu_STR humanizeType(const s_Type& type)
 {
-    fu_STR result { type.value.canon };
-    if (type.value.modid)
-        result = ((type.value.modid + ":"_fu) + result);
+    fu_STR result { type.vtype.canon };
+    if (type.vtype.modid)
+        result = ((type.vtype.modid + ":"_fu) + result);
 
-    if (type.value.quals)
+    if (type.vtype.quals)
     {
         (result += ":"_fu);
         for (int i = 0; (i < TAGS.size()); i++)
         {
-            if ((type.value.quals & (1 << i)))
+            if ((type.vtype.quals & (1 << i)))
                 (result += (" "_fu + TAGS[i]));
 
         };
@@ -516,13 +516,13 @@ s_ValueType parseType(const fu_STR& str)
 
 bool type_isArray(const s_Type& type)
 {
-    return ((type.value.quals & q_rx_resize) && fu::lmatch(type.value.canon, "[]"_fu));
+    return ((type.vtype.quals & q_rx_resize) && fu::lmatch(type.vtype.canon, "[]"_fu));
 }
 
 s_Type createArray(const s_Type& item)
 {
     fu_STR canon = ("[]"_fu + serializeType(item));
-    const int quals = ((item.value.quals & q_rx_copy) | q_rx_resize);
+    const int quals = ((item.vtype.quals & q_rx_copy) | q_rx_resize);
     const int modid = 0;
     return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
 }
@@ -532,20 +532,20 @@ s_Type tryClear_array(const s_Type& type)
     if (!type_isArray(type))
         return s_Type{};
 
-    s_ValueType value = parseType(fu::slice(type.value.canon, 2));
-    return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
+    s_ValueType vtype = parseType(fu::slice(type.vtype.canon, 2));
+    return s_Type { s_ValueType(vtype), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
 bool type_isSlice(const s_Type& type)
 {
-    return ((type.value.quals & q_ref) && fu::lmatch(type.value.canon, "[]"_fu));
+    return ((type.vtype.quals & q_ref) && fu::lmatch(type.vtype.canon, "[]"_fu));
 }
 
 s_Type createSlice(const s_Type& item)
 {
     s_Type out = createArray(item);
-    out.value.quals &= ~(q_rx_copy | q_rx_resize);
-    out.value.quals |= q_ref;
+    out.vtype.quals &= ~(q_rx_copy | q_rx_resize);
+    out.vtype.quals |= q_ref;
     return out;
 }
 
@@ -554,21 +554,21 @@ s_Type tryClear_slice(const s_Type& type)
     if (!type_isSlice(type))
         return s_Type{};
 
-    s_ValueType value = parseType(fu::slice(type.value.canon, 2));
-    return s_Type { s_ValueType(value), s_Lifetime(type.lifetime), s_Effects{} };
+    s_ValueType vtype = parseType(fu::slice(type.vtype.canon, 2));
+    return s_Type { s_ValueType(vtype), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
 bool type_isMap(const s_Type& type)
 {
-    return fu::lmatch(type.value.canon, std::byte('{'));
+    return fu::lmatch(type.vtype.canon, std::byte('{'));
 }
 
-s_Type createMap(const s_Type& key, const s_Type& value)
+s_Type createMap(const s_Type& key, const s_Type& vtype)
 {
-    fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(value));
-    const int quals = ((key.value.quals & value.value.quals) & q_rx_copy);
+    fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(vtype));
+    const int quals = ((key.vtype.quals & vtype.vtype.quals) & q_rx_copy);
     const int modid = 0;
-    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, type_inter(key.lifetime, value.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, type_inter(key.lifetime, vtype.lifetime), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type)
@@ -577,9 +577,9 @@ s_MapFields tryClear_map(const s_Type& type)
         return s_MapFields{};
 
     int depth = 0;
-    for (int i = 1; (i < type.value.canon.size()); i++)
+    for (int i = 1; (i < type.vtype.canon.size()); i++)
     {
-        const std::byte c = type.value.canon[i];
+        const std::byte c = type.vtype.canon[i];
         if ((c == std::byte('{')))
             depth++;
         else if ((c == std::byte('}')))
@@ -588,8 +588,8 @@ s_MapFields tryClear_map(const s_Type& type)
             {
                 continue;
             };
-            fu_STR ckey = fu::slice(type.value.canon, 1, i);
-            fu_STR cval = fu::slice(type.value.canon, (i + 1));
+            fu_STR ckey = fu::slice(type.vtype.canon, 1, i);
+            fu_STR cval = fu::slice(type.vtype.canon, (i + 1));
             return s_MapFields { s_Type { parseType(ckey), s_Lifetime(type.lifetime), s_Effects{} }, s_Type { parseType(cval), s_Lifetime(type.lifetime), s_Effects{} } };
         };
     };
@@ -601,15 +601,15 @@ bool type_has(const s_Type& type, const fu_STR& tag)
     const int idx = fu::lfind(TAGS, tag);
     ((idx >= 0) || fu::fail((("Unknown type tag: `"_fu + tag) + "`."_fu)));
     const int mask = (1 << idx);
-    return ((type.value.quals & mask) == mask);
+    return ((type.vtype.quals & mask) == mask);
 }
 
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
-    if (((a.value.canon != b.value.canon) || (a.value.modid != b.value.modid)))
+    if (((a.vtype.canon != b.vtype.canon) || (a.vtype.modid != b.vtype.modid)))
         return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type{}));
 
-    return s_Type { s_ValueType { (a.value.quals & b.value.quals), int(a.value.modid), fu_STR(a.value.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { (a.vtype.quals & b.vtype.quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
 }
 
 uint64_t u64(const s_Target& t)
