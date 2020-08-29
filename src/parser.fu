@@ -714,6 +714,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             return createBlock([ body ]);
 
         _numReturns++;
+        if (body.kind == "call" && body.value == "__native")
+            return body;
+
         return createBlock([ createReturn(body) ]);
     }
 

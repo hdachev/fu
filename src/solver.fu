@@ -1147,20 +1147,8 @@ pub fn solve(
             }
 
             // Builtin?
-            if (n_body.kind == "block" && n_body.items.len == 1)
-            {
-                let ret = n_body.items[0];
-                if (ret.kind == "return" && ret.items.len == 1)
-                {
-                    let expr = ret.items[0];
-                    if (expr.kind == "call" && expr.value == "__native")
-                    {
-                        native = true;
-
-                        n_body = expr;
-                    }
-                }
-            }
+            if (n_body.kind == "call" && n_body.value == "__native")
+                native = true;
 
             // Return type annot.
             {
