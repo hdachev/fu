@@ -1526,7 +1526,7 @@ pub fn solve(
                     fields.push(
                         StructField(
                             id:   item.value        || fail(),
-                            type: item.type.value   || fail()));
+                            type: item.type.vtype   || fail()));
                 }
             }
 

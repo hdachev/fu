@@ -58,8 +58,8 @@ pub fn cpp_codegen(
 
     //
 
-    fn typeAnnot(value: ValueType): string
-        typeAnnot(Type(:value));
+    fn typeAnnot(vtype: ValueType): string
+        typeAnnot(Type(:vtype));
 
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
@@ -138,7 +138,7 @@ pub fn cpp_codegen(
         let arrayItem = tryClear_array(type);
         if (arrayItem)
         {
-            if (arrayItem.value == t_byte.value)
+            if (arrayItem.vtype == t_byte.vtype)
                 return annotateString();
 
             let itemAnnot = typeAnnot(arrayItem);
@@ -769,7 +769,7 @@ pub fn cpp_codegen(
             // Definit.
             if (init.kind == "definit"
                     && !(init.type.quals & q_ref)
-                    && init.type.value == node.type.value)
+                    && init.type.vtype == node.type.vtype)
             {
                 return head ~ " {}";
             }

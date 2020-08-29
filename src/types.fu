@@ -76,7 +76,7 @@ pub struct Effects
 
 pub struct Type
 {
-    using value:    ValueType;
+    using vtype:    ValueType;
     lifetime?:      Lifetime;
     effects?:       Effects;
 };
@@ -125,9 +125,9 @@ pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",     quals: Primiti
 
 //
 
-pub fn is_never(t: Type) t.value == t_never.value;
-pub fn is_void (t: Type) t.value == t_void .value;
-pub fn is_bool (t: Type) t.value == t_bool .value;
+pub fn is_never(t: Type) t.vtype == t_never.vtype;
+pub fn is_void (t: Type) t.vtype == t_void .vtype;
+pub fn is_bool (t: Type) t.vtype == t_bool .vtype;
 
 
 // https://doc.rust-lang.org/nomicon/subtyping.html:
@@ -340,8 +340,8 @@ pub fn tryClear_array(type: Type): Type
     if (!type_isArray(type))
         return Type();
 
-    let value = parseType(type.canon.slice(2));
-    return Type(:value, :type.lifetime);
+    let vtype = parseType(type.canon.slice(2));
+    return Type(:vtype, :type.lifetime);
 }
 
 
@@ -368,8 +368,8 @@ pub fn tryClear_slice(type: Type): Type
     if (!type_isSlice(type))
         return Type();
 
-    let value = parseType(type.canon.slice(2));
-    return Type(:value, :type.lifetime);
+    let vtype = parseType(type.canon.slice(2));
+    return Type(:vtype, :type.lifetime);
 }
 
 
@@ -380,17 +380,17 @@ pub fn type_isMap(type: Type): bool
     return type.canon.starts(with: '{');
 }
 
-pub fn createMap(key: Type, value: Type): Type
+pub fn createMap(key: Type, vtype: Type): Type
 {
     let canon = "{" ~ serializeType(key) ~ "}"
-                    ~ serializeType(value);
+                    ~ serializeType(vtype);
 
-    let quals = key.quals & value.quals & q_rx_copy;
+    let quals = key.quals & vtype.quals & q_rx_copy;
     let modid = 0;
 
     return Type(
         ValueType(:canon, :quals, :modid),
-            lifetime: type_inter(key.lifetime, value.lifetime));
+            lifetime: type_inter(key.lifetime, vtype.lifetime));
 }
 
 pub struct MapFields
@@ -421,8 +421,8 @@ pub fn tryClear_map(type: Type): MapFields
             let cval = type.canon.slice(i + 1);
 
             return MapFields(
-                key:   Type(value: parseType(ckey), :type.lifetime),
-                value: Type(value: parseType(cval), :type.lifetime));
+                key:   Type(vtype: parseType(ckey), :type.lifetime),
+                value: Type(vtype: parseType(cval), :type.lifetime));
         }
     }
 
