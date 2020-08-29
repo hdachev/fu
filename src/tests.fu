@@ -2430,6 +2430,30 @@ pub fn runTests()
     `
     ]);
 
+    ZERO([
+    `
+        pub fn add(ref to: $T[], item: $T) {
+            for (mut i = 0; i < to.len; i++) {
+                if (to[i] >= item) {
+                    if (to[i] != item)
+                        to.insert(i, item);
+
+                    return;
+                }
+            }
+
+            to.push(item);
+        }
+    `,
+    `
+        fn main() {
+            mut x = [1, 2, 3];
+            x._0::add(3); if (x.len != 3) return 33;
+            x._0::add(4); return x.len - x[3];
+        }
+    `
+    ]);
+
 
     // Explicit shadowing.
 
