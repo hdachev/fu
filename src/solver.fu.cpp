@@ -15,6 +15,7 @@
 
 struct s_Argument;
 struct s_Context;
+struct s_CurrentFn;
 struct s_Effects;
 struct s_Intlit;
 struct s_LexerOutput;
@@ -634,6 +635,22 @@ struct s_ScopeSkip
 };
                                 #endif
 
+                                #ifndef DEF_s_CurrentFn
+                                #define DEF_s_CurrentFn
+struct s_CurrentFn
+{
+    s_SolvedNode out;
+    s_ScopeMemo return_idx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || out
+            || return_idx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Intlit
                                 #define DEF_s_Intlit
 struct s_Intlit
@@ -1007,9 +1024,8 @@ struct sf_solve
     s_TokenIdx _here {};
     s_Scope _scope {};
     s_ScopeMemo _root_scope {};
-    s_ScopeMemo _return_idx {};
     s_ScopeSkip _scope_skip {};
-    s_SolvedNode _current_fn {};
+    s_CurrentFn _current_fn {};
     s_Type t_string = createArray(t_byte);
     void _Scope_import__forceCopy(const int modid)
     {
@@ -1803,29 +1819,28 @@ struct sf_solve
 
         const fu_VEC<s_Node>& inItems = n_fn.items;
         ((inItems.size() >= FN_RET_BACK) || fail(fu_STR{}));
-        s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }());
-        out.items.resize(inItems.size());
+        s_CurrentFn out = s_CurrentFn { ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }()), s_ScopeMemo{} };
+        out.out.items.resize(inItems.size());
         if (_current_fn)
         {
-            _current_fn.flags |= F_HAS_CLOSURE;
-            out.flags |= F_CLOSURE;
-            if ((_current_fn.flags & F_TEMPLATE))
-                out.flags |= F_TEMPLATE;
+            _current_fn.out.flags |= F_HAS_CLOSURE;
+            out.out.flags |= F_CLOSURE;
+            if ((_current_fn.out.flags & F_TEMPLATE))
+                out.out.flags |= F_TEMPLATE;
 
         };
         bool native = false;
         s_Node n_body {};
         
         {
-            const s_ScopeMemo return_idx0 { _return_idx };
             const s_ScopeMemo scope0 = Scope_push(_scope);
-            _return_idx = scope0;
+            out.return_idx = scope0;
             const s_ScopeMemo root_scope0 { _root_scope };
             if (!root_scope0)
-                _root_scope = _return_idx;
+                _root_scope = out.return_idx;
 
             std::swap(_current_fn, out);
-            fu_VEC<s_SolvedNode>& outItems = _current_fn.items;
+            fu_VEC<s_SolvedNode>& outItems = _current_fn.out.items;
             for (int i = 0; (i < (inItems.size() + FN_ARGS_BACK)); i++)
             {
                 const s_Node& n_arg = ([&]() -> const s_Node& { { const s_Node& _ = inItems[i]; if (_) return _; } fail(fu_STR{}); }());
@@ -1871,7 +1886,6 @@ struct sf_solve
             };
             std::swap(_current_fn, out);
             Scope_pop(_scope, scope0);
-            _return_idx = return_idx0;
             _root_scope = root_scope0;
         };
         if (!prep)
@@ -1879,24 +1893,24 @@ struct sf_solve
             fu_STR name { (n_fn.value ? n_fn.value : fail("TODO anonymous fns"_fu)) };
             if ((spec && !native))
             {
-                fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.items, 0, (out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
+                fu_STR sig = ([&]() -> fu_STR { { fu_STR _ = mangleArguments(fu::get_view_mut(out.out.items, 0, (out.out.items.size() + FN_BODY_BACK))); if (_) return _; } fail(fu_STR{}); }());
                 fu_STR hash = hash62(sig, 4);
                 (name += ("_"_fu + hash));
             };
             fu_STR kind = (native ? "__native"_fu : "fn"_fu);
-            const s_Target fndecl = FnDecl(kind, name, out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
-            out.type = X_addrofTarget(fndecl);
+            const s_Target fndecl = FnDecl(kind, name, out.out, ([&]() -> const s_Node& { if (native) return n_body; else return fu::Default<s_Node>::value; }()));
+            out.out.type = X_addrofTarget(fndecl);
         };
         if ((solve && !native))
         {
-            (out.items.mutref((out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
+            (out.out.items.mutref((out.out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
         };
         if (solve)
         {
-            GET_mut(out.target).solved = out;
-            return createEmpty("fndef"_fu, X_addrofTarget(out.target), out.target);
+            GET_mut(out.out.target).solved = out.out;
+            return createEmpty("fndef"_fu, X_addrofTarget(out.out.target), out.out.target);
         };
-        return out;
+        return std::move(out.out);
     };
     fu_STR mangleArguments(fu::view<s_SolvedNode> args)
     {
@@ -1928,7 +1942,7 @@ struct sf_solve
     {
         bool ok = true;
         fu_MAP<fu_STR, s_Type> typeParams0 {};
-        s_SolvedNode current_fn0 {};
+        s_CurrentFn current_fn0 {};
         std::swap(_current_fn, current_fn0);
         const s_ScopeMemo scope0 = Scope_push(_scope);
         s_ScopeSkip scope_skip0 { _scope_skip };
@@ -2059,9 +2073,9 @@ struct sf_solve
         fu_STR id { node.value };
         fu_STR origId { id };
         if (!origId)
-            id = ([&]() -> fu_STR { { fu_STR _ = fu_STR(_current_fn.value); if (_) return _; } return "Anon"_fu; }());
+            id = ([&]() -> fu_STR { { fu_STR _ = fu_STR(_current_fn.out.value); if (_) return _; } return "Anon"_fu; }());
 
-        if (!(_current_fn.flags & F_TEMPLATE))
+        if (!(_current_fn.out.flags & F_TEMPLATE))
         {
             structType = initStruct(id, node.flags, module);
             if ((!prep && origId))
@@ -2150,13 +2164,13 @@ struct sf_solve
     {
         const auto& retIdx = [&]() -> int
         {
-            return (_current_fn.items.size() + FN_RET_BACK);
+            return (_current_fn.out.items.size() + FN_RET_BACK);
         };
-        s_Type prevType { _current_fn.items.mutref(retIdx()).type };
+        s_Type prevType { _current_fn.out.items.mutref(retIdx()).type };
         ((node.items.size() <= 1) || fail(fu_STR{}));
         s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType, s_Type{}, bool{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
-        if ((killedBy(next.type.lifetime, _return_idx.items_len) && (next.type.value.quals & q_ref)))
+        if ((killedBy(next.type.lifetime, _current_fn.return_idx.items_len) && (next.type.value.quals & q_ref)))
         {
             const bool nrvo = ((next.kind == "call"_fu) && (next.items.size() == 0) && (GET(next.target).kind == "var"_fu));
             next = createMove(next, nrvo);
@@ -2164,7 +2178,7 @@ struct sf_solve
         if (prevType)
             checkAssignable(prevType, next.type, "Non-assignable return types"_fu, fu_STR{}, fu_STR{});
         else
-            _current_fn.items.mutref(retIdx()) = (next ? next : fail(fu_STR{}));
+            _current_fn.out.items.mutref(retIdx()) = (next ? next : fail(fu_STR{}));
 
         if (out.items)
             maybeCopyOrMove(out.items.mutref(0), (prevType ? prevType : next.type), false);
@@ -2235,8 +2249,12 @@ struct sf_solve
                 for (int i = start; (i < (_scope.items.size() - 1)); i++)
                 {
                     if ((_scope.items.mutref(i).id == id))
-                        same++;
+                    {
+                        s_Overload o = GET(_scope.items.mutref(i).target);
+                        if (((o.kind == "arg"_fu) || (o.kind == "ref"_fu) || (o.kind == "var"_fu)))
+                            same++;
 
+                    };
                 };
                 if (same)
                     (GET_mut(overload).name += ("_"_fu + same));
@@ -2557,7 +2575,7 @@ struct sf_solve
             if (!_current_fn)
                 fail((("No implicit `"_fu + id) + "` in scope."_fu));
 
-            matched = injectImplicitArg__mutfn(_current_fn, id, type);
+            matched = injectImplicitArg__mutfn(_current_fn.out, id, type);
             (matched || fail(fu_STR{}));
         };
         return matched;
