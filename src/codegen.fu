@@ -572,15 +572,10 @@ pub fn cpp_codegen(
             end = i;
 
             let item = items[i];
-            if (item.kind == "fn")
-            {
-                if (item.flags & F_CLOSURE)
-                    hasClosuresInHeader = true;
-            }
+            if (item.kind == "fndef")
+                hasClosuresInHeader = true;
             else if (item.kind != "let" && item.kind != "struct")
-            {
                 break;
-            }
         }
 
         if (!hasClosuresInHeader)
@@ -652,6 +647,14 @@ pub fn cpp_codegen(
 
 
     //
+
+    fn cgFnDef(fndef: SolvedNode, mode: i32): string
+    {
+        let o = GET(fndef.target);
+        let n = o.solved;
+        n.kind == "fn" || fail("cgFnDef non-fn");
+        return cgFn(n, mode);
+    }
 
     fn cgFn(fn: SolvedNode, mode: i32): string
     {
@@ -1506,11 +1509,10 @@ pub fn cpp_codegen(
     {
         let k = node.kind;
 
-        if (k == "fn")          return cgFn(node, mode);
+        if (k == "call")        return cgCall(node, mode);
         if (k == "return")      return cgReturn(node);
         if (k == "break")       return cgJump(node);
         if (k == "continue")    return cgJump(node);
-        if (k == "call")        return cgCall(node, mode);
         if (k == "let")         return cgLet(node);
         if (k == "global")      return cgGlobal(node);
         if (k == "if")          return cgIf(node, mode);
@@ -1530,6 +1532,8 @@ pub fn cpp_codegen(
         if (k == "parens")      return cgParens(node);
         if (k == "label")       return cgParens(node);
 
+        if (k == "fndef")       return cgFnDef(node, mode);
+        if (k == "fn")          return cgFn(node, mode);
         if (k == "struct")      return cgEmpty(mode);
         if (k == "empty")       return cgEmpty(mode);
 

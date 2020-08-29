@@ -180,7 +180,6 @@ pub fn solve(
             :node.flags);
 
         node.target = target;
-        GET_mut(target).solved = node;
 
         return target;
     }
@@ -1017,11 +1016,11 @@ pub fn solve(
         return solved(node, t_string);
     }
 
-    fn createEmpty(type = t_void): SolvedNode
+    fn createEmpty(kind = "empty", type = t_void, target?: Target): SolvedNode
     {
         return SolvedNode(
-            kind: "empty", :type,
-            token: (_here || fail()));
+            :kind, :type, :target,
+            token: _here || fail());
     }
 
 
@@ -1203,6 +1202,16 @@ pub fn solve(
 
         if (solve && !native)
             out.items[out.items.len + FN_BODY_BACK] || fail();
+
+        if (solve)
+        {
+            GET_mut(out.target).solved = out;
+
+            return createEmpty(
+                kind: "fndef",
+                type: addroffn::X_addrofTarget(out.target),
+                target: out.target);
+        }
 
         return out;
     }
