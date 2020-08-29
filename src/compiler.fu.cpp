@@ -59,8 +59,8 @@ s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
-void build(const s_Context&, bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, bool);
+void build(const s_Context&, bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&, bool);
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void setModule(const s_Module&, s_Context&);
 
@@ -655,7 +655,7 @@ inline const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
 inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
-void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
+void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme, const bool nowrite)
 {
     s_Context ctx { CTX_PRELUDE };
     
@@ -686,7 +686,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
     };
-    return build(ctx, run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme);
+    return build(ctx, run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, nowrite);
 }
 
 namespace {
@@ -742,8 +742,9 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
     const bool run = true;
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu);
-    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{});
+    const bool nowrite = true;
+    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite);
+    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite);
     return ctx;
 }
 

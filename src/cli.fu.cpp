@@ -14,7 +14,7 @@ fu_STR locate_PRJDIR();
 fu_STR path_join(const fu_STR&, const fu_STR&);
 int self_test();
 static void runTestsAndBuildCompiler();
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, bool);
 void runTests();
 void saySomethingNice();
 
@@ -147,7 +147,7 @@ struct sf_cli_handle
                 fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 
         };
-        build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme);
+        build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme, false);
         return 0;
     };
 };
