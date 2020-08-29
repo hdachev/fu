@@ -1258,12 +1258,8 @@ struct sf_cpp_codegen
         {
             end = i;
             const s_SolvedNode& item = items[i];
-            if ((item.kind == "fn"_fu))
-            {
-                if ((item.flags & F_CLOSURE))
-                    hasClosuresInHeader = true;
-
-            }
+            if ((item.kind == "fndef"_fu))
+                hasClosuresInHeader = true;
             else if (((item.kind != "let"_fu) && (item.kind != "struct"_fu)))
             {
                 break;
@@ -1298,6 +1294,13 @@ struct sf_cpp_codegen
 
         _clsrN++;
         return src;
+    };
+    fu_STR cgFnDef(const s_SolvedNode& fndef, const int mode)
+    {
+        s_Overload o = GET(fndef.target);
+        const s_SolvedNode& n = o.solved;
+        ((n.kind == "fn"_fu) || fail("cgFnDef non-fn"_fu));
+        return cgFn(n, mode);
     };
     fu_STR cgFn(const s_SolvedNode& fn, const int mode)
     {
@@ -1958,8 +1961,8 @@ struct sf_cpp_codegen
     fu_STR cgNode(const s_SolvedNode& node, const int mode)
     {
         const fu_STR& k = node.kind;
-        if ((k == "fn"_fu))
-            return cgFn(node, mode);
+        if ((k == "call"_fu))
+            return cgCall(node, mode);
 
         if ((k == "return"_fu))
             return cgReturn(node);
@@ -1969,9 +1972,6 @@ struct sf_cpp_codegen
 
         if ((k == "continue"_fu))
             return cgJump(node);
-
-        if ((k == "call"_fu))
-            return cgCall(node, mode);
 
         if ((k == "let"_fu))
             return cgLet(node);
@@ -2023,6 +2023,12 @@ struct sf_cpp_codegen
 
         if ((k == "label"_fu))
             return cgParens(node);
+
+        if ((k == "fndef"_fu))
+            return cgFnDef(node, mode);
+
+        if ((k == "fn"_fu))
+            return cgFn(node, mode);
 
         if ((k == "struct"_fu))
             return cgEmpty(mode);

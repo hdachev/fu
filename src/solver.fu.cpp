@@ -1105,7 +1105,6 @@ struct sf_solve
         s_Template tEmplate = s_Template { s_Node(native), fu_VEC<int>(NO_IMPORTS) };
         const s_Target target = Scope_add(_scope, kind, id, ret, node.flags, min, max, args, tEmplate, s_Partial{}, s_SolvedNode{}, module);
         node.target = target;
-        GET_mut(target).solved = node;
         return target;
     };
     s_Target DefCtor(const fu_STR& id, const s_Type& type, const fu_VEC<s_SolvedNode>& members)
@@ -1595,7 +1594,7 @@ struct sf_solve
             return solveChar(node);
 
         if ((k == "empty"_fu))
-            return createEmpty(t_void);
+            return createEmpty("empty"_fu, t_void, s_Target{});
 
         if ((k == "definit"_fu))
             return solveDefinit(type);
@@ -1769,9 +1768,9 @@ struct sf_solve
 
         return solved(node, t_string, fu_VEC<s_SolvedNode>{});
     };
-    s_SolvedNode createEmpty(const s_Type& type)
+    s_SolvedNode createEmpty(const fu_STR& kind, const s_Type& type, const s_Target& target)
     {
-        return s_SolvedNode { "empty"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target{} };
+        return s_SolvedNode { fu_STR(kind), 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here ? _here : fail(fu_STR{}))), s_Type(type), s_Target(target) };
     };
     s_Node createTypeParam(const fu_STR& value)
     {
@@ -1797,7 +1796,7 @@ struct sf_solve
                 return s_SolvedNode((prep ? prep : fail(fu_STR{})));
 
             const s_Target tDecl = TemplateDecl(n_fn);
-            return createEmpty(X_addrofTarget(tDecl));
+            return createEmpty("empty"_fu, X_addrofTarget(tDecl), s_Target{});
         };
         if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
             return s_SolvedNode{};
@@ -1891,6 +1890,11 @@ struct sf_solve
         if ((solve && !native))
         {
             (out.items.mutref((out.items.size() + FN_BODY_BACK)) || fail(fu_STR{}));
+        };
+        if (solve)
+        {
+            GET_mut(out.target).solved = out;
+            return createEmpty("fndef"_fu, X_addrofTarget(out.target), out.target);
         };
         return out;
     };
@@ -2210,7 +2214,7 @@ struct sf_solve
     {
         s_SolvedNode annot = evalTypeAnnot(only_zET6(node.items));
         Scope_Typedef(_scope, node.value, annot.type, node.flags, module);
-        return createEmpty(t_void);
+        return createEmpty("empty"_fu, t_void, s_Target{});
     };
     s_SolvedNode solveLet(const s_Node& node, s_Lifetime&& lifetime)
     {
@@ -2275,7 +2279,7 @@ struct sf_solve
     {
         const s_Module& m = findModule(node.value);
         Scope_import(m.modid);
-        return createEmpty(t_void);
+        return createEmpty("empty"_fu, t_void, s_Target{});
     };
     s_Type Scope_lookupType(fu_STR&& id, const int flags)
     {
@@ -2307,7 +2311,7 @@ struct sf_solve
     {
         const fu_STR& id = node.value;
         s_Type type = X_solveAddrOfFn(_scope, _scope_skip, id);
-        return createEmpty(type);
+        return createEmpty("empty"_fu, type, s_Target{});
     };
     s_SolvedNode evalTypeAnnot(const s_Node& node)
     {
