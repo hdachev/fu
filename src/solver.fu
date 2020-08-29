@@ -1779,7 +1779,11 @@ pub fn solve(
                 {
                 // */
                     if (_scope.items[i].id == id)
-                        same++;
+                    {
+                        let o = GET(_scope.items[i].target);
+                        if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
+                            same++;
+                    }
                 }
 
                 if (same)
