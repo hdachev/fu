@@ -27,12 +27,12 @@ pub fn solve(
     mut _scope:         Scope;
 
     mut _root_scope:    ScopeMemo;
-    mut _return_idx:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
 
     struct CurrentFn
     {
         using out: SolvedNode;
+        return_idx: ScopeMemo;
     };
 
     mut _current_fn:    CurrentFn;
@@ -1076,7 +1076,8 @@ pub fn solve(
         inItems.len >= FN_RET_BACK || fail();
 
         mut out = CurrentFn(
-            prep || solved(n_fn, t_void));
+            prep || solved(n_fn, t_void),
+            return_idx: ScopeMemo());
 
         out.items.resize(inItems.len);
 
@@ -1097,13 +1098,12 @@ pub fn solve(
         mut n_body: Node;
 
         {
-            let return_idx0 = _return_idx;
             let scope0      = Scope_push(_scope);
-            _return_idx     = scope0;
+            out.return_idx  = scope0;
 
             let root_scope0 = _root_scope;
             if (!root_scope0)
-                _root_scope = _return_idx;
+                _root_scope = out.return_idx;
 
             SWAP(_current_fn, out);
             ref outItems = _current_fn.items;
@@ -1184,7 +1184,6 @@ pub fn solve(
             SWAP(_current_fn, out);
 
             Scope_pop(_scope, scope0);
-            _return_idx = return_idx0;
             _root_scope = root_scope0;
         }
         //////////////////////////
@@ -1632,7 +1631,7 @@ pub fn solve(
         // TODO LIFETIMES   this doesn't work               //
         //                  for deeply referential types.   //
                                                             //
-        if (next.type.lifetime.killedBy(_return_idx.items_len) &&     //
+        if (next.type.lifetime.killedBy(_current_fn.return_idx.items_len) &&
             next.type.quals & q_ref)                        //
         {                                                   //
             let nrvo = next.kind == "call"                  //
