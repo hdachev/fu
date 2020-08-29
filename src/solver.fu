@@ -29,7 +29,13 @@ pub fn solve(
     mut _root_scope:    ScopeMemo;
     mut _return_idx:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
-    mut _current_fn:    SolvedNode;
+
+    struct CurrentFn
+    {
+        using out: SolvedNode;
+    };
+
+    mut _current_fn:    CurrentFn;
 
 
     //
@@ -1069,7 +1075,8 @@ pub fn solve(
         let inItems = n_fn.items;
         inItems.len >= FN_RET_BACK || fail();
 
-        mut out = prep || solved(n_fn, t_void);
+        mut out = CurrentFn(
+            prep || solved(n_fn, t_void));
 
         out.items.resize(inItems.len);
 
@@ -1195,7 +1202,7 @@ pub fn solve(
 
             //
             let kind = native ? "__native" : "fn";
-            let fndecl = FnDecl(:kind, id: name, out, native && n_body);
+            let fndecl = FnDecl(:kind, id: name, out.out, native && n_body);
 
             out.type = addroffn::X_addrofTarget(fndecl);
         }
@@ -1205,7 +1212,7 @@ pub fn solve(
 
         if (solve)
         {
-            GET_mut(out.target).solved = out;
+            GET_mut(out.target).solved = out.out;
 
             return createEmpty(
                 kind: "fndef",
@@ -1213,7 +1220,7 @@ pub fn solve(
                 target: out.target);
         }
 
-        return out;
+        return out.out;
     }
 
 
@@ -1274,7 +1281,7 @@ pub fn solve(
         mut typeParams0: Map(string, Type);
 
         ////////////////////////////////
-        mut current_fn0: SolvedNode;
+        mut current_fn0: CurrentFn;
 
         SWAP(_current_fn, current_fn0);
 
@@ -2263,7 +2270,7 @@ pub fn solve(
                 return fail("No implicit `" ~ id ~ "` in scope.");
 
             matched = injectImplicitArg__mutfn(
-                _current_fn, id, type);
+                _current_fn.out, id, type);
 
             matched || fail();
         }
