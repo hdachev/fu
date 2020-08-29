@@ -1856,19 +1856,9 @@ struct sf_solve
                 n_ret = ([&]() -> const s_Node& { { const s_Node& _ = items[(items.size() + FN_RET_BACK)]; if (_) return _; } return n_ret; }());
                 n_body = items[(items.size() + FN_BODY_BACK)];
             };
-            if (((n_body.kind == "block"_fu) && (n_body.items.size() == 1)))
-            {
-                s_Node ret { n_body.items[0] };
-                if (((ret.kind == "return"_fu) && (ret.items.size() == 1)))
-                {
-                    const s_Node& expr = ret.items[0];
-                    if (((expr.kind == "call"_fu) && (expr.value == "__native"_fu)))
-                    {
-                        native = true;
-                        n_body = expr;
-                    };
-                };
-            };
+            if (((n_body.kind == "call"_fu) && (n_body.value == "__native"_fu)))
+                native = true;
+
             
             {
                 s_SolvedNode s_ret = (n_ret ? evalTypeAnnot(n_ret) : s_SolvedNode{});

@@ -809,6 +809,9 @@ struct sf_parse
             return createBlock(fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { body } });
 
         _numReturns++;
+        if (((body.kind == "call"_fu) && (body.value == "__native"_fu)))
+            return body;
+
         return createBlock(fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { createReturn(body) } });
     };
     s_Node tryPopTypeAnnot()
