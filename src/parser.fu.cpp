@@ -1254,7 +1254,7 @@ struct sf_parse
         {
             const s_Node& head = ([&]() -> const s_Node& { if (expr.items && (expr.items.size() == 1)) { const s_Node& _ = expr.items[0]; if (_) return _; } fail(fu_STR{}); }());
             args.unshift(head);
-            return createCall((expr.value ? expr.value : fail(fu_STR{})), (F_METHOD | argFlags), args);
+            return createCall((expr.value ? expr.value : fail(fu_STR{})), ((F_METHOD | argFlags) | (expr.flags & ~F_ACCESS)), args);
         };
         if (((expr.kind == "call"_fu) && (expr.flags & F_ID)))
             return createCall((expr.value ? expr.value : fail(fu_STR{})), (argFlags | (expr.flags & ~F_ID)), args);

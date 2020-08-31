@@ -736,13 +736,21 @@ fu_STR snippet2cpp(const fu_STR& src)
     return fu_STR{};
 }
 
+                                #ifndef DEFt_last_NwMO
+                                #define DEFt_last_NwMO
+inline const fu_STR& last_NwMO(const fu_VEC<fu_STR>& s)
+{
+    return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
+}
+                                #endif
+
 s_Context ZERO(const fu_VEC<fu_STR>& sources)
 {
     s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
     const bool run = true;
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    const bool nowrite = true;
+    const bool nowrite = !fu::has(last_NwMO(sources), "//! ALLOW_WRITE"_fu);
     build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite);
     build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite);
     return ctx;
