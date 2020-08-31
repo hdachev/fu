@@ -1269,7 +1269,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             args.unshift(head);
 
             return createCall(
-                expr.value || fail(), F_METHOD | argFlags,
+                expr.value || fail(),
+                F_METHOD | argFlags | expr.flags &~ F_ACCESS,
                 args);
         }
 

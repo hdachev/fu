@@ -206,7 +206,7 @@ pub fn ZERO(sources: string[]): Context
     let fulib = FULIB;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    let nowrite = true;
+    let nowrite = !sources.last.has("//! ALLOW_WRITE");
 
     ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug", :nowrite);
     ::build(:ctx, :run, :fulib, :dir_wrk, :nowrite);
