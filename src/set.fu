@@ -1,0 +1,17 @@
+
+pub fn add(ref to: $T[], item: $T)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < to.len; i++)
+    {
+        if (to[i] >= item)
+        {
+            if (to[i] != item)
+                to.insert(i, item);
+
+            return;
+        }
+    }
+
+    to.push(item);
+};

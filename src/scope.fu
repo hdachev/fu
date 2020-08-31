@@ -187,6 +187,9 @@ pub struct Overload
     partial:    Partial;
     template:   Template;
     solved:     SolvedNode;
+
+    // Target.index, Target.modid is current module modid.
+    used_by?:   i32[];
 };
 
 pub struct ScopeItem

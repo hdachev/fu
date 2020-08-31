@@ -2075,7 +2075,6 @@ pub fn solve(
     {
         return Node(
             kind:   "call",
-            flags:  F_ID,
             value:  id,
             token:  (_here || fail()));
     }
@@ -2257,7 +2256,7 @@ pub fn solve(
     fn bindImplicitArg(name: string, type: Type): SolvedNode
     {
         return CallerNode(
-            createRead(name), :type,
+            createRead("__implicit"), :type,
             target: getImplicit(name, type));
     }
 
@@ -2480,7 +2479,7 @@ pub fn solve(
         }
 
         // Tag copies and moves.
-        else if (args.len)
+        else if (args)
         {
             let host_args = overload.args || fail("CallerNode: no host args.");
             for (mut i = 0; i < args.len; i++)
@@ -2491,6 +2490,11 @@ pub fn solve(
             type.lifetime = Lifetime_fromCallArgs(
                 type.lifetime, args);
         }
+
+        // Track deps.
+        if (overload.kind == "fn" && target.modid == module.modid)
+            GET_mut(target).used_by
+                .set::add(_current_fn.target.index /* one based */);
 
         //
         mut out = solved(node, type, args);
