@@ -2204,10 +2204,11 @@ pub fn solve(
             value: overload.name, :overload.type, :target);
     }
 
-    fn injectImplicitArg__mutfn(
-        ref fnNode: SolvedNode,
-        id: string, type: Type): Target
+    fn injectImplicitArg(id: string, type: Type): Target
     {
+        ref fnNode = _current_fn.out || fail(
+            "No implicit `" ~ id ~ "` in scope.");
+
         ///////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
         let scope0  = Scope_push(_scope);
@@ -2255,29 +2256,15 @@ pub fn solve(
 
     fn bindImplicitArg(name: string, type: Type): SolvedNode
     {
-        return CallerNode(
-            createRead("__implicit"), :type,
-            target: getImplicit(name, type));
-    }
-
-    fn getImplicit(id: string, type: Type): Target
-    {
+        let id = name;
         mut args: SolvedNode[];
-        mut matched = _scope.tryMatch__mutargs(
-            :id, :args, retType: type);
 
-        if (!matched)
-        {
-            if (!_current_fn)
-                return fail("No implicit `" ~ id ~ "` in scope.");
+        let target = _scope.tryMatch__mutargs(:id, :args, retType: type)
+            || injectImplicitArg(:id, :type)
+            || fail();
 
-            matched = injectImplicitArg__mutfn(
-                _current_fn.out, id, type);
-
-            matched || fail();
-        }
-
-        return matched;
+        return CallerNode(
+            createRead("__implicit"), :type, :target);
     }
 
 
