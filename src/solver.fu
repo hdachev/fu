@@ -39,6 +39,8 @@ pub fn solve(
 
     mut _current_fn:    CurrentFn;
 
+    mut SLOW_resolve:   i32;
+
 
     //
 
@@ -2672,6 +2674,8 @@ pub fn solve(
             // Exhaust the resolve queue here.
             while (_resolve)
             {
+                SLOW_resolve++;
+
                 let index = _resolve.last;
                 _resolve.pop(); // TODO we need pops that return a value, this is stupid.
 
@@ -2725,6 +2729,7 @@ pub fn solve(
         _current_fn && fail("non-empty _current_fn.");
 
         // Run the thing.
-        return SolverOutput(:root, :scope);
+        return SolverOutput(:root, :scope,
+            :SLOW_resolve);
     }
 }

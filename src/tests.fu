@@ -332,6 +332,32 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
+        fn outer(implicit x: i32, i: i32): i32
+            i > 0   ? inner(i)
+                    : x + i;
+
+        fn inner(i: i32): i32
+            outer(i - 1);
+
+        let implicit x = 7;
+        return outer(1) - 7;
+    `);
+
+    ZERO(`
+        //! SLOW_resolve
+        fn inner(implicit x: i32, i: i32): i32
+            outer(i - 2 * x);
+
+        fn outer(i: i32): i32
+            i > 0   ? inner(i)
+                    : 2 * i;
+
+        let implicit x = 3;
+        return outer(6);
+    `);
+
+    ZERO(`
         struct Range {
             min: i32;
             max: i32;

@@ -405,6 +405,9 @@ pub struct SolverOutput
 {
     root:   SolvedNode;
     scope:  Scope;
+
+    // Stats & such.
+    SLOW_resolve:   i32;
 };
 
 
