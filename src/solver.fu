@@ -25,6 +25,7 @@ pub fn solve(
 {
     mut _here:          TokenIdx;
     mut _scope:         Scope;
+    mut _resolve:       i32[];
 
     mut _root_scope:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
@@ -2648,6 +2649,20 @@ pub fn solve(
             // Continue from group end.
             i1 > i0 || fail();
             i = i1 - 1; // <- loop++
+
+            // Exhaust the resolve queue here.
+            while (_resolve)
+            {
+                let index = _resolve[_resolve.len - 1];
+                _resolve.pop(); // TODO we need pops that return a value, this is stupid.
+
+                let target = Target(modid: module.modid, :index);
+                let overload = GET(target);
+
+                unorderedSolve(
+                    overload.template.node,
+                    overload.solved);
+            }
         }
 
         result.len == nodes.len || fail();
