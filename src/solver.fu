@@ -26,6 +26,7 @@ pub fn solve(
     mut _here:          TokenIdx;
     mut _scope:         Scope;
     mut _resolve:       i32[];
+    mut _resolve_ok:    i32;
 
     mut _root_scope:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
@@ -196,9 +197,6 @@ pub fn solve(
         overload.flags  = solved.flags;
 
         overload.solved = solved;
-
-        // TODO: if any one thing changed,
-        //  push all used_by's onto _resolve.
     }
 
     fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
@@ -2259,6 +2257,10 @@ pub fn solve(
                 Argument(
                     name: id, :type,
                     flags: F_IMPLICIT));
+
+            _resolve_ok || fail("Not a great time to resolve-push.");
+            for (mut i = 0; i < o.used_by.len; i++)
+                _resolve.set::add(o.used_by[i]);
         }
 
         return ret;
@@ -2568,11 +2570,9 @@ pub fn solve(
     {
         mut result: SolvedNode[];
 
-        /////////////////////////
+        //////////////////
         let here0 = _here;
-        mut resolve0: i32[];
-        SWAP(_resolve, resolve0);
-        /////////////////////////
+        //////////////////
 
         result.resize(nodes.len);
 
@@ -2592,6 +2592,12 @@ pub fn solve(
 
                 continue;
             }
+
+            /////////////////////////
+            _resolve_ok++;
+            mut resolve0: i32[];
+            SWAP(_resolve, resolve0);
+            /////////////////////////
 
             // Unordered solve -
             //  batches multiple potentially recursive declarations,
@@ -2666,7 +2672,7 @@ pub fn solve(
             // Exhaust the resolve queue here.
             while (_resolve)
             {
-                let index = _resolve[_resolve.len - 1];
+                let index = _resolve.last;
                 _resolve.pop(); // TODO we need pops that return a value, this is stupid.
 
                 let target = Target(modid: module.modid, :index);
@@ -2676,15 +2682,18 @@ pub fn solve(
                     overload.template.node,
                     overload.solved);
             }
+
+            /////////////////////////
+            _resolve_ok--;
+            SWAP(_resolve, resolve0);
+            /////////////////////////
         }
 
         result.len == nodes.len || fail("solveNodes: result.len != nodes.len");
-        _resolve && fail("solveNodes: non-empty _resolve.");
 
-        /////////////////////////
-        SWAP(_resolve, resolve0);
+        //////////////
         _here = here0;
-        /////////////////////////
+        //////////////
 
         return result;
     }
@@ -2709,8 +2718,11 @@ pub fn solve(
 
     // Solve.
     {
-        let root = solveNode(parse);
+        let root  = solveNode(parse);
         let scope = Scope_exports(_scope, :module.modid);
+
+        _resolve    && fail("non-empty _resolve.");
+        _current_fn && fail("non-empty _current_fn.");
 
         // Run the thing.
         return SolverOutput(:root, :scope);
