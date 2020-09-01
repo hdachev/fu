@@ -2559,7 +2559,11 @@ pub fn solve(
     {
         mut result: SolvedNode[];
 
+        /////////////////////////
         let here0 = _here;
+        mut resolve0: i32[];
+        SWAP(_resolve, resolve0);
+        /////////////////////////
 
         result.resize(nodes.len);
 
@@ -2665,9 +2669,13 @@ pub fn solve(
             }
         }
 
-        result.len == nodes.len || fail();
+        result.len == nodes.len || fail("solveNodes: result.len != nodes.len");
+        _resolve && fail("solveNodes: non-empty _resolve.");
 
+        /////////////////////////
+        SWAP(_resolve, resolve0);
         _here = here0;
+        /////////////////////////
 
         return result;
     }
