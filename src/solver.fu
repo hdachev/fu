@@ -147,20 +147,25 @@ pub fn solve(
             :node.flags);
     }
 
-    fn FnDecl(kind: string, id: string, ref solved: SolvedNode, template: Template): Target
+    fn FnDecl(kind: string, id: string, template: Template): Target
+    {
+        return Scope_add(
+            _scope,
+            :kind, :id, type: t_void,
+            :template,
+            flags: 0 /* added in update */);
+    }
+
+    fn FnDecl_update(target: Target, ref solved: SolvedNode)
     {
         let items = solved.items;
-        let rnode = items[items.len + FN_RET_BACK];
-        let ret   = rnode && rnode.type || fail();
 
-        mut min         = 0;
-        let max         = items.len + FN_RET_BACK;
-        let argNodes    = items.slice(0, max);
-
+        mut min = 0;
+        let max = items.len + FN_RET_BACK;
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
-            let argNode = argNodes[i];
+            let argNode = items[i];
             argNode.kind == "let" || fail();
 
             let isImplicit = !!(argNode.flags & F_IMPLICIT);
@@ -176,16 +181,24 @@ pub fn solve(
             args.push(arg);
         }
 
-        let target = Scope_add(
-            _scope,
-            :kind, :id, ret,
-            :min, :max, :args,
-            :template,
-            :solved.flags);
+        // The target here is likely pointless at this point,
+        //  along with the type on
+        solved.target   = target;
+        solved.type     = addroffn::X_addrofTarget(target);
 
-        solved.target = target;
+        // Unconditionally replacing the stuff.
+        ref overload    = GET_mut(target);
 
-        return target;
+        overload.type   = items[items.len + FN_RET_BACK].type || fail();
+        overload.min    = min;
+        overload.max    = max;
+        overload.args   = args;
+        overload.flags  = solved.flags;
+
+        overload.solved = solved;
+
+        // TODO: if any one thing changed,
+        //  push all used_by's onto _resolve.
     }
 
     fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
@@ -1201,23 +1214,20 @@ pub fn solve(
             let kind = native ? "__native" : "fn";
             let NO_IMPORTS: i32[];
             let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS);
-            let fndecl = FnDecl(:kind, id: name, out.out, :template);
 
-            out.type = addroffn::X_addrofTarget(fndecl);
+            out.target = FnDecl(:kind, id: name, :template);
         }
 
         if (solve && !native)
             out.items[out.items.len + FN_BODY_BACK] || fail();
 
-        if (solve)
-        {
-            GET_mut(out.target).solved = out.out;
+        FnDecl_update(out.target, out.out);
 
+        if (solve)
             return createEmpty(
-                kind: "fndef",
-                type: addroffn::X_addrofTarget(out.target),
+                kind:   "fndef",
+                type:   out.type,
                 target: out.target);
-        }
 
         return out.out;
     }
