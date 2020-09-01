@@ -147,9 +147,9 @@ pub fn solve(
             :node.flags);
     }
 
-    fn FnDecl(kind: string, id: string, ref node: SolvedNode, native: Node): Target
+    fn FnDecl(kind: string, id: string, ref solved: SolvedNode, template: Template): Target
     {
-        let items = node.items;
+        let items = solved.items;
         let rnode = items[items.len + FN_RET_BACK];
         let ret   = rnode && rnode.type || fail();
 
@@ -176,17 +176,14 @@ pub fn solve(
             args.push(arg);
         }
 
-        let NO_IMPORTS: i32[];
-        let template = Template(node: native, imports: NO_IMPORTS);
-
         let target = Scope_add(
             _scope,
             :kind, :id, ret,
             :min, :max, :args,
             :template,
-            :node.flags);
+            :solved.flags);
 
-        node.target = target;
+        solved.target = target;
 
         return target;
     }
@@ -1202,7 +1199,9 @@ pub fn solve(
 
             //
             let kind = native ? "__native" : "fn";
-            let fndecl = FnDecl(:kind, id: name, out.out, native && n_body);
+            let NO_IMPORTS: i32[];
+            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS);
+            let fndecl = FnDecl(:kind, id: name, out.out, :template);
 
             out.type = addroffn::X_addrofTarget(fndecl);
         }
