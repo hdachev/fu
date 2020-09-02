@@ -2262,7 +2262,10 @@ pub fn solve(
 
             _resolve_ok || fail("Not a great time to resolve-push.");
             for (mut i = 0; i < o.used_by.len; i++)
-                _resolve.set::add(o.used_by[i]);
+                _resolve.set::add(
+                    o.used_by[i] || fail(
+                        "Cannot inject implicit arg `" ~ id ~ "` to function `"
+                            ~ fnNode.value ~ "` because it is used in global scope."));
         }
 
         return ret;
