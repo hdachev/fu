@@ -359,6 +359,24 @@ pub fn Scope_add(
     return target;
 }
 
+pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_"): Target
+{
+    let modid = MODID;
+    let target = Target(:modid,
+        index: scope.overloads.len + 1);
+
+    mut item: Overload;
+    item.kind = kind;
+    scope.overloads.push(item);
+
+    return target;
+}
+
+pub fn Scope_set(scope: &mut Scope, id: string, target: Target)
+{
+    scope.items.push(ScopeItem( :id, :target ));
+}
+
 pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags: i32 = F_PUB)
 {
     return Scope_add(:scope, "type", :id, :type, :flags);

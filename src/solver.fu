@@ -150,16 +150,18 @@ pub fn solve(
             :node.flags);
     }
 
-    fn FnDecl(kind: string, id: string, template: Template): Target
+    fn FnDecl_init(target: Target, kind: string, id: string, template: Template)
     {
-        return Scope_add(
-            _scope,
-            :kind, :id, type: t_void,
-            :template,
-            flags: 0 /* added in update */);
+        ref overload = GET_mut(target);
+
+        overload.name = id;
+        overload.kind = kind;
+        overload.template = template;
+
+        Scope_set(_scope, :id, :target);
     }
 
-    fn FnDecl_update(target: Target, ref solved: SolvedNode)
+    fn FnDecl_update(solved: SolvedNode)
     {
         let items = solved.items;
 
@@ -184,13 +186,8 @@ pub fn solve(
             args.push(arg);
         }
 
-        // The target here is likely pointless at this point,
-        //  along with the type on
-        solved.target   = target;
-        solved.type     = addroffn::X_addrofTarget(target);
-
         // Unconditionally replacing the stuff.
-        ref overload    = GET_mut(target);
+        ref overload    = GET_mut(solved.target);
 
         overload.type   = items[items.len + FN_RET_BACK].type || fail();
         overload.min    = min;
@@ -1092,6 +1089,12 @@ pub fn solve(
 
         out.items.resize(inItems.len);
 
+        if (!prep)
+        {
+            out.target = Scope_create(_scope);
+            out.type = addroffn::X_addrofTarget(out.target);
+        }
+
         //
         if (_current_fn)
         {
@@ -1186,7 +1189,7 @@ pub fn solve(
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.len + FN_BODY_BACK] = s_body;
+                outItems[outItems.len + FN_BODY_BACK] = s_body || fail();
             }
 
             //
@@ -1215,13 +1218,10 @@ pub fn solve(
             let NO_IMPORTS: i32[];
             let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS);
 
-            out.target = FnDecl(:kind, id: name, :template);
+            FnDecl_init(out.target, :kind, id: name, :template);
         }
 
-        if (solve && !native)
-            out.items[out.items.len + FN_BODY_BACK] || fail();
-
-        FnDecl_update(out.target, out.out);
+        FnDecl_update(out.out);
 
         if (solve)
             return createEmpty(
@@ -2251,19 +2251,12 @@ pub fn solve(
         //  there's nothing else to do here.
         if (fnNode.target)
         {
-            ref o = GET_mut(fnNode.target);
-
-            // We'll be mutating the overload.
-            o.kind == "fn" || fail();
-            o.args.push(
-                Argument(
-                    name: id, :type,
-                    flags: F_IMPLICIT));
+            let used_by = GET(fnNode.target).used_by;
 
             _resolve_ok || fail("Not a great time to resolve-push.");
-            for (mut i = 0; i < o.used_by.len; i++)
+            for (mut i = 0; i < used_by.len; i++)
                 _resolve.set::add(
-                    o.used_by[i] || fail(
+                    used_by[i] || fail(
                         "Cannot inject implicit arg `" ~ id ~ "` to function `"
                             ~ fnNode.value ~ "` because it is used in global scope."));
         }
