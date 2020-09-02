@@ -2682,6 +2682,9 @@ pub fn solve(
                 let target = Target(modid: module.modid, :index);
                 let overload = GET(target);
 
+                if (SLOW_resolve > 1024)
+                    fail("_resolve loops forever on `" ~ overload.name ~ "`.");
+
                 unorderedSolve(
                     overload.template.node,
                     overload.solved);
