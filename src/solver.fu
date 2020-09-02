@@ -189,13 +189,29 @@ pub fn solve(
         // Unconditionally replacing the stuff.
         ref overload    = GET_mut(solved.target);
 
-        overload.type   = items[items.len + FN_RET_BACK].type || fail();
+        let args_len0   = overload.args.len;
+
+        overload.type   = items[items.len + FN_RET_BACK].type || t_void;
         overload.min    = min;
         overload.max    = max;
         overload.args   = args;
         overload.flags  = solved.flags;
 
         overload.solved = solved;
+
+        // TODO FIX starting the diff with just number of arguments,
+        //  which is fine for implicit cycling,
+        //   then we gotta move on to bigger and better things.
+        if (args_len0 != overload.args.len)
+        {
+            !overload.used_by.len || _resolve_ok || fail(
+                "Not a great time to resolve-push.");
+
+            for (mut i = 0; i < overload.used_by.len; i++)
+                _resolve.set::add(
+                    overload.used_by[i] || fail(
+                        "Cannot _resolve fns invoked in global scope."));
+        }
     }
 
     fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
@@ -2245,20 +2261,6 @@ pub fn solve(
             let newArgNode  = createLet(ret, F_IMPLICIT);
 
             fnNode.items.insert(newArgIdx, newArgNode);
-        }
-
-        // If we dont have the overload yet,
-        //  there's nothing else to do here.
-        if (fnNode.target)
-        {
-            let used_by = GET(fnNode.target).used_by;
-
-            _resolve_ok || fail("Not a great time to resolve-push.");
-            for (mut i = 0; i < used_by.len; i++)
-                _resolve.set::add(
-                    used_by[i] || fail(
-                        "Cannot inject implicit arg `" ~ id ~ "` to function `"
-                            ~ fnNode.value ~ "` because it is used in global scope."));
         }
 
         return ret;

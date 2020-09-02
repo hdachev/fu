@@ -364,6 +364,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -375,6 +376,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         fn returns_x(implicit x: i32): i32
             = x;
 
