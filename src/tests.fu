@@ -346,15 +346,21 @@ pub fn runTests()
 
     ZERO(`
         //! SLOW_resolve
-        fn inner(implicit x: i32, i: i32): i32
-            outer(i - 2 * x);
-
-        fn outer(i: i32): i32
+        fn outer(implicit x: i32, i: i32)
             i > 0   ? inner(i)
-                    : 2 * i;
+                    : x + i;
 
-        let implicit x = 3;
-        return outer(6);
+        fn noret(i: i32) = outer(i);
+
+        fn template(i) = i & 1 ? outer(i) : noret(i);
+
+        fn inner(i: i32): i32
+            template(i - 1);
+
+        fn main() {
+            let implicit x = 7;
+            return outer(1) - 7;
+        }
     `);
 
     ZERO(`
