@@ -25,9 +25,6 @@ pub fn solve(
 {
     mut _here:          TokenIdx;
     mut _scope:         Scope;
-    mut _resolve:       i32[];
-    mut _resolve_ok:    i32;
-
     mut _root_scope:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
 
@@ -204,13 +201,20 @@ pub fn solve(
         //   then we gotta move on to bigger and better things.
         if (args_len0 != overload.args.len)
         {
-            !overload.used_by.len || _resolve_ok || fail(
-                "Not a great time to resolve-push.");
-
             for (mut i = 0; i < overload.used_by.len; i++)
-                _resolve.set::add(
-                    overload.used_by[i] || fail(
-                        "Cannot _resolve fns invoked in global scope."));
+            {
+                let userIdx = Target(modid: module.modid, index: overload.used_by[i]);
+
+                ref user = GET_mut(userIdx);
+                if !(user.status & SS_DIRTY)
+                {
+                    user.status & SS_FINALIZED && fail(
+                        "Overload finalized, cannot make dirty.");
+
+                    user.status |= SS_DIRTY;
+                    SLOW_resolve++;
+                }
+            }
         }
     }
 
@@ -2593,12 +2597,6 @@ pub fn solve(
                 continue;
             }
 
-            /////////////////////////
-            _resolve_ok++;
-            mut resolve0: i32[];
-            SWAP(_resolve, resolve0);
-            /////////////////////////
-
             // Unordered solve -
             //  batches multiple potentially recursive declarations,
             //   so we can expose them all in scope prior to solving types.
@@ -2608,6 +2606,10 @@ pub fn solve(
             //   introduced halfway through.
             let i0 = i;
             mut i1 = nodes.len;
+
+            ////////////////////////////
+            mut resolve0 = SLOW_resolve;
+            ////////////////////////////
 
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
@@ -2628,6 +2630,10 @@ pub fn solve(
                 if (node.kind != "fn")
                     result[i] = unorderedPrep(node);
             }
+
+            // Later we'll continue from group end.
+            i1 > i0 || fail();
+            i = i1 - 1; // <- loop++
 
             // TODO fix this shit
             {
@@ -2665,33 +2671,46 @@ pub fn solve(
                 }
             }
 
-            // Continue from group end.
-            i1 > i0 || fail();
-            i = i1 - 1; // <- loop++
-
             // Exhaust the resolve queue here.
-            while (_resolve)
             {
-                SLOW_resolve++;
+                mut some = resolve0 != SLOW_resolve;
+                while (some)
+                {
+                    some = false;
 
-                let index = _resolve.last;
-                _resolve.pop(); // TODO we need pops that return a value, this is stupid.
+                    ////////////////////////
+                    resolve0 = SLOW_resolve;
+                    ////////////////////////
 
-                let target = Target(modid: module.modid, :index);
-                let overload = GET(target);
+                    // mut noop = true;
+                    for (shadow mut i = i0; i < i1; i++)
+                    {
+                        let r = result[i];
+                        if (r.kind != "fndef" || !resolveIfNeeded(r.target))
+                            continue;
 
-                if (SLOW_resolve > 1024)
-                    fail("_resolve loops forever on `" ~ overload.name ~ "`.");
+                        some = resolve0 != SLOW_resolve;
+                        // noop = false;
+                    }
 
-                unorderedSolve(
-                    overload.template.node,
-                    overload.solved);
+                    // noop && fail("SLOW_resolve mislead us into looping.");
+                }
             }
 
-            /////////////////////////
-            _resolve_ok--;
-            SWAP(_resolve, resolve0);
-            /////////////////////////
+            // Lock things down,
+            //  this should explode on self-invoke from a closure,
+            //   we'll move this out of this loop,
+            //    and provide an extra fallback resolve
+            //     while we can here to support those too.
+            for (shadow mut i = i0; i < i1; i++)
+            {
+                shadow let r = result[i];
+                if (r.kind == "fndef")
+                {
+                    ref o = GET_mut(r.target);
+                    o.status |= SS_FINALIZED;
+                }
+            }
         }
 
         result.len == nodes.len || fail("solveNodes: result.len != nodes.len");
@@ -2701,6 +2720,30 @@ pub fn solve(
         //////////////
 
         return result;
+    }
+
+    fn resolveIfNeeded(target: Target): bool
+    {
+        let overload = GET(target);
+        if !(overload.status & SS_DIRTY)
+            return false;
+
+        GET_mut(target).status &= ~SS_DIRTY;
+
+        //////////////////
+        let here0 = _here;
+        _here = overload.template.node.token;
+        //////////////////
+
+        unorderedSolve(
+            overload.template.node,
+            overload.solved);
+
+        //////////////
+        _here = here0;
+        //////////////
+
+        return true;
     }
 
 
@@ -2726,7 +2769,6 @@ pub fn solve(
         let root  = solveNode(parse);
         let scope = Scope_exports(_scope, :module.modid);
 
-        _resolve    && fail("non-empty _resolve.");
         _current_fn && fail("non-empty _current_fn.");
 
         // Run the thing.

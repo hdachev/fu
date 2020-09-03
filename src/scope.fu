@@ -2,6 +2,9 @@ import parser;
 import types;
 import lifetimes;
 
+pub let SS_FINALIZED    = 1 << 0;
+pub let SS_DIRTY        = 1 << 1;
+
 
 // Build service primitives.
 
@@ -190,6 +193,7 @@ pub struct Overload
 
     // Target.index, Target.modid is current module modid.
     used_by?:   i32[];
+    status?:    i32;
 };
 
 pub struct ScopeItem
