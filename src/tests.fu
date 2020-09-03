@@ -388,6 +388,24 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
+        fn returns_x(implicit x: i32): i32
+            = x;
+
+        fn calls_self_3(call_self = false): i32
+        {
+            let add = 1; // <- this wasnt visible
+            fn do_call_self(mul: i32 = 0)
+                = calls_self_3 * mul + add;
+
+            return call_self ? do_call_self(4) : returns_x;
+        }
+
+        let implicit x = 7;
+        return calls_self_3(true) - 29;
+    `);
+
+    ZERO(`
         struct Range {
             min: i32;
             max: i32;
