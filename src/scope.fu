@@ -192,7 +192,13 @@ pub struct Overload
     solved:     SolvedNode;
 
     // Target.index, Target.modid is current module modid.
-    used_by?:   i32[];
+    //
+    // Note that when closures call their enclosing function,
+    //  the index we use is the one of the enclosing function.
+    //   See CallerNode, that's where we keep track of users.
+    used_by?:   i32[]; // <- watch out for closures
+
+    // Solver state.
     status?:    i32;
 };
 

@@ -32,6 +32,7 @@ pub fn solve(
     {
         using out: SolvedNode;
         return_idx: ScopeMemo;
+        closure_of: i32[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -1106,7 +1107,9 @@ pub fn solve(
 
         mut out = CurrentFn(
             prep || solved(n_fn, t_void),
-            return_idx: ScopeMemo());
+            return_idx: ScopeMemo(),
+            closure_of: _current_fn.closure_of
+                      ~ _current_fn.target.index);
 
         out.items.resize(inItems.len);
 
@@ -2497,8 +2500,14 @@ pub fn solve(
 
         // Track deps.
         if (overload.kind == "fn" && target.modid == module.modid)
-            GET_mut(target).used_by
-                .set::add(_current_fn.target.index /* one based */);
+        {
+            // Nested self-invocation detection.
+            let index = _current_fn.closure_of.has(target.index)
+                ? target.index
+                : _current_fn.target.index;
+
+            GET_mut(target).used_by.set::add(index);
+        }
 
         //
         mut out = solved(node, type, args);
