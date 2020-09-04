@@ -189,7 +189,7 @@ pub fn solve(
 
         let args_len0   = overload.args.len;
 
-        overload.type   = items[items.len + FN_RET_BACK].type || t_void;
+        overload.type   = items[items.len + FN_RET_BACK].type || fail("FnDecl_update: no return type.");
         overload.min    = min;
         overload.max    = max;
         overload.args   = args;
