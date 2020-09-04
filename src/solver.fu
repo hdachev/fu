@@ -37,6 +37,7 @@ pub fn solve(
     mut _current_fn:    CurrentFn;
 
     mut SLOW_resolve:   i32;
+    mut resolve_done:   i32;
 
 
     //
@@ -2673,7 +2674,9 @@ pub fn solve(
 
             // Exhaust the resolve queue here.
             {
-                mut some = resolve0 != SLOW_resolve;
+                mut some = SLOW_resolve != resolve0
+                        && SLOW_resolve != resolve_done;
+
                 while (some)
                 {
                     some = false;
@@ -2682,18 +2685,15 @@ pub fn solve(
                     resolve0 = SLOW_resolve;
                     ////////////////////////
 
-                    // mut noop = true;
                     for (shadow mut i = i0; i < i1; i++)
                     {
                         let r = result[i];
                         if (r.kind != "fndef" || !resolveIfNeeded(r.target))
                             continue;
 
-                        some = resolve0 != SLOW_resolve;
-                        // noop = false;
+                        some = SLOW_resolve != resolve0
+                            && SLOW_resolve != resolve_done;
                     }
-
-                    // noop && fail("SLOW_resolve mislead us into looping.");
                 }
             }
 
@@ -2729,6 +2729,7 @@ pub fn solve(
             return false;
 
         GET_mut(target).status &= ~SS_DIRTY;
+        resolve_done++;
 
         //////////////////
         let here0 = _here;
@@ -2770,6 +2771,7 @@ pub fn solve(
         let scope = Scope_exports(_scope, :module.modid);
 
         _current_fn && fail("non-empty _current_fn.");
+        SLOW_resolve == resolve_done || fail("Some overload was left dirty.");
 
         // Run the thing.
         return SolverOutput(:root, :scope,
