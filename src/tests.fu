@@ -531,6 +531,14 @@ pub fn runTests()
         fn main() mul_ab_opt(1);
     `);
 
+    ZERO(`
+        fn self_rec_template(x: $T): $T
+            x > 0 ? self_rec_template(x / 2 - 5) : x;
+
+        fn main()
+            self_rec_template(7) + 2;
+    `);
+
     // ZERO(`
     //     fn main() {
     //         let a = 1;
