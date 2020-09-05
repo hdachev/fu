@@ -702,13 +702,15 @@ pub fn cpp_codegen(
             _indent = "\n";
 
         mut src = cgFnSignature(fn);
-        if (!(fn.flags & F_CLOSURE) && _fdef.has(id || fail()))
-            ensureFwdDecl(fn.target);
-
         if (body.kind == "block")
             src ~= cgBlock(body, M_STMT);
         else
             src ~= blockWrap([ body ]);
+
+        // Consider a fwdannot after outputting body,
+        //  it could itself have written to _fdef.
+        if (!(fn.flags & F_CLOSURE) && _fdef.has(id || fail()))
+            ensureFwdDecl(fn.target);
 
         //////////////
         _fnN    = f0;
