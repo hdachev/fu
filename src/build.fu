@@ -82,7 +82,7 @@ fn getLinkOrder(modules: Module[]): i32[]
 //
 
 pub fn build(
-    ctx: Context,
+    implicit ctx: Context,
     run: bool,
 
     mut dir_wrk !: string,

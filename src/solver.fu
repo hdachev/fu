@@ -719,7 +719,9 @@ pub fn solve(
                     let host_arg = host_args[i];
                     args[i] = host_arg.default || bindImplicitArg(
                         :host_arg.name,
-                        :host_arg.type);
+                        :host_arg.type,
+
+                        becauseOf: matchIdx);
                 }
             }
         }
@@ -2258,10 +2260,10 @@ pub fn solve(
             value: overload.name, :overload.type, :target);
     }
 
-    fn injectImplicitArg(id: string, type: Type): Target
+    fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         ref fnNode = _current_fn.out || fail(
-            "No implicit `" ~ id ~ "` in scope.");
+            "No implicit `" ~ id ~ "` in scope, needed to call `" ~ GET(becauseOf).name ~ "`.");
 
         ///////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
@@ -2294,14 +2296,17 @@ pub fn solve(
         return ret;
     }
 
-    fn bindImplicitArg(name: string, type: Type): SolvedNode
+    fn bindImplicitArg(name: string, type: Type, becauseOf!: Target): SolvedNode
     {
         let id = name;
         mut args: SolvedNode[];
 
         let target = _scope.tryMatch__mutargs(:id, :args, retType: type)
-            || injectImplicitArg(:id, :type)
+            || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
+
+        GET(target).flags & F_IMPLICIT || fail(
+            "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
 
         return CallerNode(
             createRead("__implicit"), :type, :target);
