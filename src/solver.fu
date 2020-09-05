@@ -1086,7 +1086,8 @@ pub fn solve(
         // Template early exit.
         if (spec)
         {
-            solve || fail();
+            // Now we try to prep these too.
+            // solve || fail();
         }
         else if (n_fn.flags & F_TEMPLATE)
         {
@@ -1290,17 +1291,27 @@ pub fn solve(
         //  B. The multiple map taps here are because stuff
         //      moves around while doTrySpecialize does its work -
         //      if maps values didn"t move around we"d be good.
-        let spec = module.out.specs[mangle];
+        mut spec = module.out.specs[mangle];
 
         let SPEC_FAILED = -1;
         if (!spec)
         {
-            shadow let spec = doTrySpecialize(template, args, mangle);
-            module.out.specs[mangle] = spec ? spec : Target(modid: SPEC_FAILED, index: 0);
-            return spec;
+            let SPEC_FAIL = Target(modid: SPEC_FAILED, index: 0);
+
+            /////////////////////////////////////////////
+            let m0 = mangle;
+            module.out.specs[m0] = SPEC_FAIL;
+            /////////////////////////////////////////////
+
+            spec = doTrySpecialize(template, args, mangle) || SPEC_FAIL;
+
+            /////////////////////////////////////////////
+            module.out.specs[m0]     = spec || SPEC_FAIL;
+            module.out.specs[mangle] = spec || SPEC_FAIL;
+            /////////////////////////////////////////////
         }
 
-        return spec.modid != SPEC_FAILED ? spec : Target();
+        return spec.modid != SPEC_FAILED && spec;
     }
 
 
@@ -1481,7 +1492,16 @@ pub fn solve(
         }
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
-        let specialized = ok && __solveFn(template.node, solve: true, spec: true, :caseIdx);
+
+        let prep = ok && __solveFn(template.node, solve: false, spec: true, :caseIdx);
+
+        ///////////////////////////////////////////
+        // Re-enable recursion.
+        if (prep.target)
+            module.out.specs[mangle] = prep.target;
+        ///////////////////////////////////////////
+
+        let specialized = ok && __solveFn(template.node, :prep, solve: true, spec: true, :caseIdx);
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
