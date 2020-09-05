@@ -277,6 +277,78 @@ pub fn runTests()
     `);
 
 
+    // Templating checks.
+
+    ZERO(`
+        let x = 3;
+        return x / 2 - 1;
+    `);
+
+    ZERO(`
+        fn hey(a) a * a;
+        fn main() 0.hey;
+    `);
+
+    // FAIL(`
+    //     fn div3by(a: i32) 3 / a; //ERR overload
+    //     return div3by(2) - 1;
+    // `);
+
+    ZERO(`
+        fn div3by(a: $T) 3 / a;
+        return div3by(2) - 1;
+    `);
+
+    ZERO(`
+        fn div3by(a) 3 / a;
+        return div3by(2) - 1;
+    `);
+
+    ZERO(`
+        fn add3(a: $T, b = 3) a + b;
+        struct v1 { x: i32; };
+        fn +(a: v1, b: i32) v1(a.x + b);
+        fn main() add3(2.v1).x - 5;
+    `);
+
+    ZERO(`
+        fn mul_ab_init(a: $T, b = 0) a*b;
+        fn main() mul_ab_init(1);
+    `);
+
+    ZERO(`
+        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;
+        fn main() mul_ab_annot_init(1);
+    `);
+
+    ZERO(`
+        fn mul_ab_opt(a: $T, b?: $T) a*b;
+        fn main() mul_ab_opt(1);
+    `);
+
+    ZERO(`
+        fn self_rec_template(x: $T): $T
+            x > 0 ? self_rec_template(x / 2 - 5) : x;
+
+        fn main()
+            self_rec_template(7) + 2;
+    `);
+
+    ZERO(`
+        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;
+        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;
+        fn main() ab_rec(11) + 200;
+    `);
+
+    // ZERO(`
+    //     fn main() {
+    //         let a = 1;
+    //         fn add1(b) a + b;
+    //         return 2.add1 - 3;
+    //     }
+    // `);
+
+
     // Recursion, closures & implicit args.
 
     ZERO(`
@@ -480,78 +552,6 @@ pub fn runTests()
 
         return a - c;
     `);
-
-
-    // Templating checks.
-
-    ZERO(`
-        let x = 3;
-        return x / 2 - 1;
-    `);
-
-    ZERO(`
-        fn hey(a) a * a;
-        fn main() 0.hey;
-    `);
-
-    // FAIL(`
-    //     fn div3by(a: i32) 3 / a; //ERR overload
-    //     return div3by(2) - 1;
-    // `);
-
-    ZERO(`
-        fn div3by(a: $T) 3 / a;
-        return div3by(2) - 1;
-    `);
-
-    ZERO(`
-        fn div3by(a) 3 / a;
-        return div3by(2) - 1;
-    `);
-
-    ZERO(`
-        fn add3(a: $T, b = 3) a + b;
-        struct v1 { x: i32; };
-        fn +(a: v1, b: i32) v1(a.x + b);
-        fn main() add3(2.v1).x - 5;
-    `);
-
-    ZERO(`
-        fn mul_ab_init(a: $T, b = 0) a*b;
-        fn main() mul_ab_init(1);
-    `);
-
-    ZERO(`
-        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;
-        fn main() mul_ab_annot_init(1);
-    `);
-
-    ZERO(`
-        fn mul_ab_opt(a: $T, b?: $T) a*b;
-        fn main() mul_ab_opt(1);
-    `);
-
-    ZERO(`
-        fn self_rec_template(x: $T): $T
-            x > 0 ? self_rec_template(x / 2 - 5) : x;
-
-        fn main()
-            self_rec_template(7) + 2;
-    `);
-
-    ZERO(`
-        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;
-        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;
-        fn main() ab_rec(11) + 200;
-    `);
-
-    // ZERO(`
-    //     fn main() {
-    //         let a = 1;
-    //         fn add1(b) a + b;
-    //         return 2.add1 - 3;
-    //     }
-    // `);
 
 
     // Arrays.
