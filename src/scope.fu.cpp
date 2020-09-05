@@ -395,6 +395,8 @@ struct s_Overload
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
+    fu_VEC<int> used_by;
+    int status;
     explicit operator bool() const noexcept
     {
         return false
@@ -408,6 +410,8 @@ struct s_Overload
             || partial
             || tEmplate
             || solved
+            || used_by
+            || status
         ;
     }
 };
@@ -437,11 +441,13 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
+    int SLOW_resolve;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || scope
+            || SLOW_resolve
         ;
     }
 };
@@ -562,6 +568,16 @@ struct s_ScopeSkip
                                 #endif
 
 #ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_SS_FINALIZED
+                                #define DEF_SS_FINALIZED
+inline const int SS_FINALIZED = (1 << 0);
+                                #endif
+
+                                #ifndef DEF_SS_DIRTY
+                                #define DEF_SS_DIRTY
+inline const int SS_DIRTY = (1 << 1);
+                                #endif
 
 int MODID(const s_Module& module)
 {
@@ -700,12 +716,27 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved) };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0 };
     if ((kind != "field"_fu))
         scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 
     scope.overloads.push(item);
     return target;
+}
+
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind, const s_Module& module)
+{
+    const int modid = MODID(module);
+    const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
+    s_Overload item {};
+    item.kind = kind;
+    scope.overloads.push(item);
+    return target;
+}
+
+void Scope_set(s_Scope& scope, const fu_STR& id, const s_Target& target)
+{
+    scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 }
 
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Module& module)

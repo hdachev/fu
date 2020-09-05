@@ -59,8 +59,8 @@ s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
+void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&, bool, const s_Context&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, bool);
-void build(const s_Context&, bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&, bool);
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void setModule(const s_Module&, s_Context&);
 
@@ -418,6 +418,8 @@ struct s_Overload
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
+    fu_VEC<int> used_by;
+    int status;
     explicit operator bool() const noexcept
     {
         return false
@@ -431,6 +433,8 @@ struct s_Overload
             || partial
             || tEmplate
             || solved
+            || used_by
+            || status
         ;
     }
 };
@@ -460,11 +464,13 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
+    int SLOW_resolve;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || scope
+            || SLOW_resolve
         ;
     }
 };
@@ -686,7 +692,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
     };
-    return build(ctx, run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, nowrite);
+    return build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, nowrite, ctx);
 }
 
 namespace {
@@ -709,6 +715,14 @@ struct sf_compile_snippets
             fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
             (ctx.files.upsert(fname) = src);
             compile(fname, fu_STR{}, ctx);
+        };
+        for (int i = 0; (i < ctx.modules.size()); i++)
+        {
+            s_Module module { ctx.modules[i] };
+            if (module.out.solve.SLOW_resolve)
+            {
+                (fu::has(module.in.src, "//! SLOW_resolve"_fu) || fu::fail("SLOW: unexpected SLOW_resolve."_fu));
+            };
         };
         return ctx;
     };
@@ -751,8 +765,8 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
     const bool nowrite = !fu::has(last_NwMO(sources), "//! ALLOW_WRITE"_fu);
-    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite);
-    build(ctx, run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite);
+    build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite, ctx);
+    build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite, ctx);
     return ctx;
 }
 

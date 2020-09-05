@@ -407,6 +407,8 @@ struct s_Overload
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
+    fu_VEC<int> used_by;
+    int status;
     explicit operator bool() const noexcept
     {
         return false
@@ -420,6 +422,8 @@ struct s_Overload
             || partial
             || tEmplate
             || solved
+            || used_by
+            || status
         ;
     }
 };
@@ -449,11 +453,13 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
+    int SLOW_resolve;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || scope
+            || SLOW_resolve
         ;
     }
 };
@@ -646,7 +652,7 @@ inline std::byte if_last_bcSl(fu_STR& s)
 }
                                 #endif
 
-void build(const s_Context& ctx, const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite, const s_Context& ctx)
 {
     if ((if_last_bcSl(dir_wrk) != std::byte('/')))
     {

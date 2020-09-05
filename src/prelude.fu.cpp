@@ -390,6 +390,8 @@ struct s_Overload
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
+    fu_VEC<int> used_by;
+    int status;
     explicit operator bool() const noexcept
     {
         return false
@@ -403,6 +405,8 @@ struct s_Overload
             || partial
             || tEmplate
             || solved
+            || used_by
+            || status
         ;
     }
 };
@@ -432,11 +436,13 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
+    int SLOW_resolve;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || scope
+            || SLOW_resolve
         ;
     }
 };

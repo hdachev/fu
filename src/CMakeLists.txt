@@ -16,6 +16,7 @@ set(FU_INPUTS
     intlit.fu
     addroffn.fu
     ../lib/tea.fu
+    set.fu
     solver.fu
     codegen.fu
     prelude.fu

@@ -306,6 +306,8 @@ struct s_Overload
     s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
+    fu_VEC<int> used_by;
+    int status;
     explicit operator bool() const noexcept
     {
         return false
@@ -319,6 +321,8 @@ struct s_Overload
             || partial
             || tEmplate
             || solved
+            || used_by
+            || status
         ;
     }
 };
@@ -460,11 +464,13 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
+    int SLOW_resolve;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || scope
+            || SLOW_resolve
         ;
     }
 };
@@ -1333,13 +1339,13 @@ struct sf_cpp_codegen
             _indent = "\n"_fu;
 
         fu_STR src = cgFnSignature(fn);
-        if ((!(fn.flags & F_CLOSURE) && fu::has(_fdef, (id ? id : fail(fu_STR{})))))
-            ensureFwdDecl(fn.target);
-
         if ((body.kind == "block"_fu))
             (src += cgBlock(body, M_STMT));
         else
             (src += blockWrap(fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { body } }, bool{}, bool{}));
+
+        if ((!(fn.flags & F_CLOSURE) && fu::has(_fdef, (id ? id : fail(fu_STR{})))))
+            ensureFwdDecl(fn.target);
 
         _fnN = f0;
         _clsrN = c0;
