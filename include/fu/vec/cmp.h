@@ -11,17 +11,22 @@
 A_B_VECLIKE()
 inline bool operator==(const A& a, const B& b) noexcept
 {
-    int s = a.size();
-    return s == b.size()
-        && memcmp(a.data(), b.data(), size_t(s)) == 0;
+    const auto* d0 = a.data();
+    const auto* d1 = b.data();
+    const auto  s0 = a.size();
+    const auto  s1 = b.size();
+
+    bool diff  = (s0 != s1);
+    bool same  = (d0 == d1) | (!diff & !s0);
+    bool cheap = (same | diff);
+
+    return cheap ? same : memcmp(d0, d1, size_t(s0)) == 0;
 }
 
 A_B_VECLIKE()
 fu_INL bool operator!=(const A& a, const B& b) noexcept
 {
-    int s = a.size();
-    return s != b.size()
-        || memcmp(a.data(), b.data(), size_t(s)) != 0;
+    return !(a == b);
 }
 
 
