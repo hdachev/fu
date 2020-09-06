@@ -27,6 +27,7 @@ struct s_ModuleOutputs;
 struct s_ModuleStat;
 struct s_ModuleStats;
 struct s_Node;
+struct s_OpenTemplate;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
@@ -661,6 +662,26 @@ struct s_CurrentFn
 };
                                 #endif
 
+                                #ifndef DEF_s_OpenTemplate
+                                #define DEF_s_OpenTemplate
+struct s_OpenTemplate
+{
+    s_Target spec;
+    s_Template tEmplate;
+    fu_VEC<s_SolvedNode> args;
+    fu_STR mangle;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || spec
+            || tEmplate
+            || args
+            || mangle
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Intlit
                                 #define DEF_s_Intlit
 struct s_Intlit
@@ -1061,6 +1082,7 @@ struct sf_solve
     s_CurrentFn _current_fn {};
     int SLOW_resolve {};
     int resolve_done {};
+    fu_VEC<s_OpenTemplate> _open_templates {};
     s_Type t_string = createArray(t_byte);
     void _Scope_import__forceCopy(const int modid)
     {
@@ -1723,13 +1745,13 @@ struct sf_solve
     };
     s_SolvedNode solveRoot(const s_Node& node)
     {
-        return solved(node, t_void, solveNodes(node.items, t_void, s_Type{}, bool{}));
+        return solved(node, t_void, solveNodes(node.items, t_void, s_Type{}, bool{}, true));
     };
     s_SolvedNode solveBlock(const s_Node& node, const s_Type& type)
     {
         const s_ScopeMemo scope0 = Scope_push(_scope);
         const bool expr = !!(if_last_zET6(node.items).flags & F_NODISCARD);
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, t_void, type, expr);
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, t_void, type, expr, bool{});
         const s_Type& type_1 = ((expr && items.size()) ? last_4UAi(items).type : t_void);
         s_SolvedNode out = solved(node, type_1, items);
         Scope_pop(_scope, scope0);
@@ -1737,7 +1759,7 @@ struct sf_solve
     };
     s_SolvedNode solveComma(const s_Node& node)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{}, s_Type{}, bool{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, s_Type{}, s_Type{}, bool{}, bool{});
         const s_SolvedNode& last = ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = items[(items.size() - 1)]; if (_) return _; } fail(fu_STR{}); }());
         return solved(node, (last.type ? last.type : fail(fu_STR{})), items);
     };
@@ -1851,13 +1873,13 @@ struct sf_solve
     };
     s_SolvedNode uPrepFn(const s_Node& node)
     {
-        return __solveFn(node, false, s_SolvedNode{}, bool{}, -1);
+        return __solveFn(node, false, s_SolvedNode{}, bool{}, -1, s_Target{});
     };
     s_SolvedNode uSolveFn(const s_Node& node, const s_SolvedNode& prep)
     {
-        return __solveFn(node, true, prep, bool{}, -1);
+        return __solveFn(node, true, prep, bool{}, -1, s_Target{});
     };
-    s_SolvedNode __solveFn(const s_Node& n_fn, const bool solve, const s_SolvedNode& prep, const bool spec, const int caseIdx)
+    s_SolvedNode __solveFn(const s_Node& n_fn, const bool solve, const s_SolvedNode& prep, const bool spec, const int caseIdx, const s_Target& into)
     {
         if (spec)
         {
@@ -1879,7 +1901,7 @@ struct sf_solve
         out.out.items.resize(inItems.size());
         if (!prep)
         {
-            out.out.target = Scope_create(_scope, "_no_kind_yet_"_fu, module);
+            out.out.target = ([&]() -> s_Target { { s_Target _ = s_Target(into); if (_) return _; } return Scope_create(_scope, "_no_kind_yet_"_fu, module); }());
             out.out.type = X_addrofTarget(out.out.target);
         };
         if (_current_fn)
@@ -1965,9 +1987,13 @@ struct sf_solve
         };
         FnDecl_update(out.out);
         if (solve)
-            return createEmpty("fndef"_fu, out.out.type, out.out.target);
+            return createFnDef(out.out);
 
         return std::move(out.out);
+    };
+    s_SolvedNode createFnDef(const s_SolvedNode& fn)
+    {
+        return s_SolvedNode { "fndef"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx(fn.token), s_Type(fn.type), s_Target(fn.target) };
     };
     fu_STR mangleArguments(fu::view<s_SolvedNode> args)
     {
@@ -1992,13 +2018,18 @@ struct sf_solve
             const s_Target SPEC_FAIL = s_Target { int(SPEC_FAILED), 0 };
             fu_STR m0 { mangle };
             (module.out.specs.upsert(m0) = SPEC_FAIL);
-            spec = ([&]() -> s_Target { { s_Target _ = doTrySpecialize(tEmplate, fu_VEC<s_SolvedNode>(args), mangle); if (_) return _; } return s_Target(SPEC_FAIL); }());
-            (module.out.specs.upsert(m0) = (spec ? spec : SPEC_FAIL));
-            (module.out.specs.upsert(mangle) = (spec ? spec : SPEC_FAIL));
+            spec = ([&]() -> s_Target { { s_Target _ = doTrySpecialize(tEmplate, fu_VEC<s_SolvedNode>(args), mangle, s_Target{}); if (_) return _; } return s_Target(SPEC_FAIL); }());
+            (module.out.specs.upsert(mangle) = spec);
+            if ((m0 != mangle))
+                (module.out.specs.upsert(m0) = spec);
+
+            if ((spec.modid != SPEC_FAILED))
+                _open_templates.push(s_OpenTemplate { s_Target(spec), s_Template(tEmplate), fu_VEC<s_SolvedNode>(args), fu_STR(mangle) });
+
         };
         return std::move(([&]() -> const s_Target& { if ((spec.modid != SPEC_FAILED)) return spec; else return fu::Default<s_Target>::value; }()));
     };
-    s_Target doTrySpecialize(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle)
+    s_Target doTrySpecialize(const s_Template& tEmplate, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle, const s_Target& into)
     {
         bool ok = true;
         fu_MAP<fu_STR, s_Type> typeParams0 {};
@@ -2105,11 +2136,11 @@ struct sf_solve
             };
         };
         ((kind == "fn"_fu) || fail("__solveFn spec:true is not expected to fail."_fu));
-        s_SolvedNode prep = ([&]() -> s_SolvedNode { if (ok) return __solveFn(tEmplate.node, false, s_SolvedNode{}, true, caseIdx); else return s_SolvedNode{}; }());
+        s_SolvedNode prep = ([&]() -> s_SolvedNode { if (ok && !into) return __solveFn(tEmplate.node, false, s_SolvedNode{}, true, caseIdx, into); else return s_SolvedNode{}; }());
         if (prep.target)
             (module.out.specs.upsert(mangle) = prep.target);
 
-        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return __solveFn(tEmplate.node, true, prep, true, caseIdx); else return s_SolvedNode{}; }());
+        s_SolvedNode specialized = ([&]() -> s_SolvedNode { if (ok) return __solveFn(tEmplate.node, true, prep, true, caseIdx, into); else return s_SolvedNode{}; }());
         std::swap(_current_fn, current_fn0);
         Scope_pop(_scope, scope0);
         _scope_skip = scope_skip0;
@@ -2232,7 +2263,7 @@ struct sf_solve
         };
         s_Type prevType { _current_fn.out.items.mutref(retIdx()).type };
         ((node.items.size() <= 1) || fail(fu_STR{}));
-        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType, s_Type{}, bool{}));
+        s_SolvedNode out = solved(node, t_void, solveNodes(node.items, prevType, s_Type{}, bool{}, bool{}));
         s_SolvedNode& next = (out.items ? out.items.mutref(0) : out);
         if ((killedBy(next.type.lifetime, _current_fn.return_idx.items_len) && (next.type.vtype.quals & q_ref)))
         {
@@ -2545,7 +2576,7 @@ struct sf_solve
             (target || fail(fu_STR{}));
         };
         const s_Scope& scope = ((node.flags & F_QUALIFIED) ? dequalify_andGetScope(id) : _scope);
-        fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{}, s_Type{}, bool{});
+        fu_VEC<s_SolvedNode> args = solveNodes(node.items, s_Type{}, s_Type{}, bool{}, bool{});
         s_Target callTargIdx = match__mutargs(scope, id, args, node.flags, target);
         s_Overload callTarg = GET(callTargIdx);
         while (callTarg.partial)
@@ -2575,7 +2606,7 @@ struct sf_solve
         if ((!itemType && isStruct(type)))
             return solveCall(node, lookupStruct(type, module, ctx).ctor);
 
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType, s_Type{}, bool{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, itemType, s_Type{}, bool{}, bool{});
         int startAt = 0;
         if ((!itemType && items.size()))
         {
@@ -2660,7 +2691,7 @@ struct sf_solve
     };
     s_SolvedNode solveOr(const s_Node& node, s_Type&& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{}, bool{});
         if (is_void(type))
             type = t_bool;
 
@@ -2705,7 +2736,7 @@ struct sf_solve
     };
     s_SolvedNode solveAnd(const s_Node& node, s_Type&& type)
     {
-        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{});
+        fu_VEC<s_SolvedNode> items = solveNodes(node.items, type, s_Type{}, bool{}, bool{});
         if (is_void(type))
             type = t_bool;
 
@@ -2808,7 +2839,7 @@ struct sf_solve
     {
         return s_SolvedNode { (nrvo ? "nrvo"_fu : "move"_fu), 0, fu_STR{}, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { node } }, s_TokenIdx(node.token), clear_refs(node.type), s_Target{} };
     };
-    fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type_all, const s_Type& type_last, const bool use_type_last)
+    fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& nodes, const s_Type& type_all, const s_Type& type_last, const bool use_type_last, const bool TEMP_open_templates)
     {
         fu_VEC<s_SolvedNode> result {};
         const s_TokenIdx here0 { _here };
@@ -2888,11 +2919,23 @@ struct sf_solve
                     for (int i_1 = i0; (i_1 < i1); i_1++)
                     {
                         s_SolvedNode r { result[i_1] };
-                        if (((r.kind != "fndef"_fu) || !resolveIfNeeded(r.target)))
+                        if (((r.kind != "fndef"_fu) || !resolveIfNeeded_nonTemplateFn(r.target)))
                         {
                             continue;
                         };
                         some = ((SLOW_resolve != resolve0) && (SLOW_resolve != resolve_done));
+                    };
+                    if (TEMP_open_templates)
+                    {
+                        for (int i_1 = 0; (i_1 < _open_templates.size()); i_1++)
+                        {
+                            s_OpenTemplate r { _open_templates[i_1] };
+                            if (!resolveIfNeeded_templateSpec(r))
+                            {
+                                continue;
+                            };
+                            some = ((SLOW_resolve != resolve0) && (SLOW_resolve != resolve_done));
+                        };
                     };
                 };
             };
@@ -2905,12 +2948,24 @@ struct sf_solve
                     o.status |= SS_FINALIZED;
                 };
             };
+            if (TEMP_open_templates)
+            {
+                for (int i_1 = 0; (i_1 < _open_templates.size()); i_1++)
+                {
+                    s_OpenTemplate r { _open_templates[i_1] };
+                    s_Overload& o = GET_mut(r.spec);
+                    if ((o.kind == "fn"_fu))
+                        o.status |= SS_FINALIZED;
+
+                };
+                _open_templates.clear();
+            };
         };
         ((result.size() == nodes.size()) || fail("solveNodes: result.len != nodes.len"_fu));
         _here = here0;
         return result;
     };
-    bool resolveIfNeeded(const s_Target& target)
+    bool resolveIfNeeded_nonTemplateFn(const s_Target& target)
     {
         s_Overload overload = GET(target);
         if (!(overload.status & SS_DIRTY))
@@ -2921,6 +2976,21 @@ struct sf_solve
         const s_TokenIdx here0 { _here };
         _here = overload.tEmplate.node.token;
         unorderedSolve(overload.tEmplate.node, overload.solved);
+        _here = here0;
+        return true;
+    };
+    bool resolveIfNeeded_templateSpec(const s_OpenTemplate& ot)
+    {
+        s_Overload overload = GET(ot.spec);
+        if (!(overload.status & SS_DIRTY))
+            return false;
+
+        GET_mut(ot.spec).status &= ~SS_DIRTY;
+        resolve_done++;
+        const s_TokenIdx here0 { _here };
+        _here = overload.tEmplate.node.token;
+        fu_STR mangle { ot.mangle };
+        doTrySpecialize(ot.tEmplate, fu_VEC<s_SolvedNode>(ot.args), mangle, ot.spec);
         _here = here0;
         return true;
     };
