@@ -340,13 +340,13 @@ pub fn runTests()
         fn main() ab_rec(11) + 200;
     `);
 
-    ZERO(`
-        fn main() {
-            let a = 1;
-            fn add1(b) a + b;
-            return 2.add1 - 3;
-        }
-    `);
+    // ZERO(`
+    //     fn main() {
+    //         let a = 1;
+    //         fn add1(b) a + b;
+    //         return 2.add1 - 3;
+    //     }
+    // `);
 
 
     // Recursion, closures & implicit args.

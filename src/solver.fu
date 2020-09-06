@@ -37,8 +37,21 @@ pub fn solve(
 
     mut _current_fn:    CurrentFn;
 
+
+    //
+
     mut SLOW_resolve:   i32;
     mut resolve_done:   i32;
+
+    struct OpenTemplate
+    {
+        spec:       Target;
+        template:   Template;
+        args:       SolvedNode[];
+        mangle:     string;
+    };
+
+    mut _open_templates: OpenTemplate[];
 
 
     //
@@ -931,7 +944,9 @@ pub fn solve(
 
     fn solveRoot(node: Node): SolvedNode
     {
-        return solved(node, t_void, solveNodes(node.items, t_void));
+        return solved(node, t_void,
+            solveNodes(node.items, t_void,
+                TEMP_open_templates: true));
     }
 
     fn solveBlock(node: Node, type?: Type): SolvedNode
@@ -1083,7 +1098,7 @@ pub fn solve(
         return __solveFn(node, :prep, solve: true);
     }
 
-    fn __solveFn(n_fn: Node, solve!: bool, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1): SolvedNode
+    fn __solveFn(n_fn: Node, solve!: bool, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
     {
         // Template early exit.
         if (spec)
@@ -1118,7 +1133,7 @@ pub fn solve(
 
         if (!prep)
         {
-            out.target = Scope_create(_scope);
+            out.target = into || Scope_create(_scope);
             out.type = addroffn::X_addrofTarget(out.target);
         }
 
@@ -1251,12 +1266,18 @@ pub fn solve(
         FnDecl_update(out.out);
 
         if (solve)
-            return createEmpty(
-                kind:   "fndef",
-                type:   out.type,
-                target: out.target);
+            return createFnDef(out.out);
 
         return out.out;
+    }
+
+    fn createFnDef(fn: SolvedNode): SolvedNode
+    {
+        return SolvedNode(
+            kind:   "fndef",
+            type:   fn.type,
+            target: fn.target,
+            token:  fn.token);
     }
 
 
@@ -1300,17 +1321,24 @@ pub fn solve(
         {
             let SPEC_FAIL = Target(modid: SPEC_FAILED, index: 0);
 
-            /////////////////////////////////////////////
+            ////////////////////////////////////
             let m0 = mangle;
             module.out.specs[m0] = SPEC_FAIL;
-            /////////////////////////////////////////////
+            ////////////////////////////////////
 
             spec = doTrySpecialize(template, args, mangle) || SPEC_FAIL;
 
-            /////////////////////////////////////////////
-            module.out.specs[m0]     = spec || SPEC_FAIL;
-            module.out.specs[mangle] = spec || SPEC_FAIL;
-            /////////////////////////////////////////////
+            ////////////////////////////////////
+            module.out.specs[mangle] = spec;
+            if (m0 != mangle)
+                module.out.specs[m0] = spec;
+            ////////////////////////////////////
+
+            // The resolver entry.
+            if (spec.modid != SPEC_FAILED)
+                _open_templates.push(
+                    OpenTemplate(
+                        spec, template, args, mangle));
         }
 
         return spec.modid != SPEC_FAILED && spec;
@@ -1320,7 +1348,7 @@ pub fn solve(
     // Let's try to run all specs through here for starters.
 
     fn doTrySpecialize(
-        template: Template, mut args: SolvedNode[], ref mangle: string)
+        template: Template, mut args: SolvedNode[], ref mangle: string, into?: Target)
             : Target
     {
         mut ok = true;
@@ -1495,7 +1523,9 @@ pub fn solve(
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = ok && __solveFn(template.node, solve: false, spec: true, :caseIdx);
+        let prep = ok && !into && __solveFn(
+            template.node, solve: false, spec: true, :caseIdx,
+            :into);
 
         ///////////////////////////////////////////
         // Re-enable recursion.
@@ -1503,7 +1533,9 @@ pub fn solve(
             module.out.specs[mangle] = prep.target;
         ///////////////////////////////////////////
 
-        let specialized = ok && __solveFn(template.node, :prep, solve: true, spec: true, :caseIdx);
+        let specialized = ok && __solveFn(
+            template.node, :prep, solve: true, spec: true, :caseIdx,
+            :into);
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
@@ -2605,7 +2637,8 @@ pub fn solve(
     fn solveNodes(
         nodes: Node[],
         type_all?: Type, type_last?!: Type,
-        use_type_last?!: bool): SolvedNode[]
+        use_type_last?!: bool,
+        TEMP_open_templates?!: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -2722,28 +2755,51 @@ pub fn solve(
                     for (shadow mut i = i0; i < i1; i++)
                     {
                         let r = result[i];
-                        if (r.kind != "fndef" || !resolveIfNeeded(r.target))
+                        if (r.kind != "fndef" || !resolveIfNeeded_nonTemplateFn(r.target))
                             continue;
 
                         some = SLOW_resolve != resolve0
                             && SLOW_resolve != resolve_done;
                     }
+
+                    if (TEMP_open_templates)
+                    {
+                        for (shadow mut i = 0; i < _open_templates.len; i++)
+                        {
+                            let r = _open_templates[i];
+                            if (!resolveIfNeeded_templateSpec(r))
+                                continue;
+
+                            some = SLOW_resolve != resolve0
+                                && SLOW_resolve != resolve_done;
+                        }
+                    }
                 }
             }
 
-            // Lock things down,
-            //  this should explode on self-invoke from a closure,
-            //   we'll move this out of this loop,
-            //    and provide an extra fallback resolve
-            //     while we can here to support those too.
+            // Lock things down.
             for (shadow mut i = i0; i < i1; i++)
             {
-                shadow let r = result[i];
+                let r = result[i];
                 if (r.kind == "fndef")
                 {
                     ref o = GET_mut(r.target);
                     o.status |= SS_FINALIZED;
                 }
+            }
+
+            // Also freeze templates.
+            if (TEMP_open_templates)
+            {
+                for (shadow mut i = 0; i < _open_templates.len; i++)
+                {
+                    let r = _open_templates[i];
+                    ref o = GET_mut(r.spec);
+                    if (o.kind == "fn")
+                        o.status |= SS_FINALIZED;
+                }
+
+                _open_templates.clear();
             }
         }
 
@@ -2756,7 +2812,7 @@ pub fn solve(
         return result;
     }
 
-    fn resolveIfNeeded(target: Target): bool
+    fn resolveIfNeeded_nonTemplateFn(target: Target): bool
     {
         let overload = GET(target);
         if !(overload.status & SS_DIRTY)
@@ -2773,6 +2829,33 @@ pub fn solve(
         unorderedSolve(
             overload.template.node,
             overload.solved);
+
+        //////////////
+        _here = here0;
+        //////////////
+
+        return true;
+    }
+
+    fn resolveIfNeeded_templateSpec(ot: OpenTemplate): bool
+    {
+        let overload = GET(ot.spec);
+        if !(overload.status & SS_DIRTY)
+            return false;
+
+        GET_mut(ot.spec).status &= ~SS_DIRTY;
+        resolve_done++;
+
+        //////////////////
+        let here0 = _here;
+        _here = overload.template.node.token;
+        //////////////////
+
+        mut mangle = ot.mangle;
+
+        doTrySpecialize(
+            ot.template, ot.args, mangle,
+            into: ot.spec);
 
         //////////////
         _here = here0;
