@@ -478,6 +478,19 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
+        fn noret_x(implicit x: i32) x;
+
+        fn templ_calls_self_2(call_self): i32 // <- now a template
+            = call_self ? templ_calls_self_2(false) * 3 : noret_x;
+
+        fn main() {
+            let implicit x = 7;
+            return templ_calls_self_2(true) - 21;
+        }
+    `);
+
+    ZERO(`
         struct Range {
             min: i32;
             max: i32;
