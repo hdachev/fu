@@ -2371,6 +2371,25 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub fn set_once(ref entry, bit: i32): bool
+        {
+            let mask = 1 << bit.u64;    // cg'd into '1u << uint64_t(bit)'
+            if (entry & mask)           //  which doesnt work for some reason
+                return false;
+
+            entry |= mask;
+            return true;
+        }
+
+        fn main() {
+            mut entry: u64;
+            let a = set_once(entry, 32);
+            let b = set_once(entry, 32);
+            return a && !b ? 0 : 101;
+        }
+    `);
+
 
     // Imports & pubs.
 

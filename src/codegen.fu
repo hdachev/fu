@@ -1203,6 +1203,10 @@ pub fn cpp_codegen(
                 return "(-9223372036854775807-1)";
         }
 
+        if (node.type.canon == "u64" || node.type.canon == "i64")
+            if (!src.has('l'))
+                src ~= "ll";
+
         return src;
     }
 
