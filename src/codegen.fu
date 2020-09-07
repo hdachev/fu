@@ -536,7 +536,7 @@ pub fn cpp_codegen(
         return;
     }
 
-    fn ensureTemplateFn(target: Target, overload: Overload)
+    fn ensureFnDef(target: Target, overload: Overload)
     {
         mut def = false;
         _idef[target.u64] ||= (def = true);
@@ -545,7 +545,7 @@ pub fn cpp_codegen(
 
         // Go!
         let node = overload.solved;
-        node.kind == "fn" || fail("ensureTemplateFn non-fn");
+        node.kind == "fn" || fail("ensureFnDef non-fn");
         cgFn(node, M_STMT);
     }
 
@@ -652,6 +652,9 @@ pub fn cpp_codegen(
     {
         let o = GET(fndef.target);
         let n = o.solved;
+        if !(n.flags & (F_PUB | F_CLOSURE))
+            return "";
+
         n.kind == "fn" || fail("cgFnDef non-fn");
         return cgFn(n, mode);
     }
@@ -1014,8 +1017,8 @@ pub fn cpp_codegen(
 
         if (node.target.modid && target.kind == "fn")
         {
-            if (target.solved.flags & F_TEMPLATE)
-                ensureTemplateFn(node.target, target);
+            if (target.solved.flags & F_TEMPLATE || !(target.solved.flags & (F_PUB | F_CLOSURE)))
+                ensureFnDef(node.target, target);
             else if (node.target.modid != module.modid)
                 ensureFwdDecl(node.target);
         }
