@@ -1117,11 +1117,9 @@ pub fn solve(
         }
 
         // Prep reject.
-        if (!solve && !(n_fn.flags & F_FULLY_TYPED))
-            return SolvedNode();
-
         let inItems = n_fn.items;
-        inItems.len >= FN_RET_BACK || fail();
+        if (!solve && !inItems[inItems.len + FN_RET_BACK])
+            return SolvedNode();
 
         mut out = CurrentFn(
             prep || solved(n_fn, t_void),
