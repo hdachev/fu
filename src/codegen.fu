@@ -23,7 +23,7 @@ pub fn cpp_codegen(
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
     mut _ffwd: Map(string, string);
-    mut _idef: Map(u64, bool);
+    mut _idef: Map(i32, bool);
     mut _tdef: string;
     mut _fdef: string;
 
@@ -539,7 +539,8 @@ pub fn cpp_codegen(
     fn ensureFnDef(target: Target, overload: Overload)
     {
         mut def = false;
-        _idef[target.u64] ||= (def = true);
+        target.modid == module.modid || fail("BAD MODID");
+        _idef[target.index] ||= (def = true);
         if (!def)
             return;
 
