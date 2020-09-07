@@ -1012,11 +1012,13 @@ pub fn cpp_codegen(
             return items[0] ~ "." ~ ID(id);
         }
 
-        if (node.target.modid && (node.target.modid != module.modid || target.flags & F_OPERATOR))
-            ensureFwdDecl(node.target);
-
-        if (node.target.modid == module.modid && target.solved.flags & F_TEMPLATE && target.kind == "fn")
-            ensureTemplateFn(node.target, target);
+        if (node.target.modid && target.kind == "fn")
+        {
+            if (target.solved.flags & F_TEMPLATE)
+                ensureTemplateFn(node.target, target);
+            else if (node.target.modid != module.modid)
+                ensureFwdDecl(node.target);
+        }
 
         if (target.flags & F_OPERATOR)
         {
