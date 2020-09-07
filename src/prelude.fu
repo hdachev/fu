@@ -167,9 +167,13 @@ fn    pop(a: &mut $T[]): void __native(".pop()");
 fn  shift(a: &mut $T[]): void __native(".shift()");
 
 fn  clear(a: &mut $T[]): void __native(".clear()");
-fn resize(a: &mut $T[], len: i32): void __native(".resize");
 fn shrink(a: &mut $T[], len: i32): void __native(".shrink");
+
+fn resize(a: &mut $T[], len: i32): void __native(".resize");
 fn   grow(a: &mut $T[], len: i32): void __native(".grow");
+
+fn resize_junk(a: &mut $T[], len: i32): void __native(".resize<false>");
+fn   grow_junk(a: &mut $T[], len: i32): void __native(".grow<false>");
 
 fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
 

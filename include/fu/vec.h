@@ -686,11 +686,22 @@ struct fu_VEC
                 MOV_ctor(dest, *src);
     }
 
+    template <bool ZERO_FILL>
     fu_INL static void DEF_initRange(T* start, T* end) noexcept
     {
+        /*
         if constexpr (!TRIVIAL)
+        {
             for (T* i = start; i < end; i++)
                 new (i) T();
+        }
+        /*/
+        if constexpr (!TRIVIAL || ZERO_FILL)
+        {
+            if (end > start)
+                memset((void*)start, 0, (const char*)end - (const char*)start);
+        }
+        //*/
 
 #ifndef NDEBUG
         // We don't default-initialize trivial types,
@@ -712,6 +723,8 @@ struct fu_VEC
                 *i = (char) (uintptr_t) i;
         }
 #endif
+        (void) start;
+        (void) end;
     }
 
     fu_INL static void DESTROY_range(T* start, T* end) noexcept
@@ -784,18 +797,20 @@ struct fu_VEC
     //
     // Resizing.
 
+    template <bool ZERO_FILL = true>
     void resize(i32 s1) noexcept {
         i32 s0  = size();
         i32 rem = s0 - s1; rem = rem > 0 ? rem : 0;
         i32 add = s1 - s0; add = add > 0 ? add : 0;
 
         MUT_back(rem, add);
-        DEF_initRange(new_data + old_size, new_data + new_size);
+        DEF_initRange<ZERO_FILL>(new_data + old_size, new_data + new_size);
     }
 
+    template <bool ZERO_FILL = true>
     void grow(i32 s1) noexcept {
         MUT_back(Zero, s1 - size());
-        DEF_initRange(new_data + old_size, new_data + new_size);
+        DEF_initRange<ZERO_FILL>(new_data + old_size, new_data + new_size);
     }
 
     void shrink(i32 s1) noexcept {
