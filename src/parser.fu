@@ -643,6 +643,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 items[retIdx] = type = createRead("i32");
             else if (type.kind != "call" || type.value != "i32" || type.items.len)
                 fail("fn main() must return i32.");
+
+            flags |= F_PUB;
         }
 
         //
