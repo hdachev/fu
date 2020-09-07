@@ -64,14 +64,14 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
         absval += ci;
         ([&](fu_STR& _) -> fu_STR& { if (!_) _ = ([&]() -> fu_STR { if ((last != (absval / base))) return "Integer literal overflows a u64."_fu; else return fu_STR{}; }()); return _; } (error));
     };
-    const bool uNsigned = ((suffix == std::byte('u')) || (base != 10u));
+    const bool uNsigned = ((suffix == std::byte('u')) || (base != 10ull));
     const bool negative = (sign == std::byte('-'));
     const bool sIgned = (bool(negative) || (suffix == std::byte('i')));
     ([&](fu_STR& _) -> fu_STR& { if (!_) _ = ([&]() -> fu_STR { if (sIgned && uNsigned) return "Ambiguous int literal: cannot decide if signed or unsigned."_fu; else return fu_STR{}; }()); return _; } (error));
-    const uint64_t sizeval = ((negative && absval) ? (absval - 1u) : uint64_t(absval));
-    const int minsize_i = ((sizeval < 0x80u) ? 8 : ((sizeval < 0x8000u) ? 16 : ((sizeval < 0x80000000u) ? 32 : ((sizeval < 0x8000000000000000u) ? 64 : 128))));
-    const int minsize_u = (negative ? 255 : ((absval < 0x100u) ? 8 : ((absval < 0x10000u) ? 16 : ((absval < 0x100000000u) ? 32 : 64))));
-    const int minsize_f = ((absval < 0x1000000u) ? 32 : 64);
+    const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));
+    const int minsize_i = ((sizeval < 0x80ull) ? 8 : ((sizeval < 0x8000ull) ? 16 : ((sizeval < 0x80000000ull) ? 32 : ((sizeval < 0x8000000000000000ull) ? 64 : 128))));
+    const int minsize_u = (negative ? 255 : ((absval < 0x100ull) ? 8 : ((absval < 0x10000ull) ? 16 : ((absval < 0x100000000ull) ? 32 : 64))));
+    const int minsize_f = ((absval < 0x1000000ull) ? 32 : 64);
     ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (sIgned ? ([&]() -> fu_STR { if ((minsize_i > 64)) return "Oversized signed int literal."_fu; else return fu_STR{}; }()) : ([&]() -> fu_STR { if ((minsize_u > 64)) return "Oversized unsigned int literal."_fu; else return fu_STR{}; }())); return _; } (error));
     return s_Intlit { uint8_t(base), uint8_t(minsize_i), uint8_t(minsize_u), uint8_t(minsize_f), bool(sIgned), bool(uNsigned), bool(negative), uint64_t(absval), fu_STR(error) };
 }

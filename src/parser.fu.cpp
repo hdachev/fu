@@ -148,14 +148,9 @@ inline const int F_ACCESS = (1 << 4);
 inline const int F_ID = (1 << 5);
                                 #endif
 
-                                #ifndef DEF_F_INDEX
-                                #define DEF_F_INDEX
-inline const int F_INDEX = (1 << 6);
-                                #endif
-
                                 #ifndef DEF_F_QUALIFIED
                                 #define DEF_F_QUALIFIED
-inline const int F_QUALIFIED = (1 << 7);
+inline const int F_QUALIFIED = (1 << 6);
                                 #endif
 
                                 #ifndef DEF_F_LOCAL
@@ -218,44 +213,34 @@ inline const int F_REF = (1 << 22);
 inline const int F_SHADOW = (1 << 23);
                                 #endif
 
-                                #ifndef DEF_F_UNTYPED_ARGS
-                                #define DEF_F_UNTYPED_ARGS
-inline const int F_UNTYPED_ARGS = (1 << 24);
-                                #endif
-
                                 #ifndef DEF_F_NAMED_ARGS
                                 #define DEF_F_NAMED_ARGS
-inline const int F_NAMED_ARGS = (1 << 25);
-                                #endif
-
-                                #ifndef DEF_F_FULLY_TYPED
-                                #define DEF_F_FULLY_TYPED
-inline const int F_FULLY_TYPED = (1 << 26);
+inline const int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
                                 #ifndef DEF_F_CLOSURE
                                 #define DEF_F_CLOSURE
-inline const int F_CLOSURE = (1 << 27);
+inline const int F_CLOSURE = (1 << 25);
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
                                 #define DEF_F_HAS_CLOSURE
-inline const int F_HAS_CLOSURE = (1 << 28);
+inline const int F_HAS_CLOSURE = (1 << 26);
                                 #endif
 
                                 #ifndef DEF_F_PATTERN
                                 #define DEF_F_PATTERN
-inline const int F_PATTERN = (1 << 29);
+inline const int F_PATTERN = (1 << 27);
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
-inline const int F_TEMPLATE = (1 << 30);
+inline const int F_TEMPLATE = (1 << 28);
                                 #endif
 
                                 #ifndef DEF_F_INLINE
                                 #define DEF_F_INLINE
-inline const int F_INLINE = (1 << 31);
+inline const int F_INLINE = (1 << 29);
                                 #endif
 
 static const int P_RESET = 1000;
@@ -762,10 +747,8 @@ struct sf_parse
             else if (((type.kind != "call"_fu) || (type.value != "i32"_fu) || type.items.size()))
                 fail("fn main() must return i32."_fu);
 
+            flags |= F_PUB;
         };
-        if (type)
-            flags |= F_FULLY_TYPED;
-
         if ((_dollars.size() > dollars0.size()))
             flags |= F_TEMPLATE;
 
@@ -841,9 +824,6 @@ struct sf_parse
             first = false;
             s_Node arg = parseLet(true);
             const bool untyped = !arg.items.mutref(LET_TYPE);
-            if (untyped)
-                outFlags |= F_UNTYPED_ARGS;
-
             if (arg.items.mutref(LET_INIT))
             {
                 if ((arg.flags & F_IMPLICIT))
@@ -1279,7 +1259,7 @@ struct sf_parse
         fu_VEC<s_Node> args {};
         const int argFlags = parseCallArgs("]"_fu, args);
         args.unshift(expr);
-        return createCall("[]"_fu, (F_INDEX | argFlags), args);
+        return createCall("[]"_fu, argFlags, args);
     };
     s_Node createLeaf(const fu_STR& kind, const fu_STR& value)
     {

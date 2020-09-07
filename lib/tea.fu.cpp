@@ -111,7 +111,7 @@ s_TEA hash(fu::view<std::byte> u8view)
                                 #define DEFt_u64_F9TO
 inline uint64_t u64_F9TO(s_TEA&& tea)
 {
-    return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32u));
+    return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull));
 }
                                 #endif
 
@@ -121,14 +121,14 @@ fu_STR hash62(fu::view<std::byte> str, const int chars)
     uint64_t v = u64_F9TO(hash(str));
     for (int i = 0; (i < chars); i++)
     {
-        const uint64_t c = (v % 62u);
-        v = (v / 62u);
-        if ((c < 10u))
-            (res += std::byte(((c - 0u) + uint64_t(std::byte('0')))));
-        else if ((c < 36u))
-            (res += std::byte(((c - 10u) + uint64_t(std::byte('a')))));
+        const uint64_t c = (v % 62ull);
+        v = (v / 62ull);
+        if ((c < 10ull))
+            (res += std::byte(((c - 0ull) + uint64_t(std::byte('0')))));
+        else if ((c < 36ull))
+            (res += std::byte(((c - 10ull) + uint64_t(std::byte('a')))));
         else
-            (res += std::byte(((c - 36u) + uint64_t(std::byte('A')))));
+            (res += std::byte(((c - 36ull) + uint64_t(std::byte('A')))));
 
     };
     return res;

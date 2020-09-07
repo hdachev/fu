@@ -819,7 +819,7 @@ inline const int q_floating_pt = (1 << 9);
 
                                 #ifndef DEF_F_NAMED_ARGS
                                 #define DEF_F_NAMED_ARGS
-inline const int F_NAMED_ARGS = (1 << 25);
+inline const int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
                                 #ifndef DEF_F_ACCESS
@@ -974,22 +974,17 @@ inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }
 
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
-inline const int F_TEMPLATE = (1 << 30);
-                                #endif
-
-                                #ifndef DEF_F_FULLY_TYPED
-                                #define DEF_F_FULLY_TYPED
-inline const int F_FULLY_TYPED = (1 << 26);
+inline const int F_TEMPLATE = (1 << 28);
                                 #endif
 
                                 #ifndef DEF_F_HAS_CLOSURE
                                 #define DEF_F_HAS_CLOSURE
-inline const int F_HAS_CLOSURE = (1 << 28);
+inline const int F_HAS_CLOSURE = (1 << 26);
                                 #endif
 
                                 #ifndef DEF_F_CLOSURE
                                 #define DEF_F_CLOSURE
-inline const int F_CLOSURE = (1 << 27);
+inline const int F_CLOSURE = (1 << 25);
                                 #endif
 
                                 #ifndef DEF_F_MUT
@@ -1042,7 +1037,7 @@ inline const s_Node& only_zET6(const fu_VEC<s_Node>& s)
 
                                 #ifndef DEF_F_QUALIFIED
                                 #define DEF_F_QUALIFIED
-inline const int F_QUALIFIED = (1 << 7);
+inline const int F_QUALIFIED = (1 << 6);
                                 #endif
 
                                 #ifndef DEF_t_bool
@@ -1892,11 +1887,10 @@ struct sf_solve
             const s_Target tDecl = TemplateDecl(n_fn);
             return createEmpty("empty"_fu, X_addrofTarget(tDecl), s_Target{});
         };
-        if ((!solve && !(n_fn.flags & F_FULLY_TYPED)))
+        const fu_VEC<s_Node>& inItems = n_fn.items;
+        if ((!solve && !inItems[(inItems.size() + FN_RET_BACK)]))
             return s_SolvedNode{};
 
-        const fu_VEC<s_Node>& inItems = n_fn.items;
-        ((inItems.size() >= FN_RET_BACK) || fail(fu_STR{}));
         s_CurrentFn out = s_CurrentFn { ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(n_fn, t_void, fu_VEC<s_SolvedNode>{}); }()), s_ScopeMemo{}, (_current_fn.closure_of + _current_fn.out.target.index) };
         out.out.items.resize(inItems.size());
         if (!prep)

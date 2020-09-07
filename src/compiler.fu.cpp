@@ -57,6 +57,7 @@ s_ModuleStat ModuleStat_now();
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
+static void compile(const fu_STR&, const fu_STR&, s_Context&);
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
 void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&, bool, const s_Context&);
@@ -578,44 +579,6 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
-{
-    s_Module module { getModule(fname, ctx) };
-    if (!module.in)
-    {
-        module.out = s_ModuleOutputs{};
-        fu_STR src = ([&]() -> fu_STR { { fu_STR _ = getFile(fu_STR(fname), ctx); if (_) return _; } fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)); }());
-        const s_ModuleStat stat0 = ModuleStat_now();
-        s_LexerOutput lexer_result = lex(src, fname);
-        const s_ModuleStat stat1 = ModuleStat_now();
-        s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
-        const s_ModuleStat stat2 = ModuleStat_now();
-        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
-        module.stats.lex = (stat1 - stat0);
-        module.stats.parse = (stat2 - stat1);
-        setModule(module, ctx);
-    }
-    else
-    {
-        (module.out || fu::fail(((("import circle: `"_fu + via) + fname) + "`."_fu)));
-    };
-    if (!module.out)
-    {
-        fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
-        for (int i = 0; (i < fuzimports.size()); i++)
-            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), ctx);
-
-        const s_ModuleStat stat0 = ModuleStat_now();
-        module.out.solve = solve(module.in.parse.root, ctx, module);
-        const s_ModuleStat stat1 = ModuleStat_now();
-        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
-        const s_ModuleStat stat2 = ModuleStat_now();
-        module.stats.solve = (stat1 - stat0);
-        module.stats.codegen = (stat2 - stat1);
-        setModule(module, ctx);
-    };
-}
-
                                 #ifndef DEFt_if_last_y0NH
                                 #define DEFt_if_last_y0NH
 inline std::byte if_last_y0NH(const fu_STR& s)
@@ -660,6 +623,44 @@ inline const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
                                 #define DEF_CTX_PRELUDE
 inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
+
+static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
+{
+    s_Module module { getModule(fname, ctx) };
+    if (!module.in)
+    {
+        module.out = s_ModuleOutputs{};
+        fu_STR src = ([&]() -> fu_STR { { fu_STR _ = getFile(fu_STR(fname), ctx); if (_) return _; } fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)); }());
+        const s_ModuleStat stat0 = ModuleStat_now();
+        s_LexerOutput lexer_result = lex(src, fname);
+        const s_ModuleStat stat1 = ModuleStat_now();
+        s_ParserOutput parser_result = parse(module.modid, fname, lexer_result.tokens);
+        const s_ModuleStat stat2 = ModuleStat_now();
+        module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
+        module.stats.lex = (stat1 - stat0);
+        module.stats.parse = (stat2 - stat1);
+        setModule(module, ctx);
+    }
+    else
+    {
+        (module.out || fu::fail(((("import circle: `"_fu + via) + fname) + "`."_fu)));
+    };
+    if (!module.out)
+    {
+        fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
+        for (int i = 0; (i < fuzimports.size()); i++)
+            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), ctx);
+
+        const s_ModuleStat stat0 = ModuleStat_now();
+        module.out.solve = solve(module.in.parse.root, ctx, module);
+        const s_ModuleStat stat1 = ModuleStat_now();
+        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
+        const s_ModuleStat stat2 = ModuleStat_now();
+        module.stats.solve = (stat1 - stat0);
+        module.stats.codegen = (stat2 - stat1);
+        setModule(module, ctx);
+    };
+}
 
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme, const bool nowrite)
 {

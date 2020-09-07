@@ -39,7 +39,6 @@ int Region_toArgIndex(const s_Region&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
-static int commonQuals(const fu_VEC<s_StructField>&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -608,6 +607,15 @@ s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
     return ([&]() -> s_Struct& { { s_Struct& _ = module.out.types.mutref(canon); if (_) return _; } fu_ASSERT(); }());
 }
 
+static int commonQuals(const fu_VEC<s_StructField>& fields)
+{
+    int commonQuals = -1;
+    for (int i = 0; (i < fields.size()); i++)
+        commonQuals &= fields[i].type.quals;
+
+    return commonQuals;
+}
+
                                 #ifndef DEF_q_trivial
                                 #define DEF_q_trivial
 inline const int q_trivial = (1 << 3);
@@ -619,15 +627,6 @@ int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, con
     def.fields = (fields ? fields : fu::fail("TODO empty structs (fields) ?"_fu));
     def.items = (items ? items : fu::fail("TODO empty structs (items)  ?"_fu));
     return (commonQuals(fields) & (q_rx_copy | q_trivial));
-}
-
-static int commonQuals(const fu_VEC<s_StructField>& fields)
-{
-    int commonQuals = -1;
-    for (int i = 0; (i < fields.size()); i++)
-        commonQuals &= fields[i].type.quals;
-
-    return commonQuals;
 }
 
                                 #ifndef DEF_F_PUB

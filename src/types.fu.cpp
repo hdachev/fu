@@ -18,23 +18,9 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-bool operator==(const s_ValueType&, const s_ValueType&);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
+static s_Effects type_inter(const s_Effects&, const s_Effects&);
 uint64_t u64(const s_Target&);
-
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -79,6 +65,20 @@ struct s_Lifetime
     {
         return false
             || regions
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Effects
+                                #define DEF_s_Effects
+struct s_Effects
+{
+    int raw;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || raw
         ;
     }
 };
@@ -243,11 +243,6 @@ inline const int e_malloc = (1 << 12);
 inline const int e_memcpy = (1 << 13);
                                 #endif
 
-static s_Effects type_inter(const s_Effects& a, const s_Effects& b)
-{
-    return s_Effects { (a.raw | b.raw) };
-}
-
 bool operator==(const s_ValueType& a, const s_ValueType& b)
 {
     return ((a.quals == b.quals) && (a.modid == b.modid) && (a.canon == b.canon));
@@ -396,14 +391,6 @@ bool qhas(const s_Type& type, const int q)
     return ((type.vtype.quals & q) == q);
 }
 
-static s_Type tryClear(const s_Type& type, const int q)
-{
-    if ((!type || !qhas(type, q)))
-        return s_Type{};
-
-    return qsub(type, q);
-}
-
 s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
 {
     s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
@@ -418,6 +405,14 @@ s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
     t.vtype.quals |= (q_mutref | q_ref);
     t.lifetime = type_inter(t.lifetime, lifetime);
     return t;
+}
+
+static s_Type tryClear(const s_Type& type, const int q)
+{
+    if ((!type || !qhas(type, q)))
+        return s_Type{};
+
+    return qsub(type, q);
 }
 
 s_Type tryClear_mutref(const s_Type& type)
@@ -604,6 +599,11 @@ bool type_has(const s_Type& type, const fu_STR& tag)
     return ((type.vtype.quals & mask) == mask);
 }
 
+static s_Effects type_inter(const s_Effects& a, const s_Effects& b)
+{
+    return s_Effects { (a.raw | b.raw) };
+}
+
 s_Type type_tryInter(const s_Type& a, const s_Type& b)
 {
     if (((a.vtype.canon != b.vtype.canon) || (a.vtype.modid != b.vtype.modid)))
@@ -614,7 +614,7 @@ s_Type type_tryInter(const s_Type& a, const s_Type& b)
 
 uint64_t u64(const s_Target& t)
 {
-    return ((uint64_t(t.modid) << 32u) | uint64_t(t.index));
+    return ((uint64_t(t.modid) << 32ull) | uint64_t(t.index));
 }
 
 #endif

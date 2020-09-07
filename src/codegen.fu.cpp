@@ -62,7 +62,6 @@ s_Type add_ref(const s_Type&, const s_Lifetime&);
 s_Type clear_refs(const s_Type&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_slice(const s_Type&);
-uint64_t u64(const s_Target&);
 
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -693,7 +692,7 @@ inline const int FN_RET_BACK = -2;
 
                                 #ifndef DEF_F_CLOSURE
                                 #define DEF_F_CLOSURE
-inline const int F_CLOSURE = (1 << 27);
+inline const int F_CLOSURE = (1 << 25);
                                 #endif
 
                                 #ifndef DEF_FN_ARGS_BACK
@@ -708,7 +707,7 @@ inline const int F_OPERATOR = (1 << 21);
 
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
-inline const int F_TEMPLATE = (1 << 30);
+inline const int F_TEMPLATE = (1 << 28);
                                 #endif
 
                                 #ifndef DEF_F_PUB
@@ -733,7 +732,7 @@ inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetim
 
                                 #ifndef DEF_F_HAS_CLOSURE
                                 #define DEF_F_HAS_CLOSURE
-inline const int F_HAS_CLOSURE = (1 << 28);
+inline const int F_HAS_CLOSURE = (1 << 26);
                                 #endif
 
                                 #ifndef DEF_F_MUT
@@ -805,7 +804,7 @@ struct sf_cpp_codegen
     fu_MAP<fu_STR, fu_STR> _libs {};
     fu_MAP<fu_STR, fu_STR> _tfwd {};
     fu_MAP<fu_STR, fu_STR> _ffwd {};
-    fu_MAP<uint64_t, bool> _idef {};
+    fu_MAP<int, bool> _idef {};
     fu_STR _tdef {};
     fu_STR _fdef {};
     fu_STR _indent = "\n"_fu;
@@ -1238,15 +1237,16 @@ struct sf_cpp_codegen
         (_ffwd.upsert(ffwdKey) = src);
         return;
     };
-    void ensureTemplateFn(const s_Target& target, const s_Overload& overload)
+    void ensureFnDef(const s_Target& target, const s_Overload& overload)
     {
         bool def = false;
-        ([&](bool& _) -> bool& { if (!_) _ = (def = true); return _; } (_idef.upsert(u64(target))));
+        ((target.modid == module.modid) || fail("BAD MODID"_fu));
+        ([&](bool& _) -> bool& { if (!_) _ = (def = true); return _; } (_idef.upsert(target.index)));
         if (!def)
             return;
 
         const s_SolvedNode& node = overload.solved;
-        ((node.kind == "fn"_fu) || fail("ensureTemplateFn non-fn"_fu));
+        ((node.kind == "fn"_fu) || fail("ensureFnDef non-fn"_fu));
         cgFn(node, M_STMT);
     };
     fu_STR try_cgFnAsStruct(const s_SolvedNode& fn)
@@ -1305,6 +1305,9 @@ struct sf_cpp_codegen
     {
         s_Overload o = GET(fndef.target);
         const s_SolvedNode& n = o.solved;
+        if (!(n.flags & (F_PUB | F_CLOSURE)))
+            return fu_STR{};
+
         ((n.kind == "fn"_fu) || fail("cgFnDef non-fn"_fu));
         return cgFn(n, mode);
     };
@@ -1572,12 +1575,14 @@ struct sf_cpp_codegen
         if ((target.kind == "field"_fu))
             return ((items.mutref(0) + "."_fu) + ID(id));
 
-        if ((node.target.modid && ((node.target.modid != module.modid) || (target.flags & F_OPERATOR))))
-            ensureFwdDecl(node.target);
+        if ((node.target.modid && (target.kind == "fn"_fu)))
+        {
+            if (((target.solved.flags & F_TEMPLATE) || !(target.solved.flags & (F_PUB | F_CLOSURE))))
+                ensureFnDef(node.target, target);
+            else if ((node.target.modid != module.modid))
+                ensureFwdDecl(node.target);
 
-        if (((node.target.modid == module.modid) && (target.solved.flags & F_TEMPLATE) && (target.kind == "fn"_fu)))
-            ensureTemplateFn(node.target, target);
-
+        };
         if ((target.flags & F_OPERATOR))
         {
             const fu_VEC<s_SolvedNode>& nodes = (node.items ? node.items : fail(fu_STR{}));
@@ -1720,8 +1725,14 @@ struct sf_cpp_codegen
         if ((src.size() > 16))
         {
             s_Intlit parse = Intlit(src);
-            if ((parse.negative && (parse.absval == 0x8000000000000000u)))
+            if ((parse.negative && (parse.absval == 0x8000000000000000ull)))
                 return "(-9223372036854775807-1)"_fu;
+
+        };
+        if (((node.type.vtype.canon == "u64"_fu) || (node.type.vtype.canon == "i64"_fu)))
+        {
+            if (!fu::has(src, std::byte('l')))
+                (src += "ll"_fu);
 
         };
         return src;

@@ -567,6 +567,61 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_if_last_bcSl
+                                #define DEFt_if_last_bcSl
+inline std::byte if_last_bcSl(fu_STR& s)
+{
+    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
+}
+                                #endif
+
+namespace {
+
+struct sf_getLinkOrder
+    {
+        const fu_VEC<s_Module>& modules;
+        const s_Context& ctx {};
+        fu_VEC<int> link_order = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+        void visit(const s_Module& module, const s_Context& ctx)
+        {
+            const int link_id = module.modid;
+            if (fu::has(link_order, link_id))
+                return;
+
+            const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
+            for (int i = 0; (i < fuzimports.size()); i++)
+            {
+                fu_STR fname = resolveFile_x(fuzimports[i], ctx);
+                for (int i_1 = 1; (i_1 < modules.size()); i_1++)
+                {
+                    const s_Module& m = modules[i_1];
+                    if ((m.fname == fname))
+                    {
+                        visit(m, ctx);
+                        break;
+                    };
+                };
+            };
+            (fu::has(link_order, link_id) && fu::fail("link order broken"_fu));
+            link_order.push(link_id);
+        };
+        fu_VEC<int> getLinkOrder()
+        {
+            for (int i = 1; (i < modules.size()); i++)
+                visit(modules[i], ctx);
+
+            return link_order;
+        };
+    };
+
+} // namespace
+
+fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
+{
+    return (sf_getLinkOrder { modules, ctx }).getLinkOrder();
+}
+
+
 static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
 {
     if (fu::lmatch(fname, dir_src))
@@ -596,61 +651,6 @@ static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR&
     };
     return fname_2;
 }
-
-namespace {
-
-struct sf_getLinkOrder
-{
-    const fu_VEC<s_Module>& modules;
-    const s_Context& ctx {};
-    fu_VEC<int> link_order = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
-    void visit(const s_Module& module, const s_Context& ctx)
-    {
-        const int link_id = module.modid;
-        if (fu::has(link_order, link_id))
-            return;
-
-        const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
-        for (int i = 0; (i < fuzimports.size()); i++)
-        {
-            fu_STR fname = resolveFile_x(fuzimports[i], ctx);
-            for (int i_1 = 1; (i_1 < modules.size()); i_1++)
-            {
-                const s_Module& m = modules[i_1];
-                if ((m.fname == fname))
-                {
-                    visit(m, ctx);
-                    break;
-                };
-            };
-        };
-        (fu::has(link_order, link_id) && fu::fail("link order broken"_fu));
-        link_order.push(link_id);
-    };
-    fu_VEC<int> getLinkOrder()
-    {
-        for (int i = 1; (i < modules.size()); i++)
-            visit(modules[i], ctx);
-
-        return link_order;
-    };
-};
-
-} // namespace
-
-fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
-{
-    return (sf_getLinkOrder { modules, ctx }).getLinkOrder();
-}
-
-
-                                #ifndef DEFt_if_last_bcSl
-                                #define DEFt_if_last_bcSl
-inline std::byte if_last_bcSl(fu_STR& s)
-{
-    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
-}
-                                #endif
 
 void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite, const s_Context& ctx)
 {
