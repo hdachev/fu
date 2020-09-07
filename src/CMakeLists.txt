@@ -18,6 +18,7 @@ set(FU_INPUTS
     ../lib/tea.fu
     set.fu
     solver.fu
+    bitset.fu
     codegen.fu
     prelude.fu
     build.fu

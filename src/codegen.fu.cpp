@@ -18,6 +18,7 @@
 #include <utility>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_Context;
 struct s_Effects;
 struct s_Intlit;
@@ -47,6 +48,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+bool add_once(s_BitSet&, int);
 bool hasIdentifierChars(const fu_STR&);
 bool isStruct(const s_Type&);
 bool is_bool(const s_Type&);
@@ -575,6 +577,20 @@ struct s_Context
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint64_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_MapFields
                                 #define DEF_s_MapFields
 struct s_MapFields
@@ -720,6 +736,22 @@ inline const int F_PUB = (1 << 20);
 inline const int F_POSTFIX = (1 << 3);
                                 #endif
 
+                                #ifndef DEFt_grow_if_oob_Jhs7
+                                #define DEFt_grow_if_oob_Jhs7
+inline s_BitSet& grow_if_oob_Jhs7(fu_VEC<s_BitSet>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
+bool add_once(fu_VEC<s_BitSet>& bs, const s_Target& target)
+{
+    return add_once(grow_if_oob_Jhs7(bs, target.modid), target.index);
+}
+
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
 inline const int FN_BODY_BACK = -1;
@@ -803,8 +835,9 @@ struct sf_cpp_codegen
     const s_Context& ctx;
     fu_MAP<fu_STR, fu_STR> _libs {};
     fu_MAP<fu_STR, fu_STR> _tfwd {};
-    fu_MAP<fu_STR, fu_STR> _ffwd {};
-    fu_MAP<int, bool> _idef {};
+    fu_VEC<s_BitSet> _ffwd {};
+    fu_VEC<fu_STR> _ffwd_src {};
+    s_BitSet _idef {};
     fu_STR _tdef {};
     fu_STR _fdef {};
     fu_STR _indent = "\n"_fu;
@@ -986,7 +1019,10 @@ struct sf_cpp_codegen
     };
     fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes, const bool leadingNewline)
     {
-        fu_VEC<fu_STR> values { dedupes.m_values };
+        return collectDedupes(fu_VEC<fu_STR>(dedupes.m_values), leadingNewline);
+    };
+    fu_STR collectDedupes(fu_VEC<fu_STR>&& values, const bool leadingNewline)
+    {
         if (!values.size())
             return fu_STR{};
 
@@ -1032,7 +1068,7 @@ struct sf_cpp_codegen
     {
         fu_STR src = cgStatements(root_1.items);
         fu_STR main = cgMain();
-        fu_STR header = ((((collectDedupes(_libs, bool{}) + collectDedupes(_tfwd, true)) + collectDedupes(_ffwd, true)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
+        fu_STR header = ((((collectDedupes(_libs, bool{}) + collectDedupes(_tfwd, true)) + collectDedupes(fu_VEC<fu_STR>(_ffwd_src), true)) + _tdef) + ([&]() -> fu_STR { if (_fdef) return (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef) + "\n#endif\n"_fu); else return fu_STR{}; }()));
         return ((header + src) + main);
     };
     fu_STR cgMain()
@@ -1214,8 +1250,7 @@ struct sf_cpp_codegen
         if (((overload.kind != "fn"_fu) || (overload.name == "main"_fu)))
             return;
 
-        fu_STR ffwdKey = ((target.modid + "#"_fu) + target.index);
-        if (fu::has(_ffwd, ffwdKey))
+        if (!add_once(_ffwd, target))
             return;
 
         const fu_STR& id = (overload.name ? overload.name : fail(fu_STR{}));
@@ -1234,15 +1269,13 @@ struct sf_cpp_codegen
             (src += typeAnnot(args[i].type, (M_ARGUMENT | M_FWDECL)));
         };
         (src += ");\n"_fu);
-        (_ffwd.upsert(ffwdKey) = src);
+        (_ffwd_src += src);
         return;
     };
     void ensureFnDef(const s_Target& target, const s_Overload& overload)
     {
-        bool def = false;
         ((target.modid == module.modid) || fail("BAD MODID"_fu));
-        ([&](bool& _) -> bool& { if (!_) _ = (def = true); return _; } (_idef.upsert(target.index)));
-        if (!def)
+        if (!add_once(_idef, target.index))
             return;
 
         const s_SolvedNode& node = overload.solved;
@@ -1416,11 +1449,9 @@ struct sf_cpp_codegen
     };
     void cgForeignGlobal(const s_Target& target)
     {
-        fu_STR key = ((target.modid + "#"_fu) + target.index);
-        if (fu::has(_ffwd, key))
+        if (!add_once(_ffwd, target))
             return;
 
-        (_ffwd.upsert(key) = fu_STR{});
         s_Overload o = GET(target);
         cgGlobal(o.solved);
     };
