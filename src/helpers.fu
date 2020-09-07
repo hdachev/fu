@@ -18,7 +18,16 @@ pub fn if_first(s: $T[])
 pub fn if_last(s: $T[])
     s.len && s[s.len - 1];
 
-pub fn hasIdentifierChars(id: string) {
+pub fn grow_if_oob(a: &mut $T[], i: i32): &mut $T
+{
+    if (a.len <= i)
+        a.grow(i + 1);
+
+    return a[i];
+}
+
+pub fn hasIdentifierChars(id: string)
+{
     for (mut i = 0; i < id.len; i++)
     {
         let c = id[i];

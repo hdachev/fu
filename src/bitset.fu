@@ -1,0 +1,24 @@
+
+pub struct BitSet
+{
+    _data: u64[];
+};
+
+pub fn add_once(using _: &mut BitSet, idx: i32): bool
+{
+    idx >= 0 || throw("Bad IDX.");
+
+    let bucket = idx / 64;
+    let bit    = idx % 64;
+    let mask   = 1 << bit.u64;
+
+    ref entry = _data.helpers::grow_if_oob(bucket);
+    if !(entry & mask)
+    {
+        entry |= mask;
+        return true;
+    }
+
+    // Already there.
+    return false;
+}

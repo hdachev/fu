@@ -3,6 +3,7 @@ import parser;
 import types;
 import scope;
 import context;
+import bitset;
 
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
@@ -15,6 +16,18 @@ let M_FWDECL            = 1 << 6;
 
 //
 
+type BitSet2D = bitset::BitSet[];
+
+fn add_once(ref bs: BitSet2D, target: Target): bool
+{
+    return bs
+        .grow_if_oob(target.modid)
+        .add_once(target.index)
+}
+
+
+//
+
 pub fn cpp_codegen(
     implicit module: Module,
     implicit ctx: Context,
@@ -22,8 +35,11 @@ pub fn cpp_codegen(
 {
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
-    mut _ffwd: Map(string, string);
-    mut _idef: Map(i32, bool);
+
+    mut _ffwd: BitSet2D;
+    mut _ffwd_src: string[];
+
+    mut _idef: bitset::BitSet;
     mut _tdef: string;
     mut _fdef: string;
 
@@ -233,11 +249,13 @@ pub fn cpp_codegen(
 
     //
 
-    fn collectDedupes(
-        dedupes: Map(string, string),
-        leadingNewline?: bool): string
+    fn collectDedupes(dedupes: Map(string, string), leadingNewline?: bool): string
     {
-        mut values = dedupes.values();
+        return collectDedupes(dedupes.values(), :leadingNewline);
+    }
+
+    fn collectDedupes(mut values: string[], leadingNewline?: bool): string
+    {
         if (!values.len)
             return "";
 
@@ -300,7 +318,7 @@ pub fn cpp_codegen(
 
         let header = collectDedupes(_libs)
                    ~ collectDedupes(_tfwd, leadingNewline: true)
-                   ~ collectDedupes(_ffwd, leadingNewline: true)
+                   ~ collectDedupes(_ffwd_src, leadingNewline: true)
                    ~               (_tdef)
                    ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
                    ;
@@ -505,8 +523,7 @@ pub fn cpp_codegen(
         if (overload.kind != "fn" || overload.name == "main")
             return;
 
-        let ffwdKey = target.modid ~ "#" ~ target.index;
-        if (_ffwd.has(ffwdKey))
+        if !(_ffwd.add_once(target))
             return;
 
         let id      = overload.name || fail();
@@ -531,17 +548,16 @@ pub fn cpp_codegen(
         }
 
         src ~= ");\n";
-        _ffwd[ffwdKey] = src;
+
+        _ffwd_src ~= src;
 
         return;
     }
 
     fn ensureFnDef(target: Target, overload: Overload)
     {
-        mut def = false;
         target.modid == module.modid || fail("BAD MODID");
-        _idef[target.index] ||= (def = true);
-        if (!def)
+        if !(_idef.add_once(target.index))
             return;
 
         // Go!
@@ -823,11 +839,9 @@ pub fn cpp_codegen(
 
     fn cgForeignGlobal(target: Target): void
     {
-        let key = target.modid ~ "#" ~ target.index;
-        if (_ffwd.has(key))
+        if !(_ffwd.add_once(target))
             return;
 
-        _ffwd[key] = "";
         let o = GET(target);
         cgGlobal(o.solved);
     }
