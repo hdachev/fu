@@ -4,6 +4,7 @@ import compiler;
 // A quick self-test without I/O.
 
 let TEST_SRC = `
+    //! SLOW_resolve
     fn test(one: i32) {
         let zero = one - 1;
         let two  = one * 2;
@@ -362,6 +363,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         fn test(one: i32)
         {
             let zero = one - 1;

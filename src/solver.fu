@@ -209,6 +209,7 @@ pub fn solve(
         ref overload    = GET_mut(solved.target);
 
         let args_len0   = overload.args.len;
+        let closure0    = overload.closes_over.len;
 
         overload.type   = items[items.len + FN_RET_BACK].type || fail("FnDecl_update: no return type.");
         overload.min    = min;
@@ -217,12 +218,26 @@ pub fn solve(
         overload.flags  = solved.flags;
 
         overload.solved = solved;
-        overload.closes_over = closes_over;
+
+        // It's too cumbersome making this check all over the place.
+        {
+            mut really_closes_over: i32[];
+
+            for (mut i = 0; i < closes_over.len; i++)
+            {
+                let o = GET(Target(modid: module.modid, index: closes_over[i]));
+                if (o.local_of != solved.target.index)
+                    really_closes_over ~= closes_over[i];
+            }
+
+            overload.closes_over = really_closes_over;
+        }
 
         // TODO FIX starting the diff with just number of arguments,
         //  which is fine for implicit cycling,
         //   then we gotta move on to bigger and better things.
-        if (args_len0 != overload.args.len)
+        if (args_len0 != overload.args.len ||
+            closure0  != overload.closes_over.len)
         {
             for (mut i = 0; i < overload.used_by.len; i++)
             {
@@ -2578,7 +2593,7 @@ pub fn solve(
             {
                 // Robust closure tracking.
                 let o = GET(target);
-                if (o.local_of && o.local_of != _current_fn.target.index)
+                if (o.local_of)
                     _current_fn.closes_over.set::add(target.index);
 
                 _current_fn.closes_over.set::add_set(o.closes_over);

@@ -494,9 +494,23 @@ pub fn cpp_codegen(
             src = linkage ~ src;
         }
 
+        mut needComma = 0;
+
+        for (mut i = 0; i < overload.closes_over.len; i++)
+        {
+            if (needComma++)
+                src ~= ", ";
+
+            let o = GET(Target(
+                modid: module.modid,
+                index: overload.closes_over[i]));
+
+            src ~= typeAnnot(o.type) ~ " " ~ ID(o.name);
+        }
+
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
-            if (i)
+            if (needComma++)
                 src ~= ", ";
 
             src ~= binding(items[i] || fail());
@@ -536,10 +550,24 @@ pub fn cpp_codegen(
 
         mut src = linkage ~ annot ~ " " ~ name ~ "(";
 
+        mut needComma = 0;
+
+        for (mut i = 0; i < overload.closes_over.len; i++)
+        {
+            if (needComma++)
+                src ~= ", ";
+
+            let o = GET(Target(
+                modid: module.modid,
+                index: overload.closes_over[i]));
+
+            src ~= typeAnnot(o.type);
+        }
+
         let args = overload.args;
         for (mut i = 0; i < args.len; i++)
         {
-            if (i)
+            if (needComma++)
                 src ~= ", ";
 
             src ~= typeAnnot(args[i].type, M_ARGUMENT | M_FWDECL);
@@ -1004,7 +1032,23 @@ pub fn cpp_codegen(
 
         id != "__native" || assert();
 
-        return ID(id) ~ "(" ~ items.join(", ") ~ ")";
+        mut closure = "";
+        if (target.closes_over)
+        {
+            for (mut i = 0; i < target.closes_over.len; i++)
+            {
+                if (i)
+                    closure ~= ", ";
+
+                let o = GET(Target(modid: module.modid, index: target.closes_over[i]));
+                closure ~= ID(o.name);
+            }
+
+            if (items)
+                closure ~= ", ";
+        }
+
+        return ID(id) ~ "(" ~ closure ~ items.join(", ") ~ ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
