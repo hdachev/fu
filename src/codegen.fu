@@ -10,7 +10,7 @@ let M_RETBOOL           = 1 << 1;
 let M_CONST             = 1 << 2;
 let M_RETVAL            = 1 << 3;
 let M_ARGUMENT          = 1 << 4;
-let M_CLOSURE           = 1 << 5;
+let M_LAMBDA            = 1 << 5;
 let M_FWDECL            = 1 << 6;
 
 
@@ -44,9 +44,6 @@ pub fn cpp_codegen(
     mut _fdef: string;
 
     mut _indent: string = "\n";
-    mut _fnN: i32;
-    mut _clsrN: i32;
-    mut _faasN: i32;
     mut _hasMain: i32;
 
     fn GET(target: Target): Overload
@@ -84,7 +81,7 @@ pub fn cpp_codegen(
 
         let fwd = typeAnnotBase(type);
 
-        if (mode & M_RETVAL && type.canon == "never" && !(mode & M_CLOSURE))
+        if (mode & M_RETVAL && type.canon == "never" && !(mode & M_LAMBDA))
             return "[[noreturn]] " ~ fwd;
 
         if (type.quals & q_ref)
@@ -466,32 +463,33 @@ pub fn cpp_codegen(
     {
         let items   = fn.items;
         let ret     = items[items.len + FN_RET_BACK] || fail();
-        let closure = !!_clsrN && (fn.flags & F_CLOSURE);
+
+        let lambda  = false;
 
         let annot   = typeAnnot(
             ret.type || fail(),
-            M_RETVAL | (closure ? M_CLOSURE : 0));
+            M_RETVAL | (lambda ? M_LAMBDA : 0));
 
         let overload = GET(fn.target);
 
         mut id = overload.name;
-        if (id == "main" && !closure && !_faasN)
+        if (id == "main" && !lambda)
         {
             _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
             id = "fu_MAIN";
         }
 
-        mut src = closure
+        mut src = lambda
                 ? "const auto& " ~ id ~ " = [&]("
                 : annot ~ " " ~ id ~ "(";
 
         if (overload.flags & F_OPERATOR)
             src = annot ~ " operator" ~ id.valid_operator ~ "(";
 
-        if (!closure)
+        if (!lambda)
         {
-            let linkage = (  fn.flags & F_TEMPLATE        && "inline ")
-                        ~ (!(fn.flags & F_PUB) && !_faasN && "static ");
+            let linkage = (  fn.flags & F_TEMPLATE && "inline ")
+                        ~ (!(fn.flags & F_PUB)     && "static ");
 
             src = linkage ~ src;
         }
@@ -510,7 +508,7 @@ pub fn cpp_codegen(
             src ~= ", /*postfix*/int ";
         }
 
-        src ~= closure
+        src ~= lambda
              ? ") -> " ~ annot
              : ")";
 
@@ -567,109 +565,13 @@ pub fn cpp_codegen(
     }
 
 
-    // This barely works unless it doesn't.
-
-    fn try_cgFnAsStruct(fn: SolvedNode): string
-    {
-        let body = fn.items[fn.items.len + FN_BODY_BACK];
-        if (!body || body.kind != "block")
-            return "";
-
-        let items = body.items;
-        let overload = GET(fn.target);
-        let id = overload.name;
-
-        // We need at least one closure
-        //  in the function "header"
-        //   for all of this to make sense.
-        mut hasClosuresInHeader = false;
-        mut end = 0;
-        for (mut i = 0; i < items.len; i++)
-        {
-            end = i;
-
-            let item = items[i];
-            if (item.kind == "fndef")
-                hasClosuresInHeader = true;
-            else if (item.kind != "let" && item.kind != "struct")
-                break;
-        }
-
-        if (!hasClosuresInHeader)
-            return "";
-
-        // Ok - refactor time.
-        let restFn = SolvedNode(
-
-            kind: "fn", type: t_void,
-            flags: fn.flags | F_CLOSURE,
-            token: fn.token,
-            target: fn.target,
-
-            items:
-            [
-                fn.items[fn.items.len - 2], // retval
-                SolvedNode(
-                    kind: "block", type: t_void,
-                    token: fn.token,
-                    items: items.slice(
-                        end, items.len)),
-            ]);
-
-        let head: SolvedNode[] =
-            fn.items.slice(0, fn.items.len + FN_ARGS_BACK)
-                ~ items.slice(0, end)
-                ~ [ restFn ];
-
-        //////////////////////
-        _clsrN == 0 || fail();
-        _clsrN--; // -1, so root closures come up at 0.
-        //////////////////////
-
-        let structName = "sf_" ~ id;
-        mut src = "\nnamespace {\n\nstruct " ~ structName
-                ~ blockWrap(head) ~ ";\n";
-
-        //////////////////////
-        {
-            mut args: string[];
-
-            for (mut i = 0; i < fn.items.len + FN_ARGS_BACK; i++)
-            {
-                let argNode = fn.items[i];
-                let argType = argNode.type;
-                let o       = GET(argNode.target);
-                let argName = o.name;
-
-                args.push(
-                    argType.quals & q_ref
-                        ? argName
-                        : cgSteal(argName));
-            }
-
-            src ~= "\n} // namespace\n\n";
-            src ~= cgFnSignature(fn);
-            src ~= "\n{\n    return (" ~ structName ~ " { " ~ args.join(", ") ~ " })." ~ id ~ "();\n}\n\n";
-        }
-
-        if (_fdef.has(id || fail()))
-            ensureFwdDecl(fn.target);
-
-        //////////////////////
-        _clsrN++;
-        //////////////////////
-
-        return src;
-    }
-
-
     //
 
     fn cgFnDef(fndef: SolvedNode, mode: i32): string
     {
         let o = GET(fndef.target);
         let n = o.solved;
-        if !(n.flags & (F_PUB | F_CLOSURE))
+        if !(n.flags & F_PUB)
             return "";
 
         n.kind == "fn" || fail("cgFnDef non-fn");
@@ -678,33 +580,13 @@ pub fn cpp_codegen(
 
     fn cgFn(fn: SolvedNode, mode: i32): string
     {
-        // Use like-struct output for top-level functions with closures -
-        //  We'll try to "close over" a root-level struct.
-        if (_faasN == 0 && fn.flags & F_HAS_CLOSURE)
-        {
-            /////////
-            _faasN++;
-            /////////
-            let src = try_cgFnAsStruct(fn);
-            /////////
-            _faasN--;
-            /////////
-
-            if (src)
-            {
-                _fdef ~= src;
-                return mode & M_STMT ? "" : "0";
-            }
-        }
-
-        ///////////////////////////
-        let f0 = _fnN;
-        let c0 = _clsrN;
+        //////////////////////
         let indent0 = _indent;
+        //////////////////////
 
-        _fnN++;
-        if (fn.flags & F_CLOSURE) _clsrN++;
-        ///////////////////////////
+        let lambda = false;
+        if (!lambda)
+            _indent = "\n";
 
         //
         let items = fn.items;
@@ -717,28 +599,27 @@ pub fn cpp_codegen(
         if (!body)
             return mode & M_STMT ? "\n// fn " ~ id ~ " has no body.\n" : "0";
 
-        // Both closures and try_cgFnAsStruct
-        if (!(fn.flags & F_CLOSURE))
-            _indent = "\n";
-
+        // TODO is this needed?
+        //  Body should always be a block.
         mut src = cgFnSignature(fn);
-        if (body.kind == "block")
-            src ~= cgBlock(body, M_STMT);
-        else
-            src ~= blockWrap([ body ]);
+        {
+            body.kind == "block" || fail("cgFn: body indeed not a block.");
+            // if (body.kind == "block")
+                src ~= cgBlock(body, M_STMT);
+            // else
+            //     src ~= blockWrap([ body ]);
+        }
 
         // Consider a fwdannot after outputting body,
         //  it could itself have written to _fdef.
-        if (!(fn.flags & F_CLOSURE) && _fdef.has(id || fail()))
+        if (!lambda && _fdef.has(id || fail()))
             ensureFwdDecl(fn.target);
 
-        //////////////
-        _fnN    = f0;
-        _clsrN  = c0;
+        //////////////////
         _indent = indent0;
-        //////////////
+        //////////////////
 
-        if (fn.flags & F_CLOSURE)
+        if (lambda)
             return src;
 
         let dedupe = fn.flags & F_PUB
@@ -1032,7 +913,7 @@ pub fn cpp_codegen(
 
         if (node.target.modid && target.kind == "fn")
         {
-            if (target.solved.flags & F_TEMPLATE || !(target.solved.flags & (F_PUB | F_CLOSURE)))
+            if (target.solved.flags & F_TEMPLATE || !(target.solved.flags & F_PUB))
                 ensureFnDef(node.target, target);
             else if (node.target.modid != module.modid)
                 ensureFwdDecl(node.target);
