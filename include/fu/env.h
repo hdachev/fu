@@ -10,7 +10,7 @@ namespace fu {
 inline fu_STRLIT env_get(fu_STR name)
 {
     const char* value = getenv(FU_TEMP_CSTR(name));
-    return fu_STRLIT { value, (int) strlen(value) };
+    return fu_STRLIT { value, value ? (int) strlen(value) : 0 };
 }
 
 } // namespace
