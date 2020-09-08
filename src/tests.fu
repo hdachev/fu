@@ -529,6 +529,28 @@ pub fn runTests()
         return outer() - 7;
     `);
 
+    ZERO(`
+        fn main() {
+            let a = 1;
+            let b = 2;
+            let c = 3;
+
+            fn depth1(x: i32) {
+                fn depth2(y: i32) {
+                    return sibling1(x + y + b);
+                }
+
+                return depth2(x + a);
+            }
+
+            fn sibling1(z: i32): i32 {
+                return z + c;
+            }
+
+            return depth1(0) - 6;
+        }
+    `);
+
 
     //
 
