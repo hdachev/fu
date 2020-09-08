@@ -1,57 +1,30 @@
 
-STRLIT compiler.fu
+____________
+cgFnAsStruct:
 
-    lex     0.00932813s
-    parse   0.00778103s
-    solve   0.0308979s
-    codegen 0.00925708s
+        lex 0.00590086 s    0 allocs    0 bytes
+      parse 0.00894403 s    0 allocs    0 bytes
+      solve 0.0845289 s     0 allocs    0 bytes
+    codegen 0.0171213 s     0 allocs    0 bytes
 
-            0.0827391s
+            0.117994s
 
-NEWCOW compiler.fu
+___________________________
+new style, plain free funcs:
 
-    lex:     16360 µs
-    parse:   9664 µs
-    solve:   33659 µs
-    codegen: 17845 µs
+        lex 0.00560808 s    0 allocs    0 bytes
+      parse 0.00870609 s    0 allocs    0 bytes
+      solve 0.178981 s      0 allocs    0 bytes
+    codegen 0.0268743 s     0 allocs    0 bytes
 
-            107170 µs
+            0.221582s
 
-STDSTR compiler.fu
+_____________________________
+lambdas unsorted, not amazing:
 
-    lex:     16273 µs
-    parse:   12105 µs
-    solve:   42522 µs
-    codegen: 17095 µs
+        lex 0.00667906 s    0 allocs    0 bytes
+      parse 0.00982022 s    0 allocs    0 bytes
+      solve 0.279457 s      0 allocs    0 bytes
+    codegen 0.0292532 s     0 allocs    0 bytes
 
-            118851 µs
-
-    std::string compile(const std::string& fname, const std::string& src, s_TEMP_Context& ctx)
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        s_LexResult res_lex = lex(src, fname);
-
-        auto t1 = std::chrono::high_resolution_clock::now();
-        s_Node res_parse = parse(fname, res_lex.tokens);
-
-        auto t2 = std::chrono::high_resolution_clock::now();
-        s_SolveResult res_solve = solve(res_parse, ctx);
-
-        auto t3 = std::chrono::high_resolution_clock::now();
-        std::string cpp = cpp_codegen(res_solve.root, res_solve.scope, ctx);
-
-        auto t4 = std::chrono::high_resolution_clock::now();
-
-        auto t10 = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-        auto t21 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-        auto t32 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
-        auto t43 = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
-
-        std::cout << "    lex:     " << t10 << " µs" << std::endl;
-        std::cout << "    parse:   " << t21 << " µs" << std::endl;
-        std::cout << "    solve:   " << t32 << " µs" << std::endl;
-        std::cout << "    codegen: " << t43 << " µs" << std::endl;
-
-        return cpp;
-    }
-
+            0.326952s
