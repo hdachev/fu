@@ -200,6 +200,10 @@ pub struct Overload
 
     // Solver state.
     status?:    i32;
+
+    // For locals, if non-zero, index of enclosing fn, obviously same modid.
+    local_of?:  i32;
+    closes_over?: i32[];
 };
 
 pub struct ScopeItem
@@ -348,7 +352,8 @@ pub fn Scope_add(
     args?:          Argument[],
     template?:      Template,
     partial?:       Partial,
-    solved?:        SolvedNode): Target
+    solved?:        SolvedNode,
+    local_of?:      i32): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -358,7 +363,8 @@ pub fn Scope_add(
         name: id || throw("Falsy Scope_add(id)."),
         :kind, :flags, :type,
         :min, :max, :args,
-        :partial, :template, :solved);
+        :partial, :template, :solved,
+        :local_of);
 
     if (kind != "field")
         scope.items.push(

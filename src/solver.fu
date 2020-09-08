@@ -31,8 +31,9 @@ pub fn solve(
     struct CurrentFn
     {
         using out: SolvedNode;
-        return_idx: ScopeMemo;
+        return_idx: ScopeMemo; // <- truth from here
         closure_of: i32[];
+        closes_over?: i32[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -117,9 +118,15 @@ pub fn solve(
 
     fn Binding(id: string, type: Type, flags!: i32, kind = "var")
     {
+        let local_of = !(flags & F_FIELD) && _current_fn.target.index;
+
+        if (local_of)
+            kind == "var" || kind == "arg" || kind == "ref" || fail(
+                "Nope, getting it wrong.");
+
         return Scope_add(
             _scope, :kind,
-            :id || fail(), :type || fail(), :flags);
+            :id || fail(), :type || fail(), :flags, :local_of);
     }
 
     fn Field(id: string, structType: Type, fieldType: Type)
@@ -173,7 +180,7 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
-    fn FnDecl_update(solved: SolvedNode)
+    fn FnDecl_update(solved: SolvedNode, closes_over: i32[])
     {
         let items = solved.items;
 
@@ -210,6 +217,7 @@ pub fn solve(
         overload.flags  = solved.flags;
 
         overload.solved = solved;
+        overload.closes_over = closes_over;
 
         // TODO FIX starting the diff with just number of arguments,
         //  which is fine for implicit cycling,
@@ -1261,7 +1269,7 @@ pub fn solve(
             FnDecl_init(out.target, :kind, id: name, :template);
         }
 
-        FnDecl_update(out.out);
+        FnDecl_update(out.out, out.closes_over);
 
         if (solve)
             return createFnDef(out.out);
@@ -2554,14 +2562,27 @@ pub fn solve(
         }
 
         // Track deps.
-        if (overload.kind == "fn" && target.modid == module.modid)
+        if (target.modid == module.modid)
         {
-            // Nested self-invocation detection.
-            let index = _current_fn.closure_of.has(target.index)
-                ? target.index
-                : _current_fn.target.index;
+            if (overload.kind == "fn")
+            {
+                // Nested self-invocation detection.
+                let index = _current_fn.closure_of.has(target.index)
+                    ? target.index
+                    : _current_fn.target.index;
 
-            GET_mut(target).used_by.set::add(index);
+                GET_mut(target).used_by.set::add(index);
+            }
+
+            if (_current_fn)
+            {
+                // Robust closure tracking.
+                let o = GET(target);
+                if (o.local_of && o.local_of != _current_fn.target.index)
+                    _current_fn.closes_over.set::add(target.index);
+
+                _current_fn.closes_over.set::add_set(o.closes_over);
+            }
         }
 
         //

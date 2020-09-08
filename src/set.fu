@@ -1,17 +1,23 @@
 
-pub fn add(ref to: $T[], item: $T)
+pub fn add(ref dest: $T[], item: $T)
 {
     // TODO bsearch instead
-    for (mut i = 0; i < to.len; i++)
+    for (mut i = 0; i < dest.len; i++)
     {
-        if (to[i] >= item)
+        if (dest[i] >= item)
         {
-            if (to[i] != item)
-                to.insert(i, item);
+            if (dest[i] != item)
+                dest.insert(i, item);
 
             return;
         }
     }
 
-    to.push(item);
-};
+    dest.push(item);
+}
+
+pub fn add_set(ref dest: $T[], src: $T[])
+{
+    for (mut i = 0; i < src.len; i++)
+        dest.add(src[i]);
+}
