@@ -62,8 +62,7 @@ fn compile(fname: string, via: string = "")
 
         let stat1 = ModuleStat_now();
         module.out.cpp = codegen::cpp_codegen(
-            module.out.solve.root,
-            module.out.solve.scope);
+            module.out.solve.root);
 
         let stat2 = ModuleStat_now();
 

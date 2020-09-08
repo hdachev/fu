@@ -31,7 +31,7 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
 pub fn cpp_codegen(
     implicit module: Module,
     implicit ctx: Context,
-    root: SolvedNode, scope: Scope): string
+    root: SolvedNode): string
 {
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
@@ -80,9 +80,6 @@ pub fn cpp_codegen(
             return "int";
 
         let fwd = typeAnnotBase(type);
-
-        if (mode & M_RETVAL && type.canon == "never" && !(mode & M_LAMBDA))
-            return "[[noreturn]] " ~ fwd;
 
         if (type.quals & q_ref)
         {
@@ -488,7 +485,8 @@ pub fn cpp_codegen(
 
         if (!lambda)
         {
-            let linkage = (  fn.flags & F_TEMPLATE && "inline ")
+            let linkage = (overload.type.is_never  && "[[noreturn]] ")
+                        ~ (  fn.flags & F_TEMPLATE && "inline ")
                         ~ (!(fn.flags & F_PUB)     && "static ");
 
             src = linkage ~ src;
@@ -545,7 +543,8 @@ pub fn cpp_codegen(
         let isOp    = overload.flags & F_OPERATOR;
 
         let name    = isOp ? "operator" ~ id.valid_operator : id;
-        let linkage = (overload.flags & F_TEMPLATE && "inline ")
+        let linkage = (overload.type.is_never  && "[[noreturn]] ")
+                    ~ (overload.flags & F_TEMPLATE && "inline ")
                   ~ (!(overload.flags & F_PUB)     && "static ");
 
         mut src = linkage ~ annot ~ " " ~ name ~ "(";

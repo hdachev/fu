@@ -777,7 +777,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 outFlags |= F_TEMPLATE;
             }
 
-            arg.flags &= ~F_LOCAL;
             arg.flags |= F_ARG;
 
             if (arg.flags & F_IMPLICIT)
@@ -820,7 +819,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseLet(xqmark! = false): Node
     {
-        mut flags = F_LOCAL;
+        mut flags = 0;
 
         if (tryConsume("id", "using"   ))   flags |= F_USING;
         if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;

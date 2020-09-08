@@ -32,8 +32,8 @@ pub fn solve(
     {
         using out: SolvedNode;
         return_idx: ScopeMemo; // <- truth from here
-        closure_of: i32[];
-        closes_over?: i32[];
+        parent_idx: i32;
+        locals_used?: i32[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -91,6 +91,11 @@ pub fn solve(
         return _scope.overloads[target.index - 1];
     }
 
+    fn GET_local(index: i32): Overload
+    {
+        return GET(Target(modid: module.modid, :index));
+    }
+
 
     //
 
@@ -116,13 +121,16 @@ pub fn solve(
     fn Lifetime_next(): Lifetime
         Lifetime_fromScopeIdx( _scope.items.len + 1 );
 
-    fn Binding(id: string, type: Type, flags!: i32, kind = "var")
+    fn Binding(id: string, type: Type, mut flags!: i32, kind = "var")
     {
         let local_of = !(flags & F_FIELD) && _current_fn.target.index;
-
         if (local_of)
+        {
             kind == "var" || kind == "arg" || kind == "ref" || fail(
                 "Nope, getting it wrong.");
+
+            flags |= F_LOCAL;
+        }
 
         return Scope_add(
             _scope, :kind,
@@ -180,7 +188,7 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
-    fn FnDecl_update(solved: SolvedNode, closes_over: i32[])
+    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32)
     {
         let items = solved.items;
 
@@ -219,18 +227,19 @@ pub fn solve(
 
         overload.solved = solved;
 
-        // It's too cumbersome making this check all over the place.
+        // See which one of the locals we've used are not our own.
         {
-            mut really_closes_over: i32[];
+            mut closes_over: i32[];
 
-            for (mut i = 0; i < closes_over.len; i++)
+            for (mut i = 0; i < locals_used.len; i++)
             {
-                let o = GET(Target(modid: module.modid, index: closes_over[i]));
+                let o = GET_local(locals_used[i]);
                 if (o.local_of != solved.target.index)
-                    really_closes_over ~= closes_over[i];
+                    closes_over ~= locals_used[i];
             }
 
-            overload.closes_over = really_closes_over;
+            overload.closes_over = closes_over;
+            overload.local_of = parent_idx;
         }
 
         // TODO FIX starting the diff with just number of arguments,
@@ -240,19 +249,31 @@ pub fn solve(
             closure0  != overload.closes_over.len)
         {
             for (mut i = 0; i < overload.used_by.len; i++)
+                makeDirty(overload.used_by[i], :parent_idx);
+        }
+    }
+
+    fn makeDirty(index: i32, parent_idx: i32): void
+    {
+        let userIdx = Target(modid: module.modid, :index);
+
+        ref user = GET_mut(userIdx);
+        if !(user.status & SS_DIRTY)
+        {
+            let their_parent = user.local_of;
+            index >= parent_idx || fail(
+                "makeDirty: climbed too far up.");
+
+            if (user.status & SS_FINALIZED)
             {
-                let userIdx = Target(modid: module.modid, index: overload.used_by[i]);
+                if (their_parent)
+                    return makeDirty(their_parent, :parent_idx);
 
-                ref user = GET_mut(userIdx);
-                if !(user.status & SS_DIRTY)
-                {
-                    user.status & SS_FINALIZED && fail(
-                        "Overload finalized, cannot make dirty.");
-
-                    user.status |= SS_DIRTY;
-                    SLOW_resolve++;
-                }
+                fail("Overload finalized, cannot make dirty.");
             }
+
+            user.status |= SS_DIRTY;
+            SLOW_resolve++;
         }
     }
 
@@ -1058,8 +1079,7 @@ pub fn solve(
         // TODO `f` suffix
         if (v) {}
 
-        fn want(t: Type) type.canon == t.canon;
-        if (want(t_f32)) return t_f32;
+        if (type.canon == t_f32.canon) return t_f32;
 
         return t_f64;
     }
@@ -1147,8 +1167,7 @@ pub fn solve(
         mut out = CurrentFn(
             prep || solved(n_fn, t_void),
             return_idx: ScopeMemo(),
-            closure_of: _current_fn.closure_of
-                      ~ _current_fn.target.index);
+            parent_idx: _current_fn.target.index);
 
         out.items.resize(inItems.len);
 
@@ -1284,7 +1303,7 @@ pub fn solve(
             FnDecl_init(out.target, :kind, id: name, :template);
         }
 
-        FnDecl_update(out.out, out.closes_over);
+        FnDecl_update(out.out, out.locals_used, out.parent_idx);
 
         if (solve)
             return createFnDef(out.out);
@@ -2581,22 +2600,19 @@ pub fn solve(
         {
             if (overload.kind == "fn")
             {
-                // Nested self-invocation detection.
-                let index = _current_fn.closure_of.has(target.index)
-                    ? target.index
-                    : _current_fn.target.index;
-
-                GET_mut(target).used_by.set::add(index);
+                // Tracking call graph.
+                GET_mut(target).used_by.set::add(
+                    _current_fn.target.index);
             }
 
             if (_current_fn)
             {
                 // Robust closure tracking.
                 let o = GET(target);
-                if (o.local_of)
-                    _current_fn.closes_over.set::add(target.index);
+                if (o.flags & F_LOCAL)
+                    _current_fn.locals_used.set::add(target.index);
 
-                _current_fn.closes_over.set::add_set(o.closes_over);
+                _current_fn.locals_used.set::add_set(o.closes_over);
             }
         }
 
