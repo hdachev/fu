@@ -2031,6 +2031,25 @@ static fu_STR cgCatch(const s_Module& module, const s_Context& ctx, fu_MAP<fu_ST
     return src;
 }
 
+static fu_STR cgTryCatch(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR, fu_STR>& _libs, fu_MAP<fu_STR, fu_STR>& _tfwd, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, s_BitSet& _idef, fu_STR& _tdef, fu_STR& _fdef, fu_STR& _indent, int& _hasMain, const s_SolvedNode& node)
+{
+    const fu_VEC<s_SolvedNode>& items = node.items;
+    fu_STR tRy = blockWrapSubstatement(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, items[0]);
+    const s_SolvedNode& err = items[1];
+    fu_STR cAtch = blockWrapSubstatement(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, items[2]);
+    fu_STR src {};
+    (src += (_indent + "try"_fu));
+    (src += (_indent + "{"_fu));
+    (src += (_indent + tRy));
+    (src += (_indent + "}"_fu));
+    (src += (_indent + "catch (const std::exception& o_0)"_fu));
+    (src += (_indent + "{"_fu));
+    (src += (((((_indent + "    const "_fu) + annotateString(_libs)) + "& "_fu) + ID(GET(module, ctx, err.target).name)) + " = fu_TO_STR(o_0.what());"_fu));
+    (src += (_indent + cAtch));
+    (src += (_indent + "}\n"_fu));
+    return src;
+}
+
 static fu_STR cgNode(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR, fu_STR>& _libs, fu_MAP<fu_STR, fu_STR>& _tfwd, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, s_BitSet& _idef, fu_STR& _tdef, fu_STR& _fdef, fu_STR& _indent, int& _hasMain, const s_SolvedNode& node, const int mode)
 {
     const fu_STR& k = node.kind;
@@ -2123,6 +2142,9 @@ static fu_STR cgNode(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR
 
     if ((k == "catch"_fu))
         return cgCatch(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, node);
+
+    if ((k == "try"_fu))
+        return cgTryCatch(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, node);
 
     fail(("TODO: "_fu + k));
 }

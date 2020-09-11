@@ -3060,6 +3060,20 @@ static s_SolvedNode solveDefer(const s_Context& ctx, s_Module& module, s_TokenId
     return solved(node, t_void, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { item } });
 }
 
+static s_SolvedNode solveTryCatch(const s_Context& ctx, s_Module& module, s_TokenIdx& _here, s_Scope& _scope, s_ScopeMemo& _root_scope, s_ScopeSkip& _scope_skip, s_CurrentFn& _current_fn, int& SLOW_resolve, int& resolve_done, fu_VEC<s_OpenTemplate>& _open_templates, const s_Type& t_string, const s_Node& node)
+{
+    ((node.items.size() == 3) || fail(ctx, _here, fu_STR{}));
+    const s_ScopeMemo scope0 = Scope_push(_scope);
+    s_SolvedNode tRy = solveNode(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node.items[0], s_Type{});
+    Scope_pop(_scope, scope0);
+    const s_ScopeMemo scope0_1 = Scope_push(_scope);
+    s_SolvedNode err = solveNode(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node.items[1], s_Type{});
+    s_SolvedNode cAtch = solveNode(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node.items[2], s_Type{});
+    Scope_pop(_scope, scope0_1);
+    (((err.kind == "let"_fu) && isAssignableAsArgument(err.type, s_Type(t_string))) || fail(ctx, _here, ("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu)));
+    return solved(node, t_void, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { tRy, err, cAtch } });
+}
+
 static s_SolvedNode solveTypeAssert(const s_Context& ctx, s_Module& module, s_TokenIdx& _here, s_Scope& _scope, s_ScopeMemo& _root_scope, s_ScopeSkip& _scope_skip, s_CurrentFn& _current_fn, int& SLOW_resolve, int& resolve_done, fu_VEC<s_OpenTemplate>& _open_templates, const s_Type& t_string, const s_Node& node)
 {
     const s_Node& left = node.items[0];
@@ -3153,6 +3167,9 @@ static s_SolvedNode solveNode(const s_Context& ctx, s_Module& module, s_TokenIdx
 
     if ((k == "defer"_fu))
         return solveDefer(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node);
+
+    if ((k == "try"_fu))
+        return solveTryCatch(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node);
 
     if ((k == "typeassert"_fu))
         return solveTypeAssert(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node);

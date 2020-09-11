@@ -632,6 +632,18 @@ static s_Node parseDefer(int modid, const fu_STR& fname, const fu_VEC<s_Token>& 
     return make(modid, _loc, "defer"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { parseStatement(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports) } }, 0, fu_STR{});
 }
 
+static s_Node parseTryCatch(int modid, const fu_STR& fname, const fu_VEC<s_Token>& tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, int& _numReturns, int& _dollarAuto, fu_VEC<fu_STR>& _dollars, int& _anonFns, fu_VEC<fu_STR>& _imports)
+{
+    ((_fnDepth > 0) || ((void)_idx--, fail(fname, tokens, _idx, _loc, fu_STR{})));
+    s_Node tRy = parseStatement(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports);
+    consume(fname, tokens, _idx, _loc, "id"_fu, "catch"_fu);
+    consume(fname, tokens, _idx, _loc, "op"_fu, "("_fu);
+    s_Node err = createLet(modid, _loc, consume(fname, tokens, _idx, _loc, "id"_fu, fu::view<std::byte>{}).value, 0, createRead(modid, fname, tokens, _idx, _loc, "string"_fu), s_Node{});
+    consume(fname, tokens, _idx, _loc, "op"_fu, ")"_fu);
+    s_Node cAtch = parseStatement(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports);
+    return make(modid, _loc, "try"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { tRy, err, cAtch } }, 0, fu_STR{});
+}
+
 static s_Node miss()
 {
     return s_Node{};
@@ -796,6 +808,9 @@ static s_Node parseStatement(int modid, const fu_STR& fname, const fu_VEC<s_Toke
 
             if ((v == "defer"_fu))
                 return parseDefer(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports);
+
+            if ((v == "try"_fu))
+                return parseTryCatch(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports);
 
             if ((v == "for"_fu))
                 return parseFor(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _numReturns, _dollarAuto, _dollars, _anonFns, _imports);
