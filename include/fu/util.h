@@ -140,3 +140,9 @@ const int fu_DEBUG = 0;
 #endif
 
 /////////////////////////////////////////////
+
+#define fu_CONCAT_detail(a, b) a##b
+#define fu_CONCAT(a, b) fu_CONCAT_detail(a, b)
+#define fu_UNIQUE_ID() fu_CONCAT(fu_UNIQUE_ID_, __COUNTER__)
+
+/////////////////////////////////////////////

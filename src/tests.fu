@@ -2677,6 +2677,22 @@ pub fn runTests()
     `);
 
 
+    // Defer.
+
+    ZERO(`
+        //! ALLOW_WRITE
+        fn main() {
+            mut a = 1;
+            mut b = 0;
+            {
+                defer a++;
+                b = a;
+            }
+            return (b+1) - a;
+        }
+    `);
+
+
     // Conversions / ctors.
 
     ZERO(`
