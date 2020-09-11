@@ -778,6 +778,9 @@ static fu_STR ID(const fu_STR& id)
     if ((id == "template"_fu))
         return "tEmplate"_fu;
 
+    if ((id == "try"_fu))
+        return "tRy"_fu;
+
     if ((id == "catch"_fu))
         return "cAtch"_fu;
 

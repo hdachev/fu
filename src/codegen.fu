@@ -352,6 +352,7 @@ pub fn cpp_codegen(
         if (id == "struct")     return "sTruct";
         if (id == "default")    return "dEfault";
         if (id == "template")   return "tEmplate";
+        if (id == "try")        return "tRy";
         if (id == "catch")      return "cAtch";
         if (id == "not")        return "nOt";
         if (id == "and")        return "aNd";
