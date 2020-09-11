@@ -453,6 +453,13 @@ pub fn cpp_codegen(
         return src ~ ")";
     }
 
+    fn cgDefer(node: SolvedNode): string
+    {
+        include("<fu/defer.h>");
+
+        return "fu_DEFER(" ~ cgNode(node.items.only) ~ ")";
+    }
+
 
     //
 
@@ -1486,6 +1493,7 @@ pub fn cpp_codegen(
         if (k == "fn")          return cgFn(node, mode);
         if (k == "struct")      return cgEmpty(mode);
         if (k == "empty")       return cgEmpty(mode);
+        if (k == "defer")       return cgDefer(node);
 
         if (k == "copy")        return cgCopyMove(node);
         if (k == "move")        return cgCopyMove(node);

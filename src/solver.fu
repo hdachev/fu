@@ -946,6 +946,7 @@ pub fn solve(
 
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
+        if (k == "defer")       return solveDefer(node);
 
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
@@ -1976,6 +1977,12 @@ pub fn solve(
 
         //
         return createEmpty();
+    }
+
+    fn solveDefer(node: Node): SolvedNode
+    {
+        let item = solveNode(node.items.only);
+        return solved(node, t_void, [ item ]);
     }
 
 

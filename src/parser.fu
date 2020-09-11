@@ -460,6 +460,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             {
                 if (v == "if")          return parseIf();
                 if (v == "return")      return parseReturn();
+                if (v == "defer")       return parseDefer();
 
                 if (v == "for")         return parseFor();
                 if (v == "while")       return parseWhile();
@@ -1336,6 +1337,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         return createReturn(
             parseExpressionStatement());
+    }
+
+    fn parseDefer(): Node
+    {
+        _fnDepth > 0 || { _idx--; fail() };
+        return make("defer", [ parseStatement() ]);
     }
 
     fn createReturn(node: Node = Node()): Node
