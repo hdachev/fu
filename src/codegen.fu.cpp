@@ -1990,6 +1990,12 @@ static fu_STR cgEmpty(const int mode)
     return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
 }
 
+static fu_STR cgDefer(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR, fu_STR>& _libs, fu_MAP<fu_STR, fu_STR>& _tfwd, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, s_BitSet& _idef, fu_STR& _tdef, fu_STR& _fdef, fu_STR& _indent, int& _hasMain, const s_SolvedNode& node)
+{
+    include(_libs, "<fu/defer.h>"_fu);
+    return (("fu_DEFER("_fu + cgNode(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, only_4UAi(node.items), 0)) + ")"_fu);
+}
+
 static fu_STR cgCopyMove(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR, fu_STR>& _libs, fu_MAP<fu_STR, fu_STR>& _tfwd, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, s_BitSet& _idef, fu_STR& _tdef, fu_STR& _fdef, fu_STR& _indent, int& _hasMain, const s_SolvedNode& node)
 {
     fu_STR a = cgNode(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, ([&]() -> const s_SolvedNode& { { const s_SolvedNode& _ = node.items[0]; if (_) return _; } fail(fu_STR{}); }()), 0);
@@ -2099,6 +2105,9 @@ static fu_STR cgNode(const s_Module& module, const s_Context& ctx, fu_MAP<fu_STR
 
     if ((k == "empty"_fu))
         return cgEmpty(mode);
+
+    if ((k == "defer"_fu))
+        return cgDefer(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, node);
 
     if ((k == "copy"_fu))
         return cgCopyMove(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, node);

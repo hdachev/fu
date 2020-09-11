@@ -3054,6 +3054,12 @@ static s_SolvedNode solveImport(const s_Context& ctx, s_TokenIdx& _here, s_Scope
     return createEmpty(ctx, _here, "empty"_fu, t_void, s_Target{});
 }
 
+static s_SolvedNode solveDefer(const s_Context& ctx, s_Module& module, s_TokenIdx& _here, s_Scope& _scope, s_ScopeMemo& _root_scope, s_ScopeSkip& _scope_skip, s_CurrentFn& _current_fn, int& SLOW_resolve, int& resolve_done, fu_VEC<s_OpenTemplate>& _open_templates, const s_Type& t_string, const s_Node& node)
+{
+    s_SolvedNode item = solveNode(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, only_zET6(node.items), s_Type{});
+    return solved(node, t_void, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { item } });
+}
+
 static s_SolvedNode solveTypeAssert(const s_Context& ctx, s_Module& module, s_TokenIdx& _here, s_Scope& _scope, s_ScopeMemo& _root_scope, s_ScopeSkip& _scope_skip, s_CurrentFn& _current_fn, int& SLOW_resolve, int& resolve_done, fu_VEC<s_OpenTemplate>& _open_templates, const s_Type& t_string, const s_Node& node)
 {
     const s_Node& left = node.items[0];
@@ -3144,6 +3150,9 @@ static s_SolvedNode solveNode(const s_Context& ctx, s_Module& module, s_TokenIdx
 
     if ((k == "import"_fu))
         return solveImport(ctx, _here, _scope, node);
+
+    if ((k == "defer"_fu))
+        return solveDefer(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node);
 
     if ((k == "typeassert"_fu))
         return solveTypeAssert(ctx, module, _here, _scope, _root_scope, _scope_skip, _current_fn, SLOW_resolve, resolve_done, _open_templates, t_string, node);
