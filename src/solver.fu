@@ -947,6 +947,7 @@ pub fn solve(
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
         if (k == "defer")       return solveDefer(node);
+        if (k == "try")         return solveTryCatch(node);
 
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
@@ -1953,6 +1954,36 @@ pub fn solve(
 
         return solved(node, var_ok.type,
             [ var_ok, var_err, catch ]);
+    }
+
+    fn solveTryCatch(node: Node): SolvedNode
+    {
+        node.items.len == 3 || fail();
+
+        /////////////////////////////////
+        let scope0  = Scope_push(_scope);
+        /////////////////////////////////
+
+        let try     = solveNode(node.items[0]);
+
+        ///////////////////////////////////////
+        Scope_pop(_scope, scope0);
+        shadow let scope0 = Scope_push(_scope);
+        ///////////////////////////////////////
+
+        let err     = solveNode(node.items[1]);
+        let catch   = solveNode(node.items[2]);
+
+        //////////////////////////
+        Scope_pop(_scope, scope0);
+        //////////////////////////
+
+        err.kind == "let" && isAssignableAsArgument(
+            host: err.type, t_string) || fail(
+                "catch: exceptions are strings,"
+                    ~ " consider dropping the annotation.");
+
+        return solved(node, t_void, [ try, err, catch ]);
     }
 
     fn findModule(fuzimport: string): &Module

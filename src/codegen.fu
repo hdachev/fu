@@ -1460,6 +1460,29 @@ pub fn cpp_codegen(
         return src;
     }
 
+    fn cgTryCatch(node: SolvedNode): string
+    {
+        let items = node.items;
+        let try = blockWrapSubstatement(items[0]);
+
+        let err = items[1];
+        let catch = blockWrapSubstatement(items[2]);
+
+        mut src: string;
+
+        src ~= _indent ~ "try";
+        src ~= _indent ~ "{";
+        src ~= _indent ~ try;
+        src ~= _indent ~ "}";
+        src ~= _indent ~ "catch (const std::exception& o_0)";
+        src ~= _indent ~ "{";
+        src ~= _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(GET(err.target).name) ~ " = fu_TO_STR(o_0.what());";
+        src ~= _indent ~ catch;
+        src ~= _indent ~ "}\n";
+
+        return src;
+    }
+
 
     //
 
@@ -1500,6 +1523,7 @@ pub fn cpp_codegen(
         if (k == "move")        return cgCopyMove(node);
         if (k == "nrvo")        return cgCopyMove(node);
         if (k == "catch")       return cgCatch(node);
+        if (k == "try")         return cgTryCatch(node);
 
         return fail("TODO: " ~ k);
     }

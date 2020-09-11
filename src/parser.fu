@@ -461,6 +461,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "if")          return parseIf();
                 if (v == "return")      return parseReturn();
                 if (v == "defer")       return parseDefer();
+                if (v == "try")         return parseTryCatch();
 
                 if (v == "for")         return parseFor();
                 if (v == "while")       return parseWhile();
@@ -1339,18 +1340,38 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             parseExpressionStatement());
     }
 
-    fn parseDefer(): Node
-    {
-        _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", [ parseStatement() ]);
-    }
-
     fn createReturn(node: Node = Node()): Node
     {
         if (!node)
             return make("return");
 
         return make("return", [ node ]);
+    }
+
+    fn parseDefer(): Node
+    {
+        _fnDepth > 0 || { _idx--; fail() };
+        return make("defer", [ parseStatement() ]);
+    }
+
+    fn parseTryCatch(): Node
+    {
+        _fnDepth > 0 || { _idx--; fail() };
+
+        let try = parseStatement();
+
+        consume("id", "catch");
+        consume("op", "(");
+
+        let err = createLet(
+                consume("id").value, 0,
+                createRead("string"), Node);
+
+        consume("op", ")");
+
+        let catch = parseStatement();
+
+        return make("try", [ try, err, catch ]);
     }
 
     fn parseJump(kind: string /*"break"|"continue"*/): Node

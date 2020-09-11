@@ -1659,6 +1659,24 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn throw_hey(): i32 {
+            throw("hey");
+            return 1;
+        }
+
+        fn main(): i32 {
+            try {
+                return throw_hey();
+            }
+            catch (e) {
+                return e.len - 3;
+            }
+
+            return 11;
+        }
+    `);
+
+    ZERO(`
 
         fn main()
             cli_handle([ "hello", "you" ]);
@@ -2680,7 +2698,6 @@ pub fn runTests()
     // Defer.
 
     ZERO(`
-        //! ALLOW_WRITE
         fn main() {
             mut a = 1;
             mut b = 0;
