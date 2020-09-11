@@ -130,3 +130,13 @@ inline uint32_t fu_NEXT_LOG2(uint32_t a) // a must be >= 2
     return 32 - uint32_t( __builtin_clz(a - 1));
 #endif
 }
+
+/////////////////////////////////////////////
+
+#ifndef NDEBUG
+const int fu_DEBUG = 1;
+#else
+const int fu_DEBUG = 0;
+#endif
+
+/////////////////////////////////////////////

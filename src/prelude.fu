@@ -253,6 +253,8 @@ fn exit(code: i32): never __native("<cstdlib>", "std::exit");
 fn ALLOC_STAT_COUNT(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
 fn ALLOC_STAT_BYTES(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
 
+fn DEBUG(): i32 __native("<fu/util.h>", "fu_DEBUG");
+
 
 // TODO move these out in separate imports,
 //  now::hr() etc, mini import syntax will be just as usable.
