@@ -41,6 +41,7 @@ struct s_ValueType;
 
 fu_STR path_dirname(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
+static fu_STR resolveFile(const fu_STR&, const fu_STR&, s_Context&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -398,6 +399,8 @@ struct s_Overload
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     int status;
+    int local_of;
+    fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
     {
         return false
@@ -413,6 +416,8 @@ struct s_Overload
             || solved
             || used_by
             || status
+            || local_of
+            || closes_over
         ;
     }
 };
@@ -566,6 +571,43 @@ fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return fu_STR(ctx.modules[idx.modid].fname);
 }
 
+static fu_STR tryResolve(const fu_STR& from, const fu_STR& name, s_Context& ctx, const fu_STR& path)
+{
+    const bool exists = (fu::file_size(path) >= 0);
+    if (exists)
+        return fu_STR(path);
+
+    
+    {
+        fu_STR path_1 = ((from + "lib/"_fu) + name);
+        const bool exists_1 = (fu::file_size(path_1) >= 0);
+        if (exists_1)
+            return path_1;
+
+    };
+    
+    {
+        fu_STR path_1 = ((from + "vendor/"_fu) + name);
+        const bool exists_1 = (fu::file_size(path_1) >= 0);
+        if (exists_1)
+            return path_1;
+
+    };
+    
+    {
+        fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
+        const bool exists_1 = (fu::file_size(path_1) >= 0);
+        if (exists_1)
+            return path_1;
+
+    };
+    fu_STR fallback = path_dirname(from);
+    if ((!fallback || (fallback.size() >= from.size())))
+        return fu_STR{};
+
+    return resolveFile(fallback, name, ctx);
+}
+
 static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
     fu_STR path = (from + name);
@@ -573,43 +615,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
     if (cached)
         return std::move(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
 
-    const auto& tryResolve = [&]() -> fu_STR
-    {
-        const bool exists = (fu::file_size(path) >= 0);
-        if (exists)
-            return fu_STR(path);
-
-        
-        {
-            fu_STR path_1 = ((from + "lib/"_fu) + name);
-            const bool exists_1 = (fu::file_size(path_1) >= 0);
-            if (exists_1)
-                return path_1;
-
-        };
-        
-        {
-            fu_STR path_1 = ((from + "vendor/"_fu) + name);
-            const bool exists_1 = (fu::file_size(path_1) >= 0);
-            if (exists_1)
-                return path_1;
-
-        };
-        
-        {
-            fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
-            const bool exists_1 = (fu::file_size(path_1) >= 0);
-            if (exists_1)
-                return path_1;
-
-        };
-        fu_STR fallback = path_dirname(from);
-        if ((!fallback || (fallback.size() >= from.size())))
-            return fu_STR{};
-
-        return resolveFile(fallback, name, ctx);
-    };
-    fu_STR resolve = tryResolve();
+    fu_STR resolve = tryResolve(from, name, ctx, path);
     (ctx.fuzzy.upsert(path) = ([&]() -> fu_STR { { fu_STR _ = fu_STR(resolve); if (_) return _; } return "\v"_fu; }()));
     return resolve;
 }

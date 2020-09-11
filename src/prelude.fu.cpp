@@ -392,6 +392,8 @@ struct s_Overload
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     int status;
+    int local_of;
+    fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
     {
         return false
@@ -407,6 +409,8 @@ struct s_Overload
             || solved
             || used_by
             || status
+            || local_of
+            || closes_over
         ;
     }
 };

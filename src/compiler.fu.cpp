@@ -46,7 +46,7 @@ struct s_ValueType;
 
 fu_STR FAIL(const fu_STR&);
 fu_STR FAIL(const fu_VEC<fu_STR>&);
-fu_STR cpp_codegen(const s_SolvedNode&, const s_Scope&, const s_Module&, const s_Context&);
+fu_STR cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Context ZERO(const fu_STR&);
@@ -421,6 +421,8 @@ struct s_Overload
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     int status;
+    int local_of;
+    fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
     {
         return false
@@ -436,6 +438,8 @@ struct s_Overload
             || solved
             || used_by
             || status
+            || local_of
+            || closes_over
         ;
     }
 };
@@ -654,7 +658,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
         const s_ModuleStat stat0 = ModuleStat_now();
         module.out.solve = solve(module.in.parse.root, ctx, module);
         const s_ModuleStat stat1 = ModuleStat_now();
-        module.out.cpp = cpp_codegen(module.out.solve.root, module.out.solve.scope, module, ctx);
+        module.out.cpp = cpp_codegen(module.out.solve.root, module, ctx);
         const s_ModuleStat stat2 = ModuleStat_now();
         module.stats.solve = (stat1 - stat0);
         module.stats.codegen = (stat2 - stat1);
@@ -696,46 +700,32 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     return build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, nowrite, ctx);
 }
 
-namespace {
-
-struct sf_compile_snippets
+static fu_STR ensure_main(const fu_STR& src)
 {
-    const fu_VEC<fu_STR>& sources;
-    const fu_VEC<fu_STR>& fnames;
-    fu_STR ensure_main(const fu_STR& src)
-    {
-        return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
-    };
-    s_Context ctx { CTX_PRELUDE };
-    s_Context compile_snippets()
-    {
-        for (int i = 0; (i < sources.size()); i++)
-        {
-            const fu_STR& snippet = sources[i];
-            fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
-            fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
-            (ctx.files.upsert(fname) = src);
-            compile(fname, fu_STR{}, ctx);
-        };
-        for (int i = 0; (i < ctx.modules.size()); i++)
-        {
-            s_Module module { ctx.modules[i] };
-            if (module.out.solve.SLOW_resolve)
-            {
-                (fu::has(module.in.src, "//! SLOW_resolve"_fu) || fu::fail("SLOW: unexpected SLOW_resolve."_fu));
-            };
-        };
-        return ctx;
-    };
-};
-
-} // namespace
+    return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
+}
 
 s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
 {
-    return (sf_compile_snippets { sources, fnames }).compile_snippets();
+    s_Context ctx { CTX_PRELUDE };
+    for (int i = 0; (i < sources.size()); i++)
+    {
+        const fu_STR& snippet = sources[i];
+        fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
+        fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
+        (ctx.files.upsert(fname) = src);
+        compile(fname, fu_STR{}, ctx);
+    };
+    for (int i = 0; (i < ctx.modules.size()); i++)
+    {
+        s_Module module { ctx.modules[i] };
+        if (module.out.solve.SLOW_resolve)
+        {
+            (fu::has(module.in.src, "//! SLOW_resolve"_fu) || fu::fail("SLOW: unexpected SLOW_resolve."_fu));
+        };
+    };
+    return ctx;
 }
-
 
 fu_STR snippet2cpp(const fu_STR& src)
 {
@@ -765,7 +755,7 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
     const bool run = true;
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    const bool nowrite = !fu::has(last_NwMO(sources), "//! ALLOW_WRITE"_fu);
+    const bool nowrite = (!fu::has(last_NwMO(sources), "//! ALLOW_WRITE"_fu) && !fu::env_get("fu_ALLOW_WRITE"_fu));
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite, ctx);
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite, ctx);
     return ctx;

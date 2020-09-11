@@ -396,6 +396,8 @@ struct s_Overload
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     int status;
+    int local_of;
+    fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
     {
         return false
@@ -411,6 +413,8 @@ struct s_Overload
             || solved
             || used_by
             || status
+            || local_of
+            || closes_over
         ;
     }
 };
@@ -554,12 +558,48 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR TEST_SRC = "\n    fn test(one: i32) {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn main(): i32 {\n        return test(1) - 17;\n    }\n"_fu;
+static const fu_STR TEST_SRC = "\n    //! SLOW_resolve\n    fn test(one: i32) {\n        let zero = one - 1;\n        let two  = one * 2;\n\n        fn inner(i: i32): i32\n            i > zero ? outer(i - one) : zero;\n\n        fn outer(i: i32): i32\n            two * inner(i);\n\n        return outer(one) + (two - one) * 17;\n    }\n\n    fn main(): i32 {\n        return test(1) - 17;\n    }\n"_fu;
 
 int self_test()
 {
     fu_STR cpp = snippet2cpp(TEST_SRC);
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
+}
+
+static fu_STR EXPR(fu_STR& assertion, const fu_STR& varname)
+{
+    return fu::replace(assertion, "@"_fu, varname);
+}
+
+static void ARROPS(const fu_STR& literal, const fu_STR& operation, fu_STR&& assertion)
+{
+    assertion = (("("_fu + assertion) + ")"_fu);
+    fu_STR src {};
+    (src += "\n"_fu);
+    (src += "\n    {"_fu);
+    (src += (("\n        mut arr0 = ["_fu + literal) + "];"_fu));
+    (src += (("\n        arr0."_fu + operation) + ";"_fu));
+    (src += (("\n        if ("_fu + EXPR(assertion, "arr0"_fu)) + " != 0) return 13;"_fu));
+    (src += "\n    }"_fu);
+    (src += "\n"_fu);
+    (src += (("\n    mut orig = ["_fu + literal) + "];"_fu));
+    (src += "\n"_fu);
+    (src += "\n    {"_fu);
+    (src += "\n        mut arr1 = CLONE(orig);"_fu);
+    (src += (("\n        arr1."_fu + operation) + ";"_fu));
+    (src += (("\n        if ("_fu + EXPR(assertion, "arr1"_fu)) + " != 0) return 17;"_fu));
+    (src += "\n    }"_fu);
+    (src += "\n"_fu);
+    (src += "\n    {"_fu);
+    (src += "\n        mut arr2 = STEAL(orig);"_fu);
+    (src += "\n        if (orig.len) return 19;"_fu);
+    (src += (("\n        arr2."_fu + operation) + ";"_fu));
+    (src += (("\n        if ("_fu + EXPR(assertion, "arr2"_fu)) + " != 0) return 23;"_fu));
+    (src += "\n    }"_fu);
+    (src += "\n"_fu);
+    (src += "\n    return 0;"_fu);
+    (src += "\n"_fu);
+    ZERO(src);
 }
 
 void runTests()
@@ -599,7 +639,7 @@ void runTests()
     ZERO("\n        fn self_rec_template(x: $T): $T\n            x > 0 ? self_rec_template(x / 2 - 5) : x;\n\n        fn main()\n            self_rec_template(7) + 2;\n    "_fu);
     ZERO("\n        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;\n        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;\n        fn main() ab_rec(11) + 200;\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu);
-    ZERO("\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu);
     ZERO("\n        fn outer(i: i32): i32\n            i > 0   ? inner(i)\n                    : 2 * i;\n\n        fn inner(implicit x: i32, i: i32): i32\n            outer(i - 2 * x);\n\n        let implicit x = 3;\n        return outer(6);\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu);
@@ -610,6 +650,7 @@ void runTests()
     ZERO("\n        //! SLOW_resolve\n        fn noret_x(implicit x: i32) x;\n\n        fn templ_calls_self_2(call_self): i32 // <- now a template\n            = call_self ? templ_calls_self_2(false) * 3 : noret_x;\n\n        fn main() {\n            let implicit x = 7;\n            return templ_calls_self_2(true) - 21;\n        }\n    "_fu);
     ZERO("\n        struct Range {\n            min: i32;\n            max: i32;\n        }\n\n        fn size(using implicit r: Range)\n            max - min;\n\n        fn test()\n            size();\n\n        let implicit r = Range(14, 21);\n\n        return test  - 7;\n    "_fu);
     ZERO("\n        struct Range {\n            min: i32;\n            max: i32;\n        }\n\n        fn size(using implicit r: Range)\n            max - min;\n\n        fn inner()\n            size();\n\n        fn outer()\n            inner();\n\n        let implicit r = Range(14, 21);\n\n        return outer() - 7;\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn main() {\n            let a = 1;\n            let b = 2;\n            let c = 3;\n\n            fn depth1(x: i32) {\n                fn depth2(y: i32) {\n                    return sibling1(x + y + b);\n                }\n\n                return depth2(x + a);\n            }\n\n            fn sibling1(z: i32): i32 {\n                return z + c;\n            }\n\n            return depth1(0) - 6;\n        }\n    "_fu);
     ZERO("\n        let x = 1;\n\n        fn test(): &i32\n            x;\n\n        return test - 1;\n    "_fu);
     ZERO("\n        let a = 1;\n        let x: &i32 = a;\n\n        return a - x;\n    "_fu);
     ZERO("\n        struct Test {\n            x: &i32;\n        }\n\n        let a = 1;\n        let test = Test(a);\n\n        return test.x - 1;\n    "_fu);
@@ -617,40 +658,6 @@ void runTests()
     ZERO("\n        mut arr = [0, 1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        mut arr: i32[] = [1, 2, 3, 4];\n        arr.push(5);\n\n        fn test(view: &i32[]): i32 {\n            mut sum = 0;\n            for (mut i = 0; i < view.len; i++)\n                sum += view[i];\n\n            return sum - 15;\n        }\n\n        return test(arr);\n    "_fu);
     ZERO("\n        let x = 5;\n        mut arr = [ -5 ];\n        arr.push(x);\n        return arr[0] + arr[1];\n    "_fu);
-    const auto& ARROPS = [&](const fu_STR& literal, const fu_STR& operation, fu_STR&& assertion) -> void
-    {
-        assertion = (("("_fu + assertion) + ")"_fu);
-        const auto& EXPR = [&](const fu_STR& varname) -> fu_STR
-        {
-            return fu::replace(assertion, "@"_fu, varname);
-        };
-        fu_STR src {};
-        (src += "\n"_fu);
-        (src += "\n    {"_fu);
-        (src += (("\n        mut arr0 = ["_fu + literal) + "];"_fu));
-        (src += (("\n        arr0."_fu + operation) + ";"_fu));
-        (src += (("\n        if ("_fu + EXPR("arr0"_fu)) + " != 0) return 13;"_fu));
-        (src += "\n    }"_fu);
-        (src += "\n"_fu);
-        (src += (("\n    mut orig = ["_fu + literal) + "];"_fu));
-        (src += "\n"_fu);
-        (src += "\n    {"_fu);
-        (src += "\n        mut arr1 = CLONE(orig);"_fu);
-        (src += (("\n        arr1."_fu + operation) + ";"_fu));
-        (src += (("\n        if ("_fu + EXPR("arr1"_fu)) + " != 0) return 17;"_fu));
-        (src += "\n    }"_fu);
-        (src += "\n"_fu);
-        (src += "\n    {"_fu);
-        (src += "\n        mut arr2 = STEAL(orig);"_fu);
-        (src += "\n        if (orig.len) return 19;"_fu);
-        (src += (("\n        arr2."_fu + operation) + ";"_fu));
-        (src += (("\n        if ("_fu + EXPR("arr2"_fu)) + " != 0) return 23;"_fu));
-        (src += "\n    }"_fu);
-        (src += "\n"_fu);
-        (src += "\n    return 0;"_fu);
-        (src += "\n"_fu);
-        ZERO(src);
-    };
     ARROPS("0,1,2,3,4"_fu, "push(5)"_fu, "@[1] + @[4] - @[5]"_fu);
     ARROPS("0,1,2,3,4"_fu, "insert(5, 5)"_fu, "@[1] + @[4] - @[5]"_fu);
     ARROPS("0,1,2,3,4"_fu, "pop()"_fu, "@[1] + @[3] - @.len"_fu);

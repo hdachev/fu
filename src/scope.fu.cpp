@@ -396,6 +396,8 @@ struct s_Overload
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     int status;
+    int local_of;
+    fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
     {
         return false
@@ -411,6 +413,8 @@ struct s_Overload
             || solved
             || used_by
             || status
+            || local_of
+            || closes_over
         ;
     }
 };
@@ -711,11 +715,11 @@ void Scope_pop(s_Scope& scope, const s_ScopeMemo& memo)
     scope.imports.shrink(memo.imports_len);
 }
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& solved, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& solved, const int local_of, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0 };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0, int(local_of), fu_VEC<int>{} };
     if ((kind != "field"_fu))
         scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 
@@ -740,7 +744,7 @@ void Scope_set(s_Scope& scope, const fu_STR& id, const s_Target& target)
 
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, module);
+    return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, 0, module);
 }
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
