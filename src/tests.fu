@@ -2766,18 +2766,18 @@ pub fn runTests()
         fn main() [1, 2].reduce(|a, b| a + b) - 3;
     `);
 
-    // ZERO(`
-    //     fn each(items: $T[], fn) {
-    //         for (mut i = 0; i < items.len; i++)
-    //             fn(items[i]);
-    //     }
-    //
-    //     fn main() {
-    //         mut i = 0;
-    //         [1, 2].each(|x| i += x);
-    //         return i - 3;
-    //     }
-    // `);
+    ZERO(`
+        fn each(items: $T[], fn) {
+            for (mut i = 0; i < items.len; i++) // <- one i
+                fn(items[i]);
+        }
+
+        fn main() {
+            mut i = 0;                  // <- another i, i got them to shadow each other
+            [1, 2].each(|x| i += x);    //      in the everything-a-free-function
+            return i - 3;               //      impl of closures
+        }
+    `);
 
 
     // Template structs.
