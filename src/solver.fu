@@ -168,11 +168,14 @@ pub fn solve(
         }
 
         //
-        let kind = "template";
-        let template = Template(node, imports: _scope.imports);
+        let template = Template(
+            node,
+            imports: !_current_fn && _scope.imports,
+            locals:   _current_fn && Scope_snap(_scope));
+
         return Scope_add(
             _scope,
-            :kind, :id, Type,
+            kind: "template", :id, Type,
             :min, :max, :args, :template,
             :node.flags);
     }
@@ -997,7 +1000,7 @@ pub fn solve(
     fn solveBlock(node: Node, type?: Type): SolvedNode
     {
         ////////////////////////////////
-        let scope0 = Scope_push(_scope);
+        let scope0 = Scope_snap(_scope);
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
@@ -1187,7 +1190,7 @@ pub fn solve(
         mut n_body: Node;
 
         {
-            let scope0      = Scope_push(_scope);
+            let scope0      = Scope_snap(_scope);
             out.return_idx  = scope0;
 
             let root_scope0 = _root_scope;
@@ -1291,7 +1294,8 @@ pub fn solve(
             //
             let kind = native ? "__native" : "fn";
             let NO_IMPORTS: i32[];
-            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS);
+            let NO_LOCALS: ScopeMemo;
+            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS, locals: NO_LOCALS);
 
             FnDecl_init(out.target, :kind, id: name, :template);
         }
@@ -1392,7 +1396,7 @@ pub fn solve(
 
         SWAP(_current_fn, current_fn0);
 
-        let scope0 = Scope_push(_scope);
+        let scope0 = Scope_snap(_scope);
         let scope_skip0 = _scope_skip;
         ////////////////////////////////
 
@@ -1400,11 +1404,12 @@ pub fn solve(
         mut typeParams: Map(string, Type);
 
         //
+        let template = GET(overloadIdx).template;
+
         _scope_skip = _root_scope && ScopeSkip(
-            start: _root_scope,
+            start: template.locals || _root_scope,
               end: scope0);
 
-        let template = GET(overloadIdx).template;
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
 
@@ -1942,7 +1947,7 @@ pub fn solve(
         let var_ok = solveNode(node.items[0]);
 
         ////////////////////////////////
-        let scope0 = Scope_push(_scope);
+        let scope0 = Scope_snap(_scope);
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
@@ -1963,14 +1968,14 @@ pub fn solve(
         node.items.len == 3 || fail();
 
         /////////////////////////////////
-        let scope0  = Scope_push(_scope);
+        let scope0  = Scope_snap(_scope);
         /////////////////////////////////
 
         let try     = solveNode(node.items[0]);
 
         ///////////////////////////////////////
         Scope_pop(_scope, scope0);
-        shadow let scope0 = Scope_push(_scope);
+        shadow let scope0 = Scope_snap(_scope);
         ///////////////////////////////////////
 
         let err     = solveNode(node.items[1]);
@@ -2379,7 +2384,7 @@ pub fn solve(
 
         ///////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
-        let scope0  = Scope_push(_scope);
+        let scope0  = Scope_snap(_scope);
         let ret     = Binding(id, type, flags: F_IMPLICIT);
         Scope_pop(_scope, scope0);
         ///////////////////////////////////////////

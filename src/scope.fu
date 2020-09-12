@@ -156,6 +156,7 @@ pub struct Template
 {
     node:       Node;
     imports:    i32[];
+    locals:     ScopeMemo;
 };
 
 pub struct Partial
@@ -328,7 +329,7 @@ pub struct ScopeMemo
     imports_len: i32;
 };
 
-pub fn Scope_push(scope: &mut Scope)
+pub fn Scope_snap(scope: &mut Scope)
     ScopeMemo(
         items_len:   scope.items  .len,
         imports_len: scope.imports.len);
