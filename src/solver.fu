@@ -46,10 +46,10 @@ pub fn solve(
 
     struct OpenTemplate
     {
-        spec:       Target;
-        template:   Template;
-        args:       SolvedNode[];
-        mangle:     string;
+        overloadIdx:    Target;
+        spec:           Target;
+        args:           SolvedNode[];
+        mangle:         string;
     };
 
     mut _open_templates: OpenTemplate[];
@@ -620,9 +620,8 @@ pub fn solve(
                         if (reorder)
                             fail("TODO handle argument reorder in template specialization.");
 
-                        let o = GET(overloadIdx);
                         let specIdx = trySpecialize(
-                            overloadIdx, :o.template, :args,
+                            :overloadIdx, :args,
                             :args_mangled ||= mangleArguments(args));
 
                         if (!specIdx)
@@ -1335,12 +1334,12 @@ pub fn solve(
     //
 
     fn trySpecialize(
-        target: Target, template: Template, args: SolvedNode[],
+        overloadIdx: Target, args: SolvedNode[],
         args_mangled: string)
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = target.modid ~ "#" ~ target.index ~ " ";
+        mut mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " ";
             mangle ~= args_mangled;
 
         // TODO FIX THIS MESS -
@@ -1360,7 +1359,7 @@ pub fn solve(
             module.out.specs[m0] = SPEC_FAIL;
             ////////////////////////////////////
 
-            spec = doTrySpecialize(template, args, mangle) || SPEC_FAIL;
+            spec = doTrySpecialize(:overloadIdx, :args, :mangle) || SPEC_FAIL;
 
             ////////////////////////////////////
             module.out.specs[mangle] = spec;
@@ -1372,7 +1371,7 @@ pub fn solve(
             if (spec.modid != SPEC_FAILED)
                 _open_templates.push(
                     OpenTemplate(
-                        spec, template, args, mangle));
+                        :overloadIdx, :spec, :args, :mangle));
         }
 
         return spec.modid != SPEC_FAILED && spec;
@@ -1382,7 +1381,7 @@ pub fn solve(
     // Let's try to run all specs through here for starters.
 
     fn doTrySpecialize(
-        template: Template, mut args: SolvedNode[], ref mangle: string, into?: Target)
+        overloadIdx: Target, mut args: SolvedNode[], ref mangle: string, into?: Target)
             : Target
     {
         mut ok = true;
@@ -1405,6 +1404,7 @@ pub fn solve(
             start: _root_scope,
               end: scope0);
 
+        let template = GET(overloadIdx).template;
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
 
@@ -2944,7 +2944,7 @@ pub fn solve(
         mut mangle = ot.mangle;
 
         doTrySpecialize(
-            ot.template, ot.args, mangle,
+            :ot.overloadIdx, :ot.args, :mangle,
             into: ot.spec);
 
         //////////////
