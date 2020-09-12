@@ -1177,9 +1177,6 @@ pub fn solve(
         //
         if (_current_fn)
         {
-            _current_fn.flags |= F_HAS_CLOSURE;
-            out.flags |= F_CLOSURE;
-
             // Propagate "inlined"-ness to non-templates within templates,
             //  see the `traverse` testcase.
             if (_current_fn.flags & F_TEMPLATE)
