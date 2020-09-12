@@ -1881,6 +1881,7 @@ pub fn solve(
 
         let id = out.value;
 
+        //
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
             let overload = out.target = Binding(
@@ -1892,6 +1893,7 @@ pub fn solve(
 
             if (_root_scope)
             {
+                mut any = 0;
                 mut same = 0;
                 /*
                 for (mut i = 0; i < _scope.items.len - 1; i++)
@@ -1905,6 +1907,7 @@ pub fn solve(
                 // */
                     if (_scope.items[i].id == id)
                     {
+                        any++;
                         let o = GET(_scope.items[i].target);
                         if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
                             same++;
@@ -1913,6 +1916,16 @@ pub fn solve(
 
                 if (same)
                     GET_mut(overload).name ~= "_" ~ same;
+
+                // LEAKY TEMPLATES, part 1:
+                //  All locals are F_SHADOW - this is a usability thing really,
+                //   otherwise you'd simply have to `shadow` everything manually.
+                //
+                // Actually turning this on for everything -
+                //  it might optimize scope lookups all over the place.
+                //
+                if (!global && !any) // && _current_fn.flags & F_INLINE
+                    out.flags |= F_SHADOW;
             }
 
             if (global)
