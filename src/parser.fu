@@ -1351,7 +1351,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseDefer(): Node
     {
         _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", [ parseStatement() ]);
+        return make("defer", [ parseExpression() ]);
     }
 
     fn parseTryCatch(): Node

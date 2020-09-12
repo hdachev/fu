@@ -999,6 +999,7 @@ pub fn solve(
     {
         ////////////////////////////////
         let scope0 = Scope_push(_scope);
+        defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
         let expr = !!(node.items.if_last.flags & F_NODISCARD);
@@ -1012,13 +1013,7 @@ pub fn solve(
         shadow let type = expr && items.len
             ? items.last.type : t_void;
 
-        let out = solved(:node, :type, :items);
-
-        //////////////////////////
-        Scope_pop(_scope, scope0);
-        //////////////////////////
-
-        return out;
+        return solved(:node, :type, :items);
     }
 
     fn solveComma(node: Node): SolvedNode
@@ -1204,6 +1199,14 @@ pub fn solve(
                 _root_scope = out.return_idx;
 
             SWAP(_current_fn, out);
+
+            defer {
+                SWAP(_current_fn, out);
+                Scope_pop(_scope, scope0);
+                _root_scope = root_scope0;
+            }
+
+            /////////////////////////////////
             ref outItems = _current_fn.items;
 
             // Arg decls.
@@ -1275,14 +1278,6 @@ pub fn solve(
                 //  implicit args splice in
                 outItems[outItems.len + FN_BODY_BACK] = s_body || fail();
             }
-
-            //
-            /////////////////////////////////////////////////////
-
-            SWAP(_current_fn, out);
-
-            Scope_pop(_scope, scope0);
-            _root_scope = root_scope0;
         }
         //////////////////////////
 
@@ -1934,18 +1929,15 @@ pub fn solve(
     {
         node.items.len == 3 || fail();
 
-        let var_ok  = solveNode(node.items[0]);
+        let var_ok = solveNode(node.items[0]);
 
         ////////////////////////////////
-        let scope0  = Scope_push(_scope);
+        let scope0 = Scope_push(_scope);
+        defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
         let var_err = solveNode(node.items[1]);
         let catch   = solveNode(node.items[2]);
-
-        //////////////////////////
-        Scope_pop(_scope, scope0);
-        //////////////////////////
 
         var_err.kind == "let" && isAssignableAsArgument(
             var_err.type, t_string) || fail(
