@@ -19,6 +19,7 @@ struct s_Partial;
 struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -360,17 +361,35 @@ struct s_Partial
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
+    s_ScopeMemo locals;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
+            || locals
         ;
     }
 };

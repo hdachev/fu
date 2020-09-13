@@ -35,6 +35,7 @@ struct s_Partial;
 struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -377,17 +378,35 @@ struct s_Partial
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
+    s_ScopeMemo locals;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
+            || locals
         ;
     }
 };
@@ -579,28 +598,28 @@ inline std::byte if_last_bcSl(fu_STR& s)
 }
                                 #endif
 
-static void visit(const fu_VEC<s_Module>& modules, fu_VEC<int>& link_order, const s_Module& module, const s_Context& ctx)
+static void visit(const fu_VEC<s_Module>& modules_0, fu_VEC<int>& link_order_0, const s_Module& module, const s_Context& ctx)
 {
     const int link_id = module.modid;
-    if (fu::has(link_order, link_id))
+    if (fu::has(link_order_0, link_id))
         return;
 
     const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
     for (int i = 0; (i < fuzimports.size()); i++)
     {
         fu_STR fname = resolveFile_x(fuzimports[i], ctx);
-        for (int i_1 = 1; (i_1 < modules.size()); i_1++)
+        for (int i_1 = 1; (i_1 < modules_0.size()); i_1++)
         {
-            const s_Module& m = modules[i_1];
+            const s_Module& m = modules_0[i_1];
             if ((m.fname == fname))
             {
-                visit(modules, link_order, m, ctx);
+                visit(modules_0, link_order_0, m, ctx);
                 break;
             };
         };
     };
-    (fu::has(link_order, link_id) && fu::fail("link order broken"_fu));
-    link_order.push(link_id);
+    (fu::has(link_order_0, link_id) && fu::fail("link order broken"_fu));
+    link_order_0.push(link_id);
 }
 
 static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
@@ -612,24 +631,24 @@ static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context
     return link_order;
 }
 
-[[noreturn]] static fu::never ERR(fu_STR& dir_wrk, fu_VEC<fu_STR>& Fs, int& code, fu_STR& stdout, fu_STR&& cpp)
+[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp)
 {
     if (!cpp)
     {
-        for (int i = Fs.size(); (i-- > 0); )
+        for (int i = Fs_0.size(); (i-- > 0); )
         {
-            if (Fs.mutref(i))
-                (cpp += (("#include \""_fu + Fs.mutref(i)) + ".cpp\"\n"_fu));
+            if (Fs_0.mutref(i))
+                (cpp += (("#include \""_fu + Fs_0.mutref(i)) + ".cpp\"\n"_fu));
 
         };
     };
-    fu_STR fname = (dir_wrk + "failing-testcase.cpp"_fu);
+    fu_STR fname = (dir_wrk_0 + "failing-testcase.cpp"_fu);
     (std::cout << ("  WRITE "_fu + fname) << '\n');
     fu::file_write(fname, cpp);
-    if (!stdout)
-        stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
+    if (!stdout_0)
+        stdout_0 = (("[ EXIT CODE "_fu + code_0) + " ]"_fu);
 
-    fu::fail(("Smth broke: "_fu + stdout));
+    fu::fail(("Smth broke: "_fu + stdout_0));
 }
 
 static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)

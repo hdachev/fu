@@ -20,11 +20,11 @@ void saySomethingNice();
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR next(const fu_VEC<fu_STR>& argv, int& idx)
+static fu_STR next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
 {
-    const int i = idx++;
-    if ((i < argv.size()))
-        return fu_STR(argv[i]);
+    const int i = idx_0++;
+    if ((i < argv_0.size()))
+        return fu_STR(argv_0[i]);
 
     return fu_STR{};
 }
@@ -41,23 +41,23 @@ static void runTestsAndBuildCompiler()
     cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, PRJDIR);
 }
 
-static fu_STR abs(const fu_STR& cwd, const fu_STR& path)
+static fu_STR abs(const fu_STR& cwd_0, const fu_STR& path)
 {
-    return ([&]() -> fu_STR { if (path && (path[0] != std::byte('-'))) return path_join(cwd, path); else return fu_STR{}; }());
+    return ([&]() -> fu_STR { if (path && (path[0] != std::byte('-'))) return path_join(cwd_0, path); else return fu_STR{}; }());
 }
 
-static void option(const fu_VEC<fu_STR>& argv, const fu_STR& cwd, int& idx, int& options, fu_STR& val, fu_STR& opt, const fu_STR& sHort, const fu_STR& lOng, const int o, fu_STR& dir)
+static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0, int& options_0, fu_STR& val_0, fu_STR& opt_0, const fu_STR& sHort, const fu_STR& lOng, const int o, fu_STR& dir)
 {
-    if (((opt == sHort) || (opt == lOng)))
+    if (((opt_0 == sHort) || (opt_0 == lOng)))
     {
-        options |= o;
-        if ((opt == lOng))
+        options_0 |= o;
+        if ((opt_0 == lOng))
         {
-            (dir && fu::fail((((opt + ": already set to `"_fu) + dir) + "`."_fu)));
-            dir = ([&]() -> fu_STR { { fu_STR _ = abs(cwd, val); if (_) return _; } fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)); }());
-            val = next(argv, idx);
+            (dir && fu::fail((((opt_0 + ": already set to `"_fu) + dir) + "`."_fu)));
+            dir = ([&]() -> fu_STR { { fu_STR _ = abs(cwd_0, val_0); if (_) return _; } fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val_0) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)); }());
+            val_0 = next(argv_0, idx_0);
         };
-        opt = fu_STR{};
+        opt_0 = fu_STR{};
     };
 }
 

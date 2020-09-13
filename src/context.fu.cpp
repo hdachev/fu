@@ -28,6 +28,7 @@ struct s_Partial;
 struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -367,17 +368,35 @@ struct s_Partial
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
+    s_ScopeMemo locals;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
+            || locals
         ;
     }
 };
@@ -571,15 +590,15 @@ fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return fu_STR(ctx.modules[idx.modid].fname);
 }
 
-static fu_STR tryResolve(const fu_STR& from, const fu_STR& name, s_Context& ctx, const fu_STR& path)
+static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& ctx_0, const fu_STR& path_0)
 {
-    const bool exists = (fu::file_size(path) >= 0);
+    const bool exists = (fu::file_size(path_0) >= 0);
     if (exists)
-        return fu_STR(path);
+        return fu_STR(path_0);
 
     
     {
-        fu_STR path_1 = ((from + "lib/"_fu) + name);
+        fu_STR path_1 = ((from_0 + "lib/"_fu) + name_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -587,7 +606,7 @@ static fu_STR tryResolve(const fu_STR& from, const fu_STR& name, s_Context& ctx,
     };
     
     {
-        fu_STR path_1 = ((from + "vendor/"_fu) + name);
+        fu_STR path_1 = ((from_0 + "vendor/"_fu) + name_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -595,17 +614,17 @@ static fu_STR tryResolve(const fu_STR& from, const fu_STR& name, s_Context& ctx,
     };
     
     {
-        fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
+        fu_STR path_1 = ((from_0 + "fu/lib/"_fu) + name_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
 
     };
-    fu_STR fallback = path_dirname(from);
-    if ((!fallback || (fallback.size() >= from.size())))
+    fu_STR fallback = path_dirname(from_0);
+    if ((!fallback || (fallback.size() >= from_0.size())))
         return fu_STR{};
 
-    return resolveFile(fallback, name, ctx);
+    return resolveFile(fallback, name_0, ctx_0);
 }
 
 static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)

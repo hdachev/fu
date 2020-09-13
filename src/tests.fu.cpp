@@ -22,6 +22,7 @@ struct s_Partial;
 struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
+struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -364,17 +365,35 @@ struct s_Partial
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
+    s_ScopeMemo locals;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
+            || locals
         ;
     }
 };
@@ -566,9 +585,9 @@ int self_test()
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
 }
 
-static fu_STR EXPR(fu_STR& assertion, const fu_STR& varname)
+static fu_STR EXPR(fu_STR& assertion_0, const fu_STR& varname)
 {
-    return fu::replace(assertion, "@"_fu, varname);
+    return fu::replace(assertion_0, "@"_fu, varname);
 }
 
 static void ARROPS(const fu_STR& literal, const fu_STR& operation, fu_STR&& assertion)
@@ -638,6 +657,7 @@ void runTests()
     ZERO("\n        fn mul_ab_opt(a: $T, b?: $T) a*b;\n        fn main() mul_ab_opt(1);\n    "_fu);
     ZERO("\n        fn self_rec_template(x: $T): $T\n            x > 0 ? self_rec_template(x / 2 - 5) : x;\n\n        fn main()\n            self_rec_template(7) + 2;\n    "_fu);
     ZERO("\n        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;\n        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;\n        fn main() ab_rec(11) + 200;\n    "_fu);
+    ZERO("\n        fn main() {\n            let a = 1;\n            fn add1(b) a + b;\n            return 2.add1 - 3;\n        }\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu);
@@ -835,6 +855,7 @@ void runTests()
     ZERO("\n        fn mul2(a) a*2;\n        fn test(b, fn) fn(1 + fn(b));\n        fn main() 14 - test(3, fn mul2);\n    "_fu);
     ZERO("\n        fn map(items: $T[], fn) {\n            mut result: fn(items[0])[];\n            for (mut i = 0; i < items.len; i++)\n                result.push(fn(items[i]));\n\n            return result;\n        }\n\n        fn sqr(x) x*x;\n\n        fn main() [2].map(fn sqr)[0] - 4;\n    "_fu);
     ZERO("\n        fn reduce(items: $T[], fn, init?: $T) {\n            mut result = init;\n            for (mut i = 0; i < items.len; i++)\n                result = fn(result, items[i]);\n\n            return result;\n        }\n\n        fn main() [1, 2].reduce(|a, b| a + b) - 3;\n    "_fu);
+    ZERO("\n        fn each(items: $T[], fn) {\n            for (mut i = 0; i < items.len; i++) // <- one i\n                fn(items[i]);\n        }\n\n        fn main() {\n            mut i = 0;                  // <- another i, i got them to shadow each other\n            [1, 2].each(|x| i += x);    //      in the everything-a-free-function\n            return i - 3;               //      impl of closures\n        }\n    "_fu);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ;\n            /*/\n            .i32;\n            //*/\n    "_fu);
 }

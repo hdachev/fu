@@ -61,25 +61,25 @@ static const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 
 static const fu_VEC<fu_STR> MBOPS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<40> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
 
-static void token(int& line, int& lidx, fu_VEC<s_Token>& tokens, const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1)
+static void token(int& line_0, int& lidx_0, fu_VEC<s_Token>& tokens_0, const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1)
 {
-    const int col = (idx0 - lidx);
-    tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
+    const int col = (idx0 - lidx_0);
+    tokens_0.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line_0), int(col) });
 }
 
-static void err_str(const fu_STR& src, const fu_STR& fname, int end, int& line, int& lidx, int& idx, const fu_STR& kind, const int idx0, const fu_STR& reason)
+static void err_str(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const fu_STR& reason)
 {
-    while (((idx < end) && (src[idx] > std::byte(' '))))
-        idx++;
+    while (((idx_0 < end_0) && (src_0[idx_0] > std::byte(' '))))
+        idx_0++;
 
-    const int col = (idx0 - lidx);
-    fu_STR value = fu::slice(src, idx0, idx);
-    fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
+    const int col = (idx0 - lidx_0);
+    fu_STR value = fu::slice(src_0, idx0, idx_0);
+    fu::fail((((((((((((("LEX ERROR: "_fu + fname_0) + "@"_fu) + line_0) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
 }
 
-static void err(const fu_STR& src, const fu_STR& fname, int end, int& line, int& lidx, int& idx, const fu_STR& kind, const int idx0, const int reason)
+static void err(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const int reason)
 {
-    err_str(src, fname, end, line, lidx, idx, kind, idx0, (("`"_fu + src[reason]) + "`"_fu));
+    err_str(src_0, fname_0, end_0, line_0, lidx_0, idx_0, kind, idx0, (("`"_fu + src_0[reason]) + "`"_fu));
 }
 
 static fu_STR unescapeStr(const fu_STR& esc, const int idx0, const int idx1)

@@ -364,17 +364,35 @@ struct s_Partial
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeMemo
+                                #define DEF_s_ScopeMemo
+struct s_ScopeMemo
+{
+    int items_len;
+    int imports_len;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items_len
+            || imports_len
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
+    s_ScopeMemo locals;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
+            || locals
         ;
     }
 };
@@ -538,22 +556,6 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_ScopeMemo
-                                #define DEF_s_ScopeMemo
-struct s_ScopeMemo
-{
-    int items_len;
-    int imports_len;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items_len
-            || imports_len
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ScopeSkip
                                 #define DEF_s_ScopeSkip
 struct s_ScopeSkip
@@ -704,7 +706,7 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     return s_Target{};
 }
 
-s_ScopeMemo Scope_push(s_Scope& scope)
+s_ScopeMemo Scope_snap(s_Scope& scope)
 {
     return s_ScopeMemo { scope.items.size(), scope.imports.size() };
 }
