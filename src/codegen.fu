@@ -46,6 +46,8 @@ pub fn cpp_codegen(
     mut _indent: string = "\n";
     mut _hasMain: i32;
 
+    mut _current_fn_index: i32;
+
     fn GET(target: Target): Overload
     {
         target.index > 0 || assert();
@@ -346,6 +348,15 @@ pub fn cpp_codegen(
 
     //
 
+    fn localID(target: Target, overload: Overload)
+    {
+        let ok = ID(overload.name);
+        if (target.modid == module.modid && overload.local_of == _current_fn_index)
+            return ok;
+
+        return ok ~ "_0";
+    }
+
     fn ID(id: string): string
     {
         if (id == "this")       return "tHis";
@@ -511,7 +522,7 @@ pub fn cpp_codegen(
                 modid: module.modid,
                 index: overload.closes_over[i]));
 
-            src ~= typeAnnot(o.type) ~ " " ~ ID(o.name);
+            src ~= typeAnnot(o.type) ~ " " ~ ID(o.name) ~ "_0";
         }
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
@@ -638,6 +649,13 @@ pub fn cpp_codegen(
         //  Body should always be a block.
         mut src = cgFnSignature(fn);
         {
+            ////////////////////////////////////////////
+            let current_fn_index0 = _current_fn_index;
+            defer _current_fn_index = current_fn_index0;
+
+            _current_fn_index = fn.target.index;
+            ////////////////////////////////////////////
+
             body.kind == "block" || fail("cgFn: body indeed not a block.");
             // if (body.kind == "block")
                 src ~= cgBlock(body, M_STMT);
@@ -938,7 +956,7 @@ pub fn cpp_codegen(
             target.kind == "arg" ||
             target.kind == "ref")
         {
-            return ID(target.name);
+            return localID(node.target, target);
         }
 
         if (target.kind == "field")
@@ -1047,8 +1065,9 @@ pub fn cpp_codegen(
                 if (i)
                     closure ~= ", ";
 
-                let o = GET(Target(modid: module.modid, index: target.closes_over[i]));
-                closure ~= ID(o.name);
+                let t = Target(modid: module.modid, index: target.closes_over[i]);
+                let o = GET(t);
+                closure ~= localID(t, o);
             }
 
             if (items)
