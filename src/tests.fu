@@ -2779,6 +2779,23 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        mut sum = 2;
+
+        fn FnDecl_update(parent_idx: i32) {
+            fn each(fn) fn();
+            each(| | makeDirty(:parent_idx));
+        }
+
+        fn makeDirty(parent_idx: i32): void {
+            sum += parent_idx;
+        }
+
+        FnDecl_update(1);
+
+        return sum - 3;
+    `);
+
 
     // Template structs.
 
