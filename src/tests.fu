@@ -2784,7 +2784,7 @@ pub fn runTests()
 
         fn FnDecl_update(parent_idx: i32) {
             fn each(fn) fn();
-            each(| | makeDirty(:parent_idx));
+            each(|| makeDirty(:parent_idx));
         }
 
         fn makeDirty(parent_idx: i32): void {

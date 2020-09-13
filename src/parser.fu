@@ -563,11 +563,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn parseLambda(): Node
+    fn parseLambda(noArgs?: bool): Node
     {
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
-        return parseFnDecl_cont(endv: "|",
+        return parseFnDecl_cont(endv: !noArgs && "|",
             flags: F_INLINE | F_TEMPLATE, expr: true, :name);
     }
 
@@ -623,7 +623,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let numReturns0 = _numReturns;
         ////////////////////////////////
 
-        flags |= parseArgsDecl(items, "op", :endv);
+        flags |= endv && parseArgsDecl(items, "op", :endv);
 
         // Return type annot.
         mut type = tryPopTypeAnnot();
@@ -1025,6 +1025,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v ==  "$") return parseTypeParam();
                 if (v ==  "@") return parseTypeTag();
                 if (v ==  "|") return parseLambda();
+                if (v == "||") return parseLambda(noArgs: true);
                 if (v == "[]") return createDefinit();
 
                 if (v == "::")
