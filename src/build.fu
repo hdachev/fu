@@ -129,7 +129,6 @@ pub fn build(
     // Not considering warnings when hashing files.
     let GCC_CMD = GCChash
                 ~ "-pedantic-errors -Wall -Wextra -Werror " // opt-in
-                ~ "-Wno-parentheses-equality " // opt-out
                 ;
 
     //

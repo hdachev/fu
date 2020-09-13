@@ -12,6 +12,7 @@ let M_RETVAL            = 1 << 3;
 let M_ARGUMENT          = 1 << 4;
 let M_LAMBDA            = 1 << 5;
 let M_FWDECL            = 1 << 6;
+let M_PARENS            = 1 << 7;
 
 
 //
@@ -896,6 +897,30 @@ pub fn cpp_codegen(
         return false;
     }
 
+    fn binSkipParens(id: string, mode: i32)
+    {
+        if (mode & M_STMT)
+            return true;
+
+        if (mode & M_PARENS)
+        {
+            if (id.last == '=')
+            {
+                // Clang errors on equality within parens in conditionals ...
+                if (id == "==" || id == "!=")
+                    return true;
+
+                // ... and on naked equalities in conditionals.
+                return false;
+            }
+
+            // Everything else is fine.
+            return true;
+        }
+
+        return false;
+    }
+
     fn cgCall(node: SolvedNode, mode: i32): string
     {
         let target = GET(node.target) || fail();
@@ -923,6 +948,9 @@ pub fn cpp_codegen(
             {
                 if (id.hasIdentifierChars)
                     return id ~ "(" ~ items.join(", ") ~ ")";
+
+                if (binSkipParens(id, mode))
+                    return items[0] ~ " " ~ id ~ " " ~ items[1];
 
                 return "(" ~ items[0] ~ " " ~ id ~ " " ~ items[1] ~ ")";
             }
@@ -1036,10 +1064,11 @@ pub fn cpp_codegen(
                             return cgAppend(node, items[0]);
 
                 // Skip some of the ridiculous parens.
-                if (mode & M_STMT)
-                    return items[0] ~ " " ~ id.valid_operator ~ " " ~ items[1];
+                mut op = id.valid_operator;
+                if (binSkipParens(op, mode))
+                    return items[0] ~ " " ~ op ~ " " ~ items[1];
                 else
-                    return "(" ~ items[0] ~ " " ~ id.valid_operator ~ " " ~ items[1] ~ ")";
+                    return "(" ~ items[0] ~ " " ~ op ~ " " ~ items[1] ~ ")";
             }
         }
 
@@ -1196,7 +1225,7 @@ pub fn cpp_codegen(
                 ? " " ~ cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
-        let cond = n0 && cgNode(n0, M_RETBOOL);
+        let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS));
         let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
         let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
@@ -1425,7 +1454,7 @@ pub fn cpp_codegen(
         let n_pcnd = items[LOOP_POST_COND];
 
         let init = n_init && cgNode(n_init, M_STMT);
-        let cond = n_cond && cgNode(n_cond, M_RETBOOL);
+        let cond = n_cond && cgNode(n_cond, M_RETBOOL | M_PARENS);
         let post = n_post && cgNode(n_post, M_STMT);
         mut body = n_body && blockWrapSubstatement(n_body);
         let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL);
