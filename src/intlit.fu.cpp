@@ -51,10 +51,10 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
     const uint64_t base = ((prefix == std::byte('x')) ? uint64_t(16) : ((prefix == std::byte('o')) ? uint64_t(8) : ((prefix == std::byte('b')) ? uint64_t(2) : uint64_t(10))));
     fu_STR error {};
     uint64_t absval {};
-    for (int i = 0; (i < value.size()); i++)
+    for (int i = 0; i < value.size(); i++)
     {
         const std::byte c = value[i];
-        if ((c == std::byte('_')))
+        if (c == std::byte('_'))
         {
             continue;
         };

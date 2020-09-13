@@ -366,10 +366,10 @@ bool type_isCTC(const s_Type& type)
 fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
 {
     fu_STR res {};
-    for (int i = 0; (i < targets.size()); i++)
+    for (int i = 0; i < targets.size(); i++)
     {
         const s_Target& target = targets[i];
-        (res += ((("@"_fu + target.modid) + ":"_fu) + target.index));
+        res += ((("@"_fu + target.modid) + ":"_fu) + target.index);
     };
     return ([&]() -> fu_STR { { fu_STR _ = fu_STR(res); if (_) return _; } return "@"_fu; }());
 }
@@ -378,7 +378,7 @@ fu_VEC<s_Target> unpackAddrOfFn(const fu_STR& canon)
 {
     fu_VEC<s_Target> res {};
     int i = 0;
-    while ((i < canon.size()))
+    while (i < canon.size())
     {
         ((canon[i++] == std::byte('@')) || fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon) + "`."_fu)));
         const int modid = parse10i32(i, canon);
@@ -395,7 +395,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s
         return false;
 
     fu_VEC<s_Target> targets = unpackAddrOfFn(type.vtype.canon);
-    for (int i = 0; (i < targets.size()); i++)
+    for (int i = 0; i < targets.size(); i++)
         out.push(s_ScopeItem { fu_STR(id), s_Target(targets[i]) });
 
     return true;

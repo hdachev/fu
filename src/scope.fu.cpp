@@ -616,7 +616,7 @@ s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
 static int commonQuals(const fu_VEC<s_StructField>& fields)
 {
     int commonQuals = -1;
-    for (int i = 0; (i < fields.size()); i++)
+    for (int i = 0; i < fields.size(); i++)
         commonQuals &= fields[i].type.quals;
 
     return commonQuals;
@@ -643,10 +643,10 @@ inline const int F_PUB = (1 << 20);
 s_Scope Scope_exports(const s_Scope& scope, const int modid)
 {
     fu_VEC<s_ScopeItem> result {};
-    for (int i = 0; (i < scope.items.size()); i++)
+    for (int i = 0; i < scope.items.size(); i++)
     {
         const s_ScopeItem& item = scope.items[i];
-        if ((item.target.modid == modid))
+        if (item.target.modid == modid)
         {
             const s_Overload& overload = scope.overloads[(item.target.index - 1)];
             if ((!modid || (overload.flags & F_PUB)))
@@ -663,10 +663,10 @@ fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
     (id || fu_ASSERT());
     fu_VEC<s_Target> results {};
     const fu_VEC<s_ScopeItem>& items = scope.items;
-    for (int i = 0; (i < items.size()); i++)
+    for (int i = 0; i < items.size(); i++)
     {
         const s_ScopeItem& item = items[i];
-        if ((item.id == id))
+        if (item.id == id)
             results.unshift(item.target);
 
     };
@@ -689,13 +689,13 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
     if (!scope_iterator)
         scope_iterator = ((items.size() + extra_items.size()) + field_items.size());
 
-    while ((scope_iterator-- > 0))
+    while (scope_iterator-- > 0)
     {
-        if ((scope_iterator == skip1))
+        if (scope_iterator == skip1)
             scope_iterator = skip0;
 
         const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : extra_items[(scope_iterator - items.size())]) : items[scope_iterator]);
-        if ((item.id == id))
+        if (item.id == id)
         {
             if (!scope_iterator)
                 scope_iterator = -1;
@@ -722,7 +722,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item = s_Overload { fu_STR(kind), fu_STR((id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0, int(local_of), fu_VEC<int>{} };
-    if ((kind != "field"_fu))
+    if (kind != "field"_fu)
         scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 
     scope.overloads.push(item);
@@ -752,11 +752,11 @@ s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, con
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
 {
     s_Lifetime result {};
-    for (int i = 0; (i < lifetime.regions.size()); i++)
+    for (int i = 0; i < lifetime.regions.size(); i++)
     {
         const s_Region& r = lifetime.regions[i];
         const int argIdx = Region_toArgIndex(r);
-        if ((argIdx < 0))
+        if (argIdx < 0)
         {
             result = type_inter(result, r);
             continue;

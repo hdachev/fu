@@ -452,10 +452,10 @@ fu_STR serializeType(const s_Type& type)
 {
     fu_STR prefix {};
     if (type.vtype.modid)
-        (prefix += type.vtype.modid);
+        prefix += type.vtype.modid;
 
     if (type.vtype.quals)
-        (prefix += ("+"_fu + type.vtype.quals));
+        prefix += ("+"_fu + type.vtype.quals);
 
     return (prefix + type.vtype.canon);
 }
@@ -468,11 +468,11 @@ fu_STR humanizeType(const s_Type& type)
 
     if (type.vtype.quals)
     {
-        (result += ":"_fu);
-        for (int i = 0; (i < TAGS.size()); i++)
+        result += ":"_fu;
+        for (int i = 0; i < TAGS.size(); i++)
         {
-            if ((type.vtype.quals & (1 << i)))
-                (result += (" "_fu + TAGS[i]));
+            if (type.vtype.quals & (1 << i))
+                result += (" "_fu + TAGS[i]);
 
         };
     };
@@ -500,7 +500,7 @@ s_ValueType parseType(const fu_STR& str)
     int offset {};
     const int modid = parse10i32(offset, str);
     int quals = 0;
-    if ((str[offset] == std::byte('+')))
+    if (str[offset] == std::byte('+'))
     {
         offset++;
         quals = parse10i32(offset, str);
@@ -572,12 +572,12 @@ s_MapFields tryClear_map(const s_Type& type)
         return s_MapFields{};
 
     int depth = 0;
-    for (int i = 1; (i < type.vtype.canon.size()); i++)
+    for (int i = 1; i < type.vtype.canon.size(); i++)
     {
         const std::byte c = type.vtype.canon[i];
-        if ((c == std::byte('{')))
+        if (c == std::byte('{'))
             depth++;
-        else if ((c == std::byte('}')))
+        else if (c == std::byte('}'))
         {
             if (depth--)
             {

@@ -106,20 +106,20 @@ const s_Lifetime& inter_locals(const s_Lifetime& a, const s_Lifetime& b)
 
 s_Lifetime inter_args(s_Lifetime&& a, const s_Lifetime& b)
 {
-    for (int i = 0; (i < b.regions.size()); i++){
+    for (int i = 0; i < b.regions.size(); i++){
     {
         const s_Region& br = b.regions[i];
-        for (int i_1 = 0; (i_1 < a.regions.size()); i_1++)
+        for (int i_1 = 0; i_1 < a.regions.size(); i_1++)
         {
             const s_Region ar { a.regions[i_1] };
-            if ((ar.index == br.index))
+            if (ar.index == br.index)
             {
-                if ((ar.relax > br.relax))
+                if (ar.relax > br.relax)
                     a.regions.mutref(i_1) = br;
 
                 goto L_OUTER_c;
             };
-            if ((ar.index > br.index))
+            if (ar.index > br.index)
             {
                 a.regions.insert(i_1, br);
                 goto L_OUTER_c;
@@ -163,9 +163,9 @@ bool killedBy(const s_Lifetime& lifetime, const int returnIdx)
 
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&& lifetime, const int relax)
 {
-    if ((relax > 0))
+    if (relax > 0)
     {
-        for (int i = 0; (i < lifetime.regions.size()); i++)
+        for (int i = 0; i < lifetime.regions.size(); i++)
             lifetime.regions.mutref(i).relax += relax;
 
     };

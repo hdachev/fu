@@ -671,7 +671,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     if (!module.out)
     {
         fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
-        for (int i = 0; (i < fuzimports.size()); i++)
+        for (int i = 0; i < fuzimports.size(); i++)
             compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), ctx);
 
         const s_ModuleStat stat0 = ModuleStat_now();
@@ -695,14 +695,14 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
         compile(fname, fu_STR{}, ctx);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
-        if (((t1 - t0) > 0.025))
+        if ((t1 - t0) > 0.025)
         {
             s_ModuleStat lex {};
             s_ModuleStat parse {};
             s_ModuleStat solve {};
             s_ModuleStat codegen {};
             fu_VEC<s_Module> m { ctx.modules };
-            for (int i = 0; (i < m.size()); i++)
+            for (int i = 0; i < m.size(); i++)
             {
                 lex += m[i].stats.lex;
                 parse += m[i].stats.parse;
@@ -727,7 +727,7 @@ static fu_STR ensure_main(const fu_STR& src)
 s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
 {
     s_Context ctx { CTX_PRELUDE };
-    for (int i = 0; (i < sources.size()); i++)
+    for (int i = 0; i < sources.size(); i++)
     {
         const fu_STR& snippet = sources[i];
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
@@ -735,7 +735,7 @@ s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& 
         (ctx.files.upsert(fname) = src);
         compile(fname, fu_STR{}, ctx);
     };
-    for (int i = 0; (i < ctx.modules.size()); i++)
+    for (int i = 0; i < ctx.modules.size(); i++)
     {
         s_Module module { ctx.modules[i] };
         if (module.out.solve.SLOW_resolve)
@@ -750,10 +750,10 @@ fu_STR snippet2cpp(const fu_STR& src)
 {
     fu_STR fname = "SNIPPET"_fu;
     s_Context ctx = compile_snippets(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } }, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fname } });
-    for (int i = 0; (i < ctx.modules.size()); i++)
+    for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
-        if ((module.fname == fname))
+        if (module.fname == fname)
             return std::move(module.out.cpp);
 
     };
@@ -782,7 +782,7 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
 
 static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
 {
-    for (int i = 0; (i < sources.size()); i++)
+    for (int i = 0; i < sources.size(); i++)
         sources.mutref(i) = fu::replace(sources[i], "//*F"_fu, "/*"_fu);
 
     return std::move(sources);
@@ -808,11 +808,11 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources)
     }
 ;
     fu_STR bad = "\nDID NOT THROW:\n"_fu;
-    for (int i = 1; (i < ctx.modules.size()); i++)
+    for (int i = 1; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
-        (bad += (((("\n#"_fu + i) + ": "_fu) + module.fname) + "\n"_fu));
-        (bad += (((((((("\nfu  ["_fu + i) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu) + i) + "]:\n\t"_fu) + indent(module.out.cpp)) + "\n"_fu));
+        bad += (((("\n#"_fu + i) + ": "_fu) + module.fname) + "\n"_fu);
+        bad += (((((((("\nfu  ["_fu + i) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu) + i) + "]:\n\t"_fu) + indent(module.out.cpp)) + "\n"_fu);
     };
     fu::fail(bad);
 }
@@ -820,17 +820,17 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources)
 void ZERO_SAME(const fu_VEC<fu_VEC<fu_STR>>& alts)
 {
     fu_VEC<s_Module> expect = ZERO(alts[0]).modules;
-    for (int i = 1; (i < alts.size()); i++)
+    for (int i = 1; i < alts.size(); i++)
     {
         fu_VEC<s_Module> actual = compile_snippets(alts[i], fu_VEC<fu_STR>{}).modules;
-        if ((expect.size() != actual.size()))
+        if (expect.size() != actual.size())
             fu::fail("ZERO_SAME: expect/actual len mismatch."_fu);
 
-        for (int m = 0; (m < actual.size()); m++)
+        for (int m = 0; m < actual.size(); m++)
         {
             const fu_STR& x = expect[m].out.cpp;
             const fu_STR& a = actual[m].out.cpp;
-            if ((x != a))
+            if (x != a)
                 fu::fail(((((((((((("ZERO_SAME: alts["_fu + i) + "] mismatch at:\n"_fu) + "\nexpect["_fu) + m) + "]:\n\t"_fu) + indent(x)) + "\nactual["_fu) + m) + "]:\n\t"_fu) + indent(a)) + "\n"_fu));
 
         };
@@ -850,8 +850,8 @@ fu_STR FAIL(const fu_STR& src)
 void ZERO_SAME(const fu_VEC<fu_STR>& alts)
 {
     fu_VEC<fu_VEC<fu_STR>> wrap {};
-    for (int i = 0; (i < alts.size()); i++)
-        (wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { alts[i] } });
+    for (int i = 0; i < alts.size(); i++)
+        wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { alts[i] } };
 
     return ZERO_SAME(wrap);
 }

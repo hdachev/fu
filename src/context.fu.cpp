@@ -642,7 +642,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
     const int fuzzy = fu::lfind(path, std::byte('\v'));
-    if ((fuzzy > 0))
+    if (fuzzy > 0)
     {
         fu_STR from = fu::slice(path, 0, fuzzy);
         fu_STR name = fu::slice(path, (fuzzy + 1));
@@ -681,9 +681,9 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
 
 s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 {
-    for (int i = 0; (i < ctx.modules.size()); i++)
+    for (int i = 0; i < ctx.modules.size(); i++)
     {
-        if ((ctx.modules.mutref(i).fname == fname))
+        if (ctx.modules.mutref(i).fname == fname)
             return ctx.modules.mutref(i);
 
     };
@@ -701,7 +701,7 @@ void setModule(const s_Module& module, s_Context& ctx)
 
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    if ((type.vtype.modid == module.modid))
+    if (type.vtype.modid == module.modid)
         return ([&]() -> const s_Struct& { { const s_Struct& _ = module.out.types[type.vtype.canon]; if (_) return _; } fu_ASSERT(); }());
 
     return ([&]() -> const s_Struct& { { const s_Struct& _ = ctx.modules[type.vtype.modid].out.types[type.vtype.canon]; if (_) return _; } fu_ASSERT(); }());

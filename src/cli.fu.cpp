@@ -23,7 +23,7 @@ void saySomethingNice();
 static fu_STR next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
 {
     const int i = idx_0++;
-    if ((i < argv_0.size()))
+    if (i < argv_0.size())
         return fu_STR(argv_0[i]);
 
     return fu_STR{};
@@ -51,7 +51,7 @@ static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0
     if (((opt_0 == sHort) || (opt_0 == lOng)))
     {
         options_0 |= o;
-        if ((opt_0 == lOng))
+        if (opt_0 == lOng)
         {
             (dir && fu::fail((((opt_0 + ": already set to `"_fu) + dir) + "`."_fu)));
             dir = ([&]() -> fu_STR { { fu_STR _ = abs(cwd_0, val_0); if (_) return _; } fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val_0) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)); }());
@@ -70,7 +70,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 {
     int idx = 0;
     fu_STR self = next(argv, idx);
-    if ((argv.size() == 1))
+    if (argv.size() == 1)
     {
         (std::cout << "\n\tHello! "_fu << self << '\n');
         (std::cout << "\tNothing to do, running a quick self test.\n"_fu << '\n');
@@ -100,11 +100,11 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     while (((val.size() > 1) && (val.mutref(0) == std::byte('-'))))
     {
         fu_STR opt { val };
-        if ((opt.mutref(1) != std::byte('-')))
+        if (opt.mutref(1) != std::byte('-'))
         {
             opt = fu_STR { fu_STR::INIT<1> { opt.mutref(1) } };
             val = (std::byte('-') + fu::slice(val, 2));
-            if ((val == "-"_fu))
+            if (val == "-"_fu)
                 val = next(argv, idx);
 
         }
@@ -130,7 +130,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
             fu::fail((("Unknown option: `"_fu + opt) + "`."_fu));
 
     };
-    if ((options & EMIT_CPP))
+    if (options & EMIT_CPP)
     {
         if (!dir_src)
             dir_src = (dir_cpp ? dir_cpp : cwd);
@@ -141,7 +141,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     };
     fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(cwd, val); if (_) return _; } fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)); }());
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    if ((options & EMIT_BIN))
+    if (options & EMIT_BIN)
         ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
 
     

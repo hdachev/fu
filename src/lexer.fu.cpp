@@ -86,26 +86,26 @@ static fu_STR unescapeStr(const fu_STR& esc, const int idx0, const int idx1)
 {
     fu_STR out {};
     const int n = (idx1 - 1);
-    for (int i = (idx0 + 1); (i < n); i++)
+    for (int i = (idx0 + 1); i < n; i++)
     {
         const std::byte c = esc[i];
-        if ((c == std::byte('\\')))
+        if (c == std::byte('\\'))
         {
             const std::byte c1 = esc[++i];
-            if ((c1 == std::byte('n')))
-                (out += std::byte('\n'));
-            else if ((c1 == std::byte('r')))
-                (out += std::byte('\r'));
-            else if ((c1 == std::byte('t')))
-                (out += std::byte('\t'));
-            else if ((c1 == std::byte('v')))
-                (out += std::byte('\v'));
+            if (c1 == std::byte('n'))
+                out += std::byte('\n');
+            else if (c1 == std::byte('r'))
+                out += std::byte('\r');
+            else if (c1 == std::byte('t'))
+                out += std::byte('\t');
+            else if (c1 == std::byte('v'))
+                out += std::byte('\v');
             else
-                (out += c1);
+                out += c1;
 
         }
         else
-            (out += c);
+            out += c;
 
     };
     return out;
@@ -118,13 +118,13 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
-    while ((idx < end))
+    while (idx < end)
     {
         const int idx0 = idx;
         const std::byte c = src[idx++];
         if ((c <= std::byte(' ')))
         {
-            if ((c == std::byte('\n')))
+            if (c == std::byte('\n'))
             {
                 line++;
                 lidx = (idx - 1);
@@ -132,7 +132,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         }
         else if ((((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_'))))
         {
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
                 if ((((c_1 >= std::byte('A')) && (c_1 <= std::byte('Z'))) || ((c_1 >= std::byte('a')) && (c_1 <= std::byte('z'))) || (c_1 == std::byte('_')) || ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))))
@@ -154,7 +154,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             bool exp = false;
             bool ob = false;
             std::byte max = std::byte('9');
-            if ((c == std::byte('0')))
+            if (c == std::byte('0'))
             {
                 const std::byte c_1 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
                 if (((c_1 == std::byte('x')) || (c_1 == std::byte('X'))))
@@ -178,7 +178,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
 
             };
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
                 if ((((c_1 >= std::byte('0')) && (c_1 <= max)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F')))))))
@@ -189,7 +189,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     idx--;
                     break;
                 }
-                else if ((c_1 == std::byte('.')))
+                else if (c_1 == std::byte('.'))
                 {
                     const std::byte c_2 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
                     if (!(((c_2 >= std::byte('0')) && (c_2 <= std::byte('9'))) || (hex && (((c_2 >= std::byte('a')) && (c_2 <= std::byte('f'))) || ((c_2 >= std::byte('A')) && (c_2 <= std::byte('F')))))))
@@ -240,20 +240,20 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         {
             bool esc = false;
             bool ok = false;
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c1 = src[idx++];
-                if ((c1 == c))
+                if (c1 == c)
                 {
                     ok = true;
                     break;
                 }
-                else if ((c1 == std::byte('\\')))
+                else if (c1 == std::byte('\\'))
                 {
                     esc = true;
                     idx++;
                 }
-                else if ((c1 == std::byte('\n')))
+                else if (c1 == std::byte('\n'))
                 {
                     line++;
                     lidx = (idx - 1);
@@ -277,10 +277,10 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('/'))))
         {
             idx++;
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c1 = src[idx++];
-                if ((c1 == std::byte('\n')))
+                if (c1 == std::byte('\n'))
                 {
                     line++;
                     lidx = (idx - 1);
@@ -291,10 +291,10 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('*'))))
         {
             idx++;
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if ((c_1 == std::byte('\n')))
+                if (c_1 == std::byte('\n'))
                 {
                     line++;
                     lidx = (idx - 1);
@@ -309,7 +309,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         else if (fu::has(OPTOKENS, c))
         {
             fu_STR candidate = fu_STR { fu_STR::INIT<1> { c } };
-            while ((idx < end))
+            while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
                 if (fu::has(OPTOKENS, c_1))
