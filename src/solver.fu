@@ -1411,6 +1411,9 @@ pub fn solve(
             start: template.locals || _root_scope,
               end: scope0);
 
+        _scope_skip.end.items_len >= _scope_skip.start.items_len || fail(
+            "doTrySpecialize: will scope_skip backwards.");
+
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
 
