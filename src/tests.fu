@@ -1347,6 +1347,18 @@ pub fn runTests()
                 ? 0 : 1;
     `);
 
+    ZERO(`
+        pub struct Template { locals: ScopeMemo; }; // <- used ahead of the def, was missing q_trivial
+        pub struct ScopeMemo { x: i32; }; // <- trivial, discovered on solve here after Template is done
+        pub fn +(a: ScopeMemo, b: ScopeMemo) a.x + b.x; // <- used here after both structs are done
+
+        pub fn main() {
+            let a = Template(ScopeMemo(+3));
+            let b = Template(ScopeMemo(-3));
+            return a.locals + b.locals; // <- fails to match.
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 

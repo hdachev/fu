@@ -1016,6 +1016,17 @@ pub fn solve(
         shadow let type = expr && items.len
             ? items.last.type : t_void;
 
+        ////////////////////////////////
+        //
+        // for (mut i = 0; i < _open_templates.len; i++)
+        // {
+        //     let o = GET(_open_templates[i].overloadIdx);
+        //     if (o.template.locals > scope0)
+        //         fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
+        // }
+        //
+        ////////////////////////////////
+
         return solved(:node, :type, :items);
     }
 

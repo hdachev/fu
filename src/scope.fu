@@ -346,6 +346,10 @@ pub fn Scope_pop(scope: &mut Scope, memo: ScopeMemo)
     scope.imports.shrink(memo.imports_len);
 }
 
+pub fn >(a: ScopeMemo, b: ScopeMemo)
+    a.items_len   > b.items_len ||
+    a.imports_len > b.imports_len;
+
 
 ////////////////////////////////
 
