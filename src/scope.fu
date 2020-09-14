@@ -287,12 +287,18 @@ pub fn search(
     }
 
     // Search.
+    let items = scope.items;
+
     let skip0 = scope_skip.start.items_len - 1;
     let skip1 = scope_skip.end  .items_len - 1;
+    if (skip1 >= items.len)
+        throw ("Scope/search: scope_skip will jump past end of scope.items.");
 
-    let items = scope.items;
+    let START = items.len + extra_items.len + field_items.len;
     if (!scope_iterator)
-        scope_iterator = items.len + extra_items.len + field_items.len;
+        scope_iterator = START;
+    else if (scope_iterator >= START)
+        throw ("Scope/search: scope.items shrunk while we iterated.");
 
     while (scope_iterator --> 0)
     {

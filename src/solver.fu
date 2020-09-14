@@ -538,7 +538,7 @@ pub fn solve(
     }
 
     fn tryMatch__mutargs(
-        scope: Scope,
+        scope: Scope, scope_skip: ScopeSkip,
         mut id: string, ref args: SolvedNode[],
         flags?!: i32, retType?!: Type, target?!: Target): Target
     {
@@ -587,7 +587,7 @@ pub fn solve(
             :NEXT
             while (overloadIdx =
                 scope.search(id, scope_iterator,
-                    scope_skip: _scope_skip, :target,
+                    :scope_skip, :target,
                     :extra_items, :field_items))
             {
                 :TEST_AGAIN
@@ -813,15 +813,15 @@ pub fn solve(
     //
 
     fn match__mutargs(
-        scope: Scope,
+        scope: Scope, scope_skip: ScopeSkip,
         id: string, ref args: SolvedNode[],
         flags: i32, target: Target): Target
     {
-        let ret = scope.tryMatch__mutargs(:id, :args, :flags, :target);
+        let ret = tryMatch__mutargs(scope, scope_skip, :id, :args, :flags, :target);
         if (ret)
             return ret;
 
-        let debug = scope.tryMatch__mutargs(:id, :args, :flags, :target);
+        let debug = tryMatch__mutargs(scope, scope_skip, :id, :args, :flags, :target);
         if (debug)
             return debug;
 
@@ -1010,7 +1010,8 @@ pub fn solve(
             node.items,
             type_all:       t_void,
             type_last:      type,
-            use_type_last:  expr);
+            use_type_last:  expr,
+            TEMP_open_templates: true);
 
         shadow let type = expr && items.len
             ? items.last.type : t_void;
@@ -2031,13 +2032,14 @@ pub fn solve(
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
-        let scope = flags & F_QUALIFIED
+        let qualified = flags & F_QUALIFIED;
+        let scope = qualified
             ? dequalify_andGetScope(id)
             : _scope;
 
         while (overloadIdx =
             scope.search(id, scope_iterator,
-                scope_skip: _scope_skip))
+                scope_skip: !qualified && _scope_skip))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
@@ -2273,15 +2275,19 @@ pub fn solve(
         if (!id) target || fail();
 
         // Qualified?
-        let scope = node.flags & F_QUALIFIED
+        let qualified = node.flags & F_QUALIFIED;
+        let scope = qualified
             ? dequalify_andGetScope(id)
             : _scope;
 
         mut args = solveNodes(node.items);
 
         //
-        mut callTargIdx = scope.match__mutargs(id, args, node.flags, :target);
-        mut callTarg    = GET(callTargIdx);
+        mut callTargIdx = match__mutargs(
+            scope, !qualified && _scope_skip,
+            id, args, node.flags, :target);
+
+        mut callTarg = GET(callTargIdx);
 
         // `using` codegen.
         while (callTarg.partial)
@@ -2418,7 +2424,7 @@ pub fn solve(
         let id = name;
         mut args: SolvedNode[];
 
-        let target = _scope.tryMatch__mutargs(:id, :args, retType: type)
+        let target = tryMatch__mutargs(_scope, _scope_skip, :id, :args, retType: type)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
