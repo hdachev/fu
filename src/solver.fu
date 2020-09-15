@@ -260,10 +260,10 @@ pub fn solve(
     {
         let parent_idx = overload.local_of;
         for (mut i = 0; i < overload.used_by.len; i++)
-            makeDirty(overload.used_by[i], :parent_idx);
+            makeDirty(overload.used_by[i], :parent_idx, becauseOf: overload);
     }
 
-    fn makeDirty(index: i32, parent_idx: i32): void
+    fn makeDirty(index: i32, parent_idx: i32, becauseOf!: Overload): void
     {
         index || fail(
             "makeDirty: climbed up to global scope.");
@@ -280,9 +280,9 @@ pub fn solve(
             if (user.status & SS_FINALIZED)
             {
                 if (their_parent)
-                    return makeDirty(their_parent, :parent_idx);
+                    return makeDirty(their_parent, :parent_idx, :becauseOf);
 
-                fail("Overload finalized, cannot make dirty.");
+                fail("Overload finalized, cannot make dirty: `" ~ user.name ~ "`, because of `" ~ becauseOf.name ~ "`.");
             }
 
             user.status |= SS_DIRTY;
@@ -1058,20 +1058,19 @@ pub fn solve(
             type_all:       t_void,
             type_last:      type,
             use_type_last:  expr,
-            TEMP_open_templates: true);
+            TEMP_open_templates: true,
+            TEMP_template_scope: scope0);
 
         shadow let type = expr && items.len
             ? items.last.type : t_void;
 
         ////////////////////////////////
-        //
-        // for (mut i = 0; i < _open_templates.len; i++)
-        // {
-        //     let o = GET(_open_templates[i].overloadIdx);
-        //     if (o.template.locals > scope0)
-        //         fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
-        // }
-        //
+        for (mut i = 0; i < _open_templates.len; i++)
+        {
+            let o = GET(_open_templates[i].overloadIdx);
+            if (o.template.locals > scope0)
+                fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
+        }
         ////////////////////////////////
 
         return solved(:node, :type, :items);
@@ -2831,13 +2830,15 @@ pub fn solve(
         nodes: Node[],
         type_all?: Type, type_last?!: Type,
         use_type_last?!: bool,
-        TEMP_open_templates?!: bool): SolvedNode[]
+        TEMP_open_templates?!: bool,
+        TEMP_template_scope?!: ScopeMemo): SolvedNode[]
     {
         mut result: SolvedNode[];
 
-        //////////////////
-        let here0 = _here;
-        //////////////////
+        ////////////////////////////////////////////////////////
+        let here0   = _here;
+        defer _here = here0;
+        ////////////////////////////////////////////////////////
 
         result.resize(nodes.len);
 
@@ -2950,27 +2951,40 @@ pub fn solve(
             }
 
             // Also freeze templates.
-            if (TEMP_open_templates)
-            {
-                for (shadow mut i = 0; i < _open_templates.len; i++)
-                {
-                    let r = _open_templates[i];
-                    ref o = GET_mut(r.spec);
-                    if (o.kind == "fn")
-                        o.status |= SS_FINALIZED;
-                }
-
-                _open_templates.clear();
-            }
+            if (i != nodes.len - 1 && TEMP_open_templates)
+                freezeTemplates(TEMP_template_scope);
         }
+
+        // Also freeze templates.
+        if (TEMP_open_templates)
+            freezeTemplates(TEMP_template_scope);
 
         result.len == nodes.len || fail("solveNodes: result.len != nodes.len");
 
-        //////////////
-        _here = here0;
-        //////////////
-
         return result;
+    }
+
+    fn freezeTemplates(scope0: ScopeMemo)
+    {
+        for (shadow mut i = _open_templates.len; i --> 0; )
+        {
+            let r = _open_templates[i];
+            if (scope0)
+            {
+                let p = GET(r.overloadIdx);
+                if !(p.template.locals > scope0)
+                    continue;
+            }
+
+            ref o = GET_mut(r.spec);
+            {
+                o.status & SS_DIRTY && fail(
+                    "freezeTemplates: attempting to freeze a dirty template.");
+
+                o.status |= SS_FINALIZED;
+                _open_templates.splice(i, 1);
+            }
+        }
     }
 
     fn resolveIfNeeded_nonTemplateFn(target: Target): bool
@@ -3050,6 +3064,7 @@ pub fn solve(
 
         _current_fn && fail("non-empty _current_fn.");
         SLOW_resolve == resolve_done || fail("Some overload was left dirty.");
+        _open_templates && fail("Some template was left open.");
 
         // Run the thing.
         return SolverOutput(:root, :scope,
