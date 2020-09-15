@@ -1650,6 +1650,10 @@ pub fn runTests()
             let tree = SolvedNode(3,
                 [ SolvedNode(5), SolvedNode(7) ]);
 
+            // This is an aside, managed to lose the copy qual when working structs
+            // Initially noticed it because visitNodes tried to change its sighash
+            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy
+
             mut myVisitor: Visitor;
             myVisitor.visitNodes(tree);
             return myVisitor.sum - 15;
