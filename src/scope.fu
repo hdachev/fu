@@ -42,20 +42,7 @@ pub struct Module
     stats?:     ModuleStats;
 };
 
-pub fn MODID(implicit module: Module): i32
-    module.modid;
-
-
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Scope.
+////
 
 pub struct Struct
 {
@@ -73,73 +60,28 @@ pub struct StructField
     type:       ValueType;
 };
 
-pub fn isStruct(type: Type)
+////
+
+pub struct SolverOutput
 {
-    return type.canon.starts(with: '$');
-}
+    root:   SolvedNode;
+    scope:  Scope;
 
-pub fn initStruct(
-    implicit module: &mut Module,
-    id: string, flags: i32)
+    // Stats & such.
+    SLOW_resolve:   i32;
+};
+
+pub struct ScopeSkip
 {
-    let canon = "$" ~ id;
+    start: ScopeMemo;
+    end:   ScopeMemo;
+};
 
-    if (module.out.types.has(canon))
-        throw("initStruct already invoked for `" ~ id ~ "`.");
-
-    module.out.types[canon] = Struct(
-        :id || throw("TODO anonymous structs?"),
-        :flags);
-
-    // Assume everything, we resolve disappointment.
-    let specualtive_quals = q_rx_copy | q_trivial;
-
-    return Type(ValueType(:canon, MODID,
-        quals: specualtive_quals));
-}
-
-pub fn despeculateStruct(mut type: Type)
+pub struct ScopeMemo
 {
-    type.quals &= ~(q_rx_copy | q_trivial);
-    return type;
-}
-
-pub fn lookupStruct_mut(implicit module: &mut Module, canon: string)
-{
-    return module.out.types[canon] || assert();
-}
-
-pub fn finalizeStruct(
-    canon: string, fields: StructField[], items: ScopeItem[]): i32
-{
-    let def: &mut Struct    = lookupStruct_mut(canon);
-        def.fields          = fields || throw("TODO empty structs (fields) ?");
-        def.items           = items  || throw("TODO empty structs (items)  ?");
-
-    return fields.commonQuals();
-}
-
-fn commonQuals(fields: StructField[]): i32
-{
-    mut commonQuals = -1;
-
-    for (mut i = 0; i < fields.len; i++)
-        commonQuals &= fields[i].type.quals;
-
-    return commonQuals;
-}
-
-
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Scope.
+    items_len: i32;
+    imports_len: i32;
+};
 
 pub struct SolvedNode
 {
@@ -226,6 +168,89 @@ pub struct Scope
     imports:    i32[];
 };
 
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Scope.
+
+pub fn MODID(implicit module: Module): i32
+    module.modid;
+
+pub fn isStruct(type: Type)
+{
+    return type.canon.starts(with: '$');
+}
+
+pub fn initStruct(
+    implicit module: &mut Module,
+    id: string, flags: i32)
+{
+    let canon = "$" ~ id;
+
+    if (module.out.types.has(canon))
+        throw("initStruct already invoked for `" ~ id ~ "`.");
+
+    module.out.types[canon] = Struct(
+        :id || throw("TODO anonymous structs?"),
+        :flags);
+
+    // Assume everything, we resolve disappointment.
+    let specualtive_quals = q_rx_copy | q_trivial;
+
+    return Type(ValueType(:canon, MODID,
+        quals: specualtive_quals));
+}
+
+pub fn despeculateStruct(mut type: Type)
+{
+    type.quals &= ~(q_rx_copy | q_trivial);
+    return type;
+}
+
+pub fn lookupStruct_mut(implicit module: &mut Module, canon: string)
+{
+    return module.out.types[canon] || assert();
+}
+
+pub fn finalizeStruct(
+    canon: string, fields: StructField[], items: ScopeItem[]): i32
+{
+    let def: &mut Struct    = lookupStruct_mut(canon);
+        def.fields          = fields || throw("TODO empty structs (fields) ?");
+        def.items           = items  || throw("TODO empty structs (items)  ?");
+
+    return fields.commonQuals();
+}
+
+fn commonQuals(fields: StructField[]): i32
+{
+    mut commonQuals = -1;
+
+    for (mut i = 0; i < fields.len; i++)
+        commonQuals &= fields[i].type.quals;
+
+    return commonQuals;
+}
+
+
+
+
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+///////////////////////////////////////
+////////
+////////
+////////
+////////     Scope.
+
 pub fn Scope_exports(scope: Scope, modid!: i32)
 {
     mut result: ScopeItem[] = [];
@@ -267,12 +292,6 @@ pub fn DEPREC_lookup(scope: Scope, id: string): Target[]
 
     return results;
 }
-
-pub struct ScopeSkip
-{
-    start: ScopeMemo;
-    end:   ScopeMemo;
-};
 
 pub fn search(
     scope: Scope, id: string,
@@ -334,12 +353,6 @@ pub fn search(
 
 
 ////////////////////////////////
-
-pub struct ScopeMemo
-{
-    items_len: i32;
-    imports_len: i32;
-};
 
 pub fn Scope_snap(scope: &mut Scope)
     ScopeMemo(
@@ -448,18 +461,6 @@ pub fn Lifetime_fromCallArgs(
 
     return result;
 }
-
-
-//
-
-pub struct SolverOutput
-{
-    root:   SolvedNode;
-    scope:  Scope;
-
-    // Stats & such.
-    SLOW_resolve:   i32;
-};
 
 
 //
