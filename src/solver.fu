@@ -53,6 +53,7 @@ pub fn solve(
     };
 
     mut _open_templates: OpenTemplate[];
+    mut _current_struct: Target;
 
 
     //
@@ -251,13 +252,22 @@ pub fn solve(
         if (args_len0 != overload.args.len ||
             closure0  != overload.closes_over.len)
         {
-            for (mut i = 0; i < overload.used_by.len; i++)
-                makeDirty(overload.used_by[i], :parent_idx);
+            invalidateUsers(overload);
         }
+    }
+
+    fn invalidateUsers(overload: Overload): void
+    {
+        let parent_idx = overload.local_of;
+        for (mut i = 0; i < overload.used_by.len; i++)
+            makeDirty(overload.used_by[i], :parent_idx);
     }
 
     fn makeDirty(index: i32, parent_idx: i32): void
     {
+        index || fail(
+            "makeDirty: climbed up to global scope.");
+
         let userIdx = Target(modid: module.modid, :index);
 
         ref user = GET_mut(userIdx);
@@ -280,8 +290,19 @@ pub fn solve(
         }
     }
 
-    fn DefCtor(id: string, type: Type, members: SolvedNode[]): Target
+    fn DefCtor(id: string, type: Type, members: SolvedNode[], mut into: Target): Target
     {
+        // TODO ideally defctors have to go,
+        //  they're just an extra function we have to deal with here.
+        //   plus they depend on the struct itself,
+        //    and so require all the extra care there.
+        //
+        // Basically we want to have one less thing.
+        //
+        // Alternatively, we drop the Struct fields stuff in `types`,
+        //  and use the argument list here to describe the struct members,
+        //   which servers us just as well, we have just one thing.
+        //
         let max = members.len;
         mut min = 0;
         mut args: Argument[];
@@ -290,6 +311,10 @@ pub fn solve(
         {
             let member = members[i];
 
+            // There's duplication here <-> and in the typedef.
+            //  Perhaps we do the opposite, drop the members there,
+            //   and just refer to this argument list.
+            //
             let arg = Argument(
                 name:       member.value || fail(),
                 type:       member.type  || fail(),
@@ -305,12 +330,26 @@ pub fn solve(
         if (!max) return Target();
         if (!min) min++;
 
-        // TODO don't Scope_add when templated.
-        return Scope_add(
-            _scope,
-            "defctor", :id, :type,
-            :min, :max, :args,
-            flags: F_PUB);
+        //
+        if (!into)
+        {
+            into = Scope_create(_scope);
+
+            // TODO don't Scope_set when templated.
+            Scope_set(_scope, :id, target: into);
+        }
+
+        ref overload    = GET_mut(into);
+
+        overload.kind   = "defctor";
+        overload.name   = id;
+        overload.type   = type;
+        overload.min    = min;
+        overload.max    = max;
+        overload.args   = args;
+        overload.flags  = F_PUB;
+
+        return into;
     }
 
     fn tryCreateDefinit(type: Type): SolvedNode
@@ -712,7 +751,11 @@ pub fn solve(
 
                         // Forbid ambiguity.
                         if (matchIdx)
+                        {
+                            let debug = GET(matchIdx);
+                            if (debug) {}
                             fail("Ambiguous callsite, matches multiple functions in scope: `" ~ id ~ "`.");
+                        }
 
                         // Do reorder.
                         if (reorder)
@@ -736,6 +779,8 @@ pub fn solve(
                     // Forbid ambiguity.
                     else if (matchIdx)
                     {
+                        let debug = GET(matchIdx);
+                        if (debug) {}
                         fail("Ambiguous callsite, matches multiple items in scope: `" ~ id ~ "`.");
                     }
 
@@ -1604,14 +1649,6 @@ pub fn solve(
 
     //
 
-    fn solveTypeCtor(node: Node): SolvedNode
-    {
-        let tDecl   = TemplateDecl(node);
-        mut out     = solved(node, t_void);
-        out.target  = tDecl;
-        return out;
-    }
-
     fn uPrepStruct(node: Node): SolvedNode
     {
         return __solveStruct(solve: false, :node);
@@ -1632,16 +1669,33 @@ pub fn solve(
         if (!origId)
             id = _current_fn.value || "Anon";
 
+        fn ensureTypedef()
+        {
+            if (out.target || !origId)
+                return;
+
+            let NO_IMPORTS: i32[];
+            let NO_LOCALS: ScopeMemo;
+            let template = Template(:node, imports: NO_IMPORTS, locals: NO_LOCALS);
+
+            out.target = Scope_Typedef(_scope, origId, structType, node.flags, :template);
+        }
+
         // Add the arity-0 type entry.
         if (!(_current_fn.flags & F_TEMPLATE))
         {
             structType = initStruct(id, node.flags);
-            if (!prep && origId)
-                out.target = Scope_Typedef(_scope, origId, structType, node.flags);
+            ensureTypedef();
         }
 
         if (!solve)
             return out;
+
+        /////////////////////////////////////////////////
+        _current_struct && fail("struct-within-struct");
+        defer _current_struct = Target();
+        _current_struct = out.target;
+        /////////////////////////////////////////////////
 
         // Struct fields only.
         let members = node.items;
@@ -1649,8 +1703,7 @@ pub fn solve(
         let items = solveStructMembers(:id, :node.flags, :structType, :members, :innerScope);
         out.items = items;
 
-        if (!out.target && origId)
-            out.target = Scope_Typedef(_scope, origId, structType, node.flags);
+        ensureTypedef();
 
         // Add a default constructor.
         {
@@ -1673,18 +1726,31 @@ pub fn solve(
             }
 
             //
-            structType.quals |= finalizeStruct(structType.canon, fields, innerScope);
+            let quals0 = structType.quals;
+            let quals1 = structType.quals |= finalizeStruct(structType.canon, fields, innerScope);
+
             if (out.target)
                 GET_mut(out.target).type.quals = structType.quals;
 
             // Link up the constructor.
             // TODO don't Scope_add when templated.
-            let ctor = DefCtor(id, structType, members);
+            //
+            // TODO drop DefCtors, we have too many things already,
+            //  ideally the typedef should suffice.
+            //
+            let ctor = DefCtor(id, structType, members, into: lookupStruct(structType).ctor);
             lookupStruct_mut(structType.canon).ctor = ctor;
+
+            //
+            if (quals0 != quals1 && out.target)
+                invalidateUsers(GET(out.target));
         }
 
         // So we can type x = struct { what };
         out.type = structType;
+
+        if (out.target)
+            GET_mut(out.target).solved = out;
 
         return out;
     }
@@ -2663,16 +2729,22 @@ pub fn solve(
         // Track deps.
         if (target.modid == module.modid)
         {
-            if (overload.kind == "fn")
+            // Tracking call graph & type annotations.
+            if (overload.kind == "fn" || overload.kind == "type")
             {
-                // Tracking call graph.
-                GET_mut(target).used_by.set::add(
-                    _current_fn.target.index);
+                ref t = GET_mut(target);
+
+                if (_current_struct)
+                    GET_mut(target).used_by.set::add(
+                        _current_struct.index);
+                else
+                    t.used_by.set::add(
+                        _current_fn.target.index);
             }
 
+            // Robust closure tracking.
             if (_current_fn)
             {
-                // Robust closure tracking.
                 let o = GET(target);
                 if (o.flags & F_LOCAL)
                     _current_fn.locals_used.set::add(target.index);
@@ -2870,7 +2942,7 @@ pub fn solve(
                     for (shadow mut i = i0; i < i1; i++)
                     {
                         let r = result[i];
-                        if (r.kind != "fndef" || !resolveIfNeeded_nonTemplateFn(r.target))
+                        if (r.kind != "fndef" && r.kind != "struct" || !resolveIfNeeded_nonTemplateFn(r.target))
                             continue;
 
                         some = SLOW_resolve != resolve0

@@ -84,12 +84,10 @@ pub fn initStruct(
 {
     let canon = "$" ~ id;
 
-    let def = Struct(
+    // REGISTER STRUCT ///////////
+    module.out.types[canon] ||= Struct(
         :id || throw("TODO anonymous structs?"),
         :flags);
-
-    // REGISTER STRUCT ///////////
-    module.out.types[canon] = def;
     //////////////////////////////
 
     let TODO_FIX_allTypesAreCopiable = q_rx_copy;
@@ -404,9 +402,9 @@ pub fn Scope_set(scope: &mut Scope, id: string, target: Target)
     scope.items.push(ScopeItem( :id, :target ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags: i32 = F_PUB)
+pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template)
 {
-    return Scope_add(:scope, "type", :id, :type, :flags);
+    return Scope_add(:scope, "type", :id, :type, :flags, :template);
 }
 
 

@@ -1348,6 +1348,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         pub struct Template { locals: ScopeMemo; }; // <- used ahead of the def, was missing q_trivial
         pub struct ScopeMemo { x: i32; }; // <- trivial, discovered on solve here after Template is done
         pub fn +(a: ScopeMemo, b: ScopeMemo) a.x + b.x; // <- used here after both structs are done
@@ -1922,7 +1923,7 @@ pub fn runTests()
 
         pub struct LogicFrame_in
         {
-            lastLogic:  LogicFrame;
+            lastLogic:  LogicFrame; //! SLOW_resolve
         };
 
         pub struct LogicFrame
