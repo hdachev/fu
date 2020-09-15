@@ -2802,6 +2802,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         mut sum = 2;
 
         fn FnDecl_update(parent_idx: i32) {

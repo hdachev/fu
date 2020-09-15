@@ -172,7 +172,8 @@ pub fn solve(
         let template = Template(
             node,
             imports: !_current_fn && _scope.imports,
-            locals:   _current_fn && Scope_snap(_scope));
+            locals:   _current_fn && Scope_snap(_scope),
+            parent_idx: _current_fn.target.index);
 
         return Scope_add(
             _scope,
@@ -1351,9 +1352,11 @@ pub fn solve(
 
             //
             let kind = native ? "__native" : "fn";
+
+            // TODO this no longer seems to make sense
             let NO_IMPORTS: i32[];
             let NO_LOCALS: ScopeMemo;
-            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS, locals: NO_LOCALS);
+            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
 
             FnDecl_init(out.target, :kind, id: name, :template);
         }
@@ -1463,6 +1466,11 @@ pub fn solve(
 
         //
         let template = GET(overloadIdx).template;
+
+        if (template.parent_idx)
+            _current_fn.target = Target(
+                modid: module.modid,
+                index: template.parent_idx);
 
         _scope_skip = _root_scope && ScopeSkip(
             start: template.locals || _root_scope,
@@ -1677,7 +1685,7 @@ pub fn solve(
 
             let NO_IMPORTS: i32[];
             let NO_LOCALS: ScopeMemo;
-            let template = Template(:node, imports: NO_IMPORTS, locals: NO_LOCALS);
+            let template = Template(:node, imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
 
             out.target = Scope_Typedef(_scope, origId, structType, node.flags, :template);
         }
