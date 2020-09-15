@@ -273,6 +273,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseRoot(): Node
     {
+        consume("sof", "sof");
+
         _loc = _idx;
 
         mut out = make("root",

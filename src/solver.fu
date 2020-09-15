@@ -1003,11 +1003,13 @@ pub fn solve(
         return fail("TODO: " ~ k);
     }
 
-    fn isUnordered(kind: string)
+    fn unorderedClassify(kind: string): i32
     {
-        return kind == "fn"
-            || kind == "struct"
-            || kind == "typedef";
+        if (kind == "fn")       return 1;
+        if (kind == "struct")   return 10;
+        if (kind == "typedef")  return 10;
+
+        return 0;
     }
 
     fn unorderedPrep(node: Node): SolvedNode
@@ -2846,7 +2848,8 @@ pub fn solve(
                 continue;
 
             // Regular solve.
-            if (!isUnordered(node.kind))
+            mut unorderedClass = unorderedClassify(node.kind);
+            if (!unorderedClass)
             {
                 _here       = node.token || _here;
                 result[i]   = solveNode(:node, type:
@@ -2874,60 +2877,27 @@ pub fn solve(
             //  without doing type checking when possible.
             for (shadow mut i = i0; i < nodes.len; i++)
             {
-                shadow let node = nodes[i];
-                if (!node)
-                    continue;
-
-                if (!isUnordered(node.kind))
+                shadow let node = nodes[i] || fail("solveNodes, prep: falsy node");
+                if (unorderedClassify(node.kind) != unorderedClass)
                 {
                     i1 = i;
                     break;
                 }
 
-                _here       = node.token || _here;
-
-                if (node.kind != "fn")
-                    result[i] = unorderedPrep(node);
+                _here = node.token || _here;
+                result[i] = unorderedPrep(node);
             }
 
             // Later we'll continue from group end.
             i1 > i0 || fail();
             i = i1 - 1; // <- loop++
 
-            // TODO fix this shit
+            // Second pass, solve all.
+            for (shadow mut i = i0; i < i1; i++)
             {
-                // Second pass - solve types.
-                for (shadow mut i = i0; i < i1; i++)
-                {
-                    shadow let node = nodes[i];
-                    if (node && node.kind != "fn")
-                    {
-                        _here       = node.token || _here;
-                        result[i]   = unorderedSolve(node, result[i]);
-                    }
-                }
-
-                // Third pass - prep fns.
-                for (shadow mut i = i0; i < i1; i++)
-                {
-                    shadow let node = nodes[i];
-                    if (node.kind == "fn")
-                    {
-                        _here       = node.token || _here;
-                        result[i]   = unorderedPrep(node);
-                    }
-                }
-
-                // Finally - solve fns.
-                for (shadow mut i = i0; i < i1; i++)
-                {
-                    shadow let node = nodes[i];
-                    if (node.kind == "fn")
-                    {
-                        _here       = node.token || _here;
-                        result[i]   = unorderedSolve(node, result[i]);
-                    }
-                }
+                shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
+                _here = node.token || _here;
+                result[i] = unorderedSolve(node, result[i]);
             }
 
             // Exhaust the resolve queue here.

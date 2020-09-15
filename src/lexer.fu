@@ -51,6 +51,11 @@ pub fn lex(src: string, fname: string): LexerOutput
             Token( :kind, :value, :idx0, :idx1, :line, :col ));
     }
 
+    // Start token, so that no legit token has index 0.
+    token(
+        "sof", "sof",
+        idx, idx);
+
     fn err_str(kind: string, idx0: i32, reason: string)
     {
         // exit to nearest whitespace
