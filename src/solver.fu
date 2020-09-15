@@ -1661,8 +1661,8 @@ pub fn solve(
 
     fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode): SolvedNode
     {
-        mut out = prep || solved(node, t_void);
-        mut structType: Type;
+        mut out = prep || solved(node, Type());
+        ref structType = out.type;
 
         mut id = node.value;
         let origId = id;
@@ -1682,7 +1682,7 @@ pub fn solve(
         }
 
         // Add the arity-0 type entry.
-        if (!(_current_fn.flags & F_TEMPLATE))
+        if (!(_current_fn.flags & F_TEMPLATE) && !out.target)
         {
             structType = initStruct(id, node.flags);
             ensureTypedef();
@@ -1727,7 +1727,7 @@ pub fn solve(
 
             //
             let quals0 = structType.quals;
-            let quals1 = structType.quals |= finalizeStruct(structType.canon, fields, innerScope);
+            let quals1 = structType.quals &= finalizeStruct(structType.canon, fields, innerScope);
 
             if (out.target)
                 GET_mut(out.target).type.quals = structType.quals;
@@ -1779,6 +1779,10 @@ pub fn solve(
 
             structType  = initStruct(:id, :flags);
         }
+
+        // Dereferencing a struct does not require it
+        //  to have any particular qualities.
+        shadow let structType = despeculateStruct(structType);
 
         // Pass 1.
         for (mut i = 0; i < out.len; i++)

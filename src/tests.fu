@@ -734,6 +734,11 @@ pub fn runTests()
     `);
 
     ZERO(`
+        struct SelfRec { x: SelfRec[]; }; //! SLOW_resolve
+        fn main() SelfRec( [ SelfRec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
+    `);
+
+    ZERO(`
         mut a = [7, 1, 5, 3, 99, -13]; // [-13, 1, 3, 5, 7, 99]
         a.sort();
         return a[0] + a[1] + a[3] + a[4];
@@ -1231,7 +1236,7 @@ pub fn runTests()
             kind:       string;
             flags?:     i32;
             value?:     string;
-            items?:     SolvedNode[];
+            items?:     SolvedNode[]; //! SLOW_resolve
             token:      Token;
 
             type:       Type;
@@ -1619,7 +1624,7 @@ pub fn runTests()
 
         struct SolvedNode {
             value: i32;
-            items?: SolvedNode[];
+            items?: SolvedNode[]; //! SLOW_resolve
         };
 
         fn visitNodes(_v: &mut $V, _n: SolvedNode) {

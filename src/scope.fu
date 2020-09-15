@@ -84,16 +84,24 @@ pub fn initStruct(
 {
     let canon = "$" ~ id;
 
-    // REGISTER STRUCT ///////////
-    module.out.types[canon] ||= Struct(
+    if (module.out.types.has(canon))
+        throw("initStruct already invoked for `" ~ id ~ "`.");
+
+    module.out.types[canon] = Struct(
         :id || throw("TODO anonymous structs?"),
         :flags);
-    //////////////////////////////
 
-    let TODO_FIX_allTypesAreCopiable = q_rx_copy;
+    // Assume everything, we resolve disappointment.
+    let specualtive_quals = q_rx_copy | q_trivial;
 
     return Type(ValueType(:canon, MODID,
-        quals: TODO_FIX_allTypesAreCopiable));
+        quals: specualtive_quals));
+}
+
+pub fn despeculateStruct(mut type: Type)
+{
+    type.quals &= ~(q_rx_copy | q_trivial);
+    return type;
 }
 
 pub fn lookupStruct_mut(implicit module: &mut Module, canon: string)
@@ -108,7 +116,7 @@ pub fn finalizeStruct(
         def.fields          = fields || throw("TODO empty structs (fields) ?");
         def.items           = items  || throw("TODO empty structs (items)  ?");
 
-    return fields.commonQuals() & (q_rx_copy | q_trivial);
+    return fields.commonQuals();
 }
 
 fn commonQuals(fields: StructField[]): i32
