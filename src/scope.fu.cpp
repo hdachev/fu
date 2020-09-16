@@ -5,6 +5,7 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
+#include <utility>
 
 struct s_Argument;
 struct s_Effects;
@@ -35,6 +36,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
 int Region_toArgIndex(const s_Region&);
 s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
 s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
@@ -387,12 +389,14 @@ struct s_Template
     s_Node node;
     fu_VEC<int> imports;
     s_ScopeMemo locals;
+    int parent_idx;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
             || locals
+            || parent_idx
         ;
     }
 };
@@ -599,13 +603,26 @@ bool isStruct(const s_Type& type)
 inline const int q_rx_copy = (1 << 2);
                                 #endif
 
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline const int q_trivial = (1 << 3);
+                                #endif
+
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
 {
     fu_STR canon = ("$"_fu + id);
-    s_Struct def = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, fu_VEC<s_ScopeItem>{} };
-    (module.out.types.upsert(canon) = def);
-    const int TODO_FIX_allTypesAreCopiable = q_rx_copy;
-    return s_Type { s_ValueType { int(TODO_FIX_allTypesAreCopiable), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
+    if (fu::has(module.out.types, canon))
+        fu::fail((("initStruct already invoked for `"_fu + id) + "`."_fu));
+
+    (module.out.types.upsert(canon) = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, fu_VEC<s_ScopeItem>{} });
+    const int specualtive_quals = (q_rx_copy | q_trivial);
+    return s_Type { s_ValueType { int(specualtive_quals), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
+}
+
+s_Type despeculateStruct(s_Type&& type)
+{
+    type.vtype.quals &= ~(q_rx_copy | q_trivial);
+    return std::move(type);
 }
 
 s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
@@ -622,17 +639,12 @@ static int commonQuals(const fu_VEC<s_StructField>& fields)
     return commonQuals;
 }
 
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
-                                #endif
-
 int finalizeStruct(const fu_STR& canon, const fu_VEC<s_StructField>& fields, const fu_VEC<s_ScopeItem>& items, s_Module& module)
 {
     s_Struct& def = lookupStruct_mut(canon, module);
     def.fields = (fields ? fields : fu::fail("TODO empty structs (fields) ?"_fu));
     def.items = (items ? items : fu::fail("TODO empty structs (items)  ?"_fu));
-    return (commonQuals(fields) & (q_rx_copy | q_trivial));
+    return commonQuals(fields);
 }
 
                                 #ifndef DEF_F_PUB
@@ -683,11 +695,17 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
         scope_iterator--;
         return s_Target(target);
     };
+    const fu_VEC<s_ScopeItem>& items = scope.items;
     const int skip0 = (scope_skip.start.items_len - 1);
     const int skip1 = (scope_skip.end.items_len - 1);
-    const fu_VEC<s_ScopeItem>& items = scope.items;
+    if ((skip1 >= items.size()))
+        fu::fail("Scope/search: scope_skip will jump past end of scope.items."_fu);
+
+    const int START = ((items.size() + extra_items.size()) + field_items.size());
     if (!scope_iterator)
-        scope_iterator = ((items.size() + extra_items.size()) + field_items.size());
+        scope_iterator = START;
+    else if ((scope_iterator >= START))
+        fu::fail("Scope/search: scope.items shrunk while we iterated."_fu);
 
     while (scope_iterator-- > 0)
     {
@@ -717,6 +735,11 @@ void Scope_pop(s_Scope& scope, const s_ScopeMemo& memo)
     scope.imports.shrink(memo.imports_len);
 }
 
+bool operator>(const s_ScopeMemo& a, const s_ScopeMemo& b)
+{
+    return ((a.items_len > b.items_len) || (a.imports_len > b.imports_len));
+}
+
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& solved, const int local_of, const s_Module& module)
 {
     const int modid = MODID(module);
@@ -744,9 +767,9 @@ void Scope_set(s_Scope& scope, const fu_STR& id, const s_Target& target)
     scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 }
 
-s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Module& module)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Template& tEmplate, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, s_Template{}, s_Partial{}, s_SolvedNode{}, 0, module);
+    return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, tEmplate, s_Partial{}, s_SolvedNode{}, 0, module);
 }
 
 s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
@@ -906,20 +929,20 @@ inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifet
 s_Scope listGlobals(const s_Module& module)
 {
     s_Scope scope {};
-    Scope_Typedef(scope, "i8"_fu, t_i8, F_PUB, module);
-    Scope_Typedef(scope, "i16"_fu, t_i16, F_PUB, module);
-    Scope_Typedef(scope, "i32"_fu, t_i32, F_PUB, module);
-    Scope_Typedef(scope, "i64"_fu, t_i64, F_PUB, module);
-    Scope_Typedef(scope, "u8"_fu, t_u8, F_PUB, module);
-    Scope_Typedef(scope, "u16"_fu, t_u16, F_PUB, module);
-    Scope_Typedef(scope, "u32"_fu, t_u32, F_PUB, module);
-    Scope_Typedef(scope, "u64"_fu, t_u64, F_PUB, module);
-    Scope_Typedef(scope, "f32"_fu, t_f32, F_PUB, module);
-    Scope_Typedef(scope, "f64"_fu, t_f64, F_PUB, module);
-    Scope_Typedef(scope, "bool"_fu, t_bool, F_PUB, module);
-    Scope_Typedef(scope, "byte"_fu, t_byte, F_PUB, module);
-    Scope_Typedef(scope, "void"_fu, t_void, F_PUB, module);
-    Scope_Typedef(scope, "never"_fu, t_never, F_PUB, module);
+    Scope_Typedef(scope, "i8"_fu, t_i8, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "i16"_fu, t_i16, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "i32"_fu, t_i32, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "i64"_fu, t_i64, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "u8"_fu, t_u8, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "u16"_fu, t_u16, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "u32"_fu, t_u32, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "u64"_fu, t_u64, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "f32"_fu, t_f32, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "f64"_fu, t_f64, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "bool"_fu, t_bool, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "byte"_fu, t_byte, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "void"_fu, t_void, F_PUB, s_Template{}, module);
+    Scope_Typedef(scope, "never"_fu, t_never, F_PUB, s_Template{}, module);
     return scope;
 }
 

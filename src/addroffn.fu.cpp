@@ -261,12 +261,14 @@ struct s_Template
     s_Node node;
     fu_VEC<int> imports;
     s_ScopeMemo locals;
+    int parent_idx;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
             || locals
+            || parent_idx
         ;
     }
 };

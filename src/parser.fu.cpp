@@ -361,6 +361,17 @@ static const int M_LINT_UNARY_PRECEDENCE = (1 << 0);
     fu::fail(((((fname_0 + " "_fu) + addr) + ":\n\t"_fu) + reason));
 }
 
+static s_Token consume(const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, fu::view<std::byte> kind, fu::view<std::byte> value)
+{
+    const s_Token& token = tokens_0[_idx_0];
+    if (((token.kind == kind) && (!value || (token.value == value))))
+    {
+        _idx_0++;
+        return s_Token(token);
+    };
+    fail(fname_0, tokens_0, _idx_0, _loc_0, (((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
+}
+
 [[noreturn]] static fu::never fail_Lint(const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, const fu_STR& reason)
 {
     fail(fname_0, tokens_0, _idx_0, _loc_0, ("Lint: "_fu + reason));
@@ -375,17 +386,6 @@ static s_Token tryConsume(const fu_VEC<s_Token>& tokens_0, int& _idx_0, fu::view
         return s_Token(token);
     };
     return s_Token{};
-}
-
-static s_Token consume(const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, fu::view<std::byte> kind, fu::view<std::byte> value)
-{
-    const s_Token& token = tokens_0[_idx_0];
-    if (((token.kind == kind) && (!value || (token.value == value))))
-    {
-        _idx_0++;
-        return s_Token(token);
-    };
-    fail(fname_0, tokens_0, _idx_0, _loc_0, (((("Expected `"_fu + (value ? value : kind)) + "`, got `"_fu) + token.value) + "`."_fu));
 }
 
 static s_Node make(int modid_0, int& _loc_0, const fu_STR& kind, const fu_VEC<s_Node>& items, const int flags, const fu_STR& value)
@@ -875,7 +875,7 @@ static s_Node parseFnDecl_cont(int modid_0, const fu_STR& fname_0, const fu_VEC<
     _fnDepth_0++;
     fu_VEC<fu_STR> dollars0 { _dollars_0 };
     const int numReturns0 = _numReturns_0;
-    flags |= parseArgsDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, items, "op"_fu, endv);
+    flags |= ([&]() -> int { if (endv) return parseArgsDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, items, "op"_fu, endv); else return int{}; }());
     s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
     const int retIdx = items.size();
     items.push(type);
@@ -1036,10 +1036,10 @@ static s_Node parseTypeTag(int modid_0, const fu_STR& fname_0, const fu_VEC<s_To
     return createTypeTag(modid_0, _loc_0, consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}).value);
 }
 
-static s_Node parseLambda(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseLambda(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const bool noArgs)
 {
     fu_STR name = ((("l_"_fu + modid_0) + "_"_fu) + _anonFns_0++);
-    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, name, (F_INLINE | F_TEMPLATE), true, "|"_fu);
+    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, name, (F_INLINE | F_TEMPLATE), true, ([&]() -> fu_STR { if (!noArgs) return "|"_fu; else return fu_STR{}; }()));
 }
 
 static s_Node createDefinit(int modid_0, int& _loc_0)
@@ -1131,7 +1131,10 @@ static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_V
                 return parseTypeTag(modid_0, fname_0, tokens_0, _idx_0, _loc_0);
 
             if (v == "|"_fu)
-                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, bool{});
+
+            if (v == "||"_fu)
+                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, true);
 
             if (v == "[]"_fu)
                 return createDefinit(modid_0, _loc_0);
@@ -1430,6 +1433,7 @@ static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const f
 
 static s_Node parseRoot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
 {
+    consume(fname_0, tokens_0, _idx_0, _loc_0, "sof"_fu, "sof"_fu);
     _loc_0 = _idx_0;
     s_Node out = make(modid_0, _loc_0, "root"_fu, parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "eof"_fu, "eof"_fu, false), 0, fu_STR{});
     return out;

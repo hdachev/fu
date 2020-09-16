@@ -118,6 +118,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
+    token(line, lidx, tokens, "sof"_fu, "sof"_fu, idx, idx);
     while (idx < end)
     {
         const int idx0 = idx;
