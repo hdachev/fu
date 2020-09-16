@@ -34,6 +34,10 @@ pub fn solve(
         return_idx: ScopeMemo; // <- truth from here
         parent_idx: i32;
         locals_used?: i32[];
+
+        ret_expect?: Type;
+        ret_actual?: Type;
+        ret_count?:  i32;
     };
 
     mut _current_fn:    CurrentFn;
@@ -193,12 +197,12 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
-    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32)
+    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32, ret_actual: Type)
     {
         let items = solved.items;
 
         mut min = 0;
-        let max = items.len + FN_RET_BACK;
+        let max = items.len + FN_ARGS_BACK;
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
@@ -224,7 +228,7 @@ pub fn solve(
         let args_len0   = overload.args.len;
         let closure0    = overload.closes_over.len;
 
-        overload.type   = items[items.len + FN_RET_BACK].type || fail("FnDecl_update: no return type.");
+        overload.type   = ret_actual || fail("FnDecl_update: no return type.");
         overload.min    = min;
         overload.max    = max;
         overload.args   = args;
@@ -1298,44 +1302,49 @@ pub fn solve(
 
             /////////////////////////////////////////////////////
             mut n_ret   = inItems[inItems.len + FN_RET_BACK];
-                n_body  = inItems[inItems.len + FN_BODY_BACK] || fail();
+                n_body  = inItems[inItems.len + FN_BODY_BACK];
 
             // Pattern descent.
             if (caseIdx >= 0)
             {
                 n_body.kind == "pattern" || fail();
                 let branch = n_body.items[caseIdx] || fail();
-                let items = branch.items;
 
-                n_ret   = items[items.len + FN_RET_BACK]  || n_ret;
-                n_body  = items[items.len + FN_BODY_BACK];
+                shadow let inItems = branch.items;
+
+                n_ret   = inItems[inItems.len + FN_RET_BACK] || n_ret;
+                n_body  = inItems[inItems.len + FN_BODY_BACK];
             }
 
             // Builtin?
+            n_body || fail("solveFn: no body.");
             if (n_body.kind == "call" && n_body.value == "__native")
                 native = true;
 
             // Return type annot.
-            {
-                let s_ret = n_ret
-                    ? evalTypeAnnot(n_ret)
-                    : SolvedNode();
-
-                // MUT DURING SOLVE,
-                //  implicit args splice in
-                outItems[outItems.len + FN_RET_BACK] = s_ret;
-            }
+            _current_fn.ret_expect = n_ret && evalTypeAnnot(n_ret).type;
 
             // Only if actually solving the fn, the fn body.
             if (solve && !native)
             {
                 let s_body = solveNode(n_body);
-                s_body || fail();
+
+                _current_fn.ret_actual ||= _current_fn.ret_count
+                    ? fail("falsy ret_actual when ret_count != 0.")
+                    : t_void;
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
-                outItems[outItems.len + FN_BODY_BACK] = s_body || fail();
+                outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
             }
+            else
+            {
+                _current_fn.ret_actual = _current_fn.ret_expect || fail("falsy ret_expect");
+            }
+
+            // Sighashes include return value.
+            outItems[outItems.len + FN_RET_BACK] =
+                createEmpty(type: _current_fn.ret_actual);
         }
         //////////////////////////
 
@@ -1361,7 +1370,7 @@ pub fn solve(
             FnDecl_init(out.target, :kind, id: name, :template);
         }
 
-        FnDecl_update(out.out, out.locals_used, out.parent_idx);
+        FnDecl_update(out.out, out.locals_used, out.parent_idx, out.ret_actual);
 
         if (solve)
             return createFnDef(out.out);
@@ -1832,46 +1841,60 @@ pub fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
-        // Solving the stuff below might inject implicit args -
-        //  which would shift the retidx back.
-        fn retIdx()
-            _current_fn.items.len + FN_RET_BACK;
-
-        let prevType = _current_fn.items[retIdx].type;
-
-        node.items.len <= 1 || fail();
-        mut out = solved(node, t_void,
-            solveNodes(node.items, prevType));
-
-        ref next =
-            out.items   ? out.items[0]
-                        : out;
+        mut out = solved(node, t_void /*TODO t_never*/,
+            solveNodes(node.items, _current_fn.ret_actual || _current_fn.ret_expect));
 
         //////////////////////////////////////////////////////
-        //                                                  //
-        // TODO LIFETIMES   this doesn't work               //
-        //                  for deeply referential types.   //
-                                                            //
-        if (next.type.lifetime.killedBy(_current_fn.return_idx.items_len) &&
-            next.type.quals & q_ref)                        //
-        {                                                   //
-            let nrvo = next.kind == "call"                  //
-                    && next.items.len == 0                  //
-                    && next.target.GET.kind == "var";       //
-                                                            //
-            next = createMove(next, nrvo);                  //
-        }                                                   //
+        //
+        // Notice - as soon as we re-assign the return value,
+        //  we want to re-iterate all the return statements,
+        //   because that can change our copy/move decision.
+        fn report(type: Type)
+        {
+            // Check annot.
+            if (_current_fn.ret_expect)
+                checkAssignable(host: _current_fn.ret_expect, type, "Expression non-assignable to return annotation");
+
+            // Check multiple returns.
+            if (_current_fn.ret_actual)
+                checkAssignable(host: _current_fn.ret_actual, type, "Non-assignable return types");
+            else
+                _current_fn.ret_actual = type || fail();
+
+            // Counter.
+            _current_fn.ret_count++;
+        }
         //////////////////////////////////////////////////////
 
-        if (prevType)
-            checkAssignable(host: prevType, next.type,
-                "Non-assignable return types");
+        if (!node.items)
+        {
+            report(t_void);
+        }
         else
-            _current_fn.items[retIdx] = next || fail();
+        {
+            ref next = out.items.only;
 
-        if (out.items)
-            maybeCopyOrMove(out.items[0],
-                prevType || next.type);
+            //////////////////////////////////////////////////////
+            //                                                  //
+            // TODO LIFETIMES   this doesn't work               //
+            //                  for deeply referential types.   //
+                                                                //
+            if (next.type.lifetime.killedBy(_current_fn.return_idx.items_len) &&
+                next.type.quals & q_ref)                        //
+            {                                                   //
+                let nrvo = next.kind == "call"                  //
+                        && next.items.len == 0                  //
+                        && next.target.GET.kind == "var";       //
+                                                                //
+                next = createMove(next, nrvo);                  //
+            }                                                   //
+            //////////////////////////////////////////////////////
+
+            report(next.type);
+
+            // cpy/move.
+            maybeCopyOrMove(out.items[0], _current_fn.ret_actual);
+        }
 
         return out;
     }
@@ -2478,7 +2501,7 @@ pub fn solve(
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
-        ref fnNode = _current_fn.out || fail(
+        _current_fn.items || fail(
             "No implicit `" ~ id ~ "` in scope, needed to call `" ~ GET(becauseOf).name ~ "`.");
 
         ///////////////////////////////////////////
@@ -2490,10 +2513,9 @@ pub fn solve(
 
         // Reuse existing or add new argnode.
         {
-            let n = fnNode.items.len;
-            for (mut i = 0; i < n; i++)
+            for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
             {
-                ref arg = fnNode.items[i];
+                let arg = _current_fn.items[i];
                 if (arg.value == id)
                 {
                     checkAssignable(host: type, arg.type,
@@ -2503,10 +2525,10 @@ pub fn solve(
                 }
             }
 
-            let newArgIdx   = fnNode.items.len + FN_RET_BACK;
+            let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
             let newArgNode  = createLet(ret, F_IMPLICIT);
 
-            fnNode.items.insert(newArgIdx, newArgNode);
+            _current_fn.items.insert(newArgIdx, newArgNode);
         }
 
         return ret;

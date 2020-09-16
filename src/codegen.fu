@@ -478,16 +478,13 @@ pub fn cpp_codegen(
 
     fn cgFnSignature(fn: SolvedNode): string
     {
-        let items   = fn.items;
-        let ret     = items[items.len + FN_RET_BACK] || fail();
-
-        let lambda  = false;
-
-        let annot   = typeAnnot(
-            ret.type || fail(),
-            M_RETVAL | (lambda ? M_LAMBDA : 0));
-
         let overload = GET(fn.target);
+
+        let items = fn.items;
+        let lambda = false;
+        let annot = typeAnnot(
+            overload.type || fail(),
+            M_RETVAL | (lambda ? M_LAMBDA : 0));
 
         mut id = overload.name;
         if (id == "main" && !lambda)

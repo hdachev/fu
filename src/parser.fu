@@ -265,7 +265,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             return token;
         }
 
-        return Token();
+        return [];
     }
 
 
