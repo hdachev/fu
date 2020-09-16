@@ -122,8 +122,12 @@ pub fn killedBy(lifetime: Lifetime, returnIdx: i32)
 pub fn Lifetime_relaxCallArg(mut lifetime: Lifetime, relax: i32)
 {
     if (relax > 0)
+    {
+        throw("USING Lifetime.relax.");
+
         for (mut i = 0; i < lifetime.regions.len; i++)
             lifetime.regions[i].relax += relax;
+    }
 
     return lifetime;
 }

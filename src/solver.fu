@@ -197,6 +197,53 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
+    fn TEST_lifetime(lifetime: Lifetime, numArgs: i32)
+    {
+        for (mut i = 0; i < lifetime.regions.len; i++)
+        {
+            let r = lifetime.regions[i];
+            let argIdx = Region_toArgIndex(r);
+
+            // argIdx negative for non-arguments.
+            argIdx < numArgs || fail(
+                "Argument union lifetime region out of range.");
+        }
+    }
+
+    fn Lifetime_fromCallArgs(
+        lifetime: Lifetime, args: SolvedNode[]): Lifetime
+    {
+        mut result: Lifetime;
+
+        for (mut i = 0; i < lifetime.regions.len; i++)
+        {
+            let r = lifetime.regions[i];
+
+            // Use verbatim unless an argument.
+            let argIdx = Region_toArgIndex(r);
+            if (argIdx < 0)
+            {
+                result = type_inter(result, r);
+                continue;
+            }
+
+            // Else replace with actual from callsite,
+            //  incrementing the relax depth as much as possible.
+
+            // TODO FIX we can catch dangling references
+            //  to temporaries right here.
+
+            let arg     = args[argIdx];
+            let actual  = Lifetime_relaxCallArg(arg.type.lifetime, r.relax); // <- noop
+
+            TEST_lifetime(actual, _current_fn.items.len + FN_ARGS_BACK);
+            result      = type_inter(result, actual);
+            TEST_lifetime(result, _current_fn.items.len + FN_ARGS_BACK);
+        }
+
+        return result;
+    }
+
     fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32, ret_actual: Type)
     {
         let items = solved.items;
@@ -235,6 +282,9 @@ pub fn solve(
         overload.flags  = solved.flags;
 
         overload.solved = solved;
+
+        // Test.
+        TEST_lifetime(ret_actual.lifetime, args.len);
 
         // See which one of the locals we've used are not our own.
         {
@@ -2504,32 +2554,34 @@ pub fn solve(
         _current_fn.items || fail(
             "No implicit `" ~ id ~ "` in scope, needed to call `" ~ GET(becauseOf).name ~ "`.");
 
-        ///////////////////////////////////////////
-        // TODO obtain or persist this in the original scope.
-        let scope0  = Scope_snap(_scope);
-        let ret     = Binding(id, type, flags: F_IMPLICIT);
-        Scope_pop(_scope, scope0);
-        ///////////////////////////////////////////
-
         // Reuse existing or add new argnode.
+        for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
-            for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
+            let arg = _current_fn.items[i];
+            if (arg.value == id)
             {
-                let arg = _current_fn.items[i];
-                if (arg.value == id)
-                {
-                    checkAssignable(host: type, arg.type,
-                        "Implicit arg collision", id);
+                checkAssignable(host: type, arg.type,
+                    "Implicit arg collision", id);
 
-                    return ret;
-                }
+                return arg.target || fail();
             }
-
-            let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-            let newArgNode  = createLet(ret, F_IMPLICIT);
-
-            _current_fn.items.insert(newArgIdx, newArgNode);
         }
+
+        // We'll be adding a new thing here.
+        let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
+
+        shadow mut type = type;
+        type.lifetime   = Lifetime_fromArgIndex(newArgIdx);
+
+        /////////////////////////////////////////////////////
+        // TODO obtain or persist this in the original scope.
+        let scope0      = Scope_snap(_scope);
+        let ret         = Binding(id, type, flags: F_IMPLICIT);
+        Scope_pop(_scope, scope0);
+        /////////////////////////////////////////////////////
+
+        let newArgNode  = createLet(ret, F_IMPLICIT);
+        _current_fn.items.insert(newArgIdx, newArgNode);
 
         return ret;
     }
@@ -2543,11 +2595,12 @@ pub fn solve(
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
-        GET(target).flags & F_IMPLICIT || fail(
+        let o = GET(target);
+        o.flags & F_IMPLICIT || fail(
             "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
 
         return CallerNode(
-            createRead("__implicit"), :type, :target);
+            createRead("__implicit"), :o.type, :target);
     }
 
 
@@ -2757,8 +2810,12 @@ pub fn solve(
                     args[i] || fail(), host_args[i].type,
                     isArgument: true);
 
+            //
             type.lifetime = Lifetime_fromCallArgs(
                 type.lifetime, args);
+
+            TEST_lifetime(type.lifetime, numArgs:
+                _current_fn.items.len + FN_ARGS_BACK);
         }
 
         // Track deps.

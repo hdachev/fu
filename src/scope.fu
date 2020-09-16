@@ -432,40 +432,6 @@ pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, t
 
 //
 
-pub fn Lifetime_fromCallArgs(
-    lifetime: Lifetime, args: SolvedNode[]): Lifetime
-{
-    mut result: Lifetime;
-
-    for (mut i = 0; i < lifetime.regions.len; i++)
-    {
-        let r = lifetime.regions[i];
-
-        // Use verbatim unless an argument.
-        let argIdx = Region_toArgIndex(r);
-        if (argIdx < 0)
-        {
-            result = type_inter(result, r);
-            continue;
-        }
-
-        // Else replace with actual from callsite,
-        //  incrementing the relax depth as much as possible.
-
-        // TODO FIX we can catch dangling references
-        //  to temporaries right here.
-
-        let arg     = args[argIdx];
-        let actual  = Lifetime_relaxCallArg(arg.type.lifetime, r.relax);
-            result  = type_inter(result, actual);
-    }
-
-    return result;
-}
-
-
-//
-
 pub fn listGlobals(implicit module: Module): Scope
 {
     mut scope: Scope;
