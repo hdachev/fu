@@ -2,7 +2,7 @@
 set -e
 
 git reset
-git checkout *.fu.cpp
+git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt
 ./bootstrap
 
 ./bin/fu self
