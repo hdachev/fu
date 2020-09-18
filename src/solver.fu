@@ -3,7 +3,8 @@ import parser;
 import scope;
 import context;
 import types;
-import lifetimes;
+
+let TEST = true;
 
 let WARN_ON_IMPLICIT_COPY = false;
 
@@ -123,23 +124,211 @@ pub fn solve(
 
     //
 
-    fn Lifetime_next(): Lifetime
-        Lifetime_fromScopeIdx( _scope.items.len + 1 );
+    fn Lifetime_DISABLE_BORROW_CHECKER(): Lifetime =
+        Lifetime();
 
-    fn Binding(id: string, type: Type, mut flags!: i32, kind = "var")
+    fn Lifetime_FN_unorderedPrep(): Lifetime =
+        Lifetime();
+
+    fn Lifetime_fromNative(inArgs: [Node], args: [SolvedNode]): Lifetime
     {
+        inArgs.len == args.len || fail("inArgs.len != args.len");
+
+        mut res: Lifetime;
+        for (mut i = 0; i < args.len; i++)
+        {
+            let inArg = inArgs[i];
+            let annot = inArg.items[LET_TYPE];
+            if (annot.items.len == 1 && ((annot.kind == "call" && (annot.value == "&" || annot.value == "&mut")) || annot.kind == "arrlit"))
+            {
+                res && fail("Ambiguous __native lifetime.");
+
+                let arg = args[i];
+                let o = GET(arg.target);
+                res = o.type.lifetime || fail("Missing arg lifetime.");
+            }
+        }
+
+        let only = res.uni0n.only;
+        only < 0 || fail("Non-single-arg __native lifetime.");
+
+        return res;
+    }
+
+    fn Lifetime_test(lifetime: Lifetime, current_fn: Target): Lifetime
+    {
+        mut _last = 0x80000000.i32;
+
+        for (mut i = 0; i < lifetime.uni0n.len; i++)
+        {
+            let packed = lifetime.uni0n[i];
+            {
+                packed > _last || fail("Lifetime_test: not a sorted set");
+                _last = packed;
+            }
+
+            if (packed >= 0)
+            {
+                i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
+
+                let local = GET(Target(modid: module.modid, index: packed));
+                let local_of = local.flags & F_LOCAL && local.local_of || fail("Lifetime_test: not a local");
+
+                mut frame = current_fn.index;
+                while (local_of != frame)
+                {
+                    local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere");
+                    frame || fail("Lifetime_test: climbed up to root");
+                    frame = GET(Target(modid: module.modid, index: frame)).local_of;
+                }
+            }
+        }
+
+        return lifetime;
+    }
+
+    fn Lifetime_fromBinding(target: Target, kind: string): Lifetime
+    {
+        if (TEST)
+            target.modid == module.modid || fail("not from this module");
+
+        // Static?
+        if (kind == "global")
+            return Lifetime_DISABLE_BORROW_CHECKER();
+
+        // Argument?
+        let isArg   = kind == "arg";
+        let index   = target.index;
+        let packed  = isArg ? -1 - index : index;
+
+        if (TEST)
+            isArg || kind == "var" || kind == "ref" || fail("not a local");
+
+        return Lifetime_test(
+            Lifetime(uni0n: [ packed ]),
+            _current_fn.target);
+    }
+
+    fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
+    {
+        let returned    = overload.type.lifetime.uni0n;
+        let items       = overload.solved.items;
+
+        // Nothing to do if empty/non-arg.
+        if !(returned.if_first < 0)
+            return Lifetime(uni0n: returned);
+
+        let head = -1 - items[0].target.index;
+        let tail = -1 - items[items.len + FN_ARGS_BACK - 1].target.index;
+        head - (overload.args.len - 1) == tail || fail("simplest thing wont work");
+
+        mut keep:       Lifetime;
+        mut replace:    Lifetime;
+
+        for (mut i = 0; i < returned.len; i++)
+        {
+            let packed  = returned[i];
+            let index   = -1 - packed;
+
+            // We're only filtering here, no need to run the full thing.
+            if (index < head || index > tail) {
+                keep.uni0n ~= packed;
+                continue;
+            }
+
+            // Full union here, otherwise we risk messing things up.
+            let offset  = index - head;
+            let argNode = argNodes[offset];
+            replace     = Lifetime_union(replace, argNode.type.lifetime);
+        }
+
+        return Lifetime_test(
+            Lifetime_union(keep, replace),
+            _current_fn.target);
+    }
+
+    fn Lifetime_killedByReturnOf(lifetime: Lifetime, target: Target)
+    {
+        // Any local will suffice.
+        for (mut i = 0; i < lifetime.uni0n.len; i++)
+            if (lifetime.uni0n[i] >= target.index)
+                return true;
+
+        return false;
+    }
+
+
+    //
+
+    fn Binding(id: string, mut type: Type, mut flags!: i32, kind = "var")
+    {
+        mut name = id;
+
+        // Unique identifiers.
+        if (_root_scope)
+        {
+            mut any     = 0;
+            mut same    = 0;
+
+            let start = _scope_skip.end.items_len || _root_scope.items_len;
+            for (mut i = start; i < _scope.items.len; i++)
+            {
+                if (_scope.items[i].id == id)
+                {
+                    any++;
+                    let o = GET(_scope.items[i].target);
+                    if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
+                        same++;
+                }
+            }
+
+            if (same)
+                name ~= "_" ~ same;
+
+            // LEAKY TEMPLATES, part 1:
+            //  All locals are F_SHADOW - this is a usability thing really,
+            //   otherwise you'd simply have to `shadow` everything manually.
+            //
+            // Actually turning this on for everything -
+            //  it might optimize scope lookups all over the place.
+            //
+            if (kind != "global" && !any) // && _current_fn.flags & F_INLINE
+                flags |= F_SHADOW;
+        }
+
+        //
         let local_of = !(flags & F_FIELD) && _current_fn.target.index;
         if (local_of)
         {
-            kind == "var" || kind == "arg" || kind == "ref" || fail(
-                "Nope, getting it wrong.");
-
+            kind == "var" || kind == "arg" || kind == "ref" || fail("Nope, getting it wrong.");
             flags |= F_LOCAL;
         }
 
-        return Scope_add(
-            _scope, :kind,
-            :id || fail(), :type || fail(), :flags, :local_of);
+        // Reserve the slot.
+        let target = Scope_create(_scope, :kind);
+        Scope_set(_scope, :id, :target);
+
+        // Populate.
+        ref overload        = GET_mut(target);
+
+        overload.name       = name;
+        overload.flags      = flags;
+        overload.local_of   = local_of;
+
+        {
+            // Ensure proper lifetime on reference types.
+            let lifetime = Lifetime_fromBinding(target, kind);
+
+            // Throw away argument lifetime, union below will fix it up.
+            if (flags & F_ARG)
+                type.lifetime = Lifetime_DISABLE_BORROW_CHECKER();
+
+            overload.type   = flags & F_MUT
+                ? add_mutref(type, lifetime)
+                : add_ref   (type, lifetime);
+        }
+
+        return target;
     }
 
     fn Field(id: string, structType: Type, fieldType: Type)
@@ -197,53 +386,6 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
-    fn TEST_lifetime(lifetime: Lifetime, numArgs: i32)
-    {
-        for (mut i = 0; i < lifetime.regions.len; i++)
-        {
-            let r = lifetime.regions[i];
-            let argIdx = Region_toArgIndex(r);
-
-            // argIdx negative for non-arguments.
-            argIdx < numArgs || fail(
-                "Argument union lifetime region out of range.");
-        }
-    }
-
-    fn Lifetime_fromCallArgs(
-        lifetime: Lifetime, args: SolvedNode[]): Lifetime
-    {
-        mut result: Lifetime;
-
-        for (mut i = 0; i < lifetime.regions.len; i++)
-        {
-            let r = lifetime.regions[i];
-
-            // Use verbatim unless an argument.
-            let argIdx = Region_toArgIndex(r);
-            if (argIdx < 0)
-            {
-                result = type_inter(result, r);
-                continue;
-            }
-
-            // Else replace with actual from callsite,
-            //  incrementing the relax depth as much as possible.
-
-            // TODO FIX we can catch dangling references
-            //  to temporaries right here.
-
-            let arg     = args[argIdx];
-            let actual  = Lifetime_relaxCallArg(arg.type.lifetime, r.relax); // <- noop
-
-            TEST_lifetime(actual, _current_fn.items.len + FN_ARGS_BACK);
-            result      = type_inter(result, actual);
-            TEST_lifetime(result, _current_fn.items.len + FN_ARGS_BACK);
-        }
-
-        return result;
-    }
-
     fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32, ret_actual: Type)
     {
         let items = solved.items;
@@ -284,7 +426,7 @@ pub fn solve(
         overload.solved = solved;
 
         // Test.
-        TEST_lifetime(ret_actual.lifetime, args.len);
+        Lifetime_test(ret_actual.lifetime, solved.target);
 
         // See which one of the locals we've used are not our own.
         {
@@ -410,15 +552,18 @@ pub fn solve(
     fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
-        if (type.quals & q_mutref)
+        if (type.is_mutref)
             return SolvedNode();
 
         return createDefinit(type);
     }
 
-    fn createDefinit(type: Type): SolvedNode
+    fn createDefinit(mut type: Type): SolvedNode
     {
         let token = _here || fail();
+
+        if (type.is_ref)
+            type.lifetime = Lifetime_DISABLE_BORROW_CHECKER();
 
         if (type.quals & q_integral)
             return SolvedNode(
@@ -1024,7 +1169,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type);
         if (k == "label")       return solveComma(node);
 
-        if (k == "let")         return solveLet(node, Lifetime_static);
+        if (k == "let")         return solveLet(node);
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrayLiteral(node, type);
 
@@ -1219,7 +1364,7 @@ pub fn solve(
     {
         if (!node.value)
             return createDefinit(
-                add_ref(t_string, Lifetime_static));
+                add_ref(t_string, Lifetime_temporary));
 
         return solved(node, t_string);
     }
@@ -1327,8 +1472,6 @@ pub fn solve(
                 let n_arg = inItems[i] || fail();
                 n_arg.kind == "let" || fail();
 
-                let lifetime = Lifetime_fromArgIndex(i);
-
                 // If spec and unless argument explicitly wants a value -
                 if (spec && !(n_arg.flags & F_MUT)
                          && !(n_arg.items[LET_INIT]))
@@ -1339,14 +1482,14 @@ pub fn solve(
 
                     // Emit value-taking specializations.
                     let type = evalTypeParam(mut_arg.value);
-                    if !(type.quals & q_ref)
+                    if !(type.is_ref)
                         mut_arg.flags |= F_MUT;
 
-                    outItems[i] = solveLet(mut_arg, :lifetime);
+                    outItems[i] = solveLet(mut_arg);
                 }
                 else
                 {
-                    outItems[i] = solveLet(n_arg, :lifetime);
+                    outItems[i] = solveLet(n_arg);
                 }
             }
 
@@ -1390,6 +1533,19 @@ pub fn solve(
             else
             {
                 _current_fn.ret_actual = _current_fn.ret_expect || fail("falsy ret_expect");
+
+                //////////////////////////////////////////////////////////
+                // Lifetimes.
+                //
+                if (_current_fn.ret_actual.lifetime)
+                    _current_fn.ret_actual.lifetime = native
+                        ? Lifetime_fromNative(inItems[0, inItems.len + FN_ARGS_BACK], _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK])
+                        : solve ? fail() : Lifetime_FN_unorderedPrep();
+                //
+                else if (_current_fn.ret_actual.is_ref)
+                    fail("fn.ret_actual is a ref without a lifetime.");
+                //
+                //////////////////////////////////////////////////////////
             }
 
             // Sighashes include return value.
@@ -1610,10 +1766,6 @@ pub fn solve(
 
                 if (inType)
                 {
-                    // All fnargs are referable.
-                    inType.lifetime = Lifetime_fromArgIndex(i);
-
-                    //
                     let argName = argNode.value || fail();
 
                     // Same pattern - grabs a mutref.
@@ -1625,7 +1777,7 @@ pub fn solve(
                             = inType;
 
                     //
-                    inType.quals |= q_ref;
+                    inType = add_ref(inType, Lifetime_temporary);
 
                     // Type check.
                     if (annot)
@@ -1872,7 +2024,7 @@ pub fn solve(
             fail("All structs must be zerofilled by default."
                 ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
-        return solveBinding(node, Lifetime_fromArgIndex(0));
+        return solveLetLike_dontTouchScope(node);
     }
 
     fn solveField(structType: Type, node: SolvedNode, ref innerScope: ScopeItem[])
@@ -1929,8 +2081,8 @@ pub fn solve(
             // TODO LIFETIMES   this doesn't work               //
             //                  for deeply referential types.   //
                                                                 //
-            if (next.type.lifetime.killedBy(_current_fn.return_idx.items_len) &&
-                next.type.quals & q_ref)                        //
+            if (next.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
+                next.type.is_ref)                               //
             {                                                   //
                 let nrvo = next.kind == "call"                  //
                         && next.items.len == 0                  //
@@ -1969,40 +2121,45 @@ pub fn solve(
 
     //
 
-    fn solveBinding(node: Node, lifetime: Lifetime): SolvedNode
+    fn solveLetLike_dontTouchScope(node: Node): SolvedNode
     {
         let n_annot     = node.items[LET_TYPE];
         let n_init      = node.items[LET_INIT];
 
         mut annot       = n_annot && evalTypeAnnot(n_annot);
         if (annot.type && node.flags & F_REF)
-            annot.type = add_mutref(annot.type, lifetime);
+            annot.type  = add_mutref(annot.type, Lifetime_temporary);
 
         mut init        = n_init && solveNode(n_init, annot.type);
 
         annot.type || init.type || fail(
             "Variable declarations without type annotations must be initialized.");
 
-        let t_let       = annot.type
-                            ? node.flags & F_ARG && !(node.flags & F_MUT)
-                                ? add_ref(annot.type, lifetime)
-                                : annot.type
-                        : init.type.quals & q_mutref || node.flags & F_MUT
-                            ? node.flags & F_REF
-                                ? init.type
-                                : clear_refs(init.type)
-                            : node.flags & F_ARG && !(node.flags & F_MUT)
-                                ? add_ref(init.type, lifetime)
-                                : init.type;
-
         if (annot.type && init.type)
+        {
             checkAssignable(host: annot.type, init.type,
                 "Type annotation does not match init expression",
                     node.value, "=");
 
+            annot.type.lifetime = init.type.lifetime;
+        }
+
         if (node.flags & F_REF)
-            init.type.quals & q_mutref || !init && node.flags & F_ARG || fail(
+            init.type.is_mutref || !init && node.flags & F_ARG || fail(
                 "`ref` variables must be initialized to a mutable reference.");
+
+        //
+        let t_let   = annot.type
+                        ? node.flags & F_ARG && !(node.flags & F_MUT)
+                            ? add_ref(annot.type, Lifetime_temporary)
+                            : annot.type
+                    : init.type.is_mutref || node.flags & F_MUT
+                        ? node.flags & F_REF
+                            ? init.type
+                            : clear_refs(init.type)
+                        : node.flags & F_ARG && !(node.flags & F_MUT)
+                            ? add_ref(init.type, Lifetime_temporary)
+                            : init.type;
 
         if (init)
             maybeCopyOrMove(init, t_let);
@@ -2012,7 +2169,7 @@ pub fn solve(
 
         if !(_current_fn || node.flags & F_FIELD)
         {
-            if (out.flags & F_MUT || out.type.quals & q_mutref)
+            if (out.flags & F_MUT || out.type.is_mutref)
                 fail("Mutable statics are not currently allowed.");
 
             out.kind = "global";
@@ -2028,80 +2185,28 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn solveLet(node: Node, mut lifetime: Lifetime): SolvedNode
+    fn solveLet(node: Node): SolvedNode
     {
-        mut out         = solveBinding(node, lifetime);
+        mut out         = solveLetLike_dontTouchScope(node);
         let global      = out.kind == "global";
 
-        //////////////////////////////////////////////////////
-        //                                                  //
-        // TODO LIFETIMES   this doesn't work               //
-        //                  for deeply referential types.   //
-                                                            //
-        if !(out.type.quals & q_ref)                        //
-            lifetime = Lifetime_next();                     //
-                                                            //
-        //////////////////////////////////////////////////////
-
-        let kind = global                   ? "global"
-                 : node.flags & F_ARG       ? "arg"
-                 : out.type.quals & q_ref   ? "ref"
-                                            : "var";
+        let kind = global               ? "global"
+                 : node.flags & F_ARG   ? "arg"
+                 : out.type.is_ref      ? "ref"
+                                        : "var";
 
         let id = out.value;
 
         //
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
-            let overload = out.target = Binding(
-                :id, :kind, :node.flags,
-
-                node.flags & F_MUT
-                    ? add_mutref(out.type, lifetime)
-                    : add_ref(out.type, lifetime));
-
-            if (_root_scope)
-            {
-                mut any = 0;
-                mut same = 0;
-                /*
-                for (mut i = 0; i < _scope.items.len - 1; i++)
-                {
-                    if (i == _scope_skip.start.items_len)
-                        i  = _scope_skip.end  .items_len;
-                /*/
-                let start = _scope_skip.end.items_len || _root_scope.items_len;
-                for (mut i = start; i < _scope.items.len - 1; i++)
-                {
-                // */
-                    if (_scope.items[i].id == id)
-                    {
-                        any++;
-                        let o = GET(_scope.items[i].target);
-                        if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
-                            same++;
-                    }
-                }
-
-                if (same)
-                    GET_mut(overload).name ~= "_" ~ same;
-
-                // LEAKY TEMPLATES, part 1:
-                //  All locals are F_SHADOW - this is a usability thing really,
-                //   otherwise you'd simply have to `shadow` everything manually.
-                //
-                // Actually turning this on for everything -
-                //  it might optimize scope lookups all over the place.
-                //
-                if (!global && !any) // && _current_fn.flags & F_INLINE
-                    out.flags |= F_SHADOW;
-            }
+            let target = out.target = Binding(:id, :kind, :node.flags, :out.type);
 
             if (global)
-                GET_mut(overload).solved = out;
+                GET_mut(target).solved = out;
 
             if (out.flags & F_USING)
-                scope_using(overload);
+                scope_using(target);
         }
 
         return out;
@@ -2255,10 +2360,10 @@ pub fn solve(
             if (items.len == 1)
             {
                 if (node.value == "&")
-                    return solved(node, add_ref(T, Lifetime_static));
+                    return solved(node, add_ref(T, Lifetime_temporary));
 
                 if (node.value == "&mut")
-                    return solved(node, add_mutref(T, Lifetime_static));
+                    return solved(node, add_mutref(T, Lifetime_temporary));
 
                 if (node.value == "[]")
                     return solved(node, createArray(T));
@@ -2305,7 +2410,7 @@ pub fn solve(
                     // HACK TODO FIX!
                     //  keep the ref around for clear-slice to work.
                     if (node.value == "&mut" && items[0].kind == "arrlit" && items[0].items.len == 1)
-                        t.quals |= q_ref;
+                        t = add_ref(t, Lifetime_temporary);
 
                     return trySolveTypeParams(
                         items[0] || fail(), t, typeParams);
@@ -2513,7 +2618,7 @@ pub fn solve(
                 target: lookupStruct(type).ctor);
 
         // Nope, it's an array literal.
-        let items   = solveNodes(node.items, itemType);
+        mut items   = solveNodes(node.items, itemType);
         mut startAt = 0;
 
         if (!itemType && items.len)
@@ -2533,6 +2638,13 @@ pub fn solve(
             itemType || fail(
                 "[array literal] No common supertype.");
         }
+
+        //
+        if (itemType.is_ref || itemType.lifetime)
+            fail("Array items cannot be refs.");
+
+        for (mut i = 0; i < items.len; i++)
+            maybeCopyOrMove(items[i], itemType);
 
         return solved(node, createArray(itemType), items);
     }
@@ -2569,9 +2681,6 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-
-        shadow mut type = type;
-        type.lifetime   = Lifetime_fromArgIndex(newArgIdx);
 
         /////////////////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
@@ -2628,6 +2737,7 @@ pub fn solve(
                             : type_tryInter(priType, secType);
 
             type || fail("[if] No common supertype: `" ~ serializeType(priType) ~ " : " ~ serializeType(secType) ~ "`.");
+            type.is_ref || !type.lifetime || fail("[if] stray lifetime");
 
             if (cons)
                 maybeCopyOrMove(cons, type);
@@ -2810,12 +2920,7 @@ pub fn solve(
                     args[i] || fail(), host_args[i].type,
                     isArgument: true);
 
-            //
-            type.lifetime = Lifetime_fromCallArgs(
-                type.lifetime, args);
-
-            TEST_lifetime(type.lifetime, numArgs:
-                _current_fn.items.len + FN_ARGS_BACK);
+            type.lifetime = Lifetime_replaceArgsAtCallsite(overload, args);
         }
 
         // Track deps.
@@ -2854,36 +2959,34 @@ pub fn solve(
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
         isArgument = false): void
     {
-        let q = slot.quals;
-
         // Clear mutrefs unless needed.
-        if !(q & q_mutref)
-            node.type.quals &= ~q_mutref;
+        if !(slot.is_mutref)
+            node.type = clear_mutref(node.type);
 
         // No copy needed when the slot is a reference.
-        if (q & q_ref)
+        if (slot.is_ref)
         {
             // Except if we're talking a fnarg,
             //  in which case we're better off binding a temporary,
             //   else we risk cache missing on the useless global defval.
             if (node.kind == "definit" && isArgument)
-                node.type.quals &= ~q_ref;
+                node.type = clear_refs(node.type);
 
             return;
         }
 
         // Also, no copy needed when the expression is a value.
-        if !(node.type.quals & q_ref)
+        if (!node.type.is_ref)
             return;
 
         // Definits can just as well emit values.
         if (node.kind == "definit")
         {
-            node.type.quals &= ~q_ref;
+            node.type = clear_refs(node.type);
             return;
         }
 
-        if !(q & q_rx_copy)
+        if !(slot.quals & q_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
         if (WARN_ON_IMPLICIT_COPY)

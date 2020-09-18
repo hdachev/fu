@@ -84,12 +84,12 @@ pub fn cpp_codegen(
 
         let fwd = typeAnnotBase(type);
 
-        if (type.quals & q_ref)
+        if (type.is_ref)
         {
             if (fwd.starts(with: "fu::view"))
                 return fwd;
 
-            if (type.quals & q_mutref)
+            if (type.is_mutref)
                 return fwd ~ "&";
 
             // Pass primitives by value.
@@ -161,13 +161,13 @@ pub fn cpp_codegen(
         }
 
         // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
-        let sliceItem = tryClear_slice(add_ref(type, lifetimes::Lifetime));
+        let sliceItem = tryClear_slice(add_ref(type, Lifetime));
         if (sliceItem)
         {
             let itemAnnot = typeAnnot(sliceItem);
 
             include("<fu/view.h>");
-            if (type.quals & q_mutref)
+            if (type.is_mutref)
                 return "fu::view_mut<" ~ itemAnnot ~ ">";
             else
                 return "fu::view<" ~ itemAnnot ~ ">";
@@ -366,6 +366,7 @@ pub fn cpp_codegen(
         if (id == "template")   return "tEmplate";
         if (id == "try")        return "tRy";
         if (id == "catch")      return "cAtch";
+        if (id == "union")      return "uNion";
         if (id == "not")        return "nOt";
         if (id == "and")        return "aNd";
         if (id == "or")         return "oR";
@@ -711,7 +712,7 @@ pub fn cpp_codegen(
         {
             // Cleaner copy-init setup,
             //  the default is super-verbose.
-            if (init.kind == "copy" && !(node.type.quals & q_ref))
+            if (init.kind == "copy" && !node.type.is_ref)
             {
                 let expr = cgNode(init.items.only);
                 if (node.type.quals & q_primitive)
@@ -722,7 +723,7 @@ pub fn cpp_codegen(
 
             // Definit.
             if (init.kind == "definit"
-                    && !(init.type.quals & q_ref)
+                    && !init.type.is_ref
                     && init.type.vtype == node.type.vtype)
             {
                 return head ~ " {}";
@@ -1014,7 +1015,7 @@ pub fn cpp_codegen(
                 if (id == "[]")
                 {
                     // The new cow_vec is here.
-                    if (node.type.quals & q_mutref)
+                    if (node.type.is_mutref)
                         return items[0] ~ ".mutref(" ~ items[1] ~ ")";
 
                     return items[0] ~ "[" ~ items[1] ~ "]";
@@ -1246,9 +1247,9 @@ pub fn cpp_codegen(
 
     fn cgDefault(type: Type): string
     {
-        type.quals & q_mutref && fail("Cannot definit mutrefs.");
+        type.is_mutref && fail("Cannot definit mutrefs.");
 
-        if (type.quals & q_ref)
+        if (type.is_ref)
         {
             include("<fu/default.h>");
 

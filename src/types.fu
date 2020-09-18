@@ -1,7 +1,6 @@
-import lifetimes;
 
-pub let q_mutref        = 1 << 0;
-pub let q_ref           = 1 << 1;
+let q_mutref            = 1 << 0;
+let q_ref               = 1 << 1;
 
 pub let q_rx_copy       = 1 << 2;
 
@@ -58,6 +57,36 @@ pub let e_io        = 1 <<  8;
 
 pub let e_malloc    = 1 << 12;
 pub let e_memcpy    = 1 << 13;
+
+
+//
+
+pub struct Lifetime
+{
+    uni0n: i32[];
+};
+
+pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
+{
+    // How does this work -
+    //
+    // In a lifetime union, there can be 0 or 1 local variables,
+    //  and 0-N function arguments from any number of nested function frames
+    //   (basically some function and its closures at whatever depth).
+    //
+    // There can be only one local - their lifetimes are obviously ordered,
+    //  so only one local can survive any union, and that's the innermost,
+    //   which is the greatest index. Innermost = first to die.
+    //
+    // Argument indices are -1-negated, so they always end up to the left
+    //  of any non-arg locals, which trivializes this operation.
+    //
+    mut uni0n = set::union(a.uni0n, b.uni0n);
+    if (uni0n.len >= 2 && uni0n[uni0n.len - 2] >= 0)
+        uni0n.splice(uni0n.len - 2, 1);
+
+    return Lifetime(:uni0n);
+}
 
 
 //
@@ -141,7 +170,7 @@ pub fn is_bool (t: Type) t.vtype == t_bool .vtype;
 //     reference, they inherit invariance and you're prevented
 //      from doing anything bad.
 
-pub fn isAssignable(host: Type, guest: Type)
+pub fn isAssignable(host: Type, guest: Type): bool
 {
     return host.canon == guest.canon
         && host.modid == guest.modid
@@ -151,59 +180,60 @@ pub fn isAssignable(host: Type, guest: Type)
         || guest.is_never;
 }
 
+pub fn Lifetime_temporary(): Lifetime =
+    Lifetime(uni0n: [ 0x7fffffff.i32 ]);
 
-//
-
-pub fn isAssignableAsArgument(
-    host: Type, mut guest: Type)
+pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
-    guest.quals |= q_ref;
-    return isAssignable(host, guest);
+    // This has to go, it doesn't make amazing sense.
+    return isAssignable(host,
+        guest.quals & q_ref || !(host.quals & q_ref)
+            ? guest
+            : add_ref(guest, Lifetime_temporary));
 }
 
 
 //
 
-pub fn qsub(type: Type, q: i32): Type
-{
-    mut t = type;
-        t.quals &= ~q;
+pub fn is_ref(   type: Type): bool = type.quals & q_ref    != 0;
+pub fn is_mutref(type: Type): bool = type.quals & q_mutref != 0;
 
-    return t;
+pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
+{
+    type.quals   |= q_ref;
+    type.lifetime = Lifetime_union(type.lifetime, lifetime);
+    return type;
 }
 
-pub fn qhas(type: Type, q: i32): bool
+pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 {
-    return type.quals & q == q;
-}
-
-fn tryClear(type: Type, q: i32): Type
-{
-    if (!type || !qhas(type, q))
-        return Type();
-
-    return qsub(type, q);
+    type.quals   |= q_mutref | q_ref;
+    type.lifetime = Lifetime_union(type.lifetime, lifetime);
+    return type;
 }
 
 
 //
 
-pub fn add_ref(type: Type, lifetime: Lifetime): Type
+pub fn clear_refs(mut type: Type): Type
 {
-    mut t = type || throw("falsy type");
-        t.quals |= q_ref;
-        t.lifetime = type_inter(lifetime, t.lifetime);
-
-    return t;
+    type.quals &= ~(q_ref | q_mutref);
+    type.lifetime = Lifetime(); // <- discard lifetime
+    return type;
 }
 
-pub fn add_mutref(type: Type, lifetime: Lifetime): Type
+pub fn clear_mutref(mut type: Type)
 {
-    mut t = type || throw("falsy type");
-        t.quals   |= q_mutref | q_ref;
-        t.lifetime = type_inter(t.lifetime, lifetime);
+    type.quals &= ~q_mutref;
+    type.quals & q_ref || !type.lifetime || assert(); // dont discard lifetime, it's
+    return type;
+}
 
-    return t;
+fn tryClearRefs(type: Type, mutref?: bool): Type
+{
+    let refs = type.quals  & (q_ref | q_mutref);
+    return (mutref ? refs == (q_ref | q_mutref) : !!refs)
+        && clear_refs(type);
 }
 
 
@@ -211,39 +241,18 @@ pub fn add_mutref(type: Type, lifetime: Lifetime): Type
 
 pub fn tryClear_mutref(type: Type)
 {
-    return tryClear(type, q_ref | q_mutref);
+    return tryClearRefs(:type, mutref: true);
 }
 
 pub fn tryClear_ref(type: Type)
 {
-    let t = tryClear(type, q_ref);
-
-    return t
-         ? qsub(t, q_mutref)
-         : t;
-}
-
-pub fn clear_refs(type: Type): Type
-{
-    mut t = type;
-        t.quals &= ~q_ref;
-        t.quals &= ~q_mutref;
-
-    return t;
-}
-
-pub fn clear_mutref(type: Type)
-{
-    mut t = type;
-        t.quals &= ~q_mutref;
-
-    return t;
+    return tryClearRefs(:type);
 }
 
 pub fn add_refs(from: Type, mut to: Type)
 {
     to.quals   |= from.quals & (q_ref | q_mutref);
-    to.lifetime = type_inter(from.lifetime, to.lifetime);
+    to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
     return to;
 }
 
@@ -390,7 +399,7 @@ pub fn createMap(key: Type, vtype: Type): Type
 
     return Type(
         ValueType(:canon, :quals, :modid),
-            lifetime: type_inter(key.lifetime, vtype.lifetime));
+            lifetime: Lifetime_union(key.lifetime, vtype.lifetime));
 }
 
 pub struct MapFields
@@ -450,13 +459,16 @@ pub fn type_tryInter(a: Type, b: Type)
              : b.is_never ? a
              : Type();
 
+    let quals = a.quals & b.quals;
+
     return Type(
         ValueType(
             :a.canon,
-            :a.quals & b.quals,
+            :quals,
             :a.modid),
-        type_inter(a.lifetime, b.lifetime),
-        type_inter(a.effects,  b.effects ));
+        effects: type_inter(a.effects, b.effects),
+        lifetime: quals & q_ref &&
+            Lifetime_union(a.lifetime, b.lifetime));
 }
 
 

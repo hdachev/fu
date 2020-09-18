@@ -21,3 +21,41 @@ pub fn add_set(ref dest: $T[], src: $T[])
     for (mut i = 0; i < src.len; i++)
         dest.add(src[i]);
 }
+
+
+// TODO instead of this, loop twice -
+//  once to size things up,
+//   again to put everything in its place (N).
+
+pub fn union(a: $T[], b: $T[]): $T[]
+{
+    if (a.len < b.len)
+        return union(b, a);
+
+    shadow mut a = a;
+
+    mut x = 0;
+    mut y = 0;
+    while (x < a.len && y < b.len)
+    {
+        let X = a[x];
+        let Y = b[y];
+
+        if (X > Y)
+        {
+            a.insert(x, Y);
+            y++;
+        }
+        else if (X == Y)
+        {
+            y++;
+        }
+
+        x++;
+    }
+
+    if (y < b.len)
+        a ~= b[y, b.len];
+
+    return a;
+}

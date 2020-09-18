@@ -1,6 +1,5 @@
 import parser;
 import types;
-import lifetimes;
 
 pub let SS_FINALIZED    = 1 << 0;
 pub let SS_DIRTY        = 1 << 1;
