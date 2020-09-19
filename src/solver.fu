@@ -195,7 +195,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, kind: string): Lifetime
+    fn Lifetime_fromBinding(target: Target, kind: string, type: Type): Lifetime
     {
         if (TEST)
             target.modid == module.modid || fail("not from this module");
@@ -205,12 +205,9 @@ pub fn solve(
             return Lifetime_DISABLE_BORROW_CHECKER();
 
         // Argument?
-        let isArg   = kind == "arg";
-        let index   = target.index;
-        let packed  = isArg ? -1 - index : index;
-
-        if (TEST)
-            isArg || kind == "var" || kind == "ref" || fail("not a local");
+        let parametric  = kind == "arg" && type.is_ref;
+        let index       = target.index;
+        let packed      = parametric ? -1 - index : index;
 
         return Lifetime_test(
             Lifetime(uni0n: [ packed ]),
@@ -325,7 +322,7 @@ pub fn solve(
 
         {
             // Ensure proper lifetime on reference types.
-            let lifetime = Lifetime_fromBinding(target, kind);
+            let lifetime = Lifetime_fromBinding(target, kind, type);
 
             // Throw away argument lifetime, union below will fix it up.
             if (flags & F_ARG)
