@@ -223,9 +223,9 @@ pub fn solve(
         if !(returned.if_first < 0)
             return Lifetime(uni0n: returned);
 
-        let head = -1 - items[0].target.index;
-        let tail = -1 - items[items.len + FN_ARGS_BACK - 1].target.index;
-        head - (overload.args.len - 1) == tail || fail("simplest thing wont work");
+        let head = items[0].target.index;
+        let tail = items[items.len + FN_ARGS_BACK - 1].target.index;
+        head + (overload.args.len - 1) == tail || fail("simplest thing wont work");
 
         mut keep:       Lifetime;
         mut replace:    Lifetime;
@@ -256,8 +256,11 @@ pub fn solve(
     {
         // Any local will suffice.
         for (mut i = 0; i < lifetime.uni0n.len; i++)
-            if (lifetime.uni0n[i] >= target.index)
+        {
+            let item = lifetime.uni0n[i];
+            if (item >= target.index)
                 return true;
+        }
 
         return false;
     }
@@ -2690,7 +2693,7 @@ pub fn solve(
         /////////////////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
         let scope0      = Scope_snap(_scope);
-        let ret         = Binding(id, type, flags: F_IMPLICIT);
+        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG);
         Scope_pop(_scope, scope0);
         /////////////////////////////////////////////////////
 
