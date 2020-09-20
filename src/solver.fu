@@ -1484,11 +1484,6 @@ pub fn solve(
                     mut mut_arg = n_arg;
                     mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
 
-                    // Emit value-taking specializations.
-                    let type = evalTypeParam(mut_arg.value);
-                    if !(type.is_ref)
-                        mut_arg.flags |= F_MUT;
-
                     outItems[i] = solveLet(mut_arg);
                 }
                 else
