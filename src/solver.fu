@@ -164,6 +164,9 @@ pub fn solve(
     {
         mut _last = 0x80000000.i32;
 
+        let debug_2 = current_fn && GET(current_fn);
+        if (debug_2) {}
+
         for (mut i = 0; i < lifetime.uni0n.len; i++)
         {
             let packed = lifetime.uni0n[i];
@@ -313,25 +316,19 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, :kind);
+        let target = Scope_create(_scope, :kind, :name, :flags, :local_of);
         Scope_set(_scope, :id, :target);
 
-        // Populate.
-        ref overload        = GET_mut(target);
-
-        overload.name       = name;
-        overload.flags      = flags;
-        overload.local_of   = local_of;
-
+        // Setup the lifetime for references to this binding.
+        ref overload = GET_mut(target);
         {
-            // Ensure proper lifetime on reference types.
             let lifetime = Lifetime_fromBinding(target, kind, type);
 
             // Throw away argument lifetime, union below will fix it up.
             if (flags & F_ARG)
                 type.lifetime = Lifetime_DISABLE_BORROW_CHECKER();
 
-            overload.type   = flags & F_MUT
+            overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
                 : add_ref   (type, lifetime);
         }
@@ -394,7 +391,7 @@ pub fn solve(
         Scope_set(_scope, :id, :target);
     }
 
-    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], parent_idx: i32, ret_actual: Type)
+    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], ret_actual: Type)
     {
         let items = solved.items;
 
@@ -445,7 +442,6 @@ pub fn solve(
             }
 
             overload.closes_over = closes_over;
-            overload.local_of = parent_idx;
         }
 
         // Test.
@@ -1438,7 +1434,7 @@ pub fn solve(
 
         if (!prep)
         {
-            out.target = into || Scope_create(_scope);
+            out.target = into || Scope_create(_scope, local_of: out.parent_idx);
             out.type = addroffn::X_addrofTarget(out.target);
         }
 
@@ -1584,7 +1580,7 @@ pub fn solve(
             FnDecl_init(out.target, :kind, id: name, :template);
         }
 
-        FnDecl_update(out.out, out.locals_used, out.parent_idx, out.ret_actual);
+        FnDecl_update(out.out, out.locals_used, out.ret_actual);
 
         if (solve)
             return createFnDef(out.out);
