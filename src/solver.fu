@@ -2387,7 +2387,7 @@ pub fn solve(
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
             // Slice.
-            return solved(node, createSlice(T));
+            return solved(node, createSlice(T, Lifetime_temporary));
         }
 
         return fail("TODO evalTypeAnnot");

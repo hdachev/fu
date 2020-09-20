@@ -364,12 +364,11 @@ pub fn type_isSlice(type: Type): bool
         && type.canon.starts(with: "[]");
 }
 
-pub fn createSlice(item: Type): Type
+pub fn createSlice(item: Type, lifetime: Lifetime): Type
 {
     mut out = createArray(item);
     out.quals &= ~(q_rx_copy | q_rx_resize);
-    out.quals |= q_ref;
-    return out;
+    return add_ref(out, lifetime);
 }
 
 pub fn tryClear_slice(type: Type): Type
