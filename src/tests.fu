@@ -2662,6 +2662,19 @@ pub fn runTests()
     `);
 
 
+    // Return inference.
+
+    ZERO(`
+        fn noReturn() throw ("ex");
+
+        fn doesReturn(a: i32)
+            if (a > 0)  return noReturn();
+            else        return a;
+
+        fn main() doesReturn(-3) + 3;
+    `);
+
+
     // Let's start having fun.
 
     ZERO(`
