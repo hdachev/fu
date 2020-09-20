@@ -1595,7 +1595,7 @@ pub fn solve(
 
     //
 
-    fn mangleArguments(args: [SolvedNode]): string
+    fn mangleArguments(args: [$T]): string
     {
         mut mangle = "";
         for (mut i = 0; i < args.len; i++)
@@ -1603,7 +1603,7 @@ pub fn solve(
             if (i)
                 mangle ~= ",";
 
-            mangle ~= serializeType((args[i] || fail()).type);
+            mangle ~= serializeType(args[i].type);
         }
 
         return mangle;
@@ -1611,6 +1611,26 @@ pub fn solve(
 
 
     //
+
+    fn setSpec(mangle: string, target: Target)
+    {
+        ref t = module.out.specs[mangle] ||= Target;
+
+        fn name(shadow target)
+            target.modid != -1  ? GET(target).name
+                                : "SPEC_FAIL";
+
+        !t ||
+        t.modid == target.modid &&
+        t.index == target.index ||
+        t.modid == -1 || fail(
+            "About to screw up royally, replacing spec: "
+                ~ t.index ~ " with " ~ target.index
+                    ~ ", mangle: " ~ mangle ~ ", that's: "
+                    ~ t.name ~ " becoming " ~ target.name);
+
+        t = target;
+    }
 
     fn trySpecialize(
         overloadIdx: Target, args: SolvedNode[],
@@ -1635,16 +1655,37 @@ pub fn solve(
 
             ////////////////////////////////////
             let m0 = mangle;
-            module.out.specs[m0] = SPEC_FAIL;
+            setSpec(m0, SPEC_FAIL);
             ////////////////////////////////////
 
             spec = doTrySpecialize(:overloadIdx, :args, :mangle) || SPEC_FAIL;
 
-            ////////////////////////////////////
-            module.out.specs[mangle] = spec;
+            /////////////////////////////////////////
+            // TODO FIX THIS MESS
+            let spec0 = spec;
+
+            {
+                ref preexisting = module.out.specs[mangle] ||= spec;
+                if (preexisting.modid == SPEC_FAILED)
+                    preexisting = spec;
+                else
+                    spec = preexisting;
+            }
+
             if (m0 != mangle)
-                module.out.specs[m0] = spec;
-            ////////////////////////////////////
+            {
+                ref preexisting = module.out.specs[m0] ||= spec;
+                if (preexisting.modid == spec0.modid &&
+                    preexisting.index == spec0.index)
+                {
+                    preexisting = spec;
+                }
+                else
+                {
+                    setSpec(m0, spec);
+                }
+            }
+            /////////////////////////////////////////
 
             // The resolver entry.
             if (spec.modid != SPEC_FAILED)
@@ -1796,6 +1837,7 @@ pub fn solve(
         // Literal fixup.
         if (remangle)
         {
+            // TODO FIX
             let start   = mangle.find(' ') + 1 || fail();
                 mangle  = mangle.slice(0, start) ~ mangleArguments(args);
         }
@@ -1848,12 +1890,21 @@ pub fn solve(
         ///////////////////////////////////////////
         // Re-enable recursion.
         if (prep.target)
-            module.out.specs[mangle] = prep.target;
+            setSpec(mangle, prep.target);
         ///////////////////////////////////////////
 
         let specialized = ok && __solveFn(
             template.node, :prep, solve: true, spec: true, :caseIdx,
-            :into);
+            :into).target;
+
+        // A final remangle.
+        if (specialized)
+        {
+            // TODO FIX
+            let start   = mangle.find(' ') + 1 || fail();
+                mangle  = mangle.slice(0, start) ~ mangleArguments(
+                    GET(specialized).args);
+        }
 
         ////////////////////////////////
         SWAP(_current_fn, current_fn0);
@@ -1862,7 +1913,7 @@ pub fn solve(
         _scope_skip = scope_skip0;
         ////////////////////////////////
 
-        return specialized.target;
+        return specialized;
     }
 
 
