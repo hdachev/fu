@@ -2675,6 +2675,31 @@ pub fn runTests()
         fn main() doesReturn(-3) + 3;
     `);
 
+    ZERO(`
+        struct Context { modules: Module[]; };
+        struct Module  { fname: i32; };
+
+        fn test(implicit ctx: Context) {
+            fn findModule(fname: i32): &Module {
+                let modules = ctx.modules;
+                for (mut i = 0; i < modules.len; i++) {
+                    let module = modules[i];
+                    if (module.fname == fname)
+                        return module;
+                }
+
+                throw("Cannot locate: " ~ fname);
+            }
+
+            return findModule(0);
+        }
+
+        fn main() {
+            let implicit ctx = Context([ Module ]);
+            return test.fname;
+        }
+    `);
+
 
     // Let's start having fun.
 
