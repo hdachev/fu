@@ -2100,6 +2100,13 @@ pub fn solve(
     //  we want to re-iterate all the return statements,
     //   because that can change our copy/move decision.
 
+    fn typeInter(reason: string, a: Type, b: Type)
+    {
+        return type_tryInter(a, b) || fail(reason
+            ~ " No common supertype: `"
+            ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
+    }
+
     fn reportReturnType(type: Type)
     {
         // Check annot.
@@ -2108,7 +2115,7 @@ pub fn solve(
 
         // Check multiple returns.
         if (_current_fn.ret_actual)
-            checkAssignable(host: _current_fn.ret_actual, type, "Non-assignable return types");
+            _current_fn.ret_actual = typeInter("[return]", _current_fn.ret_actual, type);
         else
             _current_fn.ret_actual = type || fail();
 

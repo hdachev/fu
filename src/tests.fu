@@ -2667,9 +2667,10 @@ pub fn runTests()
     ZERO(`
         fn noReturn() throw ("ex");
 
-        fn doesReturn(a: i32)
+        fn doesReturn(a: i32) {
             if (a > 0)  return noReturn();
-            else        return a;
+                        return a;
+        }
 
         fn main() doesReturn(-3) + 3;
     `);
