@@ -1206,6 +1206,8 @@ pub fn solve(
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
+        if (k == "struct")      return solveStructExpr(node);
+
         return fail("TODO: " ~ k);
     }
 
@@ -1934,6 +1936,11 @@ pub fn solve(
         return __solveStruct(solve: true, :node, :prep);
     }
 
+    fn solveStructExpr(node: Node): SolvedNode
+    {
+        return __solveStruct(solve: true, :node);
+    }
+
     fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode): SolvedNode
     {
         mut out = prep || solved(node, Type());
@@ -2100,9 +2107,9 @@ pub fn solve(
     //  we want to re-iterate all the return statements,
     //   because that can change our copy/move decision.
 
-    fn typeInter(reason: string, a: Type, b: Type)
+    fn superType(reason: string, a: Type, b: Type)
     {
-        return type_tryInter(a, b) || fail(reason
+        return type_trySuper(a, b) || fail(reason
             ~ " No common supertype: `"
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
@@ -2111,11 +2118,12 @@ pub fn solve(
     {
         // Check annot.
         if (_current_fn.ret_expect)
-            checkAssignable(host: _current_fn.ret_expect, type, "Expression non-assignable to return annotation");
+            checkAssignable(host: _current_fn.ret_expect, type,
+                "Expression not assignable to return annotation");
 
         // Check multiple returns.
         if (_current_fn.ret_actual)
-            _current_fn.ret_actual = typeInter("[return]", _current_fn.ret_actual, type);
+            _current_fn.ret_actual = superType("[return]", _current_fn.ret_actual, type);
         else
             _current_fn.ret_actual = type || fail();
 
@@ -2528,7 +2536,7 @@ pub fn solve(
             ref _param = (typeParams[id] ||= Type);
             if (_param)
             {
-                let inter = type_tryInter(_param, type);
+                let inter = type_trySuper(_param, type);
                 if (!inter)
                     return false;
 
@@ -2716,7 +2724,7 @@ pub fn solve(
 
         for (mut i = startAt; i < items.len; i++)
         {
-            itemType = type_tryInter(
+            itemType = type_trySuper(
                 itemType, (items[i] || fail()).type);
 
             itemType || fail(
@@ -2818,7 +2826,7 @@ pub fn solve(
         if (!type.is_void && !type.is_bool)
         {
             type = !secType ? priType
-                            : type_tryInter(priType, secType);
+                            : type_trySuper(priType, secType);
 
             type || fail("[if] No common supertype: `" ~ serializeType(priType) ~ " : " ~ serializeType(secType) ~ "`.");
             type.is_ref || !type.lifetime || fail("[if] stray lifetime");
@@ -2876,7 +2884,7 @@ pub fn solve(
 
                 if (sumType)
                 {
-                    sumType = type_tryInter(sumType, itemType);
+                    sumType = type_trySuper(sumType, itemType);
                     if (!sumType)
                         break;
                 }
@@ -2929,7 +2937,7 @@ pub fn solve(
 
                 if (sumType)
                 {
-                    sumType = type_tryInter(sumType, item.type);
+                    sumType = type_trySuper(sumType, item.type);
                     if (!sumType)
                         break;
                 }

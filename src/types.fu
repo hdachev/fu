@@ -451,7 +451,7 @@ pub fn type_has(type: Type, tag: string)
 
 //
 
-pub fn type_tryInter(a: Type, b: Type)
+pub fn type_trySuper(a: Type, b: Type)
 {
     if (a.canon != b.canon || a.modid != b.modid)
         return a.is_never ? b
