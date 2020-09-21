@@ -180,6 +180,9 @@ pub fn isAssignable(host: Type, guest: Type): bool
         || guest.is_never;
 }
 
+pub fn Lifetime_static(): Lifetime =
+    Lifetime(uni0n: [ 0 ]);
+
 pub fn Lifetime_temporary(): Lifetime =
     Lifetime(uni0n: [ 0x7fffffff.i32 ]);
 
@@ -201,14 +204,14 @@ pub fn is_mutref(type: Type): bool = type.quals & q_mutref != 0;
 pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals   |= q_ref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime);
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || throw("add_ref: falsy lifetime");
     return type;
 }
 
 pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals   |= q_mutref | q_ref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime);
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || throw("add_mutref: falsy lifetime");
     return type;
 }
 
@@ -253,6 +256,8 @@ pub fn add_refs(from: Type, mut to: Type)
 {
     to.quals   |= from.quals & (q_ref | q_mutref);
     to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
+    to.lifetime || !(to.quals & (q_ref | q_mutref))
+                || throw("add_refs: falsy lifetime");
     return to;
 }
 

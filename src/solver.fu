@@ -181,18 +181,20 @@ pub fn solve(
             {
                 i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
 
-                let local = GET(Target(:module.modid, index: packed));
-                let local_of = local.flags & F_LOCAL && local.local_of || fail("Lifetime_test: not a local");
-
-                let debug = GET(Target(:module.modid, index: local_of));
-                if (debug) {}
-
-                mut frame = current_fn.index;
-                while (local_of != frame)
+                let local = packed && GET(Target(:module.modid, index: packed));
+                let local_of = local.local_of; // zero for globals
+                if (local_of)
                 {
-                    local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere");
-                    frame || fail("Lifetime_test: climbed up to root");
-                    frame = GET(Target(modid: module.modid, index: frame)).local_of;
+                    let debug = local_of && GET(Target(:module.modid, index: local_of));
+                    if (debug) {}
+
+                    mut frame = current_fn.index;
+                    while (local_of != frame)
+                    {
+                        local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere");
+                        frame || fail("Lifetime_test: climbed up to root");
+                        frame = GET(Target(modid: module.modid, index: frame)).local_of;
+                    }
                 }
             }
         }
@@ -204,10 +206,6 @@ pub fn solve(
     {
         if (TEST)
             target.modid == module.modid || fail("not from this module");
-
-        // Static?
-        if (kind == "global")
-            return Lifetime_DISABLE_BORROW_CHECKER();
 
         // Alias?
         if (kind == "ref")
@@ -575,7 +573,7 @@ pub fn solve(
         let token = _here || fail();
 
         if (type.is_ref)
-            type.lifetime = Lifetime_DISABLE_BORROW_CHECKER();
+            type.lifetime = Lifetime_static();
 
         if (type.quals & q_integral)
             return SolvedNode(
@@ -2294,6 +2292,8 @@ pub fn solve(
                                         : "var";
 
         let id = out.value;
+
+        !out.type.is_ref || out.type.lifetime || fail("ref without lifetime");
 
         //
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
