@@ -2665,6 +2665,68 @@ pub fn runTests()
     // Return inference.
 
     ZERO(`
+        struct HasInt { i: i32; };
+
+        fn test(s: HasInt): &i32 {
+            let i = s.i;
+            return i;
+        }
+
+        fn main() HasInt(-1).test + 1;
+    `);
+
+    ZERO(`
+        fn test(implicit x: i32): &i32 = x;
+        fn main() test(3) - 3;
+    `);
+
+    ZERO(`
+        fn test(implicit x: i32): &i32 {
+            fn inner() x;
+            return inner;
+        }
+
+        fn main() test(3) - 3;
+    `);
+
+    ZERO(`
+        struct I { v: i32; };
+
+        fn test(implicit x: I): &i32 {
+            fn inner() x.v;
+            return inner;
+        }
+
+        fn main() test(I(3)) - 3;
+    `);
+
+    ZERO(`
+        struct I { v: i32[]; };
+
+        fn test(implicit x: I): &i32 {
+            fn inner() x.v[0];
+            return inner;
+        }
+
+        fn main() test(I([3])) - 3;
+    `);
+
+    ZERO(`
+        struct I { v: i32[]; };
+
+        fn test(implicit x: I): &i32 {
+            fn inner() {
+                let v = x.v;
+                return v[0];
+            }
+
+            return inner;
+        }
+
+        fn main() test(I([3])) - 3;
+    `);
+
+    ZERO(`
         fn noReturn() throw ("ex");
 
         fn doesReturn(a: i32) {
