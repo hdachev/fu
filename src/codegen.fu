@@ -781,9 +781,9 @@ pub fn cpp_codegen(
 
     fn cgReturn(node: SolvedNode): string
     {
-        if (node.items)
+        if (node.target)
         {
-            let head = node.items[0] || fail();
+            let head = GET(node.target).solved || fail();
             let src = cgNode(head);
             if (head.type.is_never)
                 return src;

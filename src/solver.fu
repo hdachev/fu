@@ -31,14 +31,16 @@ pub fn solve(
 
     struct CurrentFn
     {
-        using out: SolvedNode;
-        return_idx: ScopeMemo; // <- truth from here
-        parent_idx: i32;
-        locals_used?: i32[];
+        using out:      SolvedNode;
+        return_idx:     ScopeMemo; // <- truth from here
+        parent_idx:     i32;
+        locals_used?:   i32[];
 
-        ret_expect?: Type;
-        ret_actual?: Type;
-        ret_count?:  i32;
+        ret_expect?:    Type;
+        ret_actual?:    Type;
+        ret_count?:     i32;
+
+        returns?:       Target[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -1521,9 +1523,12 @@ pub fn solve(
             {
                 let s_body = solveNode(n_body);
 
+                // Fixup returns.
                 _current_fn.ret_actual ||= _current_fn.ret_count
                     ? fail("falsy ret_actual when ret_count != 0.")
                     : t_void;
+
+                finalizeReturns();
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2089,67 +2094,89 @@ pub fn solve(
     }
 
 
+    //////////////////////////////////////////////////////////
     //
+    // Note - as soon as we re-assign the return value,
+    //  we want to re-iterate all the return statements,
+    //   because that can change our copy/move decision.
+
+    fn reportReturnType(type: Type)
+    {
+        // Check annot.
+        if (_current_fn.ret_expect)
+            checkAssignable(host: _current_fn.ret_expect, type, "Expression non-assignable to return annotation");
+
+        // Check multiple returns.
+        if (_current_fn.ret_actual)
+            checkAssignable(host: _current_fn.ret_actual, type, "Non-assignable return types");
+        else
+            _current_fn.ret_actual = type || fail();
+
+        // Counter.
+        _current_fn.ret_count++;
+    }
+
+    fn stashReturn(solved: SolvedNode): Target
+    {
+        let target = Scope_create(_scope, "return",
+            local_of: _current_fn.target.index || fail(), :solved);
+
+        _current_fn.returns ~= target;
+
+        return target;
+    }
+
+    fn finalizeReturns()
+    {
+        // cpy/move.
+        if (!_current_fn.ret_actual.is_ref)
+        {
+            for (mut i = 0; i < _current_fn.returns.len; i++)
+            {
+                ref ret = GET_mut(_current_fn.returns[i]);
+                maybeCopyOrMove(ret.solved, _current_fn.ret_actual);
+            }
+        }
+    }
 
     fn solveReturn(node: Node): SolvedNode
     {
-        mut out = solved(node, t_void /*TODO t_never*/,
-            solveNodes(node.items, _current_fn.ret_actual || _current_fn.ret_expect));
-
-        //////////////////////////////////////////////////////
-        //
-        // Notice - as soon as we re-assign the return value,
-        //  we want to re-iterate all the return statements,
-        //   because that can change our copy/move decision.
-        fn report(type: Type)
-        {
-            // Check annot.
-            if (_current_fn.ret_expect)
-                checkAssignable(host: _current_fn.ret_expect, type, "Expression non-assignable to return annotation");
-
-            // Check multiple returns.
-            if (_current_fn.ret_actual)
-                checkAssignable(host: _current_fn.ret_actual, type, "Non-assignable return types");
-            else
-                _current_fn.ret_actual = type || fail();
-
-            // Counter.
-            _current_fn.ret_count++;
-        }
-        //////////////////////////////////////////////////////
-
         if (!node.items)
         {
-            report(t_void);
-        }
-        else
-        {
-            ref next = out.items.only;
-
-            //////////////////////////////////////////////////////
-            //                                                  //
-            // TODO LIFETIMES   this doesn't work               //
-            //                  for deeply referential types.   //
-                                                                //
-            if (next.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
-                next.type.is_ref)                               //
-            {                                                   //
-                let nrvo = next.kind == "call"                  //
-                        && next.items.len == 0                  //
-                        && next.target.GET.kind == "var";       //
-                                                                //
-                next = createMove(next, nrvo);                  //
-            }                                                   //
-            //////////////////////////////////////////////////////
-
-            report(next.type);
-
-            // cpy/move.
-            maybeCopyOrMove(out.items[0], _current_fn.ret_actual);
+            reportReturnType(t_void);
+            return solved(node, t_never);
         }
 
-        return out;
+
+        // We'll detach the return expression for further fiddling elsewhere.
+
+        mut expr = solveNode(
+            node.items.only,
+            type: _current_fn.ret_actual || _current_fn.ret_expect);
+
+        //////////////////////////////////////////////////////
+        //                                                  //
+        // TODO LIFETIMES   this doesn't work               //
+        //                  for deeply referential types.   //
+                                                            //
+        if (expr.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
+            expr.type.is_ref)                               //
+        {                                                   //
+            let nrvo = expr.kind == "call"                  //
+                    && expr.items.len == 0                  //
+                    && expr.target.GET.kind == "var";       //
+                                                            //
+            expr = createMove(expr, nrvo);                  //
+        }                                                   //
+                                                            //
+        //////////////////////////////////////////////////////
+
+        reportReturnType(expr.type);
+        return solved(node, t_never, target: stashReturn(expr));
     }
+
+
+    //////////////////////////////////////////////////////////
 
     fn checkAssignable(
         host: Type, guest: Type, err: string,
@@ -2932,7 +2959,7 @@ pub fn solve(
     //
 
     fn solved(
-        node: Node, type: Type, items: SolvedNode[] = [])
+        node: Node, type: Type, items: SolvedNode[] = [], target = Target)
             : SolvedNode
     {
         return SolvedNode(
@@ -2941,7 +2968,7 @@ pub fn solve(
             value: node.value,
             token: node.token,
 
-            :items, :type);
+            :items, :type, :target);
     }
 
     fn CallerNode(

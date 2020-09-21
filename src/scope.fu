@@ -405,7 +405,7 @@ pub fn Scope_add(
     return target;
 }
 
-pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_", name?: string, flags?: i32, local_of?: i32): Target
+pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_", name?: string, flags?: i32, local_of?: i32, solved?: SolvedNode): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -417,6 +417,7 @@ pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_", name?: string, fl
     item.name       = name;
     item.flags      = flags;
     item.local_of   = local_of;
+    item.solved     = solved;
 
     scope.overloads.push(item);
 
