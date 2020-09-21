@@ -783,10 +783,22 @@ pub fn cpp_codegen(
     {
         if (node.target)
         {
-            let head = GET(node.target).solved || fail();
+            let o = GET(node.target);
+            let head = o.solved || fail();
             let src = cgNode(head);
+
+            // [[noreturns]] shouldn't have return statements,
+            //  but regular fns should return the output of [[noreturns]]
+            //   for them to end on a return. It's a mess man.
             if (head.type.is_never)
-                return src;
+            {
+                let fn = GET(Target(
+                    modid: node.target.modid,
+                    index: o.local_of));
+
+                if (fn.type.is_never)
+                    return src;
+            }
 
             return "return " ~ src;
         }
