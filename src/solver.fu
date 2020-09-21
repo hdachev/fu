@@ -209,6 +209,12 @@ pub fn solve(
         if (kind == "global")
             return Lifetime_DISABLE_BORROW_CHECKER();
 
+        // Alias?
+        if (kind == "ref")
+            return Lifetime_test(
+                type.is_ref && type.lifetime || fail("ref: bad ref/lifetime"),
+                _current_fn.target);
+
         // Argument?
         let parametric  = kind == "arg" && type.is_ref;
         let index       = target.index;
