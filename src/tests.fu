@@ -2762,6 +2762,19 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn noReturn() throw ("ex");
+
+        fn returnVoid(a: i32): void {
+            if (a > 0) return noReturn();
+        }
+
+        fn main() {
+            returnVoid(0);
+            return 0;
+        }
+    `);
+
 
     // Let's start having fun.
 
