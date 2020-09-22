@@ -72,6 +72,7 @@ s_Type tryClear_slice(const s_Type&);
 static fu_STR cgAppend(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, const fu_STR&);
 static fu_STR cgFn(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, int);
 static fu_STR cgNode(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, int);
+static fu_STR cgTryCatch(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&);
 static fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>&, bool);
 static fu_STR typeAnnot(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_STR&, const s_Type&, int);
 
@@ -2064,22 +2065,30 @@ static fu_STR cgCopyMove(const s_Module& module_0, const s_Context& ctx_0, fu_MA
     return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, node.type, a);
 }
 
+static fu_STR cgTryCatch(fu_MAP<fu_STR, fu_STR>& _libs_0, fu_STR& _indent_0, const fu_STR& tRy, const fu_STR& err, const fu_STR& cAtch)
+{
+    return (((((((((((((((((((((_indent_0 + "try"_fu) + _indent_0) + "{"_fu) + _indent_0) + tRy) + _indent_0) + "}"_fu) + _indent_0) + "catch (const std::exception& o_0)"_fu) + _indent_0) + "{"_fu) + _indent_0) + "    const "_fu) + annotateString(_libs_0)) + "& "_fu) + ID(err)) + " = fu_TO_STR(o_0.what());"_fu) + _indent_0) + cAtch) + _indent_0) + "}\n"_fu);
+}
+
 static fu_STR cgCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, int& _current_fn_index_0, const s_SolvedNode& node)
 {
     const fu_VEC<s_SolvedNode>& items = node.items;
     const s_SolvedNode& let_main = items[0];
-    fu_STR let_init = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[0].items[LET_INIT], 0);
-    const fu_STR& err_id = items[1].value;
-    fu_STR catch_body = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[2]);
+    fu_STR tRy = (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[0].items[LET_INIT], 0) + ";"_fu);
+    fu_STR err = GET(module_0, ctx_0, items[1].target).name;
+    fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[2]);
+    if (is_never(let_main.type))
+        return cgTryCatch(_libs_0, _indent_0, tRy, err, cAtch);
+
     fu_STR src = (binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, let_main, false, true) + ";"_fu);
     src += (_indent_0 + "try"_fu);
     src += (_indent_0 + "{"_fu);
-    src += (((((_indent_0 + "    "_fu) + let_main.value) + " = "_fu) + let_init) + ";"_fu);
+    src += ((((_indent_0 + "    "_fu) + let_main.value) + " = "_fu) + tRy);
     src += (_indent_0 + "}"_fu);
     src += (_indent_0 + "catch (const std::exception& o_0)"_fu);
     src += (_indent_0 + "{"_fu);
-    src += (((((_indent_0 + "    const "_fu) + annotateString(_libs_0)) + "& "_fu) + err_id) + " = fu_TO_STR(o_0.what());"_fu);
-    src += (_indent_0 + catch_body);
+    src += (((((_indent_0 + "    const "_fu) + annotateString(_libs_0)) + "& "_fu) + ID(err)) + " = fu_TO_STR(o_0.what());"_fu);
+    src += (_indent_0 + cAtch);
     src += (_indent_0 + "}\n"_fu);
     return src;
 }
@@ -2088,19 +2097,9 @@ static fu_STR cgTryCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MA
 {
     const fu_VEC<s_SolvedNode>& items = node.items;
     fu_STR tRy = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[0]);
-    const s_SolvedNode& err = items[1];
+    fu_STR err = GET(module_0, ctx_0, items[1].target).name;
     fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[2]);
-    fu_STR src {};
-    src += (_indent_0 + "try"_fu);
-    src += (_indent_0 + "{"_fu);
-    src += (_indent_0 + tRy);
-    src += (_indent_0 + "}"_fu);
-    src += (_indent_0 + "catch (const std::exception& o_0)"_fu);
-    src += (_indent_0 + "{"_fu);
-    src += (((((_indent_0 + "    const "_fu) + annotateString(_libs_0)) + "& "_fu) + ID(GET(module_0, ctx_0, err.target).name)) + " = fu_TO_STR(o_0.what());"_fu);
-    src += (_indent_0 + cAtch);
-    src += (_indent_0 + "}\n"_fu);
-    return src;
+    return cgTryCatch(_libs_0, _indent_0, tRy, err, cAtch);
 }
 
 static fu_STR cgNode(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, int& _current_fn_index_0, const s_SolvedNode& node, const int mode)

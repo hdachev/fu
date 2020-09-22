@@ -18,6 +18,9 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
+bool operator==(const s_Effects&, const s_Effects&);
+bool operator==(const s_Lifetime&, const s_Lifetime&);
+bool operator==(const s_Type&, const s_Type&);
 bool operator==(const s_ValueType&, const s_ValueType&);
 s_Type add_ref(s_Type&&, const s_Lifetime&);
 uint64_t u64(const s_Target&);
@@ -264,6 +267,21 @@ s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
 bool operator==(const s_ValueType& a, const s_ValueType& b)
 {
     return ((a.quals == b.quals) && (a.modid == b.modid) && (a.canon == b.canon));
+}
+
+bool operator==(const s_Lifetime& a, const s_Lifetime& b)
+{
+    return (a.uni0n == b.uni0n);
+}
+
+bool operator==(const s_Effects& a, const s_Effects& b)
+{
+    return (a.raw == b.raw);
+}
+
+bool operator==(const s_Type& a, const s_Type& b)
+{
+    return ((a.vtype == b.vtype) && (a.lifetime == b.lifetime) && (a.effects == b.effects));
 }
 
                                 #ifndef DEF_Trivial
