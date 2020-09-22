@@ -4,7 +4,11 @@ import scope;
 import context;
 import types;
 
-let WARN_ON_IMPLICIT_COPY = false;
+
+//
+
+let USE_nontriv_autocopy    = true;
+let USE_retval_narrowing    = false; // <- todo invalidate users
 
 
 
@@ -2159,6 +2163,18 @@ pub fn solve(
             ? fail("falsy ret_actual when ret_count != 0.")
             : t_void;
 
+        // TODO FIX
+        //  Disable return value narrowing,
+        //   we're getting some aliasing somewhere that breaks the compiler's back.
+        if (!USE_retval_narrowing && _current_fn.ret_expect)
+        {
+            let lt0                 = _current_fn.ret_actual.lifetime;
+            _current_fn.ret_actual  = _current_fn.ret_expect;
+
+            if (_current_fn.ret_actual.is_ref)
+                _current_fn.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
+        }
+
         // cpy/move.
         if (!_current_fn.ret_actual.is_ref)
         {
@@ -3187,11 +3203,8 @@ pub fn solve(
         if !(slot.quals & q_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
-        if (WARN_ON_IMPLICIT_COPY)
-        {
-            // if !(node.type.quals & q_trivial)
-            //     println("WARN ", _here.line, ":", _here.col, ":\timplicit copy ", node.type.canon);
-        }
+        if (!USE_nontriv_autocopy && !(node.type.quals & q_trivial))
+            fail("Non-trivial implicit copy.");
 
         // Here we go.
         node = createCopy(node);
