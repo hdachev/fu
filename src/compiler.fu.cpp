@@ -30,7 +30,6 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -266,31 +265,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<s_Region> regions;
+    fu_VEC<int> uni0n;
     explicit operator bool() const noexcept
     {
         return false
-            || regions
+            || uni0n
         ;
     }
 };
@@ -751,7 +734,7 @@ s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& 
 fu_STR snippet2cpp(const fu_STR& src)
 {
     fu_STR fname = "SNIPPET"_fu;
-    s_Context ctx = compile_snippets(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } }, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fname } });
+    s_Context ctx = compile_snippets(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(fname) } });
     for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
@@ -816,7 +799,7 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources)
         bad += (((("\n#"_fu + i) + ": "_fu) + module.fname) + "\n"_fu);
         bad += (((((((("\nfu  ["_fu + i) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu) + i) + "]:\n\t"_fu) + indent(module.out.cpp)) + "\n"_fu);
     };
-    fu::fail(bad);
+    return fu::fail(bad);
 }
 
 void ZERO_SAME(const fu_VEC<fu_VEC<fu_STR>>& alts)
@@ -841,19 +824,19 @@ void ZERO_SAME(const fu_VEC<fu_VEC<fu_STR>>& alts)
 
 s_Context ZERO(const fu_STR& src)
 {
-    return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
+    return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } });
 }
 
 fu_STR FAIL(const fu_STR& src)
 {
-    return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { src } });
+    return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } });
 }
 
 void ZERO_SAME(const fu_VEC<fu_STR>& alts)
 {
     fu_VEC<fu_VEC<fu_STR>> wrap {};
     for (int i = 0; i < alts.size(); i++)
-        wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { alts[i] } };
+        wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(alts[i]) } };
 
     return ZERO_SAME(wrap);
 }

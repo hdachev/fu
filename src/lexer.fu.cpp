@@ -309,7 +309,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         }
         else if (fu::has(OPTOKENS, c))
         {
-            fu_STR candidate = fu_STR { fu_STR::INIT<1> { c } };
+            fu_STR candidate = fu_STR { fu_STR::INIT<1> { std::byte(c) } };
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];

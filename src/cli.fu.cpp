@@ -102,7 +102,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
         fu_STR opt { val };
         if (opt.mutref(1) != std::byte('-'))
         {
-            opt = fu_STR { fu_STR::INIT<1> { opt.mutref(1) } };
+            opt = fu_STR { fu_STR::INIT<1> { std::byte(opt[1]) } };
             val = (std::byte('-') + fu::slice(val, 2));
             if (val == "-"_fu)
                 val = next(argv, idx);

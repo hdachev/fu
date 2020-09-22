@@ -20,7 +20,6 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -37,10 +36,6 @@ struct s_Type;
 struct s_ValueType;
 
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
-int Region_toArgIndex(const s_Region&);
-s_Lifetime Lifetime_relaxCallArg(s_Lifetime&&, int);
-s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
-s_Lifetime type_inter(const s_Lifetime&, const s_Region&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -242,31 +237,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<s_Region> regions;
+    fu_VEC<int> uni0n;
     explicit operator bool() const noexcept
     {
         return false
-            || regions
+            || uni0n
         ;
     }
 };
@@ -752,12 +731,16 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
     return target;
 }
 
-s_Target Scope_create(s_Scope& scope, const fu_STR& kind, const s_Module& module)
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const int flags, const int local_of, const s_SolvedNode& solved, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
     s_Overload item {};
     item.kind = kind;
+    item.name = name;
+    item.flags = flags;
+    item.local_of = local_of;
+    item.solved = solved;
     scope.overloads.push(item);
     return target;
 }
@@ -770,25 +753,6 @@ void Scope_set(s_Scope& scope, const fu_STR& id, const s_Target& target)
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Template& tEmplate, const s_Module& module)
 {
     return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, tEmplate, s_Partial{}, s_SolvedNode{}, 0, module);
-}
-
-s_Lifetime Lifetime_fromCallArgs(const s_Lifetime& lifetime, const fu_VEC<s_SolvedNode>& args)
-{
-    s_Lifetime result {};
-    for (int i = 0; i < lifetime.regions.size(); i++)
-    {
-        const s_Region& r = lifetime.regions[i];
-        const int argIdx = Region_toArgIndex(r);
-        if (argIdx < 0)
-        {
-            result = type_inter(result, r);
-            continue;
-        };
-        const s_SolvedNode& arg = args[argIdx];
-        s_Lifetime actual = Lifetime_relaxCallArg(s_Lifetime(arg.type.lifetime), r.relax);
-        result = type_inter(result, actual);
-    };
-    return result;
 }
 
                                 #ifndef DEF_Trivial

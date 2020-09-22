@@ -11,7 +11,6 @@ struct s_Lifetime;
 struct s_Node;
 struct s_Overload;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -44,31 +43,15 @@ struct s_ValueType
 };
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<s_Region> regions;
+    fu_VEC<int> uni0n;
     explicit operator bool() const noexcept
     {
         return false
-            || regions
+            || uni0n
         ;
     }
 };
@@ -416,7 +399,7 @@ s_Type X_solveAddrOfFn(const s_Scope& scope, const s_ScopeSkip& scope_skip, cons
 
 s_Type X_addrofTarget(const s_Target& target)
 {
-    return s_Type { s_ValueType { 0, 0, packAddrOfFn(fu_VEC<s_Target> { fu_VEC<s_Target>::INIT<1> { target } }) }, s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { 0, 0, packAddrOfFn(fu_VEC<s_Target> { fu_VEC<s_Target>::INIT<1> { s_Target(target) } }) }, s_Lifetime{}, s_Effects{} };
 }
 
 #endif

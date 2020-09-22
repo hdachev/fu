@@ -19,7 +19,6 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -241,31 +240,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<s_Region> regions;
+    fu_VEC<int> uni0n;
     explicit operator bool() const noexcept
     {
         return false
-            || regions
+            || uni0n
         ;
     }
 };
@@ -847,8 +830,20 @@ void runTests()
     ZERO("\n        fn main() ::vec3.maxc.i32;\n    "_fu);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn _0(i: i32) i + 1;\n    "_fu, "\n        fn main() (-1).::_0;\n    "_fu } });
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn add(ref to: $T[], item: $T) {\n            for (mut i = 0; i < to.len; i++) {\n                if (to[i] >= item) {\n                    if (to[i] != item)\n                        to.insert(i, item);\n\n                    return;\n                }\n            }\n\n            to.push(item);\n        }\n    "_fu, "\n        fn main() {\n            mut x = [1, 2, 3];\n            x._0::add(3); if (x.len != 3) return 33;\n            x._0::add(4); return x.len - x[3];\n        }\n    "_fu } });
+    ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;\n        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;\n\n        pub let A = \"hello\";\n        pub let B = \"world\";\n    "_fu, "\n        import _0;\n        fn test(i: i32) {\n            let v = i & 1 ? A : B;\n            return v.len;\n        }\n\n        fn main() 0.test - 1.test;\n    "_fu } });
     ZERO("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu);
     ZERO("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu);
+    ZERO("\n        struct HasInt { i: i32; };\n\n        fn test(s: HasInt): &i32 {\n            let i = s.i;\n            return i;\n        }\n\n        fn main() HasInt(-1).test + 1;\n    "_fu);
+    ZERO("\n        fn test(implicit x: i32): &i32 = x;\n        fn main() test(3) - 3;\n    "_fu);
+    ZERO("\n        fn test(implicit x: i32): &i32 {\n            fn inner() x;\n            return inner;\n        }\n\n        fn main() test(3) - 3;\n    "_fu);
+    ZERO("\n        struct I { v: i32; };\n\n        fn test(implicit x: I): &i32 {\n            fn inner() x.v;\n            return inner;\n        }\n\n        fn main() test(I(3)) - 3;\n    "_fu);
+    ZERO("\n        struct I { v: i32[]; };\n\n        fn test(implicit x: I): &i32 {\n            fn inner() x.v[0];\n            return inner;\n        }\n\n        fn main() test(I([3])) - 3;\n    "_fu);
+    ZERO("\n        struct I { v: i32[]; };\n\n        fn test(implicit x: I): &i32 {\n            fn inner() {\n                let v = x.v;\n                return v[0];\n            }\n\n            return inner;\n        }\n\n        fn main() test(I([3])) - 3;\n    "_fu);
+    ZERO("\n        fn noReturn() throw (\"ex\");\n\n        fn doesReturn(a: i32) {\n            if (a > 0)  return noReturn();\n                        return a;\n        }\n\n        fn main() doesReturn(-3) + 3;\n    "_fu);
+    ZERO("\n        struct Context { modules: Module[]; };\n        struct Module  { fname: i32; };\n\n        fn test(implicit ctx: Context) {\n            fn findModule(fname: i32): &Module {\n                let modules = ctx.modules;\n                for (mut i = 0; i < modules.len; i++) {\n                    let module = modules[i];\n                    if (module.fname == fname)\n                        return module;\n                }\n\n                throw(\"Cannot locate: \" ~ fname);\n            }\n\n            return findModule(0);\n        }\n\n        fn main() {\n            let implicit ctx = Context([ Module ]);\n            return test.fname;\n        }\n    "_fu);
+    ZERO("\n        fn noReturn() throw (\"ex\");\n\n        fn returnVoid(a: i32): void {\n            if (a > 0) return noReturn();\n        }\n\n        fn main() {\n            returnVoid(0);\n            return 0;\n        }\n    "_fu);
+    ZERO("\n        fn parseQualifierChain(mut i: i32): i32 {\n            for (;;) {\n                if !(i & 15) return i;\n                i--;\n            }\n        }\n\n        fn main() parseQualifierChain(15);\n    "_fu);
+    ZERO("\n        fn if0_ret101(x: i32) {\n            if      (x > 2) return x * 2;\n            else if (x > 1) return x + 1; // <- left branch seeded right with never\n            return x + 101;\n        }\n\n        fn main() 0.if0_ret101 - 101;\n    "_fu);
     ZERO("\n        struct X { i: i32; };\n\n        fn         ++(using x: &mut X) ++i;\n        postfix fn ++(using x: &mut X) i++;\n\n        fn main() {\n            mut x: X;\n            let a = x++;\n            let b = ++x;\n            return a || b - 2;\n        }\n    "_fu);
     FAIL("\n        //\n        // The -1.abs problem.\n        //\n        // Ruby lexes the minus into the numeric literal.\n        //  This is kinda inconsistent, altough it does make sense.\n        //\n        // Rust & all c-likes lex to -abs(1).\n        //  Rust linters warn about this.\n        //\n        // One thing we can do is change the precedence of some unaries\n        //  to above method call - others, like ! benefit from usual precedence.\n        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,\n        //    but the & op usually works the way you want it to.\n        //     So introducing more precedence rules is a really questionable idea.\n        //\n        // We'll go the rust way for starters,\n        //  this will be a compile time error for now.\n        //\n        fn test()\n        //*F\n            -1.0\n        /*/\n            (-1.0)\n        //*/\n                .abs;\n\n        fn main() test ? 0 : 7;\n    "_fu);
     ZERO("\n        fn test() [] -> i32;\n        fn main() test;\n    "_fu);

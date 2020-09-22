@@ -7,7 +7,6 @@
 #include "helpers.fu.cpp"
 #include "lexer.fu.cpp"
 #include "parser.fu.cpp"
-#include "lifetimes.fu.cpp"
 #include "types.fu.cpp"
 #include "stat.fu.cpp"
 #include "scope.fu.cpp"

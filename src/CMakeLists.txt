@@ -8,7 +8,7 @@ set(FU_INPUTS
     helpers.fu
     lexer.fu
     parser.fu
-    lifetimes.fu
+    set.fu
     types.fu
     stat.fu
     scope.fu
@@ -16,7 +16,6 @@ set(FU_INPUTS
     intlit.fu
     addroffn.fu
     ../lib/tea.fu
-    set.fu
     solver.fu
     bitset.fu
     codegen.fu

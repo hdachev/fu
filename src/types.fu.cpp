@@ -8,19 +8,33 @@
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 #include <utility>
 
 struct s_Effects;
 struct s_Lifetime;
 struct s_MapFields;
-struct s_Region;
 struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-s_Lifetime type_inter(const s_Lifetime&, const s_Lifetime&);
-static s_Effects type_inter(const s_Effects&, const s_Effects&);
+bool operator==(const s_ValueType&, const s_ValueType&);
+s_Type add_ref(s_Type&&, const s_Lifetime&);
 uint64_t u64(const s_Target&);
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu_VEC<int> uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
+        ;
+    }
+};
+                                #endif
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -35,36 +49,6 @@ struct s_ValueType
             || quals
             || modid
             || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu_VEC<s_Region> regions;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || regions
         ;
     }
 };
@@ -136,15 +120,9 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEF_q_mutref
-                                #define DEF_q_mutref
-inline const int q_mutref = (1 << 0);
-                                #endif
+static const int q_mutref = (1 << 0);
 
-                                #ifndef DEF_q_ref
-                                #define DEF_q_ref
-inline const int q_ref = (1 << 1);
-                                #endif
+static const int q_ref = (1 << 1);
 
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy
@@ -242,6 +220,46 @@ inline const int e_malloc = (1 << 12);
                                 #define DEF_e_memcpy
 inline const int e_memcpy = (1 << 13);
                                 #endif
+
+                                #ifndef DEFt_union_fEgd
+                                #define DEFt_union_fEgd
+inline fu_VEC<int> union_fEgd(const fu_VEC<int>& a, const fu_VEC<int>& b)
+{
+    if (a.size() < b.size())
+        return union_fEgd(b, a);
+
+    fu_VEC<int> a_1 { a };
+    int x = 0;
+    int y = 0;
+    while (((x < a_1.size()) && (y < b.size())))
+    {
+        const int X = a_1[x];
+        const int Y = b[y];
+        if (X > Y)
+        {
+            a_1.insert(x, Y);
+            y++;
+        }
+        else if (X == Y)
+            y++;
+
+        x++;
+    };
+    if (y < b.size())
+        a_1 += fu::get_view(b, y, b.size());
+
+    return a_1;
+}
+                                #endif
+
+s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
+{
+    fu_VEC<int> uni0n = union_fEgd(a.uni0n, b.uni0n);
+    if (((uni0n.size() >= 2) && (uni0n.mutref((uni0n.size() - 2)) >= 0)))
+        uni0n.splice((uni0n.size() - 2), 1);
+
+    return s_Lifetime { fu_VEC<int>(uni0n) };
+}
 
 bool operator==(const s_ValueType& a, const s_ValueType& b)
 {
@@ -373,78 +391,80 @@ bool isAssignable(const s_Type& host, const s_Type& guest)
     return (((host.vtype.canon == guest.vtype.canon) && (host.vtype.modid == guest.vtype.modid) && ((host.vtype.quals & guest.vtype.quals) == host.vtype.quals) && (!(host.vtype.quals & q_mutref) || ((host.vtype.quals & q_MUTINVAR) == (guest.vtype.quals & q_MUTINVAR)))) || is_never(guest));
 }
 
-bool isAssignableAsArgument(const s_Type& host, s_Type&& guest)
+s_Lifetime Lifetime_static()
 {
-    guest.vtype.quals |= q_ref;
-    return isAssignable(host, guest);
+    return s_Lifetime { fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } } };
 }
 
-s_Type qsub(const s_Type& type, const int q)
+s_Lifetime Lifetime_temporary()
 {
-    s_Type t { type };
-    t.vtype.quals &= ~q;
-    return t;
+    return s_Lifetime { fu_VEC<int> { fu_VEC<int>::INIT<1> { int(0x7fffffffu) } } };
 }
 
-bool qhas(const s_Type& type, const int q)
+bool isAssignableAsArgument(const s_Type& host, const s_Type& guest)
 {
-    return ((type.vtype.quals & q) == q);
+    return isAssignable(host, (((guest.vtype.quals & q_ref) || !(host.vtype.quals & q_ref)) ? s_Type(guest) : add_ref(s_Type(guest), Lifetime_temporary())));
 }
 
-s_Type add_ref(const s_Type& type, const s_Lifetime& lifetime)
+bool is_ref(const s_Type& type)
 {
-    s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.vtype.quals |= q_ref;
-    t.lifetime = type_inter(lifetime, t.lifetime);
-    return t;
+    return ((type.vtype.quals & q_ref) != 0);
 }
 
-s_Type add_mutref(const s_Type& type, const s_Lifetime& lifetime)
+bool is_mutref(const s_Type& type)
 {
-    s_Type t { (type ? type : fu::fail("falsy type"_fu)) };
-    t.vtype.quals |= (q_mutref | q_ref);
-    t.lifetime = type_inter(t.lifetime, lifetime);
-    return t;
+    return ((type.vtype.quals & q_mutref) != 0);
 }
 
-static s_Type tryClear(const s_Type& type, const int q)
+s_Type add_ref(s_Type&& type, const s_Lifetime& lifetime)
 {
-    if ((!type || !qhas(type, q)))
-        return s_Type{};
+    type.vtype.quals |= q_ref;
+    type.lifetime = ([&]() -> s_Lifetime { { s_Lifetime _ = Lifetime_union(type.lifetime, lifetime); if (_) return _; } fu::fail("add_ref: falsy lifetime"_fu); }());
+    return std::move(type);
+}
 
-    return qsub(type, q);
+s_Type add_mutref(s_Type&& type, const s_Lifetime& lifetime)
+{
+    type.vtype.quals |= (q_mutref | q_ref);
+    type.lifetime = ([&]() -> s_Lifetime { { s_Lifetime _ = Lifetime_union(type.lifetime, lifetime); if (_) return _; } fu::fail("add_mutref: falsy lifetime"_fu); }());
+    return std::move(type);
+}
+
+s_Type clear_refs(s_Type&& type)
+{
+    type.vtype.quals &= ~(q_ref | q_mutref);
+    type.lifetime = s_Lifetime{};
+    return std::move(type);
+}
+
+s_Type clear_mutref(s_Type&& type)
+{
+    type.vtype.quals &= ~q_mutref;
+    ((type.vtype.quals & q_ref) || !type.lifetime || fu_ASSERT());
+    return std::move(type);
+}
+
+static s_Type tryClearRefs(const s_Type& type, const bool mutref)
+{
+    const int refs = (type.vtype.quals & (q_ref | q_mutref));
+    return ([&]() -> s_Type { if ((mutref ? (refs == (q_ref | q_mutref)) : !!refs)) return clear_refs(s_Type(type)); else return s_Type{}; }());
 }
 
 s_Type tryClear_mutref(const s_Type& type)
 {
-    return tryClear(type, (q_ref | q_mutref));
+    return tryClearRefs(type, true);
 }
 
 s_Type tryClear_ref(const s_Type& type)
 {
-    s_Type t = tryClear(type, q_ref);
-    return (t ? qsub(t, q_mutref) : s_Type(t));
-}
-
-s_Type clear_refs(const s_Type& type)
-{
-    s_Type t { type };
-    t.vtype.quals &= ~q_ref;
-    t.vtype.quals &= ~q_mutref;
-    return t;
-}
-
-s_Type clear_mutref(const s_Type& type)
-{
-    s_Type t { type };
-    t.vtype.quals &= ~q_mutref;
-    return t;
+    return tryClearRefs(type, bool{});
 }
 
 s_Type add_refs(const s_Type& from, s_Type&& to)
 {
     to.vtype.quals |= (from.vtype.quals & (q_ref | q_mutref));
-    to.lifetime = type_inter(from.lifetime, to.lifetime);
+    to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
+    (to.lifetime || !(to.vtype.quals & (q_ref | q_mutref)) || fu::fail("add_refs: falsy lifetime"_fu));
     return std::move(to);
 }
 
@@ -536,12 +556,11 @@ bool type_isSlice(const s_Type& type)
     return ((type.vtype.quals & q_ref) && fu::lmatch(type.vtype.canon, "[]"_fu));
 }
 
-s_Type createSlice(const s_Type& item)
+s_Type createSlice(const s_Type& item, const s_Lifetime& lifetime)
 {
     s_Type out = createArray(item);
     out.vtype.quals &= ~(q_rx_copy | q_rx_resize);
-    out.vtype.quals |= q_ref;
-    return out;
+    return add_ref(s_Type(out), lifetime);
 }
 
 s_Type tryClear_slice(const s_Type& type)
@@ -563,7 +582,7 @@ s_Type createMap(const s_Type& key, const s_Type& vtype)
     fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(vtype));
     const int quals = ((key.vtype.quals & vtype.vtype.quals) & q_rx_copy);
     const int modid = 0;
-    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, type_inter(key.lifetime, vtype.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, Lifetime_union(key.lifetime, vtype.lifetime), s_Effects{} };
 }
 
 s_MapFields tryClear_map(const s_Type& type)
@@ -604,12 +623,13 @@ static s_Effects type_inter(const s_Effects& a, const s_Effects& b)
     return s_Effects { (a.raw | b.raw) };
 }
 
-s_Type type_tryInter(const s_Type& a, const s_Type& b)
+s_Type type_trySuper(const s_Type& a, const s_Type& b)
 {
     if (((a.vtype.canon != b.vtype.canon) || (a.vtype.modid != b.vtype.modid)))
         return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type{}));
 
-    return s_Type { s_ValueType { (a.vtype.quals & b.vtype.quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, type_inter(a.lifetime, b.lifetime), type_inter(a.effects, b.effects) };
+    const int quals = (a.vtype.quals & b.vtype.quals);
+    return s_Type { s_ValueType { int(quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, ([&]() -> s_Lifetime { if ((quals & q_ref)) return Lifetime_union(a.lifetime, b.lifetime); else return s_Lifetime{}; }()), type_inter(a.effects, b.effects) };
 }
 
 uint64_t u64(const s_Target& t)

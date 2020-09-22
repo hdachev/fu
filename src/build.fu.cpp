@@ -32,7 +32,6 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Partial;
-struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -254,31 +253,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    int relax;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-            || relax
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<s_Region> regions;
+    fu_VEC<int> uni0n;
     explicit operator bool() const noexcept
     {
         return false
-            || regions
+            || uni0n
         ;
     }
 };
@@ -750,7 +733,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 const double t0 = fu::now_hr();
                 code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
                 if (code)
-                    ERR(dir_wrk, Fs, code, stdout, fu_STR(cpp));
+                    return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR(cpp));
 
                 const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
@@ -773,7 +756,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
-                ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+                return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
             };
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
@@ -782,14 +765,14 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             code = fu::shell_exec((("rm "_fu + Fs.mutref(1)) + ".o 2>&1"_fu), stdout);
 
         if (code)
-            ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+            return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
 
     };
     if (run)
         code = fu::shell_exec(fu_STR(F_exe), stdout);
 
     if (code)
-        ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+        return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
 
     if ((dir_cpp && dir_src))
     {
@@ -871,7 +854,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+        return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
 
 }
 
