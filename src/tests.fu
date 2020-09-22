@@ -2775,6 +2775,17 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn parseQualifierChain(mut i: i32): i32 {
+            for (;;) {
+                if !(i & 15) return i;
+                i--;
+            }
+        }
+
+        fn main() parseQualifierChain(15);
+    `);
+
 
     // Let's start having fun.
 
