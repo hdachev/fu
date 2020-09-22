@@ -2639,6 +2639,25 @@ pub fn runTests()
     `
     ]);
 
+    ZERO([
+    `
+        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;
+        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;
+
+        pub let A = "hello";
+        pub let B = "world";
+    `,
+    `
+        import _0;
+        fn test(i: i32) {
+            let v = i & 1 ? A : B;
+            return v.len;
+        }
+
+        fn main() 0.test - 1.test;
+    `
+    ]);
+
 
     // Explicit shadowing.
 

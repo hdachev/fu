@@ -4,8 +4,6 @@ import scope;
 import context;
 import types;
 
-let TEST = true;
-
 let WARN_ON_IMPLICIT_COPY = false;
 
 
@@ -214,8 +212,11 @@ pub fn solve(
 
     fn Lifetime_fromBinding(target: Target, kind: string, type: Type): Lifetime
     {
-        if (TEST)
-            target.modid == module.modid || fail("not from this module");
+        target.modid == module.modid || fail("not from this module");
+
+        // Globals?
+        if (kind == "global")
+            return Lifetime_static();
 
         // Alias?
         if (kind == "ref")
