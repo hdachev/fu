@@ -121,6 +121,17 @@ pub fn ==(a: ValueType, b: ValueType)
     a.modid == b.modid &&
     a.canon == b.canon;
 
+pub fn ==(a: Lifetime, b: Lifetime)
+    a.uni0n == b.uni0n;
+
+pub fn ==(a: Effects, b: Effects)
+    a.raw == b.raw;
+
+pub fn ==(a: Type, b: Type)
+    a.vtype    == b.vtype    &&
+    a.lifetime == b.lifetime &&
+    a.effects  == b.effects;
+
 
 //
 

@@ -8,7 +8,7 @@ import types;
 //
 
 let USE_nontriv_autocopy    = true;
-let USE_retval_narrowing    = false; // <- todo invalidate users
+let USE_retval_narrowing    = false;
 
 
 
@@ -440,6 +440,7 @@ pub fn solve(
         // Unconditionally replacing the stuff.
         ref overload    = GET_mut(solved.target);
 
+        let retval0     = overload.type;
         let args_len0   = overload.args.len;
         let closure0    = overload.closes_over.len;
 
@@ -471,8 +472,9 @@ pub fn solve(
         // TODO FIX starting the diff with just number of arguments,
         //  which is fine for implicit cycling,
         //   then we gotta move on to bigger and better things.
-        if (args_len0 != overload.args.len ||
-            closure0  != overload.closes_over.len)
+        if (args_len0 != overload.args.len          ||
+            closure0  != overload.closes_over.len   ||
+            !(retval0 == overload.type))
         {
             invalidateUsers(overload);
         }
