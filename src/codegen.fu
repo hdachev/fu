@@ -1503,19 +1503,24 @@ pub fn cpp_codegen(
         let items       = node.items;
 
         let let_main    = items[0];
-        let let_init    = cgNode(items[0].items[LET_INIT]);
-        let err_id      = items[1].value;
-        let catch_body  = blockWrapSubstatement(items[2]);
 
+        mut try         = cgNode(items[0].items[LET_INIT]) ~ ";";
+        let err         = GET(items[1].target).name;
+        let catch       = blockWrapSubstatement(items[2]);
+
+        if (let_main.type.is_never)
+            return cgTryCatch(try, err, catch);
+
+        // TODO dedupe with below nonsense
         mut src =        binding(let_main, forceMut: true) ~ ";";
         src ~= _indent ~ "try";
         src ~= _indent ~ "{";
-        src ~= _indent ~ "    " ~ let_main.value ~ " = " ~ let_init ~ ";";
+        src ~= _indent ~ "    " ~ let_main.value ~ " = " ~ try;
         src ~= _indent ~ "}";
         src ~= _indent ~ "catch (const std::exception& o_0)";
         src ~= _indent ~ "{";
-        src ~= _indent ~ "    const " ~ annotateString() ~ "& " ~ err_id ~ " = fu_TO_STR(o_0.what());";
-        src ~= _indent ~ catch_body;
+        src ~= _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());";
+        src ~= _indent ~ catch;
         src ~= _indent ~ "}\n";
 
         return src;
@@ -1526,22 +1531,23 @@ pub fn cpp_codegen(
         let items = node.items;
         let try = blockWrapSubstatement(items[0]);
 
-        let err = items[1];
+        let err = GET(items[1].target).name;
         let catch = blockWrapSubstatement(items[2]);
 
-        mut src: string;
+        return cgTryCatch(try, err, catch);
+    }
 
-        src ~= _indent ~ "try";
-        src ~= _indent ~ "{";
-        src ~= _indent ~ try;
-        src ~= _indent ~ "}";
-        src ~= _indent ~ "catch (const std::exception& o_0)";
-        src ~= _indent ~ "{";
-        src ~= _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(GET(err.target).name) ~ " = fu_TO_STR(o_0.what());";
-        src ~= _indent ~ catch;
-        src ~= _indent ~ "}\n";
-
-        return src;
+    fn cgTryCatch(try: string, err: string, catch: string): string
+    {
+        return _indent ~ "try"
+             ~ _indent ~ "{"
+             ~ _indent ~ try
+             ~ _indent ~ "}"
+             ~ _indent ~ "catch (const std::exception& o_0)"
+             ~ _indent ~ "{"
+             ~ _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());"
+             ~ _indent ~ catch
+             ~ _indent ~ "}\n";
     }
 
 
