@@ -1286,7 +1286,8 @@ pub fn solve(
             type_last:      type,
             use_type_last:  expr,
             TEMP_open_templates: true,
-            TEMP_template_scope: scope0);
+            TEMP_template_scope: scope0,
+            deadcode_on_never:   true);
 
         shadow let type = expr && items.len || items.if_last.type.is_never
             ? items.last.type
@@ -2935,12 +2936,16 @@ pub fn solve(
 
     fn solveIf(node: Node, mut type: Type): SolvedNode
     {
+        let cond    = solveNode(node.items[0], t_bool);
+
+        // Dead code elim.
+        if (cond.type.is_never)
+            return cond;
+
         let n_cons  = node.items[1];
         let n_alt   = node.items[2];
-
-        let cond    = solveNode(node.items[0], t_bool);
         mut cons    = n_cons && solveNode(n_cons, type);
-        mut alt     = n_alt  && solveNode(n_alt , cons.type || type);
+        mut alt     = n_alt  && solveNode(n_alt, !cons.type.is_never && cons.type || type);
 
         if (cons.type && alt.type)
         {
@@ -2957,6 +2962,10 @@ pub fn solve(
             // Control flow.
             if (cons.type.is_never && alt.type.is_never)
                 type = t_never;
+        }
+        else
+        {
+            type = t_void;
         }
 
         return solved(node, type || fail(), [ cond, cons, alt ]);
@@ -2976,7 +2985,9 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, type);
+        mut items = solveNodes(node.items, type, deadcode_on_never: true);
+        if (items.len < 2)
+            return items.only;
 
         // Statement mode.
         if (type.is_void)
@@ -3038,7 +3049,9 @@ pub fn solve(
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, type);
+        let items = solveNodes(node.items, type, deadcode_on_never: true);
+        if (items.len < 2)
+            return items.only;
 
         // Statement mode.
         if (type.is_void)
@@ -3232,7 +3245,8 @@ pub fn solve(
         type_all?: Type, type_last?!: Type,
         use_type_last?!: bool,
         TEMP_open_templates?!: bool,
-        TEMP_template_scope?!: ScopeMemo): SolvedNode[]
+        TEMP_template_scope?!: ScopeMemo,
+        deadcode_on_never?: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -3254,9 +3268,18 @@ pub fn solve(
             if (!unorderedClass)
             {
                 _here       = node.token || _here;
+
+                ref solved  =
                 result[i]   = solveNode(:node, type:
                     i == nodes.len - 1 && use_type_last
                         ? type_last : type_all);
+
+                // Dead code elim.
+                if (deadcode_on_never && solved.type.is_never)
+                {
+                    result.shrink(i + 1);
+                    break;
+                }
 
                 continue;
             }
@@ -3359,8 +3382,6 @@ pub fn solve(
         // Also freeze templates.
         if (TEMP_open_templates)
             freezeTemplates(TEMP_template_scope);
-
-        result.len == nodes.len || fail("solveNodes: result.len != nodes.len");
 
         return result;
     }

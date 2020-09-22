@@ -2806,6 +2806,19 @@ pub fn runTests()
     `);
 
 
+    // Dead code elim.
+
+    ZERO(`
+        fn if0_ret101(x: i32) {
+            if      (x > 2) return x * 2;
+            else if (x > 1) return x + 1; // <- left branch seeded right with never
+            return x + 101;
+        }
+
+        fn main() 0.if0_ret101 - 101;
+    `);
+
+
     // Let's start having fun.
 
     ZERO(`
