@@ -50,9 +50,8 @@ pub fn solve(
         ret_count?:     i32;
 
         returns?:       Target[];
-
-        // Loops.
         loops?:         OpenLoop[];
+        tries?:         i32;
     };
 
     mut _current_fn:    CurrentFn;
@@ -2437,7 +2436,9 @@ pub fn solve(
     {
         node.items.len == 3 || fail();
 
+        _current_fn.tries++;
         let var_ok = solveNode(node.items[0]);
+        _current_fn.tries--;
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
@@ -2447,12 +2448,16 @@ pub fn solve(
         let var_err = solveNode(node.items[1]);
         let catch   = solveNode(node.items[2]);
 
+        let type = var_ok.type;
+        catch.type.is_never || fail(
+            "[let catch]: catch clause must exit local scope.");
+
         var_err.kind == "let" && isAssignableAsArgument(
             var_err.type, t_string) || fail(
                 "catch: exceptions are strings,"
                     ~ " consider dropping the annotation.");
 
-        return solved(node, var_ok.type,
+        return solved(node, type,
             [ var_ok, var_err, catch ]);
     }
 
@@ -2464,7 +2469,9 @@ pub fn solve(
         let scope0  = Scope_snap(_scope);
         /////////////////////////////////
 
+        _current_fn.tries++;
         let try     = solveNode(node.items[0]);
+        _current_fn.tries--;
 
         ///////////////////////////////////////
         Scope_pop(_scope, scope0);
@@ -2483,7 +2490,11 @@ pub fn solve(
                 "catch: exceptions are strings,"
                     ~ " consider dropping the annotation.");
 
-        return solved(node, t_void, [ try, err, catch ]);
+        let type    = try.type.is_never && catch.type.is_never
+                        ? t_never
+                        : t_void;
+
+        return solved(node, type, [ try, err, catch ]);
     }
 
     fn findModule(fuzimport: string): &Module
@@ -2594,6 +2605,13 @@ pub fn solve(
                 if (node.value == "Map")
                     return solved(node, createMap(T(0), T(1)));
             }
+
+            // TODO FIX kinda crappy
+            // Watch out for noreturn.
+            ////////////////////////////
+                    _current_fn.tries++;
+            defer   _current_fn.tries--;
+            ////////////////////////////
 
             return solveCall(node);
         }
@@ -2772,7 +2790,11 @@ pub fn solve(
             ? dequalify_andGetScope(id)
             : _scope;
 
-        mut args = solveNodes(node.items);
+        mut args = solveNodes(node.items, deadcode_on_never: true);
+
+        // Dead code elim.
+        if (args.if_last.type.is_never)
+            return createBlock(node.token, t_never, args);
 
         //
         mut callTargIdx = match__mutargs(
@@ -3123,11 +3145,22 @@ pub fn solve(
             :items, :type, :target);
     }
 
+    fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[]): SolvedNode
+    {
+        return SolvedNode(kind: "block", :type, :items, :token);
+    }
+
     fn CallerNode(
         node: Node, mut type: Type, target: Target, mut args: SolvedNode[] = [])
             : SolvedNode
     {
         let overload = GET(target);
+
+        // TODO FIX
+        //  Ensures we notice noreturn fns.
+        //   Implicit return void is caught in finalizeReturns on exit.
+        if (!_current_fn.tries && !_current_fn.ret_count && overload.type.is_never && _current_fn)
+            reportReturnType(t_never);
 
         // HACK -
         //  TBD how we make this stuff work in real life.
