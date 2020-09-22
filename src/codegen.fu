@@ -798,6 +798,9 @@ pub fn cpp_codegen(
 
                 if (fn.type.is_never)
                     return src;
+
+                if (fn.type.is_void)
+                    return "return (void) " ~ src;
             }
 
             return "return " ~ src;
