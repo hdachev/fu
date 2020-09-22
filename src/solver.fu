@@ -1273,8 +1273,9 @@ pub fn solve(
             TEMP_open_templates: true,
             TEMP_template_scope: scope0);
 
-        shadow let type = expr && items.len
-            ? items.last.type : t_void;
+        shadow let type = expr && items.len || items.if_last.type.is_never
+            ? items.last.type
+            : t_void;
 
         ////////////////////////////////
         for (mut i = 0; i < _open_templates.len; i++)
@@ -1529,12 +1530,7 @@ pub fn solve(
             {
                 let s_body = solveNode(n_body);
 
-                // Fixup returns.
-                _current_fn.ret_actual ||= _current_fn.ret_count
-                    ? fail("falsy ret_actual when ret_count != 0.")
-                    : t_void;
-
-                finalizeReturns();
+                finalizeReturns(s_body.type);
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2145,8 +2141,13 @@ pub fn solve(
         return target;
     }
 
-    fn finalizeReturns()
+    fn finalizeReturns(bodyType: Type)
     {
+        // Not a single return statement = return void.
+        _current_fn.ret_actual ||= _current_fn.ret_count
+            ? fail("falsy ret_actual when ret_count != 0.")
+            : t_void;
+
         // cpy/move.
         if (!_current_fn.ret_actual.is_ref)
         {
@@ -2155,6 +2156,23 @@ pub fn solve(
                 ref ret = GET_mut(_current_fn.returns[i]);
                 maybeCopyOrMove(ret.solved, _current_fn.ret_actual);
             }
+        }
+
+        // See if we're missing the final return statement.
+        //  Two cases of interest:
+        //
+        // [1] If this is a non-void/non-never returning function,
+        //      then you've forgotten the final return stmt of your fn.
+        //
+        // [2] If this is a never returning function,
+        //      then this means that the function actually returns void.
+        //
+        if (!bodyType.is_never) // Refers to the type of the return stmt -
+        {                       //  it is always never, everything after it is unreach.
+            isAssignable(host: t_void, _current_fn.ret_actual) || fail(
+                "Non-void returning fn missing a final return.");
+
+            _current_fn.ret_actual = t_void;
         }
     }
 
@@ -2815,32 +2833,28 @@ pub fn solve(
 
     fn solveIf(node: Node, mut type: Type): SolvedNode
     {
-        let n0      = node.items[0];
-        let n1      = node.items[1];
-        let n2      = node.items[2];
+        let n_cons  = node.items[1];
+        let n_alt   = node.items[2];
 
-        let cond    = solveNode(n0, t_bool);
-        mut cons    = n1 && solveNode(n1, type);
-        mut alt     = n2 && solveNode(n2, cons.type || type);
+        let cond    = solveNode(node.items[0], t_bool);
+        mut cons    = n_cons && solveNode(n_cons, type);
+        mut alt     = n_alt  && solveNode(n_alt , cons.type || type);
 
-        let priExpr = cons || alt || fail();
-        let secExpr = cons && alt || cons;
-
-        let priType = priExpr.type;
-        let secType = secExpr.type;
-
-        if (!type.is_void && !type.is_bool)
+        if (cons.type && alt.type)
         {
-            type = !secType ? priType
-                            : type_trySuper(priType, secType);
+            if (!type.is_void)
+            {
+                type = type_trySuper(cons.type, alt.type) || fail(
+                    "[if] No common supertype: `" ~ serializeType(cons.type) ~ " : " ~ serializeType(alt.type) ~ "`.");
 
-            type || fail("[if] No common supertype: `" ~ serializeType(priType) ~ " : " ~ serializeType(secType) ~ "`.");
-            type.is_ref || !type.lifetime || fail("[if] stray lifetime");
-
-            if (cons)
+                type.is_ref || !type.lifetime || fail("[if] stray lifetime");
                 maybeCopyOrMove(cons, type);
-            if (alt)
-                maybeCopyOrMove(alt, type);
+                maybeCopyOrMove(alt,  type);
+            }
+
+            // Control flow.
+            if (cons.type.is_never && alt.type.is_never)
+                type = t_never;
         }
 
         return solved(node, type || fail(), [ cond, cons, alt ]);
