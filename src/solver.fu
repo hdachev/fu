@@ -9,6 +9,7 @@ import types;
 
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false;
+let USE_ref_to_mutref       = false;
 
 
 
@@ -2374,7 +2375,9 @@ pub fn solve(
                     : init.type.is_mutref || node.flags & F_MUT
                         ? node.flags & F_REF
                             ? init.type
-                            : clear_refs(init.type)
+                            : USE_ref_to_mutref && !(node.flags & F_MUT)
+                                ? clear_mutref(init.type)
+                                : clear_refs(init.type)
                         : node.flags & F_ARG && !(node.flags & F_MUT)
                             ? add_ref(init.type, Lifetime_temporary)
                             : init.type;
