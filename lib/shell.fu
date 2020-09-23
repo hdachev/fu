@@ -1,0 +1,3 @@
+
+pub fn exec(mut cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
+pub fn exec(mut cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");

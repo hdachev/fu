@@ -80,13 +80,13 @@ fn compile(fname: string, via: string = "")
 fn absdir(a: string)
     a.if_last == '/' ? a : a ~ '/';
 
-let HOME = absdir(env_get("HOME"));
+let HOME = absdir(env::get("HOME"));
 
 pub fn locate_PRJDIR(): string
 {
     let dir = HOME ~ "fu/";
     let fn  = dir  ~ "src/compiler.fu";
-    let fs  = file_size(fn);
+    let fs  = file::size(fn);
         fs  > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
 
     println("PRJDIR: " ~ dir);
@@ -119,9 +119,9 @@ pub fn build(
     {
         println("COMPILE ", fname);
 
-        let t0 = now_hr();
+        let t0 = now::hr();
         compile(:fname);
-        let t1 = now_hr();
+        let t1 = now::hr();
         let tt = t1 - t0;
 
         if (t1 - t0 > 0.025)
@@ -213,7 +213,7 @@ pub fn ZERO(sources: string[]): Context
     let fulib = FULIB;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    let nowrite = !sources.last.has("//! ALLOW_WRITE") && !env_get("fu_ALLOW_WRITE");
+    let nowrite = !sources.last.has("//! ALLOW_WRITE") && !env::get("fu_ALLOW_WRITE");
 
     ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug", :nowrite);
     ::build(:ctx, :run, :fulib, :dir_wrk, :nowrite);

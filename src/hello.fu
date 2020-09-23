@@ -24,7 +24,7 @@ let NICE_THINGS =
 
 pub fn saySomethingNice()
 {
-    let sec = i32(now_utc());
+    let sec = i32(now::utc());
 
 /////////////////////////////
     let NEW_STUFF = false; //

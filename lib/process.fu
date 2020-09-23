@@ -1,0 +1,3 @@
+
+pub fn exit(code: i32): never __native("<cstdlib>", "std::exit");
+pub fn DEBUG(): i32 __native("<fu/util.h>", "fu_DEBUG");

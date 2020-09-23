@@ -82,8 +82,7 @@ pub inline fn uniform_f11(u: u32)
 pub fn hash(mut res: TEA, u8view: [byte])
 {
     // First off, a view over most of the array as u32s.
-    let u32len = u8view.len & ~3;
-
+    let u32len  = u8view.len & ~3;
     let u32view = u8view[0, u32len].view(u32);
 
     // First, tuples.
@@ -91,27 +90,30 @@ pub fn hash(mut res: TEA, u8view: [byte])
     {
         res.v0 ^= u32view[i - 1];
         res.v1 ^= u32view[i];
-        res.r4();
+        res.r16();
     }
 
-    // A lone trailer.
-    if (u32view.len & 1)
-        res.v0 ^= u32view[u32view.len - 1];
-
-    // The trailing bytes.
+    if (u8view.len & 7)
     {
-        mut last: u32;
-        for (mut i = u32len; i < u8view.len; i++)
+        // A lone trailer.
+        if (u32view.len & 1)
+            res.v0 ^= u32view[u32view.len - 1];
+
+        // The trailing bytes.
         {
-            last <<= 8;
-            last |= u8view[i].u32;
+            mut last: u32;
+            for (mut i = u32len; i < u8view.len; i++)
+            {
+                last <<= 8;
+                last |= u8view[i].u32;
+            }
+
+            res.v1 ^= last;
         }
 
-        res.v1 ^= last;
+        // Finally, let's go for a good final shuffle.
+        res.r16();
     }
-
-    // Finally, let's go for a good final shuffle.
-    res.r16();
 
     return res;
 }
@@ -138,6 +140,24 @@ pub fn hash62(str: [byte], chars = 11): string
             res ~= byte(c - 10 + 'a'.u64);
         else
             res ~= byte(c - 36 + 'A'.u64);
+    }
+
+    return res;
+}
+
+pub fn hash16(str: [byte], chars = 16): string
+{
+    mut res: string;
+    mut v = str.hash.u64;
+    for (mut i = 0; i < chars; i++)
+    {
+        let c = v % 16;
+        v = v / 16;
+
+        if (c < 10)
+            res ~= byte(c -  0 + '0'.u64);
+        else
+            res ~= byte(c - 10 + 'a'.u64);
     }
 
     return res;

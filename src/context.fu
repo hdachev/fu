@@ -34,14 +34,14 @@ fn resolveFile(
 
     fn tryResolve(): string
     {
-        let exists = file_size(path) >= 0;
+        let exists = file::size(path) >= 0;
         if (exists)
             return path;
 
         // TODO FIX
         {
             shadow let path = from ~ "lib/" ~ name;
-            shadow let exists = file_size(path) >= 0;
+            shadow let exists = file::size(path) >= 0;
             if (exists)
                 return path;
         }
@@ -49,7 +49,7 @@ fn resolveFile(
         // TODO FIX
         {
             shadow let path = from ~ "vendor/" ~ name;
-            shadow let exists = file_size(path) >= 0;
+            shadow let exists = file::size(path) >= 0;
             if (exists)
                 return path;
         }
@@ -57,7 +57,7 @@ fn resolveFile(
         // TODO FIX
         {
             shadow let path = from ~ "fu/lib/" ~ name;
-            shadow let exists = file_size(path) >= 0;
+            shadow let exists = file::size(path) >= 0;
             if (exists)
                 return path;
         }
@@ -126,7 +126,7 @@ pub fn getFile(
     if (cached)
         return cached == "\v" ? "" : cached;
 
-    let read = file_read(path);
+    let read = file::read(path);
     ctx.files[path] = read || "\v";
     return read;
 }

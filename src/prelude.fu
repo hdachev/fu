@@ -192,12 +192,6 @@ fn find(a: [$T], b: [$T]) case ($T -> @primitive): i32  __native("<fu/vec/find.h
 fn has (a: [$T], b: [$T]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
-// TODO FIX: these here mean to support arrays of strings.
-
-fn find(a: [$T], b: $T): i32  __native("<fu/vec/find.h>", "fu::lfind");
-fn has (a: [$T], b: $T): bool __native("<fu/vec/find.h>", "fu::has");
-
-
 // Strings.
 
 type string = byte[];
@@ -243,50 +237,6 @@ fn values(a: &Map($K, $V)): &$V[] __native(".m_values");
 fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
 
 
-// Assertions, bugs & fails.
-
-fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
-fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
-fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
-fn exit(code: i32): never __native("<cstdlib>", "std::exit");
-
-fn ALLOC_STAT_COUNT(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
-fn ALLOC_STAT_BYTES(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");
-
-fn DEBUG(): i32 __native("<fu/util.h>", "fu_DEBUG");
-
-
-// TODO move these out in separate imports,
-//  now::hr() etc, mini import syntax will be just as usable.
-
-fn now_hr (): f64 __native("<fu/now.h>", "fu::now_hr()");
-fn now_utc(): f64 __native("<fu/now.h>", "fu::now_utc()");
-
-
-// TODO port this in our thing,
-//  we've got all we need now.
-
-fn hash_tea(str: string): string __native("<fu/tea.h>", "fu::hash_tea");
-
-
-// TODO all of these should annotate 'str: string |> c_str',
-//  or '.c_str', or '|> c_str' - the c-str conversion can cheap append a nullchar,
-//   which will be alloc-free in 99% of the cases.
-
-fn env_get(mut key: string): string __native("<fu/env.h>", "fu::env_get");
-
-fn file_size (path: string): i32 __native("<fu/io.h>", "fu::file_size");
-fn file_read (path: string): string __native("<fu/io.h>", "fu::file_read");
-fn file_write(path: string, body: string): i32 __native("<fu/io.h>", "fu::file_write");
-
-fn fs_cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
-fn fs_mkdir_p(mut path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
-fn fs_mkdir_p(mut path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
-
-fn shell_exec(mut cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
-fn shell_exec(mut cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");
-
-
 // Fun with views.
 
 fn view(a: [$T], t: $U)
@@ -294,6 +244,21 @@ fn view(a: [$T], t: $U)
     case (                   $T -> @trivial && $U -> @trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
 
 fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "fu::view_assign");
+
+
+// Assertions, bugs & fails.
+//  TODO i dont actually think we want to have nullary stuff in prelude,
+//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.
+
+fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
+fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
+fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
+
+
+// TODO FIX: these here mean to support arrays of strings.
+
+fn find(a: [$T], b: $T): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn has (a: [$T], b: $T): bool __native("<fu/vec/find.h>", "fu::has");
 
 `;
 

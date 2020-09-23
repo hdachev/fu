@@ -1,0 +1,3 @@
+
+pub fn STAT_COUNT(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_COUNT()");
+pub fn STAT_BYTES(): i32 __native("<fu/mem/arc.h>", "fu_ARC::ALLOC_STAT_BYTES()");

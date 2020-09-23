@@ -1,0 +1,3 @@
+
+pub fn hr (): f64 __native("<fu/now.h>", "fu::now_hr()");
+pub fn utc(): f64 __native("<fu/now.h>", "fu::now_utc()");

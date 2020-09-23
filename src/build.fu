@@ -8,7 +8,7 @@ fn ensure_local_fname(fname: string, dir_src: string): string
         return fname;
 
     let foreign = dir_src ~ ".foreign/";
-    fs_mkdir_p(foreign);
+    fs::mkdir_p(foreign);
 
     let rel = path_relative(from: dir_src, to: fname)
         .replace(all: "../", with: "up__")
@@ -28,12 +28,12 @@ fn update_file(
         fname.starts(with: dir_src) || throw("ensure_local_fname broken");
 
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
-    if (file_read(fname) != data)
+    if (file::read(fname) != data)
     {
         if (nowrite)
             throw("NOWRITE: About to write `" ~ fname ~ "`:\n\n" ~ data ~ "\n");
 
-        let err = file_write(fname, data);
+        let err = file::write(fname, data);
         if (err)
             throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
 
@@ -135,7 +135,7 @@ pub fn build(
     mut Fs: string[];
     mut len_all: i32;
 
-    let fulib_cpp = file_read(fulib);
+    let fulib_cpp = file::read(fulib);
 
     for (mut i = 0; i < ctx.modules.len; i++)
     {
@@ -143,17 +143,17 @@ pub fn build(
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
 
-        let F       = cpp &&    dir_wrk ~ "o-" ~ hash_tea(GCChash ~ cpp)
-                                        ~ "-" ~ cpp.len;
+        let F       = cpp &&    dir_wrk ~ "o-" ~ tea::hash16(GCChash ~ cpp)
+                                        ~  "-" ~ cpp.len;
 
         Fs.push(F);
         len_all += cpp.len;
     }
 
     //
-    fs_mkdir_p(dir_wrk);
+    fs::mkdir_p(dir_wrk);
 
-    let F_exe = dir_wrk ~ "b-" ~ hash_tea(Fs.join("/"))
+    let F_exe = dir_wrk ~ "b-" ~ tea::hash16(Fs.join("/"))
                         ~  "-" ~ len_all ~ "-" ~ Fs.len;
 
     //
@@ -169,7 +169,7 @@ pub fn build(
 
         let fname = dir_wrk ~ "failing-testcase.cpp";
         println("  WRITE " ~ fname);
-        file_write(fname, cpp);
+        file::write(fname, cpp);
 
         //
         if (!stdout)
@@ -180,7 +180,7 @@ pub fn build(
 
     //
     let link_order = getLinkOrder(ctx.modules);
-    if (file_size(F_exe) < 1 && (bin || run))
+    if (file::size(F_exe) < 1 && (bin || run))
     {
         // Build.
         for (mut i = 0; i < Fs.len; i++)
@@ -193,7 +193,7 @@ pub fn build(
             let F_tmp = F ~ ".o.tmp";
             let F_obj = F ~ ".o";
 
-            if (file_size(F_obj) < 1)
+            if (file::size(F_obj) < 1)
             {
                 // Prelude @ 0.
                 let human = i
@@ -206,18 +206,18 @@ pub fn build(
                 if (nowrite)
                     throw("NOWRITE: About to write `" ~ F_cpp ~ "`:\n\n" ~ cpp ~ "\n");
                 else
-                    file_write(F_cpp, cpp);
+                    file::write(F_cpp, cpp);
 
                 println("  BUILD ", human, " ", F_cpp);
 
-                let t0 = now_hr();
+                let t0 = now::hr();
 
-                code = shell_exec(GCC_CMD ~ INCLUDE ~ "-c -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1", stdout)
-                    || shell_exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
+                code = shell::exec(GCC_CMD ~ INCLUDE ~ "-c -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1", stdout)
+                    || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
 
                 if (code) return ERR(cpp);
 
-                let t1 = now_hr();
+                let t1 = now::hr();
                 println("     OK ", t1 - t0, "s");
             }
         }
@@ -235,11 +235,11 @@ pub fn build(
 
         {
             println("   LINK ", F_exe);
-            let t0 = now_hr();
+            let t0 = now::hr();
 
-            code = shell_exec(cmd ~ " 2>&1", stdout)
-                || shell_exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
-                || shell_exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
+            code = shell::exec(cmd ~ " 2>&1", stdout)
+                || shell::exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
+                || shell::exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
 
             if (code)
             {
@@ -247,27 +247,27 @@ pub fn build(
                 return ERR;
             }
 
-            let t1 = now_hr();
+            let t1 = now::hr();
             println("     OK ", t1 - t0, "s");
         }
 
         // Delete single object file.
         if (Fs.len == 2 && Fs[1])
-            code = shell_exec("rm " ~ Fs[1] ~ ".o 2>&1", stdout);
+            code = shell::exec("rm " ~ Fs[1] ~ ".o 2>&1", stdout);
 
         if (code) return ERR;
     }
 
     //
     if (run)
-        code = shell_exec(F_exe, stdout);
+        code = shell::exec(F_exe, stdout);
 
     if (code) return ERR;
 
     // .cpp file output.
     if (dir_cpp && dir_src)
     {
-        fs_mkdir_p(dir_cpp);
+        fs::mkdir_p(dir_cpp);
 
         mut cpp_files: string[];
 
@@ -337,7 +337,7 @@ pub fn build(
 
                     // Check for custom cmake files.
                     let custom = module.fname ~ ".cmake";
-                    if (file_size(custom) > 0)
+                    if (file::size(custom) > 0)
                         includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
 
                     let cpp_file = cpp_files[moduleIdx];
@@ -384,9 +384,9 @@ pub fn build(
     // output binary.
     if (bin)
     {
-        fs_mkdir_p( path_dirname(bin) );
+        fs::mkdir_p( path_dirname(bin) );
 
-        code = shell_exec("mv " ~ F_exe ~ " " ~ bin ~ " 2>&1", stdout);
+        code = shell::exec("mv " ~ F_exe ~ " " ~ bin ~ " 2>&1", stdout);
     }
 
     if (code) return ERR;

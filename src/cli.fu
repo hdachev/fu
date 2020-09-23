@@ -2,7 +2,7 @@ import helpers;
 import compiler;
 import tests;
 
-fn cli_handle(argv: string[], cwd = fs_cwd()): i32
+fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 {
     mut idx = 0;
 

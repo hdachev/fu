@@ -1,0 +1,4 @@
+
+pub fn cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
+pub fn mkdir_p(mut path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
+pub fn mkdir_p(mut path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
