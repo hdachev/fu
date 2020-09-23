@@ -2865,6 +2865,22 @@ pub fn runTests()
         fn main() test ? 0 : 7;
     `);
 
+    ZERO(`
+        fn test(s: $T) {
+            mut sum = 0;
+            for (fieldname i: $T) sum += s.i;
+            return sum;
+        }
+
+        struct XY { x: i32; y: i32; };
+
+        fn main() {
+            let thing = XY(1, 2);
+            let sum = test(thing);
+            return sum - 3;
+        }
+    `);
+
 
     // Type assert.
 

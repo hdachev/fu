@@ -1229,6 +1229,10 @@ pub fn solve(
 
         if (k == "struct")      return solveStructExpr(node);
 
+        // Exotics
+        if (k == "forfieldsof") return solveForFieldsOf(node);
+
+        //
         return fail("TODO: " ~ k);
     }
 
@@ -2335,6 +2339,61 @@ pub fn solve(
 
         // Control flow.
         return solved(node, t_never);
+    }
+
+
+    // Exotic loops.
+
+    fn solveForFieldsOf(node: Node): SolvedNode
+    {
+        fn astReplace(shadow node: Node, mutate): Node
+        {
+            fn walk(shadow ref node: Node)
+            {
+                for (mut i = 0; i < node.items.len; i++)
+                    walk(node.items[i]);
+
+                mutate(node);
+            }
+
+            shadow mut node = node;
+            walk(node);
+            return node;
+        }
+
+        let placeholder     = node.value;
+        let body_template   = node.items[1];
+        let fields_of       = evalTypeAnnot(node.items[0]).type;
+        let fields          = lookupStruct(fields_of).items;
+
+        mut items_ast: Node[];
+        for (mut i = 0; i < fields.len; i++)
+        {
+            let field = fields[i];
+            if (GET(field.target).kind == "field")
+            {
+                items_ast ~= astReplace(body_template, |ref item: Node|
+                {
+                    if (item.kind   == "call"      &&
+                        item.value  == placeholder &&
+                        item.items.len <= 1)
+                    {
+                        // TODO disable any kind of scope lookup but field access.
+                        if (item.items)
+                            item.value = field.id;
+                        else
+                            item.kind = "str";
+                    }
+                });
+            }
+        }
+
+        // Control flow & deadcode elim.
+        //  TODO break & continue.
+        let items = solveNodes(items_ast, deadcode_on_never: true);
+        let type  = items.last.type.is_never ? t_never : t_void;
+
+        return createBlock(node.token, type, items);
     }
 
 

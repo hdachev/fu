@@ -1459,6 +1459,21 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         consume("op", "(");
 
+        // First of the crazies.
+        if (tryConsume("id", "fieldname"))
+        {
+            let placeholder = consume("id").value;
+            consume("op", ":");
+            let type = parseTypeAnnot();
+            consume("op", ")");
+            let body = parseStatement();
+
+            return make("forfieldsof",
+                value: placeholder,
+                items: [ type, body ]);
+        }
+
+        //
         let init = !tryConsume("op", ";") && parseLetStmt();
         let cond = !tryConsume("op", ";") && parseExpressionStatement();
 
