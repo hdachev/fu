@@ -1757,6 +1757,16 @@ pub fn runTests()
             test().a + test().b;
     `);
 
+    ZERO(`
+        struct X { x: i32; };
+        fn ref2arg(x: X) = x;
+
+        fn main() {
+            let NOTREF = ref2arg(X(101));
+            return NOTREF.x - 101;
+        }
+    `);
+
 
     // Returning a mut arg.
 

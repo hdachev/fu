@@ -268,7 +268,13 @@ pub fn solve(
             // Full union here, otherwise we risk messing things up.
             let offset  = index - head;
             let argNode = argNodes[offset];
-            replace     = Lifetime_union(replace, argNode.type.lifetime);
+
+            // Abort on first temporary.
+            if (!argNode.type.is_ref || argNode.type.is_ref2temp)
+                return Lifetime_temporary();
+
+            let argLt   = argNode.type.lifetime || fail("refarg without lifetime");
+            replace     = Lifetime_union(replace, argLt);
         }
 
         return Lifetime_test(
@@ -2422,19 +2428,25 @@ pub fn solve(
             annot.type.lifetime = init.type.lifetime;
         }
 
+        let killref = init.type.is_ref2temp();
+
         if (node.flags & F_REF)
+        {
             init.type.is_mutref || !init && node.flags & F_ARG || fail(
                 "`ref` variables must be initialized to a mutable reference.");
+            killref && fail(
+                "`ref` varibles cannot bind to temporaries.");
+        }
 
         //
         let t_let   = annot.type
                         ? node.flags & F_ARG && !(node.flags & F_MUT)
                             ? add_ref(annot.type, Lifetime_temporary)
                             : annot.type
-                    : init.type.is_mutref || node.flags & F_MUT
-                        ? node.flags & F_REF
+                    : init.type.is_mutref || node.flags & F_MUT || killref
+                        ? node.flags & F_REF && !killref
                             ? init.type
-                            : USE_ref_to_mutref && !(node.flags & F_MUT)
+                            : USE_ref_to_mutref && !(node.flags & F_MUT) && !killref
                                 ? clear_mutref(init.type)
                                 : clear_refs(init.type)
                         : node.flags & F_ARG && !(node.flags & F_MUT)

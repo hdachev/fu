@@ -194,8 +194,10 @@ pub fn isAssignable(host: Type, guest: Type): bool
 pub fn Lifetime_static(): Lifetime =
     Lifetime(uni0n: [ 0 ]);
 
+let LT_TEMP = 0x7fffffff.i32;
+
 pub fn Lifetime_temporary(): Lifetime =
-    Lifetime(uni0n: [ 0x7fffffff.i32 ]);
+    Lifetime(uni0n: [ LT_TEMP ]);
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
@@ -224,6 +226,13 @@ pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
     type.quals   |= q_mutref | q_ref;
     type.lifetime = Lifetime_union(type.lifetime, lifetime) || throw("add_mutref: falsy lifetime");
     return type;
+}
+
+pub fn is_ref2temp(type: Type): bool
+{
+    return type.lifetime.uni0n
+        && type.lifetime.uni0n[type.lifetime.uni0n.len - 1] == LT_TEMP
+        && (type.is_ref && type.lifetime.uni0n.len == 1 || throw("ref2temp doesnt look good"));
 }
 
 
