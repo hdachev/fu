@@ -10,8 +10,11 @@ set(FU_INPUTS
     parser.fu
     set.fu
     types.fu
+    ../lib/now.fu
+    ../lib/alloc.fu
     stat.fu
     scope.fu
+    file.fu
     context.fu
     intlit.fu
     addroffn.fu
@@ -19,7 +22,10 @@ set(FU_INPUTS
     solver.fu
     bitset.fu
     codegen.fu
+    ../lib/env.fu
     prelude.fu
+    ../lib/fs.fu
+    ../lib/shell.fu
     build.fu
     compiler.fu
     tests.fu

@@ -587,9 +587,9 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_y0NH
-                                #define DEFt_if_last_y0NH
-inline std::byte if_last_y0NH(const fu_STR& s)
+                                #ifndef DEFt_if_last_qVFp
+                                #define DEFt_if_last_qVFp
+inline std::byte if_last_qVFp(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
@@ -597,7 +597,7 @@ inline std::byte if_last_y0NH(const fu_STR& s)
 
 static fu_STR absdir(const fu_STR& a)
 {
-    return ((if_last_y0NH(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
+    return ((if_last_qVFp(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
 }
 
 static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
@@ -745,9 +745,9 @@ fu_STR snippet2cpp(const fu_STR& src)
     return fu_STR{};
 }
 
-                                #ifndef DEFt_last_NwMO
-                                #define DEFt_last_NwMO
-inline const fu_STR& last_NwMO(const fu_VEC<fu_STR>& s)
+                                #ifndef DEFt_last_ByEn
+                                #define DEFt_last_ByEn
+inline const fu_STR& last_ByEn(const fu_VEC<fu_STR>& s)
 {
     return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
 }
@@ -759,7 +759,7 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
     const bool run = true;
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    const bool nowrite = (!fu::has(last_NwMO(sources), "//! ALLOW_WRITE"_fu) && !fu::env_get("fu_ALLOW_WRITE"_fu));
+    const bool nowrite = (!fu::has(last_ByEn(sources), "//! ALLOW_WRITE"_fu) && !fu::env_get("fu_ALLOW_WRITE"_fu));
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite, ctx);
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite, ctx);
     return ctx;

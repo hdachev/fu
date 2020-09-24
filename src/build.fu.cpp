@@ -6,7 +6,6 @@
 #include <fu/now.h>
 #include <fu/shell.h>
 #include <fu/str.h>
-#include <fu/tea.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
@@ -16,6 +15,7 @@
 #include <fu/vec/join.h>
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 #include <iostream>
 
 struct s_Argument;
@@ -46,6 +46,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+fu_STR hash16(fu::view<std::byte>, int);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
@@ -575,9 +576,9 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_bcSl
-                                #define DEFt_if_last_bcSl
-inline std::byte if_last_bcSl(fu_STR& s)
+                                #ifndef DEFt_if_last_ajCN
+                                #define DEFt_if_last_ajCN
+inline std::byte if_last_ajCN(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
@@ -668,18 +669,18 @@ static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR&
 
 void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite, const s_Context& ctx)
 {
-    if (if_last_bcSl(dir_wrk) != std::byte('/'))
+    if (if_last_ajCN(dir_wrk) != std::byte('/'))
     {
         (dir_wrk || fu::fail("No workspace directory provided."_fu));
         dir_wrk += std::byte('/');
     };
-    if ((dir_obj && (if_last_bcSl(dir_obj) != std::byte('/'))))
+    if ((dir_obj && (if_last_ajCN(dir_obj) != std::byte('/'))))
         dir_obj += std::byte('/');
 
-    if ((dir_src && (if_last_bcSl(dir_src) != std::byte('/'))))
+    if ((dir_src && (if_last_ajCN(dir_src) != std::byte('/'))))
         dir_src += std::byte('/');
 
-    if ((dir_cpp && (if_last_bcSl(dir_cpp) != std::byte('/'))))
+    if ((dir_cpp && (if_last_ajCN(dir_cpp) != std::byte('/'))))
         dir_cpp += std::byte('/');
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
@@ -699,12 +700,12 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = (i ? module.out.cpp : fulib_cpp);
-        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + fu::hash_tea((GCChash + cpp))) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
+        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp), 16)) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
         Fs.push(F);
         len_all += cpp.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
-    fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + fu::hash_tea(fu::join(Fs, "/"_fu))) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + hash16(fu::join(Fs, "/"_fu), 16)) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     int code {};
     fu_STR stdout {};
     fu_VEC<int> link_order = getLinkOrder(ctx.modules, ctx);

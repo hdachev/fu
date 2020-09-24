@@ -224,12 +224,12 @@ inline const int e_malloc = (1 << 12);
 inline const int e_memcpy = (1 << 13);
                                 #endif
 
-                                #ifndef DEFt_union_fEgd
-                                #define DEFt_union_fEgd
-inline fu_VEC<int> union_fEgd(const fu_VEC<int>& a, const fu_VEC<int>& b)
+                                #ifndef DEFt_union_pOV0
+                                #define DEFt_union_pOV0
+inline fu_VEC<int> union_pOV0(const fu_VEC<int>& a, const fu_VEC<int>& b)
 {
     if (a.size() < b.size())
-        return union_fEgd(b, a);
+        return union_pOV0(b, a);
 
     fu_VEC<int> a_1 { a };
     int x = 0;
@@ -257,7 +257,7 @@ inline fu_VEC<int> union_fEgd(const fu_VEC<int>& a, const fu_VEC<int>& b)
 
 s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
 {
-    fu_VEC<int> uni0n = union_fEgd(a.uni0n, b.uni0n);
+    fu_VEC<int> uni0n = union_pOV0(a.uni0n, b.uni0n);
     if (((uni0n.size() >= 2) && (uni0n.mutref((uni0n.size() - 2)) >= 0)))
         uni0n.splice((uni0n.size() - 2), 1);
 

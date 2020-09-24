@@ -647,6 +647,15 @@ static s_Node createLoop(int modid_0, int& _loc_0, const s_Node& init, const s_N
 static s_Node parseFor(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
 {
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu);
+    if (tryConsume(tokens_0, _idx_0, "id"_fu, "fieldname"_fu))
+    {
+        fu_STR placeholder = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}).value;
+        consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu);
+        s_Node type = parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu);
+        s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        return make(modid_0, _loc_0, "forfieldsof"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { s_Node(type), s_Node(body) } }, 0, placeholder);
+    };
     s_Node init = ([&]() -> s_Node { if (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu)) return parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0); else return s_Node{}; }());
     s_Node cond = ([&]() -> s_Node { if (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu)) return parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0); else return s_Node{}; }());
     const s_Token& token = tokens_0[_idx_0];
@@ -1047,9 +1056,9 @@ static s_Node createDefinit(int modid_0, int& _loc_0)
     return make(modid_0, _loc_0, "definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 }
 
-                                #ifndef DEFt_only_y0NH
-                                #define DEFt_only_y0NH
-inline std::byte only_y0NH(const fu_STR& s)
+                                #ifndef DEFt_only_qVFp
+                                #define DEFt_only_qVFp
+inline std::byte only_qVFp(const fu_STR& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1064,7 +1073,7 @@ static s_Node createPrefix(int modid_0, int& _loc_0, const fu_STR& op, s_Node&& 
     {
         const std::byte sign = expr.value[0];
         if (((sign == std::byte('+')) || (sign == std::byte('-'))))
-            expr.value.mutref(0) = ((sign == only_y0NH(op)) ? std::byte('+') : std::byte('-'));
+            expr.value.mutref(0) = ((sign == only_qVFp(op)) ? std::byte('+') : std::byte('-'));
         else
             expr.value = (op + expr.value);
 

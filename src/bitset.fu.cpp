@@ -21,9 +21,9 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_grow_if_oob_4mm0
-                                #define DEFt_grow_if_oob_4mm0
-inline uint64_t& grow_if_oob_4mm0(fu_VEC<uint64_t>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_1lNm
+                                #define DEFt_grow_if_oob_1lNm
+inline uint64_t& grow_if_oob_1lNm(fu_VEC<uint64_t>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -38,7 +38,7 @@ bool add_once(s_BitSet& _, const int idx)
     const int bucket = (idx / 64);
     const int bit = (idx % 64);
     const uint64_t mask = (1ull << uint64_t(bit));
-    uint64_t& entry = grow_if_oob_4mm0(_._data, bucket);
+    uint64_t& entry = grow_if_oob_1lNm(_._data, bucket);
     if (!(entry & mask))
     {
         entry |= mask;

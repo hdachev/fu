@@ -705,9 +705,9 @@ static void include(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_STR& lib)
 
 }
 
-                                #ifndef DEFt_last_y0NH
-                                #define DEFt_last_y0NH
-inline std::byte last_y0NH(const fu_STR& s)
+                                #ifndef DEFt_last_qVFp
+                                #define DEFt_last_qVFp
+inline std::byte last_qVFp(const fu_STR& s)
 {
     return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
 }
@@ -720,7 +720,7 @@ static bool binSkipParens(const fu_STR& id, const int mode)
 
     if (mode & M_PARENS)
     {
-        if (last_y0NH(id) == std::byte('='))
+        if (last_qVFp(id) == std::byte('='))
         {
             if (((id == "=="_fu) || (id == "!="_fu)))
                 return true;
@@ -997,9 +997,9 @@ static fu_STR cgDefault(const s_Module& module_0, const s_Context& ctx_0, fu_MAP
     return (typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, 0) + "{}"_fu);
 }
 
-                                #ifndef DEFt_grow_if_oob_OeDv
-                                #define DEFt_grow_if_oob_OeDv
-inline s_BitSet& grow_if_oob_OeDv(fu_VEC<s_BitSet>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_IECj
+                                #define DEFt_grow_if_oob_IECj
+inline s_BitSet& grow_if_oob_IECj(fu_VEC<s_BitSet>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -1010,7 +1010,7 @@ inline s_BitSet& grow_if_oob_OeDv(fu_VEC<s_BitSet>& a, const int i)
 
 static bool add_once(fu_VEC<s_BitSet>& bs, const s_Target& target)
 {
-    return add_once(grow_if_oob_OeDv(bs, target.modid), target.index);
+    return add_once(grow_if_oob_IECj(bs, target.modid), target.index);
 }
 
                                 #ifndef DEF_F_MUT
@@ -1028,9 +1028,9 @@ inline const int F_ARG = (1 << 9);
 inline const int LET_INIT = 1;
                                 #endif
 
-                                #ifndef DEFt_only_4UAi
-                                #define DEFt_only_4UAi
-inline const s_SolvedNode& only_4UAi(const fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_only_7COX
+                                #define DEFt_only_7COX
+inline const s_SolvedNode& only_7COX(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -1053,7 +1053,7 @@ static fu_STR binding(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
     {
         if (((init.kind == "copy"_fu) && !is_ref(node.type)))
         {
-            fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, only_4UAi(init.items), 0);
+            fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, only_7COX(init.items), 0);
             if (node.type.vtype.quals & q_primitive)
                 return ((head + " = "_fu) + expr);
 
@@ -1226,9 +1226,9 @@ static fu_STR cgParens(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<
     return (src + ")"_fu);
 }
 
-                                #ifndef DEFt_if_last_y0NH
-                                #define DEFt_if_last_y0NH
-inline std::byte if_last_y0NH(const fu_STR& s)
+                                #ifndef DEFt_if_last_qVFp
+                                #define DEFt_if_last_qVFp
+inline std::byte if_last_qVFp(const fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s[(s.size() - 1)]; else return fu::Default<std::byte>::value; }());
 }
@@ -1242,7 +1242,7 @@ static fu_STR cgStatements(const s_Module& module_0, const s_Context& ctx_0, fu_
     {
         const fu_STR& line = lines[i];
         if (line)
-            src += ((_indent_0 + line) + ((if_last_y0NH(line) == std::byte(';')) ? std::byte('\n') : std::byte(';')));
+            src += ((_indent_0 + line) + ((if_last_qVFp(line) == std::byte(';')) ? std::byte('\n') : std::byte(';')));
 
     };
     return src;
@@ -1355,7 +1355,7 @@ static fu_STR cgFn(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_S
     s_Overload overload = GET(module_0, ctx_0, fn.target);
     const fu_STR& id = overload.name;
     if (!body)
-        return ((mode & M_STMT) ? (("\n// fn "_fu + id) + " has no body.\n"_fu) : "0"_fu);
+        return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
 
     fu_STR src = cgFnSignature(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, fn);
     
@@ -1402,7 +1402,7 @@ static bool isFieldChain(const s_Module& module_0, const s_Context& ctx_0, const
 
     s_Overload t = GET(module_0, ctx_0, node.target);
     if (t.kind == "field"_fu)
-        return isFieldChain(module_0, ctx_0, only_4UAi(node.items));
+        return isFieldChain(module_0, ctx_0, only_7COX(node.items));
 
     if (((t.kind == "var"_fu) || (t.kind == "global"_fu) || (t.kind == "arg"_fu) || (t.kind == "ref"_fu)))
         return true;
@@ -2050,7 +2050,7 @@ static fu_STR cgEmpty(const int mode)
 static fu_STR cgDefer(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, int& _current_fn_index_0, const s_SolvedNode& node)
 {
     include(_libs_0, "<fu/defer.h>"_fu);
-    return (("fu_DEFER("_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, only_4UAi(node.items), 0)) + ")"_fu);
+    return (("fu_DEFER("_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, only_7COX(node.items), 0)) + ")"_fu);
 }
 
 static fu_STR cgCopyMove(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, int& _current_fn_index_0, const s_SolvedNode& node)
