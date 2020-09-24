@@ -642,7 +642,7 @@ pub fn cpp_codegen(
 
         // Custom __natives.
         if (!body)
-            return mode & M_STMT ? "\n// fn " ~ id ~ " has no body.\n" : "0";
+            return mode & M_STMT ? "" : "0";
 
         // TODO is this needed?
         //  Body should always be a block.
