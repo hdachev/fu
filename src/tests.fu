@@ -1721,7 +1721,7 @@ pub fn runTests()
     `);
 
 
-    // Lifetimes, type inference & copy elision.
+    // Lifetimes, type inference, copy elision, temporaries.
 
     ZERO(`
         fn test() {
@@ -1790,6 +1790,77 @@ pub fn runTests()
             let a = XY(99, 2);
             let ref2a = ref2arg(a);
             return mem::ptr_eq(a, ref2a) ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NoCopy { i: i32; };
+        fn retmutref(ref nc: NoCopy) nc;
+
+        fn main() {
+            mut nc: NoCopy;
+            nc.retmutref.retmutref.i++;
+            return nc.i - 1;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NoCopy { i: i32; };
+        fn mutrefself(ref nc: NoCopy) {
+            nc.i++;
+            return nc;
+        }
+
+        fn main() {
+            mut nc: NoCopy;
+            nc.mutrefself().mutrefself();
+            return nc.i - 2;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NoCopy { i: i32; };
+
+        fn      retarg(a: NoCopy) a;
+        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;
+        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;
+        fn retargs_and(a: NoCopy, b: NoCopy) a && b;
+
+        fn main() {
+            let a: NoCopy;
+            let b: NoCopy;
+            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NoCopy { i: i32; };
+
+        fn      retarg(a: NoCopy) a;
+        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;
+        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;
+        fn retargs_and(a: NoCopy, b: NoCopy) a && b;
+
+        fn main() {
+            let a: NoCopy;                      // <- b now temp
+
+            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, NoCopy)))).i;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NoCopy { i: i32; };
+
+        fn      retarg(a) a;                    // <- now templates
+        fn  retargs_if(a, b) a.i ? b : a;
+        fn  retargs_or(a, b) a || b;
+        fn retargs_and(a, b) a && b;
+
+        fn main() {
+            mut a: NoCopy;                      // <- now muts
+            mut b: NoCopy;
+            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;
+            return a.i + b.i - 1;
         }
     `);
 
