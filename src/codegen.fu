@@ -1289,40 +1289,62 @@ pub fn cpp_codegen(
         {
             let items = node.items;
 
-            let retSecondLast = items[items.len - 1].type.is_never;
-
-            let condEnd = retSecondLast
-                        ? items.len - 2
-                        : items.len - 1;
-
             mut src = "";
 
-            if (condEnd)
-            {
-                src ~= "if (";
+            let annot = typeAnnot(type);
 
-                for (mut i = 0; i < condEnd; i++)
+            if (type.is_mutref)
+            {
+                for (mut i = 0; i < items.len; i++)
                 {
                     let item = items[i];
-                    if (i) src ~= " && ";
-                    src ~= cgNode(item, M_RETBOOL);
+                    if (item.type.is_never)
+                    {
+                        src ~= cgNode(item, M_RETBOOL) ~ ";";
+                        break;
+                    }
+
+                    if (i < items.len - 1)
+                        src ~= "{ " ~ annot ~ " _ = " ~ cgNode(item) ~ "; if (!_) return _; } ";
+                    else
+                        src ~= "return " ~ cgNode(item) ~ ";";
                 }
-
-                src ~= ") ";
-            }
-
-            let tail = cgNode(items[condEnd]);
-
-            if (retSecondLast)
-            {
-                src ~= "{ " ~ typeAnnot(type) ~ " _ = " ~ tail ~ "; ";
-                src ~= "if (!_) return _; } ";
-                src ~= cgNode(items[items.len - 1]) ~ ";"; //FAIL
             }
             else
             {
-                src ~= "return " ~ tail ~ ";"; //TRUTHY
-                src ~= " else return " ~ cgDefault(type) ~ ";";
+                let retSecondLast = items[items.len - 1].type.is_never;
+
+                let condEnd = retSecondLast
+                            ? items.len - 2
+                            : items.len - 1;
+
+                if (condEnd)
+                {
+                    src ~= "if (";
+
+                    for (mut i = 0; i < condEnd; i++)
+                    {
+                        let item = items[i];
+                        if (i) src ~= " && ";
+                        src ~= cgNode(item, M_RETBOOL);
+                    }
+
+                    src ~= ") ";
+                }
+
+                let tail = cgNode(items[condEnd]);
+
+                if (retSecondLast)
+                {
+                    src ~= "{ " ~ typeAnnot(type) ~ " _ = " ~ tail ~ "; ";
+                    src ~= "if (!_) return _; } ";
+                    src ~= cgNode(items[items.len - 1]) ~ ";"; //FAIL
+                }
+                else
+                {
+                    src ~= "return " ~ tail ~ ";"; //TRUTHY
+                    src ~= " else return " ~ cgDefault(type) ~ ";";
+                }
             }
 
             src = "([&]() -> " ~ typeAnnot(type) ~ " { " ~ src ~ " }())";
