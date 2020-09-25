@@ -1721,7 +1721,7 @@ pub fn runTests()
     `);
 
 
-    // Lifetimes & type inference.
+    // Lifetimes, type inference & copy elision.
 
     ZERO(`
         fn test() {
@@ -1764,6 +1764,32 @@ pub fn runTests()
         fn main() {
             let NOTREF = ref2arg(X(101));
             return NOTREF.x - 101;
+        }
+    `);
+
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct Copied { x: i32; };
+
+        fn main() {
+            let a = Copied(1);
+            mut b = a;
+            b.x++;
+            return b.x - a.x * 2;
+        }
+    `);
+
+    ZERO(`
+        struct XY { x: i32; y: i32; };
+        fn ref2arg(v: XY) = v;
+
+        fn main() {
+            let a = XY(99, 2);
+            let ref2a = ref2arg(a);
+            return mem::ptr_eq(a, ref2a) ? 0 : 1;
         }
     `);
 

@@ -36,7 +36,7 @@ pub let F_LOCAL         = 1 << 8;
 pub let F_ARG           = 1 << 9;
 pub let F_FIELD         = 1 << 10;
 pub let F_NODISCARD     = 1 << 11;
-// ... 12
+pub let F_NOCOPY        = 1 << 12;
 // ... 13
 // ... 14
 // ... 15
@@ -313,13 +313,20 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn parseStructDecl(): Node
+    fn parseNoCopy(): Node
+    {
+        consume("id", "struct");
+
+        return parseStructDecl(flags: F_NOCOPY);
+    }
+
+    fn parseStructDecl(flags! = 0): Node
     {
         let name = tryConsume("id").value;
 
         consume("op", "{");
         let items = parseBlockLike("op", "}", struct: true);
-        let struct = make("struct", items, 0, name);
+        let struct = make("struct", items, :flags, name);
 
         return struct;
     }
@@ -451,6 +458,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
+
+                if (v == "nocopy")      return parseNoCopy();
             }
 
             if (peek.kind == "op" && peek.value == "{")

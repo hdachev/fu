@@ -202,7 +202,9 @@ pub fn initStruct(
         :flags);
 
     // Assume everything, we resolve disappointment.
-    let specualtive_quals = q_rx_copy | q_trivial;
+    let specualtive_quals = flags & F_NOCOPY
+        ? q_trivial
+        : q_rx_copy | q_trivial;
 
     return Type(ValueType(:canon, MODID,
         quals: specualtive_quals));

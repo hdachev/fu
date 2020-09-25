@@ -230,6 +230,14 @@ pub fn cpp_codegen(
             def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.id) ~ ";";
         }
 
+        if !(t.quals & q_rx_copy)
+        {
+            def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = delete;";
+            def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
+            def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
+            def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
+        }
+
         def ~= "\n    explicit operator bool() const noexcept";
         def ~= "\n    {";
         def ~= "\n        return false";
@@ -1089,7 +1097,7 @@ pub fn cpp_codegen(
             return cgClone(node.type, items[0]);
 
         if (id == "STEAL" && items.len == 1)
-            return cgSteal(items[0]);
+            return cgSteal(node.type, items[0]);
 
         if (id == "SWAP" && items.len == 2)
             return cgSwap(items);
@@ -1606,13 +1614,16 @@ pub fn cpp_codegen(
             return a;
 
         if (node.kind == "move")
-            return cgSteal(a);
+            return cgSteal(node.type, a);
 
         return cgClone(node.type, a);
     }
 
-    fn cgSteal(src: string): string
+    fn cgSteal(type: Type, src: string): string
     {
+        if (type.quals & q_trivial)
+            return cgClone(type, src);
+
         include("<utility>");
         return "std::move(" ~ src ~ ")";
     }

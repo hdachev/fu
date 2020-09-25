@@ -1,0 +1,2 @@
+
+pub fn ptr_eq(a: &$T, b: &$T): bool __native("<fu/mem/util.h>", "fu::ptr_eq");
