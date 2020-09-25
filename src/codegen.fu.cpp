@@ -858,6 +858,13 @@ static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu
         const s_StructField& field = fields[i];
         def += ((((indent + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, field.type)) + " "_fu) + ID(field.id)) + ";"_fu);
     };
+    if (!(t.vtype.quals & q_rx_copy))
+    {
+        def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = delete;"_fu);
+        def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) = default;"_fu);
+        def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu);
+        def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) = default;"_fu);
+    };
     def += "\n    explicit operator bool() const noexcept"_fu;
     def += "\n    {"_fu;
     def += "\n        return false"_fu;
@@ -1440,8 +1447,11 @@ static fu_STR cgClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
     return (((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type) + "("_fu) + src) + ")"_fu);
 }
 
-static fu_STR cgSteal(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_STR& src)
+static fu_STR cgSteal(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, const s_Type& type, const fu_STR& src)
 {
+    if (type.vtype.quals & q_trivial)
+        return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, src);
+
     include(_libs_0, "<utility>"_fu);
     return (("std::move("_fu + src) + ")"_fu);
 }
@@ -1581,7 +1591,7 @@ static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
         return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, node.type, items[0]);
 
     if (((id == "STEAL"_fu) && (items.size() == 1)))
-        return cgSteal(_libs_0, items[0]);
+        return cgSteal(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, node.type, items[0]);
 
     if (((id == "SWAP"_fu) && (items.size() == 2)))
         return cgSwap(_libs_0, items);
@@ -1754,33 +1764,54 @@ static fu_STR cgAnd(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_
     if (!is_bool(type))
     {
         const fu_VEC<s_SolvedNode>& items = node.items;
-        const bool retSecondLast = is_never(items[(items.size() - 1)].type);
-        const int condEnd = (retSecondLast ? (items.size() - 2) : (items.size() - 1));
         fu_STR src {};
-        if (condEnd)
+        fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, 0);
+        if (is_mutref(type))
         {
-            src += "if ("_fu;
-            for (int i = 0; i < condEnd; i++)
+            for (int i = 0; i < items.size(); i++)
             {
                 const s_SolvedNode& item = items[i];
-                if (i)
-                    src += " && "_fu;
+                if (is_never(item.type))
+                {
+                    src += (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, item, M_RETBOOL) + ";"_fu);
+                    break;
+                };
+                if (i < (items.size() - 1))
+                    src += (((("{ "_fu + annot) + " _ = "_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, item, 0)) + "; if (!_) return _; } "_fu);
+                else
+                    src += (("return "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, item, 0)) + ";"_fu);
 
-                src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, item, M_RETBOOL);
             };
-            src += ") "_fu;
-        };
-        fu_STR tail = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[condEnd], 0);
-        if (retSecondLast)
-        {
-            src += (((("{ "_fu + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, 0)) + " _ = "_fu) + tail) + "; "_fu);
-            src += "if (!_) return _; } "_fu;
-            src += (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[(items.size() - 1)], 0) + ";"_fu);
         }
         else
         {
-            src += (("return "_fu + tail) + ";"_fu);
-            src += ((" else return "_fu + cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type)) + ";"_fu);
+            const bool retSecondLast = is_never(items[(items.size() - 1)].type);
+            const int condEnd = (retSecondLast ? (items.size() - 2) : (items.size() - 1));
+            if (condEnd)
+            {
+                src += "if ("_fu;
+                for (int i = 0; i < condEnd; i++)
+                {
+                    const s_SolvedNode& item = items[i];
+                    if (i)
+                        src += " && "_fu;
+
+                    src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, item, M_RETBOOL);
+                };
+                src += ") "_fu;
+            };
+            fu_STR tail = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[condEnd], 0);
+            if (retSecondLast)
+            {
+                src += (((("{ "_fu + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, 0)) + " _ = "_fu) + tail) + "; "_fu);
+                src += "if (!_) return _; } "_fu;
+                src += (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, items[(items.size() - 1)], 0) + ";"_fu);
+            }
+            else
+            {
+                src += (("return "_fu + tail) + ";"_fu);
+                src += ((" else return "_fu + cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type)) + ";"_fu);
+            };
         };
         src = (((("([&]() -> "_fu + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, type, 0)) + " { "_fu) + src) + " }())"_fu);
         return src;
@@ -2060,7 +2091,7 @@ static fu_STR cgCopyMove(const s_Module& module_0, const s_Context& ctx_0, fu_MA
         return a;
 
     if (node.kind == "move"_fu)
-        return cgSteal(_libs_0, a);
+        return cgSteal(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, node.type, a);
 
     return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, node.type, a);
 }

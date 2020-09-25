@@ -182,6 +182,11 @@ inline const int F_FIELD = (1 << 10);
 inline const int F_NODISCARD = (1 << 11);
                                 #endif
 
+                                #ifndef DEF_F_NOCOPY
+                                #define DEF_F_NOCOPY
+inline const int F_NOCOPY = (1 << 12);
+                                #endif
+
                                 #ifndef DEF_F_MUT
                                 #define DEF_F_MUT
 inline const int F_MUT = (1 << 16);
@@ -502,12 +507,12 @@ static s_Node parseLetStmt(int modid_0, const fu_STR& fname_0, const fu_VEC<s_To
     return ret;
 }
 
-static s_Node parseStructDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseStructDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const int flags)
 {
     fu_STR name = tryConsume(tokens_0, _idx_0, "id"_fu, fu::view<std::byte>{}).value;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "{"_fu);
     fu_VEC<s_Node> items = parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "op"_fu, "}"_fu, true);
-    s_Node sTruct = make(modid_0, _loc_0, "struct"_fu, items, 0, name);
+    s_Node sTruct = make(modid_0, _loc_0, "struct"_fu, items, flags, name);
     return sTruct;
 }
 
@@ -558,6 +563,12 @@ static s_Node parseInlineDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s
 
     _idx_0--;
     return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, flags, bool{});
+}
+
+static s_Node parseNoCopy(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+{
+    consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "struct"_fu);
+    return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_NOCOPY);
 }
 
 static s_Node createNot(int modid_0, int& _loc_0, const s_Node& expr)
@@ -761,7 +772,7 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
                 return ((void)_idx_0--, parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
 
             if (v == "struct"_fu)
-                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
 
             if (v == "pub"_fu)
                 return parsePub(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
@@ -790,11 +801,14 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
             if (v == "postfix"_fu)
                 return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_POSTFIX, bool{});
 
+            if (v == "nocopy"_fu)
+                return parseNoCopy(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+
         };
         if (((peek.kind == "op"_fu) && (peek.value == "{"_fu)))
         {
             if (v == "struct"_fu)
-                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
 
         };
         if (_fnDepth_0)

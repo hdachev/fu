@@ -3,7 +3,6 @@
 #include <fu/str.h>
 #include <fu/vec/concat_one.h>
 #include <fu/view.h>
-#include <utility>
 
 struct s_TEA;
 
@@ -77,7 +76,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
         };
         r16_aQnK(res);
     };
-    return std::move(res);
+    return s_TEA(res);
 }
 
 s_TEA hash(fu::view<std::byte> u8view)

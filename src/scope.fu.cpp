@@ -577,14 +577,19 @@ bool isStruct(const s_Type& type)
     return fu::lmatch(type.vtype.canon, std::byte('$'));
 }
 
-                                #ifndef DEF_q_rx_copy
-                                #define DEF_q_rx_copy
-inline const int q_rx_copy = (1 << 2);
+                                #ifndef DEF_F_NOCOPY
+                                #define DEF_F_NOCOPY
+inline const int F_NOCOPY = (1 << 12);
                                 #endif
 
                                 #ifndef DEF_q_trivial
                                 #define DEF_q_trivial
 inline const int q_trivial = (1 << 3);
+                                #endif
+
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline const int q_rx_copy = (1 << 2);
                                 #endif
 
 s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
@@ -594,7 +599,7 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
         fu::fail((("initStruct already invoked for `"_fu + id) + "`."_fu));
 
     (module.out.types.upsert(canon) = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, fu_VEC<s_ScopeItem>{} });
-    const int specualtive_quals = (q_rx_copy | q_trivial);
+    const int specualtive_quals = ((flags & F_NOCOPY) ? int(q_trivial) : (q_rx_copy | q_trivial));
     return s_Type { s_ValueType { int(specualtive_quals), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }
 

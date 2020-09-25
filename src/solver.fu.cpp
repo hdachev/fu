@@ -57,6 +57,7 @@ bool is_bool(const s_Type&);
 bool is_mutref(const s_Type&);
 bool is_never(const s_Type&);
 bool is_ref(const s_Type&);
+bool is_ref2temp(const s_Type&);
 bool is_void(const s_Type&);
 bool operator==(const s_Type&, const s_Type&);
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
@@ -1576,7 +1577,7 @@ static s_Target trySpecialize(const s_Context& ctx_0, s_Module& module_0, s_Toke
             _open_templates_0.push(s_OpenTemplate { s_Target(overloadIdx), s_Target(spec), fu_VEC<s_SolvedNode>(args), fu_STR(mangle) });
 
     };
-    return std::move(([&]() -> const s_Target& { if ((spec.modid != SPEC_FAILED)) return spec; else return fu::Default<s_Target>::value; }()));
+    return s_Target(([&]() -> const s_Target& { if ((spec.modid != SPEC_FAILED)) return spec; else return fu::Default<s_Target>::value; }()));
 }
 
                                 #ifndef DEF_F_IMPLICIT
@@ -1761,7 +1762,7 @@ static s_Target injectImplicitArg(const s_Context& ctx_0, s_Module& module_0, s_
         if (arg.value == id)
         {
             checkAssignable(ctx_0, _here_0, type, arg.type, "Implicit arg collision"_fu, id, fu_STR{});
-            return std::move((arg.target ? arg.target : fail(ctx_0, _here_0, fu_STR{})));
+            return s_Target((arg.target ? arg.target : fail(ctx_0, _here_0, fu_STR{})));
         };
     };
     const int newArgIdx = (_current_fn_0.out.items.size() + FN_ARGS_BACK);
@@ -1861,7 +1862,11 @@ static s_Lifetime Lifetime_replaceArgsAtCallsite(const s_Context& ctx_0, s_Modul
         };
         const int offset = (index - head);
         const s_SolvedNode& argNode = argNodes[offset];
-        replace = Lifetime_union(replace, argNode.type.lifetime);
+        if ((!is_ref(argNode.type) || is_ref2temp(argNode.type)))
+            return Lifetime_temporary();
+
+        const s_Lifetime& argLt = (argNode.type.lifetime ? argNode.type.lifetime : fail(ctx_0, _here_0, "refarg without lifetime"_fu));
+        replace = Lifetime_union(replace, argLt);
     };
     return Lifetime_test(ctx_0, module_0, _here_0, _scope_0, Lifetime_union(keep, replace), _current_fn_0.out.target);
 }
@@ -2315,11 +2320,13 @@ static s_SolvedNode solveLetLike_dontTouchScope(const s_Context& ctx_0, s_Module
         checkAssignable(ctx_0, _here_0, annot.type, init.type, "Type annotation does not match init expression"_fu, node.value, "="_fu);
         annot.type.lifetime = init.type.lifetime;
     };
+    const bool killref = is_ref2temp(init.type);
     if (node.flags & F_REF)
     {
         (is_mutref(init.type) || (!init && (node.flags & F_ARG)) || fail(ctx_0, _here_0, "`ref` variables must be initialized to a mutable reference."_fu));
+        (killref && fail(ctx_0, _here_0, "`ref` varibles cannot bind to temporaries."_fu));
     };
-    s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(s_Type(annot.type), Lifetime_temporary()) : s_Type(annot.type)) : ((is_mutref(init.type) || (node.flags & F_MUT)) ? ((node.flags & F_REF) ? s_Type(init.type) : ((USE_ref_to_mutref && !(node.flags & F_MUT)) ? clear_mutref(s_Type(init.type)) : clear_refs(s_Type(init.type)))) : (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(s_Type(init.type), Lifetime_temporary()) : s_Type(init.type))));
+    s_Type t_let = (annot.type ? (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(s_Type(annot.type), Lifetime_temporary()) : s_Type(annot.type)) : ((is_mutref(init.type) || (node.flags & F_MUT) || killref) ? (((node.flags & F_REF) && !killref) ? s_Type(init.type) : ((USE_ref_to_mutref && !(node.flags & F_MUT) && !killref) ? clear_mutref(s_Type(init.type)) : clear_refs(s_Type(init.type)))) : (((node.flags & F_ARG) && !(node.flags & F_MUT)) ? add_ref(s_Type(init.type), Lifetime_temporary()) : s_Type(init.type))));
     if (init)
         maybeCopyOrMove(ctx_0, _here_0, init, t_let, false);
 
@@ -2828,7 +2835,7 @@ static s_Target DefCtor(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& 
     overload.max = max;
     overload.args = args;
     overload.flags = F_PUB;
-    return std::move(into);
+    return s_Target(into);
 }
 
 static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkip& _scope_skip_0, s_CurrentFn& _current_fn_0, int& SLOW_resolve_0, int& resolve_done_0, fu_VEC<s_OpenTemplate>& _open_templates_0, s_Target& _current_struct_0, const s_Type& t_string_0, const bool solve, const s_Node& node, const s_SolvedNode& prep)
@@ -3566,7 +3573,7 @@ inline static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0,
     l_14_0_Mvh6(placeholder_0, field_0, node_1);
 }
 
-inline static s_Node astReplace_a5yG(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
+inline static s_Node astReplace_cYNE(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
 {
     s_Node node_1 { node };
     walk(placeholder_0, field_0, node_1);
@@ -3584,7 +3591,7 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     {
         const s_ScopeItem& field = fields[i];
         if (GET(ctx_0, module_0, _scope_0, field.target).kind == "field"_fu)
-            items_ast += astReplace_a5yG(placeholder, field, body_template, 0);
+            items_ast += astReplace_cYNE(placeholder, field, body_template, 0);
 
     };
     fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, bool{}, s_ScopeMemo{}, true);

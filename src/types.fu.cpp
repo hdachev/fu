@@ -414,9 +414,11 @@ s_Lifetime Lifetime_static()
     return s_Lifetime { fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } } };
 }
 
+static const int LT_TEMP = int(0x7fffffffu);
+
 s_Lifetime Lifetime_temporary()
 {
-    return s_Lifetime { fu_VEC<int> { fu_VEC<int>::INIT<1> { int(0x7fffffffu) } } };
+    return s_Lifetime { fu_VEC<int> { fu_VEC<int>::INIT<1> { int(LT_TEMP) } } };
 }
 
 bool isAssignableAsArgument(const s_Type& host, const s_Type& guest)
@@ -446,6 +448,11 @@ s_Type add_mutref(s_Type&& type, const s_Lifetime& lifetime)
     type.vtype.quals |= (q_mutref | q_ref);
     type.lifetime = ([&]() -> s_Lifetime { { s_Lifetime _ = Lifetime_union(type.lifetime, lifetime); if (_) return _; } fu::fail("add_mutref: falsy lifetime"_fu); }());
     return std::move(type);
+}
+
+bool is_ref2temp(const s_Type& type)
+{
+    return (type.lifetime.uni0n && (type.lifetime.uni0n[(type.lifetime.uni0n.size() - 1)] == LT_TEMP) && ((is_ref(type) && (type.lifetime.uni0n.size() == 1)) || fu::fail("ref2temp doesnt look good"_fu)));
 }
 
 s_Type clear_refs(s_Type&& type)
