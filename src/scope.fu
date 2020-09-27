@@ -279,18 +279,14 @@ pub fn Scope_exports(scope: Scope, modid!: i32)
 
 ////////////////////////////////
 
-pub fn DEPREC_lookup(scope: Scope, id: string): Target[]
+pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip): Target[]
 {
-    id || assert();
+    mut scope_iterator: i32;
     mut results: Target[] = [];
 
-    let items = scope.items;
-    for (mut i = 0; i < items.len; i++)
-    {
-        let item = items[i];
-        if (item.id == id)
-            results.unshift(item.target);
-    }
+    mut target: Target;
+    while (target = search(:scope, :id, :scope_iterator, :scope_skip))
+        results.unshift(target);
 
     return results;
 }

@@ -1103,11 +1103,11 @@ pub fn solve(
         if (debug)
             return debug;
 
-        return scope.NICERR_mismatch(:id, :args);
+        return scope.NICERR_mismatch(:id, :args, :scope_skip);
     }
 
     fn NICERR_mismatch(
-        scope: Scope,
+        scope: Scope, scope_skip: ScopeSkip,
         id: string, args: SolvedNode[]): never
     {
         // TODO instead of this -
@@ -1118,7 +1118,7 @@ pub fn solve(
 
         // We should do everything possible to be helpful here,
         //  do whatever you need, this is compile-fail path.
-        let overloads = DEPREC_lookup(scope, id);
+        let overloads = DEPREC_lookup(scope, id, scope_skip);
 
         mut min = 0x7fffffff.i32;
         mut max = 0;
