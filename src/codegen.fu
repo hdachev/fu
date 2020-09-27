@@ -1077,6 +1077,11 @@ pub fn cpp_codegen(
                          ~ "; return _; } (" ~ items[0] ~ "))";
                 }
 
+                // Skip explicit copy on assignment, it's just overly verbose.
+                if (id == "=" || id == "||=" || id == "&&=")
+                    if (nodes[1].kind == "copy")
+                        items[1] = cgNode(nodes[1].items.only);
+
                 // Collapse (a ~= b + c) into (a ~= b, a ~= c),
                 //  totally surprised at how little if any impact this has.
                 if (id == "~=")

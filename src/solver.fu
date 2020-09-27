@@ -3590,15 +3590,15 @@ pub fn solve(
 
     // Solve.
     {
-        let root  = solveNode(parse);
-        let scope = Scope_exports(_scope, :module.modid);
+        let root = solveNode(parse);
 
         _current_fn && fail("non-empty _current_fn.");
         SLOW_resolve == resolve_done || fail("Some overload was left dirty.");
         _open_templates && fail("Some template was left open.");
 
         // Run the thing.
-        return SolverOutput(:root, :scope,
+        return SolverOutput(:root,
+            scope: Scope_exports(_scope, :module.modid),
             :SLOW_resolve);
     }
 }

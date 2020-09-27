@@ -135,8 +135,8 @@ fn false(): bool __native("false");
 
 // Assignment.
 
-fn   =(a: &mut $T, b: $T) case ($T -> @copy): &mut $T __native;
-fn ||=(a: &mut $T, b: $T) case ($T -> @copy): &mut $T __native;
+fn   =(a: &mut $T, mut b: $T): &mut $T __native;
+fn ||=(a: &mut $T, mut b: $T): &mut $T __native;
 
 
 // Arrays.
@@ -271,7 +271,7 @@ pub fn solvePrelude(): Context
     //  I"m thinking we"ll just prep a ready-to-copy template,
     //   with prelude solved at modid 0.
     let implicit mut ctx: Context;
-    let implicit mut module = getModule("");
+    let implicit mut module = getModule("").helpers::clone();
 
     let lexed   = lexer::lex(prelude_src, "__prelude");
     let root    = parser::parse(0, "__prelude", :lexed.tokens).root;

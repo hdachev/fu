@@ -2765,6 +2765,33 @@ pub fn runTests()
     `
     ]);
 
+    ZERO([
+    `
+        pub fn clone(a: $T)
+        case ($T -> @copy) a;
+        case ($T -> $T) {
+            mut res: $T;
+            for (fieldname i: $T) res.i = a.i.clone();
+            return res;
+        }
+    `,
+    `
+        pub nocopy struct Scope { x: i32; };
+
+        pub struct ModuleOutputs {
+            deps: i32[];
+            scope: Scope;
+        };
+
+        pub fn test(a: ModuleOutputs) {
+            let b = a._0::clone();
+            return a.deps.len - b.deps.len;
+        }
+
+        pub fn main() test(ModuleOutputs);
+    `
+    ]);
+
 
     // Explicit shadowing.
 

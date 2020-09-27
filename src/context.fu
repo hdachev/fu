@@ -13,13 +13,6 @@ pub nocopy struct Context
     fuzzy: Map(string, string);
 };
 
-pub fn clone(ctx: Context)
-{
-    mut res: Context;
-    for (fieldname i: res) res.i = ctx.i;
-    return res;
-}
-
 pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 
@@ -155,9 +148,9 @@ pub fn setModule(
     implicit ctx: &mut Context,
     module: Module)
 {
-    let current: &mut Module = ctx.modules[module.modid];
+    ref current = ctx.modules[module.modid];
         current.fname == module.fname || assert();
-        current = module;
+        current = module.clone();
 }
 
 

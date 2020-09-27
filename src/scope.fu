@@ -161,7 +161,7 @@ pub struct ScopeItem
     target:     Target;
 };
 
-pub struct Scope
+pub /*TODO nocopy*/ struct Scope
 {
     items:      ScopeItem[];
     overloads:  Overload[];

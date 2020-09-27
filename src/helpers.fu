@@ -143,3 +143,16 @@ pub fn ascii_lower(a: string): string
 
     return res;
 }
+
+
+//
+
+pub fn clone(a: $T)
+case ($T -> @copy) a;
+case ($T -> $T) {
+    mut res: $T;
+    for (fieldname i: $T)
+        res.i = a.i.clone();
+
+    return res;
+}
