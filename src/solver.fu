@@ -89,7 +89,9 @@ pub fn solve(
 
     fn Scope_import(modid: i32): void
     {
-        if (_scope.imports.has(modid)) return;
+        let idx = _scope.imports.find(modid);
+        if (idx >= 0 && !(idx >= _scope_skip.start.imports_len && idx < _scope_skip.end.imports_len))
+            return;
 
         modid || fail("Attempting to import modid-0.");
         _scope.imports ~= modid;
