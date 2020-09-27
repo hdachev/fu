@@ -36,6 +36,7 @@ struct s_Type;
 struct s_ValueType;
 
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
+s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -654,18 +655,14 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid)
     return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads), fu_VEC<int>(no_imports) };
 }
 
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id)
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id, const s_ScopeSkip& scope_skip)
 {
-    (id || fu_ASSERT());
+    int scope_iterator {};
     fu_VEC<s_Target> results {};
-    const fu_VEC<s_ScopeItem>& items = scope.items;
-    for (int i = 0; i < items.size(); i++)
-    {
-        const s_ScopeItem& item = items[i];
-        if (item.id == id)
-            results.unshift(item.target);
+    s_Target target {};
+    while ((target = search(scope, id, scope_iterator, scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<s_ScopeItem>{})))
+        results.unshift(target);
 
-    };
     return results;
 }
 

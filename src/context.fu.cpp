@@ -67,22 +67,6 @@ struct s_Token
 };
                                 #endif
 
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
-{
-    fu_STR fname;
-    fu_VEC<s_Token> tokens;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || fname
-            || tokens
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -94,6 +78,22 @@ struct s_TokenIdx
         return false
             || modid
             || tokidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_LexerOutput
+                                #define DEF_s_LexerOutput
+struct s_LexerOutput
+{
+    fu_STR fname;
+    fu_VEC<s_Token> tokens;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || fname
+            || tokens
         ;
     }
 };
@@ -569,18 +569,6 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-s_Context clone(const s_Context& ctx)
-{
-    s_Context res {};
-    
-    {
-        res.modules = ctx.modules;
-        res.files = ctx.files;
-        res.fuzzy = ctx.fuzzy;
-    };
-    return res;
-}
-
 s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return s_Token(ctx.modules[idx.modid].in.lex.tokens[idx.tokidx]);
@@ -693,11 +681,19 @@ s_Module& getModule(const fu_STR& fname, s_Context& ctx)
     return ctx.modules.mutref(i);
 }
 
+                                #ifndef DEFt_clone_inRx
+                                #define DEFt_clone_inRx
+inline const s_Module& clone_inRx(const s_Module& a)
+{
+    return a;
+}
+                                #endif
+
 void setModule(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
     ((current.fname == module.fname) || fu_ASSERT());
-    current = module;
+    current = clone_inRx(module);
 }
 
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)

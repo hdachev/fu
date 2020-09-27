@@ -1574,6 +1574,12 @@ static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
                 fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, head.type, 0);
                 return (((((((("([&]("_fu + annot) + " _) -> "_fu) + annot) + " { if (!_) _ = "_fu) + items.mutref(1)) + "; return _; } ("_fu) + items.mutref(0)) + "))"_fu);
             };
+            if (((id == "="_fu) || (id == "||="_fu) || (id == "&&="_fu)))
+            {
+                if (nodes[1].kind == "copy"_fu)
+                    items.mutref(1) = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, only_7COX(nodes[1].items), 0);
+
+            };
             if (id == "~="_fu)
             {
                 if ((type_isArray(head.type) && isFieldChain(module_0, ctx_0, node.items[0])))

@@ -258,9 +258,9 @@ static const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> {
 static void binop(s_BINOP& out_0, int& precedence_0, bool& rightToLeft_0, const fu_VEC<fu_STR>& ops)
 {
     precedence_0++;
-    (out_0.RIGHT_TO_LEFT.upsert(precedence_0) = rightToLeft_0);
+    (out_0.RIGHT_TO_LEFT.upsert(precedence_0) = bool(rightToLeft_0));
     for (int i = 0; i < ops.size(); i++)
-        (out_0.PRECEDENCE.upsert(ops[i]) = precedence_0);
+        (out_0.PRECEDENCE.upsert(ops[i]) = int(precedence_0));
 
 }
 

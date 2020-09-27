@@ -50,7 +50,6 @@ fu_STR cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Context ZERO(const fu_STR&);
-s_Context clone(const s_Context&);
 s_Context solvePrelude();
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
@@ -637,6 +636,37 @@ inline const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
 inline const s_Context CTX_PRELUDE = solvePrelude();
                                 #endif
 
+                                #ifndef DEFt_clone_yYPg
+                                #define DEFt_clone_yYPg
+inline const fu_VEC<s_Module>& clone_yYPg(const fu_VEC<s_Module>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_eG9V
+                                #define DEFt_clone_eG9V
+inline const fu_MAP<fu_STR, fu_STR>& clone_eG9V(const fu_MAP<fu_STR, fu_STR>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_edYU
+                                #define DEFt_clone_edYU
+inline s_Context clone_edYU(const s_Context& a)
+{
+    s_Context res {};
+    
+    {
+        res.modules = clone_yYPg(a.modules);
+        res.files = clone_eG9V(a.files);
+        res.fuzzy = clone_eG9V(a.fuzzy);
+    };
+    return res;
+}
+                                #endif
+
 static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 {
     s_Module module { getModule(fname, ctx) };
@@ -677,7 +707,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme, const bool nowrite)
 {
-    s_Context ctx = clone(CTX_PRELUDE);
+    s_Context ctx = clone_edYU(CTX_PRELUDE);
     
     {
         (std::cout << "COMPILE "_fu << fname << '\n');
@@ -716,13 +746,13 @@ static fu_STR ensure_main(const fu_STR& src)
 
 s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
 {
-    s_Context ctx = clone(CTX_PRELUDE);
+    s_Context ctx = clone_edYU(CTX_PRELUDE);
     for (int i = 0; i < sources.size(); i++)
     {
         const fu_STR& snippet = sources[i];
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
         fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
-        (ctx.files.upsert(fname) = src);
+        (ctx.files.upsert(fname) = fu_STR(src));
         compile(fname, fu_STR{}, ctx);
     };
     for (int i = 0; i < ctx.modules.size(); i++)
