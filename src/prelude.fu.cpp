@@ -578,8 +578,7 @@ s_Context solvePrelude()
     s_Module module { clone_Qe7Q(getModule(fu_STR{}, ctx)) };
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
     s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
-    s_SolverOutput solved = solve(root, ctx, module);
-    module.out.solve = solved;
+    module.out.solve = solve(root, ctx, module);
     setModule(module, ctx);
     return ctx;
 }

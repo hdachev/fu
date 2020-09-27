@@ -3590,6 +3590,7 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     const fu_STR& placeholder = node.value;
     const s_Node& body_template = node.items[1];
     s_Type fields_of = evalTypeAnnot(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, node.items[0]).type;
+    (isStruct(fields_of) || fail(ctx_0, _here_0, (("[for fieldname]: This is not a struct: `"_fu + serializeType(fields_of)) + "`."_fu)));
     const fu_VEC<s_ScopeItem>& fields = lookupStruct(fields_of, module_0, ctx_0).items;
     fu_VEC<s_Node> items_ast {};
     for (int i = 0; i < fields.size(); i++)

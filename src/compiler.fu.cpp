@@ -667,9 +667,17 @@ inline s_Context clone_edYU(const s_Context& a)
 }
                                 #endif
 
+                                #ifndef DEFt_clone_Qe7Q
+                                #define DEFt_clone_Qe7Q
+inline s_Module& clone_Qe7Q(s_Module& a)
+{
+    return a;
+}
+                                #endif
+
 static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 {
-    s_Module module { getModule(fname, ctx) };
+    s_Module module { clone_Qe7Q(getModule(fname, ctx)) };
     if (!module.in)
     {
         module.out = s_ModuleOutputs{};
