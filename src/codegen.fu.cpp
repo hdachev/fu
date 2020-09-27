@@ -585,6 +585,10 @@ struct s_Context
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
     fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -2111,7 +2115,7 @@ static fu_STR cgCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
     if (is_never(let_main.type))
         return cgTryCatch(_libs_0, _indent_0, tRy, err, cAtch);
 
-    fu_STR src = (binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, let_main, false, true) + ";"_fu);
+    fu_STR src = (binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_index_0, let_main, false, true) + " = {};"_fu);
     src += (_indent_0 + "try"_fu);
     src += (_indent_0 + "{"_fu);
     src += ((((_indent_0 + "    "_fu) + let_main.value) + " = "_fu) + tRy);

@@ -549,6 +549,10 @@ struct s_Context
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
     fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -762,7 +766,7 @@ void runTests()
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n        fn mutrefself(ref nc: NoCopy) {\n            nc.i++;\n            return nc;\n        }\n\n        fn main() {\n            mut nc: NoCopy;\n            nc.mutrefself().mutrefself();\n            return nc.i - 2;\n        }\n    "_fu);
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a: NoCopy) a;\n        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;\n        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;\n        fn retargs_and(a: NoCopy, b: NoCopy) a && b;\n\n        fn main() {\n            let a: NoCopy;\n            let b: NoCopy;\n            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i;\n        }\n    "_fu);
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a: NoCopy) a;\n        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;\n        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;\n        fn retargs_and(a: NoCopy, b: NoCopy) a && b;\n\n        fn main() {\n            let a: NoCopy;                      // <- b now temp\n\n            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, NoCopy)))).i;\n        }\n    "_fu);
-    ZERO("\n        //! ALLOW_WRITE\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a) a;                    // <- now templates\n        fn  retargs_if(a, b) a.i ? b : a;\n        fn  retargs_or(a, b) a || b;\n        fn retargs_and(a, b) a && b;\n\n        fn main() {\n            mut a: NoCopy;                      // <- now muts\n            mut b: NoCopy;\n            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;\n            return a.i + b.i - 1;\n        }\n    "_fu);
+    ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a) a;                    // <- now templates\n        fn  retargs_if(a, b) a.i ? b : a;\n        fn  retargs_or(a, b) a || b;\n        fn retargs_and(a, b) a && b;\n\n        fn main() {\n            mut a: NoCopy;                      // <- now muts\n            mut b: NoCopy;\n            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;\n            return a.i + b.i - 1;\n        }\n    "_fu);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test) {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test): Test {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu);
     ZERO("\n        fn main()\n            i32(PI * 2.0) - 6;\n    "_fu);

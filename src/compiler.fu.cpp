@@ -50,6 +50,7 @@ fu_STR cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Context ZERO(const fu_STR&);
+s_Context clone(const s_Context&);
 s_Context solvePrelude();
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
@@ -574,6 +575,10 @@ struct s_Context
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
     fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -672,7 +677,7 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
 
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme, const bool nowrite)
 {
-    s_Context ctx { CTX_PRELUDE };
+    s_Context ctx = clone(CTX_PRELUDE);
     
     {
         (std::cout << "COMPILE "_fu << fname << '\n');
@@ -711,7 +716,7 @@ static fu_STR ensure_main(const fu_STR& src)
 
 s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
 {
-    s_Context ctx { CTX_PRELUDE };
+    s_Context ctx = clone(CTX_PRELUDE);
     for (int i = 0; i < sources.size(); i++)
     {
         const fu_STR& snippet = sources[i];
@@ -780,7 +785,7 @@ static fu_STR indent(const fu_STR& src)
 
 fu_STR FAIL(const fu_VEC<fu_STR>& sources)
 {
-    s_Context ctx;
+    s_Context ctx = {};
     try
     {
         ctx = compile_snippets(sources, fu_VEC<fu_STR>{});

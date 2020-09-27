@@ -67,22 +67,6 @@ struct s_Token
 };
                                 #endif
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_LexerOutput
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
@@ -94,6 +78,22 @@ struct s_LexerOutput
         return false
             || fname
             || tokens
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
         ;
     }
 };
@@ -552,6 +552,10 @@ struct s_Context
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
     fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -564,6 +568,18 @@ struct s_Context
                                 #endif
 
 #ifndef FU_NO_FDEFs
+
+s_Context clone(const s_Context& ctx)
+{
+    s_Context res {};
+    
+    {
+        res.modules = ctx.modules;
+        res.files = ctx.files;
+        res.fuzzy = ctx.fuzzy;
+    };
+    return res;
+}
 
 s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
 {

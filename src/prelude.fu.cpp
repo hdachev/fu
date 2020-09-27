@@ -545,6 +545,10 @@ struct s_Context
     fu_VEC<s_Module> modules;
     fu_MAP<fu_STR, fu_STR> files;
     fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
