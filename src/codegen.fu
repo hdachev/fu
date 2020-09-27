@@ -1542,7 +1542,7 @@ pub fn cpp_codegen(
             return cgTryCatch(try, err, catch);
 
         // TODO dedupe with below nonsense
-        mut src =        binding(let_main, forceMut: true) ~ ";";
+        mut src =        binding(let_main, forceMut: true) ~ " = {};";
         src ~= _indent ~ "try";
         src ~= _indent ~ "{";
         src ~= _indent ~ "    " ~ let_main.value ~ " = " ~ try;

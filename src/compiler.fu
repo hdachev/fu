@@ -114,7 +114,7 @@ pub fn build(
 
     nowrite = false)
 {
-    let implicit mut ctx = prelude::CTX_PRELUDE;
+    let implicit mut ctx = prelude::CTX_PRELUDE.clone();
 
     {
         println("COMPILE ", fname);
@@ -165,7 +165,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
             ? src
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
-    let implicit mut ctx = prelude::CTX_PRELUDE;
+    let implicit mut ctx = prelude::CTX_PRELUDE.clone();
     for (mut i = 0; i < sources.len; i++)
     {
         let snippet = sources[i];

@@ -4,7 +4,7 @@ import types;
 import scope;
 import helpers;
 
-pub struct Context
+pub nocopy struct Context
 {
     modules: Module[];
 
@@ -12,6 +12,13 @@ pub struct Context
     files: Map(string, string);
     fuzzy: Map(string, string);
 };
+
+pub fn clone(ctx: Context)
+{
+    mut res: Context;
+    for (fieldname i: res) res.i = ctx.i;
+    return res;
+}
 
 pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
