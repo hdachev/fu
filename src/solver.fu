@@ -2372,6 +2372,8 @@ pub fn solve(
         let placeholder     = node.value;
         let body_template   = node.items[1];
         let fields_of       = evalTypeAnnot(node.items[0]).type;
+        fields_of.isStruct || fail("[for fieldname]: This is not a struct: `" ~ serializeType(fields_of) ~ "`.");
+
         let fields          = lookupStruct(fields_of).items;
 
         mut items_ast: Node[];
