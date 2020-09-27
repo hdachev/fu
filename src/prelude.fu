@@ -275,9 +275,8 @@ pub fn solvePrelude(): Context
 
     let lexed   = lexer::lex(prelude_src, "__prelude");
     let root    = parser::parse(0, "__prelude", :lexed.tokens).root;
-    let solved  = solver::solve(root);
 
-    module.out.solve = solved;
+    module.out.solve = solver::solve(root);
     setModule(module);
 
     return ctx;

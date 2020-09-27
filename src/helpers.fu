@@ -147,9 +147,21 @@ pub fn ascii_lower(a: string): string
 
 //
 
+pub fn map(a: [$T], fn)
+{
+    mut res: fn($T)[];
+    res.grow_junk(a.len);
+    for (mut i = 0; i < a.len; i++)
+        res[i] = fn(a[i]);
+
+    return res;
+}
+
 pub fn clone(a: $T)
 case ($T -> @copy) a;
-case ($T -> $T) {
+// case ($T -> [_]) a.map(fn clone);
+case ($T -> $T)
+{
     mut res: $T;
     for (fieldname i: $T)
         res.i = a.i.clone();

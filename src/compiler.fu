@@ -7,7 +7,7 @@ import stat;
 
 fn compile(fname: string, via: string = "")
 {
-    let implicit mut module = getModule(fname);
+    let implicit mut module = getModule(fname).clone();
 
     // Inputs are only dependent on the one file in question.
     if (!module.in)
