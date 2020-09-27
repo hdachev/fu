@@ -2380,15 +2380,23 @@ pub fn solve(
             {
                 items_ast ~= astReplace(body_template, |ref item: Node|
                 {
-                    if (item.kind   == "call"      &&
-                        item.value  == placeholder &&
-                        item.items.len <= 1)
+                    if (item.value == placeholder)
                     {
-                        // TODO disable any kind of scope lookup but field access.
-                        if (item.items)
+                        if (item.items.len == 1 && item.kind == "call")
+                        {
+                            // TODO field access syntax disables any kind of scope lookup but fields,
+                            //  otherwise we risk miscellaneous stuff randomly breaking templates for no good reason.
+                            //
+                            // if (item.flags & F_ACCESS)
+                            //     item.flags |= F_NOSCOPE;
+                            //
                             item.value = field.id;
-                        else
-                            item.kind = "str";
+                        }
+                        else if (item.kind == "str")
+                        {
+                            // String literals, potentially useful for serialization.
+                            item.value = field.id;
+                        }
                     }
                 });
             }
