@@ -11,6 +11,9 @@ struct fu_CONFIG
     static constexpr bool TRIVIAL =
         std::is_trivially_destructible<T>::value;
 
+    static constexpr bool COPIABLE =
+        std::is_copy_constructible<T>::value;
+
     static constexpr i32 VEC_SIZE = 16;
 
     static constexpr i32 SMALL_CAPA =
@@ -38,6 +41,8 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
+    #define COPIABLE            (fu_CONFIG<T>::COPIABLE)
+    #define SHAREABLE           (COPIABLE)
     #define TRIVIAL             (fu_CONFIG<T>::TRIVIAL)
     #define VEC_SIZE            (fu_CONFIG<T>::VEC_SIZE)
     #define SMALL_CAPA          (fu_CONFIG<T>::SMALL_CAPA)
@@ -119,7 +124,10 @@ struct fu_VEC
     }
 
     fu_INL i32 shared_capa() const noexcept {
-        return capa() &~ SIGN_BIT;
+        if constexpr (SHAREABLE)
+            return capa() &~ SIGN_BIT;
+        else
+            return capa();
     }
 
     fu_INL i32 UNSAFE__MarkUnique() const noexcept {
@@ -130,6 +138,7 @@ struct fu_VEC
     }
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
+        static_assert(SHAREABLE, "Cannot share fu_VECs of this type.");
         assert(!small());
         big.PACK = UNSAFE__Pack( // Make negative.
                   UNSAFE__Unpack(big.PACK) | SIGN_BIT);
@@ -249,7 +258,7 @@ struct fu_VEC
         assert(old_capa > SMALL_CAPA);
 
         fu_ARC* arc = UNSAFE__arc(old_data);
-        if (arc->decr()) {
+        if (!SHAREABLE || arc->decr()) {
             DESTROY_range(
                 old_data,
                 old_data + old_size);
@@ -296,6 +305,8 @@ struct fu_VEC
     fu_INL fu_VEC(const fu_VEC& c) noexcept
         : big(c.big)
     {
+        static_assert(COPIABLE, "Cannot copy fu_VECs of non-copiable types.");
+
         i32 shared_capa = this->shared_capa();
         if (shared_capa > SMALL_CAPA)
         {
@@ -314,6 +325,8 @@ struct fu_VEC
 
     fu_INL fu_VEC& operator=(const fu_VEC& c) noexcept
     {
+        static_assert(COPIABLE, "Cannot copy fu_VECs of non-copiable types.");
+
         if (this != &c)
             *this = fu_VEC(c);
 
@@ -338,6 +351,9 @@ struct fu_VEC
 
     fu_INL bool slow_check_unique() const noexcept
     {
+        if constexpr (!SHAREABLE)
+            return true;
+
         i32 unique_capa = capa();
         if (unique_capa >= SMALL_CAPA)
             return true;
@@ -352,6 +368,9 @@ struct fu_VEC
 
     fu_INL static bool slow_check_unique(const T* data) noexcept
     {
+        if constexpr (!SHAREABLE)
+            return true;
+
         return UNSAFE__arc(data)->unique();
     }
 
@@ -595,7 +614,7 @@ struct fu_VEC
         //  It's actually the faster option for trivial data,
         //   because we skip the checks & the refc-hit,
         //    since it's a memcpy anyway.
-        if constexpr (!is_Clear)
+        if constexpr (!is_Clear && SHAREABLE)
         {
             if constexpr (fu_MAYBE_POS(idx))
                 CPY_ctor_range(
@@ -1105,6 +1124,8 @@ struct fu_VEC
 //
 
 #undef TRIVIAL
+#undef COPIABLE
+#undef SHAREABLE
 #undef VEC_SIZE
 #undef SMALL_CAPA
 #undef HAS_SMALL
