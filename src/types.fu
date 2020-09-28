@@ -383,10 +383,9 @@ pub fn tryClear_array(type: Type): Type
 //  Slices are refs to arrays,
 //   with revoked copy & resize priviledges.
 
-pub fn type_isSlice(type: Type): bool
+fn type_isSliceable(type: Type): bool
 {
-    return type.quals & q_ref
-        && type.canon.starts(with: "[]");
+    return type.canon.starts(with: "[]");
 }
 
 pub fn createSlice(item: Type, lifetime: Lifetime): Type
@@ -396,9 +395,9 @@ pub fn createSlice(item: Type, lifetime: Lifetime): Type
     return add_ref(out, lifetime);
 }
 
-pub fn tryClear_slice(type: Type): Type
+pub fn tryClear_sliceable(type: Type): Type
 {
-    if (!type_isSlice(type))
+    if (!type_isSliceable(type))
         return Type();
 
     let vtype = parseType(type.canon.slice(2));

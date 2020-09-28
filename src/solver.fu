@@ -2740,11 +2740,6 @@ pub fn solve(
                     if (!t)
                         return false;
 
-                    // HACK TODO FIX!
-                    //  keep the ref around for clear-slice to work.
-                    if (node.value == "&mut" && items[0].kind == "arrlit" && items[0].items.len == 1)
-                        t = add_ref(t, Lifetime_temporary);
-
                     return trySolveTypeParams(
                         items[0] || fail(), t, typeParams);
                 }
@@ -2799,7 +2794,7 @@ pub fn solve(
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
             // Slice.
-            let t = tryClear_slice(type);
+            let t = tryClear_sliceable(type);
             return t && trySolveTypeParams(
                 node.items[0] || fail(), t, typeParams);
         }

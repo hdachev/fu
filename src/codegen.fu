@@ -161,7 +161,7 @@ pub fn cpp_codegen(
         }
 
         // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
-        let sliceItem = tryClear_slice(add_ref(type, Lifetime_static));
+        let sliceItem = tryClear_sliceable(type);
         if (sliceItem)
         {
             let itemAnnot = typeAnnot(sliceItem);
