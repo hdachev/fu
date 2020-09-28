@@ -159,7 +159,7 @@ pub fn map(a: [$T], fn)
 
 pub fn clone(a: $T)
 case ($T -> @copy) a;
-// case ($T -> [_]) a.map(fn clone);
+case ($T -> [$U]) a.map(fn clone);
 case ($T -> $T)
 {
     mut res: $T;

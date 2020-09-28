@@ -131,7 +131,7 @@ pub fn build(
             mut solve:      ModuleStat;
             mut codegen:    ModuleStat;
 
-            let m = ctx.modules;
+            ref m = ctx.modules;
             for (mut i = 0; i < m.len; i++)
             {
                 lex     += m[i].stats.lex;
@@ -181,7 +181,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
 
     for (mut i = 0; i < ctx.modules.len; i++)
     {
-        let module = ctx.modules[i];
+        ref module = ctx.modules[i];
         if (module.out.solve.SLOW_resolve)
             module.in.src.has("//! SLOW_resolve")
                 || throw("SLOW: unexpected SLOW_resolve.");
