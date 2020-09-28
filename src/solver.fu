@@ -74,6 +74,8 @@ pub fn solve(
     mut _open_templates: OpenTemplate[];
     mut _current_struct: Target;
 
+    type TypeParams = Map(string, Type);
+
 
     //
 
@@ -1742,7 +1744,6 @@ pub fn solve(
             : Target
     {
         mut ok = true;
-        mut typeParams0: Map(string, Type);
 
         ////////////////////////////////
         mut current_fn0: CurrentFn;
@@ -1754,7 +1755,7 @@ pub fn solve(
         ////////////////////////////////
 
         //
-        mut typeParams: Map(string, Type);
+        mut typeParams: TypeParams;
 
         //
         let template = GET(overloadIdx).template;
@@ -1903,12 +1904,19 @@ pub fn solve(
                 let branches = pattern.items;
                 for (mut i = 0; i < branches.len; i++)
                 {
-                    let cond = branches[i].items[0] || fail();
-                    if (evalTypePattern(cond))
+                    let cond = branches[i].items[0];
+                    if (cond)
                     {
-                        caseIdx = i;
-                        break;
+                        let undo = typeParams;
+                        if (!evalTypePattern(cond, typeParams))
+                        {
+                            typeParams = undo;
+                            continue;
+                        }
                     }
+
+                    caseIdx = i;
+                    break;
                 }
 
                 // All branches mismatch?
@@ -2715,7 +2723,7 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, ref typeParams: Map(string, Type)): bool
+        node: Node, mut type: Type, ref typeParams: TypeParams): bool
     {
         if (node.kind == "call")
         {
@@ -2799,12 +2807,12 @@ pub fn solve(
         return fail("TODO trySolveTypeParams fallthrough");
     }
 
-    fn evalTypePattern(node: Node): bool
+    fn evalTypePattern(node: Node, ref typeParams: Map(string, Type)): bool
     {
         if (node.kind == "and")
         {
             for (mut i = 0; i < node.items.len; i++)
-                if (!evalTypePattern(node.items[i]))
+                if (!evalTypePattern(node.items[i], typeParams))
                     return false;
 
             return true;
@@ -2812,7 +2820,7 @@ pub fn solve(
         else if (node.kind == "or")
         {
             for (mut i = 0; i < node.items.len; i++)
-                if (evalTypePattern(node.items[i]))
+                if (evalTypePattern(node.items[i], typeParams))
                     return true;
 
             return false;
@@ -2830,9 +2838,13 @@ pub fn solve(
                     evalTypeParam(left.value),
                     right.value || fail("Falsy type tag."));
             else
-                return isAssignable(
-                    host: evalTypeAnnot(right).type,
-                          evalTypeAnnot(left ).type);
+            {
+                let actual = evalTypeAnnot(left).type;
+
+                return trySolveTypeParams(
+                    type: actual, node: right,
+                        :typeParams);
+            }
         }
 
         return fail("TODO evalTypePattern fallthrough: "

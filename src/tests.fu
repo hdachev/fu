@@ -349,6 +349,34 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub fn map(a: [$T], fn) {
+            mut res: fn($T)[];
+            res.grow_junk(a.len);
+            for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
+            return res;
+        }
+
+        pub fn clone(a: $T)
+        case ($T -> @copy) a;
+        case ($T -> [$U]) a.map(fn clone);
+        default {
+            mut res: $T;
+            for (fieldname i: $T) res.i = a.i.clone();
+            return res;
+        }
+
+        pub nocopy struct Scope { x: i32; };
+        pub struct ModuleOutputs { deps: Scope[]; };
+
+        pub fn test(a: ModuleOutputs) {
+            let b = a.clone();
+            return a.deps.len - b.deps.len;
+        }
+
+        pub fn main() test(ModuleOutputs);
+    `);
+
 
     // Recursion, closures & implicit args.
 

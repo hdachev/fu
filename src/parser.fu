@@ -687,17 +687,25 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             flags |= F_PATTERN;
 
-            do
+            fn parseBranch(noCond?: bool)
             {
-                let cond = parseUnaryExpression();
+                let cond = !noCond && parseUnaryExpression();
                 let type = tryPopTypeAnnot();
                 let cons = parseFnBodyBranch();
 
                 branches.push(
                     make("fnbranch", [ cond, type, cons ]));
             }
+
+            // Parse cases.
+            do parseBranch();
             while (tryConsume("id", "case"));
 
+            // Trailing else.
+            if (tryConsume("id", "default"))
+                parseBranch(noCond: true);
+
+            //
             body = make("pattern", branches);
         }
         else
