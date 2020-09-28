@@ -51,7 +51,7 @@ pub let F_REF           = 1 << 22;
 pub let F_SHADOW        = 1 << 23;
 
 pub let F_NAMED_ARGS    = 1 << 24;
-// ... 25
+pub let F_RECURSIVE     = 1 << 25;
 // ... 26
 pub let F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;

@@ -2,24 +2,28 @@
 pub fn add(ref dest: $T[], item: $T)
 {
     // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++)
-    {
-        if (dest[i] >= item)
-        {
-            if (dest[i] != item)
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] != item) {
                 dest.insert(i, item);
+                return true;
+            }
 
-            return;
+            return false;
         }
     }
 
     dest.push(item);
+    return true;
 }
 
-pub fn add_set(ref dest: $T[], src: $T[])
+pub fn add(ref dest: $T[], src: $T[])
 {
+    mut some = false;
     for (mut i = 0; i < src.len; i++)
-        dest.add(src[i]);
+        some = dest.add(src[i]) || some;
+
+    return some;
 }
 
 
@@ -36,18 +40,15 @@ pub fn union(a: $T[], b: $T[]): $T[]
 
     mut x = 0;
     mut y = 0;
-    while (x < a.len && y < b.len)
-    {
+    while (x < a.len && y < b.len) {
         let X = a[x];
         let Y = b[y];
 
-        if (X > Y)
-        {
+        if (X > Y) {
             a.insert(x, Y);
             y++;
         }
-        else if (X == Y)
-        {
+        else if (X == Y) {
             y++;
         }
 

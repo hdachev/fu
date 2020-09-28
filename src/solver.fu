@@ -2070,9 +2070,43 @@ pub fn solve(
         out.type = structType;
 
         if (out.target)
-            GET_mut(out.target).solved = out;
+        {
+            ref o = GET_mut(out.target);
+            o.solved = out;
+
+            if (o.used_by && !(o.flags & F_RECURSIVE))
+                detectRecusion(o, out.target.index);
+        }
 
         return out;
+    }
+
+    fn detectRecusion(ref o: Overload, startIndex: i32)
+    {
+        mut seen: bitset::BitSet;
+
+        fn visit(overload: Overload): bool
+        {
+            let u = overload.used_by;
+            for (mut i = 0; i < u.len; i++)
+            {
+                let index = u[i];
+                if (!seen.bitset::add_once(index))
+                    continue;
+
+                if (index == startIndex)
+                    return true;
+
+                let t = Target(:module.modid, :index);
+                if (visit(GET(t)))
+                    return true;
+            }
+
+            return false;
+        }
+
+        if (visit(o))
+            o.flags |= F_RECURSIVE;
     }
 
     fn solveStructMembers(
@@ -3301,7 +3335,7 @@ pub fn solve(
                 if (o.flags & F_LOCAL)
                     _current_fn.locals_used.set::add(target.index);
 
-                _current_fn.locals_used.set::add_set(o.closes_over);
+                _current_fn.locals_used.set::add(o.closes_over);
             }
         }
 
