@@ -576,11 +576,6 @@ s_Type tryClear_array(const s_Type& type)
     return s_Type { s_ValueType(vtype), s_Lifetime(type.lifetime), s_Effects{} };
 }
 
-bool type_isSlice(const s_Type& type)
-{
-    return ((type.vtype.quals & q_ref) && fu::lmatch(type.vtype.canon, "[]"_fu));
-}
-
 s_Type createSlice(const s_Type& item, const s_Lifetime& lifetime)
 {
     s_Type out = createArray(item);
@@ -588,9 +583,14 @@ s_Type createSlice(const s_Type& item, const s_Lifetime& lifetime)
     return add_ref(s_Type(out), lifetime);
 }
 
-s_Type tryClear_slice(const s_Type& type)
+static bool type_isSliceable(const s_Type& type)
 {
-    if (!type_isSlice(type))
+    return fu::lmatch(type.vtype.canon, "[]"_fu);
+}
+
+s_Type tryClear_sliceable(const s_Type& type)
+{
+    if (!type_isSliceable(type))
         return s_Type{};
 
     s_ValueType vtype = parseType(fu::slice(type.vtype.canon, 2));

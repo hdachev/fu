@@ -63,12 +63,10 @@ bool type_isMap(const s_Type&);
 bool type_isZST(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 s_Intlit Intlit(fu::view<std::byte>);
-s_Lifetime Lifetime_static();
 s_MapFields tryClear_map(const s_Type&);
-s_Type add_ref(s_Type&&, const s_Lifetime&);
 s_Type clear_refs(s_Type&&);
 s_Type tryClear_array(const s_Type&);
-s_Type tryClear_slice(const s_Type&);
+s_Type tryClear_sliceable(const s_Type&);
 static fu_STR cgAppend(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, const fu_STR&);
 static fu_STR cgFn(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, int);
 static fu_STR cgNode(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, int&, const s_SolvedNode&, int);
@@ -940,7 +938,7 @@ static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu
         include(_libs_0, "<fu/vec.h>"_fu);
         return (("fu_VEC<"_fu + itemAnnot) + ">"_fu);
     };
-    s_Type sliceItem = tryClear_slice(add_ref(s_Type(type), Lifetime_static()));
+    s_Type sliceItem = tryClear_sliceable(type);
     if (sliceItem)
     {
         fu_STR itemAnnot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, sliceItem, 0);

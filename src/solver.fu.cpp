@@ -102,7 +102,7 @@ s_Type initStruct(const fu_STR&, int, s_Module&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
-s_Type tryClear_slice(const s_Type&);
+s_Type tryClear_sliceable(const s_Type&);
 s_Type type_trySuper(const s_Type&, const s_Type&);
 static fu_VEC<s_SolvedNode> solveNodes(const s_Context&, s_Module&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkip&, s_CurrentFn&, int&, int&, fu_VEC<s_OpenTemplate>&, s_Target&, const s_Type&, const fu_VEC<s_Node>&, const s_Type&, const s_Type&, bool, bool, const s_ScopeMemo&, bool);
 static s_SolvedNode __solveFn(const s_Context&, s_Module&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkip&, s_CurrentFn&, int&, int&, fu_VEC<s_OpenTemplate>&, s_Target&, const s_Type&, const s_Node&, bool, const s_SolvedNode&, bool, int, const s_Target&);
@@ -1318,9 +1318,6 @@ static bool trySolveTypeParams(const s_Context& ctx_0, s_Module& module_0, s_Tok
                 if (!t)
                     return false;
 
-                if (((node.value == "&mut"_fu) && (items[0].kind == "arrlit"_fu) && (items[0].items.size() == 1)))
-                    t = add_ref(s_Type(t), Lifetime_temporary());
-
                 return trySolveTypeParams(ctx_0, module_0, _here_0, _scope_0, _scope_skip_0, ([&]() -> const s_Node& { { const s_Node& _ = items[0]; if (_) return _; } fail(ctx_0, _here_0, fu_STR{}); }()), s_Type(t), typeParams);
             }
             else if (items.size() == 2)
@@ -1356,7 +1353,7 @@ static bool trySolveTypeParams(const s_Context& ctx_0, s_Module& module_0, s_Tok
     }
     else if (((node.kind == "arrlit"_fu) && (node.items.size() == 1)))
     {
-        s_Type t = tryClear_slice(type);
+        s_Type t = tryClear_sliceable(type);
         return (t && trySolveTypeParams(ctx_0, module_0, _here_0, _scope_0, _scope_skip_0, ([&]() -> const s_Node& { { const s_Node& _ = node.items[0]; if (_) return _; } fail(ctx_0, _here_0, fu_STR{}); }()), s_Type(t), typeParams));
     };
     return fail(ctx_0, _here_0, "TODO trySolveTypeParams fallthrough"_fu);
@@ -1372,13 +1369,13 @@ static s_Type evalTypeParam(const s_Context& ctx_0, s_Module& module_0, s_TokenI
     return ([&]() -> s_Type { { s_Type _ = Scope_lookupType(ctx_0, module_0, _here_0, _scope_0, _scope_skip_0, ("$"_fu + (id ? id : fail(ctx_0, _here_0, "Falsy type param id."_fu))), 0); if (_) return _; } fail(ctx_0, _here_0, (("No type param `$"_fu + id) + "` in scope."_fu)); }());
 }
 
-static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkip& _scope_skip_0, s_CurrentFn& _current_fn_0, int& SLOW_resolve_0, int& resolve_done_0, fu_VEC<s_OpenTemplate>& _open_templates_0, s_Target& _current_struct_0, const s_Type& t_string_0, const s_Node& node)
+static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkip& _scope_skip_0, s_CurrentFn& _current_fn_0, int& SLOW_resolve_0, int& resolve_done_0, fu_VEC<s_OpenTemplate>& _open_templates_0, s_Target& _current_struct_0, const s_Type& t_string_0, const s_Node& node, fu_MAP<fu_STR, s_Type>& typeParams)
 {
     if (node.kind == "and"_fu)
     {
         for (int i = 0; i < node.items.size(); i++)
         {
-            if (!evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, node.items[i]))
+            if (!evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, node.items[i], typeParams))
                 return false;
 
         };
@@ -1388,7 +1385,7 @@ static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, s_TokenI
     {
         for (int i = 0; i < node.items.size(); i++)
         {
-            if (evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, node.items[i]))
+            if (evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, node.items[i], typeParams))
                 return true;
 
         };
@@ -1401,8 +1398,10 @@ static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, s_TokenI
         if (((left.kind == "typeparam"_fu) && (right.kind == "typetag"_fu)))
             return type_has(evalTypeParam(ctx_0, module_0, _here_0, _scope_0, _scope_skip_0, left.value), (right.value ? right.value : fail(ctx_0, _here_0, "Falsy type tag."_fu)));
         else
-            return isAssignable(evalTypeAnnot(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, right).type, evalTypeAnnot(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, left).type);
-
+        {
+            s_Type actual = evalTypeAnnot(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, left).type;
+            return trySolveTypeParams(ctx_0, module_0, _here_0, _scope_0, _scope_skip_0, right, s_Type(actual), typeParams);
+        };
     };
     return fail(ctx_0, _here_0, (((("TODO evalTypePattern fallthrough: "_fu + node.kind) + "("_fu) + node.items.size()) + ")"_fu));
 }
@@ -1423,7 +1422,6 @@ inline static fu_STR mangleArguments_0Lqq(const fu_VEC<s_Argument>& args)
 static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkip& _scope_skip_0, s_CurrentFn& _current_fn_0, int& SLOW_resolve_0, int& resolve_done_0, fu_VEC<s_OpenTemplate>& _open_templates_0, s_Target& _current_struct_0, const s_Type& t_string_0, const s_Target& overloadIdx, fu_VEC<s_SolvedNode>&& args, fu_STR& mangle, const s_Target& into)
 {
     bool ok = true;
-    fu_MAP<fu_STR, s_Type> typeParams0 {};
     s_CurrentFn current_fn0 {};
     std::swap(_current_fn_0, current_fn0);
     const s_ScopeMemo scope0 = Scope_snap(_scope_0);
@@ -1518,12 +1516,18 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, s_To
             const fu_VEC<s_Node>& branches = pattern.items;
             for (int i = 0; i < branches.size(); i++)
             {
-                const s_Node& cond = ([&]() -> const s_Node& { { const s_Node& _ = branches[i].items[0]; if (_) return _; } fail(ctx_0, _here_0, fu_STR{}); }());
-                if (evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, cond))
+                const s_Node& cond = branches[i].items[0];
+                if (cond)
                 {
-                    caseIdx = i;
-                    break;
+                    fu_MAP<fu_STR, s_Type> undo { typeParams };
+                    if (!evalTypePattern(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, cond, typeParams))
+                    {
+                        typeParams = undo;
+                        continue;
+                    };
                 };
+                caseIdx = i;
+                break;
             };
             if (caseIdx < 0)
                 ok = false;
@@ -3578,7 +3582,7 @@ inline static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0,
     l_14_0_Mvh6(placeholder_0, field_0, node_1);
 }
 
-inline static s_Node astReplace_xQQ2(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
+inline static s_Node astReplace_E1Ce(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
 {
     s_Node node_1 { node };
     walk(placeholder_0, field_0, node_1);
@@ -3597,7 +3601,7 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     {
         const s_ScopeItem& field = fields[i];
         if (GET(ctx_0, module_0, _scope_0, field.target).kind == "field"_fu)
-            items_ast += astReplace_xQQ2(placeholder, field, body_template, 0);
+            items_ast += astReplace_E1Ce(placeholder, field, body_template, 0);
 
     };
     fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, bool{}, s_ScopeMemo{}, true);
