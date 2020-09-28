@@ -108,6 +108,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -228,6 +232,7 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target def;
     s_Target ctor;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
@@ -236,6 +241,7 @@ struct s_Struct
             || id
             || fields
             || flags
+            || def
             || ctor
             || items
         ;
@@ -300,6 +306,10 @@ struct s_SolvedNode
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -434,6 +444,10 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    s_Scope(const s_Scope&) = delete;
+    s_Scope(s_Scope&&) = default;
+    s_Scope& operator=(const s_Scope&) = delete;
+    s_Scope& operator=(s_Scope&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -452,6 +466,10 @@ struct s_SolverOutput
     s_SolvedNode root;
     s_Scope scope;
     int SLOW_resolve;
+    s_SolverOutput(const s_SolverOutput&) = delete;
+    s_SolverOutput(s_SolverOutput&&) = default;
+    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
+    s_SolverOutput& operator=(s_SolverOutput&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -472,6 +490,10 @@ struct s_ModuleOutputs
     fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
+    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs(s_ModuleOutputs&&) = default;
+    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -532,6 +554,10 @@ struct s_Module
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Module(const s_Module&) = delete;
+    s_Module(s_Module&&) = default;
+    s_Module& operator=(const s_Module&) = delete;
+    s_Module& operator=(s_Module&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -681,11 +707,147 @@ s_Module& getModule(const fu_STR& fname, s_Context& ctx)
     return ctx.modules.mutref(i);
 }
 
-                                #ifndef DEFt_clone_inRx
-                                #define DEFt_clone_inRx
-inline const s_Module& clone_inRx(const s_Module& a)
+                                #ifndef DEFt_clone_8E8n
+                                #define DEFt_clone_8E8n
+inline int clone_8E8n(const int a)
 {
     return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_p23H
+                                #define DEFt_clone_p23H
+inline const fu_STR& clone_p23H(const fu_STR& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_A86o
+                                #define DEFt_clone_A86o
+inline const s_ModuleInputs& clone_A86o(const s_ModuleInputs& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_hoNZ
+                                #define DEFt_clone_hoNZ
+inline const fu_VEC<int>& clone_hoNZ(const fu_VEC<int>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_dJL7
+                                #define DEFt_clone_dJL7
+inline const fu_MAP<fu_STR, s_Struct>& clone_dJL7(const fu_MAP<fu_STR, s_Struct>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_OAZa
+                                #define DEFt_clone_OAZa
+inline const fu_MAP<fu_STR, s_Target>& clone_OAZa(const fu_MAP<fu_STR, s_Target>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_21Cz
+                                #define DEFt_clone_21Cz
+inline const s_SolvedNode& clone_21Cz(const s_SolvedNode& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_ZWHS
+                                #define DEFt_clone_ZWHS
+inline const fu_VEC<s_ScopeItem>& clone_ZWHS(const fu_VEC<s_ScopeItem>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_qypS
+                                #define DEFt_clone_qypS
+inline const fu_VEC<s_Overload>& clone_qypS(const fu_VEC<s_Overload>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_PdVe
+                                #define DEFt_clone_PdVe
+inline s_Scope clone_PdVe(const s_Scope& a)
+{
+    s_Scope res {};
+    
+    {
+        res.items = clone_ZWHS(a.items);
+        res.overloads = clone_qypS(a.overloads);
+        res.imports = clone_hoNZ(a.imports);
+    };
+    return res;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_askV
+                                #define DEFt_clone_askV
+inline s_SolverOutput clone_askV(const s_SolverOutput& a)
+{
+    s_SolverOutput res {};
+    
+    {
+        res.root = clone_21Cz(a.root);
+        res.scope = clone_PdVe(a.scope);
+        res.SLOW_resolve = clone_8E8n(a.SLOW_resolve);
+    };
+    return res;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_GY14
+                                #define DEFt_clone_GY14
+inline s_ModuleOutputs clone_GY14(const s_ModuleOutputs& a)
+{
+    s_ModuleOutputs res {};
+    
+    {
+        res.deps = clone_hoNZ(a.deps);
+        res.types = clone_dJL7(a.types);
+        res.specs = clone_OAZa(a.specs);
+        res.solve = clone_askV(a.solve);
+        res.cpp = clone_p23H(a.cpp);
+    };
+    return res;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_pgPa
+                                #define DEFt_clone_pgPa
+inline const s_ModuleStats& clone_pgPa(const s_ModuleStats& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_Z5NJ
+                                #define DEFt_clone_Z5NJ
+inline s_Module clone_Z5NJ(const s_Module& a)
+{
+    s_Module res {};
+    
+    {
+        res.modid = clone_8E8n(a.modid);
+        res.fname = clone_p23H(a.fname);
+        res.in = clone_A86o(a.in);
+        res.out = clone_GY14(a.out);
+        res.stats = clone_pgPa(a.stats);
+    };
+    return res;
 }
                                 #endif
 
@@ -693,7 +855,7 @@ void setModule(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
     ((current.fname == module.fname) || fu_ASSERT());
-    current = clone_inRx(module);
+    current = clone_Z5NJ(module);
 }
 
 const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)

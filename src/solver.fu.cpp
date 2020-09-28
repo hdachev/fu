@@ -15,6 +15,7 @@
 #include <utility>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_Context;
 struct s_CurrentFn;
 struct s_Effects;
@@ -49,6 +50,7 @@ struct s_Type;
 struct s_ValueType;
 
 bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Type&);
+bool add_once(s_BitSet&, int);
 bool hasIdentifierChars(const fu_STR&);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, const s_Type&);
@@ -104,6 +106,7 @@ s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
 s_Type tryClear_sliceable(const s_Type&);
 s_Type type_trySuper(const s_Type&, const s_Type&);
+static bool visit(const s_Context&, s_Module&, s_Scope&, int, s_BitSet&, const s_Overload&);
 static fu_VEC<s_SolvedNode> solveNodes(const s_Context&, s_Module&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkip&, s_CurrentFn&, int&, int&, fu_VEC<s_OpenTemplate>&, s_Target&, const s_Type&, const fu_VEC<s_Node>&, const s_Type&, const s_Type&, bool, bool, const s_ScopeMemo&, bool);
 static s_SolvedNode __solveFn(const s_Context&, s_Module&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkip&, s_CurrentFn&, int&, int&, fu_VEC<s_OpenTemplate>&, s_Target&, const s_Type&, const s_Node&, bool, const s_SolvedNode&, bool, int, const s_Target&);
 static s_SolvedNode evalTypeAnnot(const s_Context&, s_Module&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkip&, s_CurrentFn&, int&, int&, fu_VEC<s_OpenTemplate>&, s_Target&, const s_Type&, const s_Node&);
@@ -232,6 +235,10 @@ struct s_SolvedNode
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -308,6 +315,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -404,6 +415,10 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    s_Scope(const s_Scope&) = delete;
+    s_Scope(s_Scope&&) = default;
+    s_Scope& operator=(const s_Scope&) = delete;
+    s_Scope& operator=(s_Scope&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -422,6 +437,10 @@ struct s_SolverOutput
     s_SolvedNode root;
     s_Scope scope;
     int SLOW_resolve;
+    s_SolverOutput(const s_SolverOutput&) = delete;
+    s_SolverOutput(s_SolverOutput&&) = default;
+    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
+    s_SolverOutput& operator=(s_SolverOutput&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -530,6 +549,7 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target def;
     s_Target ctor;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
@@ -538,6 +558,7 @@ struct s_Struct
             || id
             || fields
             || flags
+            || def
             || ctor
             || items
         ;
@@ -554,6 +575,10 @@ struct s_ModuleOutputs
     fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
+    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs(s_ModuleOutputs&&) = default;
+    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -614,6 +639,10 @@ struct s_Module
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Module(const s_Module&) = delete;
+    s_Module(s_Module&&) = default;
+    s_Module& operator=(const s_Module&) = delete;
+    s_Module& operator=(s_Module&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -776,6 +805,20 @@ struct s_MapFields
         return false
             || key
             || value
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint64_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
         ;
     }
 };
@@ -1880,49 +1923,57 @@ static s_Lifetime Lifetime_replaceArgsAtCallsite(const s_Context& ctx_0, s_Modul
     return Lifetime_test(ctx_0, module_0, _here_0, _scope_0, Lifetime_union(keep, replace), _current_fn_0.out.target);
 }
 
-                                #ifndef DEFt_add_UEzP
-                                #define DEFt_add_UEzP
-inline void add_UEzP(fu_VEC<int>& dest, int& item)
+                                #ifndef DEFt_add_z0oV
+                                #define DEFt_add_z0oV
+inline bool add_z0oV(fu_VEC<int>& dest, int& item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
         if ((dest.mutref(i) >= item))
         {
             if (dest.mutref(i) != item)
+            {
                 dest.insert(i, item);
-
-            return;
+                return true;
+            };
+            return false;
         };
     };
     dest.push(item);
+    return true;
 }
                                 #endif
 
-                                #ifndef DEFt_add_he1P
-                                #define DEFt_add_he1P
-inline void add_he1P(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_add_2BUv
+                                #define DEFt_add_2BUv
+inline bool add_2BUv(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
         if ((dest.mutref(i) >= item))
         {
             if (dest.mutref(i) != item)
+            {
                 dest.insert(i, item);
-
-            return;
+                return true;
+            };
+            return false;
         };
     };
     dest.push(item);
+    return true;
 }
                                 #endif
 
-                                #ifndef DEFt_add_set_T2Lg
-                                #define DEFt_add_set_T2Lg
-inline void add_set_T2Lg(fu_VEC<int>& dest, const fu_VEC<int>& src)
+                                #ifndef DEFt_add_zwax
+                                #define DEFt_add_zwax
+inline bool add_zwax(fu_VEC<int>& dest, const fu_VEC<int>& src)
 {
+    bool some = false;
     for (int i = 0; i < src.size(); i++)
-        add_he1P(dest, src[i]);
+        some = (add_2BUv(dest, src[i]) || bool(some));
 
+    return some;
 }
                                 #endif
 
@@ -1952,18 +2003,18 @@ static s_SolvedNode CallerNode(const s_Context& ctx_0, s_Module& module_0, s_Tok
         {
             s_Overload& t = GET_mut(module_0, _scope_0, target);
             if (_current_struct_0)
-                add_UEzP(GET_mut(module_0, _scope_0, target).used_by, _current_struct_0.index);
+                add_z0oV(GET_mut(module_0, _scope_0, target).used_by, _current_struct_0.index);
             else
-                add_UEzP(t.used_by, _current_fn_0.out.target.index);
+                add_z0oV(t.used_by, _current_fn_0.out.target.index);
 
         };
         if (_current_fn_0)
         {
             s_Overload o = GET(ctx_0, module_0, _scope_0, target);
             if (o.flags & F_LOCAL)
-                add_he1P(_current_fn_0.locals_used, target.index);
+                add_2BUv(_current_fn_0.locals_used, target.index);
 
-            add_set_T2Lg(_current_fn_0.locals_used, o.closes_over);
+            add_zwax(_current_fn_0.locals_used, o.closes_over);
         };
     };
     s_SolvedNode out = solved(node, type, args, s_Target{});
@@ -2847,6 +2898,40 @@ static s_Target DefCtor(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& 
     return s_Target(into);
 }
 
+                                #ifndef DEF_F_RECURSIVE
+                                #define DEF_F_RECURSIVE
+inline const int F_RECURSIVE = (1 << 25);
+                                #endif
+
+static bool visit(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, int startIndex_0, s_BitSet& seen_0, const s_Overload& overload)
+{
+    const fu_VEC<int>& u = overload.used_by;
+    for (int i = 0; i < u.size(); i++)
+    {
+        const int index = u[i];
+        if (!add_once(seen_0, index))
+        {
+            continue;
+        };
+        if (index == startIndex_0)
+            return true;
+
+        const s_Target t = s_Target { int(module_0.modid), int(index) };
+        if (visit(ctx_0, module_0, _scope_0, startIndex_0, seen_0, GET(ctx_0, module_0, _scope_0, t)))
+            return true;
+
+    };
+    return false;
+}
+
+static void detectRecusion(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Overload& o, const int startIndex)
+{
+    s_BitSet seen {};
+    if (visit(ctx_0, module_0, _scope_0, startIndex, seen, o))
+        o.flags |= F_RECURSIVE;
+
+}
+
 static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkip& _scope_skip_0, s_CurrentFn& _current_fn_0, int& SLOW_resolve_0, int& resolve_done_0, fu_VEC<s_OpenTemplate>& _open_templates_0, s_Target& _current_struct_0, const s_Type& t_string_0, const bool solve, const s_Node& node, const s_SolvedNode& prep)
 {
     s_SolvedNode out = ([&]() -> s_SolvedNode { { s_SolvedNode _ = s_SolvedNode(prep); if (_) return _; } return solved(node, s_Type{}, fu_VEC<s_SolvedNode>{}, s_Target{}); }());
@@ -2892,15 +2977,22 @@ static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, s_
             GET_mut(module_0, _scope_0, out.target).type.vtype.quals = structType.vtype.quals;
 
         const s_Target ctor = DefCtor(ctx_0, module_0, _here_0, _scope_0, id, structType, members_1, s_Target(lookupStruct(structType, module_0, ctx_0).ctor));
-        lookupStruct_mut(structType.vtype.canon, module_0).ctor = ctor;
+        s_Struct& s = lookupStruct_mut(structType.vtype.canon, module_0);
+        s.ctor = ctor;
+        s.def = out.target;
         if (((quals0 != quals1) && out.target))
             invalidateUsers(ctx_0, module_0, _here_0, _scope_0, SLOW_resolve_0, GET(ctx_0, module_0, _scope_0, out.target));
 
     };
     out.type = structType;
     if (out.target)
-        GET_mut(module_0, _scope_0, out.target).solved = out;
+    {
+        s_Overload& o = GET_mut(module_0, _scope_0, out.target);
+        o.solved = out;
+        if ((o.used_by && !(o.flags & F_RECURSIVE)))
+            detectRecusion(ctx_0, module_0, _scope_0, o, out.target.index);
 
+    };
     return out;
 }
 
@@ -3582,7 +3674,7 @@ inline static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0,
     l_14_0_Mvh6(placeholder_0, field_0, node_1);
 }
 
-inline static s_Node astReplace_E1Ce(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
+inline static s_Node astReplace_D7YT(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node, int)
 {
     s_Node node_1 { node };
     walk(placeholder_0, field_0, node_1);
@@ -3601,7 +3693,7 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     {
         const s_ScopeItem& field = fields[i];
         if (GET(ctx_0, module_0, _scope_0, field.target).kind == "field"_fu)
-            items_ast += astReplace_E1Ce(placeholder, field, body_template, 0);
+            items_ast += astReplace_D7YT(placeholder, field, body_template, 0);
 
     };
     fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _here_0, _scope_0, _root_scope_0, _scope_skip_0, _current_fn_0, SLOW_resolve_0, resolve_done_0, _open_templates_0, _current_struct_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, bool{}, s_ScopeMemo{}, true);

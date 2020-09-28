@@ -103,6 +103,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -223,6 +227,7 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target def;
     s_Target ctor;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
@@ -231,6 +236,7 @@ struct s_Struct
             || id
             || fields
             || flags
+            || def
             || ctor
             || items
         ;
@@ -295,6 +301,10 @@ struct s_SolvedNode
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -429,6 +439,10 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    s_Scope(const s_Scope&) = delete;
+    s_Scope(s_Scope&&) = default;
+    s_Scope& operator=(const s_Scope&) = delete;
+    s_Scope& operator=(s_Scope&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -447,6 +461,10 @@ struct s_SolverOutput
     s_SolvedNode root;
     s_Scope scope;
     int SLOW_resolve;
+    s_SolverOutput(const s_SolverOutput&) = delete;
+    s_SolverOutput(s_SolverOutput&&) = default;
+    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
+    s_SolverOutput& operator=(s_SolverOutput&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -467,6 +485,10 @@ struct s_ModuleOutputs
     fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
+    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs(s_ModuleOutputs&&) = default;
+    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -527,6 +549,10 @@ struct s_Module
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Module(const s_Module&) = delete;
+    s_Module(s_Module&&) = default;
+    s_Module& operator=(const s_Module&) = delete;
+    s_Module& operator=(s_Module&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -599,7 +625,7 @@ s_Type initStruct(const fu_STR& id, const int flags, s_Module& module)
     if (fu::has(module.out.types, canon))
         fu::fail((("initStruct already invoked for `"_fu + id) + "`."_fu));
 
-    (module.out.types.upsert(canon) = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, fu_VEC<s_ScopeItem>{} });
+    (module.out.types.upsert(canon) = s_Struct { fu_STR((id ? id : fu::fail("TODO anonymous structs?"_fu))), fu_VEC<s_StructField>{}, int(flags), s_Target{}, s_Target{}, fu_VEC<s_ScopeItem>{} });
     const int specualtive_quals = ((flags & F_NOCOPY) ? int(q_trivial) : (q_rx_copy | q_trivial));
     return s_Type { s_ValueType { int(specualtive_quals), MODID(module), fu_STR(canon) }, s_Lifetime{}, s_Effects{} };
 }

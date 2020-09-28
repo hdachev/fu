@@ -72,6 +72,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -230,6 +234,11 @@ inline const int F_SHADOW = (1 << 23);
                                 #ifndef DEF_F_NAMED_ARGS
                                 #define DEF_F_NAMED_ARGS
 inline const int F_NAMED_ARGS = (1 << 24);
+                                #endif
+
+                                #ifndef DEF_F_RECURSIVE
+                                #define DEF_F_RECURSIVE
+inline const int F_RECURSIVE = (1 << 25);
                                 #endif
 
                                 #ifndef DEF_F_PATTERN

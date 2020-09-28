@@ -148,6 +148,10 @@ struct s_SolvedNode
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -208,6 +212,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -304,6 +312,10 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    s_Scope(const s_Scope&) = delete;
+    s_Scope(s_Scope&&) = default;
+    s_Scope& operator=(const s_Scope&) = delete;
+    s_Scope& operator=(s_Scope&&) = default;
     explicit operator bool() const noexcept
     {
         return false

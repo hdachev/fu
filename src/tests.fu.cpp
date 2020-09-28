@@ -105,6 +105,10 @@ struct s_Node
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -225,6 +229,7 @@ struct s_Struct
     fu_STR id;
     fu_VEC<s_StructField> fields;
     int flags;
+    s_Target def;
     s_Target ctor;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
@@ -233,6 +238,7 @@ struct s_Struct
             || id
             || fields
             || flags
+            || def
             || ctor
             || items
         ;
@@ -297,6 +303,10 @@ struct s_SolvedNode
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -431,6 +441,10 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    s_Scope(const s_Scope&) = delete;
+    s_Scope(s_Scope&&) = default;
+    s_Scope& operator=(const s_Scope&) = delete;
+    s_Scope& operator=(s_Scope&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -449,6 +463,10 @@ struct s_SolverOutput
     s_SolvedNode root;
     s_Scope scope;
     int SLOW_resolve;
+    s_SolverOutput(const s_SolverOutput&) = delete;
+    s_SolverOutput(s_SolverOutput&&) = default;
+    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
+    s_SolverOutput& operator=(s_SolverOutput&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -469,6 +487,10 @@ struct s_ModuleOutputs
     fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
+    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs(s_ModuleOutputs&&) = default;
+    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -529,6 +551,10 @@ struct s_Module
     s_ModuleInputs in;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Module(const s_Module&) = delete;
+    s_Module(s_Module&&) = default;
+    s_Module& operator=(const s_Module&) = delete;
+    s_Module& operator=(s_Module&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -752,7 +778,7 @@ void runTests()
     FAIL("\n        pub struct ScopeSkip {\n            start: i32;\n            end:   i32;\n        };\n\n        pub fn search(skip: ScopeSkip = [])\n            skip.end - skip.start;\n\n        pub fn main()\n            //*F\n            ScopeSkip(min: -1, max: +1)\n            /*/\n            ScopeSkip(start: -1, end: +1)\n            //*/\n                .end - 1;\n    "_fu);
     ZERO("\n        struct vec3 { x?: f32; y?: f32; z?: f32; };\n\n        struct mat34 {\n            mx: vec3; my: vec3; mz: vec3;\n            mo: vec3;\n        };\n\n        inline fn mat34_identity()\n            mat34(\n                vec3(x: 1),\n                vec3(y: 1),\n                vec3(z: 1), vec3 /*point3*/);\n\n        // What broke is this using reports a conflict,\n        //  because 'determinant' got expanded within 'inverse',\n        //   and there's another using mat34 there.\n        //    Basically we totally don't want it to expand there.\n        inline fn determinant(using _: mat34): f32\n            - mz.x * my.y * mx.z + my.x * mz.y * mx.z + mz.x * mx.y * my.z\n            - mx.x * mz.y * my.z - my.x * mx.y * mz.z + mx.x * my.y * mz.z;\n\n        fn inverse(using mat: mat34): mat34\n        {\n            let idet = 1 / mat.determinant;\n\n            let i_mx = vec3(\n                idet * (- mz.y * my.z + my.y * mz.z),\n                idet * (+ mz.y * mx.z - mx.y * mz.z),\n                idet * (- my.y * mx.z + mx.y * my.z));\n\n            let i_my = vec3(\n                idet * (+ mz.x * my.z - my.x * mz.z),\n                idet * (- mz.x * mx.z + mx.x * mz.z),\n                idet * (+ my.x * mx.z - mx.x * my.z));\n\n            let i_mz = vec3(\n                idet * (- mz.x * my.y + my.x * mz.y),\n                idet * (+ mz.x * mx.y - mx.x * mz.y),\n                idet * (- my.x * mx.y + mx.x * my.y));\n\n            return mat34(\n                i_mx, i_my, i_mz,\n\n                vec3( // point3\n                      mo.x * -i_mx.x\n                    + mo.y * -i_my.x\n                    + mo.z * -i_mz.x,\n\n                      mo.x * -i_mx.y\n                    + mo.y * -i_my.y\n                    + mo.z * -i_mz.y,\n\n                      mo.x * -i_mx.z\n                    + mo.y * -i_my.z\n                    + mo.z * -i_mz.z));\n        }\n\n        fn main() i32 <|\n            mat34_identity.inverse.determinant - 1;\n    "_fu);
     ZERO("\n        struct TEA\n        {\n            v0: u32;\n            v1: u32;\n        }\n\n        inline fn r4(using _: &mut TEA, sum: &mut u32)\n        {\n            mut delta: u32 = 0x9e3779b9;\n\n            for (mut i = 0; i < 4; i++) {\n                sum += delta;\n\n                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);\n                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);\n            }\n        }\n\n        // Stack overflow solving this,\n        //  argmax is +inf, and it just\n        //   re-enters and re-enters.\n        inline fn r4(tea: &mut TEA) {\n            mut sum: u32; tea.r4(sum);\n        }\n\n        fn main() {\n            mut tea: TEA;\n            tea.r4();\n            return (tea.v0 ^ tea.v0).i32;\n        }\n    "_fu);
-    ZERO("\n\n        struct SolvedNode {\n            value: i32;\n            items?: SolvedNode[]; //! SLOW_resolve\n        };\n\n        fn visitNodes(_v: &mut $V, _n: SolvedNode) {\n\n            fn traverse(v: &mut $V, n: SolvedNode) {\n                v.visit(n);\n                for (mut i = 0; i < n.items.len; i++)\n                    traverse(v, n.items[i]);\n            }\n\n            traverse(_v, _n);\n        };\n\n        struct Visitor {\n            sum: i32;\n        };\n\n        fn visit(using v: &mut Visitor, node: SolvedNode) {\n            sum += node.value;\n        };\n\n        fn main(): i32 {\n            let tree = SolvedNode(3,\n                [ SolvedNode(5), SolvedNode(7) ]);\n\n            // This is an aside, managed to lose the copy qual when working structs\n            // Initially noticed it because visitNodes tried to change its sighash\n            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy\n\n            mut myVisitor: Visitor;\n            myVisitor.visitNodes(tree);\n            return myVisitor.sum - 15;\n        };\n\n    "_fu);
+    ZERO("\n        struct SolvedNode {\n            value: i32;\n            items?: SolvedNode[]; //! SLOW_resolve\n        };\n\n        fn visitNodes(_v: &mut $V, _n: SolvedNode) {\n\n            fn traverse(v: &mut $V, n: SolvedNode) {\n                v.visit(n);\n                for (mut i = 0; i < n.items.len; i++)\n                    traverse(v, n.items[i]);\n            }\n\n            traverse(_v, _n);\n        };\n\n        struct Visitor {\n            sum: i32;\n        };\n\n        fn visit(using v: &mut Visitor, node: SolvedNode) {\n            sum += node.value;\n        };\n\n        fn main(): i32 {\n            let tree = SolvedNode(3,\n                [ SolvedNode(5), SolvedNode(7) ]);\n\n            // This is an aside, managed to lose the copy qual when working structs\n            // Initially noticed it because visitNodes tried to change its sighash\n            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy\n\n            mut myVisitor: Visitor;\n            myVisitor.visitNodes(tree);\n            return myVisitor.sum - 15;\n        };\n\n    "_fu);
     ZERO("\n        return 0 > 1 ? throw(\"should type check\") : 0;\n    "_fu);
     ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1;\n        }\n\n        fn main(): i32 {\n            let x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return x || 7;\n        }\n    "_fu);
     ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1;\n        }\n\n        fn main(): i32 {\n            try {\n                return throw_hey();\n            }\n            catch (e) {\n                return e.len - 3;\n            }\n\n            return 11;\n        }\n    "_fu);
@@ -813,6 +839,7 @@ void runTests()
     ZERO("\n        struct Hey { i: i32; }\n\n        fn test(): Hey {\n            return [ 0 ];\n        }\n\n        fn main() test.i;\n    "_fu);
     FAIL("\n        struct Test {\n        //*F\n            a: i32;\n        /*/\n            a?: i32;\n        //*/\n            b: i32;\n        };\n\n        return Test(b: 1).a;\n    "_fu);
     FAIL("\n        struct Test {\n            b: i32;\n        //*F\n            a: i32;\n        /*/\n            a?: i32;\n        //*/\n        };\n\n        return Test(1).a;\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        struct Node {\n            items?: Node[];\n            stuff?: Node[];\n        };\n\n        fn rec_copy(ref a: Node) {\n            // If implemented naively,\n            //  by the time you copy stuff it's no longer there.\n            a = a.items[0];\n        }\n\n        fn main() {\n            mut a = Node(items: [ Node(stuff: [ Node ]) ]);\n            rec_copy(a);\n            return a.stuff.len - 1;\n        }\n    "_fu);
     ZERO("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        return test(-1);\n    "_fu);
     FAIL("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        //*F\n        return test(-2, +2);\n        /*/\n        return test(-2, b: +2);\n        //*/\n    "_fu);
     FAIL("\n        struct Test { a: i32; b!: i32; };\n        fn test(t: Test) t.a + t.b;\n        //*F\n        return Test(-2, +2).test;\n        /*/\n        return Test(-2, b: +2).test;\n        //*/\n    "_fu);

@@ -19,8 +19,8 @@ set(FU_INPUTS
     intlit.fu
     addroffn.fu
     ../lib/tea.fu
-    solver.fu
     bitset.fu
+    solver.fu
     codegen.fu
     ../lib/env.fu
     prelude.fu
