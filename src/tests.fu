@@ -1649,7 +1649,6 @@ pub fn runTests()
     // Let's try something new.
 
     ZERO(`
-
         struct SolvedNode {
             value: i32;
             items?: SolvedNode[]; //! SLOW_resolve
@@ -2337,6 +2336,29 @@ pub fn runTests()
         };
 
         return Test(1).a;
+    `);
+
+
+    // Recursive structs.
+
+    ZERO(`
+        //! SLOW_resolve
+        struct Node {
+            items?: Node[];
+            stuff?: Node[];
+        };
+
+        fn rec_copy(ref a: Node) {
+            // If implemented naively,
+            //  by the time you copy stuff it's no longer there.
+            a = a.items[0];
+        }
+
+        fn main() {
+            mut a = Node(items: [ Node(stuff: [ Node ]) ]);
+            rec_copy(a);
+            return a.stuff.len - 1;
+        }
     `);
 
 

@@ -48,6 +48,8 @@ pub struct Struct
     id:         string;
     fields?:    StructField[];
     flags:      i32;
+
+    def?:       Target;
     ctor?:      Target;
 
     items?:     ScopeItem[];

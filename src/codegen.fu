@@ -60,6 +60,11 @@ pub fn cpp_codegen(
         return m.out.solve.scope.overloads[target.index - 1];
     }
 
+    fn try_GET(target: Target): Overload
+    {
+        return target && GET(target);
+    }
+
     fn fail(reason = "") throw(reason);
 
 
@@ -236,6 +241,13 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
+        }
+        else if (try_GET(s.def).flags & F_RECURSIVE)
+        {
+            def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
+            def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
+            def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
+            def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "& selfrec) { return *this = " ~ id ~ "(selfrec); }";
         }
 
         def ~= "\n    explicit operator bool() const noexcept";

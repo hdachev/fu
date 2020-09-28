@@ -2058,8 +2058,10 @@ pub fn solve(
             // TODO drop DefCtors, we have too many things already,
             //  ideally the typedef should suffice.
             //
-            let ctor = DefCtor(id, structType, members, into: lookupStruct(structType).ctor);
-            lookupStruct_mut(structType.canon).ctor = ctor;
+            let ctor    = DefCtor(id, structType, members, into: lookupStruct(structType).ctor);
+            ref s       = lookupStruct_mut(structType.canon);
+                s.ctor  = ctor;
+                s.def   = out.target;
 
             //
             if (quals0 != quals1 && out.target)
