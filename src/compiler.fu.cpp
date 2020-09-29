@@ -36,7 +36,6 @@ struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -181,40 +180,6 @@ struct s_ModuleInputs
 };
                                 #endif
 
-                                #ifndef DEF_s_ValueType
-                                #define DEF_s_ValueType
-struct s_ValueType
-{
-    int quals;
-    int modid;
-    fu_STR canon;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || quals
-            || modid
-            || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_ValueType type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
 struct s_Target
@@ -251,21 +216,31 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    s_Target def;
-    s_Target ctor;
+    s_Target target;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
-            || id
-            || fields
-            || flags
-            || def
-            || ctor
+            || target
             || items
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    int quals;
+    int modid;
+    fu_STR canon;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || quals
+            || modid
+            || canon
         ;
     }
 };

@@ -41,7 +41,6 @@ struct s_ScopeMemo;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
-struct s_StructField;
 struct s_Target;
 struct s_Template;
 struct s_Token;
@@ -300,22 +299,6 @@ struct s_ModuleInputs
 };
                                 #endif
 
-                                #ifndef DEF_s_StructField
-                                #define DEF_s_StructField
-struct s_StructField
-{
-    fu_STR id;
-    s_ValueType type;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-            || type
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ScopeItem
                                 #define DEF_s_ScopeItem
 struct s_ScopeItem
@@ -336,20 +319,12 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
-    fu_STR id;
-    fu_VEC<s_StructField> fields;
-    int flags;
-    s_Target def;
-    s_Target ctor;
+    s_Target target;
     fu_VEC<s_ScopeItem> items;
     explicit operator bool() const noexcept
     {
         return false
-            || id
-            || fields
-            || flags
-            || def
-            || ctor
+            || target
             || items
         ;
     }
@@ -814,11 +789,6 @@ static fu_STR structId(const s_Type& t)
     fail((("Bad structId: `"_fu + t.vtype.canon) + "`."_fu));
 }
 
-static fu_STR typeAnnot(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, const s_ValueType& vtype)
-{
-    return typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, s_Type { s_ValueType(vtype), s_Lifetime{}, s_Effects{} }, 0);
-}
-
 static fu_STR ID(const fu_STR& id)
 {
     if (id == "this"_fu)
@@ -890,11 +860,12 @@ static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu
     fu_STR id = structId(t);
     fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\nstruct "_fu) + id) + "\n{"_fu);
     fu_STR indent = "\n    "_fu;
-    const fu_VEC<s_StructField>& fields = s.fields;
+    const fu_VEC<s_ScopeItem>& fields = s.items;
     for (int i = 0; i < fields.size(); i++)
     {
-        const s_StructField& field = fields[i];
-        def += ((((indent + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, field.type)) + " "_fu) + ID(field.id)) + ";"_fu);
+        s_Overload field = GET(module_0, ctx_0, fields[i].target);
+        ((field.kind == "field"_fu) || fail(((((("Non-field struct item: "_fu + field.name) + " ("_fu) + field.kind) + ") in "_fu) + t.vtype.canon)));
+        def += ((((indent + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, field.type, 0)) + " "_fu) + ID(field.name)) + ";"_fu);
     };
     if (!(t.vtype.quals & q_rx_copy))
     {
@@ -903,7 +874,7 @@ static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu
         def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu);
         def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) = default;"_fu);
     }
-    else if (try_GET(module_0, ctx_0, s.def).flags & F_RECURSIVE)
+    else if (try_GET(module_0, ctx_0, s.target).flags & F_RECURSIVE)
     {
         def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = default;"_fu);
         def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) = default;"_fu);
@@ -1549,7 +1520,7 @@ static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
         };
         return id;
     };
-    if (((target.kind == "defctor"_fu) || (target.kind == "type"_fu)))
+    if (target.kind == "type"_fu)
     {
         if (!items)
             return cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, target.type);
