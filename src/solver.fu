@@ -2028,7 +2028,8 @@ pub fn solve(
         // Add a default constructor.
         {
             shadow mut members: SolvedNode[];
-            mut fields: StructField[];
+
+            mut commonQuals = -1;
 
             shadow let items = out.items;
             for (mut i = 0; i < items.len; i++)
@@ -2037,17 +2038,16 @@ pub fn solve(
                 if (item && item.kind == "let" && (item.flags & F_FIELD))
                 {
                     members.push(item);
-
-                    fields.push(
-                        StructField(
-                            id:   item.value        || fail(),
-                            type: item.type.vtype   || fail()));
+                    commonQuals &= item.type.quals;
                 }
             }
 
             //
+            lookupStruct_mut(structType.canon).items =
+                innerScope || throw("TODO empty structs (items)?");
+
             let quals0 = structType.quals;
-            let quals1 = structType.quals &= finalizeStruct(structType.canon, fields, innerScope);
+            let quals1 = structType.quals &= commonQuals;
 
             if (out.target)
                 GET_mut(out.target).type.quals = structType.quals;

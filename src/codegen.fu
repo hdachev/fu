@@ -228,11 +228,12 @@ pub fn cpp_codegen(
 
         mut indent = "\n    ";
 
-        let fields = s.fields;
+        let fields = s.items;
         for (mut i = 0; i < fields.len; i++)
         {
-            let field = fields[i];
-            def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.id) ~ ";";
+            let field = GET(fields[i].target);
+            field.kind == "field" || fail("Non-field struct item: " ~ field.name ~ " (" ~ field.kind ~ ") in " ~ t.canon);
+            def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.name) ~ ";";
         }
 
         if !(t.quals & q_rx_copy)

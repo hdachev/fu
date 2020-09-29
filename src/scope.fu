@@ -45,20 +45,9 @@ pub struct Module
 
 pub struct Struct
 {
-    id:         string;
-    fields?:    StructField[];
-    flags:      i32;
-
     def?:       Target;
     ctor?:      Target;
-
     items?:     ScopeItem[];
-};
-
-pub struct StructField
-{
-    id:         string;
-    type:       ValueType;
 };
 
 ////
@@ -190,18 +179,14 @@ pub fn isStruct(type: Type)
     return type.canon.starts(with: '$');
 }
 
-pub fn initStruct(
-    implicit module: &mut Module,
-    id: string, flags: i32)
+pub fn initStruct(implicit module: &mut Module, id: string, flags: i32)
 {
     let canon = "$" ~ id;
 
     if (module.out.types.has(canon))
         throw("initStruct already invoked for `" ~ id ~ "`.");
 
-    module.out.types[canon] = Struct(
-        :id || throw("TODO anonymous structs?"),
-        :flags);
+    module.out.types[canon] = Struct;
 
     // Assume everything, we resolve disappointment.
     let specualtive_quals = flags & F_NOCOPY
@@ -218,29 +203,9 @@ pub fn despeculateStruct(mut type: Type)
     return type;
 }
 
-pub fn lookupStruct_mut(implicit module: &mut Module, canon: string)
+pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
 {
-    return module.out.types[canon] || assert();
-}
-
-pub fn finalizeStruct(
-    canon: string, fields: StructField[], items: ScopeItem[]): i32
-{
-    let def: &mut Struct    = lookupStruct_mut(canon);
-        def.fields          = fields || throw("TODO empty structs (fields) ?");
-        def.items           = items  || throw("TODO empty structs (items)  ?");
-
-    return fields.commonQuals();
-}
-
-fn commonQuals(fields: StructField[]): i32
-{
-    mut commonQuals = -1;
-
-    for (mut i = 0; i < fields.len; i++)
-        commonQuals &= fields[i].type.quals;
-
-    return commonQuals;
+    return module.out.types[canon];
 }
 
 
