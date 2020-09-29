@@ -575,7 +575,7 @@ pub fn solve(
 
         ref overload    = GET_mut(into);
 
-        overload.kind   = "defctor";
+        overload.kind   = "type";
         overload.name   = id;
         overload.type   = type;
         overload.min    = min;
@@ -713,7 +713,7 @@ pub fn solve(
             //  we really only want this for fields & properties,
             //   but there's no way to tell a property from a fn,
             //    this at least is easy to disambiguate.
-            if (overload.kind == "defctor")
+            if (overload.kind == "type")
                 return;
 
             // See if we fit.
@@ -873,7 +873,7 @@ pub fn solve(
 
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
-                    if (arity && overload.kind == "type")
+                    if (arity && overload.kind == "type" && !target)
                     {
                         let alt = overload.type.canon;
                         if (alt != id) // e.g. i32
@@ -2677,7 +2677,7 @@ pub fn solve(
                 scope_skip: !qualified && _scope_skip))
         {
             let maybe = GET(overloadIdx);
-            if (maybe.kind == "type")
+            if (maybe.kind == "type" && maybe.min == 0)
                 return maybe.type || fail();
         }
 

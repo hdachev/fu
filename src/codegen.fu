@@ -993,7 +993,7 @@ pub fn cpp_codegen(
         }
 
         //
-        if (target.kind == "defctor" || target.kind == "type")
+        if (target.kind == "type")
         {
             if (!items)
                 return cgDefault(target.type);
