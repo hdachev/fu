@@ -348,20 +348,21 @@ pub fn Scope_add(
     template?:      Template,
     partial?:       Partial,
     solved?:        SolvedNode,
-    local_of?:      i32): Target
+    local_of?:      i32,
+    name?:          string): Target
 {
     let modid = MODID;
     let target = Target(:modid,
         index: scope.overloads.len + 1);
 
     let item = Overload(
-        name: id || throw("Falsy Scope_add(id)."),
+        name: name || id || throw("Falsy Scope_add(id)."),
         :kind, :flags, :type,
         :min, :max, :args,
         :partial, :template, :solved,
         :local_of);
 
-    if (kind != "field")
+    if (id && kind != "field")
         scope.items.push(
             ScopeItem( :id, :target ));
 
@@ -394,9 +395,9 @@ pub fn Scope_set(scope: &mut Scope, id: string, target: Target)
     scope.items.push(ScopeItem( :id, :target ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template)
+pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string)
 {
-    return Scope_add(:scope, "type", :id, :type, :flags, :template);
+    return Scope_add(:scope, "type", :id, :name, :type, :flags, :template);
 }
 
 
