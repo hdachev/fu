@@ -179,12 +179,12 @@ pub fn isStruct(type: Type)
     return type.canon.starts(with: '$');
 }
 
-pub fn initStruct(implicit module: &mut Module, id: string, flags: i32)
+pub fn initStruct(implicit module: &mut Module, name: string, flags: i32)
 {
-    let canon = "$" ~ id;
+    let canon = "$" ~ name;
 
     if (module.out.types.has(canon))
-        throw("initStruct already invoked for `" ~ id ~ "`.");
+        throw("initStruct already invoked for `" ~ name ~ "`.");
 
     module.out.types[canon] = Struct;
 

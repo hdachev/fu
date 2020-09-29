@@ -1984,27 +1984,29 @@ pub fn solve(
         mut out = prep || solved(node, Type());
         ref structType = out.type;
 
-        mut id = node.value;
-        let origId = id;
+        mut name = node.value;
+        let origId = name;
         if (!origId)
-            id = _current_fn.value || "Anon";
+            name = _current_fn.value || "Anon";
 
         fn ensureTypedef()
         {
-            if (out.target || !origId)
+            if (out.target)
                 return;
 
             let NO_IMPORTS: i32[];
             let NO_LOCALS: ScopeMemo;
-            let template = Template(:node, imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
+            let template = Template(:node,
+                imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
 
-            out.target = Scope_Typedef(_scope, origId, structType, node.flags, :template);
+            out.target = Scope_Typedef(_scope, id: origId, :name,
+                structType, node.flags, :template);
         }
 
         // Add the arity-0 type entry.
         if (!(_current_fn.flags & F_TEMPLATE) && !out.target)
         {
-            structType = initStruct(id, node.flags);
+            structType = initStruct(:name, :node.flags);
             ensureTypedef();
         }
 
@@ -2020,7 +2022,7 @@ pub fn solve(
         // Struct fields only.
         let members = node.items;
         mut innerScope: ScopeItem[];
-        let items = solveStructMembers(:id, :node.flags, :structType, :members, :innerScope);
+        let items = solveStructMembers(:name, :node.flags, :structType, :members, :innerScope);
         out.items = items;
 
         ensureTypedef();
@@ -2058,7 +2060,7 @@ pub fn solve(
             // TODO drop DefCtors, we have too many things already,
             //  ideally the typedef should suffice.
             //
-            let ctor    = DefCtor(id, structType, members, into: lookupStruct(structType).ctor);
+            let ctor    = DefCtor(name, structType, members, into: lookupStruct(structType).ctor);
             ref s       = lookupStruct_mut(structType.canon);
                 s.ctor  = ctor;
                 s.def   = out.target;
@@ -2112,7 +2114,7 @@ pub fn solve(
     }
 
     fn solveStructMembers(
-        ref id: string, flags: i32,
+        ref name: string, flags: i32,
         members: Node[], ref structType: Type, ref innerScope: ScopeItem[]): SolvedNode[]
     {
         mut out: SolvedNode[];
@@ -2131,9 +2133,9 @@ pub fn solve(
         {
             let sig     = mangleArguments(out);
             let hash    = tea::hash62(sig, chars: 4);
-            id         ~= "_" ~ hash;
+            name       ~= "_" ~ hash;
 
-            structType  = initStruct(:id, :flags);
+            structType  = initStruct(:name, :flags);
         }
 
         // Dereferencing a struct does not require it
