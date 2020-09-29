@@ -45,8 +45,7 @@ pub struct Module
 
 pub struct Struct
 {
-    def?:       Target;
-    ctor?:      Target;
+    target?:    Target;
     items?:     ScopeItem[];
 };
 

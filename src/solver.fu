@@ -524,68 +524,6 @@ pub fn solve(
         }
     }
 
-    fn DefCtor(id: string, type: Type, members: SolvedNode[], mut into: Target): Target
-    {
-        // TODO ideally defctors have to go,
-        //  they're just an extra function we have to deal with here.
-        //   plus they depend on the struct itself,
-        //    and so require all the extra care there.
-        //
-        // Basically we want to have one less thing.
-        //
-        // Alternatively, we drop the Struct fields stuff in `types`,
-        //  and use the argument list here to describe the struct members,
-        //   which servers us just as well, we have just one thing.
-        //
-        let max = members.len;
-        mut min = 0;
-        mut args: Argument[];
-
-        for (mut i = 0; i < members.len; i++)
-        {
-            let member = members[i];
-
-            // There's duplication here <-> and in the typedef.
-            //  Perhaps we do the opposite, drop the members there,
-            //   and just refer to this argument list.
-            //
-            let arg = Argument(
-                name:       member.value || fail(),
-                type:       member.type  || fail(),
-                default:    member.items[LET_INIT],
-                flags:      member.flags & F_MUSTNAME);
-
-            if (!arg.default)
-                min++;
-
-            args.push(arg);
-        }
-
-        if (!max) return Target();
-        if (!min) min++;
-
-        //
-        if (!into)
-        {
-            into = Scope_create(_scope);
-
-            // TODO don't Scope_set when templated.
-            Scope_set(_scope, :id, target: into);
-        }
-
-        ref overload    = GET_mut(into);
-
-        overload.kind   = "type";
-        overload.name   = id;
-        overload.type   = type;
-        overload.min    = min;
-        overload.max    = max;
-        overload.args   = args;
-        overload.flags  = F_PUB;
-
-        return into;
-    }
-
     fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
@@ -873,7 +811,9 @@ pub fn solve(
 
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
-                    if (arity && overload.kind == "type" && !target)
+                    let isType = overload.kind == "type";
+                    let isZeroInit = isType && !arity;
+                    if (arity && isType && !target)
                     {
                         let alt = overload.type.canon;
                         if (alt != id) // e.g. i32
@@ -883,7 +823,8 @@ pub fn solve(
 
                     //
                     if (overload.min > arity || overload.max < arity)
-                        continue :NEXT;
+                        if (!isZeroInit)
+                            continue :NEXT;
 
                     // Match by return.
                     if (retType && !isAssignable(retType, overload.type || fail()))
@@ -1047,22 +988,26 @@ pub fn solve(
         {
             let matched = GET(matchIdx);
 
-            // Mutate call args last thing.
-            let host_args = matched.args;
-            if (host_args.len > args.len)
-                args.resize(host_args.len);
-
-            // Defaults & implicit argument injection.
-            for (mut i = 0; i < args.len; i++)
+            let isZeroInit = matched.kind == "type" && !arity;
+            if (!isZeroInit)
             {
-                if (!args[i])
-                {
-                    let host_arg = host_args[i];
-                    args[i] = host_arg.default || bindImplicitArg(
-                        :host_arg.name,
-                        :host_arg.type,
+                // Mutate call args last thing.
+                let host_args = matched.args;
+                if (host_args.len > args.len)
+                    args.resize(host_args.len);
 
-                        becauseOf: matchIdx);
+                // Defaults & implicit argument injection.
+                for (mut i = 0; i < args.len; i++)
+                {
+                    if (!args[i])
+                    {
+                        let host_arg = host_args[i];
+                        args[i] = host_arg.default || bindImplicitArg(
+                            :host_arg.name,
+                            :host_arg.type,
+
+                            becauseOf: matchIdx);
+                    }
                 }
             }
         }
@@ -2051,21 +1996,12 @@ pub fn solve(
             let quals0 = structType.quals;
             let quals1 = structType.quals &= commonQuals;
 
-            if (out.target)
-                GET_mut(out.target).type.quals = structType.quals;
+            GET_mut(out.target).type.quals = structType.quals;
 
-            // Link up the constructor.
-            // TODO don't Scope_add when templated.
-            //
-            // TODO drop DefCtors, we have too many things already,
-            //  ideally the typedef should suffice.
-            //
-            let ctor    = DefCtor(name, structType, members, into: lookupStruct(structType).ctor);
-            ref s       = lookupStruct_mut(structType.canon);
-                s.ctor  = ctor;
-                s.def   = out.target;
+            updateCtor(members, into:
+                lookupStruct_mut(structType.canon).target =
+                    out.target);
 
-            //
             if (quals0 != quals1 && out.target)
                 invalidateUsers(GET(out.target));
         }
@@ -2083,6 +2019,39 @@ pub fn solve(
         }
 
         return out;
+    }
+
+    fn updateCtor(members: SolvedNode[], into: Target): Target
+    {
+        let max = members.len;
+        mut min = 0;
+        mut args: Argument[];
+
+        for (mut i = 0; i < members.len; i++)
+        {
+            let member = members[i];
+
+            let arg = Argument(
+                name:       member.value || fail(),
+                type:       member.type  || fail(),
+                default:    member.items[LET_INIT],
+                flags:      member.flags & F_MUSTNAME);
+
+            if (!arg.default)
+                min++;
+
+            args.push(arg);
+        }
+
+        if (!max) return Target();
+        if (!min) min++;
+
+        ref overload    = GET_mut(into);
+        overload.min    = min;
+        overload.max    = max;
+        overload.args   = args;
+
+        return into;
     }
 
     fn detectRecusion(ref o: Overload, startIndex: i32)
@@ -2677,7 +2646,7 @@ pub fn solve(
                 scope_skip: !qualified && _scope_skip))
         {
             let maybe = GET(overloadIdx);
-            if (maybe.kind == "type" && maybe.min == 0)
+            if (maybe.kind == "type")
                 return maybe.type || fail();
         }
 
@@ -2989,7 +2958,7 @@ pub fn solve(
         // Default constructor calls.
         if (!itemType && type.isStruct)
             return solveCall(node,
-                target: lookupStruct(type).ctor);
+                target: lookupStruct(type).target);
 
         // Nope, it's an array literal.
         mut items   = solveNodes(node.items, itemType);
