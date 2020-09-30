@@ -3177,6 +3177,33 @@ pub fn runTests()
     `);
 
 
+    // Macros & loops.
+
+    ZERO(`
+        fn loop2d(x0, x1, y0, y1, fn) {
+            for (mut y = y0; y < y1; y++)
+            for (mut x = x0; x < x1; x++) fn(x, y);
+        }
+
+        fn main() {
+            mut sum = 0;
+            loop2d( x0:  0, x1: 10,
+                    y0: 10, y1: 12, |x, y|
+            {
+                if (y < 11) {
+                    sum++;          // twice
+                    continue;       // <- inner loop
+                }
+
+                if (x == 1) break;  // <- outer loop
+                sum += (x + 1) * y; // once: (0+1)*11
+            });
+
+            return sum - 2 - 11;
+        }
+    `);
+
+
     // Template structs.
 
     ZERO(`
