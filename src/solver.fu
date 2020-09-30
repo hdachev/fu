@@ -1967,8 +1967,48 @@ pub fn solve(
         // Struct fields only.
         let members = node.items;
         mut innerScope: ScopeItem[];
-        let items = solveStructMembers(:name, :node.flags, :structType, :members, :innerScope);
-        out.items = items;
+
+        // Struct members, pass 0.
+        out.items = members.map(|node|
+        {
+            node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
+
+            node.items[LET_INIT] &&
+            node.items[LET_INIT].kind != "definit" &&
+                fail("All structs must be zerofilled by default."
+                    ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+
+            return solveLetLike_dontTouchScope(node);
+        });
+
+        if (!structType)
+        {
+            let sig     = mangleArguments(out.items);
+            let hash    = tea::hash62(sig, chars: 4);
+            name       ~= "_" ~ hash;
+
+            structType  = initStruct(:name, :node.flags);
+        }
+
+        // Dereferencing a struct does not require it
+        //  to have any particular qualities.
+        {
+            shadow let structType = despeculateStruct(structType);
+
+            // Struct members, pass 1.
+            out.items.each(|node|
+            {
+                node.kind == "let" || fail("solveStructMembers_2: " ~ node.kind);
+
+                let id = node.value;
+                let target = Field(:id, :structType, fieldType: node.type);
+
+                innerScope.push(ScopeItem(:id, :target));
+
+                if (node.flags & F_USING)
+                    scope_using(target);
+            });
+        }
 
         ensureTypedef();
 
@@ -1978,10 +2018,9 @@ pub fn solve(
 
             mut commonQuals = -1;
 
-            shadow let items = out.items;
-            for (mut i = 0; i < items.len; i++)
+            for (mut i = 0; i < out.items.len; i++)
             {
-                let item = items[i];
+                let item = out.items[i];
                 if (item && item.kind == "let" && (item.flags & F_FIELD))
                 {
                     members.push(item);
@@ -1990,20 +2029,46 @@ pub fn solve(
             }
 
             //
-            lookupStruct_mut(structType.canon).items =
-                innerScope || throw("TODO empty structs (items)?");
+            {
+                ref s = lookupStruct_mut(structType.canon);
+                    s.items     = innerScope || fail("TODO empty structs (items)?");
+                    s.target    = out.target || fail("No struct/out.target.");
+            }
 
             let quals0 = structType.quals;
             let quals1 = structType.quals &= commonQuals;
 
-            GET_mut(out.target).type.quals = structType.quals;
+            //
+            let max = members.len;
+            mut min = 0;
+            mut args: Argument[];
 
-            updateCtor(members, into:
-                lookupStruct_mut(structType.canon).target =
-                    out.target);
+            for (mut i = 0; i < members.len; i++)
+            {
+                let member = members[i];
+
+                let arg = Argument(
+                    name:       member.value || fail(),
+                    type:       member.type  || fail(),
+                    default:    member.items[LET_INIT],
+                    flags:      member.flags & F_MUSTNAME);
+
+                if (!arg.default)
+                    min++;
+
+                args.push(arg);
+            }
+
+            if (max && !min) min++;
+
+            ref overload    = GET_mut(out.target);
+            overload.min    = min;
+            overload.max    = max;
+            overload.args   = args;
+            overload.type   = structType;
 
             if (quals0 != quals1 && out.target)
-                invalidateUsers(GET(out.target));
+                invalidateUsers(overload);
         }
 
         // So we can type x = struct { what };
@@ -2019,39 +2084,6 @@ pub fn solve(
         }
 
         return out;
-    }
-
-    fn updateCtor(members: SolvedNode[], into: Target): Target
-    {
-        let max = members.len;
-        mut min = 0;
-        mut args: Argument[];
-
-        for (mut i = 0; i < members.len; i++)
-        {
-            let member = members[i];
-
-            let arg = Argument(
-                name:       member.value || fail(),
-                type:       member.type  || fail(),
-                default:    member.items[LET_INIT],
-                flags:      member.flags & F_MUSTNAME);
-
-            if (!arg.default)
-                min++;
-
-            args.push(arg);
-        }
-
-        if (!max) return Target();
-        if (!min) min++;
-
-        ref overload    = GET_mut(into);
-        overload.min    = min;
-        overload.max    = max;
-        overload.args   = args;
-
-        return into;
     }
 
     fn detectRecusion(ref o: Overload, startIndex: i32)
@@ -2080,69 +2112,6 @@ pub fn solve(
 
         if (visit(o))
             o.flags |= F_RECURSIVE;
-    }
-
-    fn solveStructMembers(
-        ref name: string, flags: i32,
-        members: Node[], ref structType: Type, ref innerScope: ScopeItem[]): SolvedNode[]
-    {
-        mut out: SolvedNode[];
-
-        // Pass 0.
-        for (mut i = 0; i < members.len; i++)
-        {
-            let node = members[i];
-            if (node.kind == "let")
-                out.push(solveField(:node));
-            else
-                fail("solveStructMembers_1: " ~ node.kind);
-        }
-
-        if (!structType)
-        {
-            let sig     = mangleArguments(out);
-            let hash    = tea::hash62(sig, chars: 4);
-            name       ~= "_" ~ hash;
-
-            structType  = initStruct(:name, :flags);
-        }
-
-        // Dereferencing a struct does not require it
-        //  to have any particular qualities.
-        shadow let structType = despeculateStruct(structType);
-
-        // Pass 1.
-        for (mut i = 0; i < out.len; i++)
-        {
-            let node = out[i];
-            if (node.kind == "let")
-                solveField(:node, :structType, :innerScope);
-            else
-                fail("solveStructMembers_2: " ~ node.kind);
-        }
-
-        return out;
-    }
-
-    fn solveField(node: Node): SolvedNode
-    {
-        node.items[LET_INIT] &&
-        node.items[LET_INIT].kind != "definit" &&
-            fail("All structs must be zerofilled by default."
-                ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
-
-        return solveLetLike_dontTouchScope(node);
-    }
-
-    fn solveField(structType: Type, node: SolvedNode, ref innerScope: ScopeItem[])
-    {
-        let id = node.value;
-        let target = Field(:id, :structType, fieldType: node.type);
-
-        innerScope.push(ScopeItem(:id, :target));
-
-        if (node.flags & F_USING)
-            scope_using(target);
     }
 
 

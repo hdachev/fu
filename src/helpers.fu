@@ -157,6 +157,12 @@ pub fn map(a: [$T], fn)
     return res;
 }
 
+pub fn each(a: [$T], fn)
+{
+    for (mut i = 0; i < a.len; i++)
+        fn(a[i]);
+}
+
 pub fn clone(a: $T)
 case ($T -> @copy) a;
 case ($T -> [$U]) a.map(fn clone);
