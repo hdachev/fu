@@ -3180,6 +3180,23 @@ pub fn runTests()
     // Macros & loops.
 
     ZERO(`
+        fn each(arr, fn) {
+            for (mut i = 0; i < arr.len; i++)
+                fn(arr[i]);
+        }
+
+        fn main() {
+            mut sum = 0;
+            :OUTER [1, 2, 3, 4].each(|x| {
+                sum += x;
+                for (mut x = 1; x--; ) // once
+                    if (sum == 6) break :OUTER;
+            });
+            return sum - 6;
+        }
+    `);
+
+    ZERO(`
         fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);

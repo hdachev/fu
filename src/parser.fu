@@ -244,7 +244,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn consume(kind: [byte], value?: [byte]): Token
+    fn consume(kind: [byte], value?: [byte], err?: string): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
@@ -253,7 +253,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             return token;
         }
 
-        return fail("Expected `" ~ (value || kind) ~ "`, got `" ~ token.value ~ "`.");
+        return fail((err || "Expected") ~
+            " `" ~ (value || kind) ~ "`, got `" ~ token.value ~ "`.");
     }
 
     fn tryConsume(kind: [byte], value?: [byte]): Token
@@ -524,7 +525,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             return stmt;
         }
 
-        return fail();
+        return fail("Only loops can be prefixed with a :label "
+                    ~ "currently, this is a `" ~ stmt.kind ~ "`.");
     }
 
     fn parseEmpty(): Node
@@ -1214,7 +1216,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             // Comma juggle.
             if (!first)
             {
-                consume("op", ",");
+                consume("op", ",", "Call expr expected `" ~ endop ~ "` or");
 
                 // Trailing comma -
                 //  array literals, fncalls, etc.
