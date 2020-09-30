@@ -781,9 +781,9 @@ inline s_Module clone_Z5NJ(const s_Module& a)
 }
                                 #endif
 
-                                #ifndef DEFt_map_Tjoi
-                                #define DEFt_map_Tjoi
-inline fu_VEC<s_Module> map_Tjoi(const fu_VEC<s_Module>& a, int)
+                                #ifndef DEFt_map_xG7h
+                                #define DEFt_map_xG7h
+inline fu_VEC<s_Module> map_xG7h(const fu_VEC<s_Module>& a, int)
 {
     fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
@@ -798,7 +798,7 @@ inline fu_VEC<s_Module> map_Tjoi(const fu_VEC<s_Module>& a, int)
                                 #define DEFt_clone_oPzP
 inline fu_VEC<s_Module> clone_oPzP(const fu_VEC<s_Module>& a)
 {
-    return map_Tjoi(a, 0);
+    return map_xG7h(a, 0);
 }
                                 #endif
 
