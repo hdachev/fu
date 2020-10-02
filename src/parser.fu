@@ -435,7 +435,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             if (v == "{")           return parseBlock();
             if (v == ";")           return parseEmpty();
-            if (v == ":")           return parseLabelledStatement(trailing: false);
         }
         else if (token.kind == "id")
         {
@@ -483,7 +482,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                     return parseStructDecl();
 
                 if (peek.value == ":")
-                    return { _idx--; parseLabelledStatement(trailing: true) };
+                    return { _idx--; parseLabelledStatement() };
             }
 
             if (v == "import" && (peek.kind == "id" || peek.kind == "str"))
@@ -517,13 +516,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("import", :value);
     }
 
-    fn parseLabelledStatement(trailing: bool): Node
+    fn parseLabelledStatement(): Node
     {
         let label = consume("id");
-        if (trailing) consume("op", ":");
+        consume("op", ":");
 
-        mut stmt  = parseStatement();
-
+        mut stmt = parseStatement();
         if (stmt.kind == "loop")
         {
             stmt.value && fail();
