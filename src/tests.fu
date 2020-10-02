@@ -3178,7 +3178,7 @@ pub fn runTests()
 
 
     // Macros & loops.
-
+/*
     ZERO(`
         fn each(arr, fn) {
             for (mut i = 0; i < arr.len; i++)
@@ -3219,7 +3219,7 @@ pub fn runTests()
             return sum - 2 - 11;
         }
     `);
-
+*/
 
     // Template structs.
 

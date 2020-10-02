@@ -435,7 +435,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             if (v == "{")           return parseBlock();
             if (v == ";")           return parseEmpty();
-            if (v == ":")           return parseLabelledStatement();
+            if (v == ":")           return parseLabelledStatement(trailing: false);
         }
         else if (token.kind == "id")
         {
@@ -463,11 +463,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "nocopy")      return parseNoCopy();
             }
 
-            if (peek.kind == "op" && peek.value == "{")
-            {
-                if (v == "struct")      return parseStructDecl();
-            }
-
             if (_fnDepth)
             {
                 if (v == "if")          return parseIf();
@@ -480,6 +475,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "do")          return parseDoWhile();
                 if (v == "break")       return parseJump("break");
                 if (v == "continue")    return parseJump("continue");
+            }
+
+            if (peek.kind == "op")
+            {
+                if (peek.value == "{" && v == "struct")
+                    return parseStructDecl();
+
+                if (peek.value == ":")
+                    return { _idx--; parseLabelledStatement(trailing: true) };
             }
 
             if (v == "import" && (peek.kind == "id" || peek.kind == "str"))
@@ -513,9 +517,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("import", :value);
     }
 
-    fn parseLabelledStatement(): Node
+    fn parseLabelledStatement(trailing: bool): Node
     {
         let label = consume("id");
+        if (trailing) consume("op", ":");
+
         mut stmt  = parseStatement();
 
         if (stmt.kind == "loop")
