@@ -475,22 +475,6 @@ static s_Node parseEmpty(int modid_0, int& _loc_0)
     return make(modid_0, _loc_0, "empty"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 }
 
-static s_Node parseLabelledStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const bool trailing)
-{
-    s_Token label = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{});
-    if (trailing)
-        consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu, fu_STR{});
-
-    s_Node stmt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
-    if (stmt.kind == "loop"_fu)
-    {
-        (stmt.value && fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{}));
-        stmt.value = (label.value ? label.value : fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{}));
-        return stmt;
-    };
-    return fail(fname_0, tokens_0, _idx_0, _loc_0, ((("Only loops can be prefixed with a :label "_fu + "currently, this is a `"_fu) + stmt.kind) + "`."_fu));
-}
-
 static s_Node createCall(int modid_0, int& _loc_0, const fu_STR& id, const int flags, const fu_VEC<s_Node>& args)
 {
     return make(modid_0, _loc_0, "call"_fu, args, flags, id);
@@ -721,6 +705,20 @@ static s_Node parseJump(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token
     return jump;
 }
 
+static s_Node parseLabelledStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _numReturns_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+{
+    s_Token label = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{});
+    consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu, fu_STR{});
+    s_Node stmt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    if (stmt.kind == "loop"_fu)
+    {
+        (stmt.value && fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{}));
+        stmt.value = (label.value ? label.value : fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{}));
+        return stmt;
+    };
+    return fail(fname_0, tokens_0, _idx_0, _loc_0, ((("Only loops can be prefixed with a :label "_fu + "currently, this is a `"_fu) + stmt.kind) + "`."_fu));
+}
+
 static fu_STR registerImport(const fu_STR& fname_0, fu_VEC<fu_STR>& _imports_0, fu_STR&& value)
 {
     if (!path_ext(value))
@@ -763,9 +761,6 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
 
         if (v == ";"_fu)
             return parseEmpty(modid_0, _loc_0);
-
-        if (v == ":"_fu)
-            return parseLabelledStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, false);
 
     }
     else if (token.kind == "id"_fu)
@@ -853,7 +848,7 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
                 return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
 
             if (peek.value == ":"_fu)
-                return ((void)_idx_0--, parseLabelledStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, true));
+                return ((void)_idx_0--, parseLabelledStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _numReturns_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
 
         };
         if (((v == "import"_fu) && ((peek.kind == "id"_fu) || (peek.kind == "str"_fu))))

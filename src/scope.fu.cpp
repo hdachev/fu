@@ -569,6 +569,16 @@ inline const int SS_FINALIZED = (1 << 0);
 inline const int SS_DIRTY = (1 << 1);
                                 #endif
 
+                                #ifndef DEF_SS_HAS_BREAK
+                                #define DEF_SS_HAS_BREAK
+inline const int SS_HAS_BREAK = (1 << 2);
+                                #endif
+
+                                #ifndef DEF_SS_HAS_CONTINUE
+                                #define DEF_SS_HAS_CONTINUE
+inline const int SS_HAS_CONTINUE = (1 << 3);
+                                #endif
+
 int MODID(const s_Module& module)
 {
     return int(module.modid);
