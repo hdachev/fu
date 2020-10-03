@@ -32,13 +32,6 @@ pub fn solve(
     mut _root_scope:    ScopeMemo;
     mut _scope_skip:    ScopeSkip;
 
-    struct OpenLoop
-    {
-        label:          string;
-        num_breaks?:    i32;
-        num_conts?:     i32;
-    };
-
     struct CurrentFn
     {
         using out:      SolvedNode;
@@ -51,7 +44,6 @@ pub fn solve(
         ret_count?:     i32;
 
         returns?:       Target[];
-        loops?:         OpenLoop[];
         tries?:         i32;
     };
 
@@ -2254,6 +2246,34 @@ pub fn solve(
 
     // Loops.
 
+    fn LabelID(id: string) "L " ~ id;
+
+    fn Scope_addLabel(id: string): Target
+    {
+        return Scope_add(
+            _scope, "label", id: LabelID(id),
+            type: Type, flags: F_SHADOW);
+    }
+
+    fn Scope_lookupLabel(mut id: string): &mut Overload
+    {
+        id = LabelID(id);
+
+        mut scope_iterator: i32;
+        mut overloadIdx: Target;
+
+        while (overloadIdx =
+            _scope.search(id, scope_iterator,
+                scope_skip: _scope_skip))
+        {
+            ref maybe = GET_mut(overloadIdx);
+            if (maybe.kind == "label")
+                return maybe;
+        }
+
+        return fail("No label `" ~ id ~ "` in scope.");
+    }
+
     fn solveLoop(node: Node): SolvedNode
     {
         ////////////////////////////////
@@ -2261,12 +2281,7 @@ pub fn solve(
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
-        let label       = node.value;
-
-        /////////////////////////////////////////
-        let idx         = _current_fn.loops.len;
-        _current_fn.loops.push(OpenLoop(:label));
-        /////////////////////////////////////////
+        let label       = Scope_addLabel(node.value);
 
         let n_init      = node.items[0];
         let n_pre_cond  = node.items[1];
@@ -2280,14 +2295,8 @@ pub fn solve(
         let body        = n_body      && solveNode(n_body,      t_void);
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
 
-        //////////////////////////////////////////////////
-        let loop        = _current_fn.loops[idx];
-        _current_fn.loops.pop();
-        _current_fn.loops.len == idx || fail("loop leak");
-        //////////////////////////////////////////////////
-
         // Control flow.
-        let type        = !pre_cond && !post_cond && !loop.num_breaks
+        let type        = !pre_cond && !post_cond && !(GET(label).flags & SS_HAS_BREAK)
                             ? t_never
                             : t_void;
 
@@ -2297,33 +2306,12 @@ pub fn solve(
 
     fn solveJump(node: Node): SolvedNode
     {
-        mut idx = _current_fn.loops.len - 1;
-        idx >= 0 || fail("No loops in scope, nothing to break/continue from.");
-
-        // Jumping out of a labelled loop.
-        let label = node.value;
-        if (label)
-        {
-            idx = -1;
-            for (mut i = 0; i < _current_fn.loops.len; i++)
-            {
-                let loop = _current_fn.loops[i];
-                if (loop.label == label)
-                {
-                    idx = i;
-                    break;
-                }
-            }
-
-            idx >= 0 || fail("No loop labelled `" ~ label ~ "` in scope.");
-        }
-
         // Jump kind.
-        ref loop = _current_fn.loops[idx];
+        ref label = Scope_lookupLabel(node.value);
         if (node.kind == "break")
-            loop.num_breaks++;
+            label.flags |= SS_HAS_BREAK;
         else if (node.kind == "continue")
-            loop.num_conts++;
+            label.flags |= SS_HAS_CONTINUE;
         else
             fail("TODO jump kind: `" ~ node.kind ~ "`.");
 

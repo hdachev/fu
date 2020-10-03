@@ -3,6 +3,8 @@ import types;
 
 pub let SS_FINALIZED    = 1 << 0;
 pub let SS_DIRTY        = 1 << 1;
+pub let SS_HAS_BREAK    = 1 << 2;
+pub let SS_HAS_CONTINUE = 1 << 3;
 
 
 // Build service primitives.
