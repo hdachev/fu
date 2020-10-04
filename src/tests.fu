@@ -3180,6 +3180,18 @@ pub fn runTests()
     // Macros & loops.
 
     ZERO(`
+        fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        fn main() {
+            mut x = 0;
+            loop1d(0, 10, |i| { if (x += i) break; });
+            return x - 1;
+        }
+    `);
+
+    ZERO(`
         fn each(arr, fn) {
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
