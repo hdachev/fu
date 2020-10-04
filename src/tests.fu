@@ -3178,7 +3178,7 @@ pub fn runTests()
 
 
     // Macros & loops.
-/*
+
     ZERO(`
         fn each(arr, fn) {
             for (mut i = 0; i < arr.len; i++)
@@ -3187,7 +3187,7 @@ pub fn runTests()
 
         fn main() {
             mut sum = 0;
-            :OUTER [1, 2, 3, 4].each(|x| {
+            OUTER: [1, 2, 3, 4].each(|x| {
                 sum += x;
                 for (mut x = 1; x--; ) // once
                     if (sum == 6) break :OUTER;
@@ -3219,7 +3219,35 @@ pub fn runTests()
             return sum - 2 - 11;
         }
     `);
-*/
+
+    ZERO(`
+        fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        fn loop2d(x0, x1, y0, y1, fn)
+            loop1d(x0, x1, |x|
+                loop1d(y0, y1, |y|
+                    fn (x, y)));
+
+        fn main() {
+            mut sum = 0;
+            loop2d( x0:  0, x1: 10,
+                    y0: 10, y1: 12, |x, y|
+            {
+                if (y < 11) {
+                    sum++;          // twice
+                    continue;       // <- inner loop
+                }
+
+                if (x == 1) break;  // <- outer loop
+                sum += (x + 1) * y; // once: (0+1)*11
+            });
+
+            return sum - 2 - 11;
+        }
+    `);
+
 
     // Template structs.
 
