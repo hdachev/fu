@@ -56,8 +56,8 @@ pub let F_RECURSIVE     = 1 << 25;
 pub let F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
-// ... 30
-pub let F_STATEMENT     = 1 << 31;
+pub let F_STATEMENT     = 1 << 30;
+pub let F_SINGLE_STMT   = 1 << 31;
 
 
 // Operator precedence table.
@@ -761,7 +761,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (body.kind == "call" && body.value == "__native")
             return body;
 
-        return createBlock([ createReturn(body) ]);
+        return createBlock([ createReturn(body, flags: F_SINGLE_STMT) ]);
     }
 
     fn tryPopTypeAnnot(): Node
@@ -1381,12 +1381,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             parseExpressionStatement());
     }
 
-    fn createReturn(node: Node = Node()): Node
+    fn createReturn(node: Node = Node(), flags?!: i32): Node
     {
         if (!node)
             return make("return");
 
-        return make("return", [ node ]);
+        return make("return", [ node ], :flags);
     }
 
     fn parseDefer(): Node

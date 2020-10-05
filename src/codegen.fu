@@ -824,6 +824,10 @@ pub fn cpp_codegen(
                     return "return (void) " ~ src;
             }
 
+            // This kinda does it for return non-expression.
+            if (head.type.is_void && node.flags & F_SINGLE_STMT)
+                return src;
+
             return "return " ~ src;
         }
 
