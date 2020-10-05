@@ -57,7 +57,7 @@ pub let F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
 // ... 30
-// ... 31
+pub let F_STATEMENT     = 1 << 31;
 
 
 // Operator precedence table.
@@ -169,7 +169,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     mut _col0       = 0;
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
+
     mut _numReturns = 0;
+    mut _numJumps   = 0;
 
     mut _dollarAuto = 0;
     mut _dollars    : string[];
@@ -429,6 +431,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let token = tokens[_loc = _idx++] || fail();
         ///////////////////////////////////////////////
 
+        //
         if (token.kind == "op")
         {
             let v = token.value;
@@ -495,7 +498,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         ////////////
 
         // Expression statement, followed by a semi.
-        return parseExpressionStatement();
+        return parseExpressionStatement(autoLabel: true);
     }
 
     fn parseImport(): Node
@@ -518,19 +521,22 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseLabelledStatement(): Node
     {
-        let label = consume("id");
+        let label = consume("id").value;
         consume("op", ":");
 
         mut stmt = parseStatement();
         if (stmt.kind == "loop")
         {
             stmt.value && fail();
-            stmt.value = label.value || fail();
+            stmt.value = label || fail();
             return stmt;
         }
 
-        return fail("Only loops can be prefixed with a :label "
-                    ~ "currently, this is a `" ~ stmt.kind ~ "`.");
+        if (stmt.kind == "call")
+            return createLabel(label, stmt, F_STATEMENT);
+
+        return fail("Only loops & call exprs can be :labelled, "
+                    ~ "this is a `" ~ stmt.kind ~ "`.");
     }
 
     fn parseEmpty(): Node
@@ -538,9 +544,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("empty");
     }
 
-    fn parseExpressionStatement(): Node
+    fn parseExpressionStatement(autoLabel?!: bool): Node
     {
-        mut expr = parseExpression(P_RESET);
+        let numJumps0   = _numJumps;
+        mut expr        = parseExpression(P_RESET);
+        let numJumps1   = _numJumps;
 
         let peek = tokens[_idx];
         if (peek.kind == "op" && peek.value == "}")
@@ -549,6 +557,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             _idx++;
         else
             fail_Lint("Missing semicollon.");
+
+        // Auto-labelling.
+        if (autoLabel && numJumps0 != numJumps1)
+        {
+            if (expr.kind == "call")
+                return createLabel("", expr, F_STATEMENT);
+        }
 
         return expr;
     }
@@ -638,6 +653,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         _fnDepth++;
         let dollars0 = _dollars;
         let numReturns0 = _numReturns;
+
+        defer {
+            _fnDepth--;
+            _dollars = dollars0;
+            _numReturns = numReturns0;
+        }
         ////////////////////////////////
 
         flags |= endv && parseArgsDecl(items, "op", :endv);
@@ -669,12 +690,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         //
         if (_dollars.len > dollars0.len)
             flags |= F_TEMPLATE;
-
-        ////////////////////////////////
-        _fnDepth--;
-        _dollars = dollars0;
-        _numReturns = numReturns0;
-        ////////////////////////////////
 
         return make("fn", items, flags, name);
     }
@@ -1275,9 +1290,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return fail("Can't :auto_name this expression.");
     }
 
-    fn createLabel(id: string, value: Node): Node
+    fn createLabel(id: string, expr: Node, flags?: i32): Node
     {
-        return make("label", [ value ], 0, id);
+        return make("label", [ expr ], :flags, id);
     }
 
     fn parseCallExpression(expr: Node): Node
@@ -1404,6 +1419,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         let label = tryConsume("op", ":")
                  && consume("id");
+
+        _numJumps++;
 
         let jump = createJump(kind, label.value);
         consume("op", ";");

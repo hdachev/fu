@@ -1139,7 +1139,7 @@ pub fn solve(
 
         if (k == "root")        return solveRoot(node);
         if (k == "block")       return solveBlock(node, :type);
-        if (k == "label")       return solveComma(node);
+        if (k == "label")       return solveLabel(node, :type);
 
         if (k == "let")         return solveLet(node);
         if (k == "call")        return solveCall(node);
@@ -1254,14 +1254,6 @@ pub fn solve(
         ////////////////////////////////
 
         return solved(:node, :type, :items);
-    }
-
-    fn solveComma(node: Node): SolvedNode
-    {
-        let items = solveNodes(node.items);
-        let last = items[items.len - 1] || fail();
-
-        return solved(node, last.type || fail(), items);
     }
 
 
@@ -2272,6 +2264,16 @@ pub fn solve(
         }
 
         return fail("No label `" ~ id ~ "` in scope.");
+    }
+
+    fn solveLabel(node: Node, type: Type): SolvedNode
+    {
+        let target = node.flags & F_STATEMENT
+            && Scope_addLabel(node.value);
+
+        //
+        let expr = solveNode(node.items.only, :type);
+        return solved(node, [ expr ], :expr.type, :target);
     }
 
     fn solveLoop(node: Node): SolvedNode
