@@ -3180,6 +3180,22 @@ pub fn runTests()
     // Macros & loops.
 
     ZERO(`
+        fn test(x: i32) {
+            outer: {
+                inner: {
+                    if (x > 1) break: outer;
+                    if (x > 0) break: inner;
+                    return 2;
+                }
+                return 1;
+            }
+            return 0;
+        }
+
+        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
+    `);
+
+    ZERO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
