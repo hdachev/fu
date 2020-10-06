@@ -1229,7 +1229,11 @@ pub fn solve(
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
+        let label = node.value && Scope_addLabel(node.value);
+
         let expr = !!(node.items.if_last.flags & F_NODISCARD);
+        if (expr && label)
+            fail("TODO labelled expression blocks.");
 
         let items = solveNodes(
             node.items,
@@ -1240,7 +1244,8 @@ pub fn solve(
             TEMP_template_scope: scope0,
             deadcode_on_never:   true);
 
-        shadow let type = expr && items.len || items.if_last.type.is_never
+        // Control flow.
+        shadow let type = expr && items.len || items.if_last.type.is_never && !(label && GET(label).flags & SS_HAS_BREAK)
             ? items.last.type
             : t_void;
 

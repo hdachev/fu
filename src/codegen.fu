@@ -417,14 +417,19 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool): string
+    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: string): string
     {
         let indent0 = _indent;
         _indent ~= "    ";
 
         let open  = gnuStmtExpr ? "(__extension__ ({" : "{";
-        let close = gnuStmtExpr ? "}))" : "}";
+        mut close = gnuStmtExpr ? "}))" : "}";
 
+        // Block break label.
+        if (label)
+            close = "L_" ~ label ~ "_b:;" ~ indent0 ~ close;
+
+        //
         mut src = cgStatements(nodes);
         if (!skipCurlies || nodes.len != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
             src = indent0 ~ open ~ src ~ indent0 ~ close;
@@ -442,8 +447,12 @@ pub fn cpp_codegen(
 
     fn cgBlock(block: SolvedNode, mode: i32): string
     {
+        ////////////////////////
+        let label = block.value;
+        ////////////////////////
+
         mut expr = !(mode & M_STMT);
-        if (expr)
+        if (expr && !label)
         {
             fn isExpr(node: SolvedNode)
                 node.kind == "call";
@@ -462,7 +471,7 @@ pub fn cpp_codegen(
                 return cgParens(block);
         }
 
-        return blockWrap(block.items, gnuStmtExpr: !(mode & M_STMT));
+        return blockWrap(block.items, gnuStmtExpr: expr, :label);
     }
 
     fn cgParens(node: SolvedNode): string
@@ -677,10 +686,8 @@ pub fn cpp_codegen(
             ////////////////////////////////////////////
 
             body.kind == "block" || fail("cgFn: body indeed not a block.");
-            // if (body.kind == "block")
-                src ~= cgBlock(body, M_STMT);
-            // else
-            //     src ~= blockWrap([ body ]);
+
+            src ~= cgBlock(body, M_STMT);
         }
 
         // Consider a fwdannot after outputting body,

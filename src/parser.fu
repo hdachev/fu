@@ -525,17 +525,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         consume("op", ":");
 
         mut stmt = parseStatement();
-        if (stmt.kind == "loop")
+        if (stmt.kind == "loop" || stmt.kind == "block")
         {
             stmt.value && fail();
             stmt.value = label || fail();
             return stmt;
         }
 
-        if (stmt.kind == "call")
+        if (stmt.kind == "call" || stmt.kind == "block")
             return createLabel(label, stmt, F_STATEMENT);
 
-        return fail("Only loops & call exprs can be :labelled, "
+        return fail("Only loops, blocks & calls can be :labelled, "
                     ~ "this is a `" ~ stmt.kind ~ "`.");
     }
 
