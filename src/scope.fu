@@ -1,10 +1,13 @@
 import parser;
 import types;
 
-pub let SS_FINALIZED    = 1 << 0;
-pub let SS_DIRTY        = 1 << 1;
-pub let SS_HAS_BREAK    = 1 << 2;
-pub let SS_HAS_CONTINUE = 1 << 3;
+pub let SS_FINALIZED    = 0x1 << 0;
+pub let SS_DIRTY        = 0x1 << 1;
+pub let SS_REC_CHECKED  = 0x1 << 2;
+pub let SS_RECURSIVE    = 0x1 << 3;
+
+pub let SS_HAS_BREAK    = 0x1 << 4;
+pub let SS_HAS_CONTINUE = 0x1 << 5;
 
 
 // Build service primitives.
@@ -139,8 +142,8 @@ pub struct Overload
     //   See CallerNode, that's where we keep track of users.
     used_by?:   i32[]; // <- watch out for closures
 
-    // Solver state.
-    status?:    i32;
+    // Solver state. // maybe we need flags enums already
+    status?:    u32; // <- u32 to differentiate from flags
 
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
     local_of?:  i32;

@@ -480,6 +480,9 @@ pub fn solve(
         {
             invalidateUsers(overload);
         }
+
+        // We dont need this yet.
+        // checkRecursions(overload, solved.target.index);
     }
 
     fn invalidateUsers(overload: Overload): void
@@ -1245,7 +1248,7 @@ pub fn solve(
             deadcode_on_never:   true);
 
         // Control flow.
-        shadow let type = expr && items.len || items.if_last.type.is_never && !(label && GET(label).flags & SS_HAS_BREAK)
+        shadow let type = expr && items.len || items.if_last.type.is_never && !(label && GET(label).status & SS_HAS_BREAK)
             ? items.last.type
             : t_void;
 
@@ -2064,17 +2067,22 @@ pub fn solve(
         if (out.target)
         {
             ref o = GET_mut(out.target);
-            o.solved = out;
+                o.solved = out;
 
-            if (o.used_by && !(o.flags & F_RECURSIVE))
-                detectRecusion(o, out.target.index);
+            checkRecursions(o, out.target.index);
         }
 
         return out;
     }
 
-    fn detectRecusion(ref o: Overload, startIndex: i32)
+    fn checkRecursions(ref o: Overload, startIndex: i32): void
     {
+        if (!o.used_by || o.status & SS_REC_CHECKED)
+            return;
+
+        o.status |= SS_REC_CHECKED;
+
+        //
         mut seen: bitset::BitSet;
 
         fn visit(overload: Overload): bool
@@ -2098,7 +2106,7 @@ pub fn solve(
         }
 
         if (visit(o))
-            o.flags |= F_RECURSIVE;
+            o.status |= SS_RECURSIVE;
     }
 
 
@@ -2304,7 +2312,7 @@ pub fn solve(
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
 
         // Control flow.
-        let type        = !pre_cond && !post_cond && !(GET(label).flags & SS_HAS_BREAK)
+        let type        = !pre_cond && !post_cond && !(GET(label).status & SS_HAS_BREAK)
                             ? t_never
                             : t_void;
 
@@ -2317,9 +2325,9 @@ pub fn solve(
         // Jump kind.
         ref label = Scope_lookupLabel(node.value);
         if (node.kind == "break")
-            label.flags |= SS_HAS_BREAK;
+            label.status |= SS_HAS_BREAK;
         else if (node.kind == "continue")
-            label.flags |= SS_HAS_CONTINUE;
+            label.status |= SS_HAS_CONTINUE;
         else
             fail("TODO jump kind: `" ~ node.kind ~ "`.");
 

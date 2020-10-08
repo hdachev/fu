@@ -243,7 +243,7 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
         }
-        else if (try_GET(s.target).flags & F_RECURSIVE)
+        else if (try_GET(s.target).status & SS_RECURSIVE)
         {
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
