@@ -245,7 +245,8 @@ pub fn solve(
 
         let head = items[0].target.index;
         let tail = items[items.len + FN_ARGS_BACK - 1].target.index;
-        head + (overload.args.len - 1) == tail || fail("simplest thing wont work");
+        let tail_expect = head + (overload.args.len - 1);
+        tail == tail_expect || fail("simplest thing wont work");
 
         mut keep:       Lifetime;
         mut replace:    Lifetime;

@@ -1393,6 +1393,80 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub struct MeshBuilder
+        {
+            verts?:     byte[];
+            indices?:   byte[];
+            vert_bytes: i32;
+            num_verts?: i32;
+        };
+
+        pub fn alloc(
+            using mb: &mut MeshBuilder,
+            new_verts: i32,
+            new_indices: i32)
+        {
+            verts.resize_junk((verts.len + new_verts) * vert_bytes);
+
+            let index_bytes = 4;
+            indices.resize_junk((indices.len + new_indices) * index_bytes);
+        }
+
+        pub fn setup_quads(
+            using mb: &mut MeshBuilder, // <- the 'using' introduced more bindings,
+            num_quads: i32)             // <-  advancing the target index number of this arg,
+                : &mut [byte]           // <-   confusing the callsite lifetime of this view.
+        {
+            let b0 = verts.len;
+            let v0 = num_verts;
+            let i0 = indices.len;
+
+            alloc(num_quads * 4, num_quads * 6);
+
+            mut v1 = v0;
+
+            let indices_i32: &mut [i32] =
+                indices[i0, indices.len]
+                    .view(i32);
+
+            for (mut i = 0; i < indices_i32.len; i += 6)
+            {
+                indices_i32[i    ] = v1;
+                indices_i32[i + 1] = v1 + 1;
+                indices_i32[i + 2] = v1 + 2;
+
+                indices_i32[i + 3] = v1;
+                indices_i32[i + 4] = v1 + 2;
+                indices_i32[i + 5] = v1 + 3;
+
+                v1 += 4;
+            }
+
+            num_verts = v1;
+
+            return verts[b0, verts.len];
+        }
+
+        let QUAD_VBO: f32[] =
+        [
+            -1, -1, 0,      0, 0, 1,    0, 0,
+            +1, -1, 0,      0, 0, 1,    1, 0,
+            +1, +1, 0,      0, 0, 1,    1, 1,
+            -1, +1, 0,      0, 0, 1,    0, 1,
+        ];
+
+        pub fn main()
+        {
+            mut mb = MeshBuilder(
+                vert_bytes: 4 * (3+3+2));
+
+            mb.setup_quads(1).view(f32) .= QUAD_VBO;
+
+            return mb.num_verts.len - 4;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
@@ -3194,7 +3268,7 @@ pub fn runTests()
 
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
     `);
-
+/*
     ZERO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
@@ -3275,7 +3349,7 @@ pub fn runTests()
             return sum - 2 - 11;
         }
     `);
-
+*/
 
     // Template structs.
 
