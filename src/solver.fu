@@ -245,11 +245,11 @@ pub fn solve(
 
         let head = items[0].target.index;
         let tail = items[items.len + FN_ARGS_BACK - 1].target.index;
-        let tail_expect = head + (overload.args.len - 1);
-        tail == tail_expect || fail("simplest thing wont work");
 
         mut keep:       Lifetime;
         mut replace:    Lifetime;
+
+        mut offset = items.len + FN_ARGS_BACK;
 
         for (mut i = 0; i < returned.len; i++)
         {
@@ -263,15 +263,27 @@ pub fn solve(
             }
 
             // Full union here, otherwise we risk messing things up.
-            let offset  = index - head;
-            let argNode = argNodes[offset];
+            while (offset--)
+            {
+                let here = items[offset].target.index;
+                if (here == index)
+                {
+                    let argNode = argNodes[offset];
 
-            // Abort on first temporary.
-            if (!argNode.type.is_ref || argNode.type.is_ref2temp)
-                return Lifetime_temporary();
+                    // Abort on first temporary.
+                    // TODO FIX this is not correct - we cant skip over anything,
+                    //  and temp lifetimes need to be extended.
+                    if (!argNode.type.is_ref || argNode.type.is_ref2temp)
+                        return Lifetime_temporary();
 
-            let argLt   = argNode.type.lifetime || fail("refarg without lifetime");
-            replace     = Lifetime_union(replace, argLt);
+                    // This is fine.
+                    let argLt   = argNode.type.lifetime || fail("refarg without lifetime");
+                    replace     = Lifetime_union(replace, argLt);
+                    break;
+                }
+
+                here > index || fail("nope, going backwards");
+            }
         }
 
         return Lifetime_test(

@@ -1463,7 +1463,7 @@ pub fn runTests()
 
             mb.setup_quads(1).view(f32) .= QUAD_VBO;
 
-            return mb.num_verts.len - 4;
+            return mb.num_verts - 4;
         }
     `);
 
