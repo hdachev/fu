@@ -1410,15 +1410,12 @@ pub fn solve(
         }
 
         // Prep reject.
-        let inItems = n_fn.items;
-        if (!solve && !inItems[inItems.len + FN_RET_BACK])
-            return SolvedNode();
-
         mut out = CurrentFn(
             prep || solved(n_fn, t_void),
             return_idx: ScopeMemo(),
             parent_idx: _current_fn.target.index);
 
+        let inItems = n_fn.items;
         out.items.resize(inItems.len);
 
         if (!prep)
@@ -1518,7 +1515,9 @@ pub fn solve(
             }
             else
             {
-                _current_fn.ret_actual = _current_fn.ret_expect || fail("falsy ret_expect");
+                _current_fn.ret_actual = n_ret
+                    ? _current_fn.ret_expect || fail("falsy ret_expect: " ~ n_fn.value)
+                    : !solve && t_never || fail("about to assume t_never retval in solve: " ~ n_fn.value);
 
                 //////////////////////////////////////////////////////////
                 // Lifetimes.
