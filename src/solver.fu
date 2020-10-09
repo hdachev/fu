@@ -1699,9 +1699,14 @@ pub fn solve(
         mut current_fn0: CurrentFn;
 
         SWAP(_current_fn, current_fn0);
-
         let scope0 = Scope_snap(_scope);
         let scope_skip0 = _scope_skip;
+
+        defer {
+            SWAP(_current_fn, current_fn0);
+            Scope_pop(_scope, scope0);
+            _scope_skip = scope_skip0;
+        }
         ////////////////////////////////
 
         //
@@ -1828,6 +1833,11 @@ pub fn solve(
             // TODO FIX
             let start   = mangle.find(' ') + 1 || fail();
                 mangle  = mangle.slice(0, start) ~ mangleArguments(args);
+
+            //
+            let preexisting = module.out.specs[mangle] || Target();
+            if (preexisting)
+                return preexisting;
         }
         //        /LITFIX
         /////////////////
@@ -1900,13 +1910,6 @@ pub fn solve(
                 mangle  = mangle.slice(0, start) ~ mangleArguments(
                     GET(specialized).args);
         }
-
-        ////////////////////////////////
-        SWAP(_current_fn, current_fn0);
-
-        Scope_pop(_scope, scope0);
-        _scope_skip = scope_skip0;
-        ////////////////////////////////
 
         return specialized;
     }
