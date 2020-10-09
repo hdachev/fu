@@ -586,6 +586,12 @@ pub fn runTests()
         fn main() goto0(1);
     `);
 
+    ZERO(`
+        //! SLOW_resolve
+        fn goto0(x) x && goto0(x / 2);
+        fn main() goto0(1);
+    `);
+
 
     //
 
