@@ -1546,9 +1546,12 @@ pub fn solve(
             mut name = n_fn.value || fail("TODO anonymous fns");
             if (spec && !native)
             {
-                let sig = mangleArguments(out.items[0, out.items.len + FN_BODY_BACK]) || fail();
-                let hash = tea::hash62(sig, chars: 4);
-                name ~= "_" ~ hash;
+                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
+                if (sig)
+                {
+                    let hash = tea::hash62(sig, chars: 4) || fail();
+                    name ~= "_" ~ hash;
+                }
             }
 
             //
@@ -1604,7 +1607,7 @@ pub fn solve(
         ref t = module.out.specs[mangle] ||= Target;
 
         fn name(shadow target)
-            target.modid != -1  ? GET(target).name
+            target.modid != -1  ? `"` ~ GET(target).name ~ `"`
                                 : "SPEC_FAIL";
 
         !t ||
