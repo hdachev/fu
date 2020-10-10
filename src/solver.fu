@@ -1221,8 +1221,8 @@ pub fn solve(
     {
         let k = node.kind;
 
-        if (k == "fn")          return uSolveFn(node, prep);
-        if (k == "struct")      return uSolveStruct(node, prep);
+        if (k == "fn")          return uSolveFn(node, into: prep.target);
+        if (k == "struct")      return uSolveStruct(node, into: prep.target);
         if (k == "typedef")     return prep || fail();
 
         return fail("TODO: " ~ k);
@@ -1386,9 +1386,9 @@ pub fn solve(
         return __solveFn(node, solve: false);
     }
 
-    fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
+    fn uSolveFn(node: Node, into: Target): SolvedNode
     {
-        return __solveFn(node, solve: true, into: prep.target);
+        return __solveFn(node, solve: true, :into);
     }
 
     fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
@@ -1919,9 +1919,9 @@ pub fn solve(
         return __solveStruct(solve: false, :node);
     }
 
-    fn uSolveStruct(node: Node, prep: SolvedNode): SolvedNode
+    fn uSolveStruct(node: Node, into: Target): SolvedNode
     {
-        return __solveStruct(solve: true, :node, :prep);
+        return __solveStruct(solve: true, :node, :into);
     }
 
     fn solveStructExpr(node: Node): SolvedNode
@@ -1929,9 +1929,9 @@ pub fn solve(
         return __solveStruct(solve: true, :node);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, prep?!: SolvedNode): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, into?!: Target): SolvedNode
     {
-        mut out = prep || solved(node, Type());
+        mut out = solved(node, target: into, type: into && GET(into).type);
         ref structType = out.type;
 
         mut name = node.value;
