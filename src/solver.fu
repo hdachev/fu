@@ -1596,6 +1596,11 @@ pub fn solve(
 
     //
 
+    fn is_SPECFAIL(target: Target): bool
+    {
+        return target.modid == -1;
+    }
+
     fn setSpec(mangle: string, target: Target)
     {
         ref t = module.out.specs[mangle] ||= Target;
@@ -1604,10 +1609,9 @@ pub fn solve(
             target.modid != -1  ? `"` ~ GET(target).name ~ `"`
                                 : "SPEC_FAIL";
 
-        !t ||
+        !t || t.is_SPECFAIL ||
         t.modid == target.modid &&
-        t.index == target.index ||
-        t.modid == -1 || fail(
+        t.index == target.index || fail(
             "About to screw up royally, replacing spec: "
                 ~ t.index ~ " with " ~ target.index
                     ~ ", mangle: " ~ mangle ~ ", that's: "
@@ -1632,63 +1636,34 @@ pub fn solve(
         //      if maps values didn"t move around we"d be good.
         mut spec = module.out.specs[mangle];
 
-        let SPEC_FAILED = -1;
-        if (!spec)
+        if (!spec) // <- SPECFAIL is truthy
         {
-            let SPEC_FAIL = Target(modid: SPEC_FAILED, index: 0);
-
-            ////////////////////////////////////
-            let m0 = mangle;
-            setSpec(m0, SPEC_FAIL);
-            ////////////////////////////////////
-
-            spec = doTrySpecialize(:overloadIdx, :args, :mangle) || SPEC_FAIL;
-
-            /////////////////////////////////////////
-            // TODO FIX THIS MESS
-            let spec0 = spec;
-
-            {
-                ref preexisting = module.out.specs[mangle] ||= spec;
-                if (preexisting.modid == SPEC_FAILED)
-                    preexisting = spec;
-                else
-                    spec = preexisting;
-            }
-
-            if (m0 != mangle)
-            {
-                ref preexisting = module.out.specs[m0] ||= spec;
-                if (preexisting.modid == spec0.modid &&
-                    preexisting.index == spec0.index)
-                {
-                    preexisting = spec;
-                }
-                else
-                {
-                    setSpec(m0, spec);
-                }
-            }
-            /////////////////////////////////////////
+            spec = doTrySpecialize(:overloadIdx, :args, :mangle);
 
             // The resolver entry.
-            if (spec.modid != SPEC_FAILED)
+            // TODO MOVE IT IN, this is how we're gonna make everything the same
+            if (!spec.is_SPECFAIL)
                 _open_templates.push(
                     OpenTemplate(
                         :overloadIdx, :spec, :args, :mangle));
         }
 
-        return spec.modid != SPEC_FAILED && spec;
+        return !spec.is_SPECFAIL && spec;
     }
 
 
     // Let's try to run all specs through here for starters.
 
     fn doTrySpecialize(
-        overloadIdx: Target, mut args: SolvedNode[], ref mangle: string, into?: Target)
+        overloadIdx: Target, mut args: SolvedNode[], mut mangle: string, into?: Target)
             : Target
     {
         mut ok = true;
+
+        let mangle00 = mangle;
+        let SPECFAIL = Target(modid: -1, index: 0);
+
+        if (!into) setSpec(mangle, SPECFAIL);
 
         ////////////////////////////////
         mut current_fn0: CurrentFn;
@@ -1829,18 +1804,26 @@ pub fn solve(
             let start   = mangle.find(' ') + 1 || fail();
                 mangle  = mangle.slice(0, start) ~ mangleArguments(args);
 
-            //
-            let preexisting = module.out.specs[mangle] || Target();
-            if (preexisting)
-                return preexisting;
+            if (mangle00 != mangle)
+            {
+                let preexisting = module.out.specs[mangle] || Target();
+                if (preexisting)
+                {
+                    setSpec(mangle00, preexisting);
+                    return preexisting;
+                }
+
+                if (!into) setSpec(mangle, SPECFAIL);
+            }
         }
         //        /LITFIX
         /////////////////
 
         // Match pattern arm here.
-        mut caseIdx = -1;
+        if (!ok)
+            return SPECFAIL;
 
-        if (ok)
+        mut caseIdx = -1;
         {
             // Unpack type params in scope.
             {
@@ -1877,38 +1860,50 @@ pub fn solve(
                 // All branches mismatch?
                 //  Can't return, faking RAII here.
                 if (caseIdx < 0)
-                    ok = false;
+                    return SPECFAIL;
             }
         }
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = ok && !into && __solveFn(
+        let prep = !into && __solveFn(
             template.node, solve: false, spec: true, :caseIdx,
-            :into);
+            :into).target;
 
-        shadow let into = prep.target || into;
+        shadow let into = prep || into;
 
         ///////////////////////////////////////////
         // Re-enable recursion.
-        if (prep.target)
-            setSpec(mangle, prep.target);
-        ///////////////////////////////////////////
-
-        let specialized = ok && __solveFn(
-            template.node, solve: true, spec: true, :caseIdx,
-            :into).target;
-
-        // A final remangle.
-        if (specialized)
+        if (prep)
         {
+            // Remangle.
+            let mangle0 = mangle;
+
             // TODO FIX
             let start   = mangle.find(' ') + 1 || fail();
                 mangle  = mangle.slice(0, start) ~ mangleArguments(
-                    GET(specialized).args);
-        }
+                    GET(prep).args);
 
-        return specialized;
+            mut preexisting: Target;
+            if (mangle0 != mangle)
+            {
+                preexisting = module.out.specs[mangle] || Target();
+                setSpec(mangle0, preexisting || prep);
+            }
+
+            if (mangle00 != mangle)
+                setSpec(mangle00, preexisting || prep);
+
+            if (preexisting)
+                return preexisting;
+
+            setSpec(mangle, prep);
+        }
+        ///////////////////////////////////////////
+
+        return __solveFn(
+            template.node, solve: true, spec: true, :caseIdx,
+            :into).target || fail("__solveFn gave zero target.");
     }
 
 
@@ -3569,10 +3564,8 @@ pub fn solve(
         _here = overload.template.node.token;
         //////////////////
 
-        mut mangle = ot.mangle;
-
         doTrySpecialize(
-            :ot.overloadIdx, :ot.args, :mangle,
+            :ot.overloadIdx, :ot.args, :ot.mangle,
             into: ot.spec);
 
         //////////////
