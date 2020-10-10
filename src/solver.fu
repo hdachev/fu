@@ -1411,19 +1411,16 @@ pub fn solve(
         }
 
         // Prep reject.
+        let return_idx = Scope_snap(_scope);
+        let parent_idx = _current_fn.target.index;
+        let target = into || Scope_create(_scope, local_of: parent_idx);
+
         mut out = CurrentFn(
-            solved(n_fn, t_void),
-            return_idx: ScopeMemo(),
-            parent_idx: _current_fn.target.index);
+            :return_idx, :parent_idx, solved(n_fn,
+                :target, type: addroffn::X_addrofTarget(target)));
 
         let inItems = n_fn.items;
         out.items.resize(inItems.len);
-
-        if (!out.target)
-        {
-            out.target = into || Scope_create(_scope, local_of: out.parent_idx);
-            out.type = addroffn::X_addrofTarget(out.target);
-        }
 
         //
         if (_current_fn)
@@ -1439,18 +1436,15 @@ pub fn solve(
         mut n_body: Node;
 
         {
-            let scope0      = Scope_snap(_scope);
-            out.return_idx  = scope0;
-
             let root_scope0 = _root_scope;
             if (!root_scope0)
-                _root_scope = out.return_idx;
+                _root_scope = return_idx;
 
             SWAP(_current_fn, out);
 
             defer {
                 SWAP(_current_fn, out);
-                Scope_pop(_scope, scope0);
+                Scope_pop(_scope, return_idx);
                 _root_scope = root_scope0;
             }
 
@@ -1562,10 +1556,10 @@ pub fn solve(
             let NO_LOCALS: ScopeMemo;
             let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
 
-            FnDecl_init(out.target, :kind, id: name, :template);
+            FnDecl_init(:target, :kind, id: name, :template);
         }
 
-        FnDecl_update(out.out, out.locals_used, out.ret_actual);
+        FnDecl_update(out.out, :out.locals_used, :out.ret_actual);
 
         if (solve)
             return createFnDef(out.out);
