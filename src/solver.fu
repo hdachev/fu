@@ -1388,10 +1388,10 @@ pub fn solve(
 
     fn uSolveFn(node: Node, prep: SolvedNode): SolvedNode
     {
-        return __solveFn(node, :prep, solve: true);
+        return __solveFn(node, solve: true, into: prep.target);
     }
 
-    fn __solveFn(n_fn: Node, solve!: bool, prep?!: SolvedNode, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
+    fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
     {
         // Template early exit.
         if (spec)
@@ -1401,24 +1401,25 @@ pub fn solve(
         }
         else if (n_fn.flags & F_TEMPLATE)
         {
-            if (solve)
-                return prep || fail();
+            let tDecl = solve
+                ? into || fail()
+                : TemplateDecl(n_fn);
 
-            let tDecl = TemplateDecl(n_fn);
             return createEmpty(
+                target: tDecl,
                 type: addroffn::X_addrofTarget(tDecl));
         }
 
         // Prep reject.
         mut out = CurrentFn(
-            prep || solved(n_fn, t_void),
+            solved(n_fn, t_void),
             return_idx: ScopeMemo(),
             parent_idx: _current_fn.target.index);
 
         let inItems = n_fn.items;
         out.items.resize(inItems.len);
 
-        if (!prep)
+        if (!out.target)
         {
             out.target = into || Scope_create(_scope, local_of: out.parent_idx);
             out.type = addroffn::X_addrofTarget(out.target);
@@ -1539,7 +1540,7 @@ pub fn solve(
         }
         //////////////////////////
 
-        if (!prep)
+        if (!into)
         {
             // TODO FIX currently we only hash template names.
             mut name = n_fn.value || fail("TODO anonymous fns");
@@ -1892,6 +1893,8 @@ pub fn solve(
             template.node, solve: false, spec: true, :caseIdx,
             :into);
 
+        shadow let into = prep.target || into;
+
         ///////////////////////////////////////////
         // Re-enable recursion.
         if (prep.target)
@@ -1899,7 +1902,7 @@ pub fn solve(
         ///////////////////////////////////////////
 
         let specialized = ok && __solveFn(
-            template.node, :prep, solve: true, spec: true, :caseIdx,
+            template.node, solve: true, spec: true, :caseIdx,
             :into).target;
 
         // A final remangle.
