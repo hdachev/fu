@@ -1209,7 +1209,6 @@ pub fn solve(
     fn unorderedPrep(node: Node): SolvedNode
     {
         let k = node.kind;
-
         if (k == "fn")          return uPrepFn(node);
         if (k == "struct")      return uPrepStruct(node);
         if (k == "typedef")     return solveTypedef(node);
@@ -1217,13 +1216,13 @@ pub fn solve(
         return fail("TODO: " ~ k);
     }
 
-    fn unorderedSolve(node: Node, prep: SolvedNode)
+    fn unorderedSolve(node: Node, into: Target)
     {
-        let k = node.kind;
+        into || fail("unorderedSolve without prep");
 
-        if (k == "fn")          return uSolveFn(node, into: prep.target);
-        if (k == "struct")      return uSolveStruct(node, into: prep.target);
-        if (k == "typedef")     return prep || fail();
+        let k = node.kind;
+        if (k == "fn")          return uSolveFn(node, :into);
+        if (k == "struct")      return uSolveStruct(node, :into);
 
         return fail("TODO: " ~ k);
     }
@@ -3422,7 +3421,8 @@ pub fn solve(
             {
                 shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
                 _here = node.token || _here;
-                result[i] = unorderedSolve(node, result[i]);
+                let into = result[i].target;
+                result[i] = into && unorderedSolve(node, result[i].target);
             }
 
             // Exhaust the resolve queue here.
@@ -3525,7 +3525,7 @@ pub fn solve(
 
         unorderedSolve(
             overload.template.node,
-            overload.solved);
+            overload.solved.target);
 
         //////////////
         _here = here0;
