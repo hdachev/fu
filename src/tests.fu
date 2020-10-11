@@ -592,6 +592,17 @@ pub fn runTests()
         fn main() goto0(1);
     `);
 
+    ZERO(`
+        fn impl(implicit ref _impl: i32) _impl;
+        fn arg_or_impl(ref arg: i32) arg || impl;
+        fn main() {
+            let implicit mut _impl: i32;
+            mut arg: i32;
+            ref ref = arg_or_impl(arg);
+            return arg - ref;
+        }
+    `);
+
 
     //
 
