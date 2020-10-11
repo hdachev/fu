@@ -1601,7 +1601,7 @@ pub fn solve(
         return target.modid == -1;
     }
 
-    fn setSpec(mangle: string, target: Target)
+    fn setSpec(mangle: string, target: Target, nx?: bool)
     {
         ref t = module.out.specs[mangle] ||= Target;
 
@@ -1609,9 +1609,7 @@ pub fn solve(
             target.modid != -1  ? `"` ~ GET(target).name ~ `"`
                                 : "SPEC_FAIL";
 
-        !t || t.is_SPECFAIL ||
-        t.modid == target.modid &&
-        t.index == target.index || fail(
+        !t && nx || t.is_SPECFAIL && !nx || fail(
             "About to screw up royally, replacing spec: "
                 ~ t.index ~ " with " ~ target.index
                     ~ ", mangle: " ~ mangle ~ ", that's: "
@@ -1626,27 +1624,8 @@ pub fn solve(
             : Target
     {
         // TODO memoize the whole mangle.
-        mut mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " ";
-            mangle ~= args_mangled;
-
-        // TODO FIX THIS MESS -
-        //  A. Not recursion capable: use the general prep-vs-solve approach here too.
-        //  B. The multiple map taps here are because stuff
-        //      moves around while doTrySpecialize does its work -
-        //      if maps values didn"t move around we"d be good.
-        mut spec = module.out.specs[mangle];
-
-        if (!spec) // <- SPECFAIL is truthy
-        {
-            spec = doTrySpecialize(:overloadIdx, :args, :mangle);
-
-            // The resolver entry.
-            // TODO MOVE IT IN, this is how we're gonna make everything the same
-            if (!spec.is_SPECFAIL)
-                _open_templates.push(
-                    OpenTemplate(
-                        :overloadIdx, :spec, :args, :mangle));
-        }
+        let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
+        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle);
 
         return !spec.is_SPECFAIL && spec;
     }
@@ -1660,10 +1639,11 @@ pub fn solve(
     {
         mut ok = true;
 
+        let args00 = args;
         let mangle00 = mangle;
         let SPECFAIL = Target(modid: -1, index: 0);
 
-        if (!into) setSpec(mangle, SPECFAIL);
+        if (!into) setSpec(mangle, SPECFAIL, nx: true);
 
         ////////////////////////////////
         mut current_fn0: CurrentFn;
@@ -1813,7 +1793,7 @@ pub fn solve(
                     return preexisting;
                 }
 
-                if (!into) setSpec(mangle, SPECFAIL);
+                if (!into) setSpec(mangle, SPECFAIL, nx: true);
             }
         }
         //        /LITFIX
@@ -1866,13 +1846,9 @@ pub fn solve(
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = !into && __solveFn(
-            template.node, solve: false, spec: true, :caseIdx,
-            :into).target;
-
+        let prep = !into && __solveFn(template.node, solve: false, spec: true, :caseIdx).target;
         shadow let into = prep || into;
 
-        ///////////////////////////////////////////
         // Re-enable recursion.
         if (prep)
         {
@@ -1891,19 +1867,27 @@ pub fn solve(
                 setSpec(mangle0, preexisting || prep);
             }
 
-            if (mangle00 != mangle)
+            let nx = mangle00 != mangle;
+            if (nx && mangle00 != mangle0)
                 setSpec(mangle00, preexisting || prep);
 
             if (preexisting)
                 return preexisting;
 
-            setSpec(mangle, prep);
+            setSpec(mangle, prep, :nx);
         }
-        ///////////////////////////////////////////
 
-        return __solveFn(
+        //
+        __solveFn(
             template.node, solve: true, spec: true, :caseIdx,
-            :into).target || fail("__solveFn gave zero target.");
+                :into);
+
+        _open_templates.push(
+            OpenTemplate(:overloadIdx, spec: into,
+                args: args00,
+                mangle: mangle00));
+
+        return into;
     }
 
 
