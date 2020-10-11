@@ -72,6 +72,7 @@ struct fu_VEC
 
 #ifndef NDEBUG
         char  buf[VEC_SIZE];
+        i32   i32buf[VEC_SIZE / 4];
         const All*      all;
         const AllChars* all_chars;
     };
