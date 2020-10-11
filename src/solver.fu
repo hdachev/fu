@@ -858,6 +858,38 @@ pub fn solve(
                         continue :TEST_AGAIN;
                     }
 
+                    fn disambig()
+                    {
+                        if (matchIdx)
+                        {
+                            let other = GET(matchIdx);
+
+                            fn GETfn(idx: i32) GET(Target(modid: module.modid, index: idx));
+
+                            fn fnName(idx: i32) idx
+                                ? "`" ~ GETfn(idx).name ~ "`"
+                                : "global scope";
+
+                            mut here  = _current_fn.target.index;
+                            mut there = other.local_of;
+
+                            if (SELF_TEST)
+                            {
+                                if (here > there)
+                                {
+                                    while (here > there) here  = GETfn(here).local_of;
+                                    while (there > here) there = GETfn(there).local_of;
+                                }
+
+                                here == there || fail(
+                                    "BUG! Leaking `" ~ id ~ "` between functions: "
+                                        ~ here.fnName ~ " and " ~ there.fnName);
+                            }
+
+                            fail("Ambiguous callsite, matches multiple items in scope: `" ~ id ~ "` from " ~ here.fnName ~ " and " ~ there.fnName ~ ".");
+                        }
+                    }
+
                     if (args)
                     {
                         // Type check args.
@@ -934,12 +966,7 @@ pub fn solve(
                         }
 
                         // Forbid ambiguity.
-                        if (matchIdx)
-                        {
-                            let debug = GET(matchIdx);
-                            if (debug) {}
-                            fail("Ambiguous callsite, matches multiple functions in scope: `" ~ id ~ "`.");
-                        }
+                        disambig();
 
                         // Do reorder.
                         if (reorder)
@@ -961,11 +988,9 @@ pub fn solve(
                     }
 
                     // Forbid ambiguity.
-                    else if (matchIdx)
+                    else
                     {
-                        let debug = GET(matchIdx);
-                        if (debug) {}
-                        fail("Ambiguous callsite, matches multiple items in scope: `" ~ id ~ "`.");
+                        disambig();
                     }
 
                     // Done!
