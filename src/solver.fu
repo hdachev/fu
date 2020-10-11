@@ -3492,7 +3492,7 @@ pub fn solve(
 
                     if (TEMP_open_templates)
                     {
-                        for (shadow mut i = 0; i < _open_templates.len; i++)
+                        for (shadow mut i = open_templates0; i < _open_templates.len; i++)
                         {
                             let r = _open_templates[i];
                             if (!resolveIfNeeded_templateSpec(r))
