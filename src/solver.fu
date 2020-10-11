@@ -11,6 +11,8 @@ let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false;
 let USE_ref_to_mutref       = false;
 
+let SELF_TEST               = true;
+
 
 
 ///////////////////////////////////////
@@ -55,12 +57,17 @@ pub fn solve(
     mut SLOW_resolve:   i32;
     mut resolve_done:   i32;
 
+
+    // TODO keep open templates sorted by depth-of-locals.
+    //  currently unordered, so we always need to cycle through the whole bunch.
+    //   Or find whatever other way to limit the looping over them.
+    //
     struct OpenTemplate
     {
-        overloadIdx:    Target;
+        overloadIdx?:   Target;
         spec:           Target;
-        args:           SolvedNode[];
-        mangle:         string;
+        args?:          SolvedNode[];
+        mangle?:        string;
     };
 
     mut _open_templates: OpenTemplate[];
@@ -381,7 +388,16 @@ pub fn solve(
             flags: F_PUB);
     }
 
-    fn TemplateDecl(node: Node)
+    fn createTemplate(node: Node): Template
+    {
+        return Template(
+            node,
+            imports: !_current_fn && _scope.imports,
+            locals:   _current_fn && Scope_snap(_scope),
+            parent_idx: _current_fn.target.index);
+    }
+
+    fn TemplateDecl(node: Node): Target
     {
         let id      = node.value;
         let items   = node.items;
@@ -403,11 +419,7 @@ pub fn solve(
         }
 
         //
-        let template = Template(
-            node,
-            imports: !_current_fn && _scope.imports,
-            locals:   _current_fn && Scope_snap(_scope),
-            parent_idx: _current_fn.target.index);
+        let template = createTemplate(node);
 
         return Scope_add(
             _scope,
@@ -1267,6 +1279,8 @@ pub fn solve(
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
         defer Scope_pop(_scope, scope0);
+
+        let open_templates0 = _open_templates.len;
         ////////////////////////////////
 
         let label = node.value && Scope_addLabel(node.value);
@@ -1290,11 +1304,15 @@ pub fn solve(
             : t_void;
 
         ////////////////////////////////
-        for (mut i = 0; i < _open_templates.len; i++)
+        if (SELF_TEST)
         {
-            let o = GET(_open_templates[i].overloadIdx);
-            if (o.template.locals > scope0)
-                fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
+            for (mut i = open_templates0; i < _open_templates.len; i++)
+            {
+                let ot = _open_templates[i];
+                let o = GET(ot.overloadIdx || ot.spec);
+                if (o.template.locals > scope0)
+                    fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
+            }
         }
         ////////////////////////////////
 
@@ -1574,16 +1592,16 @@ pub fn solve(
 
             //
             let kind = native ? "__native" : "fn";
-
-            // TODO this no longer seems to make sense
-            let NO_IMPORTS: i32[];
-            let NO_LOCALS: ScopeMemo;
-            let template = Template(node: native ? n_body : n_fn, imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
+            let template = createTemplate(node: native ? n_body : n_fn);
 
             FnDecl_init(:target, :kind, id: name, :template);
         }
 
         FnDecl_update(out.out, :out.locals_used, :out.ret_actual);
+
+        // This is where we open up
+        if (!spec && solve)
+            _open_templates.push(OpenTemplate(spec: target));
 
         if (solve)
             return createFnDef(out.out);
@@ -1947,10 +1965,7 @@ pub fn solve(
             if (out.target)
                 return;
 
-            let NO_IMPORTS: i32[];
-            let NO_LOCALS: ScopeMemo;
-            let template = Template(:node,
-                imports: NO_IMPORTS, locals: NO_LOCALS, parent_idx: 0);
+            let template = createTemplate(:node);
 
             out.target = Scope_Typedef(_scope, id: origId, :name,
                 structType, node.flags, :template);
@@ -3381,6 +3396,8 @@ pub fn solve(
 
         result.resize(nodes.len);
 
+        let open_templates0 = _open_templates.len;
+
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
@@ -3466,7 +3483,7 @@ pub fn solve(
                     for (shadow mut i = i0; i < i1; i++)
                     {
                         let r = result[i];
-                        if (r.kind != "fndef" && r.kind != "struct" || !resolveIfNeeded_nonTemplateFn(r.target))
+                        if (r.kind != "struct" || !resolveIfNeeded_nonTemplateFn(r.target))
                             continue;
 
                         some = SLOW_resolve != resolve0
@@ -3501,29 +3518,29 @@ pub fn solve(
 
             // Also freeze templates.
             if (i != nodes.len - 1 && TEMP_open_templates)
-                freezeTemplates(TEMP_template_scope);
+                freezeTemplates(TEMP_template_scope, :open_templates0);
         }
 
         // Also freeze templates.
         if (TEMP_open_templates)
-            freezeTemplates(TEMP_template_scope);
+            freezeTemplates(TEMP_template_scope, :open_templates0);
 
         return result;
     }
 
-    fn freezeTemplates(scope0: ScopeMemo)
+    fn freezeTemplates(scope0: ScopeMemo, open_templates0!: i32)
     {
-        for (shadow mut i = _open_templates.len; i --> 0; )
+        for (mut i = _open_templates.len; i --> open_templates0; )
         {
-            let r = _open_templates[i];
+            let ot = _open_templates[i];
             if (scope0)
             {
-                let p = GET(r.overloadIdx);
+                let p = GET(ot.overloadIdx || ot.spec);
                 if !(p.template.locals > scope0)
                     continue;
             }
 
-            ref o = GET_mut(r.spec);
+            ref o = GET_mut(ot.spec);
             {
                 o.status & SS_DIRTY && fail(
                     "freezeTemplates: attempting to freeze a dirty template.");
@@ -3573,9 +3590,17 @@ pub fn solve(
         _here = overload.template.node.token;
         //////////////////
 
-        doTrySpecialize(
-            :ot.overloadIdx, :ot.args, :ot.mangle,
-            into: ot.spec);
+        if (ot.overloadIdx)
+            doTrySpecialize(
+                // TODO figure out how to collapse this in the bottom branch
+                //  we shouldn't need to resolve the signature.
+                //   so this is both risky and wasteful.
+                :ot.overloadIdx, :ot.args, :ot.mangle,
+                into: ot.spec);
+        else
+            unorderedSolve(
+                overload.template.node,
+                into: overload.solved.target);
 
         //////////////
         _here = here0;
