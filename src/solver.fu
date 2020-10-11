@@ -314,7 +314,7 @@ pub fn solve(
 
     //
 
-    fn Binding(id: string, mut type: Type, mut flags!: i32, kind = "var")
+    fn Binding(id: string, mut type: Type, mut flags!: i32, kind: string)
     {
         mut name = id;
 
@@ -3032,7 +3032,7 @@ pub fn solve(
         /////////////////////////////////////////////////////
         // TODO obtain or persist this in the original scope.
         let scope0      = Scope_snap(_scope);
-        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG);
+        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG, kind: "arg");
         Scope_pop(_scope, scope0);
         /////////////////////////////////////////////////////
 
