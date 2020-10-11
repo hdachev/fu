@@ -1480,6 +1480,33 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn target(implicit ref _target: i32) _target;
+
+        // this suddenly reported that it doesn't see __solveStruct
+        fn GET_mut(ref x: i32) x || target;
+
+        // while i was trying to reproduce an ambig "o" fail here
+        fn __solveStruct(mut arg: i32): i32 {
+            if (arg) {
+                ref o = GET_mut(arg);
+                    o++;
+                checkRecursions(o, o);
+            }
+            return arg;
+        }
+
+        fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }
+
+        //! SLOW_resolve
+        fn main()
+        {
+            let implicit mut _target = 0;
+
+            return __solveStruct(1) - 4;
+        }
+    `);
+
+    ZERO(`
         //! SLOW_resolve
         fn main()
         {

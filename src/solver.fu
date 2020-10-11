@@ -2449,7 +2449,7 @@ pub fn solve(
         if (node.flags & F_REF)
         {
             init.type.is_mutref || !init && node.flags & F_ARG || fail(
-                "`ref` variables must be initialized to a mutable reference.");
+                "`ref` variables must be initialized to a mutable reference: `" ~ node.value ~ "`.");
             killref && fail(
                 "`ref` varibles cannot bind to temporaries.");
         }
