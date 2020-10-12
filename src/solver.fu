@@ -179,40 +179,44 @@ pub fn solve(
 
     fn Lifetime_test(lifetime: Lifetime, current_fn: Target): Lifetime
     {
-        mut _last = 0x80000000.i32;
-
-        let debug_2 = current_fn && GET(current_fn);
-        if (debug_2) {}
-
-        for (mut i = 0; i < lifetime.uni0n.len; i++)
+        if (SELF_TEST)
         {
-            let packed = lifetime.uni0n[i];
+            mut _last = 0x80000000.i32;
+
+            let debug_2 = current_fn && GET(current_fn);
+            if (debug_2) {}
+
+            for (mut i = 0; i < lifetime.uni0n.len; i++)
             {
-                packed > _last || fail("Lifetime_test: not a sorted set");
-                _last = packed;
-            }
-
-            if (packed >= 0)
-            {
-                fn getfn(index: i32)
-                    GET(Target(:module.modid, :index));
-
-                i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
-
-                let local = packed && getfn(packed);
-                let local_of = local.local_of; // zero for globals
-                if (local_of)
+                let packed = lifetime.uni0n[i];
                 {
-                    mut frame = current_fn.index;
-                    while (local_of != frame)
-                    {
-                        local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere: `"
-                            ~ getfn(local_of).name ~ "` does not contain "
-                            ~ (frame    ? "`" ~ getfn(local_of).name ~ "`."
-                                        : "global scope."));
+                    packed > _last || fail("Lifetime_test: not a sorted set");
+                    _last = packed;
+                }
 
-                        frame || fail("Lifetime_test: climbed up to root");
-                        frame = getfn(frame).local_of;
+                if (packed >= 0)
+                {
+                    fn fnd(index: i32)
+                        GET(Target(:module.modid, :index));
+
+                    i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
+
+                    let local = packed && fnd(packed);
+                    let local_of = local.local_of; // zero for globals
+                    if (local_of)
+                    {
+                        mut frame = current_fn.index;
+                        while (local_of != frame)
+                        {
+                            local_of <= frame || fail("Lifetime_test: `" ~ local.name ~ "` is not a local: `"
+                                ~ fnd(local_of).name ~ "` does not contain "
+                                ~ (frame    ? "`" ~ fnd(frame).name ~ "`"
+                                            : "global scope")
+                                ~ (current_fn.index != frame ? ", testing from `" ~ fnd(current_fn.index).name ~ "`." : "."));
+
+                            frame || fail("Lifetime_test: climbed up to root");
+                            frame = fnd(frame).local_of;
+                        }
                     }
                 }
             }
