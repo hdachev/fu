@@ -400,8 +400,8 @@ pub fn solve(
     {
         return Template(
             node,
-            imports: !_current_fn && _scope.imports,
-            locals:   _current_fn && Scope_snap(_scope));
+            imports:   !_current_fn && _scope.imports,
+            scope_memo: _current_fn && Scope_snap(_scope));
     }
 
     fn TemplateDecl(node: Node, local_of: i32): Target
@@ -1317,7 +1317,7 @@ pub fn solve(
             {
                 let ot = _open_templates[i];
                 let o = GET(ot.overloadIdx || ot.spec);
-                if (o.template.locals > scope0)
+                if (o.template.scope_memo > scope0)
                     fail("Exiting the scope of an open template: `" ~ o.name ~ "`.");
             }
         }
@@ -1749,7 +1749,7 @@ pub fn solve(
 
         //
         _scope_skip = _root_scope && ScopeSkip(
-            start: template.locals || _root_scope,
+            start: template.scope_memo || _root_scope,
               end: scope0);
 
         _scope_skip.end.items_len >= _scope_skip.start.items_len || fail(
@@ -3572,7 +3572,7 @@ pub fn solve(
             if (scope0)
             {
                 let p = GET(ot.overloadIdx || ot.spec);
-                if !(p.template.locals > scope0)
+                if !(p.template.scope_memo > scope0)
                     continue;
             }
 

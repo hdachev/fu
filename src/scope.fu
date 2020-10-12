@@ -98,7 +98,7 @@ pub struct Template
 {
     node:       Node;
     imports:    i32[];
-    locals:     ScopeMemo;
+    scope_memo: ScopeMemo;
 };
 
 pub struct Partial
