@@ -194,21 +194,25 @@ pub fn solve(
 
             if (packed >= 0)
             {
+                fn getfn(index: i32)
+                    GET(Target(:module.modid, :index));
+
                 i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
 
-                let local = packed && GET(Target(:module.modid, index: packed));
+                let local = packed && getfn(packed);
                 let local_of = local.local_of; // zero for globals
                 if (local_of)
                 {
-                    let debug = local_of && GET(Target(:module.modid, index: local_of));
-                    if (debug) {}
-
                     mut frame = current_fn.index;
                     while (local_of != frame)
                     {
-                        local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere");
+                        local_of <= frame || fail("Lifetime_test: local_of chain took us elsewhere: `"
+                            ~ getfn(local_of).name ~ "` does not contain "
+                            ~ (frame    ? "`" ~ getfn(local_of).name ~ "`."
+                                        : "global scope."));
+
                         frame || fail("Lifetime_test: climbed up to root");
-                        frame = GET(Target(modid: module.modid, index: frame)).local_of;
+                        frame = getfn(frame).local_of;
                     }
                 }
             }
