@@ -99,7 +99,6 @@ pub struct Template
     node:       Node;
     imports:    i32[];
     locals:     ScopeMemo;
-    parent_idx: i32; // <- doesnt this do the same thing as Overload.local_of?
 };
 
 pub struct Partial

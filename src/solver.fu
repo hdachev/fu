@@ -401,11 +401,10 @@ pub fn solve(
         return Template(
             node,
             imports: !_current_fn && _scope.imports,
-            locals:   _current_fn && Scope_snap(_scope),
-            parent_idx: _current_fn.target.index);
+            locals:   _current_fn && Scope_snap(_scope));
     }
 
-    fn TemplateDecl(node: Node): Target
+    fn TemplateDecl(node: Node, local_of: i32): Target
     {
         let id      = node.value;
         let items   = node.items;
@@ -433,7 +432,7 @@ pub fn solve(
             _scope,
             kind: "template", :id, Type,
             :min, :max, :args, :template,
-            :node.flags, local_of: template.parent_idx);
+            :node.flags, :local_of);
     }
 
     fn FnDecl_init(target: Target, kind: string, id: string, template: Template)
@@ -1443,6 +1442,8 @@ pub fn solve(
 
     fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
     {
+        let parent_idx = _current_fn.target.index;
+
         // Template early exit.
         if (spec)
         {
@@ -1453,7 +1454,7 @@ pub fn solve(
         {
             let tDecl = solve
                 ? into || fail()
-                : TemplateDecl(n_fn);
+                : TemplateDecl(n_fn, local_of: parent_idx);
 
             return createEmpty(
                 target: tDecl,
@@ -1462,7 +1463,6 @@ pub fn solve(
 
         // Prep reject.
         let return_idx = Scope_snap(_scope);
-        let parent_idx = _current_fn.target.index;
         let target = into || Scope_create(_scope, local_of: parent_idx);
 
         mut out = CurrentFn(
@@ -1713,10 +1713,11 @@ pub fn solve(
         mut typeParams: TypeParams;
 
         //
-        let template = GET(overloadIdx).template;
+        let overload = GET(overloadIdx);
+        let template = overload.template;
 
         {
-            mut parent_idx = template.parent_idx;
+            mut parent_idx = overload.local_of;
 
             // If we're taking a closure as an argument,
             //  we're becoming a closure ourselves of whatever that closure is closing over -
