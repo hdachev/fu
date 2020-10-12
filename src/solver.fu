@@ -433,7 +433,7 @@ pub fn solve(
             _scope,
             kind: "template", :id, Type,
             :min, :max, :args, :template,
-            :node.flags);
+            :node.flags, local_of: template.parent_idx);
     }
 
     fn FnDecl_init(target: Target, kind: string, id: string, template: Template)
@@ -1715,11 +1715,38 @@ pub fn solve(
         //
         let template = GET(overloadIdx).template;
 
-        if (template.parent_idx)
-            _current_fn.target = Target(
-                modid: module.modid,
-                index: template.parent_idx);
+        {
+            mut parent_idx = template.parent_idx;
 
+            // If we're taking a closure as an argument,
+            //  we're becoming a closure ourselves of whatever that closure is closing over -
+            //   so that e.g. lifetime reasoning can have an easier time etc.
+            for (mut i = 0; i < args.len; i++)
+            {
+                let arg_t = args[i].type;
+                if (addroffn::type_isAddrOfFn(arg_t))
+                {
+                    let targets = addroffn::unpackAddrOfFn(arg_t.canon);
+                    for (shadow mut i = 0; i < targets.len; i++)
+                    {
+                        let target = targets[i];
+                        if (target.modid == module.modid)
+                        {
+                            let local_of = GET(target).local_of;
+                            if (parent_idx < local_of)
+                                parent_idx = local_of;
+                        }
+                    }
+                }
+            }
+
+            //
+            if (parent_idx)
+                _current_fn.target = Target(
+                    :module.modid, index: parent_idx);
+        }
+
+        //
         _scope_skip = _root_scope && ScopeSkip(
             start: template.locals || _root_scope,
               end: scope0);
