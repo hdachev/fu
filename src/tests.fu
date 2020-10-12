@@ -1568,6 +1568,32 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct ValueType { modid: i32; };
+        struct Type { using vtype: ValueType; };
+        struct Target { modid: i32; index: i32; };
+        struct Overload { name: string; };
+
+        fn GET(target: Target): Overload =
+            Overload(name: "N" ~ target.index);
+
+        fn main() {
+            mut specs: Map(string, Target);
+
+            fn setSpec(mangle: string) {
+                ref t = specs[mangle] ||= Target;
+
+                fn name(shadow target)
+                    target.modid != -1  ? GET(target).name
+                                        : "SPEC_FAIL";
+
+                return t.name;
+            }
+
+            return setSpec("hey").len - 2;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
