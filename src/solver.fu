@@ -1250,14 +1250,21 @@ pub fn solve(
         return 0;
     }
 
-    fn unorderedPrep(node: Node): SolvedNode
+    fn unorderedPrep_A(node: Node): SolvedNode
     {
         let k = node.kind;
-        if (k == "fn")          return uPrepFn(node);
+        if (k == "fn")          return uPrepFn_A(node);
         if (k == "struct")      return uPrepStruct(node);
         if (k == "typedef")     return solveTypedef(node);
 
         return fail("TODO: " ~ k);
+    }
+
+    fn unorderedPrep_B(node: Node, into: Target)
+    {
+        let k = node.kind;
+        if (k == "fn")
+            uPrepFn_B(into);
     }
 
     fn unorderedSolve(node: Node, into: Target)
@@ -1430,9 +1437,19 @@ pub fn solve(
 
     //
 
-    fn uPrepFn(node: Node): SolvedNode
+    fn uPrepFn_A(node: Node): SolvedNode
     {
         return __solveFn(node, solve: false);
+    }
+
+    fn uPrepFn_B(target: Target)
+    {
+        if (_current_fn)
+        {
+            ref template = GET_mut(target).template;
+            if (template)
+                template.scope_memo = Scope_snap(_scope);
+        }
     }
 
     fn uSolveFn(node: Node, into: Target): SolvedNode
@@ -1655,7 +1672,7 @@ pub fn solve(
     {
         ref t = module.out.specs[mangle] ||= Target;
 
-        fn name(shadow target)
+        fn id(shadow target)
             target.modid != -1  ? `"` ~ GET(target).name ~ `"`
                                 : "SPEC_FAIL";
 
@@ -1663,7 +1680,7 @@ pub fn solve(
             "About to screw up royally, replacing spec: "
                 ~ t.index ~ " with " ~ target.index
                     ~ ", mangle: " ~ mangle ~ ", that's: "
-                    ~ t.name ~ " becoming " ~ target.name);
+                    ~ t.id ~ " becoming " ~ target.id);
 
         t = target;
     }
@@ -3479,7 +3496,7 @@ pub fn solve(
             //  without doing type checking when possible.
             for (shadow mut i = i0; i < nodes.len; i++)
             {
-                shadow let node = nodes[i] || fail("solveNodes, prep: falsy node");
+                shadow let node = nodes[i] || fail("solveNodes, prep-a: falsy node");
                 if (unorderedClassify(node.kind) != unorderedClass)
                 {
                     i1 = i;
@@ -3487,20 +3504,29 @@ pub fn solve(
                 }
 
                 _here = node.token || _here;
-                result[i] = unorderedPrep(node);
+                result[i] = unorderedPrep_A(node);
             }
 
             // Later we'll continue from group end.
             i1 > i0 || fail();
             i = i1 - 1; // <- loop++
 
-            // Second pass, solve all.
+            // Second prep pass, limit access to scope
+            //  of all newly generated entries to what we have right now.
+            for (shadow mut i = i0; i < i1; i++)
+            {
+                shadow let node = nodes[i] || fail("solveNodes, prep-b: falsy node");
+                _here = node.token || _here;
+                unorderedPrep_B(:node, result[i].target);
+            }
+
+            // TODO REMOVE, solve all.
             for (shadow mut i = i0; i < i1; i++)
             {
                 shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
                 _here = node.token || _here;
                 let into = result[i].target;
-                result[i] = into && unorderedSolve(node, result[i].target);
+                result[i] = into && unorderedSolve(:node, :into);
             }
 
             // Exhaust the resolve queue here.

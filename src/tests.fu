@@ -1568,14 +1568,16 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    FAIL(`
         struct ValueType { modid: i32; };
         struct Type { using vtype: ValueType; };
         struct Target { modid: i32; index: i32; };
-        struct Overload { name: string; };
+        struct Overload { name: string; id: string; };
 
         fn GET(target: Target): Overload =
-            Overload(name: "N" ~ target.index);
+            Overload(
+                name: "N" ~ target.index,
+                  id: "I" ~ target.index);
 
         fn main() {
             mut specs: Map(string, Target);
@@ -1583,9 +1585,11 @@ pub fn runTests()
             fn setSpec(mangle: string) {
                 ref t = specs[mangle] ||= Target;
 
+                // This template should start expanding on GET(target).name,
+                //  which should conflict with overload name.
                 fn name(shadow target)
-                    target.modid != -1  ? GET(target).name
-                                        : "SPEC_FAIL";
+                    GET(target) //*F
+                        .name; /*/ .id; //*/
 
                 return t.name;
             }
