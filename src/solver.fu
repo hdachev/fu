@@ -2156,6 +2156,8 @@ pub fn solve(
                 o.solved = out;
 
             checkRecursions(o, out.target.index);
+
+            _open_templates.push(OpenTemplate(spec: out.target));
         }
 
         return out;
@@ -3542,39 +3544,18 @@ pub fn solve(
                     resolve0 = SLOW_resolve;
                     ////////////////////////
 
-                    for (shadow mut i = i0; i < i1; i++)
-                    {
-                        let r = result[i];
-                        if (r.kind != "struct" || !resolveIfNeeded_nonTemplateFn(r.target))
-                            continue;
-
-                        some = SLOW_resolve != resolve0
-                            && SLOW_resolve != resolve_done;
-                    }
-
                     if (TEMP_open_templates)
                     {
                         for (shadow mut i = open_templates0; i < _open_templates.len; i++)
                         {
                             let r = _open_templates[i];
-                            if (!resolveIfNeeded_templateSpec(r))
+                            if (!resolveIfNeeded(r))
                                 continue;
 
                             some = SLOW_resolve != resolve0
                                 && SLOW_resolve != resolve_done;
                         }
                     }
-                }
-            }
-
-            // Lock things down.
-            for (shadow mut i = i0; i < i1; i++)
-            {
-                let r = result[i];
-                if (r.kind == "fndef")
-                {
-                    ref o = GET_mut(r.target);
-                    o.status |= SS_FINALIZED;
                 }
             }
 
@@ -3613,32 +3594,7 @@ pub fn solve(
         }
     }
 
-    fn resolveIfNeeded_nonTemplateFn(target: Target): bool
-    {
-        let overload = GET(target);
-        if !(overload.status & SS_DIRTY)
-            return false;
-
-        GET_mut(target).status &= ~SS_DIRTY;
-        resolve_done++;
-
-        //////////////////
-        let here0 = _here;
-        _here = overload.template.node.token;
-        //////////////////
-
-        unorderedSolve(
-            overload.template.node,
-            overload.solved.target);
-
-        //////////////
-        _here = here0;
-        //////////////
-
-        return true;
-    }
-
-    fn resolveIfNeeded_templateSpec(ot: OpenTemplate): bool
+    fn resolveIfNeeded(ot: OpenTemplate): bool
     {
         let overload = GET(ot.spec);
         if !(overload.status & SS_DIRTY)

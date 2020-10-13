@@ -669,6 +669,7 @@ pub fn cpp_codegen(
 
         let overload = GET(fn.target);
         let id = overload.name;
+        overload.status & SS_FINALIZED || fail("cgFn: fn not finalized: " ~ id);
 
         // Custom __natives.
         if (!body)
