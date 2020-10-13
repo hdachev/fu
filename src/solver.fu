@@ -152,23 +152,34 @@ pub fn solve(
         sig.len + FN_ARGS_BACK == args.len || fail("sig.len != args.len");
 
         let ret = sig[sig.len + FN_RET_BACK];
-        let mutref = ret.kind == "call" && ret.items.len == 1 && ret.value == "&mut";
+        mut mutref = ret.kind == "call" && ret.items.len == 1 && ret.value == "&mut";
 
         mut res: Lifetime;
-        for (mut i = 0; i < args.len; i++)
+        for (;;)
         {
-            let inArg = sig[i];
-            let annot = inArg.items[LET_TYPE];
-            if (annot.items.len == 1 && ((annot.kind == "call"
-                && (!mutref && annot.value == "&" || annot.value == "&mut"))
-                 || !mutref && annot.kind == "arrlit"))
+            for (mut i = 0; i < args.len; i++)
             {
-                res && fail("Ambiguous __native lifetime.");
+                let inArg = sig[i];
+                let annot = inArg.items[LET_TYPE];
+                if (annot.items.len == 1 && ((annot.kind == "call"
+                    && (!mutref && annot.value == "&" || annot.value == "&mut"))
+                     || !mutref && annot.kind == "arrlit"))
+                {
+                    res && fail("Ambiguous __native lifetime.");
 
-                let arg = args[i];
-                let o = GET(arg.target);
-                res = o.type.lifetime || fail("Missing arg lifetime.");
+                    let arg = args[i];
+                    let o = GET(arg.target);
+                    res = o.type.lifetime || fail("Missing arg lifetime.");
+                }
             }
+
+            // Try again without the mutref,
+            //  currently we have a bunch of drama related to case-patterns,
+            //   the mutref annots actually come in the branches, not the arg annots.
+            if (!mutref || res.uni0n)
+                break;
+
+            mutref = false;
         }
 
         let only = res.uni0n.only;
