@@ -3453,6 +3453,41 @@ pub fn solve(
 
         let open_templates0 = _open_templates.len;
 
+        ////////////////////////////
+        mut resolve0 = SLOW_resolve;
+
+        fn resolve_ALL()
+        {
+            if (!TEMP_open_templates)
+                return;
+
+            mut some = SLOW_resolve != resolve0
+                    && SLOW_resolve != resolve_done;
+
+            while (some)
+            {
+                some = false;
+
+                ////////////////////////
+                resolve0 = SLOW_resolve;
+                ////////////////////////
+
+                for (shadow mut i = open_templates0; i < _open_templates.len; i++)
+                {
+                    let r = _open_templates[i];
+                    if (!resolveIfNeeded(r))
+                        continue;
+
+                    some = SLOW_resolve != resolve0
+                        && SLOW_resolve != resolve_done;
+                }
+            }
+
+            // Also freeze templates.
+            freezeTemplates(TEMP_template_scope, :open_templates0);
+        }
+
+        //
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
@@ -3489,10 +3524,6 @@ pub fn solve(
             //   introduced halfway through.
             let i0 = i;
             mut i1 = nodes.len;
-
-            ////////////////////////////
-            mut resolve0 = SLOW_resolve;
-            ////////////////////////////
 
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
@@ -3531,42 +3562,13 @@ pub fn solve(
                 result[i] = into && unorderedSolve(:node, :into);
             }
 
-            // Exhaust the resolve queue here.
-            {
-                mut some = SLOW_resolve != resolve0
-                        && SLOW_resolve != resolve_done;
-
-                while (some)
-                {
-                    some = false;
-
-                    ////////////////////////
-                    resolve0 = SLOW_resolve;
-                    ////////////////////////
-
-                    if (TEMP_open_templates)
-                    {
-                        for (shadow mut i = open_templates0; i < _open_templates.len; i++)
-                        {
-                            let r = _open_templates[i];
-                            if (!resolveIfNeeded(r))
-                                continue;
-
-                            some = SLOW_resolve != resolve0
-                                && SLOW_resolve != resolve_done;
-                        }
-                    }
-                }
-            }
-
-            // Also freeze templates.
-            if (i != nodes.len - 1 && TEMP_open_templates)
-                freezeTemplates(TEMP_template_scope, :open_templates0);
+            // Exhaust the resolve queue here, unless this is the last iter ...
+            if (i != nodes.len - 1)
+                resolve_ALL();
         }
 
-        // Also freeze templates.
-        if (TEMP_open_templates)
-            freezeTemplates(TEMP_template_scope, :open_templates0);
+        // ... which we resolve here.
+        resolve_ALL();
 
         return result;
     }
