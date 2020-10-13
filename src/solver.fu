@@ -1899,29 +1899,25 @@ pub fn solve(
 
         mut n_fn = template.node;
         {
-            typeParams.unpack();
-
-            //
+            // Pattern matching.
             let body = items[items.len + FN_BODY_BACK] || fail();
             if (body.kind == "pattern")
             {
+                let undo = typeParams;
                 let branches = body.items;
-                mut did_match = false;
 
+                mut did_match = false;
                 for (mut i = 0; i < branches.len; i++)
                 {
+                    // Fails cond if any?
                     let cond = branches[i].items[0];
-                    if (cond)
+                    if (cond && !evalTypePattern(cond, typeParams))
                     {
-                        let undo = typeParams;
-                        if (!evalTypePattern(cond, typeParams))
-                        {
-                            typeParams = undo;
-                            continue;
-                        }
+                        typeParams = undo;
+                        continue;
                     }
 
-                    // Pattern descent.
+                    // Pass.
                     let cons = branches[i].items;
                     ref sig = n_fn.items;
                     {
@@ -1941,6 +1937,8 @@ pub fn solve(
                 if (!did_match)
                     return SPECFAIL;
             }
+
+            typeParams.unpack();
         }
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
@@ -2734,11 +2732,11 @@ pub fn solve(
 
     //
 
-    fn evalTypeParam(id: string): Type
+    fn evalTypeParam(id: string, typeParams?: TypeParams): Type
     {
-        return Scope_lookupType(
-            "$" ~ (id   || fail("Falsy type param id.")))
-                        || fail("No type param `$" ~ id ~ "` in scope.");
+        return typeParams[id] || Scope_lookupType(
+                    "$" ~ (id || fail("Falsy type param id.")))
+                              || fail("No type param `$" ~ id ~ "` in scope.");
     }
 
     fn solveTypeParam(node: Node): SolvedNode
@@ -2756,9 +2754,9 @@ pub fn solve(
 
     //
 
-    fn evalTypeAnnot(node: Node): SolvedNode
+    fn evalTypeAnnot(node: Node, typeParams?: TypeParams): SolvedNode
     {
-        fn T(i: i32 = 0) evalTypeAnnot(node.items[i]).type;
+        fn T(i: i32 = 0) evalTypeAnnot(node.items[i], typeParams).type;
 
         if (node.kind == "call")
         {
@@ -2791,7 +2789,7 @@ pub fn solve(
         }
         else if (node.kind == "typeparam")
         {
-            return solved(node, evalTypeParam(node.value));
+            return solved(node, evalTypeParam(node.value, typeParams));
         }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
@@ -2910,11 +2908,11 @@ pub fn solve(
             //   we could subtype it with the desired quals.
             if (left.kind  == "typeparam" && right.kind == "typetag")
                 return type_has(
-                    evalTypeParam(left.value),
+                    evalTypeParam(left.value, typeParams),
                     right.value || fail("Falsy type tag."));
             else
             {
-                let actual = evalTypeAnnot(left).type;
+                let actual = evalTypeAnnot(left, typeParams).type;
 
                 return trySolveTypeParams(
                     type: actual, node: right,
