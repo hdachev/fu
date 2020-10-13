@@ -1899,15 +1899,7 @@ pub fn solve(
 
         mut n_fn = template.node;
         {
-            // Unpack type params in scope.
-            {
-                mut keys = typeParams.keys;
-                for (mut i = 0; i < keys.len; i++)
-                {
-                    let key = keys[i];
-                    Scope_Typedef(_scope, "$" ~ key, typeParams[key], flags: 0);
-                }
-            }
+            typeParams.unpack();
 
             //
             let body = items[items.len + FN_BODY_BACK] || fail();
@@ -1995,6 +1987,16 @@ pub fn solve(
                 mangle: mangle00));
 
         return into;
+    }
+
+    fn unpack(typeParams: TypeParams): void
+    {
+        let keys = typeParams.keys;
+        for (mut i = 0; i < keys.len; i++)
+        {
+            let key = keys[i];
+            Scope_Typedef(_scope, "$" ~ key, typeParams[key], flags: 0);
+        }
     }
 
 
