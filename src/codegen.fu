@@ -659,11 +659,6 @@ pub fn cpp_codegen(
         let indent0 = _indent;
         //////////////////////
 
-        let lambda = false;
-        if (!lambda)
-            _indent = "\n";
-
-        //
         let items = fn.items;
         let body  = items[items.len + FN_BODY_BACK];
 
@@ -673,7 +668,14 @@ pub fn cpp_codegen(
 
         // Custom __natives.
         if (!body)
+        {
+            overload.kind == "__native" || fail("cgFn: no body on non-native: " ~ id);
             return mode & M_STMT ? "" : "0";
+        }
+
+        let lambda = false;
+        if (!lambda)
+            _indent = "\n";
 
         // TODO is this needed?
         //  Body should always be a block.
