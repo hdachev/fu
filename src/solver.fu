@@ -1457,7 +1457,7 @@ pub fn solve(
         return __solveFn(node, solve: true, :into);
     }
 
-    fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, caseIdx! = -1, into?: Target): SolvedNode
+    fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, into?: Target): SolvedNode
     {
         let parent_idx = _current_fn.target.index;
 
@@ -1541,20 +1541,8 @@ pub fn solve(
             }
 
             /////////////////////////////////////////////////////
-            mut n_ret   = inItems[inItems.len + FN_RET_BACK];
+            let n_ret   = inItems[inItems.len + FN_RET_BACK];
                 n_body  = inItems[inItems.len + FN_BODY_BACK];
-
-            // Pattern descent.
-            if (caseIdx >= 0)
-            {
-                n_body.kind == "pattern" || fail();
-                let branch = n_body.items[caseIdx] || fail();
-
-                shadow let inItems = branch.items;
-
-                n_ret   = inItems[inItems.len + FN_RET_BACK] || n_ret;
-                n_body  = inItems[inItems.len + FN_BODY_BACK];
-            }
 
             // Builtin?
             n_body || fail("solveFn: no body.");
@@ -1898,7 +1886,7 @@ pub fn solve(
         if (!ok)
             return SPECFAIL;
 
-        mut caseIdx = -1;
+        mut n_fn = template.node;
         {
             // Unpack type params in scope.
             {
@@ -1911,10 +1899,12 @@ pub fn solve(
             }
 
             //
-            let pattern = items[items.len + FN_BODY_BACK] || fail();
-            if (pattern.kind == "pattern")
+            let body = items[items.len + FN_BODY_BACK] || fail();
+            if (body.kind == "pattern")
             {
-                let branches = pattern.items;
+                let branches = body.items;
+                mut did_match = false;
+
                 for (mut i = 0; i < branches.len; i++)
                 {
                     let cond = branches[i].items[0];
@@ -1928,20 +1918,31 @@ pub fn solve(
                         }
                     }
 
-                    caseIdx = i;
+                    // Pattern descent.
+                    let cons = branches[i].items;
+                    ref sig = n_fn.items;
+                    {
+                        let n_ret = cons[cons.len + FN_RET_BACK];
+                        if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
+
+                        let n_body = cons[cons.len + FN_BODY_BACK];
+                        sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
+                    }
+
+                    did_match = true;
                     break;
                 }
 
                 // All branches mismatch?
                 //  Can't return, faking RAII here.
-                if (caseIdx < 0)
+                if (!did_match)
                     return SPECFAIL;
             }
         }
 
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = !into && __solveFn(template.node, solve: false, spec: true, :caseIdx).target;
+        let prep = !into && __solveFn(:n_fn, solve: false, spec: true).target;
         shadow let into = prep || into;
 
         // Re-enable recursion.
@@ -1974,7 +1975,7 @@ pub fn solve(
 
         //
         __solveFn(
-            template.node, solve: true, spec: true, :caseIdx,
+            :n_fn, solve: true, spec: true,
                 :into);
 
         _open_templates.push(
