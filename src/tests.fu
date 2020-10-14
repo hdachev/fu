@@ -3382,6 +3382,40 @@ pub fn runTests()
     `);
 
 
+    // Let's try to break scope-skips.
+
+    ZERO(`
+
+        fn test(depth0) {
+
+            fn first(depth1) {
+                fn inner(depth2) {
+                    let sum = depth0 + depth1 + depth2;
+                    return sum;
+                }
+
+                let sum = depth0 + depth1;
+                return inner(|| sum);
+            }
+
+            fn second(depth1) {
+                fn inner(depth2) {
+                    let sum = depth0 + depth1 + depth2;
+                    return sum + first(|| sum);
+                }
+
+                let sum = depth0 + depth1;
+                return inner(|| sum);
+            }
+
+            let sum = depth0 + depth0;
+            return second(|| sum);
+        }
+
+        fn main() test(0);
+    `);
+
+
     // Macros & loops.
 
     ZERO(`
