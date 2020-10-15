@@ -1696,6 +1696,16 @@ pub fn solve(
         return !spec.is_SPECFAIL && spec;
     }
 
+    fn ScopeSkip_test(prev: ScopeSkip, next: ScopeSkip)
+    {
+        if (!prev)
+            return;
+
+        if (prev.start.items_len < next.start.items_len)
+            fail("ScopeSkip: start will shift forward and expose things you don't want in scope.");
+        if (prev.end.items_len > next.end.items_len)
+            fail("ScopeSkip: end will shift back, which makes no sense.");
+    }
 
     // Let's try to run all specs through here for starters.
 
@@ -1771,6 +1781,9 @@ pub fn solve(
         _scope_skip.end.items_len >= _scope_skip.start.items_len || fail(
             "doTrySpecialize: will scope_skip backwards.");
 
+        ScopeSkip_test(scope_skip0, _scope_skip);
+
+        //
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
 
