@@ -377,6 +377,23 @@ pub fn runTests()
         pub fn main() test(ModuleOutputs);
     `);
 
+    ZERO(`
+        let static = 1;
+        fn template(arg) static - arg;
+        let arg = 7;                // <- template shouldn't see this
+        let result = template(-1);  // <- when specializing here
+        fn main() result;
+    `);
+
+    ZERO(`
+        fn main() {
+            let static = 1;
+            fn template(arg) static - arg;
+            let arg = 7; // same here, except we're in a fn.
+            return template(-1);
+        }
+    `);
+
 
     // Recursion, closures & implicit args.
 
