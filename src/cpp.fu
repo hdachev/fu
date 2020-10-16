@@ -1,0 +1,41 @@
+
+
+// How do we make this superfast?
+//  What's the fastest algo on the planet?
+
+let KEYWORDS: string[][] =
+[
+    [],
+    [],
+    ["do","if","or"],
+    ["and","asm","for","int","new","not","try","xor"],
+    ["auto","bool","case","char","else","enum","goto","long","this","true","void"],
+    ["bitor","break","catch","class","compl","const","false","float","or_eq","short","throw","union","using","while"],
+    ["and_eq","bitand","delete","double","export","extern","friend","inline","not_eq","public","return","signed","sizeof","static","struct","switch","typeid","xor_eq"],
+    ["alignas","alignof","char8_t","concept","default","mutable","nullptr","private","typedef","virtual","wchar_t"],
+    ["char16_t","char32_t","continue","co_await","co_yield","decltype","explicit","noexcept","operator","reflexpr","register","requires","template","typename","unsigned","volatile"],
+    ["consteval","constexpr","constinit","co_return","namespace","protected"],
+    ["const_cast"],
+    ["static_cast"],
+    ["dynamic_cast","synchronized","thread_local"],
+    ["atomic_cancel","atomic_commit","static_assert"],
+    [],
+    ["atomic_noexcept"],
+    ["reinterpret_cast"],
+];
+
+pub fn ID(id: string)
+{
+    if (id.len < KEYWORDS.len)
+    {
+        let idx = KEYWORDS[id.len].find(id);
+        if (idx >= 0)
+        {
+            mut cpy = id;
+            cpy[1] = cpy[1].helpers::ascii_upper;
+            return cpy;
+        }
+    }
+
+    return id;
+}
