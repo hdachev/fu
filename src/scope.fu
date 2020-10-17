@@ -67,8 +67,8 @@ pub struct SolverOutput
 
 pub struct ScopeSkip
 {
-    start: ScopeMemo;
-    end:   ScopeMemo;
+    start:  i32;
+    end:    i32;
 };
 
 pub struct ScopeMemo
@@ -98,7 +98,10 @@ pub struct Template
 {
     node:       Node;
     imports:    i32[];
+
     scope_memo: ScopeMemo;
+    ss_items:   ScopeSkip[];
+    ss_imports: ScopeSkip[];
 };
 
 pub struct Partial
@@ -249,7 +252,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32)
 
 ////////////////////////////////
 
-pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip): Target[]
+pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip[]): Target[]
 {
     mut scope_iterator: i32;
     mut results: Target[] = [];
@@ -261,13 +264,36 @@ pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip): Target[]
     return results;
 }
 
+pub fn each(
+    items: [$T],
+    scope_skip: ScopeSkip[],
+    fn,
+    start = 0)
+{
+    let END_DUMMY = ScopeSkip(start: items.len, end: items.len);
+
+    mut i0 = start;
+    for (mut i = 0; i < scope_skip.len + 1; i++)
+    {
+        let ss = i < scope_skip.len ? scope_skip[i] : END_DUMMY;
+        if (ss.end <= i0)
+            continue;
+
+        let i1 = ss.start;
+        for (shadow mut i = i0; i < i1; i++)
+            fn(items[i]);
+
+        i0 = ss.end;
+    }
+}
+
 pub fn search(
     scope: Scope, id: string,
     scope_iterator: &mut i32,
-    scope_skip: ScopeSkip,
+    scope_skip: ScopeSkip[],
     target?: Target,
-    extra_items?: ScopeItem[],
-    field_items?: ScopeItem[]): Target
+    extra_items?: [ScopeItem],
+    field_items?: [ScopeItem]): Target
 {
     // Searching & forcing results the same way.
     if (target)
@@ -282,21 +308,48 @@ pub fn search(
     // Search.
     let items = scope.items;
 
-    let skip0 = scope_skip.start.items_len - 1;
-    let skip1 = scope_skip.end  .items_len - 1;
-    if (skip1 >= items.len)
-        throw ("Scope/search: scope_skip will jump past end of scope.items.");
-
     let START = items.len + extra_items.len + field_items.len;
     if (!scope_iterator)
         scope_iterator = START;
     else if (scope_iterator >= START)
         throw ("Scope/search: scope.items shrunk while we iterated.");
 
+    // Scope skip.
+    mut skiptrap = -1;
+
+    fn nextSkip()
+    {
+        for (mut i = scope_skip.len; i --> 0; )
+        {
+            let ss = scope_skip[i];
+
+            let s1 = ss.end - 1;
+            if (scope_iterator > s1)
+            {
+                skiptrap = s1;
+                break;
+            }
+
+            let s0 = ss.start - 1;
+            if (scope_iterator > s0)
+                scope_iterator = s0;
+        }
+
+        if (skiptrap >= items.len)
+            throw ("Scope/search: scope_skip will jump past end of scope.items.");
+    }
+
+    scope_iterator--;
+    nextSkip();
+    scope_iterator++;
+
+    // TODO unroll into three loops,
+    //  for each kind of thing we're searching.
+    //
     while (scope_iterator --> 0)
     {
-        if (scope_iterator == skip1)
-            scope_iterator  = skip0;
+        if (scope_iterator == skiptrap)
+            nextSkip();
 
         // TODO clean this up
         let item = scope_iterator >= items.len

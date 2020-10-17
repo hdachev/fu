@@ -7,6 +7,8 @@ import types;
 
 //
 
+let OPTI_autoshadow         = false;
+
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false;
 let USE_ref_to_mutref       = false;
@@ -32,7 +34,9 @@ pub fn solve(
     mut _here:          TokenIdx;
     mut _scope:         Scope;
     mut _root_scope:    ScopeMemo;
-    mut _scope_skip:    ScopeSkip;
+
+    mut _ss_items:      ScopeSkip[];
+    mut _ss_imports:    ScopeSkip[];
 
     struct CurrentFn
     {
@@ -90,8 +94,18 @@ pub fn solve(
 
     fn Scope_import(modid: i32): void
     {
-        let idx = _scope.imports.find(modid);
-        if (idx >= 0 && !(idx >= _scope_skip.start.imports_len && idx < _scope_skip.end.imports_len))
+        mut found = false;
+        _scope.imports.each(_ss_imports, |import|
+        {
+            if (import == modid)
+            {
+                found = true;
+                // break;  // <- TODO
+                // return; // <- actually
+            }
+        });
+
+        if (found)
             return;
 
         modid || fail("Attempting to import modid-0.");
@@ -343,17 +357,17 @@ pub fn solve(
             mut any     = 0;
             mut same    = 0;
 
-            let start = _scope_skip.end.items_len || _root_scope.items_len;
-            for (mut i = start; i < _scope.items.len; i++)
+            _scope.items.each(_ss_items, |item|
             {
-                if (_scope.items[i].id == id)
+                if (item.id == id)
                 {
                     any++;
-                    let o = GET(_scope.items[i].target);
+                    let o = GET(item.target);
                     if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
                         same++;
                 }
-            }
+            },
+            start: _root_scope.items_len);
 
             if (same)
                 name ~= "_" ~ same;
@@ -365,8 +379,9 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (kind != "global" && !any) // && _current_fn.flags & F_INLINE
-                flags |= F_SHADOW;
+            if (OPTI_autoshadow)
+                if (kind != "global" && !any) // && _current_fn.flags & F_INLINE
+                    flags |= F_SHADOW;
         }
 
         //
@@ -412,7 +427,9 @@ pub fn solve(
         return Template(
             node,
             imports:   !_current_fn && _scope.imports,
-            scope_memo: _current_fn && Scope_snap(_scope));
+            scope_memo: _current_fn && Scope_snap(_scope),
+            ss_items:   _current_fn && _ss_items,
+            ss_imports: _current_fn && _ss_imports);
     }
 
     fn TemplateDecl(node: Node, local_of: i32): Target
@@ -702,13 +719,7 @@ pub fn solve(
         }
 
         // Visit stuff currently in scope.
-        for (mut i = 0; i < _scope.items.len; i++)
-        {
-            if (i == _scope_skip.start.items_len)
-                i  = _scope_skip.end  .items_len;
-
-            visit(_scope.items[i]);
-        }
+        _scope.items.each(_ss_items, fn visit);
 
         // Also bring in stuff from the module of origin.
         let extra_modid = actual.modid;
@@ -790,7 +801,7 @@ pub fn solve(
     }
 
     fn tryMatch__mutargs(
-        scope: Scope, scope_skip: ScopeSkip,
+        scope: Scope, scope_skip: ScopeSkip[],
         mut id: string, ref args: SolvedNode[],
         flags?!: i32, retType?!: Type, target?!: Target): Target
     {
@@ -1105,7 +1116,7 @@ pub fn solve(
     //
 
     fn match__mutargs(
-        scope: Scope, scope_skip: ScopeSkip,
+        scope: Scope, scope_skip: ScopeSkip[],
         id: string, ref args: SolvedNode[],
         flags: i32, target: Target): Target
     {
@@ -1121,7 +1132,7 @@ pub fn solve(
     }
 
     fn NICERR_mismatch(
-        scope: Scope, scope_skip: ScopeSkip,
+        scope: Scope, scope_skip: ScopeSkip[],
         id: string, args: SolvedNode[]): never
     {
         // TODO instead of this -
@@ -1247,6 +1258,7 @@ pub fn solve(
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
+        if (k == "fn")          return solveFnExpr(node);
         if (k == "struct")      return solveStructExpr(node);
 
         // Exotics
@@ -1470,6 +1482,11 @@ pub fn solve(
     fn uSolveFn(node: Node, into: Target): SolvedNode
     {
         return __solveFn(node, solve: true, :into);
+    }
+
+    fn solveFnExpr(node: Node): SolvedNode
+    {
+        return __solveFn(node, solve: true, into: uPrepFn_A(node).target);
     }
 
     fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, into?: Target): SolvedNode
@@ -1700,18 +1717,20 @@ pub fn solve(
         return !spec.is_SPECFAIL && spec;
     }
 
-    fn ScopeSkip_test(prev: ScopeSkip, next: ScopeSkip)
+
+    //
+
+    fn ScopeSkip_push(ref scope_skip: ScopeSkip[], start: i32, end: i32)
     {
-        if (!prev)
+        start <= end || fail("ScopeSkip_push: bad args.");
+        if (end == start)
             return;
 
-        if (prev.start.items_len < next.start.items_len)
-            fail("ScopeSkip: start will shift forward and expose things you don't want in scope.");
-        if (prev.end.items_len > next.end.items_len)
-            fail("ScopeSkip: end will shift back, which makes no sense.");
-    }
+        let last = scope_skip.if_last;
+        last.end <= start || fail("ScopeSkip_push: last.end > start.");
 
-    // Let's try to run all specs through here for starters.
+        scope_skip ~= ScopeSkip(:start, :end);
+    }
 
     fn doTrySpecialize(
         overloadIdx: Target, mut args: SolvedNode[], mut mangle: string, into?: Target)
@@ -1730,12 +1749,14 @@ pub fn solve(
 
         SWAP(_current_fn, current_fn0);
         let scope0 = Scope_snap(_scope);
-        let scope_skip0 = _scope_skip;
+        let ss_items0   = _ss_items;
+        let ss_imports0 = _ss_imports;
 
         defer {
             SWAP(_current_fn, current_fn0);
             Scope_pop(_scope, scope0);
-            _scope_skip = scope_skip0;
+            _ss_items   = ss_items0;
+            _ss_imports = ss_imports0;
         }
         ////////////////////////////////
 
@@ -1778,14 +1799,16 @@ pub fn solve(
         }
 
         //
-        _scope_skip = _root_scope && ScopeSkip(
-            start: template.scope_memo || _root_scope,
-              end: scope0);
+        if (_root_scope)
+        {
+            let start = template.scope_memo || _root_scope;
 
-        _scope_skip.end.items_len >= _scope_skip.start.items_len || fail(
-            "doTrySpecialize: will scope_skip backwards.");
+            _ss_items   = template.ss_items;
+            _ss_imports = template.ss_imports;
 
-        ScopeSkip_test(scope_skip0, _scope_skip);
+            ScopeSkip_push(_ss_items,   start: start.items_len,   end: scope0.items_len);
+            ScopeSkip_push(_ss_imports, start: start.imports_len, end: scope0.imports_len);
+        }
 
         //
         for (mut i = 0; i < template.imports.len; i++)
@@ -2385,9 +2408,8 @@ pub fn solve(
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
-        while (overloadIdx =
-            _scope.search(id, scope_iterator,
-                scope_skip: _scope_skip))
+        while (overloadIdx = _scope.search(
+            id, scope_iterator, scope_skip: _ss_items))
         {
             ref maybe = GET_mut(overloadIdx);
             if (maybe.kind == "label")
@@ -2731,7 +2753,7 @@ pub fn solve(
 
         while (overloadIdx =
             scope.search(id, scope_iterator,
-                scope_skip: !qualified && _scope_skip))
+                scope_skip: !qualified && _ss_items))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
@@ -2764,7 +2786,9 @@ pub fn solve(
     fn solveAddrOfFn(node: Node): SolvedNode
     {
         let id = node.value;
-        let type = addroffn::X_solveAddrOfFn(_scope, :id, _scope_skip);
+        let type = addroffn::X_solveAddrOfFn(_scope, :id, scope_skip: _ss_items)
+            || fail("No `fn " ~ id ~ "` in scope.");
+
         return createEmpty(:type);
     }
 
@@ -2986,7 +3010,7 @@ pub fn solve(
 
         //
         mut callTargIdx = match__mutargs(
-            scope, !qualified && _scope_skip,
+            scope, !qualified && _ss_items,
             id, args, node.flags, :target);
 
         mut callTarg = GET(callTargIdx);
@@ -3131,7 +3155,7 @@ pub fn solve(
         let id = name;
         mut args: SolvedNode[];
 
-        let target = tryMatch__mutargs(_scope, _scope_skip, :id, :args, retType: type)
+        let target = tryMatch__mutargs(_scope, _ss_items, :id, :args, retType: type)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 

@@ -23,7 +23,7 @@ pub fn packAddrOfFn(targets: Target[])
         res ~= "@" ~ target.modid ~ ":" ~ target.index;
     }
 
-    return res || "@";
+    return res;
 }
 
 pub fn unpackAddrOfFn(canon: string)
@@ -60,7 +60,7 @@ pub fn X_unpackAddrOfFnBinding(ref out: ScopeItem[], id: string, type: Type): bo
     return true;
 }
 
-pub fn X_solveAddrOfFn(scope: Scope, scope_skip: ScopeSkip, id: string)
+pub fn X_solveAddrOfFn(scope: Scope, scope_skip: ScopeSkip[], id: string)
 {
     mut targets: Target[];
 
@@ -69,7 +69,8 @@ pub fn X_solveAddrOfFn(scope: Scope, scope_skip: ScopeSkip, id: string)
     while (target = scope.search(:id, :scope_iterator, :scope_skip))
         targets.push(target);
 
-    return Type(ValueType(quals: 0, modid: 0, canon: packAddrOfFn(targets)));
+    return targets
+        && Type(ValueType(quals: 0, modid: 0, canon: packAddrOfFn(targets)));
 }
 
 pub fn X_addrofTarget(target: Target)
