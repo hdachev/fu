@@ -29,6 +29,19 @@ pub fn self_test(): i32
     return cpp.find("int main()") ? 0 : 101;
 }
 
+pub fn TODO(src: string)
+{
+    try {
+        snippet2cpp(src);
+    }
+    catch (e) {
+        println("  TODO: ", e, "\n", src);
+        return;
+    }
+
+    throw("TODO test is actually passing: " ~ src);
+}
+
 
 // Run the whole battery & build self.
 
@@ -379,18 +392,18 @@ pub fn runTests()
 
     ZERO(`
         let static = 1;
-        fn template(arg) static - arg;
-        let arg = 7;                // <- template shouldn't see this
-        let result = template(-1);  // <- when specializing here
+        fn template(arg) static + arg;
+        let arg = 7;                        // <- template shouldn't see this
+        let result = template(arg / -4);    // <- when specializing here
         fn main() result;
     `);
 
     ZERO(`
         fn main() {
             let static = 1;
-            fn template(arg) static - arg;
+            fn template(arg) static + arg;
             let arg = 7; // same here, except we're in a fn.
-            return template(-1);
+            return template(arg / -4);
         }
     `);
 
@@ -3398,31 +3411,74 @@ pub fn runTests()
         return sum - 3;
     `);
 
+    TODO(`
+        fn fn_v(fn, v) fn(v);           // passing fields as fnargs
+        struct XY { x: i32; y: i32; };  // broke for some reason
+        fn main() {
+            let v = XY(11, 13);
+            return fn_v(fn x, v) + fn_v(fn y, v) - 24;
+        }
+    `);
+
 
     // Let's try to break scope-skips.
 
     ZERO(`
+        fn identity(x) x;
+        fn main() {
+            fn outer(depth1) {
+                let sum = depth1; return identity(|| sum);
+            }
+            let sum = 0; return outer(sum);
+        }
+    `);
 
+    ZERO(`
+        fn identity(x) x;
         fn test(depth0) {
+            fn outer(depth1) {
+                let sum = depth1; inline fn lambda1() sum; return identity(fn lambda1);
+            }
+            let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);
+        }
+        fn main() test(0);
+    `);
 
-            fn first(depth1) {
+    ZERO(`
+        fn test(depth0) {
+            fn identity(x) x;
+            fn outer(depth1) {
                 fn inner(depth2) {
+                    let sum = depth2; inline fn lambda2() sum; return identity(fn lambda2);
+                }
+                let sum = depth1; inline fn lambda1() sum; return inner(fn lambda1);
+            }
+            let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);
+        }
+        fn main() test(0);
+    `);
+
+    ZERO(`
+        fn test(depth0)
+        {
+            fn first(depth1) {
+                fn first_inner(depth2) {
                     let sum = depth0 + depth1 + depth2;
                     return sum;
                 }
 
                 let sum = depth0 + depth1;
-                return inner(|| sum);
+                return first_inner(|| sum);
             }
 
             fn second(depth1) {
-                fn inner(depth2) {
+                fn second_inner(depth2) {
                     let sum = depth0 + depth1 + depth2;
                     return sum + first(|| sum);
                 }
 
                 let sum = depth0 + depth1;
-                return inner(|| sum);
+                return second_inner(|| sum);
             }
 
             let sum = depth0 + depth0;
@@ -3450,8 +3506,8 @@ pub fn runTests()
 
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
     `);
-/*
-    ZERO(`
+
+    TODO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -3460,6 +3516,18 @@ pub fn runTests()
             mut x = 0;
             loop1d(0, 10, |i| { if (x += i) break; });
             return x - 1;
+        }
+    `);
+/*
+    ZERO(`
+        fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        fn main() {
+            mut x = 0;
+            loop1d(0, 10, |i| { if (x += i) return x - 1; });
+            return 101;
         }
     `);
 
