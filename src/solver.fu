@@ -892,31 +892,35 @@ pub fn solve(
                     {
                         if (matchIdx)
                         {
-                            let other = GET(matchIdx);
-
                             fn GETfn(idx: i32) GET(Target(modid: module.modid, index: idx));
 
                             fn fnName(idx: i32) idx
                                 ? "`" ~ GETfn(idx).name ~ "`"
                                 : "global scope";
 
-                            mut here  = _current_fn.target.index;
-                            mut there = other.local_of;
+                            let inner = GET(matchIdx)   .local_of;      // first to match is innermost scope
+                            let outer = GET(overloadIdx).local_of;      // what we're currently looking is upscope
+                            let callsite = _current_fn.target.index;    // as seen from where we currently are
 
                             if (SELF_TEST)
                             {
-                                if (here > there)
-                                {
-                                    while (here > there) here  = GETfn(here).local_of;
-                                    while (there > here) there = GETfn(there).local_of;
-                                }
+                                mut _c = callsite;
+                                while (_c > inner) _c = GETfn(_c).local_of;
+                                _c == inner || fail(
+                                    "BUG! Leaking `" ~ id ~ "` between functions [inner/callsite]: "
+                                        ~ inner.fnName ~ " is seen from " ~ callsite.fnName);
 
-                                here == there || fail(
-                                    "BUG! Leaking `" ~ id ~ "` between functions: "
-                                        ~ here.fnName ~ " and " ~ there.fnName);
+                                mut _i = inner;
+                                while (_i > outer) _i = GETfn(_i).local_of;
+                                _i == outer || fail(
+                                    "BUG! Leaking `" ~ id ~ "` between functions [inner/outer]: "
+                                        ~ inner.fnName ~ " and " ~ outer.fnName
+                                        ~ " as seen from " ~ callsite.fnName);
                             }
 
-                            fail("Ambiguous callsite, matches multiple items in scope: `" ~ id ~ "` from " ~ here.fnName ~ " and " ~ there.fnName ~ ".");
+                            fail("Ambiguous callsite, matches multiple items in scope: `" ~ id
+                                ~ "` from " ~ inner.fnName ~ " and " ~ outer.fnName
+                                ~ ", as seen from " ~ callsite.fnName ~ ".");
                         }
                     }
 
