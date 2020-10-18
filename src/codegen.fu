@@ -522,9 +522,8 @@ pub fn cpp_codegen(
             if (needComma++)
                 src ~= ", ";
 
-            let o = GET(Target(
-                modid: module.modid,
-                index: overload.closes_over[i]));
+            let index = overload.closes_over[i];
+            let o = GET(Target(:module.modid, :index));
 
             src ~= typeAnnot(o.type) ~ " " ~ ID(o.name) ~ "_0";
         }

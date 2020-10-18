@@ -1,6 +1,8 @@
 
 pub struct BitSet
 {
+    // TODO u8 actually better fit,
+    //  so we can make maximum use of the smallvec opti.
     _data: u64[];
 };
 
