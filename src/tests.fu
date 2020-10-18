@@ -3415,6 +3415,16 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        fn fn_w(x, y) x(y);             // same thing but
+        fn fn_v(y, x) fn_w(fn y, x);    // extra nasty
+        struct XY { x: i32; y: i32; };
+        fn main() {
+            let v = XY(11, 13);
+            return fn_v(fn x, v) + fn_v(fn y, v) - 24;
+        }
+    `);
+
 
     // Let's try to break scope-skips.
 
