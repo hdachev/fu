@@ -2097,7 +2097,7 @@ pub fn solve(
         mut innerScope: ScopeItem[];
 
         // Struct members, pass 0.
-        out.items = members.map(|node|
+        out.items = members.map(|shadow node|
         {
             node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
@@ -2124,7 +2124,7 @@ pub fn solve(
             shadow let structType = despeculateStruct(structType);
 
             // Struct members, pass 1.
-            out.items.each(|node|
+            out.items.each(|shadow node|
             {
                 node.kind == "let" || fail("solveStructMembers_2: " ~ node.kind);
 
