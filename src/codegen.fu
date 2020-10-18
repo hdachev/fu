@@ -46,6 +46,7 @@ pub fn cpp_codegen(
     mut _hasMain: i32;
 
     mut _current_fn_index: i32;
+    mut _current_fn_dupes: BitSet;
 
     fn GET(target: Target): Overload
     {
@@ -374,8 +375,29 @@ pub fn cpp_codegen(
         if (target.modid == module.modid && overload.local_of == _current_fn_index)
             return ok;
 
+        if (_current_fn_dupes.has(target.index))
+            return ok ~ "_0" ~ target.index;
+
         return ok ~ "_0";
     }
+
+    fn generateLocalID(target: Target, overload: Overload, ref seen: string[])
+    {
+        let ok = ID(overload.name);
+        if (target.modid == module.modid && overload.local_of == _current_fn_index)
+            return ok;
+
+        if (!seen.set::add(ok))
+        {
+            _current_fn_dupes.add_once(target.index);
+            return ok ~ "_0" ~ target.index;
+        }
+
+        return ok ~ "_0";
+    }
+
+
+    //
 
     fn cgStatements(nodes: SolvedNode[]): string
     {
@@ -517,15 +539,19 @@ pub fn cpp_codegen(
 
         mut needComma = 0;
 
-        for (mut i = 0; i < overload.closes_over.len; i++)
+        // Ridiculous nonsense.
         {
-            if (needComma++)
-                src ~= ", ";
+            mut seen: string[] = [];
 
-            let index = overload.closes_over[i];
-            let o = GET(Target(:module.modid, :index));
+            for (mut i = 0; i < overload.closes_over.len; i++)
+            {
+                if (needComma++)
+                    src ~= ", ";
 
-            src ~= typeAnnot(o.type) ~ " " ~ ID(o.name) ~ "_0";
+                let t = Target(:module.modid, index: overload.closes_over[i]);
+                let o = GET(t);
+                src ~= typeAnnot(o.type) ~ " " ~ generateLocalID(t, o, seen);
+            }
         }
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
@@ -653,14 +679,22 @@ pub fn cpp_codegen(
 
         // TODO is this needed?
         //  Body should always be a block.
-        mut src = cgFnSignature(fn);
+        mut src: string;
         {
             ////////////////////////////////////////////
             let current_fn_index0 = _current_fn_index;
-            defer _current_fn_index = current_fn_index0;
+            mut current_fn_dupes0: BitSet;
+
+            defer {
+                _current_fn_index = current_fn_index0;
+                SWAP(_current_fn_dupes, current_fn_dupes0);
+            }
 
             _current_fn_index = fn.target.index;
+            SWAP(_current_fn_dupes, current_fn_dupes0);
             ////////////////////////////////////////////
+
+            src ~= cgFnSignature(fn);
 
             body.kind == "block" || fail("cgFn: body indeed not a block.");
 
