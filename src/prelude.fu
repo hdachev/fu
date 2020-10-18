@@ -137,9 +137,13 @@ fn false(): bool __native("false");
 
 fn   =(a: &mut $T, mut b: $T): &mut $T __native;
 fn ||=(a: &mut $T, mut b: $T): &mut $T __native;
+fn &&=(a: &mut $T, mut b: $T): void __native;
 
 
 // Arrays.
+//
+// TODO mutval push/insert/unshift, just like the assignments above.
+// TODO trivial .=
 
 fn len (a: [$T]): i32 __native(".size()");
 

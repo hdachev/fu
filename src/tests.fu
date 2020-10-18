@@ -385,6 +385,21 @@ pub fn runTests()
         pub fn main() test(ModuleOutputs);
     `);
 
+
+    // Lexical vs dynamically scoped templates -
+    //  I guess we want both, but how?
+    //   Should we just make it explicit?
+
+    ZERO([
+    `
+        pub fn identity(dont_leak_me) dont_leak_me;
+    `,
+    `
+        let dont_leak_me = 1;
+        fn main() _0::identity(dont_leak_me * 2) - 2;
+    `
+    ]);
+
     ZERO(`
         let static = 1;
         fn template(arg) static + arg;
@@ -3511,8 +3526,8 @@ pub fn runTests()
 
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
     `);
-
-    TODO(`
+/*
+    ZERO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -3523,7 +3538,7 @@ pub fn runTests()
             return x - 1;
         }
     `);
-/*
+
     ZERO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)

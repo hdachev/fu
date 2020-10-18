@@ -7,7 +7,7 @@ import types;
 
 //
 
-let OPTI_autoshadow         = false;
+let OPTI_autoshadow         = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false;
@@ -1471,12 +1471,9 @@ pub fn solve(
 
     fn uPrepFn_B(target: Target)
     {
-        if (_current_fn)
-        {
-            ref template = GET_mut(target).template;
-            if (template)
-                template.scope_memo = Scope_snap(_scope);
-        }
+        ref template = GET_mut(target).template;
+        if (template.scope_memo)
+            template.scope_memo = Scope_snap(_scope);
     }
 
     fn uSolveFn(node: Node, into: Target): SolvedNode
@@ -1521,14 +1518,10 @@ pub fn solve(
         let inItems = n_fn.items;
         out.items.resize(inItems.len);
 
-        //
-        if (_current_fn)
-        {
-            // Propagate "inlined"-ness to non-templates within templates,
-            //  see the `traverse` testcase.
-            if (_current_fn.flags & F_TEMPLATE)
-                out.flags |= F_TEMPLATE;
-        }
+        // Propagate "inlined"-ness to non-templates within templates,
+        //  see the `traverse` testcase.
+        if (_current_fn.flags & F_TEMPLATE)
+            out.flags |= F_TEMPLATE;
 
         //////////////////////////
         mut native = false;
@@ -2596,7 +2589,8 @@ pub fn solve(
         //
         mut out = solved(node, t_let, [annot || init, init]);
 
-        if !(_current_fn || node.flags & F_FIELD)
+        let global = !_current_fn && !(node.flags & F_FIELD);
+        if (global)
         {
             if (out.flags & F_MUT || out.type.is_mutref)
                 fail("Mutable statics are not currently allowed.");
