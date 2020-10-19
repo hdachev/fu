@@ -3421,9 +3421,21 @@ pub fn runTests()
         return sum - 3;
     `);
 
+
+    // Addrofns of struct fields.
+
     ZERO(`
-        fn fn_v(fn, v) fn(v);           // passing fields as fnargs
-        struct XY { x: i32; y: i32; };  // broke for some reason
+        fn fn_v(fn, v) fn(v);
+        struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
+        fn main() {
+            let v = XY(11, 13);
+            return fn_v(fn x, v) + fn_v(fn y, v) - 24;
+        }
+    `);
+
+    ZERO(`
+        fn fn_v(x, v) x(v);             // same but name conflict - x arg and .x field
+        struct XY { x: i32; y: i32; };
         fn main() {
             let v = XY(11, 13);
             return fn_v(fn x, v) + fn_v(fn y, v) - 24;

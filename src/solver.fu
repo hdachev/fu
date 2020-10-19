@@ -837,7 +837,7 @@ pub fn solve(
 
         //
         let unary_arg_t = arity == 1 && args[0].type;
-        let field_items = unary_arg_t.isStruct && lookupStruct(unary_arg_t).items;
+        let field_items = flags & F_ACCESS && unary_arg_t.isStruct && lookupStruct(unary_arg_t).items;
 
         //
         mut alternate_ids: string[];
@@ -1766,6 +1766,11 @@ pub fn solve(
             // If we're taking a closure as an argument,
             //  we're becoming a closure ourselves of whatever that closure is closing over -
             //   so that e.g. lifetime reasoning can have an easier time etc.
+            //
+            // TODO all of these must form up a common shadowing group -
+            //  So nothing by the same name should come in from outer scope,
+            //   and yet none of these things shadow each other.
+            //
             for (mut i = 0; i < args.len; i++)
             {
                 let arg_t = args[i].type;
@@ -2781,6 +2786,7 @@ pub fn solve(
     {
         let id = node.value;
 
+        mut shadow = false;
         mut result: Target[];
 
         // Visit local scope.
@@ -2788,9 +2794,12 @@ pub fn solve(
         {
             mut scope_iterator: i32;
             mut target: Target;
-            while (target = items.search(
-                :id, :scope_iterator, scope_skip: _ss_items))
+            while (!shadow && (target = items.search(
+                :id, :scope_iterator, scope_skip: _ss_items)))
             {
+                // Can't shadow here -
+                //  shadowing works per signature,
+                //   we can't just shadow everything by the same name in scope.
                 result.push(target);
             }
         }
