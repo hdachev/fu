@@ -181,3 +181,9 @@ case ($T -> $T)
 
     return res;
 }
+
+
+//
+
+pub fn each(a: Map($K, $V), fn)
+    a.values.each(fn fn);

@@ -3421,7 +3421,7 @@ pub fn runTests()
         return sum - 3;
     `);
 
-    TODO(`
+    ZERO(`
         fn fn_v(fn, v) fn(v);           // passing fields as fnargs
         struct XY { x: i32; y: i32; };  // broke for some reason
         fn main() {

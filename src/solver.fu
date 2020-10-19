@@ -2780,9 +2780,41 @@ pub fn solve(
     fn solveAddrOfFn(node: Node): SolvedNode
     {
         let id = node.value;
-        let type = addroffn::X_solveAddrOfFn(_scope, :id, scope_skip: _ss_items)
-            || fail("No `fn " ~ id ~ "` in scope.");
 
+        mut result: Target[];
+
+        // Visit local scope.
+        fn visitScope(items: [ScopeItem])
+        {
+            mut scope_iterator: i32;
+            mut target: Target;
+            while (target = items.search(
+                :id, :scope_iterator, scope_skip: _ss_items))
+            {
+                result.push(target);
+            }
+        }
+
+        visitScope(_scope.items);
+
+        // Iterate all visible types, this is slow.
+        //  Alternatively we could just unwrap all of these things in
+        //   module root scope but that'd slow everything else down.
+        fn visitTypes(shadow module: Module)
+            module.out.types.each(
+                |struct| visitScope(struct.items));
+
+        // From this module ...
+        visitTypes(module);
+
+        // ... and all visible imports.
+        _scope.imports.each(_ss_imports,
+            |import| visitTypes(ctx.modules[import]));
+
+        //
+        result || fail("No `fn " ~ id ~ "` in scope.");
+
+        let type = Type(ValueType(quals: 0, modid: 0, canon: addroffn::packAddrOfFn(result)));
         return createEmpty(:type);
     }
 
