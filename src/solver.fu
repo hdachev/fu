@@ -848,7 +848,7 @@ pub fn solve(
             mut overloadIdx: Target;
 
             NEXT: while (overloadIdx =
-                scope.search(id, scope_iterator,
+                scope.items.search(id, scope_iterator,
                     :scope_skip, :target,
                     :extra_items, :field_items))
             {
@@ -2401,7 +2401,7 @@ pub fn solve(
         mut scope_iterator: i32;
         mut overloadIdx: Target;
 
-        while (overloadIdx = _scope.search(
+        while (overloadIdx = _scope.items.search(
             id, scope_iterator, scope_skip: _ss_items))
         {
             ref maybe = GET_mut(overloadIdx);
@@ -2746,7 +2746,7 @@ pub fn solve(
             : _scope;
 
         while (overloadIdx =
-            scope.search(id, scope_iterator,
+            scope.items.search(id, scope_iterator,
                 scope_skip: !qualified && _ss_items))
         {
             let maybe = GET(overloadIdx);

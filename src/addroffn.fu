@@ -66,7 +66,7 @@ pub fn X_solveAddrOfFn(scope: Scope, scope_skip: ScopeSkip[], id: string)
 
     mut scope_iterator: i32;
     mut target: Target;
-    while (target = scope.search(:id, :scope_iterator, :scope_skip))
+    while (target = scope.items.search(:id, :scope_iterator, :scope_skip))
         targets.push(target);
 
     return targets

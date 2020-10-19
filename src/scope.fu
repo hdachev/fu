@@ -258,7 +258,7 @@ pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip[]): Target[
     mut results: Target[] = [];
 
     mut target: Target;
-    while (target = search(:scope, :id, :scope_iterator, :scope_skip))
+    while (target = scope.items.search(:id, :scope_iterator, :scope_skip))
         results.unshift(target);
 
     return results;
@@ -288,7 +288,7 @@ pub fn each(
 }
 
 pub fn search(
-    scope: Scope, id: string,
+    items: [ScopeItem], id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
     target?: Target,
@@ -306,13 +306,11 @@ pub fn search(
     }
 
     // Search.
-    let items = scope.items;
-
     let START = items.len + extra_items.len + field_items.len;
     if (!scope_iterator)
         scope_iterator = START;
     else if (scope_iterator >= START)
-        throw ("Scope/search: scope.items shrunk while we iterated.");
+        throw ("Scope/search: items shrunk while we iterated.");
 
     // Scope skip.
     mut skiptrap = -1;
@@ -336,7 +334,7 @@ pub fn search(
         }
 
         if (skiptrap >= items.len)
-            throw ("Scope/search: scope_skip will jump past end of scope.items.");
+            throw ("Scope/search: scope_skip will jump past end of items.");
     }
 
     scope_iterator--;
