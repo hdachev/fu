@@ -2806,19 +2806,24 @@ pub fn solve(
 
         visitScope(_scope.items);
 
-        // Iterate all visible types, this is slow.
-        //  Alternatively we could just unwrap all of these things in
-        //   module root scope but that'd slow everything else down.
-        fn visitTypes(shadow module: Module)
-            module.out.types.each(
-                |struct| visitScope(struct.items));
+        // TODO FIX:
+        //  emit a regular lambda instead.
+        if (node.flags & F_ACCESS)
+        {
+            // Iterate all visible types, this is slow.
+            //  Alternatively we could just unwrap all of these things in
+            //   module root scope but that'd slow everything else down.
+            fn visitTypes(shadow module: Module)
+                module.out.types.each(
+                    |struct| visitScope(struct.items));
 
-        // From this module ...
-        visitTypes(module);
+            // From this module ...
+            visitTypes(module);
 
-        // ... and all visible imports.
-        _scope.imports.each(_ss_imports,
-            |import| visitTypes(ctx.modules[import]));
+            // ... and all visible imports.
+            _scope.imports.each(_ss_imports,
+                |import| visitTypes(ctx.modules[import]));
+        }
 
         //
         result || fail("No `fn " ~ id ~ "` in scope.");

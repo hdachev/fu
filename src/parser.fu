@@ -639,9 +639,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (!expr)
             consume("op", "(");
         else if (!tryConsume("op", "("))
-            return make(kind: "addroffn", :flags, value: name);
+            return createAddrOfFn(:name, :flags);
 
         return parseFnDecl_cont(:flags, :name, :expr);
+    }
+
+    fn createAddrOfFn(name!: string, flags!: i32): Node
+    {
+        return make(kind: "addroffn", :flags, value: name);
     }
 
     fn parseFnDecl_cont(name!: string, mut flags?!: i32, expr?!: bool, endv! = ")"): Node
@@ -1076,6 +1081,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                     let id = consume("id").value;
                     _idx -= 2;
                     return createRead(id);
+                }
+
+                if (v == ".")
+                {
+                    let id = consume("id").value;
+                    return createAddrOfFn(name: id, flags: F_ACCESS);
                 }
 
                 return parsePrefix(v);
