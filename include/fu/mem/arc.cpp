@@ -1,11 +1,12 @@
 #include "./arc.h"
 #include "../util.h"
+#include "../int/next_pow2.h"
 
 static inline char* fu_POW2MEM_ALLOC(size_t& inout_bytes) noexcept
 {
     size_t bytes = inout_bytes;
     {
-        uint32_t rnd = fu_NEXT_POW2(uint32_t(bytes));
+        uint32_t rnd = fu::next_pow2(uint32_t(bytes));
 
         // Node re 0x8: it'll fit in an i32
         //  after we sub the header size.
@@ -25,7 +26,7 @@ static inline char* fu_POW2MEM_ALLOC(size_t& inout_bytes) noexcept
 
 static inline void fu_POW2MEM_FREE(char* memory, size_t bytes) noexcept
 {
-    bytes = fu_NEXT_POW2(uint32_t(bytes));
+    bytes = fu::next_pow2(uint32_t(bytes));
 
     std::free((void*)memory);
 }

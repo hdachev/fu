@@ -2,6 +2,7 @@
 
 #include "./std.h"
 #include "./cfg.h"
+#include "./inl.h"
 
 /////////////////////////////////////////////
 //
@@ -105,44 +106,10 @@ struct fu_MAYBE_POS<fu_ZERO> {
 
 /////////////////////////////////////////////
 
-inline uint32_t fu_NEXT_POW2(uint32_t v) noexcept
-{
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-
-    return v;
-}
-
-/////////////////////////////////////////////
-
-inline uint32_t fu_NEXT_LOG2(uint32_t a) // a must be >= 2
-{
-#ifdef _MSC_VER
-    unsigned long bit;
-    _BitScanReverse(&bit, a - 1);
-    return uint32_t(bit + 1);
-#else
-    return 32 - uint32_t( __builtin_clz(a - 1));
-#endif
-}
-
-/////////////////////////////////////////////
-
 #ifndef NDEBUG
 const int fu_DEBUG = 1;
 #else
 const int fu_DEBUG = 0;
 #endif
-
-/////////////////////////////////////////////
-
-#define fu_CONCAT_detail(a, b) a##b
-#define fu_CONCAT(a, b) fu_CONCAT_detail(a, b)
-#define fu_UNIQUE_ID() fu_CONCAT(fu_UNIQUE_ID_, __COUNTER__)
 
 /////////////////////////////////////////////

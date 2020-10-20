@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "./util.h"
+#include "./inl.h"
 
 namespace fu {
 
