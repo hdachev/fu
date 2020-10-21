@@ -418,6 +418,19 @@ pub fn runTests()
     `);
 
 
+    // All those shortcuts we've taken.
+
+    TODO(`
+        fn ab(a, b = -1) a + b;
+        fn main() ab(1.5, -1.5);
+    `);
+
+    TODO(`
+        fn ab(a, b) a + b;
+        fn main() ab(b: 1, a: -1);
+    `);
+
+
     // Recursion, closures & implicit args.
 
     ZERO(`
