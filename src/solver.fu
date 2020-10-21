@@ -1486,7 +1486,9 @@ pub fn solve(
         return __solveFn(node, solve: true, into: uPrepFn_A(node).target);
     }
 
-    fn __solveFn(n_fn: Node, solve!: bool, spec?!: bool, into?: Target): SolvedNode
+    fn __solveFn(
+        n_fn: Node, solve!: bool, spec?!: bool, into?: Target,
+        extra_items?: [ScopeItem]): SolvedNode
     {
         let parent_idx = _current_fn.target.index;
 
@@ -1522,6 +1524,10 @@ pub fn solve(
         //  see the `traverse` testcase.
         if (_current_fn.flags & F_TEMPLATE)
             out.flags |= F_TEMPLATE;
+
+        // Populate scope.
+        if (extra_items)
+            _scope.items ~= extra_items;
 
         //////////////////////////
         mut native = false;
@@ -1808,9 +1814,17 @@ pub fn solve(
             ScopeSkip_push(_ss_imports, start: start.imports_len, end: scope0.imports_len);
         }
 
-        //
+        // We'll need the original imports in scope
+        //  in order to solve type params & pattern match below.
+        Scope_snap(_scope) == scope0 || fail(
+            "doTrySpec: scope write before imports unpack.");
+
         for (mut i = 0; i < template.imports.len; i++)
             Scope_import(template.imports[i]);
+
+        let expect_scopelen = Scope_snap(_scope);
+        defer Scope_snap(_scope) == expect_scopelen || fail(
+            "doTrySpec: scope write after imports unpack.");
 
         //
         let kind    = template.node.kind;
@@ -1975,13 +1989,15 @@ pub fn solve(
                 if (!did_match)
                     return SPECFAIL;
             }
-
-            typeParams.unpack();
         }
 
+        // We shouldn't have written anything new into scope.
+        let extra_items = typeParams.intoScopeItems();
+
+        //
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = !into && __solveFn(:n_fn, solve: false, spec: true).target;
+        let prep = !into && __solveFn(:n_fn, solve: false, spec: true, :extra_items).target;
         shadow let into = prep || into;
 
         // Re-enable recursion.
@@ -2013,9 +2029,7 @@ pub fn solve(
         }
 
         //
-        __solveFn(
-            :n_fn, solve: true, spec: true,
-                :into);
+        __solveFn(:n_fn, solve: true, spec: true, :extra_items, :into);
 
         _open_templates.push(
             OpenTemplate(:overloadIdx, spec: into,
@@ -2025,14 +2039,21 @@ pub fn solve(
         return into;
     }
 
-    fn unpack(typeParams: TypeParams): void
+    fn intoScopeItems(typeParams: TypeParams): ScopeItem[]
     {
-        let keys = typeParams.keys;
-        for (mut i = 0; i < keys.len; i++)
+        mut res: ScopeItem[];
+
+        typeParams.pairs(|id, type|
         {
-            let key = keys[i];
-            Scope_Typedef(_scope, "$" ~ key, typeParams[key], flags: 0);
-        }
+            let name = "$" ~ id;
+            let target = Scope_Typedef(_scope,
+                id: "", // dont Scope_add
+                name: "$" ~ id, :type, flags: 0);
+
+            res ~= ScopeItem(name, :target);
+        });
+
+        return res;
     }
 
 

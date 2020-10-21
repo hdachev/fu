@@ -268,7 +268,7 @@ pub fn cpp_codegen(
 
     fn collectDedupes(dedupes: Map(string, string), leadingNewline?: bool): string
     {
-        return collectDedupes(dedupes.values(), :leadingNewline);
+        return collectDedupes(:dedupes.values, :leadingNewline);
     }
 
     fn collectDedupes(mut values: string[], leadingNewline?: bool): string

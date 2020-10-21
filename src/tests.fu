@@ -3333,6 +3333,20 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut a = 1;
+            mut b = 0;
+            mut c = 0;
+            {
+                defer a++;
+                defer c = a;
+                b = a;
+            }
+            return (b*27) - (a*11 + c*5);
+        }
+    `);
+
 
     // Conversions / ctors.
 
