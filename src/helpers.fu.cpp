@@ -142,4 +142,9 @@ fu_STR ascii_lower(const fu_STR& a)
     return res;
 }
 
+std::byte ascii_upper(const std::byte c)
+{
+    return (((c >= std::byte('a')) && (c <= std::byte('z'))) ? std::byte((int(c) + (int(std::byte('A')) - int(std::byte('a'))))) : std::byte(c));
+}
+
 #endif

@@ -21,6 +21,7 @@ set(FU_INPUTS
     ../lib/tea.fu
     bitset.fu
     solver.fu
+    cpp.fu
     codegen.fu
     ../lib/env.fu
     prelude.fu

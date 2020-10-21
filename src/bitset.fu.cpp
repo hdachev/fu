@@ -1,15 +1,15 @@
 #include <cstdint>
-#include <fu/never.h>
-#include <fu/str.h>
 #include <fu/vec.h>
 
 struct s_BitSet;
+
+void add(s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint64_t> _data;
+    fu_VEC<uint8_t> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -21,9 +21,9 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_grow_if_oob_1lNm
-                                #define DEFt_grow_if_oob_1lNm
-inline uint64_t& grow_if_oob_1lNm(fu_VEC<uint64_t>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_oHEp
+                                #define DEFt_grow_if_oob_oHEp
+inline uint8_t& grow_if_oob_oHEp(fu_VEC<uint8_t>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -34,17 +34,35 @@ inline uint64_t& grow_if_oob_1lNm(fu_VEC<uint64_t>& a, const int i)
 
 bool add_once(s_BitSet& _, const int idx)
 {
-    ((idx >= 0) || fu::fail("Bad IDX."_fu));
-    const int bucket = (idx / 64);
-    const int bit = (idx % 64);
-    const uint64_t mask = (1ull << uint64_t(bit));
-    uint64_t& entry = grow_if_oob_1lNm(_._data, bucket);
+    const int no_neg = ((idx < 0) ? -1 : 0);
+    const int bucket = ((idx / 8) | no_neg);
+    const int bit = (idx % 8);
+    const uint8_t mask = (1u << uint8_t(bit));
+    uint8_t& entry = grow_if_oob_oHEp(_._data, bucket);
     if (!(entry & mask))
     {
         entry |= mask;
         return true;
     };
     return false;
+}
+
+void add(s_BitSet& _, const int idx)
+{
+    const int no_neg = ((idx < 0) ? -1 : 0);
+    const int bucket = ((idx / 8) | no_neg);
+    const int bit = (idx % 8);
+    const uint8_t mask = (1u << uint8_t(bit));
+    grow_if_oob_oHEp(_._data, bucket) |= mask;
+}
+
+bool has(const s_BitSet& _, const int idx)
+{
+    const int no_neg = ((idx < 0) ? -1 : 0);
+    const int bucket = ((idx / 8) | no_neg);
+    const int bit = (idx % 8);
+    const uint8_t mask = (1u << uint8_t(bit));
+    return ((_._data.size() > bucket) && ((_._data[bucket] & mask) != 0u));
 }
 
 #endif

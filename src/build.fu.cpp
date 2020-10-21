@@ -35,6 +35,7 @@ struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
+struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -363,21 +364,39 @@ struct s_ScopeMemo
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkip
+                                #define DEF_s_ScopeSkip
+struct s_ScopeSkip
+{
+    int start;
+    int end;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || start
+            || end
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
-    s_ScopeMemo locals;
-    int parent_idx;
+    s_ScopeMemo scope_memo;
+    fu_VEC<s_ScopeSkip> ss_items;
+    fu_VEC<s_ScopeSkip> ss_imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
-            || locals
-            || parent_idx
+            || scope_memo
+            || ss_items
+            || ss_imports
         ;
     }
 };
@@ -398,7 +417,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    int status;
+    uint32_t status;
     int local_of;
     fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
@@ -581,9 +600,9 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_ajCN
-                                #define DEFt_if_last_ajCN
-inline std::byte if_last_ajCN(fu_STR& s)
+                                #ifndef DEFt_if_last_jB4B
+                                #define DEFt_if_last_jB4B
+inline std::byte if_last_jB4B(fu_STR& s)
 {
     return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
 }
@@ -674,18 +693,18 @@ static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR&
 
 void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite, const s_Context& ctx)
 {
-    if (if_last_ajCN(dir_wrk) != std::byte('/'))
+    if (if_last_jB4B(dir_wrk) != std::byte('/'))
     {
         (dir_wrk || fu::fail("No workspace directory provided."_fu));
         dir_wrk += std::byte('/');
     };
-    if ((dir_obj && (if_last_ajCN(dir_obj) != std::byte('/'))))
+    if ((dir_obj && (if_last_jB4B(dir_obj) != std::byte('/'))))
         dir_obj += std::byte('/');
 
-    if ((dir_src && (if_last_ajCN(dir_src) != std::byte('/'))))
+    if ((dir_src && (if_last_jB4B(dir_src) != std::byte('/'))))
         dir_src += std::byte('/');
 
-    if ((dir_cpp && (if_last_ajCN(dir_cpp) != std::byte('/'))))
+    if ((dir_cpp && (if_last_jB4B(dir_cpp) != std::byte('/'))))
         dir_cpp += std::byte('/');
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);

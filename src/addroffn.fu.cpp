@@ -5,25 +5,14 @@
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 
-struct s_Argument;
 struct s_Effects;
 struct s_Lifetime;
-struct s_Node;
-struct s_Overload;
-struct s_Partial;
-struct s_Scope;
 struct s_ScopeItem;
-struct s_ScopeMemo;
-struct s_ScopeSkip;
-struct s_SolvedNode;
 struct s_Target;
-struct s_Template;
-struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
 int parse10i32(int&, const fu_STR&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -121,228 +110,6 @@ struct s_ScopeItem
 };
                                 #endif
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Argument
-                                #define DEF_s_Argument
-struct s_Argument
-{
-    fu_STR name;
-    s_Type type;
-    s_SolvedNode dEfault;
-    int flags;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || name
-            || type
-            || dEfault
-            || flags
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Partial
-                                #define DEF_s_Partial
-struct s_Partial
-{
-    s_Target via;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || via
-            || target
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_Node> items;
-    s_TokenIdx token;
-    s_Node(const s_Node&) = default;
-    s_Node(s_Node&&) = default;
-    s_Node& operator=(s_Node&&) = default;
-    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeMemo
-                                #define DEF_s_ScopeMemo
-struct s_ScopeMemo
-{
-    int items_len;
-    int imports_len;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items_len
-            || imports_len
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Template
-                                #define DEF_s_Template
-struct s_Template
-{
-    s_Node node;
-    fu_VEC<int> imports;
-    s_ScopeMemo locals;
-    int parent_idx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || node
-            || imports
-            || locals
-            || parent_idx
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
-{
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int flags;
-    int min;
-    int max;
-    fu_VEC<s_Argument> args;
-    s_Partial partial;
-    s_Template tEmplate;
-    s_SolvedNode solved;
-    fu_VEC<int> used_by;
-    int status;
-    int local_of;
-    fu_VEC<int> closes_over;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || name
-            || type
-            || flags
-            || min
-            || max
-            || args
-            || partial
-            || tEmplate
-            || solved
-            || used_by
-            || status
-            || local_of
-            || closes_over
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Scope
-                                #define DEF_s_Scope
-struct s_Scope
-{
-    fu_VEC<s_ScopeItem> items;
-    fu_VEC<s_Overload> overloads;
-    fu_VEC<int> imports;
-    s_Scope(const s_Scope&) = delete;
-    s_Scope(s_Scope&&) = default;
-    s_Scope& operator=(const s_Scope&) = delete;
-    s_Scope& operator=(s_Scope&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items
-            || overloads
-            || imports
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeSkip
-                                #define DEF_s_ScopeSkip
-struct s_ScopeSkip
-{
-    s_ScopeMemo start;
-    s_ScopeMemo end;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || start
-            || end
-        ;
-    }
-};
-                                #endif
-
 #ifndef FU_NO_FDEFs
 
 bool type_isAddrOfFn(const s_Type& type)
@@ -368,7 +135,7 @@ fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
         const s_Target& target = targets[i];
         res += ((("@"_fu + target.modid) + ":"_fu) + target.index);
     };
-    return ([&]() -> fu_STR { { fu_STR _ = fu_STR(res); if (_) return _; } return "@"_fu; }());
+    return res;
 }
 
 fu_VEC<s_Target> unpackAddrOfFn(const fu_STR& canon)
@@ -396,17 +163,6 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s
         out.push(s_ScopeItem { fu_STR(id), s_Target(targets[i]) });
 
     return true;
-}
-
-s_Type X_solveAddrOfFn(const s_Scope& scope, const s_ScopeSkip& scope_skip, const fu_STR& id)
-{
-    fu_VEC<s_Target> targets {};
-    int scope_iterator {};
-    s_Target target {};
-    while ((target = search(scope, id, scope_iterator, scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<s_ScopeItem>{})))
-        targets.push(target);
-
-    return s_Type { s_ValueType { 0, 0, packAddrOfFn(targets) }, s_Lifetime{}, s_Effects{} };
 }
 
 s_Type X_addrofTarget(const s_Target& target)

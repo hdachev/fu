@@ -16,6 +16,7 @@
 #include "../lib/tea.fu.cpp"
 #include "bitset.fu.cpp"
 #include "solver.fu.cpp"
+#include "cpp.fu.cpp"
 #include "codegen.fu.cpp"
 #include "prelude.fu.cpp"
 #include "build.fu.cpp"

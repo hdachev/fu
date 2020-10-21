@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -5,6 +6,7 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
+#include <fu/view.h>
 #include <utility>
 
 struct s_Argument;
@@ -34,8 +36,9 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+bool operator==(const s_ScopeMemo&, const s_ScopeMemo&);
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
-s_Target search(const s_Scope&, const fu_STR&, int&, const s_ScopeSkip&, const s_Target&, const fu_VEC<s_ScopeItem>&, const fu_VEC<s_ScopeItem>&);
+s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, const fu_VEC<s_ScopeSkip>&, const s_Target&, fu::view<s_ScopeItem>, fu::view<s_ScopeItem>);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -347,21 +350,39 @@ struct s_ScopeMemo
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkip
+                                #define DEF_s_ScopeSkip
+struct s_ScopeSkip
+{
+    int start;
+    int end;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || start
+            || end
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
-    s_ScopeMemo locals;
-    int parent_idx;
+    s_ScopeMemo scope_memo;
+    fu_VEC<s_ScopeSkip> ss_items;
+    fu_VEC<s_ScopeSkip> ss_imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
-            || locals
-            || parent_idx
+            || scope_memo
+            || ss_items
+            || ss_imports
         ;
     }
 };
@@ -382,7 +403,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    int status;
+    uint32_t status;
     int local_of;
     fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
@@ -541,42 +562,36 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_ScopeSkip
-                                #define DEF_s_ScopeSkip
-struct s_ScopeSkip
-{
-    s_ScopeMemo start;
-    s_ScopeMemo end;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || start
-            || end
-        ;
-    }
-};
-                                #endif
-
 #ifndef FU_NO_FDEFs
 
                                 #ifndef DEF_SS_FINALIZED
                                 #define DEF_SS_FINALIZED
-inline const int SS_FINALIZED = (1 << 0);
+inline const uint32_t SS_FINALIZED = (0x1u << 0u);
                                 #endif
 
                                 #ifndef DEF_SS_DIRTY
                                 #define DEF_SS_DIRTY
-inline const int SS_DIRTY = (1 << 1);
+inline const uint32_t SS_DIRTY = (0x1u << 1u);
+                                #endif
+
+                                #ifndef DEF_SS_REC_CHECKED
+                                #define DEF_SS_REC_CHECKED
+inline const uint32_t SS_REC_CHECKED = (0x1u << 2u);
+                                #endif
+
+                                #ifndef DEF_SS_RECURSIVE
+                                #define DEF_SS_RECURSIVE
+inline const uint32_t SS_RECURSIVE = (0x1u << 3u);
                                 #endif
 
                                 #ifndef DEF_SS_HAS_BREAK
                                 #define DEF_SS_HAS_BREAK
-inline const int SS_HAS_BREAK = (1 << 2);
+inline const uint32_t SS_HAS_BREAK = (0x1u << 4u);
                                 #endif
 
                                 #ifndef DEF_SS_HAS_CONTINUE
                                 #define DEF_SS_HAS_CONTINUE
-inline const int SS_HAS_CONTINUE = (1 << 3);
+inline const uint32_t SS_HAS_CONTINUE = (0x1u << 5u);
                                 #endif
 
 int MODID(const s_Module& module)
@@ -649,18 +664,39 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid)
     return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads), fu_VEC<int>(no_imports) };
 }
 
-fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id, const s_ScopeSkip& scope_skip)
+fu_VEC<s_Target> DEPREC_lookup(const s_Scope& scope, const fu_STR& id, const fu_VEC<s_ScopeSkip>& scope_skip)
 {
     int scope_iterator {};
     fu_VEC<s_Target> results {};
     s_Target target {};
-    while ((target = search(scope, id, scope_iterator, scope_skip, s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<s_ScopeItem>{})))
+    while ((target = search(scope.items, id, scope_iterator, scope_skip, s_Target{}, fu::view<s_ScopeItem>{}, fu::view<s_ScopeItem>{})))
         results.unshift(target);
 
     return results;
 }
 
-s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, const s_ScopeSkip& scope_skip, const s_Target& target, const fu_VEC<s_ScopeItem>& extra_items, const fu_VEC<s_ScopeItem>& field_items)
+static void nextSkip(fu::view<s_ScopeItem> items_0, int& scope_iterator_0, const fu_VEC<s_ScopeSkip>& scope_skip_0, int& skiptrap_0)
+{
+    for (int i = scope_skip_0.size(); i-- > 0; )
+    {
+        const s_ScopeSkip& ss = scope_skip_0[i];
+        const int s1 = (ss.end - 1);
+        if (scope_iterator_0 > s1)
+        {
+            skiptrap_0 = s1;
+            break;
+        };
+        const int s0 = (ss.start - 1);
+        if (scope_iterator_0 > s0)
+            scope_iterator_0 = s0;
+
+    };
+    if ((skiptrap_0 >= items_0.size()))
+        fu::fail("Scope/search: scope_skip will jump past end of items."_fu);
+
+}
+
+s_Target search(fu::view<s_ScopeItem> items, const fu_STR& id, int& scope_iterator, const fu_VEC<s_ScopeSkip>& scope_skip, const s_Target& target, fu::view<s_ScopeItem> extra_items, fu::view<s_ScopeItem> field_items)
 {
     if (target)
     {
@@ -670,22 +706,20 @@ s_Target search(const s_Scope& scope, const fu_STR& id, int& scope_iterator, con
         scope_iterator--;
         return s_Target(target);
     };
-    const fu_VEC<s_ScopeItem>& items = scope.items;
-    const int skip0 = (scope_skip.start.items_len - 1);
-    const int skip1 = (scope_skip.end.items_len - 1);
-    if ((skip1 >= items.size()))
-        fu::fail("Scope/search: scope_skip will jump past end of scope.items."_fu);
-
     const int START = ((items.size() + extra_items.size()) + field_items.size());
     if (!scope_iterator)
         scope_iterator = START;
     else if ((scope_iterator >= START))
-        fu::fail("Scope/search: scope.items shrunk while we iterated."_fu);
+        fu::fail("Scope/search: items shrunk while we iterated."_fu);
 
+    int skiptrap = -1;
+    scope_iterator--;
+    nextSkip(items, scope_iterator, scope_skip, skiptrap);
+    scope_iterator++;
     while (scope_iterator-- > 0)
     {
-        if (scope_iterator == skip1)
-            scope_iterator = skip0;
+        if (scope_iterator == skiptrap)
+            nextSkip(items, scope_iterator, scope_skip, skiptrap);
 
         const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : extra_items[(scope_iterator - items.size())]) : items[scope_iterator]);
         if (item.id == id)
@@ -715,11 +749,16 @@ bool operator>(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return ((a.items_len > b.items_len) || (a.imports_len > b.imports_len));
 }
 
+bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
+{
+    return ((a.items_len == b.items_len) || (a.imports_len == b.imports_len));
+}
+
 s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_Partial& partial, const s_SolvedNode& solved, const int local_of, const fu_STR& name, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0, int(local_of), fu_VEC<int>{} };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Partial(partial), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, 0u, int(local_of), fu_VEC<int>{} };
     if ((id && (kind != "field"_fu)))
         scope.items.push(s_ScopeItem { fu_STR(id), s_Target(target) });
 

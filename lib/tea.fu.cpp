@@ -26,9 +26,9 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_r16_F9b0
-                                #define DEFt_r16_F9b0
-inline void r16_F9b0(s_TEA& _, uint32_t& sum)
+                                #ifndef DEFt_r16_aKqO
+                                #define DEFt_r16_aKqO
+inline void r16_aKqO(s_TEA& _, uint32_t& sum)
 {
     uint32_t delta = 0x9e3779b9u;
     for (int i = 0; i < 16; i++)
@@ -40,12 +40,12 @@ inline void r16_F9b0(s_TEA& _, uint32_t& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_r16_aQnK
-                                #define DEFt_r16_aQnK
-inline void r16_aQnK(s_TEA& tea)
+                                #ifndef DEFt_r16_Zh1l
+                                #define DEFt_r16_Zh1l
+inline void r16_Zh1l(s_TEA& tea)
 {
     uint32_t sum {};
-    r16_F9b0(tea, sum);
+    r16_aKqO(tea, sum);
 }
                                 #endif
 
@@ -57,7 +57,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r16_aQnK(res);
+        r16_Zh1l(res);
     };
     if (u8view.size() & 7)
     {
@@ -74,7 +74,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
             };
             res.v1 ^= last;
         };
-        r16_aQnK(res);
+        r16_Zh1l(res);
     };
     return s_TEA(res);
 }
@@ -86,9 +86,9 @@ s_TEA hash(fu::view<std::byte> u8view)
     return res;
 }
 
-                                #ifndef DEFt_u64_pIMK
-                                #define DEFt_u64_pIMK
-inline uint64_t u64_pIMK(const s_TEA& tea)
+                                #ifndef DEFt_u64_aLRF
+                                #define DEFt_u64_aLRF
+inline uint64_t u64_aLRF(const s_TEA& tea)
 {
     return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull));
 }
@@ -97,7 +97,7 @@ inline uint64_t u64_pIMK(const s_TEA& tea)
 fu_STR hash62(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
-    uint64_t v = u64_pIMK(hash(str));
+    uint64_t v = u64_aLRF(hash(str));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 62ull);
@@ -116,7 +116,7 @@ fu_STR hash62(fu::view<std::byte> str, const int chars)
 fu_STR hash16(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
-    uint64_t v = u64_pIMK(hash(str));
+    uint64_t v = u64_aLRF(hash(str));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 16ull);

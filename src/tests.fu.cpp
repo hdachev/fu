@@ -1,9 +1,12 @@
+#include <cstdint>
 #include <fu/map.h>
+#include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
+#include <iostream>
 
 struct s_Argument;
 struct s_Context;
@@ -22,6 +25,7 @@ struct s_Partial;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
+struct s_ScopeSkip;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -349,21 +353,39 @@ struct s_ScopeMemo
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkip
+                                #define DEF_s_ScopeSkip
+struct s_ScopeSkip
+{
+    int start;
+    int end;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || start
+            || end
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
 {
     s_Node node;
     fu_VEC<int> imports;
-    s_ScopeMemo locals;
-    int parent_idx;
+    s_ScopeMemo scope_memo;
+    fu_VEC<s_ScopeSkip> ss_items;
+    fu_VEC<s_ScopeSkip> ss_imports;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
-            || locals
-            || parent_idx
+            || scope_memo
+            || ss_items
+            || ss_imports
         ;
     }
 };
@@ -384,7 +406,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    int status;
+    uint32_t status;
     int local_of;
     fu_VEC<int> closes_over;
     explicit operator bool() const noexcept
@@ -575,6 +597,27 @@ int self_test()
     return (fu::lfind(cpp, "int main()"_fu) ? 0 : 101);
 }
 
+void TODO(const fu_STR& src)
+{
+    
+    try
+    {
+    
+        snippet2cpp(src);
+    }
+    catch (const std::exception& o_0)
+    {
+        const fu_STR& e = fu_TO_STR(o_0.what());
+    
+    {
+        (std::cout << "  TODO: "_fu << e << "\n"_fu << src << '\n');
+        return;
+    }
+    }
+;
+    fu::fail(("TODO test is actually passing: "_fu + src));
+}
+
 static fu_STR EXPR(fu_STR& assertion_0, const fu_STR& varname)
 {
     return fu::replace(assertion_0, "@"_fu, varname);
@@ -649,6 +692,9 @@ void runTests()
     ZERO("\n        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;\n        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;\n        fn main() ab_rec(11) + 200;\n    "_fu);
     ZERO("\n        fn main() {\n            let a = 1;\n            fn add1(b) a + b;\n            return 2.add1 - 3;\n        }\n    "_fu);
     ZERO("\n        pub fn map(a: [$T], fn) {\n            mut res: fn($T)[];\n            res.grow_junk(a.len);\n            for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);\n            return res;\n        }\n\n        pub fn clone(a: $T)\n        case ($T -> @copy) a;\n        case ($T -> [$U]) a.map(fn clone);\n        default {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n\n        pub nocopy struct Scope { x: i32; };\n        pub struct ModuleOutputs { deps: Scope[]; };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a.clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu);
+    ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn identity(dont_leak_me) dont_leak_me;\n    "_fu, "\n        let dont_leak_me = 1;\n        fn main() _0::identity(dont_leak_me * 2) - 2;\n    "_fu } });
+    ZERO("\n        let static = 1;\n        fn template(arg) static + arg;\n        let arg = 7;                        // <- template shouldn't see this\n        let result = template(arg / -4);    // <- when specializing here\n        fn main() result;\n    "_fu);
+    ZERO("\n        fn main() {\n            let static = 1;\n            fn template(arg) static + arg;\n            let arg = 7; // same here, except we're in a fn.\n            return template(arg / -4);\n        }\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu);
     ZERO("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu);
@@ -662,6 +708,9 @@ void runTests()
     ZERO("\n        struct Range {\n            min: i32;\n            max: i32;\n        }\n\n        fn size(using implicit r: Range)\n            max - min;\n\n        fn test()\n            size();\n\n        let implicit r = Range(14, 21);\n\n        return test  - 7;\n    "_fu);
     ZERO("\n        struct Range {\n            min: i32;\n            max: i32;\n        }\n\n        fn size(using implicit r: Range)\n            max - min;\n\n        fn inner()\n            size();\n\n        fn outer()\n            inner();\n\n        let implicit r = Range(14, 21);\n\n        return outer() - 7;\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        fn main() {\n            let a = 1;\n            let b = 2;\n            let c = 3;\n\n            fn depth1(x: i32) {\n                fn depth2(y: i32) {\n                    return sibling1(x + y + b);\n                }\n\n                return depth2(x + a);\n            }\n\n            fn sibling1(z: i32): i32 {\n                return z + c;\n            }\n\n            return depth1(0) - 6;\n        }\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn goto0(x) x ? goto0(x / 2) : 0;\n        fn main() goto0(1);\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn goto0(x) x && goto0(x / 2);\n        fn main() goto0(1);\n    "_fu);
+    ZERO("\n        fn impl(implicit ref _impl: i32) _impl;\n        fn arg_or_impl(ref arg: i32) arg || impl;\n        fn main() {\n            let implicit mut _impl: i32;\n            mut arg: i32;\n            ref ref = arg_or_impl(arg);\n            return arg - ref;\n        }\n    "_fu);
     ZERO("\n        let x = 1;\n\n        fn test(): &i32\n            x;\n\n        return test - 1;\n    "_fu);
     ZERO("\n        let a = 1;\n        let x: &i32 = a;\n\n        return a - x;\n    "_fu);
     ZERO("\n        struct Test {\n            x: &i32;\n        }\n\n        let a = 1;\n        let test = Test(a);\n\n        return test.x - 1;\n    "_fu);
@@ -740,6 +789,11 @@ void runTests()
     ZERO("\n        return 0o101.i32 - 65;\n    "_fu);
     ZERO("\n\n        fn path_normalize(p: string): string {\n            mut path = p.split(\"/\");\n\n            for (mut i = path.len; i --> 0; ) {\n                let part = path[i];\n                if (part == \".\" || !part && i > 0 && i < path.len - 1)\n                    path.splice(i, 1);\n            }\n\n            for (mut i = 1; i < path.len; i++) {\n                if (path[i] == \"..\")\n                    path.splice(--i, 2);\n            }\n\n            return path.join(\"/\");\n        }\n\n        fn path_join(a: string, b: string)\n            path_normalize(a ~ \"/\" ~ b);\n\n        fn main()\n            path_join(\"hello/hey\", \"./../you//\") == \"hello/you/\"\n                ? 0 : 1;\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        pub struct Template { locals: ScopeMemo; }; // <- used ahead of the def, was missing q_trivial\n        pub struct ScopeMemo { x: i32; }; // <- trivial, discovered on solve here after Template is done\n        pub fn +(a: ScopeMemo, b: ScopeMemo) a.x + b.x; // <- used here after both structs are done\n\n        pub fn main() {\n            let a = Template(ScopeMemo(+3));\n            let b = Template(ScopeMemo(-3));\n            return a.locals + b.locals; // <- fails to match.\n        }\n    "_fu);
+    ZERO("\n        pub struct MeshBuilder\n        {\n            verts?:     byte[];\n            indices?:   byte[];\n            vert_bytes: i32;\n            num_verts?: i32;\n        };\n\n        pub fn alloc(\n            using mb: &mut MeshBuilder,\n            new_verts: i32,\n            new_indices: i32)\n        {\n            verts.resize_junk((verts.len + new_verts) * vert_bytes);\n\n            let index_bytes = 4;\n            indices.resize_junk((indices.len + new_indices) * index_bytes);\n        }\n\n        pub fn setup_quads(\n            using mb: &mut MeshBuilder, // <- the 'using' introduced more bindings,\n            num_quads: i32)             // <-  advancing the target index number of this arg,\n                : &mut [byte]           // <-   confusing the callsite lifetime of this view.\n        {\n            let b0 = verts.len;\n            let v0 = num_verts;\n            let i0 = indices.len;\n\n            alloc(num_quads * 4, num_quads * 6);\n\n            mut v1 = v0;\n\n            let indices_i32: &mut [i32] =\n                indices[i0, indices.len]\n                    .view(i32);\n\n            for (mut i = 0; i < indices_i32.len; i += 6)\n            {\n                indices_i32[i    ] = v1;\n                indices_i32[i + 1] = v1 + 1;\n                indices_i32[i + 2] = v1 + 2;\n\n                indices_i32[i + 3] = v1;\n                indices_i32[i + 4] = v1 + 2;\n                indices_i32[i + 5] = v1 + 3;\n\n                v1 += 4;\n            }\n\n            num_verts = v1;\n\n            return verts[b0, verts.len];\n        }\n\n        let QUAD_VBO: f32[] =\n        [\n            -1, -1, 0,      0, 0, 1,    0, 0,\n            +1, -1, 0,      0, 0, 1,    1, 0,\n            +1, +1, 0,      0, 0, 1,    1, 1,\n            -1, +1, 0,      0, 0, 1,    0, 1,\n        ];\n\n        pub fn main()\n        {\n            mut mb = MeshBuilder(\n                vert_bytes: 4 * (3+3+2));\n\n            mb.setup_quads(1).view(f32) .= QUAD_VBO;\n\n            return mb.num_verts - 4;\n        }\n    "_fu);
+    ZERO("\n        fn target(implicit ref _target: i32) _target;\n\n        // this suddenly reported that it doesn't see __solveStruct\n        fn GET_mut(ref x: i32) x || target;\n\n        // while i was trying to reproduce an ambig \"o\" fail here\n        fn __solveStruct(mut arg: i32): i32 {\n            if (arg) {\n                ref o = GET_mut(arg);\n                    o++;\n                checkRecursions(o, o);\n            }\n            return arg;\n        }\n\n        fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n        //! SLOW_resolve\n        fn main()\n        {\n            let implicit mut _target = 0;\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn main()\n        {\n            mut target = 0;\n\n            fn each(cond, cons) cond && cons();\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target));\n\n            fn __solveStruct(mut arg: i32, x = 0): i32 {\n                each(arg, || arg += x);\n                if (arg) {\n                    ref o = GET_mut(arg);\n                        o++;\n                    checkRecursions(o, o);\n                }\n                return arg;\n            }\n\n            fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu);
+    ZERO("\n        //! SLOW_resolve\n        fn main()\n        {\n            mut target = 0;\n\n            // this suddenly reported that it doesn't see __solveStruct\n            fn GET_mut(ref x) x || (target = __solveStruct(target));\n\n            // while i was trying to reproduce an ambig \"o\" fail here\n            fn __solveStruct(mut arg: i32): i32 {\n                if (arg) {\n                    ref o = GET_mut(arg);\n                        o++;\n                    checkRecursions(o, o);\n                }\n                return arg;\n            }\n\n            fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu);
+    FAIL("\n        struct ValueType { modid: i32; };\n        struct Type { using vtype: ValueType; };\n        struct Target { modid: i32; index: i32; };\n        struct Overload { name: string; id: string; };\n\n        fn GET(target: Target): Overload =\n            Overload(\n                name: \"N\" ~ target.index,\n                  id: \"I\" ~ target.index);\n\n        fn main() {\n            mut specs: Map(string, Target);\n\n            fn setSpec(mangle: string) {\n                ref t = specs[mangle] ||= Target;\n\n                // This template should start expanding on GET(target).name,\n                //  which should conflict with overload name.\n                fn name(shadow target)\n                    GET(target) //*F\n                        .name; /*/ .id; //*/\n\n                return t.name;\n            }\n\n            return setSpec(\"hey\").len - 2;\n        }\n    "_fu);
     ZERO("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu);
     ZERO("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw(\"woot\");\n    "_fu);
     ZERO("\n\n        struct TrueStory { kind: string; value: string; };\n\n        mut specialized = TrueStory(kind: \"fn\", value: \"val\");\n\n        specialized.kind == \"fn\" && specialized.value || throw(\"nope\");\n\n        let v: &mut string = specialized.kind == \"fn\"\n                          && specialized.value\n                          || throw(\"nope\");\n        v ~= \"ue\";\n\n        return specialized.value == \"value\" ? 0 : 1;\n\n    "_fu);
@@ -865,6 +919,7 @@ void runTests()
     ZERO("\n        fn test(s: $T) {\n            mut sum = 0;\n            for (fieldname i: $T) sum += s.i;\n            return sum;\n        }\n\n        struct XY { x: i32; y: i32; };\n\n        fn main() {\n            let thing = XY(1, 2);\n            let sum = test(thing);\n            return sum - 3;\n        }\n    "_fu);
     ZERO("\n        fn test() [] -> i32;\n        fn main() test;\n    "_fu);
     ZERO("\n        fn main() {\n            mut a = 1;\n            mut b = 0;\n            {\n                defer a++;\n                b = a;\n            }\n            return (b+1) - a;\n        }\n    "_fu);
+    ZERO("\n        fn main() {\n            mut a = 1;\n            mut b = 0;\n            mut c = 0;\n            {\n                defer a++;\n                defer c = a;\n                b = a;\n            }\n            return (b*27) - (a*11 + c*5);\n        }\n    "_fu);
     ZERO("\n        type Test = i8;\n        fn main() 256.Test.i32;\n    "_fu);
     FAIL("\n        fn test(a: $A, b: $B) b + //*F\n            a;\n            /*/\n            $B(a);\n            //*/\n        fn main() i8(-1).test(+1);\n    "_fu);
     ZERO("\n        let x = { mut z = 0; z++; z };\n        return x - 1;\n    "_fu);
@@ -873,6 +928,14 @@ void runTests()
     ZERO("\n        fn reduce(items: $T[], fn, init?: $T) {\n            mut result = init;\n            for (mut i = 0; i < items.len; i++)\n                result = fn(result, items[i]);\n\n            return result;\n        }\n\n        fn main() [1, 2].reduce(|a, b| a + b) - 3;\n    "_fu);
     ZERO("\n        fn each(items: $T[], fn) {\n            for (mut i = 0; i < items.len; i++) // <- one i\n                fn(items[i]);\n        }\n\n        fn main() {\n            mut i = 0;                  // <- another i, i got them to shadow each other\n            [1, 2].each(|x| i += x);    //      in the everything-a-free-function\n            return i - 3;               //      impl of closures\n        }\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        mut sum = 2;\n\n        fn FnDecl_update(parent_idx: i32) {\n            fn each(fn) fn();\n            each(|| makeDirty(:parent_idx));\n        }\n\n        fn makeDirty(parent_idx: i32): void {\n            sum += parent_idx;\n        }\n\n        FnDecl_update(1);\n\n        return sum - 3;\n    "_fu);
+    ZERO("\n        fn fn_v(fn, v) fn(v);\n        struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu);
+    ZERO("\n        fn fn_v(x, v) x(v);             // same but name conflict - x arg and .x field\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu);
+    ZERO("\n        fn fn_w(x, y) x(y);             // same thing but\n        fn fn_v(y, x) fn_w(fn y, x);    // extra nasty\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu);
+    ZERO("\n        fn identity(x) x;\n        fn main() {\n            fn outer(depth1) {\n                let sum = depth1; return identity(|| sum);\n            }\n            let sum = 0; return outer(sum);\n        }\n    "_fu);
+    ZERO("\n        fn identity(x) x;\n        fn test(depth0) {\n            fn outer(depth1) {\n                let sum = depth1; inline fn lambda1() sum; return identity(fn lambda1);\n            }\n            let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);\n        }\n        fn main() test(0);\n    "_fu);
+    ZERO("\n        fn test(depth0) {\n            fn identity(x) x;\n            fn outer(depth1) {\n                fn inner(depth2) {\n                    let sum = depth2; inline fn lambda2() sum; return identity(fn lambda2);\n                }\n                let sum = depth1; inline fn lambda1() sum; return inner(fn lambda1);\n            }\n            let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);\n        }\n        fn main() test(0);\n    "_fu);
+    ZERO("\n        fn test(depth0)\n        {\n            fn first(depth1) {\n                fn first_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum;\n                }\n\n                let sum = depth0 + depth1;\n                return first_inner(|| sum);\n            }\n\n            fn second(depth1) {\n                fn second_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum + first(|| sum);\n                }\n\n                let sum = depth0 + depth1;\n                return second_inner(|| sum);\n            }\n\n            let sum = depth0 + depth0;\n            return second(|| sum);\n        }\n\n        fn main() test(0);\n    "_fu);
+    ZERO("\n        fn test(x: i32) {\n            outer: {\n                inner: {\n                    if (x > 1) break: outer;\n                    if (x > 0) break: inner;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ;\n            /*/\n            .i32;\n            //*/\n    "_fu);
 }
