@@ -42,6 +42,19 @@ pub fn TODO(src: string)
     throw("TODO test is actually passing: " ~ src);
 }
 
+pub fn TODO(src: string[])
+{
+    try {
+        compile_snippets(src);
+    }
+    catch (e) {
+        println("  TODO: ", e, "\n", src.join("\n\n"));
+        return;
+    }
+
+    throw("TODO test is actually passing: " ~ src.join("\n\n"));
+}
+
 
 // Run the whole battery & build self.
 
