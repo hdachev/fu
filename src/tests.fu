@@ -348,7 +348,7 @@ pub fn runTests()
         fn main() mul_ab_opt(1);
     `);
 
-    TODO(`
+    ZERO(`
         fn ab(a, b) a + b;
         fn main() ab(b: 1, a: -1);
     `);

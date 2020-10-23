@@ -887,15 +887,16 @@ pub fn solve(
                     if (names && !getNamedArgReorder(reorder, names, overload.args))
                         continue :NEXT;
 
+                    mut temp: string;
+                    shadow ref args_mangled =
+                        reorder ? temp : args_mangled;
+
                     // Specialize.
                     if (overload.kind == "template")
                     {
-                        if (reorder)
-                            fail("TODO handle argument reorder in template specialization.");
-
                         let specIdx = trySpecialize(
                             :overloadIdx, :args,
-                            :args_mangled ||= mangleArguments(args));
+                            :args_mangled ||= mangleArguments(args, reorder));
 
                         if (!specIdx)
                             continue :NEXT;
@@ -1709,6 +1710,27 @@ pub fn solve(
                 mangle ~= ",";
 
             mangle ~= serializeType(args[i].type);
+        }
+
+        return mangle;
+    }
+
+    fn mangleArguments(args: [SolvedNode], reorder: [i32]): string
+    {
+        if (!reorder)
+            return mangleArguments(args);
+
+        mut mangle = "";
+        for (mut i = 0; i < reorder.len; i++)
+        {
+            if (mangle)
+                mangle ~= ",";
+
+            let callsiteIndex = reorder[i];
+            if (callsiteIndex < 0 || callsiteIndex >= args.len)
+                fail("TODO mangleArguments: non-trivial reorder.");
+
+            mangle ~= serializeType(args[callsiteIndex].type);
         }
 
         return mangle;
