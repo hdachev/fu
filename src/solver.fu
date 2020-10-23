@@ -84,6 +84,15 @@ pub fn solve(
 
     let t_string = createArray(t_byte);
 
+    struct Mangles
+    {
+        mangle0: string;
+        mangle00: string;
+
+        args00: SolvedNode[];
+        overloadIdx: Target;
+    };
+
 
     //
 
@@ -1488,7 +1497,7 @@ pub fn solve(
 
     fn __solveFn(
         n_fn: Node, solve!: bool, spec?!: bool, into?: Target,
-        extra_items?: [ScopeItem]): SolvedNode
+        extra_items?: [ScopeItem], mangles?: Mangles): SolvedNode
     {
         let parent_idx = _current_fn.target.index;
 
@@ -1533,6 +1542,40 @@ pub fn solve(
         mut native = false;
         mut n_body: Node;
 
+        mut didInit = false;
+
+        fn initScope()
+        {
+            if (didInit)
+                return;
+
+            didInit = true;
+
+            // TODO FIX currently we only hash template names.
+            mut name = n_fn.value || fail("TODO anonymous fns");
+            if (spec && !native)
+            {
+                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
+                if (sig)
+                {
+                    let hash = tea::hash62(sig, chars: 4) || fail();
+                    name ~= "_" ~ hash;
+                }
+            }
+
+            //
+            let kind = native ? "__native" : "fn";
+            let template = createTemplate(node: native ? n_body : n_fn);
+
+            FnDecl_init(:target, :kind, id: name, :template);
+        }
+
+        fn updateScope()
+        {
+            FnDecl_update(out.out, :out.locals_used, :out.ret_actual);
+        }
+
+        // Go!
         {
             let root_scope0 = _root_scope;
             if (!root_scope0)
@@ -1583,35 +1626,50 @@ pub fn solve(
             // Return type annot.
             _current_fn.ret_expect = n_ret && evalTypeAnnot(n_ret).type;
 
-            // Only if actually solving the fn, the fn body.
-            if (solve && !native)
-            {
-                let s_body = solveNode(n_body);
-
-                finalizeReturns(s_body.type);
-
-                // MUT DURING SOLVE,
-                //  implicit args splice in
-                outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
-            }
-            else
+            // Seed return value.
             {
                 _current_fn.ret_actual = n_ret
                     ? _current_fn.ret_expect || fail("falsy ret_expect: " ~ n_fn.value)
-                    : !solve && t_never || fail("about to assume t_never retval in solve: " ~ n_fn.value);
+                    : t_never;
 
-                //////////////////////////////////////////////////////////
-                // Lifetimes.
-                //
                 if (_current_fn.ret_actual.lifetime)
                     _current_fn.ret_actual.lifetime = native
                         ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK])
-                        : solve ? fail() : Lifetime_FN_unorderedPrep();
+                        : Lifetime_FN_unorderedPrep();
                 //
                 else if (_current_fn.ret_actual.is_ref)
                     fail("fn.ret_actual is a ref without a lifetime.");
-                //
-                //////////////////////////////////////////////////////////
+            }
+
+            // Only if actually solving the fn, the fn body.
+            if (solve)
+            {
+                if (!into && mangles)
+                {
+                    // Re-enable recursion.
+                    {
+                        SWAP(_current_fn, out);
+                        initScope();
+                        updateScope();
+                        SWAP(_current_fn, out);
+                    }
+
+                    // setSpecs & co.
+                    let preexisting = __afterPrep_dedupeMangle(mangles, target);
+                    if (preexisting)
+                        return createEmpty(target: preexisting);
+                }
+
+                if (!native)
+                {
+                    _current_fn.ret_actual = Type();
+                    let s_body = solveNode(n_body);
+                    finalizeReturns(s_body.type);
+
+                    // MUT DURING SOLVE,
+                    //  implicit args splice in
+                    outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+                }
             }
 
             // Sighashes include return value.
@@ -1620,28 +1678,11 @@ pub fn solve(
         }
         //////////////////////////
 
+        // What now?
         if (!into)
-        {
-            // TODO FIX currently we only hash template names.
-            mut name = n_fn.value || fail("TODO anonymous fns");
-            if (spec && !native)
-            {
-                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
-                if (sig)
-                {
-                    let hash = tea::hash62(sig, chars: 4) || fail();
-                    name ~= "_" ~ hash;
-                }
-            }
+            initScope();
 
-            //
-            let kind = native ? "__native" : "fn";
-            let template = createTemplate(node: native ? n_body : n_fn);
-
-            FnDecl_init(:target, :kind, id: name, :template);
-        }
-
-        FnDecl_update(out.out, :out.locals_used, :out.ret_actual);
+        updateScope();
 
         // This is where we open up
         if (!spec && solve)
@@ -1997,47 +2038,43 @@ pub fn solve(
         //
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let prep = !into && __solveFn(:n_fn, solve: false, spec: true, :extra_items).target;
-        shadow let into = prep || into;
+        let mangles = Mangles(:mangle00, mangle0: mangle, :overloadIdx, :args00);
 
-        // Re-enable recursion.
-        if (prep)
+        return __solveFn(:n_fn, solve: true, spec: true, :extra_items, :into, :mangles).target;
+    }
+
+    fn __afterPrep_dedupeMangle(using mangles: Mangles, prep: Target): Target
+    {
+        let start   = mangle0.find(' ') + 1 || fail();
+        let mangle  = mangle0.slice(0, start)
+                    ~ mangleArguments(GET(prep).args);
+
+        mut preexisting: Target;
+        if (mangle0 != mangle)
         {
-            // Remangle.
-            let mangle0 = mangle;
-
-            // TODO FIX
-            let start   = mangle.find(' ') + 1 || fail();
-                mangle  = mangle.slice(0, start) ~ mangleArguments(
-                    GET(prep).args);
-
-            mut preexisting: Target;
-            if (mangle0 != mangle)
-            {
-                preexisting = module.out.specs[mangle] || Target();
-                setSpec(mangle0, preexisting || prep);
-            }
-
-            let nx = mangle00 != mangle;
-            if (nx && mangle00 != mangle0)
-                setSpec(mangle00, preexisting || prep);
-
-            if (preexisting)
-                return preexisting;
-
-            setSpec(mangle, prep, :nx);
+            preexisting = module.out.specs[mangle] || Target();
+            setSpec(mangle0, preexisting || prep);
         }
 
-        //
-        __solveFn(:n_fn, solve: true, spec: true, :extra_items, :into);
+        let nx = mangle00 != mangle;
+        if (nx && mangle00 != mangle0)
+            setSpec(mangle00, preexisting || prep);
 
+        if (preexisting)
+            return preexisting;
+
+        // TODO should move up into __solveFn
         _open_templates.push(
-            OpenTemplate(:overloadIdx, spec: into,
+            OpenTemplate(:overloadIdx, spec: prep,
                 args: args00,
                 mangle: mangle00));
 
-        return into;
+        setSpec(mangle, prep, :nx);
+        return Target();
     }
+
+
+    //
 
     fn intoScopeItems(typeParams: TypeParams): ScopeItem[]
     {
