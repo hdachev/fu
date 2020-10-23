@@ -2194,6 +2194,54 @@ pub fn runTests()
     `);
 
 
+    // Returning never vs void.
+
+    ZERO(`
+        fn incr_x_to_1(ref x: i32) {
+            x && throw("this reports return t_never");
+            fn incr_x() { return x++; }
+            incr_x();
+        }
+        fn main() {
+            mut x = 0;
+            incr_x_to_1(x);
+            return x - 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut x = 0;
+            fn incr_x_to_1() {
+                x && throw("this reports return t_never");
+                fn incr_x() { return x++; }
+                incr_x();
+            }
+            incr_x_to_1();
+            return x - 1;
+        }
+    `);
+
+    ZERO(`
+        fn apply(fn, v) fn(v);
+        fn main() {
+            mut x = 0;
+            fn scope_using(via: i32) {
+                x && throw("this reports return t_never");
+                // which messed up retcount for scope_using
+                fn visit(item: i32) {
+                    if (item)   return item;
+                                return x++;
+                }
+                apply(fn visit, via);
+            }
+
+            scope_using(x);
+            return x - 1;
+        }
+    `);
+
+
     // Usability of numeric literals.
 
     ZERO(`
