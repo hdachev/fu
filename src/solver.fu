@@ -62,16 +62,22 @@ pub fn solve(
     mut resolve_done:   i32;
 
 
-    // TODO keep open templates sorted by depth-of-locals.
-    //  currently unordered, so we always need to cycle through the whole bunch.
-    //   Or find whatever other way to limit the looping over them.
-    //
+    // TODO we shouldn't need this stuff
+    //  under the new depth-first + immediately-repeat-on-dirty design.
+
+    struct Mangles
+    {
+        mangle0: string;
+        mangle00: string;
+        args00: SolvedNode[];
+        overloadIdx: Target;
+        extra_items: ScopeItem[];
+    };
+
     struct OpenTemplate
     {
-        overloadIdx?:   Target;
-        spec:           Target;
-        args?:          SolvedNode[];
-        mangle?:        string;
+        spec: Target;
+        using mangles?: Mangles;
     };
 
     mut _open_templates: OpenTemplate[];
@@ -83,15 +89,6 @@ pub fn solve(
     //
 
     let t_string = createArray(t_byte);
-
-    struct Mangles
-    {
-        mangle0: string;
-        mangle00: string;
-
-        args00: SolvedNode[];
-        overloadIdx: Target;
-    };
 
 
     //
@@ -1497,7 +1494,7 @@ pub fn solve(
 
     fn __solveFn(
         n_fn: Node, solve!: bool, spec?!: bool, into?: Target,
-        extra_items?: [ScopeItem], mangles?: Mangles): SolvedNode
+        mangles?: Mangles): SolvedNode
     {
         let parent_idx = _current_fn.target.index;
 
@@ -1535,8 +1532,7 @@ pub fn solve(
             out.flags |= F_TEMPLATE;
 
         // Populate scope.
-        if (extra_items)
-            _scope.items ~= extra_items;
+        _scope.items ~= mangles.extra_items;
 
         //////////////////////////
         mut native = false;
@@ -1685,13 +1681,11 @@ pub fn solve(
         updateScope();
 
         // This is where we open up
-        if (!spec && solve)
-            _open_templates.push(OpenTemplate(spec: target));
+        if (!solve)
+            return out.out;
 
-        if (solve)
-            return createFnDef(out.out);
-
-        return out.out;
+        _open_templates.push(OpenTemplate(spec: target, :mangles));
+        return createFnDef(out.out);
     }
 
     fn createFnDef(fn: SolvedNode): SolvedNode
@@ -2038,9 +2032,9 @@ pub fn solve(
         //
         kind == "fn" || fail("__solveFn spec:true is not expected to fail.");
 
-        let mangles = Mangles(:mangle00, mangle0: mangle, :overloadIdx, :args00);
+        let mangles = Mangles(:mangle00, mangle0: mangle, :overloadIdx, :args00, :extra_items);
 
-        return __solveFn(:n_fn, solve: true, spec: true, :extra_items, :into, :mangles).target;
+        return __solveFn(:n_fn, solve: true, spec: true, :into, :mangles).target;
     }
 
     fn __afterPrep_dedupeMangle(using mangles: Mangles, prep: Target): Target
@@ -2062,12 +2056,6 @@ pub fn solve(
 
         if (preexisting)
             return preexisting;
-
-        // TODO should move up into __solveFn
-        _open_templates.push(
-            OpenTemplate(:overloadIdx, spec: prep,
-                args: args00,
-                mangle: mangle00));
 
         setSpec(mangle, prep, :nx);
         return Target();
@@ -3766,8 +3754,7 @@ pub fn solve(
                 // TODO figure out how to collapse this in the bottom branch
                 //  we shouldn't need to resolve the signature.
                 //   so this is both risky and wasteful.
-                :ot.overloadIdx, :ot.args, :ot.mangle,
-                into: ot.spec);
+                :ot.overloadIdx, ot.args00, ot.mangle00, into: ot.spec);
         else
             unorderedSolve(
                 overload.template.node,
