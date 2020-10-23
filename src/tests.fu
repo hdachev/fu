@@ -349,13 +349,35 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn ab(a, b) a + b;
-        fn main() ab(b: 1, a: -1);
+        fn ab(a, b) a + b*2;
+        fn main() ab(b: 1, a: -2);
+    `);
+
+    ZERO(`
+        struct yi32 { y: i32; };
+        fn add_s_vy(v, s) s + v.y;
+        fn main() add_s_vy(v: yi32(1), -1);
+    `);
+
+    ZERO(`
+        struct xi32 { x: i32; };
+        fn add_s_vx(s, v) s + v.x; // <- args reordered
+        fn main() add_s_vx(v: xi32(1), -1);
     `);
 
     TODO(`
-        fn ab(a, b = -1) a + b;
-        fn main() ab(1.5, -1.5);
+        fn ab(a, b = 0, c = 0) a + b*2 + c*3;
+        fn main() ab(3, c: -1);
+    `);
+
+    TODO(`
+        fn ab(a, b = -1) a + b*2;
+        fn main() ab(3.0, -1.5);
+    `);
+
+    TODO(`
+        fn ab(a, b = -1) a + b*2;
+        fn main() ab(3, -1.5);
     `);
 
     ZERO(`
