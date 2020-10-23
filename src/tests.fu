@@ -348,6 +348,16 @@ pub fn runTests()
         fn main() mul_ab_opt(1);
     `);
 
+    TODO(`
+        fn ab(a, b) a + b;
+        fn main() ab(b: 1, a: -1);
+    `);
+
+    TODO(`
+        fn ab(a, b = -1) a + b;
+        fn main() ab(1.5, -1.5);
+    `);
+
     ZERO(`
         fn self_rec_template(x: $T): $T
             x > 0 ? self_rec_template(x / 2 - 5) : x;
@@ -428,19 +438,6 @@ pub fn runTests()
             let arg = 7; // same here, except we're in a fn.
             return template(arg / -4);
         }
-    `);
-
-
-    // All those shortcuts we've taken.
-
-    TODO(`
-        fn ab(a, b = -1) a + b;
-        fn main() ab(1.5, -1.5);
-    `);
-
-    TODO(`
-        fn ab(a, b) a + b;
-        fn main() ab(b: 1, a: -1);
     `);
 
 
