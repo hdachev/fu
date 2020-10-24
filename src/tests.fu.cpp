@@ -5,6 +5,7 @@
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
+#include <fu/vec/join.h>
 #include <fu/vec/replace.h>
 #include <iostream>
 
@@ -41,6 +42,8 @@ fu_STR FAIL(const fu_VEC<fu_STR>&);
 fu_STR snippet2cpp(const fu_STR&);
 s_Context ZERO(const fu_STR&);
 s_Context ZERO(const fu_VEC<fu_STR>&);
+s_Context compile_snippets(const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&);
+void TODO(const fu_VEC<fu_STR>&);
 void ZERO_SAME(const fu_VEC<fu_STR>&);
 
                                 #ifndef DEF_s_Token
@@ -618,6 +621,27 @@ void TODO(const fu_STR& src)
     fu::fail(("TODO test is actually passing: "_fu + src));
 }
 
+void TODO(const fu_VEC<fu_STR>& src)
+{
+    
+    try
+    {
+    
+        compile_snippets(src, fu_VEC<fu_STR>{});
+    }
+    catch (const std::exception& o_0)
+    {
+        const fu_STR& e = fu_TO_STR(o_0.what());
+    
+    {
+        (std::cout << "  TODO: "_fu << e << "\n"_fu << fu::join(src, "\n\n"_fu) << '\n');
+        return;
+    }
+    }
+;
+    fu::fail(("TODO test is actually passing: "_fu + fu::join(src, "\n\n"_fu)));
+}
+
 static fu_STR EXPR(fu_STR& assertion_0, const fu_STR& varname)
 {
     return fu::replace(assertion_0, "@"_fu, varname);
@@ -688,6 +712,13 @@ void runTests()
     ZERO("\n        fn mul_ab_init(a: $T, b = 0) a*b;\n        fn main() mul_ab_init(1);\n    "_fu);
     ZERO("\n        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;\n        fn main() mul_ab_annot_init(1);\n    "_fu);
     ZERO("\n        fn mul_ab_opt(a: $T, b?: $T) a*b;\n        fn main() mul_ab_opt(1);\n    "_fu);
+    ZERO("\n        fn ab(a, b) a + b*2;\n        fn main() ab(b: 1, a: -2);\n    "_fu);
+    ZERO("\n        struct yi32 { y: i32; };\n        fn add_s_vy(v, s) s + v.y;\n        fn main() add_s_vy(v: yi32(1), -1);\n    "_fu);
+    ZERO("\n        struct xi32 { x: i32; };\n        fn add_s_vx(s, v) s + v.x; // <- args reordered\n        fn main() add_s_vx(v: xi32(1), -1);\n    "_fu);
+    ZERO("\n        fn ab(a, b = 0, c = 0) a + b*2 + c*3;\n        fn main() ab(3, c: -1);\n    "_fu);
+    ZERO("\n        fn ab(a, b = -1) a + b*2;\n        fn main() ab(3.0, -1.5).i32;\n    "_fu);
+    ZERO("\n        let NEG_ONE_FIVE = -1.5;\n        fn ab(a: $T, b: $T = -1) a + b*2;\n        fn main() ab(3, NEG_ONE_FIVE).i32;\n    "_fu);
+    ZERO("\n        let TWO = 2.0;\n        fn ab(a: $T, b: $T = -1) a + b*2;\n        fn main() ab(TWO).i32;\n    "_fu);
     ZERO("\n        fn self_rec_template(x: $T): $T\n            x > 0 ? self_rec_template(x / 2 - 5) : x;\n\n        fn main()\n            self_rec_template(7) + 2;\n    "_fu);
     ZERO("\n        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;\n        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;\n        fn main() ab_rec(11) + 200;\n    "_fu);
     ZERO("\n        fn main() {\n            let a = 1;\n            fn add1(b) a + b;\n            return 2.add1 - 3;\n        }\n    "_fu);
@@ -794,6 +825,7 @@ void runTests()
     ZERO("\n        //! SLOW_resolve\n        fn main()\n        {\n            mut target = 0;\n\n            fn each(cond, cons) cond && cons();\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target));\n\n            fn __solveStruct(mut arg: i32, x = 0): i32 {\n                each(arg, || arg += x);\n                if (arg) {\n                    ref o = GET_mut(arg);\n                        o++;\n                    checkRecursions(o, o);\n                }\n                return arg;\n            }\n\n            fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu);
     ZERO("\n        //! SLOW_resolve\n        fn main()\n        {\n            mut target = 0;\n\n            // this suddenly reported that it doesn't see __solveStruct\n            fn GET_mut(ref x) x || (target = __solveStruct(target));\n\n            // while i was trying to reproduce an ambig \"o\" fail here\n            fn __solveStruct(mut arg: i32): i32 {\n                if (arg) {\n                    ref o = GET_mut(arg);\n                        o++;\n                    checkRecursions(o, o);\n                }\n                return arg;\n            }\n\n            fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu);
     FAIL("\n        struct ValueType { modid: i32; };\n        struct Type { using vtype: ValueType; };\n        struct Target { modid: i32; index: i32; };\n        struct Overload { name: string; id: string; };\n\n        fn GET(target: Target): Overload =\n            Overload(\n                name: \"N\" ~ target.index,\n                  id: \"I\" ~ target.index);\n\n        fn main() {\n            mut specs: Map(string, Target);\n\n            fn setSpec(mangle: string) {\n                ref t = specs[mangle] ||= Target;\n\n                // This template should start expanding on GET(target).name,\n                //  which should conflict with overload name.\n                fn name(shadow target)\n                    GET(target) //*F\n                        .name; /*/ .id; //*/\n\n                return t.name;\n            }\n\n            return setSpec(\"hey\").len - 2;\n        }\n    "_fu);
+    ZERO("\n        pub struct ScopeSkip { start: i32; end: i32; };\n\n        pub fn each(items: [$T], scope_skip: ScopeSkip[], fn, start = 0) {\n            let END_DUMMY = ScopeSkip(start: items.len, end: items.len);\n\n            mut i0 = start;\n            for (mut i = 0; i < scope_skip.len + 1; i++) {\n                let ss = i < scope_skip.len ? scope_skip[i] : END_DUMMY;\n                if (ss.end <= i0)\n                    continue;\n\n                let i1 = ss.start;\n                for (shadow mut i = i0; i < i1; i++)\n                    fn(items[i]);\n\n                i0 = ss.end;\n            }\n        }\n\n        pub fn test(items?: i32[]) {\n            mut sum = 0;\n            let ss: ScopeSkip[];\n            items.each(ss, |item| sum += item, start: sum);\n            return sum;\n        }\n\n        pub fn main() test();\n    "_fu);
     ZERO("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu);
     ZERO("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw(\"woot\");\n    "_fu);
     ZERO("\n\n        struct TrueStory { kind: string; value: string; };\n\n        mut specialized = TrueStory(kind: \"fn\", value: \"val\");\n\n        specialized.kind == \"fn\" && specialized.value || throw(\"nope\");\n\n        let v: &mut string = specialized.kind == \"fn\"\n                          && specialized.value\n                          || throw(\"nope\");\n        v ~= \"ue\";\n\n        return specialized.value == \"value\" ? 0 : 1;\n\n    "_fu);
@@ -825,6 +857,9 @@ void runTests()
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a) a;                    // <- now templates\n        fn  retargs_if(a, b) a.i ? b : a;\n        fn  retargs_or(a, b) a || b;\n        fn retargs_and(a, b) a && b;\n\n        fn main() {\n            mut a: NoCopy;                      // <- now muts\n            mut b: NoCopy;\n            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;\n            return a.i + b.i - 1;\n        }\n    "_fu);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test) {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test): Test {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu);
+    ZERO("\n        fn incr_x_to_1(ref x: i32) {\n            x && throw(\"this reports return t_never\");\n            fn incr_x() { return x++; }\n            incr_x();\n        }\n        fn main() {\n            mut x = 0;\n            incr_x_to_1(x);\n            return x - 1;\n        }\n    "_fu);
+    ZERO("\n        fn main() {\n            mut x = 0;\n            fn incr_x_to_1() {\n                x && throw(\"this reports return t_never\");\n                fn incr_x() { return x++; }\n                incr_x();\n            }\n            incr_x_to_1();\n            return x - 1;\n        }\n    "_fu);
+    ZERO("\n        fn apply(fn, v) fn(v);\n        fn main() {\n            mut x = 0;\n            fn scope_using(via: i32) {\n                x && throw(\"this reports return t_never\");\n                // which messed up retcount for scope_using\n                fn visit(item: i32) {\n                    if (item)   return item;\n                                return x++;\n                }\n                apply(fn visit, via);\n            }\n\n            scope_using(x);\n            return x - 1;\n        }\n    "_fu);
     ZERO("\n        fn main()\n            i32(PI * 2.0) - 6;\n    "_fu);
     ZERO("\n        fn main()\n            i32(PI * 2 - 6);\n    "_fu);
     ZERO("\n        fn main()\n            PI * 2 - 6 |> i32;\n    "_fu);
