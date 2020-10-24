@@ -1592,22 +1592,29 @@ pub fn solve(
             // Arg decls.
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
-                let n_arg = inItems[i] || fail();
-                n_arg.kind == "let" || fail();
-
-                // If spec and unless argument explicitly wants a value -
-                if (spec && !(n_arg.items[LET_INIT]))
+                fn tryGetArgSpecType(id: string): Type
                 {
-                    // Specialize with actuals.
-                    mut mut_arg = n_arg;
-                    mut_arg.items[LET_TYPE] = createTypeParam(mut_arg.value);
+                    mut param = "$" ~ id;
+                    for (shadow mut i = 0; i < mangles.extra_items.len; i++)
+                    {
+                        let m = mangles.extra_items[i];
+                        if (m.id == param)
+                        {
+                            let o = GET(m.target);
+                            o.kind == "type" && o.max == 0 || fail(
+                                "tryGetArgSpecType: Not a typeparam: `"
+                                    ~ o.kind ~ ":" ~ param ~ "(" ~ o.max ~ ")`.");
 
-                    outItems[i] = solveLet(mut_arg);
+                            return o.type;
+                        }
+                    }
+
+                    return Type;
                 }
-                else
-                {
-                    outItems[i] = solveLet(n_arg);
-                }
+
+                let n_arg       = inItems[i];
+                let specType    = spec && tryGetArgSpecType(n_arg.value);
+                outItems[i]     = solveLet(n_arg, :specType);
             }
 
             /////////////////////////////////////////////////////
@@ -2640,12 +2647,17 @@ pub fn solve(
 
     //
 
-    fn solveLetLike_dontTouchScope(node: Node): SolvedNode
+    fn solveLetLike_dontTouchScope(node: Node, specType?!: Type): SolvedNode
     {
         let n_annot     = node.items[LET_TYPE];
         let n_init      = node.items[LET_INIT];
 
         mut annot       = n_annot && evalTypeAnnot(n_annot);
+
+        // Annot override during template specialization.
+        if (specType)
+            annot.type = specType;
+
         if (annot.type && node.flags & F_REF)
             annot.type  = add_mutref(annot.type, Lifetime_temporary);
 
@@ -2656,11 +2668,38 @@ pub fn solve(
 
         if (annot.type && init.type)
         {
-            checkAssignable(host: annot.type, init.type,
-                "Type annotation does not match init expression",
-                    node.value, "=");
+            if (node.flags & F_ARG)
+            {
+                // Is this correct here?
+                //  Since we do fnarg defaults on the callsite,
+                //   they're always referable.
+                if (annot.type.is_ref && !init.type.is_ref)
+                    init.type = add_ref(init.type, Lifetime_temporary);
+            }
 
-            annot.type.lifetime = init.type.lifetime;
+            if (specType)
+            {
+                // Kinda arbitrary -
+                //  if init expr doesn't resolve to a mutref,
+                //   infer we want no mutref under any circumstance,
+                //    this should help herd the specs a little.
+                if (specType.is_mutref && !init.type.is_mutref)
+                    annot.type = clear_mutref(annot.type);
+
+                // Drop defaults that don't match current spec types,
+                //  this will effectively make the args non-defaulted.
+                if (!isAssignable(host: annot.type, init.type))
+                    init = SolvedNode();
+            }               // ^
+                            // |
+            if (init.type)  // | Might be dropped here.
+            {
+                checkAssignable(host: annot.type, init.type,
+                    "Type annotation does not match init expression",
+                        node.value, "=");
+
+                annot.type.lifetime = init.type.lifetime;
+            }
         }
 
         let killref = init.type.is_ref2temp();
@@ -2713,9 +2752,9 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn solveLet(node: Node): SolvedNode
+    fn solveLet(node: Node, specType?!: Type): SolvedNode
     {
-        mut out         = solveLetLike_dontTouchScope(node);
+        mut out         = solveLetLike_dontTouchScope(node, :specType);
         let global      = out.kind == "global";
 
         let kind = global               ? "global"

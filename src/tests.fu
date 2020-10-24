@@ -370,14 +370,21 @@ pub fn runTests()
         fn main() ab(3, c: -1);
     `);
 
-    TODO(`
+    ZERO(`
         fn ab(a, b = -1) a + b*2;
-        fn main() ab(3.0, -1.5);
+        fn main() ab(3.0, -1.5).i32;
     `);
 
-    TODO(`
-        fn ab(a, b = -1) a + b*2;
-        fn main() ab(3, -1.5);
+    ZERO(`
+        let NEG_ONE_FIVE = -1.5;
+        fn ab(a: $T, b: $T = -1) a + b*2;
+        fn main() ab(3, NEG_ONE_FIVE).i32;
+    `);
+
+    ZERO(`
+        let TWO = 2.0;
+        fn ab(a: $T, b: $T = -1) a + b*2;
+        fn main() ab(TWO).i32;
     `);
 
     ZERO(`
@@ -1681,6 +1688,36 @@ pub fn runTests()
 
             return setSpec("hey").len - 2;
         }
+    `);
+
+    ZERO(`
+        pub struct ScopeSkip { start: i32; end: i32; };
+
+        pub fn each(items: [$T], scope_skip: ScopeSkip[], fn, start = 0) {
+            let END_DUMMY = ScopeSkip(start: items.len, end: items.len);
+
+            mut i0 = start;
+            for (mut i = 0; i < scope_skip.len + 1; i++) {
+                let ss = i < scope_skip.len ? scope_skip[i] : END_DUMMY;
+                if (ss.end <= i0)
+                    continue;
+
+                let i1 = ss.start;
+                for (shadow mut i = i0; i < i1; i++)
+                    fn(items[i]);
+
+                i0 = ss.end;
+            }
+        }
+
+        pub fn test(items?: i32[]) {
+            mut sum = 0;
+            let ss: ScopeSkip[];
+            items.each(ss, |item| sum += item, start: sum);
+            return sum;
+        }
+
+        pub fn main() test();
     `);
 
 
