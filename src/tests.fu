@@ -437,6 +437,20 @@ pub fn runTests()
         pub fn main() test(ModuleOutputs);
     `);
 
+    TODO(`
+        struct X { a: i32; };
+        inline fn test(using x: X, b: i32) a + b; // same as above but inline
+        fn hey(using x: X) test(-1);
+        return X(1).hey;
+    `);
+
+    TODO(`
+        struct X { a: i32; };
+        fn test(using x: X, b) a + b; // same as a above but template
+        fn hey(using x: X) test(-1);
+        return X(1).hey;
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?
