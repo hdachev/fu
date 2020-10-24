@@ -1596,8 +1596,7 @@ pub fn solve(
                 n_arg.kind == "let" || fail();
 
                 // If spec and unless argument explicitly wants a value -
-                if (spec && !(n_arg.flags & F_MUT)
-                         && !(n_arg.items[LET_INIT]))
+                if (spec && !(n_arg.items[LET_INIT]))
                 {
                     // Specialize with actuals.
                     mut mut_arg = n_arg;
@@ -1984,12 +1983,19 @@ pub fn solve(
                     ref argName_typeParam =
                         typeParams[argName] ||= Type;
 
+                    // Values vs refs.
+                    //  TODO actually this is rather stupid, isn't it,
+                    //   what if it were all just refs and we did the copy internally,
+                    //    only if necessary, and as late as possible.
+                    if (argNode.flags & F_MUT)
+                        inType = clear_refs(inType);
+                    else
+                        inType = add_ref(inType, Lifetime_temporary);
+
+                    //
                     argName_typeParam && fail(
                         "Type param name collision with argument: `" ~ argName ~ "`.")
                             = inType;
-
-                    //
-                    inType = add_ref(inType, Lifetime_temporary);
 
                     // Type check.
                     if (annot)
