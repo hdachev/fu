@@ -895,7 +895,7 @@ pub fn solve(
                     if (overload.kind == "template")
                     {
                         let specIdx = trySpecialize(
-                            :overloadIdx, :args,
+                            :overloadIdx, :args, :reorder,
                             :args_mangled ||= mangleArguments(args, reorder));
 
                         if (!specIdx)
@@ -1762,13 +1762,13 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[],
+        overloadIdx: Target, args: SolvedNode[], reorder: [i32],
         args_mangled: string)
             : Target
     {
         // TODO memoize the whole mangle.
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
-        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle);
+        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle, :reorder);
 
         return !spec.is_SPECFAIL && spec;
     }
@@ -1789,11 +1789,29 @@ pub fn solve(
     }
 
     fn doTrySpecialize(
-        overloadIdx: Target, mut args: SolvedNode[], mut mangle: string, into?: Target)
+        overloadIdx: Target, mut args: SolvedNode[],
+        mut mangle: string, into?: Target, reorder?: [i32])
             : Target
     {
         mut ok = true;
 
+        // Trivial reorder.
+        if (reorder)
+        {
+            mut reordered: SolvedNode[];
+            for (mut i = 0; i < reorder.len; i++)
+            {
+                let callsiteIndex = reorder[i];
+                if (callsiteIndex < 0 || callsiteIndex >= args.len)
+                    fail("doTrySpecialize: gaps in reorder");
+
+                reordered.push(args[callsiteIndex]);
+            }
+
+            args = reordered;
+        }
+
+        //
         let args00 = args;
         let mangle00 = mangle;
         let SPECFAIL = Target(modid: -1, index: 0);
