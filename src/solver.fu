@@ -1719,18 +1719,27 @@ pub fn solve(
     {
         if (!reorder)
             return mangleArguments(args);
+        else
+            reorder.len >= args.len || fail(
+                "mangleArguments: `reorder.len < args.len`,"
+                    ~ " then `!reorder` checks become ambiguous.");
 
         mut mangle = "";
+        mut commas = 0;
+
         for (mut i = 0; i < reorder.len; i++)
         {
-            if (mangle)
+            while (commas > 0)
+            {
                 mangle ~= ",";
+                commas--;
+            }
 
             let callsiteIndex = reorder[i];
-            if (callsiteIndex < 0 || callsiteIndex >= args.len)
-                fail("TODO mangleArguments: non-trivial reorder.");
+            if (callsiteIndex >= 0 && callsiteIndex < args.len)
+                mangle ~= serializeType(args[callsiteIndex].type);
 
-            mangle ~= serializeType(args[callsiteIndex].type);
+            commas++;
         }
 
         return mangle;
@@ -1795,17 +1804,16 @@ pub fn solve(
     {
         mut ok = true;
 
-        // Trivial reorder.
+        // Reorder with gaps.
         if (reorder)
         {
             mut reordered: SolvedNode[];
             for (mut i = 0; i < reorder.len; i++)
             {
                 let callsiteIndex = reorder[i];
-                if (callsiteIndex < 0 || callsiteIndex >= args.len)
-                    fail("doTrySpecialize: gaps in reorder");
-
-                reordered.push(args[callsiteIndex]);
+                reordered.push(
+                    callsiteIndex >= 0 && callsiteIndex < args.len
+                        && args[callsiteIndex]);
             }
 
             args = reordered;
