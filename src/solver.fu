@@ -700,12 +700,9 @@ pub fn solve(
             let overloadIdx = item.target;
             let overload = GET(overloadIdx);
 
-            // Needs at least one argument.
-            if (overload.min < 1)
-                return;
-
-            // TODO using + templates, the fuck do we do?
-            if (overload.kind == "template")
+            // Needs at least one argument,
+            //  and does not support defaulted args.
+            if (overload.min < 1 || overload.max != overload.min)
                 return;
 
             // Skip over defctors -
@@ -716,7 +713,7 @@ pub fn solve(
                 return;
 
             // See if we fit.
-            let expect = overload.args[0] || fail();
+            let expect = overload.args[0] || fail("scope_using: bad head arg.");
             if (!isAssignableAsArgument(expect.type, actual))
                 return;
 
