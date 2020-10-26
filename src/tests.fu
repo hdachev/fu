@@ -439,15 +439,15 @@ pub fn runTests()
 
     TODO(`
         struct X { a: i32; };
-        inline fn test(using x: X, b: i32) a + b; // same as above but inline
-        fn hey(using x: X) test(-1);
+        inline fn add_uxa_b_inline(using x: X, b: i32) a + b;
+        fn hey(using x: X) add_uxa_b_inline(-1);
         return X(1).hey;
     `);
 
     TODO(`
         struct X { a: i32; };
-        fn test(using x: X, b) a + b; // same as a above but template
-        fn hey(using x: X) test(-1);
+        fn add_uxa_b_template(using x: X, b /* untyped */) a + b;
+        fn hey(using x: X) add_uxa_b_template(-1);
         return X(1).hey;
     `);
 

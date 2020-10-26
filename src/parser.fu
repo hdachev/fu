@@ -656,12 +656,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         ////////////////////////////////
         _fnDepth++;
-        let dollars0 = _dollars;
+        let dollars0 = _dollars.len;
         let numReturns0 = _numReturns;
 
         defer {
             _fnDepth--;
-            _dollars = dollars0;
+            _dollars.shrink(dollars0);
             _numReturns = numReturns0;
         }
         ////////////////////////////////
@@ -693,7 +693,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
 
         //
-        if (_dollars.len > dollars0.len)
+        if (_dollars.len > dollars0)
             flags |= F_TEMPLATE;
 
         return make("fn", items, flags, name);
@@ -805,9 +805,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             first = false;
 
+            let dollars0 = _dollars.len;
             mut arg = parseLet(xqmark: true);
 
-            let untyped = !arg.items[LET_TYPE];
+            if (_dollars.len > dollars0)
+                arg.flags |= F_TEMPLATE;
+
             if (arg.items[LET_INIT])
             {
                 if (arg.flags & F_IMPLICIT)
@@ -819,12 +822,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             {
                 fail("TODO non-trailing default arguments");
             }
-            else if (untyped)
+            else if (!arg.items[LET_TYPE])
             {
-                outFlags |= F_TEMPLATE;
+                arg.flags |= F_TEMPLATE;
             }
 
             arg.flags |= F_ARG;
+            outFlags  |= arg.flags & F_TEMPLATE;
 
             if (arg.flags & F_IMPLICIT)
                 implicit.push(arg);
