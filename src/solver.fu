@@ -443,10 +443,22 @@ pub fn solve(
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
-            let arg = items[i];
-            arg.kind == "let" || fail();
-            let name = arg.value || fail();
-            args.push(Argument(:name));
+            let arg     = items[i];
+            let name    = arg.value || fail("TemplateDecl: no argname.");
+            let annot   = arg.items[LET_TYPE];
+            let init    = arg.items[LET_INIT];
+
+            //////////////////////////////////////////////////
+            //                                              //
+            // Pre-typing template annots?                  //
+            //  Perhaps do this lazily?                     //
+            //
+            let typed   = !(arg.flags & F_TEMPLATE);
+            let type    = typed && annot && evalTypeAnnot(annot).type;
+            let default = typed && init  && solveNode(init, :type);
+            args.push(Argument(:name, :type, :default));
+            //                                              //
+            //////////////////////////////////////////////////
 
             if (!arg.items[LET_INIT])
                 min++;
@@ -3027,7 +3039,7 @@ pub fn solve(
             return solved(node, createSlice(T, Lifetime_temporary));
         }
 
-        return fail("TODO evalTypeAnnot");
+        return fail("TODO evalTypeAnnot: " ~ node.kind ~ "[" ~ node.items.len ~ "]");
     }
 
     fn trySolveTypeParams(
@@ -3229,7 +3241,7 @@ pub fn solve(
 
             let argNode     = CallerNode(
                 createRead("__partial"),
-                via.type || fail(),
+                via.type || fail("solveCall: no `via.type`"),
                 viaIdx,
                 innerArgs);
 
@@ -3243,7 +3255,7 @@ pub fn solve(
         //
         return CallerNode(
             node,
-            callTarg.type || fail(),
+            callTarg.type || fail("solveCall: no `callTarg.type`."),
             callTargIdx,
             args);
     }
