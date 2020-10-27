@@ -52,6 +52,8 @@ pub struct Struct
 {
     target?:    Target;
     items?:     ScopeItem[];
+    imports?:   i32[];
+    converts?:  Target[];
 };
 
 ////
@@ -73,8 +75,10 @@ pub struct ScopeSkip
 
 pub struct ScopeMemo
 {
-    items_len: i32;
-    imports_len: i32;
+    items_len:      i32;
+    imports_len:    i32;
+    usings_len:     i32;
+    converts_len:   i32;
 };
 
 pub struct SolvedNode
@@ -94,14 +98,21 @@ pub struct SolvedNode
     target?:    Target;
 };
 
+pub struct ScopeSkipMemos
+{
+    items:      ScopeSkip[];
+    imports:    ScopeSkip[];
+    usings:     ScopeSkip[];
+    converts:   ScopeSkip[];
+};
+
 pub struct Template
 {
     node:       Node;
     imports:    i32[];
 
     scope_memo: ScopeMemo;
-    ss_items:   ScopeSkip[];
-    ss_imports: ScopeSkip[];
+    scope_skip: ScopeSkipMemos;
 };
 
 pub struct Partial
@@ -133,7 +144,6 @@ pub struct Overload
     // TODO move exotic bloat over to module,
     //  all trailers can fit in the same
     //   [ modid / thing ] slot here.
-    partial:    Partial;
     template:   Template;
     solved:     SolvedNode;
 
@@ -163,6 +173,8 @@ pub nocopy struct Scope
     items:      ScopeItem[];
     overloads:  Overload[];
     imports:    i32[];
+    usings:     i32[];
+    converts:   Target[];
 };
 
 
@@ -242,26 +254,40 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
     }
 
     let no_imports: i32[];
+    let no_usings: i32[];
 
     return Scope(
         items: result,
         :scope.overloads,
-        imports: no_imports);
+        :scope.converts,
+        imports: no_imports,
+        usings:  no_usings);
 }
 
 
 ////////////////////////////////
 
-pub fn DEPREC_lookup(scope: Scope, id: string, scope_skip: ScopeSkip[]): Target[]
+pub fn has(items: [$T], scope_skip: ScopeSkip[], item: $T, start = 0)
 {
-    mut scope_iterator: i32;
-    mut results: Target[] = [];
+    // TODO return out of each here.
+    let END_DUMMY = ScopeSkip(start: items.len, end: items.len);
 
-    mut target: Target;
-    while (target = scope.items.search(:id, :scope_iterator, :scope_skip))
-        results.unshift(target);
+    mut i0 = start;
+    for (mut i = 0; i < scope_skip.len + 1; i++)
+    {
+        let ss = i < scope_skip.len ? scope_skip[i] : END_DUMMY;
+        if (ss.end <= i0)
+            continue;
 
-    return results;
+        let i1 = ss.start;
+        for (shadow mut i = i0; i < i1; i++)
+            if (items[i] == item)
+                return true;
+
+        i0 = ss.end;
+    }
+
+    return false;
 }
 
 pub fn each(
@@ -292,7 +318,7 @@ pub fn search(
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
     target?: Target,
-    extra_items?: [ScopeItem],
+    extra_items?: [Target],
     field_items?: [ScopeItem]): Target
 {
     // Searching & forcing results the same way.
@@ -341,19 +367,21 @@ pub fn search(
     nextSkip();
     scope_iterator++;
 
+    // TODO clean this up
+    mut TODO_FIX = ScopeItem;
+    if (extra_items) TODO_FIX.id = id;
+
     // TODO unroll into three loops,
     //  for each kind of thing we're searching.
-    //
     while (scope_iterator --> 0)
     {
         if (scope_iterator == skiptrap)
             nextSkip();
 
-        // TODO clean this up
         let item = scope_iterator >= items.len
             ? scope_iterator >= items.len + extra_items.len
             ? field_items[scope_iterator - items.len - extra_items.len]
-            : extra_items[scope_iterator - items.len]
+            : { TODO_FIX.target = extra_items[scope_iterator - items.len]; TODO_FIX }
             : items[scope_iterator];
 
         if (item.id == id)
@@ -375,22 +403,28 @@ pub fn search(
 
 pub fn Scope_snap(scope: &mut Scope)
     ScopeMemo(
-        items_len:   scope.items  .len,
-        imports_len: scope.imports.len);
+        items_len:    scope.items   .len,
+        imports_len:  scope.imports .len,
+        usings_len:   scope.usings  .len,
+        converts_len: scope.converts.len);
 
 pub fn Scope_pop(scope: &mut Scope, memo: ScopeMemo)
 {
-    scope.items  .shrink(memo.items_len);
-    scope.imports.shrink(memo.imports_len);
+    scope.items   .shrink(memo.items_len);
+    scope.imports .shrink(memo.imports_len);
+    scope.usings  .shrink(memo.usings_len);
+    scope.converts.shrink(memo.converts_len);
 }
 
-pub fn >(a: ScopeMemo, b: ScopeMemo)
-    a.items_len   > b.items_len ||
-    a.imports_len > b.imports_len;
+fn cmp(a: ScopeMemo, b: ScopeMemo)
+    a.items_len     - b.items_len     ||
+    a.imports_len   - b.imports_len   ||
+    a.usings_len    - b.usings_len    ||
+    a.converts_len  - b.converts_len;
 
-pub fn ==(a: ScopeMemo, b: ScopeMemo)
-    a.items_len   == b.items_len ||
-    a.imports_len == b.imports_len;
+pub fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
+pub fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
+pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 
 
 ////////////////////////////////
@@ -404,7 +438,6 @@ pub fn Scope_add(
     max?:           i32,
     args?:          Argument[],
     template?:      Template,
-    partial?:       Partial,
     solved?:        SolvedNode,
     local_of?:      i32,
     name?:          string): Target
@@ -417,7 +450,7 @@ pub fn Scope_add(
         name: name || id || throw("Falsy Scope_add(id)."),
         :kind, :flags, :type,
         :min, :max, :args,
-        :partial, :template, :solved,
+        :template, :solved,
         :local_of);
 
     scope.overloads.push(item);

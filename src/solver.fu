@@ -35,8 +35,7 @@ pub fn solve(
     mut _scope:         Scope;
     mut _root_scope:    ScopeMemo;
 
-    mut _ss_items:      ScopeSkip[];
-    mut _ss_imports:    ScopeSkip[];
+    mut _ss:            ScopeSkipMemos;
 
     mut _field_items:   ScopeItem[];
 
@@ -103,7 +102,7 @@ pub fn solve(
     fn Scope_import(modid: i32): void
     {
         mut found = false;
-        _scope.imports.each(_ss_imports, |import|
+        _scope.imports.each(_ss.imports, |import|
         {
             if (import == modid)
             {
@@ -365,7 +364,7 @@ pub fn solve(
             mut any     = 0;
             mut same    = 0;
 
-            _scope.items.each(_ss_items, |item|
+            _scope.items.each(_ss.items, |item|
             {
                 if (item.id == id)
                 {
@@ -427,8 +426,7 @@ pub fn solve(
             node,
             imports:   !_current_fn && _scope.imports,
             scope_memo: _current_fn && Scope_snap(_scope),
-            ss_items:   _current_fn && _ss_items,
-            ss_imports: _current_fn && _ss_imports);
+            scope_skip: _current_fn && _ss);
     }
 
     fn TemplateDecl(node: Node, local_of: i32): Target
@@ -648,115 +646,30 @@ pub fn solve(
 
     //
 
-    fn Partial(id: string, viaIdx: Target, overloadIdx: Target)
+    fn reorderByNumUsings(ref result: i32[],
+        host_args: Argument[], num_args: i32, num_usings!: i32)
     {
-        let via      = GET(viaIdx);
-        let overload = GET(overloadIdx);
+        result.clear();
 
-        mut kind = "p-unshift";
-        mut min = overload.min - 1;
-        mut max = overload.max - 1;
-        min >= 0 && max >= min || fail();
-
-        mut args = overload.args.slice(1);
-        mut flags = 0;
-
-        // Everything that's not a local/namespace/static/constant
-        //  needs a value through which to activate.
-        if (via.kind != "var" &&
-            via.kind != "global" &&
-            via.kind != "arg" &&
-            via.kind != "ref")
+        if (num_usings)
         {
-            kind = "p-wrap";
-            min++;
-            max++;
-
-            flags |= F_PUB;
-
-            mut arg = Argument(
-                type: via.args[0].type,
-                name: "using");
-
-            args.unshift(arg);
+            for (mut i = 0; i < host_args.len; i++)
+            {
+                let x = i - num_usings;
+                result.push(x >= 0 && x < num_args ? x : -1);
+            }
         }
-
-        return Scope_add(
-            _scope,
-            :kind, :id, :overload.type, :flags,
-            :min, :max, :args,
-            partial: Partial(viaIdx, overloadIdx));
     }
 
-
-    // We need a smarter way of doing this.
-
-    fn scope_using(viaIdx: Target)
-    {
-        let via     = GET(viaIdx);
-        let actual  = via.type || fail();
-
-        fn visit(item: ScopeItem)
-        {
-            // Skip over operators.
-            if (!item.id.hasIdentifierChars)
-                return;
-
-            let overloadIdx = item.target;
-            let overload = GET(overloadIdx);
-
-            // Needs at least one argument,
-            //  and does not support defaulted args.
-            if (overload.min < 1 || overload.max != overload.min)
-                return;
-
-            // Skip over defctors -
-            //  we really only want this for fields & properties,
-            //   but there's no way to tell a property from a fn,
-            //    this at least is easy to disambiguate.
-            if (overload.kind == "type")
-                return;
-
-            // See if we fit.
-            let expect = overload.args[0] || fail("scope_using: bad head arg.");
-            if (!isAssignableAsArgument(expect.type, actual))
-                return;
-
-            //
-            Partial(item.id, viaIdx, overloadIdx);
-        }
-
-        // Visit stuff currently in scope.
-        _scope.items.each(_ss_items, fn visit);
-
-        // Also bring in stuff from the module of origin.
-        let extra_modid = actual.modid;
-        if (!_scope.imports.has(extra_modid))
-        {
-            let items = ctx.modules[extra_modid].out.solve.scope.items;
-            for (mut i = 0; i < items.len; i++)
-                visit(items[i]);
-        }
-
-        // Struct members.
-        if (actual.isStruct)
-            for (mut i = 0; i < _field_items.len; i++)
-                visit(_field_items[i]);
-    }
-
-
-    //
-
-    fn getNamedArgReorder(
-        ref result: i32[],
-        names: string[],
-        host_args: Argument[]): bool
+    fn reorderByArgNames(ref result: i32[],
+        names: string[], host_args: Argument[], num_usings!: i32): bool
     {
         result.clear();
 
         //
         mut used   = 0;
-        mut offset = 0;
+        mut offset = num_usings;
+
         for (mut i = 0; i < host_args.len; i++)
         {
             mut idx = names.find(host_args[i].name);
@@ -806,13 +719,15 @@ pub fn solve(
     }
 
     fn tryMatch__mutargs(
-        scope: Scope, scope_skip: ScopeSkip[],
+        scope: Scope, local_scope: bool,
         mut id: string, ref args: SolvedNode[],
+        ref conversions: Target[][],
         flags?!: i32, retType?!: Type, target?!: Target): Target
     {
         mut matchIdx: Target;
 
-        let arity = args.len;
+        let minArity = args.len;
+        let maxArity = minArity + (scope.usings && countUsings(:scope, :local_scope));
 
         // Prep labelled args for remap.
         mut names: string[];
@@ -820,7 +735,7 @@ pub fn solve(
         {
             mut some = false;
 
-            for (mut i = 0; i < arity; i++)
+            for (mut i = 0; i < minArity; i++)
             {
                 let arg = args[i];
                 names.push(arg.kind == "label"
@@ -834,17 +749,10 @@ pub fn solve(
         mut reorder: i32[];
         mut args_mangled: string;
 
-        //
-        let extra_modid = flags & F_ACCESS && args.if_first.type.modid;
-        let extra_items = extra_modid
-                        && !_scope.imports.has(extra_modid)
-                        && ctx.modules[extra_modid].out.solve.scope.items;
-
-        //
-        let unary_arg_t = arity == 1 && args[0].type;
-        let field_items = flags & F_ACCESS
-            && unary_arg_t.isStruct
-            && unary_arg_t.modid == module.modid
+        // TODO the whole field_items thing is a mess,
+        //  we really need a cleaner way to put these things up.
+        let field_items = local_scope && (flags & F_ACCESS || !minArity)
+            && minArity <= 1 && maxArity
             && _field_items;
 
         //
@@ -855,10 +763,65 @@ pub fn solve(
             mut scope_iterator: i32;
             mut overloadIdx: Target;
 
+            // Argument & `using` dependent lookup,
+            //  basically we do everything we can to get rid of imports.
+            mut extra_items: Target[];
+            if (local_scope && !target)
+            {
+                mut seen: bitset::BitSet;
+
+                fn visitTypeImports(type: Type)
+                {
+                    let visit = type.lookupTypeImports();
+                    for (mut i = -1; i < visit.len; i++)
+                    {
+                        let modid = i >= 0 ? visit[i] : type.modid;
+                        if (seen.bitset::has(modid))
+                            continue;
+
+                        // Lazy init -
+                        //  we want to ignore self and all imports,
+                        //   and everything we've already traversed.
+                        if (!seen)
+                        {
+                            seen.bitset::add(0);
+                            seen.bitset::add(module.modid);
+                            scope.imports.each(
+                                local_scope && _ss.imports,
+                                    |shadow modid| seen.bitset::add(modid));
+                        }
+
+                        if (!seen.bitset::add_once(modid))
+                            continue;
+
+                        //
+                        let items = ctx.modules[modid].out.solve.scope.items;
+                        for (shadow mut i = 0; i < items.len; i++)
+                            if (items[i].id == id)
+                                extra_items.push(items[i].target);
+                    }
+                }
+
+                // Usings.
+                if (maxArity > minArity)
+                    scope.usings.each(
+                        local_scope && _ss.usings,
+                            |index| visitTypeImports(
+                                GET(Target(:module.modid, :index)).type));
+
+                // Field access, method calls & operator calls.
+                //  TODO no way to opt-out of this for operators currently,
+                //   consider regular id-names for all ops, so we can freefn call them.
+                if (flags & (F_ACCESS | F_METHOD | F_INFIX | F_PREFIX | F_POSTFIX))
+                    for (mut i = 0; i < args.len; i++)
+                        visitTypeImports(args[i].type);
+            }
+
+            //
             NEXT: while (overloadIdx =
                 scope.items.search(id, scope_iterator,
-                    :scope_skip, :target,
-                    :extra_items, :field_items))
+                    scope_skip: local_scope && _ss.items,
+                    :target, :extra_items, :field_items))
             {
                 TEST_AGAIN: while (true)
                 {
@@ -867,8 +830,8 @@ pub fn solve(
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
                     let isType = overload.kind == "type";
-                    let isZeroInit = isType && !arity;
-                    if (arity && isType && !target)
+                    let isZeroInit = isType && !minArity;
+                    if (minArity && isType && !target)
                     {
                         let alt = overload.type.canon;
                         if (alt != id) // e.g. i32
@@ -876,19 +839,26 @@ pub fn solve(
                     }
                     ////////////////////////////////////////////
 
-                    //
-                    if (overload.min > arity || overload.max < arity)
-                        if (!isZeroInit)
+                    // Arity check.
+                    if (!isZeroInit)
+                        if (overload.max < minArity || overload.min > maxArity)
                             continue :NEXT;
 
                     // Match by return.
                     if (retType && !isAssignable(retType, overload.type || fail()))
                         continue :NEXT;
 
-                    // Match by argnames.
-                    if (names && !getNamedArgReorder(reorder, names, overload.args))
+                    // Reorder by argument names or number of implicit `using` args.
+                    let host_args   = overload.args;
+                    let num_usings  = !isZeroInit && overload.min > minArity
+                                    && overload.min - minArity;
+
+                    if (!names)
+                        reorderByNumUsings(reorder, host_args, args.len, :num_usings);
+                    else if (!reorderByArgNames(reorder, names, host_args, :num_usings))
                         continue :NEXT;
 
+                    //
                     mut temp: string;
                     shadow ref args_mangled =
                         reorder ? temp : args_mangled;
@@ -929,13 +899,16 @@ pub fn solve(
                         }
                     }
 
-                    if (args)
-                    {
-                        // Type check args.
-                        let host_args = overload.args;
+                    ///////////////////////////////////
+                    ref conversions_out = conversions;
+                    shadow mut conversions: Target[][];
+                    ///////////////////////////////////
 
-                        let N = reorder ? reorder.len
-                                        : args.len;
+                    if (overload.min)
+                    {
+                        reorder.len >= args.len || !reorder || fail("reorder < args.");
+                        let N = (reorder.len || args.len)
+                            .max(!isZeroInit && overload.min);
 
                         /////////////////
                         // Literal fixup.
@@ -943,43 +916,66 @@ pub fn solve(
                         //        /LITFIX
                         /////////////////
 
+                        ARG_OK:
                         for (mut i = 0; i < N; i++)
                         {
                             let host_arg = host_args[i];
-
-                            // Templates.
                             let expect = host_arg.type;
-                            if (!expect)
-                                continue;
 
-                            let callsiteIndex = reorder ? reorder[i]
-                                                        : i;
+                            // Its either reorder or args, asserted above [^].
+                            let callsiteIndex   = i < reorder.len   ? reorder[i]
+                                                : i < args.len      ? i
+                                                : /*using*/ -1;
+
                             if (callsiteIndex < 0)
                             {
                                 // Argument may not be defaulted -
                                 //  we might be supplying defaults via names
                                 //   before we've actually exhausted
                                 //    all the non-defaulted stuff.
-                                if (!host_arg.default && !(host_arg.flags & F_IMPLICIT))
-                                    continue :NEXT;
+                                if (host_arg.default || host_arg.flags & F_IMPLICIT)
+                                    continue :ARG_OK;
 
-                                continue;
+                                // Usings - can't match on explicitly named arguments.
+                                if !(host_arg.flags & F_MUSTNAME)
+                                {
+                                    // Can't proceed if we don't know what we're looking for.
+                                    //  If we decide to not support more than a single using,
+                                    //   we could simply assume it's a match here.
+                                    //
+                                    shadow let expect = expect || host_arg.default.type;
+                                    if (expect)
+                                    {
+                                        let conversion = tryConvert(:scope, :local_scope, :expect);
+                                        if (conversion)
+                                        {
+                                            conversions.grow_if_oob(i) = conversion;
+                                            continue :ARG_OK;
+                                        }
+                                    }
+                                }
+
+                                continue :NEXT;
                             }
 
                             // Explicit argname requirements.
-                            else if (host_arg.flags & F_MUSTNAME)
+                            if (host_arg.flags & F_MUSTNAME)
                             {
                                 if (names.len <= callsiteIndex || !names[callsiteIndex])
                                     continue :NEXT;
                             }
 
-                            let actual = args[callsiteIndex].type;
+                            // Templates.
+                            if (!expect)
+                                continue :ARG_OK;
 
-                            mut ok = isAssignableAsArgument(expect, actual);
+                            let actual = args[callsiteIndex].type;
+                            if (isAssignableAsArgument(expect, actual))
+                                continue :ARG_OK;
 
                             /////////////////
                             // Literal fixup.
-                            if (!ok && considerRetyping(expect, actual))
+                            if (considerRetyping(:expect, :actual))
                             {
                                 ref arg = args[callsiteIndex];
                                 if (arg.kind == "label")
@@ -992,16 +988,25 @@ pub fn solve(
                                     arg = inner;
                                 }
 
-                                let retype  = tryRetyping(arg, expect);
-                                    ok      = isAssignableAsArgument(expect, retype);
-
-                                if (ok)
+                                let retype = tryRetyping(arg, expect);
+                                if (isAssignableAsArgument(expect, retype))
+                                {
                                     arg.type = retype;
+                                    continue :ARG_OK;
+                                }
                             }
                             //        /LITFIX
                             /////////////////
 
-                            if (!ok)
+                            // Go through conversions here.
+                            let conversion = tryConvert(:scope, :local_scope, :expect, :actual);
+                            if (conversion)
+                            {
+                                conversions.grow_if_oob(i) = conversion;
+                                continue :ARG_OK;
+                            }
+
+                            // Nope, args fail.
                             {
                                 args = undo_literal_fixup;
                                 continue :NEXT;
@@ -1026,6 +1031,9 @@ pub fn solve(
 
                     // Forbid ambiguity.
                     disambig();
+
+                    // Output conversions.
+                    SWAP(conversions, conversions_out);
 
                     // Do reorder.
                     if (reorder)
@@ -1071,7 +1079,7 @@ pub fn solve(
         {
             let matched = GET(matchIdx);
 
-            let isZeroInit = matched.kind == "type" && !arity;
+            let isZeroInit = matched.kind == "type" && !minArity;
             if (!isZeroInit)
             {
                 // Mutate call args last thing.
@@ -1082,14 +1090,19 @@ pub fn solve(
                 // Defaults & implicit argument injection.
                 for (mut i = 0; i < args.len; i++)
                 {
-                    if (!args[i])
+                    if (!args[i] && !conversions.unless_oob(i))
                     {
                         let host_arg = host_args[i];
-                        args[i] = host_arg.default || bindImplicitArg(
-                            :host_arg.name,
-                            :host_arg.type,
 
-                            becauseOf: matchIdx);
+                        args[i] = host_arg.default ||
+                        {
+                            host_arg.flags & F_IMPLICIT || fail(
+                                "tryMatch: about to implicit-bind a non-implicit argument: `"
+                                    ~ host_arg.name ~ ": " ~ serializeType(host_arg.type) ~ "`.");
+
+                            bindImplicitArg(:host_arg.name,
+                                            :host_arg.type, becauseOf: matchIdx)
+                        };
                     }
                 }
             }
@@ -1122,24 +1135,174 @@ pub fn solve(
 
     //
 
+    fn countUsings(scope: Scope, local_scope: bool): i32
+    {
+        let scope_skip = local_scope && _ss.usings;
+        mut count = 0;
+        scope.usings.each(scope_skip, |u| u ? count++ : fail());
+        return count;
+    }
+
+    fn tryConvert(
+        scope: Scope, local_scope: bool,
+        expect: Type, actual?: Type): Target[]
+    {
+        mut match:  Target[];
+        mut path:   Target[];
+
+        let has_converts = scope.converts.len;
+        let ss_converts = local_scope && _ss.converts;
+
+        fn descend(from: Type, nullary!: bool, isStruct!: bool)
+        {
+            fn foreach(t: Target)
+            {
+                let convert = GET(t);
+                if (nullary || isAssignableAsArgument(
+                    from, /*into*/host: convert.args.first.type))
+                {
+                    let convertType = convert.kind == "field"
+                        ? add_refs(from: from || fail(), to: convert.type)
+                        : convert.type;
+
+                    shadow let isStruct = convertType.isStruct;
+
+                    if (isAssignableAsArgument(convertType, /*into*/host: expect))
+                    {
+                        // Actual is assignable to current `from` type,
+                        //  this means we've got a conversion edge that works.
+                        if (match)
+                        {
+                            fn explain(shadow path: [Target])
+                            {
+                                mut res = "`";
+                                for (mut i = 0; i < path.len; i++)
+                                {
+                                    if (i) res ~= "` -> `";
+
+                                    let o = GET(path[i]);
+                                    res ~= o.kind ~ " " ~ o.name;
+
+                                    if (i < path.len) res ~= ": " ~ serializeType(o.type);
+                                }
+
+                                res ~= "`";
+                                return res;
+                            }
+
+                            mut suffix  = "\n\t" ~ explain(match) ~ "\n\tand:"
+                                        ~ "\n\t" ~ explain(path ~ t);
+
+                            if (actual)
+                                fail("Conversion ambiguity, multiple ways to convert `"
+                                    ~ serializeType(actual) ~ "` into `"
+                                    ~ serializeType(expect) ~ "`: " ~ suffix);
+                            else
+                                fail("`using` ambiguity, multiple ways to obtain a `"
+                                    ~ serializeType(expect) ~ "` in this scope: " ~ suffix);
+                        }
+
+                        match = path ~ t;
+                    }
+                    else
+                    {
+                        let mightHaveConversion = isStruct || scope.converts;
+                        if (mightHaveConversion)
+                        {
+                            // Forbid cyclic conversions.
+                            //  Delaying the error check to speed up the general case.
+                            if (path.len > 10)
+                            {
+                                for (mut i = path.len; i --> 0; )
+                                {
+                                    if (path[i] == t)
+                                    {
+                                        mut err = "Conversion loop:";
+
+                                        for (shadow mut i = i; i < path.len; i++)
+                                        {
+                                            if (!i) err ~= "\n\t`";
+                                            else    err ~= " `";
+
+                                            shadow let convert = GET(path[i]);
+                                            err ~= convert.kind ~ " " ~ convert.name ~ ": " ~ serializeType(convertType) ~ "` ->";
+                                        }
+
+                                        err ~= "\n\t\t`" ~ convert.kind ~ " " ~ convert.name ~ "`.";
+                                        fail(err);
+                                    }
+                                }
+                            }
+
+                            /////////////////////
+                                    path.push(t);
+                            defer   path.pop();
+                            /////////////////////
+                            descend(convertType, nullary: false, :isStruct);
+                            /////////////////////
+                        }
+                    }
+                }
+            }
+
+            // Usings.
+            if (nullary)
+            {
+                scope.usings.each(local_scope && _ss.usings,
+                    |index| foreach(
+                        Target(:module.modid, :index)));
+            }
+
+            // On-struct stuff.
+            else
+            {
+                if (isStruct)
+                {
+                    let inner = lookupStruct(from).converts;
+
+                    // TODO no need to for the outer isAssignableAsArgument check.
+                    // TODO can we split these into incoming and outgoing converts,
+                    //       so we don't have to check anything at all?
+                    //
+                    for (mut i = 0; i < inner.len; i++)
+                        foreach(inner[i]);
+                }
+
+                // Conversions.
+                if (has_converts)
+                    scope.converts.each(ss_converts, fn foreach);
+            }
+        }
+
+        // Go.
+        descend(actual, nullary: !actual, :actual.isStruct);
+
+        // We're done here.
+        return match;
+    }
+
+
+    //
+
     fn match__mutargs(
-        scope: Scope, scope_skip: ScopeSkip[],
+        scope: Scope, local_scope: bool,
         id: string, ref args: SolvedNode[],
+        ref conversions: Target[][],
         flags: i32, target: Target): Target
     {
-        let ret = tryMatch__mutargs(scope, scope_skip, :id, :args, :flags, :target);
+        let ret = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions, :flags, :target);
         if (ret)
             return ret;
 
-        let debug = tryMatch__mutargs(scope, scope_skip, :id, :args, :flags, :target);
+        let debug = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions, :flags, :target);
         if (debug)
             return debug;
 
-        return scope.NICERR_mismatch(:id, :args, :scope_skip);
+        return NICERR_mismatch(:scope, :local_scope, :id, :args);
     }
 
     fn NICERR_mismatch(
-        scope: Scope, scope_skip: ScopeSkip[],
+        scope: Scope, local_scope: bool,
         id: string, args: SolvedNode[]): never
     {
         // TODO instead of this -
@@ -1150,7 +1313,17 @@ pub fn solve(
 
         // We should do everything possible to be helpful here,
         //  do whatever you need, this is compile-fail path.
-        let overloads = DEPREC_lookup(scope, id, scope_skip);
+
+        mut overloads: Target[] = [];
+
+        mut scope_iterator: i32;
+        mut target: Target;
+        while (target = scope.items.search(:id, :scope_iterator,
+            scope_skip:  local_scope && _ss.items,
+            field_items: local_scope && _field_items))
+        {
+            overloads.push(target);
+        }
 
         mut min = 0x7fffffff.i32;
         mut max = 0;
@@ -1220,7 +1393,7 @@ pub fn solve(
                 ? args.len < min ? fail("`" ~ id ~ "` expects at least " ~ min ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
                 : args.len > max ? fail("`" ~ id ~ "` expects at most " ~ max ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
                 : fail("`" ~ id ~ "` bad args" ~ expectedArgs(overloads) ~ actualArgs(args))
-             : fail("`" ~ id ~ "` is not defined in this scope.");
+             : fail("`" ~ id ~ "` is not defined in this scope: " ~ ("`" ~ _current_fn.value ~ "`." || "root scope."));
     }
 
 
@@ -1798,9 +1971,13 @@ pub fn solve(
             return;
 
         let last = scope_skip.if_last;
-        last.end <= start || fail("ScopeSkip_push: last.end > start.");
+            last.end <= start || fail("ScopeSkip_push: last.end > start.");
 
-        scope_skip ~= ScopeSkip(:start, :end);
+        // Opti - don't grow if possible, so we stay in small storage.
+        if (scope_skip && last.end == start)
+            scope_skip.last.end = end;
+        else
+            scope_skip ~= ScopeSkip(:start, :end);
     }
 
     fn doTrySpecialize(
@@ -1837,14 +2014,12 @@ pub fn solve(
 
         SWAP(_current_fn, current_fn0);
         let scope0 = Scope_snap(_scope);
-        let ss_items0   = _ss_items;
-        let ss_imports0 = _ss_imports;
+        let ss0 = _ss;
 
         defer {
             SWAP(_current_fn, current_fn0);
             Scope_pop(_scope, scope0);
-            _ss_items   = ss_items0;
-            _ss_imports = ss_imports0;
+            _ss = ss0;
         }
         ////////////////////////////////
 
@@ -1895,12 +2070,12 @@ pub fn solve(
         if (_root_scope)
         {
             let start = template.scope_memo || _root_scope;
+                  _ss = template.scope_skip;
 
-            _ss_items   = template.ss_items;
-            _ss_imports = template.ss_imports;
-
-            ScopeSkip_push(_ss_items,   start: start.items_len,   end: scope0.items_len);
-            ScopeSkip_push(_ss_imports, start: start.imports_len, end: scope0.imports_len);
+            ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
+            ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
+            ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
+            ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
         }
 
         // We'll need the original imports in scope
@@ -2200,6 +2375,9 @@ pub fn solve(
         // Struct fields only.
         let members = node.items;
 
+        mut structConverts: Target[];
+        mut structImports:  i32[];
+
         // Struct members, pass 0.
         out.items = members.map(|shadow node|
         {
@@ -2261,7 +2439,14 @@ pub fn solve(
                     field.type = node.type;
 
                 if (node.flags & F_USING)
-                    scope_using(item.target);
+                {
+                    structConverts.push(item.target);
+
+                    if (field.type.modid != module.modid)
+                        structImports.set::add(field.type.modid);
+
+                    structImports.set::add(field.type.lookupTypeImports());
+                }
             }
         }
 
@@ -2285,9 +2470,10 @@ pub fn solve(
 
             //
             {
-                ref s = lookupStruct_mut(structType.canon);
-                    s.target = out.target || fail(
-                        "No struct/out.target.");
+                ref s           = lookupStruct_mut(structType.canon);
+                    s.target    = out.target || fail("No struct/out.target.");
+                    s.converts  = structConverts;
+                    s.imports   = structImports;
             }
 
             let quals0 = structType.quals;
@@ -2536,7 +2722,7 @@ pub fn solve(
         mut overloadIdx: Target;
 
         while (overloadIdx = _scope.items.search(
-            id, scope_iterator, scope_skip: _ss_items))
+            id, scope_iterator, scope_skip: _ss.items))
         {
             ref maybe = GET_mut(overloadIdx);
             if (maybe.kind == "label")
@@ -2797,7 +2983,7 @@ pub fn solve(
                 GET_mut(target).solved = out;
 
             if (out.flags & F_USING)
-                scope_using(target);
+                _scope.usings.push(target.index);
         }
 
         return out;
@@ -2913,7 +3099,7 @@ pub fn solve(
 
         while (overloadIdx =
             scope.items.search(id, scope_iterator,
-                scope_skip: !qualified && _ss_items))
+                scope_skip: !qualified && _ss.items))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
@@ -2956,7 +3142,7 @@ pub fn solve(
             mut scope_iterator: i32;
             mut target: Target;
             while (!shadow && (target = items.search(
-                :id, :scope_iterator, scope_skip: _ss_items)))
+                :id, :scope_iterator, scope_skip: _ss.items)))
             {
                 // Can't shadow here -
                 //  shadowing works per signature,
@@ -2982,7 +3168,7 @@ pub fn solve(
             visitTypes(module);
 
             // ... and all visible imports.
-            _scope.imports.each(_ss_imports,
+            _scope.imports.each(_ss.imports,
                 |import| visitTypes(ctx.modules[import]));
         }
 
@@ -3210,52 +3396,38 @@ pub fn solve(
             return createBlock(node.token, t_never, args);
 
         //
+        mut conversions: Target[][];
         mut callTargIdx = match__mutargs(
-            scope, !qualified && _ss_items,
-            id, args, node.flags, :target);
+            :scope, local_scope: !qualified,
+            :id, :args, :conversions, :node.flags, :target);
 
         mut callTarg = GET(callTargIdx);
 
         // `using` codegen.
-        while (callTarg.partial)
+        for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
         {
-            let unshift     = callTarg.kind == "p-unshift";
+            let conversion = conversions[argIdx];
+            let convRead = conversion && createRead("__using");
 
-            let partial     = callTarg.partial  || fail();
-            let viaIdx      = partial.via       || fail();
-            callTargIdx     = partial.target    || fail();
+            for (mut i = 0; i < conversion.len; i++)
+            {
+                let t = conversion[i];
+                let o = GET(t);
+                if (o.min || o.max && args[argIdx])
+                {
+                    args[argIdx] = CallerNode(convRead, t, [ args[argIdx] ]);
+                    continue;
+                }
 
-            let via         = GET(viaIdx);
-            callTarg        = GET(callTargIdx);
-
-            // There's two things we can do here -
-            //  -   either we're injecting an implicitly used local,
-            //          e.g. the this pointer, or another `using` variable,
-            //  -   or we're wrapping the head argument
-            //          with another derefence or method call or whatever.
-
-            // And that's all there is to `using`.
-            mut innerArgs: SolvedNode[];
-            if (!unshift)
-                innerArgs = [ args[0] || fail() ];
-
-            let argNode     = CallerNode(
-                createRead("__partial"),
-                via.type || fail("solveCall: no `via.type`"),
-                viaIdx,
-                innerArgs);
-
-            //
-            if (unshift)
-                args.unshift(argNode);
-            else
-                args[0] = argNode;
+                i && fail("Bad conversion chain, non-leading nullary: `" ~ o.name ~ "`.");
+                args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
+                args[argIdx] = CallerNode(convRead, t);
+            }
         }
 
         //
         return CallerNode(
             node,
-            callTarg.type || fail("solveCall: no `callTarg.type`."),
             callTargIdx,
             args);
     }
@@ -3355,17 +3527,21 @@ pub fn solve(
     {
         let id = name;
         mut args: SolvedNode[];
+        mut conversions: Target[][];
 
-        let target = tryMatch__mutargs(_scope, _ss_items, :id, :args, retType: type)
+        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, retType: type)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
+
+        if (args.len != 0 || conversions.len != 0)
+            fail("dunno what happened here");
 
         let o = GET(target);
         o.flags & F_IMPLICIT || fail(
             "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
 
         return CallerNode(
-            createRead("__implicit"), :o.type, :target);
+            createRead("__implicit"), :target);
     }
 
 
@@ -3564,7 +3740,7 @@ pub fn solve(
     }
 
     fn CallerNode(
-        node: Node, mut type: Type, target: Target, mut args: SolvedNode[] = [])
+        node: Node, target: Target, mut args: SolvedNode[] = [])
             : SolvedNode
     {
         let overload = GET(target);
@@ -3578,12 +3754,10 @@ pub fn solve(
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
+        mut type = overload.type;
         if (overload.kind == "field")
         {
-            let head = args.len == 1 && args[0] || fail();
-            let headType = head.type || fail();
-
-            type = add_refs(from: headType, to: type);
+            type = add_refs(from: args.only.type || fail(), to: overload.type)
         }
 
         // Tag copies and moves.

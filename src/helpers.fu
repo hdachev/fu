@@ -26,6 +26,9 @@ pub fn grow_if_oob(a: &mut $T[], i: i32): &mut $T
     return a[i];
 }
 
+pub fn unless_oob(a: [$T], i: i32)
+    i < a.len && a[i];
+
 pub fn hasIdentifierChars(id: string)
 {
     for (mut i = 0; i < id.len; i++)

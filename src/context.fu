@@ -168,3 +168,9 @@ pub fn lookupStruct(
     return ctx.modules[type.modid].out.types[type.canon]
         || assert();
 }
+
+pub fn lookupTypeImports(type: Type)
+    type.isStruct && lookupStruct(type).imports;
+
+pub fn lookupTypeConverts(type: Type)
+    type.isStruct && lookupStruct(type).converts;

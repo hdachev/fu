@@ -504,3 +504,7 @@ pub struct Target
 };
 
 pub fn u64(t: Target): u64 = t.modid.u64 << 32 | t.index.u64;
+
+pub fn ==(a: Target, b: Target)
+    a.modid == b.modid &&
+    a.index == b.index;
