@@ -420,16 +420,20 @@ pub fn Scope_add(
         :partial, :template, :solved,
         :local_of);
 
-    if (id && kind != "field")
-        scope.items.push(
-            ScopeItem( :id, :target ));
-
     scope.overloads.push(item);
+
+    if (id)
+        scope.items.push(ScopeItem(:id, :target));
 
     return target;
 }
 
-pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_", name?: string, flags?: i32, local_of?: i32, solved?: SolvedNode): Target
+pub fn Scope_create(
+    scope: &mut Scope,
+    kind = "_no_kind_yet_", name?!: string,
+    type?: Type, flags?!: i32,
+    min?!: i32, max?!: i32, args?: Argument[],
+    solved?: SolvedNode, local_of?!: i32): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -437,11 +441,15 @@ pub fn Scope_create(scope: &mut Scope, kind = "_no_kind_yet_", name?: string, fl
 
     mut item: Overload;
 
-    item.kind       = kind;
     item.name       = name;
+    item.kind       = kind;
     item.flags      = flags;
-    item.local_of   = local_of;
+    item.type       = type;
+    item.min        = min;
+    item.max        = max;
+    item.args       = args;
     item.solved     = solved;
+    item.local_of   = local_of;
 
     scope.overloads.push(item);
 

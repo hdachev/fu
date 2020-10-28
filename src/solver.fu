@@ -419,15 +419,6 @@ pub fn solve(
         return target;
     }
 
-    fn Field(id: string, structType: Type, fieldType: Type)
-    {
-        return Scope_add(
-            _scope, "field",
-            :id || fail(), fieldType || fail(),
-            1, 1, [ Argument(name: "this", type: structType) ],
-            flags: F_PUB);
-    }
-
     fn createTemplate(node: Node): Template
     {
         return Template(
@@ -2196,7 +2187,6 @@ pub fn solve(
 
         // Struct fields only.
         let members = node.items;
-        mut innerScope: ScopeItem[];
 
         // Struct members, pass 0.
         out.items = members.map(|shadow node|
@@ -2220,24 +2210,45 @@ pub fn solve(
             structType  = initStruct(:name, :node.flags);
         }
 
-        // Dereferencing a struct does not require it
-        //  to have any particular qualities.
+        // (Re)poplate fields.
         {
-            shadow let structType = despeculateStruct(structType);
-
-            // Struct members, pass 1.
-            out.items.each(|shadow node|
+            ref innerScope = lookupStruct_mut(structType.canon).items;
+            if (!innerScope && out.items)
             {
-                node.kind == "let" || fail("solveStructMembers_2: " ~ node.kind);
+                // Dereferencing a struct does not require it
+                //  to have any particular qualities.
+                let args = [ Argument(name: "this",
+                    type: despeculateStruct(structType)) ];
 
-                let id = node.value;
-                let target = Field(:id, :structType, fieldType: node.type);
+                innerScope.resize(node.items.len);
+                for (mut i = 0; i < innerScope.len; i++)
+                {
+                    let id = node.items[i].value;
+                    let target = Scope_create(
+                        _scope, "field", name: id || fail(),
+                        min: 1, max: 1, flags: F_PUB, :args);
 
-                innerScope.push(ScopeItem(:id, :target));
+                    innerScope[i] = ScopeItem(:id, :target);
+                }
+            }
+
+            // Update field types.
+            innerScope.len == out.items.len || fail(
+                "solveStructMembers_3: field lens mismatch.");
+
+            for (mut i = 0; i < innerScope.len; i++)
+            {
+                let item = innerScope[i];
+                shadow let node = out.items[i];
+                item.id == node.value || fail(
+                    "solveStructMembers_4: field id mismatch.");
+
+                ref field = GET_mut(item.target);
+                    field.type = node.type;
 
                 if (node.flags & F_USING)
-                    scope_using(target);
-            });
+                    scope_using(item.target);
+            }
         }
 
         ensureTypedef();
@@ -2261,8 +2272,8 @@ pub fn solve(
             //
             {
                 ref s = lookupStruct_mut(structType.canon);
-                    s.items     = innerScope || fail("TODO empty structs (items)?");
-                    s.target    = out.target || fail("No struct/out.target.");
+                    s.target = out.target || fail(
+                        "No struct/out.target.");
             }
 
             let quals0 = structType.quals;
