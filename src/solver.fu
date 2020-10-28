@@ -38,6 +38,8 @@ pub fn solve(
     mut _ss_items:      ScopeSkip[];
     mut _ss_imports:    ScopeSkip[];
 
+    mut _field_items:   ScopeItem[];
+
     struct CurrentFn
     {
         using out:      SolvedNode;
@@ -726,11 +728,8 @@ pub fn solve(
 
         // Struct members.
         if (actual.isStruct)
-        {
-            let items = lookupStruct(actual).items;
-            for (mut i = 0; i < items.len; i++)
-                visit(items[i]);
-        }
+            for (mut i = 0; i < _field_items.len; i++)
+                visit(_field_items[i]);
     }
 
 
@@ -831,7 +830,10 @@ pub fn solve(
 
         //
         let unary_arg_t = arity == 1 && args[0].type;
-        let field_items = flags & F_ACCESS && unary_arg_t.isStruct && lookupStruct(unary_arg_t).items;
+        let field_items = flags & F_ACCESS
+            && unary_arg_t.isStruct
+            && unary_arg_t.modid == module.modid
+            && _field_items;
 
         //
         mut alternate_ids: string[];
@@ -2228,7 +2230,9 @@ pub fn solve(
                         _scope, "field", name: id || fail(),
                         min: 1, max: 1, flags: F_PUB, :args);
 
-                    innerScope[i] = ScopeItem(:id, :target);
+                    let scopeItem = ScopeItem(:id, :target);;
+                    innerScope[i] = scopeItem;
+                    _field_items.push(scopeItem);
                 }
             }
 
@@ -3896,7 +3900,7 @@ pub fn solve(
 
         // Run the thing.
         return SolverOutput(:root,
-            scope: Scope_exports(_scope, :module.modid),
+            scope: Scope_exports(_scope, :module.modid, _field_items),
             :SLOW_resolve);
     }
 }

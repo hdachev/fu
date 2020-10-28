@@ -226,9 +226,9 @@ pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struc
 ////////
 ////////     Scope.
 
-pub fn Scope_exports(scope: Scope, modid!: i32)
+pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 {
-    mut result: ScopeItem[] = [];
+    mut result: ScopeItem[] = field_items;
 
     for (mut i = 0; i < scope.items.len; i++)
     {
