@@ -881,21 +881,6 @@ pub fn solve(
                     shadow ref args_mangled =
                         reorder ? temp : args_mangled;
 
-                    // Specialize.
-                    if (overload.kind == "template")
-                    {
-                        let specIdx = trySpecialize(
-                            :overloadIdx, :args, :reorder,
-                            :args_mangled ||= mangleArguments(args, reorder));
-
-                        if (!specIdx)
-                            continue :NEXT;
-
-                        // Repeat arity checks and such.
-                        overloadIdx = specIdx;
-                        continue :TEST_AGAIN;
-                    }
-
                     fn disambig()
                     {
                         if (matchIdx)
@@ -950,6 +935,11 @@ pub fn solve(
                         {
                             let host_arg = host_args[i];
 
+                            // Templates.
+                            let expect = host_arg.type;
+                            if (!expect)
+                                continue;
+
                             let callsiteIndex = reorder ? reorder[i]
                                                         : i;
                             if (callsiteIndex < 0)
@@ -971,7 +961,6 @@ pub fn solve(
                                     continue :NEXT;
                             }
 
-                            let expect = host_arg.type;
                             let actual = args[callsiteIndex].type;
 
                             mut ok = isAssignableAsArgument(expect, actual);
@@ -1006,33 +995,42 @@ pub fn solve(
                                 continue :NEXT;
                             }
                         }
+                    }
 
-                        // Forbid ambiguity.
-                        disambig();
+                    // Specialize.
+                    if (overload.kind == "template")
+                    {
+                        let specIdx = trySpecialize(
+                            :overloadIdx, :args, :reorder,
+                            :args_mangled ||= mangleArguments(args, reorder));
 
-                        // Do reorder.
-                        if (reorder)
-                        {
-                            // TODO:
-                            // I shouldn't need this pass, just swaps must do.
-                            mut new_args: SolvedNode[];
-                            new_args.resize(reorder.len);
+                        if (!specIdx)
+                            continue :NEXT;
 
-                            for (mut i = 0; i < reorder.len; i++)
-                            {
-                                let idx = reorder[i];
-                                if (idx >= 0)
-                                    new_args[i] = args[idx];
-                            }
-
-                            args = new_args;
-                        }
+                        // Repeat arity checks and such.
+                        overloadIdx = specIdx;
+                        continue :TEST_AGAIN;
                     }
 
                     // Forbid ambiguity.
-                    else
+                    disambig();
+
+                    // Do reorder.
+                    if (reorder)
                     {
-                        disambig();
+                        // TODO:
+                        // I shouldn't need this pass, just swaps must do.
+                        mut new_args: SolvedNode[];
+                        new_args.resize(reorder.len);
+
+                        for (mut i = 0; i < reorder.len; i++)
+                        {
+                            let idx = reorder[i];
+                            if (idx >= 0)
+                                new_args[i] = args[idx];
+                        }
+
+                        args = new_args;
                     }
 
                     // Done!
