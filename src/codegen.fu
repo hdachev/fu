@@ -626,7 +626,11 @@ pub fn cpp_codegen(
 
     fn ensureFnDef(target: Target, overload: Overload)
     {
-        target.modid == module.modid || fail("BAD MODID");
+        target.modid == module.modid || fail(
+            "ensureFnDef: fndef is needed outside of its original scope: "
+                ~ target.modid ~ " vs " ~ module.modid ~ ": `"
+                ~ overload.kind ~ " " ~ overload.name ~ "`.");
+
         if !(_idef.add_once(target.index))
             return;
 

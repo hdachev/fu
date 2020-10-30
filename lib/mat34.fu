@@ -14,7 +14,7 @@ pub inline fn mat34_identity()
         vec3(y: 1),
         vec3(z: 1), vec3 /*point3*/);
 
-pub inline fn pmul(using _0: mat34, using _1: point3)
+pub inline fn pmul(using _0: mat34, using _1: vec3 /*point3*/)
     vec3( // point3(
         x * mx.x + y * my.x + z * mz.x + mo.x,
         x * mx.y + y * my.y + z * mz.y + mo.y,

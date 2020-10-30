@@ -3231,6 +3231,17 @@ pub fn runTests()
     `
     ]);
 
+    ZERO([`
+        // a private fn
+        fn createShader(src: string) = src;
+
+        // inits a public let
+        pub let GEOMETRY_PASS_TEST = createShader("source code");
+    `,
+    `
+        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;
+    `]);
+
 
     // Explicit shadowing.
 
