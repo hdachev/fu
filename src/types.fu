@@ -116,7 +116,7 @@ fn type_inter(a: Effects, b: Effects)
 
 //
 
-pub fn ==(a: ValueType, b: ValueType)
+fn ==(a: ValueType, b: ValueType)
     a.quals == b.quals &&
     a.modid == b.modid &&
     a.canon == b.canon;
@@ -375,7 +375,7 @@ pub fn tryClear_array(type: Type): Type
         return Type();
 
     let vtype = parseType(type.canon.slice(2));
-    return Type(:vtype, :type.lifetime);
+    return Type(:vtype/*, :type.lifetime*/);
 }
 
 
@@ -401,7 +401,7 @@ pub fn tryClear_sliceable(type: Type): Type
         return Type();
 
     let vtype = parseType(type.canon.slice(2));
-    return Type(:vtype, :type.lifetime);
+    return Type(:vtype/*, :type.lifetime*/);
 }
 
 
@@ -453,8 +453,8 @@ pub fn tryClear_map(type: Type): MapFields
             let cval = type.canon.slice(i + 1);
 
             return MapFields(
-                key:   Type(vtype: parseType(ckey), :type.lifetime),
-                value: Type(vtype: parseType(cval), :type.lifetime));
+                key:   Type(vtype: parseType(ckey)/*, :type.lifetime*/),
+                value: Type(vtype: parseType(cval)/*, :type.lifetime*/));
         }
     }
 

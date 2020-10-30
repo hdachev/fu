@@ -78,9 +78,6 @@ pub fn cpp_codegen(
 
     //
 
-    fn typeAnnot(vtype: ValueType): string
-        typeAnnot(Type(:vtype));
-
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
         if (mode & M_ARGUMENT && type.addroffn::type_isZST)
@@ -155,7 +152,7 @@ pub fn cpp_codegen(
         let arrayItem = tryClear_array(type);
         if (arrayItem)
         {
-            if (arrayItem.vtype == t_byte.vtype)
+            if (arrayItem == t_byte)
                 return annotateString();
 
             let itemAnnot = typeAnnot(arrayItem);
@@ -761,10 +758,9 @@ pub fn cpp_codegen(
             }
 
             // Definit.
-            if (init.kind == "definit"
-                    && !init.type.is_ref
-                    && init.type.vtype == node.type.vtype)
+            if (init.kind == "definit" && !init.type.is_ref)
             {
+                init.type == node.type || fail("what's this now");
                 return head ~ " {}";
             }
 
