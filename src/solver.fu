@@ -2357,7 +2357,7 @@ pub fn solve(
         }
 
         // Add the arity-0 type entry.
-        if (!(_current_fn.flags & F_TEMPLATE) && !out.target)
+        if (origId && !out.target)
         {
             structType = initStruct(:name, :node.flags);
             ensureTypedef();

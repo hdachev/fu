@@ -590,6 +590,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
@@ -602,6 +603,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
         fn outer_templ(i): i32
             i > 0   ? inner_templ(i)
                     : 2 * i;
@@ -1584,7 +1586,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
         pub struct Template { locals: ScopeMemo; }; // <- used ahead of the def, was missing q_trivial
         pub struct ScopeMemo { x: i32; }; // <- trivial, discovered on solve here after Template is done
         pub fn +(a: ScopeMemo, b: ScopeMemo) a.x + b.x; // <- used here after both structs are done
@@ -1806,6 +1807,39 @@ pub fn runTests()
         }
 
         pub fn main() test();
+    `);
+
+    ZERO(`
+        inline fn setupOperators(P_PREFIX_UNARY)
+        {
+            struct BINOP {
+                PRECEDENCE:     Map(string, i32);
+                RIGHT_TO_LEFT:  Map(i32,   bool);
+            };
+
+            mut out: BINOP;
+            mut precedence = P_PREFIX_UNARY;
+            mut rightToLeft = false;
+
+            fn binop(ops: string[]) {
+                precedence++;
+                out.RIGHT_TO_LEFT[precedence] = rightToLeft;
+                for (mut i = 0; i < ops.len; i++)
+                    out.PRECEDENCE[ops[i]] = precedence;
+            }
+
+            binop([ "|>" ]);
+
+            //
+            return out;
+        }
+
+        let BINOP = setupOperators(-1);
+
+        fn main() {
+            let precedence = BINOP.PRECEDENCE["|>"];
+            return precedence;
+        }
     `);
 
 
@@ -2529,7 +2563,7 @@ pub fn runTests()
 
         pub struct LogicFrame_in
         {
-            lastLogic:  LogicFrame; //! SLOW_resolve
+            lastLogic:  LogicFrame;
         };
 
         pub struct LogicFrame
