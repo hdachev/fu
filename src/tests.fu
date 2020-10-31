@@ -1810,14 +1810,14 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn setupOperators(P_PREFIX_UNARY)
+        inline fn setupOperators(P_PREFIX_UNARY) // <- template
         {
             struct BINOP {
                 PRECEDENCE:     Map(string, i32);
                 RIGHT_TO_LEFT:  Map(i32,   bool);
             };
 
-            mut out: BINOP;
+            mut out: BINOP; // <- no BINOP in scope
             mut precedence = P_PREFIX_UNARY;
             mut rightToLeft = false;
 
@@ -1841,6 +1841,27 @@ pub fn runTests()
             return precedence;
         }
     `);
+
+    TODO([`
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
+                    return idx;
+            }
+
+            return src.len;
+        }
+    `,
+    `
+        fn main() _0::lex("3 - 3") - 2; // <- from here
+    `]);
 
 
     // Let's move on to some cooler quality of life shit.
