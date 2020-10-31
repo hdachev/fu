@@ -1738,6 +1738,15 @@ pub fn solve(
             let template = createTemplate(node: native ? n_body : n_fn);
 
             FnDecl_init(:target, :kind, id: name, :template);
+
+            // Experimental conversion functions.
+            if (n_fn.flags & F_CONVERSION)
+            {
+                if (n_fn.flags & F_TEMPLATE || spec)
+                    fail("TODO template conversions: " ~ n_fn.value);
+
+                _scope.converts.push(target);
+            }
         }
 
         fn updateScope()

@@ -3720,6 +3720,18 @@ pub fn runTests()
     `);
 
 
+    // Conversion functions.
+
+    ZERO(`
+        struct A { a: i32; };
+        struct B { b: i32; };
+
+        implicit fn bananas(a: A) B(a.a * 2);
+
+        fn main() 1.A.b - 2;
+    `);
+
+
     // Addrofns of struct fields.
 
     ZERO(`

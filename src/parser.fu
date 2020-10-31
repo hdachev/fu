@@ -39,7 +39,7 @@ pub let F_NODISCARD     = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;
 // ... 13
 // ... 14
-// ... 15
+pub let F_CONVERSION    = 1 << 15;
 
 pub let F_MUT           = 1 << 16;
 pub let F_IMPLICIT      = 1 << 17;
@@ -457,6 +457,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "typedef")     return parseTypedef();
 
                 if (v == "fn")          return parseFnDecl();
+                if (v == "implicit")    return parseConversionDecl();
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
@@ -556,7 +557,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         else if (peek.kind == "op" && peek.value == ";")
             _idx++;
         else
-            fail_Lint("Missing semicollon.");
+            fail_Lint("Missing semicollon before `" ~ peek.value ~ "`.");
 
         // Auto-labelling.
         if (autoLabel && numJumps0 != numJumps1)
@@ -573,14 +574,26 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     //  fn keyword comes last to disambiguate operators from anonymous functions,
     //   which makes the parse a bit problematic but whatever.
 
-    fn parseInlineDecl(): Node
+    fn parseConversionDecl(): Node
     {
-        let flags = F_INLINE | F_TEMPLATE;
+        let flags = F_CONVERSION;
 
         let v = consume("id").value;
-        if (v == "infix")       return parseFixityDecl(flags | F_INFIX);
-        if (v == "prefix")      return parseFixityDecl(flags | F_PREFIX);
-        if (v == "postfix")     return parseFixityDecl(flags | F_POSTFIX);
+        if (v == "inline") return parseInlineDecl(flags);
+        _idx--;
+
+        return parseFixityDecl(flags);
+    }
+
+    fn parseInlineDecl(mut flags?: i32): Node
+    {
+        flags |= F_INLINE;
+        flags |= F_TEMPLATE;
+
+        let v = consume("id").value;
+        if (v == "infix")   return parseFixityDecl(flags | F_INFIX);
+        if (v == "prefix")  return parseFixityDecl(flags | F_PREFIX);
+        if (v == "postfix") return parseFixityDecl(flags | F_POSTFIX);
         _idx--;
 
         return parseFixityDecl(flags);
@@ -588,6 +601,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseFixityDecl(flags: i32, expr?: bool): Node
     {
+        if (flags & F_CONVERSION)
+            flags & (F_INFIX | F_PREFIX | F_POSTFIX) &&
+                fail("`implicit` functions can't be operators.");
+
         consume("id", "fn");
         return parseFnDecl(flags, :expr);
     }
