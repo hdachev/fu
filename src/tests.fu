@@ -590,6 +590,30 @@ pub fn runTests()
     `);
 
     ZERO(`
+        inline fn outer_inl(i: i32): i32
+            i > 0   ? inner_inl(i)
+                    : 2 * i;
+
+        inline fn inner_inl(implicit x: i32, i: i32): i32
+            outer_inl(i - 2 * x);
+
+        let implicit x = 3;
+        return outer_inl(6);
+    `);
+
+    ZERO(`
+        fn outer_templ(i): i32
+            i > 0   ? inner_templ(i)
+                    : 2 * i;
+
+        fn inner_templ(implicit x: i32, i): i32
+            outer_templ(i - 2 * x);
+
+        let implicit x = 3;
+        return outer_templ(6);
+    `);
+
+    ZERO(`
         //! SLOW_resolve
         fn outer(implicit x: i32, i: i32): i32
             i > 0   ? inner(i)

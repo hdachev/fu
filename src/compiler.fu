@@ -184,7 +184,16 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
         ref module = ctx.modules[i];
         if (module.out.solve.SLOW_resolve)
             module.in.src.has("//! SLOW_resolve")
-                || throw("SLOW: unexpected SLOW_resolve.");
+                || throw("SLOW:"
+                        ~ "\n\tUnexpected SLOW_resolve:"
+                        ~ "\n\t    we recursively type-checked something multiple times"
+                        ~ "\n\t    which shouldn't be needed for this snippet:\n"
+                            ~ module.in.src);
+        else
+            module.in.src.has("//! SLOW_resolve")
+                && throw("We're getting better!"
+                        ~ "\n\t    SLOW_resolve not needed for this snippet:\n"
+                            ~ module.in.src);
     }
 
     return ctx;
