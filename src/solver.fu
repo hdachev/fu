@@ -458,7 +458,7 @@ pub fn solve(
             //                                              //
             //////////////////////////////////////////////////
 
-            if (!arg.items[LET_INIT])
+            if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
                 min++;
         }
 

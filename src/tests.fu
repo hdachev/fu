@@ -528,6 +528,19 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! SLOW_resolve
+        fn inner_noret(i: i32)
+            outer_noret(i - 1);
+
+        fn outer_noret(implicit x: i32, i: i32)
+            i > 0   ? inner_noret(i)
+                    : x + i;
+
+        let implicit x = 7;
+        return outer_noret(1) - 7;
+    `);
+
+    ZERO(`
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
@@ -540,15 +553,28 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn inner_templ(i)
+        fn inner_templ(i): i32
             outer_templ(i - 1);
 
-        templine fn outer_templ(implicit x: i32, i)
+        fn outer_templ(implicit x: i32, i): i32
             i > 0   ? inner_templ(i)
                     : x + i;
 
         let implicit x = 7;
         return outer_templ(1) - 7;
+    `);
+
+    ZERO(`
+        //! SLOW_resolve
+        fn inner_templ_noret(i)
+            outer_templ_noret(i - 1);
+
+        fn outer_templ_noret(implicit x: i32, i)
+            i > 0   ? inner_templ_noret(i)
+                    : x + i;
+
+        let implicit x = 7;
+        return outer_templ_noret(1) - 7;
     `);
 
     ZERO(`
@@ -3255,7 +3281,7 @@ pub fn runTests()
     `
     ]);
 
-    ZERO([`
+    TODO([`
         // a private fn
         fn createShader(src: string) = src;
 
