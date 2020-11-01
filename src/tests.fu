@@ -2392,6 +2392,26 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        BAD CODEGEN
+        fn only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
+
+        struct Node       { kind: string; };
+        struct SolvedNode { kind: string; };
+
+        fn solveNodes(n: Node[]) {
+            mut r: SolvedNode[];
+            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind);
+            return r;
+        }
+
+        // the '|| throw' introduces a bullshit lambda during codegen,
+        //  which misreturns a dangling reference to its own frame.
+        fn solveDeclExpr(n: Node) solveNodes([ n ]).only || throw ("!only");
+
+        fn main() solveDeclExpr(Node("a")).kind.len - 1;
+    `);
+
 
     // Returning never vs void.
 
