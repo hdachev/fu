@@ -2348,6 +2348,14 @@ pub fn solve(
         if (!origId)
             name = _current_fn.value || "Anon";
 
+        fn TODO_FIX_trackStarted()
+        {
+            if (!out.target || !solve)
+                return;
+
+            GET_mut(out.target).status |= SS_DID_START;
+        }
+
         fn ensureTypedef()
         {
             if (out.target)
@@ -2357,6 +2365,8 @@ pub fn solve(
 
             out.target = Scope_Typedef(_scope, id: origId, :name,
                 structType, node.flags, :template);
+
+            TODO_FIX_trackStarted();
         }
 
         // Add the arity-0 type entry.
@@ -2369,170 +2379,257 @@ pub fn solve(
         if (!solve)
             return out;
 
-        /////////////////////////////////////////////////
-        _current_struct && fail("struct-within-struct");
-        defer _current_struct = Target();
-        _current_struct = out.target;
-        /////////////////////////////////////////////////
+        ///////////////////////////////////////////////
+        mut current_struct0: Target = out.target;
 
-        // Struct fields only.
-        let members = node.items;
+                SWAP(current_struct0, _current_struct);
+        defer   SWAP(current_struct0, _current_struct);
+        ///////////////////////////////////////////////
 
-        mut structConverts: Target[];
-        mut structImports:  i32[];
-
-        // Struct members, pass 0.
-        out.items = members.map(|shadow node|
+        ////////////////
+        // Resolve next.
+        for (mut safety = 0; safety < 1024; safety++)
         {
-            node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
+        // /RESOLVE-NEXT
+        ////////////////
 
-            node.items[LET_INIT] &&
-            node.items[LET_INIT].kind != "definit" &&
-                fail("All structs must be zerofilled by default."
-                    ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+            TODO_FIX_trackStarted();
 
-            return solveLetLike_dontTouchScope(node);
-        });
+            // Struct fields only.
+            let members = node.items;
 
-        if (!structType)
-        {
-            let sig     = mangleArguments(out.items);
-            let hash    = tea::hash62(sig, chars: 4);
-            name       ~= "_" ~ hash;
+            mut structConverts: Target[];
+            mut structImports:  i32[];
 
-            structType  = initStruct(:name, :node.flags);
-        }
-
-        // (Re)poplate fields.
-        {
-            ref innerScope = lookupStruct_mut(structType.canon).items;
-            if (!innerScope && out.items)
+            // Struct members, pass 0.
+            out.items = members.map(|shadow node|
             {
-                // Dereferencing a struct does not require it
-                //  to have any particular qualities.
-                let args = [ Argument(name: "this",
-                    type: despeculateStruct(structType)) ];
+                node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
-                innerScope.resize(node.items.len);
+                node.items[LET_INIT] &&
+                node.items[LET_INIT].kind != "definit" &&
+                    fail("All structs must be zerofilled by default."
+                        ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+
+                return solveLetLike_dontTouchScope(node);
+            });
+
+            if (!structType)
+            {
+                let sig     = mangleArguments(out.items);
+                let hash    = tea::hash62(sig, chars: 4);
+                name       ~= "_" ~ hash;
+
+                structType  = initStruct(:name, :node.flags);
+            }
+
+            // (Re)poplate fields.
+            {
+                ref innerScope = lookupStruct_mut(structType.canon).items;
+                if (!innerScope && out.items)
+                {
+                    // Dereferencing a struct does not require it
+                    //  to have any particular qualities.
+                    let args = [ Argument(name: "this",
+                        type: despeculateStruct(structType)) ];
+
+                    innerScope.resize(node.items.len);
+                    for (mut i = 0; i < innerScope.len; i++)
+                    {
+                        let id = node.items[i].value;
+                        let target = Scope_create(
+                            _scope, "field", name: id || fail(),
+                            min: 1, max: 1, flags: F_PUB, :args);
+
+                        let scopeItem = ScopeItem(:id, :target);;
+                        innerScope[i] = scopeItem;
+                        _field_items.push(scopeItem);
+                    }
+                }
+
+                // Update field types.
+                innerScope.len == out.items.len || fail(
+                    "solveStructMembers_3: field lens mismatch.");
+
                 for (mut i = 0; i < innerScope.len; i++)
                 {
-                    let id = node.items[i].value;
-                    let target = Scope_create(
-                        _scope, "field", name: id || fail(),
-                        min: 1, max: 1, flags: F_PUB, :args);
+                    let item = innerScope[i];
+                    shadow let node = out.items[i];
+                    item.id == node.value || fail(
+                        "solveStructMembers_4: field id mismatch.");
 
-                    let scopeItem = ScopeItem(:id, :target);;
-                    innerScope[i] = scopeItem;
-                    _field_items.push(scopeItem);
+                    ref field = GET_mut(item.target);
+                        field.type = node.type;
+
+                    if (node.flags & F_USING)
+                    {
+                        structConverts.push(item.target);
+
+                        if (field.type.modid != module.modid)
+                            structImports.set::add(field.type.modid);
+
+                        structImports.set::add(field.type.lookupTypeImports());
+                    }
                 }
             }
 
-            // Update field types.
-            innerScope.len == out.items.len || fail(
-                "solveStructMembers_3: field lens mismatch.");
+            ensureTypedef();
 
-            for (mut i = 0; i < innerScope.len; i++)
+            // Add a default constructor.
             {
-                let item = innerScope[i];
-                shadow let node = out.items[i];
-                item.id == node.value || fail(
-                    "solveStructMembers_4: field id mismatch.");
+                shadow mut members: SolvedNode[];
 
-                ref field = GET_mut(item.target);
-                    field.type = node.type;
+                mut commonQuals = -1;
 
-                if (node.flags & F_USING)
+                for (mut i = 0; i < out.items.len; i++)
                 {
-                    structConverts.push(item.target);
-
-                    if (field.type.modid != module.modid)
-                        structImports.set::add(field.type.modid);
-
-                    structImports.set::add(field.type.lookupTypeImports());
+                    let item = out.items[i];
+                    if (item && item.kind == "let" && (item.flags & F_FIELD))
+                    {
+                        members.push(item);
+                        commonQuals &= item.type.quals;
+                    }
                 }
-            }
-        }
 
-        ensureTypedef();
-
-        // Add a default constructor.
-        {
-            shadow mut members: SolvedNode[];
-
-            mut commonQuals = -1;
-
-            for (mut i = 0; i < out.items.len; i++)
-            {
-                let item = out.items[i];
-                if (item && item.kind == "let" && (item.flags & F_FIELD))
+                //
                 {
-                    members.push(item);
-                    commonQuals &= item.type.quals;
+                    ref s           = lookupStruct_mut(structType.canon);
+                        s.target    = out.target || fail("No struct/out.target.");
+                        s.converts  = structConverts;
+                        s.imports   = structImports;
+
+                    GET(s.target).status & SS_DID_START || fail(
+                        "Setting stuff but missing SS_DID_START.");
                 }
+
+                let quals0 = structType.quals;
+                let quals1 = structType.quals &= commonQuals;
+
+                //
+                let max = members.len;
+                mut min = 0;
+                mut args: Argument[];
+
+                for (mut i = 0; i < members.len; i++)
+                {
+                    let member = members[i];
+
+                    let arg = Argument(
+                        name:       member.value || fail(),
+                        type:       member.type  || fail(),
+                        default:    member.items[LET_INIT],
+                        flags:      member.flags & F_MUSTNAME);
+
+                    if (!arg.default)
+                        min++;
+
+                    args.push(arg);
+                }
+
+                if (max && !min) min++;
+
+                ref overload    = GET_mut(out.target);
+                overload.min    = min;
+                overload.max    = max;
+                overload.args   = args;
+                overload.type   = structType;
+
+                if (quals0 != quals1 && out.target)
+                    deepInvalidateUsers(overload);
             }
+
+            // So we can type x = struct { what };
+            out.type = structType;
 
             //
-            {
-                ref s           = lookupStruct_mut(structType.canon);
-                    s.target    = out.target || fail("No struct/out.target.");
-                    s.converts  = structConverts;
-                    s.imports   = structImports;
-            }
-
-            let quals0 = structType.quals;
-            let quals1 = structType.quals &= commonQuals;
-
-            //
-            let max = members.len;
-            mut min = 0;
-            mut args: Argument[];
-
-            for (mut i = 0; i < members.len; i++)
-            {
-                let member = members[i];
-
-                let arg = Argument(
-                    name:       member.value || fail(),
-                    type:       member.type  || fail(),
-                    default:    member.items[LET_INIT],
-                    flags:      member.flags & F_MUSTNAME);
-
-                if (!arg.default)
-                    min++;
-
-                args.push(arg);
-            }
-
-            if (max && !min) min++;
-
-            ref overload    = GET_mut(out.target);
-            overload.min    = min;
-            overload.max    = max;
-            overload.args   = args;
-            overload.type   = structType;
-
-            if (quals0 != quals1 && out.target)
-                invalidateUsers(overload);
-        }
-
-        // So we can type x = struct { what };
-        out.type = structType;
-
-        if (out.target)
-        {
             ref o = GET_mut(out.target);
                 o.solved = out;
 
+            // TODO FIX OBSOLETE - see below
             checkRecursions(o, out.target.index);
 
-            _open_templates.push(OpenTemplate(spec: out.target));
+            ////////////////
+            // Resolve next.
+            {
+                // Break unless dirty.
+                if !(o.status & SS_DIRTY)
+                {
+                    o.status |= SS_FINALIZED;
+                    return out;
+                }
+
+                // Rinse & repeat.
+                o.status &= ~SS_DIRTY;
+                resolve_done++;
+            }
+            // /RESOLVE-NEXT
+            ////////////////
         }
 
-        return out;
+        fail("Infinite resolve loop: __solveStruct `" ~ name ~ "`.");
+    }
+
+    fn ensureSolveStarted(target: Target, overload: Overload)
+    {
+        // TODO Perhaps flip this around -
+        //  call this instead of unorderedSolve,
+        //   and it'll just early-exit if already started.
+
+        //////////////////////////////////
+        // TEMP // TEMP // TEMP // TEMP //
+        //////////////////////////////////
+        //                              //
+        if (overload.kind != "type")    //
+            return;                     //
+        //                              //
+        if !(overload.type.isStruct)    //
+            return;                     //
+        //                              //
+        //////////////////////////////////
+        // TEMP // TEMP // TEMP // TEMP //
+        //////////////////////////////////
+
+        if (overload.status & SS_DID_START)
+            return;
+
+        overload.status && fail(
+            "SS_DID_START: non-zero solver status.");
+
+        unorderedSolve(
+            :overload.template.node,
+            into: target);
+
+        overload.status & SS_DID_START || fail(
+            "SS_DID_START: not set by unorderedSolve.");
+    }
+
+    fn deepInvalidateUsers(o: Overload)
+    {
+        for (mut i = 0; i < o.used_by.len; i++)
+        {
+            shadow ref o = GET_mut(Target(:module.modid, index: o.used_by[i]));
+            if !(o.status & SS_DIRTY)
+            {
+                o.status & SS_FINALIZED && fail("deepInvalidateUsers: already finalized: `" ~ o.name ~ "`.");
+                o.status |= SS_DIRTY;
+                SLOW_resolve++;
+
+                deepInvalidateUsers(:o);
+            }
+        }
     }
 
     fn checkRecursions(ref o: Overload, startIndex: i32): void
     {
+        // TODO FIX OBSOLETE -
+        //  we can notice the recursion directly during the original struct solve -
+        //   seed the struct with a "i'm currently being solved" flag,
+        //    and then upon hitting it, immediately flag it as recursive.
+        //
+        // Even better -
+        //  we can recursion-tag immediately when we get a struct that's not SS_FINALIZED.
+        //   And assert when it's not from this module or whatevs.
+        //
         if (!o.used_by || o.status & SS_REC_CHECKED)
             return;
 
@@ -3781,14 +3878,13 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (overload.kind == "fn" || overload.kind == "type")
             {
-                ref t = GET_mut(target);
+                ref o = GET_mut(target);
 
-                if (_current_struct)
-                    GET_mut(target).used_by.set::add(
-                        _current_struct.index);
-                else
-                    t.used_by.set::add(
-                        _current_fn.target.index);
+                o.used_by.set::add(
+                    _current_struct ? _current_struct.index
+                                    : _current_fn.target.index);
+
+                ensureSolveStarted(target, o);
             }
 
             // Robust closure tracking.
