@@ -1438,14 +1438,19 @@ pub fn solve(
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
-        if (k == "fn")          return solveFnExpr(node);
-        if (k == "struct")      return solveStructExpr(node);
+        if (k == "fn")          return solveDeclExpr(node);
+        if (k == "struct")      return solveDeclExpr(node);
 
         // Exotics
         if (k == "forfieldsof") return solveForFieldsOf(node);
 
         //
         return fail("TODO: " ~ k);
+    }
+
+    fn solveDeclExpr(node: Node): SolvedNode
+    {
+        return solveNodes([ node ]).only;
     }
 
     fn unorderedClassify(kind: string): i32
@@ -1476,11 +1481,10 @@ pub fn solve(
 
     fn unorderedSolve(node: Node, into: Target)
     {
-        into || fail("unorderedSolve without prep");
-
         let k = node.kind;
         if (k == "fn")          return uSolveFn(node, :into);
         if (k == "struct")      return uSolveStruct(node, :into);
+        if (k == "typedef")     return createEmpty();
 
         return fail("TODO: " ~ k);
     }
@@ -1659,11 +1663,6 @@ pub fn solve(
     fn uSolveFn(node: Node, into: Target): SolvedNode
     {
         return __solveFn(node, solve: true, :into);
-    }
-
-    fn solveFnExpr(node: Node): SolvedNode
-    {
-        return __solveFn(node, solve: true, into: uPrepFn_A(node).target);
     }
 
     fn __solveFn(
@@ -2337,11 +2336,6 @@ pub fn solve(
     fn uSolveStruct(node: Node, into: Target): SolvedNode
     {
         return __solveStruct(solve: true, :node, :into);
-    }
-
-    fn solveStructExpr(node: Node): SolvedNode
-    {
-        return __solveStruct(solve: true, :node);
     }
 
     fn __solveStruct(solve!: bool, node: Node, into?!: Target): SolvedNode
@@ -3996,7 +3990,7 @@ pub fn solve(
                 shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
                 _here = node.token || _here;
                 let into = result[i].target;
-                result[i] = into && unorderedSolve(:node, :into);
+                result[i] = unorderedSolve(:node, :into);
             }
 
             // Exhaust the resolve queue here, unless this is the last iter ...
