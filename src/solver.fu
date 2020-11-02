@@ -2338,25 +2338,23 @@ pub fn solve(
         return __solveStruct(solve: true, :node, :into);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, into?!: Target): SolvedNode
+    fn __solveStruct(solve!: bool, /*TODO BORROWCK danglefix*/mut node: Node, into?!: Target): SolvedNode
     {
         mut out = solved(node, target: into, type: into && GET(into).type);
-        ref structType = out.type;
 
         mut name = node.value;
         let origId = name;
         if (!origId)
             name = _current_fn.value || "Anon";
 
+        fn TODO_FIX_structType()
+            out.type ||= initStruct(:name, :node.flags, :SELF_TEST);
+
         fn TODO_FIX_trackStarted()
-        {
-            if (!out.target || !solve)
-                return;
+            if (solve && out.target)
+                GET_mut(out.target).status |= SS_DID_START;
 
-            GET_mut(out.target).status |= SS_DID_START;
-        }
-
-        fn ensureTypedef()
+        fn TODO_FIX_ensureTypedef()
         {
             if (out.target)
                 return;
@@ -2364,17 +2362,14 @@ pub fn solve(
             let template = createTemplate(:node);
 
             out.target = Scope_Typedef(_scope, id: origId, :name,
-                structType, node.flags, :template);
+                TODO_FIX_structType, node.flags, :template);
 
             TODO_FIX_trackStarted();
         }
 
         // Add the arity-0 type entry.
         if (origId && !out.target)
-        {
-            structType = initStruct(:name, :node.flags);
-            ensureTypedef();
-        }
+            TODO_FIX_ensureTypedef();
 
         if (!solve)
             return out;
@@ -2396,13 +2391,11 @@ pub fn solve(
             TODO_FIX_trackStarted();
 
             // Struct fields only.
-            let members = node.items;
-
             mut structConverts: Target[];
             mut structImports:  i32[];
 
             // Struct members, pass 0.
-            out.items = members.map(|shadow node|
+            out.items = node.items.map(|shadow node|
             {
                 node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
@@ -2414,14 +2407,15 @@ pub fn solve(
                 return solveLetLike_dontTouchScope(node);
             });
 
-            if (!structType)
+            // Uniquify name.
+            if (!out.type)
             {
                 let sig     = mangleArguments(out.items);
                 let hash    = tea::hash62(sig, chars: 4);
                 name       ~= "_" ~ hash;
-
-                structType  = initStruct(:name, :node.flags);
             }
+
+            ref structType = TODO_FIX_structType();
 
             // (Re)poplate fields.
             {
@@ -2443,13 +2437,14 @@ pub fn solve(
 
                         let scopeItem = ScopeItem(:id, :target);;
                         innerScope[i] = scopeItem;
+
                         _field_items.push(scopeItem);
                     }
                 }
 
                 // Update field types.
                 innerScope.len == out.items.len || fail(
-                    "solveStructMembers_3: field lens mismatch.");
+                    "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ out.items.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
 
                 for (mut i = 0; i < innerScope.len; i++)
                 {
@@ -2473,12 +2468,11 @@ pub fn solve(
                 }
             }
 
-            ensureTypedef();
+            TODO_FIX_ensureTypedef();
 
             // Add a default constructor.
             {
-                shadow mut members: SolvedNode[];
-
+                mut members: SolvedNode[];
                 mut commonQuals = -1;
 
                 for (mut i = 0; i < out.items.len; i++)

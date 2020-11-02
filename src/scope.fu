@@ -24,7 +24,7 @@ pub struct ModuleInputs
 pub struct ModuleOutputs
 {
     deps:       i32[];
-    types:      Map(string, Struct); // canon  -> type info
+    types:      Struct[];
     specs:      Map(string, Target); // mangle -> spec
     solve:      SolverOutput;
     cpp:        string;
@@ -52,6 +52,8 @@ pub struct Module
 
 pub struct Struct
 {
+    name:       string;
+
     target?:    Target;
     items?:     ScopeItem[];
     imports?:   i32[];
@@ -199,14 +201,27 @@ pub fn isStruct(type: Type)
     return type.canon.starts(with: '$');
 }
 
-pub fn initStruct(implicit module: &mut Module, name: string, flags: i32)
+pub fn structIndex(canon: string): i32
 {
-    let canon = "$" ~ name;
+    mut offset = 1;
+    return canon[0] == '$' ? parse10i32(:offset, canon) : -1;
+}
 
-    if (module.out.types.has(canon))
-        throw("initStruct already invoked for `" ~ name ~ "`.");
+pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_TEST!: bool)
+{
+    name[0].u8 - '0'.u8 > 9.u8 || throw (
+        "Bad struct name, leading digit: `" ~ name ~ "`.");
 
-    module.out.types[canon] = Struct;
+    let index = module.out.types.len;
+    let canon = "$" ~ index ~ name;
+
+    if (SELF_TEST)
+        for (mut i = 0; i < module.out.types.len; i++)
+            if (module.out.types[i].name == name)
+                throw ("initStruct/SELF_TEST duplicate: `" ~ name ~ "`.");
+
+    // Alloc a slot.
+    module.out.types ~= Struct(:name);
 
     // Assume everything, we resolve disappointment.
     let specualtive_quals = flags & F_NOCOPY
@@ -225,7 +240,7 @@ pub fn despeculateStruct(mut type: Type)
 
 pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
 {
-    return module.out.types[canon];
+    return module.out.types[canon.structIndex];
 }
 
 
