@@ -2599,8 +2599,10 @@ pub fn solve(
             :overload.template.node,
             into: target);
 
-        overload.status & SS_DID_START || fail(
-            "SS_DID_START: not set by unorderedSolve.");
+        // TODO BORROWCK dangling ref here.
+        GET(target).status & SS_DID_START || fail(
+            "SS_DID_START: not set by unorderedSolve: `"
+                ~ overload.kind ~ "` `" ~ overload.name ~ ": " ~ serializeType(overload.type) ~ "`.");
     }
 
     fn deepInvalidateUsers(o: Overload)
