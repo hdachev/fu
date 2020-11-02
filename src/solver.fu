@@ -82,7 +82,7 @@ pub fn solve(
     };
 
     mut _open_templates: OpenTemplate[];
-    mut _current_struct: Target;
+    mut _open_structs: Target[];
 
     type TypeParams = Map(string, Type);
 
@@ -2375,10 +2375,13 @@ pub fn solve(
             return out;
 
         ///////////////////////////////////////////////
-        mut current_struct0: Target = out.target;
+        let    open_structs0 = _open_structs.len;
+        defer _open_structs.shrink(open_structs0);
 
-                SWAP(current_struct0, _current_struct);
-        defer   SWAP(current_struct0, _current_struct);
+        if (out.target)
+            _open_structs ~= out.target;
+        else if (origId)
+            fail("solveStruct: no out.target: `" ~ origId ~ "`.");
         ///////////////////////////////////////////////
 
         ////////////////
@@ -3877,7 +3880,7 @@ pub fn solve(
                 ref o = GET_mut(target);
 
                 o.used_by.set::add(
-                    _current_struct ? _current_struct.index
+                    _open_structs   ? _open_structs.last.index
                                     : _current_fn.target.index);
 
                 ensureSolveStarted(target, o);
