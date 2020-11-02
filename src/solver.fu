@@ -549,9 +549,6 @@ pub fn solve(
         {
             invalidateUsers(overload);
         }
-
-        // We dont need this yet.
-        // checkRecursions(overload, solved.target.index);
     }
 
     fn invalidateUsers(overload: Overload): void
@@ -1479,7 +1476,7 @@ pub fn solve(
             uPrepFn_B(into);
     }
 
-    fn unorderedSolve(node: Node, into: Target)
+    fn unorderedSolve(/*TODO BORROWCK danglefix*/mut node: Node, into: Target)
     {
         let k = node.kind;
         if (k == "fn")          return uSolveFn(node, :into);
@@ -2542,9 +2539,6 @@ pub fn solve(
             ref o = GET_mut(out.target);
                 o.solved = out;
 
-            // TODO FIX OBSOLETE - see below
-            checkRecursions(o, out.target.index);
-
             ////////////////
             // Resolve next.
             {
@@ -2587,7 +2581,21 @@ pub fn solve(
         //////////////////////////////////
 
         if (overload.status & SS_DID_START)
+        {
+            // Recursion detector.
+            if !(overload.status & SS_FINALIZED)
+            {
+                for (mut i = _open_structs.len; i --> 0; )
+                {
+                    let t = _open_structs[i];
+                    GET_mut(t).status |= SS_RECURSIVE;
+                    if (t == target)
+                        break;
+                }
+            }
+
             return;
+        }
 
         overload.status && fail(
             "SS_DID_START: non-zero solver status.");
@@ -2616,49 +2624,6 @@ pub fn solve(
                 deepInvalidateUsers(:o);
             }
         }
-    }
-
-    fn checkRecursions(ref o: Overload, startIndex: i32): void
-    {
-        // TODO FIX OBSOLETE -
-        //  we can notice the recursion directly during the original struct solve -
-        //   seed the struct with a "i'm currently being solved" flag,
-        //    and then upon hitting it, immediately flag it as recursive.
-        //
-        // Even better -
-        //  we can recursion-tag immediately when we get a struct that's not SS_FINALIZED.
-        //   And assert when it's not from this module or whatevs.
-        //
-        if (!o.used_by || o.status & SS_REC_CHECKED)
-            return;
-
-        o.status |= SS_REC_CHECKED;
-
-        //
-        mut seen: bitset::BitSet;
-
-        fn visit(overload: Overload): bool
-        {
-            let u = overload.used_by;
-            for (mut i = 0; i < u.len; i++)
-            {
-                let index = u[i];
-                if (!seen.bitset::add_once(index))
-                    continue;
-
-                if (index == startIndex)
-                    return true;
-
-                let t = Target(:module.modid, :index);
-                if (visit(GET(t)))
-                    return true;
-            }
-
-            return false;
-        }
-
-        if (visit(o))
-            o.status |= SS_RECURSIVE;
     }
 
 
