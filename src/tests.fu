@@ -967,7 +967,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct SelfRec { x: SelfRec[]; }; //! SLOW_resolve
+        struct SelfRec { x: SelfRec[]; }; //! TYPE_recursion TYPE_resolve
         fn main() SelfRec( [ SelfRec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
@@ -1469,7 +1469,7 @@ pub fn runTests()
             kind:       string;
             flags?:     i32;
             value?:     string;
-            items?:     SolvedNode[]; //! SLOW_resolve
+            items?:     SolvedNode[]; //! TYPE_recursion TYPE_resolve
             token:      Token;
 
             type:       Type;
@@ -2121,7 +2121,7 @@ pub fn runTests()
     ZERO(`
         struct SolvedNode {
             value: i32;
-            items?: SolvedNode[]; //! SLOW_resolve
+            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
         };
 
         fn visitNodes(_v: &mut $V, _n: SolvedNode) {
@@ -2886,9 +2886,8 @@ pub fn runTests()
     // Recursive structs.
 
     ZERO(`
-        //! SLOW_resolve
         struct Node {
-            items?: Node[];
+            items?: Node[]; //! TYPE_recursion TYPE_resolve
             stuff?: Node[];
         };
 

@@ -5,6 +5,14 @@ import context;
 import types;
 
 
+// Solver notes.
+
+pub let N_TypeRecursion     = 1 << 0;
+pub let N_TypeResolve       = 1 << 1;
+
+pub let N_SlowResolve       = 1 << 2;
+
+
 //
 
 let OPTI_autoshadow         = true;
@@ -61,6 +69,8 @@ pub fn solve(
 
     mut SLOW_resolve:   i32;
     mut resolve_done:   i32;
+
+    mut notes:          i32;
 
 
     // TODO we shouldn't need this stuff
@@ -2550,8 +2560,8 @@ pub fn solve(
                 }
 
                 // Rinse & repeat.
+                notes |= N_TypeResolve;
                 o.status &= ~SS_DIRTY;
-                resolve_done++;
             }
             // /RESOLVE-NEXT
             ////////////////
@@ -2589,6 +2599,7 @@ pub fn solve(
                 {
                     let t = _open_structs[i];
                     GET_mut(t).status |= SS_RECURSIVE;
+                    notes |= N_TypeRecursion;
                     if (t == target)
                         break;
                 }
@@ -2619,8 +2630,6 @@ pub fn solve(
             {
                 o.status & SS_FINALIZED && fail("deepInvalidateUsers: already finalized: `" ~ o.name ~ "`.");
                 o.status |= SS_DIRTY;
-                SLOW_resolve++;
-
                 deepInvalidateUsers(:o);
             }
         }
@@ -4145,9 +4154,12 @@ pub fn solve(
         SLOW_resolve == resolve_done || fail("Some overload was left dirty.");
         _open_templates && fail("Some template was left open.");
 
+        if (SLOW_resolve)
+            notes |= N_SlowResolve;
+
         // Run the thing.
         return SolverOutput(:root,
             scope: Scope_exports(_scope, :module.modid, _field_items),
-            :SLOW_resolve);
+            :notes);
     }
 }

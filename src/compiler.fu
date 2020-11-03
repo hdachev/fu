@@ -158,6 +158,12 @@ pub fn build(
 
 // Test running infra.
 
+let NOTES = [
+    "TYPE_recursion",
+    "TYPE_resolve",
+    "SLOW_resolve",
+];
+
 pub fn compile_snippets(sources: string[], fnames?: string[]): Context
 {
     fn ensure_main(src: string)
@@ -182,18 +188,20 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
     for (mut i = 0; i < ctx.modules.len; i++)
     {
         ref module = ctx.modules[i];
-        if (module.out.solve.SLOW_resolve)
-            module.in.src.has("//! SLOW_resolve")
-                || throw("SLOW:"
-                        ~ "\n\tUnexpected SLOW_resolve:"
-                        ~ "\n\t    we recursively type-checked something multiple times"
-                        ~ "\n\t    which shouldn't be needed for this snippet:\n"
-                            ~ module.in.src);
-        else
-            module.in.src.has("//! SLOW_resolve")
-                && throw("We're getting better!"
-                        ~ "\n\t    SLOW_resolve not needed for this snippet:\n"
-                            ~ module.in.src);
+        mut notes = module.out.solve.notes;
+        for (mut bit = 0; bit < NOTES.len && notes; bit++)
+        {
+            let mask = 1 << bit;
+            let isset = notes & mask;
+            let annot = NOTES[bit];
+            notes &= ~mask;
+            if (isset)
+                module.in.src.has(annot) || throw(
+                    "SLOW:\n\tMissing " ~ annot ~ " annotation:\n" ~ module.in.src);
+            else
+                module.in.src.has(annot) && throw(
+                    "OVERANNOT:\n\t" ~ annot ~ " not needed for this snippet:\n" ~ module.in.src);
+        }
     }
 
     return ctx;

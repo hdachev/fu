@@ -66,8 +66,8 @@ pub struct SolverOutput
     root:   SolvedNode;
     scope:  Scope;
 
-    // Stats & such.
-    SLOW_resolve:   i32;
+    // Important solver events for testing.
+    notes:  i32;
 };
 
 pub struct ScopeSkip
