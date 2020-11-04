@@ -1441,6 +1441,7 @@ pub fn solve(
         if (k == "defer")       return solveDefer(node);
         if (k == "try")         return solveTryCatch(node);
 
+        if (k == "typedef")     return solveTypedef(node);
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
@@ -1464,7 +1465,6 @@ pub fn solve(
     {
         if (kind == "fn")       return 1;
         if (kind == "struct")   return 10;
-        if (kind == "typedef")  return 10;
 
         return 0;
     }
@@ -1474,7 +1474,6 @@ pub fn solve(
         let k = node.kind;
         if (k == "fn")          return uPrepFn_A(node);
         if (k == "struct")      return uPrepStruct(node);
-        if (k == "typedef")     return solveTypedef(node);
 
         return fail("TODO: " ~ k);
     }
@@ -1491,7 +1490,6 @@ pub fn solve(
         let k = node.kind;
         if (k == "fn")          return uSolveFn(node, :into);
         if (k == "struct")      return uSolveStruct(node, :into);
-        if (k == "typedef")     return createEmpty();
 
         return fail("TODO: " ~ k);
     }
