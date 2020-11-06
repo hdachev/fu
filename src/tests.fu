@@ -972,9 +972,16 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_resolve
-        struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_resolve
+        struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
         fn main() ABRec( [ BARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
+    `);
+
+    ZERO(`
+        struct ABRec { x: BARec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        struct BARec { x: ABRec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        struct ABBARec { x: ABRec[]; y: BARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        fn main() ABRec( [ BARec() ], [ ABBARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
     ZERO(`

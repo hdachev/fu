@@ -8,9 +8,10 @@ import types;
 // Solver notes.
 
 pub let N_TypeRecursion     = 1 << 0;
-pub let N_TypeResolve       = 1 << 1;
+pub let N_TypeReloop        = 1 << 1;
+pub let N_TypeReopen        = 1 << 2;
 
-pub let N_SlowResolve       = 1 << 2;
+pub let N_SlowResolve       = 1 << 3;
 
 
 //
@@ -2558,7 +2559,7 @@ pub fn solve(
                 }
 
                 // Rinse & repeat.
-                notes |= N_TypeResolve;
+                notes |= N_TypeReloop;
                 o.status &= ~SS_DIRTY;
             }
             // /RESOLVE-NEXT
@@ -2606,8 +2607,8 @@ pub fn solve(
             return;
         }
 
-        overload.status && fail(
-            "SS_DID_START: non-zero solver status.");
+        overload.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && fail(
+            "SS_DID_START: non-zero solver status: " ~ overload.status);
 
         unorderedSolve(
             :overload.template.node,
@@ -2621,14 +2622,38 @@ pub fn solve(
 
     fn deepInvalidateUsers(o: Overload)
     {
-        for (mut i = 0; i < o.used_by.len; i++)
+        mut resolve: Target[];
+
+        fn visit(shadow o: Overload)
         {
-            shadow ref o = GET_mut(Target(:module.modid, index: o.used_by[i]));
-            if !(o.status & SS_DIRTY)
+            for (mut i = 0; i < o.used_by.len; i++)
             {
-                o.status & SS_FINALIZED && fail("deepInvalidateUsers: already finalized: `" ~ o.name ~ "`.");
+                let t = Target(:module.modid, index: o.used_by[i]);
+                shadow ref o = GET_mut(t);
+                if (o.status & SS_DIRTY)
+                    continue;
+
                 o.status |= SS_DIRTY;
-                deepInvalidateUsers(:o);
+                if (o.status & SS_FINALIZED)
+                {
+                    notes |= N_TypeReopen;
+                    resolve.push(t);
+                }
+
+                visit(:o);
+            }
+        }
+
+        visit(:o);
+
+        for (mut i = 0; i < resolve.len; i++)
+        {
+            let t = resolve[i];
+            shadow ref o = GET_mut(t);
+            if (o.status & SS_DIRTY)
+            {
+                o.status &= ~(SS_FINALIZED | SS_DID_START | SS_DIRTY);
+                ensureSolveStarted(t, o);
             }
         }
     }

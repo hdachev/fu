@@ -161,6 +161,7 @@ pub fn build(
 let NOTES = [
     "TYPE_recursion",
     "TYPE_resolve",
+    "TYPE_reopen",
     "SLOW_resolve",
 ];
 
