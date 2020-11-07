@@ -239,7 +239,7 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
         }
-        else if (try_GET(s.target).status & SS_RECURSIVE)
+        else if (try_GET(s.target).status & SS_TYPE_RECUR)
         {
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
@@ -648,7 +648,7 @@ pub fn cpp_codegen(
         let o = GET(fndef.target);
         let n = o.solved;
         if !(n.flags & F_PUB)
-            return "";
+            return mode & M_STMT ? "" : "0";
 
         n.kind == "fn" || fail("cgFnDef non-fn");
         return cgFn(n, mode);
@@ -1712,6 +1712,8 @@ pub fn cpp_codegen(
         {
             let node  = nodes[i];
             let src   = node ? cgNode(node, mode) : "";
+
+            src || mode & M_STMT || fail("cgNodes: empty `" ~ node.kind ~ ".`");
 
             result.push(src);
         }

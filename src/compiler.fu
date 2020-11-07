@@ -159,10 +159,12 @@ pub fn build(
 // Test running infra.
 
 let NOTES = [
+    "FN_recursion",
+    "FN_resolve",
+    "FN_reopen",
     "TYPE_recursion",
     "TYPE_resolve",
     "TYPE_reopen",
-    "SLOW_resolve",
 ];
 
 pub fn compile_snippets(sources: string[], fnames?: string[]): Context

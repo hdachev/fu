@@ -4,13 +4,12 @@ import compiler;
 // A quick self-test without I/O.
 
 let TEST_SRC = `
-    //! SLOW_resolve
     fn test(one: i32) {
         let zero = one - 1;
         let two  = one * 2;
 
         fn inner(i: i32): i32
-            i > zero ? outer(i - one) : zero;
+            i > zero ? outer(i - one) : zero; //! FN_recursion //! FN_resolve //! FN_reopen
 
         fn outer(i: i32): i32
             two * inner(i);
@@ -388,6 +387,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion
         fn self_rec_template(x: $T): $T
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
@@ -396,6 +396,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion
         fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;
         fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;
         fn main() ab_rec(11) + 200;
@@ -487,6 +488,7 @@ pub fn runTests()
     // Recursion, closures & implicit args.
 
     ZERO(`
+        //! FN_recursion
         fn inner(i: i32): i32
             i > 0 ? outer(i - 1) : 0;
 
@@ -497,7 +499,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn test(one: i32)
         {
             let zero = one - 1;
@@ -516,6 +518,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         fn inner(i: i32): i32
             outer(i - 1);
 
@@ -528,7 +531,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn inner_noret(i: i32)
             outer_noret(i - 1);
 
@@ -541,6 +544,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
@@ -553,6 +557,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         fn inner_templ(i): i32
             outer_templ(i - 1);
 
@@ -565,7 +570,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn inner_templ_noret(i)
             outer_templ_noret(i - 1);
 
@@ -578,6 +583,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         fn outer(i: i32): i32
             i > 0   ? inner(i)
                     : 2 * i;
@@ -590,7 +596,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
@@ -603,7 +609,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn outer_templ(i): i32
             i > 0   ? inner_templ(i)
                     : 2 * i;
@@ -616,7 +622,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn outer(implicit x: i32, i: i32): i32
             i > 0   ? inner(i)
                     : x + i;
@@ -629,7 +635,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn outer(implicit x: i32, i: i32)
             i > 0   ? inner(i)
                     : x + i;
@@ -648,7 +654,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -660,7 +666,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -672,7 +678,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -690,10 +696,10 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn noret_x(implicit x: i32) x;
 
-        fn templ_calls_self_2(call_self): i32 // <- now a template
+        fn templ_calls_self_2(call_self): i32
             = call_self ? templ_calls_self_2(false) * 3 : noret_x;
 
         fn main() {
@@ -740,7 +746,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
         fn main() {
             let a = 1;
             let b = 2;
@@ -763,13 +768,19 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion
+        fn goto0(x): i32 = x ? goto0(x / 2) : 0;
+        fn main() goto0(1);
+    `);
+
+    ZERO(`
+        //! FN_recursion FN_resolve
         fn goto0(x) x ? goto0(x / 2) : 0;
         fn main() goto0(1);
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve
         fn goto0(x) x && goto0(x / 2);
         fn main() goto0(1);
     `);
@@ -1702,7 +1713,6 @@ pub fn runTests()
 
         fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }
 
-        //! SLOW_resolve
         fn main()
         {
             let implicit mut _target = 0;
@@ -1712,7 +1722,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
         fn main()
         {
             mut target = 0;
@@ -1738,7 +1747,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
@@ -2142,7 +2151,7 @@ pub fn runTests()
             fn traverse(v: &mut $V, n: SolvedNode) {
                 v.visit(n);
                 for (mut i = 0; i < n.items.len; i++)
-                    traverse(v, n.items[i]);
+                    traverse(v, n.items[i]); //! FN_recursion
             }
 
             traverse(_v, _n);
@@ -3556,6 +3565,32 @@ pub fn runTests()
         fn main() parseQualifierChain(15);
     `);
 
+    ZERO(`
+        fn main()
+        {
+            mut sum = 0;
+            fn getModule(fname: string) fname.len;
+            fn compile(fname: string, via: string = "")
+            {
+                // 1. this throw contributed a 'never' ret_count.
+                let module = getModule(fname) || throw ("import circle: '" ~ via ~ fname ~ "'.");
+                if (module & 1) {
+                    let fuzimports = fname.split("a");
+                    for (mut i = 0; i < fuzimports.len; i++)
+                        compile( // 2. then this recursion did something.
+                            fname: fuzimports[i],
+                              via: fname ~ " <- " ~ via);
+                }
+
+                sum += module;
+                // 3. finally no ret_actual but non-zero ret_count.
+            }
+
+            compile("ab");
+            return sum - 2;
+        }
+    `);
+
 
     // Dead code elim.
 
@@ -3740,7 +3775,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
         mut sum = 2;
 
         fn FnDecl_update(parent_idx: i32) {

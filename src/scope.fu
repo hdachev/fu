@@ -1,14 +1,16 @@
 import parser;
 import types;
 
-pub let SS_FINALIZED    = 0x1 << 0;
-pub let SS_DIRTY        = 0x1 << 1;
-pub let SS_DID_START    = 0x1 << 2;
+pub let SS_LAZY         = 0x1 << 0;
+pub let SS_DID_START    = 0x1 << 1;
+pub let SS_DIRTY        = 0x1 << 2;
+pub let SS_FINALIZED    = 0x1 << 3;
 
-pub let SS_RECURSIVE    = 0x1 << 4;
+pub let SS_TYPE_RECUR   = 0x1 << 4;
+pub let SS_FN_RECUR     = 0x1 << 5;
 
-pub let SS_HAS_BREAK    = 0x1 << 6;
-pub let SS_HAS_CONTINUE = 0x1 << 7;
+pub let SS_HAS_BREAK    = 0x1 << 8;
+pub let SS_HAS_CONTINUE = 0x1 << 9;
 
 
 // Build service primitives.
@@ -163,6 +165,9 @@ pub struct Overload
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
     local_of?:  i32;
     closes_over?: i32[];
+
+    // What about this then?
+    extra_items?: ScopeItem[];
 };
 
 pub struct ScopeItem
@@ -456,7 +461,8 @@ pub fn Scope_add(
     template?:      Template,
     solved?:        SolvedNode,
     local_of?:      i32,
-    name?:          string): Target
+    name?:          string,
+    status?:        u32): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -467,7 +473,8 @@ pub fn Scope_add(
         :kind, :flags, :type,
         :min, :max, :args,
         :template, :solved,
-        :local_of);
+        :local_of,
+        :status);
 
     scope.overloads.push(item);
 
@@ -482,7 +489,9 @@ pub fn Scope_create(
     kind = "_no_kind_yet_", name?!: string,
     type?: Type, flags?!: i32,
     min?!: i32, max?!: i32, args?: Argument[],
-    solved?: SolvedNode, local_of?!: i32): Target
+    solved?: SolvedNode, local_of?!: i32,
+    status?: u32,
+    extra_items?: ScopeItem[]): Target
 {
     let modid = MODID;
     let target = Target(:modid,
@@ -490,15 +499,17 @@ pub fn Scope_create(
 
     mut item: Overload;
 
-    item.name       = name;
-    item.kind       = kind;
-    item.flags      = flags;
-    item.type       = type;
-    item.min        = min;
-    item.max        = max;
-    item.args       = args;
-    item.solved     = solved;
-    item.local_of   = local_of;
+    item.name           = name;
+    item.kind           = kind;
+    item.flags          = flags;
+    item.type           = type;
+    item.min            = min;
+    item.max            = max;
+    item.args           = args;
+    item.solved         = solved;
+    item.local_of       = local_of;
+    item.status         = status;
+    item.extra_items    = extra_items;
 
     scope.overloads.push(item);
 
@@ -510,9 +521,10 @@ pub fn Scope_set(scope: &mut Scope, id: string, target: Target)
     scope.items.push(ScopeItem( :id, :target ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string)
+pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string,
+    status?: u32)
 {
-    return Scope_add(:scope, "type", :id, :name, :type, :flags, :template);
+    return Scope_add(:scope, "type", :id, :name, :type, :flags, :template, :status);
 }
 
 
