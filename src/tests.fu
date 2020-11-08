@@ -1758,6 +1758,26 @@ pub fn runTests()
 
     ZERO(`
         //! FN_recursion FN_resolve FN_reopen
+        fn A(ref a: i32) a || a = A(++a);
+        fn main() { mut v = 0; return A(v) - 1; }
+    `);
+
+    ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
+        fn A(ref a: i32) a || a = B(++a);
+        fn B(ref b: i32) b || b = A(++b);
+        fn main() { mut v = 0; return A(v) - 1; }
+    `);
+
+    ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
+        fn A(ref a: i32) { ref aa = a || a = B(++a); return aa; }
+        fn B(ref b: i32) { ref bb = b || b = A(++b); return bb; }
+        fn main() { mut v = 0; return A(v) - 1; }
+    `);
+
+    ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
