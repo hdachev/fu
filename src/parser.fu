@@ -30,7 +30,7 @@ pub let F_POSTFIX       = 1 << 3;
 pub let F_ACCESS        = 1 << 4;
 pub let F_ID            = 1 << 5;
 pub let F_QUALIFIED     = 1 << 6;
-// ... 7
+pub let F_PARENS        = 1 << 7;
 
 pub let F_LOCAL         = 1 << 8;
 pub let F_ARG           = 1 << 9;
@@ -985,6 +985,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (op == "->") return typeAssert(left, right);
 
         //
+        if (left.kind == "and" || left.kind == "or")
+            left.flags & F_PARENS || fail_Lint(
+                "Unparenthesized `" ~ left.kind ~ "` on the left side of an `" ~ op ~ "`.");
+
+        //
         return createCall(
             op, F_INFIX, [ left, right ]);
     }
@@ -1127,7 +1132,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseParens(): Node
     {
-        let out = parseExpression(P_RESET);
+        mut out = parseExpression(P_RESET);
+            out.flags |= F_PARENS;
+
         consume("op", ")");
         return out;
     }

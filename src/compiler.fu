@@ -165,6 +165,8 @@ let NOTES = [
     "TYPE_recursion",
     "TYPE_resolve",
     "TYPE_reopen",
+    "DEAD_code",
+    "DEAD_call",
 ];
 
 pub fn compile_snippets(sources: string[], fnames?: string[]): Context

@@ -1756,23 +1756,25 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
-        fn A(ref a: i32) a || a = A(++a);
+    FAIL(`
+        //! FN_recursion FN_resolve DEAD_call
+        fn A(ref a: i32) a || //*F
+                              a = A(++a)    /*/         // Lint should complain here,
+                             (a = A(++a)); //*/         //  this was an honest mistake.
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
-        fn A(ref a: i32) a || a = B(++a);
-        fn B(ref b: i32) b || b = A(++b);
+        //! FN_recursion FN_resolve FN_reopen DEAD_call
+        fn A(ref a: i32) a || (a = B(++a));
+        fn B(ref b: i32) b || (b = A(++b));
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
-        fn A(ref a: i32) { ref aa = a || a = B(++a); return aa; }
-        fn B(ref b: i32) { ref bb = b || b = A(++b); return bb; }
+        //! FN_recursion FN_resolve FN_reopen DEAD_call
+        fn A(ref a: i32) { ref aa = a || (a = B(++a)); return aa; }
+        fn B(ref b: i32) { ref bb = b || (b = A(++b)); return bb; }
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
