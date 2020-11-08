@@ -32,8 +32,8 @@ fn %(a: $T, b: $T)
     case ($T -> @integral): $T __native;
     case ($T -> @floating_point): $T __native("<cmath>", "std::fmod");
 
-fn ++(a: &mut $T) case ($T -> @arithmetic): $T __native;
-fn --(a: &mut $T) case ($T -> @arithmetic): $T __native;
+fn ++(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;
+fn --(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;
 postfix fn ++(a: &mut $T) case ($T -> @arithmetic): $T __native;
 postfix fn --(a: &mut $T) case ($T -> @arithmetic): $T __native;
 
