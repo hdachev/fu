@@ -354,7 +354,7 @@ pub fn solve(
 
     //
 
-    fn Binding(id: string, mut type: Type, mut flags!: i32, kind: string)
+    fn Binding(id: string, mut type: Type, mut flags!: i32, kind: string, reuse?: Target)
     {
         mut name = id;
 
@@ -400,8 +400,16 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, :kind, :name, :flags, :local_of);
+        let target = reuse || Scope_create(_scope, :kind, :name, :flags, :local_of);
         Scope_set(_scope, :id, :target);
+
+        // Double check.
+        if (SELF_TEST && reuse)
+        {
+            let preexisting = GET(reuse);
+            preexisting.name == name && preexisting.kind == kind && preexisting.flags == flags && preexisting.local_of == local_of
+                || fail("Binding reuse mismatch.");
+        }
 
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
@@ -1722,9 +1730,20 @@ pub fn solve(
                         return Type;
                     }
 
+                    // Arg target reuse, because of the resolve loop:
+                    //  the strict retType equality checks lifetimes,
+                    //   and they are expressed in terms of scope positions:
+                    //    if we don't reuse arg targets, resolve loops forever.
+                    //
+                    ref preexisting = outItems[i];
+                    let reuse       = preexisting.target;
+                    if (SELF_TEST && reuse)
+                        safety && preexisting.kind == "let" && preexisting.flags & F_ARG || fail(
+                            "__solveFn: arg target reuse: something is looking off.");
+
                     let n_arg       = inItems[i];
                     let specType    = spec && tryGetArgSpecType(n_arg.value);
-                    outItems[i]     = solveLet(n_arg, :specType);
+                    outItems[i]     = solveLet(n_arg, :specType, :reuse);
                 }
 
                 /////////////////////////////////////////////////////
@@ -2966,7 +2985,7 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn solveLet(node: Node, specType?!: Type): SolvedNode
+    fn solveLet(node: Node, specType?!: Type, reuse?: Target): SolvedNode
     {
         mut out         = solveLetLike_dontTouchScope(node, :specType);
         let global      = out.kind == "global";
@@ -2982,7 +3001,7 @@ pub fn solve(
                      : out.type.is_ref      ? "ref"
                                             : "var";
 
-            let target = out.target = Binding(:id, :kind, :node.flags, :out.type);
+            let target = out.target = Binding(:id, :kind, :node.flags, :out.type, :reuse);
 
             if (global)
                 GET_mut(target).solved = out;

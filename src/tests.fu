@@ -1722,6 +1722,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
@@ -1731,7 +1732,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
@@ -1741,22 +1742,22 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
-            fn __solveStruct(mut arg: i32, x = 0): i32 {
-                ref o = GET_mut(arg); o++;
-                return arg;
+            fn __solveStruct(mut arg: i32): i32 {
+                ref o = GET_mut(arg); o += target;
+                return target;
             }
 
-            fn GET_mut(ref x: i32) x || (target = __solveStruct(target));
-            return __solveStruct(0);
+            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));
+            return __solveStruct(0) - 2;
         }
     `);
 
     ZERO(`
-        //! SLOW_resolve
+        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
