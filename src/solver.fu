@@ -55,19 +55,22 @@ pub fn solve(
 
     mut _field_items:   ScopeItem[];
 
+    struct CurrentFn_ResetOnResolve
+    {
+        locals_used:    i32[];
+        ret_expect:     Type;
+        ret_actual:     Type;
+        ret_count:      i32;
+        returns:        Target[];
+        tries:          i32;
+    };
+
     struct CurrentFn
     {
         using out:      SolvedNode;
         return_idx:     ScopeMemo; // <- truth from here
         parent_idx:     i32;
-        locals_used?:   i32[];
-
-        ret_expect?:    Type;
-        ret_actual?:    Type;
-        ret_count?:     i32;
-
-        returns?:       Target[];
-        tries?:         i32;
+        using RoR?:     CurrentFn_ResetOnResolve;
     };
 
     mut _current_fn:    CurrentFn;
@@ -1694,6 +1697,8 @@ pub fn solve(
         {
         // /RESOLVE-NEXT
         ////////////////
+
+            out.RoR = CurrentFn_ResetOnResolve();
 
             // Go!
             {

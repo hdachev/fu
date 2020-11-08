@@ -3624,6 +3624,7 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve
         fn main()
         {
             mut sum = 0;
@@ -3632,7 +3633,7 @@ pub fn runTests()
                 // 1. this throw contributed a 'never' ret_count.
                 x || throw ("x=0");
                 if (x & 1) compile(x + 1); // 2. then this recursion did something.
-                sum += x;
+                sum += x; // <- also this must be a closure.
                 // 3. finally no ret_actual but non-zero ret_count.
             }
 
@@ -3642,24 +3643,23 @@ pub fn runTests()
     `);
 
     ZERO(`
+        //! FN_recursion FN_resolve
         fn main()
         {
             mut sum = 0;
             fn getModule(fname: string) fname.len;
             fn compile(fname: string, via: string = "")
             {
-                // 1. this throw contributed a 'never' ret_count.
                 let module = getModule(fname) || throw ("import circle: '" ~ via ~ fname ~ "'.");
                 if (module & 1) {
                     let fuzimports = fname.split("a");
                     for (mut i = 0; i < fuzimports.len; i++)
-                        compile( // 2. then this recursion did something.
+                        compile(
                             fname: fuzimports[i],
                               via: fname ~ " <- " ~ via);
                 }
 
                 sum += module;
-                // 3. finally no ret_actual but non-zero ret_count.
             }
 
             compile("ab");
