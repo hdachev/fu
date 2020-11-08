@@ -1779,7 +1779,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_resolve FN_reopen DEAD_let DEAD_code
         fn main()
         {
             mut target = 0;
@@ -2245,7 +2245,7 @@ pub fn runTests()
     ZERO(`
         fn throw_hey(): i32 {
             throw("hey");
-            return 1;
+            return 1; //! DEAD_code
         }
 
         fn main(): i32 {
@@ -2260,7 +2260,7 @@ pub fn runTests()
     ZERO(`
         fn throw_hey(): i32 {
             throw("hey");
-            return 1;
+            return 1; //! DEAD_code
         }
 
         fn main(): i32 {

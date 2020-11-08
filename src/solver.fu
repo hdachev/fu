@@ -17,6 +17,8 @@ pub let N_TypeReopen        = 1 << 5;
 
 pub let N_DeadCode          = 1 << 6;
 pub let N_DeadCall          = 1 << 7;
+pub let N_DeadLet           = 1 << 8;
+pub let N_DeadIf            = 1 << 9;
 
 
 //
@@ -1375,7 +1377,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = []): SolvedNode
+    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool): SolvedNode
     {
         let k = node.kind;
 
@@ -1383,7 +1385,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type);
         if (k == "label")       return solveLabel(node, :type);
 
-        if (k == "let")         return solveLet(node);
+        if (k == "let")         return solveLet(node, :deadcode_on_never);
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrayLiteral(node, type);
 
@@ -2881,7 +2883,7 @@ pub fn solve(
 
     //
 
-    fn solveLetLike_dontTouchScope(node: Node, specType?!: Type): SolvedNode
+    fn solveLetLike_dontTouchScope(node: Node, specType?!: Type, deadcode_on_never?!: bool): SolvedNode
     {
         let n_annot     = node.items[LET_TYPE];
         let n_init      = node.items[LET_INIT];
@@ -2938,9 +2940,17 @@ pub fn solve(
 
         let killref = init.type.is_ref2temp();
 
+        // Dead code elim.
+        if (deadcode_on_never && init.type.is_never)
+        {
+            notes |= N_DeadLet;
+            return init;
+        }
+
         if (node.flags & F_REF)
         {
-            init.type.is_mutref || !init && node.flags & F_ARG || fail(
+            init.type.is_mutref || init.type.is_never && annot.type
+                                || !init && node.flags & F_ARG || fail(
                 "`ref` variables must be initialized to a mutable reference: `" ~ node.value ~ "`"
                     ~ (init.type ? " = " ~ humanizeType(init.type) : "."));
 
@@ -2967,18 +2977,7 @@ pub fn solve(
             maybeCopyOrMove(init, t_let);
 
         //
-        mut out = solved(node, t_let, [annot || init, init]);
-
-        let global = !_current_fn && !(node.flags & F_FIELD);
-        if (global)
-        {
-            if (out.flags & F_MUT || out.type.is_mutref)
-                fail("Mutable statics are not currently allowed.");
-
-            out.kind = "global";
-        }
-
-        return out;
+        return solved(node, t_let, [annot || init, init]);
     }
 
     fn solveTypedef(node: Node): SolvedNode
@@ -2988,15 +2987,26 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn solveLet(node: Node, specType?!: Type, reuse?: Target): SolvedNode
+    fn solveLet(node: Node, specType?!: Type, reuse?: Target, deadcode_on_never?!: bool): SolvedNode
     {
-        mut out         = solveLetLike_dontTouchScope(node, :specType);
-        let global      = out.kind == "global";
+        let global = !_current_fn;
+            global && node.flags & F_FIELD && fail(
+                "solveLet: field misclassified as global: " ~ node.value);
 
-        let id = out.value;
-        !out.type.is_ref || out.type.lifetime || fail("ref without lifetime: `" ~ id ~ "`.");
+        mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
+        let id  = out.value;
+        if (out.kind != "let")
+        {
+            if (SELF_TEST)
+                deadcode_on_never && out.type.is_never || fail(
+                    "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
 
-        //
+            return out;
+        }
+
+        !out.type.is_ref || out.type.lifetime || fail(
+            "solveLet: ref without lifetime: `" ~ id ~ "`.");
+
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
             let kind = global               ? "global"
@@ -3007,7 +3017,10 @@ pub fn solve(
             let target = out.target = Binding(:id, :kind, :node.flags, :out.type, :reuse);
 
             if (global)
+            {
+                out.kind = "global";
                 GET_mut(target).solved = out;
+            }
 
             if (out.flags & F_USING)
                 _scope.usings.push(target.index);
@@ -3584,7 +3597,7 @@ pub fn solve(
         // Dead code elim.
         if (cond.type.is_never)
         {
-            notes |= N_DeadCode;
+            notes |= N_DeadIf;
             return cond;
         }
 
@@ -3897,7 +3910,7 @@ pub fn solve(
         nodes: Node[],
         type_all?: Type, type_last?!: Type,
         use_type_last?!: bool,
-        deadcode_on_never?: bool): SolvedNode[]
+        deadcode_on_never?!: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -3924,7 +3937,7 @@ pub fn solve(
                 _here       = node.token || _here;
 
                 ref solved  =
-                result[i]   = solveNode(:node, type:
+                result[i]   = solveNode(:node, :deadcode_on_never, type:
                     i == nodes.len - 1 && use_type_last
                         ? type_last : type_all);
 

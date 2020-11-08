@@ -167,6 +167,8 @@ let NOTES = [
     "TYPE_reopen",
     "DEAD_code",
     "DEAD_call",
+    "DEAD_let",
+    "DEAD_if",
 ];
 
 pub fn compile_snippets(sources: string[], fnames?: string[]): Context
