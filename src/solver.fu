@@ -2296,40 +2296,27 @@ pub fn solve(
 
     fn __solveStruct(solve!: bool, /*TODO BORROWCK danglefix*/mut node: Node, into?!: Target): SolvedNode
     {
-        mut out = solved(node, target: into, type: into && GET(into).type);
+        mut out     = solved(node, target: into, type: into && GET(into).type);
 
-        mut name = node.value;
-        let origId = name;
-        if (!origId)
-            name = _current_fn.value || "Anon";
+        let origId  = node.value;
+        let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
 
-        fn TODO_FIX_structType()
-            out.type ||= initStruct(:name, :node.flags, :SELF_TEST);
-
-        fn TODO_FIX_trackStarted()
-            if (solve && out.target)
-                GET_mut(out.target).status |= SS_DID_START;
-
-        fn TODO_FIX_ensureTypedef()
+        if (!out.target)
         {
-            if (out.target)
-                return;
-
             let template = createTemplate(:node);
 
+            out.type && assert();
+            out.type = initStruct(:name, :node.flags, :SELF_TEST);
+
             out.target = Scope_Typedef(_scope, id: origId, :name,
-                TODO_FIX_structType, node.flags, :template,
+                :out.type, :node.flags, :template,
                 status: SS_LAZY);
-
-            TODO_FIX_trackStarted();
         }
-
-        // Add the arity-0 type entry.
-        if (origId && !out.target)
-            TODO_FIX_ensureTypedef();
 
         if (!solve)
             return out;
+
+        GET_mut(out.target).status |= SS_DID_START;
 
         ///////////////////////////////////////////////
         let    open_solves0 = _open_solves.len;
@@ -2348,8 +2335,6 @@ pub fn solve(
         // /RESOLVE-NEXT
         ////////////////
 
-            TODO_FIX_trackStarted();
-
             // Struct fields only.
             mut structConverts: Target[];
             mut structImports:  i32[];
@@ -2367,25 +2352,15 @@ pub fn solve(
                 return solveLetLike_dontTouchScope(node);
             });
 
-            // Uniquify name.
-            if (!out.type)
-            {
-                let sig     = mangleArguments(out.items);
-                let hash    = tea::hash62(sig, chars: 4);
-                name       ~= "_" ~ hash;
-            }
-
-            ref structType = TODO_FIX_structType();
-
             // (Re)poplate fields.
             {
-                ref innerScope = lookupStruct_mut(structType.canon).items;
+                ref innerScope = lookupStruct_mut(out.type.canon).items;
                 if (!innerScope && out.items)
                 {
                     // Dereferencing a struct does not require it
                     //  to have any particular qualities.
                     let args = [ Argument(name: "this",
-                        type: despeculateStruct(structType)) ];
+                        type: despeculateStruct(out.type)) ];
 
                     innerScope.resize(node.items.len);
                     for (mut i = 0; i < innerScope.len; i++)
@@ -2428,8 +2403,6 @@ pub fn solve(
                 }
             }
 
-            TODO_FIX_ensureTypedef();
-
             // Add a default constructor.
             {
                 mut members: SolvedNode[];
@@ -2447,7 +2420,7 @@ pub fn solve(
 
                 //
                 {
-                    ref s           = lookupStruct_mut(structType.canon);
+                    ref s           = lookupStruct_mut(out.type.canon);
                         s.target    = out.target || fail("No struct/out.target.");
                         s.converts  = structConverts;
                         s.imports   = structImports;
@@ -2456,8 +2429,8 @@ pub fn solve(
                         "Setting stuff but missing SS_DID_START.");
                 }
 
-                let quals0 = structType.quals;
-                let quals1 = structType.quals &= commonQuals;
+                let quals0 = out.type.quals;
+                let quals1 = out.type.quals &= commonQuals;
 
                 //
                 let max = members.len;
@@ -2486,14 +2459,11 @@ pub fn solve(
                 overload.min    = min;
                 overload.max    = max;
                 overload.args   = args;
-                overload.type   = structType;
+                overload.type   = out.type;
 
                 if (quals0 != quals1 && out.target)
                     deepInvalidateUsers(overload);
             }
-
-            // So we can type x = struct { what };
-            out.type = structType;
 
             //
             ref o = GET_mut(out.target);
