@@ -1608,6 +1608,10 @@ pub fn solve(
         let tDecl = TemplateDecl(:node, local_of: parent_idx,
             status: !isTemplate && SS_LAZY); // Actual template fns are eager.
 
+        // Experimental conversion functions.
+        if (node.flags & F_CONVERSION)
+            _scope.converts.push(tDecl);
+
         return createFnDef(
             token: node.token,
             target: tDecl,
@@ -1675,15 +1679,6 @@ pub fn solve(
             shadow let template = native ? createTemplate(n_body) : template;
 
             FnDecl_init(:target, :kind, id: name, :template);
-
-            // Experimental conversion functions.
-            if (n_fn.flags & F_CONVERSION)
-            {
-                if (spec)
-                    fail("TODO template conversions: " ~ n_fn.value);
-
-                _scope.converts.push(target);
-            }
         }
 
         fn updateScope()
@@ -2141,8 +2136,8 @@ pub fn solve(
                             inType = add_ref(inType, Lifetime_temporary);
 
                         //
-                        argName_typeParam && fail(
-                            "Type param name collision with argument: `" ~ argName ~ "`.")
+                        (argName_typeParam && fail(
+                            "Type param name collision with argument: `" ~ argName ~ "`."))
                                 = inType;
 
                         // Type check.
