@@ -9,7 +9,7 @@ let TEST_SRC = `
         let two  = one * 2;
 
         fn inner(i: i32): i32
-            i > zero ? outer(i - one) : zero; //! FN_recursion //! FN_resolve //! FN_reopen
+            i > zero ? outer(i - one) : zero; //! FN_recursion //! FN_reopen
 
         fn outer(i: i32): i32
             two * inner(i);
@@ -513,7 +513,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn test(one: i32)
         {
             let zero = one - 1;
@@ -532,7 +532,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn inner(i: i32): i32
             outer(i - 1);
 
@@ -545,7 +545,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn inner_noret(i: i32)
             outer_noret(i - 1);
 
@@ -558,7 +558,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
@@ -571,7 +571,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn inner_templ(i): i32
             outer_templ(i - 1);
 
@@ -584,7 +584,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn inner_templ_noret(i)
             outer_templ_noret(i - 1);
 
@@ -597,7 +597,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn outer(i: i32): i32
             i > 0   ? inner(i)
                     : 2 * i;
@@ -610,7 +610,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
@@ -623,7 +623,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn outer_templ(i): i32
             i > 0   ? inner_templ(i)
                     : 2 * i;
@@ -636,7 +636,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn outer(implicit x: i32, i: i32): i32
             i > 0   ? inner(i)
                     : x + i;
@@ -649,7 +649,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn outer(implicit x: i32, i: i32)
             i > 0   ? inner(i)
                     : x + i;
@@ -997,15 +997,15 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
-        struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_reopen
+        struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_reopen
         fn main() ABRec( [ BARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
     ZERO(`
-        struct ABRec { x: BARec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
-        struct BARec { x: ABRec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
-        struct ABBARec { x: ABRec[]; y: BARec[]; }; //! TYPE_recursion TYPE_resolve TYPE_reopen
+        struct ABRec { x: BARec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_reopen
+        struct BARec { x: ABRec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_reopen
+        struct ABBARec { x: ABRec[]; y: BARec[]; }; //! TYPE_recursion TYPE_reopen
         fn main() ABRec( [ BARec() ], [ ABBARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
@@ -1756,7 +1756,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn main()
         {
             mut target = 0;
@@ -1780,7 +1780,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen DEAD_call
+        //! FN_recursion FN_reopen DEAD_call
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || (a = B(incr(a)));
         fn B(ref b: i32) b || (b = A(incr(b)));
@@ -1788,7 +1788,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen DEAD_call
+        //! FN_recursion FN_reopen DEAD_call
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) { ref aa = a || (a = B(incr(a))); return aa; }
         fn B(ref b: i32) { ref bb = b || (b = A(incr(b))); return bb; }
@@ -1796,7 +1796,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen DEAD_let DEAD_code
+        //! FN_recursion FN_reopen DEAD_let DEAD_code
         fn main()
         {
             mut target = 0;
@@ -1822,7 +1822,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         fn main()
         {
             mut target = 0;
@@ -3996,7 +3996,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        //! FN_recursion FN_resolve FN_reopen
+        //! FN_recursion FN_reopen
         //! DEAD_code DEAD_call
         fn use_a(implicit a: i32) a * a;
         fn use_b(implicit b: i32) b * b;

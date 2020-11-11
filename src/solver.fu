@@ -2410,34 +2410,6 @@ pub fn solve(
 
     //
 
-    fn deepInvalidateUsers(o: Overload)
-    {
-        for (mut i = 0; i < o.used_by.len; i++)
-        {
-            let t = Target(:module.modid, index: o.used_by[i]);
-            shadow ref o = GET_mut(t);
-            if (o.status & (SS_DID_START | SS_DIRTY) != SS_DID_START)
-                continue;
-
-            if (o.status & SS_FINALIZED)
-            {
-                // Reopen on next use:
-                //  Why this works is really confusing, so hold on to your papers.
-                //   1. For this to happen, there's a mutual recursion going on, so A -> B -> A.
-                //   2. We started solving A, then we solved B, finalized it but for some reason invalidated A.
-                //   3. We're hitting here, which is B getting dirty because it uses A, which necessarily means A is getting dirty too.
-                //   4. We don't need to resolve B immediately, because we're about to resolve A, which will trigger resolve anyway.
-                notes |= o.kind == "type" ? N_TypeReopen : N_FnReopen;
-                o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
-                deepInvalidateUsers(:o);
-            }
-            else
-            {
-                o.status |= SS_DIRTY;
-            }
-        }
-    }
-
     fn lazySolveStart(target: Target, overload: Overload): bool
     {
         // Isn't lazy-started?
@@ -2461,23 +2433,78 @@ pub fn solve(
         return true;
     }
 
-    fn lazySolveEnd(ref overload: Overload)
+    fn lazySolveEnd(ref o: Overload): void
     {
-        if (overload.status & SS_UPDATED)
+        mut reopen: i32[];
+
+        let parent = o.local_of;
+        if (o.status & SS_UPDATED)
         {
-            overload.status &= ~SS_UPDATED;
-            deepInvalidateUsers(overload);
+            o.status &= ~SS_UPDATED;
+
+            NEXT_USER:
+            for (mut i = 0; i < o.used_by.len; i++)
+            {
+                mut index = o.used_by[i];
+
+                GO_UP:
+                for (;;)
+                {
+                    shadow ref o = GET_mut(
+                        Target(:module.modid, :index));
+
+                    // If not started or dirty, means someone else will take care of us here.
+                    if (o.status & (SS_DID_START | SS_DIRTY) != SS_DID_START)
+                        continue :NEXT_USER;
+
+                    // If still solving somewhere up our callstack, just flag as dirty.
+                    if !(o.status & SS_FINALIZED)
+                    {
+                        o.status |= SS_DIRTY;
+                        continue :NEXT_USER;
+                    }
+
+                    // Climb up until sibling (or self) -
+                    //  this is A->B->C being invalidated by A->D:
+                    //   can't just reopen C here, because we don't have B in scope,
+                    //    so we have to invalidate B.
+                    let up = o.local_of;
+                    if (up != parent) // !sibling
+                    {
+                        up > parent || fail("lazySolveEnd: about to climb up the wrong tree.");
+                        index = up;
+                        continue :GO_UP;
+                    }
+
+                    // Finally, a finalized, non-local of self,
+                    //  gotta reopen & resolve now.
+                    notes |= o.kind == "type" ? N_TypeReopen : N_FnReopen;
+
+                    o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
+                    reopen ~= index;
+
+                    continue :NEXT_USER;
+                }
+            }
         }
 
-        if !(overload.status & SS_DIRTY)
+        //
+        if !(o.status & SS_DIRTY)
         {
-            overload.status |= SS_FINALIZED;
+            o.status |= SS_FINALIZED;
         }
         else
         {
-            overload.status & SS_FINALIZED && fail("Stray SS_FINALIZED.");
-            overload.status &= ~(SS_DID_START | SS_DIRTY);
-            notes |= overload.kind == "type" ? N_TypeResolve : N_FnResolve;
+            o.status & SS_FINALIZED && fail("Stray SS_FINALIZED.");
+            o.status &= ~(SS_DID_START | SS_DIRTY);
+            notes |= o.kind == "type" ? N_TypeResolve : N_FnResolve;
+        }
+
+        //
+        for (mut i = 0; i < reopen.len; i++)
+        {
+            let t = Target(:module.modid, index: reopen[i]);
+            lazySolveStart(t, GET(t));
         }
     }
 
