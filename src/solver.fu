@@ -488,83 +488,6 @@ pub fn solve(
             :node.flags, :local_of, :status);
     }
 
-    fn FnDecl_init(target: Target, kind: string, id: string, template: Template)
-    {
-        ref overload = GET_mut(target);
-
-        overload.name = id;
-        overload.kind = kind;
-        overload.template = template;
-    }
-
-    fn FnDecl_update(solved: SolvedNode, locals_used: i32[], ret_actual: Type)
-    {
-        let items = solved.items;
-
-        mut min = 0;
-        let max = items.len + FN_ARGS_BACK;
-        mut args: Argument[];
-        for (mut i = 0; i < max; i++)
-        {
-            let argNode = items[i];
-            argNode.kind == "let" || fail();
-
-            let isImplicit = !!(argNode.flags & F_IMPLICIT);
-            let arg = Argument(
-                type:       argNode.type  || fail(),
-                name:       argNode.value || fail(),
-                default:    !isImplicit && argNode.items[LET_INIT],
-                flags:      argNode.flags);
-
-            if (!arg.default && !isImplicit)
-                min++;
-
-            args.push(arg);
-        }
-
-        // Unconditionally replacing the stuff.
-        ref overload    = GET_mut(solved.target);
-
-        let retval0     = overload.type;
-        let args_len0   = overload.args.len;
-        let closure0    = overload.closes_over.len;
-
-        overload.type   = ret_actual || fail("FnDecl_update: no return type.");
-        overload.min    = min;
-        overload.max    = max;
-        overload.args   = args;
-        overload.flags  = solved.flags;
-
-        overload.solved = solved;
-
-        // See which one of the locals we've used are not our own.
-        {
-            mut closes_over: i32[];
-
-            for (mut i = 0; i < locals_used.len; i++)
-            {
-                let o = GET_local(locals_used[i]);
-                if (o.local_of != solved.target.index)
-                    closes_over ~= locals_used[i];
-            }
-
-            overload.closes_over = closes_over;
-        }
-
-        // Test.
-        Lifetime_test(ret_actual.lifetime, solved.target);
-
-        // TODO FIX starting the diff with just number of arguments,
-        //  which is fine for implicit cycling,
-        //   then we gotta move on to bigger and better things.
-        if (args_len0 != overload.args.len          ||
-            closure0  != overload.closes_over.len   ||
-            !(retval0 == overload.type))
-        {
-            deepInvalidateUsers(overload);
-        }
-    }
-
     fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
@@ -1625,210 +1548,6 @@ pub fn solve(
             template.scope_memo = Scope_snap(_scope);
     }
 
-    fn __solveFn(
-        parent_idx: i32, template: Template, n_fn: Node,
-        into!: Target, mangles: Mangles,
-        extra_items: ScopeItem[]): SolvedNode
-    {
-        let spec = template.node.flags & F_TEMPLATE;
-
-        // Prep reject.
-        let return_idx = Scope_snap(_scope);
-        let target = into || Scope_create(_scope, local_of: parent_idx,
-            status: SS_DID_START | SS_LAZY, :extra_items);
-
-        ///////////////////////////////////////////////
-        let    open_solves0 = _open_solves.len;
-        defer _open_solves.shrink(open_solves0);
-
-        _open_solves ~= target || fail(
-            "__solveFn: no target: `" ~ n_fn.value ~ "`.");
-        ///////////////////////////////////////////////
-
-        mut out = CurrentFn(
-            :return_idx, :parent_idx, solved(n_fn,
-                :target, type: addroffn::X_addrofTarget(target)));
-
-        let inItems = n_fn.items;
-        out.items = into && GET(into).solved.items;
-        out.items.resize(inItems.len);
-
-        // Propagate "templateness" TODO why do we do this?
-        //  Currently porting this just to avoid triggering NOWRITES.
-        if (parent_idx && !(out.flags & F_TEMPLATE))
-            out.flags |= GET(Target(:module.modid, index: parent_idx)).solved.flags & F_TEMPLATE;
-
-        //////////////////////////
-        mut native = false;
-        mut n_body: Node;
-
-        fn initScope()
-        {
-            // TODO FIX currently we only hash template names.
-            mut name = n_fn.value || fail("TODO anonymous fns");
-            if (spec && !native)
-            {
-                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
-                if (sig)
-                {
-                    let hash = tea::hash62(sig, chars: 4) || fail();
-                    name ~= "_" ~ hash;
-                }
-            }
-
-            //
-            let kind = native ? "__native" : "fn";
-            shadow let template = native ? createTemplate(n_body) : template;
-
-            FnDecl_init(:target, :kind, id: name, :template);
-        }
-
-        fn updateScope()
-        {
-            FnDecl_update(out.out, :out.locals_used, :out.ret_actual);
-        }
-
-        ////////////////
-        // Resolve next.
-        {
-        // /RESOLVE-NEXT
-        ////////////////
-
-            out.RoR = CurrentFn_ResetOnResolve();
-
-            // Go!
-            {
-                let root_scope0 = _root_scope;
-                if (!root_scope0)
-                    _root_scope = return_idx;
-
-                SWAP(_current_fn, out);
-
-                defer {
-                    SWAP(_current_fn, out);
-                    Scope_pop(_scope, return_idx);
-                    _root_scope = root_scope0;
-                }
-
-                /////////////////////////////////
-                ref outItems = _current_fn.items;
-
-                // Arg decls.
-                for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
-                {
-                    fn tryGetArgSpecType(id: string): Type
-                    {
-                        mut param = "$" ~ id;
-                        for (shadow mut i = 0; i < extra_items.len; i++)
-                        {
-                            let m = extra_items[i];
-                            if (m.id == param)
-                            {
-                                let o = GET(m.target);
-                                o.kind == "type" && o.max == 0 || fail(
-                                    "tryGetArgSpecType: Not a typeparam: `"
-                                        ~ o.kind ~ ":" ~ param ~ "(" ~ o.max ~ ")`.");
-
-                                return o.type;
-                            }
-                        }
-
-                        return Type;
-                    }
-
-                    // Arg target reuse, because of the resolve loop:
-                    //  the strict retType equality checks lifetimes,
-                    //   and they are expressed in terms of scope positions:
-                    //    if we don't reuse arg targets, resolve loops forever.
-                    //
-                    ref preexisting = outItems[i];
-                    let reuse       = preexisting.target;
-                    if (reuse)
-                        preexisting.kind == "let" && preexisting.flags & F_ARG || fail(
-                            "__solveFn: arg target reuse: something is looking off.");
-
-                    let n_arg       = inItems[i];
-                    let specType    = spec && tryGetArgSpecType(n_arg.value);
-                    outItems[i]     = solveLet(n_arg, :specType, :reuse);
-                }
-
-                /////////////////////////////////////////////////////
-                let n_ret   = inItems[inItems.len + FN_RET_BACK];
-                    n_body  = inItems[inItems.len + FN_BODY_BACK];
-
-                // Builtin?
-                n_body || fail("solveFn: no body.");
-                if (n_body.kind == "call" && n_body.value == "__native")
-                    native = true;
-
-                // Return type annot.
-                _current_fn.ret_expect = n_ret && evalTypeAnnot(n_ret).type;
-
-                // Seed return value.
-                _current_fn.ret_actual = n_ret
-                    ? _current_fn.ret_expect || fail("falsy ret_expect: " ~ n_fn.value)
-                    : t_never;
-
-                if (_current_fn.ret_actual.lifetime)
-                {
-                    _current_fn.ret_actual.lifetime = native
-                        ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK])
-                        : Lifetime_FN_unorderedPrep();
-                }
-                else if (_current_fn.ret_actual.is_ref)
-                {
-                    fail("fn.ret_actual is a ref without a lifetime.");
-                }
-
-                // Enable recursion.
-                let firstIteration = !GET(target).solved;
-                if (firstIteration)
-                {
-                    SWAP(_current_fn, out);
-                    initScope();
-                    updateScope();
-                    SWAP(_current_fn, out);
-
-                    // setSpecs & co.
-                    if (!into && mangles)
-                    {
-                        let preexisting = __afterPrep_dedupeMangle(mangles, target);
-                        if (preexisting)
-                            return createEmpty(target: preexisting);
-                    }
-                }
-
-                if (!native)
-                {
-                    _current_fn.ret_actual = Type();
-                    let s_body = solveNode(n_body);
-                    finalizeReturns(s_body.type);
-
-                    // MUT DURING SOLVE,
-                    //  implicit args splice in
-                    outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
-                }
-
-                // Sighashes include return value.
-                outItems[outItems.len + FN_RET_BACK] =
-                    createEmpty(type: _current_fn.ret_actual);
-            }
-            //////////////////////////
-
-            updateScope();
-
-            ////////////////
-            // Resolve next.
-            ref o = GET_mut(target);
-            lazySolveEnd(o);
-            return createFnDef(out.token, out.type, out.target);
-            // /RESOLVE-NEXT
-            ////////////////
-        }
-
-        fail("Infinite resolve loop: __solveFn `" ~ n_fn.value ~ "`.");
-    }
-
     fn createFnDef(token: TokenIdx, type: Type, target: Target): SolvedNode
     {
         return SolvedNode(kind: "fndef", :type, :target, :token);
@@ -1986,10 +1705,10 @@ pub fn solve(
         mut typeParams: TypeParams;
 
         //
-        let overload = GET(overloadIdx || into || fail());
-        let template = overload.template;
+        let original = GET(overloadIdx || into || fail());
+        let template = original.template;
 
-        mut parent_idx = overload.local_of;
+        mut parent_idx = original.local_of;
         {
             // If we're taking a closure as an argument,
             //  we're becoming a closure ourselves of whatever that closure is closing over -
@@ -2216,39 +1935,282 @@ pub fn solve(
         let mangles = Mangles(:mangle00, mangle0: mangle);
 
         let extra_items = into
-            ? overload.extra_items
+            ? original.extra_items
             : typeParams.intoScopeItems();
 
         _scope.items ~= extra_items;
 
-        return __solveFn(
-            :parent_idx, :template,
-            :n_fn, :into, :mangles,
-            :extra_items).target;
-    }
+        //
+        let spec = template.node.flags & F_TEMPLATE;
 
-    fn __afterPrep_dedupeMangle(using mangles: Mangles, prep: Target): Target
-    {
-        let start   = mangle0.find(' ') + 1 || fail();
-        let mangle  = mangle0.slice(0, start)
-                    ~ mangleArguments(GET(prep).args);
+        // Prep reject.
+        let return_idx = Scope_snap(_scope);
+        let target = into || Scope_create(_scope, local_of: parent_idx,
+            status: SS_DID_START | SS_LAZY, :extra_items);
 
-        mut preexisting: Target;
-        if (mangle0 != mangle)
+        ///////////////////////////////////////////////
+        let    open_solves0 = _open_solves.len;
+        defer _open_solves.shrink(open_solves0);
+
+        _open_solves ~= target || fail(
+            "__solveFn: no target: `" ~ n_fn.value ~ "`.");
+        ///////////////////////////////////////////////
+
+        mut out = CurrentFn(
+            :return_idx, :parent_idx, solved(n_fn,
+                :target, type: addroffn::X_addrofTarget(target)));
+
+        let inItems = n_fn.items;
+        out.items = into && GET(into).solved.items;
+        out.items.resize(inItems.len);
+
+        // Propagate "templateness" TODO why do we do this?
+        //  Currently porting this just to avoid triggering NOWRITES.
+        if (parent_idx && !(out.flags & F_TEMPLATE))
+            out.flags |= GET(Target(:module.modid, index: parent_idx)).solved.flags & F_TEMPLATE;
+
+        //////////////////////////
+        mut native = false;
+        mut n_body: Node;
+
+        fn initScope()
         {
-            preexisting = module.out.specs[mangle] || Target();
-            setSpec(mangle0, preexisting || prep);
+            // TODO FIX currently we only hash template names.
+            mut name = n_fn.value || fail("TODO anonymous fns");
+            if (spec && !native)
+            {
+                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
+                if (sig)
+                {
+                    let hash = tea::hash62(sig, chars: 4) || fail();
+                    name ~= "_" ~ hash;
+                }
+            }
+
+            //
+            let kind = native ? "__native" : "fn";
+            shadow let template = native ? createTemplate(n_body) : template;
+
+            //
+            ref overload = GET_mut(target);
+                overload.name = name;
+                overload.kind = kind;
+                overload.template = template;
         }
 
-        let nx = mangle00 != mangle;
-        if (nx && mangle00 != mangle0)
-            setSpec(mangle00, preexisting || prep);
+        fn updateScope()
+        {
+            shadow let items = out.items;
 
-        if (preexisting)
-            return preexisting;
+            mut min = 0;
+            let max = items.len + FN_ARGS_BACK;
+            shadow mut args: Argument[];
 
-        setSpec(mangle, prep, :nx);
-        return Target();
+            for (mut i = 0; i < max; i++)
+            {
+                let argNode = items[i];
+                argNode.kind == "let" || fail();
+
+                let isImplicit = !!(argNode.flags & F_IMPLICIT);
+                let arg = Argument(
+                    type:       argNode.type  || fail(),
+                    name:       argNode.value || fail(),
+                    default:    !isImplicit && argNode.items[LET_INIT],
+                    flags:      argNode.flags);
+
+                if (!arg.default && !isImplicit)
+                    min++;
+
+                args.push(arg);
+            }
+
+            // Unconditionally replacing the stuff.
+            ref overload    = GET_mut(target);
+
+            let retval0     = overload.type;
+            let args_len0   = overload.args.len;
+            let closure0    = overload.closes_over.len;
+
+            overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
+            overload.min    = min;
+            overload.max    = max;
+            overload.args   = args;
+            overload.flags  = out.flags;
+
+            overload.solved = out.out;
+
+            // See which one of the locals we've used are not our own.
+            {
+                mut closes_over: i32[];
+
+                for (mut i = 0; i < out.locals_used.len; i++)
+                {
+                    let o = GET_local(out.locals_used[i]);
+                    if (o.local_of != target.index)
+                        closes_over ~= out.locals_used[i];
+                }
+
+                overload.closes_over = closes_over;
+            }
+
+            // Test.
+            Lifetime_test(out.ret_actual.lifetime, target);
+
+            // TODO FIX starting the diff with just number of arguments,
+            //  which is fine for implicit cycling,
+            //   then we gotta move on to bigger and better things.
+            if (args_len0 != overload.args.len          ||
+                closure0  != overload.closes_over.len   ||
+                !(retval0 == overload.type))
+            {
+                deepInvalidateUsers(overload);
+            }
+        }
+
+        ////////////////
+        out.RoR = CurrentFn_ResetOnResolve();
+
+        // Go!
+        {
+            let root_scope0 = _root_scope;
+            if (!root_scope0)
+                _root_scope = return_idx;
+
+            SWAP(_current_fn, out);
+
+            defer {
+                SWAP(_current_fn, out);
+                Scope_pop(_scope, return_idx);
+                _root_scope = root_scope0;
+            }
+
+            /////////////////////////////////
+            ref outItems = _current_fn.items;
+
+            // Arg decls.
+            for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
+            {
+                fn tryGetArgSpecType(id: string): Type
+                {
+                    mut param = "$" ~ id;
+                    for (shadow mut i = 0; i < extra_items.len; i++)
+                    {
+                        let m = extra_items[i];
+                        if (m.id == param)
+                        {
+                            let o = GET(m.target);
+                            o.kind == "type" && o.max == 0 || fail(
+                                "tryGetArgSpecType: Not a typeparam: `"
+                                    ~ o.kind ~ ":" ~ param ~ "(" ~ o.max ~ ")`.");
+
+                            return o.type;
+                        }
+                    }
+
+                    return Type;
+                }
+
+                // Arg target reuse, because of the resolve loop:
+                //  the strict retType equality checks lifetimes,
+                //   and they are expressed in terms of scope positions:
+                //    if we don't reuse arg targets, resolve loops forever.
+                //
+                ref preexisting = outItems[i];
+                let reuse       = preexisting.target;
+                if (reuse)
+                    preexisting.kind == "let" && preexisting.flags & F_ARG || fail(
+                        "__solveFn: arg target reuse: something is looking off.");
+
+                let n_arg       = inItems[i];
+                let specType    = spec && tryGetArgSpecType(n_arg.value);
+                outItems[i]     = solveLet(n_arg, :specType, :reuse);
+            }
+
+            /////////////////////////////////////////////////////
+            let n_ret   = inItems[inItems.len + FN_RET_BACK];
+                n_body  = inItems[inItems.len + FN_BODY_BACK];
+
+            // Builtin?
+            n_body || fail("solveFn: no body.");
+            if (n_body.kind == "call" && n_body.value == "__native")
+                native = true;
+
+            // Return type annot.
+            _current_fn.ret_expect = n_ret && evalTypeAnnot(n_ret).type;
+
+            // Seed return value.
+            _current_fn.ret_actual = n_ret
+                ? _current_fn.ret_expect || fail("falsy ret_expect: " ~ n_fn.value)
+                : t_never;
+
+            if (_current_fn.ret_actual.lifetime)
+            {
+                _current_fn.ret_actual.lifetime = native
+                    ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK])
+                    : Lifetime_FN_unorderedPrep();
+            }
+            else if (_current_fn.ret_actual.is_ref)
+            {
+                fail("fn.ret_actual is a ref without a lifetime.");
+            }
+
+            // Enable recursion.
+            let firstIteration = !GET(target).solved;
+            if (firstIteration)
+            {
+                SWAP(_current_fn, out);
+                initScope();
+                updateScope();
+                SWAP(_current_fn, out);
+
+                // setSpecs & co.
+                if (!into && mangles)
+                {
+                    let start   = mangles.mangle0.find(' ') + 1 || fail();
+                        mangle  = mangles.mangle0.slice(0, start)
+                                ~ mangleArguments(GET(target).args);
+
+                    mut preexisting: Target;
+                    if (mangles.mangle0 != mangle)
+                    {
+                        preexisting = module.out.specs[mangle] || Target();
+                        setSpec(mangles.mangle0, preexisting || target);
+                    }
+
+                    let nx = mangles.mangle00 != mangle;
+                    if (nx && mangles.mangle00 != mangles.mangle0)
+                        setSpec(mangles.mangle00, preexisting || target);
+
+                    if (preexisting)
+                        return preexisting;
+
+                    setSpec(mangle, target, :nx);
+                }
+            }
+
+            if (!native)
+            {
+                _current_fn.ret_actual = Type();
+                let s_body = solveNode(n_body);
+                finalizeReturns(s_body.type);
+
+                // MUT DURING SOLVE,
+                //  implicit args splice in
+                outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+            }
+
+            // Sighashes include return value.
+            outItems[outItems.len + FN_RET_BACK] =
+                createEmpty(type: _current_fn.ret_actual);
+        }
+
+        //////////////////////////
+        updateScope();
+
+        ////////////////
+        ref o = GET_mut(target);
+        lazySolveEnd(o);
+        return target;
     }
 
 
@@ -2311,155 +2273,143 @@ pub fn solve(
             "solveStruct: no out.target: `" ~ origId ~ "`.");
         ///////////////////////////////////////////////
 
-        ////////////////
-        // Resolve next.
+        // Struct fields only.
+        mut structConverts: Target[];
+        mut structImports:  i32[];
+
+        // Struct members, pass 0.
+        out.items = node.items.map(|shadow node|
         {
-        // /RESOLVE-NEXT
-        ////////////////
+            node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
-            // Struct fields only.
-            mut structConverts: Target[];
-            mut structImports:  i32[];
+            node.items[LET_INIT] &&
+            node.items[LET_INIT].kind != "definit" &&
+                fail("All structs must be zerofilled by default."
+                    ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
-            // Struct members, pass 0.
-            out.items = node.items.map(|shadow node|
+            return solveLetLike_dontTouchScope(node);
+        });
+
+        // (Re)poplate fields.
+        {
+            ref innerScope = lookupStruct_mut(out.type.canon).items;
+            if (!innerScope && out.items)
             {
-                node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
+                // Dereferencing a struct does not require it
+                //  to have any particular qualities.
+                let args = [ Argument(name: "this",
+                    type: despeculateStruct(out.type)) ];
 
-                node.items[LET_INIT] &&
-                node.items[LET_INIT].kind != "definit" &&
-                    fail("All structs must be zerofilled by default."
-                        ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
-
-                return solveLetLike_dontTouchScope(node);
-            });
-
-            // (Re)poplate fields.
-            {
-                ref innerScope = lookupStruct_mut(out.type.canon).items;
-                if (!innerScope && out.items)
-                {
-                    // Dereferencing a struct does not require it
-                    //  to have any particular qualities.
-                    let args = [ Argument(name: "this",
-                        type: despeculateStruct(out.type)) ];
-
-                    innerScope.resize(node.items.len);
-                    for (mut i = 0; i < innerScope.len; i++)
-                    {
-                        let id = node.items[i].value;
-                        let target = Scope_create(
-                            _scope, "field", name: id || fail(),
-                            min: 1, max: 1, flags: F_PUB, :args);
-
-                        let scopeItem = ScopeItem(:id, :target);;
-                        innerScope[i] = scopeItem;
-
-                        _field_items.push(scopeItem);
-                    }
-                }
-
-                // Update field types.
-                innerScope.len == out.items.len || fail(
-                    "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ out.items.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
-
+                innerScope.resize(node.items.len);
                 for (mut i = 0; i < innerScope.len; i++)
                 {
-                    let item = innerScope[i];
-                    shadow let node = out.items[i];
-                    item.id == node.value || fail(
-                        "solveStructMembers_4: field id mismatch.");
+                    let id = node.items[i].value;
+                    let target = Scope_create(
+                        _scope, "field", name: id || fail(),
+                        min: 1, max: 1, flags: F_PUB, :args);
 
-                    ref field = GET_mut(item.target);
-                        field.type = node.type;
+                    let scopeItem = ScopeItem(:id, :target);;
+                    innerScope[i] = scopeItem;
 
-                    if (node.flags & F_USING)
-                    {
-                        structConverts.push(item.target);
-
-                        if (field.type.modid != module.modid)
-                            structImports.set::add(field.type.modid);
-
-                        structImports.set::add(field.type.lookupTypeImports());
-                    }
+                    _field_items.push(scopeItem);
                 }
             }
 
-            // Add a default constructor.
+            // Update field types.
+            innerScope.len == out.items.len || fail(
+                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ out.items.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
+
+            for (mut i = 0; i < innerScope.len; i++)
             {
-                mut members: SolvedNode[];
-                mut commonQuals = -1;
+                let item = innerScope[i];
+                shadow let node = out.items[i];
+                item.id == node.value || fail(
+                    "solveStructMembers_4: field id mismatch.");
 
-                for (mut i = 0; i < out.items.len; i++)
+                ref field = GET_mut(item.target);
+                    field.type = node.type;
+
+                if (node.flags & F_USING)
                 {
-                    let item = out.items[i];
-                    if (item && item.kind == "let" && (item.flags & F_FIELD))
-                    {
-                        members.push(item);
-                        commonQuals &= item.type.quals;
-                    }
-                }
+                    structConverts.push(item.target);
 
-                //
+                    if (field.type.modid != module.modid)
+                        structImports.set::add(field.type.modid);
+
+                    structImports.set::add(field.type.lookupTypeImports());
+                }
+            }
+        }
+
+        // Add a default constructor.
+        {
+            mut members: SolvedNode[];
+            mut commonQuals = -1;
+
+            for (mut i = 0; i < out.items.len; i++)
+            {
+                let item = out.items[i];
+                if (item && item.kind == "let" && (item.flags & F_FIELD))
                 {
-                    ref s           = lookupStruct_mut(out.type.canon);
-                        s.target    = out.target || fail("No struct/out.target.");
-                        s.converts  = structConverts;
-                        s.imports   = structImports;
-
-                    GET(s.target).status & SS_DID_START || fail(
-                        "Setting stuff but missing SS_DID_START.");
+                    members.push(item);
+                    commonQuals &= item.type.quals;
                 }
-
-                let quals0 = out.type.quals;
-                let quals1 = out.type.quals &= commonQuals;
-
-                //
-                let max = members.len;
-                mut min = 0;
-                mut args: Argument[];
-
-                for (mut i = 0; i < members.len; i++)
-                {
-                    let member = members[i];
-
-                    let arg = Argument(
-                        name:       member.value || fail(),
-                        type:       member.type  || fail(),
-                        default:    member.items[LET_INIT],
-                        flags:      member.flags & F_MUSTNAME);
-
-                    if (!arg.default)
-                        min++;
-
-                    args.push(arg);
-                }
-
-                if (max && !min) min++;
-
-                ref overload    = GET_mut(out.target);
-                overload.min    = min;
-                overload.max    = max;
-                overload.args   = args;
-                overload.type   = out.type;
-
-                if (quals0 != quals1 && out.target)
-                    deepInvalidateUsers(overload);
             }
 
             //
-            ref o = GET_mut(out.target);
-                o.solved = out;
+            {
+                ref s           = lookupStruct_mut(out.type.canon);
+                    s.target    = out.target || fail("No struct/out.target.");
+                    s.converts  = structConverts;
+                    s.imports   = structImports;
 
-            ////////////////
-            // Resolve next.
-            lazySolveEnd(o);
-            return out;
-            // /RESOLVE-NEXT
-            ////////////////
+                GET(s.target).status & SS_DID_START || fail(
+                    "Setting stuff but missing SS_DID_START.");
+            }
+
+            let quals0 = out.type.quals;
+            let quals1 = out.type.quals &= commonQuals;
+
+            //
+            let max = members.len;
+            mut min = 0;
+            mut args: Argument[];
+
+            for (mut i = 0; i < members.len; i++)
+            {
+                let member = members[i];
+
+                let arg = Argument(
+                    name:       member.value || fail(),
+                    type:       member.type  || fail(),
+                    default:    member.items[LET_INIT],
+                    flags:      member.flags & F_MUSTNAME);
+
+                if (!arg.default)
+                    min++;
+
+                args.push(arg);
+            }
+
+            if (max && !min) min++;
+
+            ref overload    = GET_mut(out.target);
+            overload.min    = min;
+            overload.max    = max;
+            overload.args   = args;
+            overload.type   = out.type;
+
+            if (quals0 != quals1 && out.target)
+                deepInvalidateUsers(overload);
         }
 
-        fail("Infinite resolve loop: __solveStruct `" ~ name ~ "`.");
+        //
+        ref o = GET_mut(out.target);
+            o.solved = out;
+
+        ////////////////
+        lazySolveEnd(o);
+        return out;
     }
 
 
