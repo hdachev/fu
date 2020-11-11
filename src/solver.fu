@@ -2051,14 +2051,17 @@ pub fn solve(
                 // Test.
                 Lifetime_test(out.ret_actual.lifetime, target);
 
-                // TODO FIX starting the diff with just number of arguments,
-                //  which is fine for implicit cycling,
-                //   then we gotta move on to bigger and better things.
-                if (args_len0 != overload.args.len          ||
-                    closure0  != overload.closes_over.len   ||
-                    !(retval0 == overload.type))
+                if (overload.used_by)
                 {
-                    deepInvalidateUsers(overload);
+                    // TODO FIX starting the diff with just number of arguments,
+                    //  which is fine for implicit cycling,
+                    //   then we gotta move on to bigger and better things.
+                    if (args_len0 != overload.args.len          ||
+                        closure0  != overload.closes_over.len   ||
+                        !(retval0 == overload.type))
+                    {
+                        overload.status |= SS_UPDATED;
+                    }
                 }
             }
 
@@ -2390,8 +2393,9 @@ pub fn solve(
             overload.args   = args;
             overload.type   = out.type;
 
-            if (quals0 != quals1 && out.target)
-                deepInvalidateUsers(overload);
+            if (overload.used_by)
+                if (quals0 != quals1)
+                    overload.status |= SS_UPDATED;
         }
 
         //
@@ -2459,6 +2463,12 @@ pub fn solve(
 
     fn lazySolveEnd(ref overload: Overload)
     {
+        if (overload.status & SS_UPDATED)
+        {
+            overload.status &= ~SS_UPDATED;
+            deepInvalidateUsers(overload);
+        }
+
         if !(overload.status & SS_DIRTY)
         {
             overload.status |= SS_FINALIZED;
