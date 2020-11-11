@@ -3995,6 +3995,44 @@ pub fn runTests()
         fn main() test(0);
     `);
 
+    ZERO(`
+        //! FN_recursion FN_resolve FN_reopen
+        //! DEAD_code DEAD_call
+        fn use_a(implicit a: i32) a * a;
+        fn use_b(implicit b: i32) b * b;
+        fn use_c(implicit c: i32) c * c;
+
+        fn parseStuff(x: i32) {
+            fn doStuff(y: i32) doSomething(y * y);
+            return doStuff(x * x);
+        }
+
+        fn doSomething(x: i32) {
+            fn doSomething_inner(y: i32) y * use_a * descend(y * y);
+            return doSomething_inner(x * x);
+        }
+
+        fn descend(x: i32) { // <- x here
+            fn descend_inner(y: i32)
+                y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?
+                      : doSomethingElse(y * y) * use_c;
+
+            return descend_inner(x * x);
+        }
+
+        fn doSomethingElse(x: i32) {
+            fn doSomethingElse_inner(y: i32) y * use_b;
+            return doSomethingElse_inner(x * x);
+        }
+
+        fn main() {
+            let implicit a = 0;
+            let implicit b = 0;
+            let implicit c = 0;
+            return parseStuff(0);
+        }
+    `);
+
 
     // Macros & loops.
 
