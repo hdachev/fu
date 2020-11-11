@@ -1662,23 +1662,7 @@ pub fn solve(
         mut mangle?: string, reorder?: [i32])
             : Target
     {
-        mut ok = true;
-
-        ////////////////////////////////
-        mut current_fn0: CurrentFn;
-
-        SWAP(_current_fn, current_fn0);
-        let scope0 = Scope_snap(_scope);
-        let ss0 = _ss;
-
-        defer {
-            SWAP(_current_fn, current_fn0);
-            Scope_pop(_scope, scope0);
-            _ss = ss0;
-        }
-        ////////////////////////////////
-
-        // Reorder with gaps.
+        // TODO FIX reorder with gaps
         if (reorder)
         {
             mut reordered: SolvedNode[];
@@ -1702,11 +1686,7 @@ pub fn solve(
             setSpec(mangle, SPECFAIL, nx: true);
 
         //
-        mut typeParams: TypeParams;
-
-        //
         let original = GET(overloadIdx || into || fail());
-        let template = original.template;
 
         mut parent_idx = original.local_of;
         {
@@ -1738,340 +1718,354 @@ pub fn solve(
             }
         }
 
-        //
-        if (_root_scope)
+        // Scopes & scope skips.
+        mut target: Target;
+
         {
-            let start = template.scope_memo || _root_scope;
-                  _ss = template.scope_skip;
+            mut current_fn0: CurrentFn;
 
-            ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
-            ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
-            ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
-            ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
-        }
+            SWAP(_current_fn, current_fn0);
+            let scope0 = Scope_snap(_scope);
+            let ss0 = _ss;
 
-        // We'll need the original imports in scope
-        //  in order to solve type params & pattern match below.
-        for (mut i = 0; i < template.imports.len; i++)
-            Scope_import(template.imports[i]);
+            defer {
+                SWAP(_current_fn, current_fn0);
+                Scope_pop(_scope, scope0);
+                _ss = ss0;
+            }
 
-        //
-        let items   = template.node.items;
-        mut n_fn    = template.node;
-        n_fn.kind == "fn" || fail("n_fn not a `fn`.");
-
-        if (!into)
-        {
-            let kind    = template.node.kind;
-            let numArgs = kind == "fn" ? items.len + FN_ARGS_BACK
-                        : fail("TODO numArgs for template:" ~ kind);
-
-            /////////////////
-            // Literal fixup.
-            mut retypeIndices: i32[];
-            mut remangle = false;
-
-            // First off, solve type params.
-            for (   mut pass_retype  = 0;
-                        pass_retype == 0 || pass_retype == 1 && retypeIndices;
-                        pass_retype++)
+            let template = original.template;
+            if (_root_scope)
             {
-            //        /LITFIX
-            /////////////////
+                let start = template.scope_memo || _root_scope;
+                      _ss = template.scope_skip;
 
-                for (mut i = 0; i < numArgs; i++)
+                ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
+                ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
+                ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
+                ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
+            }
+
+            // We'll need the original imports in scope
+            //  in order to solve type params & pattern match below.
+            for (mut i = 0; i < template.imports.len; i++)
+                Scope_import(template.imports[i]);
+
+            //
+            mut ok = true;
+            mut typeParams: TypeParams;
+
+            let items   = template.node.items;
+            mut n_fn    = template.node;
+                n_fn.kind == "fn" || fail("n_fn not a `fn`.");
+
+            if (!into)
+            {
+                let kind    = template.node.kind;
+                let numArgs = kind == "fn" ? items.len + FN_ARGS_BACK
+                            : fail("TODO numArgs for template:" ~ kind);
+
+                /////////////////
+                // Literal fixup.
+                mut retypeIndices: i32[];
+                mut remangle = false;
+
+                // First off, solve type params.
+                for (   mut pass_retype  = 0;
+                            pass_retype == 0 || pass_retype == 1 && retypeIndices;
+                            pass_retype++)
                 {
-                    if (pass_retype)
+                //        /LITFIX
+                /////////////////
+
+                    for (mut i = 0; i < numArgs; i++)
                     {
-                        // TODO fix, .try_shift instead.
-                        if (!retypeIndices.has(i))
-                            continue;
-                    }
-
-                    let inValue = args.len > i && args[i];
-                    mut inType  = inValue.type;
-
-                    let argNode = items[i] || fail();
-                    let annot   = argNode.items[LET_TYPE];
-
-                    /////////////////
-                    // Literal fixup.
-                    if (couldRetype(inValue))
-                    {
-                        let paramType =
-                            annot.kind == "typeparam"
-                                ? typeParams[annot.value] ||= Type
-                                : annot.kind == "call" && !annot.items
-                                    && Scope_lookupType(annot);
-
-                        // Ignore literals if possible.
-                        if (paramType)
+                        if (pass_retype)
                         {
-                            let retype = tryRetyping(inValue, paramType);
-                            if (retype && retype.canon != inType.canon)
+                            // TODO fix, .try_shift instead.
+                            if (!retypeIndices.has(i))
+                                continue;
+                        }
+
+                        let inValue = args.len > i && args[i];
+                        mut inType  = inValue.type;
+
+                        let argNode = items[i] || fail();
+                        let annot   = argNode.items[LET_TYPE];
+
+                        /////////////////
+                        // Literal fixup.
+                        if (couldRetype(inValue))
+                        {
+                            let paramType =
+                                annot.kind == "typeparam"
+                                    ? typeParams[annot.value] ||= Type
+                                    : annot.kind == "call" && !annot.items
+                                        && Scope_lookupType(annot);
+
+                            // Ignore literals if possible.
+                            if (paramType)
                             {
-                                inType   = args[i].type = retype;
-                                remangle = true;
+                                let retype = tryRetyping(inValue, paramType);
+                                if (retype && retype.canon != inType.canon)
+                                {
+                                    inType   = args[i].type = retype;
+                                    remangle = true;
+                                }
+                            }
+
+                            // Defer for second pass.
+                            else if (!pass_retype)
+                            {
+                                retypeIndices.push(i);
+                                continue;
                             }
                         }
+                        //        /LITFIX
+                        /////////////////
 
-                        // Defer for second pass.
-                        else if (!pass_retype)
+                        argNode.kind == "let"  || fail();
+
+                        if (inType)
                         {
-                            retypeIndices.push(i);
+                            let argName = argNode.value || fail();
+
+                            // Same pattern - grabs a mutref.
+                            ref argName_typeParam =
+                                typeParams[argName] ||= Type;
+
+                            // Values vs refs.
+                            //  TODO actually this is rather stupid, isn't it,
+                            //   what if it were all just refs and we did the copy internally,
+                            //    only if necessary, and as late as possible.
+                            if (argNode.flags & F_MUT)
+                                inType = clear_refs(inType);
+                            else
+                                inType = add_ref(inType, Lifetime_temporary);
+
+                            //
+                            (argName_typeParam && fail(
+                                "Type param name collision with argument: `" ~ argName ~ "`."))
+                                    = inType;
+
+                            // Type check.
+                            if (annot)
+                            {
+                                let argOk = inType && trySolveTypeParams(
+                                    annot, inType, typeParams);
+
+                                ok = ok && argOk;
+                                if (!ok && !remangle)
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                /////////////////
+                // Literal fixup.
+                if (remangle)
+                {
+                    // TODO FIX
+                    let start   = mangle.find(' ') + 1 || fail();
+                        mangle  = mangle.slice(0, start) ~ mangleArguments(args);
+
+                    if (mangle00 != mangle)
+                    {
+                        let preexisting = module.out.specs[mangle] || Target();
+                        if (preexisting)
+                        {
+                            setSpec(mangle00, preexisting);
+                            return preexisting;
+                        }
+
+                        if (!into)
+                            setSpec(mangle, SPECFAIL, nx: true);
+                    }
+                }
+                //        /LITFIX
+                /////////////////
+
+                // Match pattern arm here.
+                if (!ok)
+                    return SPECFAIL;
+
+                // Pattern matching.
+                let body = items[items.len + FN_BODY_BACK] || fail();
+                if (body.kind == "pattern")
+                {
+                    let undo = typeParams;
+                    let branches = body.items;
+
+                    mut did_match = false;
+                    for (mut i = 0; i < branches.len; i++)
+                    {
+                        // Fails cond if any?
+                        let cond = branches[i].items[0];
+                        if (cond && !evalTypePattern(cond, typeParams))
+                        {
+                            typeParams = undo;
                             continue;
                         }
-                    }
-                    //        /LITFIX
-                    /////////////////
 
-                    argNode.kind == "let"  || fail();
-
-                    if (inType)
-                    {
-                        let argName = argNode.value || fail();
-
-                        // Same pattern - grabs a mutref.
-                        ref argName_typeParam =
-                            typeParams[argName] ||= Type;
-
-                        // Values vs refs.
-                        //  TODO actually this is rather stupid, isn't it,
-                        //   what if it were all just refs and we did the copy internally,
-                        //    only if necessary, and as late as possible.
-                        if (argNode.flags & F_MUT)
-                            inType = clear_refs(inType);
-                        else
-                            inType = add_ref(inType, Lifetime_temporary);
-
-                        //
-                        (argName_typeParam && fail(
-                            "Type param name collision with argument: `" ~ argName ~ "`."))
-                                = inType;
-
-                        // Type check.
-                        if (annot)
+                        // Pass.
+                        let cons = branches[i].items;
+                        ref sig = n_fn.items;
                         {
-                            let argOk = inType && trySolveTypeParams(
-                                annot, inType, typeParams);
+                            let n_ret = cons[cons.len + FN_RET_BACK];
+                            if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
 
-                            ok = ok && argOk;
-                            if (!ok && !remangle)
-                                break;
+                            let n_body = cons[cons.len + FN_BODY_BACK];
+                            sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
                         }
+
+                        did_match = true;
+                        break;
                     }
+
+                    // All branches mismatch?
+                    //  Can't return, faking RAII here.
+                    if (!did_match)
+                        return SPECFAIL;
                 }
             }
 
-            /////////////////
-            // Literal fixup.
-            if (remangle)
-            {
-                // TODO FIX
-                let start   = mangle.find(' ') + 1 || fail();
-                    mangle  = mangle.slice(0, start) ~ mangleArguments(args);
+            // Populate scope.
+            let mangles = Mangles(:mangle00, mangle0: mangle);
 
-                if (mangle00 != mangle)
-                {
-                    let preexisting = module.out.specs[mangle] || Target();
-                    if (preexisting)
-                    {
-                        setSpec(mangle00, preexisting);
-                        return preexisting;
-                    }
+            let extra_items = into
+                ? original.extra_items
+                : typeParams.intoScopeItems();
 
-                    if (!into)
-                        setSpec(mangle, SPECFAIL, nx: true);
-                }
-            }
-            //        /LITFIX
-            /////////////////
-
-            // Match pattern arm here.
-            if (!ok)
-                return SPECFAIL;
-
-            // Pattern matching.
-            let body = items[items.len + FN_BODY_BACK] || fail();
-            if (body.kind == "pattern")
-            {
-                let undo = typeParams;
-                let branches = body.items;
-
-                mut did_match = false;
-                for (mut i = 0; i < branches.len; i++)
-                {
-                    // Fails cond if any?
-                    let cond = branches[i].items[0];
-                    if (cond && !evalTypePattern(cond, typeParams))
-                    {
-                        typeParams = undo;
-                        continue;
-                    }
-
-                    // Pass.
-                    let cons = branches[i].items;
-                    ref sig = n_fn.items;
-                    {
-                        let n_ret = cons[cons.len + FN_RET_BACK];
-                        if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
-
-                        let n_body = cons[cons.len + FN_BODY_BACK];
-                        sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
-                    }
-
-                    did_match = true;
-                    break;
-                }
-
-                // All branches mismatch?
-                //  Can't return, faking RAII here.
-                if (!did_match)
-                    return SPECFAIL;
-            }
-        }
-
-        // Populate scope.
-        let mangles = Mangles(:mangle00, mangle0: mangle);
-
-        let extra_items = into
-            ? original.extra_items
-            : typeParams.intoScopeItems();
-
-        _scope.items ~= extra_items;
-
-        //
-        let spec = template.node.flags & F_TEMPLATE;
-
-        // Prep reject.
-        let return_idx = Scope_snap(_scope);
-        let target = into || Scope_create(_scope, local_of: parent_idx,
-            status: SS_DID_START | SS_LAZY, :extra_items);
-
-        ///////////////////////////////////////////////
-        let    open_solves0 = _open_solves.len;
-        defer _open_solves.shrink(open_solves0);
-
-        _open_solves ~= target || fail(
-            "__solveFn: no target: `" ~ n_fn.value ~ "`.");
-        ///////////////////////////////////////////////
-
-        mut out = CurrentFn(
-            :return_idx, :parent_idx, solved(n_fn,
-                :target, type: addroffn::X_addrofTarget(target)));
-
-        let inItems = n_fn.items;
-        out.items = into && GET(into).solved.items;
-        out.items.resize(inItems.len);
-
-        // Propagate "templateness" TODO why do we do this?
-        //  Currently porting this just to avoid triggering NOWRITES.
-        if (parent_idx && !(out.flags & F_TEMPLATE))
-            out.flags |= GET(Target(:module.modid, index: parent_idx)).solved.flags & F_TEMPLATE;
-
-        //////////////////////////
-        mut native = false;
-        mut n_body: Node;
-
-        fn initScope()
-        {
-            // TODO FIX currently we only hash template names.
-            mut name = n_fn.value || fail("TODO anonymous fns");
-            if (spec && !native)
-            {
-                let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
-                if (sig)
-                {
-                    let hash = tea::hash62(sig, chars: 4) || fail();
-                    name ~= "_" ~ hash;
-                }
-            }
+            _scope.items ~= extra_items;
 
             //
-            let kind = native ? "__native" : "fn";
-            shadow let template = native ? createTemplate(n_body) : template;
+            let spec = template.node.flags & F_TEMPLATE;
 
-            //
-            ref overload = GET_mut(target);
-                overload.name = name;
-                overload.kind = kind;
-                overload.template = template;
-        }
+            // Prep reject.
+            let return_idx = Scope_snap(_scope);
+            target = into || Scope_create(_scope, local_of: parent_idx,
+                status: SS_DID_START | SS_LAZY, :extra_items);
 
-        fn updateScope()
-        {
-            shadow let items = out.items;
+            ///////////////////////////////////////////////
+            let    open_solves0 = _open_solves.len;
+            defer _open_solves.shrink(open_solves0);
 
-            mut min = 0;
-            let max = items.len + FN_ARGS_BACK;
-            shadow mut args: Argument[];
+            _open_solves ~= target || fail(
+                "__solveFn: no target: `" ~ n_fn.value ~ "`.");
+            ///////////////////////////////////////////////
 
-            for (mut i = 0; i < max; i++)
+            mut out = CurrentFn(
+                :return_idx, :parent_idx, solved(n_fn,
+                    :target, type: addroffn::X_addrofTarget(target)));
+
+            let inItems = n_fn.items;
+            out.items = into && GET(into).solved.items;
+            out.items.resize(inItems.len);
+
+            // Propagate "templateness" TODO why do we do this?
+            //  Currently porting this just to avoid triggering NOWRITES.
+            if (parent_idx && !(out.flags & F_TEMPLATE))
+                out.flags |= GET(Target(:module.modid, index: parent_idx)).solved.flags & F_TEMPLATE;
+
+            //////////////////////////
+            mut native = false;
+            mut n_body: Node;
+
+            fn initScope(shadow out: CurrentFn)
             {
-                let argNode = items[i];
-                argNode.kind == "let" || fail();
-
-                let isImplicit = !!(argNode.flags & F_IMPLICIT);
-                let arg = Argument(
-                    type:       argNode.type  || fail(),
-                    name:       argNode.value || fail(),
-                    default:    !isImplicit && argNode.items[LET_INIT],
-                    flags:      argNode.flags);
-
-                if (!arg.default && !isImplicit)
-                    min++;
-
-                args.push(arg);
-            }
-
-            // Unconditionally replacing the stuff.
-            ref overload    = GET_mut(target);
-
-            let retval0     = overload.type;
-            let args_len0   = overload.args.len;
-            let closure0    = overload.closes_over.len;
-
-            overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
-            overload.min    = min;
-            overload.max    = max;
-            overload.args   = args;
-            overload.flags  = out.flags;
-
-            overload.solved = out.out;
-
-            // See which one of the locals we've used are not our own.
-            {
-                mut closes_over: i32[];
-
-                for (mut i = 0; i < out.locals_used.len; i++)
+                // TODO FIX currently we only hash template names.
+                mut name = n_fn.value || fail("TODO anonymous fns");
+                if (spec && !native)
                 {
-                    let o = GET_local(out.locals_used[i]);
-                    if (o.local_of != target.index)
-                        closes_over ~= out.locals_used[i];
+                    let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
+                    if (sig)
+                    {
+                        let hash = tea::hash62(sig, chars: 4) || fail();
+                        name ~= "_" ~ hash;
+                    }
                 }
 
-                overload.closes_over = closes_over;
+                //
+                ref overload = GET_mut(target);
+                    overload.name = name;
+                    overload.kind = native ? "__native" : "fn";
+                    overload.template = native ? createTemplate(n_body) : template;
             }
 
-            // Test.
-            Lifetime_test(out.ret_actual.lifetime, target);
-
-            // TODO FIX starting the diff with just number of arguments,
-            //  which is fine for implicit cycling,
-            //   then we gotta move on to bigger and better things.
-            if (args_len0 != overload.args.len          ||
-                closure0  != overload.closes_over.len   ||
-                !(retval0 == overload.type))
+            fn updateScope(shadow out: CurrentFn)
             {
-                deepInvalidateUsers(overload);
+                shadow let items = out.items;
+
+                mut min = 0;
+                let max = items.len + FN_ARGS_BACK;
+                shadow mut args: Argument[];
+
+                for (mut i = 0; i < max; i++)
+                {
+                    let argNode = items[i];
+                    argNode.kind == "let" || fail();
+
+                    let isImplicit = !!(argNode.flags & F_IMPLICIT);
+                    let arg = Argument(
+                        type:       argNode.type  || fail(),
+                        name:       argNode.value || fail(),
+                        default:    !isImplicit && argNode.items[LET_INIT],
+                        flags:      argNode.flags);
+
+                    if (!arg.default && !isImplicit)
+                        min++;
+
+                    args.push(arg);
+                }
+
+                // Unconditionally replacing the stuff.
+                ref overload    = GET_mut(target);
+
+                let retval0     = overload.type;
+                let args_len0   = overload.args.len;
+                let closure0    = overload.closes_over.len;
+
+                overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
+                overload.min    = min;
+                overload.max    = max;
+                overload.args   = args;
+                overload.flags  = out.flags;
+
+                overload.solved = out.out;
+
+                // See which one of the locals we've used are not our own.
+                {
+                    mut closes_over: i32[];
+
+                    for (mut i = 0; i < out.locals_used.len; i++)
+                    {
+                        let o = GET_local(out.locals_used[i]);
+                        if (o.local_of != target.index)
+                            closes_over ~= out.locals_used[i];
+                    }
+
+                    overload.closes_over = closes_over;
+                }
+
+                // Test.
+                Lifetime_test(out.ret_actual.lifetime, target);
+
+                // TODO FIX starting the diff with just number of arguments,
+                //  which is fine for implicit cycling,
+                //   then we gotta move on to bigger and better things.
+                if (args_len0 != overload.args.len          ||
+                    closure0  != overload.closes_over.len   ||
+                    !(retval0 == overload.type))
+                {
+                    deepInvalidateUsers(overload);
+                }
             }
-        }
 
-        ////////////////
-        out.RoR = CurrentFn_ResetOnResolve();
+            ////////////////
+            out.RoR = CurrentFn_ResetOnResolve();
 
-        // Go!
-        {
+            // Go!
             let root_scope0 = _root_scope;
             if (!root_scope0)
                 _root_scope = return_idx;
@@ -2080,7 +2074,6 @@ pub fn solve(
 
             defer {
                 SWAP(_current_fn, out);
-                Scope_pop(_scope, return_idx);
                 _root_scope = root_scope0;
             }
 
@@ -2158,10 +2151,8 @@ pub fn solve(
             let firstIteration = !GET(target).solved;
             if (firstIteration)
             {
-                SWAP(_current_fn, out);
-                initScope();
-                updateScope();
-                SWAP(_current_fn, out);
+                initScope(_current_fn);
+                updateScope(_current_fn);
 
                 // setSpecs & co.
                 if (!into && mangles)
@@ -2202,12 +2193,12 @@ pub fn solve(
             // Sighashes include return value.
             outItems[outItems.len + FN_RET_BACK] =
                 createEmpty(type: _current_fn.ret_actual);
+
+            //
+            updateScope(_current_fn);
         }
 
-        //////////////////////////
-        updateScope();
-
-        ////////////////
+        // Go!
         ref o = GET_mut(target);
         lazySolveEnd(o);
         return target;
