@@ -84,12 +84,6 @@ pub fn solve(
     // TODO we shouldn't need this stuff
     //  under the new depth-first + immediately-repeat-on-dirty design.
 
-    struct Mangles
-    {
-        mangle0: string;
-        mangle00: string;
-    };
-
     mut _open_solves: Target[];
 
     type TypeParams = Map(string, Type);
@@ -1931,7 +1925,7 @@ pub fn solve(
             }
 
             // Populate scope.
-            let mangles = Mangles(:mangle00, mangle0: mangle);
+            let mangle0 = mangle;
 
             let extra_items = into
                 ? original.extra_items
@@ -1971,99 +1965,6 @@ pub fn solve(
             //////////////////////////
             mut native = false;
             mut n_body: Node;
-
-            fn initScope(shadow out: CurrentFn)
-            {
-                // TODO FIX currently we only hash template names.
-                mut name = n_fn.value || fail("TODO anonymous fns");
-                if (spec && !native)
-                {
-                    let sig = mangleArguments(out.items[0, out.items.len + FN_ARGS_BACK]);
-                    if (sig)
-                    {
-                        let hash = tea::hash62(sig, chars: 4) || fail();
-                        name ~= "_" ~ hash;
-                    }
-                }
-
-                //
-                ref overload = GET_mut(target);
-                    overload.name = name;
-                    overload.kind = native ? "__native" : "fn";
-                    overload.template = native ? createTemplate(n_body) : template;
-            }
-
-            fn updateScope(shadow out: CurrentFn)
-            {
-                shadow let items = out.items;
-
-                mut min = 0;
-                let max = items.len + FN_ARGS_BACK;
-                shadow mut args: Argument[];
-
-                for (mut i = 0; i < max; i++)
-                {
-                    let argNode = items[i];
-                    argNode.kind == "let" || fail();
-
-                    let isImplicit = !!(argNode.flags & F_IMPLICIT);
-                    let arg = Argument(
-                        type:       argNode.type  || fail(),
-                        name:       argNode.value || fail(),
-                        default:    !isImplicit && argNode.items[LET_INIT],
-                        flags:      argNode.flags);
-
-                    if (!arg.default && !isImplicit)
-                        min++;
-
-                    args.push(arg);
-                }
-
-                // Unconditionally replacing the stuff.
-                ref overload    = GET_mut(target);
-
-                let retval0     = overload.type;
-                let args_len0   = overload.args.len;
-                let closure0    = overload.closes_over.len;
-
-                overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
-                overload.min    = min;
-                overload.max    = max;
-                overload.args   = args;
-                overload.flags  = out.flags;
-
-                overload.solved = out.out;
-
-                // See which one of the locals we've used are not our own.
-                {
-                    mut closes_over: i32[];
-
-                    for (mut i = 0; i < out.locals_used.len; i++)
-                    {
-                        let o = GET_local(out.locals_used[i]);
-                        if (o.local_of != target.index)
-                            closes_over ~= out.locals_used[i];
-                    }
-
-                    overload.closes_over = closes_over;
-                }
-
-                // Test.
-                Lifetime_test(out.ret_actual.lifetime, target);
-
-                if (overload.used_by)
-                {
-                    // TODO FIX starting the diff with just number of arguments,
-                    //  which is fine for implicit cycling,
-                    //   then we gotta move on to bigger and better things.
-                    if (args_len0 != overload.args.len          ||
-                        closure0  != overload.closes_over.len   ||
-                        !(retval0 == overload.type))
-                    {
-                        overload.status |= SS_UPDATED;
-                    }
-                }
-            }
 
             ////////////////
             out.RoR = CurrentFn_ResetOnResolve();
@@ -2150,30 +2051,122 @@ pub fn solve(
                 fail("fn.ret_actual is a ref without a lifetime.");
             }
 
+            // Used twice, once to enable recursion before body, and once when done.
+            fn updateScope(shadow out: CurrentFn)
+            {
+                shadow let items = out.items;
+
+                mut min = 0;
+                let max = items.len + FN_ARGS_BACK;
+                shadow mut args: Argument[];
+
+                for (mut i = 0; i < max; i++)
+                {
+                    let argNode = items[i];
+                    argNode.kind == "let" || fail();
+
+                    let isImplicit = !!(argNode.flags & F_IMPLICIT);
+                    let arg = Argument(
+                        type:       argNode.type  || fail(),
+                        name:       argNode.value || fail(),
+                        default:    !isImplicit && argNode.items[LET_INIT],
+                        flags:      argNode.flags);
+
+                    if (!arg.default && !isImplicit)
+                        min++;
+
+                    args.push(arg);
+                }
+
+                // Unconditionally replacing the stuff.
+                ref overload    = GET_mut(target);
+
+                let retval0     = overload.type;
+                let args_len0   = overload.args.len;
+                let closure0    = overload.closes_over.len;
+
+                overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
+                overload.min    = min;
+                overload.max    = max;
+                overload.args   = args;
+                overload.flags  = out.flags;
+
+                overload.solved = out.out;
+
+                // See which one of the locals we've used are not our own.
+                {
+                    mut closes_over: i32[];
+
+                    for (mut i = 0; i < out.locals_used.len; i++)
+                    {
+                        let o = GET_local(out.locals_used[i]);
+                        if (o.local_of != target.index)
+                            closes_over ~= out.locals_used[i];
+                    }
+
+                    overload.closes_over = closes_over;
+                }
+
+                // Test.
+                Lifetime_test(out.ret_actual.lifetime, target);
+
+                if (overload.used_by)
+                {
+                    // TODO FIX starting the diff with just number of arguments,
+                    //  which is fine for implicit cycling,
+                    //   then we gotta move on to bigger and better things.
+                    if (args_len0 != overload.args.len          ||
+                        closure0  != overload.closes_over.len   ||
+                        !(retval0 == overload.type))
+                    {
+                        overload.status |= SS_UPDATED;
+                    }
+                }
+            }
+
             // Enable recursion.
             let firstIteration = !GET(target).solved;
             if (firstIteration)
             {
-                initScope(_current_fn);
+                // Previously initScope:
+                {
+                    // TODO FIX currently we only hash template names.
+                    mut name = n_fn.value || fail("TODO anonymous fns");
+                    if (spec && !native)
+                    {
+                        let sig = mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
+                        if (sig)
+                        {
+                            let hash = tea::hash62(sig, chars: 4) || fail();
+                            name ~= "_" ~ hash;
+                        }
+                    }
+
+                    ref overload = GET_mut(target);
+                        overload.name = name;
+                        overload.kind = native ? "__native" : "fn";
+                        overload.template = native ? createTemplate(n_body) : template;
+                }
+
                 updateScope(_current_fn);
 
                 // setSpecs & co.
-                if (!into && mangles)
+                if (!into)
                 {
-                    let start   = mangles.mangle0.find(' ') + 1 || fail();
-                        mangle  = mangles.mangle0.slice(0, start)
+                    let start   = mangle0.find(' ') + 1 || fail();
+                        mangle  = mangle0.slice(0, start)
                                 ~ mangleArguments(GET(target).args);
 
                     mut preexisting: Target;
-                    if (mangles.mangle0 != mangle)
+                    if (mangle0 != mangle)
                     {
                         preexisting = module.out.specs[mangle] || Target();
-                        setSpec(mangles.mangle0, preexisting || target);
+                        setSpec(mangle0, preexisting || target);
                     }
 
-                    let nx = mangles.mangle00 != mangle;
-                    if (nx && mangles.mangle00 != mangles.mangle0)
-                        setSpec(mangles.mangle00, preexisting || target);
+                    let nx = mangle00 != mangle;
+                    if (nx && mangle00 != mangle0)
+                        setSpec(mangle00, preexisting || target);
 
                     if (preexisting)
                         return preexisting;
