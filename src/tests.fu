@@ -2737,8 +2737,7 @@ pub fn runTests()
         fn main() 0;
     `);
 
-    TODO(`
-        INTLIT FAIL
+    ZERO(`
         fn leadingDigit(name: string) name[0].u8 - '0'.u8 < 10;
         fn main() "hello".leadingDigit.i32;
     `);

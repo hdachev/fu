@@ -1258,9 +1258,17 @@ pub fn cpp_codegen(
                 return "(-9223372036854775807-1)";
         }
 
-        if (node.type.canon == "u64" || node.type.canon == "i64")
-            if (!src.has('l'))
-                src ~= "ll";
+        if (node.type.quals & q_integral &&
+            node.type.canon != "u32" && node.type.canon != "i32")
+        {
+            if (node.type.canon == "u64" || node.type.canon == "i64") {
+                if (!src.has('l'))
+                    return src ~ "ll";
+            }
+            else {
+                return typeAnnotBase(node.type) ~ "(" ~ src ~ ")";
+            }
+        }
 
         return src;
     }
