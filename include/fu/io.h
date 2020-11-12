@@ -7,6 +7,7 @@
 
 #include "./defer.h"
 #include "./str.h"
+#include "./view.h"
 #include "./vec/slice.h"
 #include "./vec/concat_one.h"
 #include "./vec/c_str.h"
@@ -14,7 +15,7 @@
 namespace fu {
 
 inline int file_write(
-    const fu_STR& path, const fu_STR& body)
+    const fu_STR& path, fu::view<std::byte> body)
 {
     errno = 0;
     FILE* file = fopen(FU_TEMP_CSTR(path), "w");

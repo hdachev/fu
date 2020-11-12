@@ -180,7 +180,8 @@ pub fn build(
 
     //
     let link_order = getLinkOrder(ctx.modules);
-    if (file::size(F_exe) < 1 && (bin || run))
+    let exe_size = file::size(F_exe);
+    if (exe_size < 1 && (bin || run))
     {
         // Build.
         for (mut i = 0; i < Fs.len; i++)
@@ -260,7 +261,24 @@ pub fn build(
 
     //
     if (run)
-        code = shell::exec(F_exe, stdout);
+    {
+        // TODO FIX: this is a small testsuite runtime opti
+        if (exe_size == 4)
+        {
+            code = file::read(F_exe).view(i32).only;
+        }
+        else
+        {
+            code = shell::exec(F_exe, stdout);
+
+            // TODO FIX ////////////////////////////
+            let pure = true; ///////////////////////
+            ////////////////////////////////////////
+
+            if (pure)
+                file::write(F_exe, [ code ].view(byte));
+        }
+    }
 
     if (code) return ERR;
 
