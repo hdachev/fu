@@ -733,7 +733,8 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     int code {};
     fu_STR stdout {};
     fu_VEC<int> link_order = getLinkOrder(ctx.modules, ctx);
-    if (((fu::file_size(F_exe) < 1) && (bin || run)))
+    auto exe_size = fu::file_size(F_exe);
+    if (((exe_size < 1) && (bin || run)))
     {
         for (int i = 0; i < Fs.size(); i++)
         {
@@ -773,7 +774,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 cmd += (F + ".o "_fu);
 
         };
-        
+
         {
             (std::cout << "   LINK "_fu << F_exe << '\n');
             const double t0 = fu::now_hr();
@@ -793,7 +794,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
 
     };
-    if (run)
+    if (run && exe_size > 4)
         code = fu::shell_exec(fu_STR(F_exe), stdout);
 
     if (code)
