@@ -1412,19 +1412,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         _fnDepth > 0 || { _idx--; fail() };
         _numReturns++;
 
+        let label = tryConsume("op", ":") && consume("id").value;
         if (tryConsume("op", ";"))
             return createReturn();
 
-        return createReturn(
-            parseExpressionStatement());
+        return createReturn(:label, parseExpressionStatement());
     }
 
-    fn createReturn(node: Node = Node(), flags?!: i32): Node
+    fn createReturn(node: Node = Node(), label?!: string, flags?!: i32): Node
     {
         if (!node)
             return make("return");
 
-        return make("return", [ node ], :flags);
+        return make("return", [ node ], :flags, value: label);
     }
 
     fn parseDefer(): Node
