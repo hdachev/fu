@@ -2533,6 +2533,49 @@ pub fn solve(
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
 
+    fn solveReturn(node: Node): SolvedNode
+    {
+        if (!node.items)
+        {
+            reportReturnType(t_void);
+            return solved(node, t_never);
+        }
+
+
+        // We'll detach the return expression for further fiddling elsewhere.
+
+        mut expr = solveNode(
+            node.items.only,
+            type: _current_fn.ret_actual || _current_fn.ret_expect);
+
+        //////////////////////////////////////////////////////
+        //                                                  //
+        // TODO LIFETIMES   this doesn't work               //
+        //                  for deeply referential types.   //
+                                                            //
+        if (expr.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
+            expr.type.is_ref)                               //
+        {                                                   //
+            let nrvo = expr.kind == "call"                  //
+                    && expr.items.len == 0                  //
+                    && expr.target.GET.kind == "var";       //
+                                                            //
+            expr = createMove(expr, nrvo);                  //
+        }                                                   //
+                                                            //
+        //////////////////////////////////////////////////////
+
+        reportReturnType(expr.type);
+
+        let target = Scope_create(_scope, "return",
+            local_of: _current_fn.target.index || fail(),
+            solved: expr);
+
+        _current_fn.returns ~= target;
+
+        return solved(node, t_never, :target);
+    }
+
     fn reportReturnType(type: Type)
     {
         // Check annot.
@@ -2548,16 +2591,6 @@ pub fn solve(
 
         // Counter.
         _current_fn.ret_count++;
-    }
-
-    fn stashReturn(solved: SolvedNode): Target
-    {
-        let target = Scope_create(_scope, "return",
-            local_of: _current_fn.target.index || fail(), :solved);
-
-        _current_fn.returns ~= target;
-
-        return target;
     }
 
     fn finalizeReturns(bodyType: Type)
@@ -2605,42 +2638,6 @@ pub fn solve(
 
             _current_fn.ret_actual = t_void;
         }
-    }
-
-    fn solveReturn(node: Node): SolvedNode
-    {
-        if (!node.items)
-        {
-            reportReturnType(t_void);
-            return solved(node, t_never);
-        }
-
-
-        // We'll detach the return expression for further fiddling elsewhere.
-
-        mut expr = solveNode(
-            node.items.only,
-            type: _current_fn.ret_actual || _current_fn.ret_expect);
-
-        //////////////////////////////////////////////////////
-        //                                                  //
-        // TODO LIFETIMES   this doesn't work               //
-        //                  for deeply referential types.   //
-                                                            //
-        if (expr.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
-            expr.type.is_ref)                               //
-        {                                                   //
-            let nrvo = expr.kind == "call"                  //
-                    && expr.items.len == 0                  //
-                    && expr.target.GET.kind == "var";       //
-                                                            //
-            expr = createMove(expr, nrvo);                  //
-        }                                                   //
-                                                            //
-        //////////////////////////////////////////////////////
-
-        reportReturnType(expr.type);
-        return solved(node, t_never, target: stashReturn(expr));
     }
 
 
