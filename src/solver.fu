@@ -211,12 +211,13 @@ pub fn solve(
         return res;
     }
 
-    fn Lifetime_test(lifetime: Lifetime, current_fn: Target): Lifetime
+    fn Lifetime_test(lifetime: Lifetime): Lifetime
     {
         if (SELF_TEST)
         {
             mut _last = 0x80000000.i32;
 
+            let current_fn = _current_fn.target;
             let debug_2 = current_fn && GET(current_fn);
             if (debug_2) {}
 
@@ -269,18 +270,14 @@ pub fn solve(
 
         // Alias?
         if (kind == "ref")
-            return Lifetime_test(
-                type.is_ref && type.lifetime || fail("ref: bad ref/lifetime"),
-                _current_fn.target);
+            return Lifetime_test(type.is_ref && type.lifetime || fail("ref: bad ref/lifetime"));
 
         // Argument?
         let parametric  = kind == "arg" && type.is_ref;
         let index       = target.index;
         let packed      = parametric ? -1 - index : index;
 
-        return Lifetime_test(
-            Lifetime(uni0n: [ packed ]),
-            _current_fn.target);
+        return Lifetime_test(Lifetime(uni0n: [ packed ]));
     }
 
     fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
@@ -335,9 +332,7 @@ pub fn solve(
             }
         }
 
-        return Lifetime_test(
-            Lifetime_union(keep, replace),
-            _current_fn.target);
+        return Lifetime_test(Lifetime_union(keep, replace));
     }
 
     fn Lifetime_killedByReturnOf(lifetime: Lifetime, target: Target)
@@ -2108,7 +2103,7 @@ pub fn solve(
                 }
 
                 // Test.
-                Lifetime_test(out.ret_actual.lifetime, target);
+                Lifetime_test(out.ret_actual.lifetime);
 
                 if (overload.used_by)
                 {
