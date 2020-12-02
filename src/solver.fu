@@ -2671,7 +2671,7 @@ pub fn solve(
             local_of: _current_fn.target.index);
     }
 
-    fn Scope_lookupLabel(mut id: string): &mut Overload
+    fn Scope_lookupLabel(mut id: string): Target
     {
         id = LabelID(id);
 
@@ -2681,9 +2681,8 @@ pub fn solve(
         while (overloadIdx = _scope.items.search(
             id, scope_iterator, scope_skip: _ss.items))
         {
-            ref maybe = GET_mut(overloadIdx);
-            if (maybe.kind == "label")
-                return maybe;
+            if (GET(overloadIdx).kind == "label")
+                return overloadIdx;
         }
 
         return fail("No label `" ~ id ~ "` in scope.");
@@ -2732,7 +2731,9 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         // Jump kind.
-        ref label = Scope_lookupLabel(node.value);
+        let target = Scope_lookupLabel(node.value);
+
+        ref label = GET_mut(target);
         if (node.kind == "break")
             label.status |= SS_HAS_BREAK;
         else if (node.kind == "continue")
@@ -2741,7 +2742,7 @@ pub fn solve(
             fail("TODO jump kind: `" ~ node.kind ~ "`.");
 
         // Control flow.
-        return solved(node, t_never);
+        return solved(node, t_never, :target);
     }
 
 
