@@ -2226,7 +2226,7 @@ pub fn runTests()
             fn traverse(v: &mut $V, n: SolvedNode) {
                 v.visit(n);
                 for (mut i = 0; i < n.items.len; i++)
-                    traverse(v, n.items[i]); //! FN_recursion
+                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
             }
 
             traverse(_v, _n);
@@ -4033,6 +4033,35 @@ pub fn runTests()
     `);
 
 
+    // Template structs.
+
+    ZERO(`
+        fn sA(t: $T) struct { hey: $T; };
+
+        fn fA(a: $T): sA($T) = [ a + 2 ];
+        fn main() 1.fA.hey - 3;
+    `);
+
+    FAIL(`
+        fn sB(t: $T) struct { hey: $T; };
+
+        fn fB(a: $T): sB($T) = [ a + 2 ];
+        fn main() 1.fB.hey - 1.u32.fB.hey //*F
+            ; /*/ .i32; //*/
+    `);
+
+    TODO(`
+        fn sB(t: $T) struct { hey: $T; };
+
+        // Pattern & partial spec, how?
+        fn test(x: sB($T)): $T =
+            x.hey - 1;
+
+        type a = sB(i32);
+        fn main() a(1).test;
+    `);
+
+
     // Macros & loops.
 
     ZERO(`
@@ -4050,8 +4079,58 @@ pub fn runTests()
 
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
     `);
-/*
-    ZERO(`
+
+    TODO(`
+        fn each(arr, fn)
+            for (mut i = 0; i < arr.len; i++)
+                fn(arr[i]);
+
+        fn some(arr, fn) {
+            arr.each(|x| { if (fn(x)) return x; });
+            return 0;
+        }
+
+        fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
+    `);
+
+    TODO(`
+        fn outer() {
+            mut sum = 0;
+
+            fn inner(v: i32) {
+                for (mut i = 0; i < 10; i++) {
+                    sum += v;
+                    if (sum > 40)
+                        return :outer sum;
+                }
+
+                return v * 2;
+            }
+
+            mut x = 1;
+            for (;;) x = inner(x);
+        }
+
+        fn main() outer - 42; // extra points for style
+    `);
+
+    TODO(`
+        fn each(arr, fn)
+            for (mut i = 0; i < arr.len; i++)
+                fn(arr[i]);
+
+        fn main() {
+            mut sum = 0;
+            OUTER: [1, 2, 3, 4].each(|x| {
+                sum += x;
+                for (mut i = 1; i--; ) // once
+                    if (sum == 6) break :OUTER;
+            });
+            return sum - 6;
+        }
+    `);
+
+    TODO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4063,7 +4142,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4075,24 +4154,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
-        fn each(arr, fn) {
-            for (mut i = 0; i < arr.len; i++)
-                fn(arr[i]);
-        }
-
-        fn main() {
-            mut sum = 0;
-            OUTER: [1, 2, 3, 4].each(|x| {
-                sum += x;
-                for (mut x = 1; x--; ) // once
-                    if (sum == 6) break :OUTER;
-            });
-            return sum - 6;
-        }
-    `);
-
-    ZERO(`
+    TODO(`
         fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);
@@ -4116,7 +4178,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4143,38 +4205,6 @@ pub fn runTests()
             return sum - 2 - 11;
         }
     `);
-*/
-
-    // Template structs.
-
-    ZERO(`
-        fn sA(t: $T) struct { hey: $T; };
-
-        fn fA(a: $T): sA($T) = [ a + 2 ];
-        fn main() 1.fA.hey - 3;
-    `);
-
-    FAIL(`
-        fn sB(t: $T) struct { hey: $T; };
-
-        fn fB(a: $T): sB($T) = [ a + 2 ];
-        fn main() 1.fB.hey - 1.u32.fB.hey //*F
-            ;
-            /*/
-            .i32;
-            //*/
-    `);
-
-    // ZERO(`
-    //     fn sB(t: $T) struct { hey: $T; };
-
-    //     // Pattern & partial spec, how?
-    //     fn test(x: sB($T)): $T =
-    //         x.hey - 1;
-
-    //     type a = sB(i32);
-    //     fn main() a(1).test;
-    // `);
 
 
     // Enum basics.

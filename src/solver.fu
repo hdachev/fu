@@ -2738,6 +2738,10 @@ pub fn solve(
         else
             fail("TODO jump kind: `" ~ node.kind ~ "`.");
 
+        //
+        if (label.local_of != _current_fn.target.index)
+            fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`.");
+
         // Control flow.
         return solved(node, t_never, :target);
     }
