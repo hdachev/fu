@@ -611,7 +611,7 @@ pub fn solve(
         scope: Scope, local_scope: bool,
         mut id: string, ref args: SolvedNode[],
         ref conversions: Target[][],
-        flags?!: i32, retType?!: Type, target?!: Target): Target
+        flags?!: i32, target?!: Target): Target
     {
         mut matchIdx: Target;
 
@@ -736,10 +736,6 @@ pub fn solve(
                     if (!isZeroInit)
                         if (overload.max < minArity || overload.min > maxArity)
                             continue :NEXT;
-
-                    // Match by return.
-                    if (retType && !isAssignable(retType, overload.type || fail()))
-                        continue :NEXT;
 
                     // Reorder by argument names or number of implicit `using` args.
                     let host_args   = overload.args;
@@ -3503,7 +3499,7 @@ pub fn solve(
         mut args: SolvedNode[];
         mut conversions: Target[][];
 
-        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, retType: type)
+        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
@@ -3513,6 +3509,8 @@ pub fn solve(
         let o = GET(target);
         o.flags & F_IMPLICIT || fail(
             "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
+
+        checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch");
 
         return CallerNode(
             createRead("__implicit"), :target);
