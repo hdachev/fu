@@ -24,7 +24,7 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
 {
     return bs
         .grow_if_oob(target.modid)
-        .add_once(target.index)
+        .add_once(target.index);
 }
 
 pub fn cpp_codegen(

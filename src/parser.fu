@@ -466,15 +466,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             if (_fnDepth)
             {
                 if (v == "if")          return parseIf();
-                if (v == "return")      return parseReturn();
-                if (v == "defer")       return parseDefer();
-                if (v == "try")         return parseTryCatch();
-
                 if (v == "for")         return parseFor();
                 if (v == "while")       return parseWhile();
                 if (v == "do")          return parseDoWhile();
+
+                if (v == "return")      return parseJump("return");
                 if (v == "break")       return parseJump("break");
                 if (v == "continue")    return parseJump("continue");
+
+                if (v == "defer")       return parseDefer();
+                if (v == "try")         return parseTryCatch();
             }
 
             if (peek.kind == "op")
@@ -1386,23 +1387,30 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn parseReturn(): Node
+    fn parseJump(kind: string /*"break"|"continue"|"return"*/): Node
     {
         _fnDepth > 0 || { _idx--; fail() };
 
         let label = tryConsume("op", ":") && consume("id").value;
-        if (tryConsume("op", ";"))
-            return createReturn();
 
-        return createReturn(:label, parseExpressionStatement());
+        mut expr: Node;
+        if (!tryConsume("op", ";"))
+        {
+            expr = parseExpression();
+            consume("op", ";");
+        }
+
+        return createJump(:kind, :label, :expr);
     }
 
-    fn createReturn(node: Node = Node(), label?!: string, flags?!: i32): Node
-    {
-        if (!node)
-            return make("return");
+    fn createReturn(expr: Node, flags?!: i32): Node =
+        createJump(kind: "return", :expr, :flags);
 
-        return make("return", [ node ], :flags, value: label);
+    fn createJump(
+        kind!: string/*"break"|"continue"|"return"*/,
+        label?!: string, expr?: Node, flags?!: i32): Node
+    {
+        return make(kind, value: label, expr && [ expr ], :flags);
     }
 
     fn parseDefer(): Node
@@ -1429,20 +1437,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let catch = parseStatement();
 
         return make("try", [ try, err, catch ]);
-    }
-
-    fn parseJump(kind: string /*"break"|"continue"*/): Node
-    {
-        let label = tryConsume("op", ":") && consume("id");
-
-        let jump = createJump(kind, label.value);
-        consume("op", ";");
-        return jump;
-    }
-
-    fn createJump(kind: string/*"break"|"continue"*/, label: string): Node
-    {
-        return make(kind, value: label);
     }
 
 
