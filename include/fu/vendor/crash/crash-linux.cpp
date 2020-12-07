@@ -1,0 +1,163 @@
+#include "crash.h"
+#include <signal.h>
+#include <execinfo.h>
+#include <ucontext.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <sstream>
+#include <iostream>
+#include <cstring>
+
+//#define ADDR2LINE "/usr/bin/addr2line"
+
+namespace Crash {
+
+using namespace std;
+
+namespace {
+Handler theHandler;
+
+void writeTrace(ostream& out) {
+    void* trace[128];
+    const auto traceSize = backtrace(trace, 128);
+    char** messages = backtrace_symbols(trace, traceSize);
+
+    out << "Trace:\n";
+
+    for (int i = 0; i<traceSize; ++i) {
+        auto msg = messages[i];
+
+        // calculate load offset
+        Dl_info info;
+        dladdr(trace[i], &info);
+        if (info.dli_fbase == (void*)0x400000) {
+            // address from executable, so don't offset
+            info.dli_fbase = nullptr;
+        }
+
+        while (*msg && *msg != '(') ++msg;
+        *msg = 0;
+
+        char cmd[1024];
+        snprintf(cmd, 1024,"addr2line -e %s -f -C -p %p", messages[i], reinterpret_cast<void*>((char*)trace[i] - (char*)info.dli_fbase));
+
+        auto fp = popen(cmd, "r");
+        if (!fp) {
+            out << "Failed to generate trace further...";
+            break;
+        }
+
+        char line[2048];
+        while (fgets(line, 2048, fp)) {
+            out << messages[i] << ": ";
+            if (strstr(line, "?? ")) {
+                out << trace[i] << '\n';
+                continue;
+            }
+            else {
+                out << line;
+            }
+        }
+
+        pclose(fp);
+    }
+
+    free(messages);
+}
+
+void sigHandler(int signal, siginfo_t* info, void* /*context*/) {
+    ostringstream sout;
+    sout << "Signal: " << signal;
+
+    if (signal == SIGSEGV) {
+        sout << " at addr: " << info->si_addr;
+    }
+    sout << '\n';
+
+    writeTrace(sout);
+
+    theHandler(sout.str());
+}
+
+}
+
+void registerCrashHandler(Handler handler) {
+    theHandler = handler;
+
+    struct sigaction sa;
+    sa.sa_sigaction = sigHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+
+    sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGABRT, &sa, nullptr);
+}
+
+void generateReport(Handler handler) {
+    if (!handler) handler = theHandler;
+
+    ostringstream sout;
+    writeTrace(sout);
+
+    handler(sout.str());
+}
+
+}
+
+#if defined(TEST_CRASH)
+
+class Baba
+{
+public:
+    static int func_a(int a, char b)
+    {
+        char *p = (char *)0xdeadbeef;
+
+        a = a + b;
+        *p = 10;  /* CRASH here!! */
+
+        return 2 * a;
+    }
+};
+
+
+int func_b()
+{
+    int res, a = 5;
+
+    res = 5 + Baba::func_a(a, 't');
+    return res;
+}
+
+void custom_handler(string s)
+{
+    cout << "OOOOPS!!!\n" << s;
+    exit(1);
+}
+
+extern "C"
+{
+    __attribute__((__visibility__("default")))
+        void EntryPoint()
+    {
+        Crash::registerCrashHandler(custom_handler);
+    }
+
+    __attribute__((__visibility__("default")))
+        void CrashMeBaby()
+    {
+        cout << func_b() << endl;
+    }
+}
+
+#if !defined(DLL)
+int main()
+{
+    EntryPoint();
+    CrashMeBaby();
+
+    return 0;
+}
+#endif
+
+#endif

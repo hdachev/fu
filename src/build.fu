@@ -234,11 +234,14 @@ pub fn build(
                 cmd ~= F ~ ".o ";
         }
 
+        // This is not amazing.
+        let LIBS = process::LINUX && " -ldl";
+
         {
             println("   LINK ", F_exe);
             let t0 = now::hr();
 
-            code = shell::exec(cmd ~ " 2>&1", stdout)
+            code = shell::exec(cmd ~ LIBS ~ " 2>&1", stdout)
                 || shell::exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
                 || shell::exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
 
