@@ -787,8 +787,6 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
         };
-        if (((Fs.size() == 2) && Fs.mutref(1)))
-            code = fu::shell_exec((("rm "_fu + Fs.mutref(1)) + ".o 2>&1"_fu), stdout);
 
         if (code)
             return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});

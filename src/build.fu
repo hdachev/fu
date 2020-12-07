@@ -252,10 +252,6 @@ pub fn build(
             println("     OK ", t1 - t0, "s");
         }
 
-        // Delete single object file.
-        if (Fs.len == 2 && Fs[1])
-            code = shell::exec("rm " ~ Fs[1] ~ ".o 2>&1", stdout);
-
         if (code) return ERR;
     }
 
