@@ -10,9 +10,9 @@
 
 #include <signal.h>
 
-using namespace std;
-
 namespace Crash {
+
+using namespace std;
 
 namespace {
 Handler theHandler;

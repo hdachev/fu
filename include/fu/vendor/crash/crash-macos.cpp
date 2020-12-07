@@ -7,11 +7,11 @@
 #include <iostream>
 #include <cstring>
 
-using namespace std;
-
 //#define ADDR2LINE "/usr/bin/addr2line"
 
 namespace Crash {
+
+using namespace std;
 
 namespace {
 Handler theHandler;
@@ -29,7 +29,7 @@ void writeTrace(ostringstream& out) {
     }
 }
 
-void sigHandler(int signal, siginfo_t* info, void* context) {
+void sigHandler(int signal, siginfo_t* info, void* /*context*/) {
     ostringstream sout;
     sout << "Signal: " << signal;
 
@@ -54,6 +54,7 @@ void registerCrashHandler(Handler handler) {
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
     sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGABRT, &sa, nullptr);
 }
 
 void generateReport(Handler handler) {
