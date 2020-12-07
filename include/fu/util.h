@@ -107,9 +107,27 @@ struct fu_MAYBE_POS<fu_ZERO> {
 /////////////////////////////////////////////
 
 #ifndef NDEBUG
-const int fu_DEBUG = 1;
+const bool fu_DEBUG = true;
 #else
-const int fu_DEBUG = 0;
+const bool fu_DEBUG = false;
+#endif
+
+#ifdef __linux__
+const bool fu_LINUX = true;
+#else
+const bool fu_LINUX = false;
+#endif
+
+#ifdef _WIN32
+const bool fu_WINDOWS = true;
+#else
+const bool fu_WINDOWS = false;
+#endif
+
+#ifdef __APPLE__
+const bool fu_APPLE = true;
+#else
+const bool fu_APPLE = false;
 #endif
 
 /////////////////////////////////////////////
