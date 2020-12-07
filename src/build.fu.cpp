@@ -776,6 +776,9 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         };
 
         {
+            if (fu_LINUX)
+                cmd += " -ldl"_fu;
+
             (std::cout << "   LINK "_fu << F_exe << '\n');
             const double t0 = fu::now_hr();
             code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
