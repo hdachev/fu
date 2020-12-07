@@ -4,6 +4,10 @@
 #include "../inl.h"
 #include "../algo/fbstring_lfind.h"
 
+// memchr
+#include <string.h>
+#include <type_traits>
+
 namespace fu
 {
 
@@ -21,6 +25,7 @@ S lfind(const H& haystack, const N& needle, S start = S(0)) noexcept
 
 // lfind character
 template <  typename V,
+            typename T = typename V::value_type,
             typename S = decltype(((V*)1)->size())
                 >
 S lfind(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
@@ -33,11 +38,23 @@ S lfind(const V& vec, const typename V::value_type& item, S start = S(0)) noexce
 
     auto* i0 = data + start;
     auto* i1 = data + size;
-    for (auto* i = i0; i < i1; i++)
-        if (*i == item)
-            return S(i - i0);
 
-    return S(-1);
+    // memchr for byte sized scalars
+    if constexpr (sizeof(T) == 1 && std::is_scalar<T>::value)
+    {
+        auto* i = (const T*)memchr(
+            data ? i0 : (void*)&item, int(item), i1 - i0);
+
+        return i ? S(i - data) : S(-1);
+    }
+    else
+    {
+        for (auto* i = i0; i < i1; i++)
+            if (*i == item)
+                return S(i - data);
+
+        return S(-1);
+    }
 }
 
 // starts with substr
