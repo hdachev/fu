@@ -3530,31 +3530,22 @@ pub fn solve(
             return cond;
         }
 
-        let n_cons  = node.items[1];
-        let n_alt   = node.items[2];
-        mut cons    = n_cons && solveNode(n_cons, type);
-        mut alt     = n_alt  && solveNode(n_alt, !cons.type.is_never && cons.type || type);
+        mut cons    = solveNode(node.items[1], type);
+        mut alt     = solveNode(node.items[2], !cons.type.is_never && cons.type || type);
 
-        if (cons.type && alt.type)
+        if (!type.is_void)
         {
-            if (!type.is_void)
-            {
-                type = type_trySuper(cons.type, alt.type) || fail(
-                    "[if] No common supertype: `" ~ serializeType(cons.type) ~ " : " ~ serializeType(alt.type) ~ "`.");
+            type = type_trySuper(cons.type, alt.type) || fail(
+                "[if] No common supertype: `" ~ serializeType(cons.type) ~ " : " ~ serializeType(alt.type) ~ "`.");
 
-                type.is_ref || !type.lifetime || fail("[if] stray lifetime");
-                maybeCopyOrMove(cons, type);
-                maybeCopyOrMove(alt,  type);
-            }
+            type.is_ref || !type.lifetime || fail("[if] stray lifetime");
+            maybeCopyOrMove(cons, type);
+            maybeCopyOrMove(alt,  type);
+        }
 
-            // Control flow.
-            if (cons.type.is_never && alt.type.is_never)
-                type = t_never;
-        }
-        else
-        {
-            type = t_void;
-        }
+        // Control flow.
+        if (cons.type.is_never && alt.type.is_never)
+            type = t_never;
 
         return solved(node, type || fail(), [ cond, cons, alt ]);
     }
