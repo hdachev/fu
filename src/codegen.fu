@@ -1290,7 +1290,7 @@ pub fn cpp_codegen(
         let stmt = !!(mode & M_STMT);
 
         fn blockWrap_unlessIf(shadow node: SolvedNode)
-            node.kind == "if"
+            node.kind == "if" || node.kind == "and"
                 ? " " ~ cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
@@ -1315,30 +1315,28 @@ pub fn cpp_codegen(
 
     fn cgAnd(node: SolvedNode, mode: i32): string
     {
+        return cgAnd(:node.items, :node.type, :mode);
+    }
+
+    fn cgAnd(items: [SolvedNode], type: Type, mode: i32): string
+    {
         let stmt = !!(mode & M_STMT);
         if (stmt)
         {
-            mut cond = "if (";
-            for (mut i = 0; i < node.items.len - 1; i++)
-            {
-                if (i) cond ~= " && ";
-                cond ~= cgNode(node.items[i], M_RETBOOL);
-            }
+            let cond = items.len > 2
+                ? cgAnd (items[0, items.len - 1], t_bool, M_RETBOOL | M_PARENS)
+                : cgNode(items[0], M_RETBOOL | M_PARENS);
 
-            let cons = blockWrapSubstatement(node.items[node.items.len - 1]);
-            return cond ~ ")" ~ cons;
+            let cons = blockWrapSubstatement(items[items.len - 1]);
+            return "if (" ~ cond ~ ")" ~ cons;
         }
 
         //
-        let type = node.type;
         if (!type.is_bool)
         {
-            let items = node.items;
-
             mut src = "";
 
             let annot = typeAnnot(type);
-
             if (type.is_mutref)
             {
                 for (mut i = 0; i < items.len; i++)
@@ -1399,7 +1397,6 @@ pub fn cpp_codegen(
         }
 
         mut src = "(";
-        let items = node.items;
         for (mut i = 0; i < items.len; i++)
         {
             let item = items[i];

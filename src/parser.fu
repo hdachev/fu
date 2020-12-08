@@ -1458,10 +1458,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         consume("op", ")");
 
         let cons = parseStatement();
-        let alt  = tryConsume("id", "else")
-                && parseStatement();
+        if (tryConsume("id", "else"))
+        {
+            let alt = parseStatement();
+            return createIf(cond, cons, alt);
+        }
 
-        return createIf(cond, cons, alt);
+        return createAnd(cond, cons);
     }
 
 
