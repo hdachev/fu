@@ -1313,25 +1313,23 @@ pub fn cpp_codegen(
         return fail("TODO cgIf no const/alt");
     }
 
-
-    //
-
-    fn cgDefault(type: Type): string
+    fn cgAnd(node: SolvedNode, mode: i32): string
     {
-        type.is_mutref && fail("Cannot definit mutrefs.");
-
-        if (type.is_ref)
+        let stmt = !!(mode & M_STMT);
+        if (stmt)
         {
-            include("<fu/default.h>");
+            mut cond = "if (";
+            for (mut i = 0; i < node.items.len - 1; i++)
+            {
+                if (i) cond ~= " && ";
+                cond ~= cgNode(node.items[i], M_RETBOOL);
+            }
 
-            return "fu::Default<" ~ typeAnnot(clear_refs(type)) ~ ">::value";
+            let cons = blockWrapSubstatement(node.items[node.items.len - 1]);
+            return cond ~ ")" ~ cons;
         }
 
-        return typeAnnot(type) ~ "{}";
-    }
-
-    fn cgAnd(node: SolvedNode): string
-    {
+        //
         let type = node.type;
         if (!type.is_bool)
         {
@@ -1525,6 +1523,20 @@ pub fn cpp_codegen(
         return false;
     }
 
+    fn cgDefault(type: Type): string
+    {
+        type.is_mutref && fail("Cannot definit mutrefs.");
+
+        if (type.is_ref)
+        {
+            include("<fu/default.h>");
+
+            return "fu::Default<" ~ typeAnnot(clear_refs(type)) ~ ">::value";
+        }
+
+        return typeAnnot(type) ~ "{}";
+    }
+
 
     //
 
@@ -1644,7 +1656,7 @@ pub fn cpp_codegen(
         if (k == "if")          return cgIf(node, mode);
         if (k == "!")           return cgNot(node);
         if (k == "or")          return cgOr(node);
-        if (k == "and")         return cgAnd(node);
+        if (k == "and")         return cgAnd(node, mode);
         if (k == "loop")        return cgLoop(node);
         if (k == "int")         return cgLiteral(node);
         if (k == "real")        return cgLiteral(node);
