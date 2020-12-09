@@ -3796,6 +3796,32 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test_defer_if_errok(throw_err: bool) {
+            mut x      = 1;
+            mut if_err = 0;
+            mut if_ok  = 0;
+            try {
+                defer x++;
+                defer:err if_err += x;
+                defer:ok  if_ok  += x;
+
+                if (throw_err)
+                    throw("len=5");
+
+                x += 8; // 9 defer++ = 10
+            }
+            catch (e) {
+                x += e.len; // 6 defer++ = 7
+            }
+
+            return x * 3 + if_err * 5 + if_ok * 7;
+        }
+
+        fn main()   (test_defer_if_errok(true)  - 7 *3 - 1*5 - 0*7)
+            + 100 * (test_defer_if_errok(false) - 10*3 - 0*5 - 9*7);
+    `);
+
 
     // Conversions / ctors.
 

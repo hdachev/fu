@@ -1415,8 +1415,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn parseDefer(): Node
     {
+        let value = tryConsume("op", ":")
+                && (tryConsume("id", "err") || consume("id", "ok")).value;
+
         _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", [ parseExpression() ]);
+        return make("defer", :value, [ parseExpression() ]);
     }
 
     fn parseTryCatch(): Node

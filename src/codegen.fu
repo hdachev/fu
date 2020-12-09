@@ -495,7 +495,11 @@ pub fn cpp_codegen(
     {
         include("<fu/defer.h>");
 
-        return "fu_DEFER(" ~ cgNode(node.items.only) ~ ")";
+        let which = node.value == "err" ? "fu_DEFER_IF_ERR"
+                  : node.value == "ok"  ? "fu_DEFER_IF_OK"
+                                        : "fu_DEFER";
+
+        return which ~ "(" ~ cgNode(node.items.only) ~ ")";
     }
 
 
