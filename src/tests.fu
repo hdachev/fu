@@ -1960,6 +1960,19 @@ pub fn runTests()
         fn main() _0::lex("3 - 3") - 2; // <- from here
     `]);
 
+    ZERO(`
+        fn each(a: [$T], fn, start?!: i32)
+            for (mut i = start; i < a.len; i++)
+                fn(a[i]);
+
+        fn main() {
+            mut sum = 0;
+            let a = [ 1, 2, 3 ];
+                a.each(|i| sum += i, start: sum);   // <- start inferred to ref i32, which couldnt definit
+            return sum - 6;                         //     perhaps we can use the optionality to infer constness
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
