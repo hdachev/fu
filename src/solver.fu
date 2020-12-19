@@ -31,6 +31,8 @@ let USE_ref_to_mutref       = false;
 
 let SELF_TEST               = true;
 
+let CANNOT_definit_mutrefs  = true;
+
 
 
 ///////////////////////////////////////
@@ -480,8 +482,9 @@ pub fn solve(
     fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
-        if (type.is_mutref)
-            return SolvedNode();
+        if (CANNOT_definit_mutrefs)
+            if (type.is_mutref)
+                return SolvedNode();
 
         return createDefinit(type);
     }
@@ -1777,6 +1780,11 @@ pub fn solve(
 
                         let argNode = items[i] || fail();
                         let annot   = argNode.items[LET_TYPE];
+
+                        // We can lose mutrefs here if arguments are defaulted.
+                        if (CANNOT_definit_mutrefs)
+                            if (inType.is_mutref && argNode.items[LET_INIT])
+                                inType = clear_mutref(inType);
 
                         /////////////////
                         // Literal fixup.
