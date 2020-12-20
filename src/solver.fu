@@ -49,12 +49,18 @@ pub fn solve(
     implicit ref module: Module,
     parse: Node): SolverOutput
 {
+    struct Info
+    {
+        here: TokenIdx;
+        text: string;
+    };
+
+    mut _info:          Info[];
     mut _here:          TokenIdx;
+
     mut _scope:         Scope;
     mut _root_scope:    ScopeMemo;
-
     mut _ss:            ScopeSkipMemos;
-
     mut _field_items:   ScopeItem[];
 
     struct CurrentFn_ResetOnResolve
@@ -150,15 +156,19 @@ pub fn solve(
     fn fail(mut reason: string = ""): never
     {
         let here = _here._token;
-
         if (!reason)
             reason = "Unexpected `" ~ here.value ~ "`.";
 
         let fname = _here._fname;
-        let l0 = here.line;
-        let c0 = here.col;
-
-        let addr = "@" ~ l0 ~ ":" ~ c0;
+        let addr = "@" ~ here.line ~ ":" ~ here.col;
+        for (mut i = _info.len; i --> 0; )
+        {
+            let info = _info[i];
+            shadow let here = info.here._token;
+            reason ~= here
+                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
+                : "\n\t" ~ info.text;
+        }
 
         return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
     }
