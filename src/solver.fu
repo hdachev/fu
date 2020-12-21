@@ -1733,6 +1733,13 @@ pub fn solve(
             }
 
             let template = original.template;
+
+            let items = template.node.items;
+            mut n_fn = template.node;
+                n_fn.kind == "fn" || fail("n_fn not a `fn`.");
+
+            let isInline = !!(n_fn.flags & F_INLINE);
+
             if (_root_scope)
             {
                 let start = template.scope_memo || _root_scope;
@@ -1743,7 +1750,8 @@ pub fn solve(
                 // The declash thing is for ease of codegen - not technically needed by the solver.
                 //  This is what postfixes variable names with numbers to disambiguate them,
                 //   and not pushing here means we'll declash against things we don't see in items above.
-                ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
+                if (!isInline)
+                    ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
 
                 ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
                 ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
@@ -1758,10 +1766,6 @@ pub fn solve(
             //
             mut ok = true;
             mut typeParams: TypeParams;
-
-            let items   = template.node.items;
-            mut n_fn    = template.node;
-                n_fn.kind == "fn" || fail("n_fn not a `fn`.");
 
             if (!into)
             {
