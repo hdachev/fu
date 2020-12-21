@@ -2,3 +2,4 @@
 pub fn size (path: string): i32 __native("<fu/io.h>", "fu::file_size");
 pub fn read (path: string): string __native("<fu/io.h>", "fu::file_read");
 pub fn write(path: string, body: [byte]): i32 __native("<fu/io.h>", "fu::file_write");
+pub fn rename(old: string, new: string): i32 __native("<fu/io.h>", "fu::file_rename");

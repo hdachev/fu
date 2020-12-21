@@ -63,6 +63,14 @@ inline int file_size(
     return -1;
 }
 
+inline int file_rename(
+    const fu_STR& oldpath, const fu_STR& newpath)
+{
+    return rename(
+        FU_TEMP_CSTR(oldpath),
+        FU_TEMP_CSTR(newpath));
+}
+
 inline fu_STR file_read(
     const fu_STR& path)
 {
