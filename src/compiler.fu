@@ -259,6 +259,9 @@ pub fn ZERO(
                 }
                 else
                 {
+                    file::write(PRJDIR ~ "testdiff/expect.tmp", expect);
+                    file::write(PRJDIR ~ "testdiff/actual.tmp", actual);
+
                     throw("NOWRITE: test output mismatch for:\n" ~ key ~ "\n\nPreviously:\n" ~ expect ~ "\n\nNow:\n" ~ actual);
                 }
             }
