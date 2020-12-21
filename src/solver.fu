@@ -373,7 +373,7 @@ pub fn solve(
             mut any     = 0;
             mut same    = 0;
 
-            _scope.items.each(_ss.items, |item|
+            _scope.items.each(_ss.declash, |item|
             {
                 if (item.id == id)
                 {
@@ -396,7 +396,7 @@ pub fn solve(
             //  it might optimize scope lookups all over the place.
             //
             if (OPTI_autoshadow)
-                if (kind != "global" && !any) // && _current_fn.flags & F_INLINE
+                if (kind != "global" && !any)
                     flags |= F_SHADOW;
         }
 
@@ -1739,6 +1739,12 @@ pub fn solve(
                       _ss = template.scope_skip;
 
                 ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
+
+                // The declash thing is for ease of codegen - not technically needed by the solver.
+                //  This is what postfixes variable names with numbers to disambiguate them,
+                //   and not pushing here means we'll declash against things we don't see in items above.
+                ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
+
                 ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
                 ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
                 ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);

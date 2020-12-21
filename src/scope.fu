@@ -111,6 +111,8 @@ pub struct SolvedNode
 pub struct ScopeSkipMemos
 {
     items:      ScopeSkip[];
+    declash:    ScopeSkip[];
+
     imports:    ScopeSkip[];
     usings:     ScopeSkip[];
     converts:   ScopeSkip[];
