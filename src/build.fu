@@ -21,8 +21,7 @@ fn update_file(
     fname   !: string,
     data    !: string,
     dir_src !: string,
-    dir_out !: string,
-    nowrite !: bool)
+    dir_out !: string)
 {
     shadow let fname = ensure_local_fname(:fname, :dir_src);
         fname.starts(with: dir_src) || throw("ensure_local_fname broken");
@@ -30,9 +29,6 @@ fn update_file(
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file::read(fname) != data)
     {
-        if (nowrite)
-            throw("NOWRITE: About to write `" ~ fname ~ "`:\n\n" ~ data ~ "\n");
-
         let err = file::write(fname, data);
         if (err)
             throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
@@ -93,9 +89,7 @@ pub fn build(
     mut dir_src ! = "",
     mut dir_cpp ! = "",
         unity   ! = "",
-        scheme  ! = "",
-
-    nowrite?!: bool): void
+        scheme  ! = ""): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -204,10 +198,7 @@ pub fn build(
                 let cpp = i ? ctx.modules[i].out.cpp
                             : fulib_cpp;
 
-                if (nowrite)
-                    throw("NOWRITE: About to write `" ~ F_cpp ~ "`:\n\n" ~ cpp ~ "\n");
-                else
-                    file::write(F_cpp, cpp);
+                file::write(F_cpp, cpp);
 
                 println("  BUILD ", human, " ", F_cpp);
 
@@ -296,7 +287,7 @@ pub fn build(
             let fname           = data && module.fname ~ ".cpp";
             shadow let fname    = fname && update_file(
                 :fname, :data,
-                :dir_src, dir_out: dir_cpp, :nowrite);
+                :dir_src, dir_out: dir_cpp);
 
             cpp_files.push(fname);
         }
@@ -325,7 +316,7 @@ pub fn build(
 
                 update_file(
                     fname: unity ~ ".unity.cpp", :data,
-                    :dir_src, dir_out: dir_cpp, :nowrite);
+                    :dir_src, dir_out: dir_cpp);
             }
 
             // CMakeLists.txt
@@ -393,7 +384,7 @@ pub fn build(
 
                 update_file(
                     fname: CMakeLists, :data,
-                    :dir_src, dir_out: dir_cpp, :nowrite);
+                    :dir_src, dir_out: dir_cpp);
             }
         }
     }

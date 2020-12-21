@@ -110,9 +110,7 @@ pub fn build(
     dir_obj = "",
     dir_src = "",
     dir_cpp = "",
-    scheme  = "",
-
-    nowrite = false)
+    scheme  = "")
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
 
@@ -152,7 +150,7 @@ pub fn build(
     return ::build(
         ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
-        unity: fname, fulib: FULIB, :nowrite);
+        unity: fname, fulib: FULIB);
 }
 
 
@@ -229,7 +227,9 @@ pub fn snippet2cpp(src: string): string
     return "";
 }
 
-pub fn ZERO(sources: string[]): Context
+pub fn ZERO(
+    implicit ref testdiffs: testdiff::TestDiffs,
+    sources: string[]): Context
 {
     let ctx = compile_snippets(:sources);
 
@@ -239,8 +239,36 @@ pub fn ZERO(sources: string[]): Context
 
     let nowrite = !sources.last.has("//! ALLOW_WRITE") && !env::get("fu_ALLOW_WRITE");
 
-    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug", :nowrite);
-    ::build(:ctx, :run, :fulib, :dir_wrk, :nowrite);
+    mut key = "";
+    for (mut i = 0; i < sources.len; i++)
+    {
+        key ~= sources[i];
+        let actual = ctx.modules
+            [i + ctx.modules.len - sources.len]
+                .out.cpp;
+
+        if (nowrite)
+        {
+            let expect = testdiffs.testdiff::get_current(key);
+            if (expect != actual)
+            {
+                if (!expect)
+                {
+                    if (!env::get("fu_ALLOW_UNSEEN"))
+                        throw("NOWRITE: unknown testcase, consider fu_ALLOW_UNSEEN envar:\n" ~ key ~ "\n\nAbout to write:" ~ actual);
+                }
+                else
+                {
+                    throw("NOWRITE: test output mismatch for:\n" ~ key ~ "\n\nPreviously:\n" ~ expect ~ "\n\nNow:\n" ~ actual);
+                }
+            }
+        }
+
+        testdiffs.testdiff::set_next(key, actual);
+    }
+
+    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug");
+    ::build(:ctx, :run, :fulib, :dir_wrk);
 
     return ctx;
 }

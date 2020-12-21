@@ -59,6 +59,14 @@ pub fn TODO(src: string[])
 
 pub fn runTests()
 {
+    ////////////////////////////////////////////////
+    let TESTDIFFS_FILE = PRJDIR ~ "testdiff/now.td";
+
+    let implicit mut testdiffs =
+        testdiff::parse(
+            file::read(TESTDIFFS_FILE));
+    ////////////////////////////////////////////////
+
     ZERO(`
         return 1 - 1;
     `);
@@ -4396,4 +4404,9 @@ pub fn runTests()
     //         return mutargs(args) - 7;
     //     }
     // `);
+
+    ////////////////////////////////////////////////
+    file::write(TESTDIFFS_FILE,
+        testdiff::serialize(testdiffs));
+    ////////////////////////////////////////////////
 }

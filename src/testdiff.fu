@@ -1,0 +1,39 @@
+
+pub struct TestDiffs
+{
+    _current: Map(string, string);
+    _next   : Map(string, string);
+};
+
+pub fn parse(str: string)
+{
+    let arr = str.split("\n-----\n");
+
+    mut res: TestDiffs;
+    for (mut i = 1; i < arr.len; i += 2)
+        res._current[arr[i - 1]] = arr[i];
+
+    return res;
+}
+
+pub fn serialize(diffs: TestDiffs)
+{
+    mut res: string;
+
+    let keys = diffs._next.keys;
+    let values = diffs._next.values;
+    for (mut i = 0; i < keys.len; i++)
+        res ~= keys[i] ~ "\n-----\n" ~ values[i] ~ "\n-----\n";
+
+    return res;
+}
+
+pub fn set_next(ref diffs: TestDiffs, key: string, actual: string)
+{
+    diffs._next[key] = actual;
+}
+
+pub fn get_current(diffs: TestDiffs, key: string)
+{
+    return diffs._current[key] || "";
+}
