@@ -2,6 +2,9 @@
 
 #include <chrono>
 
+
+// TODO use time/usec_now instead.
+
 namespace fu {
 
 template <typename Clock>
