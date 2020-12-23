@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+git reset
+git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt
