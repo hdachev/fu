@@ -28,6 +28,7 @@ let OPTI_autoshadow         = true;
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false;
 let USE_ref_to_mutref       = false;
+let USE_inlining            = false;
 
 let SELF_TEST               = true;
 
@@ -1738,7 +1739,7 @@ pub fn solve(
             mut n_fn = template.node;
                 n_fn.kind == "fn" || fail("n_fn not a `fn`.");
 
-            let isInline = !!(n_fn.flags & F_INLINE);
+            let isInline = USE_inlining && !!(n_fn.flags & F_INLINE);
 
             if (_root_scope)
             {
