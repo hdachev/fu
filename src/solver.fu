@@ -1415,7 +1415,12 @@ pub fn solve(
             ? items.last.type
             : t_void;
 
-        return solved(:node, :type, :items);
+        return createBlock(:node.token, :type, :items, :label);
+    }
+
+    fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
+    {
+        return SolvedNode(kind: "block", :type, :items, :token, target: label);
     }
 
 
@@ -2692,7 +2697,7 @@ pub fn solve(
     {
         return Scope_add(
             _scope, "label", id: LabelID(id),
-            type: Type, flags: F_SHADOW,
+            name: id, type: Type, flags: F_SHADOW,
             local_of: _current_fn.target.index);
     }
 
@@ -3730,11 +3735,6 @@ pub fn solve(
             token: node.token,
 
             :items, :type, :target);
-    }
-
-    fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[]): SolvedNode
-    {
-        return SolvedNode(kind: "block", :type, :items, :token);
     }
 
     fn CallerNode(

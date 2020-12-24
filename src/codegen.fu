@@ -411,7 +411,7 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: string): string
+    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: Target): string
     {
         let indent0 = _indent;
         _indent ~= "    ";
@@ -421,7 +421,7 @@ pub fn cpp_codegen(
 
         // Block break label.
         if (label)
-            close = "L_" ~ label ~ "_b:;" ~ indent0 ~ close;
+            close = "L_" ~ GET(label).name ~ "_b:;" ~ indent0 ~ close;
 
         //
         mut src = cgStatements(nodes);
@@ -441,9 +441,9 @@ pub fn cpp_codegen(
 
     fn cgBlock(block: SolvedNode, mode: i32): string
     {
-        ////////////////////////
-        let label = block.value;
-        ////////////////////////
+        /////////////////////////
+        let label = block.target;
+        /////////////////////////
 
         mut expr = !(mode & M_STMT);
         if (expr && !label)
