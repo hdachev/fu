@@ -2052,6 +2052,9 @@ pub fn solve(
             if (n_body.kind == "call" && n_body.value == "__native")
                 native = true;
 
+            if (!native)
+                n_body.kind == "block" || fail("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
+
             // Return type annot.
             _current_fn.ret_expect = n_ret && evalTypeAnnot(n_ret).type;
 
