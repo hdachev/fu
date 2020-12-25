@@ -255,14 +255,14 @@ pub fn ZERO(
                 if (!expect)
                 {
                     if (!env::get("fu_ALLOW_UNSEEN"))
-                        throw("NOWRITE: unknown testcase, consider fu_ALLOW_UNSEEN envar:\n" ~ key ~ "\n\nAbout to write:" ~ actual);
+                        throw("NOWRITE: unknown testcase.\n\nConsider fu_ALLOW_UNSEEN envar:\n" ~ key ~ "\nAbout to write:\n\n" ~ actual);
                 }
                 else
                 {
                     file::write(PRJDIR ~ "testdiff/expect.tmp", expect);
                     file::write(PRJDIR ~ "testdiff/actual.tmp", actual);
 
-                    throw("NOWRITE: test output mismatch for:\n" ~ key ~ "\n\nPreviously:\n" ~ expect ~ "\n\nNow:\n" ~ actual);
+                    throw("NOWRITE: test output mismatch for:\n\n" ~ key ~ "\nPreviously:\n\n" ~ expect ~ "\nNow:\n\n" ~ actual);
                 }
             }
         }

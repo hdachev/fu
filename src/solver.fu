@@ -1398,7 +1398,7 @@ pub fn solve(
 
         let label = id && Scope_addLabel(id);
 
-        let expr = !!(nodes.if_last.flags & F_NODISCARD);
+        let expr = !type.is_void;
         if (expr && label)
             fail("TODO labelled expression blocks.");
 
@@ -2205,7 +2205,7 @@ pub fn solve(
             if (!native)
             {
                 _current_fn.ret_actual = Type();
-                let s_body = solveNode(n_body);
+                let s_body = solveNode(n_body, type: t_void);
                 finalizeReturns(s_body.type);
 
                 // MUT DURING SOLVE,

@@ -2,4 +2,4 @@
 set -e
 
 git reset
-git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt
+git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt *.td

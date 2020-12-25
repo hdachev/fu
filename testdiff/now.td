@@ -6855,6 +6855,46 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn ScopeSkip_push(ref scope_skip: i32[]) {
+            if (scope_skip) scope_skip[0]++;
+            else            scope_skip ~= 1;
+        }
+
+        fn main() {
+            mut scope_skip = [ 1 ];
+            ScopeSkip_push(scope_skip);
+            return scope_skip[0] - 2;
+        }
+    
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static void ScopeSkip_push(fu_VEC<int>& scope_skip)
+{
+    if (scope_skip)
+        scope_skip.mutref(0)++;
+    else
+        scope_skip += 1;
+
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> scope_skip = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    ScopeSkip_push(scope_skip);
+    return (scope_skip.mutref(0) - 2);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;

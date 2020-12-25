@@ -1981,6 +1981,19 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn ScopeSkip_push(ref scope_skip: i32[]) {
+            if (scope_skip) scope_skip[0]++;
+            else            scope_skip ~= 1;
+        }
+
+        fn main() {
+            mut scope_skip = [ 1 ];
+            ScopeSkip_push(scope_skip);
+            return scope_skip[0] - 2;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 

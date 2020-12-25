@@ -35,7 +35,7 @@ pub let F_PARENS        = 1 << 7;
 pub let F_LOCAL         = 1 << 8;
 pub let F_ARG           = 1 << 9;
 pub let F_FIELD         = 1 << 10;
-pub let F_NODISCARD     = 1 << 11;
+// ... 11
 pub let F_NOCOPY        = 1 << 12;
 // ... 13
 // ... 14
@@ -385,8 +385,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             // Maybe we should get rid of this.
             expr.kind != "call"
                 || ((expr.flags & (F_ID | F_ACCESS)) == 0)
-                || expr.flags & F_NODISCARD
                 || expr.items.len > 1
+                || tokens[_idx].value == endVal
                 || fail_Lint("Orphan pure-looking expression.");
 
             // Filter out excess semicolons.
@@ -547,11 +547,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         mut expr = parseExpression(P_RESET);
         let peek = tokens[_idx];
-        if (peek.kind == "op" && peek.value == "}")
-            expr.flags |= F_NODISCARD;
-        else if (peek.kind == "op" && peek.value == ";")
+        if (peek.kind == "op" && peek.value == ";")
             _idx++;
-        else
+        else if (peek.kind != "op" || peek.value != "}")
             fail_Lint("Missing semicollon before `" ~ peek.value ~ "`.");
 
         return expr;
