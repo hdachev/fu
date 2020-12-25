@@ -1306,7 +1306,7 @@ pub fn solve(
         let k = node.kind;
 
         if (k == "root")        return solveRoot(node);
-        if (k == "block")       return solveBlock(node, :type);
+        if (k == "block")       return solveBlock(node.token, node.items, id: node.value, :type);
         if (k == "label")       return solveLabel(node, :type);
 
         if (k == "let")         return solveLet(node, :deadcode_on_never);
@@ -1389,21 +1389,21 @@ pub fn solve(
             solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(node: Node, type?: Type): SolvedNode
+    fn solveBlock(token: TokenIdx, nodes: Node[], id?!: string, type?!: Type): SolvedNode
     {
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
-        let label = node.value && Scope_addLabel(node.value);
+        let label = id && Scope_addLabel(id);
 
-        let expr = !!(node.items.if_last.flags & F_NODISCARD);
+        let expr = !!(nodes.if_last.flags & F_NODISCARD);
         if (expr && label)
             fail("TODO labelled expression blocks.");
 
         let items = solveNodes(
-            node.items,
+            nodes,
             type_all:           t_void,
             type_last:          type,
             use_type_last:      expr,
@@ -1414,7 +1414,7 @@ pub fn solve(
             ? items.last.type
             : t_void;
 
-        return createBlock(:node.token, :type, :items, :label);
+        return createBlock(:token, :type, :items, :label);
     }
 
     fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
