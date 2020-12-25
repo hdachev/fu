@@ -411,7 +411,6 @@ pub fn solve(
 
         // Reserve the slot.
         let target = reuse || Scope_create(_scope, :kind, :name, :flags, :local_of);
-        Scope_set(_scope, :id, :target);
 
         // Double check.
         if (SELF_TEST && reuse)
@@ -2979,6 +2978,7 @@ pub fn solve(
                                             : "var";
 
             let target = out.target = Binding(:id, :kind, :node.flags, :out.type, :reuse);
+            Scope_set(_scope, :id, :target);
 
             if (global)
             {
@@ -3516,14 +3516,7 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-
-        /////////////////////////////////////////////////////
-        // TODO obtain or persist this in the original scope.
-        let scope0      = Scope_snap(_scope);
         let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG, kind: "arg");
-        Scope_pop(_scope, scope0);
-        /////////////////////////////////////////////////////
-
         let newArgNode  = createLet(ret, F_IMPLICIT);
         _current_fn.items.insert(newArgIdx, newArgNode);
 
