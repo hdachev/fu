@@ -2736,17 +2736,17 @@ pub fn solve(
 
         let label       = Scope_addLabel(node.value);
 
-        let n_init      = node.items[0];
-        let n_pre_cond  = node.items[1];
-        let n_post      = node.items[2];
-        let n_body      = node.items[3];
-        let n_post_cond = node.items[4];
+        let n_init      = node.items[LOOP_INIT];
+        let n_pre_cond  = node.items[LOOP_COND];
+        let n_body      = node.items[LOOP_BODY];
+        let n_post_cond = node.items[LOOP_POST_COND];
+        let n_post      = node.items[LOOP_POST];
 
         let init        = n_init      && solveNode(n_init,      t_void);
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
-        let post        = n_post      && solveNode(n_post,      t_void);
         let body        = n_body      && solveNode(n_body,      t_void);
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
+        let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
         let type        = !pre_cond && !post_cond && !(GET(label).status & SS_HAS_BREAK)
@@ -2754,7 +2754,7 @@ pub fn solve(
                             : t_void;
 
         return solved(node, type,
-            [ init, pre_cond, post, body, post_cond ]);
+            [ init, pre_cond, body, post_cond, post ]);
     }
 
     fn solveJump(node: Node): SolvedNode

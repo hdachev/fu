@@ -144,9 +144,9 @@ pub let TYPECTOR_BACK   = -1;
 
 pub let LOOP_INIT       = 0;
 pub let LOOP_COND       = 1;
-pub let LOOP_POST       = 2;
-pub let LOOP_BODY       = 3;
-pub let LOOP_POST_COND  = 4;
+pub let LOOP_BODY       = 2;
+pub let LOOP_POST_COND  = 3;
+pub let LOOP_POST       = 4;
 
 
 // Descent modes.
@@ -1528,7 +1528,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         //
         let init = !tryConsume("op", ";") && parseLetStmt();
-        let cond = !tryConsume("op", ";") && parseExpressionStatement();
+        let pre_cond = !tryConsume("op", ";") && parseExpressionStatement();
 
         let token = tokens[_idx];
         let post = token.kind == "op" && token.value == ")"
@@ -1538,17 +1538,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         consume("op", ")");
         let body = parseStatement();
 
-        return createLoop(init, cond, post, body, miss);
+        return createLoop(:init, :pre_cond, :post, :body);
     }
 
     fn parseWhile(): Node
     {
         consume("op", "(");
-        let cond = parseExpression();
+        let pre_cond = parseExpression();
         consume("op", ")");
         let body = parseStatement();
 
-        return createLoop(miss, cond, miss, body, miss);
+        return createLoop(:pre_cond, :body);
     }
 
     fn parseDoWhile(): Node
@@ -1556,16 +1556,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let body = parseStatement();
         consume("id", "while");
         consume("op", "(");
-        let cond = parseExpression();
+        let post_cond = parseExpression();
         consume("op", ")");
         consume("op", ";");
 
-        return createLoop(miss, miss, miss, body, cond);
+        return createLoop(:body, :post_cond);
     }
 
-    fn createLoop(init: Node, cond: Node, post: Node, body: Node, postcond: Node): Node
+    fn createLoop(init?!: Node, pre_cond?!: Node, body?!: Node, post_cond?!: Node, post?!: Node): Node
     {
-        return make("loop", [ init, cond, post, body, postcond ]);
+        return make("loop", [ init, pre_cond, body, post_cond, post ]);
     }
 
     // -------------------------------

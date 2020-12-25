@@ -1553,15 +1553,16 @@ pub fn cpp_codegen(
 
         let n_init = items[LOOP_INIT];
         let n_cond = items[LOOP_COND];
-        let n_post = items[LOOP_POST];
         let n_body = items[LOOP_BODY];
         let n_pcnd = items[LOOP_POST_COND];
+        let n_post = items[LOOP_POST];
 
         let init = n_init && cgNode(n_init, M_STMT);
         let cond = n_cond && cgNode(n_cond, M_RETBOOL | M_PARENS);
-        let post = n_post && cgNode(n_post, M_STMT);
         mut body = n_body && blockWrapSubstatement(n_body);
         let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL);
+        let post = n_post && cgNode(n_post, M_STMT);
+
         mut breakLabel = "";
 
         if (body && node.value)
