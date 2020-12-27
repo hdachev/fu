@@ -1707,8 +1707,7 @@ pub fn cpp_codegen(
         if (type.quals & q_trivial)
             return cgClone(type, src);
 
-        include("<utility>");
-        return "std::move(" ~ src ~ ")";
+        return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";
     }
 
     fn cgSwap(items: string[]): string

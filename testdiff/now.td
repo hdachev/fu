@@ -2986,7 +2986,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3011,7 +3010,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3056,7 +3055,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3081,7 +3079,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3126,7 +3124,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3151,7 +3148,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3196,7 +3193,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3221,7 +3217,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3266,7 +3262,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3291,7 +3286,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3336,7 +3331,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3361,7 +3355,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3406,7 +3400,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3431,7 +3424,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3476,7 +3469,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3501,7 +3493,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -3546,7 +3538,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 #ifndef FU_NO_FDEFs
 
@@ -3571,7 +3562,7 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = std::move(orig);
+        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
         if (orig.size())
             return 19;
 
@@ -8513,7 +8504,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 struct s_Test;
 
@@ -8536,7 +8526,7 @@ struct s_Test
 static s_Test test(s_Test&& x)
 {
     x.i.mutref(0) += x.i.mutref(1);
-    return std::move(x);
+    return static_cast<s_Test&&>(x);
 }
 
 int fu_MAIN()
@@ -8566,7 +8556,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <fu/vec.h>
-#include <utility>
 
 struct s_Test;
 
@@ -8589,7 +8578,7 @@ struct s_Test
 static s_Test test(s_Test&& x)
 {
     x.i.mutref(0) += x.i.mutref(1);
-    return std::move(x);
+    return static_cast<s_Test&&>(x);
 }
 
 int fu_MAIN()
