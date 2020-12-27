@@ -376,7 +376,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             _col0 > col00 || fail_Lint(
                 "Bad indent, expecting more than " ~ col00
-                    ~ ". Block starts on line " ~ line0 ~ ".");
+                    ~ ", got " ~ _col0 ~ ". Block starts on line " ~ line0 ~ ".");
 
             let expr = struct
                 ? parseStructItem()

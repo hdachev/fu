@@ -1397,11 +1397,7 @@ pub fn solve(
         ////////////////////////////////
 
         let label = id && Scope_addLabel(id);
-
-        let expr = !type.is_void;
-        if (expr && label)
-            fail("TODO labelled expression blocks.");
-
+        let expr  = !type.is_void;
         let items = solveNodes(
             nodes,
             type_all:           t_void,
