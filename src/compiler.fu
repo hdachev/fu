@@ -229,8 +229,22 @@ pub fn snippet2cpp(src: string): string
 
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
-    sources: string[]): Context
+    mut sources: string[]): Context
 {
+    // Trim trailing spaces
+    //  to help with manual testdiff edits.
+    //
+    for (mut i = 0; i < sources.len; i++)
+    {
+        ref src = sources[i];
+
+        mut end = src.len;
+        for (mut r = src.len; r --> 0 && src[r] == ' '; )
+            end = r;
+
+        src.shrink(end);
+    }
+
     let ctx = compile_snippets(:sources);
 
     let run = true;

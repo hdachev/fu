@@ -1,6 +1,6 @@
 
         return 1 - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -21,7 +21,7 @@ int main() { return fu_MAIN(); }
             a + b;
 
         return sum(1, -1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -47,7 +47,7 @@ int main() { return fu_MAIN(); }
             a + b;
 
         return sum(1, -1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -73,7 +73,7 @@ int main() { return fu_MAIN(); }
             a > 0 ? 1 : a < 0 ? -1 : 0;
 
         return sign(7) + sign(-3) + sign(0);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -103,7 +103,7 @@ int main() { return fu_MAIN(); }
         }
 
         return sign(10) * 2 + sign(-5);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -136,7 +136,7 @@ int main() { return fu_MAIN(); }
         }
 
         return sign(10) * 2 + sign(-5);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -167,7 +167,7 @@ int main() { return fu_MAIN(); }
             sum++;
 
         return sum * 2 - 20;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -193,7 +193,7 @@ int main() { return fu_MAIN(); }
             sum--;
 
         return sum * 2 + 20;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -220,7 +220,7 @@ int main() { return fu_MAIN(); }
         mut res = 0;
         decr(res);
         return res + 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -250,7 +250,7 @@ int main() { return fu_MAIN(); }
         mut res = 0;
         decr(res);
         return res + 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -280,7 +280,7 @@ int main() { return fu_MAIN(); }
 
         decr();
         return res + 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -309,7 +309,7 @@ int main() { return fu_MAIN(); }
 
         decr(res);
         return res + 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -338,7 +338,7 @@ int main() { return fu_MAIN(); }
             sum++;
 
         return sum - 15;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -368,7 +368,7 @@ int main() { return fu_MAIN(); }
             sum++; //ERR ++ overload
 
         return sum - 15;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -394,7 +394,7 @@ int main() { return fu_MAIN(); }
             sum += 2;
 
         return sum - 16;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -419,7 +419,7 @@ int main() { return fu_MAIN(); }
             a - b * 2;
 
         return named(b: 3, 6);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -448,7 +448,7 @@ int main() { return fu_MAIN(); }
             named(:b, :a);
 
         return other(b: 3, 6);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -484,7 +484,7 @@ int main() { return fu_MAIN(); }
             r.max - r.min;
 
         return size(Range(14, 21)) - 7;
-    
+
 -----
 
 struct s_Range;
@@ -532,7 +532,7 @@ int main() { return fu_MAIN(); }
         mut r = Range(1, 2);
         r.min++;
         return r.max - r.min;
-    
+
 -----
 
 struct s_Range;
@@ -583,7 +583,7 @@ int main() { return fu_MAIN(); }
 
         r.min++; //ERR ++ overload
         return r.max - r.min;
-    
+
 -----
 
 struct s_Range;
@@ -629,7 +629,7 @@ int main() { return fu_MAIN(); }
             r_max - r_min;
 
         return size(Range(14, 21)) - 7;
-    
+
 -----
 
 struct s_Range;
@@ -677,7 +677,7 @@ int main() { return fu_MAIN(); }
         fn hey(using x: X) test(-1);
 
         return X(1).hey;
-    
+
 -----
 
 struct s_X;
@@ -735,7 +735,7 @@ int main() { return fu_MAIN(); }
         let b = Player(Pos( 4));
 
         return dist(a, b) - 6;
-    
+
 -----
 
 struct s_Player;
@@ -800,7 +800,7 @@ int main() { return fu_MAIN(); }
             //*/
 
         fn main() test(A(1, 1), B(-1, -1));
-    
+
 -----
 
 struct s_A;
@@ -868,7 +868,7 @@ int main() { return fu_MAIN(); }
 
         fn test(f: CurrentFn) f.parent_idx - f.ret_count;
         fn main() test(CurrentFn(1, CurrentFn_ResetOnResolve(1)));
-    
+
 -----
 
 struct s_CurrentFn;
@@ -925,7 +925,7 @@ int main() { return fu_MAIN(); }
 
         let x = 3;
         return x / 2 - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -945,7 +945,7 @@ int main() { return fu_MAIN(); }
 
         fn hey(a) a * a;
         fn main() 0.hey;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -969,7 +969,7 @@ int main() { return fu_MAIN(); }
 
         fn div3by(a: $T) 3 / a;
         return div3by(2) - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -993,7 +993,7 @@ int main() { return fu_MAIN(); }
 
         fn div3by(a) 3 / a;
         return div3by(2) - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1019,7 +1019,7 @@ int main() { return fu_MAIN(); }
         struct v1 { x: i32; };
         fn +(a: v1, b: i32) v1(a.x + b);
         fn main() add3(2.v1).x - 5;
-    
+
 -----
 
 struct s_v1;
@@ -1064,7 +1064,7 @@ int main() { return fu_MAIN(); }
 
         fn mul_ab_init(a: $T, b = 0) a*b;
         fn main() mul_ab_init(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1088,7 +1088,7 @@ int main() { return fu_MAIN(); }
 
         fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;
         fn main() mul_ab_annot_init(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1112,7 +1112,7 @@ int main() { return fu_MAIN(); }
 
         fn mul_ab_opt(a: $T, b?: $T) a*b;
         fn main() mul_ab_opt(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1136,7 +1136,7 @@ int main() { return fu_MAIN(); }
 
         fn ab(a, b) a + b*2;
         fn main() ab(b: 1, a: -2);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1161,7 +1161,7 @@ int main() { return fu_MAIN(); }
         struct yi32 { y: i32; };
         fn add_s_vy(v, s) s + v.y;
         fn main() add_s_vy(v: yi32(1), -1);
-    
+
 -----
 
 struct s_yi32;
@@ -1202,7 +1202,7 @@ int main() { return fu_MAIN(); }
         struct xi32 { x: i32; };
         fn add_s_vx(s, v) s + v.x; // <- args reordered
         fn main() add_s_vx(v: xi32(1), -1);
-    
+
 -----
 
 struct s_xi32;
@@ -1242,7 +1242,7 @@ int main() { return fu_MAIN(); }
 
         fn ab(a, b = 0, c = 0) a + b*2 + c*3;
         fn main() ab(3, c: -1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1266,7 +1266,7 @@ int main() { return fu_MAIN(); }
 
         fn ab(a, b = -1) a + b*2;
         fn main() ab(3.0, -1.5).i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1291,7 +1291,7 @@ int main() { return fu_MAIN(); }
         let NEG_ONE_FIVE = -1.5;
         fn ab(a: $T, b: $T = -1) a + b*2;
         fn main() ab(3, NEG_ONE_FIVE).i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1318,7 +1318,7 @@ int main() { return fu_MAIN(); }
         let TWO = 2.0;
         fn ab(a: $T, b: $T = -1) a + b*2;
         fn main() ab(TWO).i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1348,7 +1348,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             self_rec_template(7) + 2;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1374,7 +1374,7 @@ int main() { return fu_MAIN(); }
         fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;
         fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;
         fn main() ab_rec(11) + 200;
-    
+
 -----
 
 inline static int ab_rec_U3Pf(int);
@@ -1408,7 +1408,7 @@ int main() { return fu_MAIN(); }
             fn add1(b) a + b;
             return 2.add1 - 3;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1456,7 +1456,7 @@ int main() { return fu_MAIN(); }
         }
 
         pub fn main() test(ModuleOutputs);
-    
+
 -----
 #include <fu/vec.h>
 
@@ -1514,7 +1514,7 @@ inline int clone_U3Pf(const int a)
 inline s_Scope clone_DXfV(const s_Scope& a)
 {
     s_Scope res {};
-    
+
     {
         res.x = clone_U3Pf(a.x);
     };
@@ -1548,7 +1548,7 @@ inline fu_VEC<s_Scope> clone_gQjd(const fu_VEC<s_Scope>& a)
 inline s_ModuleOutputs clone_Z4mx(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs res {};
-    
+
     {
         res.deps = clone_gQjd(a.deps);
     };
@@ -1578,7 +1578,7 @@ int main() { return fu_MAIN(); }
         inline fn add_uxa_b_inline(using x: X, b: i32) a + b;
         fn hey(using x: X) add_uxa_b_inline(-1);
         return X(1).hey;
-    
+
 -----
 
 struct s_X;
@@ -1625,7 +1625,7 @@ int main() { return fu_MAIN(); }
         fn add_uxa_b_template(using x: X, b /* untyped */) a + b;
         fn hey(using x: X) add_uxa_b_template(-1);
         return X(1).hey;
-    
+
 -----
 
 struct s_X;
@@ -1669,16 +1669,16 @@ int main() { return fu_MAIN(); }
 -----
 
         pub fn identity(dont_leak_me) dont_leak_me;
-    
+
 -----
 
 -----
 
         pub fn identity(dont_leak_me) dont_leak_me;
-    
+
         let dont_leak_me = 1;
         fn main() _0::identity(dont_leak_me * 2) - 2;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1710,7 +1710,7 @@ int main() { return fu_MAIN(); }
         let arg = 7;                        // <- template shouldn't see this
         let result = template(arg / -4);    // <- when specializing here
         fn main() result;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1744,7 +1744,7 @@ int main() { return fu_MAIN(); }
             let arg = 7; // same here, except we're in a fn.
             return template(arg / -4);
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -1776,7 +1776,7 @@ int main() { return fu_MAIN(); }
             2 * inner(i);
 
         return outer(1);
-    
+
 -----
 
 static int outer(int);
@@ -1821,7 +1821,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(1) - 17;
-    
+
 -----
 
 static int outer(int, int, int, int);
@@ -1867,7 +1867,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer(1) - 7;
-    
+
 -----
 
 static int outer(int, int);
@@ -1907,7 +1907,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer_noret(1) - 7;
-    
+
 -----
 
 static int outer_noret(int, int);
@@ -1947,7 +1947,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer_inl(1) - 7;
-    
+
 -----
 
 inline static int outer_inl_8E8n(int, int);
@@ -1987,7 +1987,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer_templ(1) - 7;
-    
+
 -----
 
 inline static int outer_templ_8E8n(int, int);
@@ -2027,7 +2027,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer_templ_noret(1) - 7;
-    
+
 -----
 
 inline static int outer_templ_noret_8E8n(int, int);
@@ -2067,7 +2067,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 3;
         return outer(6);
-    
+
 -----
 
 static int outer(int, int);
@@ -2107,7 +2107,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 3;
         return outer_inl(6);
-    
+
 -----
 
 inline static int outer_inl_U3Pf(int, int);
@@ -2147,7 +2147,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 3;
         return outer_templ(6);
-    
+
 -----
 
 inline static int outer_templ_U3Pf(int, int);
@@ -2187,7 +2187,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return outer(1) - 7;
-    
+
 -----
 
 static int outer(int, int);
@@ -2233,7 +2233,7 @@ int main() { return fu_MAIN(); }
             let implicit x = 7;
             return outer(1) - 7;
         }
-    
+
 -----
 
 static int outer(int, int);
@@ -2282,7 +2282,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return calls_self_1(true) - 14;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2319,7 +2319,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return calls_self_2(true) - 21;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2362,7 +2362,7 @@ int main() { return fu_MAIN(); }
 
         let implicit x = 7;
         return calls_self_3(true) - 29;
-    
+
 -----
 
 static int calls_self_3(bool, int);
@@ -2408,7 +2408,7 @@ int main() { return fu_MAIN(); }
             let implicit x = 7;
             return templ_calls_self_2(true) - 21;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2450,7 +2450,7 @@ int main() { return fu_MAIN(); }
         let implicit r = Range(14, 21);
 
         return test  - 7;
-    
+
 -----
 
 struct s_Range;
@@ -2513,7 +2513,7 @@ int main() { return fu_MAIN(); }
         let implicit r = Range(14, 21);
 
         return outer() - 7;
-    
+
 -----
 
 struct s_Range;
@@ -2583,7 +2583,7 @@ int main() { return fu_MAIN(); }
 
             return depth1(0) - 6;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2621,7 +2621,7 @@ int main() { return fu_MAIN(); }
         //! FN_recursion
         fn goto0(x): i32 = x ? goto0(x / 2) : 0;
         fn main() goto0(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2646,7 +2646,7 @@ int main() { return fu_MAIN(); }
         //! FN_recursion FN_resolve
         fn goto0(x) x ? goto0(x / 2) : 0;
         fn main() goto0(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2671,7 +2671,7 @@ int main() { return fu_MAIN(); }
         //! FN_recursion FN_resolve
         fn goto0(x) x && goto0(x / 2);
         fn main() goto0(1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2701,7 +2701,7 @@ int main() { return fu_MAIN(); }
             ref ref = arg_or_impl(arg);
             return arg - ref;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2737,7 +2737,7 @@ int main() { return fu_MAIN(); }
             x;
 
         return test - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2764,7 +2764,7 @@ int main() { return fu_MAIN(); }
         let x: &i32 = a;
 
         return a - x;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2791,7 +2791,7 @@ int main() { return fu_MAIN(); }
         let test = Test(a);
 
         return test.x - 1;
-    
+
 -----
 
 struct s_Test;
@@ -2832,7 +2832,7 @@ int main() { return fu_MAIN(); }
         let c = a = b;
 
         return a - c;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -2865,7 +2865,7 @@ int main() { return fu_MAIN(); }
         }
 
         return test(arr);
-    
+
 -----
 #include <fu/vec.h>
 
@@ -2906,7 +2906,7 @@ int main() { return fu_MAIN(); }
         }
 
         return test(arr);
-    
+
 -----
 #include <fu/vec.h>
 
@@ -2939,7 +2939,7 @@ int main() { return fu_MAIN(); }
         mut arr = [ -5 ];
         arr.push(x);
         return arr[0] + arr[1];
-    
+
 -----
 #include <fu/vec.h>
 
@@ -2992,7 +2992,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.push(5);
@@ -3001,7 +3001,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.push(5);
@@ -3009,7 +3009,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3062,7 +3062,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.insert(5, 5);
@@ -3071,7 +3071,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.insert(5, 5);
@@ -3079,7 +3079,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3132,7 +3132,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.pop();
@@ -3141,7 +3141,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.pop();
@@ -3149,7 +3149,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3202,7 +3202,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.splice(4, 1);
@@ -3211,7 +3211,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.splice(4, 1);
@@ -3219,7 +3219,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3272,7 +3272,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.unshift(5);
@@ -3281,7 +3281,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.unshift(5);
@@ -3289,7 +3289,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3342,7 +3342,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.insert(0, 5);
@@ -3351,7 +3351,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.insert(0, 5);
@@ -3359,7 +3359,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3412,7 +3412,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.shift();
@@ -3421,7 +3421,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.shift();
@@ -3429,7 +3429,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3482,7 +3482,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
         arr0.insert(1, 5);
@@ -3491,7 +3491,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 4 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.insert(1, 5);
@@ -3499,7 +3499,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3552,7 +3552,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    
+
     {
         fu_VEC<int> arr0 = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 100 } };
         arr0.splice(1, 3);
@@ -3561,7 +3561,7 @@ int fu_MAIN()
 
     };
     fu_VEC<int> orig = fu_VEC<int> { fu_VEC<int>::INIT<5> { 0, 1, 2, 3, 100 } };
-    
+
     {
         fu_VEC<int> arr1 = fu_VEC<int>(orig);
         arr1.splice(1, 3);
@@ -3569,7 +3569,7 @@ int fu_MAIN()
             return 17;
 
     };
-    
+
     {
         fu_VEC<int> arr2 = std::move(orig);
         if (orig.size())
@@ -3594,7 +3594,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             OPERATORS[2] == "*" ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -3623,7 +3623,7 @@ int main() { return fu_MAIN(); }
         x.push( X([ Y(true) ]) );
 
         return x.len + x[0].y.len * 2 - 3;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -3676,7 +3676,7 @@ int main() { return fu_MAIN(); }
 
         struct SelfRec { x: SelfRec[]; }; //! TYPE_recursion TYPE_resolve
         fn main() SelfRec( [ SelfRec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
-    
+
 -----
 #include <fu/vec.h>
 
@@ -3717,7 +3717,7 @@ int main() { return fu_MAIN(); }
         struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_reopen
         struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_reopen
         fn main() ABRec( [ BARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
-    
+
 -----
 #include <fu/vec.h>
 
@@ -3778,7 +3778,7 @@ int main() { return fu_MAIN(); }
         struct BARec { x: ABRec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_reopen
         struct ABBARec { x: ABRec[]; y: BARec[]; }; //! TYPE_recursion TYPE_reopen
         fn main() ABRec( [ BARec() ], [ ABBARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
-    
+
 -----
 #include <fu/vec.h>
 
@@ -3863,7 +3863,7 @@ int main() { return fu_MAIN(); }
         mut a = [7, 1, 5, 3, 99, -13]; // [-13, 1, 3, 5, 7, 99]
         a.sort();
         return a[0] + a[1] + a[3] + a[4];
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/sort.h>
@@ -3887,7 +3887,7 @@ int main() { return fu_MAIN(); }
         let a = [0, 1, 2, 3];
         let b = a.slice(1, 3);
         return b.len - b[1];
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/slice.h>
@@ -3911,7 +3911,7 @@ int main() { return fu_MAIN(); }
         let a = [0, 1, 2, 3];
         let b = a.slice(1);
         return b.len - b[2];
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/slice.h>
@@ -3936,7 +3936,7 @@ int main() { return fu_MAIN(); }
         str ~= "world";
 
         return str.len - 11;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/concat.h>
@@ -3962,7 +3962,7 @@ int main() { return fu_MAIN(); }
         return str.starts(with: "hel")
              ? str.len - 11
              : 171;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/concat.h>
@@ -3987,7 +3987,7 @@ int main() { return fu_MAIN(); }
 
         return str == "a1710010"
              ? 0 : 101;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -4014,7 +4014,7 @@ int main() { return fu_MAIN(); }
             cpy ~= str[i];
 
         return (cpy.len - 11) + (cpy == str ? 0 : 1);
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -4041,7 +4041,7 @@ int main() { return fu_MAIN(); }
 
         return "hello world".find("world")
              - 2 * [1, 7, 13, 14, 19].find(14);
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -4064,7 +4064,7 @@ int main() { return fu_MAIN(); }
         return ("hello world".has("world") ? 1 : 0)
              + ([1, 14, 96, 2].has(14)     ? 2 : 0)
              - 3;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -4088,7 +4088,7 @@ int main() { return fu_MAIN(); }
         let a = hw.slice(6, 6 + 5);
         let b = hw.substr(6, 5);
         return a == b && a == "world" ? a.len - 5 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -4134,7 +4134,7 @@ int main() { return fu_MAIN(); }
             sum += test(tests[i]);
 
         return sum;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -4178,7 +4178,7 @@ int main() { return fu_MAIN(); }
 
             return 0;
         }
-    
+
 -----
 
 -----
@@ -4188,7 +4188,7 @@ int main() { return fu_MAIN(); }
         fn main()
             strA.slice(26, 32) == "ABCDEF"
                 ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -4216,7 +4216,7 @@ int main() { return fu_MAIN(); }
         x["world"] = 2;
 
         return x["hello"] - x["world"] + 1;
-    
+
 -----
 #include <fu/map.h>
 #include <fu/str.h>
@@ -4261,7 +4261,7 @@ int main() { return fu_MAIN(); }
         }
 
         return x[pop()] - x[pop()] + 1;
-    
+
 -----
 #include <cstdint>
 #include <fu/map.h>
@@ -4304,7 +4304,7 @@ int main() { return fu_MAIN(); }
 
         fn test(a = 1, b = 2) a + b;
         return test() - 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4328,7 +4328,7 @@ int main() { return fu_MAIN(); }
 
         fn test(a = 1, b = 2) a + b;
         return test(b: -1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4352,7 +4352,7 @@ int main() { return fu_MAIN(); }
 
         fn test(a = 1, b = 2) a + b;
         return test(-2);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4377,7 +4377,7 @@ int main() { return fu_MAIN(); }
         struct Test { a?: i32; b?: i32; }
         let t = Test(1);
         return t.a - 1 + t.b * 7;
-    
+
 -----
 
 struct s_Test;
@@ -4416,7 +4416,7 @@ int main() { return fu_MAIN(); }
         struct Test { a?: i32; b?: i32; }
         let t = Test(1);
         return t.b;
-    
+
 -----
 
 struct s_Test;
@@ -4455,7 +4455,7 @@ int main() { return fu_MAIN(); }
         struct Test { a?: i32; b?: i32; }
         let t = Test(a: 1);
         return t.a - 1 + t.b * 7;
-    
+
 -----
 
 struct s_Test;
@@ -4494,7 +4494,7 @@ int main() { return fu_MAIN(); }
         struct Test { a?: i32; b?: i32; }
         let t = Test(b: 1);
         return t.b - 1 + t.a * 7;
-    
+
 -----
 
 struct s_Test;
@@ -4533,7 +4533,7 @@ int main() { return fu_MAIN(); }
         struct Test { x?: i32; };
         fn hey() Test();
         return hey.x;
-    
+
 -----
 
 struct s_Test;
@@ -4577,7 +4577,7 @@ int main() { return fu_MAIN(); }
                 : Test();
 
         return hey.x;
-    
+
 -----
 
 struct s_Test;
@@ -4617,7 +4617,7 @@ int main() { return fu_MAIN(); }
 
         let s = 7;
         return s ? 0 : 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4637,7 +4637,7 @@ int main() { return fu_MAIN(); }
 
         let s = 0;
         return s ? 1 : 0;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4657,7 +4657,7 @@ int main() { return fu_MAIN(); }
 
         let s = "hello";
         return s ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 
@@ -4678,7 +4678,7 @@ int main() { return fu_MAIN(); }
 
         let s = "";
         return s ? 1 : 0;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/str.h>
@@ -4700,7 +4700,7 @@ int main() { return fu_MAIN(); }
 
         let s = [ 4 ];
         return s ? 0 : 1;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -4722,7 +4722,7 @@ int main() { return fu_MAIN(); }
         mut s = [ 4 ];
         s.pop();
         return s ? 1 : 0;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -4745,7 +4745,7 @@ int main() { return fu_MAIN(); }
         struct S { x: i32; }
         let s: S = S(1);
         return s ? 0 : 1;
-    
+
 -----
 
 struct s_S;
@@ -4782,7 +4782,7 @@ int main() { return fu_MAIN(); }
         struct S { x: i32; }
         let s: S;
         return s ? 1 : 0;
-    
+
 -----
 
 struct s_S;
@@ -4830,7 +4830,7 @@ int main() { return fu_MAIN(); }
         }
 
         return sum - 34;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -4853,7 +4853,7 @@ int fu_MAIN()
                 goto L_outer_b;
             };
         };
-    
+
         }L_outer_c:;}
         L_outer_b:;
 
@@ -4877,7 +4877,7 @@ int main() { return fu_MAIN(); }
         //*/
 
         return t.x - 1;
-    
+
 -----
 
 struct s_Test;
@@ -4922,7 +4922,7 @@ int main() { return fu_MAIN(); }
         let w = x || y;
 
         return w == "hello" ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -4949,7 +4949,7 @@ int main() { return fu_MAIN(); }
         let w = x && y;
 
         return w == "world" ? 0 : 1;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/str.h>
@@ -4977,7 +4977,7 @@ int main() { return fu_MAIN(); }
         let w = 3 && x || y;
 
         return w == "hello" ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -5005,7 +5005,7 @@ int main() { return fu_MAIN(); }
         let w = arr && x || y;
 
         return w == "world" ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -5035,7 +5035,7 @@ int main() { return fu_MAIN(); }
         let w = arr && x || y || throw("Nope.");
 
         return w == "world" ? 0 : 1;
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -5063,7 +5063,7 @@ int main() { return fu_MAIN(); }
         mut i = 7;
         i ||= 11;
         return i - 7;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5085,7 +5085,7 @@ int main() { return fu_MAIN(); }
         mut i = 0;
         i ||= 11;
         return i - 11;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5115,7 +5115,7 @@ int main() { return fu_MAIN(); }
 
         m["hello"] ||= f();
         return g;
-    
+
 -----
 #include <fu/map.h>
 #include <fu/str.h>
@@ -5155,7 +5155,7 @@ int main() { return fu_MAIN(); }
 
         m["hello"] ||= f();
         return g - 1;
-    
+
 -----
 #include <fu/map.h>
 #include <fu/str.h>
@@ -5189,16 +5189,16 @@ int main() { return fu_MAIN(); }
                 return 0;
             }
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    
+
     {
-        
+
         {
             return 0;
         };
@@ -5223,16 +5223,16 @@ int main() { return fu_MAIN(); }
             }
         }
         //*/
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    
+
     {
-        
+
         {
             return 0;
         };
@@ -5249,14 +5249,14 @@ int main() { return fu_MAIN(); }
         {
             return 0;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    
+
     {
         return 0;
     };
@@ -5276,14 +5276,14 @@ int main() { return fu_MAIN(); }
         /*/
         }
         //*/
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    
+
     {
         return 0;
     };
@@ -5303,14 +5303,14 @@ int main() { return fu_MAIN(); }
         /*/
         }
         //*/
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    
+
     {
         return 0;
     };
@@ -5345,7 +5345,7 @@ int main() { return fu_MAIN(); }
 
     fn main() P_COMMA - 7;
 
-    
+
 -----
 #include <fu/map.h>
 #include <fu/never.h>
@@ -5412,7 +5412,7 @@ int main() { return fu_MAIN(); }
 
         return 1;
 
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
@@ -5464,7 +5464,7 @@ int main() { return fu_MAIN(); }
         }
 
         return createDefaultInit(Type()).target.i;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -5603,7 +5603,7 @@ int main() { return fu_MAIN(); }
             "", id, t_template,
             min, max, arg_n,
             :template);
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -5714,7 +5714,7 @@ int main() { return fu_MAIN(); }
         let items = [ "" ];
         i == items.len - 1 || throw("what?");
         return i;
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -5742,7 +5742,7 @@ int main() { return fu_MAIN(); }
              ? 0xffffff.i32 // what is this
              : 0 // madness
              ;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5761,7 +5761,7 @@ int main() { return fu_MAIN(); }
 
         fn test(id: i32) id;
         return test(/*id*/0); // <- bad parse
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5784,7 +5784,7 @@ int main() { return fu_MAIN(); }
 -----
 
         return 0b101.i32 - 5;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5802,7 +5802,7 @@ int main() { return fu_MAIN(); }
 -----
 
         return 0o101.i32 - 65;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -5843,7 +5843,7 @@ int main() { return fu_MAIN(); }
         fn main()
             path_join("hello/hey", "./../you//") == "hello/you/"
                 ? 0 : 1;
-    
+
 -----
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -5899,7 +5899,7 @@ int main() { return fu_MAIN(); }
             let b = Template(ScopeMemo(-3));
             return a.locals + b.locals; // <- fails to match.
         }
-    
+
 -----
 
 struct s_ScopeMemo;
@@ -6025,7 +6025,7 @@ int main() { return fu_MAIN(); }
 
             return mb.num_verts - 4;
         }
-    
+
 -----
 #include <cstdint>
 #include <fu/str.h>
@@ -6124,7 +6124,7 @@ int main() { return fu_MAIN(); }
 
             return __solveStruct(1) - 4;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -6175,7 +6175,7 @@ int main() { return fu_MAIN(); }
             fn GET_mut(ref x: i32) x || GET_mut(target += 1);
             return GET_mut(target) - 1;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -6205,7 +6205,7 @@ int main() { return fu_MAIN(); }
             fn GET_mut(ref x: i32) x || GET_mut(++target);
             return GET_mut(target) - 1;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -6240,7 +6240,7 @@ int main() { return fu_MAIN(); }
             fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));
             return __solveStruct(0) - 2;
         }
-    
+
 -----
 
 static int __solveStruct(int&, int);
@@ -6278,7 +6278,7 @@ int main() { return fu_MAIN(); }
                               a = A(incr(a))    /*/         // Lint should complain here,
                              (a = A(incr(a))); //*/         //  this was an honest mistake.
         fn main() { mut v = 0; return A(v) - 1; }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -6311,7 +6311,7 @@ int main() { return fu_MAIN(); }
         fn A(ref a: i32) a || (a = B(incr(a)));
         fn B(ref b: i32) b || (b = A(incr(b)));
         fn main() { mut v = 0; return A(v) - 1; }
-    
+
 -----
 
 static int& A(int&);
@@ -6351,7 +6351,7 @@ int main() { return fu_MAIN(); }
         fn A(ref a: i32) { ref aa = a || (a = B(incr(a))); return aa; }
         fn B(ref b: i32) { ref bb = b || (b = A(incr(b))); return bb; }
         fn main() { mut v = 0; return A(v) - 1; }
-    
+
 -----
 
 static int& A(int&);
@@ -6411,7 +6411,7 @@ int main() { return fu_MAIN(); }
 
             return __solveStruct(1) - 4;
         }
-    
+
 -----
 
 static int __solveStruct(int&, int, int);
@@ -6485,7 +6485,7 @@ int main() { return fu_MAIN(); }
 
             return __solveStruct(1) - 4;
         }
-    
+
 -----
 
 static int __solveStruct(int&, int);
@@ -6553,7 +6553,7 @@ int main() { return fu_MAIN(); }
 
             return setSpec("hey").len - 2;
         }
-    
+
 -----
 #include <fu/map.h>
 #include <fu/str.h>
@@ -6652,7 +6652,7 @@ int main() { return fu_MAIN(); }
         }
 
         pub fn main() test();
-    
+
 -----
 #include <fu/vec.h>
 
@@ -6753,7 +6753,7 @@ int main() { return fu_MAIN(); }
             let precedence = BINOP.PRECEDENCE["|>"];
             return precedence;
         }
-    
+
 -----
 #include <fu/map.h>
 #include <fu/str.h>
@@ -6822,7 +6822,7 @@ int main() { return fu_MAIN(); }
                 a.each(|i| sum += i, start: sum);   // <- start inferred to ref i32, which couldnt definit
             return sum - 6;                         //     perhaps we can use the optionality to infer constness
         }
-    
+
 -----
 #include <fu/vec.h>
 
@@ -6865,7 +6865,7 @@ int main() { return fu_MAIN(); }
             ScopeSkip_push(scope_skip);
             return scope_skip[0] - 2;
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/concat_one.h>
@@ -6898,7 +6898,7 @@ int main() { return fu_MAIN(); }
         let a = 7;
         let b = a && 3;
         return b - 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -6925,7 +6925,7 @@ int main() { return fu_MAIN(); }
         return a.i
             || (b || S(4)).i * 2 - (a || S(6)).i
             && throw("woot");
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -6976,7 +6976,7 @@ int main() { return fu_MAIN(); }
 
         return specialized.value == "value" ? 0 : 1;
 
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -7032,7 +7032,7 @@ int main() { return fu_MAIN(); }
             let v = a && consume().value;
             return v.len - a;
         };
-    
+
 -----
 #include <fu/str.h>
 
@@ -7088,7 +7088,7 @@ int main() { return fu_MAIN(); }
         }
 
         return hey(0);
-    
+
 -----
 
 struct s_ScopeIdx;
@@ -7146,7 +7146,7 @@ int main() { return fu_MAIN(); }
             b.ARR_LAST += a.ARR_LAST;
             return b.ARR_LAST - 3;
         };
-    
+
 -----
 #include <fu/vec.h>
 
@@ -7186,7 +7186,7 @@ int main() { return fu_MAIN(); }
 
         b.ARR_LAST += a.ARR_LAST;
         return b.ARR_LAST - 3;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -7220,7 +7220,7 @@ int main() { return fu_MAIN(); }
         struct S { i: i32; }
         fn test(mut x: S) x.i += 1;
         return S(-1).test;
-    
+
 -----
 
 struct s_S;
@@ -7266,7 +7266,7 @@ int main() { return fu_MAIN(); }
 
         b.ARR_LAST += a.ARR_LAST;
         return b.ARR_LAST - [3].ARR_LAST;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -7311,7 +7311,7 @@ int main() { return fu_MAIN(); }
             test(ret);
             return ret.u_mat4_VP.i - 1;
         }
-    
+
 -----
 
 struct s_RenderFrame;
@@ -7386,7 +7386,7 @@ int main() { return fu_MAIN(); }
             ScopeSkip(start: -1, end: +1)
             //*/
                 .end - 1;
-    
+
 -----
 
 struct s_ScopeSkip;
@@ -7485,7 +7485,7 @@ int main() { return fu_MAIN(); }
 
         fn main() i32 <|
             mat34_identity.inverse.determinant - 1;
-    
+
 -----
 
 struct s_mat34;
@@ -7592,7 +7592,7 @@ int main() { return fu_MAIN(); }
             tea.r4();
             return (tea.v0 ^ tea.v0).i32;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -7684,7 +7684,7 @@ int main() { return fu_MAIN(); }
             return myVisitor.sum - 15;
         };
 
-    
+
 -----
 #include <fu/vec.h>
 
@@ -7765,7 +7765,7 @@ int main() { return fu_MAIN(); }
 -----
 
         return 0 > 1 ? throw("should type check") : 0;
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -7796,7 +7796,7 @@ int main() { return fu_MAIN(); }
 
             return x || 7;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -7818,7 +7818,7 @@ int fu_MAIN()
     catch (const std::exception& o_0)
     {
         const fu_STR& err = fu_TO_STR(o_0.what());
-    
+
         return (err.size() - 3);
     }
 ;
@@ -7847,7 +7847,7 @@ int main() { return fu_MAIN(); }
 
             return 11;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -7861,16 +7861,15 @@ static int throw_hey()
 
 int fu_MAIN()
 {
-    
+
     try
     {
-    
         return throw_hey();
     }
     catch (const std::exception& o_0)
     {
         const fu_STR& e = fu_TO_STR(o_0.what());
-    
+
         return (e.size() - 3);
     }
 ;
@@ -7902,7 +7901,7 @@ int main() { return fu_MAIN(); }
             // Router.
             return next().len - 5;
         }
-    
+
 -----
 #include <fu/default.h>
 #include <fu/str.h>
@@ -7944,7 +7943,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             test() - 5;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -7976,7 +7975,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             test().i - 5;
-    
+
 -----
 
 struct s_Test;
@@ -8024,7 +8023,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             test().a + test().b;
-    
+
 -----
 
 struct s_Test;
@@ -8072,7 +8071,7 @@ int main() { return fu_MAIN(); }
             let NOTREF = ref2arg(X(101));
             return NOTREF.x - 101;
         }
-    
+
 -----
 
 struct s_X;
@@ -8123,7 +8122,7 @@ int main() { return fu_MAIN(); }
             b.x++;
             return b.x - a.x * 2;
         }
-    
+
 -----
 
 struct s_Copied;
@@ -8167,7 +8166,7 @@ int main() { return fu_MAIN(); }
             let ref2a = ref2arg(a);
             return mem::ptr_eq(a, ref2a) ? 0 : 1;
         }
-    
+
 -----
 
 -----
@@ -8180,7 +8179,7 @@ int main() { return fu_MAIN(); }
             nc.retmutref.retmutref.i++;
             return nc.i - 1;
         }
-    
+
 -----
 
 struct s_NoCopy;
@@ -8235,7 +8234,7 @@ int main() { return fu_MAIN(); }
             nc.mutrefself().mutrefself();
             return nc.i - 2;
         }
-    
+
 -----
 
 struct s_NoCopy;
@@ -8292,7 +8291,7 @@ int main() { return fu_MAIN(); }
             let b: NoCopy;
             return retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i;
         }
-    
+
 -----
 #include <fu/default.h>
 
@@ -8366,7 +8365,7 @@ int main() { return fu_MAIN(); }
 
             return retarg(retargs_if(a, retargs_and(a, retargs_or(a, NoCopy)))).i;
         }
-    
+
 -----
 #include <fu/default.h>
 
@@ -8440,7 +8439,7 @@ int main() { return fu_MAIN(); }
             retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;
             return a.i + b.i - 1;
         }
-    
+
 -----
 
 struct s_NoCopy;
@@ -8511,7 +8510,7 @@ int main() { return fu_MAIN(); }
             let s = Test([ 1, 2 ]);
             return test(s).i[0] - s.i[0] * 3;
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <utility>
@@ -8564,7 +8563,7 @@ int main() { return fu_MAIN(); }
             let s = Test([ 1, 2 ]);
             return test(s).i[0] - s.i[0] * 3;
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <utility>
@@ -8616,7 +8615,7 @@ int main() { return fu_MAIN(); }
             incr_x_to_1(x);
             return x - 1;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -8660,7 +8659,7 @@ int main() { return fu_MAIN(); }
             incr_x_to_1();
             return x - 1;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -8710,7 +8709,7 @@ int main() { return fu_MAIN(); }
             scope_using(x);
             return x - 1;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -8754,7 +8753,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             i32(PI * 2.0) - 6;
-    
+
 -----
 #include <math.h>
 
@@ -8774,7 +8773,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             i32(PI * 2 - 6);
-    
+
 -----
 #include <math.h>
 
@@ -8794,7 +8793,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             PI * 2 - 6 |> i32;
-    
+
 -----
 #include <math.h>
 
@@ -8814,7 +8813,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             i32 <| PI * 2 - 6;
-    
+
 -----
 #include <math.h>
 
@@ -8833,7 +8832,7 @@ int main() { return fu_MAIN(); }
 -----
 
         let x: f32 = 1; fn main() 1 - x.i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -8853,7 +8852,7 @@ int main() { return fu_MAIN(); }
 -----
 
         let x: f32 = 1.0; fn main() 1 - x.i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -8873,7 +8872,7 @@ int main() { return fu_MAIN(); }
 -----
 
         let x: u8 = 1; fn main() 1 - x.i32;
-    
+
 -----
 #include <cstdint>
 
@@ -8894,7 +8893,7 @@ int main() { return fu_MAIN(); }
 -----
 
         let x = 1.f32; fn main() 1 - x.i32;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -8915,7 +8914,7 @@ int main() { return fu_MAIN(); }
 
         fn gt0(x: f32) x > 0;
         fn main() gt0(1.f32) ? 0 : 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -8940,7 +8939,7 @@ int main() { return fu_MAIN(); }
         struct Hey { x: f32; };
         fn hey() Hey(1);
         fn main() hey.x.i32 - 1;
-    
+
 -----
 
 struct s_Hey;
@@ -8984,7 +8983,7 @@ int main() { return fu_MAIN(); }
             let v = test(1);
             return (v.x + v.z).i32;
         }
-    
+
 -----
 
 struct s_vec3;
@@ -9033,7 +9032,7 @@ int main() { return fu_MAIN(); }
             let v = test(-1);
             return (v.x - v.z).i32;
         }
-    
+
 -----
 
 struct s_vec3;
@@ -9078,7 +9077,7 @@ int main() { return fu_MAIN(); }
 
         fn hey(i: f32) i.f32 + 0.5;
         fn main() hey(1).i32 - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -9110,7 +9109,7 @@ int main() { return fu_MAIN(); }
 
         fn main() i32 <|
             lin255(1) - 255;
-    
+
 -----
 #include <algorithm>
 #include <cmath>
@@ -9147,7 +9146,7 @@ int main() { return fu_MAIN(); }
 
         fn main() i32 <|
             (1/vec3(x: 1)).x - 1;
-    
+
 -----
 
 struct s_vec3;
@@ -9201,7 +9200,7 @@ int main() { return fu_MAIN(); }
         ];
 
         fn main() QUAD_DATA.len - 6 * 9;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -9224,7 +9223,7 @@ int main() { return fu_MAIN(); }
         fn test(a: bool): u8 = a ? 1 : 0;
 
         fn main() test(false).i32;
-    
+
 -----
 #include <cstdint>
 
@@ -9250,7 +9249,7 @@ int main() { return fu_MAIN(); }
         fn test(a: bool): u8 = a && 1;
 
         fn main() test(false).i32;
-    
+
 -----
 #include <cstdint>
 
@@ -9284,7 +9283,7 @@ int main() { return fu_MAIN(); }
             | (srgb && 0x80.u8);
 
         fn main() ATTRIB(A_u8, 4).i32 - 16;
-    
+
 -----
 #include <cstdint>
 
@@ -9352,7 +9351,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() 0;
-    
+
 -----
 
 struct s_Geometry;
@@ -9478,7 +9477,7 @@ int main() { return fu_MAIN(); }
 
         fn leadingDigit(name: string) name[0].u8 - '0'.u8 < 10;
         fn main() "hello".leadingDigit.i32;
-    
+
 -----
 #include <cstdint>
 #include <fu/str.h>
@@ -9505,7 +9504,7 @@ int main() { return fu_MAIN(); }
         type Test = i32[];
         fn yo(t: Test) t[0] + t[1];
         fn main() yo([-1, +1]);
-    
+
 -----
 #include <fu/vec.h>
 
@@ -9531,7 +9530,7 @@ int main() { return fu_MAIN(); }
         fn if_first(a: $T[]) a && a[0];
         fn hello(a: i32[]) a.if_first;
         fn main() hello([ 3 ]) - 3;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/vec.h>
@@ -9564,7 +9563,7 @@ int main() { return fu_MAIN(); }
         type X = i32[];
         fn hello(a: X) a.if_first;
         fn main() hello([ 3 ]) - 3;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/vec.h>
@@ -9601,7 +9600,7 @@ int main() { return fu_MAIN(); }
 
         fn hello() list.if_first.if_first;
         fn main() hello - 3;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/vec.h>
@@ -9649,7 +9648,7 @@ int main() { return fu_MAIN(); }
 
         fn hello() list.if_first.if_first;
         fn main() hello - 3;
-    
+
 -----
 #include <fu/default.h>
 #include <fu/vec.h>
@@ -9691,7 +9690,7 @@ int main() { return fu_MAIN(); }
         let arr = [1, 2];
         fn eq(a: i32[], b: i32[]) a == b;
         fn main() eq(arr, arr) ? 0 : 1;
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
@@ -9720,7 +9719,7 @@ int main() { return fu_MAIN(); }
         let arr = [1, 2];
         fn eq(a: $T[], b: $T[]) a == b;
         fn main() eq(arr, arr) ? 0 : 1;
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
@@ -9751,7 +9750,7 @@ int main() { return fu_MAIN(); }
 
         fn main()
             test([-1, +1]);
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9782,7 +9781,7 @@ int main() { return fu_MAIN(); }
             mut hey = [-1, +1];
             return hey.test();
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9809,7 +9808,7 @@ int main() { return fu_MAIN(); }
 
         fn test(i: i32) [ i, i + 1 ];
         fn main() test(0)[1] - 1;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -9839,7 +9838,7 @@ int main() { return fu_MAIN(); }
             mut hey: byte[] = [ byte(1), byte(1), byte(1), byte(1) ];
             return (hey.test - 0x1010101).i32;
         }
-    
+
 -----
 #include <cstddef>
 #include <cstdint>
@@ -9873,7 +9872,7 @@ int main() { return fu_MAIN(); }
             let hey = [7, -1, +1];
             return test(hey[1, 3]);
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9905,7 +9904,7 @@ int main() { return fu_MAIN(); }
             mut hey = [7, -1, +1];
             return hey[1, 3].test();
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9938,7 +9937,7 @@ int main() { return fu_MAIN(); }
             test(hey[1, 3]);
             return hey[0] + hey[1] + hey[2];
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9977,7 +9976,7 @@ int main() { return fu_MAIN(); }
             a.test();
             return a[0].i - 16843009;
         }
-    
+
 -----
 #include <cstdint>
 #include <fu/vec.h>
@@ -10032,7 +10031,7 @@ int main() { return fu_MAIN(); }
             test(a, [ Hey(13) ]);
             return a[0] - 13;
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -10083,7 +10082,7 @@ int main() { return fu_MAIN(); }
             a .= [ Hey(13) ].view(i32);
             return a[0] - 13;
         }
-    
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -10122,7 +10121,7 @@ int main() { return fu_MAIN(); }
 
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
-    
+
 -----
 #include <cstdint>
 #include <fu/str.h>
@@ -10155,7 +10154,7 @@ int main() { return fu_MAIN(); }
             let r: Hey = a && [ a ];
             return r.i - 1;
         }
-    
+
 -----
 
 struct s_Hey;
@@ -10196,7 +10195,7 @@ int main() { return fu_MAIN(); }
             let a: Hey[] = [ [ -1 ], [ +1 ] ];
             return a[0].i + a[1].i;
         }
-    
+
 -----
 #include <fu/vec.h>
 
@@ -10238,7 +10237,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test.i;
-    
+
 -----
 
 struct s_Hey;
@@ -10286,7 +10285,7 @@ int main() { return fu_MAIN(); }
         };
 
         return Test(b: 1).a;
-    
+
 -----
 
 struct s_Test;
@@ -10331,7 +10330,7 @@ int main() { return fu_MAIN(); }
         };
 
         return Test(1).a;
-    
+
 -----
 
 struct s_Test;
@@ -10382,7 +10381,7 @@ int main() { return fu_MAIN(); }
             rec_copy(a);
             return a.stuff.len - 1;
         }
-    
+
 -----
 #include <fu/vec.h>
 
@@ -10431,7 +10430,7 @@ int main() { return fu_MAIN(); }
 
         fn test(a: i32, b!: i32 = 1) a + b;
         return test(-1);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10459,7 +10458,7 @@ int main() { return fu_MAIN(); }
         /*/
         return test(-2, b: +2);
         //*/
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10488,7 +10487,7 @@ int main() { return fu_MAIN(); }
         /*/
         return Test(-2, b: +2).test;
         //*/
-    
+
 -----
 
 struct s_Test;
@@ -10535,7 +10534,7 @@ int main() { return fu_MAIN(); }
         /*/
         return Test(b: +2).test - 2;
         //*/
-    
+
 -----
 
 struct s_Test;
@@ -10578,7 +10577,7 @@ int main() { return fu_MAIN(); }
         let _precedence = 0;
         fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;
         fn main() parseExpression();
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10605,7 +10604,7 @@ int main() { return fu_MAIN(); }
         fn A(x!: i32 = 0) x;
         fn B(x: i32 = 0) A(:x);
         fn main() A + B;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10643,7 +10642,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 100).i32 - 27;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10673,7 +10672,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 32700).i32 - 67;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10702,7 +10701,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 2147483600).i32 - 47;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10731,7 +10730,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 9223372036854775800).i32 - 7;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10761,7 +10760,7 @@ int main() { return fu_MAIN(); }
 
             return (ret + 100).i32 + 28;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10791,7 +10790,7 @@ int main() { return fu_MAIN(); }
 
             return (ret + 32700).i32 + 68;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10820,7 +10819,7 @@ int main() { return fu_MAIN(); }
 
             return (ret + 2147483600).i32 + 48;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -10849,7 +10848,7 @@ int main() { return fu_MAIN(); }
 
             return (ret + 9223372036854775800).i32 + 8;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10879,7 +10878,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xff).i32;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10909,7 +10908,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffff).i32;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10939,7 +10938,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffffffff).i32;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -10969,7 +10968,7 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffffffffffffffff).i32;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -11004,7 +11003,7 @@ int main() { return fu_MAIN(); }
             let b = set_once(entry, 32);
             return a && !b ? 0 : 101;
         }
-    
+
 -----
 #include <cstdint>
 
@@ -11043,7 +11042,7 @@ int main() { return fu_MAIN(); }
         pub
         //*/
         fn hello() 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -11062,10 +11061,10 @@ int hello()
         pub
         //*/
         fn hello() 3;
-    
+
         import _0;
         fn main() 6 - hello * 2;
-    
+
 -----
 
 int hello();
@@ -11085,15 +11084,15 @@ int main() { return fu_MAIN(); }
 -----
 
         pub struct Hey { i: i32; };
-    
+
 -----
 
 -----
 
         pub struct Hey { i: i32; };
-    
+
         fn main() 1._0::Hey.i - 1;
-    
+
 -----
 
 struct s_Hey;
@@ -11127,22 +11126,22 @@ int main() { return fu_MAIN(); }
 -----
 
         pub struct Hey { i: i32; };
-    
+
         import _0;
         pub inline fn test(h: Hey) h.i + 2;
-    
+
 -----
 
 -----
 
         pub struct Hey { i: i32; };
-    
+
         import _0;
         pub inline fn test(h: Hey) h.i + 2;
-    
+
         import _1;
         fn main() 1._0::Hey.test - 3;
-    
+
 -----
 
 struct s_Hey;
@@ -11184,20 +11183,20 @@ int main() { return fu_MAIN(); }
 -----
 
         pub struct Hey { i: i32; };
-    
+
         pub inline fn test(h: _0::Hey) h.i + 2;
-    
+
 -----
 
 -----
 
         pub struct Hey { i: i32; };
-    
+
         pub inline fn test(h: _0::Hey) h.i + 2;
-    
+
         import _1;
         fn main() 1._0::Hey.test - 3;
-    
+
 -----
 
 struct s_Hey;
@@ -11239,11 +11238,11 @@ int main() { return fu_MAIN(); }
 -----
 
         pub struct Hey { i: i32; };
-    
+
         pub inline fn test(h: _0::Hey) h.i + 2;
-    
+
         fn main() 1._0::Hey._1::test - 3;
-    
+
 -----
 
 struct s_Hey;
@@ -11285,16 +11284,16 @@ int main() { return fu_MAIN(); }
 -----
 
         pub struct You { i: i32; };
-    
+
 -----
 
 -----
 
         pub struct You { i: i32; };
-    
+
         pub struct Hey { using you: _0::You; };
         pub fn init3(): Hey = [ _0::You(3) ];
-    
+
 -----
 
 struct s_Hey;
@@ -11340,25 +11339,25 @@ s_Hey init3()
 -----
 
         pub struct You { i: i32; };
-    
+
         pub struct Hey { using you: _0::You; };
         pub fn init3(): Hey = [ _0::You(3) ];
-    
+
         pub inline fn test(using h = _1::init3) i + 7;
-    
+
 -----
 
 -----
 
         pub struct You { i: i32; };
-    
+
         pub struct Hey { using you: _0::You; };
         pub fn init3(): Hey = [ _0::You(3) ];
-    
+
         pub inline fn test(using h = _1::init3) i + 7;
-    
+
         fn main() _2::test - 10;
-    
+
 -----
 
 struct s_Hey;
@@ -11421,7 +11420,7 @@ int main() { return fu_MAIN(); }
             y?: f32;
             z?: f32;
         };
-    
+
 -----
 
 -----
@@ -11431,7 +11430,7 @@ int main() { return fu_MAIN(); }
             y?: f32;
             z?: f32;
         };
-    
+
         import _0;
 
         pub struct mat34 {
@@ -11446,7 +11445,7 @@ int main() { return fu_MAIN(); }
                 vec3(x: 1),
                 vec3(y: 1),
                 vec3(z: 1), vec3 /*point3*/);
-    
+
 -----
 
 -----
@@ -11456,7 +11455,7 @@ int main() { return fu_MAIN(); }
             y?: f32;
             z?: f32;
         };
-    
+
         import _0;
 
         pub struct mat34 {
@@ -11471,7 +11470,7 @@ int main() { return fu_MAIN(); }
                 vec3(x: 1),
                 vec3(y: 1),
                 vec3(z: 1), vec3 /*point3*/);
-    
+
         pub struct mat4 {
             m0: f32; m1: f32; m2: f32; m3: f32;
             m4: f32; m5: f32; m6: f32; m7: f32;
@@ -11495,7 +11494,7 @@ int main() { return fu_MAIN(); }
             + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB
             - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF
             - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
-    
+
 -----
 
 struct s_mat4;
@@ -11560,7 +11559,7 @@ float determinant(const s_mat4& _)
             y?: f32;
             z?: f32;
         };
-    
+
         import _0;
 
         pub struct mat34 {
@@ -11575,7 +11574,7 @@ float determinant(const s_mat4& _)
                 vec3(x: 1),
                 vec3(y: 1),
                 vec3(z: 1), vec3 /*point3*/);
-    
+
         pub struct mat4 {
             m0: f32; m1: f32; m2: f32; m3: f32;
             m4: f32; m5: f32; m6: f32; m7: f32;
@@ -11599,7 +11598,7 @@ float determinant(const s_mat4& _)
             + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB
             - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF
             - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;
-    
+
         pub fn main()
         {
             let m34 = _1::mat34_identity;
@@ -11607,7 +11606,7 @@ float determinant(const s_mat4& _)
 
             return m44.determinant.i32 - 1;
         }
-    
+
 -----
 
 struct s_mat34;
@@ -11733,19 +11732,19 @@ int main() { return fu_MAIN(); }
         import vec3;
 
         fn main() vec3.maxc.i32;
-    
+
 -----
 
 -----
 
         fn main() ::vec3.maxc.i32;
-    
+
 -----
 
 -----
 
         pub fn _0(i: i32) i + 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -11760,9 +11759,9 @@ int _0(const int i)
 -----
 
         pub fn _0(i: i32) i + 1;
-    
+
         fn main() (-1).::_0;
-    
+
 -----
 
 int _0(int);
@@ -11793,7 +11792,7 @@ int main() { return fu_MAIN(); }
 
             to.push(item);
         }
-    
+
 -----
 
 -----
@@ -11810,13 +11809,13 @@ int main() { return fu_MAIN(); }
 
             to.push(item);
         }
-    
+
         fn main() {
             mut x = [1, 2, 3];
             x._0::add(3); if (x.len != 3) return 33;
             x._0::add(4); return x.len - x[3];
         }
-    
+
 -----
 #include <fu/vec.h>
 
@@ -11863,7 +11862,7 @@ int main() { return fu_MAIN(); }
 
         pub let A = "hello";
         pub let B = "world";
-    
+
 -----
 #include <fu/str.h>
 
@@ -11988,7 +11987,7 @@ inline const fu_STR B = "world"_fu;
 
         pub let A = "hello";
         pub let B = "world";
-    
+
         import _0;
         fn test(i: i32) {
             let v = i & 1 ? A : B;
@@ -11996,7 +11995,7 @@ inline const fu_STR B = "world"_fu;
         }
 
         fn main() 0.test - 1.test;
-    
+
 -----
 #include <fu/str.h>
 
@@ -12037,7 +12036,7 @@ int main() { return fu_MAIN(); }
             for (fieldname i: $T) res.i = a.i.clone();
             return res;
         }
-    
+
 -----
 
 -----
@@ -12049,7 +12048,7 @@ int main() { return fu_MAIN(); }
             for (fieldname i: $T) res.i = a.i.clone();
             return res;
         }
-    
+
         pub nocopy struct Scope { x: i32; };
 
         pub struct ModuleOutputs {
@@ -12063,7 +12062,7 @@ int main() { return fu_MAIN(); }
         }
 
         pub fn main() test(ModuleOutputs);
-    
+
 -----
 #include <fu/vec.h>
 
@@ -12131,7 +12130,7 @@ inline int clone_U3Pf(const int a)
 inline s_Scope clone_zycA(const s_Scope& a)
 {
     s_Scope res {};
-    
+
     {
         res.x = clone_U3Pf(a.x);
     };
@@ -12144,7 +12143,7 @@ inline s_Scope clone_zycA(const s_Scope& a)
 inline s_ModuleOutputs clone_kdfs(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs res {};
-    
+
     {
         res.deps = clone_I28a(a.deps);
         res.scope = clone_zycA(a.scope);
@@ -12174,7 +12173,7 @@ int main() { return fu_MAIN(); }
         let a = 1;
         shadow let a = a + 1;
         return a - 2;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12203,7 +12202,7 @@ int main() { return fu_MAIN(); }
             for (mut i = 0; i < 10; i++) return outer();
             return 1;
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12244,7 +12243,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() HasInt(-1).test + 1;
-    
+
 -----
 
 struct s_HasInt;
@@ -12285,7 +12284,7 @@ int main() { return fu_MAIN(); }
 
         fn test(implicit x: i32): &i32 = x;
         fn main() test(3) - 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12313,7 +12312,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(3) - 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12348,7 +12347,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(I(3)) - 3;
-    
+
 -----
 
 struct s_I;
@@ -12399,7 +12398,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(I([3])) - 3;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -12455,7 +12454,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(I([3])) - 3;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -12508,7 +12507,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() doesReturn(-3) + 3;
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12562,7 +12561,7 @@ int main() { return fu_MAIN(); }
             let implicit ctx = Context([ Module ]);
             return test.fname;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12643,7 +12642,7 @@ int main() { return fu_MAIN(); }
             returnVoid(0);
             return 0;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12683,7 +12682,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() parseQualifierChain(15);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12727,7 +12726,7 @@ int main() { return fu_MAIN(); }
             compile(2);
             return sum - 2;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12779,7 +12778,7 @@ int main() { return fu_MAIN(); }
             compile("ab");
             return sum - 2;
         }
-    
+
 -----
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12828,7 +12827,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() 0.if0_ret101 - 101;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -12866,7 +12865,7 @@ int main() { return fu_MAIN(); }
             let b = ++x;
             return a || b - 2;
         }
-    
+
 -----
 
 struct s_X;
@@ -12941,7 +12940,7 @@ int main() { return fu_MAIN(); }
                 .abs;
 
         fn main() test ? 0 : 7;
-    
+
 -----
 #include <cmath>
 
@@ -12977,7 +12976,7 @@ int main() { return fu_MAIN(); }
             let sum = test(thing);
             return sum - 3;
         }
-    
+
 -----
 
 struct s_XY;
@@ -13003,7 +13002,7 @@ struct s_XY
 inline static int test_bKKL(const s_XY& s)
 {
     int sum = 0;
-    
+
     {
         sum += s.x;
         sum += s.y;
@@ -13027,7 +13026,7 @@ int main() { return fu_MAIN(); }
 
         fn test() [] -> i32;
         fn main() test;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13058,7 +13057,7 @@ int main() { return fu_MAIN(); }
             }
             return (b+1) - a;
         }
-    
+
 -----
 #include <fu/defer.h>
 
@@ -13068,7 +13067,7 @@ int fu_MAIN()
 {
     int a = 1;
     int b = 0;
-    
+
     {
         fu_DEFER(a++);
         b = a;
@@ -13094,7 +13093,7 @@ int main() { return fu_MAIN(); }
             }
             return (b*27) - (a*11 + c*5);
         }
-    
+
 -----
 #include <fu/defer.h>
 
@@ -13105,7 +13104,7 @@ int fu_MAIN()
     int a = 1;
     int b = 0;
     int c = 0;
-    
+
     {
         fu_DEFER(a++);
         fu_DEFER((c = a));
@@ -13144,7 +13143,7 @@ int main() { return fu_MAIN(); }
 
         fn main()   (test_defer_if_errok(true)  - 7 *3 - 1*5 - 0*7)
             + 100 * (test_defer_if_errok(false) - 10*3 - 0*5 - 9*7);
-    
+
 -----
 #include <fu/defer.h>
 #include <fu/never.h>
@@ -13157,10 +13156,9 @@ static int test_defer_if_errok(const bool throw_err)
     int x = 1;
     int if_err = 0;
     int if_ok = 0;
-    
+
     try
     {
-    
     {
         fu_DEFER(x++);
         fu_DEFER_IF_ERR((if_err += x));
@@ -13174,7 +13172,7 @@ static int test_defer_if_errok(const bool throw_err)
     catch (const std::exception& o_0)
     {
         const fu_STR& e = fu_TO_STR(o_0.what());
-    
+
         x += e.size();
     }
 ;
@@ -13195,7 +13193,7 @@ int main() { return fu_MAIN(); }
 
         type Test = i8;
         fn main() 256.Test.i32;
-    
+
 -----
 #include <cstdint>
 
@@ -13219,7 +13217,7 @@ int main() { return fu_MAIN(); }
             $B(a);
             //*/
         fn main() i8(-1).test(+1);
-    
+
 -----
 #include <cstdint>
 
@@ -13244,15 +13242,15 @@ int main() { return fu_MAIN(); }
 
         let x = { mut z = 0; z++; z };
         return x - 1;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    const int x = 
-    (__extension__ ({
+    const int x = (__extension__ (
+    {
         int z = 0;
         z++;
         z;
@@ -13270,7 +13268,7 @@ int main() { return fu_MAIN(); }
         fn mul2(a) a*2;
         fn test(b, fn) fn(1 + fn(b));
         fn main() 14 - test(3, fn mul2);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13308,7 +13306,7 @@ int main() { return fu_MAIN(); }
         fn sqr(x) x*x;
 
         fn main() [2].map(fn sqr)[0] - 4;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -13349,7 +13347,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() [1, 2].reduce(|a, b| a + b) - 3;
-    
+
 -----
 #include <fu/vec.h>
 
@@ -13391,7 +13389,7 @@ int main() { return fu_MAIN(); }
             [1, 2].each(|x| i += x);    //      in the everything-a-free-function
             return i - 3;               //      impl of closures
         }
-    
+
 -----
 #include <fu/vec.h>
 
@@ -13437,7 +13435,7 @@ int main() { return fu_MAIN(); }
         FnDecl_update(1);
 
         return sum - 3;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13482,7 +13480,7 @@ int main() { return fu_MAIN(); }
         implicit fn bananas(a: A) B(a.a * 2);
 
         fn main() 1.A.b - 2;
-    
+
 -----
 
 struct s_A;
@@ -13541,7 +13539,7 @@ int main() { return fu_MAIN(); }
             let v = XY(11, 13);
             return fn_v(.x, v) + fn_v(.y, v) - 24;
         }
-    
+
 -----
 
 struct s_XY;
@@ -13593,7 +13591,7 @@ int main() { return fu_MAIN(); }
             let v = XY(11, 13);
             return fn_v(.x, v) + fn_v(.y, v) - 24;
         }
-    
+
 -----
 
 struct s_XY;
@@ -13646,7 +13644,7 @@ int main() { return fu_MAIN(); }
             let v = XY(11, 13);
             return fn_v(.x, v) + fn_v(.y, v) - 24;
         }
-    
+
 -----
 
 struct s_XY;
@@ -13709,7 +13707,7 @@ int main() { return fu_MAIN(); }
             }
             let sum = 0; return outer(sum);
         }
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13751,7 +13749,7 @@ int main() { return fu_MAIN(); }
             let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);
         }
         fn main() test(0);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13806,7 +13804,7 @@ int main() { return fu_MAIN(); }
             let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);
         }
         fn main() test(0);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13888,7 +13886,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() test(0);
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
@@ -13990,7 +13988,7 @@ int main() { return fu_MAIN(); }
             let implicit c = 0;
             return parseStuff(0);
         }
-    
+
 -----
 
 static int descend(int, int, int, int);
@@ -14074,7 +14072,7 @@ int main() { return fu_MAIN(); }
 
         fn fA(a: $T): sA($T) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
-    
+
 -----
 
 struct s_sA_U3Pf;
@@ -14117,7 +14115,7 @@ int main() { return fu_MAIN(); }
         fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey /*
             ; /*/ .i32; //*/
-    
+
 -----
 #include <cstdint>
 
@@ -14189,16 +14187,16 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
-    
+
 -----
 
 #ifndef FU_NO_FDEFs
 
 static int test(const int x)
 {
-    
+
     {
-        
+
         {
             if (x > 1)
             {

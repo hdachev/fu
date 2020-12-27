@@ -405,7 +405,8 @@ pub fn cpp_codegen(
         {
             let line = lines[i];
             if (line)
-                src ~= _indent ~ line ~ (line.if_last == ';' ? '\n' : ';');
+                src ~= (line.if_first == '\n' ? '\n' ~ line : _indent ~ line)
+                     ~ (line.if_last == ';' ? '\n' : ';');
         }
 
         return src;
@@ -416,8 +417,9 @@ pub fn cpp_codegen(
         let indent0 = _indent;
         _indent ~= "    ";
 
-        let open  = gnuStmtExpr ? "(__extension__ ({" : "{";
-        mut close = gnuStmtExpr ? "}))" : "}";
+        let gnuOpen = gnuStmtExpr && "(__extension__ (";
+        let open    = "{";
+        mut close   = gnuStmtExpr ? "}))" : "}";
 
         // Block break label.
         if (label)
@@ -426,7 +428,7 @@ pub fn cpp_codegen(
         //
         mut src = cgStatements(nodes);
         if (!skipCurlies || nodes.len != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
-            src = indent0 ~ open ~ src ~ indent0 ~ close;
+            src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
         _indent = indent0;
         return src;
@@ -1543,8 +1545,15 @@ pub fn cpp_codegen(
 
     fn postfixBlock(src: string, postfix: string): string
     {
-        src[src.len - 1] == '}' || fail();
-        return src.slice(0, src.len - 1) ~ postfix ~ '}';
+        mut end = src.len - 1;
+
+        // :(
+        src[end] == '}' || fail();
+        if (postfix.if_first == '\n')
+            for (mut i = end; i --> 0 && src[i] == ' '; )
+                end--;
+
+        return src.slice(0, end) ~ postfix ~ '}';
     }
 
     fn cgLoop(node: SolvedNode): string
@@ -1594,28 +1603,18 @@ pub fn cpp_codegen(
     {
         let items       = node.items;
 
-        let let_main    = items[0];
-
-        mut try         = cgNode(items[0].items[LET_INIT]) ~ ";";
+        let var_name    = items[0];
+        let try_init    = cgNode(items[0].items[LET_INIT]) ~ ";";
         let err         = GET(items[1].target).name;
         let catch       = blockWrapSubstatement(items[2]);
 
-        if (let_main.type.is_never)
-            return cgTryCatch(try, err, catch);
-
-        // TODO dedupe with below nonsense
-        mut src =        binding(let_main, forceMut: true) ~ " = {};";
-        src ~= _indent ~ "try";
-        src ~= _indent ~ "{";
-        src ~= _indent ~ "    " ~ let_main.value ~ " = " ~ try;
-        src ~= _indent ~ "}";
-        src ~= _indent ~ "catch (const std::exception& o_0)";
-        src ~= _indent ~ "{";
-        src ~= _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());";
-        src ~= _indent ~ catch;
-        src ~= _indent ~ "}\n";
-
-        return src;
+        return binding(var_name, forceMut: true) ~ " = {};"
+             ~ cgTryCatch(
+                var_name.type.is_never
+                    ? _indent ~ "    " ~  try_init
+                    : _indent ~ "    " ~  var_name.value ~ " = " ~ try_init,
+                err,
+                catch);
     }
 
     fn cgTryCatch(node: SolvedNode): string
@@ -1633,12 +1632,12 @@ pub fn cpp_codegen(
     {
         return _indent ~ "try"
              ~ _indent ~ "{"
-             ~ _indent ~ try
+             ~  try
              ~ _indent ~ "}"
              ~ _indent ~ "catch (const std::exception& o_0)"
              ~ _indent ~ "{"
-             ~ _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());"
-             ~ _indent ~ catch
+             ~ _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());\n"
+             ~  catch
              ~ _indent ~ "}\n";
     }
 
