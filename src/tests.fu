@@ -1994,6 +1994,24 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Module  { cpp:     string;   };
+        struct Context { modules: Module[]; };
+
+        fn snippet2cpp(cpp: string): string {
+            let ctx = Context([ Module(cpp) ]);
+            for (mut i = 0; i < ctx.modules.len; i++) {
+                let module = ctx.modules[i]; // this was const Module& =  ...
+                if (module.cpp)
+                    return module.cpp; // but this was static_cast<fu_STR&&>( ... )
+            }
+
+            return "";
+        }
+
+        fn main() snippet2cpp("1").len - 1;
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
@@ -2523,8 +2541,15 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
-        BAD CODEGEN
+    ZERO(`
+        // The thing below but shorter:
+        //  the '|| throw' introduces a bullshit lambda during codegen,
+        //   which misreturns a dangling reference to its own frame.
+        fn test(x: string) [x][0] || throw("nope!");
+        fn main() "what".test.len - 4;
+    `);
+
+    ZERO(`
         fn only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
 
         struct Node       { kind: string; };
@@ -4140,12 +4165,14 @@ pub fn runTests()
         fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;
     `);
 
-    TODO(`
+    ZERO(`
         fn test(x: i32) {
-            return BLOCK: {
-                if (x & 1) break :BLOCK 1;
-                if (x & 2) return 2;
-                3
+            return {
+                BLOCK: {
+                    if (x & 1) break :BLOCK 1;
+                    if (x & 2) return 2;
+                    3
+                }
             };
         }
 
