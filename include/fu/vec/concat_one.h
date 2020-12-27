@@ -66,7 +66,7 @@ template <typename V, typename T,
 inline fu_VEC<T> operator+(T&& a, const V& b) noexcept {
     fu_VEC<T> vec;
 
-    vec.reserve(a.size() + 1);
+    vec.reserve(b.size() + 1);
     vec.push(static_cast<T&&>(a));
     vec.append(fu_ZERO(), b);
 
