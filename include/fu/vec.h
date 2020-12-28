@@ -206,6 +206,25 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
+    fu_INL i32 unique_size() const noexcept {
+
+        assert(false && "Not tested!");
+
+        if constexpr (!SHAREABLE)
+            return size();
+
+        if constexpr (HAS_SMALL) {
+            i32 small_size  = UNSAFE__ReadSmallSize();
+            i32 capa        = UNSAFE__Unpack(big.PACK);
+            return small()  ? small_size
+                            : big.size | (capa & SIGN_BIT);
+        }
+
+        return big.size;
+    }
+
+    /////////////////////////////////////////////
+
     fu_INL const T* data() const noexcept {
         if constexpr (HAS_SMALL) {
             return small() ? (T*)this : big.data;
@@ -1098,6 +1117,21 @@ struct fu_VEC
 
         #else
         return (u32) idx < (u32) size()
+             ? *ok
+             : *((T*)1);
+
+        #endif
+    }
+
+    fu_INL T& unique(i32 idx) noexcept
+    {
+        T* ok = (T*) data() + idx;
+
+        #if fu_RETAIL
+        return *ok;             // Assert unique + bounds check.
+                                // This is where this differs from the two above.
+        #else                   // ----------- //
+        return (u32) idx < (u32) unique_size() //
              ? *ok
              : *((T*)1);
 
