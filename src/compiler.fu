@@ -245,24 +245,34 @@ pub fn ZERO(
         src.shrink(end);
     }
 
+
+    // We can now safely do the nowrites second -
+    //  so that we can first test if the thing works,
+    //   and only then allow you to persist it as an OK test output.
+    //
     let ctx = compile_snippets(:sources);
 
     let run = true;
     let fulib = FULIB;
     let dir_wrk = DEFAULT_WORKSPACE;
 
+    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug");
+    ::build(:ctx, :run, :fulib, :dir_wrk);
+
+    // OK so it works, let's see if test output actually matches -
+    //  this also allows us to perhaps defer all nowrite fails till all tests clear.
+    //
     let nowrite = !sources.last.has("//! ALLOW_WRITE") && !env::get("fu_ALLOW_WRITE");
-
-    mut key = "";
-    for (mut i = 0; i < sources.len; i++)
+    if (nowrite)
     {
-        key ~= sources[i];
-        let actual = ctx.modules
-            [i + ctx.modules.len - sources.len]
-                .out.cpp;
-
-        if (nowrite)
+        mut key = "";
+        for (mut i = 0; i < sources.len; i++)
         {
+            key ~= sources[i];
+            let actual = ctx.modules
+                [i + ctx.modules.len - sources.len]
+                    .out.cpp;
+
             let expect = testdiffs.testdiff::get_current(key);
             if (expect != actual)
             {
@@ -279,13 +289,10 @@ pub fn ZERO(
                     throw("NOWRITE: test output mismatch for:\n\n" ~ key ~ "\nPreviously:\n\n" ~ expect ~ "\nNow:\n\n" ~ actual);
                 }
             }
+
+            testdiffs.testdiff::set_next(key, actual);
         }
-
-        testdiffs.testdiff::set_next(key, actual);
     }
-
-    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug");
-    ::build(:ctx, :run, :fulib, :dir_wrk);
 
     return ctx;
 }
