@@ -89,7 +89,8 @@ pub fn build(
     mut dir_src ! = "",
     mut dir_cpp ! = "",
         unity   ! = "",
-        scheme  ! = ""): void
+        scheme  ! = "",
+        onfail  ! = ""): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -169,7 +170,17 @@ pub fn build(
         if (!stdout)
             stdout = "[ EXIT CODE " ~ code ~ " ]";
 
-        return throw("Smth broke: " ~ stdout);
+        mut explain = "";
+        if (onfail)
+        {
+            explain = "\nFailing testcase:\n\n";
+            for (mut i = 1; i < ctx.modules.len; i++)
+                explain ~= onfail == "print-src"
+                    ? ctx.modules[i].in.src
+                    : ctx.modules[i].fname ~ "\n";
+        }
+
+        return throw("Smth broke:\n\n" ~ stdout ~ explain);
     }
 
     //

@@ -148,7 +148,7 @@ pub fn build(
     }
 
     return ::build(
-        ctx, :run, :bin, :scheme,
+        :ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         unity: fname, fulib: FULIB);
 }
@@ -256,8 +256,8 @@ pub fn ZERO(
     let fulib = FULIB;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug");
-    ::build(:ctx, :run, :fulib, :dir_wrk);
+    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug"   , onfail: "print-src");
+    ::build(:ctx, :run, :fulib, :dir_wrk                    , onfail: "print-src");
 
     // OK so it works, let's see if test output actually matches -
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.
