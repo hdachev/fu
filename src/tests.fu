@@ -1995,15 +1995,34 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct Module  { cpp:     string;   };
-        struct Context { modules: Module[]; };
+        struct Module  { cpp:    string; };
+        struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
 
         fn snippet2cpp(cpp: string): string {
-            let ctx = Context([ Module(cpp) ]);
-            for (mut i = 0; i < ctx.modules.len; i++) {
-                let module = ctx.modules[i]; // this was const Module& =  ...
+            let ctx = Context( Module(cpp) );
+            {
+                let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
-                    return module.cpp; // but this was static_cast<fu_STR&&>( ... )
+                    return module.cpp;          ;; EXPECT static_cast<Module&&>
+            }
+
+            return "";
+        }
+
+        fn main() snippet2cpp("1").len - 1;
+    `);
+
+    ZERO(`
+        struct Module  { cpp:     string;   };
+        struct Context { modules: Module[]; };  // Module[] is COW-capable -
+                                                //  - either prove there's no COW,
+        fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.
+            let ctx = Context([ Module(cpp) ]);
+            for (mut i = 0; i < ctx.modules.len; i++)
+            {
+                let module = ctx.modules[i];    ;; TODO .unique(i)
+                if (module.cpp)
+                    return module.cpp;          ;; TODO static_cast<Module&&>
             }
 
             return "";
