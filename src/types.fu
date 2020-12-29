@@ -61,10 +61,25 @@ pub let e_memcpy    = 1 << 13;
 
 //
 
-pub struct Lifetime
-{
-    uni0n: i32[];
-};
+pub struct Region { index!: i32; };
+
+pub fn > (a: Region, b: Region) a.index >  b.index;
+pub fn >=(a: Region, b: Region) a.index >= b.index;
+pub fn !=(a: Region, b: Region) a.index != b.index;
+pub fn ==(a: Region, b: Region) a.index == b.index;
+
+pub fn Region_toLocalIndex(region: Region) region.index;
+pub fn Region_fromLocalIndex(index: i32) Region(:index);
+
+pub fn Region_isArg(region: Region) region.index < 0;
+
+pub fn Region_toArgIndex(region: Region) -1 - region.Region_toLocalIndex;
+pub fn Region_fromArgIndex(index: i32) Region_fromLocalIndex(-1 - index);
+
+
+//
+
+pub struct Lifetime { uni0n: Region[]; };
 
 pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
 {
@@ -82,7 +97,7 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
     //  of any non-arg locals, which trivializes this operation.
     //
     mut uni0n = set::union(a.uni0n, b.uni0n);
-    if (uni0n.len >= 2 && uni0n[uni0n.len - 2] >= 0)
+    if (uni0n.len >= 2 && !Region_isArg(uni0n[uni0n.len - 2]))
         uni0n.splice(uni0n.len - 2, 1);
 
     return Lifetime(:uni0n);
@@ -122,7 +137,7 @@ fn ==(a: ValueType, b: ValueType)
     a.canon == b.canon;
 
 pub fn ==(a: Lifetime, b: Lifetime)
-    a.uni0n == b.uni0n;
+    a.uni0n.view(i32) == b.uni0n.view(i32);
 
 pub fn ==(a: Effects, b: Effects)
     a.raw == b.raw;
@@ -192,12 +207,12 @@ pub fn isAssignable(host: Type, guest: Type): bool
 }
 
 pub fn Lifetime_static(): Lifetime =
-    Lifetime(uni0n: [ 0 ]);
+    Lifetime(uni0n: [ Region ]);
 
-let LT_TEMP = 0x7fffffff.i32;
+let Region_TEMP = Region_fromLocalIndex(0x7fffffff.i32);
 
 pub fn Lifetime_temporary(): Lifetime =
-    Lifetime(uni0n: [ LT_TEMP ]);
+    Lifetime(uni0n: [ Region_TEMP ]);
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
@@ -231,7 +246,7 @@ pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 pub fn is_ref2temp(type: Type): bool
 {
     return type.lifetime.uni0n
-        && type.lifetime.uni0n[type.lifetime.uni0n.len - 1] == LT_TEMP
+        && type.lifetime.uni0n[type.lifetime.uni0n.len - 1] == Region_TEMP
         && (type.is_ref && type.lifetime.uni0n.len == 1 || throw("ref2temp doesnt look good"));
 }
 

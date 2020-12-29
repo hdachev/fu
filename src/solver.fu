@@ -218,8 +218,7 @@ pub fn solve(
             mutref = false;
         }
 
-        let only = res.uni0n.only;
-        only < 0 || fail("Non-single-arg __native lifetime.");
+        res.uni0n.only.Region_isArg || fail("Non-single-arg __native lifetime.");
 
         return res;
     }
@@ -228,28 +227,29 @@ pub fn solve(
     {
         if (SELF_TEST)
         {
-            mut _last = 0x80000000.i32;
-
-            let current_fn = _current_fn.target;
-            let debug_2 = current_fn && GET(current_fn);
+            let current_fn  = _current_fn.target;
+            let debug_2     = current_fn && GET(current_fn);
             if (debug_2) {}
 
+            mut _last: Region;
             for (mut i = 0; i < lifetime.uni0n.len; i++)
             {
-                let packed = lifetime.uni0n[i];
+                let region  = lifetime.uni0n[i];
                 {
-                    packed > _last || fail("Lifetime_test: not a sorted set");
-                    _last = packed;
+                    !i || region > _last || fail("Lifetime_test: not a sorted set");
+                    _last = region;
                 }
 
-                if (packed >= 0)
+                if (!Region_isArg(region))
                 {
-                    fn fnd(index: i32)
+                    let index = region.Region_toLocalIndex;
+
+                    fn fnd(shadow index: i32)
                         GET(Target(:module.modid, :index));
 
                     i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
 
-                    let local = packed && fnd(packed);
+                    let local = index && fnd(index);
                     let local_of = local.local_of; // zero for globals
                     if (local_of)
                     {
@@ -286,11 +286,12 @@ pub fn solve(
             return Lifetime_test(type.is_ref && type.lifetime || fail("ref: bad ref/lifetime"));
 
         // Argument?
-        let parametric  = kind == "arg" && type.is_ref;
         let index       = target.index;
-        let packed      = parametric ? -1 - index : index;
+        let region      = kind == "arg" && type.is_ref
+            ? Region_fromArgIndex(index)
+            : Region_fromLocalIndex(index);
 
-        return Lifetime_test(Lifetime(uni0n: [ packed ]));
+        return Lifetime_test(Lifetime(uni0n: [ region ]));
     }
 
     fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
@@ -299,7 +300,7 @@ pub fn solve(
         let items       = overload.solved.items;
 
         // Nothing to do if empty/non-arg.
-        if !(returned.if_first < 0)
+        if (!Region_isArg(returned.if_first))
             return Lifetime(uni0n: returned);
 
         let head = items[0].target.index;
@@ -312,12 +313,12 @@ pub fn solve(
 
         for (mut i = 0; i < returned.len; i++)
         {
-            let packed  = returned[i];
-            let index   = -1 - packed;
+            let region      = returned[i];
+            let index       = region.Region_toArgIndex;
 
             // We're only filtering here, no need to run the full thing.
             if (index < head || index > tail) {
-                keep.uni0n ~= packed;
+                keep.uni0n ~= region;
                 continue;
             }
 
@@ -353,7 +354,7 @@ pub fn solve(
         // Any local will suffice.
         for (mut i = 0; i < lifetime.uni0n.len; i++)
         {
-            let item = lifetime.uni0n[i];
+            let item = lifetime.uni0n[i].Region_toLocalIndex;
             if (item >= target.index)
                 return true;
         }

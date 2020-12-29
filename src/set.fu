@@ -44,12 +44,14 @@ pub fn union(a: $T[], b: $T[]): $T[]
         let X = a[x];
         let Y = b[y];
 
-        if (X > Y) {
-            a.insert(x, Y);
-            y++;
-        }
-        else if (X == Y) {
-            y++;
+        if (X >= Y) {
+            if (X != Y) {
+                a.insert(x, Y);
+                y++;
+            }
+            else {
+                y++;
+            }
         }
 
         x++;
