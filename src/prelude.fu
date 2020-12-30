@@ -192,8 +192,8 @@ fn   ends(a: [$T], with: [$T]) case ($T -> @primitive): bool __native("<fu/vec/f
 fn starts(a: [$T], with:   $T) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
 fn   ends(a: [$T], with:   $T) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
 
-fn find(a: [$T], b: [$T]) case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
-fn has (a: [$T], b: [$T]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::has");
+fn find(a: [$T], b: [$T], start = 0) case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn has (a: [$T], b: [$T])            case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // Strings.
@@ -261,8 +261,8 @@ fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
 
 // TODO FIX: these here mean to support arrays of strings.
 
-fn find(a: [$T], b: $T): i32  __native("<fu/vec/find.h>", "fu::lfind");
-fn has (a: [$T], b: $T): bool __native("<fu/vec/find.h>", "fu::has");
+fn find(a: [$T], b: $T, start = 0): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn has (a: [$T], b: $T):            bool __native("<fu/vec/find.h>", "fu::has");
 
 `;
 

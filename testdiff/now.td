@@ -4042,7 +4042,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (fu::lfind("hello world"_fu, "world"_fu) - (2 * fu::lfind(fu_VEC<int> { fu_VEC<int>::INIT<5> { 1, 7, 13, 14, 19 } }, 14)));
+    return (fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * fu::lfind(fu_VEC<int> { fu_VEC<int>::INIT<5> { 1, 7, 13, 14, 19 } }, 14, 0)));
 }
 
 #endif
