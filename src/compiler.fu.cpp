@@ -1115,7 +1115,7 @@ s_Context ZERO(const fu_VEC<fu_STR>& sources)
     const bool run = true;
     const fu_STR& fulib = FULIB;
     const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
-    const bool nowrite = (!fu::has(last_FGX6(sources), "//! ALLOW_WRITE"_fu) && !fu::env_get("fu_ALLOW_WRITE"_fu));
+    const bool nowrite = false;
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, nowrite, ctx);
     build(run, fu_STR(dir_wrk), fulib, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, nowrite, ctx);
     return ctx;
