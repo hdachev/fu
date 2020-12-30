@@ -84,32 +84,12 @@ pub fn Region_isTemp(region: Region) region == Region_TEMP;
 
 //
 
-pub struct Lifetime { uni0n: Region[]; };
+pub struct Lifetime { uni0n!: Region[]; };
 
 pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
 {
-    mut uni0n = set::union(a.uni0n, b.uni0n);
-
-    // --------------------------------------------------------
-    //
-    // UNION   - currently keeps innermost.
-    //             should simply keep all.
-    //
-    // WHY     - because we often need both upper and lower bounds.
-    //             perhaps we might not want to keep all,
-    //               but keep lowest and highest local.
-    //
-    //         - but keep all should be fine too.
-    //
-    // --------------------------------------------------------
-    //
-    // Currently:
-    //  Keep innermost - remove second-last if it is a local.
-    //
-    if (uni0n.len >= 2 && !Region_isArg(uni0n[uni0n.len - 2]))
-        uni0n.splice(uni0n.len - 2, 1);
-
-    return Lifetime(:uni0n);
+    return Lifetime(
+        uni0n: set::union(a.uni0n, b.uni0n));
 }
 
 

@@ -352,15 +352,7 @@ pub fn solve(
 
     fn Lifetime_killedByReturnOf(lifetime: Lifetime, target: Target)
     {
-        // Any local will suffice.
-        for (mut i = 0; i < lifetime.uni0n.len; i++)
-        {
-            let item = lifetime.uni0n[i].Region_toLocalIndex;
-            if (item >= target.index)
-                return true;
-        }
-
-        return false;
+        return lifetime.uni0n.if_last.Region_toLocalIndex >= target.index;
     }
 
 
