@@ -2003,7 +2003,7 @@ pub fn runTests()
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
-                    return module.cpp;          ;; EXPECT static_cast<Module&&>
+                    return module.cpp;          ;; EXPECT return static_cast<fu_STR&&>
             }
 
             return "";
@@ -2022,7 +2022,7 @@ pub fn runTests()
             {
                 let module = ctx.modules[i];    ;; TODO .unique(i)
                 if (module.cpp)
-                    return module.cpp;          ;; TODO static_cast<Module&&>
+                    return module.cpp;          ;; TODO return static_cast<fu_STR&&>
             }
 
             return "";
