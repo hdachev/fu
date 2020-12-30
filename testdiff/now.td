@@ -2669,7 +2669,32 @@ int main() { return fu_MAIN(); }
 -----
 
         //! FN_recursion FN_resolve
-        fn goto0(x) x && goto0(x / 2);
+        fn goto0(x) x ? goto0(x / 2) : x; // ideally same as above
+        fn main() goto0(1);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+inline static int goto0_U3Pf(const int x)
+{
+    return (x ? goto0_U3Pf((x / 2)) : int(x));
+}
+
+int fu_MAIN()
+{
+    return goto0_U3Pf(1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        //! FN_recursion FN_resolve
+        fn goto0(x) x && goto0(x / 2); // ideally same as above [again]
         fn main() goto0(1);
 
 -----

@@ -803,7 +803,13 @@ pub fn runTests()
 
     ZERO(`
         //! FN_recursion FN_resolve
-        fn goto0(x) x && goto0(x / 2);
+        fn goto0(x) x ? goto0(x / 2) : x; // ideally same as above
+        fn main() goto0(1);
+    `);
+
+    ZERO(`
+        //! FN_recursion FN_resolve
+        fn goto0(x) x && goto0(x / 2); // ideally same as above [again]
         fn main() goto0(1);
     `);
 

@@ -350,9 +350,11 @@ pub fn solve(
             tempsOK: true);
     }
 
-    fn Lifetime_killedByReturnOf(lifetime: Lifetime, target: Target)
+    fn Lifetime_compareToIndex(lifetime: Lifetime, target: Target)
     {
-        return lifetime.uni0n.if_last.Region_toLocalIndex >= target.index;
+        return lifetime.uni0n.if_first.Region_toLocalIndex > target.index   ? +1
+             : lifetime.uni0n.if_last .Region_toLocalIndex < target.index   ? -1
+                                                                            :  0;
     }
 
 
@@ -2570,22 +2572,34 @@ pub fn solve(
             node.items.only,
             type: _current_fn.ret_actual || _current_fn.ret_expect);
 
-        //////////////////////////////////////////////////////
-        //                                                  //
-        // TODO LIFETIMES   this doesn't work               //
-        //                  for deeply referential types.   //
-                                                            //
-        if (expr.type.lifetime.Lifetime_killedByReturnOf(_current_fn.target) &&
-            expr.type.is_ref)                               //
-        {                                                   //
-            let nrvo = expr.kind == "call"                  //
-                    && expr.items.len == 0                  //
-                    && expr.target.GET.kind == "var";       //
-                                                            //
-            expr = createMove(expr, nrvo);                  //
-        }                                                   //
-                                                            //
-        //////////////////////////////////////////////////////
+        if (expr.type.is_ref)
+        {
+            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(_current_fn.target);
+            if (ltCompare >= 0)
+            {
+                if (ltCompare > 0)
+                {
+                    let nrvo = expr.kind == "call"
+                            && expr.items.len == 0
+                            && expr.target.GET.kind == "var";
+
+                    expr = createMove(expr, :nrvo);
+                }
+                else
+                {
+                    // Might survive, so we cant move,
+                    //  might not survive, so we can't return reference,
+                    //   so we have to copy.
+                    //
+                    // We'll try to prevent this from happening by hinting control flow
+                    //  primitives such as and/or/ifs to copy preemptively
+                    //   but this can happen after lt replace on callsite,
+                    //    when return might point to a temporary argument.
+                    //
+                    expr = createCopy(expr);
+                }
+            }
+        }
 
         reportReturnType(expr.type);
 
@@ -3831,7 +3845,7 @@ pub fn solve(
             token:  node.token,
             type:   clear_refs(node.type));
 
-    fn createMove(node: SolvedNode, nrvo = false): SolvedNode
+    fn createMove(node: SolvedNode, nrvo! = false): SolvedNode
         SolvedNode(
             kind:   nrvo ? "nrvo" : "move",
             items:  [ node ],
