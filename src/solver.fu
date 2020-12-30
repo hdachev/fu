@@ -223,7 +223,7 @@ pub fn solve(
         return res;
     }
 
-    fn Lifetime_test(lifetime: Lifetime): Lifetime
+    fn Lifetime_test(lifetime: Lifetime, tempsOK?!: bool): Lifetime
     {
         if (SELF_TEST)
         {
@@ -240,31 +240,34 @@ pub fn solve(
                     _last = region;
                 }
 
-                if (!Region_isArg(region))
+                if (Region_isArg(region))
+                    continue;
+
+                if (region.Region_isTemp)
                 {
-                    let index = region.Region_toLocalIndex;
+                    i == lifetime.uni0n.len - 1 && tempsOK || fail("Lifetime_test: unexpected temporary.");
+                    continue;
+                }
 
-                    fn fnd(shadow index: i32)
-                        GET(Target(:module.modid, :index));
+                fn fnd(index: i32)
+                    GET(Target(:module.modid, :index));
 
-                    i == lifetime.uni0n.len - 1 || fail("Lifetime_test: local not last");
-
-                    let local = index && fnd(index);
-                    let local_of = local.local_of; // zero for globals
-                    if (local_of)
+                let index = region.Region_toLocalIndex;
+                let local = index && fnd(index);
+                let local_of = local.local_of; // zero for globals
+                if (local_of)
+                {
+                    mut frame = current_fn.index;
+                    while (local_of != frame)
                     {
-                        mut frame = current_fn.index;
-                        while (local_of != frame)
-                        {
-                            local_of <= frame || fail("Lifetime_test: `" ~ local.name ~ "` is not a local: `"
-                                ~ fnd(local_of).name ~ "` does not contain "
-                                ~ (frame    ? "`" ~ fnd(frame).name ~ "`"
-                                            : "global scope")
-                                ~ (current_fn.index != frame ? ", testing from `" ~ fnd(current_fn.index).name ~ "`." : "."));
+                        local_of <= frame || fail("Lifetime_test: `" ~ local.name ~ "` is not a local: `"
+                            ~ fnd(local_of).name ~ "` does not contain "
+                            ~ (frame    ? "`" ~ fnd(frame).name ~ "`"
+                                        : "global scope")
+                            ~ (current_fn.index != frame ? ", testing from `" ~ fnd(current_fn.index).name ~ "`." : "."));
 
-                            frame || fail("Lifetime_test: climbed up to root");
-                            frame = fnd(frame).local_of;
-                        }
+                        frame || fail("Lifetime_test: climbed up to root");
+                        frame = fnd(frame).local_of;
                     }
                 }
             }
@@ -330,15 +333,11 @@ pub fn solve(
                 {
                     let argNode = argNodes[offset];
 
-                    // Abort on first temporary.
-                    // TODO FIX this is not correct - we cant skip over anything,
-                    //  and temp lifetimes need to be extended.
-                    if (!argNode.type.is_ref || argNode.type.is_ref2temp)
-                        return Lifetime_temporary();
+                    let argLt = argNode.type.is_ref
+                        ? argNode.type.lifetime || fail("refarg without lifetime")
+                        : Lifetime_temporary();
 
-                    // This is fine.
-                    let argLt   = argNode.type.lifetime || fail("refarg without lifetime");
-                    replace     = Lifetime_union(replace, argLt);
+                    replace = Lifetime_union(replace, argLt);
                     break;
                 }
 
@@ -346,7 +345,9 @@ pub fn solve(
             }
         }
 
-        return Lifetime_test(Lifetime_union(keep, replace));
+        return Lifetime_test(
+            Lifetime_union(keep, replace),
+            tempsOK: true);
     }
 
     fn Lifetime_killedByReturnOf(lifetime: Lifetime, target: Target)
