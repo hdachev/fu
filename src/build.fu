@@ -178,6 +178,13 @@ pub fn build(
                 explain ~= onfail == "print-src"
                     ? ctx.modules[i].in.src
                     : ctx.modules[i].fname ~ "\n";
+
+            if (onfail == "print-src")
+            {
+                explain ~= "\nSources:\n";
+                for (mut i = 1; i < ctx.modules.len; i++)
+                    explain ~= ctx.modules[i].out.cpp;
+            }
         }
 
         return throw("Smth broke:\n\n" ~ stdout ~ explain);

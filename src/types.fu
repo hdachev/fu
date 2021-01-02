@@ -62,6 +62,17 @@ pub let e_memcpy    = 1 << 13;
 
 //
 
+pub struct Target { modid: i32; index: i32; };
+
+pub fn u64(t: Target): u64 = t.modid.u64 << 32 | t.index.u64;
+
+pub fn ==(a: Target, b: Target)
+    a.modid == b.modid &&
+    a.index == b.index;
+
+
+//
+
 pub struct Region { index!: i32; };
 
 pub fn > (a: Region, b: Region) a.index >  b.index;
@@ -90,6 +101,13 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
 {
     return Lifetime(
         uni0n: set::union(a.uni0n, b.uni0n));
+}
+
+pub fn Lifetime_compareToIndex(lifetime: Lifetime, index: i32)
+{
+    return lifetime.uni0n.if_first.Region_toLocalIndex > index  ? +1
+         : lifetime.uni0n.if_last .Region_toLocalIndex < index  ? -1
+                                                                :  0;
 }
 
 
@@ -497,18 +515,3 @@ pub fn type_trySuper(a: Type, b: Type)
         lifetime: quals & q_ref &&
             Lifetime_union(a.lifetime, b.lifetime));
 }
-
-
-//
-
-pub struct Target
-{
-    modid:  i32;
-    index:  i32;
-};
-
-pub fn u64(t: Target): u64 = t.modid.u64 << 32 | t.index.u64;
-
-pub fn ==(a: Target, b: Target)
-    a.modid == b.modid &&
-    a.index == b.index;

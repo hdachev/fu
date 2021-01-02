@@ -350,13 +350,6 @@ pub fn solve(
             tempsOK: true);
     }
 
-    fn Lifetime_compareToIndex(lifetime: Lifetime, target: Target)
-    {
-        return lifetime.uni0n.if_first.Region_toLocalIndex > target.index   ? +1
-             : lifetime.uni0n.if_last .Region_toLocalIndex < target.index   ? -1
-                                                                            :  0;
-    }
-
 
     //
 
@@ -2574,7 +2567,7 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(_current_fn.target);
+            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(_current_fn.target.index);
             if (ltCompare >= 0)
             {
                 if (ltCompare > 0)
