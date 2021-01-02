@@ -99,6 +99,29 @@ pub fn cpp_codegen(
                      ? "const " ~ fwd
                      : fwd;
 
+            // Enable move from local.
+            //
+            //  let a = ...     // Some a = ...
+            //  let b = a.b;    // B& b = a.b;      // const B& wouldn't allow move
+            //  return b;       // return move(b);  // here
+            //
+            if (!(type.quals & q_trivial) && !(mode & M_ARGUMENT)
+                && type.lifetime.Lifetime_compareToIndex(_current_fn_index) > 0)
+            {
+                // TODO only do this when strictly useful, weakens our validation.
+                //
+                // Only useful if current fn returns a nontriv value.
+                //  We could notice current fn does a move-return.
+                //   Ideally we would actually know the dependecy chain
+                //    so we'll only do this if really needed for this variable.
+                //
+                // TODO Tracking ref use and 'moved-from'-ness.
+                //
+                let fnret = GET(Target(:module.modid, index: _current_fn_index)).type;
+                if !(fnret.quals & q_trivial || fnret.is_ref)
+                    return fwd ~ "&";
+            }
+
             return "const " ~ fwd ~ "&";
         }
 

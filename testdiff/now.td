@@ -6911,6 +6911,83 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct Module  { cpp:    string; };
+        struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
+
+        fn snippet2cpp(cpp: string): string {
+            let ctx = Context( Module(cpp) );
+            {
+                let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
+                if (module.cpp)
+                    return module.cpp;          // EXPECT return static_cast<fu_STR&&>
+            }
+
+            return "";
+        }
+
+        fn main() snippet2cpp("1").len - 1;
+
+-----
+#include <fu/str.h>
+
+struct s_Context;
+struct s_Module;
+
+                                #ifndef DEF_s_Module
+                                #define DEF_s_Module
+struct s_Module
+{
+    fu_STR cpp;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || cpp
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
+{
+    s_Module module;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || module
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR snippet2cpp(const fu_STR& cpp)
+{
+    s_Context ctx = s_Context { s_Module { fu_STR(cpp) } };
+
+    {
+        s_Module& module = ctx.module;
+        if (module.cpp)
+            return static_cast<fu_STR&&>(module.cpp);
+
+    };
+    return fu_STR{};
+}
+
+int fu_MAIN()
+{
+    return (snippet2cpp("1"_fu).size() - 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
