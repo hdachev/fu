@@ -2567,6 +2567,20 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn compile_snippets(x: string) x.find('a') && throw("throw#1");
+        fn ZERO(x: string) x.find('b') && throw("throw#2");
+
+        fn FAIL(x: string): string {
+            let ctx = compile_snippets(x) && "hey"
+                catch e return ZERO(x) && e;
+
+            return ctx;
+        }
+
+        fn main() FAIL("a").len;
+    `);
+
+    ZERO(`
         // The thing below but shorter:
         //  the '|| throw' introduces a bullshit lambda during codegen,
         //   which misreturns a dangling reference to its own frame.
