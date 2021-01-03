@@ -8775,6 +8775,65 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn compile_snippets(x: string) x.find('a') && throw("throw#1");
+        fn ZERO(x: string) x.find('b') && throw("throw#2");
+
+        fn FAIL(x: string): string {
+            let ctx = compile_snippets(x) && "hey"
+                catch e return ZERO(x) && e;
+
+            return ctx;
+        }
+
+        fn main() FAIL("a").len;
+
+-----
+#include <fu/default.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec/find.h>
+
+#ifndef FU_NO_FDEFs
+
+static int compile_snippets(const fu_STR& x)
+{
+    return ([&]() -> int { { int _ = fu::lfind(x, std::byte('a'), 0); if (!_) return _; } fu::fail("throw#1"_fu); }());
+}
+
+static int ZERO(const fu_STR& x)
+{
+    return ([&]() -> int { { int _ = fu::lfind(x, std::byte('b'), 0); if (!_) return _; } fu::fail("throw#2"_fu); }());
+}
+
+static fu_STR FAIL(const fu_STR& x)
+{
+    fu_STR ctx = {};
+    try
+    {
+        ctx = ([&]() -> fu_STR { if (compile_snippets(x)) return "hey"_fu; else return fu_STR{}; }());
+    }
+    catch (const std::exception& o_0)
+    {
+        fu_STR e = fu_TO_STR(o_0.what());
+
+        return fu_STR(([&]() -> const fu_STR& { if (ZERO(x)) return e; else return fu::Default<fu_STR>::value; }()));
+    }
+;
+    return ctx;
+}
+
+int fu_MAIN()
+{
+    return FAIL("a"_fu).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn incr_x_to_1(ref x: i32) {
             x && throw("this reports return t_never");
             fn incr_x() { return x++; }

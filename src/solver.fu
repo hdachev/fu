@@ -3706,13 +3706,16 @@ pub fn solve(
                 //   e.g. `mut &x = mut_expectFalsy && throw("someone already set this");`
                 type = sumType;
             }
-            else
+            else if (type.is_ref)
             {
                 // Nope, that didn't work.
                 //  We can generate falsy values and refs,
                 //   but not mutrefs - can't allocate
                 //    a static mut and expect it to remain falsy.
                 type = clear_mutref(type);
+
+                // Default zerofills are static.
+                type.lifetime = Lifetime_makeShared(type.lifetime);
             }
         }
 
