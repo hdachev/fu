@@ -6988,6 +6988,85 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct Module  { cpp:     string;   };
+        struct Context { modules: Module[]; };  // Module[] is COW-capable -
+                                                //  - either prove there's no COW,
+        fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.
+            let ctx = Context([ Module(cpp) ]);
+            for (mut i = 0; i < ctx.modules.len; i++)
+            {
+                let module = ctx.modules[i];    // TODO .unique(i)
+                if (module.cpp)
+                    return module.cpp;          // TODO return static_cast<fu_STR&&>
+            }
+
+            return "";
+        }
+
+        fn main() snippet2cpp("1").len - 1;
+
+-----
+#include <fu/str.h>
+#include <fu/vec.h>
+
+struct s_Context;
+struct s_Module;
+
+                                #ifndef DEF_s_Module
+                                #define DEF_s_Module
+struct s_Module
+{
+    fu_STR cpp;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || cpp
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Context
+                                #define DEF_s_Context
+struct s_Context
+{
+    fu_VEC<s_Module> modules;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modules
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR snippet2cpp(const fu_STR& cpp)
+{
+    s_Context ctx = s_Context { fu_VEC<s_Module> { fu_VEC<s_Module>::INIT<1> { s_Module { fu_STR(cpp) } } } };
+    for (int i = 0; i < ctx.modules.size(); i++)
+    {
+        const s_Module& module = ctx.modules[i];
+        if (module.cpp)
+            return fu_STR(module.cpp);
+
+    };
+    return fu_STR{};
+}
+
+int fu_MAIN()
+{
+    return (snippet2cpp("1"_fu).size() - 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;

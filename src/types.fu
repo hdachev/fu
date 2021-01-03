@@ -97,11 +97,8 @@ pub fn Region_isTemp(region: Region) region == Region_TEMP;
 
 pub struct Lifetime { uni0n!: Region[]; };
 
-pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime
-{
-    return Lifetime(
-        uni0n: set::union(a.uni0n, b.uni0n));
-}
+pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
+    Lifetime(uni0n: set::union(a.uni0n, b.uni0n));
 
 pub fn Lifetime_compareToIndex(lifetime: Lifetime, index: i32)
 {
@@ -110,6 +107,14 @@ pub fn Lifetime_compareToIndex(lifetime: Lifetime, index: i32)
                                                                 :  0;
 }
 
+pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
+    Lifetime_union(lifetime, Lifetime_static);
+
+pub fn Lifetime_static(): Lifetime =
+    Lifetime(uni0n: [ Region ]);
+
+pub fn Lifetime_temporary(): Lifetime =
+    Lifetime(uni0n: [ Region_TEMP ]);
 
 //
 
@@ -212,12 +217,6 @@ pub fn isAssignable(host: Type, guest: Type): bool
                   host.quals & q_MUTINVAR == guest.quals & q_MUTINVAR)
         || guest.is_never;
 }
-
-pub fn Lifetime_static(): Lifetime =
-    Lifetime(uni0n: [ Region ]);
-
-pub fn Lifetime_temporary(): Lifetime =
-    Lifetime(uni0n: [ Region_TEMP ]);
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {

@@ -183,14 +183,14 @@ pub fn solve(
     fn Lifetime_FN_unorderedPrep(): Lifetime =
         Lifetime();
 
-    fn Lifetime_fromNative(sig: [Node], args: [SolvedNode]): Lifetime
+    fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
     {
         sig.len + FN_ARGS_BACK == args.len || fail("sig.len != args.len");
 
         let ret = sig[sig.len + FN_RET_BACK];
         mut mutref = ret.kind == "call" && ret.items.len == 1 && ret.value == "&mut";
 
-        mut res: Lifetime;
+        mut res: Type;
         for (;;)
         {
             for (mut i = 0; i < args.len; i++)
@@ -205,22 +205,32 @@ pub fn solve(
 
                     let arg = args[i];
                     let o = GET(arg.target);
-                    res = o.type.lifetime || fail("Missing arg lifetime.");
+                    res = o.type;
+                    res.lifetime || fail("Missing arg lifetime.");
                 }
             }
 
             // Try again without the mutref,
             //  currently we have a bunch of drama related to case-patterns,
             //   the mutref annots actually come in the branches, not the arg annots.
-            if (!mutref || res.uni0n)
+            if (!mutref || res.lifetime)
                 break;
 
             mutref = false;
         }
 
-        res.uni0n.only.Region_isArg || fail("Non-single-arg __native lifetime.");
+        res.lifetime.uni0n.only.Region_isArg || fail("Non-single-arg __native lifetime.");
 
-        return res;
+        // TODO FIX UNIQUENESS adding a static lifetime to constref results
+        //  that are not assignable from the source argument,
+        //   this coincides with container derefs currently -
+        //
+        // We only want to avoid attempts to move from there for now.
+        //
+        if (!actual.is_mutref && !isAssignable(host: actual, res))
+            return Lifetime_makeShared(res.lifetime);
+
+        return res.lifetime;
     }
 
     fn Lifetime_test(lifetime: Lifetime, tempsOK?!: bool): Lifetime
@@ -2055,7 +2065,7 @@ pub fn solve(
             if (_current_fn.ret_actual.lifetime)
             {
                 _current_fn.ret_actual.lifetime = native
-                    ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK])
+                    ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK], _current_fn.ret_actual)
                     : Lifetime_FN_unorderedPrep();
             }
             else if (_current_fn.ret_actual.is_ref)
