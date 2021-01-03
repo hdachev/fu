@@ -257,7 +257,11 @@ pub fn ZERO(
                 end = src.len;
 
             expectations.grow_if_oob(i) ~= src.slice(start + 3, end);
-            src.splice(start, end - start);
+
+            // Turn ;; commands into // comments and hop over.
+            src[start]      = '/';
+            src[start + 1]  = '/';
+            start           = end;
         }
     }
 
