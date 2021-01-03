@@ -2037,6 +2037,23 @@ pub fn runTests()
         fn main() snippet2cpp("1").len - 1;
     `);
 
+    ZERO(`
+        //! DEAD_code, TODO FIX no dead code here really, noticed before reopen.
+        //  Perhaps we want to "undo" these markers somehow?
+        //   Or have them per scope entry and discard?
+
+        fn test(x: string) {
+            // cg fail: fwd annots of the two fns where unconsting hey to "enable move",
+            //          basically the decision was made in the wrong scope.
+            let hey = "hey";
+            fn inner(you: string) you && hey ~ you || outer("what#1");
+            fn outer(arg: string) inner(arg && " " ~ arg) || inner("what#2");
+            return outer(x); //! FN_recursion FN_reopen
+        }
+
+        fn main() test("you").len - 7;
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
