@@ -1659,7 +1659,7 @@ pub fn cpp_codegen(
              ~ _indent ~ "}"
              ~ _indent ~ "catch (const std::exception& o_0)"
              ~ _indent ~ "{"
-             ~ _indent ~ "    const " ~ annotateString() ~ "& " ~ ID(err) ~ " = fu_TO_STR(o_0.what());\n"
+             ~ _indent ~ "    fu_STR " ~ ID(err) ~ " = fu_TO_STR(o_0.what());\n"
              ~  catch
              ~ _indent ~ "}\n";
     }

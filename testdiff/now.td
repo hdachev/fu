@@ -7989,7 +7989,7 @@ int fu_MAIN()
     }
     catch (const std::exception& o_0)
     {
-        const fu_STR& err = fu_TO_STR(o_0.what());
+        fu_STR err = fu_TO_STR(o_0.what());
 
         return (err.size() - 3);
     }
@@ -8040,7 +8040,7 @@ int fu_MAIN()
     }
     catch (const std::exception& o_0)
     {
-        const fu_STR& e = fu_TO_STR(o_0.what());
+        fu_STR e = fu_TO_STR(o_0.what());
 
         return (e.size() - 3);
     }
@@ -13341,7 +13341,7 @@ static int test_defer_if_errok(const bool throw_err)
     }
     catch (const std::exception& o_0)
     {
-        const fu_STR& e = fu_TO_STR(o_0.what());
+        fu_STR e = fu_TO_STR(o_0.what());
 
         x += e.size();
     }
