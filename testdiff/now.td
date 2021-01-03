@@ -7067,6 +7067,57 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        //! DEAD_code, TODO FIX no dead code here really, noticed before reopen.
+        //  Perhaps we want to "undo" these markers somehow?
+        //   Or have them per scope entry and discard?
+
+        fn test(x: string) {
+            // cg fail: fwd annots of the two fns where unconsting hey to "enable move",
+            //          basically the decision was made in the wrong scope.
+            let hey = "hey";
+            fn inner(you: string) you && hey ~ you || outer("what#1");
+            fn outer(arg: string) inner(arg && " " ~ arg) || inner("what#2");
+            return outer(x); //! FN_recursion FN_reopen
+        }
+
+        fn main() test("you").len - 7;
+
+-----
+#include <fu/str.h>
+#include <fu/vec/concat.h>
+
+static fu_STR outer(const fu_STR&, const fu_STR&);
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR inner(const fu_STR& hey_0, const fu_STR& you)
+{
+    return ([&]() -> fu_STR { if (you) { fu_STR _ = (hey_0 + you); if (_) return _; } return outer(hey_0, "what#1"_fu); }());
+}
+
+static fu_STR outer(const fu_STR& hey_0, const fu_STR& arg)
+{
+    return ([&]() -> fu_STR { { fu_STR _ = inner(hey_0, ([&]() -> fu_STR { if (arg) return (" "_fu + arg); else return fu_STR{}; }())); if (_) return _; } return inner(hey_0, "what#2"_fu); }());
+}
+
+static fu_STR test(const fu_STR& x)
+{
+    fu_STR hey = "hey"_fu;
+    return outer(hey, x);
+}
+
+int fu_MAIN()
+{
+    return (test("you"_fu).size() - 7);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;

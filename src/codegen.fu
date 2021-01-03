@@ -45,8 +45,13 @@ pub fn cpp_codegen(
     mut _indent: string = "\n";
     mut _hasMain: i32;
 
-    mut _current_fn_index: i32;
-    mut _current_fn_dupes: BitSet;
+    struct CurrentFn
+    {
+        using target:   Target;
+        dupes?:         BitSet;
+    };
+
+    mut _current_fn: CurrentFn;
 
     fn GET(target: Target): Overload
     {
@@ -106,7 +111,8 @@ pub fn cpp_codegen(
             //  return b;       // return move(b);  // here
             //
             if (!(type.quals & q_trivial) && !(mode & M_ARGUMENT)
-                && type.lifetime.Lifetime_compareToIndex(_current_fn_index) > 0)
+                && type.lifetime.Lifetime_compareToIndex(_current_fn.index) > 0
+                && _current_fn.modid == module.modid)
             {
                 // TODO only do this when strictly useful, weakens our validation.
                 //
@@ -117,7 +123,7 @@ pub fn cpp_codegen(
                 //
                 // TODO Tracking ref use and 'moved-from'-ness.
                 //
-                let fnret = GET(Target(:module.modid, index: _current_fn_index)).type;
+                let fnret = GET(Target(:module.modid, index: _current_fn.index)).type;
                 if !(fnret.quals & q_trivial || fnret.is_ref)
                     return fwd ~ "&";
             }
@@ -392,10 +398,10 @@ pub fn cpp_codegen(
     fn localID(target: Target, overload: Overload)
     {
         let ok = ID(overload.name);
-        if (target.modid == module.modid && overload.local_of == _current_fn_index)
+        if (target.modid == module.modid && overload.local_of == _current_fn.index)
             return ok;
 
-        if (_current_fn_dupes.has(target.index))
+        if (_current_fn.dupes.has(target.index))
             return ok ~ "_0" ~ target.index;
 
         return ok ~ "_0";
@@ -404,12 +410,12 @@ pub fn cpp_codegen(
     fn generateLocalID(target: Target, overload: Overload, ref seen: string[])
     {
         let ok = ID(overload.name);
-        if (target.modid == module.modid && overload.local_of == _current_fn_index)
+        if (target.modid == module.modid && overload.local_of == _current_fn.index)
             return ok;
 
         if (!seen.set::add(ok))
         {
-            _current_fn_dupes.add_once(target.index);
+            _current_fn.dupes.add_once(target.index);
             return ok ~ "_0" ~ target.index;
         }
 
@@ -610,6 +616,13 @@ pub fn cpp_codegen(
         if !(_ffwd.add_once(target))
             return;
 
+        ////////////////////////////////////////////
+        mut current_fn0 = CurrentFn(target: target);
+
+        defer   SWAP(_current_fn, current_fn0);
+                SWAP(_current_fn, current_fn0);
+        ////////////////////////////////////////////
+
         let id      = overload.name || fail();
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
@@ -712,16 +725,10 @@ pub fn cpp_codegen(
         mut src: string;
         {
             ////////////////////////////////////////////
-            let current_fn_index0 = _current_fn_index;
-            mut current_fn_dupes0: BitSet;
+            mut current_fn0 = CurrentFn(target: fn.target);
 
-            defer {
-                _current_fn_index = current_fn_index0;
-                SWAP(_current_fn_dupes, current_fn_dupes0);
-            }
-
-            _current_fn_index = fn.target.index;
-            SWAP(_current_fn_dupes, current_fn_dupes0);
+            defer   SWAP(_current_fn, current_fn0);
+                    SWAP(_current_fn, current_fn0);
             ////////////////////////////////////////////
 
             src ~= cgFnSignature(fn);
