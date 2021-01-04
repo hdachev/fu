@@ -45,13 +45,13 @@ pub fn cpp_codegen(
     mut _indent: string = "\n";
     mut _hasMain: i32;
 
-    struct CurrentFn
-    {
+    struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
+    {                   //  Or prefix structs with module name?
         using target:   Target;
         dupes?:         BitSet;
     };
 
-    mut _current_fn: CurrentFn;
+    mut _current_fn: cg_CurrentFn;
 
     fn GET(target: Target): Overload
     {
@@ -617,7 +617,7 @@ pub fn cpp_codegen(
             return;
 
         ////////////////////////////////////////////
-        mut current_fn0 = CurrentFn(target: target);
+        mut current_fn0 = cg_CurrentFn(target: target);
 
         defer   SWAP(_current_fn, current_fn0);
                 SWAP(_current_fn, current_fn0);
@@ -725,7 +725,7 @@ pub fn cpp_codegen(
         mut src: string;
         {
             ////////////////////////////////////////////
-            mut current_fn0 = CurrentFn(target: fn.target);
+            mut current_fn0 = cg_CurrentFn(target: fn.target);
 
             defer   SWAP(_current_fn, current_fn0);
                     SWAP(_current_fn, current_fn0);
