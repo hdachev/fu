@@ -86,3 +86,46 @@ extern "C" fu_EXPORT char* fu_ARC_ALLOC(size_t* inout_bytes)
     *inout_bytes = bytes;
     return mem + sizeof(fu_ARC);
 }
+
+
+// Same as above but without the 16 byte padding
+//  and without the reference counting, non-copiers rejoice.
+
+extern "C" fu_EXPORT void fu_UNIQ_DEALLOC(void* mem, size_t bytes)
+{
+    #if fu_ARC__DETECT_MEMORY_LEAKS
+    {
+        fu_ARC::CDOWN_count.m_cnt -= 1;
+        fu_ARC::CDOWN_bytes.m_cnt -= (int)bytes;
+    }
+    #endif
+
+    fu_POW2MEM_FREE((char*) mem, bytes);
+}
+
+extern "C" fu_EXPORT char* fu_UNIQ_ALLOC(size_t* inout_bytes)
+{
+    size_t bytes = *inout_bytes;
+
+    // Round up.
+    char* mem = fu_POW2MEM_ALLOC(bytes);
+
+    // Must fit in i32.
+    if (bytes > 0x7fffffffu)
+        std::exit(fu_EXIT_BadAlloc);
+
+    #if fu_ARC__DETECT_MEMORY_LEAKS
+    {
+        fu_ARC::CDOWN_count.m_cnt += 1;
+        fu_ARC::CDOWN_bytes.m_cnt += (int)bytes;
+    }
+    #endif
+
+    #if fu_ARC__PROFILE_MEMORY
+    fu_ARC::STAT_count.m_cnt++;
+    fu_ARC::STAT_bytes.m_cnt += (int)bytes;
+    #endif
+
+    *inout_bytes = bytes;
+    return mem;
+}

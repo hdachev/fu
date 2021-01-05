@@ -283,7 +283,8 @@ struct fu_VEC
                 old_data,
                 old_data + old_size);
 
-            fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+            if constexpr (SHAREABLE)    fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+            else                        fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
         }
     }
 
@@ -307,10 +308,11 @@ struct fu_VEC
         fu_ARC* arc = UNSAFE__arc(old_data);
 
         #ifndef NDEBUG
-        assert(arc->decr() && "not unique");
+        assert(!SHAREABLE || arc->decr() && "not unique");
         #endif
 
-        fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+        if constexpr (SHAREABLE)    fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+        else                        fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
     }
 
 
@@ -333,6 +335,8 @@ struct fu_VEC
             UNSAFE__MarkShared();
 
             c.UNSAFE__MarkShared();
+
+            static_assert(SHAREABLE, "arc->incr() a non SHAREABLE");
             UNSAFE__arc(big.data)->incr();
         }
     }
@@ -556,7 +560,9 @@ struct fu_VEC
         else
         {
             i32 new_capa = new_size + HAS_SMALL;
-            fu_ARC_ALLOC(new_data, new_capa);
+
+            fu_ALLOC<T, SHAREABLE>(new_data, new_capa);
+
             UNSAFE__EnsureActualLooksBig(new_capa);
             assert(new_capa >= new_size);
 

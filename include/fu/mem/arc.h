@@ -122,8 +122,11 @@ static_assert(sizeof(fu_ARC) < fu::ARC_MIN_ALLOC);
 extern "C" void  fu_ARC_DEALLOC(fu_ARC* arc, size_t bytes);
 extern "C" char* fu_ARC_ALLOC  (size_t* inout_bytes);
 
-template <typename T>
-inline void fu_ARC_ALLOC(T*& out_ptr, int& inout_cnt)
+extern "C" void  fu_UNIQ_DEALLOC(void* data, size_t bytes);
+extern "C" char* fu_UNIQ_ALLOC  (size_t* inout_bytes);
+
+template <typename T, bool SHAREABLE>
+inline void fu_ALLOC(T*& out_ptr, int& inout_cnt)
 {
     assert(inout_cnt > 0);
 
@@ -132,6 +135,7 @@ inline void fu_ARC_ALLOC(T*& out_ptr, int& inout_cnt)
             ? cnt : 1;
 
     size_t bytes    = cnt * sizeof(T);
-    out_ptr         = (T*)fu_ARC_ALLOC(&bytes);
+    out_ptr         = SHAREABLE ? (T*)fu_ARC_ALLOC(&bytes)
+                                : (T*)fu_UNIQ_ALLOC(&bytes);
     inout_cnt       = int(bytes / sizeof(T));
 }
