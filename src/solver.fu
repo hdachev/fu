@@ -445,49 +445,6 @@ pub fn solve(
             scope_skip: _current_fn && _ss);
     }
 
-    fn TemplateDecl(node: Node, local_of: i32, status: u32): Target
-    {
-        let id      = node.value;
-        let items   = node.items;
-
-        mut min     = 0;
-        let max     = node.kind == "fn" ? items.len + FN_ARGS_BACK
-                    : fail("TemplateDecl: non-fn node.");
-
-        mut args: Argument[];
-        for (mut i = 0; i < max; i++)
-        {
-            let arg     = items[i];
-            let name    = arg.value || fail("TemplateDecl: no argname.");
-            let annot   = arg.items[LET_TYPE];
-            let init    = arg.items[LET_INIT];
-
-            //////////////////////////////////////////////////
-            //                                              //
-            // Pre-typing template annots?                  //
-            //  Perhaps do this lazily?                     //
-            //
-            let typed   = !(arg.flags & F_TEMPLATE);
-            let type    = typed && annot && evalTypeAnnot(annot).type;
-            let default = typed && init  && solveNode(init, :type);
-            args.push(Argument(:name, :type, :default));
-            //                                              //
-            //////////////////////////////////////////////////
-
-            if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
-                min++;
-        }
-
-        //
-        let template = createTemplate(node);
-
-        return Scope_add(
-            _scope,
-            kind: "template", :id, Type,
-            :min, :max, :args, :template,
-            :node.flags, :local_of, :status);
-    }
-
     fn tryCreateDefinit(type: Type): SolvedNode
     {
         // Cannot definit mutrefs.
@@ -1523,11 +1480,45 @@ pub fn solve(
 
     fn uPrepFn_A(node: Node): SolvedNode
     {
-        let parent_idx = _current_fn.target.index;
-        let isTemplate = !!(node.flags & F_TEMPLATE);
+        let id          = node.value;
+        let local_of    = _current_fn.target.index;
+        let isTemplate  = !!(node.flags & F_TEMPLATE);
+        let status      = !isTemplate && SS_LAZY; // Actual template fns are eager.
 
-        let tDecl = TemplateDecl(:node, local_of: parent_idx,
-            status: !isTemplate && SS_LAZY); // Actual template fns are eager.
+        mut min         = 0;
+        let max         = node.items.len + FN_ARGS_BACK;
+
+        mut args: Argument[];
+        for (mut i = 0; i < max; i++)
+        {
+            let arg     = node.items[i];
+            let name    = arg.value || fail("TemplateDecl: no argname.");
+            let annot   = arg.items[LET_TYPE];
+            let init    = arg.items[LET_INIT];
+
+            //////////////////////////////////////////////////
+            //                                              //
+            // Pre-typing template annots?                  //
+            //  Perhaps do this lazily?                     //
+            //
+            let typed   = !(arg.flags & F_TEMPLATE);
+            let type    = typed && annot && evalTypeAnnot(annot).type;
+            let default = typed && init  && solveNode(init, :type);
+            args.push(Argument(:name, :type, :default));
+            //                                              //
+            //////////////////////////////////////////////////
+
+            if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
+                min++;
+        }
+
+        //
+        let template = createTemplate(node);
+
+        let tDecl = Scope_add(_scope,
+            kind: "template", :id, Type,
+            :min, :max, :args, :template,
+            :node.flags, :local_of, :status);
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
