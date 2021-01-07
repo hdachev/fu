@@ -162,11 +162,13 @@ fn    push(a: &mut $T[], b: $T): void __native(".push");
 fn unshift(a: &mut $T[], b: $T): void __native(".unshift");
 fn  insert(a: &mut $T[], i: i32, b: $T): void __native(".insert");
 
-fn  slice(a: $T[], i0: i32, i1: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
-fn  slice(a: $T[], i0: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
-fn substr(a: $T[], i0: i32, i1: i32): $T[] __native("<fu/vec/slice.h>", "fu::substr");
+fn  slice(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn  slice(a: $T[], start: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn substr(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::substr");
 
-fn splice(a: &mut $T[], i: i32, N: i32): void  __native(".splice");
+fn splice(a: &mut $T[], start: i32, count: i32): void  __native(".splice");
+fn splice(a: &mut $T[], start: i32, count: i32, b: [$T]): void  __native(".splice");
+
 fn    pop(a: &mut $T[]): void __native(".pop()");
 fn  shift(a: &mut $T[]): void __native(".shift()");
 
