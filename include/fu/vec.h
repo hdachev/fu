@@ -322,7 +322,7 @@ struct fu_VEC
     //
     // Copy & move constructors.
 
-    fu_INL fu_VEC(const fu_VEC& c) noexcept
+    fu_INL fu_EXPLICIT fu_VEC(const fu_VEC& c) noexcept
         : big(c.big)
     {
         static_assert(COPIABLE, "Cannot copy fu_VECs of non-copiable types.");

@@ -1,5 +1,7 @@
 #pragma once
 
+#define fu_EXPLICIT /*not explicit*/
+
 #ifdef fu_UNITY_FULIB
 #include <fu/_fulib.cpp>
 #endif

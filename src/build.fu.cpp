@@ -716,7 +716,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu);
+    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror -Dfu_EXPLICIT=\" \" "_fu);
     fu_VEC<fu_STR> Fs {};
     int len_all {};
     fu_STR fulib_cpp = fu::file_read(fulib);
@@ -820,6 +820,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             {
                 fu_STR data = "#pragma once\n\n"_fu;
                 data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
+                data += "#define fu_EXPLICIT /*explicit*/\n\n"_fu;
                 ((link_order.size() == cpp_files.size()) || fu::fail("lo.len != cf.len"_fu));
                 for (int i = 0; i < link_order.size(); i++)
                 {
