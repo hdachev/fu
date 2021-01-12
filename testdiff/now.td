@@ -5212,13 +5212,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-
-    {
-
-        {
-            return 0;
-        };
-    };
+    return 0;
 }
 
 #endif
@@ -5246,13 +5240,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-
-    {
-
-        {
-            return 0;
-        };
-    };
+    return 0;
 }
 
 #endif
@@ -5272,10 +5260,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-
-    {
-        return 0;
-    };
+    return 0;
 }
 
 #endif
@@ -5299,10 +5284,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-
-    {
-        return 0;
-    };
+    return 0;
 }
 
 #endif
@@ -5326,10 +5308,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-
-    {
-        return 0;
-    };
+    return 0;
 }
 
 #endif

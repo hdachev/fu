@@ -1262,7 +1262,7 @@ pub fn solve(
         let k = node.kind;
 
         if (k == "root")        return solveRoot(node);
-        if (k == "block")       return solveBlock(node.token, node.items, id: node.value, :type);
+        if (k == "block")       return solveBlock(node, :type);
         if (k == "label")       return solveLabel(node, :type);
 
         if (k == "let")         return solveLet(node, :deadcode_on_never);
@@ -1345,8 +1345,12 @@ pub fn solve(
             solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(token: TokenIdx, nodes: Node[], id?!: string, type?!: Type): SolvedNode
+    fn solveBlock(node: Node, type?!: Type): SolvedNode
     {
+        let token = node.token;
+        let nodes = node.kind == "block"  ? node.items : [ node ];
+        let id    = node.kind == "block" && node.value;
+
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
         defer Scope_pop(_scope, scope0);
@@ -1360,6 +1364,10 @@ pub fn solve(
             type_last:          type,
             use_type_last:      expr,
             deadcode_on_never:  true);
+
+        // Compact + stress test.
+        if (!label && items.len == 1 && Scope_snap(_scope) == scope0)
+            return items[0];
 
         // Control flow.
         shadow let type = expr && items.len || items.if_last.type.is_never && !(label && GET(label).status & SS_HAS_BREAK)

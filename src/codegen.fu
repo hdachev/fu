@@ -14,6 +14,7 @@ let M_ARGUMENT          = 1 << 4;
 let M_LAMBDA            = 1 << 5;
 let M_FWDECL            = 1 << 6;
 let M_PARENS            = 1 << 7;
+let M_OPT_CURLIES       = 1 << 8;
 
 
 //
@@ -441,7 +442,65 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn blockWrap(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: Target): string
+    fn cgComma(nodes: SolvedNode[]): string
+    {
+        shadow let items = cgNodes(nodes);
+        if (!items.len)
+            return "(false /*empty parens*/)";
+
+        if (items.len == 1)
+            return items[0];
+
+        mut src = "(";
+        for (mut i = 0; i < items.len; i++)
+        {
+            if (i)
+                src ~= ", ";
+            if (i < items.len - 1)
+                src ~= "(void)";
+
+            src ~= items[i];
+        }
+
+        return src ~ ")";
+    }
+
+
+    //
+
+    fn blockWrapSubstatement(node: SolvedNode): string
+        cgBlock(node, mode: M_STMT | M_OPT_CURLIES);
+
+    fn cgBlock(node: SolvedNode, mode: i32): string
+    {
+        let items = node.kind == "block"  ? node.items : [ node ];
+        let label = node.kind == "block" && node.target;
+
+        //
+        mut expr = !(mode & M_STMT);
+        if (expr && !label)
+        {
+            fn isExpr(kind: string): bool
+                kind == "call" || kind == "and" || kind == "or" || kind == "if";
+
+            mut ok = true;
+            for (mut i = 0; i < items.len; i++)
+            {
+                if (!items[i].kind.isExpr)
+                {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+                return cgComma(items);
+        }
+
+        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr, :label);
+    }
+
+    fn cgBlock(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: Target): string
     {
         let indent0 = _indent;
         _indent ~= "    ";
@@ -461,65 +520,6 @@ pub fn cpp_codegen(
 
         _indent = indent0;
         return src;
-    }
-
-    fn blockWrapSubstatement(node: SolvedNode): string
-    {
-        return node.kind != "block" ? blockWrap([ node ], skipCurlies: true)
-             : node.items.len == 1  ? blockWrapSubstatement(node.items[0])
-                                    : cgBlock(node, M_STMT);
-    }
-
-    fn cgBlock(block: SolvedNode, mode: i32): string
-    {
-        /////////////////////////
-        let label = block.target;
-        /////////////////////////
-
-        mut expr = !(mode & M_STMT);
-        if (expr && !label)
-        {
-            fn isExpr(node: SolvedNode)
-                node.kind == "call";
-
-            mut ok = true;
-            for (mut i = 0; i < block.items.len; i++)
-            {
-                if (!block.items[i].isExpr)
-                {
-                    ok = false;
-                    break;
-                }
-            }
-
-            if (ok)
-                return cgParens(block);
-        }
-
-        return blockWrap(block.items, gnuStmtExpr: expr, :label);
-    }
-
-    fn cgParens(node: SolvedNode): string
-    {
-        let items = cgNodes(node.items);
-        if (!items.len)
-            return "(false /*empty parens*/)";
-
-        if (items.len == 1)
-            return items[0];
-
-        mut src = "(";
-        for (mut i = 0; i < items.len; i++)
-        {
-            if (i)
-                src ~= ", ";
-            if (i < items.len - 1)
-                src ~= "(void)";
-
-            src ~= items[i];
-        }
-
-        return src ~ ")";
     }
 
     fn cgDefer(node: SolvedNode): string
@@ -732,9 +732,6 @@ pub fn cpp_codegen(
             ////////////////////////////////////////////
 
             src ~= cgFnSignature(fn);
-
-            body.kind == "block" || fail("cgFn: body indeed not a block.");
-
             src ~= cgBlock(body, M_STMT);
         }
 
@@ -1337,16 +1334,7 @@ pub fn cpp_codegen(
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");
 
-        if (cons && alt)
-            return "(" ~ cond ~ " ? " ~ cons ~ " : " ~ alt ~ ")";
-
-        if (cons)
-            return "(" ~ cond ~ " && " ~ cons ~ ")";
-
-        if (alt)
-            return "(" ~ cond ~ " || " ~ alt ~ ")";
-
-        return fail("TODO cgIf no const/alt");
+        return "(" ~ cond ~ " ? " ~ cons ~ " : " ~ alt ~ ")";
     }
 
     fn cgAnd(node: SolvedNode, mode: i32): string
@@ -1679,16 +1667,7 @@ pub fn cpp_codegen(
         let k = node.kind;
 
         if (k == "call")        return cgCall(node, mode);
-        if (k == "return")      return cgReturn(node);
-        if (k == "break")       return cgJump(node);
-        if (k == "continue")    return cgJump(node);
-        if (k == "let")         return cgLet(node);
-        if (k == "global")      return cgGlobal(node);
-        if (k == "if")          return cgIf(node, mode);
-        if (k == "!")           return cgNot(node);
-        if (k == "or")          return cgOr(node);
-        if (k == "and")         return cgAnd(node, mode);
-        if (k == "loop")        return cgLoop(node);
+
         if (k == "int")         return cgLiteral(node);
         if (k == "real")        return cgLiteral(node);
         if (k == "char")        return cgCharLiteral(node);
@@ -1696,22 +1675,35 @@ pub fn cpp_codegen(
         if (k == "arrlit")      return cgArrayLiteral(node, mode);
         if (k == "definit")     return cgDefaultInit(node, mode);
 
+        if (k == "copy")        return cgCopyMove(node);
+        if (k == "move")        return cgCopyMove(node);
+        if (k == "nrvo")        return cgCopyMove(node);
+
+        if (k == "if")          return cgIf(node, mode);
+        if (k == "!")           return cgNot(node);
+        if (k == "or")          return cgOr(node);
+        if (k == "and")         return cgAnd(node, mode);
+
+        if (k == "let")         return cgLet(node);
+        if (k == "global")      return cgGlobal(node);
+
+        if (k == "return")      return cgReturn(node);
+        if (k == "break")       return cgJump(node);
+        if (k == "continue")    return cgJump(node);
+
+        if (k == "loop")        return cgLoop(node);
+        if (k == "try")         return cgTryCatch(node);
+        if (k == "catch")       return cgCatch(node);
+        if (k == "defer")       return cgDefer(node);
+
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);
-        if (k == "parens")      return cgParens(node);
-        if (k == "label")       return cgParens(node);
+        if (k == "label")       return cgComma(node.items);
 
         if (k == "fndef")       return cgFnDef(node, mode);
         if (k == "fn")          return cgFn(node, mode);
         if (k == "struct")      return cgEmpty(mode);
         if (k == "empty")       return cgEmpty(mode);
-        if (k == "defer")       return cgDefer(node);
-
-        if (k == "copy")        return cgCopyMove(node);
-        if (k == "move")        return cgCopyMove(node);
-        if (k == "nrvo")        return cgCopyMove(node);
-        if (k == "catch")       return cgCatch(node);
-        if (k == "try")         return cgTryCatch(node);
 
         return fail("TODO: " ~ k);
     }
