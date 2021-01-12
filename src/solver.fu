@@ -80,6 +80,9 @@ pub fn solve(
         return_idx:     ScopeMemo; // <- truth from here
         parent_idx:     i32;
         using RoR?:     CurrentFn_ResetOnResolve;
+
+        // HA!
+        stmts?:         SolvedNode[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -1361,7 +1364,8 @@ pub fn solve(
             type_all:           t_void,
             type_last:          type,
             use_type_last:      expr,
-            deadcode_on_never:  true);
+            deadcode_on_never:  true,
+            statements:         true);
 
         // Compact + stress test.
         if (!label && items.len == 1 && Scope_snap(_scope) == scope0)
@@ -1953,7 +1957,8 @@ pub fn solve(
             let spec = template.node.flags & F_TEMPLATE;
 
             // Prep reject.
-            let return_idx = Scope_snap(_scope);
+            let return_idx = Scope_snap(_scope); // TODO: isn't this the same as scope0 above?
+
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
@@ -2736,7 +2741,7 @@ pub fn solve(
         let n_post_cond = node.items[LOOP_POST_COND];
         let n_post      = node.items[LOOP_POST];
 
-        let init        = n_init      && solveNode(n_init,      t_void);
+        let init        = n_init      && solveLetStatement(n_init);
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
         let body        = n_body      && solveNode(n_body,      t_void);
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
@@ -2984,9 +2989,35 @@ pub fn solve(
 
             if (out.flags & F_USING)
                 _scope.usings.push(target.index);
+
+            // Testing out tempvar output
+            //  by outputting all vars as if they were temps.
+            if !(node.flags & F_ARG || global)
+            {
+                _current_fn.stmts ~= out;
+                return createEmpty();
+            }
         }
 
         return out;
+    }
+
+    fn solveLetStatement(node: Node): SolvedNode
+    {
+        let stmts0 = _current_fn.stmts.len;
+
+        let res = solveNode(node, t_void);
+        if (res.kind == "empty" && _current_fn.stmts.len > stmts0)
+        {
+            shadow let res = _current_fn.stmts.last;
+            if (res.kind == "let")
+            {
+                _current_fn.stmts.pop();
+                return res;
+            }
+        }
+
+        return res;
     }
 
     fn solveCatch(node: Node): SolvedNode
@@ -2994,7 +3025,7 @@ pub fn solve(
         node.items.len == 3 || fail();
 
         _current_fn.tries++;
-        let var_ok = solveNode(node.items[0]);
+        let var_ok = solveLetStatement(node.items[0]);
         _current_fn.tries--;
 
         ////////////////////////////////
@@ -3002,7 +3033,7 @@ pub fn solve(
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
-        let var_err = solveNode(node.items[1]);
+        let var_err = solveLetStatement(node.items[1]);
         let catch   = solveNode(node.items[2]);
 
         let type = var_ok.type;
@@ -3035,7 +3066,7 @@ pub fn solve(
         shadow let scope0 = Scope_snap(_scope);
         ///////////////////////////////////////
 
-        let err     = solveNode(node.items[1]);
+        let err     = solveLetStatement(node.items[1]);
         let catch   = solveNode(node.items[2]);
 
         //////////////////////////
@@ -3851,9 +3882,11 @@ pub fn solve(
 
     fn solveNodes(
         nodes: Node[],
-        type_all?: Type, type_last?!: Type,
+        type_all?: Type,
+        type_last?!: Type,
         use_type_last?!: bool,
-        deadcode_on_never?!: bool): SolvedNode[]
+        deadcode_on_never?!: bool,
+        statements?!: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -3862,9 +3895,7 @@ pub fn solve(
         defer _here = here0;
         ////////////////////////////////////////////////////////
 
-        result.resize(nodes.len);
-
-        ////////////////////////////
+        let stmts0 = _current_fn.stmts.len;
 
         //
         for (mut i = 0; i < nodes.len; i++)
@@ -3877,17 +3908,28 @@ pub fn solve(
             mut unorderedClass = unorderedClassify(node.kind);
             if (!unorderedClass)
             {
-                _here       = node.token || _here;
+                _here = node.token || _here;
 
-                ref solved  =
-                result[i]   = solveNode(:node, :deadcode_on_never, type:
-                    i == nodes.len - 1 && use_type_last
-                        ? type_last : type_all);
+                let solved = solveNode(:node, :deadcode_on_never,
+                    type: i == nodes.len - 1 && use_type_last
+                        ? type_last
+                        : type_all);
+
+                // Temps first.
+                if (statements && _current_fn.stmts.len > stmts0)
+                {
+                    result ~= _current_fn.stmts.slice(
+                        stmts0, _current_fn.stmts.len);
+
+                    _current_fn.stmts.shrink(stmts0);
+                }
+
+                //
+                result ~= solved;
 
                 // Dead code elim.
                 if (deadcode_on_never && solved.type.is_never)
                 {
-                    result.shrink(i + 1);
                     if (i < nodes.len - 1)
                         notes |= N_DeadCode;
 
@@ -3907,6 +3949,8 @@ pub fn solve(
             let i0 = i;
             mut i1 = nodes.len;
 
+            let offset = result.len - i0;
+
             // First pass, expose stuff in scope
             //  without doing type checking when possible.
             for (shadow mut i = i0; i < nodes.len; i++)
@@ -3919,7 +3963,7 @@ pub fn solve(
                 }
 
                 _here = node.token || _here;
-                result[i] = unorderedPrep_A(node);
+                result ~= unorderedPrep_A(node);
             }
 
             // Later we'll continue from group end.
@@ -3928,11 +3972,12 @@ pub fn solve(
 
             // Second prep pass, limit access to scope
             //  of all newly generated entries to what we have right now.
+            //
             for (shadow mut i = i0; i < i1; i++)
             {
                 shadow let node = nodes[i] || fail("solveNodes, prep-b: falsy node");
                 _here = node.token || _here;
-                unorderedPrep_B(:node, result[i].target);
+                unorderedPrep_B(:node, result[i + offset].target);
             }
 
             // TODO REMOVE, solve all.
@@ -3945,7 +3990,7 @@ pub fn solve(
                 {
                     shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
                     _here = node.token || _here;
-                    let into = result[i].target;
+                    let into = result[i + offset].target;
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
                     if (lazySolveStart(into, GET(into)))
@@ -3954,6 +3999,7 @@ pub fn solve(
             }
         }
 
+        //
         return result;
     }
 
