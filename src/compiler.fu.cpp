@@ -643,7 +643,7 @@ inline const fu_STR PRJDIR = locate_PRJDIR();
 
                                 #ifndef DEF_DEFAULT_WORKSPACE
                                 #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
+inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
                                 #endif
 
                                 #ifndef DEF_FULIB

@@ -94,7 +94,7 @@ pub fn locate_PRJDIR(): string
 }
 
 pub let PRJDIR              = locate_PRJDIR();
-pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build.cpp/";
+pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build-cpp/";
 pub let FULIB               = PRJDIR ~ "include/fu/_fulib.cpp";
 
 

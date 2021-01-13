@@ -1,7 +1,7 @@
 //#define ISOLATE_FAILING_TESTCASE
 
 #ifdef ISOLATE_FAILING_TESTCASE
-#include "../build.cpp/failing-testcase.cpp"
+#include "../build-cpp/failing-testcase.cpp"
 #endif
 
 #define fu_UNITY_FULIB

@@ -1,9 +1,9 @@
 node_modules
 bin
 build
-build.cpp
-build.cpp-alt
-build.cpp-back
+build-cpp
+build-cpp-alt
+build-cpp-back
 package-lock.json
 *.sublime-workspace
 .DS_Store

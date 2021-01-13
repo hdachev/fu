@@ -63,7 +63,7 @@ static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0
 
                                 #ifndef DEF_DEFAULT_WORKSPACE
                                 #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build.cpp/"_fu);
+inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
                                 #endif
 
 static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
