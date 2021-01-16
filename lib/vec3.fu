@@ -41,7 +41,7 @@ pub inline fn len  (a: vec3) a.lensq.sqrt;
 pub inline fn norm(a: vec3)
 {
     mut n = 1 / a.len;
-        n = n.finite ? n : 0;
+    n = n.finite ? n : 0;
 
     return a * n;
 }
@@ -51,7 +51,7 @@ pub inline fn normalize(ref a: vec3)
     let l = a.len;
 
     mut n = 1 / l;
-        n = n.finite ? n : 0;
+    n = n.finite ? n : 0;
 
     a *= n;
     return l;
@@ -109,12 +109,12 @@ pub inline fn quadratic(
     }
 
     mut discr_sqrt = sqrt(discr);
-        discr_sqrt = b > 0  ? +discr_sqrt
-                            : -discr_sqrt;
+    discr_sqrt = b > 0  ? +discr_sqrt
+                        : -discr_sqrt;
 
-    let q  = -0.5 * (b + discr_sqrt);
-        x0 = q / a;
-        x1 = c / q;
+    let q = -0.5 * (b + discr_sqrt);
+    x0 = q / a;
+    x1 = c / q;
 }
 
 pub inline fn ray_sphere(

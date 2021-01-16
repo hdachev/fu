@@ -85,9 +85,9 @@ let HOME = absdir(env::get("HOME"));
 pub fn locate_PRJDIR(): string
 {
     let dir = HOME ~ "fu/";
-    let fn  = dir  ~ "src/compiler.fu";
-    let fs  = file::size(fn);
-        fs  > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
+    let fn = dir  ~ "src/compiler.fu";
+    let fs = file::size(fn);
+    fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
 
     println("PRJDIR: " ~ dir);
     return dir;

@@ -1092,12 +1092,11 @@ pub fn solve(
                                 }
                             }
 
-                            /////////////////////
-                                    path.push(t);
-                            defer   path.pop();
-                            /////////////////////
+                            ///////////////////////////////
+                            path.push(t); defer path.pop();
+                            ///////////////////////////////
                             descend(convertType, nullary: false, :isStruct);
-                            /////////////////////
+                            ///////////////////////////////
                         }
                     }
                 }
@@ -1283,7 +1282,6 @@ pub fn solve(
         if (k == "real")        return solveNum(node, type);
         if (k == "str")         return solveStr(node);
         if (k == "char")        return solveChar(node);
-        if (k == "empty")       return createEmpty();
 
         if (k == "definit")     return solveDefinit(type);
 
@@ -1644,7 +1642,7 @@ pub fn solve(
             return;
 
         let last = scope_skip.if_last;
-            last.end <= start || fail("ScopeSkip_push: last.end > start.");
+        last.end <= start || fail("ScopeSkip_push: last.end > start.");
 
         // Opti - don't grow if possible, so we stay in small storage.
         if (scope_skip && last.end == start)
@@ -1735,14 +1733,14 @@ pub fn solve(
 
             let items = template.node.items;
             mut n_fn = template.node;
-                n_fn.kind == "fn" || fail("n_fn not a `fn`.");
+            n_fn.kind == "fn" || fail("n_fn not a `fn`.");
 
             let isInline = USE_inlining && !!(n_fn.flags & F_INLINE);
 
             if (_root_scope)
             {
                 let start = template.scope_memo || _root_scope;
-                      _ss = template.scope_skip;
+                _ss = template.scope_skip;
 
                 ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
 
@@ -1879,8 +1877,8 @@ pub fn solve(
                 if (remangle)
                 {
                     // TODO FIX
-                    let start   = mangle.find(' ') + 1 || fail();
-                        mangle  = mangle.slice(0, start) ~ mangleArguments(args);
+                    let start = mangle.find(' ') + 1 || fail();
+                    mangle = mangle.slice(0, start) ~ mangleArguments(args);
 
                     if (mangle00 != mangle)
                     {
@@ -1982,7 +1980,6 @@ pub fn solve(
 
             //////////////////////////
             mut native = false;
-            mut n_body: Node;
 
             ////////////////
             out.RoR = CurrentFn_ResetOnResolve();
@@ -2043,7 +2040,7 @@ pub fn solve(
 
             /////////////////////////////////////////////////////
             let n_ret   = inItems[inItems.len + FN_RET_BACK];
-                n_body  = inItems[inItems.len + FN_BODY_BACK];
+            let n_body  = inItems[inItems.len + FN_BODY_BACK];
 
             // Builtin?
             n_body || fail("solveFn: no body.");
@@ -2164,9 +2161,9 @@ pub fn solve(
                     }
 
                     ref overload = GET_mut(target);
-                        overload.name = name;
-                        overload.kind = native ? "__native" : "fn";
-                        overload.template = native ? createTemplate(n_body) : template;
+                    overload.name = name;
+                    overload.kind = native ? "__native" : "fn";
+                    overload.template = native ? createTemplate(n_body) : template;
                 }
 
                 updateScope(_current_fn);
@@ -2175,7 +2172,7 @@ pub fn solve(
                 if (!into)
                 {
                     let start   = mangle0.find(' ') + 1 || fail();
-                        mangle  = mangle0.slice(0, start)
+                    mangle      = mangle0.slice(0, start)
                                 ~ mangleArguments(GET(target).args);
 
                     mut preexisting: Target;
@@ -2335,7 +2332,7 @@ pub fn solve(
                     "solveStructMembers_4: field id mismatch.");
 
                 ref field = GET_mut(item.target);
-                    field.type = node.type;
+                field.type = node.type;
 
                 if (node.flags & F_USING)
                 {
@@ -2366,10 +2363,10 @@ pub fn solve(
 
             //
             {
-                ref s           = lookupStruct_mut(out.type.canon);
-                    s.target    = out.target || fail("No struct/out.target.");
-                    s.converts  = structConverts;
-                    s.imports   = structImports;
+                ref s       = lookupStruct_mut(out.type.canon);
+                s.target    = out.target || fail("No struct/out.target.");
+                s.converts  = structConverts;
+                s.imports   = structImports;
 
                 GET(s.target).status & SS_DID_START || fail(
                     "Setting stuff but missing SS_DID_START.");
@@ -2414,7 +2411,7 @@ pub fn solve(
 
         //
         ref o = GET_mut(out.target);
-            o.solved = out;
+        o.solved = out;
 
         ////////////////
         lazySolveEnd(o);
@@ -2432,8 +2429,8 @@ pub fn solve(
 
         {
             ref o = GET_mut(target);
-                o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && fail("SS_DID_START: non-zero solver status: " ~ overload.status);
-                o.status |= SS_DID_START;
+            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && fail("SS_DID_START: non-zero solver status: " ~ overload.status);
+            o.status |= SS_DID_START;
 
             if (o.kind == "template" || o.kind == "fn")
                 doTrySpecialize(into: target);
@@ -2959,8 +2956,8 @@ pub fn solve(
     fn solveLet(node: Node, specType?!: Type, reuse?: Target, deadcode_on_never?!: bool): SolvedNode
     {
         let global = !_current_fn;
-            global && node.flags & F_FIELD && fail(
-                "solveLet: field misclassified as global: " ~ node.value);
+        global && node.flags & F_FIELD && fail(
+            "solveLet: field misclassified as global: " ~ node.value);
 
         mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
@@ -3218,10 +3215,9 @@ pub fn solve(
 
             // TODO FIX kinda crappy
             // Watch out for noreturn.
-            ////////////////////////////
-                    _current_fn.tries++;
-            defer   _current_fn.tries--;
-            ////////////////////////////
+            ///////////////////////////////////////////////
+            _current_fn.tries++; defer _current_fn.tries--;
+            ///////////////////////////////////////////////
 
             return solveCall(node);
         }
@@ -3376,10 +3372,10 @@ pub fn solve(
     fn dequalify_andGetScope(ref id: string): &Scope
     {
         let split = id.find('\t');
-            split >= 0 || fail();
+        split >= 0 || fail();
 
         let fname = id.slice(0, split);
-            id    = id.slice(split + 1);
+        id        = id.slice(split + 1);
 
         let other = findModule(fuzimport: fname);
         if (other.modid != module.modid)

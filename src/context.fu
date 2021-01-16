@@ -149,8 +149,8 @@ pub fn setModule(
     module: Module)
 {
     ref current = ctx.modules[module.modid];
-        current.fname == module.fname || assert();
-        current = module.clone();
+    current.fname == module.fname || assert();
+    current = module.clone();
 }
 
 

@@ -6105,7 +6105,7 @@ int main() { return fu_MAIN(); }
         fn __solveStruct(mut arg: i32): i32 {
             if (arg) {
                 ref o = GET_mut(arg);
-                    o++;
+                o++;
                 checkRecursions(o, o);
             }
             return arg;
@@ -6396,7 +6396,7 @@ int main() { return fu_MAIN(); }
                 each(arg, || arg += x);
                 if (arg) {
                     ref o = GET_mut(arg);
-                        o++;
+                    o++;
                     checkRecursions(o, o);
                 }
                 return arg;
@@ -6470,7 +6470,7 @@ int main() { return fu_MAIN(); }
             fn __solveStruct(mut arg: i32): i32 {
                 if (arg) {
                     ref o = GET_mut(arg);
-                        o++;
+                    o++;
                     checkRecursions(o, o);
                 }
                 return arg;
@@ -6814,8 +6814,8 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut sum = 0;
             let a = [ 1, 2, 3 ];
-                a.each(|i| sum += i, start: sum);   // <- start inferred to ref i32, which couldnt definit
-            return sum - 6;                         //     perhaps we can use the optionality to infer constness
+            a.each(|i| sum += i, start: sum);   // <- start inferred to ref i32, which couldnt definit
+            return sum - 6;                     //     perhaps we can use the optionality to infer constness
         }
 
 -----
@@ -8959,8 +8959,8 @@ int main() { return fu_MAIN(); }
                 x && throw("this reports return t_never");
                 // which messed up retcount for scope_using
                 fn visit(item: i32) {
-                    if (item)   return item;
-                                return x++;
+                    if (item) return item;
+                    return x++;
                 }
                 apply(fn visit, via);
             }
@@ -12761,8 +12761,8 @@ int main() { return fu_MAIN(); }
         fn noReturn() throw ("ex");
 
         fn doesReturn(a: i32) {
-            if (a > 0)  return noReturn();
-                        return a;
+            if (a > 0) return noReturn();
+            return a;
         }
 
         fn main() doesReturn(-3) + 3;

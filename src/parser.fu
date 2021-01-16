@@ -347,13 +347,24 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         endKind: string, endVal: string,
         struct! = false): Node[]
     {
-        let line0 = tokens[_idx].line;
-        let col00 = _col0;
+        let line0   = _idx && tokens[_idx - 1].line;
+        let col00   = _col0;
+
+        mut colNN   = -1;
+        mut lineNN  = line0;
 
         mut items: Node[] = [];
         for (;;)
         {
             let token = tokens[_idx];
+
+            // Ignore excess semicolons, e.g. struct{}; etc.
+            if (token.kind == "op" && token.value == ";")
+            {
+                _idx++;
+                continue;
+            }
+
             if (token.kind == endKind && token.value == endVal)
             {
                 // Done.
@@ -365,19 +376,30 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 let col1  = token.col;
 
                 line1 == line0 || col1 == _col0 || fail_Lint(
-                    "Bad closing `" ~ token.value ~ "` indent, expecting " ~ (_col0 - 1)
+                    "Inconsistent indent at closing `" ~ token.value ~ "`: expected " ~ (_col0 - 1)
                         ~ ", got " ~ (col1 - 1)
                         ~ ". Block starts on line " ~ line0 ~ ".");
 
                 break;
             }
 
+            //
             _col0 = token.col;
-
             _col0 > col00 || fail_Lint(
-                "Bad indent, expecting more than " ~ col00
+                "Inconsistent indent at `" ~ token.value ~ "`: expected more than " ~ col00
                     ~ ", got " ~ _col0 ~ ". Block starts on line " ~ line0 ~ ".");
 
+            // Consistent indentation within blocks.
+            colNN < 0 || colNN == _col0 || token.line == lineNN || fail_Lint(
+                "Inconsistent indent at `" ~ token.value ~ "`: expected exactly " ~ colNN
+                    ~ ", got " ~ _col0 ~ ". Previous statement starts on line " ~ lineNN ~ ".");
+
+            if (colNN < 0)
+                colNN = _col0;
+
+            lineNN = token.line;
+
+            //
             let expr = struct
                 ? parseStructItem()
                 : parseStatement();
@@ -389,9 +411,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 || tokens[_idx].value == endVal
                 || fail_Lint("Orphan pure-looking expression.");
 
-            // Filter out excess semicolons.
-            if (expr.kind != "empty")
-                items.push(expr);
+            items.push(expr);
         }
 
         return items;
@@ -434,7 +454,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             let v = token.value;
 
             if (v == "{")           return parseBlock();
-            if (v == ";")           return parseEmpty();
         }
         else if (token.kind == "id")
         {
@@ -536,11 +555,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         return fail("Only loops, blocks & calls can be :labelled, "
                     ~ "this is a `" ~ stmt.kind ~ "`.");
-    }
-
-    fn parseEmpty(): Node
-    {
-        return make("empty");
     }
 
     fn parseExpressionStatement(): Node
@@ -1111,7 +1125,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseParens(): Node
     {
         mut out = parseExpression(P_RESET);
-            out.flags |= F_PARENS;
+        out.flags |= F_PARENS;
 
         consume("op", ")");
         return out;
@@ -1529,9 +1543,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let pre_cond = !tryConsume("op", ";") && parseExpressionStatement();
 
         let token = tokens[_idx];
-        let post = token.kind == "op" && token.value == ")"
-            ? parseEmpty()
-            : parseExpression();
+        let post = !(token.kind == "op" && token.value == ")")
+            && parseExpression();
 
         consume("op", ")");
         let body = parseStatement();

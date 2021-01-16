@@ -24,7 +24,7 @@ fn update_file(
     dir_out !: string)
 {
     shadow let fname = ensure_local_fname(:fname, :dir_src);
-        fname.starts(with: dir_src) || throw("ensure_local_fname broken");
+    fname.starts(with: dir_src) || throw("ensure_local_fname broken");
 
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file::read(fname) != data)

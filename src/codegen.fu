@@ -619,8 +619,8 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////
         mut current_fn0 = cg_CurrentFn(target: target);
 
-        defer   SWAP(_current_fn, current_fn0);
-                SWAP(_current_fn, current_fn0);
+        defer SWAP(_current_fn, current_fn0);
+        SWAP(_current_fn, current_fn0);
         ////////////////////////////////////////////
 
         let id      = overload.name || fail();
@@ -727,8 +727,8 @@ pub fn cpp_codegen(
             ////////////////////////////////////////////
             mut current_fn0 = cg_CurrentFn(target: fn.target);
 
-            defer   SWAP(_current_fn, current_fn0);
-                    SWAP(_current_fn, current_fn0);
+            defer SWAP(_current_fn, current_fn0);
+            SWAP(_current_fn, current_fn0);
             ////////////////////////////////////////////
 
             src ~= cgFnSignature(fn);
@@ -906,7 +906,7 @@ pub fn cpp_codegen(
         {
             let c = node.value[i];
 
-                 if (c == '\n') esc ~= "\\n";
+            if      (c == '\n') esc ~= "\\n";
             else if (c == '\r') esc ~= "\\r";
             else if (c == '\t') esc ~= "\\t";
             else if (c == '\v') esc ~= "\\v";
@@ -927,7 +927,7 @@ pub fn cpp_codegen(
         {
             let c = node.value[i];
 
-                 if (c == '\n') esc ~= "\\n";
+            if      (c == '\n') esc ~= "\\n";
             else if (c == '\r') esc ~= "\\r";
             else if (c == '\t') esc ~= "\\t";
             else if (c == '\v') esc ~= "\\v";
