@@ -2283,7 +2283,7 @@ pub fn solve(
         mut structImports:  i32[];
 
         // Struct members, pass 0.
-        out.items = node.items.map(|shadow node|
+        let members = node.items.map(|shadow node|
         {
             node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
@@ -2298,7 +2298,7 @@ pub fn solve(
         // (Re)poplate fields.
         {
             ref innerScope = lookupStruct_mut(out.type.canon).items;
-            if (!innerScope && out.items)
+            if (!innerScope && members)
             {
                 // Dereferencing a struct does not require it
                 //  to have any particular qualities.
@@ -2321,20 +2321,19 @@ pub fn solve(
             }
 
             // Update field types.
-            innerScope.len == out.items.len || fail(
-                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ out.items.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
+            innerScope.len == members.len || fail(
+                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ members.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
 
             for (mut i = 0; i < innerScope.len; i++)
             {
                 let item = innerScope[i];
-                shadow let node = out.items[i];
-                item.id == node.value || fail(
-                    "solveStructMembers_4: field id mismatch.");
+                shadow let member = members[i];
+                item.id == member.value || fail("solveStructMembers_4: field id mismatch.");
 
                 ref field = GET_mut(item.target);
-                field.type = node.type;
+                field.type = member.type;
 
-                if (node.flags & F_USING)
+                if (member.flags & F_USING)
                 {
                     structConverts.push(item.target);
 
@@ -2348,18 +2347,12 @@ pub fn solve(
 
         // Add a default constructor.
         {
-            mut members: SolvedNode[];
             mut commonQuals = -1;
+            for (mut i = 0; i < members.len; i++)
+                commonQuals &= members[i].type.quals;
 
-            for (mut i = 0; i < out.items.len; i++)
-            {
-                let item = out.items[i];
-                if (item && item.kind == "let" && (item.flags & F_FIELD))
-                {
-                    members.push(item);
-                    commonQuals &= item.type.quals;
-                }
-            }
+            let quals0 = out.type.quals;
+            let quals1 = out.type.quals &= commonQuals;
 
             //
             {
@@ -2371,9 +2364,6 @@ pub fn solve(
                 GET(s.target).status & SS_DID_START || fail(
                     "Setting stuff but missing SS_DID_START.");
             }
-
-            let quals0 = out.type.quals;
-            let quals1 = out.type.quals &= commonQuals;
 
             //
             let max = members.len;
@@ -2410,12 +2400,10 @@ pub fn solve(
         }
 
         //
-        ref o = GET_mut(out.target);
-        o.solved = out;
+        lazySolveEnd(GET_mut(out.target));
 
-        ////////////////
-        lazySolveEnd(o);
-        return out;
+        // We're done here, return nothing.
+        return SolvedNode();
     }
 
 
@@ -2722,6 +2710,9 @@ pub fn solve(
 
     fn solveLabel(node: Node, type: Type): SolvedNode
     {
+        // TODO FIX this was a terrible idea,
+        //  F_STATEMENT isn't used anywhere else but for labels,
+        //   this makes NO sense, consider having two types of labels if needed.
         let target = node.flags & F_STATEMENT
             && Scope_addLabel(node.value);
 
@@ -2942,8 +2933,10 @@ pub fn solve(
         if (init)
             maybeCopyOrMove(init, t_let);
 
-        //
-        return solved(node, t_let, [annot || init, init]);
+        // TODO clean this up, annots not needed.
+        //  We could move init out of here?
+        //   So we can edit out of order maybe?
+        return solved(node, t_let, [SolvedNode, init]);
     }
 
     fn solveTypedef(node: Node): SolvedNode
@@ -2953,7 +2946,7 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn solveLet(node: Node, specType?!: Type, reuse?: Target, deadcode_on_never?!: bool): SolvedNode
+    fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
     {
         let global = !_current_fn;
         global && node.flags & F_FIELD && fail(
