@@ -857,7 +857,6 @@ pub fn cpp_codegen(
         {
             let o = GET(node.target);
             let head = o.solved || fail();
-            let src = cgNode(head);
 
             // [[noreturns]] shouldn't have return statements,
             //  but regular fns should return the output of [[noreturns]]
@@ -869,17 +868,17 @@ pub fn cpp_codegen(
                     index: o.local_of));
 
                 if (fn.type.is_never)
-                    return src;
+                    return cgNode(head, M_STMT);
 
                 if (fn.type.is_void)
-                    return "return (void) " ~ src;
+                    return "return (void) " ~ cgNode(head);
             }
 
             // This kinda does it for return non-expression.
             if (head.type.is_void && node.flags & F_SINGLE_STMT)
-                return src;
+                return cgNode(head, M_STMT);
 
-            return "return " ~ src;
+            return "return " ~ cgNode(head);
         }
 
         return "return";
