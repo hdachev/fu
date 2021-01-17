@@ -1342,11 +1342,16 @@ pub fn solve(
 
     fn solveRoot(node: Node): SolvedNode
     {
+        // TODO if deadcode_on_never here and if last is never,
+        //  the program will crash during static init.
+        //   Could we use this mechanism for static asserts?
+        //
         return solved(node, t_void,
-            solveNodes(node.items, t_void));
+            solveNodes(node.items, t_void,
+                statements: true));
     }
 
-    fn solveBlock(node: Node, type?!: Type): SolvedNode
+    fn solveBlock(node: Node, type!: Type): SolvedNode
     {
         let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
@@ -2554,7 +2559,9 @@ pub fn solve(
         if (!node.items)
         {
             reportReturnType(t_void);
-            return solved(node, t_never);
+
+            return emitStatement(
+                solved(node, t_never));
         }
 
 
@@ -2601,7 +2608,8 @@ pub fn solve(
 
         _current_fn.returns ~= target;
 
-        return solved(node, t_never, :target);
+        return emitStatement(
+            solved(node, t_never, :target));
     }
 
     fn reportReturnType(type: Type)
@@ -2752,8 +2760,9 @@ pub fn solve(
                             ? t_never
                             : t_void;
 
-        return solved(node, type,
-            [ init, pre_cond, body, post_cond, post ]);
+        return emitStatement(
+            solved(node, type,
+                [ init, pre_cond, body, post_cond, post ]));
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -2774,7 +2783,8 @@ pub fn solve(
             fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`.");
 
         // Control flow.
-        return solved(node, t_never, :target);
+        return emitStatement(
+            solved(node, t_never, :target));
     }
 
 
@@ -2959,6 +2969,8 @@ pub fn solve(
 
         mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
+
+        // Dead code elim.
         if (out.kind != "let")
         {
             if (SELF_TEST)
@@ -2989,17 +3001,23 @@ pub fn solve(
 
             if (out.flags & F_USING)
                 _scope.usings.push(target.index);
-
-            // Testing out tempvar output
-            //  by outputting all vars as if they were temps.
-            if !(node.flags & F_ARG || global)
-            {
-                _current_fn.stmts ~= out;
-                return createEmpty();
-            }
         }
 
+        // Testing out tempvar output
+        //  by outputting all vars as if they were temps.
+        if !(node.flags & F_ARG)
+            return emitStatement(out);
+
         return out;
+    }
+
+    fn emitStatement(node: SolvedNode): SolvedNode
+    {
+        if (node.type.is_never)
+            return node;
+
+        _current_fn.stmts ~= node;
+        return createEmpty();
     }
 
     fn solveLetStatement(node: Node): SolvedNode
@@ -3586,8 +3604,8 @@ pub fn solve(
             return cond;
         }
 
-        mut cons    = solveNode(node.items[1], type);
-        mut alt     = solveNode(node.items[2], !cons.type.is_never && cons.type || type);
+        mut cons    = solveBlock(node.items[1], :type);
+        mut alt     = solveBlock(node.items[2], type: !cons.type.is_never && cons.type || type);
 
         if (!type.is_void)
         {
@@ -3620,7 +3638,7 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, type, deadcode_on_never: true);
+        mut items = solveNodes(node.items, type, deadcode_on_never: true, as_blocks_after: 1);
         if (items.len < 2)
             return items.only;
 
@@ -3684,7 +3702,7 @@ pub fn solve(
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, type, deadcode_on_never: true);
+        let items = solveNodes(node.items, type, deadcode_on_never: true, as_blocks_after: 1);
         if (items.len < 2)
             return items.only;
 
@@ -3886,7 +3904,8 @@ pub fn solve(
         type_last?!: Type,
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
-        statements?!: bool): SolvedNode[]
+        statements?!: bool,
+        as_blocks_after! = -1): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -3910,10 +3929,13 @@ pub fn solve(
             {
                 _here = node.token || _here;
 
-                let solved = solveNode(:node, :deadcode_on_never,
-                    type: i == nodes.len - 1 && use_type_last
-                        ? type_last
-                        : type_all);
+                let type = i == nodes.len - 1 && use_type_last
+                    ? type_last
+                    : type_all;
+
+                let solved = as_blocks_after >= 0 && as_blocks_after <= i
+                    ? solveBlock(:node, :type)
+                    : solveNode(:node, :deadcode_on_never, :type);
 
                 // Temps first.
                 if (statements && _current_fn.stmts.len > stmts0)
