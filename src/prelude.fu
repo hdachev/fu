@@ -7,7 +7,7 @@ let prelude_src = `
 
 fn STEAL (a: &mut $T): $T __native;
 fn CLONE (a: &    $T) case ($T -> @copy): $T __native;
-fn SWAP  (a: &mut $T, b: &mut $T): void __native;
+fn SWAP  (a: &mut $T, b: &mut $T): void __native("<utility>", "std::swap");
 
 fn println(): void __native;
 fn println(a: $A): void __native;

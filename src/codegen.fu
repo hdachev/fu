@@ -1171,9 +1171,6 @@ pub fn cpp_codegen(
         if (id == "STEAL" && items.len == 1)
             return cgSteal(node.type, items[0]);
 
-        if (id == "SWAP" && items.len == 2)
-            return cgSwap(items);
-
         if (id == "println")
             return cgPrint(items);
 
@@ -1722,12 +1719,6 @@ pub fn cpp_codegen(
             return cgClone(type, src);
 
         return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";
-    }
-
-    fn cgSwap(items: string[]): string
-    {
-        include("<utility>");
-        return "std::swap(" ~ items.join(", ") ~ ")";
     }
 
     fn cgClone(type: Type, src: string): string
