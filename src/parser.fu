@@ -1177,9 +1177,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     fn createPrefix(op: string, mut expr: Node): Node
     {
-        if (op == "!")
-            return createNot(expr);
-
         // Moving `-` and `+` into unary literals.
         if ((op == "+" || op == "-") &&
             (expr.kind == "int" || expr.kind == "real"))
@@ -1194,11 +1191,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         }
 
         return createCall(op, F_PREFIX, [ expr ]);
-    }
-
-    fn createNot(expr: Node): Node
-    {
-        return make("!", [ expr ]);
     }
 
     fn parseAccessExpression(expr: Node): Node
@@ -1468,7 +1460,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         mut cond = parseExpression();
         if (not)
-            cond = createNot(cond);
+            cond = createPrefix("!", cond);
 
         consume("op", ")");
 

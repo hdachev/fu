@@ -1273,7 +1273,6 @@ pub fn solve(
 
         if (k == "if")          return solveIf(node, type);
         if (k == "or")          return solveOr(node, type);
-        if (k == "!")           return solveNot(node);
         if (k == "and")         return solveAnd(node, type);
 
         if (k == "return")      return solveReturn(node);
@@ -3628,13 +3627,6 @@ pub fn solve(
     //////////////////////////////////////////////////
     // Logic                  .                     //
     //////////////////////////////////////////////////
-
-    fn solveNot(node: Node): SolvedNode
-    {
-        return solved(
-            node, t_bool,
-                [ solveNode(node.items[0], t_bool) ]);
-    }
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {

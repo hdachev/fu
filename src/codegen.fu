@@ -1431,12 +1431,6 @@ pub fn cpp_codegen(
         return src ~ ")";
     }
 
-    fn cgNot(node: SolvedNode): string
-    {
-        let item = node.items[0];
-        return "!" ~ cgNode(item, M_RETBOOL);
-    }
-
     fn cgOr(node: SolvedNode): string
     {
         // [gnu] Consider:
@@ -1679,7 +1673,6 @@ pub fn cpp_codegen(
         if (k == "nrvo")        return cgCopyMove(node);
 
         if (k == "if")          return cgIf(node, mode);
-        if (k == "!")           return cgNot(node);
         if (k == "or")          return cgOr(node);
         if (k == "and")         return cgAnd(node, mode);
 

@@ -129,6 +129,7 @@ fn finite(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::is
 
 // Logic.
 
+fn !(v: $T): bool __native;
 fn true (): bool __native("true");
 fn false(): bool __native("false");
 
