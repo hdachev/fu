@@ -8869,6 +8869,126 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        // The thing below but shorter:
+        //  the '|| throw' introduces a bullshit lambda during codegen,
+        //   which misreturns a dangling reference to its own frame.
+        fn test(x: string) [x][0] || throw("nope!");
+        fn main() "what".test.len - 4;
+
+-----
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR test(const fu_STR& x)
+{
+    const fu_STR* _0;
+    return fu_STR((*(_0 = &(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(x) } }[0])) ? *_0 : fu::fail("nope!"_fu)));
+}
+
+int fu_MAIN()
+{
+    return (test("what"_fu).size() - 4);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
+
+        struct Node       { kind: string; };
+        struct SolvedNode { kind: string; };
+
+        fn solveNodes(n: Node[]) {
+            mut r: SolvedNode[];
+            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind);
+            return r;
+        }
+
+        // the '|| throw' introduces a bullshit lambda during codegen,
+        //  which misreturns a dangling reference to its own frame.
+        fn solveDeclExpr(n: Node) solveNodes([ n ]).only || throw ("!only");
+
+        fn main() solveDeclExpr(Node("a")).kind.len - 1;
+
+-----
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+#include <fu/vec/concat_str.h>
+
+struct s_Node;
+struct s_SolvedNode;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_STR kind;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static const s_SolvedNode& only_S5gz(const fu_VEC<s_SolvedNode>& s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
+
+static fu_VEC<s_SolvedNode> solveNodes(const fu_VEC<s_Node>& n)
+{
+    fu_VEC<s_SolvedNode> r {};
+    for (int i = 0; i < n.size(); i++)
+        r += s_SolvedNode { fu_STR(n[i].kind) };
+
+    return r;
+}
+
+static s_SolvedNode solveDeclExpr(const s_Node& n)
+{
+    const s_SolvedNode* _0;
+    return s_SolvedNode((*(_0 = &(only_S5gz(solveNodes(fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(n) } })))) ? *_0 : fu::fail("!only"_fu)));
+}
+
+int fu_MAIN()
+{
+    return (solveDeclExpr(s_Node { "a"_fu }).kind.size() - 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn incr_x_to_1(ref x: i32) {
             x && throw("this reports return t_never");
             fn incr_x() { return x++; }
