@@ -7741,11 +7741,6 @@ struct s_mat34
 
 #ifndef FU_NO_FDEFs
 
-inline static s_mat34 mat34_identity()
-{
-    return s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
-}
-
 inline static float determinant_2rXJ(const s_mat34& _)
 {
     return (((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z));
@@ -7758,6 +7753,11 @@ static s_mat34 inverse(const s_mat34& mat)
     const s_vec3 i_my = s_vec3 { (idet * ((+mat.mz.x * mat.my.z) - (mat.my.x * mat.mz.z))), (idet * ((-mat.mz.x * mat.mx.z) + (mat.mx.x * mat.mz.z))), (idet * ((+mat.my.x * mat.mx.z) - (mat.mx.x * mat.my.z))) };
     const s_vec3 i_mz = s_vec3 { (idet * ((-mat.mz.x * mat.my.y) + (mat.my.x * mat.mz.y))), (idet * ((+mat.mz.x * mat.mx.y) - (mat.mx.x * mat.mz.y))), (idet * ((-mat.my.x * mat.mx.y) + (mat.mx.x * mat.my.y))) };
     return s_mat34 { s_vec3(i_mx), s_vec3(i_my), s_vec3(i_mz), s_vec3 { (((mat.mo.x * -i_mx.x) + (mat.mo.y * -i_my.x)) + (mat.mo.z * -i_mz.x)), (((mat.mo.x * -i_mx.y) + (mat.mo.y * -i_my.y)) + (mat.mo.z * -i_mz.y)), (((mat.mo.x * -i_mx.z) + (mat.mo.y * -i_my.z)) + (mat.mo.z * -i_mz.z)) } };
+}
+
+inline static s_mat34 mat34_identity()
+{
+    return s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
 }
 
 int fu_MAIN()
@@ -8508,8 +8508,6 @@ int main() { return fu_MAIN(); }
 
 struct s_NoCopy;
 
-static const s_NoCopy& retarg(const s_NoCopy&);
-
                                 #ifndef DEF_s_NoCopy
                                 #define DEF_s_NoCopy
 struct s_NoCopy
@@ -8530,14 +8528,9 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retarg(const s_NoCopy& a)
 {
-    return (a ? a : b);
-}
-
-static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
-{
-    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+    return a;
 }
 
 static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
@@ -8545,9 +8538,14 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
     return (a.i ? b : a);
 }
 
-static const s_NoCopy& retarg(const s_NoCopy& a)
+static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return a;
+    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+}
+
+static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+{
+    return (a ? a : b);
 }
 
 int fu_MAIN()
@@ -8582,8 +8580,6 @@ int main() { return fu_MAIN(); }
 
 struct s_NoCopy;
 
-static const s_NoCopy& retarg(const s_NoCopy&);
-
                                 #ifndef DEF_s_NoCopy
                                 #define DEF_s_NoCopy
 struct s_NoCopy
@@ -8604,14 +8600,9 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retarg(const s_NoCopy& a)
 {
-    return (a ? a : b);
-}
-
-static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
-{
-    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+    return a;
 }
 
 static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
@@ -8619,9 +8610,14 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
     return (a.i ? b : a);
 }
 
-static const s_NoCopy& retarg(const s_NoCopy& a)
+static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return a;
+    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+}
+
+static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+{
+    return (a ? a : b);
 }
 
 int fu_MAIN()
@@ -8675,14 +8671,9 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-inline static s_NoCopy& retargs_or_kyhe(s_NoCopy& a, s_NoCopy& b)
+inline static s_NoCopy& retarg_Z6XS(s_NoCopy& a)
 {
-    return (a ? a : b);
-}
-
-inline static s_NoCopy& retargs_and_kyhe(s_NoCopy& a, s_NoCopy& b)
-{
-    return ([&]() -> s_NoCopy& { { s_NoCopy& _ = a; if (!_) return _; } return b; }());
+    return a;
 }
 
 inline static s_NoCopy& retargs_if_kyhe(s_NoCopy& a, s_NoCopy& b)
@@ -8690,9 +8681,14 @@ inline static s_NoCopy& retargs_if_kyhe(s_NoCopy& a, s_NoCopy& b)
     return (a.i ? b : a);
 }
 
-inline static s_NoCopy& retarg_Z6XS(s_NoCopy& a)
+inline static s_NoCopy& retargs_and_kyhe(s_NoCopy& a, s_NoCopy& b)
 {
-    return a;
+    return ([&]() -> s_NoCopy& { { s_NoCopy& _ = a; if (!_) return _; } return b; }());
+}
+
+inline static s_NoCopy& retargs_or_kyhe(s_NoCopy& a, s_NoCopy& b)
+{
+    return (a ? a : b);
 }
 
 int fu_MAIN()
@@ -9875,9 +9871,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_VEC<int>> list()
+inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return fu_VEC<fu_VEC<int>> { fu_VEC<fu_VEC<int>>::INIT<1> { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } } };
+    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
@@ -9885,9 +9881,9 @@ inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
     return ([&]() -> const fu_VEC<int>& { if (a) return a[0]; else return fu::Default<fu_VEC<int>>::value; }());
 }
 
-inline static int if_first_I28a(const fu_VEC<int>& a)
+static fu_VEC<fu_VEC<int>> list()
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return fu_VEC<fu_VEC<int>> { fu_VEC<fu_VEC<int>>::INIT<1> { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } } };
 }
 
 static int hello()
@@ -9923,9 +9919,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_VEC<int>> list()
+inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return fu_VEC<fu_VEC<int>> { fu_VEC<fu_VEC<int>>::INIT<1> { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } } };
+    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
@@ -9933,9 +9929,9 @@ inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
     return ([&]() -> const fu_VEC<int>& { if (a) return a[0]; else return fu::Default<fu_VEC<int>>::value; }());
 }
 
-inline static int if_first_I28a(const fu_VEC<int>& a)
+static fu_VEC<fu_VEC<int>> list()
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return fu_VEC<fu_VEC<int>> { fu_VEC<fu_VEC<int>>::INIT<1> { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } } };
 }
 
 static int hello()
@@ -13756,20 +13752,6 @@ int main() { return fu_MAIN(); }
 struct s_A;
 struct s_B;
 
-                                #ifndef DEF_s_A
-                                #define DEF_s_A
-struct s_A
-{
-    int a;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || a
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_B
                                 #define DEF_s_B
 struct s_B
@@ -13779,6 +13761,20 @@ struct s_B
     {
         return false
             || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A
+                                #define DEF_s_A
+struct s_A
+{
+    int a;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a
         ;
     }
 };
