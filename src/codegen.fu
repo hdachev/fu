@@ -541,33 +541,22 @@ pub fn cpp_codegen(
         let overload = GET(fn.target);
 
         let items = fn.items;
-        let lambda = false;
-        let annot = typeAnnot(
-            overload.type || fail(),
-            M_RETVAL | (lambda ? M_LAMBDA : 0));
+        let annot = typeAnnot(overload.type || fail(), M_RETVAL);
 
         mut id = overload.name;
-        if (id == "main" && !lambda)
-        {
+        if (id == "main") {
             _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
             id = "fu_MAIN";
         }
-
-        mut src = lambda
-                ? "const auto& " ~ id ~ " = [&]("
-                : annot ~ " " ~ id ~ "(";
-
-        if (overload.flags & F_OPERATOR)
-            src = annot ~ " operator" ~ id.valid_operator ~ "(";
-
-        if (!lambda)
-        {
-            let linkage = (overload.type.is_never  && "[[noreturn]] ")
-                        ~ (  fn.flags & F_TEMPLATE && "inline ")
-                        ~ (!(fn.flags & F_PUB)     && "static ");
-
-            src = linkage ~ src;
+        else if (overload.flags & F_OPERATOR) {
+            id = "operator" ~ id.valid_operator;
         }
+
+        let linkage = (overload.type.is_never  && "[[noreturn]] ")
+                    ~ (  fn.flags & F_TEMPLATE && "inline ")
+                    ~ (!(fn.flags & F_PUB)     && "static ");
+
+        mut src = linkage ~ annot ~ " " ~ id ~ "(";
 
         mut needComma = 0;
 
@@ -600,9 +589,7 @@ pub fn cpp_codegen(
             src ~= ", /*postfix*/int ";
         }
 
-        src ~= lambda
-             ? ") -> " ~ annot
-             : ")";
+        src ~= ")";
 
         return src;
     }
@@ -716,9 +703,7 @@ pub fn cpp_codegen(
             return mode & M_STMT ? "" : "0";
         }
 
-        let lambda = false;
-        if (!lambda)
-            _indent = "\n";
+        _indent = "\n";
 
         // TODO is this needed?
         //  Body should always be a block.
@@ -737,15 +722,12 @@ pub fn cpp_codegen(
 
         // Consider a fwdannot after outputting body,
         //  it could itself have written to _fdef.
-        if (!lambda && _fdef.has(id || fail()))
+        if (_fdef.has(id || fail()))
             ensureFwdDecl(fn.target);
 
         //////////////////
         _indent = indent0;
         //////////////////
-
-        if (lambda)
-            return src;
 
         let dedupe = fn.flags & F_PUB
                   && fn.flags & F_TEMPLATE
