@@ -1019,7 +1019,24 @@ pub fn cpp_codegen(
     fn cgCall(node: SolvedNode, mode: i32): string
     {
         let target = GET(node.target) || fail();
-        mut items  = cgNodes(node.items);
+
+        mut _items: string[];
+        let items = node.items;
+        fn REST(start: i32 = 0)
+        {
+            mut src = "";
+            for (mut i = start; i < items.len; i++)
+            {
+                if (i > start)
+                    src ~= ", ";
+
+                src ~= cgNode(items[i]);
+            }
+
+            return src;
+        }
+
+        fn ARG(i: i32) cgNode(items[i]);
 
         // Builtin specs.
         if (target.kind == "__native" && target.template.node.items)
@@ -1034,20 +1051,20 @@ pub fn cpp_codegen(
             if (id[0] == '.')
             {
                 if (items.len > 1)
-                    return items[0] ~ id ~ "(" ~ items.slice(1).join(", ") ~ ")";
+                    return ARG(0) ~ id ~ "(" ~ REST(1) ~ ")";
 
-                return items[0] ~ id;
+                return ARG(0) ~ id;
             }
 
             if (items)
             {
                 if (id.hasIdentifierChars)
-                    return id ~ "(" ~ items.join(", ") ~ ")";
+                    return id ~ "(" ~ REST ~ ")";
 
                 if (binSkipParens(id, mode))
-                    return items[0] ~ " " ~ id ~ " " ~ items[1];
+                    return ARG(0) ~ " " ~ id ~ " " ~ ARG(1);
 
-                return "(" ~ items[0] ~ " " ~ id ~ " " ~ items[1] ~ ")";
+                return "(" ~ ARG(0) ~ " " ~ id ~ " " ~ ARG(1) ~ ")";
             }
 
             return id;
@@ -1062,7 +1079,7 @@ pub fn cpp_codegen(
             target.type.isStruct || fail(
                 "cgCall: defctor/type not a struct.");
 
-            return typeAnnotBase(target.type) ~ " { " ~ items.join(", ") ~ " }";
+            return typeAnnotBase(target.type) ~ " { " ~ REST ~ " }";
         }
 
         let id = target.name || fail();
@@ -1084,7 +1101,7 @@ pub fn cpp_codegen(
 
         if (target.kind == "field")
         {
-            return items[0] ~ "." ~ ID(id);
+            return ARG(0) ~ "." ~ ID(id);
         }
 
         if (node.target.modid && target.kind == "fn")
@@ -1097,14 +1114,13 @@ pub fn cpp_codegen(
 
         if (target.flags & F_OPERATOR)
         {
-            let nodes = node.items  || fail();
-            let head  = nodes[0]    || fail();
+            let head = items[0] || fail();
 
             if (items.len == 1)
             {
                 return node.flags & F_POSTFIX
-                     ? items[0] ~ id.valid_operator
-                     : id.valid_operator ~ items[0];
+                     ? ARG(0) ~ id.valid_operator
+                     : id.valid_operator ~ ARG(0);
             }
 
             if (items.len == 2)
@@ -1113,9 +1129,9 @@ pub fn cpp_codegen(
                 {
                     // The new cow_vec is here.
                     if (node.type.is_mutref)
-                        return items[0] ~ ".mutref(" ~ items[1] ~ ")";
+                        return ARG(0) ~ ".mutref(" ~ ARG(1) ~ ")";
 
-                    return items[0] ~ "[" ~ items[1] ~ "]";
+                    return ARG(0) ~ "[" ~ ARG(1) ~ "]";
                 }
 
                 // This is hellish but should cover our asses for a little while -
@@ -1128,7 +1144,7 @@ pub fn cpp_codegen(
                         {
                             return "(" ~ cgNode(head.items[0] || fail())
                                  ~ ".upsert(" ~ cgNode(head.items[1] || fail()) ~ ") = "
-                                 ~ items[1] ~ ")";
+                                 ~ ARG(1) ~ ")";
                         }
                     }
                 }
@@ -1137,49 +1153,54 @@ pub fn cpp_codegen(
                 //  notice again the special casing for std::maps.
                 if (id == "||=")
                 {
+                    mut arg0: string;
                     if (head.kind == "call" && head.value == "[]" && head.items.len == 2)
                     {
                         if (type_isMap((head.items[0] || fail()).type))
-                            items[0] = cgNode(head.items[0] || fail())
-                                     ~ ".upsert(" ~ cgNode(head.items[1] || fail()) ~ ")";
+                            arg0 = cgNode(head.items[0] || fail())
+                                ~ ".upsert(" ~ cgNode(head.items[1] || fail()) ~ ")";
                     }
 
                     let annot = typeAnnot(head.type);
 
                     return "([&](" ~ annot ~ " _) -> " ~ annot
-                         ~ " { if (!_) _ = " ~ items[1]
-                         ~ "; return _; } (" ~ items[0] ~ "))";
+                         ~ " { if (!_) _ = " ~ ARG(1)
+                         ~ "; return _; } (" ~ (arg0 || ARG(0)) ~ "))";
                 }
-
-                // Skip explicit copy on assignment, it's just overly verbose.
-                if (id == "=" || id == "||=" || id == "&&=")
-                    if (nodes[1].kind == "copy")
-                        items[1] = cgNode(nodes[1].items.only);
 
                 // Collapse (a ~= b + c) into (a ~= b, a ~= c),
                 //  totally surprised at how little if any impact this has.
                 if (id == "~=")
                     if (type_isArray(head.type) && isFieldChain(node.items[0]))
                         if (node.items[1].value == "~" && node.items[1].type.canon == head.type.canon)
-                            return cgAppend(node, items[0]);
+                            return cgAppend(node, ARG(0));
 
-                // Skip some of the ridiculous parens.
-                mut op = id.valid_operator;
-                if (binSkipParens(op, mode))
-                    return items[0] ~ " " ~ op ~ " " ~ items[1];
-                else
-                    return "(" ~ items[0] ~ " " ~ op ~ " " ~ items[1] ~ ")";
+                // Skip explicit copy on assignment, it's just overly verbose.
+                {
+                    let arg0 = ARG(0);
+                    mut arg1: string;
+                    if (id == "=" || id == "||=" || id == "&&=")
+                        if (items[1].kind == "copy")
+                            arg1 = cgNode(items[1].items.only);
+
+                    // Skip some of the ridiculous parens.
+                    mut op = id.valid_operator;
+                    if (binSkipParens(op, mode))
+                        return arg0 ~ " " ~ op ~ " " ~ (arg1 || ARG(1));
+                    else
+                        return "(" ~ arg0 ~ " " ~ op ~ " " ~ (arg1 || ARG(1)) ~ ")";
+                }
             }
         }
 
         if (id == "CLONE" && items.len == 1)
-            return cgClone(node.type, items[0]);
+            return cgClone(node.type, ARG(0));
 
         if (id == "STEAL" && items.len == 1)
-            return cgSteal(node.type, items[0]);
+            return cgSteal(node.type, ARG(0));
 
         if (id == "println")
-            return cgPrint(items);
+            return cgPrint(cgNodes(items));
 
         id != "__native" || assert();
 
@@ -1200,7 +1221,7 @@ pub fn cpp_codegen(
                 closure ~= ", ";
         }
 
-        return ID(id) ~ "(" ~ closure ~ items.join(", ") ~ ")";
+        return ID(id) ~ "(" ~ closure ~ REST ~ ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
