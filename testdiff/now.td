@@ -5004,7 +5004,7 @@ int fu_MAIN()
 {
     fu_STR x = "hello"_fu;
     fu_STR y = "world"_fu;
-    const fu_STR& w = ([&]() -> const fu_STR& { if (3) { const fu_STR& _ = x; if (_) return _; } return y; }());
+    const fu_STR& w = (3 && x ? x : y);
     return ((w == "hello"_fu) ? 0 : 1);
 }
 
@@ -5034,7 +5034,7 @@ int fu_MAIN()
     fu_STR x = "hello"_fu;
     fu_STR y = "world"_fu;
     fu_VEC<int> arr {};
-    const fu_STR& w = ([&]() -> const fu_STR& { if (arr) { const fu_STR& _ = x; if (_) return _; } return y; }());
+    const fu_STR& w = (arr && x ? x : y);
     return ((w == "world"_fu) ? 0 : 1);
 }
 
@@ -5065,7 +5065,7 @@ int fu_MAIN()
     fu_STR x = "hello"_fu;
     fu_STR y = "world"_fu;
     fu_VEC<int> arr {};
-    const fu_STR& w = ([&]() -> const fu_STR& { if (arr) { const fu_STR& _ = x; if (_) return _; } { const fu_STR& _ = y; if (_) return _; } fu::fail("Nope."_fu); }());
+    const fu_STR& w = (arr && x ? x : y ? y : fu::fail("Nope."_fu));
     return ((w == "world"_fu) ? 0 : 1);
 }
 
@@ -5378,7 +5378,10 @@ static s_BINOP setupOperators()
 
 static const s_BINOP BINOP = setupOperators();
 
-static const int P_COMMA = ([]() -> int { { int _ = BINOP.P[","_fu]; if (_) return _; } fu_ASSERT(); }());
+static const int P_COMMA { []() -> int {
+    int _0 {};
+    return ((_0 = BINOP.P[","_fu]) ? _0 : fu_ASSERT());
+}() };
 
 int fu_MAIN()
 {
@@ -5855,7 +5858,7 @@ static fu_STR path_normalize(const fu_STR& p)
     for (int i = path.size(); i-- > 0; )
     {
         fu_STR part { path[i] };
-        if (((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1)))))
+        if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
             path.splice(i, 1);
 
     };
@@ -7071,12 +7074,14 @@ static fu_STR outer(const fu_STR&, const fu_STR&);
 
 static fu_STR inner(const fu_STR& hey_0, const fu_STR& you)
 {
-    return ([&]() -> fu_STR { if (you) { fu_STR _ = (hey_0 + you); if (_) return _; } return outer(hey_0, "what#1"_fu); }());
+    fu_STR _0 {};
+    return (you && (_0 = (hey_0 + you)) ? static_cast<fu_STR&&>(_0) : outer(hey_0, "what#1"_fu));
 }
 
 static fu_STR outer(const fu_STR& hey_0, const fu_STR& arg)
 {
-    return ([&]() -> fu_STR { { fu_STR _ = inner(hey_0, ([&]() -> fu_STR { if (arg) return (" "_fu + arg); else return fu_STR{}; }())); if (_) return _; } return inner(hey_0, "what#2"_fu); }());
+    fu_STR _0 {};
+    return ((_0 = inner(hey_0, ([&]() -> fu_STR { if (arg) return (" "_fu + arg); else return fu_STR{}; }()))) ? static_cast<fu_STR&&>(_0) : inner(hey_0, "what#2"_fu));
 }
 
 static fu_STR test(const fu_STR& x)
@@ -7154,7 +7159,10 @@ int fu_MAIN()
 {
     const s_S a = s_S { 0 };
     const s_S b = s_S { 3 };
-    return ([&]() -> int { { int _ = int(a.i); if (_) return _; } return ([&]() -> int { { int _ = ((([&]() -> s_S { { s_S _ = s_S(b); if (_) return _; } return s_S { 4 }; }()).i * 2) - ([&]() -> s_S { { s_S _ = s_S(a); if (_) return _; } return s_S { 6 }; }()).i); if (!_) return _; } fu::fail("woot"_fu); }()); }());
+    int _0 {};
+    s_S _1 {};
+    s_S _2 {};
+    return ((_0 = int(a.i)) ? _0 : ([&]() -> int { { int _ = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i); if (!_) return _; } fu::fail("woot"_fu); }()));
 }
 
 #endif
@@ -7209,7 +7217,7 @@ int fu_MAIN()
 {
     s_TrueStory specialized = s_TrueStory { "fn"_fu, "val"_fu };
     (((specialized.kind == "fn"_fu) && specialized.value) || fu::fail("nope"_fu));
-    fu_STR& v = ([&]() -> fu_STR& { if ((specialized.kind == "fn"_fu)) { fu_STR& _ = specialized.value; if (_) return _; } fu::fail("nope"_fu); }());
+    fu_STR& v = ((specialized.kind == "fn"_fu) && specialized.value ? specialized.value : fu::fail("nope"_fu));
     v += "ue"_fu;
     return ((specialized.value == "value"_fu) ? 0 : 1);
 }
@@ -8024,7 +8032,8 @@ int fu_MAIN()
         return (err.size() - 3);
     }
 ;
-    return ([&]() -> int { { int _ = int(x); if (_) return _; } return 7; }());
+    int _0 {};
+    return ((_0 = int(x)) ? _0 : 7);
 }
 
 #endif
@@ -13054,7 +13063,8 @@ static int getModule(const fu_STR& fname)
 
 static void compile(int& sum_0, const fu_STR& fname, const fu_STR& via)
 {
-    const int module = ([&]() -> int { { int _ = getModule(fname); if (_) return _; } fu::fail(((("import circle: '"_fu + via) + fname) + "'."_fu)); }());
+    int _0 {};
+    const int module = ((_0 = getModule(fname)) ? _0 : fu::fail(((("import circle: '"_fu + via) + fname) + "'."_fu)));
     if (module & 1)
     {
         fu_VEC<fu_STR> fuzimports = fu::split(fname, "a"_fu);
@@ -13162,7 +13172,8 @@ int fu_MAIN()
     s_X x {};
     const int a = x++;
     const int b = ++x;
-    return ([&]() -> int { { int _ = int(a); if (_) return _; } return (b - 2); }());
+    int _0 {};
+    return ((_0 = int(a)) ? _0 : (b - 2));
 }
 
 #endif
@@ -13366,7 +13377,7 @@ int fu_MAIN()
 
     {
         fu_DEFER(a++);
-        fu_DEFER((c = a));
+        fu_DEFER(c = a);
         b = a;
     };
     return ((b * 27) - ((a * 11) + (c * 5)));
@@ -13420,8 +13431,8 @@ static int test_defer_if_errok(const bool throw_err)
     {
     {
         fu_DEFER(x++);
-        fu_DEFER_IF_ERR((if_err += x));
-        fu_DEFER_IF_OK((if_ok += x));
+        fu_DEFER_IF_ERR(if_err += x);
+        fu_DEFER_IF_OK(if_ok += x);
         if (throw_err)
             fu::fail("len=5"_fu);
 
