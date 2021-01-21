@@ -50,6 +50,9 @@ pub fn cpp_codegen(
     {                   //  Or prefix structs with module name?
         using target:   Target;
         dupes?:         BitSet;
+
+        numTEMPVARs?:   i32;
+        TEMPVARs?:      string[];
     };
 
     mut _current_fn: cg_CurrentFn;
@@ -357,7 +360,8 @@ pub fn cpp_codegen(
 
     fn cgRoot(shadow root: SolvedNode): string
     {
-        let src    = cgStatements(root.items);
+        mut count: i32;
+        let src    = cgStatements(root.items, :count);
         let main   = cgMain();
 
         let header = collectDedupes(_libs)
@@ -426,11 +430,12 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgStatements(nodes: SolvedNode[]): string
+    fn cgStatements(nodes: SolvedNode[], ref count!: i32): string
     {
-        mut src = "";
-
         let lines = cgNodes(nodes, M_STMT);
+        count = lines.len;
+
+        mut src = "";
         for (mut i = 0; i < lines.len; i++)
         {
             let line = lines[i];
@@ -514,8 +519,9 @@ pub fn cpp_codegen(
             close = "L_" ~ GET(label).name ~ "_b:;" ~ indent0 ~ close;
 
         //
-        mut src = cgStatements(nodes);
-        if (!skipCurlies || nodes.len != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
+        mut count: i32;
+        mut src = cgStatements(nodes, :count);
+        if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
         _indent = indent0;
@@ -530,7 +536,7 @@ pub fn cpp_codegen(
                   : node.value == "ok"  ? "fu_DEFER_IF_OK"
                                         : "fu_DEFER";
 
-        return which ~ "(" ~ cgNode(node.items.only) ~ ")";
+        return which ~ "(" ~ cgNode(node.items.only, M_STMT) ~ ")";
     }
 
 
@@ -747,6 +753,14 @@ pub fn cpp_codegen(
 
     fn binding(node: SolvedNode, doInit = false, forceMut = false): string
     {
+        //////////////////////////////////////////////////////////
+        mut _tv0: string[];
+        if !(_current_fn.index) SWAP(_tv0, _current_fn.TEMPVARs);
+        defer {
+            if !(_current_fn.index) SWAP(_tv0, _current_fn.TEMPVARs);
+        }
+        //////////////////////////////////////////////////////////
+
         let annot = typeAnnot(
             node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
                      | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));
@@ -783,7 +797,18 @@ pub fn cpp_codegen(
                 return head ~ " {}";
             }
 
-            return head ~ " = " ~ cgNode(init);
+            let expr = cgNode(init);
+
+            // HACK - wrap in a lambda when we need temps here
+            if (!_current_fn.index && _current_fn.TEMPVARs)
+            {
+                shadow let annot = annot.starts(with: "const ") ? annot.slice(6) : annot;
+                shadow let init = " { []() -> " ~ annot ~ " {\n    " ~ _current_fn.TEMPVARs.join(";\n    ") ~ ";\n    return " ~ expr ~ ";\n}() }";
+                _current_fn.TEMPVARs.clear();
+                return head ~ init;
+            }
+
+            return head ~ " = " ~ expr;
         }
 
         return head ~ " {}";
@@ -1410,45 +1435,17 @@ pub fn cpp_codegen(
         return src ~ ")";
     }
 
-    fn cgOr(node: SolvedNode): string
+    fn cgOr(node: SolvedNode, mode: i32): string
     {
-        // [gnu] Consider:
-        //  (__extension__ (a ?: b))
+        let type  = node.type;
+        let items = node.items;
 
-        let type = node.type;
+        mut src = !(mode & M_PARENS) && "(";
+
         if (!type.is_bool)
         {
-            // Try a ?: chain.
-            mut ternary = true;
-            for (mut i = 0; i < node.items.len - 1; i++)
-            {
-                if (!isFieldChain(node.items[i]))
-                {
-                    ternary = false;
-                    break;
-                }
+            mut TEMPVAR: string;
 
-                if (ternary)
-                {
-                    mut src = "(";
-                    for (shadow mut i = 0; i < node.items.len - 1; i++)
-                    {
-                        let n = node.items[i];
-                        let item = cgNode(n);
-                        src ~= item ~ " ? " ~ item ~ " : ";
-                    }
-
-                    src ~= cgNode(node.items[node.items.len - 1]) ~ ")";
-                    return src;
-                }
-            }
-
-            //
-            let annot = typeAnnot(type);
-
-            mut src = "([&]() -> " ~ annot ~ " {";
-
-            let items = node.items;
             for (mut i = 0; i < items.len - 1; i++)
             {
                 let item = items[i] || fail();
@@ -1461,7 +1458,6 @@ pub fn cpp_codegen(
                     shadow let items = item.items;
                     tail = items[items.len - 1] || fail();
 
-                    src ~= " if (";
                     for (shadow mut i = 0; i < items.len - 1; i++)
                     {
                         if (i)
@@ -1470,30 +1466,53 @@ pub fn cpp_codegen(
                         src ~= cgNode(items[i] || fail(), M_RETBOOL);
                     }
 
-                    src ~= ")";
+                    src ~= " && ";
                 }
 
-                src ~= " { " ~ annot ~ " _ = " ~ cgNode(tail) ~ "; if (_) return _; }";
+                //
+                if (isFieldChain(tail))
+                {
+                    let trivial = cgNode(tail);
+                    src ~= trivial ~ " ? " ~ trivial ~ " : ";
+                }
+                else
+                {
+                    mut ptrflip: bool;
+                    let annot = typeAnnot(type);
+                    if (!TEMPVAR)
+                        TEMPVAR = emitTEMPVAR(annot, :ptrflip);
+
+                    if (tail.kind == "copy")
+                    {
+                        // TODO fix the copies -
+                        //  we can copy AFTER the test,
+                        //   will also result in shorter code.
+                    }
+
+                    if (ptrflip)
+                        src ~= "*(" ~ TEMPVAR ~ " = &(" ~ cgNode(tail) ~ ")) ? *" ~ TEMPVAR ~ " : ";
+                    else if (type.quals & q_trivial)
+                        src ~= "(" ~ TEMPVAR ~ " = " ~ cgNode(tail) ~ ") ? " ~ TEMPVAR ~ " : ";
+                    else
+                        src ~= "(" ~ TEMPVAR ~ " = " ~ cgNode(tail) ~ ") ? static_cast<" ~ annot ~ "&&>(" ~ TEMPVAR ~ ") : ";
+                }
             }
 
             let tail = items[items.len - 1] || fail();
-            if (!tail.type.is_never)
-                src ~= " return";
-
-            src ~= " " ~ cgNode(tail) ~ "; }())";
-            return src;
+            src ~= cgNode(tail);
         }
-
-        mut src = "(";
-        let items = node.items;
-        for (mut i = 0; i < items.len; i++)
+        else
         {
-            let item = items[i];
-            if (i) src ~= " || ";
-            src ~= cgNode(item, M_RETBOOL);
+            for (mut i = 0; i < items.len; i++)
+            {
+                let item = items[i];
+                if (i) src ~= " || ";
+                src ~= cgNode(item, M_RETBOOL);
+            }
         }
 
-        return src ~ ")";
+        if !(mode & M_PARENS) src ~= ")";
+        return src;
     }
 
     fn isFieldChain(node: SolvedNode): bool
@@ -1652,7 +1671,7 @@ pub fn cpp_codegen(
         if (k == "nrvo")        return cgCopyMove(node);
 
         if (k == "if")          return cgIf(node, mode);
-        if (k == "or")          return cgOr(node);
+        if (k == "or")          return cgOr(node, mode);
         if (k == "and")         return cgAnd(node, mode);
 
         if (k == "let")         return cgLet(node);
@@ -1711,9 +1730,29 @@ pub fn cpp_codegen(
 
     //
 
+    fn emitTEMPVAR(annot: string, ref ptrflip!: bool): string
+    {
+        ptrflip = annot[annot.len - 1] == '&';
+
+        let id = "_" ~ _current_fn.numTEMPVARs++;
+        _current_fn.TEMPVARs ~= ptrflip
+            ? annot[0, annot.len - 1] ~ "* " ~ id
+            : annot ~ " " ~ id ~ " {}";
+
+        return id;
+    }
+
     fn cgNodes(nodes: SolvedNode[], mode: i32 = 0): string[]
     {
         mut result: string[] = [];
+
+        //////////////////////////////////////////////////////////
+        mut _tv0: string[];
+        if (mode & M_STMT) SWAP(_tv0, _current_fn.TEMPVARs);
+        defer {
+            if (mode & M_STMT) SWAP(_tv0, _current_fn.TEMPVARs);
+        }
+        //////////////////////////////////////////////////////////
 
         for (mut i = 0; i < nodes.len; i++)
         {
@@ -1721,6 +1760,12 @@ pub fn cpp_codegen(
             let src   = node ? cgNode(node, mode) : "";
 
             src || mode & M_STMT || fail("cgNodes: empty `" ~ node.kind ~ ".`");
+
+            if (mode & M_STMT && _current_fn.TEMPVARs)
+            {
+                result ~= _current_fn.TEMPVARs;
+                _current_fn.TEMPVARs.clear();
+            }
 
             result.push(src);
         }
