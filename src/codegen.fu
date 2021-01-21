@@ -55,6 +55,8 @@ pub fn cpp_codegen(
         TEMPVARs?:      string[];
     };
 
+    struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
+
     mut _current_fn: cg_CurrentFn;
 
     fn GET(target: Target): Overload
@@ -1460,6 +1462,34 @@ pub fn cpp_codegen(
         return src ~ ")";
     }
 
+    fn via(ref tv: TEMPVAR, type: Type, expr: SolvedNode): string
+    {
+        if (isFieldChain(expr))
+        {
+            let trivial = cgNode(expr);
+            return trivial ~ " ? " ~ trivial ~ " : ";
+        }
+
+        if (!tv.id)
+            tv.id = emitTEMPVAR(
+                tv.annot = typeAnnot(type), :tv.ptrflip);
+
+        if (expr.kind == "copy")
+        {
+            // TODO fix the copies -
+            //  we can copy AFTER the test,
+            //   will also result in shorter code.
+        }
+
+        if (tv.ptrflip)
+            return "*(" ~ tv.id ~ " = &(" ~ cgNode(expr) ~ ")) ? *" ~ tv.id ~ " : ";
+
+        if (type.quals & q_trivial)
+            return "(" ~ tv.id ~ " = " ~ cgNode(expr) ~ ") ? " ~ tv.id ~ " : ";
+
+        return "(" ~ tv.id ~ " = " ~ cgNode(expr) ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
+    }
+
     fn cgOr(node: SolvedNode, mode: i32): string
     {
         let type  = node.type;
@@ -1469,7 +1499,7 @@ pub fn cpp_codegen(
 
         if (!type.is_bool)
         {
-            mut TEMPVAR: string;
+            mut tv: TEMPVAR;
 
             for (mut i = 0; i < items.len - 1; i++)
             {
@@ -1495,32 +1525,7 @@ pub fn cpp_codegen(
                 }
 
                 //
-                if (isFieldChain(tail))
-                {
-                    let trivial = cgNode(tail);
-                    src ~= trivial ~ " ? " ~ trivial ~ " : ";
-                }
-                else
-                {
-                    mut ptrflip: bool;
-                    let annot = typeAnnot(type);
-                    if (!TEMPVAR)
-                        TEMPVAR = emitTEMPVAR(annot, :ptrflip);
-
-                    if (tail.kind == "copy")
-                    {
-                        // TODO fix the copies -
-                        //  we can copy AFTER the test,
-                        //   will also result in shorter code.
-                    }
-
-                    if (ptrflip)
-                        src ~= "*(" ~ TEMPVAR ~ " = &(" ~ cgNode(tail) ~ ")) ? *" ~ TEMPVAR ~ " : ";
-                    else if (type.quals & q_trivial)
-                        src ~= "(" ~ TEMPVAR ~ " = " ~ cgNode(tail) ~ ") ? " ~ TEMPVAR ~ " : ";
-                    else
-                        src ~= "(" ~ TEMPVAR ~ " = " ~ cgNode(tail) ~ ") ? static_cast<" ~ annot ~ "&&>(" ~ TEMPVAR ~ ") : ";
-                }
+                src ~= via(:tv, :type, tail);
             }
 
             let tail = items[items.len - 1] || fail();
