@@ -2703,7 +2703,7 @@ int main() { return fu_MAIN(); }
 
 inline static int goto0_U3Pf(const int x)
 {
-    return ([&]() -> int { if (x) return goto0_U3Pf((x / 2)); else return int{}; }());
+    return (x ? goto0_U3Pf((x / 2)) : int{});
 }
 
 int fu_MAIN()
@@ -4977,7 +4977,7 @@ int fu_MAIN()
 {
     fu_STR x = "hello"_fu;
     fu_STR y = "world"_fu;
-    const fu_STR& w = ([&]() -> const fu_STR& { if (x) return y; else return fu::Default<fu_STR>::value; }());
+    const fu_STR& w = (x ? y : fu::Default<fu_STR>::value);
     return ((w == "world"_fu) ? 0 : 1);
 }
 
@@ -5421,7 +5421,7 @@ int fu_MAIN()
 {
     const bool hex = true;
     fu_STR trail = "x"_fu;
-    if ((!((trail >= "0"_fu) && (trail <= "9"_fu)) && !(hex && (((trail >= "a"_fu) && (trail <= "f"_fu)) || ((trail >= "A"_fu) && (trail <= "F"_fu))))))
+    if (!((trail >= "0"_fu) && (trail <= "9"_fu)) && !(hex && (((trail >= "a"_fu) && (trail <= "f"_fu)) || ((trail >= "A"_fu) && (trail <= "F"_fu)))))
         return 0;
 
     return 1;
@@ -6423,7 +6423,7 @@ inline static int& l_1_0(int& arg_0, int x_0)
 
 inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
 {
-    return ([&]() -> int& { { int& _ = cond; if (!_) return _; } return l_1_0(arg_0, x_0); }());
+    return (!cond ? cond : l_1_0(arg_0, x_0));
 }
 
 static int& GET_mut(int& target_0, int& x)
@@ -7081,7 +7081,7 @@ static fu_STR inner(const fu_STR& hey_0, const fu_STR& you)
 static fu_STR outer(const fu_STR& hey_0, const fu_STR& arg)
 {
     fu_STR _0 {};
-    return ((_0 = inner(hey_0, ([&]() -> fu_STR { if (arg) return (" "_fu + arg); else return fu_STR{}; }()))) ? static_cast<fu_STR&&>(_0) : inner(hey_0, "what#2"_fu));
+    return ((_0 = inner(hey_0, (arg ? (" "_fu + arg) : fu_STR{}))) ? static_cast<fu_STR&&>(_0) : inner(hey_0, "what#2"_fu));
 }
 
 static fu_STR test(const fu_STR& x)
@@ -7113,7 +7113,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int a = 7;
-    const int b = ([&]() -> int { if (a) return 3; else return int{}; }());
+    const int b = (a ? 3 : int{});
     return (b - 3);
 }
 
@@ -7160,9 +7160,10 @@ int fu_MAIN()
     const s_S a = s_S { 0 };
     const s_S b = s_S { 3 };
     int _0 {};
-    s_S _1 {};
+    int _1 {};
     s_S _2 {};
-    return ((_0 = int(a.i)) ? _0 : ([&]() -> int { { int _ = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i); if (!_) return _; } fu::fail("woot"_fu); }()));
+    s_S _3 {};
+    return ((_0 = int(a.i)) ? _0 : (!(_1 = ((((_2 = s_S(b)) ? _2 : s_S { 4 }).i * 2) - ((_3 = s_S(a)) ? _3 : s_S { 6 }).i)) ? _1 : fu::fail("woot"_fu)));
 }
 
 #endif
@@ -7272,7 +7273,7 @@ static s_Token consume()
 int fu_MAIN()
 {
     const int a = 3;
-    fu_STR v = ([&]() -> fu_STR { if (a) return consume().value; else return fu_STR{}; }());
+    fu_STR v = (a ? consume().value : fu_STR{});
     return (v.size() - a);
 }
 
@@ -8540,7 +8541,7 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+    return (a ? b : fu::Default<s_NoCopy>::value);
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
@@ -8612,7 +8613,7 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return ([&]() -> const s_NoCopy& { if (a) return b; else return fu::Default<s_NoCopy>::value; }());
+    return (a ? b : fu::Default<s_NoCopy>::value);
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
@@ -8683,7 +8684,7 @@ inline static s_NoCopy& retargs_if_kyhe(s_NoCopy& a, s_NoCopy& b)
 
 inline static s_NoCopy& retargs_and_kyhe(s_NoCopy& a, s_NoCopy& b)
 {
-    return ([&]() -> s_NoCopy& { { s_NoCopy& _ = a; if (!_) return _; } return b; }());
+    return (!a ? a : b);
 }
 
 inline static s_NoCopy& retargs_or_kyhe(s_NoCopy& a, s_NoCopy& b)
@@ -8832,12 +8833,14 @@ int main() { return fu_MAIN(); }
 
 static int compile_snippets(const fu_STR& x)
 {
-    return ([&]() -> int { { int _ = fu::lfind(x, std::byte('a'), 0); if (!_) return _; } fu::fail("throw#1"_fu); }());
+    int _0 {};
+    return (!(_0 = fu::lfind(x, std::byte('a'), 0)) ? _0 : fu::fail("throw#1"_fu));
 }
 
 static int ZERO(const fu_STR& x)
 {
-    return ([&]() -> int { { int _ = fu::lfind(x, std::byte('b'), 0); if (!_) return _; } fu::fail("throw#2"_fu); }());
+    int _0 {};
+    return (!(_0 = fu::lfind(x, std::byte('b'), 0)) ? _0 : fu::fail("throw#2"_fu));
 }
 
 static fu_STR FAIL(const fu_STR& x)
@@ -8845,13 +8848,13 @@ static fu_STR FAIL(const fu_STR& x)
     fu_STR ctx = {};
     try
     {
-        ctx = ([&]() -> fu_STR { if (compile_snippets(x)) return "hey"_fu; else return fu_STR{}; }());
+        ctx = (compile_snippets(x) ? "hey"_fu : fu_STR{});
     }
     catch (const std::exception& o_0)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
-        return fu_STR(([&]() -> const fu_STR& { if (ZERO(x)) return e; else return fu::Default<fu_STR>::value; }()));
+        return fu_STR((ZERO(x) ? e : fu::Default<fu_STR>::value));
     }
 ;
     return ctx;
@@ -9641,7 +9644,7 @@ int main() { return fu_MAIN(); }
 
 static uint8_t test(const bool a)
 {
-    return ([&]() -> uint8_t { if (a) return uint8_t(1u); else return uint8_t{}; }());
+    return (a ? uint8_t(1u) : uint8_t{});
 }
 
 int fu_MAIN()
@@ -9680,7 +9683,7 @@ inline const uint8_t A_u8 = uint8_t(0x0u);
 
 static uint8_t ATTRIB(const uint8_t type, const int count, const bool srgb)
 {
-    return (((type & uint8_t(0x3u)) | (uint8_t(count) << uint8_t(2u))) | ([&]() -> uint8_t { if (srgb) return uint8_t(0x80u); else return uint8_t{}; }()));
+    return (((type & uint8_t(0x3u)) | (uint8_t(count) << uint8_t(2u))) | (srgb ? uint8_t(0x80u) : uint8_t{}));
 }
 
 int fu_MAIN()
@@ -9923,7 +9926,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return (a ? a[0] : fu::Default<int>::value);
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -9956,7 +9959,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return (a ? a[0] : fu::Default<int>::value);
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -9993,12 +9996,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return (a ? a[0] : fu::Default<int>::value);
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return ([&]() -> const fu_VEC<int>& { if (a) return a[0]; else return fu::Default<fu_VEC<int>>::value; }());
+    return (a ? a[0] : fu::Default<fu_VEC<int>>::value);
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10041,12 +10044,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return ([&]() -> int { if (a) return a[0]; else return fu::Default<int>::value; }());
+    return (a ? a[0] : fu::Default<int>::value);
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return ([&]() -> const fu_VEC<int>& { if (a) return a[0]; else return fu::Default<fu_VEC<int>>::value; }());
+    return (a ? a[0] : fu::Default<fu_VEC<int>>::value);
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10562,7 +10565,7 @@ struct s_Hey
 int fu_MAIN()
 {
     const int a = 1;
-    const s_Hey r = ([&]() -> s_Hey { if (a) return s_Hey { int(a) }; else return s_Hey{}; }());
+    const s_Hey r = (a ? s_Hey { int(a) } : s_Hey{});
     return (r.i - 1);
 }
 
