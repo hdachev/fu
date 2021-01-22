@@ -308,8 +308,6 @@ pub fn ZERO(
     // OK so it works, let's see if test output actually matches -
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.
     //
-    let nowrite = !sources.last.has("//! ALLOW_WRITE") && !env::get("fu_ALLOW_WRITE");
-    if (nowrite)
     {
         mut key = "";
         for (mut i = 0; i < sources.len; i++)
@@ -327,7 +325,7 @@ pub fn ZERO(
                     if (!env::get("fu_ALLOW_UNSEEN"))
                         throw("NOWRITE: unknown testcase.\n\nConsider fu_ALLOW_UNSEEN envar:\n" ~ key ~ "\nAbout to write:\n\n" ~ actual);
                 }
-                else
+                else if (!env::get("fu_ALLOW_WRITE"))
                 {
                     file::write(PRJDIR ~ "testdiff/expect.tmp", expect);
                     file::write(PRJDIR ~ "testdiff/actual.tmp", actual);

@@ -882,8 +882,8 @@ pub fn cpp_codegen(
             if (head.type.is_void && node.flags & F_SINGLE_STMT)
                 return cgNode(head, M_STMT);
 
-            // TODO M_PARENS: No point in parenthesizing regular returns.
-            return "return " ~ cgNode(head);
+            // I think the prefix keywords beat everything re: precedence.
+            return "return " ~ cgNode(head, M_PARENS);
         }
 
         return "return";
