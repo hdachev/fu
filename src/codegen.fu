@@ -825,11 +825,6 @@ pub fn cpp_codegen(
     {
         mut src = cgLet(node);
 
-        // Nasty tempfix -
-        //  can't have [&] in global space.
-        src = src.replace(
-            all: "([&](", with: "([](");
-
         // cpp17 inline const syntax sugars.
         if (src.starts(with: "const "))
             src = src.slice(6);
@@ -1167,12 +1162,12 @@ pub fn cpp_codegen(
                             arg0 = cgNode(head.items[0] || fail())
                                 ~ ".upsert(" ~ cgNode(head.items[1] || fail()) ~ ")";
                     }
+                    arg0 ||= ARG(0);
 
-                    let annot = typeAnnot(head.type);
-
-                    return "([&](" ~ annot ~ " _) -> " ~ annot
-                         ~ " { if (!_) _ = " ~ ARG(1)
-                         ~ "; return _; } (" ~ (arg0 || ARG(0)) ~ "))";
+                    mut tv: TEMPVAR;
+                    let condcons = via(:tv, :head.type, expr: arg0);
+                    let alt = tv.ptrflip ? "*" ~ tv.id : tv.id || arg0;
+                    return "(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")";
                 }
 
                 // Collapse (a ~= b + c) into (a ~= b, a ~= c),
@@ -1186,7 +1181,7 @@ pub fn cpp_codegen(
                 {
                     let arg0 = ARG(0);
                     mut arg1: string;
-                    if (id == "=" || id == "||=" || id == "&&=")
+                    if (id == "=" || id == "||=" || id == "&&=") // This is off, see ||= returns above
                         if (items[1].kind == "copy")
                             arg1 = cgNode(items[1].items.only);
 
@@ -1484,10 +1479,6 @@ pub fn cpp_codegen(
             return trivial ~ " ? " ~ trivial ~ " : ";
         }
 
-        if (!tv.id)
-            tv.id = emitTEMPVAR(
-                tv.annot = typeAnnot(type), :tv.ptrflip);
-
         if (expr.kind == "copy")
         {
             // TODO fix the copies -
@@ -1495,13 +1486,22 @@ pub fn cpp_codegen(
             //   will also result in shorter code.
         }
 
+        return via(:tv, :type, expr: cgNode(expr));
+    }
+
+    fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
+    {
+        if (!tv.id)
+            tv.id = emitTEMPVAR(
+                tv.annot = typeAnnot(type), :tv.ptrflip);
+
         if (tv.ptrflip)
-            return "*(" ~ tv.id ~ " = &(" ~ cgNode(expr) ~ ")) ? *" ~ tv.id ~ " : ";
+            return "*(" ~ tv.id ~ " = &(" ~ expr ~ ")) ? *" ~ tv.id ~ " : ";
 
         if (type.quals & q_trivial)
-            return "(" ~ tv.id ~ " = " ~ cgNode(expr) ~ ") ? " ~ tv.id ~ " : ";
+            return "(" ~ tv.id ~ " = " ~ expr ~ ") ? " ~ tv.id ~ " : ";
 
-        return "(" ~ tv.id ~ " = " ~ cgNode(expr) ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
+        return "(" ~ tv.id ~ " = " ~ expr ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
     }
 
     fn isFieldChain(node: SolvedNode): bool
