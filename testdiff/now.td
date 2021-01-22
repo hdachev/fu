@@ -5087,7 +5087,8 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int i = 7;
-    ([&](int& _) -> int& { if (!_) _ = 11; return _; } (i));
+    int* _0;
+    (*(_0 = &(i)) ? *_0 : *_0 = 11);
     return (i - 7);
 }
 
@@ -5109,7 +5110,8 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int i = 0;
-    ([&](int& _) -> int& { if (!_) _ = 11; return _; } (i));
+    int* _0;
+    (*(_0 = &(i)) ? *_0 : *_0 = 11);
     return (i - 11);
 }
 
@@ -5149,7 +5151,8 @@ int fu_MAIN()
     fu_MAP<fu_STR, fu_STR> m {};
     int g = 0;
     (m.upsert("hello"_fu) = "world"_fu);
-    ([&](fu_STR& _) -> fu_STR& { if (!_) _ = f(g); return _; } (m.upsert("hello"_fu)));
+    fu_STR* _0;
+    (*(_0 = &(m.upsert("hello"_fu))) ? *_0 : *_0 = f(g));
     return g;
 }
 
@@ -5189,7 +5192,8 @@ int fu_MAIN()
     fu_MAP<fu_STR, fu_STR> m {};
     int g = 0;
     (m.upsert("_not_hello_"_fu) = "world"_fu);
-    ([&](fu_STR& _) -> fu_STR& { if (!_) _ = f(g); return _; } (m.upsert("hello"_fu)));
+    fu_STR* _0;
+    (*(_0 = &(m.upsert("hello"_fu))) ? *_0 : *_0 = f(g));
     return (g - 1);
 }
 
@@ -6606,7 +6610,8 @@ inline static fu_STR name_zs0j(s_Target& target)
 
 static fu_STR setSpec(fu_MAP<fu_STR, s_Target>& specs_0, const fu_STR& mangle)
 {
-    s_Target& t = ([&](s_Target& _) -> s_Target& { if (!_) _ = s_Target{}; return _; } (specs_0.upsert(mangle)));
+    s_Target* _0;
+    s_Target& t = (*(_0 = &(specs_0.upsert(mangle))) ? *_0 : *_0 = s_Target{});
     return name_zs0j(t);
 }
 
@@ -7160,10 +7165,10 @@ int fu_MAIN()
     const s_S a = s_S { 0 };
     const s_S b = s_S { 3 };
     int _0 {};
-    int _1 {};
+    s_S _1 {};
     s_S _2 {};
-    s_S _3 {};
-    return ((_0 = int(a.i)) ? _0 : (!(_1 = ((((_2 = s_S(b)) ? _2 : s_S { 4 }).i * 2) - ((_3 = s_S(a)) ? _3 : s_S { 6 }).i)) ? _1 : fu::fail("woot"_fu)));
+    int _3 {};
+    return ((_0 = int(a.i)) ? _0 : (!(_3 = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i)) ? _3 : fu::fail("woot"_fu)));
 }
 
 #endif
