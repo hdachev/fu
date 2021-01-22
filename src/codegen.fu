@@ -1381,8 +1381,6 @@ pub fn cpp_codegen(
         }
 
         mut src = !(mode & M_PARENS) && "(";
-
-        //
         if (type.is_bool)
         {
             cgAndOr_concat(src, " && ", items, parens: true);
@@ -1433,8 +1431,17 @@ pub fn cpp_codegen(
         let type  = node.type;
         let items = node.items;
 
-        mut src = !(mode & M_PARENS) && "(";
+        let stmt = !!(mode & M_STMT);
+        if (stmt)
+        {
+            mut src = "if (!(";
+            cgAndOr_concat(src, " || ", items[0, items.len - 1], parens: true);
+            src ~= "))";
+            src ~= blockWrapSubstatement(items[items.len - 1]);
+            return src;
+        }
 
+        mut src = !(mode & M_PARENS) && "(";
         if (type.is_bool)
         {
             cgAndOr_concat(src, " || ", items, parens: true);

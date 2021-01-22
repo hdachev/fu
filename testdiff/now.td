@@ -5728,7 +5728,9 @@ int fu_MAIN()
 {
     const int i = 0;
     fu_VEC<fu_STR> items = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR{} } };
-    ((i == (items.size() - 1)) || fu::fail("what?"_fu));
+    if (!(i == (items.size() - 1)))
+        fu::fail("what?"_fu);
+
     return i;
 }
 
@@ -7222,7 +7224,9 @@ struct s_TrueStory
 int fu_MAIN()
 {
     s_TrueStory specialized = s_TrueStory { "fn"_fu, "val"_fu };
-    (((specialized.kind == "fn"_fu) && specialized.value) || fu::fail("nope"_fu));
+    if (!((specialized.kind == "fn"_fu) && specialized.value))
+        fu::fail("nope"_fu);
+
     fu_STR& v = ((specialized.kind == "fn"_fu) && specialized.value ? specialized.value : fu::fail("nope"_fu));
     v += "ue"_fu;
     return ((specialized.value == "value"_fu) ? 0 : 1);
@@ -13127,7 +13131,9 @@ int main() { return fu_MAIN(); }
 
 static void compile(int& sum_0, const int x)
 {
-    (x || fu::fail("x=0"_fu));
+    if (!(x))
+        fu::fail("x=0"_fu);
+
     if (x & 1)
         compile(sum_0, (x + 1));
 
