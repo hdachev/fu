@@ -7,7 +7,7 @@
 
 int fu_MAIN()
 {
-    return (1 - 1);
+    return 1 - 1;
 }
 
 #endif
@@ -28,7 +28,7 @@ int main() { return fu_MAIN(); }
 
 static int sum(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -54,7 +54,7 @@ int main() { return fu_MAIN(); }
 
 static int sum(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -85,7 +85,7 @@ static int sign(const int a)
 
 int fu_MAIN()
 {
-    return ((sign(7) + sign(-3)) + sign(0));
+    return (sign(7) + sign(-3)) + sign(0);
 }
 
 #endif
@@ -118,7 +118,7 @@ static int sign(const int a)
 
 int fu_MAIN()
 {
-    return ((sign(10) * 2) + sign(-5));
+    return (sign(10) * 2) + sign(-5);
 }
 
 #endif
@@ -152,7 +152,7 @@ static int sign(const int a)
 
 int fu_MAIN()
 {
-    return ((sign(10) * 2) + sign(-5));
+    return (sign(10) * 2) + sign(-5);
 }
 
 #endif
@@ -178,7 +178,7 @@ int fu_MAIN()
     for (int i = 0; i < 10; i++)
         sum++;
 
-    return ((sum * 2) - 20);
+    return (sum * 2) - 20;
 }
 
 #endif
@@ -204,7 +204,7 @@ int fu_MAIN()
     for (int i = 10; i-- > 0; )
         sum--;
 
-    return ((sum * 2) + 20);
+    return (sum * 2) + 20;
 }
 
 #endif
@@ -234,7 +234,7 @@ int fu_MAIN()
 {
     int res = 0;
     decr(res);
-    return (res + 1);
+    return res + 1;
 }
 
 #endif
@@ -264,7 +264,7 @@ int fu_MAIN()
 {
     int res = 0;
     decr(res);
-    return (res + 1);
+    return res + 1;
 }
 
 #endif
@@ -294,7 +294,7 @@ int fu_MAIN()
 {
     int res = 0;
     decr(res);
-    return (res + 1);
+    return res + 1;
 }
 
 #endif
@@ -323,7 +323,7 @@ int fu_MAIN()
 {
     int res = 0;
     decr(res);
-    return (res + 1);
+    return res + 1;
 }
 
 #endif
@@ -349,7 +349,7 @@ int fu_MAIN()
     while (sum < 15)
         sum++;
 
-    return (sum - 15);
+    return sum - 15;
 }
 
 #endif
@@ -379,7 +379,7 @@ int fu_MAIN()
     while (sum < 15)
         sum++;
 
-    return (sum - 15);
+    return sum - 15;
 }
 
 #endif
@@ -405,7 +405,7 @@ int fu_MAIN()
     while (sum < 15)
         sum += 2;
 
-    return (sum - 16);
+    return sum - 16;
 }
 
 #endif
@@ -426,7 +426,7 @@ int main() { return fu_MAIN(); }
 
 static int named(const int a, const int b)
 {
-    return (a - (b * 2));
+    return a - (b * 2);
 }
 
 int fu_MAIN()
@@ -455,7 +455,7 @@ int main() { return fu_MAIN(); }
 
 static int named(const int a, const int b)
 {
-    return (a - (b * 2));
+    return a - (b * 2);
 }
 
 static int other(const int a, const int b)
@@ -509,12 +509,12 @@ struct s_Range
 
 static int size(const s_Range& r)
 {
-    return (r.max - r.min);
+    return r.max - r.min;
 }
 
 int fu_MAIN()
 {
-    return (size(s_Range { 14, 21 }) - 7);
+    return size(s_Range { 14, 21 }) - 7;
 }
 
 #endif
@@ -559,7 +559,7 @@ int fu_MAIN()
 {
     s_Range r = s_Range { 1, 2 };
     r.min++;
-    return (r.max - r.min);
+    return r.max - r.min;
 }
 
 #endif
@@ -610,7 +610,7 @@ int fu_MAIN()
 {
     s_Range r = s_Range { 1, 2 };
     r.min++;
-    return (r.max - r.min);
+    return r.max - r.min;
 }
 
 #endif
@@ -654,12 +654,12 @@ struct s_Range
 
 static int size(const s_Range& r)
 {
-    return (r.r_max - r.r_min);
+    return r.r_max - r.r_min;
 }
 
 int fu_MAIN()
 {
-    return (size(s_Range { 14, 21 }) - 7);
+    return size(s_Range { 14, 21 }) - 7;
 }
 
 #endif
@@ -700,7 +700,7 @@ struct s_X
 
 static int test(const s_X& x, const int b)
 {
-    return (x.a + b);
+    return x.a + b;
 }
 
 static int hey(const s_X& x)
@@ -773,14 +773,14 @@ struct s_Player
 
 static int dist(const s_Player& p, const s_Player& other)
 {
-    return (p.pos.x - other.pos.x);
+    return p.pos.x - other.pos.x;
 }
 
 int fu_MAIN()
 {
     const s_Player a = s_Player { s_Pos { 10 } };
     const s_Player b = s_Player { s_Pos { 4 } };
-    return (dist(a, b) - 6);
+    return dist(a, b) - 6;
 }
 
 #endif
@@ -842,7 +842,7 @@ struct s_B
 
 static int test(const s_A& a, const s_B& b)
 {
-    return (a.y + b.z);
+    return a.y + b.z;
 }
 
 int fu_MAIN()
@@ -908,7 +908,7 @@ struct s_CurrentFn
 
 static int test(const s_CurrentFn& f)
 {
-    return (f.parent_idx - f.RoR.ret_count);
+    return f.parent_idx - f.RoR.ret_count;
 }
 
 int fu_MAIN()
@@ -933,7 +933,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int x = 3;
-    return ((x / 2) - 1);
+    return (x / 2) - 1;
 }
 
 #endif
@@ -952,7 +952,7 @@ int main() { return fu_MAIN(); }
 
 inline static int hey_U3Pf(const int a)
 {
-    return (a * a);
+    return a * a;
 }
 
 int fu_MAIN()
@@ -976,12 +976,12 @@ int main() { return fu_MAIN(); }
 
 inline static int div3by_U3Pf(const int a)
 {
-    return (3 / a);
+    return 3 / a;
 }
 
 int fu_MAIN()
 {
-    return (div3by_U3Pf(2) - 1);
+    return div3by_U3Pf(2) - 1;
 }
 
 #endif
@@ -1000,12 +1000,12 @@ int main() { return fu_MAIN(); }
 
 inline static int div3by_U3Pf(const int a)
 {
-    return (3 / a);
+    return 3 / a;
 }
 
 int fu_MAIN()
 {
-    return (div3by_U3Pf(2) - 1);
+    return div3by_U3Pf(2) - 1;
 }
 
 #endif
@@ -1047,12 +1047,12 @@ static s_v1 operator+(const s_v1& a, const int b)
 
 inline static s_v1 add3_EtsH(const s_v1& a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
 {
-    return (add3_EtsH(s_v1 { 2 }, 3).x - 5);
+    return add3_EtsH(s_v1 { 2 }, 3).x - 5;
 }
 
 #endif
@@ -1071,7 +1071,7 @@ int main() { return fu_MAIN(); }
 
 inline static int mul_ab_init_8E8n(const int a, const int b)
 {
-    return (a * b);
+    return a * b;
 }
 
 int fu_MAIN()
@@ -1095,7 +1095,7 @@ int main() { return fu_MAIN(); }
 
 inline static int mul_ab_annot_init_8E8n(const int a, const int b)
 {
-    return (a * b);
+    return a * b;
 }
 
 int fu_MAIN()
@@ -1119,7 +1119,7 @@ int main() { return fu_MAIN(); }
 
 inline static int mul_ab_opt_8E8n(const int a, const int b)
 {
-    return (a * b);
+    return a * b;
 }
 
 int fu_MAIN()
@@ -1143,7 +1143,7 @@ int main() { return fu_MAIN(); }
 
 inline static int ab_8E8n(const int a, const int b)
 {
-    return (a + (b * 2));
+    return a + (b * 2);
 }
 
 int fu_MAIN()
@@ -1184,7 +1184,7 @@ struct s_yi32
 
 inline static int add_s_vy_tq1P(const s_yi32& v, const int s)
 {
-    return (s + v.y);
+    return s + v.y;
 }
 
 int fu_MAIN()
@@ -1225,7 +1225,7 @@ struct s_xi32
 
 inline static int add_s_vx_DYIm(const int s, const s_xi32& v)
 {
-    return (s + v.x);
+    return s + v.x;
 }
 
 int fu_MAIN()
@@ -1249,7 +1249,7 @@ int main() { return fu_MAIN(); }
 
 inline static int ab_AFZy(const int a, const int b, const int c)
 {
-    return ((a + (b * 2)) + (c * 3));
+    return (a + (b * 2)) + (c * 3);
 }
 
 int fu_MAIN()
@@ -1273,7 +1273,7 @@ int main() { return fu_MAIN(); }
 
 inline static double ab_F2FO(const double a, const double b)
 {
-    return (a + (b * 2.0));
+    return a + (b * 2.0);
 }
 
 int fu_MAIN()
@@ -1300,7 +1300,7 @@ static const double NEG_ONE_FIVE = -1.5;
 
 inline static double ab_F2FO(const double a, const double b)
 {
-    return (a + (b * 2.0));
+    return a + (b * 2.0);
 }
 
 int fu_MAIN()
@@ -1327,7 +1327,7 @@ static const double TWO = 2.0;
 
 inline static double ab_F2FO(const double a, const double b)
 {
-    return (a + (b * 2.0));
+    return a + (b * 2.0);
 }
 
 int fu_MAIN()
@@ -1360,7 +1360,7 @@ inline static int self_rec_template_U3Pf(const int x)
 
 int fu_MAIN()
 {
-    return (self_rec_template_U3Pf(7) + 2);
+    return self_rec_template_U3Pf(7) + 2;
 }
 
 #endif
@@ -1393,7 +1393,7 @@ inline static int ab_rec_U3Pf(const int a)
 
 int fu_MAIN()
 {
-    return (ab_rec_U3Pf(11) + 200);
+    return ab_rec_U3Pf(11) + 200;
 }
 
 #endif
@@ -1415,13 +1415,13 @@ int main() { return fu_MAIN(); }
 
 inline static int add1_U3Pf(int a_0, const int b)
 {
-    return (a_0 + b);
+    return a_0 + b;
 }
 
 int fu_MAIN()
 {
     const int a = 1;
-    return (add1_U3Pf(a, 2) - 3);
+    return add1_U3Pf(a, 2) - 3;
 }
 
 #endif
@@ -1559,7 +1559,7 @@ inline s_ModuleOutputs clone_Z4mx(const s_ModuleOutputs& a)
 int test(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs b = clone_Z4mx(a);
-    return (a.deps.size() - b.deps.size());
+    return a.deps.size() - b.deps.size();
 }
 
 int fu_MAIN()
@@ -1601,7 +1601,7 @@ struct s_X
 
 inline static int add_uxa_b_inline_Dx7L(const s_X& x, const int b)
 {
-    return (x.a + b);
+    return x.a + b;
 }
 
 static int hey(const s_X& x)
@@ -1648,7 +1648,7 @@ struct s_X
 
 inline static int add_uxa_b_template_Dx7L(const s_X& x, const int b)
 {
-    return (x.a + b);
+    return x.a + b;
 }
 
 static int hey(const s_X& x)
@@ -1695,7 +1695,7 @@ inline int identity_U3Pf(const int dont_leak_me)
 
 int fu_MAIN()
 {
-    return (identity_U3Pf((dont_leak_me * 2)) - 2);
+    return identity_U3Pf((dont_leak_me * 2)) - 2;
 }
 
 #endif
@@ -1721,7 +1721,7 @@ static const int arg = 7;
 
 inline static int template_U3Pf(const int arg)
 {
-    return (sTatic + arg);
+    return sTatic + arg;
 }
 
 static const int result = template_U3Pf((arg / -4));
@@ -1751,7 +1751,7 @@ int main() { return fu_MAIN(); }
 
 inline static int template_U3Pf(int sTatic_0, const int arg)
 {
-    return (sTatic_0 + arg);
+    return sTatic_0 + arg;
 }
 
 int fu_MAIN()
@@ -1790,7 +1790,7 @@ static int inner(const int i)
 
 static int outer(const int i)
 {
-    return (2 * inner(i));
+    return 2 * inner(i);
 }
 
 int fu_MAIN()
@@ -1835,19 +1835,19 @@ static int inner(int one_0, int zero_0, int two_0, const int i)
 
 static int outer(int one_0, int zero_0, int two_0, const int i)
 {
-    return (two_0 * inner(one_0, zero_0, two_0, i));
+    return two_0 * inner(one_0, zero_0, two_0, i);
 }
 
 static int test(const int one)
 {
     const int zero = (one - 1);
     const int two = (one * 2);
-    return (outer(one, zero, two, one) + ((two - one) * 17));
+    return outer(one, zero, two, one) + ((two - one) * 17);
 }
 
 int fu_MAIN()
 {
-    return (test(1) - 17);
+    return test(1) - 17;
 }
 
 #endif
@@ -1887,7 +1887,7 @@ static int outer(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer(1, x) - 7);
+    return outer(1, x) - 7;
 }
 
 #endif
@@ -1927,7 +1927,7 @@ static int outer_noret(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer_noret(1, x) - 7);
+    return outer_noret(1, x) - 7;
 }
 
 #endif
@@ -1967,7 +1967,7 @@ inline static int outer_inl_8E8n(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer_inl_8E8n(1, x) - 7);
+    return outer_inl_8E8n(1, x) - 7;
 }
 
 #endif
@@ -2007,7 +2007,7 @@ inline static int outer_templ_8E8n(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer_templ_8E8n(1, x) - 7);
+    return outer_templ_8E8n(1, x) - 7;
 }
 
 #endif
@@ -2047,7 +2047,7 @@ inline static int outer_templ_noret_8E8n(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer_templ_noret_8E8n(1, x) - 7);
+    return outer_templ_noret_8E8n(1, x) - 7;
 }
 
 #endif
@@ -2207,7 +2207,7 @@ static int outer(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer(1, x) - 7);
+    return outer(1, x) - 7;
 }
 
 #endif
@@ -2263,7 +2263,7 @@ static int outer(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (outer(1, x) - 7);
+    return outer(1, x) - 7;
 }
 
 #endif
@@ -2300,7 +2300,7 @@ static int calls_self_1(const bool call_self, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (calls_self_1(true, x) - 14);
+    return calls_self_1(true, x) - 14;
 }
 
 #endif
@@ -2337,7 +2337,7 @@ static int calls_self_2(const bool call_self, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (calls_self_2(true, x) - 21);
+    return calls_self_2(true, x) - 21;
 }
 
 #endif
@@ -2371,7 +2371,7 @@ static int calls_self_3(bool, int);
 
 static int do_call_self(int add_0, const int mul, const int x)
 {
-    return ((calls_self_3(false, x) * mul) + add_0);
+    return (calls_self_3(false, x) * mul) + add_0;
 }
 
 static int returns_x(const int x)
@@ -2388,7 +2388,7 @@ static int calls_self_3(const bool call_self, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (calls_self_3(true, x) - 29);
+    return calls_self_3(true, x) - 29;
 }
 
 #endif
@@ -2426,7 +2426,7 @@ inline static int templ_calls_self_2_1zaR(const bool call_self, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return (templ_calls_self_2_1zaR(true, x) - 21);
+    return templ_calls_self_2_1zaR(true, x) - 21;
 }
 
 #endif
@@ -2475,7 +2475,7 @@ struct s_Range
 
 static int size(const s_Range& r)
 {
-    return (r.max - r.min);
+    return r.max - r.min;
 }
 
 static int test(const s_Range& r)
@@ -2486,7 +2486,7 @@ static int test(const s_Range& r)
 int fu_MAIN()
 {
     const s_Range r = s_Range { 14, 21 };
-    return (test(r) - 7);
+    return test(r) - 7;
 }
 
 #endif
@@ -2538,7 +2538,7 @@ struct s_Range
 
 static int size(const s_Range& r)
 {
-    return (r.max - r.min);
+    return r.max - r.min;
 }
 
 static int inner(const s_Range& r)
@@ -2554,7 +2554,7 @@ static int outer(const s_Range& r)
 int fu_MAIN()
 {
     const s_Range r = s_Range { 14, 21 };
-    return (outer(r) - 7);
+    return outer(r) - 7;
 }
 
 #endif
@@ -2590,7 +2590,7 @@ int main() { return fu_MAIN(); }
 
 static int sibling1(int c_0, const int z)
 {
-    return (z + c_0);
+    return z + c_0;
 }
 
 static int depth2(int b_0, int c_0, int x_0, const int y)
@@ -2608,7 +2608,7 @@ int fu_MAIN()
     const int a = 1;
     const int b = 2;
     const int c = 3;
-    return (depth1(a, b, c, 0) - 6);
+    return depth1(a, b, c, 0) - 6;
 }
 
 #endif
@@ -2703,7 +2703,7 @@ int main() { return fu_MAIN(); }
 
 inline static int goto0_U3Pf(const int x)
 {
-    return (x ? goto0_U3Pf((x / 2)) : int{});
+    return x ? goto0_U3Pf((x / 2)) : int{};
 }
 
 int fu_MAIN()
@@ -2738,7 +2738,7 @@ static int& impl(int& _impl)
 
 static int& arg_or_impl(int& arg, int& _impl)
 {
-    return (arg ? arg : impl(_impl));
+    return arg ? arg : impl(_impl);
 }
 
 int fu_MAIN()
@@ -2746,7 +2746,7 @@ int fu_MAIN()
     int _impl {};
     int arg {};
     int& ref = arg_or_impl(arg, _impl);
-    return (arg - ref);
+    return arg - ref;
 }
 
 #endif
@@ -2775,7 +2775,7 @@ static int test(int x_0)
 int fu_MAIN()
 {
     const int x = 1;
-    return (test(x) - 1);
+    return test(x) - 1;
 }
 
 #endif
@@ -2798,7 +2798,7 @@ int fu_MAIN()
 {
     const int a = 1;
     const int x = a;
-    return (a - x);
+    return a - x;
 }
 
 #endif
@@ -2841,7 +2841,7 @@ int fu_MAIN()
 {
     const int a = 1;
     const s_Test test = s_Test { a };
-    return (test.x - 1);
+    return test.x - 1;
 }
 
 #endif
@@ -2868,7 +2868,7 @@ int fu_MAIN()
     int b = a;
     b++;
     const int c = (a = b);
-    return (a - c);
+    return a - c;
 }
 
 #endif
@@ -2902,7 +2902,7 @@ static int test(const fu_VEC<int>& view)
     for (int i = 0; i < view.size(); i++)
         sum += view[i];
 
-    return (sum - 15);
+    return sum - 15;
 }
 
 int fu_MAIN()
@@ -2943,7 +2943,7 @@ static int test(const fu_VEC<int>& view)
     for (int i = 0; i < view.size(); i++)
         sum += view[i];
 
-    return (sum - 15);
+    return sum - 15;
 }
 
 int fu_MAIN()
@@ -2975,7 +2975,7 @@ int fu_MAIN()
     const int x = 5;
     fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<1> { -5 } };
     arr.push(x);
-    return (arr.mutref(0) + arr.mutref(1));
+    return arr.mutref(0) + arr.mutref(1);
 }
 
 #endif
@@ -3680,7 +3680,7 @@ int fu_MAIN()
 {
     fu_VEC<s_X> x {};
     x.push(s_X { fu_VEC<s_Y> { fu_VEC<s_Y>::INIT<1> { s_Y { true } } } });
-    return ((x.size() + (x.mutref(0).y.size() * 2)) - 3);
+    return (x.size() + (x.mutref(0).y.size() * 2)) - 3;
 }
 
 #endif
@@ -3720,7 +3720,7 @@ struct s_SelfRec
 
 int fu_MAIN()
 {
-    return (s_SelfRec { fu_VEC<s_SelfRec> { fu_VEC<s_SelfRec>::INIT<1> { s_SelfRec{} } } }.x.size() - 1);
+    return s_SelfRec { fu_VEC<s_SelfRec> { fu_VEC<s_SelfRec>::INIT<1> { s_SelfRec{} } } }.x.size() - 1;
 }
 
 #endif
@@ -3780,7 +3780,7 @@ struct s_BARec
 
 int fu_MAIN()
 {
-    return (s_ABRec { fu_VEC<s_BARec> { fu_VEC<s_BARec>::INIT<1> { s_BARec{} } } }.x.size() - 1);
+    return s_ABRec { fu_VEC<s_BARec> { fu_VEC<s_BARec>::INIT<1> { s_BARec{} } } }.x.size() - 1;
 }
 
 #endif
@@ -3866,7 +3866,7 @@ struct s_BARec
 
 int fu_MAIN()
 {
-    return (s_ABRec { fu_VEC<s_BARec> { fu_VEC<s_BARec>::INIT<1> { s_BARec{} } }, fu_VEC<s_ABBARec> { fu_VEC<s_ABBARec>::INIT<1> { s_ABBARec{} } } }.x.size() - 1);
+    return s_ABRec { fu_VEC<s_BARec> { fu_VEC<s_BARec>::INIT<1> { s_BARec{} } }, fu_VEC<s_ABBARec> { fu_VEC<s_ABBARec>::INIT<1> { s_ABBARec{} } } }.x.size() - 1;
 }
 
 #endif
@@ -3890,7 +3890,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<6> { 7, 1, 5, 3, 99, -13 } };
     fu::sort(a);
-    return (((a.mutref(0) + a.mutref(1)) + a.mutref(3)) + a.mutref(4));
+    return ((a.mutref(0) + a.mutref(1)) + a.mutref(3)) + a.mutref(4);
 }
 
 #endif
@@ -3914,7 +3914,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<4> { 0, 1, 2, 3 } };
     fu_VEC<int> b = fu::slice(a, 1, 3);
-    return (b.size() - b[1]);
+    return b.size() - b[1];
 }
 
 #endif
@@ -3938,7 +3938,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<4> { 0, 1, 2, 3 } };
     fu_VEC<int> b = fu::slice(a, 1);
-    return (b.size() - b[2]);
+    return b.size() - b[2];
 }
 
 #endif
@@ -3963,7 +3963,7 @@ int fu_MAIN()
 {
     fu_STR str = "hello "_fu;
     str += "world"_fu;
-    return (str.size() - 11);
+    return str.size() - 11;
 }
 
 #endif
@@ -4045,7 +4045,7 @@ int fu_MAIN()
     for (int i = 0; i < str.size(); i++)
         cpy += str[i];
 
-    return ((cpy.size() - 11) + ((cpy == str) ? 0 : 1));
+    return (cpy.size() - 11) + ((cpy == str) ? 0 : 1);
 }
 
 #endif
@@ -4067,7 +4067,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * fu::lfind(fu_VEC<int> { fu_VEC<int>::INIT<5> { 1, 7, 13, 14, 19 } }, 14, 0)));
+    return fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * fu::lfind(fu_VEC<int> { fu_VEC<int>::INIT<5> { 1, 7, 13, 14, 19 } }, 14, 0));
 }
 
 #endif
@@ -4090,7 +4090,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (fu::has(fu_VEC<int> { fu_VEC<int>::INIT<4> { 1, 14, 96, 2 } }, 14) ? 2 : 0)) - 3);
+    return ((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (fu::has(fu_VEC<int> { fu_VEC<int>::INIT<4> { 1, 14, 96, 2 } }, 14) ? 2 : 0)) - 3;
 }
 
 #endif
@@ -4244,7 +4244,7 @@ int fu_MAIN()
     fu_MAP<fu_STR, int> x {};
     (x.upsert("hello"_fu) = 1);
     (x.upsert("world"_fu) = 2);
-    return ((x.mutref("hello"_fu) - x.mutref("world"_fu)) + 1);
+    return (x.mutref("hello"_fu) - x.mutref("world"_fu)) + 1;
 }
 
 #endif
@@ -4308,7 +4308,7 @@ int fu_MAIN()
     (x.upsert("world"_fu) = 2);
     fu_STR b = "hello world"_fu;
     int offset = 0;
-    return ((x.mutref(pop(b, offset)) - x.mutref(pop(b, offset))) + 1);
+    return (x.mutref(pop(b, offset)) - x.mutref(pop(b, offset))) + 1;
 }
 
 #endif
@@ -4327,12 +4327,12 @@ int main() { return fu_MAIN(); }
 
 static int test(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
 {
-    return (test(1, 2) - 3);
+    return test(1, 2) - 3;
 }
 
 #endif
@@ -4351,7 +4351,7 @@ int main() { return fu_MAIN(); }
 
 static int test(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -4375,7 +4375,7 @@ int main() { return fu_MAIN(); }
 
 static int test(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -4419,7 +4419,7 @@ struct s_Test
 int fu_MAIN()
 {
     const s_Test t = s_Test { 1, 0 };
-    return ((t.a - 1) + (t.b * 7));
+    return (t.a - 1) + (t.b * 7);
 }
 
 #endif
@@ -4497,7 +4497,7 @@ struct s_Test
 int fu_MAIN()
 {
     const s_Test t = s_Test { 1, 0 };
-    return ((t.a - 1) + (t.b * 7));
+    return (t.a - 1) + (t.b * 7);
 }
 
 #endif
@@ -4536,7 +4536,7 @@ struct s_Test
 int fu_MAIN()
 {
     const s_Test t = s_Test { 0, 1 };
-    return ((t.b - 1) + (t.a * 7));
+    return (t.b - 1) + (t.a * 7);
 }
 
 #endif
@@ -4873,7 +4873,7 @@ int fu_MAIN()
         }L_outer_c:;}
         L_outer_b:;
 
-    return (sum - 34);
+    return sum - 34;
 }
 
 #endif
@@ -4923,7 +4923,7 @@ int fu_MAIN()
 {
     s_Test t = s_Test{};
     test(t);
-    return (t.x - 1);
+    return t.x - 1;
 }
 
 #endif
@@ -5089,7 +5089,7 @@ int fu_MAIN()
     int i = 7;
     int* _0;
     (*(_0 = &(i)) ? *_0 : *_0 = 11);
-    return (i - 7);
+    return i - 7;
 }
 
 #endif
@@ -5112,7 +5112,7 @@ int fu_MAIN()
     int i = 0;
     int* _0;
     (*(_0 = &(i)) ? *_0 : *_0 = 11);
-    return (i - 11);
+    return i - 11;
 }
 
 #endif
@@ -5194,7 +5194,7 @@ int fu_MAIN()
     (m.upsert("_not_hello_"_fu) = "world"_fu);
     fu_STR* _0;
     (*(_0 = &(m.upsert("hello"_fu))) ? *_0 : *_0 = f(g));
-    return (g - 1);
+    return g - 1;
 }
 
 #endif
@@ -5389,7 +5389,7 @@ static const int P_COMMA { []() -> int {
 
 int fu_MAIN()
 {
-    return (P_COMMA - 7);
+    return P_COMMA - 7;
 }
 
 #endif
@@ -5690,7 +5690,7 @@ struct s_Partial
 
 static int Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tEmplate, const s_Partial& partial)
 {
-    return ((((((((((scope.i + kind.size()) + id.size()) + type.i) + min) + max) + arg_n.size()) + arg_t.size()) + arg_d.size()) + tEmplate.i) + partial.i);
+    return (((((((((scope.i + kind.size()) + id.size()) + type.i) + min) + max) + arg_n.size()) + arg_t.size()) + arg_d.size()) + tEmplate.i) + partial.i;
 }
 
 int fu_MAIN()
@@ -5793,7 +5793,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (int(0b101u) - 5);
+    return int(0b101u) - 5;
 }
 
 #endif
@@ -5811,7 +5811,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (int(0101u) - 65);
+    return int(0101u) - 65;
 }
 
 #endif
@@ -5939,14 +5939,14 @@ struct s_Template
 
 int operator+(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return (a.x + b.x);
+    return a.x + b.x;
 }
 
 int fu_MAIN()
 {
     const s_Template a = s_Template { s_ScopeMemo { +3 } };
     const s_Template b = s_Template { s_ScopeMemo { -3 } };
-    return (a.locals + b.locals);
+    return a.locals + b.locals;
 }
 
 #endif
@@ -6093,7 +6093,7 @@ int fu_MAIN()
 {
     s_MeshBuilder mb = s_MeshBuilder { fu_STR{}, fu_STR{}, (4 * ((3 + 3) + 2)), 0 };
     fu::view_assign(fu::view_of_mut(setup_quads(mb, 1), float{}), QUAD_VBO);
-    return (mb.num_verts - 4);
+    return mb.num_verts - 4;
 }
 
 #endif
@@ -6138,7 +6138,7 @@ static int& target(int& _target)
 
 static int& GET_mut(int& x, int& _target)
 {
-    return (x ? x : target(_target));
+    return x ? x : target(_target);
 }
 
 static void checkRecursions(int& o, const int incr, int& _target)
@@ -6160,7 +6160,7 @@ static int __solveStruct(int arg, int& _target)
 int fu_MAIN()
 {
     int _target = 0;
-    return (__solveStruct(1, _target) - 4);
+    return __solveStruct(1, _target) - 4;
 }
 
 #endif
@@ -6184,13 +6184,13 @@ int main() { return fu_MAIN(); }
 
 static int& GET_mut(int& target_0, int& x)
 {
-    return (x ? x : GET_mut(target_0, (target_0 += 1)));
+    return x ? x : GET_mut(target_0, (target_0 += 1));
 }
 
 int fu_MAIN()
 {
     int target = 0;
-    return (GET_mut(target, target) - 1);
+    return GET_mut(target, target) - 1;
 }
 
 #endif
@@ -6214,13 +6214,13 @@ int main() { return fu_MAIN(); }
 
 static int& GET_mut(int& target_0, int& x)
 {
-    return (x ? x : GET_mut(target_0, ++target_0));
+    return x ? x : GET_mut(target_0, ++target_0);
 }
 
 int fu_MAIN()
 {
     int target = 0;
-    return (GET_mut(target, target) - 1);
+    return GET_mut(target, target) - 1;
 }
 
 #endif
@@ -6251,7 +6251,7 @@ static int __solveStruct(int&, int);
 
 static int& GET_mut(int& target_0, int& x)
 {
-    return (x ? x : (target_0 = __solveStruct(target_0, int((target_0 += 1)))));
+    return x ? x : (target_0 = __solveStruct(target_0, int((target_0 += 1))));
 }
 
 static int __solveStruct(int& target_0, int arg)
@@ -6264,7 +6264,7 @@ static int __solveStruct(int& target_0, int arg)
 int fu_MAIN()
 {
     int target = 0;
-    return (__solveStruct(target, 0) - 2);
+    return __solveStruct(target, 0) - 2;
 }
 
 #endif
@@ -6292,13 +6292,13 @@ static int& incr(int& a)
 
 static int& A(int& a)
 {
-    return (a ? a : (a = A(incr(a))));
+    return a ? a : (a = A(incr(a)));
 }
 
 int fu_MAIN()
 {
     int v = 0;
-    return (A(v) - 1);
+    return A(v) - 1;
 }
 
 #endif
@@ -6327,18 +6327,18 @@ static int& incr(int& a)
 
 static int& B(int& b)
 {
-    return (b ? b : (b = A(incr(b))));
+    return b ? b : (b = A(incr(b)));
 }
 
 static int& A(int& a)
 {
-    return (a ? a : (a = B(incr(a))));
+    return a ? a : (a = B(incr(a)));
 }
 
 int fu_MAIN()
 {
     int v = 0;
-    return (A(v) - 1);
+    return A(v) - 1;
 }
 
 #endif
@@ -6380,7 +6380,7 @@ static int& A(int& a)
 int fu_MAIN()
 {
     int v = 0;
-    return (A(v) - 1);
+    return A(v) - 1;
 }
 
 #endif
@@ -6427,12 +6427,12 @@ inline static int& l_1_0(int& arg_0, int x_0)
 
 inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
 {
-    return (!cond ? cond : l_1_0(arg_0, x_0));
+    return !cond ? cond : l_1_0(arg_0, x_0);
 }
 
 static int& GET_mut(int& target_0, int& x)
 {
-    return (x ? x : (target_0 = __solveStruct(target_0, int(target_0), 0)));
+    return x ? x : (target_0 = __solveStruct(target_0, int(target_0), 0));
 }
 
 static void checkRecursions(int& target_0, int& o, const int incr)
@@ -6455,7 +6455,7 @@ static int __solveStruct(int& target_0, int arg, const int x)
 int fu_MAIN()
 {
     int target = 0;
-    return (__solveStruct(target, 1, 0) - 4);
+    return __solveStruct(target, 1, 0) - 4;
 }
 
 #endif
@@ -6496,7 +6496,7 @@ static int __solveStruct(int&, int);
 
 inline static int& GET_mut_cBw5(int& target_0, int& x)
 {
-    return (x ? x : (target_0 = __solveStruct(target_0, int(target_0))));
+    return x ? x : (target_0 = __solveStruct(target_0, int(target_0)));
 }
 
 static void checkRecursions(int& target_0, int& o, const int incr)
@@ -6518,7 +6518,7 @@ static int __solveStruct(int& target_0, int arg)
 int fu_MAIN()
 {
     int target = 0;
-    return (__solveStruct(target, 1) - 4);
+    return __solveStruct(target, 1) - 4;
 }
 
 #endif
@@ -6618,7 +6618,7 @@ static fu_STR setSpec(fu_MAP<fu_STR, s_Target>& specs_0, const fu_STR& mangle)
 int fu_MAIN()
 {
     fu_MAP<fu_STR, s_Target> specs {};
-    return (setSpec(specs, "hey"_fu).size() - 2);
+    return setSpec(specs, "hey"_fu).size() - 2;
 }
 
 #endif
@@ -6848,7 +6848,7 @@ int fu_MAIN()
     int sum = 0;
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } };
     each_hTsr(sum, a, 0, sum);
-    return (sum - 6);
+    return sum - 6;
 }
 
 #endif
@@ -6888,7 +6888,7 @@ int fu_MAIN()
 {
     fu_VEC<int> scope_skip = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     ScopeSkip_push(scope_skip);
-    return (scope_skip.mutref(0) - 2);
+    return scope_skip.mutref(0) - 2;
 }
 
 #endif
@@ -6965,7 +6965,7 @@ static fu_STR snippet2cpp(const fu_STR& cpp)
 
 int fu_MAIN()
 {
-    return (snippet2cpp("1"_fu).size() - 1);
+    return snippet2cpp("1"_fu).size() - 1;
 }
 
 #endif
@@ -7044,7 +7044,7 @@ static fu_STR snippet2cpp(const fu_STR& cpp)
 
 int fu_MAIN()
 {
-    return (snippet2cpp("1"_fu).size() - 1);
+    return snippet2cpp("1"_fu).size() - 1;
 }
 
 #endif
@@ -7080,13 +7080,13 @@ static fu_STR outer(const fu_STR&, const fu_STR&);
 static fu_STR inner(const fu_STR& hey_0, const fu_STR& you)
 {
     fu_STR _0 {};
-    return (you && (_0 = (hey_0 + you)) ? static_cast<fu_STR&&>(_0) : outer(hey_0, "what#1"_fu));
+    return you && (_0 = (hey_0 + you)) ? static_cast<fu_STR&&>(_0) : outer(hey_0, "what#1"_fu);
 }
 
 static fu_STR outer(const fu_STR& hey_0, const fu_STR& arg)
 {
     fu_STR _0 {};
-    return ((_0 = inner(hey_0, (arg ? (" "_fu + arg) : fu_STR{}))) ? static_cast<fu_STR&&>(_0) : inner(hey_0, "what#2"_fu));
+    return (_0 = inner(hey_0, (arg ? (" "_fu + arg) : fu_STR{}))) ? static_cast<fu_STR&&>(_0) : inner(hey_0, "what#2"_fu);
 }
 
 static fu_STR test(const fu_STR& x)
@@ -7097,7 +7097,7 @@ static fu_STR test(const fu_STR& x)
 
 int fu_MAIN()
 {
-    return (test("you"_fu).size() - 7);
+    return test("you"_fu).size() - 7;
 }
 
 #endif
@@ -7119,7 +7119,7 @@ int fu_MAIN()
 {
     const int a = 7;
     const int b = (a ? 3 : int{});
-    return (b - 3);
+    return b - 3;
 }
 
 #endif
@@ -7168,7 +7168,7 @@ int fu_MAIN()
     s_S _1 {};
     s_S _2 {};
     int _3 {};
-    return ((_0 = int(a.i)) ? _0 : (!(_3 = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i)) ? _3 : fu::fail("woot"_fu)));
+    return (_0 = int(a.i)) ? _0 : (!(_3 = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i)) ? _3 : fu::fail("woot"_fu));
 }
 
 #endif
@@ -7279,7 +7279,7 @@ int fu_MAIN()
 {
     const int a = 3;
     fu_STR v = (a ? consume().value : fu_STR{});
-    return (v.size() - a);
+    return v.size() - a;
 }
 
 #endif
@@ -7383,7 +7383,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return (ARR_LAST_mrln(b) - 3);
+    return ARR_LAST_mrln(b) - 3;
 }
 
 #endif
@@ -7423,7 +7423,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return (ARR_LAST_mrln(b) - 3);
+    return ARR_LAST_mrln(b) - 3;
 }
 
 #endif
@@ -7503,7 +7503,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return (ARR_LAST_mrln(b) - ARR_LAST_I28a(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } }));
+    return ARR_LAST_mrln(b) - ARR_LAST_I28a(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } });
 }
 
 #endif
@@ -7577,7 +7577,7 @@ int fu_MAIN()
 {
     s_RenderFrame ret {};
     test(ret);
-    return (ret.u_mat4_VP.i - 1);
+    return ret.u_mat4_VP.i - 1;
 }
 
 #endif
@@ -7627,12 +7627,12 @@ struct s_ScopeSkip
 
 int search(const s_ScopeSkip& skip)
 {
-    return (skip.end - skip.start);
+    return skip.end - skip.start;
 }
 
 int fu_MAIN()
 {
-    return (s_ScopeSkip { -1, +1 }.end - 1);
+    return s_ScopeSkip { -1, +1 }.end - 1;
 }
 
 #endif
@@ -7749,7 +7749,7 @@ struct s_mat34
 
 inline static float determinant_2rXJ(const s_mat34& _)
 {
-    return (((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z));
+    return ((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z);
 }
 
 static s_mat34 inverse(const s_mat34& mat)
@@ -7970,7 +7970,7 @@ int fu_MAIN()
     };
     s_Visitor myVisitor {};
     visitNodes_7vqN(myVisitor, tree);
-    return (myVisitor.sum - 15);
+    return myVisitor.sum - 15;
 }
 
 #endif
@@ -8035,11 +8035,11 @@ int fu_MAIN()
     {
         fu_STR err = fu_TO_STR(o_0.what());
 
-        return (err.size() - 3);
+        return err.size() - 3;
     }
 ;
     int _0 {};
-    return ((_0 = int(x)) ? _0 : 7);
+    return (_0 = int(x)) ? _0 : 7;
 }
 
 #endif
@@ -8087,7 +8087,7 @@ int fu_MAIN()
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
-        return (e.size() - 3);
+        return e.size() - 3;
     }
 ;
 }
@@ -8138,7 +8138,7 @@ static const fu_STR& next(const fu_VEC<fu_STR>& args_0, int& idx_0)
 static int cli_handle(const fu_VEC<fu_STR>& args)
 {
     int idx = 0;
-    return (next(args, idx).size() - 5);
+    return next(args, idx).size() - 5;
 }
 
 int fu_MAIN()
@@ -8173,7 +8173,7 @@ static int test()
 
 int fu_MAIN()
 {
-    return (test() - 5);
+    return test() - 5;
 }
 
 #endif
@@ -8221,7 +8221,7 @@ static s_Test test()
 
 int fu_MAIN()
 {
-    return (test().i - 5);
+    return test().i - 5;
 }
 
 #endif
@@ -8271,7 +8271,7 @@ static s_Test test()
 
 int fu_MAIN()
 {
-    return (test().a + test().b);
+    return test().a + test().b;
 }
 
 #endif
@@ -8317,7 +8317,7 @@ static const s_X& ref2arg(const s_X& x)
 int fu_MAIN()
 {
     const s_X NOTREF { ref2arg(s_X { 101 }) };
-    return (NOTREF.x - 101);
+    return NOTREF.x - 101;
 }
 
 #endif
@@ -8365,7 +8365,7 @@ int fu_MAIN()
     const s_Copied a = s_Copied { 1 };
     s_Copied b { a };
     b.x++;
-    return (b.x - (a.x * 2));
+    return b.x - (a.x * 2);
 }
 
 #endif
@@ -8430,7 +8430,7 @@ int fu_MAIN()
 {
     s_NoCopy nc {};
     retmutref(retmutref(nc)).i++;
-    return (nc.i - 1);
+    return nc.i - 1;
 }
 
 #endif
@@ -8486,7 +8486,7 @@ int fu_MAIN()
 {
     s_NoCopy nc {};
     mutrefself(mutrefself(nc));
-    return (nc.i - 2);
+    return nc.i - 2;
 }
 
 #endif
@@ -8546,12 +8546,12 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return (a ? b : fu::Default<s_NoCopy>::value);
+    return a ? b : fu::Default<s_NoCopy>::value;
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return (a ? a : b);
+    return a ? a : b;
 }
 
 int fu_MAIN()
@@ -8618,12 +8618,12 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return (a ? b : fu::Default<s_NoCopy>::value);
+    return a ? b : fu::Default<s_NoCopy>::value;
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return (a ? a : b);
+    return a ? a : b;
 }
 
 int fu_MAIN()
@@ -8689,12 +8689,12 @@ inline static s_NoCopy& retargs_if_kyhe(s_NoCopy& a, s_NoCopy& b)
 
 inline static s_NoCopy& retargs_and_kyhe(s_NoCopy& a, s_NoCopy& b)
 {
-    return (!a ? a : b);
+    return !a ? a : b;
 }
 
 inline static s_NoCopy& retargs_or_kyhe(s_NoCopy& a, s_NoCopy& b)
 {
-    return (a ? a : b);
+    return a ? a : b;
 }
 
 int fu_MAIN()
@@ -8702,7 +8702,7 @@ int fu_MAIN()
     s_NoCopy a {};
     s_NoCopy b {};
     retarg_Z6XS(retargs_if_kyhe(a, retargs_and_kyhe(a, retargs_or_kyhe(a, b)))).i++;
-    return ((a.i + b.i) - 1);
+    return (a.i + b.i) - 1;
 }
 
 #endif
@@ -8754,7 +8754,7 @@ static s_Test test(s_Test&& x)
 int fu_MAIN()
 {
     s_Test s = s_Test { fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } } };
-    return (test(s_Test(s)).i[0] - (s.i[0] * 3));
+    return test(s_Test(s)).i[0] - (s.i[0] * 3);
 }
 
 #endif
@@ -8806,7 +8806,7 @@ static s_Test test(s_Test&& x)
 int fu_MAIN()
 {
     s_Test s = s_Test { fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } } };
-    return (test(s_Test(s)).i[0] - (s.i[0] * 3));
+    return test(s_Test(s)).i[0] - (s.i[0] * 3);
 }
 
 #endif
@@ -8839,13 +8839,13 @@ int main() { return fu_MAIN(); }
 static int compile_snippets(const fu_STR& x)
 {
     int _0 {};
-    return (!(_0 = fu::lfind(x, std::byte('a'), 0)) ? _0 : fu::fail("throw#1"_fu));
+    return !(_0 = fu::lfind(x, std::byte('a'), 0)) ? _0 : fu::fail("throw#1"_fu);
 }
 
 static int ZERO(const fu_STR& x)
 {
     int _0 {};
-    return (!(_0 = fu::lfind(x, std::byte('b'), 0)) ? _0 : fu::fail("throw#2"_fu));
+    return !(_0 = fu::lfind(x, std::byte('b'), 0)) ? _0 : fu::fail("throw#2"_fu);
 }
 
 static fu_STR FAIL(const fu_STR& x)
@@ -8898,7 +8898,7 @@ static fu_STR test(const fu_STR& x)
 
 int fu_MAIN()
 {
-    return (test("what"_fu).size() - 4);
+    return test("what"_fu).size() - 4;
 }
 
 #endif
@@ -8987,7 +8987,7 @@ static s_SolvedNode solveDeclExpr(const s_Node& n)
 
 int fu_MAIN()
 {
-    return (solveDeclExpr(s_Node { "a"_fu }).kind.size() - 1);
+    return solveDeclExpr(s_Node { "a"_fu }).kind.size() - 1;
 }
 
 #endif
@@ -9031,7 +9031,7 @@ int fu_MAIN()
 {
     int x = 0;
     incr_x_to_1(x);
-    return (x - 1);
+    return x - 1;
 }
 
 #endif
@@ -9075,7 +9075,7 @@ int fu_MAIN()
 {
     int x = 0;
     incr_x_to_1(x);
-    return (x - 1);
+    return x - 1;
 }
 
 #endif
@@ -9133,7 +9133,7 @@ int fu_MAIN()
 {
     int x = 0;
     scope_using(x, x);
-    return (x - 1);
+    return x - 1;
 }
 
 #endif
@@ -9153,7 +9153,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    return (int((M_PI * 2.0)) - 6);
+    return int((M_PI * 2.0)) - 6;
 }
 
 #endif
@@ -9233,7 +9233,7 @@ static const float x = 1.0f;
 
 int fu_MAIN()
 {
-    return (1 - int(x));
+    return 1 - int(x);
 }
 
 #endif
@@ -9253,7 +9253,7 @@ static const float x = 1.0f;
 
 int fu_MAIN()
 {
-    return (1 - int(x));
+    return 1 - int(x);
 }
 
 #endif
@@ -9274,7 +9274,7 @@ static const uint8_t x = uint8_t(1u);
 
 int fu_MAIN()
 {
-    return (1 - int(x));
+    return 1 - int(x);
 }
 
 #endif
@@ -9294,7 +9294,7 @@ static const float x = float(1);
 
 int fu_MAIN()
 {
-    return (1 - int(x));
+    return 1 - int(x);
 }
 
 #endif
@@ -9313,7 +9313,7 @@ int main() { return fu_MAIN(); }
 
 static bool gt0(const float x)
 {
-    return (x > 0.0f);
+    return x > 0.0f;
 }
 
 int fu_MAIN()
@@ -9359,7 +9359,7 @@ static s_Hey hey()
 
 int fu_MAIN()
 {
-    return (int(hey().x) - 1);
+    return int(hey().x) - 1;
 }
 
 #endif
@@ -9476,12 +9476,12 @@ int main() { return fu_MAIN(); }
 
 static float hey(const float i)
 {
-    return (float(i) + 0.5f);
+    return float(i) + 0.5f;
 }
 
 int fu_MAIN()
 {
-    return (int(hey(1.0f)) - 1);
+    return int(hey(1.0f)) - 1;
 }
 
 #endif
@@ -9602,7 +9602,7 @@ static const fu_VEC<float> QUAD_DATA = fu_VEC<float> { fu_VEC<float>::INIT<54> {
 
 int fu_MAIN()
 {
-    return (QUAD_DATA.size() - (6 * 9));
+    return QUAD_DATA.size() - (6 * 9);
 }
 
 #endif
@@ -9649,7 +9649,7 @@ int main() { return fu_MAIN(); }
 
 static uint8_t test(const bool a)
 {
-    return (a ? uint8_t(1u) : uint8_t{});
+    return a ? uint8_t(1u) : uint8_t{};
 }
 
 int fu_MAIN()
@@ -9688,12 +9688,12 @@ inline const uint8_t A_u8 = uint8_t(0x0u);
 
 static uint8_t ATTRIB(const uint8_t type, const int count, const bool srgb)
 {
-    return (((type & uint8_t(0x3u)) | (uint8_t(count) << uint8_t(2u))) | (srgb ? uint8_t(0x80u) : uint8_t{}));
+    return ((type & uint8_t(0x3u)) | (uint8_t(count) << uint8_t(2u))) | (srgb ? uint8_t(0x80u) : uint8_t{});
 }
 
 int fu_MAIN()
 {
-    return (int(ATTRIB(A_u8, 4, false)) - 16);
+    return int(ATTRIB(A_u8, 4, false)) - 16;
 }
 
 #endif
@@ -9878,7 +9878,7 @@ int main() { return fu_MAIN(); }
 
 static bool leadingDigit(const fu_STR& name)
 {
-    return ((uint8_t(name[0]) - uint8_t(std::byte('0'))) < uint8_t(10u));
+    return (uint8_t(name[0]) - uint8_t(std::byte('0'))) < uint8_t(10u);
 }
 
 int fu_MAIN()
@@ -9904,7 +9904,7 @@ int main() { return fu_MAIN(); }
 
 static int yo(const fu_VEC<int>& t)
 {
-    return (t[0] + t[1]);
+    return t[0] + t[1];
 }
 
 int fu_MAIN()
@@ -9931,7 +9931,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return (a ? a[0] : fu::Default<int>::value);
+    return a ? a[0] : fu::Default<int>::value;
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -9941,7 +9941,7 @@ static int hello(const fu_VEC<int>& a)
 
 int fu_MAIN()
 {
-    return (hello(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } }) - 3);
+    return hello(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } }) - 3;
 }
 
 #endif
@@ -9964,7 +9964,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return (a ? a[0] : fu::Default<int>::value);
+    return a ? a[0] : fu::Default<int>::value;
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -9974,7 +9974,7 @@ static int hello(const fu_VEC<int>& a)
 
 int fu_MAIN()
 {
-    return (hello(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } }) - 3);
+    return hello(fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } }) - 3;
 }
 
 #endif
@@ -10001,12 +10001,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return (a ? a[0] : fu::Default<int>::value);
+    return a ? a[0] : fu::Default<int>::value;
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return (a ? a[0] : fu::Default<fu_VEC<int>>::value);
+    return a ? a[0] : fu::Default<fu_VEC<int>>::value;
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10021,7 +10021,7 @@ static int hello()
 
 int fu_MAIN()
 {
-    return (hello() - 3);
+    return hello() - 3;
 }
 
 #endif
@@ -10049,12 +10049,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return (a ? a[0] : fu::Default<int>::value);
+    return a ? a[0] : fu::Default<int>::value;
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return (a ? a[0] : fu::Default<fu_VEC<int>>::value);
+    return a ? a[0] : fu::Default<fu_VEC<int>>::value;
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10069,7 +10069,7 @@ static int hello()
 
 int fu_MAIN()
 {
-    return (hello() - 3);
+    return hello() - 3;
 }
 
 #endif
@@ -10093,7 +10093,7 @@ static const fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } };
 
 static bool eq(const fu_VEC<int>& a, const fu_VEC<int>& b)
 {
-    return (a == b);
+    return a == b;
 }
 
 int fu_MAIN()
@@ -10122,7 +10122,7 @@ static const fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } };
 
 inline static bool eq_hoNZ(const fu_VEC<int>& a, const fu_VEC<int>& b)
 {
-    return (a == b);
+    return a == b;
 }
 
 int fu_MAIN()
@@ -10151,7 +10151,7 @@ int main() { return fu_MAIN(); }
 
 static int test(fu::view<int> hey)
 {
-    return (hey[0] + hey[1]);
+    return hey[0] + hey[1];
 }
 
 int fu_MAIN()
@@ -10213,7 +10213,7 @@ static fu_VEC<int> test(const int i)
 
 int fu_MAIN()
 {
-    return (test(0)[1] - 1);
+    return test(0)[1] - 1;
 }
 
 #endif
@@ -10273,7 +10273,7 @@ int main() { return fu_MAIN(); }
 
 static int test(fu::view<int> hey)
 {
-    return (hey[0] + hey[1]);
+    return hey[0] + hey[1];
 }
 
 int fu_MAIN()
@@ -10345,7 +10345,7 @@ int fu_MAIN()
 {
     fu_VEC<int> hey = fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 0, 0 } };
     test(fu::get_view_mut(hey, 1, 3));
-    return ((hey.mutref(0) + hey.mutref(1)) + hey.mutref(2));
+    return (hey.mutref(0) + hey.mutref(1)) + hey.mutref(2);
 }
 
 #endif
@@ -10401,7 +10401,7 @@ int fu_MAIN()
 {
     fu_VEC<s_Hey> a = fu_VEC<s_Hey> { fu_VEC<s_Hey>::INIT<1> { s_Hey{} } };
     test(a);
-    return (a.mutref(0).i - 16843009);
+    return a.mutref(0).i - 16843009;
 }
 
 #endif
@@ -10455,7 +10455,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
     test(a, fu_VEC<s_Hey> { fu_VEC<s_Hey>::INIT<1> { s_Hey { 13 } } });
-    return (a.mutref(0) - 13);
+    return a.mutref(0) - 13;
 }
 
 #endif
@@ -10501,7 +10501,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
     fu::view_assign(a, fu::view_of(fu_VEC<s_Hey> { fu_VEC<s_Hey>::INIT<1> { s_Hey { 13 } } }, int{}));
-    return (a.mutref(0) - 13);
+    return a.mutref(0) - 13;
 }
 
 #endif
@@ -10524,7 +10524,7 @@ int main() { return fu_MAIN(); }
 
 static bool test(fu::view<std::byte> a, fu::view<std::byte> b)
 {
-    return (a == b);
+    return a == b;
 }
 
 int fu_MAIN()
@@ -10571,7 +10571,7 @@ int fu_MAIN()
 {
     const int a = 1;
     const s_Hey r = (a ? s_Hey { int(a) } : s_Hey{});
-    return (r.i - 1);
+    return r.i - 1;
 }
 
 #endif
@@ -10612,7 +10612,7 @@ struct s_Hey
 int fu_MAIN()
 {
     fu_VEC<s_Hey> a = fu_VEC<s_Hey> { fu_VEC<s_Hey>::INIT<2> { s_Hey { -1 }, s_Hey { +1 } } };
-    return (a[0].i + a[1].i);
+    return a[0].i + a[1].i;
 }
 
 #endif
@@ -10810,7 +10810,7 @@ int fu_MAIN()
 {
     s_Node a = s_Node { fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node { fu_VEC<s_Node>{}, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node{} } } } } }, fu_VEC<s_Node>{} };
     rec_copy(a);
-    return (a.stuff.size() - 1);
+    return a.stuff.size() - 1;
 }
 
 #endif
@@ -10829,7 +10829,7 @@ int main() { return fu_MAIN(); }
 
 static int test(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -10857,7 +10857,7 @@ int main() { return fu_MAIN(); }
 
 static int test(const int a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 int fu_MAIN()
@@ -10904,7 +10904,7 @@ struct s_Test
 
 static int test(const s_Test& t)
 {
-    return (t.a + t.b);
+    return t.a + t.b;
 }
 
 int fu_MAIN()
@@ -10951,12 +10951,12 @@ struct s_Test
 
 static int test(const s_Test& t)
 {
-    return (t.a + t.b);
+    return t.a + t.b;
 }
 
 int fu_MAIN()
 {
-    return (test(s_Test { 0, +2 }) - 2);
+    return test(s_Test { 0, +2 }) - 2;
 }
 
 #endif
@@ -10978,7 +10978,7 @@ static const int _precedence = 0;
 
 static int parseExpression(const int p1, const int mode)
 {
-    return (p1 + mode);
+    return p1 + mode;
 }
 
 int fu_MAIN()
@@ -11013,7 +11013,7 @@ static int B(const int x)
 
 int fu_MAIN()
 {
-    return (A(0) + B(0));
+    return A(0) + B(0);
 }
 
 #endif
@@ -11043,7 +11043,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int8_t ret = int8_t(127);
-    return (int((ret - int8_t(100))) - 27);
+    return int((ret - int8_t(100))) - 27;
 }
 
 #endif
@@ -11072,7 +11072,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const short ret = short(32767);
-    return (int((ret - short(32700))) - 67);
+    return int((ret - short(32700))) - 67;
 }
 
 #endif
@@ -11101,7 +11101,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int ret = 2147483647;
-    return (int((ret - 2147483600)) - 47);
+    return int((ret - 2147483600)) - 47;
 }
 
 #endif
@@ -11131,7 +11131,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int64_t ret = 9223372036854775807ll;
-    return (int((ret - 9223372036854775800ll)) - 7);
+    return int((ret - 9223372036854775800ll)) - 7;
 }
 
 #endif
@@ -11161,7 +11161,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int8_t ret = int8_t(-128);
-    return (int((ret + int8_t(100))) + 28);
+    return int((ret + int8_t(100))) + 28;
 }
 
 #endif
@@ -11190,7 +11190,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const short ret = short(-32768);
-    return (int((ret + short(32700))) + 68);
+    return int((ret + short(32700))) + 68;
 }
 
 #endif
@@ -11219,7 +11219,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int ret = -2147483648;
-    return (int((ret + 2147483600)) + 48);
+    return int((ret + 2147483600)) + 48;
 }
 
 #endif
@@ -11249,7 +11249,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int64_t ret = (-9223372036854775807-1);
-    return (int((ret + 9223372036854775800ll)) + 8);
+    return int((ret + 9223372036854775800ll)) + 8;
 }
 
 #endif
@@ -11465,7 +11465,7 @@ int hello();
 
 int fu_MAIN()
 {
-    return (6 - (hello() * 2));
+    return 6 - (hello() * 2);
 }
 
 #endif
@@ -11507,7 +11507,7 @@ struct s_Hey
 
 int fu_MAIN()
 {
-    return (s_Hey { 1 }.i - 1);
+    return s_Hey { 1 }.i - 1;
 }
 
 #endif
@@ -11558,13 +11558,13 @@ struct s_Hey
                                 #define DEFt_test_NkGW
 inline int test_NkGW(const s_Hey& h)
 {
-    return (h.i + 2);
+    return h.i + 2;
 }
                                 #endif
 
 int fu_MAIN()
 {
-    return (test_NkGW(s_Hey { 1 }) - 3);
+    return test_NkGW(s_Hey { 1 }) - 3;
 }
 
 #endif
@@ -11613,13 +11613,13 @@ struct s_Hey
                                 #define DEFt_test_NkGW
 inline int test_NkGW(const s_Hey& h)
 {
-    return (h.i + 2);
+    return h.i + 2;
 }
                                 #endif
 
 int fu_MAIN()
 {
-    return (test_NkGW(s_Hey { 1 }) - 3);
+    return test_NkGW(s_Hey { 1 }) - 3;
 }
 
 #endif
@@ -11659,13 +11659,13 @@ struct s_Hey
                                 #define DEFt_test_NkGW
 inline int test_NkGW(const s_Hey& h)
 {
-    return (h.i + 2);
+    return h.i + 2;
 }
                                 #endif
 
 int fu_MAIN()
 {
-    return (test_NkGW(s_Hey { 1 }) - 3);
+    return test_NkGW(s_Hey { 1 }) - 3;
 }
 
 #endif
@@ -11791,13 +11791,13 @@ struct s_Hey
                                 #define DEFt_test_a17S
 inline int test_a17S(const s_Hey& h)
 {
-    return (h.you.i + 7);
+    return h.you.i + 7;
 }
                                 #endif
 
 int fu_MAIN()
 {
-    return (test_a17S(init3()) - 10);
+    return test_a17S(init3()) - 10;
 }
 
 #endif
@@ -11939,7 +11939,7 @@ struct s_mat4
 
 float determinant(const s_mat4& _)
 {
-    return ((((((((((((((((((((((((((+_.mC * _.m9) * _.m6) * _.m3) - (((_.m8 * _.mD) * _.m6) * _.m3)) - (((_.mC * _.m5) * _.mA) * _.m3)) + (((_.m4 * _.mD) * _.mA) * _.m3)) + (((_.m8 * _.m5) * _.mE) * _.m3)) - (((_.m4 * _.m9) * _.mE) * _.m3)) - (((_.mC * _.m9) * _.m2) * _.m7)) + (((_.m8 * _.mD) * _.m2) * _.m7)) + (((_.mC * _.m1) * _.mA) * _.m7)) - (((_.m0 * _.mD) * _.mA) * _.m7)) - (((_.m8 * _.m1) * _.mE) * _.m7)) + (((_.m0 * _.m9) * _.mE) * _.m7)) + (((_.mC * _.m5) * _.m2) * _.mB)) - (((_.m4 * _.mD) * _.m2) * _.mB)) - (((_.mC * _.m1) * _.m6) * _.mB)) + (((_.m0 * _.mD) * _.m6) * _.mB)) + (((_.m4 * _.m1) * _.mE) * _.mB)) - (((_.m0 * _.m5) * _.mE) * _.mB)) - (((_.m8 * _.m5) * _.m2) * _.mF)) + (((_.m4 * _.m9) * _.m2) * _.mF)) + (((_.m8 * _.m1) * _.m6) * _.mF)) - (((_.m0 * _.m9) * _.m6) * _.mF)) - (((_.m4 * _.m1) * _.mA) * _.mF)) + (((_.m0 * _.m5) * _.mA) * _.mF));
+    return (((((((((((((((((((((((((+_.mC * _.m9) * _.m6) * _.m3) - (((_.m8 * _.mD) * _.m6) * _.m3)) - (((_.mC * _.m5) * _.mA) * _.m3)) + (((_.m4 * _.mD) * _.mA) * _.m3)) + (((_.m8 * _.m5) * _.mE) * _.m3)) - (((_.m4 * _.m9) * _.mE) * _.m3)) - (((_.mC * _.m9) * _.m2) * _.m7)) + (((_.m8 * _.mD) * _.m2) * _.m7)) + (((_.mC * _.m1) * _.mA) * _.m7)) - (((_.m0 * _.mD) * _.mA) * _.m7)) - (((_.m8 * _.m1) * _.mE) * _.m7)) + (((_.m0 * _.m9) * _.mE) * _.m7)) + (((_.mC * _.m5) * _.m2) * _.mB)) - (((_.m4 * _.mD) * _.m2) * _.mB)) - (((_.mC * _.m1) * _.m6) * _.mB)) + (((_.m0 * _.mD) * _.m6) * _.mB)) + (((_.m4 * _.m1) * _.mE) * _.mB)) - (((_.m0 * _.m5) * _.mE) * _.mB)) - (((_.m8 * _.m5) * _.m2) * _.mF)) + (((_.m4 * _.m9) * _.m2) * _.mF)) + (((_.m8 * _.m1) * _.m6) * _.mF)) - (((_.m0 * _.m9) * _.m6) * _.mF)) - (((_.m4 * _.m1) * _.mA) * _.mF)) + (((_.m0 * _.m5) * _.mA) * _.mF);
 }
 
 #endif
@@ -12111,7 +12111,7 @@ int fu_MAIN()
 {
     const s_mat34 m34 = mat34_identity();
     const s_mat4 m44 = mat4_8ATk(m34);
-    return (int(determinant(m44)) - 1);
+    return int(determinant(m44)) - 1;
 }
 
 #endif
@@ -12143,7 +12143,7 @@ int main() { return fu_MAIN(); }
 
 int _0(const int i)
 {
-    return (i + 1);
+    return i + 1;
 }
 
 #endif
@@ -12239,7 +12239,7 @@ int fu_MAIN()
         return 33;
 
     add_7gVc(x, 4);
-    return (x.size() - x.mutref(3));
+    return x.size() - x.mutref(3);
 }
 
 #endif
@@ -12411,7 +12411,7 @@ static int test(const int i)
 
 int fu_MAIN()
 {
-    return (test(0) - test(1));
+    return test(0) - test(1);
 }
 
 #endif
@@ -12547,7 +12547,7 @@ inline s_ModuleOutputs clone_kdfs(const s_ModuleOutputs& a)
 int test(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs b = clone_kdfs(a);
-    return (a.deps.size() - b.deps.size());
+    return a.deps.size() - b.deps.size();
 }
 
 int fu_MAIN()
@@ -12574,7 +12574,7 @@ int fu_MAIN()
 {
     const int a = 1;
     const int a_1 = (a + 1);
-    return (a_1 - 2);
+    return a_1 - 2;
 }
 
 #endif
@@ -12664,7 +12664,7 @@ static int test(const s_HasInt& s)
 
 int fu_MAIN()
 {
-    return (test(s_HasInt { -1 }) + 1);
+    return test(s_HasInt { -1 }) + 1;
 }
 
 #endif
@@ -12688,7 +12688,7 @@ static int test(const int x)
 
 int fu_MAIN()
 {
-    return (test(3) - 3);
+    return test(3) - 3;
 }
 
 #endif
@@ -12721,7 +12721,7 @@ static int test(const int x)
 
 int fu_MAIN()
 {
-    return (test(3) - 3);
+    return test(3) - 3;
 }
 
 #endif
@@ -12772,7 +12772,7 @@ static int test(const s_I& x)
 
 int fu_MAIN()
 {
-    return (test(s_I { 3 }) - 3);
+    return test(s_I { 3 }) - 3;
 }
 
 #endif
@@ -12824,7 +12824,7 @@ static int test(const s_I& x)
 
 int fu_MAIN()
 {
-    return (test(s_I { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } }) - 3);
+    return test(s_I { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } }) - 3;
 }
 
 #endif
@@ -12881,7 +12881,7 @@ static int test(const s_I& x)
 
 int fu_MAIN()
 {
-    return (test(s_I { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } }) - 3);
+    return test(s_I { fu_VEC<int> { fu_VEC<int>::INIT<1> { 3 } } }) - 3;
 }
 
 #endif
@@ -12921,7 +12921,7 @@ static int doesReturn(const int a)
 
 int fu_MAIN()
 {
-    return (doesReturn(-3) + 3);
+    return doesReturn(-3) + 3;
 }
 
 #endif
@@ -13138,7 +13138,7 @@ int fu_MAIN()
 {
     int sum = 0;
     compile(sum, 2);
-    return (sum - 2);
+    return sum - 2;
 }
 
 #endif
@@ -13203,7 +13203,7 @@ int fu_MAIN()
 {
     int sum = 0;
     compile(sum, "ab"_fu, fu_STR{});
-    return (sum - 2);
+    return sum - 2;
 }
 
 #endif
@@ -13228,16 +13228,16 @@ int main() { return fu_MAIN(); }
 static int if0_ret101(const int x)
 {
     if (x > 2)
-        return (x * 2);
+        return x * 2;
     else if (x > 1)
-        return (x + 1);
+        return x + 1;
 
-    return (x + 101);
+    return x + 101;
 }
 
 int fu_MAIN()
 {
-    return (if0_ret101(0) - 101);
+    return if0_ret101(0) - 101;
 }
 
 #endif
@@ -13297,7 +13297,7 @@ int fu_MAIN()
     const int a = x++;
     const int b = ++x;
     int _0 {};
-    return ((_0 = int(a)) ? _0 : (b - 2));
+    return (_0 = int(a)) ? _0 : (b - 2);
 }
 
 #endif
@@ -13408,7 +13408,7 @@ int fu_MAIN()
 {
     const s_XY thing = s_XY { 1, 2 };
     const int sum = test_bKKL(thing);
-    return (sum - 3);
+    return sum - 3;
 }
 
 #endif
@@ -13466,7 +13466,7 @@ int fu_MAIN()
         fu_DEFER(a++);
         b = a;
     };
-    return ((b + 1) - a);
+    return (b + 1) - a;
 }
 
 #endif
@@ -13504,7 +13504,7 @@ int fu_MAIN()
         fu_DEFER(c = a);
         b = a;
     };
-    return ((b * 27) - ((a * 11) + (c * 5)));
+    return (b * 27) - ((a * 11) + (c * 5));
 }
 
 #endif
@@ -13570,12 +13570,12 @@ static int test_defer_if_errok(const bool throw_err)
         x += e.size();
     }
 ;
-    return (((x * 3) + (if_err * 5)) + (if_ok * 7));
+    return ((x * 3) + (if_err * 5)) + (if_ok * 7);
 }
 
 int fu_MAIN()
 {
-    return ((((test_defer_if_errok(true) - (7 * 3)) - (1 * 5)) - (0 * 7)) + (100 * (((test_defer_if_errok(false) - (10 * 3)) - (0 * 5)) - (9 * 7))));
+    return (((test_defer_if_errok(true) - (7 * 3)) - (1 * 5)) - (0 * 7)) + (100 * (((test_defer_if_errok(false) - (10 * 3)) - (0 * 5)) - (9 * 7)));
 }
 
 #endif
@@ -13619,7 +13619,7 @@ int main() { return fu_MAIN(); }
 
 inline static int test_ZHMH(const int8_t a, const int b)
 {
-    return (b + int(a));
+    return b + int(a);
 }
 
 int fu_MAIN()
@@ -13649,7 +13649,7 @@ int fu_MAIN()
         z++;
         z;
     }));
-    return (x - 1);
+    return x - 1;
 }
 
 #endif
@@ -13669,7 +13669,7 @@ int main() { return fu_MAIN(); }
 
 inline static int mul2_U3Pf(const int a)
 {
-    return (a * 2);
+    return a * 2;
 }
 
 inline static int test_Yqt7(const int b, int)
@@ -13679,7 +13679,7 @@ inline static int test_Yqt7(const int b, int)
 
 int fu_MAIN()
 {
-    return (14 - test_Yqt7(3, 0));
+    return 14 - test_Yqt7(3, 0);
 }
 
 #endif
@@ -13708,7 +13708,7 @@ int main() { return fu_MAIN(); }
 
 inline static int sqr_U3Pf(const int x)
 {
-    return (x * x);
+    return x * x;
 }
 
 inline static fu_VEC<int> map_OOnE(const fu_VEC<int>& items, int)
@@ -13722,7 +13722,7 @@ inline static fu_VEC<int> map_OOnE(const fu_VEC<int>& items, int)
 
 int fu_MAIN()
 {
-    return (map_OOnE(fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } }, 0)[0] - 4);
+    return map_OOnE(fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } }, 0)[0] - 4;
 }
 
 #endif
@@ -13749,7 +13749,7 @@ int main() { return fu_MAIN(); }
 
 inline static int l_1_0_SOFX(int& a, const int b)
 {
-    return (a + b);
+    return a + b;
 }
 
 inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
@@ -13763,7 +13763,7 @@ inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
 
 int fu_MAIN()
 {
-    return (reduce_HEZr(fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0, 0) - 3);
+    return reduce_HEZr(fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0, 0) - 3;
 }
 
 #endif
@@ -13805,7 +13805,7 @@ int fu_MAIN()
 {
     int i = 0;
     each_kJRA(i, fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0);
-    return (i - 3);
+    return i - 3;
 }
 
 #endif
@@ -13858,7 +13858,7 @@ int fu_MAIN()
 {
     int sum = 2;
     FnDecl_update(sum, 1);
-    return (sum - 3);
+    return sum - 3;
 }
 
 #endif
@@ -13917,7 +13917,7 @@ static s_B bananas(const s_A& a)
 
 int fu_MAIN()
 {
-    return (bananas(s_A { 1 }).b - 2);
+    return bananas(s_A { 1 }).b - 2;
 }
 
 #endif
@@ -13969,7 +13969,7 @@ inline static int fn_v_NUPh(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return ((fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24);
+    return (fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24;
 }
 
 #endif
@@ -14021,7 +14021,7 @@ inline static int fn_v_NUPh(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return ((fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24);
+    return (fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24;
 }
 
 #endif
@@ -14084,7 +14084,7 @@ inline static int fn_v_9qoR(int, const s_XY& x)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return ((fn_v_NUPh(0, v) + fn_v_9qoR(0, v)) - 24);
+    return (fn_v_NUPh(0, v) + fn_v_9qoR(0, v)) - 24;
 }
 
 #endif
@@ -14320,7 +14320,7 @@ inline static int first_t3FB(int depth0_0, int sum_0, int)
 inline static int second_inner_Rf2N(int depth0_0, int sum_0, int sum_021, int)
 {
     const int sum = ((depth0_0 + l_1_3(sum_0)) + l_1_2(sum_021));
-    return (sum + first_t3FB(depth0_0, sum, 0));
+    return sum + first_t3FB(depth0_0, sum, 0);
 }
 
 inline static int second_lY2z(int depth0_0, int sum_0, int)
@@ -14394,17 +14394,17 @@ static int parseStuff(int, int, int, int);
 
 static int use_a(const int a)
 {
-    return (a * a);
+    return a * a;
 }
 
 static int use_b(const int b)
 {
-    return (b * b);
+    return b * b;
 }
 
 static int doSomethingElse_inner(const int y, const int b)
 {
-    return (y * use_b(b));
+    return y * use_b(b);
 }
 
 static int doSomethingElse(const int x, const int b)
@@ -14414,7 +14414,7 @@ static int doSomethingElse(const int x, const int b)
 
 static int use_c(const int c)
 {
-    return (c * c);
+    return c * c;
 }
 
 static int descend_inner(int x_0, const int y, const int a, const int b, const int c)
@@ -14429,7 +14429,7 @@ static int descend(const int x, const int a, const int b, const int c)
 
 static int doSomething_inner(const int y, const int a, const int b, const int c)
 {
-    return ((y * use_a(a)) * descend((y * y), a, b, c));
+    return (y * use_a(a)) * descend((y * y), a, b, c);
 }
 
 static int doSomething(const int x, const int a, const int b, const int c)
@@ -14494,7 +14494,7 @@ inline static s_sA_U3Pf fA_U3Pf(const int a)
 
 int fu_MAIN()
 {
-    return (fA_U3Pf(1).hey - 3);
+    return fA_U3Pf(1).hey - 3;
 }
 
 #endif
@@ -14558,7 +14558,7 @@ inline static s_sB_aXiX fB_aXiX(const uint32_t a)
 
 int fu_MAIN()
 {
-    return (fB_U3Pf(1).hey - int(fB_aXiX(uint32_t(1)).hey));
+    return fB_U3Pf(1).hey - int(fB_aXiX(uint32_t(1)).hey);
 }
 
 #endif
@@ -14611,7 +14611,7 @@ static int test(const int x)
 
 int fu_MAIN()
 {
-    return (((test(2) * 11) + ((test(1) - 1) * 13)) + ((test(0) - 2) * 17));
+    return ((test(2) * 11) + ((test(1) - 1) * 13)) + ((test(0) - 2) * 17);
 }
 
 #endif
