@@ -887,6 +887,7 @@ pub fn cpp_codegen(
             if (head.type.is_void && node.flags & F_SINGLE_STMT)
                 return cgNode(head, M_STMT);
 
+            // TODO M_PARENS: No point in parenthesizing regular returns.
             return "return " ~ cgNode(head);
         }
 
@@ -1377,89 +1378,102 @@ pub fn cpp_codegen(
         let stmt = !!(mode & M_STMT);
         if (stmt)
         {
-            let cond = items.len > 2
-                ? cgAnd (items[0, items.len - 1], t_bool, M_RETBOOL | M_PARENS)
-                : cgNode(items[0], M_RETBOOL | M_PARENS);
-
-            let cons = blockWrapSubstatement(items[items.len - 1]);
-            return "if (" ~ cond ~ ")" ~ cons;
+            mut src = "if (";
+            cgAndOr_concat(src, " && ", items[0, items.len - 1], parens: true);
+            src ~= ")";
+            src ~= blockWrapSubstatement(items[items.len - 1]);
+            return src;
         }
 
-        //
-        if (!type.is_bool)
-        {
-            mut src = "";
+        mut src = !(mode & M_PARENS) && "(";
 
-            let annot = typeAnnot(type);
+        //
+        if (type.is_bool)
+        {
+            cgAndOr_concat(src, " && ", items, parens: true);
+        }
+        else
+        {
+            mut tv: TEMPVAR;
+
             if (type.is_mutref)
             {
                 for (mut i = 0; i < items.len; i++)
                 {
                     let item = items[i];
-                    if (item.type.is_never)
-                    {
-                        src ~= cgNode(item, M_RETBOOL) ~ ";";
-                        break;
-                    }
-
                     if (i < items.len - 1)
-                        src ~= "{ " ~ annot ~ " _ = " ~ cgNode(item) ~ "; if (!_) return _; } ";
+                        src ~= "!" ~ via(:tv, :type, item);
                     else
-                        src ~= "return " ~ cgNode(item) ~ ";";
+                        src ~= cgNode(item);
                 }
             }
             else
             {
-                let retSecondLast = items[items.len - 1].type.is_never;
+                let N = items.len;
+                let retSecondLast = items[N - 1].type.is_never;
 
-                let condEnd = retSecondLast
-                            ? items.len - 2
-                            : items.len - 1;
-
-                if (condEnd)
-                {
-                    src ~= "if (";
-
-                    for (mut i = 0; i < condEnd; i++)
-                    {
-                        let item = items[i];
-                        if (i) src ~= " && ";
-                        src ~= cgNode(item, M_RETBOOL);
-                    }
-
-                    src ~= ") ";
-                }
-
-                let tail = cgNode(items[condEnd]);
+                let condEnd = retSecondLast ? N - 2 : N - 1;
+                cgAndOr_concat(src, " && ", items[0, condEnd]);
 
                 if (retSecondLast)
                 {
-                    src ~= "{ " ~ typeAnnot(type) ~ " _ = " ~ tail ~ "; ";
-                    src ~= "if (!_) return _; } ";
-                    src ~= cgNode(items[items.len - 1]) ~ ";"; //FAIL
+                    if (condEnd) src ~= " && ";
+                    src ~= "!" ~ via(:tv, :type, items[N - 2]);
+                    src ~= cgNode(items[N - 1]); // FAIL
                 }
                 else
                 {
-                    src ~= "return " ~ tail ~ ";"; //TRUTHY
-                    src ~= " else return " ~ cgDefault(type) ~ ";";
+                    src ~= " ? " ~ cgNode(items[N - 1]);
+                    src ~= " : " ~ cgDefault(type);
                 }
             }
-
-            src = "([&]() -> " ~ typeAnnot(type) ~ " { " ~ src ~ " }())";
-
-            return src;
         }
 
-        mut src = "(";
-        for (mut i = 0; i < items.len; i++)
+        if !(mode & M_PARENS) src ~= ")";
+        return src;
+    }
+
+    fn cgOr(node: SolvedNode, mode: i32): string
+    {
+        let type  = node.type;
+        let items = node.items;
+
+        mut src = !(mode & M_PARENS) && "(";
+
+        if (type.is_bool)
         {
-            let item = items[i];
+            cgAndOr_concat(src, " || ", items, parens: true);
+        }
+        else
+        {
+            mut tv: TEMPVAR;
 
-            if (i) src ~= " && ";
-            src ~= cgNode(item, M_RETBOOL);
+            for (mut i = 0; i < items.len - 1; i++)
+            {
+                let item = items[i] || fail();
+                mut tail = item;
+
+                // Here's the `a && b || c` pattern,
+                //  actually works quite well.
+                if (item.kind == "and")
+                {
+                    shadow let items = item.items;
+                    tail = items[items.len - 1] || fail();
+
+                    cgAndOr_concat(src, " && ", items[0, items.len - 1]);
+                    src ~= " && ";
+                }
+
+                //
+                src ~= via(:tv, :type, tail);
+            }
+
+            let tail = items[items.len - 1] || fail();
+            src ~= cgNode(tail);
         }
 
-        return src ~ ")";
+        if !(mode & M_PARENS) src ~= ")";
+        return src;
     }
 
     fn via(ref tv: TEMPVAR, type: Type, expr: SolvedNode): string
@@ -1490,61 +1504,6 @@ pub fn cpp_codegen(
         return "(" ~ tv.id ~ " = " ~ cgNode(expr) ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
     }
 
-    fn cgOr(node: SolvedNode, mode: i32): string
-    {
-        let type  = node.type;
-        let items = node.items;
-
-        mut src = !(mode & M_PARENS) && "(";
-
-        if (!type.is_bool)
-        {
-            mut tv: TEMPVAR;
-
-            for (mut i = 0; i < items.len - 1; i++)
-            {
-                let item = items[i] || fail();
-                mut tail = item;
-
-                // Here's the `a && b || c` pattern,
-                //  actually works quite well.
-                if (item.kind == "and")
-                {
-                    shadow let items = item.items;
-                    tail = items[items.len - 1] || fail();
-
-                    for (shadow mut i = 0; i < items.len - 1; i++)
-                    {
-                        if (i)
-                            src ~= " && ";
-
-                        src ~= cgNode(items[i] || fail(), M_RETBOOL);
-                    }
-
-                    src ~= " && ";
-                }
-
-                //
-                src ~= via(:tv, :type, tail);
-            }
-
-            let tail = items[items.len - 1] || fail();
-            src ~= cgNode(tail);
-        }
-        else
-        {
-            for (mut i = 0; i < items.len; i++)
-            {
-                let item = items[i];
-                if (i) src ~= " || ";
-                src ~= cgNode(item, M_RETBOOL);
-            }
-        }
-
-        if !(mode & M_PARENS) src ~= ")";
-        return src;
-    }
-
     fn isFieldChain(node: SolvedNode): bool
     {
         if (node.kind != "call")
@@ -1563,6 +1522,16 @@ pub fn cpp_codegen(
         }
 
         return false;
+    }
+
+    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens?!: bool)
+    {
+        let mode = M_RETBOOL | (parens && items.len == 1 && M_PARENS);
+        for (mut i = 0; i < items.len; i++)
+        {
+            if (i) src ~= op;
+            src ~= cgNode(items[i], :mode);
+        }
     }
 
     fn cgDefault(type: Type): string
