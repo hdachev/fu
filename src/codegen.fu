@@ -1199,7 +1199,7 @@ pub fn cpp_codegen(
             return cgClone(node.type, ARG(0));
 
         if (id == "STEAL" && items.len == 1)
-            return cgSteal(node.type, ARG(0));
+            return cgMove(node.type, ARG(0));
 
         if (id == "println")
             return cgPrint(cgNodes(items));
@@ -1486,13 +1486,14 @@ pub fn cpp_codegen(
             return trivial ~ " ? " ~ trivial ~ " : ";
         }
 
-        if (expr.kind == "copy")
+        if (expr.kind == "copy" || expr.kind == "move")
         {
+            let kind = expr.kind;
             shadow let expr = expr.items.only;
             if (expr.isFieldChain)
             {
                 let trivial = cgNode(expr);
-                return trivial ~ " ? " ~ cgClone(:type, trivial) ~ " : ";
+                return trivial ~ " ? " ~ cgMoveOrClone(:kind, :type, trivial) ~ " : ";
             }
 
             // TODO fix the copies -
@@ -1685,9 +1686,9 @@ pub fn cpp_codegen(
         if (k == "arrlit")      return cgArrayLiteral(node, mode);
         if (k == "definit")     return cgDefaultInit(node, mode);
 
-        if (k == "copy")        return cgCopyMove(node);
-        if (k == "move")        return cgCopyMove(node);
-        if (k == "nrvo")        return cgCopyMove(node);
+        if (k == "copy")        return cgMoveOrClone(node);
+        if (k == "move")        return cgMoveOrClone(node);
+        if (k == "nrvo")        return cgMoveOrClone(node);
 
         if (k == "if")          return cgIf(node, mode);
         if (k == "or")          return cgOr(node, mode);
@@ -1720,20 +1721,23 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgCopyMove(node: SolvedNode): string
+    fn cgMoveOrClone(node: SolvedNode): string
     {
-        let a = cgNode(node.items[0] || fail());
-
-        if (node.kind == "nrvo")
-            return a;
-
-        if (node.kind == "move")
-            return cgSteal(node.type, a);
-
-        return cgClone(node.type, a);
+        return cgMoveOrClone(node.kind, node.type, cgNode(node.items.only));
     }
 
-    fn cgSteal(type: Type, src: string): string
+    fn cgMoveOrClone(kind: string, type: Type, src: string): string
+    {
+        if (kind == "nrvo")
+            return src;
+
+        if (kind == "move")
+            return cgMove(type, src);
+
+        return cgClone(type, src);
+    }
+
+    fn cgMove(type: Type, src: string): string
     {
         if (type.quals & q_trivial)
             return cgClone(type, src);
