@@ -10,6 +10,10 @@ project(${PROJECT_NAME})
 file(GLOB hacking_exe_src hacking/*.cpp)
 include_directories(include/)
 
+if (UNIX)
+    link_libraries(dl)
+endif (UNIX)
+
 add_executable(hacking_exe ${hacking_exe_src})
 
 set_target_properties(hacking_exe
