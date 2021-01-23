@@ -7167,10 +7167,7 @@ int fu_MAIN()
     const s_S a = s_S { 0 };
     const s_S b = s_S { 3 };
     int _0 {};
-    s_S _1 {};
-    s_S _2 {};
-    int _3 {};
-    return (_0 = int(a.i)) ? _0 : (!(_3 = ((((_1 = s_S(b)) ? _1 : s_S { 4 }).i * 2) - ((_2 = s_S(a)) ? _2 : s_S { 6 }).i)) ? _3 : fu::fail("woot"_fu));
+    return a.i ? int(a.i) : (!(_0 = (((b ? s_S(b) : s_S { 4 }).i * 2) - (a ? s_S(a) : s_S { 6 }).i)) ? _0 : fu::fail("woot"_fu));
 }
 
 #endif
@@ -8042,8 +8039,7 @@ int fu_MAIN()
         return err.size() - 3;
     }
 ;
-    int _0 {};
-    return (_0 = int(x)) ? _0 : 7;
+    return x ? int(x) : 7;
 }
 
 #endif
@@ -13302,8 +13298,7 @@ int fu_MAIN()
     s_X x {};
     const int a = x++;
     const int b = ++x;
-    int _0 {};
-    return (_0 = int(a)) ? _0 : (b - 2);
+    return a ? int(a) : (b - 2);
 }
 
 #endif

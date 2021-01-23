@@ -1480,7 +1480,7 @@ pub fn cpp_codegen(
 
     fn via(ref tv: TEMPVAR, type: Type, expr: SolvedNode): string
     {
-        if (isFieldChain(expr))
+        if (expr.isFieldChain)
         {
             let trivial = cgNode(expr);
             return trivial ~ " ? " ~ trivial ~ " : ";
@@ -1488,9 +1488,22 @@ pub fn cpp_codegen(
 
         if (expr.kind == "copy")
         {
+            shadow let expr = expr.items.only;
+            if (expr.isFieldChain)
+            {
+                let trivial = cgNode(expr);
+                return trivial ~ " ? " ~ cgClone(:type, trivial) ~ " : ";
+            }
+
             // TODO fix the copies -
             //  we can copy AFTER the test,
             //   will also result in shorter code.
+            //
+            // TODO this is true for any transformation that does not affect truthiness.
+            //  For example a conversion from i8 to i32 cannot affect truthiness, but i32 to i8 can.
+            //   Can we generalize this? This would be fantastic.
+            //
+            // But copies are the worst.
         }
 
         return via(:tv, :type, expr: cgNode(expr));
