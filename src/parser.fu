@@ -763,7 +763,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         //
         let body = expr
-            ? parseExpression()
+            ? parseExpression(_precedence)
             : parseStatement();
 
         if (body.kind == "block")
@@ -907,7 +907,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return make("let", [ type, init ], flags, id);
     }
 
-    fn parseExpression(p1 = _precedence, mode! = 0): Node
+    fn parseExpression(p1: i32, mode?!: i32): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -955,7 +955,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         mut mid: Node;
         if (op == "?")
         {
-            mid = parseExpression();
+            mid = parseExpression(P_RESET);
             consume("op", ":");
         }
 
@@ -1399,10 +1399,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         mut expr: Node;
         if (!tryConsume("op", ";"))
-        {
-            expr = parseExpression();
-            consume("op", ";");
-        }
+            expr = parseExpressionStatement();
 
         return createJump(:kind, :label, :expr);
     }
@@ -1423,7 +1420,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 && (tryConsume("id", "err") || consume("id", "ok")).value;
 
         _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", :value, [ parseExpression() ]);
+        return make("defer", :value, [ parseStatement() ]);
     }
 
     fn parseTryCatch(): Node
@@ -1458,11 +1455,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         consume("op", "(");
 
-        mut cond = parseExpression();
+        mut cond = parseParens();
         if (not)
             cond = createPrefix("!", cond);
-
-        consume("op", ")");
 
         let cons = parseStatement();
         if (tryConsume("id", "else"))
@@ -1536,9 +1531,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         let token = tokens[_idx];
         let post = !(token.kind == "op" && token.value == ")")
-            && parseExpression();
+            ? parseParens()
+            : consume("op", ")") && [];
 
-        consume("op", ")");
         let body = parseStatement();
 
         return createLoop(:init, :pre_cond, :post, :body);
@@ -1547,8 +1542,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseWhile(): Node
     {
         consume("op", "(");
-        let pre_cond = parseExpression();
-        consume("op", ")");
+        let pre_cond = parseParens();
         let body = parseStatement();
 
         return createLoop(:pre_cond, :body);
@@ -1559,8 +1553,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let body = parseStatement();
         consume("id", "while");
         consume("op", "(");
-        let post_cond = parseExpression();
-        consume("op", ")");
+        let post_cond = parseParens();
         consume("op", ";");
 
         return createLoop(:body, :post_cond);
