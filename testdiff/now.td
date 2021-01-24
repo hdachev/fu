@@ -5076,6 +5076,46 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn what(a: i32) {
+            a == 2 || a & 1 || throw("what1");
+            a  > 1 && a & 1 && throw("what2");
+            a  > 0 && a & 3 || throw("what3");
+            return a + 4;
+        }
+        fn main() 1.what - 2.what + 1;
+
+-----
+#include <fu/never.h>
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+static int what(const int a)
+{
+    if (!((a == 2) || (a & 1)))
+        fu::fail("what1"_fu);
+
+    if ((a > 1) && (a & 1))
+        fu::fail("what2"_fu);
+
+    if (!((a > 0) && (a & 3)))
+        fu::fail("what3"_fu);
+
+    return a + 4;
+}
+
+int fu_MAIN()
+{
+    return (what(1) - what(2)) + 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         mut i = 7;
         i ||= 11;
         return i - 7;

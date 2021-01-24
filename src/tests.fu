@@ -1367,6 +1367,16 @@ pub fn runTests()
         return w == "world" ? 0 : 1;
     `);
 
+    ZERO(`
+        fn what(a: i32) {
+            a == 2 || a & 1 || throw("what1");
+            a  > 1 && a & 1 && throw("what2");
+            a  > 0 && a & 3 || throw("what3");
+            return a + 4;
+        }
+        fn main() 1.what - 2.what + 1;
+    `);
+
 
     // Short-circuit assignment, esp. useful for maps
     //  and the cpp `map[k] = v`,
