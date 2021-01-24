@@ -1377,6 +1377,20 @@ pub fn runTests()
         fn main() 1.what - 2.what + 1;
     `);
 
+    ZERO(`
+        fn gen(len: i32) {
+            mut res: i32[];
+            for (mut i = 0; i < len; i++) res ~= i;
+            return res;
+        }
+        fn test(len: i32) {
+            let x = [-5, +5];
+            let y = len.gen && x;
+            return x[len];
+        }
+        fn main() 0.test + 1.test;
+    `);
+
 
     // Short-circuit assignment, esp. useful for maps
     //  and the cpp `map[k] = v`,
