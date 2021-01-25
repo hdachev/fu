@@ -5116,6 +5116,53 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn gen(len: i32) {
+            mut res: i32[];
+            for (mut i = 0; i < len; i++) res ~= i;
+            return res;
+        }
+        fn test(len: i32) {
+            let x = [-5, +5];
+            let y = len.gen && x;
+            return x[y.len / 2];
+        }
+        fn main() 0.test + 1.test;
+
+-----
+#include <fu/default.h>
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<int> gen(const int len)
+{
+    fu_VEC<int> res {};
+    for (int i = 0; i < len; i++)
+        res += i;
+
+    return res;
+}
+
+static int test(const int len)
+{
+    fu_VEC<int> x = fu_VEC<int> { fu_VEC<int>::INIT<2> { -5, +5 } };
+    const fu_VEC<int>& y = (gen(len) ? x : fu::Default<fu_VEC<int>>::value);
+    return int(x[(y.size() / 2)]);
+}
+
+int fu_MAIN()
+{
+    return test(0) + test(1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         mut i = 7;
         i ||= 11;
         return i - 7;

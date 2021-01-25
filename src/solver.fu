@@ -3672,20 +3672,15 @@ pub fn solve(
                 }
             }
 
-            if (sumType)
+            if (!sumType)
             {
-                // If we do have an intersection,
-                //  and if the sum type is not a reference,
-                //   some shit may need copying here.
-                for (mut i = 0; i < items.len; i++)
-                    maybeCopyOrMove(
-                        items[i], sumType);
-
-                type = sumType;
+                type = t_bool;
             }
             else
             {
-                type = t_bool;
+                type = sumType;
+                for (mut i = 0; i < items.len; i++)
+                    maybeCopyOrMove(items[i], sumType);
             }
         }
 
@@ -3718,7 +3713,7 @@ pub fn solve(
                 if (sumType)
                 {
                     sumType = type_trySuper(sumType, item.type);
-                    if (!sumType)
+                    if (!sumType.is_ref)
                         break;
                 }
                 else
@@ -3728,23 +3723,24 @@ pub fn solve(
                 }
             }
 
-            if (sumType)
+            if (!sumType.is_ref)
             {
-                // All the types sum up -
-                //  so this is an ok way to get a mutref:
-                //   e.g. `mut &x = mut_expectFalsy && throw("someone already set this");`
-                type = sumType;
-            }
-            else if (type.is_ref)
-            {
-                // Nope, that didn't work.
-                //  We can generate falsy values and refs,
-                //   but not mutrefs - can't allocate
-                //    a static mut and expect it to remain falsy.
-                type = clear_mutref(type);
+                // We'll use the type of the last operand,
+                //  and generate a falsy default for the rest.
+                if (type.is_ref)
+                {
+                    // We can generate falsy values and refs,
+                    //  but not mutrefs - can't allocate
+                    //   a static mut and expect it to remain falsy.
+                    type = clear_mutref(type);
 
-                // Default zerofills are static.
-                type.lifetime = Lifetime_makeShared(type.lifetime);
+                    // Default zerofills are static.
+                    type.lifetime = Lifetime_makeShared(type.lifetime);
+                }
+            }
+            else
+            {
+                type = sumType;
             }
         }
 

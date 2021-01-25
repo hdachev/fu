@@ -1386,7 +1386,7 @@ pub fn runTests()
         fn test(len: i32) {
             let x = [-5, +5];
             let y = len.gen && x;
-            return x[len];
+            return x[y.len / 2];
         }
         fn main() 0.test + 1.test;
     `);
