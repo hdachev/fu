@@ -522,7 +522,7 @@ pub fn solve(
         }
     }
 
-    fn reorderByArgNames(ref result: i32[],
+    fn reorderByArgIDs(ref result: i32[],
         names: string[], host_args: Argument[], num_usings!: i32): bool
     {
         result.clear();
@@ -599,7 +599,7 @@ pub fn solve(
             for (mut i = 0; i < minArity; i++)
             {
                 let arg = args[i];
-                names.push(arg.kind == "label"
+                names.push(arg.kind == "argid"
                     ? { some = true; arg.value } || fail()
                     : "");
             }
@@ -716,7 +716,7 @@ pub fn solve(
 
                     if (!names)
                         reorderByNumUsings(reorder, host_args, args.len, :num_usings);
-                    else if (!reorderByArgNames(reorder, names, host_args, :num_usings))
+                    else if (!reorderByArgIDs(reorder, names, host_args, :num_usings))
                         continue :NEXT;
 
                     //
@@ -839,15 +839,8 @@ pub fn solve(
                             if (considerRetyping(:expect, :actual))
                             {
                                 ref arg = args[callsiteIndex];
-                                if (arg.kind == "label")
-                                {
-                                    // SEGV fix -
-                                    //  how do we deal with this in general?
-                                    //   might as well discontinue copy assignment
-                                    //    in favor of cpy->mov.
-                                    let inner = arg.items.only;
-                                    arg = inner;
-                                }
+                                if (arg.kind == "argid")
+                                    arg = arg.items.only;
 
                                 let retype = tryRetyping(arg, expect);
                                 if (isAssignableAsArgument(expect, retype))
@@ -1240,7 +1233,7 @@ pub fn solve(
                     result ~= ",";
 
                 result ~= "\n\t";
-                if (arg.kind == "label")
+                if (arg.kind == "argid")
                     result ~= arg.value ~ ": ";
 
                 result ~= humanizeType(arg.type);
@@ -1265,7 +1258,7 @@ pub fn solve(
 
         if (k == "root")        return solveRoot(node);
         if (k == "block")       return solveBlock(node, :type);
-        if (k == "label")       return solveLabel(node, :type);
+        if (k == "argid")       return solveArgID(node, :type);
 
         if (k == "let")         return solveLet(node, :deadcode_on_never);
         if (k == "call")        return solveCall(node);
@@ -2720,7 +2713,7 @@ pub fn solve(
         return fail("No label `" ~ id ~ "` in scope.");
     }
 
-    fn solveLabel(node: Node, type: Type): SolvedNode
+    fn solveArgID(node: Node, type: Type): SolvedNode
     {
         let expr = solveNode(node.items.only, :type);
         return solved(node, [ expr ], :expr.type);

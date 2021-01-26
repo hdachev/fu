@@ -1290,7 +1290,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 name = getAutoName(expr);
 
             out_args.push(
-                name    ? createLabel(name, expr)
+                name    ? createArgID(name, expr)
                         : expr);
         }
 
@@ -1308,9 +1308,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         return fail("Can't :auto_name this expression.");
     }
 
-    fn createLabel(id: string, expr: Node, flags?: i32): Node
+    fn createArgID(id: string, expr: Node, flags?: i32): Node
     {
-        return make("label", [ expr ], :flags, id);
+        return make("argid", [ expr ], :flags, id);
     }
 
     fn parseCallExpression(expr: Node): Node

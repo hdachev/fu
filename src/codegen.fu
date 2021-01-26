@@ -1708,7 +1708,7 @@ pub fn cpp_codegen(
 
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);
-        if (k == "label")       return cgComma(node.items);
+        if (k == "argid")       return cgComma(node.items);
 
         if (k == "fndef")       return cgFnDef(node, mode);
         if (k == "fn")          return cgFn(node, mode);
