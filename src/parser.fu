@@ -56,7 +56,7 @@ pub let F_NAMED_ARGS    = 1 << 24;
 let     F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
-pub let F_STATEMENT     = 1 << 30;
+// ... 30
 pub let F_SINGLE_STMT   = 1 << 31;
 
 
@@ -292,9 +292,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             parseBlockLike("op", "}"));
     }
 
-    fn createBlock(items: Node[]): Node
+    fn createBlock(items: Node[], label?: string): Node
     {
-        return make("block", :items);
+        return make("block", :items, value: label);
     }
 
 
@@ -545,16 +545,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         mut stmt = parseStatement();
         if (stmt.kind == "loop" || stmt.kind == "block")
         {
-            stmt.value && fail();
-            stmt.value = label || fail();
+            stmt.value && fail("Label `" ~ label ~ "`: statement already labeled as `" ~ stmt.value ~ "`.");
+            stmt.value = label;
             return stmt;
         }
 
-        if (stmt.kind == "call" || stmt.kind == "block")
-            return createLabel(label, stmt, F_STATEMENT);
-
-        return fail("Only loops, blocks & calls can be :labelled, "
-                    ~ "this is a `" ~ stmt.kind ~ "`.");
+        return createBlock([ stmt ], :label);
     }
 
     fn parseExpressionStatement(): Node

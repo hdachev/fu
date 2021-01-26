@@ -2722,15 +2722,8 @@ pub fn solve(
 
     fn solveLabel(node: Node, type: Type): SolvedNode
     {
-        // TODO FIX this was a terrible idea,
-        //  F_STATEMENT isn't used anywhere else but for labels,
-        //   this makes NO sense, consider having two types of labels if needed.
-        let target = node.flags & F_STATEMENT
-            && Scope_addLabel(node.value);
-
-        //
         let expr = solveNode(node.items.only, :type);
-        return solved(node, [ expr ], :expr.type, :target);
+        return solved(node, [ expr ], :expr.type);
     }
 
     fn solveLoop(node: Node): SolvedNode
