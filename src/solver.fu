@@ -69,7 +69,6 @@ pub fn solve(
         locals_used:    i32[];
         ret_expect:     Type;
         ret_actual:     Type;
-        ret_count:      i32;
         returns:        Target[];
     };
 
@@ -2611,21 +2610,18 @@ pub fn solve(
                 "Expression not assignable to return annotation");
 
         // Check multiple returns.
-        if (_current_fn.ret_actual)
-            _current_fn.ret_actual = superType("[return]", _current_fn.ret_actual, type);
-        else
-            _current_fn.ret_actual = type || fail();
+        _current_fn.ret_actual = _current_fn.ret_actual
+            ? superType("[return]", _current_fn.ret_actual, type)
+            : type;
 
         // Counter.
-        _current_fn.ret_count++;
+        _current_fn.ret_actual || fail("Can't be null past this point.");
     }
 
     fn finalizeReturns(bodyType: Type)
     {
         // Not a single return statement = return void.
-        _current_fn.ret_actual ||= _current_fn.ret_count
-            ? fail("falsy ret_actual when ret_count != 0.")
-            : t_void;
+        _current_fn.ret_actual ||= t_void;
 
         // TODO FIX
         //  Disable return value narrowing,
