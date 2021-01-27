@@ -95,7 +95,7 @@ pub fn solve(
     // TODO we shouldn't need this stuff
     //  under the new depth-first + immediately-repeat-on-dirty design.
 
-    mut _open_solves: Target[];
+    mut _open_solves:   i32[];
 
     type TypeParams = Map(string, Type);
 
@@ -1962,7 +1962,7 @@ pub fn solve(
             let    open_solves0 = _open_solves.len;
             defer _open_solves.shrink(open_solves0);
 
-            _open_solves ~= target || fail(
+            _open_solves ~= target.index || fail(
                 "__solveFn: no target: `" ~ n_fn.value ~ "`.");
             ///////////////////////////////////////////////
 
@@ -2275,7 +2275,7 @@ pub fn solve(
         let    open_solves0 = _open_solves.len;
         defer _open_solves.shrink(open_solves0);
 
-        _open_solves ~= out.target || fail(
+        _open_solves ~= out.target.index || fail(
             "solveStruct: no out.target: `" ~ origId ~ "`.");
         ///////////////////////////////////////////////
 
@@ -2522,9 +2522,9 @@ pub fn solve(
         for (mut i = _open_solves.len; i --> 0; )
         {
             let t = _open_solves[i];
-            GET_mut(t).status |= status;
+            GET_mut(Target(:module.modid, index: t)).status |= status;
             notes |= note;
-            if (t == target)
+            if (t == target.index)
                 return;
         }
 
@@ -3773,7 +3773,7 @@ pub fn solve(
                 ref o = GET_mut(target);
                 if (_open_solves)
                 {
-                    o.used_by.set::add(_open_solves.last.index);
+                    o.used_by.set::add(_open_solves.last);
                     detectRecursion(target, overload);
                 }
             }
