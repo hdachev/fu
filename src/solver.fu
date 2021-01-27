@@ -71,7 +71,6 @@ pub fn solve(
         ret_actual:     Type;
         ret_count:      i32;
         returns:        Target[];
-        tries:          i32;
     };
 
     struct CurrentFn
@@ -3027,9 +3026,7 @@ pub fn solve(
     {
         node.items.len == 3 || fail();
 
-        _current_fn.tries++;
         let var_ok = solveLetStatement(node.items[0]);
-        _current_fn.tries--;
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
@@ -3060,9 +3057,7 @@ pub fn solve(
         let scope0  = Scope_snap(_scope);
         /////////////////////////////////
 
-        _current_fn.tries++;
         let try     = solveNode(node.items[0]);
-        _current_fn.tries--;
 
         ///////////////////////////////////////
         Scope_pop(_scope, scope0);
@@ -3239,12 +3234,6 @@ pub fn solve(
                 if (node.value == "Map")
                     return solved(node, createMap(T(0), T(1)));
             }
-
-            // TODO FIX kinda crappy
-            // Watch out for noreturn.
-            ///////////////////////////////////////////////
-            _current_fn.tries++; defer _current_fn.tries--;
-            ///////////////////////////////////////////////
 
             return solveCall(node);
         }
@@ -3756,12 +3745,6 @@ pub fn solve(
             : SolvedNode
     {
         let overload = GET(target);
-
-        // TODO FIX
-        //  Ensures we notice noreturn fns.
-        //   Implicit return void is caught in finalizeReturns on exit.
-        if (!_current_fn.tries && !_current_fn.ret_count && overload.type.is_never && _current_fn)
-            reportReturnType(t_never);
 
         // HACK -
         //  TBD how we make this stuff work in real life.
