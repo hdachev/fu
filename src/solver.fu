@@ -66,10 +66,11 @@ pub fn solve(
 
     struct CurrentFn_ResetOnResolve
     {
-        locals_used:    i32[];
         ret_expect:     Type;
         ret_actual:     Type;
-        returns:        Target[];
+        returns:        i32[];
+
+        locals_used:    i32[];
     };
 
     struct CurrentFn
@@ -2596,7 +2597,7 @@ pub fn solve(
             local_of: _current_fn.target.index || fail(),
             solved: expr);
 
-        _current_fn.returns ~= target;
+        _current_fn.returns ~= target.index;
 
         return emitStatement(
             solved(node, t_never, :target));
@@ -2640,7 +2641,7 @@ pub fn solve(
         {
             for (mut i = 0; i < _current_fn.returns.len; i++)
             {
-                ref ret = GET_mut(_current_fn.returns[i]);
+                ref ret = GET_mut(Target(:module.modid, index: _current_fn.returns[i]));
                 maybeCopyOrMove(ret.solved, _current_fn.ret_actual);
             }
         }
