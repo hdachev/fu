@@ -59,6 +59,41 @@ pub fn solve(
     mut _info:          Info[];
     mut _here:          TokenIdx;
 
+    fn fail(mut reason: string = ""): never
+    {
+        let here = _here._token;
+        if (!reason)
+            reason = "Unexpected `" ~ here.value ~ "`.";
+
+        let fname = _here._fname;
+        let addr = "@" ~ here.line ~ ":" ~ here.col;
+        for (mut i = _info.len; i --> 0; )
+        {
+            let info = _info[i];
+            shadow let here = info.here._token;
+            reason ~= here
+                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
+                : "\n\t" ~ info.text;
+        }
+
+        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
+    }
+
+
+    //
+
+    struct Helpers
+    {
+        // index:          i32;
+
+        ret_expect:     Type;
+        ret_actual:     Type;
+        returns:        i32[];
+    };
+
+
+    //
+
     mut _scope:         Scope;
     mut _root_scope:    ScopeMemo;
     mut _ss:            ScopeSkipMemos;
@@ -66,11 +101,9 @@ pub fn solve(
 
     struct CurrentFn_ResetOnResolve
     {
-        ret_expect:     Type;
-        ret_actual:     Type;
-        returns:        i32[];
-
         locals_used:    i32[];
+
+        h:              Helpers;
     };
 
     struct CurrentFn
@@ -87,11 +120,6 @@ pub fn solve(
 
     // Moving solve-only stuff from scope & current-fn above here.
 
-    // struct Helpers
-    // {
-    //     index:          i32;
-    // };
-
     // mut _helpers:       Helpers[];
 
     // fn HELP(index: i32)
@@ -105,6 +133,11 @@ pub fn solve(
 
     //     fail("No helper for index: " ~ index);
     // }
+
+    fn HELP()
+    {
+        return _current_fn.h;
+    }
 
 
     //
@@ -171,29 +204,6 @@ pub fn solve(
     fn GET_local(index: i32): Overload
     {
         return GET(Target(modid: module.modid, :index));
-    }
-
-
-    //
-
-    fn fail(mut reason: string = ""): never
-    {
-        let here = _here._token;
-        if (!reason)
-            reason = "Unexpected `" ~ here.value ~ "`.";
-
-        let fname = _here._fname;
-        let addr = "@" ~ here.line ~ ":" ~ here.col;
-        for (mut i = _info.len; i --> 0; )
-        {
-            let info = _info[i];
-            shadow let here = info.here._token;
-            reason ~= here
-                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
-                : "\n\t" ~ info.text;
-        }
-
-        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
     }
 
 
@@ -2084,7 +2094,7 @@ pub fn solve(
             }
 
             // Used twice, once to enable recursion before body, and once when done.
-            fn updateScope(shadow out: CurrentFn)
+            fn updateScope(shadow out: CurrentFn, retval: Type)
             {
                 shadow let items = out.items;
 
@@ -2117,7 +2127,7 @@ pub fn solve(
                 let args_len0   = overload.args.len;
                 let closure0    = overload.closes_over.len;
 
-                overload.type   = out.ret_actual || fail("FnDecl_update: no return type.");
+                overload.type   = retval || fail("FnDecl_update: no return type.");
                 overload.min    = min;
                 overload.max    = max;
                 overload.args   = args;
@@ -2140,7 +2150,7 @@ pub fn solve(
                 }
 
                 // Test.
-                Lifetime_test(out.ret_actual.lifetime);
+                Lifetime_test(retval.lifetime);
 
                 if (overload.used_by)
                 {
@@ -2160,7 +2170,7 @@ pub fn solve(
             let firstIteration = !GET(target).solved;
             if (firstIteration)
             {
-                _current_fn.ret_actual = ret_seed;
+                resetReturns(ret_actual: ret_seed);
 
                 // Previously initScope:
                 {
@@ -2182,7 +2192,7 @@ pub fn solve(
                     overload.template = native ? createTemplate(n_body) : template;
                 }
 
-                updateScope(_current_fn);
+                updateScope(_current_fn, retval: ret_seed);
 
                 // setSpecs & co.
                 if (!into)
@@ -2209,13 +2219,12 @@ pub fn solve(
                 }
             }
 
+            mut retval = ret_seed;
             if (!native)
             {
-                _current_fn.ret_expect = ret_expect;
-                _current_fn.ret_actual = Type();
-
+                resetReturns(:ret_expect);
                 let s_body = solveNode(n_body, type: t_void);
-                finalizeReturns(s_body.type);
+                retval = finalizeReturns(s_body.type);
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2224,10 +2233,10 @@ pub fn solve(
 
             // Sighashes include return value.
             outItems[outItems.len + FN_RET_BACK] =
-                createEmpty(type: _current_fn.ret_actual);
+                createEmpty(type: retval);
 
             //
-            updateScope(_current_fn);
+            updateScope(_current_fn, :retval);
         }
 
         // Go!
@@ -2564,6 +2573,24 @@ pub fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
+        ref h = HELP();
+
+        fn reportReturnType(type: Type)
+        {
+            // Check annot.
+            if (h.ret_expect)
+                checkAssignable(host: h.ret_expect, type,
+                    "Expression not assignable to return annotation");
+
+            // Check multiple returns.
+            h.ret_actual = h.ret_actual
+                ? superType("[return]", h.ret_actual, type)
+                : type;
+
+            // Counter.
+            h.ret_actual || fail("Can't be null past this point.");
+        }
+
         if (!node.items)
         {
             reportReturnType(t_void);
@@ -2577,7 +2604,7 @@ pub fn solve(
 
         mut expr = solveNode(
             node.items.only,
-            type: _current_fn.ret_actual || _current_fn.ret_expect);
+            type: h.ret_actual || h.ret_expect);
 
         if (expr.type.is_ref)
         {
@@ -2614,52 +2641,47 @@ pub fn solve(
             local_of: _current_fn.target.index || fail(),
             solved: expr);
 
-        _current_fn.returns ~= target.index;
+        h.returns ~= target.index;
 
         return emitStatement(
             solved(node, t_never, :target));
     }
 
-    fn reportReturnType(type: Type)
+    fn resetReturns(ret_actual?!: Type, ret_expect?!: Type)
     {
-        // Check annot.
-        if (_current_fn.ret_expect)
-            checkAssignable(host: _current_fn.ret_expect, type,
-                "Expression not assignable to return annotation");
+        ref h = HELP();
 
-        // Check multiple returns.
-        _current_fn.ret_actual = _current_fn.ret_actual
-            ? superType("[return]", _current_fn.ret_actual, type)
-            : type;
-
-        // Counter.
-        _current_fn.ret_actual || fail("Can't be null past this point.");
+        //
+        h.ret_actual = ret_actual;
+        h.ret_expect = ret_expect;
     }
 
     fn finalizeReturns(bodyType: Type)
     {
+        ref h = HELP();
+
         // Not a single return statement = return void.
-        _current_fn.ret_actual ||= t_void;
+        h.ret_actual ||= t_void;
 
         // TODO FIX
         //  Disable return value narrowing,
         //   we're getting some aliasing somewhere that breaks the compiler's back.
-        if (!USE_retval_narrowing && _current_fn.ret_expect)
+        if (!USE_retval_narrowing && h.ret_expect)
         {
-            let lt0                 = _current_fn.ret_actual.lifetime;
-            _current_fn.ret_actual  = _current_fn.ret_expect;
+            let lt0         = h.ret_actual.lifetime;
+            h.ret_actual    = h.ret_expect;
 
-            if (_current_fn.ret_actual.is_ref)
-                _current_fn.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
+            if (h.ret_actual.is_ref)
+                h.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
         }
 
         // cpy/move.
-        if (!_current_fn.ret_actual.is_ref)
+        if (!h.ret_actual.is_ref)
         {
-            for (mut i = 0; i < _current_fn.returns.len; i++)
+            for (mut i = 0; i < h.returns.len; i++)
             {
-                ref ret = GET_mut(Target(:module.modid, index: _current_fn.returns[i]));
-                maybeCopyOrMove(ret.solved, _current_fn.ret_actual);
+                ref ret = GET_mut(Target(:module.modid, index: h.returns[i]));
+                maybeCopyOrMove(ret.solved, h.ret_actual);
             }
         }
 
@@ -2674,11 +2696,13 @@ pub fn solve(
         //
         if (!bodyType.is_never) // Refers to the type of the return stmt -
         {                       //  it is always never, everything after it is unreach.
-            isAssignable(host: t_void, _current_fn.ret_actual) || fail(
+            isAssignable(host: t_void, h.ret_actual) || fail(
                 "Non-void returning fn missing a final return.");
 
-            _current_fn.ret_actual = t_void;
+            h.ret_actual = t_void;
         }
+
+        return h.ret_actual;
     }
 
 
