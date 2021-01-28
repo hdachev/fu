@@ -1737,14 +1737,10 @@ pub fn solve(
         mut target: Target;
 
         {
-            mut current_fn0: CurrentFn;
-
-            SWAP(_current_fn, current_fn0);
             let scope0 = Scope_snap(_scope);
             let ss0 = _ss;
 
             defer {
-                SWAP(_current_fn, current_fn0);
                 Scope_pop(_scope, scope0);
                 _ss = ss0;
             }
