@@ -76,7 +76,6 @@ pub fn solve(
     struct CurrentFn
     {
         using out:      SolvedNode;
-        parent_idx:     i32;
         using RoR?:     CurrentFn_ResetOnResolve;
 
         // HA!
@@ -1964,7 +1963,7 @@ pub fn solve(
             ///////////////////////////////////////////////
 
             mut out = CurrentFn(
-                :parent_idx, solved(n_fn,
+                solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
             let inItems = n_fn.items;
