@@ -76,7 +76,6 @@ pub fn solve(
     struct CurrentFn
     {
         using out:      SolvedNode;
-        return_idx:     ScopeMemo; // <- truth from here
         parent_idx:     i32;
         using RoR?:     CurrentFn_ResetOnResolve;
 
@@ -1953,8 +1952,6 @@ pub fn solve(
             let spec = template.node.flags & F_TEMPLATE;
 
             // Prep reject.
-            let return_idx = Scope_snap(_scope); // TODO: isn't this the same as scope0 above?
-
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
@@ -1967,7 +1964,7 @@ pub fn solve(
             ///////////////////////////////////////////////
 
             mut out = CurrentFn(
-                :return_idx, :parent_idx, solved(n_fn,
+                :parent_idx, solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
             let inItems = n_fn.items;
@@ -1988,7 +1985,7 @@ pub fn solve(
             // Go!
             let root_scope0 = _root_scope;
             if (!root_scope0)
-                _root_scope = return_idx;
+                _root_scope = scope0;
 
             SWAP(_current_fn, out);
 
