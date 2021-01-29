@@ -3150,6 +3150,7 @@ pub fn solve(
 
     fn solveDefer(node: Node): SolvedNode
     {
+        // TODO unless defer:ok, must be noexcept
         let item = solveNode(node.items.only);
         return solved(node, t_void, [ item ]);
     }
