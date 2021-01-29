@@ -82,18 +82,6 @@ pub fn solve(
 
     //
 
-    struct Helpers
-    {
-        // index:          i32;
-
-        ret_expect:     Type;
-        ret_actual:     Type;
-        returns:        i32[];
-    };
-
-
-    //
-
     mut _scope:         Scope;
     mut _root_scope:    ScopeMemo;
     mut _ss:            ScopeSkipMemos;
@@ -102,8 +90,6 @@ pub fn solve(
     struct CurrentFn_ResetOnResolve
     {
         locals_used:    i32[];
-
-        h:              Helpers;
     };
 
     struct CurrentFn
@@ -120,23 +106,27 @@ pub fn solve(
 
     // Moving solve-only stuff from scope & current-fn above here.
 
-    // mut _helpers:       Helpers[];
-
-    // fn HELP(index: i32)
-    // {
-    //     for (mut i = _helpers.len; i --> 0; )
-    //     {
-    //         ret h = _helpers[i];
-    //         if (h.index == index)
-    //             return h;
-    //     }
-
-    //     fail("No helper for index: " ~ index);
-    // }
-
-    fn HELP()
+    struct Helpers
     {
-        return _current_fn.h;
+        index:          i32;
+
+        ret_expect?:    Type;
+        ret_actual?:    Type;
+        returns?:       i32[];
+    };
+
+    mut _helpers:       Helpers[];
+
+    fn findHelpers(index: i32)
+    {
+        for (mut i = _helpers.len; i --> 0; )
+        {
+            ref h = _helpers[i];
+            if (h.index == index)
+                return i;
+        }
+
+        fail("No helper for index: " ~ index);
     }
 
 
@@ -2014,12 +2004,17 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
+            let helpers0 = _helpers.len;
+            _helpers ~= Helpers(:target.index);
+
             SWAP(_current_fn, out);
 
             defer {
                 SWAP(_current_fn, out);
                 _root_scope = root_scope0;
+                _helpers.shrink(helpers0);
             }
+
 
             /////////////////////////////////
             ref outItems = _current_fn.items;
@@ -2573,7 +2568,10 @@ pub fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
-        ref h = HELP();
+        ///////////////////////
+        let hidx = findHelpers(_current_fn.target.index);
+        fn h() _helpers[hidx];
+        ///////////////////////
 
         fn reportReturnType(type: Type)
         {
@@ -2649,16 +2647,21 @@ pub fn solve(
 
     fn resetReturns(ret_actual?!: Type, ret_expect?!: Type)
     {
-        ref h = HELP();
+        ///////////////////////
+        let hidx = findHelpers(_current_fn.target.index);
+        ref h = _helpers[hidx];
+        ///////////////////////
 
-        //
         h.ret_actual = ret_actual;
         h.ret_expect = ret_expect;
     }
 
     fn finalizeReturns(bodyType: Type)
     {
-        ref h = HELP();
+        ///////////////////////
+        let hidx = findHelpers(_current_fn.target.index);
+        ref h = _helpers[hidx];
+        ///////////////////////
 
         // Not a single return statement = return void.
         h.ret_actual ||= t_void;
