@@ -435,9 +435,9 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgStatements(nodes: SolvedNode[], ref count!: i32): string
+    fn cgStatements(nodes: SolvedNode[], ref count!: i32, trail?!: string): string
     {
-        let lines = cgNodes(nodes, M_STMT);
+        let lines = cgNodes(nodes, M_STMT, :trail);
         count = lines.len;
 
         mut src = "";
@@ -519,6 +519,7 @@ pub fn cpp_codegen(
         let gnuOpen = gnuStmtExpr && "(__extension__ (";
         let open    = "{";
         mut close   = gnuStmtExpr ? "}))" : "}";
+        mut trail   = "";
 
         // Blockvals!
         let voided  = !type || type.is_void;
@@ -535,8 +536,12 @@ pub fn cpp_codegen(
                 let annot   = typeAnnot(type);
                 let id      = emitTEMPVAR(annot, :ptrflip, "L_" ~ name ~ "_v");
 
-                let out     = ptrflip ? "*" ~ id : "static_cast<" ~ annot ~ "&&>(" ~ id ~ ")";
+                let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
                 close       = "}), " ~ out ~ ")";
+
+                trail       = id ~ " = ";
+                if (ptrflip)
+                    trail  ~= "&";
             }
 
             close       = brk ~ indent0 ~ close;
@@ -544,7 +549,7 @@ pub fn cpp_codegen(
 
         //
         mut count: i32;
-        mut src = cgStatements(nodes, :count);
+        mut src = cgStatements(nodes, :count, :trail);
         if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
@@ -1796,7 +1801,7 @@ pub fn cpp_codegen(
         return id;
     }
 
-    fn cgNodes(nodes: SolvedNode[], mode: i32 = 0): string[]
+    fn cgNodes(nodes: SolvedNode[], mode: i32 = 0, trail?!: string): string[]
     {
         mut result: string[] = [];
 
@@ -1811,7 +1816,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < nodes.len; i++)
         {
             let node  = nodes[i];
-            let src   = node ? cgNode(node, mode) : "";
+            mut src   = node ? cgNode(node, mode) : "";
 
             src || mode & M_STMT || fail("cgNodes: empty `" ~ node.kind ~ ".`");
 
@@ -1820,6 +1825,9 @@ pub fn cpp_codegen(
                 result ~= _current_fn.TEMPVARs;
                 _current_fn.TEMPVARs.clear();
             }
+
+            if (trail && i == nodes.len - 1 && !node.type.is_void)
+                src = trail ~ "(" ~ src ~ ")";
 
             result.push(src);
         }

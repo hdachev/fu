@@ -14747,3 +14747,48 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 
 -----
+
+        fn test(x: i32) {
+            return {
+                BLOCK: {
+                    if (x & 1) break :BLOCK 1;
+                    if (x & 2) return 2;
+                    3
+                }
+            };
+        }
+
+        fn main() 4.test - 5.test - 6.test; // 3-1-2
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test(const int x)
+{
+    int L_BLOCK_v {};
+    return (__extension__ (
+    {
+        if (x & 1)
+        {
+            { L_BLOCK_v = 1; goto L_BLOCK_b; };
+        };
+        if (x & 2)
+            return 2;
+
+        L_BLOCK_v = (3);
+        L_BLOCK_b:;
+    }), int(L_BLOCK_v));
+}
+
+int fu_MAIN()
+{
+    return (test(4) - test(5)) - test(6);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
