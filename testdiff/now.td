@@ -8799,6 +8799,45 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn as_blocks_after(x: i32) {
+            mut zero = 0;
+            if (x > 2) // a broken stmt emit lifted the loop out of the conditional
+                for (mut i = 0; i < x; i++)
+                    zero = i + i*zero;
+
+            return zero;
+        }
+
+        fn main() 2.as_blocks_after;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int as_blocks_after(const int x)
+{
+    int zero = 0;
+    if (x > 2)
+    {
+        for (int i = 0; i < x; i++)
+            zero = (i + (i * zero));
+
+    };
+    return zero;
+}
+
+int fu_MAIN()
+{
+    return as_blocks_after(2);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct Test { i: i32[]; };
 
         fn test(mut x: Test) {

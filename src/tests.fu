@@ -2576,6 +2576,19 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn as_blocks_after(x: i32) {
+            mut zero = 0;
+            if (x > 2) // a broken stmt emit lifted the loop out of the conditional
+                for (mut i = 0; i < x; i++)
+                    zero = i + i*zero;
+
+            return zero;
+        }
+
+        fn main() 2.as_blocks_after;
+    `);
+
 
     // Returning a mut arg.
 
