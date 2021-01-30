@@ -486,27 +486,38 @@ pub fn cpp_codegen(
         let items = node.kind == "block"  ? node.items : [ node ];
         let label = node.kind == "block" && node.target;
 
+        // We'll try to avoid block expressions as much as we can.
+        //  Instead of these loops it'd be nice if we knew all this stuff
+        //   as node flags or something, or a jumpset or something:
+        //      - if expressible as cpp expr (none of the below stuff),
+        //      - if wrappable in a cpp lambda (no jumping up), etc.
         //
-        mut expr = !(mode & M_STMT);
-        if (expr && !label)
+        fn exprOK(nodes: [SolvedNode])
         {
-            fn isExpr(kind: string): bool
-                kind == "call" || kind == "and" || kind == "or" || kind == "if";
-
-            mut ok = true;
-            for (mut i = 0; i < items.len; i++)
+            for (mut i = 0; i < nodes.len; i++)
             {
-                if (!items[i].kind.isExpr)
+                let n = nodes[i];
+                let k = n.kind;
+                if (k == "return" || k == "break" || k == "continue" || k == "loop"
+                    || k == "try" || k == "catch"
+                    || k == "let" || k == "block") // TODO FIX we can handle both of these
                 {
-                    ok = false;
-                    break;
+                    return false;
                 }
+
+                if (k == "and" || k == "or" || k == "if")
+                    if (!n.items.exprOK)
+                        return false;
             }
 
-            if (ok)
-                return cgComma(items);
+            return true;
         }
 
+        mut expr = !(mode & M_STMT);
+        if (expr && !label && items.exprOK)
+            return cgComma(items);
+
+        //
         return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr, :label,
             type: expr && node.type);
     }
