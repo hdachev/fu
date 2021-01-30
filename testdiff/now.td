@@ -14792,3 +14792,58 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 
 -----
+
+        fn test(a: i32) {
+            mut w = 3;
+            OUTER: w += {
+                INNER: {
+                    if (a & 1)  break: INNER;
+                    else        break: OUTER;
+                };
+                5
+            };
+            return w;
+        }
+        fn main() 0.test + 1.test - 11;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test(const int a)
+{
+    int w = 3;
+
+    {
+        w += (__extension__ (
+        {
+
+            {
+                if (a & 1)
+                {
+                    goto L_INNER_b;
+                }
+                else
+                {
+                    goto L_OUTER_b;
+                };
+                L_INNER_b:;
+            };
+            5;
+        }));
+        L_OUTER_b:;
+    };
+    return w;
+}
+
+int fu_MAIN()
+{
+    return (test(0) + test(1)) - 11;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
