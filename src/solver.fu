@@ -26,7 +26,7 @@ pub let N_DeadIf            = 1 << 9;
 let OPTI_autoshadow         = true;
 
 let USE_nontriv_autocopy    = true;
-let USE_retval_narrowing    = false;
+let USE_retval_narrowing    = false; // TODO not safe without borrowck
 let USE_ref_to_mutref       = false;
 let USE_inlining            = false;
 
@@ -195,6 +195,12 @@ pub fn solve(
     {
         return GET(Target(modid: module.modid, :index));
     }
+
+
+    // Hacking a pair of local indices into a target.
+
+    fn left (ref target: Target) target.modid;
+    fn right(ref target: Target) target.index;
 
 
     //
@@ -2568,8 +2574,11 @@ pub fn solve(
 
     fn solveReturn(node: Node): SolvedNode
     {
+        mut target: Target;
+        target.left = _current_fn.target.index;
+
         ///////////////////////
-        let hidx = findHelpers(_current_fn.target.index);
+        let hidx = findHelpers(target.left);
         fn h() _helpers[hidx];
         ///////////////////////
 
@@ -2606,7 +2615,7 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(_current_fn.target.index);
+            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(target.left);
             if (ltCompare >= 0)
             {
                 if (ltCompare > 0)
@@ -2635,11 +2644,11 @@ pub fn solve(
 
         reportReturnType(expr.type);
 
-        let target = Scope_create(_scope, "return",
-            local_of: _current_fn.target.index || fail(),
-            solved: expr);
+        target.right = Scope_create(_scope, "return",
+            local_of: target.left || fail(),
+            solved: expr).index;
 
-        h.returns ~= target.index;
+        h.returns ~= target.right;
 
         return emitStatement(
             solved(node, t_never, :target));

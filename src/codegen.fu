@@ -77,6 +77,9 @@ pub fn cpp_codegen(
 
     fn fail(reason = "") throw(reason);
 
+    fn left (target: Target) target.modid;
+    fn right(target: Target) target.index;
+
 
     //
 
@@ -857,9 +860,11 @@ pub fn cpp_codegen(
 
     fn cgReturn(node: SolvedNode): string
     {
-        if (node.target)
+        let fnIdx   = node.target.left;
+        let exprIdx = node.target.right;
+        if (exprIdx)
         {
-            let o = GET(node.target);
+            let o = GET(Target(:module.modid, exprIdx));
             let head = o.solved || fail();
 
             // [[noreturns]] shouldn't have return statements,
@@ -867,9 +872,7 @@ pub fn cpp_codegen(
             //   for them to end on a return. It's a mess man.
             if (head.type.is_never)
             {
-                let fn = GET(Target(
-                    modid: node.target.modid,
-                    index: o.local_of));
+                let fn = GET(Target(:module.modid, index: fnIdx));
 
                 if (fn.type.is_never)
                     return cgNode(head, M_STMT);
