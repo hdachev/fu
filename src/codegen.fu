@@ -1744,6 +1744,19 @@ pub fn cpp_codegen(
         if (k == "let")         return cgLet(node);
         if (k == "global")      return cgGlobal(node);
 
+        if (k == "root")        return cgRoot(node);
+        if (k == "block")       return cgBlock(node, mode);
+        if (k == "argid")       return cgComma(node.items);
+
+        // Empties.
+        if (k == "fndef")       return cgFnDef(node, mode);
+        if (k == "struct")      return cgEmpty(mode);
+        if (k == "empty")       return cgEmpty(mode);
+
+        // Stuff that we can't cg as expressions.
+        if !(mode & M_STMT)
+            return cgBlock(node, :mode);
+
         if (k == "return")      return cgJump(node);
         if (k == "break")       return cgJump(node);
         if (k == "continue")    return cgJump(node);
@@ -1752,15 +1765,6 @@ pub fn cpp_codegen(
         if (k == "try")         return cgTryCatch(node);
         if (k == "catch")       return cgCatch(node);
         if (k == "defer")       return cgDefer(node);
-
-        if (k == "root")        return cgRoot(node);
-        if (k == "block")       return cgBlock(node, mode);
-        if (k == "argid")       return cgComma(node.items);
-
-        if (k == "fndef")       return cgFnDef(node, mode);
-        if (k == "fn")          return cgFn(node, mode);
-        if (k == "struct")      return cgEmpty(mode);
-        if (k == "empty")       return cgEmpty(mode);
 
         return fail("TODO: " ~ k);
     }
