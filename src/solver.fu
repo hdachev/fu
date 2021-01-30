@@ -1293,9 +1293,9 @@ pub fn solve(
         if (k == "or")          return solveOr(node, type);
         if (k == "and")         return solveAnd(node, type);
 
-        if (k == "return")      return solveReturn(node);
         if (k == "loop")        return solveLoop(node);
         if (k == "break")       return solveJump(node);
+        if (k == "return")      return solveJump(node);
         if (k == "continue")    return solveJump(node);
 
         if (k == "int")         return solveInt(node, type);
@@ -1376,10 +1376,17 @@ pub fn solve(
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let helpers0 = _helpers.len;
+        defer {
+            Scope_pop(_scope, scope0);
+            _helpers.shrink(helpers0);
+        }
         ////////////////////////////////
 
         let label = id && Scope_addLabel(id);
+        if (label)
+            _helpers ~= Helpers(:label.index);
+
         let expr  = !type.is_void;
         let items = solveNodes(
             nodes,
@@ -2572,10 +2579,26 @@ pub fn solve(
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
 
-    fn solveReturn(node: Node): SolvedNode
+    fn solveJump(node: Node): SolvedNode
     {
         mut target: Target;
         target.left = _current_fn.target.index;
+
+        if (node.kind == "break" || node.kind == "continue")
+        {
+            let dest = Scope_lookupLabel(node.value);
+
+            ref label = GET_mut(dest);
+            if (node.kind == "break")
+                label.status |= SS_HAS_BREAK;
+            else if (node.kind == "continue")
+                label.status |= SS_HAS_CONTINUE;
+
+            if (label.local_of != _current_fn.target.index)
+                fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`.");
+
+            target.left = dest.index;
+        }
 
         ///////////////////////
         let hidx = findHelpers(target.left);
@@ -2772,10 +2795,18 @@ pub fn solve(
     {
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let helpers0 = _helpers.len;
+        defer {
+            Scope_pop(_scope, scope0);
+            _helpers.shrink(helpers0);
+        }
         ////////////////////////////////
 
+        // TODO really consider getting rid of this,
+        //  ideally we'll only have labels on blocks -
+        //   the continues-map-to-inner-block thing.
         let label       = Scope_addLabel(node.value);
+        _helpers       ~= Helpers(:label.index);
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
@@ -2797,28 +2828,6 @@ pub fn solve(
         return emitStatement(
             solved(node, type,
                 [ init, pre_cond, body, post_cond, post ]));
-    }
-
-    fn solveJump(node: Node): SolvedNode
-    {
-        // Jump kind.
-        let target = Scope_lookupLabel(node.value);
-
-        ref label = GET_mut(target);
-        if (node.kind == "break")
-            label.status |= SS_HAS_BREAK;
-        else if (node.kind == "continue")
-            label.status |= SS_HAS_CONTINUE;
-        else
-            fail("TODO jump kind: `" ~ node.kind ~ "`.");
-
-        //
-        if (label.local_of != _current_fn.target.index)
-            fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`.");
-
-        // Control flow.
-        return emitStatement(
-            solved(node, t_never, :target));
     }
 
 
