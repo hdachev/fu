@@ -858,7 +858,7 @@ pub fn cpp_codegen(
         cgGlobal(o.solved);
     }
 
-    fn cgReturn(node: SolvedNode): string
+    fn cgJump(node: SolvedNode): string
     {
         let fnIdx   = node.target.left;
         let exprIdx = node.target.right;
@@ -889,14 +889,15 @@ pub fn cpp_codegen(
             return "return " ~ cgNode(head, M_PARENS);
         }
 
-        return "return";
-    }
+        // `return;`
+        if (node.kind == "return")
+            return "return";
 
-    fn cgJump(node: SolvedNode): string
-    {
+        // `goto X;`
         if (node.value)
             return "goto L_" ~ node.value ~ "_" ~ node.kind[0];
 
+        // `break/continue`
         return node.kind;
     }
 
@@ -1700,7 +1701,7 @@ pub fn cpp_codegen(
         if (k == "let")         return cgLet(node);
         if (k == "global")      return cgGlobal(node);
 
-        if (k == "return")      return cgReturn(node);
+        if (k == "return")      return cgJump(node);
         if (k == "break")       return cgJump(node);
         if (k == "continue")    return cgJump(node);
 
