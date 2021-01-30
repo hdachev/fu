@@ -1303,9 +1303,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             return expr.value;
 
         if (expr.items)
-            return getAutoName(expr.items[0]);
+        {
+            // _  ? NAME :  _
+            //      NAME || _       same as NAME ? NAME : _
+            // _ && NAME            same as _    ? NAME : 0
 
-        return fail("Can't :auto_name this expression.");
+            let i = expr.kind == "and" && expr.items.len - 1
+                  ? expr.kind == "if"  && 1
+                  : 0;
+
+            return getAutoName(expr.items[i]);
+        }
+
+        return fail("Can't :autoname this expression.");
     }
 
     fn createArgID(id: string, expr: Node, flags?: i32): Node
