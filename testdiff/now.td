@@ -14728,10 +14728,10 @@ static int test(const int x)
                 goto L_inner_b;
             };
             return 2;
-        L_inner_b:;
+            L_inner_b:;
         };
         return 1;
-    L_outer_b:;
+        L_outer_b:;
     };
     return 0;
 }

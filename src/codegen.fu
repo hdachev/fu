@@ -507,10 +507,11 @@ pub fn cpp_codegen(
                 return cgComma(items);
         }
 
-        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr, :label);
+        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr, :label,
+            type: expr && node.type);
     }
 
-    fn cgBlock(nodes: SolvedNode[], skipCurlies?!: bool, gnuStmtExpr?!: bool, label?!: Target): string
+    fn cgBlock(nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool, label!: Target, type: Type): string
     {
         let indent0 = _indent;
         _indent ~= "    ";
@@ -519,9 +520,27 @@ pub fn cpp_codegen(
         let open    = "{";
         mut close   = gnuStmtExpr ? "}))" : "}";
 
-        // Block break label.
-        if (label)
-            close = "L_" ~ GET(label).name ~ "_b:;" ~ indent0 ~ close;
+        // Blockvals!
+        let voided  = !type || type.is_void;
+
+        // Block label & retval.
+        if (label && GET(label).status & SS_HAS_BREAK)
+        {
+            let name    = GET(label).name;
+            mut brk     = "    L_" ~ name ~ "_b:;";
+
+            if (!voided)
+            {
+                mut ptrflip = false;
+                let annot   = typeAnnot(type);
+                let id      = emitTEMPVAR(annot, :ptrflip, "L_" ~ name ~ "_v");
+
+                let out     = ptrflip ? "*" ~ id : "static_cast<" ~ annot ~ "&&>(" ~ id ~ ")";
+                close       = "}), " ~ out ~ ")";
+            }
+
+            close       = brk ~ indent0 ~ close;
+        }
 
         //
         mut count: i32;
@@ -866,6 +885,14 @@ pub fn cpp_codegen(
         {
             let o = GET(Target(:module.modid, exprIdx));
             let head = o.solved || fail();
+
+            // Break with value.
+            if (node.kind == "break")
+            {
+                // Sketch, gotta use the tempvar stack somehow here.
+                return "{ L_" ~ node.value ~ "_v = " ~ cgNode(head)
+                     ~ "; goto L_" ~ node.value ~ "_" ~ node.kind[0] ~ "; }";
+            }
 
             // [[noreturns]] shouldn't have return statements,
             //  but regular fns should return the output of [[noreturns]]
@@ -1757,14 +1784,14 @@ pub fn cpp_codegen(
 
     //
 
-    fn emitTEMPVAR(annot: string, ref ptrflip!: bool): string
+    fn emitTEMPVAR(annot: string, ref ptrflip!: bool, id?: string): string
     {
         ptrflip = annot[annot.len - 1] == '&';
 
-        let id = "_" ~ _current_fn.numTEMPVARs++;
-        _current_fn.TEMPVARs ~= ptrflip
-            ? annot[0, annot.len - 1] ~ "* " ~ id
-            : annot ~ " " ~ id ~ " {}";
+        shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
+        _current_fn.TEMPVARs ~=
+            ptrflip ? annot[0, annot.len - 1] ~ "* " ~ id
+                    : annot ~ " " ~ id ~ " {}"; // TODO dont init trivial
 
         return id;
     }
