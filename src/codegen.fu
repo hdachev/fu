@@ -532,29 +532,27 @@ pub fn cpp_codegen(
         mut close   = gnuStmtExpr ? "}))" : "}";
         mut trail   = "";
 
+        let name    = label && GET(label).name;
+
         // Blockvals!
-        let voided  = !type || type.is_void;
+        if (type && !type.is_void)
+        {
+            mut ptrflip = false;
+            let annot   = typeAnnot(type);
+            let id      = emitTEMPVAR(annot, :ptrflip, name && "L_" ~ name ~ "_v");
+
+            let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
+            close       = "}), " ~ out ~ ")";
+
+            trail       = id ~ " = ";
+            if (ptrflip)
+                trail  ~= "&";
+        }
 
         // Block label & retval.
         if (label && GET(label).status & SS_HAS_BREAK)
         {
-            let name    = GET(label).name;
             mut brk     = "    L_" ~ name ~ "_b:;";
-
-            if (!voided)
-            {
-                mut ptrflip = false;
-                let annot   = typeAnnot(type);
-                let id      = emitTEMPVAR(annot, :ptrflip, "L_" ~ name ~ "_v");
-
-                let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
-                close       = "}), " ~ out ~ ")";
-
-                trail       = id ~ " = ";
-                if (ptrflip)
-                    trail  ~= "&";
-            }
-
             close       = brk ~ indent0 ~ close;
         }
 
@@ -1830,8 +1828,9 @@ pub fn cpp_codegen(
 
         for (mut i = 0; i < nodes.len; i++)
         {
-            let node  = nodes[i];
-            mut src   = node ? cgNode(node, mode) : "";
+            let node    = nodes[i];
+            let isTrail = trail && i == nodes.len - 1 && !node.type.maybe_nonzero;
+            mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode);
 
             src || mode & M_STMT || fail("cgNodes: empty `" ~ node.kind ~ ".`");
 
@@ -1841,7 +1840,7 @@ pub fn cpp_codegen(
                 _current_fn.TEMPVARs.clear();
             }
 
-            if (trail && i == nodes.len - 1 && !node.type.is_void)
+            if (isTrail)
                 src = trail ~ "(" ~ src ~ ")";
 
             result.push(src);

@@ -197,6 +197,11 @@ pub fn is_void (t: Type) t.vtype == t_void .vtype;
 pub fn is_bool (t: Type) t.vtype == t_bool .vtype;
 
 
+// TODO non zsts, non-empty structs, etc.
+
+pub fn maybe_nonzero(t: Type) t.is_never || t.is_void;
+
+
 // https://doc.rust-lang.org/nomicon/subtyping.html:
 
 // Re: covariance of `T` in `Box<T>`:

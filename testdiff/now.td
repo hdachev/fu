@@ -13770,12 +13770,13 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
+    int _0 {};
     const int x = (__extension__ (
     {
         int z = 0;
         z++;
-        z;
-    }));
+        _0 = (z);
+    }), int(_0));
     return x - 1;
 }
 
@@ -14815,6 +14816,7 @@ static int test(const int a)
     int w = 3;
 
     {
+        int _0 {};
         w += (__extension__ (
         {
 
@@ -14829,8 +14831,8 @@ static int test(const int a)
                 };
                 L_INNER_b:;
             };
-            5;
-        }));
+            _0 = (5);
+        }), int(_0));
         L_OUTER_b:;
     };
     return w;
