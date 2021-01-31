@@ -2760,12 +2760,17 @@ pub fn solve(
 
     fn LabelID(id: string) "L " ~ id;
 
-    fn Scope_addLabel(id: string): Target
+    fn Scope_addLabel(id: string, anonOK?!: bool): Target
     {
-        return Scope_add(
+        let label = Scope_add(
             _scope, "label", id: LabelID(id),
             name: id, type: Type, flags: F_SHADOW,
             local_of: _current_fn.target.index);
+
+        if (anonOK && id)
+            Scope_set(_scope, id: LabelID(""), label);
+
+        return label;
     }
 
     fn Scope_lookupLabel(mut id: string): Target
@@ -2805,7 +2810,7 @@ pub fn solve(
         // TODO really consider getting rid of this,
         //  ideally we'll only have labels on blocks -
         //   the continues-map-to-inner-block thing.
-        let label       = Scope_addLabel(node.value);
+        let label       = Scope_addLabel(node.value, anonOK: true);
         _helpers       ~= Helpers(:label.index);
 
         let n_init      = node.items[LOOP_INIT];

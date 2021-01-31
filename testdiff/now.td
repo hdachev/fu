@@ -4833,7 +4833,6 @@ int main() { return fu_MAIN(); }
 -----
 
         mut sum = 0;
-
         outer: for (mut y = 1; y < 10; y++)
         {
             sum += y * 10; // 10, 20
@@ -4874,6 +4873,60 @@ int fu_MAIN()
         L_outer_b:;
 
     return sum - 34;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        mut sum = 0;
+        outer: for (mut x = 0;; x++) {
+            for (mut y = 0; y < x; y++) {
+                if (y & 1 && !(x & 1))
+                    continue :outer;
+
+                sum += x;
+            }
+
+            sum += x * 1000 + 100;
+            if (x > 1)
+                break; // anon
+        }
+
+        // x=0:           + 0100
+        // x=1: 1         + 1100
+        // x=2: 2
+        // x=3: 3 + 3 + 3 + 3100 break
+        return sum - 4312;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int sum = 0;
+    for (int x = 0; ; x++){
+    {
+        for (int y = 0; y < x; y++)
+        {
+            if ((y & 1) && !(x & 1))
+            {
+                goto L_outer_c;
+            };
+            sum += x;
+        };
+        sum += ((x * 1000) + 100);
+        if (x > 1)
+        {
+            break;
+        };
+
+        }L_outer_c:;};
+    return sum - 4312;
 }
 
 #endif
