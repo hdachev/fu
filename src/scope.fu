@@ -15,7 +15,8 @@ pub let SS_FN_RECUR     = 0x1 << 17;
 
 pub let SS_HAS_BREAK    = 0x1 << 24;
 pub let SS_HAS_CONTINUE = 0x1 << 25;
-// ...
+pub let SS_BREAK_OK     = 0x1 << 26;
+pub let SS_CONTINUE_OK  = 0x1 << 27;
 
 
 // Build service primitives.
