@@ -608,11 +608,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn parseLambda(noArgs?: bool): Node
+    fn parseLambda(noArgs_noClosingPipe?!: bool): Node
     {
+        if (noArgs_noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
+            fail_Lint("Unparenthesized `|| lambda` within a binary expression.");
+
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
-        return parseFnDecl_cont(endv: !noArgs && "|",
+        return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
             flags: F_INLINE | F_TEMPLATE, expr: true, :name);
     }
 
@@ -1083,7 +1086,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v ==  "$") return parseTypeParam();
                 if (v ==  "@") return parseTypeTag();
                 if (v ==  "|") return parseLambda();
-                if (v == "||") return parseLambda(noArgs: true);
+                if (v == "||") return parseLambda(noArgs_noClosingPipe: true);
                 if (v == "[]") return createDefinit();
 
                 if (v == "::")
