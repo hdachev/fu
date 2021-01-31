@@ -250,17 +250,17 @@ pub fn ZERO(
 
         // Collect ;; TODO and ;; EXPECTs.
         mut start = 0;
-        while ((start = src.find(";; ", :start)) >= 0)
+        while ((start = src.find(" ;; ", :start)) >= 0)
         {
-            mut end = src.find('\n', start + 3);
+            mut end = src.find('\n', start + 4);
             if (end < 0)
                 end = src.len;
 
-            expectations.grow_if_oob(i) ~= src.slice(start + 3, end);
+            expectations.grow_if_oob(i) ~= src.slice(start + 4, end);
 
             // Turn ;; commands into // comments and hop over.
-            src[start]      = '/';
             src[start + 1]  = '/';
+            src[start + 2]  = '/';
             start           = end;
         }
     }
