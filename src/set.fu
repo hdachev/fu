@@ -26,6 +26,18 @@ pub fn add(ref dest: $T[], src: $T[])
     return some;
 }
 
+pub fn rem(ref dest: $T[], item: $T)
+{
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] == item) {
+            dest.splice(i, 1);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 // TODO instead of this, loop twice -
 //  once to size things up,

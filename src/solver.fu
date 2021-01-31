@@ -1383,10 +1383,30 @@ pub fn solve(
         }
         ////////////////////////////////
 
-        let label = id && Scope_addLabel(id, SS_BREAK_OK);
+        mut HACK_CanContinue: string[]; /////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////
+        // TODO FIX this is shit ALSO you can't continue a labelled block ///////////
+        if (!id) _scope.items.each(_ss.items, start: _root_scope.items_len, |item| //
+        {   /////////////////////////////////////////////////////////////////////////
+            if (item.id.starts(with: "L ")) // WTF clean this up ////////////////////
+            {
+                let s = GET(item.target).status;
+                if (s & SS_CONTINUE_OK)
+                    HACK_CanContinue.set::rem(item.id);
+                else if (s & SS_BREAK_OK)
+                    HACK_CanContinue.set::add(item.id);
+            }
+        });
+
+        //
+        let label = (id || HACK_CanContinue) && Scope_addLabel(id, id ? SS_BREAK_OK : SS_CONTINUE_OK);
         if (label)
             _helpers ~= Helpers(:label.index);
 
+        for (mut i = 0; i < HACK_CanContinue.len; i++)
+            Scope_set(_scope, HACK_CanContinue[i], label);
+
+        //
         let expr  = !type.is_void;
         let items = solveNodes(
             nodes,
@@ -2625,7 +2645,7 @@ pub fn solve(
             reportReturnType(t_void);
 
             return emitStatement(
-                solved(node, t_never));
+                solved(node, t_never, :target));
         }
 
 
@@ -2761,11 +2781,12 @@ pub fn solve(
 
     fn Scope_addLabel(id: string, status: u32, anonOK?!: bool): Target
     {
-        let label = Scope_add(
-            _scope, "label", id: LabelID(id),
-            name: id, type: Type, flags: F_SHADOW,
+        let label = Scope_create(_scope, "label",
+            name: id || "" ~ _scope.items.len,
+            type: Type, flags: F_SHADOW,
             local_of: _current_fn.target.index, :status);
 
+        Scope_set(_scope, id: LabelID(id), label);
         if (anonOK && id)
             Scope_set(_scope, id: LabelID(""), label);
 

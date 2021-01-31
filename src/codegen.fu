@@ -528,11 +528,12 @@ pub fn cpp_codegen(
         _indent ~= "    ";
 
         let gnuOpen = gnuStmtExpr && "(__extension__ (";
-        let open    = "{";
+        mut open    = "{";
         mut close   = gnuStmtExpr ? "}))" : "}";
         mut trail   = "";
 
-        let name    = label && GET(label).name;
+        let lbl     = label && GET(label);
+        let name    = lbl.status & (SS_HAS_BREAK | SS_HAS_CONTINUE) && lbl.name;
 
         // Blockvals!
         if (type && !type.is_void)
@@ -550,10 +551,13 @@ pub fn cpp_codegen(
         }
 
         // Block label & retval.
-        if (label && GET(label).status & SS_HAS_BREAK)
+        if (lbl.status & (SS_HAS_BREAK | SS_HAS_CONTINUE))
         {
-            mut brk     = "    L_" ~ name ~ "_b:;";
-            close       = brk ~ indent0 ~ close;
+            open = "{ {";
+            if (lbl.status & SS_HAS_BREAK)
+                close   = "  } L_" ~ name ~ "_b:;" ~ indent0 ~ close;
+            if (lbl.status & SS_HAS_CONTINUE)
+                close   = "  } L_" ~ name ~ "_c:;" ~ indent0 ~ close;
         }
 
         //
@@ -893,7 +897,8 @@ pub fn cpp_codegen(
 
     fn cgJump(node: SolvedNode): string
     {
-        let fnIdx   = node.target.left;
+        let dest = GET(Target(:module.modid, node.target.left));
+
         let exprIdx = node.target.right;
         if (exprIdx)
         {
@@ -901,24 +906,19 @@ pub fn cpp_codegen(
             let head = o.solved || fail();
 
             // Break with value.
-            if (node.kind == "break")
-            {
-                // Sketch, gotta use the tempvar stack somehow here.
-                return "{ L_" ~ node.value ~ "_v = " ~ cgNode(head)
-                     ~ "; goto L_" ~ node.value ~ "_" ~ node.kind[0] ~ "; }";
-            }
+            if (node.kind != "return")
+                return "{ L_" ~ dest.name ~ "_v = " ~ cgNode(head)
+                     ~ "; goto L_" ~ dest.name ~ "_" ~ node.kind[0] ~ "; }";
 
             // [[noreturns]] shouldn't have return statements,
             //  but regular fns should return the output of [[noreturns]]
             //   for them to end on a return. It's a mess man.
             if (head.type.is_never)
             {
-                let fn = GET(Target(:module.modid, index: fnIdx));
-
-                if (fn.type.is_never)
+                if (dest.type.is_never)
                     return cgNode(head, M_STMT);
 
-                if (fn.type.is_void)
+                if (dest.type.is_void)
                     return "return (void) " ~ cgNode(head);
             }
 
@@ -936,7 +936,7 @@ pub fn cpp_codegen(
 
         // `goto X;`
         if (node.value)
-            return "goto L_" ~ node.value ~ "_" ~ node.kind[0];
+            return "goto L_" ~ dest.name ~ "_" ~ node.kind[0];
 
         // `break/continue`
         return node.kind;

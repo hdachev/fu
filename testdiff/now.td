@@ -14770,9 +14770,9 @@ int main() { return fu_MAIN(); }
 static int test(const int x)
 {
 
-    {
+    { {
 
-        {
+        { {
             if (x > 1)
             {
                 goto L_outer_b;
@@ -14782,10 +14782,10 @@ static int test(const int x)
                 goto L_inner_b;
             };
             return 2;
-            L_inner_b:;
+          } L_inner_b:;
         };
         return 1;
-        L_outer_b:;
+      } L_outer_b:;
     };
     return 0;
 }
@@ -14822,7 +14822,7 @@ static int test(const int x)
 {
     int L_BLOCK_v {};
     return (__extension__ (
-    {
+    { {
         if (x & 1)
         {
             { L_BLOCK_v = 1; goto L_BLOCK_b; };
@@ -14831,7 +14831,7 @@ static int test(const int x)
             return 2;
 
         L_BLOCK_v = (3);
-        L_BLOCK_b:;
+      } L_BLOCK_b:;
     }), int(L_BLOCK_v));
 }
 
@@ -14868,12 +14868,12 @@ static int test(const int a)
 {
     int w = 3;
 
-    {
+    { {
         int _0 {};
         w += (__extension__ (
         {
 
-            {
+            { {
                 if (a & 1)
                 {
                     goto L_INNER_b;
@@ -14882,11 +14882,11 @@ static int test(const int a)
                 {
                     goto L_OUTER_b;
                 };
-                L_INNER_b:;
+              } L_INNER_b:;
             };
             _0 = (5);
         }), int(_0));
-        L_OUTER_b:;
+      } L_OUTER_b:;
     };
     return w;
 }
@@ -14894,6 +14894,61 @@ static int test(const int a)
 int fu_MAIN()
 {
     return (test(0) + test(1)) - 11;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn v(x: i32) {
+            return {
+                BLOCK:                          5000 + { // *2:
+                    if (x == 9) continue :BLOCK 2000;    //   - here
+                    if (x == 8) return           300;
+                    if (x == 7) break :BLOCK      40;
+                    else                           5;    //   - and here!
+                };
+            }; // -----------------------------------
+        }
+        fn main() 9.v + 8.v + 7.v + 6.v      - 12345;
+
+-----
+#include <fu/never.h>
+
+#ifndef FU_NO_FDEFs
+
+static int v(const int x)
+{
+    int L_BLOCK_v {};
+    return (__extension__ (
+    { {
+        int L_162_v {};
+        L_BLOCK_v = ((5000 + (__extension__ (
+        { {
+            if (x == 9)
+            {
+                { L_162_v = 2000; goto L_162_c; };
+            };
+            if (x == 8)
+                return 300;
+
+            fu::never _0 {};
+            L_162_v = (((x == 7) ? (__extension__ (
+            {
+                { L_BLOCK_v = 40; goto L_BLOCK_b; };
+            }), static_cast<fu::never&&>(_0)) : 5));
+          } L_162_c:;
+        }), int(L_162_v))));
+      } L_BLOCK_b:;
+    }), int(L_BLOCK_v));
+}
+
+int fu_MAIN()
+{
+    return (((v(9) + v(8)) + v(7)) + v(6)) - 12345;
 }
 
 #endif
