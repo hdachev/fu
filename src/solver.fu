@@ -106,27 +106,15 @@ pub fn solve(
 
     // Moving solve-only stuff from scope & current-fn above here.
 
-    struct Helpers
-    {
-        index:          i32;
+    let implicit mut _helpers: Helpers[];
 
-        ret_expect?:    Type;
-        ret_actual?:    Type;
-        returns?:       i32[];
-    };
-
-    mut _helpers:       Helpers[];
-
-    fn findHelpers(index: i32)
+    fn findHelpers(target: i32)
     {
         for (mut i = _helpers.len; i --> 0; )
-        {
-            ref h = _helpers[i];
-            if (h.index == index)
+            if (_helpers[i].target == target)
                 return i;
-        }
 
-        fail("No helper for index: " ~ index);
+        fail("No helper for target: " ~ target);
     }
 
 
@@ -1376,35 +1364,12 @@ pub fn solve(
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
-        let helpers0 = _helpers.len;
-        defer {
-            Scope_pop(_scope, scope0);
-            _helpers.shrink(helpers0);
-        }
+        defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
-        mut HACK_CanContinue: string[]; /////////////////////////////////////////////
-        /////////////////////////////////////////////////////////////////////////////
-        // TODO FIX this is shit ALSO you can't continue a labelled block ///////////
-        if (!id) _scope.items.each(_ss.items, start: _root_scope.items_len, |item| //
-        {   /////////////////////////////////////////////////////////////////////////
-            if (item.id.starts(with: "L ")) // WTF clean this up ////////////////////
-            {
-                let s = GET(item.target).status;
-                if (s & SS_CONTINUE_OK)
-                    HACK_CanContinue.set::rem(item.id);
-                else if (s & SS_BREAK_OK)
-                    HACK_CanContinue.set::add(item.id);
-            }
-        });
-
-        //
-        let label = (id || HACK_CanContinue) && Scope_addLabel(id, id ? SS_BREAK_OK : SS_CONTINUE_OK);
-        if (label)
-            _helpers ~= Helpers(:label.index);
-
-        for (mut i = 0; i < HACK_CanContinue.len; i++)
-            Scope_set(_scope, HACK_CanContinue[i], label);
+        let brk_idx  = _helpers.len;
+        _helpers    ~= Helpers(:id, local_of: _current_fn.target.index, mask: HM_Jump);
+        let NOCHANGE = Scope_snap(_scope);
 
         //
         let expr  = !type.is_void;
@@ -1417,15 +1382,17 @@ pub fn solve(
             statements:         true);
 
         // Compact + stress test.
-        if (!label && items.len == 1 && Scope_snap(_scope) == scope0)
+        let label_used = _helpers[brk_idx].target;
+        if (!label_used && items.len == 1 && Scope_snap(_scope) == NOCHANGE)
             return items[0];
 
         // Control flow.
-        shadow let type = expr && items.len || items.if_last.type.is_never && !(label && GET(label).status & SS_HAS_BREAK)
+        shadow let type = expr && items.len || items.if_last.type.is_never && !label_used
             ? items.last.type
             : t_void;
 
-        return createBlock(:token, :type, :items, :label);
+        return createBlock(:token, :type, :items,
+            label: label_used && Target(:module.modid, label_used));
     }
 
     fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
@@ -1802,6 +1769,8 @@ pub fn solve(
                 ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
                 ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
                 ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
+
+                ScopeSkip_push(_ss.helpers,  start: start.helpers_len,  end: scope0.helpers_len);
             }
 
             // We'll need the original imports in scope
@@ -2037,15 +2006,13 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
-            let helpers0 = _helpers.len;
-            _helpers ~= Helpers(:target.index);
+            _helpers ~= Helpers(target: target.index, local_of: -1);
 
             SWAP(_current_fn, out);
 
             defer {
                 SWAP(_current_fn, out);
                 _root_scope = root_scope0;
-                _helpers.shrink(helpers0);
             }
 
 
@@ -2606,15 +2573,12 @@ pub fn solve(
 
         if (node.kind == "break" || node.kind == "continue")
         {
-            let dest = Scope_lookupLabel(node.value,
-                node.kind == "break" ? SS_BREAK_OK : SS_CONTINUE_OK);
+            let dest = Scope_lookupLabel(
+                node.value, cont: node.kind == "continue");
 
             ref label = GET_mut(dest);
-            label.status |=
-                node.kind == "break" ? SS_HAS_BREAK : SS_HAS_CONTINUE;
-
             if (label.local_of != _current_fn.target.index)
-                fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`.");
+                fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`: jumps into " ~ label.local_of ~ " from " ~ _current_fn.target.index);
 
             target.left = dest.index;
         }
@@ -2777,38 +2741,37 @@ pub fn solve(
 
     // Loops.
 
-    fn LabelID(id: string) "L " ~ id;
-
-    fn Scope_addLabel(id: string, status: u32, anonOK?!: bool): Target
+    fn Scope_addLabel(id: string, local_of!: i32): Target
     {
-        let label = Scope_create(_scope, "label",
+        return Scope_create(_scope, "label",
             name: id || "" ~ _scope.items.len,
-            type: Type, flags: F_SHADOW,
-            local_of: _current_fn.target.index, :status);
-
-        Scope_set(_scope, id: LabelID(id), label);
-        if (anonOK && id)
-            Scope_set(_scope, id: LabelID(""), label);
-
-        return label;
+            type: Type, flags: F_SHADOW, :local_of);
     }
 
-    fn Scope_lookupLabel(mut id: string, match: u32): Target
+    fn Scope_lookupLabel(mut id: string, cont!: bool): Target
     {
-        id = LabelID(id);
-
-        mut scope_iterator: i32;
-        mut overloadIdx: Target;
-
-        while (overloadIdx = _scope.items.search(
-            id, scope_iterator, scope_skip: _ss.items))
+        // TODO use scopeskips here
+        for (mut i = _helpers.len; i --> 0; )
         {
-            let o = GET(overloadIdx);
-            if (o.kind == "label" && o.status & match)
-                return overloadIdx;
+            let item = _helpers[i];
+            if !(item.mask & HM_Jump)
+                continue;
+            if !(id ? item.id == id : item.mask & HM_Anon != 0)
+                continue;
+
+            if (cont)
+            {
+                i++;
+                i < _helpers.len || fail(
+                    "Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
+            }
+
+            shadow ref item = _helpers[i];
+            return Target(:module.modid,
+                item.target ||= Scope_addLabel(item.id, :item.local_of).index);
         }
 
-        return fail("No label `" ~ id ~ "` in scope.");
+        fail("No label `" ~ id ~ "` in scope.");
     }
 
     fn solveArgID(node: Node, type: Type): SolvedNode
@@ -2821,18 +2784,14 @@ pub fn solve(
     {
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
-        let helpers0 = _helpers.len;
-        defer {
-            Scope_pop(_scope, scope0);
-            _helpers.shrink(helpers0);
-        }
+        defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
         // TODO really consider getting rid of this,
         //  ideally we'll only have labels on blocks -
         //   the continues-map-to-inner-block thing.
-        let label       = Scope_addLabel(node.value, anonOK: true, status: SS_BREAK_OK | SS_CONTINUE_OK);
-        _helpers       ~= Helpers(:label.index);
+        let brk_idx     = _helpers.len;
+        _helpers       ~= Helpers(id: node.value, mask: HM_Anon|HM_Jump|HM_Loop, local_of: _current_fn.target.index);
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
@@ -2842,18 +2801,20 @@ pub fn solve(
 
         let init        = n_init      && solveLetStatement(n_init);
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
-        let body        = n_body      && solveNode(n_body,      t_void);
+        let body        = n_body      && solveBlock(n_body, type: t_void);
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
         let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
-        let type        = !pre_cond && !post_cond && !(GET(label).status & SS_HAS_BREAK)
+        let label_used  = _helpers[brk_idx].target;
+        let type        = !pre_cond && !post_cond && !label_used
                             ? t_never
                             : t_void;
 
         return emitStatement(
             solved(node, type,
-                [ init, pre_cond, body, post_cond, post ]));
+                [ init, pre_cond, body, post_cond, post ],
+                    target: label_used && Target(:module.modid, label_used)));
     }
 
 

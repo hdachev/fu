@@ -533,7 +533,7 @@ pub fn cpp_codegen(
         mut trail   = "";
 
         let lbl     = label && GET(label);
-        let name    = lbl.status & (SS_HAS_BREAK | SS_HAS_CONTINUE) && lbl.name;
+        let name    = lbl.name;
 
         // Blockvals!
         if (type && !type.is_void)
@@ -550,19 +550,22 @@ pub fn cpp_codegen(
                 trail  ~= "&";
         }
 
-        // Block label & retval.
-        if (lbl.status & (SS_HAS_BREAK | SS_HAS_CONTINUE))
-        {
-            open = "{ {";
-            if (lbl.status & SS_HAS_BREAK)
-                close   = "  } L_" ~ name ~ "_b:;" ~ indent0 ~ close;
-            if (lbl.status & SS_HAS_CONTINUE)
-                close   = "  } L_" ~ name ~ "_c:;" ~ indent0 ~ close;
-        }
-
         //
         mut count: i32;
         mut src = cgStatements(nodes, :count, :trail);
+
+        // Block label & retval.
+        if (lbl.name)
+        {
+            let prefixed_id = "L_" ~ name;
+            if (src.has(prefixed_id))
+            {
+                close = "  } " ~ prefixed_id ~ ":;" ~ indent0 ~ close;
+                open  = "{ {";
+            }
+        }
+
+        //
         if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
@@ -908,7 +911,7 @@ pub fn cpp_codegen(
             // Break with value.
             if (node.kind != "return")
                 return "{ L_" ~ dest.name ~ "_v = " ~ cgNode(head)
-                     ~ "; goto L_" ~ dest.name ~ "_" ~ node.kind[0] ~ "; }";
+                     ~ "; goto L_" ~ dest.name ~ "; }";
 
             // [[noreturns]] shouldn't have return statements,
             //  but regular fns should return the output of [[noreturns]]
@@ -936,7 +939,7 @@ pub fn cpp_codegen(
 
         // `goto X;`
         if (node.value)
-            return "goto L_" ~ dest.name ~ "_" ~ node.kind[0];
+            return "goto L_" ~ dest.name;
 
         // `break/continue`
         return node.kind;
@@ -1650,11 +1653,7 @@ pub fn cpp_codegen(
 
         if (body && node.value)
         {
-            let brk = "L_" ~ node.value ~ "_b";
-            let cnt = "L_" ~ node.value ~ "_c";
-
-            if (body.has(cnt))
-                body = "{" ~ postfixBlock(body, _indent ~     "    }" ~ cnt ~ ":;");
+            let brk = "L_" ~ node.value;
             if (body.has(brk))
                 breakLabel = _indent ~ "    " ~ brk ~ ":;";
         }

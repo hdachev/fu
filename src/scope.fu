@@ -13,10 +13,9 @@ pub let SS_TYPE_RECUR   = 0x1 << 16;
 pub let SS_FN_RECUR     = 0x1 << 17;
 // ...
 
-pub let SS_HAS_BREAK    = 0x1 << 24;
-pub let SS_HAS_CONTINUE = 0x1 << 25;
-pub let SS_BREAK_OK     = 0x1 << 26;
-pub let SS_CONTINUE_OK  = 0x1 << 27;
+pub let HM_Jump         = 1.i16 << 0;
+pub let HM_Anon         = 1.i16 << 1;
+pub let HM_Loop         = 1.i16 << 2;
 
 
 // Build service primitives.
@@ -90,6 +89,7 @@ pub struct ScopeMemo
     imports_len:    i32;
     usings_len:     i32;
     converts_len:   i32;
+    helpers_len:    i32;
 };
 
 pub struct SolvedNode
@@ -117,6 +117,8 @@ pub struct ScopeSkipMemos
     imports:    ScopeSkip[];
     usings:     ScopeSkip[];
     converts:   ScopeSkip[];
+
+    helpers:    ScopeSkip[];
 };
 
 pub struct Template
@@ -178,6 +180,18 @@ pub struct Overload
     extra_items?: ScopeItem[];
 };
 
+pub struct Helpers
+{
+    target?!:       i32;
+    id?:            string;
+    mask?!:         i16;
+    local_of?!:     i32;
+
+    ret_expect?:    Type;
+    ret_actual?:    Type;
+    returns?:       i32[];
+};
+
 pub struct ScopeItem
 {
     id:         string;
@@ -192,7 +206,6 @@ pub nocopy struct Scope
     usings:     i32[];
     converts:   Target[];
 };
-
 
 
 
@@ -430,26 +443,29 @@ pub fn search(
 
 ////////////////////////////////
 
-pub fn Scope_snap(scope: &mut Scope)
+pub fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
     ScopeMemo(
         items_len:    scope.items   .len,
         imports_len:  scope.imports .len,
         usings_len:   scope.usings  .len,
-        converts_len: scope.converts.len);
+        converts_len: scope.converts.len,
+        helpers_len:       _helpers .len);
 
-pub fn Scope_pop(scope: &mut Scope, memo: ScopeMemo)
+pub fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo)
 {
     scope.items   .shrink(memo.items_len);
     scope.imports .shrink(memo.imports_len);
     scope.usings  .shrink(memo.usings_len);
     scope.converts.shrink(memo.converts_len);
+    _helpers      .shrink(memo.helpers_len);
 }
 
 fn cmp(a: ScopeMemo, b: ScopeMemo)
     a.items_len     - b.items_len     ||
     a.imports_len   - b.imports_len   ||
     a.usings_len    - b.usings_len    ||
-    a.converts_len  - b.converts_len;
+    a.converts_len  - b.converts_len  ||
+    a.helpers_len   - b.helpers_len;
 
 pub fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
 pub fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
