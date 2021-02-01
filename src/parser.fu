@@ -56,7 +56,7 @@ pub let F_NAMED_ARGS    = 1 << 24;
 let     F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
-// ... 30
+pub let F_LAMBDA        = 1 << 30;
 pub let F_SINGLE_STMT   = 1 << 31;
 
 
@@ -616,7 +616,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
         return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
-            flags: F_INLINE | F_TEMPLATE, expr: true, :name);
+            flags: F_INLINE | F_TEMPLATE | F_LAMBDA, expr: true, :name);
     }
 
     fn parseFnDecl(mut flags?: i32, expr?!: bool): Node

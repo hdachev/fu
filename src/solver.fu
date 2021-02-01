@@ -2006,7 +2006,8 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
-            _helpers ~= Helpers(target: target.index, local_of: -1);
+            _helpers ~= Helpers(target: target.index, local_of: -1,
+                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
             SWAP(_current_fn, out);
 
@@ -2305,7 +2306,7 @@ pub fn solve(
         mut structImports:  i32[];
 
         // Struct members, pass 0.
-        let members = node.items.map(|shadow node|
+        fn solveMember(shadow node: Node)
         {
             node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
 
@@ -2314,8 +2315,11 @@ pub fn solve(
                 fail("All structs must be zerofilled by default."
                     ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
+            // Can't continue/return back/fwd compat.
             return solveLetLike_dontTouchScope(node);
-        });
+        }
+
+        let members = node.items.map(fn solveMember);
 
         // (Re)poplate fields.
         {
@@ -2568,10 +2572,16 @@ pub fn solve(
 
     fn solveJump(node: Node): SolvedNode
     {
-        mut target: Target;
-        target.left = _current_fn.target.index;
+        mut target: Target(-1, -1);
 
-        if (node.kind == "break" || node.kind == "continue")
+        if (node.kind == "return")
+        {
+            let dest = Scope_lookupReturn(node.value,
+                lambdaOK: !!(node.flags & F_SINGLE_STMT));
+
+            target.left = dest.index;
+        }
+        else
         {
             let dest = Scope_lookupLabel(
                 node.value, cont: node.kind == "continue");
@@ -2748,22 +2758,58 @@ pub fn solve(
             type: Type, flags: F_SHADOW, :local_of);
     }
 
-    fn Scope_lookupLabel(mut id: string, cont!: bool): Target
+    fn Scope_lookupReturn(id: string, lambdaOK: bool): Target
     {
         // TODO use scopeskips here
         for (mut i = _helpers.len; i --> 0; )
         {
             let item = _helpers[i];
-            if !(item.mask & HM_Jump)
+            if !(item.mask & HM_Function)
                 continue;
+            if (item.mask & HM_Lambda && !lambdaOK)
+                continue;
+            if (id && item.id != id)
+                continue;
+
+            return Target(:module.modid, item.target);
+        }
+
+        fail("No return `" ~ id ~ "` in scope.");
+    }
+
+    fn Scope_lookupLabel(id: string, cont!: bool): Target
+    {
+        // TODO use scopeskips here
+        for (mut i = _helpers.len; i --> 0; )
+        {
+            let item = _helpers[i];
+
+            if !(item.mask & HM_Jump)
+            {
+                if (id || !(item.mask & HM_Lambda))
+                    continue;
+
+                // Lambda break & continue.
+                if !(cont)
+                {
+                    /////////////////////////////////////////////////
+                    fail("TODO ensure break labels around lambdas.");
+                    /////////////////////////////////////////////////
+
+                    i--;
+                    i >= 0 || fail("Cannot break to label `" ~ id ~ "` from here, did you mean to `continue`?");
+                }
+
+                return Target(:module.modid, item.target);
+            }
+
             if !(id ? item.id == id : item.mask & HM_Anon != 0)
                 continue;
 
             if (cont)
             {
                 i++;
-                i < _helpers.len || fail(
-                    "Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
+                i < _helpers.len || fail("Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
             }
 
             shadow ref item = _helpers[i];
