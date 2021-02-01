@@ -4853,24 +4853,24 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int sum = 0;
-    for (int y = 1; y < 10; y++){
-    {
+    for (int y = 1; y < 10; y++)
+    { {
         sum += (y * 10);
         for (int x = 1; x < 10; x++)
         {
             sum += x;
             if (y == 1)
             {
-                goto L_outer_c;
+                goto L_162;
             };
             if (x == 2)
             {
-                goto L_outer_b;
+                goto L_outer;
             };
         };
-
-        }L_outer_c:;}
-        L_outer_b:;
+      } L_162:;
+    }
+        L_outer:;
 
     return sum - 34;
 }
@@ -4909,13 +4909,13 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int sum = 0;
-    for (int x = 0; ; x++){
-    {
+    for (int x = 0; ; x++)
+    { {
         for (int y = 0; y < x; y++)
         {
             if ((y & 1) && !(x & 1))
             {
-                goto L_outer_c;
+                goto L_162;
             };
             sum += x;
         };
@@ -4924,8 +4924,8 @@ int fu_MAIN()
         {
             break;
         };
-
-        }L_outer_c:;};
+      } L_162:;
+    };
     return sum - 4312;
 }
 
@@ -14775,17 +14775,17 @@ static int test(const int x)
         { {
             if (x > 1)
             {
-                goto L_outer_b;
+                goto L_outer;
             };
             if (x > 0)
             {
-                goto L_inner_b;
+                goto L_inner;
             };
             return 2;
-          } L_inner_b:;
+          } L_inner:;
         };
         return 1;
-      } L_outer_b:;
+      } L_outer:;
     };
     return 0;
 }
@@ -14825,13 +14825,13 @@ static int test(const int x)
     { {
         if (x & 1)
         {
-            { L_BLOCK_v = 1; goto L_BLOCK_b; };
+            { L_BLOCK_v = 1; goto L_BLOCK; };
         };
         if (x & 2)
             return 2;
 
         L_BLOCK_v = (3);
-      } L_BLOCK_b:;
+      } L_BLOCK:;
     }), int(L_BLOCK_v));
 }
 
@@ -14876,17 +14876,17 @@ static int test(const int a)
             { {
                 if (a & 1)
                 {
-                    goto L_INNER_b;
+                    goto L_INNER;
                 }
                 else
                 {
-                    goto L_OUTER_b;
+                    goto L_OUTER;
                 };
-              } L_INNER_b:;
+              } L_INNER:;
             };
             _0 = (5);
         }), int(_0));
-      } L_OUTER_b:;
+      } L_OUTER:;
     };
     return w;
 }
@@ -14925,24 +14925,24 @@ static int v(const int x)
     int L_BLOCK_v {};
     return (__extension__ (
     { {
-        int L_162_v {};
+        int L_161_v {};
         L_BLOCK_v = ((5000 + (__extension__ (
         { {
             if (x == 9)
             {
-                { L_162_v = 2000; goto L_162_c; };
+                { L_161_v = 2000; goto L_161; };
             };
             if (x == 8)
                 return 300;
 
             fu::never _0 {};
-            L_162_v = (((x == 7) ? (__extension__ (
+            L_161_v = (((x == 7) ? (__extension__ (
             {
-                { L_BLOCK_v = 40; goto L_BLOCK_b; };
+                { L_BLOCK_v = 40; goto L_BLOCK; };
             }), static_cast<fu::never&&>(_0)) : 5));
-          } L_162_c:;
-        }), int(L_162_v))));
-      } L_BLOCK_b:;
+          } L_161:;
+        }), int(L_161_v))));
+      } L_BLOCK:;
     }), int(L_BLOCK_v));
 }
 
