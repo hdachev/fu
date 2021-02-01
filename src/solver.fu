@@ -2760,9 +2760,22 @@ pub fn solve(
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): Target
     {
-        // TODO use scopeskips here
+        //////////////////////////////////////////
+        let ss  = _ss.helpers;                  //
+        mut ssi = ss.len - 1;                   //
+        mut ssN = ssi >= 0 && ss[ssi].end - 1;  //
+        //////////////////////////////////////////
+
         for (mut i = _helpers.len; i --> 0; )
         {
+            //////////////////////////////////////////
+            if (ssi >= 0 && i == ssN) {             //
+                i   = ss[ssi--].start;              //
+                ssN = ssi >= 0 && ss[ssi].end - 1;  //
+                continue;                           //
+            }                                       //
+            //////////////////////////////////////////
+
             let item = _helpers[i];
             if !(item.mask & HM_Function)
                 continue;
@@ -2779,11 +2792,23 @@ pub fn solve(
 
     fn Scope_lookupLabel(id: string, cont!: bool): Target
     {
-        // TODO use scopeskips here
+        //////////////////////////////////////////
+        let ss  = _ss.helpers;                  //
+        mut ssi = ss.len - 1;                   //
+        mut ssN = ssi >= 0 && ss[ssi].end - 1;  //
+        //////////////////////////////////////////
+
         for (mut i = _helpers.len; i --> 0; )
         {
-            let item = _helpers[i];
+            //////////////////////////////////////////
+            if (ssi >= 0 && i == ssN) {             //
+                i   = ss[ssi--].start;              //
+                ssN = ssi >= 0 && ss[ssi].end - 1;  //
+                continue;                           //
+            }                                       //
+            //////////////////////////////////////////
 
+            let item = _helpers[i];
             if !(item.mask & HM_Jump)
             {
                 if (id || !(item.mask & HM_Lambda))
