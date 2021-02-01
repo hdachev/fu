@@ -21,7 +21,7 @@ void cow_vec_test(int cap0, int cap1)
         v0.push( T(i) );
 
     //
-    vec v1 = v0;
+    vec v1 = vec(v0);
 
     assert(v1.shared_capa() == v0.shared_capa());
 
@@ -34,7 +34,7 @@ void cow_vec_test(int cap0, int cap1)
     assert(v1.data() != v0.data() && (shared_capa1 == shared_capa0 || shared_capa1 <= (v1.size() + HEADER) * 2 || shared_capa0 <= SMALL_CAPA));
 
     //
-    vec v2 = v1;
+    vec v2 = vec(v1);
 
     assert( v2.size() == v1.size()
         && (v2.data() == v1.data() || v2.size() <= SMALL_CAPA)
@@ -48,7 +48,7 @@ void cow_vec_test(int cap0, int cap1)
         && v2.size() == 0);
 
     {
-        v2 = v0;
+        v2 = vec(v0);
         v2.pop();
 
         int s0 = v0.size();
@@ -58,7 +58,7 @@ void cow_vec_test(int cap0, int cap1)
     }
 
     {
-        v2 = v0;
+        v2 = vec(v0);
         v2.shift();
 
         int s0 = v0.size();
@@ -68,7 +68,7 @@ void cow_vec_test(int cap0, int cap1)
     }
 
     {
-        v2 = v0;
+        v2 = vec(v0);
         v2.splice(1, 1);
 
         int s0 = v0.size();
@@ -78,7 +78,7 @@ void cow_vec_test(int cap0, int cap1)
     }
 
     {
-        v2 = v0;
+        v2 = vec(v0);
         int s0 = v2.size();
         assert(v2.data() == v0.data() || v2.size() <= SMALL_CAPA);
 
@@ -86,7 +86,7 @@ void cow_vec_test(int cap0, int cap1)
         int s1 = v2.size();
         assert(v2.data() != v0.data());
 
-        v2 = v2;
+        v2 = vec(v2);
         int s2 = v2.size();
 
         v2 += v2;
@@ -101,7 +101,7 @@ void cow_vec_test(int cap0, int cap1)
             assert(a == b && b == c && a == i);
         }
 
-        v2 = v0;
+        v2 = vec(v0);
         v2.splice(0, 0, v2);
         int s4 = v2.size();
         assert(s3 == s4);
@@ -114,7 +114,7 @@ void cow_vec_test(int cap0, int cap1)
             assert(a == b && b == c && a == i);
         }
 
-        v2 = v0;
+        v2 = vec(v0);
         v2.splice(1, 0, v2);
         int s5 = v2.size();
         assert(s4 == s5);
@@ -131,7 +131,7 @@ void cow_vec_test(int cap0, int cap1)
     }
 
     //
-    v2 = v1;
+    v2 = vec(v1);
     assert(v2[1] == v1[1]);
     assert(v2.data() == v1.data() || v2.size() <= SMALL_CAPA);
 
@@ -153,7 +153,7 @@ void cow_vec_test(int cap0, int cap1)
         assert(v1[i] == v2[i]);
 
     //
-    v2 = v1;
+    v2 = vec(v1);
     v2.pop();
     assert(v2.size() == v1.size() - 1);
 
