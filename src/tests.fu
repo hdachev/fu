@@ -28,7 +28,7 @@ pub fn self_test(): i32
     return cpp.find("int main()") ? 0 : 101;
 }
 
-pub fn TODO(src: string)
+fn TODO(src: string)
 {
     try {
         snippet2cpp(src);
@@ -41,7 +41,7 @@ pub fn TODO(src: string)
     throw("TODO test is actually passing: " ~ src);
 }
 
-pub fn TODO(src: string[])
+fn TODO(src: string[])
 {
     try {
         compile_snippets(src);
@@ -53,6 +53,9 @@ pub fn TODO(src: string[])
 
     throw("TODO test is actually passing: " ~ src.join("\n\n"));
 }
+
+fn SKIP(src: string)    = println("  SKIP:\n", src);
+fn SKIP(src: string[])  = println("  SKIP:\n", src.join("\n\n"));
 
 
 // Run the whole battery & build self.
@@ -2375,6 +2378,20 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct ScopeSkip {
+            min: i32;
+            max: i32;
+        };
+
+        fn main() {
+            let a = 1;
+            mut x: ScopeSkip; x = [ -2, 0 ]; // Inference fail.
+            mut t: ScopeSkip; t = x.min && [ x.min, a ];
+            return a + t.min + t.max;
+        }
+    `);
+
 
     // Let's try something new.
 
@@ -4346,7 +4363,7 @@ pub fn runTests()
         fn main() 9.v + 8.v + 7.v + 6.v      - 12345;
     `);
 
-    TODO(`
+    SKIP(`
         fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
@@ -4359,7 +4376,7 @@ pub fn runTests()
         fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
     `);
 
-    TODO(`
+    SKIP(`
         fn outer() {
             mut sum = 0;
 
@@ -4380,7 +4397,7 @@ pub fn runTests()
         fn main() outer - 42; // extra points for style
     `);
 
-    TODO(`
+    SKIP(`
         fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
@@ -4396,7 +4413,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKIP(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4408,7 +4425,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKIP(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4420,7 +4437,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKIP(`
         fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);
@@ -4444,7 +4461,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKIP(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4567,23 +4584,6 @@ pub fn runTests()
     //
     //     fn main()
     //         TODO;
-    // `);
-
-
-    // We have to deduce the rh-types from the assignment calls.
-    //
-    // ZERO(`
-    //     struct ScopeSkip {
-    //         min: i32;
-    //         max: i32;
-    //     };
-    //
-    //     fn main() {
-    //         let a = 1;
-    //         mut x: ScopeSkip; x = [ -2, 0 ];
-    //         mut t: ScopeSkip; t = x.min && [ x.min, a ];
-    //         return a + t.min + t.max;
-    //     }
     // `);
 
     ////////////////////////////////////////////////
