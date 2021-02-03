@@ -2756,6 +2756,51 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        //! FN_recursion FN_resolve
+        fn hello(ref a: i32[], ref b: i32[], x: i32): &mut i32[] {
+            if (x == 0) return a;
+            if (x == 1) return b;
+            return hello(b, a, x / 17);
+        }
+
+        fn main() {
+            mut a = [1, 2, 3];
+            mut b = [4, 5, 6];
+            hello(a, b, 397)[1] *= 5;
+            return b[1] - 25;
+        }
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<int>& hello(fu_VEC<int>& a, fu_VEC<int>& b, const int x)
+{
+    if (x == 0)
+        return a;
+
+    if (x == 1)
+        return b;
+
+    return hello(b, a, (x / 17));
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<3> { 4, 5, 6 } };
+    hello(a, b, 397).mutref(1) *= 5;
+    return b.mutref(1) - 25;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let x = 1;
 
         fn test(): &i32
