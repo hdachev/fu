@@ -171,12 +171,6 @@ pub fn solve(
 
     //
 
-    fn Lifetime_DISABLE_BORROW_CHECKER(): Lifetime =
-        Lifetime();
-
-    fn Lifetime_FN_unorderedPrep(): Lifetime =
-        Lifetime();
-
     fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
     {
         sig.len + FN_ARGS_BACK == args.len || fail("sig.len != args.len");
@@ -235,6 +229,9 @@ pub fn solve(
             let debug_2     = current_fn && GET(current_fn);
             if (debug_2) {}
 
+            if !(lifetime.uni0n.len)
+                fail("Lifetime_test: no region set.");
+
             mut _last: Region;
             for (mut i = 0; i < lifetime.uni0n.len; i++)
             {
@@ -291,7 +288,7 @@ pub fn solve(
         // Alias?
         let isArg = flags & F_ARG;
         if (!isArg && type.is_ref)
-            return Lifetime_test(type.lifetime || fail("ref: bad ref/lifetime"));
+            return Lifetime_test(type.lifetime);
 
         // Argument?
         let index       = target.index;
@@ -350,9 +347,7 @@ pub fn solve(
             }
         }
 
-        return Lifetime_test(
-            Lifetime_union(keep, replace),
-            tempsOK: true);
+        return Lifetime_union(keep, replace);
     }
 
 
@@ -420,9 +415,13 @@ pub fn solve(
         {
             let lifetime = Lifetime_fromBinding(target, flags, type);
 
-            // Throw away argument lifetime, union below will fix it up.
-            if (flags & F_ARG)
-                type.lifetime = Lifetime_DISABLE_BORROW_CHECKER();
+            ///////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////
+            // Throw away argument lifetime, union below will fix it up. //
+            if (flags & F_ARG) ////////////////////////////////////////////
+                type.lifetime = Lifetime(); ///////////////////////////////
+            ///////////////////////////////////////////////////////////////
 
             overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
@@ -2056,7 +2055,7 @@ pub fn solve(
             {
                 ret_seed.lifetime = native
                     ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK], ret_seed)
-                    : Lifetime_FN_unorderedPrep();
+                    : Lifetime_static(); // we'll overpromise during prep
             }
             else if (ret_seed.is_ref)
             {
@@ -2098,6 +2097,9 @@ pub fn solve(
                 let closure0    = overload.closes_over.len;
 
                 overload.type   = retval || fail("FnDecl_update: no return type.");
+                if (retval.is_ref)
+                    Lifetime_test(retval.lifetime);
+
                 overload.min    = min;
                 overload.max    = max;
                 overload.args   = args;
@@ -2118,9 +2120,6 @@ pub fn solve(
 
                     overload.closes_over = closes_over;
                 }
-
-                // Test.
-                Lifetime_test(retval.lifetime);
 
                 if (overload.used_by)
                 {
@@ -3868,7 +3867,10 @@ pub fn solve(
                     args[i] || fail(), host_args[i].type,
                     isArgument: true);
 
-            type.lifetime = Lifetime_replaceArgsAtCallsite(overload, args);
+            if (type.is_ref)
+                type.lifetime = Lifetime_test(
+                    Lifetime_replaceArgsAtCallsite(overload, args),
+                    tempsOK: true);
         }
 
         // Track deps.
