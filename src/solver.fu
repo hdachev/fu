@@ -108,15 +108,6 @@ pub fn solve(
 
     let implicit mut _helpers: Helpers[];
 
-    fn findHelpers(target: i32)
-    {
-        for (mut i = _helpers.len; i --> 0; )
-            if (_helpers[i].target == target)
-                return i;
-
-        fail("No helper for target: " ~ target);
-    }
-
 
     //
 
@@ -2006,6 +1997,7 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
+            let helpers_idx = _helpers.len;
             _helpers ~= Helpers(target: target.index, local_of: -1,
                 mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
@@ -2166,7 +2158,7 @@ pub fn solve(
             let firstIteration = !GET(target).solved;
             if (firstIteration)
             {
-                resetReturns(ret_actual: ret_seed);
+                resetReturns(:helpers_idx, ret_actual: ret_seed);
 
                 // Previously initScope:
                 {
@@ -2218,9 +2210,9 @@ pub fn solve(
             mut retval = ret_seed;
             if (!native)
             {
-                resetReturns(:ret_expect);
+                resetReturns(:helpers_idx, :ret_expect);
                 let s_body = solveNode(n_body, type: t_void);
-                retval = finalizeReturns(s_body.type);
+                retval = finalizeReturns(:helpers_idx, s_body.type);
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2573,18 +2565,22 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         mut target: Target(-1, -1);
+        mut helpers_idx: i32;
 
-        if (node.kind == "return")
+        let isReturn = node.kind == "return";
+        if (isReturn)
         {
             let dest = Scope_lookupReturn(node.value,
-                lambdaOK: !!(node.flags & F_SINGLE_STMT));
+                lambdaOK: !!(node.flags & F_SINGLE_STMT),
+                    :helpers_idx);
 
             target.left = dest.index;
         }
         else
         {
             let dest = Scope_lookupLabel(
-                node.value, cont: node.kind == "continue");
+                node.value, cont: node.kind == "continue",
+                    :helpers_idx);
 
             ref label = GET_mut(dest);
             if (label.local_of != _current_fn.target.index)
@@ -2593,13 +2589,10 @@ pub fn solve(
             target.left = dest.index;
         }
 
-        ///////////////////////
-        let hidx = findHelpers(target.left);
-        fn h() _helpers[hidx];
-        ///////////////////////
-
         fn reportReturnType(type: Type)
         {
+            ref h = _helpers[helpers_idx];
+
             // Check annot.
             if (h.ret_expect)
                 checkAssignable(host: h.ret_expect, type,
@@ -2624,6 +2617,10 @@ pub fn solve(
 
 
         // We'll detach the return expression for further fiddling elsewhere.
+
+        /////////////////////////////
+        fn h() _helpers[helpers_idx];
+        /////////////////////////////
 
         mut expr = solveNode(
             node.items.only,
@@ -2670,23 +2667,17 @@ pub fn solve(
             solved(node, t_never, :target));
     }
 
-    fn resetReturns(ret_actual?!: Type, ret_expect?!: Type)
+    fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)
     {
-        ///////////////////////
-        let hidx = findHelpers(_current_fn.target.index);
-        ref h = _helpers[hidx];
-        ///////////////////////
+        ref h = _helpers[helpers_idx];
 
         h.ret_actual = ret_actual;
         h.ret_expect = ret_expect;
     }
 
-    fn finalizeReturns(bodyType: Type)
+    fn finalizeReturns(helpers_idx: i32, bodyType: Type)
     {
-        ///////////////////////
-        let hidx = findHelpers(_current_fn.target.index);
-        ref h = _helpers[hidx];
-        ///////////////////////
+        ref h = _helpers[helpers_idx];
 
         // Not a single return statement = return void.
         h.ret_actual ||= t_void;
@@ -2758,7 +2749,7 @@ pub fn solve(
             type: Type, flags: F_SHADOW, :local_of);
     }
 
-    fn Scope_lookupReturn(id: string, lambdaOK: bool): Target
+    fn Scope_lookupReturn(ref helpers_idx: i32, id: string, lambdaOK: bool): Target
     {
         //////////////////////////////////////////
         let ss  = _ss.helpers;                  //
@@ -2784,13 +2775,14 @@ pub fn solve(
             if (id && item.id != id)
                 continue;
 
+            helpers_idx = i;
             return Target(:module.modid, item.target);
         }
 
         fail("No return `" ~ id ~ "` in scope.");
     }
 
-    fn Scope_lookupLabel(id: string, cont!: bool): Target
+    fn Scope_lookupLabel(ref helpers_idx: i32, id: string, cont!: bool): Target
     {
         //////////////////////////////////////////
         let ss  = _ss.helpers;                  //
@@ -2807,6 +2799,9 @@ pub fn solve(
                 continue;                           //
             }                                       //
             //////////////////////////////////////////
+
+            // TODO Inject before each return statement, but not before other jumps.
+            defer/*:ok:return*/ helpers_idx = i;
 
             let item = _helpers[i];
             if !(item.mask & HM_Jump)
