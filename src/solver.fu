@@ -1977,10 +1977,6 @@ pub fn solve(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
-            let inItems = n_fn.items;
-            out.items = into && GET(into).solved.items;
-            out.items.resize(inItems.len);
-
             // Propagate "templateness" TODO why do we do this?
             //  Currently porting this just to avoid triggering NOWRITES.
             if (parent_idx && !(out.flags & F_TEMPLATE))
@@ -2010,7 +2006,12 @@ pub fn solve(
 
 
             /////////////////////////////////
-            ref outItems = _current_fn.items;
+            shadow ref outItems = _current_fn.items;
+            if (into)
+                outItems = GET(into).solved.items;
+
+            let inItems = n_fn.items;
+            outItems.resize(inItems.len);
 
             // Arg decls.
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
