@@ -2633,7 +2633,8 @@ pub fn solve(
             {
                 if (ltCompare > 0)
                 {
-                    let nrvo = expr.kind == "call"
+                    let nrvo = isReturn
+                            && expr.kind == "call"
                             && expr.items.len == 0
                             && expr.target.GET.kind == "var";
 
