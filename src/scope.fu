@@ -19,6 +19,7 @@ pub let HM_Loop         = 1.i16 << 2;
 // ...
 pub let HM_Function     = 1.i16 << 3;
 pub let HM_Lambda       = 1.i16 << 4;
+pub let HM_Struct       = 1.i16 << 5;
 
 
 // Build service primitives.

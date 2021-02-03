@@ -86,6 +86,7 @@ pub fn solve(
     mut _root_scope:    ScopeMemo;
     mut _ss:            ScopeSkipMemos;
     mut _field_items:   ScopeItem[];
+    mut _notes:         i32;
 
     struct CurrentFn_ResetOnResolve
     {
@@ -102,29 +103,15 @@ pub fn solve(
     };
 
     mut _current_fn:    CurrentFn;
-
-
-    // Moving solve-only stuff from scope & current-fn above here.
-
-    let implicit mut _helpers: Helpers[];
-
-
-    //
-
-    mut notes:          i32;
-
-
-    // TODO we shouldn't need this stuff
-    //  under the new depth-first + immediately-repeat-on-dirty design.
-
-    mut _open_solves:   i32[];
-
-    type TypeParams = Map(string, Type);
+    let implicit mut
+        _helpers:       Helpers[];
 
 
     //
 
     let t_string = createArray(t_byte);
+
+    type TypeParams = Map(string, Type);
 
 
     //
@@ -1965,14 +1952,6 @@ pub fn solve(
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
-            ///////////////////////////////////////////////
-            let    open_solves0 = _open_solves.len;
-            defer _open_solves.shrink(open_solves0);
-
-            _open_solves ~= target.index || fail(
-                "__solveFn: no target: `" ~ n_fn.value ~ "`.");
-            ///////////////////////////////////////////////
-
             mut out = CurrentFn(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
@@ -2287,11 +2266,11 @@ pub fn solve(
         GET_mut(out.target).status |= SS_DID_START;
 
         ///////////////////////////////////////////////
-        let    open_solves0 = _open_solves.len;
-        defer _open_solves.shrink(open_solves0);
+        let    helpers0 = _helpers.len;
+        defer _helpers.shrink(helpers0);
 
-        _open_solves ~= out.target.index || fail(
-            "solveStruct: no out.target: `" ~ origId ~ "`.");
+        _helpers ~= Helpers(mask: HM_Struct, target: out.target.index || fail(
+            "solveStruct: no out.target: `" ~ origId ~ "`."));
         ///////////////////////////////////////////////
 
         // Struct fields only.
@@ -2496,7 +2475,7 @@ pub fn solve(
 
                     // Finally, a finalized, non-local of self,
                     //  gotta reopen & resolve now.
-                    notes |= o.kind == "type" ? N_TypeReopen : N_FnReopen;
+                    _notes |= o.kind == "type" ? N_TypeReopen : N_FnReopen;
 
                     o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
                     reopen ~= index;
@@ -2515,7 +2494,7 @@ pub fn solve(
         {
             o.status & SS_FINALIZED && fail("Stray SS_FINALIZED.");
             o.status &= ~(SS_DID_START | SS_DIRTY);
-            notes |= o.kind == "type" ? N_TypeResolve : N_FnResolve;
+            _notes |= o.kind == "type" ? N_TypeResolve : N_FnResolve;
         }
 
         //
@@ -2526,6 +2505,9 @@ pub fn solve(
         }
     }
 
+    fn isFnOrType(h: Helpers): bool
+        !!(h.mask & (HM_Function | HM_Struct));
+
     fn detectRecursion(target: Target, overload: Overload): void
     {
         if (overload.status & (SS_FINALIZED | SS_LAZY) != SS_LAZY)
@@ -2534,19 +2516,24 @@ pub fn solve(
         // TODO FIX Incorrect: fns can use other fns as type annots.
         //  We need to somehow track who depends on others for type info,
         //   and who depends on others for actual compute.
-        let note = overload.kind == "type" ? N_TypeRecursion : N_FnRecursion;
-        let status = overload.kind == "type" ? SS_TYPE_RECUR : SS_FN_RECUR;
+        let note    = overload.kind == "type" ? N_TypeRecursion : N_FnRecursion;
+        let status  = overload.kind == "type" ? SS_TYPE_RECUR   : SS_FN_RECUR;
 
-        for (mut i = _open_solves.len; i --> 0; )
+        for (mut i = _helpers.len; i --> 0; )
         {
-            let t = _open_solves[i];
-            GET_mut(Target(:module.modid, index: t)).status |= status;
-            notes |= note;
-            if (t == target.index)
+            let h = _helpers[i];
+            if !(h.isFnOrType)
+                continue;
+
+            h.mask & HM_Lambda && fail("Recursive lambda, what happened here?");
+            GET_mut(Target(:module.modid, index: h.target)).status |= status;
+            _notes |= note;
+
+            if (h.target == target.index)
                 return;
         }
 
-        fail("detectRecursion: no _open_solve entry for `" ~ overload.name ~ " (" ~ overload.status ~ ")`.");
+        fail("detectRecursion: no _helpers entry for `" ~ overload.name ~ " (" ~ overload.status ~ ")`.");
     }
 
 
@@ -3013,7 +3000,7 @@ pub fn solve(
         // Dead code elim.
         if (deadcode_on_never && init.type.is_never)
         {
-            notes |= N_DeadLet;
+            _notes |= N_DeadLet;
             return init;
         }
 
@@ -3531,7 +3518,7 @@ pub fn solve(
         // Dead code elim.
         if (args.if_last.type.is_never)
         {
-            notes |= N_DeadCall;
+            _notes |= N_DeadCall;
             return createBlock(node.token, t_never, args);
         }
 
@@ -3689,7 +3676,7 @@ pub fn solve(
         // Dead code elim.
         if (cond.type.is_never)
         {
-            notes |= N_DeadIf;
+            _notes |= N_DeadIf;
             return cond;
         }
 
@@ -3888,11 +3875,17 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (overload.kind == "fn" || overload.kind == "type")
             {
-                ref o = GET_mut(target);
-                if (_open_solves)
+                // Locate immediate caller, fn or type.
+                for (mut i = _helpers.len; i --> 0; )
                 {
-                    o.used_by.set::add(_open_solves.last);
-                    detectRecursion(target, overload);
+                    ref h = _helpers[i];
+                    if (h.isFnOrType)
+                    {
+                        ref o = GET_mut(target);
+                        o.used_by.set::add(h.target);
+                        detectRecursion(target, o);
+                        break;
+                    }
                 }
             }
 
@@ -4025,7 +4018,7 @@ pub fn solve(
                 if (deadcode_on_never && solved.type.is_never)
                 {
                     if (i < nodes.len - 1)
-                        notes |= N_DeadCode;
+                        _notes |= N_DeadCode;
 
                     break;
                 }
@@ -4123,6 +4116,6 @@ pub fn solve(
         // Run the thing.
         return SolverOutput(:root,
             scope: Scope_exports(_scope, :module.modid, _field_items),
-            :notes);
+            notes: _notes);
     }
 }
