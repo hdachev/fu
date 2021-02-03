@@ -1143,8 +1143,7 @@ pub fn cpp_codegen(
         }
 
         if (target.kind == "var" ||
-            target.kind == "arg" ||
-            target.kind == "ref")
+            target.kind == "arg")
         {
             return localID(node.target, target);
         }
@@ -1584,8 +1583,7 @@ pub fn cpp_codegen(
 
         if (t.kind == "var"     ||
             t.kind == "global"  ||
-            t.kind == "arg"     ||
-            t.kind == "ref")
+            t.kind == "arg")
         {
             return true;
         }

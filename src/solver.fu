@@ -289,8 +289,8 @@ pub fn solve(
             return Lifetime_static();
 
         // Alias?
-        if (kind == "ref")
-            return Lifetime_test(type.is_ref && type.lifetime || fail("ref: bad ref/lifetime"));
+        if (kind != "arg" && type.is_ref)
+            return Lifetime_test(type.lifetime || fail("ref: bad ref/lifetime"));
 
         // Argument?
         let index       = target.index;
@@ -373,7 +373,7 @@ pub fn solve(
                 {
                     any++;
                     let o = GET(item.target);
-                    if (o.kind == "arg" || o.kind == "ref" || o.kind == "var")
+                    if (o.kind == "arg" || o.kind == "var")
                         same++;
                 }
             },
@@ -398,7 +398,7 @@ pub fn solve(
         let local_of = !(flags & F_FIELD) && _current_fn.target.index;
         if (local_of)
         {
-            kind == "var" || kind == "arg" || kind == "ref" || fail("Nope, getting it wrong.");
+            kind == "var" || kind == "arg" || fail("Nope, getting it wrong.");
             flags |= F_LOCAL;
         }
 
@@ -3048,9 +3048,8 @@ pub fn solve(
 
     fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
     {
-        let global = !_current_fn;
-        global && node.flags & F_FIELD && fail(
-            "solveLet: field misclassified as global: " ~ node.value);
+        node.flags & F_FIELD && fail(
+            "solveLet: got a field: " ~ node.value);
 
         mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
@@ -3070,9 +3069,9 @@ pub fn solve(
 
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
+            let global = !_current_fn;
             let kind = global               ? "global"
                      : node.flags & F_ARG   ? "arg"
-                     : out.type.is_ref      ? "ref"
                                             : "var";
 
             let target = out.target = Binding(:id, :kind, :node.flags, :out.type, :reuse);
