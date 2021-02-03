@@ -861,12 +861,13 @@ pub fn cpp_codegen(
 
     fn cgLet(node: SolvedNode): string
     {
-        return binding(node, doInit: true);
-    }
+        mut src = binding(node, doInit: true);
+        if !(node.flags & F_GLOBAL)
+            return src;
 
-    fn cgGlobal(node: SolvedNode): string
-    {
-        mut src = cgLet(node);
+        /////////////
+        // Globals //
+        /////////////
 
         // cpp17 inline const syntax sugars.
         if (src.starts(with: "const "))
@@ -874,18 +875,13 @@ pub fn cpp_codegen(
 
         // Hide when possible.
         if (!(node.flags & F_PUB))
-        {
             _fdef  ~= "\nstatic const " ~ src ~ ";\n";
-        }
         else
-        {
             _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
                     ~ "\n                                #define DEF_" ~ node.value
                     ~ "\ninline const " ~ src ~ ";"
                     ~ "\n                                #endif\n";
-        }
 
-        //
         return "";
     }
 
@@ -895,7 +891,7 @@ pub fn cpp_codegen(
             return;
 
         let o = GET(target);
-        cgGlobal(o.solved);
+        cgLet(o.solved);
     }
 
     fn cgJump(node: SolvedNode): string
@@ -1134,16 +1130,18 @@ pub fn cpp_codegen(
 
         let id = target.name || fail();
 
-        if (target.kind == "global")
-        {
-            if (node.target.modid != module.modid)
-                cgForeignGlobal(node.target);
-
-            return ID(id); // TODO ensure const emit.
-        }
-
         if (target.kind == "var")
+        {
+            if (target.flags & F_GLOBAL)
+            {
+                if (node.target.modid != module.modid)
+                    cgForeignGlobal(node.target);
+
+                return ID(id); // TODO ensure const emit.
+            }
+
             return localID(node.target, target);
+        }
 
         if (target.kind == "field")
             return ARG(0) ~ "." ~ ID(id);
@@ -1576,7 +1574,7 @@ pub fn cpp_codegen(
         if (t.kind == "field")
             return isFieldChain(node.items.only);
 
-        if (t.kind == "var" || t.kind == "global")
+        if (t.kind == "var")
             return true;
 
         return false;
@@ -1728,7 +1726,6 @@ pub fn cpp_codegen(
         if (k == "and")         return cgAnd(node, mode);
 
         if (k == "let")         return cgLet(node);
-        if (k == "global")      return cgGlobal(node);
 
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);

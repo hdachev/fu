@@ -35,7 +35,7 @@ let     F_PARENS        = 1 << 7;
 pub let F_LOCAL         = 1 << 8;
 pub let F_ARG           = 1 << 9;
 pub let F_FIELD         = 1 << 10;
-// ... 11
+pub let F_GLOBAL        = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;
 // ... 13
 // ... 14
