@@ -280,7 +280,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, kind: string, type: Type): Lifetime
+    fn Lifetime_fromBinding(target: Target, flags: i32, kind: string, type: Type): Lifetime
     {
         target.modid == module.modid || fail("not from this module");
 
@@ -289,12 +289,13 @@ pub fn solve(
             return Lifetime_static();
 
         // Alias?
-        if (kind != "arg" && type.is_ref)
+        let isArg = flags & F_ARG;
+        if (!isArg && type.is_ref)
             return Lifetime_test(type.lifetime || fail("ref: bad ref/lifetime"));
 
         // Argument?
         let index       = target.index;
-        let region      = kind == "arg" && type.is_ref
+        let region      = isArg && type.is_ref
             ? Region_fromArgIndex(index)
             : Region_fromLocalIndex(index);
 
@@ -373,7 +374,7 @@ pub fn solve(
                 {
                     any++;
                     let o = GET(item.target);
-                    if (o.kind == "arg" || o.kind == "var")
+                    if (o.kind == "var")
                         same++;
                 }
             },
@@ -398,7 +399,7 @@ pub fn solve(
         let local_of = !(flags & F_FIELD) && _current_fn.target.index;
         if (local_of)
         {
-            kind == "var" || kind == "arg" || fail("Nope, getting it wrong.");
+            kind == "var" || fail("Nope, getting it wrong.");
             flags |= F_LOCAL;
         }
 
@@ -416,7 +417,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target, kind, type);
+            let lifetime = Lifetime_fromBinding(target, flags, kind, type);
 
             // Throw away argument lifetime, union below will fix it up.
             if (flags & F_ARG)
@@ -2621,10 +2622,15 @@ pub fn solve(
             {
                 if (ltCompare > 0)
                 {
+                    // TODO perhaps this is a codegen concern,
+                    //  for us it's a move like any other.
+                    fn supportsNRVO(o: Overload)
+                        o.kind == "var" && !(o.flags & F_ARG);
+
                     let nrvo = isReturn
                             && expr.kind == "call"
                             && expr.items.len == 0
-                            && expr.target.GET.kind == "var";
+                            && expr.target.GET.supportsNRVO;
 
                     expr = createMove(expr, :nrvo);
                 }
@@ -3070,9 +3076,7 @@ pub fn solve(
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
         {
             let global = !_current_fn;
-            let kind = global               ? "global"
-                     : node.flags & F_ARG   ? "arg"
-                                            : "var";
+            let kind = global ? "global" : "var";
 
             let target = out.target = Binding(:id, :kind, :node.flags, :out.type, :reuse);
             Scope_set(_scope, :id, :target);
@@ -3635,7 +3639,7 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG, kind: "arg");
+        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG, kind: "var");
         let newArgNode  = createLet(ret, F_IMPLICIT);
         _current_fn.items.insert(newArgIdx, newArgNode);
 

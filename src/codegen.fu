@@ -1142,16 +1142,11 @@ pub fn cpp_codegen(
             return ID(id); // TODO ensure const emit.
         }
 
-        if (target.kind == "var" ||
-            target.kind == "arg")
-        {
+        if (target.kind == "var")
             return localID(node.target, target);
-        }
 
         if (target.kind == "field")
-        {
             return ARG(0) ~ "." ~ ID(id);
-        }
 
         if (node.target.modid && target.kind == "fn")
         {
@@ -1581,12 +1576,8 @@ pub fn cpp_codegen(
         if (t.kind == "field")
             return isFieldChain(node.items.only);
 
-        if (t.kind == "var"     ||
-            t.kind == "global"  ||
-            t.kind == "arg")
-        {
+        if (t.kind == "var" || t.kind == "global")
             return true;
-        }
 
         return false;
     }
