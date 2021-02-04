@@ -2139,8 +2139,6 @@ pub fn solve(
             let firstIteration = !GET(target).solved;
             if (firstIteration)
             {
-                resetReturns(:helpers_idx, ret_actual: ret_seed);
-
                 // Previously initScope:
                 {
                     // TODO FIX currently we only hash template names.
@@ -2192,7 +2190,7 @@ pub fn solve(
             if (!native)
             {
                 resetReturns(:helpers_idx, :ret_expect);
-                let s_body = solveNode(n_body, type: t_void);
+                let s_body = solveBlock(n_body, type: t_void);
                 retval = finalizeReturns(:helpers_idx, s_body.type);
 
                 // MUT DURING SOLVE,
