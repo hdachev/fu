@@ -1335,7 +1335,7 @@ pub fn solve(
                 statements: true));
     }
 
-    fn solveBlock(node: Node, type!: Type): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_Jump): SolvedNode
     {
         let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
@@ -1346,13 +1346,16 @@ pub fn solve(
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
-        let brk_idx  = _helpers.len;
-        _helpers    ~= Helpers(:id, local_of: _current_fn.target.index, mask: HM_Jump);
-        let NOCHANGE = Scope_snap(_scope);
+        let helpers_idx = _helpers.len;
+        _helpers       ~= Helpers(:id, :mask,
+            ret_expect: type,
+            target:     fnbody_of,
+            local_of:   fnbody_of ? -1 : _current_fn.target.index);
 
-        //
-        let expr  = !type.is_void;
-        let items = solveNodes(
+        let NOCHANGE    = Scope_snap(_scope);
+
+        let expr        = !fnbody_of && !type.is_void;
+        let items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
@@ -1360,15 +1363,71 @@ pub fn solve(
             deadcode_on_never:  true,
             statements:         true);
 
+        ///////////////////////////////////////////////////////////////
+        // finalizeReturns (helpers_idx: i32, bodyType: Type)
+        ref h = _helpers[helpers_idx];
+
+        // TODO FIX these apply to regular blocks as well,
+        //  decide if you want fns to be like blocks or the other way round,
+        //   but these ifs gotta go.
+        if (fnbody_of)
+        {
+            // Not a single return statement = return void.
+            h.ret_actual ||= t_void;
+
+            // See if we're missing the final return statement.
+            //  Two cases of interest:
+            //
+            // [1] If this is a non-void/non-never returning function,
+            //      then you've forgotten the final return stmt of your fn.
+            //
+            // [2] If this is a never returning function,
+            //      then this means that the function actually returns void.
+            //
+            if (!items.if_last.type.is_never)   // Refers to the type of the return stmt -
+            {                                   //  it is always never, everything after it is unreach.
+                isAssignable(host: t_void, h.ret_actual) || fail(
+                    "Non-void returning fn missing a final return.");
+
+                h.ret_actual = t_void;
+            }
+
+            // TODO FIX
+            //  Disable return value narrowing,
+            //   we're getting some aliasing somewhere that breaks the compiler's back.
+            if (!USE_retval_narrowing && h.ret_expect)
+            {
+                let lt0         = h.ret_actual.lifetime;
+                h.ret_actual    = h.ret_expect;
+
+                if (h.ret_actual.is_ref)
+                    h.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
+            }
+        }
+
+        // cpy/move.
+        if (!h.ret_actual.is_ref)
+        {
+            for (mut i = 0; i < h.returns.len; i++)
+            {
+                ref ret = GET_mut(Target(:module.modid, index: h.returns[i]));
+                maybeCopyOrMove(ret.solved, h.ret_actual);
+            }
+        }
+        // end finalizeReturns
+        ///////////////////////////////////////////////////////////////
+
         // Compact + stress test.
-        let label_used = _helpers[brk_idx].target;
+        let label_used = _helpers[helpers_idx].target;
         if (!label_used && items.len == 1 && Scope_snap(_scope) == NOCHANGE)
             return items[0];
 
         // Control flow.
-        shadow let type = expr && items.len || items.if_last.type.is_never && !label_used
-            ? items.last.type
-            : t_void;
+        shadow let type = fnbody_of // TODO FIX
+            ? h.ret_actual
+            : expr && items.len || items.if_last.type.is_never && !label_used
+                ? items.last.type
+                : t_void;
 
         return createBlock(:token, :type, :items,
             label: label_used && Target(:module.modid, label_used));
@@ -1973,10 +2032,6 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
-            let helpers_idx = _helpers.len;
-            _helpers ~= Helpers(target: target.index, local_of: -1,
-                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
-
             SWAP(_current_fn, out);
 
             defer {
@@ -2189,9 +2244,12 @@ pub fn solve(
             mut retval = ret_seed;
             if (!native)
             {
-                resetReturns(:helpers_idx, :ret_expect);
-                let s_body = solveBlock(n_body, type: t_void);
-                retval = finalizeReturns(:helpers_idx, s_body.type);
+                let s_body = solveBlock(
+                    n_body, type: ret_expect,
+                    fnbody_of: target.index,
+                    mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+
+                retval = s_body.type;
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -2666,55 +2724,6 @@ pub fn solve(
 
         h.ret_actual = ret_actual;
         h.ret_expect = ret_expect;
-    }
-
-    fn finalizeReturns(helpers_idx: i32, bodyType: Type)
-    {
-        ref h = _helpers[helpers_idx];
-
-        // Not a single return statement = return void.
-        h.ret_actual ||= t_void;
-
-        // TODO FIX
-        //  Disable return value narrowing,
-        //   we're getting some aliasing somewhere that breaks the compiler's back.
-        if (!USE_retval_narrowing && h.ret_expect)
-        {
-            let lt0         = h.ret_actual.lifetime;
-            h.ret_actual    = h.ret_expect;
-
-            if (h.ret_actual.is_ref)
-                h.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
-        }
-
-        // cpy/move.
-        if (!h.ret_actual.is_ref)
-        {
-            for (mut i = 0; i < h.returns.len; i++)
-            {
-                ref ret = GET_mut(Target(:module.modid, index: h.returns[i]));
-                maybeCopyOrMove(ret.solved, h.ret_actual);
-            }
-        }
-
-        // See if we're missing the final return statement.
-        //  Two cases of interest:
-        //
-        // [1] If this is a non-void/non-never returning function,
-        //      then you've forgotten the final return stmt of your fn.
-        //
-        // [2] If this is a never returning function,
-        //      then this means that the function actually returns void.
-        //
-        if (!bodyType.is_never) // Refers to the type of the return stmt -
-        {                       //  it is always never, everything after it is unreach.
-            isAssignable(host: t_void, h.ret_actual) || fail(
-                "Non-void returning fn missing a final return.");
-
-            h.ret_actual = t_void;
-        }
-
-        return h.ret_actual;
     }
 
 
