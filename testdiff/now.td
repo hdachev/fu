@@ -13473,6 +13473,42 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn hello(x: i32) {
+            if (x & 1)
+                return x * 2;
+            /*
+            x; //ERR return
+            /*/
+            return x;
+            //*/
+        }
+
+        fn main() 0.hello;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int hello(const int x)
+{
+    if (x & 1)
+        return x * 2;
+
+    return int(x);
+}
+
+int fu_MAIN()
+{
+    return hello(0);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct X { i: i32; };
 
         fn         ++(using x: &mut X) ++i;

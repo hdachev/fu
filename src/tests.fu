@@ -3926,6 +3926,20 @@ pub fn runTests()
         fn main() 0.if0_ret101 - 101;
     `);
 
+    FAIL(`
+        fn hello(x: i32) {
+            if (x & 1)
+                return x * 2;
+            //*F
+            x; //ERR return
+            /*/
+            return x;
+            //*/
+        }
+
+        fn main() 0.hello;
+    `);
+
 
     // Let's start having fun.
 
