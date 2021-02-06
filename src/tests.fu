@@ -2417,6 +2417,46 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        // Same as below, but avoids the $T call, which is also broken somehow.
+        //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -
+        //   we emit useless overloads for mutrefs when its clearly useless.
+
+        //! FN_recursion FN_resolve
+        fn rec_cases(a: $T)
+        case ($T -> @primitive) {
+            if (a)      return rec_cases(a / 2);
+            else        return a;
+        }
+        default {
+            if (a.i) {
+                shadow mut a = a;
+                a.i /= 2;
+                return rec_cases(a);
+            }
+            else        return rec_cases(a.i);
+        }
+
+        struct X { i: i32; };
+        fn main() X(1).rec_cases;
+    `);
+
+    TODO(`
+        //! FN_recursion FN_resolve
+        fn rec_cases(a: $T)
+        case ($T -> @primitive) {
+            if (a)      return rec_cases(a / 2);
+            else        return a;
+        }
+        default {
+            if (a.i)    return rec_cases($T(i: a.i / 2));
+            else        return rec_cases(a.i);
+        }
+
+        struct X { i: i32; };
+        fn main() X(1).rec_cases;
+    `);
+
 
     // Let's try something new.
 
