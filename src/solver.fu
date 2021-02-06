@@ -88,17 +88,10 @@ pub fn solve(
     mut _field_items:   ScopeItem[];
     mut _notes:         i32;
 
-    struct CurrentFn_ResetOnResolve
-    {
-        locals_used:    i32[];
-    };
-
     struct CurrentFn
     {
         using out:      SolvedNode;
-        using RoR?:     CurrentFn_ResetOnResolve;
-
-        // HA!
+        locals_used?:   i32[];
         stmts?:         SolvedNode[];
     };
 
@@ -2003,31 +1996,17 @@ pub fn solve(
                 ? original.extra_items
                 : typeParams.intoScopeItems();
 
-            _scope.items ~= extra_items;
-
-            //
-            let spec = template.node.flags & F_TEMPLATE;
-
             // Prep reject.
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
+
+            // Go!
+            _scope.items ~= extra_items;
 
             mut out = CurrentFn(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
-            // Propagate "templateness" TODO why do we do this?
-            //  Currently porting this just to avoid triggering NOWRITES.
-            if (parent_idx && !(out.flags & F_TEMPLATE))
-                out.flags |= GET(Target(:module.modid, index: parent_idx)).solved.flags & F_TEMPLATE;
-
-            //////////////////////////
-            mut native = false;
-
-            ////////////////
-            out.RoR = CurrentFn_ResetOnResolve();
-
-            // Go!
             let root_scope0 = _root_scope;
             if (!root_scope0)
                 _root_scope = scope0;
@@ -2039,7 +2018,6 @@ pub fn solve(
                 _root_scope = root_scope0;
             }
 
-
             /////////////////////////////////
             shadow ref outItems = _current_fn.items;
             if (into)
@@ -2049,6 +2027,7 @@ pub fn solve(
             outItems.resize(inItems.len);
 
             // Arg decls.
+            let spec = template.node.flags & F_TEMPLATE;
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
                 fn tryGetArgSpecType(id: string): Type
@@ -2093,9 +2072,8 @@ pub fn solve(
 
             // Builtin?
             n_body || fail("solveFn: no body.");
-            if (n_body.kind == "call" && n_body.value == "__native")
-                native = true;
 
+            let native = n_body.kind == "call" && n_body.value == "__native";
             if (!native)
                 n_body.kind == "block" || fail("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 

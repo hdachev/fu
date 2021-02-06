@@ -6969,7 +6969,7 @@ struct s_BINOP
 
 #ifndef FU_NO_FDEFs
 
-inline static void binop(s_BINOP& out_0, int& precedence_0, bool& rightToLeft_0, const fu_VEC<fu_STR>& ops)
+static void binop(s_BINOP& out_0, int& precedence_0, bool& rightToLeft_0, const fu_VEC<fu_STR>& ops)
 {
     precedence_0++;
     (out_0.RIGHT_TO_LEFT.upsert(precedence_0) = bool(rightToLeft_0));
@@ -8134,7 +8134,7 @@ static void visit(s_Visitor& v, const s_SolvedNode& node)
     v.sum += node.value;
 }
 
-inline static void traverse(s_Visitor& v, const s_SolvedNode& n)
+static void traverse(s_Visitor& v, const s_SolvedNode& n)
 {
     visit(v, n);
     for (int i = 0; i < n.items.size(); i++)
