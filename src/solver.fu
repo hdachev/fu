@@ -1696,6 +1696,32 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
+    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo, isInline!: bool)
+    {
+        if (!_root_scope)
+            return;
+
+        let start = template.scope_memo || _root_scope;
+        _ss = template.scope_skip;
+
+        ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
+
+        // The declash thing is for ease of codegen - not technically needed by the solver.
+        //  This is what postfixes variable names with numbers to disambiguate them,
+        //   and not pushing here means we'll declash against things we don't see in items above.
+        if (!isInline)
+            ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
+
+        ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
+        ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
+        ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
+
+        ScopeSkip_push(_ss.helpers,  start: start.helpers_len,  end: scope0.helpers_len);
+    }
+
+
+    //
+
     fn doTrySpecialize(
         into?: Target,
         overloadIdx?: Target, mut args?: SolvedNode[],
@@ -1792,30 +1818,12 @@ pub fn solve(
                 _ss = ss0;
             }
 
+            ScopeSkip_setup(:template, :scope0, :isInline);
+
+            //
             let items = template.node.items;
             ref n_fn = template.node;
             n_fn.kind == "fn" || fail("n_fn not a `fn`.");
-
-
-            if (_root_scope)
-            {
-                let start = template.scope_memo || _root_scope;
-                _ss = template.scope_skip;
-
-                ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
-
-                // The declash thing is for ease of codegen - not technically needed by the solver.
-                //  This is what postfixes variable names with numbers to disambiguate them,
-                //   and not pushing here means we'll declash against things we don't see in items above.
-                if (!isInline)
-                    ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
-
-                ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
-                ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
-                ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
-
-                ScopeSkip_push(_ss.helpers,  start: start.helpers_len,  end: scope0.helpers_len);
-            }
 
             // We'll need the original imports in scope
             //  in order to solve type params & pattern match below.
@@ -2142,15 +2150,19 @@ pub fn solve(
                 let args_len0   = overload.args.len;
                 let closure0    = overload.closes_over.len;
 
-                overload.type   = retval || fail("FnDecl_update: no return type.");
-                if (retval.is_ref)
-                    Lifetime_test(retval.lifetime);
-
                 overload.min    = min;
                 overload.max    = max;
                 overload.args   = args;
-                overload.flags  = out.flags;
 
+                overload.type   = retval;
+                if (isInline)
+                    return;
+
+                retval || fail("FnDecl_update: no return type.");
+                if (retval.is_ref)
+                    Lifetime_test(retval.lifetime);
+
+                overload.flags  = out.flags;
                 overload.solved = out.out;
 
                 // See which one of the locals we've used are not our own.
@@ -2205,7 +2217,7 @@ pub fn solve(
                     overload.template   = native ? createTemplate(n_body) : template;
                 }
 
-                updateScope(_current_fn, retval: ret_seed);
+                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed);
 
                 // setSpecs & co.
                 if (!into && !isInline)
