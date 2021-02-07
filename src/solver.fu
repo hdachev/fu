@@ -91,7 +91,6 @@ pub fn solve(
     {
         using out:      SolvedNode;
         locals_used?:   i32[];
-        stmts?:         SolvedNode[];
     };
 
     mut _current_fn:    CurrentFn;
@@ -1335,8 +1334,7 @@ pub fn solve(
         //   Could we use this mechanism for static asserts?
         //
         return solved(node, t_void,
-            solveNodes(node.items, t_void,
-                statements: true));
+            solveNodes(node.items, t_void));
     }
 
     fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_Jump): SolvedNode
@@ -1364,8 +1362,7 @@ pub fn solve(
             type_all:           t_void,
             type_last:          type,
             use_type_last:      expr,
-            deadcode_on_never:  true,
-            statements:         true);
+            deadcode_on_never:  true);
 
         ///////////////////////////////////////////////////////////////
         // finalizeReturns (helpers_idx: i32, bodyType: Type)
@@ -2665,8 +2662,7 @@ pub fn solve(
         {
             reportReturnType(t_void);
 
-            return emitStatement(
-                solved(node, t_never, :target));
+            return solved(node, t_never, :target);
         }
 
 
@@ -2723,8 +2719,7 @@ pub fn solve(
 
         h.returns ~= target.right;
 
-        return emitStatement(
-            solved(node, t_never, :target));
+        return solved(node, t_never, :target);
     }
 
     fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)
@@ -2888,10 +2883,9 @@ pub fn solve(
                             ? t_never
                             : t_void;
 
-        return emitStatement(
-            solved(node, type,
-                [ init, pre_cond, body, post_cond, post ],
-                    target: label_used && Target(:module.modid, label_used)));
+        return solved(node, type,
+            [ init, pre_cond, body, post_cond, post ],
+                target: label_used && Target(:module.modid, label_used));
     }
 
 
@@ -3105,11 +3099,6 @@ pub fn solve(
                 _scope.usings.push(target.index);
         }
 
-        // Testing out tempvar output
-        //  by outputting all vars as if they were temps.
-        if !(out.flags & F_ARG)
-            return emitStatement(out);
-
         return out;
     }
 
@@ -3129,31 +3118,10 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn emitStatement(node: SolvedNode): SolvedNode
-    {
-        if (node.type.is_never)
-            return node;
-
-        _current_fn.stmts ~= node;
-        return createEmpty();
-    }
-
     fn solveLetStatement(node: Node): SolvedNode
     {
-        let stmts0 = _current_fn.stmts.len;
-
-        let res = solveNode(node, t_void);
-        if (res.kind == "empty" && _current_fn.stmts.len > stmts0)
-        {
-            shadow let res = _current_fn.stmts.last;
-            if (res.kind == "let")
-            {
-                _current_fn.stmts.pop();
-                return res;
-            }
-        }
-
-        return res;
+        node.kind == "let" || fail("Expected a `let` statement, got: `" ~ node.kind ~ "`.");
+        return solveNode(node, t_void);
     }
 
     fn solveCatch(node: Node): SolvedNode
@@ -4041,7 +4009,6 @@ pub fn solve(
         type_last?!: Type,
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
-        statements?!: bool,
         as_blocks_after! = -1): SolvedNode[]
     {
         mut result: SolvedNode[];
@@ -4050,8 +4017,6 @@ pub fn solve(
         let here0   = _here;
         defer _here = here0;
         ////////////////////////////////////////////////////////
-
-        let stmts0 = _current_fn.stmts.len;
 
         //
         for (mut i = 0; i < nodes.len; i++)
@@ -4073,15 +4038,6 @@ pub fn solve(
                 let solved = as_blocks_after >= 0 && as_blocks_after <= i
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type);
-
-                // Temps first.
-                if (statements && _current_fn.stmts.len > stmts0)
-                {
-                    result ~= _current_fn.stmts.slice(
-                        stmts0, _current_fn.stmts.len);
-
-                    _current_fn.stmts.shrink(stmts0);
-                }
 
                 //
                 result ~= solved;
