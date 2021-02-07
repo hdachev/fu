@@ -2962,26 +2962,35 @@ pub fn solve(
 
     //
 
-    fn solveLetLike_dontTouchScope(node: Node, specType?!: Type, deadcode_on_never?!: bool): SolvedNode
+    fn solveLetLike_dontTouchScope(
+        node: Node, specType?!: Type,
+        deadcode_on_never?!: bool): SolvedNode
     {
-        let n_annot     = node.items[LET_TYPE];
-        let n_init      = node.items[LET_INIT];
+        let n_annot = node.items[LET_TYPE];
+        mut annot   = specType || n_annot && evalTypeAnnot(n_annot).type;
 
-        mut annot       = n_annot && evalTypeAnnot(n_annot);
+        if (annot && node.flags & F_REF)
+            annot   = add_mutref(annot, Lifetime_temporary);
 
-        // Annot override during template specialization.
-        if (specType)
-            annot.type  = specType;
+        let n_init  = node.items[LET_INIT];
+        let init    = n_init && solveNode(n_init, annot);
 
-        if (annot.type && node.flags & F_REF)
-            annot.type  = add_mutref(annot.type, Lifetime_temporary);
+        return solveLetLike_dontTouchScope(
+            :node.token, node.value, :node.flags,
+            :annot, :init,
+            :specType, :deadcode_on_never);
+    }
 
-        mut init        = n_init && solveNode(n_init, annot.type);
+    fn solveLetLike_dontTouchScope(
+        token: TokenIdx, id: string, flags: i32,
+        mut init!: SolvedNode,
+        mut annot?!: Type, specType?!: Type,
+        deadcode_on_never?!: bool): SolvedNode
+    {
+        annot || init.type || fail(
+            "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
 
-        annot.type || init.type || fail(
-            "Variable declarations without type annotations must be initialized: `" ~ node.value ~ "`.");
-
-        if (annot.type && init.type)
+        if (annot && init.type)
         {
             if (specType)
             {
@@ -2990,21 +2999,21 @@ pub fn solve(
                 //   infer we want no mutref under any circumstance,
                 //    this should help herd the specs a little.
                 if (specType.is_mutref && !init.type.is_mutref)
-                    annot.type = clear_mutref(annot.type);
+                    annot = clear_mutref(annot);
 
                 // Drop defaults that don't match current spec types,
                 //  this will effectively make the args non-defaulted.
-                if (!isAssignable(host: annot.type, init.type))
+                if (!isAssignable(host: annot, init.type))
                     init = SolvedNode();
             }               // ^
                             // |
             if (init.type)  // | Might be dropped here.
             {
-                checkAssignable(host: annot.type, init.type,
+                checkAssignable(host: annot, init.type,
                     "Type annotation does not match init expression",
-                        node.value, "=");
+                        id, "=");
 
-                annot.type.lifetime = init.type.lifetime;
+                annot.lifetime = init.type.lifetime;
             }
         }
 
@@ -3017,11 +3026,11 @@ pub fn solve(
             return init;
         }
 
-        if (node.flags & F_REF)
+        if (flags & F_REF)
         {
-            init.type.is_mutref || init.type.is_never && annot.type
-                                || !init && node.flags & F_ARG || fail(
-                "`ref` variables must be initialized to a mutable reference: `" ~ node.value ~ "`"
+            init.type.is_mutref || init.type.is_never && annot
+                                || !init && flags & F_ARG || fail(
+                "`ref` variables must be initialized to a mutable reference: `" ~ id ~ "`"
                     ~ (init.type ? " = " ~ humanizeType(init.type) : "."));
 
             killref && fail(
@@ -3029,17 +3038,17 @@ pub fn solve(
         }
 
         //
-        let t_let   = annot.type
-                        ? node.flags & F_ARG && !(node.flags & F_MUT)
-                            ? add_ref(annot.type, Lifetime_temporary)
-                            : annot.type
-                    : init.type.is_mutref || node.flags & F_MUT || killref
-                        ? node.flags & F_REF && !killref
+        let t_let   = annot
+                        ? flags & F_ARG && !(flags & F_MUT)
+                            ? add_ref(annot, Lifetime_temporary)
+                            : annot
+                    : init.type.is_mutref || flags & F_MUT || killref
+                        ? flags & F_REF && !killref
                             ? init.type
-                            : USE_ref_to_mutref && !(node.flags & F_MUT) && !killref
+                            : USE_ref_to_mutref && !(flags & F_MUT) && !killref
                                 ? clear_mutref(init.type)
                                 : clear_refs(init.type)
-                        : node.flags & F_ARG && !(node.flags & F_MUT)
+                        : flags & F_ARG && !(flags & F_MUT)
                             ? add_ref(init.type, Lifetime_temporary)
                             : init.type;
 
@@ -3049,14 +3058,9 @@ pub fn solve(
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
         //   So we can edit out of order maybe?
-        return solved(node, t_let, [SolvedNode, init]);
-    }
-
-    fn solveTypedef(node: Node): SolvedNode
-    {
-        let annot = evalTypeAnnot(node.items.only);
-        Scope_Typedef(_scope, node.value, annot.type, node.flags);
-        return createEmpty();
+        return SolvedNode(
+            kind: "let", value: id, :flags, :token,
+            type: t_let, items: [ SolvedNode, init ]);
     }
 
     fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
@@ -3064,9 +3068,14 @@ pub fn solve(
         node.flags & F_FIELD && fail(
             "solveLet: got a field: " ~ node.value);
 
-        mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
+        let out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
 
+        return solveLet(:out, :id, :reuse, :deadcode_on_never);
+    }
+
+    fn solveLet(mut out!: SolvedNode, id!: string, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
+    {
         // Dead code elim.
         if (out.kind != "let")
         {
@@ -3102,6 +3111,22 @@ pub fn solve(
             return emitStatement(out);
 
         return out;
+    }
+
+    fn createLet(id: string, flags: i32, init: SolvedNode)
+    {
+        let out = solveLetLike_dontTouchScope(:init.token, :flags, :id, :init);
+        return solveLet(:out, :id);
+    }
+
+
+    //
+
+    fn solveTypedef(node: Node): SolvedNode
+    {
+        let annot = evalTypeAnnot(node.items.only);
+        Scope_Typedef(_scope, node.value, annot.type, node.flags);
+        return createEmpty();
     }
 
     fn emitStatement(node: SolvedNode): SolvedNode
@@ -3908,27 +3933,43 @@ pub fn solve(
             }
         }
 
-        // TODO use original argvals during inline solve,
-        //  the way things are now single-pass optimizations are not possible,
-        //   things will likely need to flip around for this to work.
-        //
+        // Inliner.
         if (overload.kind == "inline")
         {
-            mut result = overload.solved;
-            for (mut i = 0; i < args.len; i++)
-            {
-                ref arg = result.items[i];
-                arg.kind == "let" && !arg.items[LET_INIT] || fail(
-                    "Inline argfill, something is off.");
+            let scope0 = Scope_snap(_scope);
+            let ss0 = _ss;
 
-                checkAssignable(host: arg.type, args[i].type,
-                    "Inliner messed up, arg type does not match init.");
-
-                arg.items[LET_INIT] = args[i];
+            defer {
+                Scope_pop(_scope, scope0);
+                _ss = ss0;
             }
 
-            result.token = node.token;
-            return result;
+            ScopeSkip_setup(:overload.template, :scope0, isInline: true);
+            _scope.items ~= overload.extra_items;
+
+            //
+            let n_fn        = overload.template.node;
+            let n_body      = n_fn.items.last;
+            let ret_expect  = overload.type;
+
+            mut result: SolvedNode[];
+            overload.args.len == args.len || fail("inline: arglen mismatch");
+            result.resize(args.len + 1);
+
+            for (mut i = 0; i < args.len; i++)
+            {
+                let slot = overload.args[i];
+                result[i] = createLet(id: slot.name, :slot.flags, init: args[i]);
+            }
+
+            let s_body = solveBlock(
+                n_body, type: ret_expect,
+                fnbody_of: target.index,
+                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+
+            result.last = s_body;
+
+            return createBlock(:node.token, result, :s_body.type);
         }
 
         //
