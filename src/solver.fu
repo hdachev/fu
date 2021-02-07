@@ -28,7 +28,6 @@ let OPTI_autoshadow         = true;
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false; // TODO not safe without borrowck
 let USE_ref_to_mutref       = false;
-let USE_inlining            = false;
 
 let SELF_TEST               = true;
 
@@ -571,6 +570,7 @@ pub fn solve(
         flags?!: i32, target?!: Target): Target
     {
         mut matchIdx: Target;
+        mut DEBUG_assertMatch: Target;
 
         let minArity = args.len;
         let maxArity = minArity + (scope.usings && countUsings(:scope, :local_scope));
@@ -864,7 +864,14 @@ pub fn solve(
                             continue :NEXT;
 
                         // Repeat arity checks and such.
-                        overloadIdx = specIdx;
+                        //
+                        // TODO doesn't seem necessary anymore.
+                        //  It's crazy to think that we'd specialize an inline
+                        //   and end up not using it.
+                        //
+                        overloadIdx         = specIdx;
+                        DEBUG_assertMatch   = specIdx;
+
                         continue :TEST_AGAIN;
                     }
 
@@ -946,6 +953,10 @@ pub fn solve(
                 }
             }
         }
+
+        if (DEBUG_assertMatch)
+            DEBUG_assertMatch == matchIdx || fail(
+                "Did specialize something but ended up not using it.");
 
         return matchIdx;
     }
@@ -1654,23 +1665,6 @@ pub fn solve(
         return target.modid == -1;
     }
 
-    fn setSpec(mangle: string, target: Target, nx?: bool)
-    {
-        ref t = module.out.specs[mangle] ||= Target;
-
-        fn id(shadow target)
-            target.modid != -1  ? `"` ~ GET(target).name ~ `"`
-                                : "SPEC_FAIL";
-
-        !t && nx || t.is_SPECFAIL && !nx || fail(
-            "About to screw up royally, replacing spec: "
-                ~ t.index ~ " with " ~ target.index
-                    ~ ", mangle: " ~ mangle ~ ", that's: "
-                    ~ t.id ~ " becoming " ~ target.id);
-
-        t = target;
-    }
-
     fn trySpecialize(
         overloadIdx: Target, args: SolvedNode[], reorder: [i32],
         args_mangled: string)
@@ -1728,12 +1722,34 @@ pub fn solve(
         let mangle00 = mangle;
         let SPECFAIL = Target(modid: -1, index: 0);
 
-        if (!into)
+        //
+        let original = GET(overloadIdx || into || fail());
+        mut template = original.template;
+        let isInline = !!(template.node.flags & F_INLINE) && false;
+
+        fn setSpec(shadow mangle: string, target: Target, nx?: bool)
+        {
+            isInline && fail("inline.setSpec");
+
+            ref t = module.out.specs[mangle] ||= Target;
+
+            fn id(shadow target)
+                target.modid != -1  ? `"` ~ GET(target).name ~ `"`
+                                    : "SPEC_FAIL";
+
+            !t && nx || t.is_SPECFAIL && !nx || fail(
+                "About to screw up royally, replacing spec: "
+                    ~ t.index ~ " with " ~ target.index
+                        ~ ", mangle: " ~ mangle ~ ", that's: "
+                        ~ t.id ~ " becoming " ~ target.id);
+
+            t = target;
+        }
+
+        if (!into && !isInline)
             setSpec(mangle, SPECFAIL, nx: true);
 
         //
-        let original = GET(overloadIdx || into || fail());
-
         mut parent_idx = original.local_of;
         {
             // If we're taking a closure as an argument,
@@ -1776,13 +1792,10 @@ pub fn solve(
                 _ss = ss0;
             }
 
-            mut template = original.template;
-
             let items = template.node.items;
             ref n_fn = template.node;
             n_fn.kind == "fn" || fail("n_fn not a `fn`.");
 
-            let isInline = USE_inlining && !!(n_fn.flags & F_INLINE);
 
             if (_root_scope)
             {
@@ -1923,7 +1936,7 @@ pub fn solve(
 
                 /////////////////
                 // Literal fixup.
-                if (remangle)
+                if (remangle && !isInline)
                 {
                     // TODO FIX
                     let start = mangle.find(' ') + 1 || fail();
@@ -2001,8 +2014,6 @@ pub fn solve(
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
             // Go!
-            _scope.items ~= extra_items;
-
             mut out = CurrentFn(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
@@ -2027,6 +2038,8 @@ pub fn solve(
             outItems.resize(inItems.len);
 
             // Arg decls.
+            _scope.items ~= extra_items;
+
             let spec = template.node.flags & F_TEMPLATE;
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -2176,7 +2189,7 @@ pub fn solve(
                 {
                     // TODO FIX currently we only hash template names.
                     mut name = n_fn.value || fail("TODO anonymous fns");
-                    if (spec && !native)
+                    if (spec && !native && !isInline)
                     {
                         let sig = mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
                         if (sig)
@@ -2186,16 +2199,16 @@ pub fn solve(
                         }
                     }
 
-                    ref overload = GET_mut(target);
-                    overload.name = name;
-                    overload.kind = native ? "__native" : "fn";
-                    overload.template = native ? createTemplate(n_body) : template;
+                    ref overload        = GET_mut(target);
+                    overload.name       = name;
+                    overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
+                    overload.template   = native ? createTemplate(n_body) : template;
                 }
 
                 updateScope(_current_fn, retval: ret_seed);
 
                 // setSpecs & co.
-                if (!into)
+                if (!into && !isInline)
                 {
                     let start   = mangle0.find(' ') + 1 || fail();
                     mangle      = mangle0.slice(0, start)
@@ -2219,27 +2232,33 @@ pub fn solve(
                 }
             }
 
-            mut retval = ret_seed;
-            if (!native)
+            // Regular fns again.
+            if (!isInline)
             {
-                let s_body = solveBlock(
-                    n_body, type: ret_expect,
-                    fnbody_of: target.index,
-                    mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                // The usual.
+                mut retval = ret_seed;
+                if (!native)
+                {
+                    let s_body = solveBlock(
+                        n_body, type: ret_expect,
+                        fnbody_of: target.index,
+                        mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
-                retval = s_body.type;
+                    retval = s_body.type;
 
-                // MUT DURING SOLVE,
-                //  implicit args splice in
-                outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+                    // MUT DURING SOLVE,
+                    //  implicit args splice in
+                    outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+                }
+
+                // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
+                //  Sighashes include return value.
+                outItems[outItems.len + FN_RET_BACK] =
+                    createEmpty(type: retval);
+
+                //
+                updateScope(_current_fn, :retval);
             }
-
-            // Sighashes include return value.
-            outItems[outItems.len + FN_RET_BACK] =
-                createEmpty(type: retval);
-
-            //
-            updateScope(_current_fn, :retval);
         }
 
         // Go!
@@ -2940,7 +2959,7 @@ pub fn solve(
 
         // Annot override during template specialization.
         if (specType)
-            annot.type = specType;
+            annot.type  = specType;
 
         if (annot.type && node.flags & F_REF)
             annot.type  = add_mutref(annot.type, Lifetime_temporary);
@@ -2952,15 +2971,6 @@ pub fn solve(
 
         if (annot.type && init.type)
         {
-            if (node.flags & F_ARG)
-            {
-                // Is this correct here?
-                //  Since we do fnarg defaults on the callsite,
-                //   they're always referable.
-                if (annot.type.is_ref && !init.type.is_ref)
-                    init.type = add_ref(init.type, Lifetime_temporary);
-            }
-
             if (specType)
             {
                 // Kinda arbitrary -
@@ -3499,9 +3509,8 @@ pub fn solve(
             ? dequalify_andGetScope(id)
             : _scope;
 
-        mut args = solveNodes(node.items, deadcode_on_never: true);
-
         // Dead code elim.
+        mut args = solveNodes(node.items, deadcode_on_never: true);
         if (args.if_last.type.is_never)
         {
             _notes |= N_DeadCall;
@@ -3510,11 +3519,9 @@ pub fn solve(
 
         //
         mut conversions: Target[][];
-        mut callTargIdx = match__mutargs(
+        let callTargIdx = match__mutargs(
             :scope, local_scope: !qualified,
             :id, :args, :conversions, :node.flags, :target);
-
-        mut callTarg = GET(callTargIdx);
 
         // `using` codegen.
         for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
@@ -3887,6 +3894,29 @@ pub fn solve(
 
                 _current_fn.locals_used.set::add(o.closes_over);
             }
+        }
+
+        // TODO use original argvals during inline solve,
+        //  the way things are now single-pass optimizations are not possible,
+        //   things will likely need to flip around for this to work.
+        //
+        if (overload.kind == "inline")
+        {
+            mut result = overload.solved;
+            for (mut i = 0; i < args.len; i++)
+            {
+                ref arg = result.items[i];
+                arg.kind == "let" && !arg.items[LET_INIT] || fail(
+                    "Inline argfill, something is off.");
+
+                checkAssignable(host: arg.type, args[i].type,
+                    "Inliner messed up, arg type does not match init.");
+
+                arg.items[LET_INIT] = args[i];
+            }
+
+            result.token = node.token;
+            return result;
         }
 
         //
