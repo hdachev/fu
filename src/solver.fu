@@ -750,7 +750,7 @@ pub fn solve(
                     shadow mut conversions: Target[][];
                     ///////////////////////////////////
 
-                    if (overload.min)
+                    if (overload.min || args.len)
                     {
                         reorder.len >= args.len || !reorder || fail("reorder < args.");
                         let N = (reorder.len || args.len)

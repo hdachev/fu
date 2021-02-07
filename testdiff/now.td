@@ -4676,6 +4676,34 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        /*
+        fn test(a = "hello") a.len; //ERR assign
+        /*/
+        fn test(a = 0) a + 1;
+        //*/
+        fn main() test(-1);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test(const int a)
+{
+    return a + 1;
+}
+
+int fu_MAIN()
+{
+    return test(-1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let s = 7;
         return s ? 0 : 1;
 
