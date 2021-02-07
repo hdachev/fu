@@ -1259,6 +1259,15 @@ pub fn runTests()
         return hey.x;
     `);
 
+    FAIL(`
+        //*F
+        fn test(a = "hello") a.len; //ERR assign
+        /*/
+        fn test(a = 0) a + 1;
+        //*/
+        fn main() test(-1);
+    `);
+
 
     // Truth tests.
 
