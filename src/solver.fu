@@ -3927,7 +3927,8 @@ pub fn solve(
             for (mut i = 0; i < args.len; i++)
             {
                 let slot = overload.args[i];
-                result[i] = createLet(id: slot.name, :slot.flags, init: args[i]);
+                result[i] = createLet(id: slot.name, init: args[i],
+                    :slot.flags &~ F_ARG); // As if not an arg.
             }
 
             let s_body = solveBlock(
