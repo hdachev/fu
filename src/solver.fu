@@ -1776,10 +1776,10 @@ pub fn solve(
                 _ss = ss0;
             }
 
-            let template = original.template;
+            mut template = original.template;
 
             let items = template.node.items;
-            mut n_fn = template.node;
+            ref n_fn = template.node;
             n_fn.kind == "fn" || fail("n_fn not a `fn`.");
 
             let isInline = USE_inlining && !!(n_fn.flags & F_INLINE);

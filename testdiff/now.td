@@ -8077,6 +8077,104 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        // Same as below, but avoids the $T call, which is also broken somehow.
+        //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -
+        //   we emit useless overloads for mutrefs when its clearly useless.
+
+        //! FN_recursion FN_resolve
+        fn rec_cases(a: $T)
+        case ($T -> @primitive) {
+            if (a)      return rec_cases(a / 2);
+            else        return a;
+        }
+        default {
+            if (a.i) {
+                shadow mut a = a;
+                a.i /= 2;
+                return rec_cases(a);
+            }
+            else        return rec_cases(a.i);
+        }
+
+        struct X { i: i32; };
+        fn main() X(1).rec_cases;
+
+-----
+
+struct s_X;
+
+                                #ifndef DEF_s_X
+                                #define DEF_s_X
+struct s_X
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static int rec_cases_U3Pf(const int a)
+{
+    if (a)
+        return rec_cases_U3Pf((a / 2));
+    else
+        return int(a);
+
+}
+
+inline static int rec_cases_cBw5(int& a)
+{
+    if (a)
+        return rec_cases_U3Pf((a / 2));
+    else
+        return int(a);
+
+}
+
+inline static int rec_cases_JcCf(s_X& a)
+{
+    if (a.i)
+    {
+        s_X a_1 { a };
+        a_1.i /= 2;
+        return rec_cases_JcCf(a_1);
+    }
+    else
+        return rec_cases_cBw5(a.i);
+
+}
+
+inline static int rec_cases_UmdU(const s_X& a)
+{
+    if (a.i)
+    {
+        s_X a_1 { a };
+        a_1.i /= 2;
+        return rec_cases_JcCf(a_1);
+    }
+    else
+        return rec_cases_U3Pf(a.i);
+
+}
+
+int fu_MAIN()
+{
+    return rec_cases_UmdU(s_X { 1 });
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct SolvedNode {
             value: i32;
             items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
