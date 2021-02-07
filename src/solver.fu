@@ -2618,8 +2618,7 @@ pub fn solve(
         mut target: Target(-1, -1);
         mut helpers_idx: i32;
 
-        let isReturn = node.kind == "return";
-        if (isReturn)
+        if (node.kind == "return")
         {
             let dest = Scope_lookupReturn(node.value,
                 lambdaOK: !!(node.flags & F_SINGLE_STMT),
@@ -2683,17 +2682,7 @@ pub fn solve(
             {
                 if (ltCompare > 0)
                 {
-                    // TODO perhaps this is a codegen concern,
-                    //  for us it's a move like any other.
-                    fn supportsNRVO(o: Overload)
-                        o.kind == "var" && !(o.flags & F_ARG);
-
-                    let nrvo = isReturn
-                            && expr.kind == "call"
-                            && expr.items.len == 0
-                            && expr.target.GET.supportsNRVO;
-
-                    expr = createMove(expr, :nrvo);
+                    expr = createMove(expr);
                 }
                 else
                 {
@@ -3994,9 +3983,9 @@ pub fn solve(
             token:  node.token,
             type:   clear_refs(node.type));
 
-    fn createMove(node: SolvedNode, nrvo! = false): SolvedNode
+    fn createMove(node: SolvedNode): SolvedNode
         SolvedNode(
-            kind:   nrvo ? "nrvo" : "move",
+            kind:   "move",
             items:  [ node ],
             token:  node.token,
             type:   clear_refs(node.type));

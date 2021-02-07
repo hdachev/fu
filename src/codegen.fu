@@ -11,7 +11,7 @@ let M_RETBOOL           = 1 << 1;
 let M_CONST             = 1 << 2;
 let M_RETVAL            = 1 << 3;
 let M_ARGUMENT          = 1 << 4;
-// ... 5
+let M_RETURN            = 1 << 5;
 let M_FWDECL            = 1 << 6;
 let M_PARENS            = 1 << 7;
 let M_OPT_CURLIES       = 1 << 8;
@@ -918,7 +918,7 @@ pub fn cpp_codegen(
                     return cgNode(head, M_STMT);
 
                 if (dest.type.is_void)
-                    return "return (void) " ~ cgNode(head);
+                    return "return (void) " ~ cgNode(head, M_RETURN);
             }
 
             // This kinda does it for return non-expression.
@@ -926,7 +926,7 @@ pub fn cpp_codegen(
                 return cgNode(head, M_STMT);
 
             // I think the prefix keywords beat everything re: precedence.
-            return "return " ~ cgNode(head, M_PARENS);
+            return "return " ~ cgNode(head, M_PARENS|M_RETURN);
         }
 
         // `return;`
@@ -1717,9 +1717,9 @@ pub fn cpp_codegen(
         if (k == "arrlit")      return cgArrayLiteral(node, mode);
         if (k == "definit")     return cgDefaultInit(node, mode);
 
-        if (k == "copy")        return cgMoveOrClone(node);
-        if (k == "move")        return cgMoveOrClone(node);
-        if (k == "nrvo")        return cgMoveOrClone(node);
+        if (k == "copy")        return cgMoveOrClone(node, mode);
+        if (k == "move")        return cgMoveOrClone(node, mode);
+        if (k == "nrvo")        return cgMoveOrClone(node, mode);
 
         if (k == "if")          return cgIf(node, mode);
         if (k == "or")          return cgOr(node, mode);
@@ -1755,16 +1755,30 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgMoveOrClone(node: SolvedNode): string
+    fn cgMoveOrClone(node: SolvedNode, mode: i32): string
     {
-        return cgMoveOrClone(node.kind, node.type, cgNode(node.items.only));
+        let expr = node.items.only;
+
+        // NRVO now here, solver doesn't care.
+        if (mode & M_RETURN && node.kind == "move")
+        {
+            fn supportsNRVO(o: Overload)
+                o.kind == "var" && !(o.flags & F_ARG)
+                    && o.local_of == _current_fn.target.index;
+
+            let nrvo = expr.kind == "call"
+                    && expr.items.len == 0
+                    && expr.target.GET.supportsNRVO;
+
+            if (nrvo)
+                return cgNode(expr);
+        }
+
+        return cgMoveOrClone(node.kind, node.type, cgNode(expr));
     }
 
     fn cgMoveOrClone(kind: string, type: Type, src: string): string
     {
-        if (kind == "nrvo")
-            return src;
-
         if (kind == "move")
             return cgMove(type, src);
 
