@@ -46,6 +46,12 @@ pub fn cpp_codegen(
     mut _indent: string = "\n";
     mut _hasMain: i32;
 
+    struct cg_Blockval
+    {
+        index: i32;
+        ptrflip: bool;
+    };
+
     struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
     {                   //  Or prefix structs with module name?
         using target:   Target;
@@ -53,6 +59,8 @@ pub fn cpp_codegen(
 
         numTEMPVARs?:   i32;
         TEMPVARs?:      string[];
+
+        blockvals?:     cg_Blockval[];
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -535,12 +543,20 @@ pub fn cpp_codegen(
         let lbl     = label && GET(label);
         let name    = lbl.name;
 
-        // Blockvals!
+        // Blockvals! /////////////////////////////////
+        let blockvals0  = _current_fn.blockvals.len;
+        defer _current_fn.blockvals.shrink(blockvals0);
+        ///////////////////////////////////////////////
+
         if (type && !type.is_void)
         {
             mut ptrflip = false;
             let annot   = typeAnnot(type);
             let id      = emitTEMPVAR(annot, :ptrflip, name && "L_" ~ name ~ "_v");
+
+            // Blockvals! //////////////////////////////////////////////
+            _current_fn.blockvals ~= cg_Blockval(:label.index, ptrflip);
+            ////////////////////////////////////////////////////////////
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
             close       = "}), " ~ out ~ ")";
@@ -896,20 +912,43 @@ pub fn cpp_codegen(
 
     fn cgJump(node: SolvedNode): string
     {
-        let dest = GET(Target(:module.modid, node.target.left));
+        let dest_idx    = node.target.left;
+        let expr_idx    = node.target.right;
 
-        let use_return = node.target.left == _current_fn.target.index;
+        let use_return  = dest_idx == _current_fn.target.index;
+        let dest        = GET(Target(:module.modid, dest_idx));
 
-        let exprIdx = node.target.right;
-        if (exprIdx)
+        if (expr_idx)
         {
-            let o = GET(Target(:module.modid, exprIdx));
-            let head = o.solved || fail();
+            let o       = GET(Target(:module.modid, expr_idx));
+            let head    = o.solved || fail();
 
             // Break with value.
             if (!use_return)
-                return "{ L_" ~ dest.name ~ "_v = " ~ cgNode(head)
+            {
+                mut hasval  = false;
+                mut ptrflip = false;
+
+                for (mut i = _current_fn.blockvals.len; i --> 0; )
+                {
+                    let bv = _current_fn.blockvals[i];
+                    if (bv.index == dest_idx)
+                    {
+                        hasval = true;
+                        ptrflip = bv.ptrflip;
+                        break;
+                    }
+                }
+
+                let assign = hasval && "L_" ~ dest.name ~ "_v = ";
+
+                mut value = cgNode(head);
+                if (ptrflip)
+                    value = "&(" ~ value ~ ")";
+
+                return "{ " ~ assign ~ value
                      ~ "; goto L_" ~ dest.name ~ "; }";
+            }
 
             // [[noreturns]] shouldn't have return statements,
             //  but regular fns should return the output of [[noreturns]]
