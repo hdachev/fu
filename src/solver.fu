@@ -665,7 +665,7 @@ pub fn solve(
             //
             NEXT: while (overloadIdx =
                 scope.items.search(id, scope_iterator,
-                    scope_skip: local_scope && _ss.items,
+                    scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
                     :target, :extra_items, :field_items))
             {
                 TEST_AGAIN: while (true)
@@ -3636,7 +3636,7 @@ pub fn solve(
         mut args: SolvedNode[];
         mut conversions: Target[][];
 
-        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions)
+        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, flags: F_IMPLICIT)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
