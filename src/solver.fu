@@ -97,6 +97,9 @@ pub fn solve(
     let implicit mut
         _helpers:       Helpers[];
 
+    mut _anons:         i32;
+    fn ANON(): string = "0" ~ _anons++;
+
 
     //
 
@@ -2018,6 +2021,11 @@ pub fn solve(
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
+            ////////////////////////////////////
+            // Reset anon counters /////////////
+            if (!_current_fn.target) _anons = 0;
+            ////////////////////////////////////
+
             // Go!
             mut out = CurrentFn(
                 solved(n_fn,
@@ -2209,7 +2217,7 @@ pub fn solve(
                     }
 
                     ref overload        = GET_mut(target);
-                    overload.name       = name;
+                    overload.name       = isInline ? ANON() : name;
                     overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
                     overload.template   = native ? createTemplate(n_body) : template;
                 }
@@ -2740,7 +2748,7 @@ pub fn solve(
     fn Scope_addLabel(id: string, local_of!: i32): Target
     {
         return Scope_create(_scope, "label",
-            name: id || "" ~ _scope.items.len,
+            name: id || ANON(),
             type: Type, flags: F_SHADOW, :local_of);
     }
 
