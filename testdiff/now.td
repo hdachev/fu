@@ -1941,7 +1941,8 @@ int main() { return fu_MAIN(); }
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
-        inline fn outer_inl(implicit x: i32, i: i32): i32
+        /*TODO inline tailrec*/
+        fn outer_inl(implicit x: i32, i: i32): i32
             i > 0   ? inner_inl(i)
                     : x + i;
 
@@ -2102,7 +2103,8 @@ int main() { return fu_MAIN(); }
             i > 0   ? inner_inl(i)
                     : 2 * i;
 
-        inline fn inner_inl(implicit x: i32, i: i32): i32
+        /*TODO inline tailrec*/
+        fn inner_inl(implicit x: i32, i: i32): i32
             outer_inl(i - 2 * x);
 
         let implicit x = 3;
