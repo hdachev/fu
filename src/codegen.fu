@@ -877,6 +877,9 @@ pub fn cpp_codegen(
 
     fn cgLet(node: SolvedNode): string
     {
+        if (node.type.addroffn::type_isZST)
+            return "";
+
         mut src = binding(node, doInit: true);
         if !(node.flags & F_GLOBAL)
             return src;
