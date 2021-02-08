@@ -898,6 +898,8 @@ pub fn cpp_codegen(
     {
         let dest = GET(Target(:module.modid, node.target.left));
 
+        let use_return = node.target.left == _current_fn.target.index;
+
         let exprIdx = node.target.right;
         if (exprIdx)
         {
@@ -905,7 +907,7 @@ pub fn cpp_codegen(
             let head = o.solved || fail();
 
             // Break with value.
-            if (node.kind != "return")
+            if (!use_return)
                 return "{ L_" ~ dest.name ~ "_v = " ~ cgNode(head)
                      ~ "; goto L_" ~ dest.name ~ "; }";
 
@@ -930,7 +932,7 @@ pub fn cpp_codegen(
         }
 
         // `return;`
-        if (node.kind == "return")
+        if (use_return)
             return "return";
 
         // `goto X;`
