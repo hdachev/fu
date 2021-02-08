@@ -2965,7 +2965,7 @@ pub fn solve(
     }
 
     fn solveLetLike_dontTouchScope(
-        token: TokenIdx, id: string, flags: i32,
+        token: TokenIdx, id: string, mut flags: i32,
         mut init!: SolvedNode,
         mut annot?!: Type, specType?!: Type,
         deadcode_on_never?!: bool): SolvedNode
@@ -3034,6 +3034,14 @@ pub fn solve(
                         : flags & F_ARG && !(flags & F_MUT)
                             ? add_ref(init.type, Lifetime_temporary)
                             : init.type;
+
+        // TODO clean this up: inliner broke for `v: &mut T` arg annots,
+        //  which don't have the F_REF flag, which drops the mutrefness here on createLet.
+        //
+        // Best way to fix is to use the original argument type on createLet,
+        //  search for TODO__ORIGINAL_ANNOT_OR_TYPE
+        if (t_let.is_mutref)
+            flags |= F_REF;
 
         if (init)
             maybeCopyOrMove(init, t_let);
@@ -3916,7 +3924,7 @@ pub fn solve(
             for (mut i = 0; i < args.len; i++)
             {
                 let slot = overload.args[i];
-                result[i] = createLet(id: slot.name, init: args[i],
+                result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
                     :slot.flags &~ F_ARG); // As if not an arg.
             }
 
