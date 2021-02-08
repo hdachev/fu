@@ -6943,7 +6943,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn setupOperators(P_PREFIX_UNARY) // <- template
+        fn setupOperators(P_PREFIX_UNARY) // <- template
         {
             struct BINOP {
                 PRECEDENCE:     Map(string, i32);
