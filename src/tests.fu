@@ -4444,7 +4444,7 @@ pub fn runTests()
         fn main() 9.v + 8.v + 7.v + 6.v      - 12345;
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
@@ -4478,7 +4478,7 @@ pub fn runTests()
         fn main() outer - 42; // extra points for style
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
@@ -4494,7 +4494,7 @@ pub fn runTests()
         }
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4506,7 +4506,7 @@ pub fn runTests()
         }
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
@@ -4518,7 +4518,7 @@ pub fn runTests()
         }
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);
@@ -4542,7 +4542,7 @@ pub fn runTests()
         }
     `);
 
-    SKIP(`
+    ZERO(`
         inline fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);

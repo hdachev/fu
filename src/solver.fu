@@ -1757,7 +1757,7 @@ pub fn solve(
         //
         let original = GET(overloadIdx || into || fail());
         mut template = original.template;
-        let isInline = !!(template.node.flags & F_INLINE) && false;
+        let isInline = !!(template.node.flags & F_INLINE);
 
         fn setSpec(shadow mangle: string, target: Target, nx?: bool)
         {
