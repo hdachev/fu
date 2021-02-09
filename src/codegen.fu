@@ -926,6 +926,10 @@ pub fn cpp_codegen(
             let o       = GET(Target(:module.modid, expr_idx));
             let head    = o.solved || fail();
 
+            // This kinda does it for return non-expression.
+            if (head.type.is_void && node.flags & F_SINGLE_STMT)
+                return cgNode(head, M_STMT);
+
             // Break with value.
             if (!use_return)
             {
@@ -964,10 +968,6 @@ pub fn cpp_codegen(
                 if (dest.type.is_void)
                     return "return (void) " ~ cgNode(head, M_RETURN);
             }
-
-            // This kinda does it for return non-expression.
-            if (head.type.is_void && node.flags & F_SINGLE_STMT)
-                return cgNode(head, M_STMT);
 
             // I think the prefix keywords beat everything re: precedence.
             return "return " ~ cgNode(head, M_PARENS|M_RETURN);
