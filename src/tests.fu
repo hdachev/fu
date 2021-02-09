@@ -4530,15 +4530,15 @@ pub fn runTests()
                     y0: 10, y1: 12, |x, y|
             {
                 if (y < 11) {
-                    sum++;          // twice
+                    sum++;          // for (x: 0, 10) so 10 times
                     continue;       // <- inner loop
                 }
 
                 if (x == 1) break;  // <- outer loop
-                sum += (x + 1) * y; // once: (0+1)*11
+                sum += (x + 1) * y; // once: (0+1)*(y=11)
             });
 
-            return sum - 2 - 11;
+            return sum - 21;
         }
     `);
 
@@ -4548,8 +4548,8 @@ pub fn runTests()
                 fn(i);
 
         inline fn loop2d(x0, x1, y0, y1, fn)
-            loop1d(x0, x1, |x|
-                loop1d(y0, y1, |y|
+            loop1d(y0, y1, |y|
+                loop1d(x0, x1, |x|
                     fn (x, y)));
 
         fn main() {
@@ -4558,15 +4558,15 @@ pub fn runTests()
                     y0: 10, y1: 12, |x, y|
             {
                 if (y < 11) {
-                    sum++;          // twice
+                    sum++;          // for (x: 0, 10) so 10 times
                     continue;       // <- inner loop
                 }
 
                 if (x == 1) break;  // <- outer loop
-                sum += (x + 1) * y; // once: (0+1)*11
+                sum += (x + 1) * y; // once: (0+1)*(y=11)
             });
 
-            return sum - 2 - 11;
+            return sum - 21;
         }
     `);
 
