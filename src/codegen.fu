@@ -978,7 +978,7 @@ pub fn cpp_codegen(
             return "return";
 
         // `goto X;`
-        if (node.value)
+        if (node.value || dest.kind != "label")
             return "goto L_" ~ dest.name;
 
         // `break/continue`

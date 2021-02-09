@@ -2640,10 +2640,6 @@ pub fn solve(
                 node.value, cont: node.kind == "continue",
                     :helpers_idx);
 
-            ref label = GET_mut(dest);
-            if (label.local_of != _current_fn.target.index)
-                fail("TODO jump-out-of-fn: `" ~ node.kind ~ " " ~ node.value ~ "`: jumps into " ~ label.local_of ~ " from " ~ _current_fn.target.index);
-
             target.left = dest.index;
         }
 
@@ -2793,6 +2789,8 @@ pub fn solve(
         mut ssN = ssi >= 0 && ss[ssi].end - 1;  //
         //////////////////////////////////////////
 
+        mut CONTINUE_BELOW: i32;
+
         for (mut i = _helpers.len; i --> 0; )
         {
             //////////////////////////////////////////
@@ -2803,36 +2801,43 @@ pub fn solve(
             }                                       //
             //////////////////////////////////////////
 
+            // Continue into first return when possible,
+            //  this comparison works because of the scope skips.
+            if (i < CONTINUE_BELOW - 1)
+                i++;
+
             // TODO Inject before each return statement, but not before other jumps.
             defer/*:ok:return*/ helpers_idx = i;
 
             let item = _helpers[i];
             if !(item.mask & HM_Jump)
             {
-                if (id || !(item.mask & HM_Lambda))
-                    continue;
-
-                // Lambda break & continue.
-                if !(cont)
+                if (!CONTINUE_BELOW)
                 {
-                    /////////////////////////////////////////////////
-                    fail("TODO ensure break labels around lambdas.");
-                    /////////////////////////////////////////////////
+                    if (id || !(item.mask & HM_Lambda))
+                        continue;
 
-                    i--;
-                    i >= 0 || fail("Cannot break to label `" ~ id ~ "` from here, did you mean to `continue`?");
+                    // Lambda break & continue.
+                    if !(cont)
+                    {
+                        CONTINUE_BELOW = i;
+                        continue;
+                    }
                 }
 
                 return Target(:module.modid, item.target);
             }
 
-            if !(id ? item.id == id : item.mask & HM_Anon != 0)
-                continue;
-
-            if (cont)
+            if (!CONTINUE_BELOW)
             {
-                i++;
-                i < _helpers.len || fail("Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
+                if !(id ? item.id == id : item.mask & HM_Anon != 0)
+                    continue;
+
+                if (cont)
+                {
+                    i++;
+                    i < _helpers.len || fail("Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
+                }
             }
 
             shadow ref item = _helpers[i];
