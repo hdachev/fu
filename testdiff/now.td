@@ -1951,16 +1951,16 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int outer_inl_8E8n(int, int);
+static int outer_inl(int, int);
 
 #ifndef FU_NO_FDEFs
 
 inline static int inner_inl_U3Pf(const int i, const int x)
 {
-    return outer_inl_8E8n((i - 1), x);
+    return outer_inl((i - 1), x);
 }
 
-inline static int outer_inl_8E8n(const int i, const int x)
+static int outer_inl(const int i, const int x)
 {
     return ((i > 0) ? inner_inl_U3Pf(i, x) : (x + i));
 }
@@ -1968,7 +1968,7 @@ inline static int outer_inl_8E8n(const int i, const int x)
 int fu_MAIN()
 {
     const int x = 7;
-    return outer_inl_8E8n(1, x) - 7;
+    return outer_inl(1, x) - 7;
 }
 
 #endif
@@ -2116,14 +2116,14 @@ inline static int outer_inl_U3Pf(int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int inner_inl_8E8n(const int i, const int x)
+static int inner_inl(const int i, const int x)
 {
     return outer_inl_U3Pf((i - (2 * x)), x);
 }
 
 inline static int outer_inl_U3Pf(const int i, const int x)
 {
-    return ((i > 0) ? inner_inl_8E8n(i, x) : (2 * i));
+    return ((i > 0) ? inner_inl(i, x) : (2 * i));
 }
 
 int fu_MAIN()
@@ -4936,14 +4936,14 @@ int fu_MAIN()
             sum += x;
             if (y == 1)
             {
-                goto L_162;
+                goto L_00;
             };
             if (x == 2)
             {
                 goto L_outer;
             };
         };
-      } L_162:;
+      } L_00:;
     }
         L_outer:;
 
@@ -4990,7 +4990,7 @@ int fu_MAIN()
         {
             if ((y & 1) && !(x & 1))
             {
-                goto L_162;
+                goto L_00;
             };
             sum += x;
         };
@@ -4999,7 +4999,7 @@ int fu_MAIN()
         {
             break;
         };
-      } L_162:;
+      } L_00:;
     };
     return sum - 4312;
 }
@@ -15134,23 +15134,23 @@ static int v(const int x)
     int L_BLOCK_v {};
     return (__extension__ (
     { {
-        int L_161_v {};
+        int L_00_v {};
         L_BLOCK_v = ((5000 + (__extension__ (
         { {
             if (x == 9)
             {
-                { L_161_v = 2000; goto L_161; };
+                { L_00_v = 2000; goto L_00; };
             };
             if (x == 8)
                 return 300;
 
             fu::never _0 {};
-            L_161_v = (((x == 7) ? (__extension__ (
+            L_00_v = (((x == 7) ? (__extension__ (
             {
                 { L_BLOCK_v = 40; goto L_BLOCK; };
             }), static_cast<fu::never&&>(_0)) : 5));
-          } L_161:;
-        }), int(L_161_v))));
+          } L_00:;
+        }), int(L_00_v))));
       } L_BLOCK:;
     }), int(L_BLOCK_v));
 }
