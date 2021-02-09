@@ -24,6 +24,7 @@ pub let N_DeadIf            = 1 << 9;
 //
 
 let OPTI_autoshadow         = true;
+let OPTI_dedupe_vars        = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false; // TODO not safe without borrowck
@@ -3099,12 +3100,45 @@ pub fn solve(
             if (global)
                 out.flags |= F_GLOBAL;
 
-            let target = out.target = Binding(:id, :out.flags, :out.type, :reuse);
-            Scope_set(_scope, :id, :target);
+            ////////////////////////////////////////////////////////////////
+            if (OPTI_dedupe_vars && !(out.flags & F_ARG))
+            {
+                let init = out.items[LET_INIT];
+                if (init.kind == "call" && !init.items)
+                {
+                    let target  = init.target;
+                    let other   = GET(target);
 
+                    let TODO_FIX__InexpressibleShadow =
+                        F_SHADOW & (other.flags ^ out.flags);
+
+                    let TODO_FIX__InexpressibleUsing =
+                        out.flags & F_USING && target.modid != module.modid;
+
+                    if (other.kind == "var" && !TODO_FIX__InexpressibleShadow
+                                            && !TODO_FIX__InexpressibleUsing)
+                    {
+                        if (isAssignable(host: other.type, out.type))
+                        {
+                            // println("VARFOLD " ~ id ~ ": " ~ humanizeType(out.type)
+                            //                    ~ " := " ~ other.name ~ ": " ~ humanizeType(other.type));
+
+                            Scope_set(_scope, :id, :target);
+                            if (out.flags & F_USING)
+                                _scope.usings.push(target.index);
+
+                            return createEmpty();
+                        }
+                    }
+                }
+            }
+            ////////////////////////////////////////////////////////////////
+
+            let target = out.target = Binding(:id, :out.flags, :out.type, :reuse);
             if (global)
                 GET_mut(target).solved = out;
 
+            Scope_set(_scope, :id, :target);
             if (out.flags & F_USING)
                 _scope.usings.push(target.index);
         }
