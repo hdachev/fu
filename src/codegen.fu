@@ -574,7 +574,7 @@ pub fn cpp_codegen(
         if (lbl.name)
         {
             let prefixed_id = "L_" ~ name;
-            if (src.has(prefixed_id))
+            if (src.has("goto " ~ prefixed_id ~ ";")) // TODO FIX track label usage
             {
                 close = "  } " ~ prefixed_id ~ ":;" ~ indent0 ~ close;
                 open  = "{ {";
@@ -1685,7 +1685,7 @@ pub fn cpp_codegen(
         if (body && node.value)
         {
             let brk = "L_" ~ node.value;
-            if (body.has(brk))
+            if (body.has("goto " ~ brk ~ ";")) // TODO FIX track label usage
                 breakLabel = _indent ~ "    " ~ brk ~ ":;";
         }
 
