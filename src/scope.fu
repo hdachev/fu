@@ -207,7 +207,7 @@ pub nocopy struct Scope
     items:      ScopeItem[];
     overloads:  Overload[];
     imports:    i32[];
-    usings:     i32[];
+    usings:     Target[];
     converts:   Target[];
 };
 
@@ -300,7 +300,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
     }
 
     let no_imports: i32[];
-    let no_usings: i32[];
+    let no_usings: Target[];
 
     return Scope(
         items: result,

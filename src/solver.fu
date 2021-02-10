@@ -655,8 +655,7 @@ pub fn solve(
                 if (maxArity > minArity)
                     scope.usings.each(
                         local_scope && _ss.usings,
-                            |index| visitTypeImports(
-                                GET(Target(:module.modid, :index)).type));
+                            |u| visitTypeImports(GET(u).type));
 
                 // Field access, method calls & operator calls.
                 //  TODO no way to opt-out of this for operators currently,
@@ -1101,8 +1100,7 @@ pub fn solve(
             if (nullary)
             {
                 scope.usings.each(local_scope && _ss.usings,
-                    |index| foreach(
-                        Target(:module.modid, :index)));
+                    |u| foreach(u));
             }
 
             // On-struct stuff.
@@ -3112,11 +3110,7 @@ pub fn solve(
                     let TODO_FIX__InexpressibleShadow =
                         F_SHADOW & (other.flags ^ out.flags);
 
-                    let TODO_FIX__InexpressibleUsing =
-                        out.flags & F_USING && target.modid != module.modid;
-
-                    if (other.kind == "var" && !TODO_FIX__InexpressibleShadow
-                                            && !TODO_FIX__InexpressibleUsing)
+                    if (other.kind == "var" && !TODO_FIX__InexpressibleShadow)
                     {
                         if (isAssignable(host: other.type, out.type))
                         {
@@ -3125,7 +3119,7 @@ pub fn solve(
 
                             Scope_set(_scope, :id, :target);
                             if (out.flags & F_USING)
-                                _scope.usings.push(target.index);
+                                _scope.usings.push(target);
 
                             return createEmpty();
                         }
@@ -3140,7 +3134,7 @@ pub fn solve(
 
             Scope_set(_scope, :id, :target);
             if (out.flags & F_USING)
-                _scope.usings.push(target.index);
+                _scope.usings.push(target);
         }
 
         return out;
