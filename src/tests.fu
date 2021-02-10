@@ -2153,6 +2153,32 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub struct Target { modid!: i32; packed!: i32; };
+        pub inline fn index(a: Target) a.packed;
+
+        //////////////////////////////////////////////////////////////////
+        // TODO module autosplit, we need to generate import variations //
+        //////////////////////////////////////////////////////////////////
+
+        struct CurrentFn { using target: Target; };
+        fn hello(c?: CurrentFn) c.index;
+        fn main() hello;
+    `);
+
+    ZERO([
+    `
+        pub struct Target { modid!: i32; packed!: i32; };
+        pub inline fn index(a: Target) a.packed;
+    `,
+    `
+        import _0;
+        struct CurrentFn { using target: Target; };
+        fn hello(c?: CurrentFn) c.index;
+        fn main() hello;
+    `
+    ]);
+
 
     // Let's move on to some cooler quality of life shit.
 
