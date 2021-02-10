@@ -1599,14 +1599,20 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-inline static int add_uxa_b_inline_Dx7L(const s_X& x, const int b)
-{
-    return x.a + b;
-}
-
 static int hey(const s_X& x)
 {
-    return add_uxa_b_inline_Dx7L(x, -1);
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_X& x_1 = x;
+        const int b = -1;
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (x_1.a + b); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
 }
 
 int fu_MAIN()
@@ -1951,18 +1957,21 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer_inl(int, int);
-
 #ifndef FU_NO_FDEFs
-
-inline static int inner_inl_U3Pf(const int i, const int x)
-{
-    return outer_inl((i - 1), x);
-}
 
 static int outer_inl(const int i, const int x)
 {
-    return ((i > 0) ? inner_inl_U3Pf(i, x) : (x + i));
+    int _0 {};
+    return ((i > 0) ? (__extension__ (
+    {
+        const int i_1 = i;
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = outer_inl((i_1 - 1), x); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)) : (x + i));
 }
 
 int fu_MAIN()
@@ -2112,24 +2121,37 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int outer_inl_U3Pf(int, int);
-
 #ifndef FU_NO_FDEFs
 
 static int inner_inl(const int i, const int x)
 {
-    return outer_inl_U3Pf((i - (2 * x)), x);
-}
-
-inline static int outer_inl_U3Pf(const int i, const int x)
-{
-    return ((i > 0) ? inner_inl(i, x) : (2 * i));
+    int _0 {};
+    return (__extension__ (
+    {
+        const int i_1 = (i - (2 * x));
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = ((i_1 > 0) ? inner_inl(i_1, x) : (2 * i_1)); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
 }
 
 int fu_MAIN()
 {
     const int x = 3;
-    return outer_inl_U3Pf(6, x);
+    int _0 {};
+    return (__extension__ (
+    {
+        const int i = 6;
+        int L_01_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_01_v = ((i > 0) ? inner_inl(i, x) : (2 * i)); goto L_01; };
+          } L_01:;
+        }), int(L_01_v)));
+    }), int(_0));
 }
 
 #endif
@@ -6637,14 +6659,18 @@ static int __solveStruct(int&, int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& l_1_0(int& arg_0, int x_0)
-{
-    return (arg_0 += x_0);
-}
-
 inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
 {
-    return !cond ? cond : l_1_0(arg_0, x_0);
+    int* _0;
+    return !cond ? cond : (__extension__ (
+    {
+        int* L_01_v;
+        _0 = &((__extension__ (
+        { {
+            { L_01_v = &((arg_0 += x_0)); goto L_01; };
+          } L_01:;
+        }), *L_01_v));
+    }), *_0);
 }
 
 static int& GET_mut(int& target_0, int& x)
@@ -6896,11 +6922,6 @@ struct s_ScopeSkip
 
 #ifndef FU_NO_FDEFs
 
-inline static int& l_1_0_U3Pf(int& sum_0, const int item)
-{
-    return (sum_0 += item);
-}
-
                                 #ifndef DEFt_each_sJgb
                                 #define DEFt_each_sJgb
 inline void each_sJgb(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
@@ -6916,8 +6937,14 @@ inline void each_sJgb(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_Scope
         };
         const int i1 = ss.start;
         for (int i_1 = i0; i_1 < i1; i_1++)
-            l_1_0_U3Pf(sum_0, items[i_1]);
+        {
+            const int item = items[i_1];
 
+            { {
+                { (sum_0 += item); goto L_01; };
+              } L_01:;
+            };
+        };
         i0 = ss.end;
     };
 }
@@ -7048,16 +7075,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int& l_1_0_U3Pf(int& sum_0, const int i)
-{
-    return (sum_0 += i);
-}
-
 inline static void each_hTsr(int& sum_0, const fu_VEC<int>& a, int, const int start)
 {
     for (int i = start; i < a.size(); i++)
-        l_1_0_U3Pf(sum_0, a[i]);
+    {
+        const int i_1 = a[i];
 
+        { {
+            { (sum_0 += i_1); goto L_00; };
+          } L_00:;
+        };
+    };
 }
 
 int fu_MAIN()
@@ -7779,14 +7807,18 @@ struct s_RenderFrame
 
 #ifndef FU_NO_FDEFs
 
-inline static s_mat4 mat4_identity()
-{
-    return s_mat4 { 1 };
-}
-
 static void test(s_RenderFrame& output)
 {
-    output.u_mat4_VP = mat4_identity();
+    s_mat4 _0 {};
+    output.u_mat4_VP = (__extension__ (
+    {
+        s_mat4 L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = s_mat4 { 1 }; goto L_00; };
+          } L_00:;
+        }), s_mat4(L_00_v)));
+    }), s_mat4(_0));
 }
 
 int fu_MAIN()
@@ -7963,28 +7995,47 @@ struct s_mat34
 
 #ifndef FU_NO_FDEFs
 
-inline static float determinant_2rXJ(const s_mat34& _)
-{
-    return ((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z);
-}
-
 static s_mat34 inverse(const s_mat34& mat)
 {
-    const float idet = (1.0f / determinant_2rXJ(mat));
+    float _0 {};
+    const float idet = (1.0f / (__extension__ (
+    {
+        const s_mat34& _ = mat;
+        float L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z)); goto L_00; };
+          } L_00:;
+        }), float(L_00_v)));
+    }), float(_0)));
     const s_vec3 i_mx = s_vec3 { (idet * ((-mat.mz.y * mat.my.z) + (mat.my.y * mat.mz.z))), (idet * ((+mat.mz.y * mat.mx.z) - (mat.mx.y * mat.mz.z))), (idet * ((-mat.my.y * mat.mx.z) + (mat.mx.y * mat.my.z))) };
     const s_vec3 i_my = s_vec3 { (idet * ((+mat.mz.x * mat.my.z) - (mat.my.x * mat.mz.z))), (idet * ((-mat.mz.x * mat.mx.z) + (mat.mx.x * mat.mz.z))), (idet * ((+mat.my.x * mat.mx.z) - (mat.mx.x * mat.my.z))) };
     const s_vec3 i_mz = s_vec3 { (idet * ((-mat.mz.x * mat.my.y) + (mat.my.x * mat.mz.y))), (idet * ((+mat.mz.x * mat.mx.y) - (mat.mx.x * mat.mz.y))), (idet * ((-mat.my.x * mat.mx.y) + (mat.mx.x * mat.my.y))) };
     return s_mat34 { s_vec3(i_mx), s_vec3(i_my), s_vec3(i_mz), s_vec3 { (((mat.mo.x * -i_mx.x) + (mat.mo.y * -i_my.x)) + (mat.mo.z * -i_mz.x)), (((mat.mo.x * -i_mx.y) + (mat.mo.y * -i_my.y)) + (mat.mo.z * -i_mz.y)), (((mat.mo.x * -i_mx.z) + (mat.mo.y * -i_my.z)) + (mat.mo.z * -i_mz.z)) } };
 }
 
-inline static s_mat34 mat34_identity()
-{
-    return s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
-}
-
 int fu_MAIN()
 {
-    return int((determinant_2rXJ(inverse(mat34_identity())) - 1.0f));
+    float _0 {};
+    return int(((__extension__ (
+    {
+        s_mat34 _1 {};
+        const s_mat34 _ = inverse((__extension__ (
+        {
+            s_mat34 L_00_v {};
+            _1 = ((__extension__ (
+            { {
+                { L_00_v = s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} }; goto L_00; };
+              } L_00:;
+            }), s_mat34(L_00_v)));
+        }), s_mat34(_1)));
+        float L_01_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_01_v = (((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z)); goto L_01; };
+          } L_01:;
+        }), float(L_01_v)));
+    }), float(_0)) - 1.0f));
 }
 
 #endif
@@ -8048,27 +8099,31 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-inline static void r4_xD7A(s_TEA& _, uint32_t& sum)
-{
-    uint32_t delta = 0x9e3779b9u;
-    for (int i = 0; i < 4; i++)
-    {
-        sum += delta;
-        _.v0 += ((((_.v1 << 4u) + 0xa341316cu) ^ (_.v1 + sum)) ^ ((_.v1 >> 5u) + 0xc8013ea4u));
-        _.v1 += ((((_.v0 << 4u) + 0xad90777du) ^ (_.v0 + sum)) ^ ((_.v0 >> 5u) + 0x7e95761eu));
-    };
-}
-
-inline static void r4_Sc3v(s_TEA& tea)
-{
-    uint32_t sum {};
-    r4_xD7A(tea, sum);
-}
-
 int fu_MAIN()
 {
     s_TEA tea {};
-    r4_Sc3v(tea);
+
+    {
+        s_TEA& tea_1 = tea;
+
+        {
+            uint32_t sum {};
+
+            {
+                uint32_t& sum_1 = sum;
+
+                {
+                    uint32_t delta = 0x9e3779b9u;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        sum_1 += delta;
+                        tea_1.v0 += ((((tea_1.v1 << 4u) + 0xa341316cu) ^ (tea_1.v1 + sum_1)) ^ ((tea_1.v1 >> 5u) + 0xc8013ea4u));
+                        tea_1.v1 += ((((tea_1.v0 << 4u) + 0xad90777du) ^ (tea_1.v0 + sum_1)) ^ ((tea_1.v0 >> 5u) + 0x7e95761eu));
+                    };
+                };
+            };
+        };
+    };
     return int((tea.v0 ^ tea.v0));
 }
 
@@ -9915,14 +9970,20 @@ struct s_vec3
 
 #ifndef FU_NO_FDEFs
 
-inline static s_vec3 operator/(const float a, const s_vec3& b)
-{
-    return s_vec3 { (a / b.x), (a / b.y), (a / b.z) };
-}
-
 int fu_MAIN()
 {
-    return int(((1.0f / s_vec3 { 1.0f, 0.0f, 0.0f }).x - 1.0f));
+    s_vec3 _0 {};
+    return int(((__extension__ (
+    {
+        const float a = 1.0f;
+        const s_vec3 b = s_vec3 { 1.0f, 0.0f, 0.0f };
+        s_vec3 L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = s_vec3 { (a / b.x), (a / b.y), (a / b.z) }; goto L_00; };
+          } L_00:;
+        }), s_vec3(L_00_v)));
+    }), s_vec3(_0)).x - 1.0f));
 }
 
 #endif
@@ -11906,17 +11967,19 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_test_NkGW
-                                #define DEFt_test_NkGW
-inline int test_NkGW(const s_Hey& h)
-{
-    return h.i + 2;
-}
-                                #endif
-
 int fu_MAIN()
 {
-    return test_NkGW(s_Hey { 1 }) - 3;
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Hey h = s_Hey { 1 };
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (h.i + 2); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)) - 3;
 }
 
 #endif
@@ -11961,17 +12024,19 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_test_NkGW
-                                #define DEFt_test_NkGW
-inline int test_NkGW(const s_Hey& h)
-{
-    return h.i + 2;
-}
-                                #endif
-
 int fu_MAIN()
 {
-    return test_NkGW(s_Hey { 1 }) - 3;
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Hey h = s_Hey { 1 };
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (h.i + 2); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)) - 3;
 }
 
 #endif
@@ -12007,17 +12072,19 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_test_NkGW
-                                #define DEFt_test_NkGW
-inline int test_NkGW(const s_Hey& h)
-{
-    return h.i + 2;
-}
-                                #endif
-
 int fu_MAIN()
 {
-    return test_NkGW(s_Hey { 1 }) - 3;
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Hey h = s_Hey { 1 };
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (h.i + 2); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)) - 3;
 }
 
 #endif
@@ -12139,17 +12206,19 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_test_a17S
-                                #define DEFt_test_a17S
-inline int test_a17S(const s_Hey& h)
-{
-    return h.you.i + 7;
-}
-                                #endif
-
 int fu_MAIN()
 {
-    return test_a17S(init3()) - 10;
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Hey h = init3();
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = (h.you.i + 7); goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)) - 10;
 }
 
 #endif
@@ -12443,26 +12512,29 @@ struct s_mat4
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_mat34_identity
-                                #define DEFt_mat34_identity
-inline s_mat34 mat34_identity()
-{
-    return s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
-}
-                                #endif
-
-                                #ifndef DEFt_mat4_8ATk
-                                #define DEFt_mat4_8ATk
-inline s_mat4 mat4_8ATk(const s_mat34& m)
-{
-    return s_mat4 { float(m.mx.x), float(m.mx.y), float(m.mx.z), 0.0f, float(m.my.x), float(m.my.y), float(m.my.z), 0.0f, float(m.mz.x), float(m.mz.y), float(m.mz.z), 0.0f, float(m.mo.x), float(m.mo.y), float(m.mo.z), 1.0f };
-}
-                                #endif
-
 int fu_MAIN()
 {
-    const s_mat34 m34 = mat34_identity();
-    const s_mat4 m44 = mat4_8ATk(m34);
+    s_mat34 _0 {};
+    const s_mat34 m34 = (__extension__ (
+    {
+        s_mat34 L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} }; goto L_00; };
+          } L_00:;
+        }), s_mat34(L_00_v)));
+    }), s_mat34(_0));
+    s_mat4 _1 {};
+    const s_mat4 m44 = (__extension__ (
+    {
+        const s_mat34& m = m34;
+        s_mat4 L_01_v {};
+        _1 = ((__extension__ (
+        { {
+            { L_01_v = s_mat4 { float(m.mx.x), float(m.mx.y), float(m.mx.z), 0.0f, float(m.my.x), float(m.my.y), float(m.my.z), 0.0f, float(m.mz.x), float(m.mz.y), float(m.mz.z), 0.0f, float(m.mo.x), float(m.mo.y), float(m.mo.z), 1.0f }; goto L_01; };
+          } L_01:;
+        }), s_mat4(L_01_v)));
+    }), s_mat4(_1));
     return int(determinant(m44)) - 1;
 }
 
@@ -12951,24 +13023,33 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int inner()
-{
-    for (int i = 0; i < 10; i++)
-        return i;
-
-    return 1;
-}
-
-inline static int outer()
-{
-    return inner();
-}
-
 int fu_MAIN()
 {
     for (int i = 0; i < 10; i++)
-        return outer();
+    {
+        int _0 {};
+        return (__extension__ (
+        {
+            int L_00_v {};
+            _0 = ((__extension__ (
+            { {
+                int _1 {};
+                { L_00_v = (__extension__ (
+                {
+                    int L_01_v {};
+                    _1 = ((__extension__ (
+                    { {
+                        for (int i_1 = 0; i_1 < 10; i_1++)
+                            { L_01_v = int(i_1); goto L_01; };
 
+                        { L_01_v = 1; goto L_01; };
+                      } L_01:;
+                    }), int(L_01_v)));
+                }), int(_1)); goto L_00; };
+              } L_00:;
+            }), int(L_00_v)));
+        }), int(_0));
+    };
     return 1;
 }
 
@@ -14137,17 +14218,24 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int l_1_0_SOFX(int& a, const int b)
-{
-    return a + b;
-}
-
 inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
 {
     int result = init;
     for (int i = 0; i < items.size(); i++)
-        result = l_1_0_SOFX(result, items[i]);
-
+    {
+        int _0 {};
+        result = (__extension__ (
+        {
+            int& a = result;
+            const int b = items[i];
+            int L_00_v {};
+            _0 = ((__extension__ (
+            { {
+                { L_00_v = (a + b); goto L_00; };
+              } L_00:;
+            }), int(L_00_v)));
+        }), int(_0));
+    };
     return result;
 }
 
@@ -14179,16 +14267,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int& l_1_0_U3Pf(int& i_0, const int x)
-{
-    return (i_0 += x);
-}
-
 inline static void each_kJRA(int& i_0, const fu_VEC<int>& items, int)
 {
     for (int i = 0; i < items.size(); i++)
-        l_1_0_U3Pf(i_0, items[i]);
+    {
+        const int x = items[i];
 
+        { {
+            { (i_0 += x); goto L_00; };
+          } L_00:;
+        };
+    };
 }
 
 int fu_MAIN()
@@ -14229,14 +14318,15 @@ static void makeDirty(int& sum_0, const int parent_idx)
     sum_0 += parent_idx;
 }
 
-inline static void l_1_0(int& sum_0, int parent_idx_0)
-{
-    makeDirty(sum_0, parent_idx_0);
-}
-
 inline static void each_FE0s(int& sum_0, int parent_idx_0, int)
 {
-    l_1_0(sum_0, parent_idx_0);
+
+    {
+
+        {
+            makeDirty(sum_0, parent_idx_0);
+        };
+    };
 }
 
 static void FnDecl_update(int& sum_0, const int parent_idx)
@@ -14496,14 +14586,18 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int l_1_0(int sum_0)
-{
-    return sum_0;
-}
-
 inline static int identity_sqbD(int sum_0, int)
 {
-    return l_1_0(sum_0);
+    int _0 {};
+    return (__extension__ (
+    {
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = sum_0; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
 }
 
 inline static int outer_U3Pf(const int depth1)
@@ -14538,24 +14632,32 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int lambda0(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int lambda1(int sum_0)
-{
-    return sum_0;
-}
-
 inline static int identity_lY2z(int sum_0, int)
 {
-    return lambda1(sum_0);
+    int _0 {};
+    return (__extension__ (
+    {
+        int L_01_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_01_v = sum_0; goto L_01; };
+          } L_01:;
+        }), int(L_01_v)));
+    }), int(_0));
 }
 
 inline static int outer_sqbD(int sum_0, int)
 {
-    const int sum = lambda0(sum_0);
+    int _0 {};
+    const int sum = (__extension__ (
+    {
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = sum_0; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
     return identity_lY2z(sum, 0);
 }
 
@@ -14593,35 +14695,47 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int lambda0(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int lambda1(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int lambda2(int sum_0)
-{
-    return sum_0;
-}
-
 inline static int identity_Rf2N(int sum_0, int)
 {
-    return lambda2(sum_0);
+    int _0 {};
+    return (__extension__ (
+    {
+        int L_02_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_02_v = sum_0; goto L_02; };
+          } L_02:;
+        }), int(L_02_v)));
+    }), int(_0));
 }
 
 inline static int inner_XNBG(int sum_0, int)
 {
-    const int sum = lambda1(sum_0);
+    int _0 {};
+    const int sum = (__extension__ (
+    {
+        int L_01_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_01_v = sum_0; goto L_01; };
+          } L_01:;
+        }), int(L_01_v)));
+    }), int(_0));
     return identity_Rf2N(sum, 0);
 }
 
 inline static int outer_sqbD(int sum_0, int)
 {
-    const int sum = lambda0(sum_0);
+    int _0 {};
+    const int sum = (__extension__ (
+    {
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = sum_0; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
     return inner_XNBG(sum, 0);
 }
 
@@ -14675,47 +14789,81 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int l_1_3(int sum_0)
+inline static int first_inner_FuD6(int depth0_0, int sum_0, int sum_042, int)
 {
-    return sum_0;
-}
-
-inline static int l_1_2(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int l_1_1(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int l_1_0(int sum_0)
-{
-    return sum_0;
-}
-
-inline static int first_inner_dCae(int depth0_0, int sum_0, int sum_040, int)
-{
-    const int sum = ((depth0_0 + l_1_1(sum_0)) + l_1_0(sum_040));
+    int _0 {};
+    int _1 {};
+    const int sum = ((depth0_0 + (__extension__ (
+    {
+        int L_04_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_04_v = sum_0; goto L_04; };
+          } L_04:;
+        }), int(L_04_v)));
+    }), int(_0))) + (__extension__ (
+    {
+        int L_05_v {};
+        _1 = ((__extension__ (
+        { {
+            { L_05_v = sum_042; goto L_05; };
+          } L_05:;
+        }), int(L_05_v)));
+    }), int(_1)));
     return sum;
 }
 
-inline static int first_t3FB(int depth0_0, int sum_0, int)
+inline static int first_Nc5O(int depth0_0, int sum_0, int)
 {
-    const int sum = (depth0_0 + l_1_1(sum_0));
-    return first_inner_dCae(depth0_0, sum_0, sum, 0);
+    int _0 {};
+    const int sum = (depth0_0 + (__extension__ (
+    {
+        int L_03_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_03_v = sum_0; goto L_03; };
+          } L_03:;
+        }), int(L_03_v)));
+    }), int(_0)));
+    return first_inner_FuD6(depth0_0, sum_0, sum, 0);
 }
 
 inline static int second_inner_Rf2N(int depth0_0, int sum_0, int sum_021, int)
 {
-    const int sum = ((depth0_0 + l_1_3(sum_0)) + l_1_2(sum_021));
-    return sum + first_t3FB(depth0_0, sum, 0);
+    int _0 {};
+    int _1 {};
+    const int sum = ((depth0_0 + (__extension__ (
+    {
+        int L_01_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_01_v = sum_0; goto L_01; };
+          } L_01:;
+        }), int(L_01_v)));
+    }), int(_0))) + (__extension__ (
+    {
+        int L_02_v {};
+        _1 = ((__extension__ (
+        { {
+            { L_02_v = sum_021; goto L_02; };
+          } L_02:;
+        }), int(L_02_v)));
+    }), int(_1)));
+    return sum + first_Nc5O(depth0_0, sum, 0);
 }
 
 inline static int second_lY2z(int depth0_0, int sum_0, int)
 {
-    const int sum = (depth0_0 + l_1_3(sum_0));
+    int _0 {};
+    const int sum = (depth0_0 + (__extension__ (
+    {
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = sum_0; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0)));
     return second_inner_Rf2N(depth0_0, sum_0, sum, 0);
 }
 
@@ -15158,6 +15306,389 @@ static int v(const int x)
 int fu_MAIN()
 {
     return (((v(9) + v(8)) + v(7)) + v(6)) - 12345;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn each(arr, fn)
+            for (mut i = 0; i < arr.len; i++)
+                fn(arr[i]);
+
+        fn some(arr, fn) {
+            arr.each(|x| { if (fn(x)) return x; });
+            return 0;
+        }
+
+        fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int some_kJRA(const fu_VEC<int>& arr, int)
+{
+
+    {
+        const fu_VEC<int>& arr_1 = arr;
+
+        {
+            for (int i = 0; i < arr_1.size(); i++)
+            {
+                const int x = arr_1[i];
+
+                {
+                    bool _0 {};
+                    if ((__extension__ (
+                    {
+                        const int v = x;
+                        bool L_02_v {};
+                        _0 = ((__extension__ (
+                        { {
+                            { L_02_v = ((v & 1) == 0); goto L_02; };
+                          } L_02:;
+                        }), bool(L_02_v)));
+                    }), bool(_0)))
+                        return int(x);
+
+                };
+            };
+        };
+    };
+    return 0;
+}
+
+int fu_MAIN()
+{
+    return some_kJRA(fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn each(arr, fn)
+            for (mut i = 0; i < arr.len; i++)
+                fn(arr[i]);
+
+        fn main() {
+            mut sum = 0;
+            OUTER: [1, 2, 3, 4].each(|x| {
+                sum += x;
+                for (mut i = 1; i--; ) // once
+                    if (sum == 6) break :OUTER;
+            });
+            return sum - 6;
+        }
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int sum = 0;
+
+    { {
+
+        {
+            fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<4> { 1, 2, 3, 4 } };
+
+            {
+                for (int i = 0; i < arr.size(); i++)
+                {
+                    const int x = arr[i];
+
+                    {
+                        sum += x;
+                        for (int i_1 = 1; i_1--; )
+                        {
+                            if (sum == 6)
+                            {
+                                goto L_OUTER;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+      } L_OUTER:;
+    };
+    return sum - 6;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        fn main() {
+            mut x = 0;
+            loop1d(0, 10, |i| { if (x += i) break; });
+            return x - 1;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int x = 0;
+
+    {
+        const int i0 = 0;
+        const int i1 = 10;
+
+        { {
+            for (int i = i0; i < i1; i++)
+            {
+                int& i_1 = i;
+
+                {
+                    if ((x += i_1))
+                    {
+                        goto L_00;
+                    };
+                };
+            };
+          } L_00:;
+        };
+    };
+    return x - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        fn main() {
+            mut x = 0;
+            loop1d(0, 10, |i| { if (x += i) return x - 1; });
+            return 101;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int x = 0;
+
+    {
+        const int i0 = 0;
+        const int i1 = 10;
+
+        {
+            for (int i = i0; i < i1; i++)
+            {
+                int& i_1 = i;
+
+                {
+                    if ((x += i_1))
+                        return x - 1;
+
+                };
+            };
+        };
+    };
+    return 101;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn loop2d(x0, x1, y0, y1, fn) {
+            for (mut y = y0; y < y1; y++)
+            for (mut x = x0; x < x1; x++) fn(x, y);
+        }
+
+        fn main() {
+            mut sum = 0;
+            loop2d( x0:  0, x1: 10,
+                    y0: 10, y1: 12, |x, y|
+            {
+                if (y < 11) {
+                    sum++;          // for (x: 0, 10) so 10 times
+                    continue;       // <- inner loop
+                }
+
+                if (x == 1) break;  // <- outer loop
+                sum += (x + 1) * y; // once: (0+1)*(y=11)
+            });
+
+            return sum - 21;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int sum = 0;
+
+    {
+        const int x0 = 0;
+        const int x1 = 10;
+        const int y0 = 10;
+        const int y1 = 12;
+
+        { {
+            for (int y = y0; y < y1; y++)
+            {
+                for (int x = x0; x < x1; x++)
+                {
+                    int& x_1 = x;
+                    int& y_1 = y;
+
+                    { {
+                        if (y_1 < 11)
+                        {
+                            sum++;
+                            goto L_01;
+                        };
+                        if (x_1 == 1)
+                        {
+                            goto L_00;
+                        };
+                        sum += ((x_1 + 1) * y_1);
+                      } L_01:;
+                    };
+                };
+            };
+          } L_00:;
+        };
+    };
+    return sum - 21;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn loop1d(i0, i1, fn)
+            for (mut i = i0; i < i1; i++)
+                fn(i);
+
+        inline fn loop2d(x0, x1, y0, y1, fn)
+            loop1d(y0, y1, |y|
+                loop1d(x0, x1, |x|
+                    fn (x, y)));
+
+        fn main() {
+            mut sum = 0;
+            loop2d( x0:  0, x1: 10,
+                    y0: 10, y1: 12, |x, y|
+            {
+                if (y < 11) {
+                    sum++;          // for (x: 0, 10) so 10 times
+                    continue;       // <- inner loop
+                }
+
+                if (x == 1) break;  // <- outer loop
+                sum += (x + 1) * y; // once: (0+1)*(y=11)
+            });
+
+            return sum - 21;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int sum = 0;
+
+    {
+        const int x0 = 0;
+        const int x1 = 10;
+        const int y0 = 10;
+        const int y1 = 12;
+
+        { {
+
+            {
+                const int i0 = y0;
+                const int i1 = y1;
+
+                {
+                    for (int i = i0; i < i1; i++)
+                    {
+                        int& y = i;
+
+                        {
+
+                            {
+                                const int i0_1 = x0;
+                                const int i1_1 = x1;
+
+                                {
+                                    for (int i_1 = i0_1; i_1 < i1_1; i_1++)
+                                    {
+
+                                        {
+
+                                            {
+                                                int& y_1 = y;
+
+                                                { {
+                                                    if (y_1 < 11)
+                                                    {
+                                                        sum++;
+                                                        goto L_05;
+                                                    };
+                                                    if (i_1 == 1)
+                                                    {
+                                                        goto L_00;
+                                                    };
+                                                    sum += ((i_1 + 1) * y_1);
+                                                  } L_05:;
+                                                };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+          } L_00:;
+        };
+    };
+    return sum - 21;
 }
 
 #endif
