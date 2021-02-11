@@ -25,6 +25,7 @@ pub let N_DeadIf            = 1 << 9;
 
 let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
+let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = false; // TODO not safe without borrowck
@@ -1363,7 +1364,7 @@ pub fn solve(
         let NOCHANGE    = Scope_snap(_scope);
 
         let expr        = !fnbody_of && !type.is_void;
-        let items       = solveNodes(
+        mut items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
@@ -1423,6 +1424,21 @@ pub fn solve(
         }
         // end finalizeReturns
         ///////////////////////////////////////////////////////////////
+
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+        if (OPTI_flatten_blocks && items.len) for (;;)
+        {
+            let tail = items.last;
+            if (tail.kind != "block" || tail.target)
+                break;
+
+            mut unwrap = tail.items;
+            items.pop();
+            items ~= unwrap;
+        }
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
 
         // Compact + stress test.
         let label_used = _helpers[helpers_idx].target;
