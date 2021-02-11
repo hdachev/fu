@@ -348,7 +348,7 @@ pub fn solve(
 
     //
 
-    fn Binding(id: string, mut type: Type, mut flags!: i32, reuse?: Target)
+    fn Binding(id: string, mut type: Type, ref flags!: i32, ref shadows!: bool, reuse?: Target)
     {
         mut name = id;
         let global = flags & F_GLOBAL;
@@ -381,9 +381,11 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (OPTI_autoshadow)
-                if (!global && !any)
-                    flags |= F_SHADOW;
+            if (OPTI_autoshadow && !global && !any)
+            {
+                shadows = true;
+                flags |= F_SHADOW;
+            }
         }
 
         //
@@ -666,10 +668,11 @@ pub fn solve(
             }
 
             //
+            mut shadows: bool;
             NEXT: while (overloadIdx =
                 scope.items.search(id, scope_iterator,
                     scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
-                    dont_search_just_return: target, :extra_items, :field_items))
+                    dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
                 TEST_AGAIN: while (true)
                 {
@@ -905,7 +908,7 @@ pub fn solve(
                     matchIdx = overloadIdx;
 
                     // Arity 0 auto-shadows.
-                    if (overload.flags & F_SHADOW)
+                    if (shadows)
                         break :NEXT;
 
                     // Done here.
@@ -1168,9 +1171,10 @@ pub fn solve(
 
         mut scope_iterator: i32;
         mut target: Target;
+        mut shadows: bool;
         while (target = scope.items.search(:id, :scope_iterator,
             scope_skip:  local_scope && _ss.items,
-            field_items: local_scope && _field_items))
+            field_items: local_scope && _field_items, :shadows))
         {
             overloads.push(target);
         }
@@ -3098,7 +3102,7 @@ pub fn solve(
         !out.type.is_ref || out.type.lifetime || fail(
             "solveLet: ref without lifetime: `" ~ id ~ "`.");
 
-        let shadows = !!(out.flags & F_SHADOW);
+        mut shadows = !!(out.flags & F_SHADOW);
 
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
@@ -3115,10 +3119,7 @@ pub fn solve(
                     let target  = init.target;
                     let other   = GET(target);
 
-                    let TODO_FIX__InexpressibleShadow =
-                        F_SHADOW & (other.flags ^ out.flags);
-
-                    if (other.kind == "var" && !TODO_FIX__InexpressibleShadow)
+                    if (other.kind == "var")
                     {
                         if (isAssignable(host: other.type, out.type))
                         {
@@ -3136,7 +3137,7 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
-            let target = out.target = Binding(:id, :out.flags, :out.type, :reuse);
+            let target = out.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
             if (global)
                 GET_mut(target).solved = out;
 
@@ -3269,6 +3270,7 @@ pub fn solve(
     {
         mut scope_iterator: i32;
         mut overloadIdx: Target;
+        mut shadows: bool;
 
         let qualified = flags & F_QUALIFIED;
         let scope = qualified
@@ -3277,7 +3279,7 @@ pub fn solve(
 
         while (overloadIdx =
             scope.items.search(id, scope_iterator,
-                scope_skip: !qualified && _ss.items))
+                scope_skip: !qualified && _ss.items, :shadows))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
@@ -3319,8 +3321,9 @@ pub fn solve(
         {
             mut scope_iterator: i32;
             mut target: Target;
+            mut shadows: bool;
             while (!shadow && (target = items.search(
-                :id, :scope_iterator, scope_skip: _ss.items)))
+                :id, :scope_iterator, scope_skip: _ss.items, :shadows)))
             {
                 // Can't shadow here -
                 //  shadowing works per signature,
@@ -3679,9 +3682,12 @@ pub fn solve(
         }
 
         // We'll be adding a new thing here.
-        let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-        let ret         = Binding(id, type, flags: F_IMPLICIT | F_ARG);
+        mut shadows: bool;
+        mut flags = F_IMPLICIT | F_ARG;
+
+        let ret         = Binding(id, type, :flags, :shadows);
         let newArgNode  = createLet(ret, F_IMPLICIT);
+        let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
         _current_fn.items.insert(newArgIdx, newArgNode);
 
         return ret;
