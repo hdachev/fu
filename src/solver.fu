@@ -669,7 +669,7 @@ pub fn solve(
             NEXT: while (overloadIdx =
                 scope.items.search(id, scope_iterator,
                     scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
-                    :target, :extra_items, :field_items))
+                    dont_search_just_return: target, :extra_items, :field_items))
             {
                 TEST_AGAIN: while (true)
                 {

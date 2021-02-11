@@ -381,18 +381,18 @@ pub fn search(
     items: [ScopeItem], id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
-    target?: Target,
+    dont_search_just_return?: Target,
     extra_items?: [Target],
     field_items?: [ScopeItem]): Target
 {
     // Searching & forcing results the same way.
-    if (target)
+    if (dont_search_just_return)
     {
         if (scope_iterator)
             return Target;
 
         scope_iterator--;
-        return target;
+        return dont_search_just_return;
     }
 
     // Search.
