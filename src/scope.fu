@@ -199,7 +199,8 @@ pub struct Helpers
 pub struct ScopeItem
 {
     id:         string;
-    target:     Target;
+    modid:      i32;
+    packed:     u32;
 };
 
 pub nocopy struct Scope
@@ -210,6 +211,23 @@ pub nocopy struct Scope
     usings:     Target[];
     converts:   Target[];
 };
+
+pub fn target(si: ScopeItem)
+    Target(:si.modid, index: (si.packed &~ (0x1 << 31)).i32);
+
+pub fn shadows(si: ScopeItem)
+    !!(si.packed & (0x1 << 31));
+
+pub fn ScopeItem(id: string, target: Target, shadows: bool)
+    ScopeItem(:id, :target.modid,
+        packed: target.index.u32 | (shadows && (0x1 << 31)));
+
+pub fn target_TODOFIX(ref si: ScopeItem, target: Target)
+{
+    si.modid  = target.modid;
+    si.packed = target.index.u32;
+    return si;
+}
 
 
 
@@ -427,7 +445,7 @@ pub fn search(
         let item = scope_iterator >= items.len
             ? scope_iterator >= items.len + extra_items.len
             ? field_items[scope_iterator - items.len - extra_items.len]
-            : { TODO_FIX.target = extra_items[scope_iterator - items.len]; TODO_FIX }
+            : { TODO_FIX.target_TODOFIX(extra_items[scope_iterator - items.len]); }
             : items[scope_iterator];
 
         if (item.id == id)
@@ -554,11 +572,7 @@ pub fn Scope_set(ref scope: Scope, id: string, target: Target, shadows!: bool)
 
 pub fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: bool)
 {
-    // target.packed &= ~(0x1 << 31);
-    // target.packed |= shadows && (0x1 << 31);
-    if (shadows) {}
-
-    items.push(ScopeItem( :id, :target ));
+    items.push(ScopeItem( :id, :target, :shadows ));
 }
 
 pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string,
