@@ -1905,8 +1905,18 @@ pub fn solve(
 
                         argNode.kind == "let"  || fail();
 
+                        //
                         if (inType)
                         {
+                            // Enable conversions on fully typed arguments.
+                            let exactType = original.args[i].type;
+                            if (exactType)
+                            {
+                                args[i].type = exactType;
+                                continue;
+                            }
+
+                            //
                             let argName = argNode.value || fail();
 
                             // Same pattern - grabs a mutref.

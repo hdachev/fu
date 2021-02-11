@@ -7352,6 +7352,160 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub struct Target { modid!: i32; packed!: i32; };
+        pub inline fn index(a: Target) a.packed;
+
+        //////////////////////////////////////////////////////////////////
+        // TODO module autosplit, we need to generate import variations //
+        //////////////////////////////////////////////////////////////////
+
+        struct CurrentFn { using target: Target; };
+        fn hello(c?: CurrentFn) c.index;
+        fn main() hello;
+
+-----
+
+struct s_CurrentFn;
+struct s_Target;
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || packed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_CurrentFn
+                                #define DEF_s_CurrentFn
+struct s_CurrentFn
+{
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || target
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int hello(const s_CurrentFn& c)
+{
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Target& a = c.target;
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = a.packed; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
+}
+
+int fu_MAIN()
+{
+    return int(hello(s_CurrentFn{}));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        pub struct Target { modid!: i32; packed!: i32; };
+        pub inline fn index(a: Target) a.packed;
+
+-----
+
+-----
+
+        pub struct Target { modid!: i32; packed!: i32; };
+        pub inline fn index(a: Target) a.packed;
+
+        import _0;
+        struct CurrentFn { using target: Target; };
+        fn hello(c?: CurrentFn) c.index;
+        fn main() hello;
+
+-----
+
+struct s_CurrentFn;
+struct s_Target;
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || packed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_CurrentFn
+                                #define DEF_s_CurrentFn
+struct s_CurrentFn
+{
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || target
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int hello(const s_CurrentFn& c)
+{
+    int _0 {};
+    return (__extension__ (
+    {
+        const s_Target& a = c.target;
+        int L_00_v {};
+        _0 = ((__extension__ (
+        { {
+            { L_00_v = a.packed; goto L_00; };
+          } L_00:;
+        }), int(L_00_v)));
+    }), int(_0));
+}
+
+int fu_MAIN()
+{
+    return int(hello(s_CurrentFn{}));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
