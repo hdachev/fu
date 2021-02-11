@@ -6658,16 +6658,12 @@ static int __solveStruct(int&, int, int);
 
 inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
 {
-    int* _0;
+    int* L_01_v;
     return !cond ? cond : (__extension__ (
-    {
-        int* L_01_v;
-        _0 = &((__extension__ (
-        { {
-            { L_01_v = &((arg_0 += x_0)); goto L_01; };
-          } L_01:;
-        }), *L_01_v));
-    }), *_0);
+    { {
+        { L_01_v = &((arg_0 += x_0)); goto L_01; };
+      } L_01:;
+    }), *L_01_v);
 }
 
 static int& GET_mut(int& target_0, int& x)
@@ -8259,15 +8255,12 @@ int fu_MAIN()
             uint32_t sum {};
 
             {
-
+                uint32_t delta = 0x9e3779b9u;
+                for (int i = 0; i < 4; i++)
                 {
-                    uint32_t delta = 0x9e3779b9u;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        sum += delta;
-                        tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
-                        tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
-                    };
+                    sum += delta;
+                    tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
+                    tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
                 };
             };
         };
@@ -15540,23 +15533,20 @@ int fu_MAIN()
     int sum = 0;
 
     { {
+        fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<4> { 1, 2, 3, 4 } };
 
         {
-            fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<4> { 1, 2, 3, 4 } };
-
+            for (int i = 0; i < arr.size(); i++)
             {
-                for (int i = 0; i < arr.size(); i++)
-                {
-                    const int x = arr[i];
+                const int x = arr[i];
 
+                {
+                    sum += x;
+                    for (int i_1 = 1; i_1--; )
                     {
-                        sum += x;
-                        for (int i_1 = 1; i_1--; )
+                        if (sum == 6)
                         {
-                            if (sum == 6)
-                            {
-                                goto L_OUTER;
-                            };
+                            goto L_OUTER;
                         };
                     };
                 };
