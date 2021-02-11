@@ -1604,12 +1604,11 @@ static int hey(const s_X& x)
     int _0 {};
     return (__extension__ (
     {
-        const s_X& x_1 = x;
         const int b = -1;
         int L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = (x_1.a + b); goto L_00; };
+            { L_00_v = (x.a + b); goto L_00; };
           } L_00:;
         }), int(L_00_v)));
     }), int(_0));
@@ -1964,11 +1963,10 @@ static int outer_inl(const int i, const int x)
     int _0 {};
     return ((i > 0) ? (__extension__ (
     {
-        const int i_1 = i;
         int L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = outer_inl((i_1 - 1), x); goto L_00; };
+            { L_00_v = outer_inl((i - 1), x); goto L_00; };
           } L_00:;
         }), int(L_00_v)));
     }), int(_0)) : (x + i));
@@ -2866,8 +2864,7 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     const int a = 1;
-    const int x = a;
-    return a - x;
+    return a - a;
 }
 
 #endif
@@ -8154,11 +8151,10 @@ static s_mat34 inverse(const s_mat34& mat)
     float _0 {};
     const float idet = (1.0f / (__extension__ (
     {
-        const s_mat34& _ = mat;
         float L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = (((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z)); goto L_00; };
+            { L_00_v = (((((((-mat.mz.x * mat.my.y) * mat.mx.z) + ((mat.my.x * mat.mz.y) * mat.mx.z)) + ((mat.mz.x * mat.mx.y) * mat.my.z)) - ((mat.mx.x * mat.mz.y) * mat.my.z)) - ((mat.my.x * mat.mx.y) * mat.mz.z)) + ((mat.mx.x * mat.my.y) * mat.mz.z)); goto L_00; };
           } L_00:;
         }), float(L_00_v)));
     }), float(_0)));
@@ -8258,21 +8254,19 @@ int fu_MAIN()
     s_TEA tea {};
 
     {
-        s_TEA& tea_1 = tea;
 
         {
             uint32_t sum {};
 
             {
-                uint32_t& sum_1 = sum;
 
                 {
                     uint32_t delta = 0x9e3779b9u;
                     for (int i = 0; i < 4; i++)
                     {
-                        sum_1 += delta;
-                        tea_1.v0 += ((((tea_1.v1 << 4u) + 0xa341316cu) ^ (tea_1.v1 + sum_1)) ^ ((tea_1.v1 >> 5u) + 0xc8013ea4u));
-                        tea_1.v1 += ((((tea_1.v0 << 4u) + 0xad90777du) ^ (tea_1.v0 + sum_1)) ^ ((tea_1.v0 >> 5u) + 0x7e95761eu));
+                        sum += delta;
+                        tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
+                        tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
                     };
                 };
             };
@@ -12681,11 +12675,10 @@ int fu_MAIN()
     s_mat4 _1 {};
     const s_mat4 m44 = (__extension__ (
     {
-        const s_mat34& m = m34;
         s_mat4 L_01_v {};
         _1 = ((__extension__ (
         { {
-            { L_01_v = s_mat4 { float(m.mx.x), float(m.mx.y), float(m.mx.z), 0.0f, float(m.my.x), float(m.my.y), float(m.my.z), 0.0f, float(m.mz.x), float(m.mz.y), float(m.mz.z), 0.0f, float(m.mo.x), float(m.mo.y), float(m.mo.z), 1.0f }; goto L_01; };
+            { L_01_v = s_mat4 { float(m34.mx.x), float(m34.mx.y), float(m34.mx.z), 0.0f, float(m34.my.x), float(m34.my.y), float(m34.my.z), 0.0f, float(m34.mz.x), float(m34.mz.y), float(m34.mz.z), 0.0f, float(m34.mo.x), float(m34.mo.y), float(m34.mo.z), 1.0f }; goto L_01; };
           } L_01:;
         }), s_mat4(L_01_v)));
     }), s_mat4(_1));
@@ -14380,12 +14373,11 @@ inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
         int _0 {};
         result = (__extension__ (
         {
-            int& a = result;
             const int b = items[i];
             int L_00_v {};
             _0 = ((__extension__ (
             { {
-                { L_00_v = (a + b); goto L_00; };
+                { L_00_v = (result + b); goto L_00; };
               } L_00:;
             }), int(L_00_v)));
         }), int(_0));
@@ -14740,7 +14732,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_sqbD(int sum_0, int)
+inline static int identity_uae5(int depth1_0, int)
 {
     int _0 {};
     return (__extension__ (
@@ -14748,7 +14740,7 @@ inline static int identity_sqbD(int sum_0, int)
         int L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = sum_0; goto L_00; };
+            { L_00_v = depth1_0; goto L_00; };
           } L_00:;
         }), int(L_00_v)));
     }), int(_0));
@@ -14756,8 +14748,7 @@ inline static int identity_sqbD(int sum_0, int)
 
 inline static int outer_U3Pf(const int depth1)
 {
-    const int sum = depth1;
-    return identity_sqbD(sum, 0);
+    return identity_uae5(depth1, 0);
 }
 
 int fu_MAIN()
@@ -14786,7 +14777,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_lY2z(int sum_0, int)
+inline static int identity_cj0H(int sum_0, int)
 {
     int _0 {};
     return (__extension__ (
@@ -14800,7 +14791,7 @@ inline static int identity_lY2z(int sum_0, int)
     }), int(_0));
 }
 
-inline static int outer_sqbD(int sum_0, int)
+inline static int outer_uae5(int depth0_0, int)
 {
     int _0 {};
     const int sum = (__extension__ (
@@ -14808,17 +14799,16 @@ inline static int outer_sqbD(int sum_0, int)
         int L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = sum_0; goto L_00; };
+            { L_00_v = depth0_0; goto L_00; };
           } L_00:;
         }), int(L_00_v)));
     }), int(_0));
-    return identity_lY2z(sum, 0);
+    return identity_cj0H(sum, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    const int sum = depth0;
-    return outer_sqbD(sum, 0);
+    return outer_uae5(depth0, 0);
 }
 
 int fu_MAIN()
@@ -14849,7 +14839,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_Rf2N(int sum_0, int)
+inline static int identity_z5ia(int sum_0, int)
 {
     int _0 {};
     return (__extension__ (
@@ -14863,7 +14853,7 @@ inline static int identity_Rf2N(int sum_0, int)
     }), int(_0));
 }
 
-inline static int inner_XNBG(int sum_0, int)
+inline static int inner_lY2z(int sum_0, int)
 {
     int _0 {};
     const int sum = (__extension__ (
@@ -14875,10 +14865,10 @@ inline static int inner_XNBG(int sum_0, int)
           } L_01:;
         }), int(L_01_v)));
     }), int(_0));
-    return identity_Rf2N(sum, 0);
+    return identity_z5ia(sum, 0);
 }
 
-inline static int outer_sqbD(int sum_0, int)
+inline static int outer_uae5(int depth0_0, int)
 {
     int _0 {};
     const int sum = (__extension__ (
@@ -14886,17 +14876,16 @@ inline static int outer_sqbD(int sum_0, int)
         int L_00_v {};
         _0 = ((__extension__ (
         { {
-            { L_00_v = sum_0; goto L_00; };
+            { L_00_v = depth0_0; goto L_00; };
           } L_00:;
         }), int(L_00_v)));
     }), int(_0));
-    return inner_XNBG(sum, 0);
+    return inner_lY2z(sum, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    const int sum = depth0;
-    return outer_sqbD(sum, 0);
+    return outer_uae5(depth0, 0);
 }
 
 int fu_MAIN()
@@ -15489,22 +15478,20 @@ inline static int some_kJRA(const fu_VEC<int>& arr, int)
 {
 
     {
-        const fu_VEC<int>& arr_1 = arr;
 
         {
-            for (int i = 0; i < arr_1.size(); i++)
+            for (int i = 0; i < arr.size(); i++)
             {
-                const int x = arr_1[i];
+                const int x = arr[i];
 
                 {
                     bool _0 {};
                     if ((__extension__ (
                     {
-                        const int v = x;
                         bool L_02_v {};
                         _0 = ((__extension__ (
                         { {
-                            { L_02_v = ((v & 1) == 0); goto L_02; };
+                            { L_02_v = ((x & 1) == 0); goto L_02; };
                           } L_02:;
                         }), bool(L_02_v)));
                     }), bool(_0)))
@@ -15612,10 +15599,9 @@ int fu_MAIN()
         { {
             for (int i = i0; i < i1; i++)
             {
-                int& i_1 = i;
 
                 {
-                    if ((x += i_1))
+                    if ((x += i))
                     {
                         goto L_00;
                     };
@@ -15659,10 +15645,9 @@ int fu_MAIN()
         {
             for (int i = i0; i < i1; i++)
             {
-                int& i_1 = i;
 
                 {
-                    if ((x += i_1))
+                    if ((x += i))
                         return x - 1;
 
                 };
@@ -15720,20 +15705,18 @@ int fu_MAIN()
             {
                 for (int x = x0; x < x1; x++)
                 {
-                    int& x_1 = x;
-                    int& y_1 = y;
 
                     { {
-                        if (y_1 < 11)
+                        if (y < 11)
                         {
                             sum++;
                             goto L_01;
                         };
-                        if (x_1 == 1)
+                        if (x == 1)
                         {
                             goto L_00;
                         };
-                        sum += ((x_1 + 1) * y_1);
+                        sum += ((x + 1) * y);
                       } L_01:;
                     };
                 };
@@ -15794,31 +15777,25 @@ int fu_MAIN()
         { {
 
             {
-                const int i0 = y0;
-                const int i1 = y1;
 
                 {
-                    for (int i = i0; i < i1; i++)
+                    for (int i = y0; i < y1; i++)
                     {
-                        int& y = i;
 
                         {
 
                             {
-                                const int i0_1 = x0;
-                                const int i1_1 = x1;
 
                                 {
-                                    for (int i_1 = i0_1; i_1 < i1_1; i_1++)
+                                    for (int i_1 = x0; i_1 < x1; i_1++)
                                     {
 
                                         {
 
                                             {
-                                                int& y_1 = y;
 
                                                 { {
-                                                    if (y_1 < 11)
+                                                    if (i < 11)
                                                     {
                                                         sum++;
                                                         goto L_05;
@@ -15827,7 +15804,7 @@ int fu_MAIN()
                                                     {
                                                         goto L_00;
                                                     };
-                                                    sum += ((i_1 + 1) * y_1);
+                                                    sum += ((i_1 + 1) * i);
                                                   } L_05:;
                                                 };
                                             };
