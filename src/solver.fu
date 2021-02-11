@@ -1795,17 +1795,15 @@ pub fn solve(
                 let arg_t = args[i].type;
                 if (addroffn::type_isAddrOfFn(arg_t))
                 {
-                    let targets = addroffn::unpackAddrOfFn(arg_t.canon);
-                    for (shadow mut i = 0; i < targets.len; i++)
+                    addroffn::unpackAddrOfFn(arg_t.canon, |target|
                     {
-                        let target = targets[i];
                         if (target.modid == module.modid)
                         {
                             let local_of = GET(target).local_of;
                             if (parent_idx < local_of)
                                 parent_idx = local_of;
                         }
-                    }
+                    });
                 }
             }
         }
@@ -2307,7 +2305,7 @@ pub fn solve(
                 id: "", // dont Scope_add
                 name: "$" ~ id, :type, flags: 0);
 
-            res ~= ScopeItem(name, :target);
+            Scope_set(res, name, :target, shadows: false);
         });
 
         return res;
@@ -2383,19 +2381,17 @@ pub fn solve(
                 let args = [ Argument(name: "this",
                     type: despeculateStruct(out.type)) ];
 
-                innerScope.resize(node.items.len);
-                for (mut i = 0; i < innerScope.len; i++)
+                for (mut i = 0; i < members.len; i++)
                 {
                     let id = node.items[i].value;
                     let target = Scope_create(
                         _scope, "field", name: id || fail(),
                         min: 1, max: 1, flags: F_PUB, :args);
 
-                    let scopeItem = ScopeItem(:id, :target);;
-                    innerScope[i] = scopeItem;
-
-                    _field_items.push(scopeItem);
+                    Scope_set(innerScope, :id, :target, shadows: false);
                 }
+
+                _field_items ~= innerScope;
             }
 
             // Update field types.
@@ -2715,7 +2711,7 @@ pub fn solve(
 
         reportReturnType(expr.type);
 
-        target.right = Scope_create(_scope, "return",
+        target.right = Scope_create(_scope, "jump",
             local_of: target.left || fail(),
             solved: expr).index;
 
@@ -3102,7 +3098,9 @@ pub fn solve(
         !out.type.is_ref || out.type.lifetime || fail(
             "solveLet: ref without lifetime: `" ~ id ~ "`.");
 
-        if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type))
+        let shadows = !!(out.flags & F_SHADOW);
+
+        if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
             let global = !_current_fn;
             if (global)
@@ -3127,7 +3125,7 @@ pub fn solve(
                             // println("VARFOLD " ~ id ~ ": " ~ humanizeType(out.type)
                             //                    ~ " := " ~ other.name ~ ": " ~ humanizeType(other.type));
 
-                            Scope_set(_scope, :id, :target);
+                            Scope_set(_scope, :id, :target, :shadows);
                             if (out.flags & F_USING)
                                 _scope.usings.push(target);
 
@@ -3142,7 +3140,7 @@ pub fn solve(
             if (global)
                 GET_mut(target).solved = out;
 
-            Scope_set(_scope, :id, :target);
+            Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)
                 _scope.usings.push(target);
         }

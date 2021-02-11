@@ -26,10 +26,8 @@ pub fn packAddrOfFn(targets: Target[])
     return res;
 }
 
-pub fn unpackAddrOfFn(canon: string)
+pub fn unpackAddrOfFn(canon: string, fn)
 {
-    mut res: Target[];
-
     mut i = 0;
     while (i < canon.len)
     {
@@ -39,23 +37,20 @@ pub fn unpackAddrOfFn(canon: string)
         canon[i++] == ':' || throw("unpackAddrOfFn: bad canon [2]: `" ~ canon ~ "`.");
         let index = parse10i32(i, canon);
 
-        res.push(Target(:modid, :index));
+        fn(Target(:modid, :index));
     }
-
-    return res;
 }
 
 
 //
 
-pub fn X_unpackAddrOfFnBinding(ref out: ScopeItem[], id: string, type: Type): bool
+pub fn X_unpackAddrOfFnBinding(ref out: ScopeItem[], id: string, type: Type, shadows: bool): bool
 {
     if (!type.type_isAddrOfFn)
         return false;
 
-    let targets = unpackAddrOfFn(type.canon);
-    for (mut i = 0; i < targets.len; i++)
-        out.push(ScopeItem(:id, target: targets[i]));
+    unpackAddrOfFn(type.canon, |target|
+        Scope_set(out, :id, :target, :shadows));
 
     return true;
 }
