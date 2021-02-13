@@ -2662,7 +2662,7 @@ pub fn solve(
         if (!node.items)
         {
             reportReturnType(:helpers_idx, t_void);
-            return solved(node, t_never, :target);
+            return createJump(:node.token, :node.flags, :target);
         }
 
         //
@@ -2707,7 +2707,16 @@ pub fn solve(
 
         h.returns ~= target.right;
 
-        return solved(node, t_never, :target);
+        return createJump(:node.token, :node.flags, :target);
+    }
+
+    fn createJump(token: TokenIdx, flags: i32, target: Target)
+    {
+        ////////////////////////////////////////////
+        // TODO flags only here for F_SINGLE_STMT //
+        ////////////////////////////////////////////
+        //
+        return SolvedNode(:token, :flags, "jump", type: t_never, :target);
     }
 
     fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)

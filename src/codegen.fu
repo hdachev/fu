@@ -15,6 +15,7 @@ let M_RETURN            = 1 << 5;
 let M_FWDECL            = 1 << 6;
 let M_PARENS            = 1 << 7;
 let M_OPT_CURLIES       = 1 << 8;
+let M_LOOP_BODY         = 1 << 9;
 
 
 //
@@ -61,6 +62,9 @@ pub fn cpp_codegen(
         TEMPVARs?:      string[];
 
         blockvals?:     cg_Blockval[];
+
+        can_break?:     i32;
+        can_cont?:      i32;
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -486,13 +490,18 @@ pub fn cpp_codegen(
 
     //
 
-    fn blockWrapSubstatement(node: SolvedNode): string
-        cgBlock(node, mode: M_STMT | M_OPT_CURLIES);
+    fn blockWrapSubstatement(node: SolvedNode, mode?: i32): string
+        cgBlock(node, mode: M_STMT | M_OPT_CURLIES | mode);
 
     fn cgBlock(node: SolvedNode, mode: i32): string
     {
         let items = node.kind == "block"  ? node.items : [ node ];
         let label = node.kind == "block" && node.target;
+
+        ///////////////////////////////////////////
+        if (mode & M_LOOP_BODY)
+            _current_fn.can_cont = label.index;
+        ///////////////////////////////////////////
 
         // We'll try to avoid block expressions as much as we can.
         //  Instead of these loops it'd be nice if we knew all this stuff
@@ -506,8 +515,7 @@ pub fn cpp_codegen(
             {
                 let n = nodes[i];
                 let k = n.kind;
-                if (k == "return" || k == "break" || k == "continue" || k == "loop"
-                    || k == "try" || k == "catch"
+                if (k == "jump" || k == "loop" || k == "try" || k == "catch"
                     || k == "let" || k == "block") // TODO FIX we can handle both of these
                 {
                     return false;
@@ -582,7 +590,7 @@ pub fn cpp_codegen(
         }
 
         //
-        if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "return" && nodes[0].kind != "call")
+        if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "jump" && nodes[0].kind != "call")
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
         _indent = indent0;
@@ -973,16 +981,16 @@ pub fn cpp_codegen(
             return "return " ~ cgNode(head, M_PARENS|M_RETURN);
         }
 
-        // `return;`
+        //
         if (use_return)
             return "return";
 
-        // `goto X;`
-        if (node.value || dest.kind != "label")
-            return "goto L_" ~ dest.name;
+        if (dest_idx == _current_fn.can_break)
+            return "break";
+        if (dest_idx == _current_fn.can_cont)
+            return "continue";
 
-        // `break/continue`
-        return node.kind;
+        return "goto L_" ~ dest.name;
     }
 
 
@@ -1666,6 +1674,18 @@ pub fn cpp_codegen(
 
     fn cgLoop(node: SolvedNode): string
     {
+        let can_cont0 = _current_fn.can_cont;
+        let can_break0 = _current_fn.can_break;
+
+        defer {
+            _current_fn.can_cont = can_cont0;
+            _current_fn.can_break = can_break0;
+        }
+
+        _current_fn.can_cont = 0;
+        _current_fn.can_break = 0;
+
+        //
         let items = node.items;
 
         let n_init = items[LOOP_INIT];
@@ -1676,19 +1696,28 @@ pub fn cpp_codegen(
 
         let init = n_init && cgNode(n_init, M_STMT);
         let cond = n_cond && cgNode(n_cond, M_RETBOOL | M_PARENS);
-        mut body = n_body && blockWrapSubstatement(n_body);
         let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL);
         let post = n_post && cgNode(n_post, M_STMT);
 
+        //
+        let label = node.target;
+        _current_fn.can_break = label.index;
+
+        mut body = n_body && blockWrapSubstatement(n_body, M_LOOP_BODY);
+
+        //
         mut breakLabel = "";
 
-        if (body && node.value)
+        let lbl     = label && GET(label);
+        let name    = lbl.name;
+        if (body && name)
         {
-            let brk = "L_" ~ node.value;
+            let brk = "L_" ~ name;
             if (body.has("goto " ~ brk ~ ";")) // TODO FIX track label usage
-                breakLabel = _indent ~ "    " ~ brk ~ ":;";
+                breakLabel = " " ~ brk ~ ":;";
         }
 
+        //
         if (pcnd)
         {
             if (init || post || cond)
@@ -1784,9 +1813,7 @@ pub fn cpp_codegen(
         if !(mode & M_STMT)
             return cgBlock(node, :mode);
 
-        if (k == "return")      return cgJump(node);
-        if (k == "break")       return cgJump(node);
-        if (k == "continue")    return cgJump(node);
+        if (k == "jump")        return cgJump(node);
 
         if (k == "loop")        return cgLoop(node);
         if (k == "try")         return cgTryCatch(node);
