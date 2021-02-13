@@ -2649,29 +2649,23 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         mut target: Target(-1, -1);
-        mut helpers_idx: i32;
 
-        let dest = node.kind == "return"
-            ? Scope_lookupReturn(node.value, :helpers_idx, lambdaOK: !!(node.flags & F_SINGLE_STMT))
-            : Scope_lookupLabel (node.value, :helpers_idx,
-                cont: node.kind == "continue");
-
-        target.left = dest.index;
-
-        if (!node.items)
-        {
-            reportReturnType(:helpers_idx, t_void);
-
-            return solved(node, t_never, :target);
-        }
-
-
-        // We'll detach the return expression for further fiddling elsewhere.
+        let helpers_idx = node.kind == "return"
+            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_SINGLE_STMT))
+            : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         /////////////////////////////
         fn h() _helpers[helpers_idx];
         /////////////////////////////
 
+        target.left = h.target || fail("No jump target.");
+        if (!node.items)
+        {
+            reportReturnType(:helpers_idx, t_void);
+            return solved(node, t_never, :target);
+        }
+
+        //
         mut expr = solveNode(
             node.items.only,
             type: h.ret_actual || h.ret_expect);
@@ -2763,7 +2757,7 @@ pub fn solve(
             type: Type, flags: F_SHADOW, :local_of);
     }
 
-    fn Scope_lookupReturn(ref helpers_idx: i32, id: string, lambdaOK: bool): Target
+    fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
     {
         //////////////////////////////////////////
         let ss  = _ss.helpers;                  //
@@ -2789,14 +2783,13 @@ pub fn solve(
             if (id && item.id != id)
                 continue;
 
-            helpers_idx = i;
-            return Target(:module.modid, item.target);
+            return i;
         }
 
         fail("No return `" ~ id ~ "` in scope.");
     }
 
-    fn Scope_lookupLabel(ref helpers_idx: i32, id: string, cont!: bool): Target
+    fn Scope_lookupLabel(id: string, cont!: bool): i32
     {
         //////////////////////////////////////////
         let ss  = _ss.helpers;                  //
@@ -2821,9 +2814,6 @@ pub fn solve(
             if (i < CONTINUE_BELOW - 1)
                 i++;
 
-            // TODO Inject before each return statement, but not before other jumps.
-            defer/*:ok:return*/ helpers_idx = i;
-
             let item = _helpers[i];
             if !(item.mask & HM_Jump)
             {
@@ -2840,7 +2830,7 @@ pub fn solve(
                     }
                 }
 
-                return Target(:module.modid, item.target);
+                return i;
             }
 
             if (!CONTINUE_BELOW)
@@ -2856,8 +2846,8 @@ pub fn solve(
             }
 
             shadow ref item = _helpers[i];
-            return Target(:module.modid,
-                item.target ||= Scope_addLabel(item.id, :item.local_of).index);
+            item.target ||= Scope_addLabel(item.id, :item.local_of).index;
+            return i;
         }
 
         fail("No label `" ~ id ~ "` in scope.");
