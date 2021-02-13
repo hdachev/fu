@@ -4359,9 +4359,8 @@ static fu_STR pop(const fu_STR& b_0, int& offset_0)
     {
         const std::byte c = b_0[offset_0++];
         if (c == std::byte(' '))
-        {
             break;
-        };
+
         a += c;
     };
     return a;
@@ -4954,17 +4953,14 @@ int fu_MAIN()
         {
             sum += x;
             if (y == 1)
-            {
                 goto L_00;
-            };
+
             if (x == 2)
-            {
                 goto L_outer;
-            };
+
         };
       } L_00:;
-    }
-        L_outer:;
+    } L_outer:;
 
     return sum - 34;
 }
@@ -5008,16 +5004,14 @@ int fu_MAIN()
         for (int y = 0; y < x; y++)
         {
             if ((y & 1) && !(x & 1))
-            {
                 goto L_00;
-            };
+
             sum += x;
         };
         sum += ((x * 1000) + 100);
         if (x > 1)
-        {
             break;
-        };
+
       } L_00:;
     };
     return sum - 4312;
@@ -6925,9 +6919,8 @@ inline void each_sJgb(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_Scope
     {
         const s_ScopeSkip& ss = ((i < scope_skip.size()) ? scope_skip[i] : END_DUMMY);
         if ((ss.end <= i0))
-        {
             continue;
-        };
+
         const int i1 = ss.start;
         for (int i_1 = i0; i_1 < i1; i_1++)
         {
@@ -15267,13 +15260,11 @@ static int test(const int x)
 
         { {
             if (x > 1)
-            {
                 goto L_outer;
-            };
+
             if (x > 0)
-            {
                 goto L_inner;
-            };
+
             return 2;
           } L_inner:;
         };
@@ -15317,9 +15308,8 @@ static int test(const int x)
     return (__extension__ (
     { {
         if (x & 1)
-        {
             { L_BLOCK_v = 1; goto L_BLOCK; };
-        };
+
         if (x & 2)
             return 2;
 
@@ -15368,13 +15358,10 @@ static int test(const int a)
 
             { {
                 if (a & 1)
-                {
                     goto L_INNER;
-                }
                 else
-                {
                     goto L_OUTER;
-                };
+
               } L_INNER:;
             };
             _0 = (5);
@@ -15422,9 +15409,8 @@ static int v(const int x)
         L_BLOCK_v = ((5000 + (__extension__ (
         { {
             if (x == 9)
-            {
                 { L_00_v = 2000; goto L_00; };
-            };
+
             if (x == 8)
                 return 300;
 
@@ -15545,9 +15531,8 @@ int fu_MAIN()
                     for (int i_1 = 1; i_1--; )
                     {
                         if (sum == 6)
-                        {
                             goto L_OUTER;
-                        };
+
                     };
                 };
             };
@@ -15592,9 +15577,8 @@ int fu_MAIN()
 
                 {
                     if ((x += i))
-                    {
                         goto L_00;
-                    };
+
                 };
             };
           } L_00:;
@@ -15703,9 +15687,8 @@ int fu_MAIN()
                             goto L_01;
                         };
                         if (x == 1)
-                        {
                             goto L_00;
-                        };
+
                         sum += ((x + 1) * y);
                       } L_01:;
                     };
@@ -15791,9 +15774,8 @@ int fu_MAIN()
                                                         goto L_05;
                                                     };
                                                     if (i_1 == 1)
-                                                    {
                                                         goto L_00;
-                                                    };
+
                                                     sum += ((i_1 + 1) * i);
                                                   } L_05:;
                                                 };
