@@ -2642,7 +2642,7 @@ pub fn solve(
     fn superType(reason: string, a: Type, b: Type)
     {
         return type_trySuper(a, b) || fail(reason
-            ~ " No common supertype: `"
+            ~ "No common supertype: `"
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
 
@@ -2651,44 +2651,16 @@ pub fn solve(
         mut target: Target(-1, -1);
         mut helpers_idx: i32;
 
-        if (node.kind == "return")
-        {
-            let dest = Scope_lookupReturn(node.value,
-                lambdaOK: !!(node.flags & F_SINGLE_STMT),
-                    :helpers_idx);
+        let dest = node.kind == "return"
+            ? Scope_lookupReturn(node.value, :helpers_idx, lambdaOK: !!(node.flags & F_SINGLE_STMT))
+            : Scope_lookupLabel (node.value, :helpers_idx,
+                cont: node.kind == "continue");
 
-            target.left = dest.index;
-        }
-        else
-        {
-            let dest = Scope_lookupLabel(
-                node.value, cont: node.kind == "continue",
-                    :helpers_idx);
-
-            target.left = dest.index;
-        }
-
-        fn reportReturnType(type: Type)
-        {
-            ref h = _helpers[helpers_idx];
-
-            // Check annot.
-            if (h.ret_expect)
-                checkAssignable(host: h.ret_expect, type,
-                    "Expression not assignable to return annotation");
-
-            // Check multiple returns.
-            h.ret_actual = h.ret_actual
-                ? superType("[return]", h.ret_actual, type)
-                : type;
-
-            // Counter.
-            h.ret_actual || fail("Can't be null past this point.");
-        }
+        target.left = dest.index;
 
         if (!node.items)
         {
-            reportReturnType(t_void);
+            reportReturnType(:helpers_idx, t_void);
 
             return solved(node, t_never, :target);
         }
@@ -2703,6 +2675,10 @@ pub fn solve(
         mut expr = solveNode(
             node.items.only,
             type: h.ret_actual || h.ret_expect);
+
+        // Dead code elim.
+        // if (expr.type.is_never)
+        //     return expr;
 
         if (expr.type.is_ref)
         {
@@ -2729,7 +2705,7 @@ pub fn solve(
             }
         }
 
-        reportReturnType(expr.type);
+        reportReturnType(:helpers_idx, expr.type);
 
         target.right = Scope_create(_scope, "jump",
             local_of: target.left || fail(),
@@ -2746,6 +2722,20 @@ pub fn solve(
 
         h.ret_actual = ret_actual;
         h.ret_expect = ret_expect;
+    }
+
+    fn reportReturnType(helpers_idx: i32, type: Type)
+    {
+        ref h = _helpers[helpers_idx];
+        if (h.ret_expect)
+            checkAssignable(host: h.ret_expect, type,
+                "Expression not assignable to return annotation");
+
+        h.ret_actual = h.ret_actual
+            ? superType("Subsequent return: ", h.ret_actual, type)
+            : type;
+
+        h.ret_actual || fail("Can't be null past this point.");
     }
 
 
