@@ -31,7 +31,7 @@ pub fn self_test(): i32
 fn TODO(src: string)
 {
     try {
-        snippet2cpp(src);
+        ZERO(src);
     }
     catch (e) {
         println("  TODO: ", e, "\n", src);
@@ -44,7 +44,7 @@ fn TODO(src: string)
 fn TODO(src: string[])
 {
     try {
-        compile_snippets(src);
+        ZERO(src);
     }
     catch (e) {
         println("  TODO: ", e, "\n", src.join("\n\n"));
@@ -53,9 +53,6 @@ fn TODO(src: string[])
 
     throw("TODO test is actually passing: " ~ src.join("\n\n"));
 }
-
-fn SKIP(src: string)    = println("  SKIP:\n", src);
-fn SKIP(src: string[])  = println("  SKIP:\n", src.join("\n\n"));
 
 
 // Run the whole battery & build self.
@@ -2758,7 +2755,7 @@ pub fn runTests()
         fn main() 2.as_blocks_after;
     `);
 
-    ZERO(`
+    TODO(`
         struct Lifetime { woot: Lifetime[]; }; //! TYPE_recursion TYPE_resolve
 
         fn Lifetime_test(x: Lifetime) {
@@ -4515,7 +4512,7 @@ pub fn runTests()
         fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
     `);
 
-    SKIP(`
+    TODO(`
         fn outer() {
             mut sum = 0;
 
