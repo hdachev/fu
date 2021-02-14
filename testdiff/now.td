@@ -13480,7 +13480,7 @@ int main() { return fu_MAIN(); }
 static int doesReturn(const int a)
 {
     if (a > 0)
-        return noReturn();
+        noReturn();
 
     return a;
 }
@@ -13615,7 +13615,7 @@ int main() { return fu_MAIN(); }
 static void returnVoid(const int a)
 {
     if (a > 0)
-        return (void) noReturn();
+        noReturn();
 
 }
 
