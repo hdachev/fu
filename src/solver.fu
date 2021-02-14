@@ -1362,8 +1362,6 @@ pub fn solve(
             local_of:   fnbody_of ? -1 : _current_fn.target.index,
             :kills);
 
-        let NOCHANGE    = Scope_snap(_scope);
-
         let expr        = !fnbody_of && !type.is_void;
         mut items       = solveNodes(
             nodes,
@@ -1445,7 +1443,7 @@ pub fn solve(
 
         // Compact + stress test.
         let label_used = _helpers[helpers_idx].target;
-        if (!label_used && items.len == 1 && Scope_snap(_scope) == NOCHANGE)
+        if (!label_used && items.len == 1)
             return items[0];
 
         // Control flow.
