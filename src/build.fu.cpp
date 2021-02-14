@@ -716,7 +716,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror -Dfu_EXPLICIT=\" \" "_fu);
+    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror -Dfu_EXPLICIT=\" \" -Wno-parentheses-equality "_fu);
     fu_VEC<fu_STR> Fs {};
     int len_all {};
     fu_STR fulib_cpp = fu::file_read(fulib);
