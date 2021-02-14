@@ -2758,6 +2758,24 @@ pub fn runTests()
         fn main() 2.as_blocks_after;
     `);
 
+    ZERO(`
+        struct Lifetime { woot: Lifetime[]; }; //! TYPE_recursion TYPE_resolve
+
+        fn Lifetime_test(x: Lifetime) {
+            x.woot.len & 1 && throw("This is very important.");
+            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]); //! FN_recursion FN_resolve
+            return x;
+        }
+
+        fn Lifetime_fromBinding(x: i32) {
+            mut woot: Lifetime[];
+            for (mut i = 0; i < x; i++) woot[i] = Lifetime();
+            return Lifetime_test(Lifetime(:woot));
+        }
+
+        fn main() 0.Lifetime_fromBinding.woot.len;
+    `);
+
 
     // Returning a mut arg.
 
