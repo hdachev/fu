@@ -9299,6 +9299,57 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn test(x: i32) {
+            let c = [10007];
+            let a = [7, 11];
+            let b = {
+                BRK: {
+                    if (x & 2) break :BRK c;
+                    if (x & 1) break :BRK [ x ]; // a val
+                    a; // a ref
+                }
+            };
+            return a[0] - b[0] * a[1];
+        }
+
+        fn main() 1.test + 4;
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+static int test(const int x)
+{
+    fu_VEC<int> c = fu_VEC<int> { fu_VEC<int>::INIT<1> { 10007 } };
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<2> { 7, 11 } };
+    fu_VEC<int> L_BRK_v {};
+    fu_VEC<int> b = (__extension__ (
+    { {
+        if (x & 2)
+            { L_BRK_v = fu_VEC<int>(c); goto L_BRK; };
+
+        if (x & 1)
+            { L_BRK_v = fu_VEC<int> { fu_VEC<int>::INIT<1> { int(x) } }; goto L_BRK; };
+
+        L_BRK_v = (fu_VEC<int>(a));
+      } L_BRK:;
+    }), static_cast<fu_VEC<int>&&>(L_BRK_v));
+    return a[0] - (b[0] * a[1]);
+}
+
+int fu_MAIN()
+{
+    return test(1) + 4;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct Test { i: i32[]; };
 
         fn test(mut x: Test) {
