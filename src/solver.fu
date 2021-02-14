@@ -1406,6 +1406,9 @@ pub fn solve(
             }
         }
 
+        if (!fnbody_of && items && !h.ret_actual.is_void)
+            reportReturnType(:helpers_idx, items.last.type);
+
         // cpy/move.
         if (!h.ret_actual.is_ref)
         {
@@ -1414,6 +1417,9 @@ pub fn solve(
                 ref ret = GET_mut(Target(:module.modid, index: h.returns[i]));
                 maybeCopyOrMove(ret.solved, h.ret_actual);
             }
+
+            if (!fnbody_of && items && !h.ret_actual.is_void)
+                maybeCopyOrMove(items.last, h.ret_actual);
         }
         // end finalizeReturns
         ///////////////////////////////////////////////////////////////
@@ -2723,7 +2729,10 @@ pub fn solve(
     fn reportReturnType(helpers_idx: i32, type: Type)
     {
         ref h = _helpers[helpers_idx];
-        if (h.ret_expect)
+
+        // Regular block expects are best-effort type inference hints,
+        //  whereas fn expects are explicit type annotations that must be enforced.
+        if (h.ret_expect && h.mask & HM_Function)
             checkAssignable(host: h.ret_expect, type,
                 "Expression not assignable to return annotation");
 
