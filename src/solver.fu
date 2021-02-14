@@ -1380,29 +1380,22 @@ pub fn solve(
         //   but these ifs gotta go.
         if (fnbody_of)
         {
-            // Not a single return statement = return void.
-            h.ret_actual ||= t_void;
-
-            // See if we're missing the final return statement.
-            //  Two cases of interest:
-            //
-            // [1] If this is a non-void/non-never returning function,
-            //      then you've forgotten the final return stmt of your fn.
-            //
-            // [2] If this is a never returning function,
-            //      then this means that the function actually returns void.
-            //
-            if (!items.if_last.type.is_never)   // Refers to the type of the return stmt -
-            {                                   //  it is always never, everything after it is unreach.
-                isAssignable(host: t_void, h.ret_actual) || fail(
-                    "Non-void returning fn missing a final return.");
+            if (items.if_last.type.is_never)
+            {
+                if (!h.ret_actual)
+                    h.ret_actual = t_never;
+            }
+            else
+            {
+                if (h.ret_actual)
+                    isAssignable(host: t_void, h.ret_actual) || fail(
+                        "Non-void returning fn missing a final return.");
 
                 h.ret_actual = t_void;
             }
 
-            // TODO FIX
-            //  Disable return value narrowing,
-            //   we're getting some aliasing somewhere that breaks the compiler's back.
+            // TODO FIX disable return value narrowing,
+            //  we're getting some aliasing somewhere.
             if (!USE_retval_narrowing && h.ret_expect)
             {
                 let lt0         = h.ret_actual.lifetime;
@@ -2671,8 +2664,8 @@ pub fn solve(
             type: h.ret_actual || h.ret_expect);
 
         // Dead code elim.
-        // if (expr.type.is_never)
-        //     return expr;
+        if (expr.type.is_never)
+            return expr;
 
         if (expr.type.is_ref)
         {
