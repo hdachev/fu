@@ -190,6 +190,7 @@ pub struct Helpers
     id?:            string;
     mask?!:         i16;
     local_of?!:     i32;
+    kills?!:        i32;
 
     ret_expect?:    Type;
     ret_actual?:    Type;
