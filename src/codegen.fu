@@ -1741,7 +1741,10 @@ pub fn cpp_codegen(
         let err         = GET(items[1].target).name;
         let catch       = blockWrapSubstatement(items[2]);
 
-        return binding(var_name, forceMut: true) ~ " = {};"
+        mut vardecl     = !var_name.type.is_never &&
+            binding(var_name, forceMut: true) ~ " = {};";
+
+        return vardecl
              ~ cgTryCatch(
                 var_name.type.is_never
                     ? _indent ~ "    " ~  try_init
