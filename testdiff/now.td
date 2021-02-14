@@ -9323,18 +9323,22 @@ static int test(const int x)
 {
     fu_VEC<int> c = fu_VEC<int> { fu_VEC<int>::INIT<1> { 10007 } };
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<2> { 7, 11 } };
-    fu_VEC<int> L_BRK_v {};
+    fu_VEC<int> L_00_v {};
     fu_VEC<int> b = (__extension__ (
     { {
-        if (x & 2)
-            { L_BRK_v = fu_VEC<int>(c); goto L_BRK; };
+        const fu_VEC<int>* _0;
+        L_00_v = (fu_VEC<int>((__extension__ (
+        {
+            if (x & 2)
+                { L_00_v = fu_VEC<int>(c); goto L_00; };
 
-        if (x & 1)
-            { L_BRK_v = fu_VEC<int> { fu_VEC<int>::INIT<1> { int(x) } }; goto L_BRK; };
+            if (x & 1)
+                { L_00_v = fu_VEC<int> { fu_VEC<int>::INIT<1> { int(x) } }; goto L_00; };
 
-        L_BRK_v = (fu_VEC<int>(a));
-      } L_BRK:;
-    }), static_cast<fu_VEC<int>&&>(L_BRK_v));
+            _0 = &(a);
+        }), *_0)));
+      } L_00:;
+    }), static_cast<fu_VEC<int>&&>(L_00_v));
     return a[0] - (b[0] * a[1]);
 }
 
@@ -14551,10 +14555,7 @@ inline static void each_FE0s(int& sum_0, int parent_idx_0, int)
 {
 
     {
-
-        {
-            makeDirty(sum_0, parent_idx_0);
-        };
+        makeDirty(sum_0, parent_idx_0);
     };
 }
 
@@ -15401,18 +15402,17 @@ int main() { return fu_MAIN(); }
 
 static int test(const int x)
 {
-    int L_BLOCK_v {};
+    int _0 {};
     return (__extension__ (
-    { {
+    {
         if (x & 1)
-            { L_BLOCK_v = 1; goto L_BLOCK; };
+            return 1;
 
         if (x & 2)
             return 2;
 
-        L_BLOCK_v = (3);
-      } L_BLOCK:;
-    }), int(L_BLOCK_v));
+        _0 = (3);
+    }), int(_0));
 }
 
 int fu_MAIN()
@@ -15499,27 +15499,22 @@ int main() { return fu_MAIN(); }
 
 static int v(const int x)
 {
-    int L_BLOCK_v {};
-    return (__extension__ (
+    int L_00_v {};
+    return 5000 + (__extension__ (
     { {
-        int L_00_v {};
-        L_BLOCK_v = ((5000 + (__extension__ (
-        { {
-            if (x == 9)
-                { L_00_v = 2000; goto L_00; };
+        if (x == 9)
+            { L_00_v = 2000; goto L_00; };
 
-            if (x == 8)
-                return 300;
+        if (x == 8)
+            return 300;
 
-            fu::never _0 {};
-            L_00_v = (((x == 7) ? (__extension__ (
-            {
-                { L_BLOCK_v = 40; goto L_BLOCK; };
-            }), static_cast<fu::never&&>(_0)) : 5));
-          } L_00:;
-        }), int(L_00_v))));
-      } L_BLOCK:;
-    }), int(L_BLOCK_v));
+        fu::never _0 {};
+        L_00_v = (((x == 7) ? (__extension__ (
+        {
+            return 40;
+        }), static_cast<fu::never&&>(_0)) : 5));
+      } L_00:;
+    }), int(L_00_v));
 }
 
 int fu_MAIN()
@@ -15847,37 +15842,28 @@ int fu_MAIN()
         { {
 
             {
-
+                for (int i = y0; i < y1; i++)
                 {
-                    for (int i = y0; i < y1; i++)
+
                     {
 
                         {
-
+                            for (int i_1 = x0; i_1 < x1; i_1++)
                             {
 
                                 {
-                                    for (int i_1 = x0; i_1 < x1; i_1++)
-                                    {
 
+                                    { {
+                                        if (i < 11)
                                         {
-
-                                            {
-
-                                                { {
-                                                    if (i < 11)
-                                                    {
-                                                        sum++;
-                                                        goto L_05;
-                                                    };
-                                                    if (i_1 == 1)
-                                                        goto L_00;
-
-                                                    sum += ((i_1 + 1) * i);
-                                                  } L_05:;
-                                                };
-                                            };
+                                            sum++;
+                                            goto L_05;
                                         };
+                                        if (i_1 == 1)
+                                            goto L_00;
+
+                                        sum += ((i_1 + 1) * i);
+                                      } L_05:;
                                     };
                                 };
                             };
