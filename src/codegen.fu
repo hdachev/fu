@@ -934,10 +934,6 @@ pub fn cpp_codegen(
             let o       = GET(Target(:module.modid, expr_idx));
             let head    = o.solved || fail();
 
-            // This kinda does it for return non-expression.
-            if (head.type.is_void && node.flags & F_SINGLE_STMT)
-                return cgNode(head, M_STMT);
-
             // Break with value.
             if (!use_return)
             {

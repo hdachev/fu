@@ -2649,8 +2649,6 @@ pub fn solve(
 
     fn solveJump(node: Node): SolvedNode
     {
-        mut target: Target(-1, -1);
-
         mut helpers_idx = node.kind == "return"
             ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_SINGLE_STMT))
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
@@ -2660,20 +2658,11 @@ pub fn solve(
         /////////////////////////////
 
         // In { a { b { c }}}, c kills b kills a.
-        while (h.kills) helpers_idx = h.kills - 1;
+        while (h.kills)
+            helpers_idx = h.kills - 1;
 
-        // Lazy labels.
-        target.left = h.target ||=
-            Scope_addLabel(h.id, :h.local_of).index;
-
-        if (!node.items)
-        {
-            reportReturnType(:helpers_idx, t_void);
-            return createJump(:node.token, :node.flags, :target);
-        }
-
-        //
-        mut expr = solveNode(
+        // Deal with expression first, might noop the jump.
+        mut expr = node.items && solveNode(
             node.items.only,
             type: h.ret_actual || h.ret_expect,
 
@@ -2683,6 +2672,22 @@ pub fn solve(
         // Dead code elim.
         if (expr.type.is_never)
             return expr;
+
+        // This kinda does it for return non-expression.
+        if (expr.type.is_void && node.flags & F_SINGLE_STMT)
+            return expr;
+
+        // Lazy labels.
+        mut target: Target(-1, -1);
+
+        target.left = h.target ||=
+            Scope_addLabel(h.id, :h.local_of).index;
+
+        if (!node.items)
+        {
+            reportReturnType(:helpers_idx, t_void);
+            return createJump(:node.token, :target);
+        }
 
         if (expr.type.is_ref)
         {
@@ -2717,16 +2722,12 @@ pub fn solve(
 
         h.returns ~= target.right;
 
-        return createJump(:node.token, :node.flags, :target);
+        return createJump(:node.token, :target);
     }
 
-    fn createJump(token: TokenIdx, flags: i32, target: Target)
+    fn createJump(token: TokenIdx, target: Target)
     {
-        ////////////////////////////////////////////
-        // TODO flags only here for F_SINGLE_STMT //
-        ////////////////////////////////////////////
-        //
-        return SolvedNode(:token, :flags, "jump", type: t_never, :target);
+        return SolvedNode(:token, "jump", type: t_never, :target);
     }
 
     fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)
