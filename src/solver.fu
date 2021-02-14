@@ -1263,7 +1263,7 @@ pub fn solve(
         if (k == "argid")       return solveArgID(node, :type);
 
         if (k == "let")         return solveLet(node, :deadcode_on_never);
-        if (k == "call")        return solveCall(node);
+        if (k == "call")        return solveCall(node, :kills);
         if (k == "arrlit")      return solveArrayLiteral(node, type);
 
         if (k == "if")          return solveIf(node, type);
@@ -1447,13 +1447,8 @@ pub fn solve(
             return items[0];
 
         // Control flow.
-        shadow let type = fnbody_of // TODO FIX
-            ? h.ret_actual
-            : expr && items.len || items.if_last.type.is_never && !label_used
-                ? items.last.type
-                : t_void;
-
-        return createBlock(:token, :type, :items,
+        return createBlock(:token, :items,
+            type: h.ret_actual || t_void,
             label: label_used && Target(:module.modid, label_used));
     }
 
@@ -3575,7 +3570,7 @@ pub fn solve(
         return _scope;
     }
 
-    fn solveCall(node: Node, target?!: Target): SolvedNode
+    fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
     {
         mut id = node.value;
         if (!id) target || fail();
@@ -3623,10 +3618,7 @@ pub fn solve(
         }
 
         //
-        return CallerNode(
-            node,
-            callTargIdx,
-            args);
+        return CallerNode(node, callTargIdx, args, :kills);
     }
 
 
@@ -3924,7 +3916,7 @@ pub fn solve(
     }
 
     fn CallerNode(
-        node: Node, target: Target, mut args: SolvedNode[] = [])
+        node: Node, target: Target, mut args: SolvedNode[] = [], kills?!: i32)
             : SolvedNode
     {
         let overload = GET(target);
@@ -4017,7 +4009,8 @@ pub fn solve(
             let s_body = solveBlock(
                 n_body, type: ret_expect,
                 fnbody_of: target.index,
-                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                :kills);
 
             result.last = s_body;
 
