@@ -3754,7 +3754,7 @@ pub fn solve(
         }
 
         mut cons    = solveBlock(node.items[1], :type);
-        mut alt     = solveBlock(node.items[2], type: !cons.type.is_never && cons.type || type);
+        mut alt     = solveBlock(node.items[2], type: type || cons.type);
 
         if (!type.is_void)
         {
