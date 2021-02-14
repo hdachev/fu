@@ -1271,9 +1271,9 @@ pub fn solve(
         if (k == "and")         return solveAnd(node, type);
 
         if (k == "loop")        return solveLoop(node);
-        if (k == "break")       return solveJump(node);
-        if (k == "return")      return solveJump(node);
-        if (k == "continue")    return solveJump(node);
+        if (k == "break")       return solveJump(node, kills);
+        if (k == "return")      return solveJump(node, kills);
+        if (k == "continue")    return solveJump(node, kills);
 
         if (k == "int")         return solveInt(node, type);
         if (k == "real")        return solveNum(node, type);
@@ -2647,7 +2647,7 @@ pub fn solve(
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
 
-    fn solveJump(node: Node): SolvedNode
+    fn solveJump(node: Node, kills: i32): SolvedNode
     {
         mut helpers_idx = node.kind == "return"
             ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_SINGLE_STMT))
@@ -2656,10 +2656,6 @@ pub fn solve(
         /////////////////////////////
         fn h() _helpers[helpers_idx];
         /////////////////////////////
-
-        // In { a { b { c }}}, c kills b kills a.
-        while (h.kills)
-            helpers_idx = h.kills - 1;
 
         // Deal with expression first, might noop the jump.
         mut expr = node.items && solveNode(
@@ -2674,7 +2670,17 @@ pub fn solve(
             return expr;
 
         // This kinda does it for return non-expression.
-        if (expr.type.is_void && node.flags & F_SINGLE_STMT)
+        let redundant = kills == helpers_idx + 1;
+        if (redundant && expr.type.is_void)
+            return expr;
+
+        // In { a { b { c }}}, c kills b kills a.
+        while (h.kills)
+            helpers_idx = h.kills - 1;
+
+        // TODO FIX see how functions are special,
+        //  if we could get rid of the compulsory returns this would clean up nicely.
+        if (redundant && !(h.mask & HM_Function))
             return expr;
 
         // Lazy labels.
