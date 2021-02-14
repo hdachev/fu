@@ -8551,6 +8551,52 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn throw_hey() {
+            throw("hey");
+        }
+
+        fn main(): i32 {
+            let x = throw_hey() //! DEAD_code
+                catch err
+                    return err.len - 3;
+
+            return x || 7;
+        }
+
+-----
+#include <fu/never.h>
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+[[noreturn]] static fu::never throw_hey()
+{
+    fu::fail("hey"_fu);
+}
+
+int fu_MAIN()
+{
+
+    try
+    {
+        throw_hey();
+    }
+    catch (const std::exception& o_0)
+    {
+        fu_STR err = fu_TO_STR(o_0.what());
+
+        return err.size() - 3;
+    }
+;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn throw_hey(): i32 {
             throw("hey");
             return 1; //! DEAD_code
