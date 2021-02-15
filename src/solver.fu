@@ -1442,14 +1442,14 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
 
         // Compact + stress test.
-        let label_used = _helpers[helpers_idx].target;
+        let label_used = h.mask & HM_LabelUsed;
         if (!label_used && items.len == 1)
             return items[0];
 
         // Control flow.
         return createBlock(:token, :items,
             type: h.ret_actual || t_void,
-            label: label_used && Target(:module.modid, label_used));
+            label: label_used && Target(:module.modid, h.target));
     }
 
     fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
@@ -2282,7 +2282,7 @@ pub fn solve(
                     let s_body = solveBlock(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
-                        mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                        mask: i16(HM_Function | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
                     retval = s_body.type;
 
@@ -2684,6 +2684,8 @@ pub fn solve(
         target.left = h.target ||=
             Scope_addLabel(h.id, :h.local_of).index;
 
+        h.mask |= HM_LabelUsed;
+
         if (!node.items)
         {
             reportReturnType(:helpers_idx, t_void);
@@ -2907,14 +2909,15 @@ pub fn solve(
         let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
-        let label_used  = _helpers[brk_idx].target;
+        let h           = _helpers[brk_idx];
+        let label_used  = h.mask & HM_LabelUsed;
         let type        = !pre_cond && !post_cond && !label_used
                             ? t_never
                             : t_void;
 
         return solved(node, type,
             [ init, pre_cond, body, post_cond, post ],
-                target: label_used && Target(:module.modid, label_used));
+                target: label_used && Target(:module.modid, h.target));
     }
 
 
