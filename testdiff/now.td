@@ -1601,17 +1601,11 @@ struct s_X
 
 static int hey(const s_X& x)
 {
-    int _0 {};
-    return (__extension__ (
+    const int b = -1;
+
     {
-        const int b = -1;
-        int L_00_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_00_v = (x.a + b); goto L_00; };
-          } L_00:;
-        }), int(L_00_v)));
-    }), int(_0));
+        return x.a + b;
+    };
 }
 
 int fu_MAIN()
@@ -1965,9 +1959,8 @@ static int outer_inl(const int i, const int x)
     {
         int L_00_v {};
         _0 = ((__extension__ (
-        { {
-            { L_00_v = outer_inl((i - 1), x); goto L_00; };
-          } L_00:;
+        {
+            L_00_v = (outer_inl((i - 1), x));
         }), int(L_00_v)));
     }), int(_0)) : (x + i));
 }
@@ -2129,9 +2122,8 @@ static int inner_inl(const int i, const int x)
         const int i_1 = (i - (2 * x));
         int L_00_v {};
         _0 = ((__extension__ (
-        { {
-            { L_00_v = ((i_1 > 0) ? inner_inl(i_1, x) : (2 * i_1)); goto L_00; };
-          } L_00:;
+        {
+            return ((i_1 > 0) ? inner_inl(i_1, x) : (2 * i_1));
         }), int(L_00_v)));
     }), int(_0));
 }
@@ -2145,9 +2137,8 @@ int fu_MAIN()
         const int i = 6;
         int L_01_v {};
         _0 = ((__extension__ (
-        { {
-            { L_01_v = ((i > 0) ? inner_inl(i, x) : (2 * i)); goto L_01; };
-          } L_01:;
+        {
+            return ((i > 0) ? inner_inl(i, x) : (2 * i));
         }), int(L_01_v)));
     }), int(_0));
 }
@@ -6650,14 +6641,11 @@ static int __solveStruct(int&, int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
+inline static void each_nvoH(int& arg_0, int x_0, int& cond, int)
 {
-    int* L_01_v;
-    return !cond ? cond : (__extension__ (
-    { {
-        { L_01_v = &((arg_0 += x_0)); goto L_01; };
-      } L_01:;
-    }), *L_01_v);
+    if (cond)
+        arg_0 += x_0;
+
 }
 
 static int& GET_mut(int& target_0, int& x)
@@ -6672,7 +6660,7 @@ static void checkRecursions(int& target_0, int& o, const int incr)
 
 static int __solveStruct(int& target_0, int arg, const int x)
 {
-    each_4rxG(arg, x, arg, 0);
+    each_nvoH(arg, x, arg, 0);
     if (arg)
     {
         int& o = GET_mut(target_0, arg);
@@ -6926,9 +6914,8 @@ inline void each_sJgb(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_Scope
         {
             const int item = items[i_1];
 
-            { {
-                { (sum_0 += item); goto L_01; };
-              } L_01:;
+            {
+                sum_0 += item;
             };
         };
         i0 = ss.end;
@@ -7067,9 +7054,8 @@ inline static void each_hTsr(int& sum_0, const fu_VEC<int>& a, int, const int st
     {
         const int i_1 = a[i];
 
-        { {
-            { (sum_0 += i_1); goto L_00; };
-          } L_00:;
+        {
+            sum_0 += i_1;
         };
     };
 }
@@ -7388,17 +7374,11 @@ struct s_CurrentFn
 
 static int hello(const s_CurrentFn& c)
 {
-    int _0 {};
-    return (__extension__ (
+    const s_Target& a = c.target;
+
     {
-        const s_Target& a = c.target;
-        int L_00_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_00_v = a.packed; goto L_00; };
-          } L_00:;
-        }), int(L_00_v)));
-    }), int(_0));
+        return a.packed;
+    };
 }
 
 int fu_MAIN()
@@ -7467,17 +7447,11 @@ struct s_CurrentFn
 
 static int hello(const s_CurrentFn& c)
 {
-    int _0 {};
-    return (__extension__ (
+    const s_Target& a = c.target;
+
     {
-        const s_Target& a = c.target;
-        int L_00_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_00_v = a.packed; goto L_00; };
-          } L_00:;
-        }), int(L_00_v)));
-    }), int(_0));
+        return a.packed;
+    };
 }
 
 int fu_MAIN()
@@ -13261,28 +13235,13 @@ int fu_MAIN()
 {
     for (int i = 0; i < 10; i++)
     {
-        int _0 {};
-        return (__extension__ (
-        {
-            int L_00_v {};
-            _0 = ((__extension__ (
-            { {
-                int _1 {};
-                { L_00_v = (__extension__ (
-                {
-                    int L_01_v {};
-                    _1 = ((__extension__ (
-                    { {
-                        for (int i_1 = 0; i_1 < 10; i_1++)
-                            { L_01_v = int(i_1); goto L_01; };
 
-                        { L_01_v = 1; goto L_01; };
-                      } L_01:;
-                    }), int(L_01_v)));
-                }), int(_1)); goto L_00; };
-              } L_00:;
-            }), int(L_00_v)));
-        }), int(_0));
+        {
+            for (int i_1 = 0; i_1 < 10; i_1++)
+                return i_1;
+
+            return 1;
+        };
     };
     return 1;
 }
@@ -14506,9 +14465,8 @@ inline static void each_kJRA(int& i_0, const fu_VEC<int>& items, int)
     {
         const int x = items[i];
 
-        { {
-            { (i_0 += x); goto L_00; };
-          } L_00:;
+        {
+            i_0 += x;
         };
     };
 }
@@ -14818,16 +14776,10 @@ int main() { return fu_MAIN(); }
 
 inline static int identity_uae5(int depth1_0, int)
 {
-    int _0 {};
-    return (__extension__ (
+
     {
-        int L_00_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_00_v = depth1_0; goto L_00; };
-          } L_00:;
-        }), int(L_00_v)));
-    }), int(_0));
+        return depth1_0;
+    };
 }
 
 inline static int outer_U3Pf(const int depth1)
@@ -14863,16 +14815,10 @@ int main() { return fu_MAIN(); }
 
 inline static int identity_cj0H(int sum_0, int)
 {
-    int _0 {};
-    return (__extension__ (
+
     {
-        int L_01_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_01_v = sum_0; goto L_01; };
-          } L_01:;
-        }), int(L_01_v)));
-    }), int(_0));
+        return sum_0;
+    };
 }
 
 inline static int outer_uae5(int depth0_0, int)
@@ -14925,16 +14871,10 @@ int main() { return fu_MAIN(); }
 
 inline static int identity_z5ia(int sum_0, int)
 {
-    int _0 {};
-    return (__extension__ (
+
     {
-        int L_02_v {};
-        _0 = ((__extension__ (
-        { {
-            { L_02_v = sum_0; goto L_02; };
-          } L_02:;
-        }), int(L_02_v)));
-    }), int(_0));
+        return sum_0;
+    };
 }
 
 inline static int inner_lY2z(int sum_0, int)
@@ -15772,17 +15712,16 @@ int fu_MAIN()
                 for (int x = x0; x < x1; x++)
                 {
 
-                    { {
+                    {
                         if (y < 11)
                         {
                             sum++;
-                            goto L_01;
+                            continue;
                         };
                         if (x == 1)
                             goto L_00;
 
                         sum += ((x + 1) * y);
-                      } L_01:;
                     };
                 };
             };
@@ -15853,17 +15792,16 @@ int fu_MAIN()
 
                                 {
 
-                                    { {
+                                    {
                                         if (i < 11)
                                         {
                                             sum++;
-                                            goto L_05;
+                                            continue;
                                         };
                                         if (i_1 == 1)
                                             goto L_00;
 
                                         sum += ((i_1 + 1) * i);
-                                      } L_05:;
                                     };
                                 };
                             };
