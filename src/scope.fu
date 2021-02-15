@@ -13,14 +13,12 @@ pub let SS_TYPE_RECUR   = 0x1 << 16;
 pub let SS_FN_RECUR     = 0x1 << 17;
 // ...
 
-pub let HM_Jump         = 1.i16 << 0;
-pub let HM_Anon         = 1.i16 << 1;
-pub let HM_Loop         = 1.i16 << 2;
-// ...
+pub let HM_CanBreak     = 1.i16 << 0;
+pub let HM_CanReturn    = 1.i16 << 1;
+pub let HM_Anon         = 1.i16 << 2;
 pub let HM_Function     = 1.i16 << 3;
 pub let HM_Lambda       = 1.i16 << 4;
 pub let HM_Struct       = 1.i16 << 5;
-// ...
 pub let HM_LabelUsed    = 1.i16 << 6;
 
 

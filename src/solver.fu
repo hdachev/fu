@@ -1344,7 +1344,7 @@ pub fn solve(
             solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_Jump, kills?!: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32): SolvedNode
     {
         let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
@@ -2282,7 +2282,7 @@ pub fn solve(
                     let s_body = solveBlock(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
-                        mask: i16(HM_Function | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
                     retval = s_body.type;
 
@@ -2802,7 +2802,7 @@ pub fn solve(
             //////////////////////////////////////////
 
             let item = _helpers[i];
-            if !(item.mask & HM_Function)
+            if !(item.mask & HM_CanReturn)
                 continue;
             if (item.mask & HM_Lambda && !lambdaOK)
                 continue;
@@ -2841,7 +2841,7 @@ pub fn solve(
                 i++;
 
             let item = _helpers[i];
-            if !(item.mask & HM_Jump)
+            if !(item.mask & HM_CanBreak)
             {
                 if (!CONTINUE_BELOW)
                 {
@@ -2894,7 +2894,7 @@ pub fn solve(
         //  ideally we'll only have labels on blocks -
         //   the continues-map-to-inner-block thing.
         let brk_idx     = _helpers.len;
-        _helpers       ~= Helpers(id: node.value, mask: HM_Anon|HM_Jump|HM_Loop, local_of: _current_fn.target.index);
+        _helpers       ~= Helpers(id: node.value, mask: HM_Anon|HM_CanBreak, local_of: _current_fn.target.index);
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
@@ -4011,8 +4011,7 @@ pub fn solve(
 
             let s_body = solveBlock(
                 n_body, type: ret_expect,
-                fnbody_of: target.index,
-                mask: i16(HM_Function | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
                 :kills);
 
             result.last = s_body;
