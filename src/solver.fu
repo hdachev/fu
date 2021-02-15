@@ -3780,7 +3780,11 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, type, deadcode_on_never: true, as_blocks_after: 1);
+        mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks_after: 1,
+            type_last: type,
+            use_type_last: true,
+            type_all: type.is_void ? t_bool : type);
+
         if (items.len < 2)
             return items.only;
 
@@ -3839,7 +3843,11 @@ pub fn solve(
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, type, deadcode_on_never: true, as_blocks_after: 1);
+        let items = solveNodes(node.items, deadcode_on_never: true, as_blocks_after: 1,
+            type_last: type,
+            use_type_last: true,
+            type_all: type.is_void ? t_bool : type);
+
         if (items.len < 2)
             return items.only;
 
