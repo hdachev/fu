@@ -953,7 +953,7 @@ pub fn cpp_codegen(
 
                 let assign = hasval && "L_" ~ dest.name ~ "_v = ";
 
-                mut value = cgNode(head);
+                mut value = cgNode(head, !assign && M_STMT);
                 if (ptrflip)
                     value = "&(" ~ value ~ ")";
 
