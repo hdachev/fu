@@ -1441,19 +1441,31 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
 
-        // Compact + stress test.
-        let label_used = h.mask & HM_LabelUsed;
-        if (!label_used && items.len == 1)
-            return items[0];
-
         // Control flow.
         return createBlock(:token, :items,
             type: h.ret_actual || t_void,
-            label: label_used && Target(:module.modid, h.target));
+            label: h.mask & HM_LabelUsed && Target(:module.modid, h.target));
     }
 
     fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
     {
+        // Compact + stress test.
+        if (!label && items.len)
+        {
+            mut ok = true;
+            for (mut i = 0; i < items.len - 1; i++)
+            {
+                if (items[i].kind != "empty")
+                {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+                return items.last;
+        }
+
         return SolvedNode(kind: "block", :type, :items, :token, target: label);
     }
 
