@@ -1514,10 +1514,7 @@ inline int clone_U3Pf(const int a)
 inline s_Scope clone_DXfV(const s_Scope& a)
 {
     s_Scope res {};
-
-    {
-        res.x = clone_U3Pf(a.x);
-    };
+    res.x = clone_U3Pf(a.x);
     return res;
 }
                                 #endif
@@ -1548,10 +1545,7 @@ inline fu_VEC<s_Scope> clone_gQjd(const fu_VEC<s_Scope>& a)
 inline s_ModuleOutputs clone_Z4mx(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs res {};
-
-    {
-        res.deps = clone_gQjd(a.deps);
-    };
+    res.deps = clone_gQjd(a.deps);
     return res;
 }
                                 #endif
@@ -1951,7 +1945,7 @@ int main() { return fu_MAIN(); }
 
 static int outer_inl(const int i, const int x)
 {
-    return ((i > 0) ? ((void)0, outer_inl((i - 1), x)) : (x + i));
+    return ((i > 0) ? outer_inl((i - 1), x) : (x + i));
 }
 
 int fu_MAIN()
@@ -8061,7 +8055,7 @@ struct s_mat34
 
 static s_mat34 inverse(const s_mat34& mat)
 {
-    const float idet = (1.0f / ((void)0, (((((((-mat.mz.x * mat.my.y) * mat.mx.z) + ((mat.my.x * mat.mz.y) * mat.mx.z)) + ((mat.mz.x * mat.mx.y) * mat.my.z)) - ((mat.mx.x * mat.mz.y) * mat.my.z)) - ((mat.my.x * mat.mx.y) * mat.mz.z)) + ((mat.mx.x * mat.my.y) * mat.mz.z))));
+    const float idet = (1.0f / (((((((-mat.mz.x * mat.my.y) * mat.mx.z) + ((mat.my.x * mat.mz.y) * mat.mx.z)) + ((mat.mz.x * mat.mx.y) * mat.my.z)) - ((mat.mx.x * mat.mz.y) * mat.my.z)) - ((mat.my.x * mat.mx.y) * mat.mz.z)) + ((mat.mx.x * mat.my.y) * mat.mz.z)));
     const s_vec3 i_mx = s_vec3 { (idet * ((-mat.mz.y * mat.my.z) + (mat.my.y * mat.mz.z))), (idet * ((+mat.mz.y * mat.mx.z) - (mat.mx.y * mat.mz.z))), (idet * ((-mat.my.y * mat.mx.z) + (mat.mx.y * mat.my.z))) };
     const s_vec3 i_my = s_vec3 { (idet * ((+mat.mz.x * mat.my.z) - (mat.my.x * mat.mz.z))), (idet * ((-mat.mz.x * mat.mx.z) + (mat.mx.x * mat.mz.z))), (idet * ((+mat.my.x * mat.mx.z) - (mat.mx.x * mat.my.z))) };
     const s_vec3 i_mz = s_vec3 { (idet * ((-mat.mz.x * mat.my.y) + (mat.my.x * mat.mz.y))), (idet * ((+mat.mz.x * mat.mx.y) - (mat.mx.x * mat.mz.y))), (idet * ((-mat.my.x * mat.mx.y) + (mat.mx.x * mat.my.y))) };
@@ -8144,16 +8138,13 @@ int fu_MAIN()
     s_TEA tea {};
 
     {
-
+        uint32_t sum {};
+        uint32_t delta = 0x9e3779b9u;
+        for (int i = 0; i < 4; i++)
         {
-            uint32_t sum {};
-            uint32_t delta = 0x9e3779b9u;
-            for (int i = 0; i < 4; i++)
-            {
-                sum += delta;
-                tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
-                tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
-            };
+            sum += delta;
+            tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
+            tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
         };
     };
     return int((tea.v0 ^ tea.v0));
@@ -12623,7 +12614,7 @@ struct s_mat4
 int fu_MAIN()
 {
     const s_mat34 m34 = s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
-    const s_mat4 m44 = ((void)0, s_mat4 { float(m34.mx.x), float(m34.mx.y), float(m34.mx.z), 0.0f, float(m34.my.x), float(m34.my.y), float(m34.my.z), 0.0f, float(m34.mz.x), float(m34.mz.y), float(m34.mz.z), 0.0f, float(m34.mo.x), float(m34.mo.y), float(m34.mo.z), 1.0f });
+    const s_mat4 m44 = s_mat4 { float(m34.mx.x), float(m34.mx.y), float(m34.mx.z), 0.0f, float(m34.my.x), float(m34.my.y), float(m34.my.z), 0.0f, float(m34.mz.x), float(m34.mz.y), float(m34.mz.z), 0.0f, float(m34.mo.x), float(m34.mo.y), float(m34.mo.z), 1.0f };
     return int(determinant(m44)) - 1;
 }
 
@@ -13035,10 +13026,7 @@ inline int clone_U3Pf(const int a)
 inline s_Scope clone_zycA(const s_Scope& a)
 {
     s_Scope res {};
-
-    {
-        res.x = clone_U3Pf(a.x);
-    };
+    res.x = clone_U3Pf(a.x);
     return res;
 }
                                 #endif
@@ -14677,15 +14665,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_kdxo(int sum_0, int)
+inline static int identity_U8wp(int depth0_0, int)
 {
-    return sum_0;
+    return depth0_0;
 }
 
 inline static int outer_uae5(int depth0_0, int)
 {
-    const int sum = depth0_0;
-    return identity_kdxo(sum, 0);
+    return identity_U8wp(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
@@ -14721,21 +14708,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_AIXJ(int sum_0, int)
+inline static int identity_2zoy(int depth0_0, int)
 {
-    return sum_0;
+    return depth0_0;
 }
 
-inline static int inner_cj0H(int sum_0, int)
+inline static int inner_kdxo(int depth0_0, int)
 {
-    const int sum = sum_0;
-    return identity_AIXJ(sum, 0);
+    return identity_2zoy(depth0_0, 0);
 }
 
 inline static int outer_uae5(int depth0_0, int)
 {
-    const int sum = depth0_0;
-    return inner_cj0H(sum, 0);
+    return inner_kdxo(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
@@ -15269,7 +15254,7 @@ inline static int some_kJRA(const fu_VEC<int>& arr, int)
         for (int i = 0; i < arr.size(); i++)
         {
             const int x = arr[i];
-            if (((void)0, ((x & 1) == 0)))
+            if ((x & 1) == 0)
                 return int(x);
 
         };
