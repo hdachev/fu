@@ -317,23 +317,6 @@ pub fn ZERO(
                 [i + ctx.modules.len - sources.len]
                     .out.cpp;
 
-            let expect = testdiffs.testdiff::get_current(key);
-            if (expect != actual)
-            {
-                if (!expect)
-                {
-                    if (!env::get("fu_ALLOW_UNSEEN"))
-                        throw("NOWRITE: unknown testcase.\n\nConsider fu_ALLOW_UNSEEN envar:\n" ~ key ~ "\nAbout to write:\n\n" ~ actual);
-                }
-                else if (!env::get("fu_ALLOW_WRITE"))
-                {
-                    file::write(PRJDIR ~ "testdiff/expect.tmp", expect);
-                    file::write(PRJDIR ~ "testdiff/actual.tmp", actual);
-
-                    throw("NOWRITE: test output mismatch for:\n\n" ~ key ~ "\nPreviously:\n\n" ~ expect ~ "\nNow:\n\n" ~ actual);
-                }
-            }
-
             testdiffs.testdiff::set_next(key, actual);
         }
     }

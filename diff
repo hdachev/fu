@@ -1,4 +1,0 @@
-#!/bin/bash
-set -e
-
-git diff --no-index testdiff/expect.tmp testdiff/actual.tmp

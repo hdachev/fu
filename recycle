@@ -4,13 +4,7 @@ set -e
 ./reset
 ./bootstrap
 
-mv testdiff/now.td testdiff/next.td
-mv testdiff/prev.td testdiff/now.td
-
 ./bin/fu self
-
-mv testdiff/now.td testdiff/prev.td
-mv testdiff/next.td testdiff/now.td
 
 ./bin/fu self
 ./bin/fu self
