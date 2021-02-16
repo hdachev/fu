@@ -4517,7 +4517,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn each(arr, fn)
+        fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
 
@@ -4567,7 +4567,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -4579,7 +4579,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -4591,7 +4591,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn loop2d(x0, x1, y0, y1, fn) {
+        fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);
         }
@@ -4619,7 +4619,7 @@ pub fn runTests()
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
-        inline fn loop2d(x0, x1, y0, y1, fn)
+        fn loop2d(x0, x1, y0, y1, fn)
             loop1d(y0, y1, |y|
                 loop1d(x0, x1, |x|
                     fn (x, y)));

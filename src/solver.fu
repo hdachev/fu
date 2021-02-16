@@ -1775,6 +1775,40 @@ pub fn solve(
         //
         let original = GET(overloadIdx || into || fail());
         mut template = original.template;
+
+        mut parent_idx = original.local_of;
+        {
+            // If we're taking a closure as an argument,
+            //  we're becoming a closure ourselves of whatever that closure is closing over -
+            //   so that e.g. lifetime reasoning can have an easier time etc.
+            //
+            // TODO all of these must form up a common shadowing group -
+            //  So nothing by the same name should come in from outer scope,
+            //   and yet none of these things shadow each other.
+            //
+            for (mut i = 0; i < args.len; i++)
+            {
+                let arg_t = args[i].type;
+                if (addroffn::type_isAddrOfFn(arg_t))
+                {
+                    addroffn::unpackAddrOfFn(arg_t.canon, |target|
+                    {
+                        if (target.modid == module.modid)
+                        {
+                            let overload = GET(target);
+                            if (overload.flags & F_SPREAD_INLINE)
+                                template.node.flags |= F_INLINE;
+
+                            let local_of = overload.local_of;
+                            if (parent_idx < local_of)
+                                parent_idx = local_of;
+                        }
+                    });
+                }
+            }
+        }
+
+        //
         let isInline = !!(template.node.flags & F_INLINE);
 
         fn setSpec(shadow mangle: string, target: Target, nx?: bool)
@@ -1798,35 +1832,6 @@ pub fn solve(
 
         if (!into && !isInline)
             setSpec(mangle, SPECFAIL, nx: true);
-
-        //
-        mut parent_idx = original.local_of;
-        {
-            // If we're taking a closure as an argument,
-            //  we're becoming a closure ourselves of whatever that closure is closing over -
-            //   so that e.g. lifetime reasoning can have an easier time etc.
-            //
-            // TODO all of these must form up a common shadowing group -
-            //  So nothing by the same name should come in from outer scope,
-            //   and yet none of these things shadow each other.
-            //
-            for (mut i = 0; i < args.len; i++)
-            {
-                let arg_t = args[i].type;
-                if (addroffn::type_isAddrOfFn(arg_t))
-                {
-                    addroffn::unpackAddrOfFn(arg_t.canon, |target|
-                    {
-                        if (target.modid == module.modid)
-                        {
-                            let local_of = GET(target).local_of;
-                            if (parent_idx < local_of)
-                                parent_idx = local_of;
-                        }
-                    });
-                }
-            }
-        }
 
         // Scopes & scope skips.
         mut target: Target;

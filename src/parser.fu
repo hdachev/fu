@@ -51,7 +51,7 @@ pub let F_REF           = 1 << 22;
 pub let F_SHADOW        = 1 << 23;
 
 pub let F_NAMED_ARGS    = 1 << 24;
-// ... 25
+pub let F_SPREAD_INLINE = 1 << 25;
 // ... 26
 let     F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
@@ -174,6 +174,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     mut _dollars    : string[];
 
     mut _anonFns    = 0;
+
+    mut _numReturns = 0;
 
 
     //
@@ -584,7 +586,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseInlineDecl(mut flags?: i32): Node
     {
         flags |= F_INLINE;
-        flags |= F_TEMPLATE;
 
         let v = consume("id").value;
         if (v == "infix")   return parseFixityDecl(flags | F_INFIX);
@@ -687,8 +688,18 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         let retIdx = items.len;
         items.push(type);
 
+        let numReturns0 = _numReturns;
+
         // Body or pattern (case/case).
         flags |= parseFnBodyOrPattern(items, :expr);
+
+        if (flags & F_LAMBDA)         {
+            if (_numReturns > numReturns0)
+                flags |= F_SPREAD_INLINE;
+        }
+        else {
+            _numReturns = numReturns0;
+        }
 
         // Ensure main: i32, kinda lame doing it here.
         if (name == "main" && _fnDepth == 1)
@@ -1405,6 +1416,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         _fnDepth > 0 || { _idx--; fail() };
 
         let label = tryConsume("op", ":") && consume("id").value;
+
+        if (kind == "return")
+            _numReturns++;
 
         mut expr: Node;
         if (!tryConsume("op", ";"))
