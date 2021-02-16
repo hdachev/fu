@@ -14665,14 +14665,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_U8wp(int depth0_0, int)
+inline static int identity_VSHQ(int depth0_0, int)
 {
     return depth0_0;
 }
 
 inline static int outer_uae5(int depth0_0, int)
 {
-    return identity_U8wp(depth0_0, 0);
+    return identity_VSHQ(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
@@ -14708,19 +14708,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_2zoy(int depth0_0, int)
+inline static int identity_lY2z(int depth0_0, int)
 {
     return depth0_0;
 }
 
-inline static int inner_kdxo(int depth0_0, int)
+inline static int inner_U8wp(int depth0_0, int)
 {
-    return identity_2zoy(depth0_0, 0);
+    return identity_lY2z(depth0_0, 0);
 }
 
 inline static int outer_uae5(int depth0_0, int)
 {
-    return inner_kdxo(depth0_0, 0);
+    return inner_U8wp(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
@@ -15231,7 +15231,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn each(arr, fn)
+        fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
 
@@ -15322,7 +15322,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -15336,24 +15336,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+inline static void loop1d_B7Rx(int& x_0, const int i0, const int i1, int)
+{
+    for (int i = i0; i < i1; i++)
+    {
+        if ((x_0 += i))
+            return;
+
+    };
+}
+
 int fu_MAIN()
 {
     int x = 0;
-
-    {
-        const int i0 = 0;
-        const int i1 = 10;
-
-        { {
-            for (int i = i0; i < i1; i++)
-            {
-                if ((x += i))
-                    goto L_02;
-
-            };
-          } L_02:;
-        };
-    };
+    loop1d_B7Rx(x, 0, 10, 0);
     return x - 1;
 }
 
@@ -15364,7 +15360,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -15402,7 +15398,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn loop2d(x0, x1, y0, y1, fn) {
+        fn loop2d(x0, x1, y0, y1, fn) {
             for (mut y = y0; y < y1; y++)
             for (mut x = x0; x < x1; x++) fn(x, y);
         }
@@ -15428,35 +15424,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+inline static void loop2d_11kI(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
+{
+    for (int y = y0; y < y1; y++)
+    {
+        for (int x = x0; x < x1; x++)
+        {
+            if (y < 11)
+            {
+                sum_0++;
+                continue;
+            };
+            if (x == 1)
+                return;
+
+            sum_0 += ((x + 1) * y);
+        };
+    };
+}
+
 int fu_MAIN()
 {
     int sum = 0;
-
-    {
-        const int x0 = 0;
-        const int x1 = 10;
-        const int y0 = 10;
-        const int y1 = 12;
-
-        { {
-            for (int y = y0; y < y1; y++)
-            {
-                for (int x = x0; x < x1; x++)
-                {
-                    if (y < 11)
-                    {
-                        sum++;
-                        continue;
-                    };
-                    if (x == 1)
-                        goto L_03;
-
-                    sum += ((x + 1) * y);
-                };
-            };
-          } L_03:;
-        };
-    };
+    loop2d_11kI(sum, 0, 10, 10, 12, 0);
     return sum - 21;
 }
 
@@ -15471,7 +15461,7 @@ int main() { return fu_MAIN(); }
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
-        inline fn loop2d(x0, x1, y0, y1, fn)
+        fn loop2d(x0, x1, y0, y1, fn)
             loop1d(y0, y1, |y|
                 loop1d(x0, x1, |x|
                     fn (x, y)));
@@ -15497,35 +15487,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+inline static void loop2d_CSvR(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
+{
+    for (int i = y0; i < y1; i++)
+    {
+        for (int i_1 = x0; i_1 < x1; i_1++)
+        {
+            if (i < 11)
+            {
+                sum_0++;
+                continue;
+            };
+            if (i_1 == 1)
+                return;
+
+            sum_0 += ((i_1 + 1) * i);
+        };
+    };
+}
+
 int fu_MAIN()
 {
     int sum = 0;
-
-    {
-        const int x0 = 0;
-        const int x1 = 10;
-        const int y0 = 10;
-        const int y1 = 12;
-
-        { {
-            for (int i = y0; i < y1; i++)
-            {
-                for (int i_1 = x0; i_1 < x1; i_1++)
-                {
-                    if (i < 11)
-                    {
-                        sum++;
-                        continue;
-                    };
-                    if (i_1 == 1)
-                        goto L_07;
-
-                    sum += ((i_1 + 1) * i);
-                };
-            };
-          } L_07:;
-        };
-    };
+    loop2d_CSvR(sum, 0, 10, 10, 12, 0);
     return sum - 21;
 }
 
