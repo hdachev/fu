@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -7,12 +8,14 @@
 
 struct s_Effects;
 struct s_Lifetime;
+struct s_Region;
 struct s_ScopeItem;
 struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
 int parse10i32(int&, const fu_STR&);
+void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -32,11 +35,25 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<int> uni0n;
+    fu_VEC<s_Region> uni0n;
     explicit operator bool() const noexcept
     {
         return false
@@ -99,12 +116,14 @@ struct s_Target
 struct s_ScopeItem
 {
     fu_STR id;
-    s_Target target;
+    int modid;
+    uint32_t packed;
     explicit operator bool() const noexcept
     {
         return false
             || id
-            || target
+            || modid
+            || packed
         ;
     }
 };
@@ -138,30 +157,33 @@ fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
     return res;
 }
 
-fu_VEC<s_Target> unpackAddrOfFn(const fu_STR& canon)
+                                #ifndef DEFt_unpackAddrOfFn_B2Nf
+                                #define DEFt_unpackAddrOfFn_B2Nf
+inline void unpackAddrOfFn_B2Nf(fu_VEC<s_ScopeItem>& out_0, const fu_STR& id_0, bool shadows_0, const fu_STR& canon, int)
 {
-    fu_VEC<s_Target> res {};
     int i = 0;
     while (i < canon.size())
     {
-        ((canon[i++] == std::byte('@')) || fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon) + "`."_fu)));
-        const int modid = parse10i32(i, canon);
-        ((canon[i++] == std::byte(':')) || fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon) + "`."_fu)));
-        const int index = parse10i32(i, canon);
-        res.push(s_Target { int(modid), int(index) });
-    };
-    return res;
-}
+        if (!(canon[i++] == std::byte('@')))
+            fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon) + "`."_fu));
 
-bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type)
+        const int modid = parse10i32(i, canon);
+        if (!(canon[i++] == std::byte(':')))
+            fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon) + "`."_fu));
+
+        const int index = parse10i32(i, canon);
+        const s_Target target = s_Target { int(modid), int(index) };
+        Scope_set(out_0, id_0, target, shadows_0);
+    };
+}
+                                #endif
+
+bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
 {
     if (!type_isAddrOfFn(type))
         return false;
 
-    fu_VEC<s_Target> targets = unpackAddrOfFn(type.vtype.canon);
-    for (int i = 0; i < targets.size(); i++)
-        out.push(s_ScopeItem { fu_STR(id), s_Target(targets[i]) });
-
+    unpackAddrOfFn_B2Nf(out, id, shadows, type.vtype.canon, 0);
     return true;
 }
 

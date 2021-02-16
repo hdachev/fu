@@ -14,12 +14,12 @@ set(FU_INPUTS
     ../lib/alloc.fu
     stat.fu
     scope.fu
-    file.fu
+    ../lib/file.fu
     context.fu
+    bitset.fu
     intlit.fu
     addroffn.fu
     ../lib/tea.fu
-    bitset.fu
     solver.fu
     cpp.fu
     codegen.fu
@@ -27,7 +27,9 @@ set(FU_INPUTS
     prelude.fu
     ../lib/fs.fu
     ../lib/shell.fu
+    ../lib/process.fu
     build.fu
+    testdiff.fu
     compiler.fu
     tests.fu
     hello.fu

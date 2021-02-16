@@ -26,29 +26,6 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_r16_aKqO
-                                #define DEFt_r16_aKqO
-inline void r16_aKqO(s_TEA& _, uint32_t& sum)
-{
-    uint32_t delta = 0x9e3779b9u;
-    for (int i = 0; i < 16; i++)
-    {
-        sum += delta;
-        _.v0 += ((((_.v1 << 4u) + 0xa341316cu) ^ (_.v1 + sum)) ^ ((_.v1 >> 5u) + 0xc8013ea4u));
-        _.v1 += ((((_.v0 << 4u) + 0xad90777du) ^ (_.v0 + sum)) ^ ((_.v0 >> 5u) + 0x7e95761eu));
-    };
-}
-                                #endif
-
-                                #ifndef DEFt_r16_Zh1l
-                                #define DEFt_r16_Zh1l
-inline void r16_Zh1l(s_TEA& tea)
-{
-    uint32_t sum {};
-    r16_aKqO(tea, sum);
-}
-                                #endif
-
 s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
 {
     const int u32len = (u8view.size() & ~3);
@@ -57,14 +34,21 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r16_Zh1l(res);
+        uint32_t sum {};
+        uint32_t delta = 0x9e3779b9u;
+        for (int i_1 = 0; i_1 < 16; i_1++)
+        {
+            sum += delta;
+            res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
+            res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+        };
     };
     if (u8view.size() & 7)
     {
         if (u32view.size() & 1)
             res.v0 ^= u32view[(u32view.size() - 1)];
 
-        
+
         {
             uint32_t last {};
             for (int i = u32len; i < u8view.size(); i++)
@@ -74,7 +58,14 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
             };
             res.v1 ^= last;
         };
-        r16_Zh1l(res);
+        uint32_t sum {};
+        uint32_t delta = 0x9e3779b9u;
+        for (int i = 0; i < 16; i++)
+        {
+            sum += delta;
+            res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
+            res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+        };
     };
     return s_TEA(res);
 }
@@ -86,18 +77,15 @@ s_TEA hash(fu::view<std::byte> u8view)
     return res;
 }
 
-                                #ifndef DEFt_u64_aLRF
-                                #define DEFt_u64_aLRF
-inline uint64_t u64_aLRF(const s_TEA& tea)
-{
-    return (uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull));
-}
-                                #endif
-
 fu_STR hash62(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
-    uint64_t v = u64_aLRF(hash(str));
+    uint64_t _0 {};
+    uint64_t v = (__extension__ (
+    {
+        const s_TEA tea = hash(str);
+        _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
+    }), uint64_t(_0));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 62ull);
@@ -116,7 +104,12 @@ fu_STR hash62(fu::view<std::byte> str, const int chars)
 fu_STR hash16(fu::view<std::byte> str, const int chars)
 {
     fu_STR res {};
-    uint64_t v = u64_aLRF(hash(str));
+    uint64_t _0 {};
+    uint64_t v = (__extension__ (
+    {
+        const s_TEA tea = hash(str);
+        _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
+    }), uint64_t(_0));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 16ull);

@@ -13,7 +13,7 @@ fu_STR ID(const fu_STR& id)
 {
     if (id.size() < KEYWORDS.size())
     {
-        const int idx = fu::lfind(KEYWORDS[id.size()], id);
+        const int idx = fu::lfind(KEYWORDS[id.size()], id, 0);
         if ((idx >= 0))
         {
             fu_STR cpy { id };

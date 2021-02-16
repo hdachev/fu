@@ -6,6 +6,7 @@
 #include <fu/now.h>
 #include <fu/shell.h>
 #include <fu/str.h>
+#include <fu/util.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
@@ -31,11 +32,12 @@ struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
-struct s_Partial;
+struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
 struct s_ScopeSkip;
+struct s_ScopeSkipMemos;
 struct s_SolvedNode;
 struct s_SolverOutput;
 struct s_Struct;
@@ -191,12 +193,14 @@ struct s_Target
 struct s_ScopeItem
 {
     fu_STR id;
-    s_Target target;
+    int modid;
+    uint32_t packed;
     explicit operator bool() const noexcept
     {
         return false
             || id
-            || target
+            || modid
+            || packed
         ;
     }
 };
@@ -206,13 +210,19 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
+    fu_VEC<int> imports;
+    fu_VEC<s_Target> converts;
     explicit operator bool() const noexcept
     {
         return false
+            || name
             || target
             || items
+            || imports
+            || converts
         ;
     }
 };
@@ -236,11 +246,25 @@ struct s_ValueType
 };
                                 #endif
 
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu_VEC<int> uni0n;
+    fu_VEC<s_Region> uni0n;
     explicit operator bool() const noexcept
     {
         return false
@@ -332,33 +356,23 @@ struct s_Argument
 };
                                 #endif
 
-                                #ifndef DEF_s_Partial
-                                #define DEF_s_Partial
-struct s_Partial
-{
-    s_Target via;
-    s_Target target;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || via
-            || target
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ScopeMemo
                                 #define DEF_s_ScopeMemo
 struct s_ScopeMemo
 {
     int items_len;
     int imports_len;
+    int usings_len;
+    int converts_len;
+    int helpers_len;
     explicit operator bool() const noexcept
     {
         return false
             || items_len
             || imports_len
+            || usings_len
+            || converts_len
+            || helpers_len
         ;
     }
 };
@@ -380,6 +394,30 @@ struct s_ScopeSkip
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeSkipMemos
+                                #define DEF_s_ScopeSkipMemos
+struct s_ScopeSkipMemos
+{
+    fu_VEC<s_ScopeSkip> items;
+    fu_VEC<s_ScopeSkip> declash;
+    fu_VEC<s_ScopeSkip> imports;
+    fu_VEC<s_ScopeSkip> usings;
+    fu_VEC<s_ScopeSkip> converts;
+    fu_VEC<s_ScopeSkip> helpers;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+            || declash
+            || imports
+            || usings
+            || converts
+            || helpers
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Template
                                 #define DEF_s_Template
 struct s_Template
@@ -387,16 +425,14 @@ struct s_Template
     s_Node node;
     fu_VEC<int> imports;
     s_ScopeMemo scope_memo;
-    fu_VEC<s_ScopeSkip> ss_items;
-    fu_VEC<s_ScopeSkip> ss_imports;
+    s_ScopeSkipMemos scope_skip;
     explicit operator bool() const noexcept
     {
         return false
             || node
             || imports
             || scope_memo
-            || ss_items
-            || ss_imports
+            || scope_skip
         ;
     }
 };
@@ -413,13 +449,13 @@ struct s_Overload
     int min;
     int max;
     fu_VEC<s_Argument> args;
-    s_Partial partial;
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
     uint32_t status;
     int local_of;
     fu_VEC<int> closes_over;
+    fu_VEC<s_ScopeItem> extra_items;
     explicit operator bool() const noexcept
     {
         return false
@@ -430,13 +466,13 @@ struct s_Overload
             || min
             || max
             || args
-            || partial
             || tEmplate
             || solved
             || used_by
             || status
             || local_of
             || closes_over
+            || extra_items
         ;
     }
 };
@@ -449,6 +485,8 @@ struct s_Scope
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
     fu_VEC<int> imports;
+    fu_VEC<s_Target> usings;
+    fu_VEC<s_Target> converts;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -459,6 +497,8 @@ struct s_Scope
             || items
             || overloads
             || imports
+            || usings
+            || converts
         ;
     }
 };
@@ -470,7 +510,7 @@ struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
-    int SLOW_resolve;
+    int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
     s_SolverOutput(s_SolverOutput&&) = default;
     s_SolverOutput& operator=(const s_SolverOutput&) = delete;
@@ -480,7 +520,7 @@ struct s_SolverOutput
         return false
             || root
             || scope
-            || SLOW_resolve
+            || notes
         ;
     }
 };
@@ -491,7 +531,7 @@ struct s_SolverOutput
 struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
-    fu_MAP<fu_STR, s_Struct> types;
+    fu_VEC<s_Struct> types;
     fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
@@ -604,7 +644,7 @@ struct s_Context
                                 #define DEFt_if_last_jB4B
 inline std::byte if_last_jB4B(fu_STR& s)
 {
-    return ([&]() -> std::byte { if (s.size()) return s.mutref((s.size() - 1)); else return fu::Default<std::byte>::value; }());
+    return s.size() ? s.mutref((s.size() - 1)) : fu::Default<std::byte>::value;
 }
                                 #endif
 
@@ -628,7 +668,9 @@ static void visit(const fu_VEC<s_Module>& modules_0, fu_VEC<int>& link_order_0, 
             };
         };
     };
-    (fu::has(link_order_0, link_id) && fu::fail("link order broken"_fu));
+    if (fu::has(link_order_0, link_id))
+        fu::fail("link order broken"_fu);
+
     link_order_0.push(link_id);
 }
 
@@ -641,7 +683,7 @@ static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context
     return link_order;
 }
 
-[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp)
+[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, const fu_STR& onfail_0, const s_Context& ctx_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp)
 {
     if (!cpp)
     {
@@ -658,8 +700,31 @@ static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context
     if (!stdout_0)
         stdout_0 = (("[ EXIT CODE "_fu + code_0) + " ]"_fu);
 
-    fu::fail(("Smth broke: "_fu + stdout_0));
+    fu_STR explain {};
+    if (onfail_0)
+    {
+        explain = "\nFailing testcase:\n\n"_fu;
+        for (int i = 1; i < ctx_0.modules.size(); i++)
+            explain += ((onfail_0 == "print-src"_fu) ? fu_STR(ctx_0.modules[i].in.src) : (ctx_0.modules[i].fname + "\n"_fu));
+
+        if (onfail_0 == "print-src"_fu)
+        {
+            explain += "\nSources:\n"_fu;
+            for (int i = 1; i < ctx_0.modules.size(); i++)
+                explain += ctx_0.modules[i].out.cpp;
+
+        };
+    };
+    fu::fail((("Smth broke:\n\n"_fu + stdout_0) + explain));
 }
+
+                                #ifndef DEFt_only_joGv
+                                #define DEFt_only_joGv
+inline int only_joGv(fu::view<int> s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+}
+                                #endif
 
 static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
 {
@@ -669,19 +734,18 @@ static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
     fu_STR foreign = (dir_src + ".foreign/"_fu);
     fu::fs_mkdir_p(fu_STR(foreign));
     fu_STR rel = fu::replace(fu::replace(path_relative(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
-    return (foreign + rel);
+    return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out, const bool nowrite)
+static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
     fu_STR fname_1 = ensure_local_fname(fname, dir_src);
-    (fu::lmatch(fname_1, dir_src) || fu::fail("ensure_local_fname broken"_fu));
+    if (!(fu::lmatch(fname_1, dir_src)))
+        fu::fail("ensure_local_fname broken"_fu);
+
     fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
     if (fu::file_read(fname_2) != data)
     {
-        if (nowrite)
-            fu::fail((((("NOWRITE: About to write `"_fu + fname_2) + "`:\n\n"_fu) + data) + "\n"_fu));
-
         const int err = fu::file_write(fname_2, data);
         if (err)
             fu::fail(((("Failed to write `"_fu + fname_2) + "`, error: #"_fu) + err));
@@ -691,24 +755,26 @@ static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR&
     return fname_2;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const bool nowrite, const s_Context& ctx)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const fu_STR& onfail, const s_Context& ctx)
 {
     if (if_last_jB4B(dir_wrk) != std::byte('/'))
     {
-        (dir_wrk || fu::fail("No workspace directory provided."_fu));
+        if (!(dir_wrk))
+            fu::fail("No workspace directory provided."_fu);
+
         dir_wrk += std::byte('/');
     };
-    if ((dir_obj && (if_last_jB4B(dir_obj) != std::byte('/'))))
+    if (dir_obj && (if_last_jB4B(dir_obj) != std::byte('/')))
         dir_obj += std::byte('/');
 
-    if ((dir_src && (if_last_jB4B(dir_src) != std::byte('/'))))
+    if (dir_src && (if_last_jB4B(dir_src) != std::byte('/')))
         dir_src += std::byte('/');
 
-    if ((dir_cpp && (if_last_jB4B(dir_cpp) != std::byte('/'))))
+    if (dir_cpp && (if_last_jB4B(dir_cpp) != std::byte('/')))
         dir_cpp += std::byte('/');
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
-    if (((scheme == "debug"_fu) || (scheme == "reldeb"_fu)))
+    if ((scheme == "debug"_fu) || (scheme == "reldeb"_fu))
         O_lvl += "-g "_fu;
 
     if (scheme == "retail"_fu)
@@ -716,7 +782,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror -Dfu_EXPLICIT=\" \" -Wno-parentheses-equality "_fu);
+    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu);
     fu_VEC<fu_STR> Fs {};
     int len_all {};
     fu_STR fulib_cpp = fu::file_read(fulib);
@@ -724,7 +790,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     {
         const s_Module& module = ctx.modules[i];
         const fu_STR& cpp = (i ? module.out.cpp : fulib_cpp);
-        fu_STR F = ([&]() -> fu_STR { if (cpp) return ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp), 16)) + "-"_fu) + cpp.size()); else return fu_STR{}; }());
+        fu_STR F = (cpp ? ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp), 16)) + "-"_fu) + cpp.size()) : fu_STR{});
         Fs.push(F);
         len_all += cpp.size();
     };
@@ -733,16 +799,15 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     int code {};
     fu_STR stdout {};
     fu_VEC<int> link_order = getLinkOrder(ctx.modules, ctx);
-    auto exe_size = fu::file_size(F_exe);
-    if (((exe_size < 1) && (bin || run)))
+    const int exe_size = fu::file_size(F_exe);
+    if ((exe_size < 1) && (bin || run))
     {
         for (int i = 0; i < Fs.size(); i++)
         {
             fu_STR F { Fs[i] };
             if (!F)
-            {
                 continue;
-            };
+
             fu_STR F_cpp = (F + ".cpp"_fu);
             fu_STR F_tmp = (F + ".o.tmp"_fu);
             fu_STR F_obj = (F + ".o"_fu);
@@ -750,16 +815,13 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             {
                 fu_STR human = (i ? path_filename(ctx.modules[i].fname) : "fulib runtime"_fu);
                 const fu_STR& cpp = (i ? ctx.modules[i].out.cpp : fulib_cpp);
-                if (nowrite)
-                    fu::fail((((("NOWRITE: About to write `"_fu + F_cpp) + "`:\n\n"_fu) + cpp) + "\n"_fu));
-                else
-                    fu::file_write(F_cpp, cpp);
-
+                fu::file_write(F_cpp, cpp);
                 (std::cout << "  BUILD "_fu << human << " "_fu << F_cpp << '\n');
                 const double t0 = fu::now_hr();
-                code = ([&]() -> int { { int _ = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout); }());
+                int _0 {};
+                code = ((_0 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _0 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
-                    return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR(cpp));
+                    ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR(cpp));
 
                 const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
@@ -774,54 +836,63 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 cmd += (F + ".o "_fu);
 
         };
+        fu_STR LIBS = (fu_LINUX ? " -ldl"_fu : fu_STR{});
 
         {
-            if (fu_LINUX)
-                cmd += " -ldl"_fu;
-
             (std::cout << "   LINK "_fu << F_exe << '\n');
             const double t0 = fu::now_hr();
-            code = ([&]() -> int { { int _ = fu::shell_exec((cmd + " 2>&1"_fu), stdout); if (_) return _; } { int _ = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout); if (_) return _; } return fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout); }());
+            int _1 {};
+            code = ((_1 = fu::shell_exec(((cmd + LIBS) + " 2>&1"_fu), stdout)) ? _1 : (_1 = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout)) ? _1 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
-                return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+                ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
             };
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
         };
-
         if (code)
-            return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+            ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
 
     };
-    if (run && exe_size > 4)
-        code = fu::shell_exec(fu_STR(F_exe), stdout);
+    if (run)
+    {
+        if (exe_size == 4)
+            code = only_joGv(fu::view_of(fu::file_read(F_exe), int{}));
+        else
+        {
+            code = fu::shell_exec(fu_STR(F_exe), stdout);
+            const bool pure = true;
+            if (pure)
+                fu::file_write(F_exe, fu::view_of(fu_VEC<int> { fu_VEC<int>::INIT<1> { int(code) } }, std::byte{}));
 
+        };
+    };
     if (code)
-        return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+        ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
 
-    if ((dir_cpp && dir_src))
+    if (dir_cpp && dir_src)
     {
         fu::fs_mkdir_p(fu_STR(dir_cpp));
         fu_VEC<fu_STR> cpp_files {};
         for (int i = 0; i < ctx.modules.size(); i++)
         {
             const s_Module& module = ctx.modules[i];
-            const fu_STR& data = ([&]() -> const fu_STR& { if (i) return module.out.cpp; else return fu::Default<fu_STR>::value; }());
-            fu_STR fname = ([&]() -> fu_STR { if (data) return (module.fname + ".cpp"_fu); else return fu_STR{}; }());
-            fu_STR fname_1 = ([&]() -> fu_STR { if (fname) return update_file(fname, data, dir_src, dir_cpp, nowrite); else return fu_STR{}; }());
+            const fu_STR& data = (i ? module.out.cpp : fu::Default<fu_STR>::value);
+            fu_STR fname = (data ? (module.fname + ".cpp"_fu) : fu_STR{});
+            fu_STR fname_1 = (fname ? update_file(fname, data, dir_src, dir_cpp) : fu_STR{});
             cpp_files.push(fname_1);
         };
-        fu_STR CMakeLists = ([&]() -> fu_STR { if (unity) return path_join(path_dirname(unity), "CMakeLists.txt"_fu); else return fu_STR{}; }());
-        if ((unity || CMakeLists))
+        fu_STR CMakeLists = (unity ? path_join(path_dirname(unity), "CMakeLists.txt"_fu) : fu_STR{});
+        if (unity || CMakeLists)
         {
             if (unity)
             {
                 fu_STR data = "#pragma once\n\n"_fu;
                 data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
-                data += "#define fu_EXPLICIT /*explicit*/\n\n"_fu;
-                ((link_order.size() == cpp_files.size()) || fu::fail("lo.len != cf.len"_fu));
+                if (!(link_order.size() == cpp_files.size()))
+                    fu::fail("lo.len != cf.len"_fu);
+
                 for (int i = 0; i < link_order.size(); i++)
                 {
                     fu_STR incl { cpp_files[link_order[i]] };
@@ -829,14 +900,16 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                         data += (("#include \""_fu + path_relative(unity, incl)) + "\"\n"_fu);
 
                 };
-                update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp, nowrite);
+                update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
             if (CMakeLists)
             {
                 fu_STR data = "cmake_minimum_required(VERSION 3.6)\n\n"_fu;
                 fu_VEC<fu_STR> inputs {};
                 fu_VEC<fu_STR> outputs {};
-                ((link_order.size() == cpp_files.size()) || fu::fail("lo.len != cf.len (2)"_fu));
+                if (!(link_order.size() == cpp_files.size()))
+                    fu::fail("lo.len != cf.len (2)"_fu);
+
                 fu_STR main {};
                 fu_STR includes {};
                 for (int i = 1; i < link_order.size(); i++)
@@ -872,7 +945,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 if (includes)
                     data += (includes + "\n"_fu);
 
-                update_file(CMakeLists, data, dir_src, dir_cpp, nowrite);
+                update_file(CMakeLists, data, dir_src, dir_cpp);
             };
         };
     };
@@ -882,7 +955,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        return (void) ERR(dir_wrk, Fs, code, stdout, fu_STR{});
+        ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
 
 }
 

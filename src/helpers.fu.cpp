@@ -16,7 +16,7 @@ bool hasIdentifierChars(const fu_STR& id)
     for (int i = 0; i < id.size(); i++)
     {
         const std::byte c = id[i];
-        if (((c == std::byte('_')) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('0')) && (c <= std::byte('9')))))
+        if ((c == std::byte('_')) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('0')) && (c <= std::byte('9'))))
             return true;
 
     };
@@ -32,9 +32,8 @@ fu_STR path_ext(const fu_STR& path)
             return fu::slice(path, i);
 
         if (c == std::byte('/'))
-        {
             break;
-        };
+
     };
     return fu_STR{};
 }
@@ -48,9 +47,8 @@ fu_STR path_noext(const fu_STR& path)
             return fu::slice(path, 0, i);
 
         if (c == std::byte('/'))
-        {
             break;
-        };
+
     };
     return fu_STR{};
 }
@@ -83,7 +81,7 @@ fu_STR path_normalize(const fu_STR& p)
     for (int i = path.size(); i-- > 0; )
     {
         fu_STR part { path[i] };
-        if (((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1)))))
+        if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
             path.splice(i, 1);
 
     };
@@ -105,9 +103,8 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
         const std::byte a = from[i];
         const std::byte b = to[i];
         if (b != a)
-        {
             break;
-        };
+
         if (b == std::byte('/'))
             same = (i + 1);
 
@@ -135,7 +132,7 @@ fu_STR ascii_lower(const fu_STR& a)
     for (int i = 0; i < res.size(); i++)
     {
         const std::byte c = res[i];
-        if (((c >= std::byte('A')) && (c <= std::byte('Z'))))
+        if ((c >= std::byte('A')) && (c <= std::byte('Z')))
             res.mutref(i) = std::byte((int(c) + offset));
 
     };

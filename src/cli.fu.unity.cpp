@@ -1,7 +1,5 @@
 #pragma once
 
-#define fu_EXPLICIT /*not explicit*/
-
 #ifdef fu_UNITY_FULIB
 #include <fu/_fulib.cpp>
 #endif
@@ -13,15 +11,16 @@
 #include "stat.fu.cpp"
 #include "scope.fu.cpp"
 #include "context.fu.cpp"
+#include "bitset.fu.cpp"
 #include "intlit.fu.cpp"
 #include "addroffn.fu.cpp"
 #include "../lib/tea.fu.cpp"
-#include "bitset.fu.cpp"
 #include "solver.fu.cpp"
 #include "cpp.fu.cpp"
 #include "codegen.fu.cpp"
 #include "prelude.fu.cpp"
 #include "build.fu.cpp"
+#include "testdiff.fu.cpp"
 #include "compiler.fu.cpp"
 #include "tests.fu.cpp"
 #include "hello.fu.cpp"

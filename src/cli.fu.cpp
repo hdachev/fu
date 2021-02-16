@@ -14,7 +14,7 @@ fu_STR locate_PRJDIR();
 fu_STR path_join(const fu_STR&, const fu_STR&);
 int self_test();
 static int cli_handle(const fu_VEC<fu_STR>&, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, bool);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
 void runTests();
 void saySomethingNice();
 
@@ -43,18 +43,21 @@ static void runTestsAndBuildCompiler()
 
 static fu_STR abs(const fu_STR& cwd_0, const fu_STR& path)
 {
-    return ([&]() -> fu_STR { if (path && (path[0] != std::byte('-'))) return path_join(cwd_0, path); else return fu_STR{}; }());
+    return path && (path[0] != std::byte('-')) ? path_join(cwd_0, path) : fu_STR{};
 }
 
 static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0, int& options_0, fu_STR& val_0, fu_STR& opt_0, const fu_STR& sHort, const fu_STR& lOng, const int o, fu_STR& dir)
 {
-    if (((opt_0 == sHort) || (opt_0 == lOng)))
+    if ((opt_0 == sHort) || (opt_0 == lOng))
     {
         options_0 |= o;
         if (opt_0 == lOng)
         {
-            (dir && fu::fail((((opt_0 + ": already set to `"_fu) + dir) + "`."_fu)));
-            dir = ([&]() -> fu_STR { { fu_STR _ = abs(cwd_0, val_0); if (_) return _; } fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val_0) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)); }());
+            if (dir)
+                fu::fail((((opt_0 + ": already set to `"_fu) + dir) + "`."_fu));
+
+            fu_STR _0 {};
+            dir = ((_0 = abs(cwd_0, val_0)) ? static_cast<fu_STR&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val_0) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
             val_0 = next(argv_0, idx_0);
         };
         opt_0 = fu_STR{};
@@ -79,7 +82,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
         (std::cout << "\tTry `fu file.fu`.\n"_fu << '\n');
         return 0;
     };
-    if (((argv.size() == 2) && (argv[1] == "self"_fu)))
+    if ((argv.size() == 2) && (argv[1] == "self"_fu))
     {
         (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << '\n');
         self_test();
@@ -97,7 +100,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     fu_STR scheme {};
     bool run {};
     fu_STR val = next(argv, idx);
-    while (((val.size() > 1) && (val.mutref(0) == std::byte('-'))))
+    while ((val.size() > 1) && (val.mutref(0) == std::byte('-')))
     {
         fu_STR opt { val };
         if (opt.mutref(1) != std::byte('-'))
@@ -115,13 +118,15 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
         option(argv, cwd, idx, options, val, opt, "c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp);
         option(argv, cwd, idx, options, val, opt, "o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj);
         option(argv, cwd, idx, options, val, opt, "b"_fu, "--bin"_fu, EMIT_BIN, bin);
-        if (((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu)))
+        if ((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu))
         {
-            (scheme && fu::fail((((opt + ": Scheme already set to `"_fu) + opt) + "`."_fu)));
+            if (scheme)
+                fu::fail((((opt + ": Scheme already set to `"_fu) + opt) + "`."_fu));
+
             scheme = fu::slice(opt, 2);
             continue;
         };
-        if (((opt == "--run"_fu) || (opt == "r"_fu)))
+        if ((opt == "--run"_fu) || (opt == "r"_fu))
         {
             run = true;
             continue;
@@ -139,19 +144,21 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
             dir_cpp = dir_src;
 
     };
-    fu_STR fname = ([&]() -> fu_STR { { fu_STR _ = abs(cwd, val); if (_) return _; } fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)); }());
-    const fu_STR& dir_wrk = DEFAULT_WORKSPACE;
+    fu_STR _0 {};
+    fu_STR fname = ((_0 = abs(cwd, val)) ? static_cast<fu_STR&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
     if (options & EMIT_BIN)
-        ([&](fu_STR& _) -> fu_STR& { if (!_) _ = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)); return _; } (bin));
+    {
+        fu_STR* _1;
+        (*(_1 = &(bin)) ? *_1 : *_1 = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)));
+    };
 
-    
     {
         fu_STR val_1 = next(argv, idx);
         if (val_1)
             fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 
     };
-    build(fname, run, dir_wrk, bin, dir_obj, dir_src, dir_cpp, scheme, false);
+    build(fname, run, DEFAULT_WORKSPACE, bin, dir_obj, dir_src, dir_cpp, scheme);
     return 0;
 }
 

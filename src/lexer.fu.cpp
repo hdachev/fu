@@ -12,8 +12,8 @@
 struct s_LexerOutput;
 struct s_Token;
 
+[[noreturn]] static fu::never err(const fu_STR&, const fu_STR&, int, int&, int&, int&, const fu_STR&, int, int);
 fu_STR ascii_lower(const fu_STR&);
-static void err(const fu_STR&, const fu_STR&, int, int&, int&, int&, const fu_STR&, int, int);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -67,9 +67,9 @@ static void token(int& line_0, int& lidx_0, fu_VEC<s_Token>& tokens_0, const fu_
     tokens_0.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line_0), int(col) });
 }
 
-static void err_str(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const fu_STR& reason)
+[[noreturn]] static fu::never err_str(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const fu_STR& reason)
 {
-    while (((idx_0 < end_0) && (src_0[idx_0] > std::byte(' '))))
+    while ((idx_0 < end_0) && (src_0[idx_0] > std::byte(' ')))
         idx_0++;
 
     const int col = (idx0 - lidx_0);
@@ -77,7 +77,7 @@ static void err_str(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& 
     fu::fail((((((((((((("LEX ERROR: "_fu + fname_0) + "@"_fu) + line_0) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
 }
 
-static void err(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const int reason)
+[[noreturn]] static fu::never err(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const int reason)
 {
     err_str(src_0, fname_0, end_0, line_0, lidx_0, idx_0, kind, idx0, (("`"_fu + src_0[reason]) + "`"_fu));
 }
@@ -131,12 +131,12 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 lidx = (idx - 1);
             };
         }
-        else if ((((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_'))))
+        else if (((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || (c == std::byte('_')))
         {
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if ((((c_1 >= std::byte('A')) && (c_1 <= std::byte('Z'))) || ((c_1 >= std::byte('a')) && (c_1 <= std::byte('z'))) || (c_1 == std::byte('_')) || ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))))
+                if (((c_1 >= std::byte('A')) && (c_1 <= std::byte('Z'))) || ((c_1 >= std::byte('a')) && (c_1 <= std::byte('z'))) || (c_1 == std::byte('_')) || ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9'))))
                 {
                 }
                 else
@@ -148,7 +148,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             const int idx1 = idx;
             token(line, lidx, tokens, "id"_fu, fu::slice(src, idx0, idx1), idx0, idx1);
         }
-        else if (((c >= std::byte('0')) && (c <= std::byte('9'))))
+        else if ((c >= std::byte('0')) && (c <= std::byte('9')))
         {
             bool hex = false;
             bool dot = false;
@@ -157,32 +157,32 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             std::byte max = std::byte('9');
             if (c == std::byte('0'))
             {
-                const std::byte c_1 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
-                if (((c_1 == std::byte('x')) || (c_1 == std::byte('X'))))
+                const std::byte c_1 = ((idx < end) ? src[idx] : fu::Default<std::byte>::value);
+                if ((c_1 == std::byte('x')) || (c_1 == std::byte('X')))
                 {
                     hex = true;
                     idx++;
                 }
-                else if (((c_1 == std::byte('o')) || (c_1 == std::byte('O'))))
+                else if ((c_1 == std::byte('o')) || (c_1 == std::byte('O')))
                 {
                     ob = true;
                     max = std::byte('7');
                     idx++;
                 }
-                else if (((c_1 == std::byte('b')) || (c_1 == std::byte('B'))))
+                else if ((c_1 == std::byte('b')) || (c_1 == std::byte('B')))
                 {
                     ob = true;
                     max = std::byte('1');
                     idx++;
                 }
-                else if (((c_1 >= std::byte('0')) && (c_1 <= std::byte('9'))))
+                else if ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))
                     err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
 
             };
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if ((((c_1 >= std::byte('0')) && (c_1 <= max)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F')))))))
+                if (((c_1 >= std::byte('0')) && (c_1 <= max)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F'))))))
                 {
                 }
                 else if (ob)
@@ -192,27 +192,23 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 }
                 else if (c_1 == std::byte('.'))
                 {
-                    const std::byte c_2 = ([&]() -> std::byte { if ((idx < end)) return src[idx]; else return fu::Default<std::byte>::value; }());
+                    const std::byte c_2 = ((idx < end) ? src[idx] : fu::Default<std::byte>::value);
                     if (!(((c_2 >= std::byte('0')) && (c_2 <= std::byte('9'))) || (hex && (((c_2 >= std::byte('a')) && (c_2 <= std::byte('f'))) || ((c_2 >= std::byte('A')) && (c_2 <= std::byte('F')))))))
                     {
                         idx--;
                         break;
                     };
-                    if ((dot || exp))
-                    {
+                    if (dot || exp)
                         err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
-                        break;
-                    };
+
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == std::byte('p')) || (c_1 == std::byte('P'))) : ((c_1 == std::byte('e')) || (c_1 == std::byte('E')))))
                 {
                     if (exp)
-                    {
                         err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
-                        break;
-                    };
-                    if (((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+')))))
+
+                    if ((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+'))))
                         idx++;
 
                     exp = true;
@@ -224,20 +220,20 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             const std::byte trail = src[(idx - 1)];
-            if ((!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F')))))))
+            if (!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F'))))))
                 err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
             else
             {
                 const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
-                if ((hex && dot && !exp))
+                if (hex && dot && !exp)
                     err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                 else
                     token(line, lidx, tokens, ((dot || exp) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
 
             };
         }
-        else if (((c == std::byte('\'')) || (c == std::byte('"')) || (c == std::byte('`'))))
+        else if ((c == std::byte('\'')) || (c == std::byte('"')) || (c == std::byte('`')))
         {
             bool esc = false;
             bool ok = false;
@@ -268,14 +264,14 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == std::byte('\''));
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
-                if ((cHar && (str.size() != 1)))
+                if (cHar && (str.size() != 1))
                     err_str(src, fname, end, line, lidx, idx, "char"_fu, idx0, ("Char literal len != 1: "_fu + str.size()));
                 else
                     token(line, lidx, tokens, kind, str, idx0, idx1);
 
             };
         }
-        else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('/'))))
+        else if ((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('/')))
         {
             idx++;
             while (idx < end)
@@ -289,7 +285,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
         }
-        else if (((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('*'))))
+        else if ((c == std::byte('/')) && (idx < end) && (src[idx] == std::byte('*')))
         {
             idx++;
             while (idx < end)
@@ -300,7 +296,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     line++;
                     lidx = (idx - 1);
                 }
-                else if (((c_1 == std::byte('*')) && (idx < end) && (src[idx] == std::byte('/'))))
+                else if ((c_1 == std::byte('*')) && (idx < end) && (src[idx] == std::byte('/')))
                 {
                     idx++;
                     break;

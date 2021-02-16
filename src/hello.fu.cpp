@@ -12,7 +12,7 @@ void saySomethingNice()
 {
     const int sec = int(fu::now_utc());
     const bool NEW_STUFF = false;
-    if (((sec % 5) && !NEW_STUFF))
+    if ((sec % 5) && !NEW_STUFF)
     {
         fu_STR str {};
         for (int i = 0; i < 3; i++)

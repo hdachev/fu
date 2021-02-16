@@ -37,7 +37,7 @@ bool add_once(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (1u << uint8_t(bit));
+    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
     uint8_t& entry = grow_if_oob_oHEp(_._data, bucket);
     if (!(entry & mask))
     {
@@ -52,7 +52,7 @@ void add(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (1u << uint8_t(bit));
+    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
     grow_if_oob_oHEp(_._data, bucket) |= mask;
 }
 
@@ -61,8 +61,8 @@ bool has(const s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (1u << uint8_t(bit));
-    return ((_._data.size() > bucket) && ((_._data[bucket] & mask) != 0u));
+    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
+    return (_._data.size() > bucket) && ((_._data[bucket] & mask) != uint8_t(0u));
 }
 
 #endif
