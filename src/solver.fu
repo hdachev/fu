@@ -119,19 +119,11 @@ pub fn solve(
 
     fn Scope_import(modid: i32): void
     {
-        mut found = false;
         _scope.imports.each(_ss.imports, |import|
         {
             if (import == modid)
-            {
-                found = true;
-                // break;  // <- TODO
-                // return; // <- actually
-            }
+                return;
         });
-
-        if (found)
-            return;
 
         modid || fail("Attempting to import modid-0.");
         _scope.imports ~= modid;

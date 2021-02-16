@@ -355,7 +355,7 @@ pub fn has(items: [$T], scope_skip: ScopeSkip[], item: $T, start = 0)
     return false;
 }
 
-pub fn each(
+pub inline fn each(
     items: [$T],
     scope_skip: ScopeSkip[],
     fn,
