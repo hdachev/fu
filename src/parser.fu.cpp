@@ -23,14 +23,14 @@ fu_STR path_dirname(const fu_STR&);
 fu_STR path_ext(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
-static fu_VEC<s_Node> parseBlockLike(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&, const fu_STR&, const fu_STR&, bool);
-static s_Node parseExpression(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&, int, int);
-static s_Node parseFnDecl(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&, int, bool);
-static s_Node parseLet(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&, bool);
-static s_Node parseStatement(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&);
-static s_Node parseTypeAnnot(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&);
-static s_Node parseUnaryExpression(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&, int);
-static s_Node tryPopTypeAnnot(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, fu_VEC<fu_STR>&);
+static fu_VEC<s_Node> parseBlockLike(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, const fu_STR&, const fu_STR&, bool);
+static s_Node parseExpression(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, int, int);
+static s_Node parseFnDecl(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, int, bool);
+static s_Node parseLet(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, bool);
+static s_Node parseStatement(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&);
+static s_Node parseTypeAnnot(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&);
+static s_Node parseUnaryExpression(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, int);
+static s_Node tryPopTypeAnnot(int, const fu_STR&, const fu_VEC<s_Token>&, int&, int&, int&, int&, int&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&);
 
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP
@@ -241,6 +241,11 @@ inline const int F_SHADOW = (1 << 23);
 inline const int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
+                                #ifndef DEF_F_SPREAD_INLINE
+                                #define DEF_F_SPREAD_INLINE
+inline const int F_SPREAD_INLINE = (1 << 25);
+                                #endif
+
 static const int F_PATTERN = (1 << 27);
 
                                 #ifndef DEF_F_TEMPLATE
@@ -419,7 +424,7 @@ static s_Node createAddrOfFn(int modid_0, int& _loc_0, const fu_STR& name, const
     return make(modid_0, _loc_0, "addroffn"_fu, fu_VEC<s_Node>{}, flags, name);
 }
 
-static int parseArgsDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& outArgs, const fu_STR& endk, const fu_STR& endv)
+static int parseArgsDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& outArgs, const fu_STR& endk, const fu_STR& endv)
 {
     bool first = true;
     int outFlags = 0;
@@ -436,7 +441,7 @@ static int parseArgsDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
             consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ","_fu, fu_STR{});
 
         first = false;
-        s_Node arg = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, true);
+        s_Node arg = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, true);
         if (_dollars_0.size() > dollars0)
             arg.flags |= F_TEMPLATE;
 
@@ -475,9 +480,9 @@ static s_Node createBlock(int modid_0, int& _loc_0, const fu_VEC<s_Node>& items,
     return make(modid_0, _loc_0, "block"_fu, items, 0, label);
 }
 
-static s_Node parseBlock(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseBlock(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    return createBlock(modid_0, _loc_0, parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "op"_fu, "}"_fu, false), fu_STR{});
+    return createBlock(modid_0, _loc_0, parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "op"_fu, "}"_fu, false), fu_STR{});
 }
 
 static s_Node createLet(int modid_0, int& _loc_0, const fu_STR& id, const int flags, const s_Node& type, const s_Node& init)
@@ -495,34 +500,34 @@ static s_Node createRead(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
     return createCall(modid_0, _loc_0, (id ? id : fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{})), F_ID, fu_VEC<s_Node>{});
 }
 
-static s_Node parseLetStmt(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseLetStmt(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node ret = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, false);
+    s_Node ret = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, false);
     if (tryConsume(tokens_0, _idx_0, "id"_fu, "catch"_fu))
     {
         s_Node err = createLet(modid_0, _loc_0, consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value, 0, createRead(modid_0, fname_0, tokens_0, _idx_0, _loc_0, "string"_fu), s_Node{});
-        s_Node cAtch = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        s_Node cAtch = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
         return make(modid_0, _loc_0, "catch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { s_Node(ret), s_Node(err), s_Node(cAtch) } }, 0, fu_STR{});
     };
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ";"_fu, fu_STR{});
     return ret;
 }
 
-static s_Node parseStructDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const int flags)
+static s_Node parseStructDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const int flags)
 {
     fu_STR name = tryConsume(tokens_0, _idx_0, "id"_fu, fu::view<std::byte>{}).value;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "{"_fu, fu_STR{});
-    fu_VEC<s_Node> items = parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "op"_fu, "}"_fu, true);
+    fu_VEC<s_Node> items = parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "op"_fu, "}"_fu, true);
     s_Node sTruct = make(modid_0, _loc_0, "struct"_fu, items, flags, name);
     return sTruct;
 }
 
-static s_Node parsePub(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parsePub(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     if (_fnDepth_0)
         fail(fname_0, tokens_0, _idx_0, _loc_0, "Cannot pub from within a fn."_fu);
 
-    s_Node out = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node out = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     out.flags |= F_PUB;
     if (out.flags & F_SHADOW)
         fail(fname_0, tokens_0, _idx_0, _loc_0, "Cannot pub a shadow."_fu);
@@ -530,9 +535,9 @@ static s_Node parsePub(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>
     return out;
 }
 
-static s_Node parseShadow(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseShadow(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node out = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node out = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     out.flags |= F_SHADOW;
     if (out.flags & F_PUB)
         fail(fname_0, tokens_0, _idx_0, _loc_0, "Cannot shadow a pub."_fu);
@@ -540,61 +545,60 @@ static s_Node parseShadow(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Tok
     return out;
 }
 
-static s_Node parseTypedef(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseTypedef(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     fu_STR name = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "="_fu, fu_STR{});
-    s_Node annot = parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node annot = parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ";"_fu, fu_STR{});
     return make(modid_0, _loc_0, "typedef"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(annot) } }, 0, name);
 }
 
-static s_Node parseFixityDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const int flags, const bool expr)
+static s_Node parseFixityDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const int flags, const bool expr)
 {
     if ((flags & F_CONVERSION) && (flags & ((F_INFIX | F_PREFIX) | F_POSTFIX)))
         fail(fname_0, tokens_0, _idx_0, _loc_0, "`implicit` functions can't be operators."_fu);
 
     consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "fn"_fu, fu_STR{});
-    return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, int(flags), expr);
+    return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, int(flags), expr);
 }
 
-static s_Node parseInlineDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, int flags)
+static s_Node parseInlineDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, int flags)
 {
     flags |= F_INLINE;
-    flags |= F_TEMPLATE;
     fu_STR v = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
     if (v == "infix"_fu)
-        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, (flags | F_INFIX), bool{});
+        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, (flags | F_INFIX), bool{});
 
     if (v == "prefix"_fu)
-        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, (flags | F_PREFIX), bool{});
+        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, (flags | F_PREFIX), bool{});
 
     if (v == "postfix"_fu)
-        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, (flags | F_POSTFIX), bool{});
+        return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, (flags | F_POSTFIX), bool{});
 
     _idx_0--;
-    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, flags, bool{});
+    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, flags, bool{});
 }
 
-static s_Node parseConversionDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseConversionDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     fu_STR v = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
     if (v == "inline"_fu)
-        return parseInlineDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, int(F_CONVERSION));
+        return parseInlineDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, int(F_CONVERSION));
 
     _idx_0--;
-    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_CONVERSION, bool{});
+    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_CONVERSION, bool{});
 }
 
-static s_Node parseNoCopy(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseNoCopy(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "struct"_fu, fu_STR{});
-    return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_NOCOPY);
+    return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_NOCOPY);
 }
 
-static s_Node parseParens(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseParens(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node out = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_RESET, 0);
+    s_Node out = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0);
     out.flags |= F_PARENS;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu, fu_STR{});
     return out;
@@ -641,26 +645,26 @@ static s_Node createAnd(int modid_0, int& _loc_0, const s_Node& left, const s_No
     return flattenIfSame(modid_0, _loc_0, "and"_fu, left, right);
 }
 
-static s_Node parseIf(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseIf(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     s_Token nOt = tryConsume(tokens_0, _idx_0, "op"_fu, "!"_fu);
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu, fu_STR{});
-    s_Node cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     if (nOt)
         cond = createPrefix(modid_0, _loc_0, "!"_fu, s_Node(cond));
 
-    s_Node cons = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node cons = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     if (tryConsume(tokens_0, _idx_0, "id"_fu, "else"_fu))
     {
-        s_Node alt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        s_Node alt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
         return createIf(modid_0, _loc_0, cond, cons, alt);
     };
     return createAnd(modid_0, _loc_0, cond, cons);
 }
 
-static s_Node parseExpressionStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseExpressionStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node expr = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_RESET, 0);
+    s_Node expr = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0);
     const s_Token& peek = tokens_0[_idx_0];
     if ((peek.kind == "op"_fu) && (peek.value == ";"_fu))
         _idx_0++;
@@ -675,40 +679,40 @@ static s_Node createLoop(int modid_0, int& _loc_0, const s_Node& init, const s_N
     return make(modid_0, _loc_0, "loop"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<5> { s_Node(init), s_Node(pre_cond), s_Node(body), s_Node(post_cond), s_Node(post) } }, 0, fu_STR{});
 }
 
-static s_Node parseFor(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseFor(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu, fu_STR{});
     if (tryConsume(tokens_0, _idx_0, "id"_fu, "fieldname"_fu))
     {
         fu_STR placeholder = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
         consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu, fu_STR{});
-        s_Node type = parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        s_Node type = parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
         consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu, fu_STR{});
-        s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
         return make(modid_0, _loc_0, "forfieldsof"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { s_Node(type), s_Node(body) } }, 0, placeholder);
     };
-    s_Node init = (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu) ? parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) : s_Node{});
-    s_Node pre_cond = (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu) ? parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) : s_Node{});
+    s_Node init = (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu) ? parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) : s_Node{});
+    s_Node pre_cond = (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu) ? parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) : s_Node{});
     const s_Token& token = tokens_0[_idx_0];
-    s_Node post = (!((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) : (consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu, fu_STR{}) ? s_Node{} : s_Node{}));
-    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node post = (!((token.kind == "op"_fu) && (token.value == ")"_fu)) ? parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) : (consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu, fu_STR{}) ? s_Node{} : s_Node{}));
+    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     return createLoop(modid_0, _loc_0, init, pre_cond, body, s_Node{}, post);
 }
 
-static s_Node parseWhile(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseWhile(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu, fu_STR{});
-    s_Node pre_cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
-    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node pre_cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
+    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     return createLoop(modid_0, _loc_0, s_Node{}, pre_cond, body, s_Node{}, s_Node{});
 }
 
-static s_Node parseDoWhile(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseDoWhile(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node body = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "while"_fu, fu_STR{});
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu, fu_STR{});
-    s_Node post_cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node post_cond = parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ";"_fu, fu_STR{});
     return createLoop(modid_0, _loc_0, s_Node{}, s_Node{}, body, post_cond, s_Node{});
 }
@@ -718,7 +722,7 @@ static s_Node createJump(int modid_0, int& _loc_0, const fu_STR& kind, const fu_
     return make(modid_0, _loc_0, kind, (expr ? fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(expr) } } : fu_VEC<s_Node>{}), flags, label);
 }
 
-static s_Node parseJump(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& kind)
+static s_Node parseJump(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& kind)
 {
     if (!(_fnDepth_0 > 0))
     {
@@ -726,14 +730,17 @@ static s_Node parseJump(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token
         fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{});
     };
     fu_STR label = (tryConsume(tokens_0, _idx_0, "op"_fu, ":"_fu) ? consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value : fu_STR{});
+    if (kind == "return"_fu)
+        _numReturns_0++;
+
     s_Node expr {};
     if (!tryConsume(tokens_0, _idx_0, "op"_fu, ";"_fu))
-        expr = parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+        expr = parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
     return createJump(modid_0, _loc_0, kind, label, expr, 0);
 }
 
-static s_Node parseDefer(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseDefer(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     s_Token _0 {};
     fu_STR value = (tryConsume(tokens_0, _idx_0, "op"_fu, ":"_fu) ? ((_0 = tryConsume(tokens_0, _idx_0, "id"_fu, "err"_fu)) ? static_cast<s_Token&&>(_0) : consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "ok"_fu, fu_STR{})).value : fu_STR{});
@@ -742,30 +749,30 @@ static s_Node parseDefer(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
         _idx_0--;
         fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{});
     };
-    return make(modid_0, _loc_0, "defer"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) } }, 0, value);
+    return make(modid_0, _loc_0, "defer"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) } }, 0, value);
 }
 
-static s_Node parseTryCatch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseTryCatch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     if (!(_fnDepth_0 > 0))
     {
         _idx_0--;
         fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{});
     };
-    s_Node tRy = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node tRy = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, "catch"_fu, fu_STR{});
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, "("_fu, fu_STR{});
     s_Node err = createLet(modid_0, _loc_0, consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value, 0, createRead(modid_0, fname_0, tokens_0, _idx_0, _loc_0, "string"_fu), s_Node{});
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ")"_fu, fu_STR{});
-    s_Node cAtch = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node cAtch = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     return make(modid_0, _loc_0, "try"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { s_Node(tRy), s_Node(err), s_Node(cAtch) } }, 0, fu_STR{});
 }
 
-static s_Node parseLabelledStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseLabelledStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     fu_STR label = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu, fu_STR{});
-    s_Node stmt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node stmt = parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     if ((stmt.kind == "loop"_fu) || (stmt.kind == "block"_fu))
     {
         if (stmt.value)
@@ -807,7 +814,7 @@ static s_Node parseImport(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Tok
     return make(modid_0, _loc_0, "import"_fu, fu_VEC<s_Node>{}, 0, value);
 }
 
-static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     const int loc0 = _loc_0;
     const s_Token* _0;
@@ -816,7 +823,7 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
     {
         const fu_STR& v = token.value;
         if (v == "{"_fu)
-            return parseBlock(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+            return parseBlock(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
     }
     else if (token.kind == "id"_fu)
@@ -826,88 +833,88 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
         if (!_fnDepth_0 || (peek.kind == "id"_fu))
         {
             if (v == "let"_fu)
-                return parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "mut"_fu)
-                return ((void)_idx_0--, parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
+                return ((void)_idx_0--, parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0));
 
             if (v == "ref"_fu)
-                return ((void)_idx_0--, parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
+                return ((void)_idx_0--, parseLetStmt(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0));
 
             if (v == "struct"_fu)
-                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
+                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0);
 
             if (v == "pub"_fu)
-                return parsePub(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parsePub(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "shadow"_fu)
-                return parseShadow(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseShadow(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "type"_fu)
-                return parseTypedef(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseTypedef(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "typedef"_fu)
-                return parseTypedef(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseTypedef(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "fn"_fu)
-                return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0, bool{});
+                return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0, bool{});
 
             if (v == "implicit"_fu)
-                return parseConversionDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseConversionDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "inline"_fu)
-                return parseInlineDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
+                return parseInlineDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0);
 
             if (v == "infix"_fu)
-                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_INFIX, bool{});
+                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_INFIX, bool{});
 
             if (v == "prefix"_fu)
-                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_PREFIX, bool{});
+                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_PREFIX, bool{});
 
             if (v == "postfix"_fu)
-                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_POSTFIX, bool{});
+                return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_POSTFIX, bool{});
 
             if (v == "nocopy"_fu)
-                return parseNoCopy(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseNoCopy(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
         };
         if (_fnDepth_0)
         {
             if (v == "if"_fu)
-                return parseIf(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseIf(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "for"_fu)
-                return parseFor(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseFor(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "while"_fu)
-                return parseWhile(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseWhile(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "do"_fu)
-                return parseDoWhile(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseDoWhile(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "return"_fu)
-                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "return"_fu);
+                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "return"_fu);
 
             if (v == "break"_fu)
-                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "break"_fu);
+                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "break"_fu);
 
             if (v == "continue"_fu)
-                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "continue"_fu);
+                return parseJump(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "continue"_fu);
 
             if (v == "defer"_fu)
-                return parseDefer(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseDefer(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "try"_fu)
-                return parseTryCatch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseTryCatch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
         };
         if (peek.kind == "op"_fu)
         {
             if ((peek.value == "{"_fu) && (v == "struct"_fu))
-                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
+                return parseStructDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0);
 
             if (peek.value == ":"_fu)
-                return ((void)_idx_0--, parseLabelledStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
+                return ((void)_idx_0--, parseLabelledStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0));
 
         };
         if ((v == "import"_fu) && ((peek.kind == "id"_fu) || (peek.kind == "str"_fu)))
@@ -916,7 +923,7 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
     };
     _idx_0--;
     _loc_0 = loc0;
-    return parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    return parseExpressionStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 }
 
 static s_Node createReturn(int modid_0, int& _loc_0, const s_Node& expr, const int flags)
@@ -924,10 +931,10 @@ static s_Node createReturn(int modid_0, int& _loc_0, const s_Node& expr, const i
     return createJump(modid_0, _loc_0, "return"_fu, fu_STR{}, expr, flags);
 }
 
-static s_Node parseFnBodyBranch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const bool expr)
+static s_Node parseFnBodyBranch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const bool expr)
 {
     tryConsume(tokens_0, _idx_0, "op"_fu, "="_fu);
-    s_Node body = (expr ? parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, _precedence_0, 0) : parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
+    s_Node body = (expr ? parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, _precedence_0, 0) : parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0));
     if (body.kind == "block"_fu)
         return body;
 
@@ -940,15 +947,15 @@ static s_Node parseFnBodyBranch(int modid_0, const fu_STR& fname_0, const fu_VEC
     return createBlock(modid_0, _loc_0, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { createReturn(modid_0, _loc_0, body, F_SINGLE_STMT) } }, fu_STR{});
 }
 
-static void parseBranch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& branches_0, const bool noCond)
+static void parseBranch(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& branches_0, const bool noCond)
 {
-    s_Node cond = (!noCond ? parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0) : s_Node{});
-    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
-    s_Node cons = parseFnBodyBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, bool{});
+    s_Node cond = (!noCond ? parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0) : s_Node{});
+    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
+    s_Node cons = parseFnBodyBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, bool{});
     branches_0.push(make(modid_0, _loc_0, "fnbranch"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<3> { s_Node(cond), s_Node(type), s_Node(cons) } }, 0, fu_STR{}));
 }
 
-static int parseFnBodyOrPattern(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& out_push_body, const bool expr)
+static int parseFnBodyOrPattern(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, fu_VEC<s_Node>& out_push_body, const bool expr)
 {
     int flags = 0;
     s_Node body {};
@@ -957,21 +964,21 @@ static int parseFnBodyOrPattern(int modid_0, const fu_STR& fname_0, const fu_VEC
         fu_VEC<s_Node> branches {};
         flags |= F_PATTERN;
         do
-            parseBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, branches, bool{});
+            parseBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, branches, bool{});
         while (tryConsume(tokens_0, _idx_0, "id"_fu, "case"_fu));
         if (tryConsume(tokens_0, _idx_0, "id"_fu, "default"_fu))
-            parseBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, branches, true);
+            parseBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, branches, true);
 
         body = make(modid_0, _loc_0, "pattern"_fu, branches, 0, fu_STR{});
     }
     else
-        body = parseFnBodyBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, expr);
+        body = parseFnBodyBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, expr);
 
     out_push_body.push(body);
     return flags;
 }
 
-static s_Node parseFnDecl_cont(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& name, int flags, const bool expr, const fu_STR& endv)
+static s_Node parseFnDecl_cont(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& name, int flags, const bool expr, const fu_STR& endv)
 {
     fu_VEC<s_Node> items {};
     _fnDepth_0++;
@@ -981,11 +988,21 @@ static s_Node parseFnDecl_cont(int modid_0, const fu_STR& fname_0, const fu_VEC<
         _fnDepth_0--;
         _dollars_0.shrink(dollars0);
     });
-    flags |= (endv ? parseArgsDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, items, "op"_fu, endv) : int{});
-    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    flags |= (endv ? parseArgsDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, items, "op"_fu, endv) : int{});
+    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     const int retIdx = items.size();
     items.push(type);
-    flags |= parseFnBodyOrPattern(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, items, expr);
+    const int numReturns0 = _numReturns_0;
+    flags |= parseFnBodyOrPattern(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, items, expr);
+    if (flags & F_LAMBDA)
+    {
+        if (_numReturns_0 > numReturns0)
+            flags |= F_SPREAD_INLINE;
+
+    }
+    else
+        _numReturns_0 = numReturns0;
+
     if ((name == "main"_fu) && (_fnDepth_0 == 1))
     {
         if (!type)
@@ -1001,7 +1018,7 @@ static s_Node parseFnDecl_cont(int modid_0, const fu_STR& fname_0, const fu_VEC<
     return make(modid_0, _loc_0, "fn"_fu, items, flags, name);
 }
 
-static s_Node parseFnDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, int flags, const bool expr)
+static s_Node parseFnDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, int flags, const bool expr)
 {
     fu_STR name = tryConsume(tokens_0, _idx_0, "id"_fu, fu::view<std::byte>{}).value;
     if (!name)
@@ -1038,7 +1055,7 @@ static s_Node parseFnDecl(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Tok
     else if (!tryConsume(tokens_0, _idx_0, "op"_fu, "("_fu))
         return createAddrOfFn(modid_0, _loc_0, name, flags);
 
-    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, name, int(flags), expr, ")"_fu);
+    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, name, int(flags), expr, ")"_fu);
 }
 
 static fu_STR getAutoName(const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, const s_Node& expr)
@@ -1059,7 +1076,7 @@ static s_Node createArgID(int modid_0, int& _loc_0, const fu_STR& id, const s_No
     return make(modid_0, _loc_0, "argid"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(expr) } }, flags, id);
 }
 
-static int parseCallArgs(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& endop, fu_VEC<s_Node>& out_args)
+static int parseCallArgs(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& endop, fu_VEC<s_Node>& out_args)
 {
     int flags = 0;
     bool first = true;
@@ -1090,7 +1107,7 @@ static int parseCallArgs(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
             _idx_0++;
             flags |= F_NAMED_ARGS;
         };
-        s_Node expr = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_RESET, 0);
+        s_Node expr = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0);
         if (autoName)
             name = getAutoName(fname_0, tokens_0, _idx_0, _loc_0, expr);
 
@@ -1104,10 +1121,10 @@ static s_Node createArrayLiteral(int modid_0, int& _loc_0, const int argFlags, c
     return make(modid_0, _loc_0, "arrlit"_fu, items, argFlags, fu_STR{});
 }
 
-static s_Node parseArrayLiteral(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseArrayLiteral(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     fu_VEC<s_Node> args {};
-    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "]"_fu, args);
+    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "]"_fu, args);
     return createArrayLiteral(modid_0, _loc_0, argFlags, args);
 }
 
@@ -1135,13 +1152,13 @@ static s_Node parseTypeTag(int modid_0, const fu_STR& fname_0, const fu_VEC<s_To
     return createTypeTag(modid_0, _loc_0, consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value);
 }
 
-static s_Node parseLambda(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const bool noArgs_noClosingPipe)
+static s_Node parseLambda(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const bool noArgs_noClosingPipe)
 {
     if (noArgs_noClosingPipe && (_precedence_0 > P_RESET) && (_precedence_0 < P_PREFIX_UNARY))
         fail_Lint(fname_0, tokens_0, _idx_0, _loc_0, "Unparenthesized `|| lambda` within a binary expression."_fu);
 
     fu_STR name = ((("l_"_fu + modid_0) + "_"_fu) + _anonFns_0++);
-    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, name, ((F_INLINE | F_TEMPLATE) | F_LAMBDA), true, (!noArgs_noClosingPipe ? "|"_fu : fu_STR{}));
+    return parseFnDecl_cont(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, name, ((F_INLINE | F_TEMPLATE) | F_LAMBDA), true, (!noArgs_noClosingPipe ? "|"_fu : fu_STR{}));
 }
 
 static s_Node createDefinit(int modid_0, int& _loc_0)
@@ -1149,7 +1166,7 @@ static s_Node createDefinit(int modid_0, int& _loc_0)
     return make(modid_0, _loc_0, "definit"_fu, fu_VEC<s_Node>{}, 0, fu_STR{});
 }
 
-static s_Node parsePrefix(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, fu_STR&& op)
+static s_Node parsePrefix(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, fu_STR&& op)
 {
     if (!(fu::has(PREFIX, op)))
     {
@@ -1160,10 +1177,10 @@ static s_Node parsePrefix(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Tok
         op = "&mut"_fu;
 
     const int mode = (((op == "-"_fu) || (op == "+"_fu)) ? int(M_LINT_UNARY_PRECEDENCE) : 0);
-    return createPrefix(modid_0, _loc_0, op, parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, mode));
+    return createPrefix(modid_0, _loc_0, op, parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, mode));
 }
 
-static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     const s_Token& token = tokens_0[_idx_0++];
 
@@ -1179,16 +1196,16 @@ static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_V
             if (peek.kind == "id"_fu)
             {
                 if (v == "fn"_fu)
-                    return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0, true);
+                    return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0, true);
 
                 if (v == "infix"_fu)
-                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_INFIX, true);
+                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_INFIX, true);
 
                 if (v == "prefix"_fu)
-                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_PREFIX, true);
+                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_PREFIX, true);
 
                 if (v == "postfix"_fu)
-                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, F_POSTFIX, true);
+                    return parseFixityDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, F_POSTFIX, true);
 
             };
             return createRead(modid_0, fname_0, tokens_0, _idx_0, _loc_0, v);
@@ -1196,13 +1213,13 @@ static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_V
         if (k == "op"_fu)
         {
             if (v == "("_fu)
-                return parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseParens(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "{"_fu)
-                return parseBlock(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseBlock(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "["_fu)
-                return parseArrayLiteral(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+                return parseArrayLiteral(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "$"_fu)
                 return parseTypeParam(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _dollarAuto_0, _dollars_0);
@@ -1211,10 +1228,10 @@ static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_V
                 return parseTypeTag(modid_0, fname_0, tokens_0, _idx_0, _loc_0);
 
             if (v == "|"_fu)
-                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, bool{});
+                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, bool{});
 
             if (v == "||"_fu)
-                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, true);
+                return parseLambda(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, true);
 
             if (v == "[]"_fu)
                 return createDefinit(modid_0, _loc_0);
@@ -1230,7 +1247,7 @@ static s_Node parseExpressionHead(int modid_0, const fu_STR& fname_0, const fu_V
                 fu_STR id = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
                 return createAddrOfFn(modid_0, _loc_0, id, F_ACCESS);
             };
-            return parsePrefix(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, fu_STR(v));
+            return parsePrefix(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, fu_STR(v));
         };
     };
     _idx_0--;
@@ -1260,10 +1277,10 @@ static s_Node parseAccessExpression(int modid_0, const fu_STR& fname_0, const fu
     return createCall(modid_0, _loc_0, id.value, F_ACCESS, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(expr) } });
 }
 
-static s_Node parseCallExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& expr)
+static s_Node parseCallExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& expr)
 {
     fu_VEC<s_Node> args {};
-    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, ")"_fu, args);
+    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, ")"_fu, args);
     if ((expr.kind == "call"_fu) && (expr.flags & F_ACCESS))
     {
         const s_Node* _0;
@@ -1280,10 +1297,10 @@ static s_Node parseCallExpression(int modid_0, const fu_STR& fname_0, const fu_V
     fail(fname_0, tokens_0, _idx_0, _loc_0, "TODO dynamic call"_fu);
 }
 
-static s_Node parseIndexExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& expr)
+static s_Node parseIndexExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& expr)
 {
     fu_VEC<s_Node> args {};
-    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "]"_fu, args);
+    const int argFlags = parseCallArgs(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "]"_fu, args);
     args.unshift(expr);
     return createCall(modid_0, _loc_0, "[]"_fu, argFlags, args);
 }
@@ -1320,7 +1337,7 @@ static s_Node typeAssert(int modid_0, int& _loc_0, const s_Node& actual, const s
     return make(modid_0, _loc_0, "typeassert"_fu, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<2> { s_Node(actual), s_Node(expect) } }, 0, fu_STR{});
 }
 
-static s_Node tryParseBinary(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& left, const fu_STR& op, const int p1)
+static s_Node tryParseBinary(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& left, const fu_STR& op, const int p1)
 {
     if ((p1 > _precedence_0) || ((p1 == _precedence_0) && !BINOP.RIGHT_TO_LEFT[p1]))
         return miss();
@@ -1329,10 +1346,10 @@ static s_Node tryParseBinary(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
     s_Node mid {};
     if (op == "?"_fu)
     {
-        mid = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_RESET, 0);
+        mid = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0);
         consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ":"_fu, fu_STR{});
     };
-    s_Node right = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, p1, 0);
+    s_Node right = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, p1, 0);
     if (mid)
         return createIf(modid_0, _loc_0, left, mid, right);
 
@@ -1382,7 +1399,7 @@ static s_Node parseQualifierChain(const fu_STR& fname_0, const fu_VEC<s_Token>& 
     };
 }
 
-static s_Node tryParseExpressionTail(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& head, const int mode)
+static s_Node tryParseExpressionTail(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const s_Node& head, const int mode)
 {
     const s_Token& token = tokens_0[_idx_0++];
     if (token.kind == "op"_fu)
@@ -1395,14 +1412,14 @@ static s_Node tryParseExpressionTail(int modid_0, const fu_STR& fname_0, const f
             return ((void)lint(fname_0, tokens_0, _idx_0, _loc_0, mode), parseAccessExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, head));
 
         if (v == "("_fu)
-            return ((void)lint(fname_0, tokens_0, _idx_0, _loc_0, mode), parseCallExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, head));
+            return ((void)lint(fname_0, tokens_0, _idx_0, _loc_0, mode), parseCallExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, head));
 
         if (v == "["_fu)
-            return ((void)lint(fname_0, tokens_0, _idx_0, _loc_0, mode), parseIndexExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, head));
+            return ((void)lint(fname_0, tokens_0, _idx_0, _loc_0, mode), parseIndexExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, head));
 
         const int p1 = BINOP.PRECEDENCE[v];
         if (p1)
-            return ((void)_idx_0--, tryParseBinary(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, head, v, p1));
+            return ((void)_idx_0--, tryParseBinary(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, head, v, p1));
 
         if (fu::has(POSTFIX, v))
             return createCall(modid_0, _loc_0, (((v == "++"_fu) || (v == "--"_fu)) ? (v + "postfix"_fu) : fu_STR(v)), F_POSTFIX, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(head) } });
@@ -1414,18 +1431,18 @@ static s_Node tryParseExpressionTail(int modid_0, const fu_STR& fname_0, const f
     return ((void)_idx_0--, miss());
 }
 
-static s_Node parseExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const int p1, const int mode)
+static s_Node parseExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const int p1, const int mode)
 {
     const int p0 = _precedence_0;
     const int loc0 = _loc_0;
     _precedence_0 = p1;
     _loc_0 = _idx_0;
-    s_Node head = parseExpressionHead(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
+    s_Node head = parseExpressionHead(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
     {
         const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == "int"_fu) || (head.kind == "real"_fu))) ? int(mode) : (mode & ~M_LINT_UNARY_PRECEDENCE));
         s_Node out {};
-        while ((out = tryParseExpressionTail(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, head, mode_1)))
+        while ((out = tryParseExpressionTail(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, head, mode_1)))
         {
             _loc_0 = _idx_0;
             head = out;
@@ -1436,22 +1453,22 @@ static s_Node parseExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s
     return head;
 }
 
-static s_Node parseUnaryExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const int mode)
+static s_Node parseUnaryExpression(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const int mode)
 {
-    return parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_PREFIX_UNARY, mode);
+    return parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_PREFIX_UNARY, mode);
 }
 
-static s_Node parseTypeAnnot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseTypeAnnot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    return parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, 0);
+    return parseUnaryExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0);
 }
 
-static s_Node tryPopTypeAnnot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node tryPopTypeAnnot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    return (tryConsume(tokens_0, _idx_0, "op"_fu, ":"_fu) ? parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) : miss());
+    return (tryConsume(tokens_0, _idx_0, "op"_fu, ":"_fu) ? parseTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) : miss());
 }
 
-static s_Node parseLet(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const bool xqmark)
+static s_Node parseLet(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const bool xqmark)
 {
     int flags = 0;
     if (tryConsume(tokens_0, _idx_0, "id"_fu, "using"_fu))
@@ -1472,23 +1489,23 @@ static s_Node parseLet(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>
     fu_STR id = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
     s_Token optional = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "?"_fu) : s_Token{});
     s_Token mustname = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "!"_fu) : s_Token{});
-    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0);
-    s_Node init = (optional ? createDefinit(modid_0, _loc_0) : (tryConsume(tokens_0, _idx_0, "op"_fu, "="_fu) ? parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, P_RESET, 0) : s_Node{}));
+    s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
+    s_Node init = (optional ? createDefinit(modid_0, _loc_0) : (tryConsume(tokens_0, _idx_0, "op"_fu, "="_fu) ? parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0) : s_Node{}));
     if (mustname)
         flags |= F_MUSTNAME;
 
     return createLet(modid_0, _loc_0, id, flags, type, init);
 }
 
-static s_Node parseStructItem(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseStructItem(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
-    s_Node member = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, true);
+    s_Node member = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, true);
     member.flags |= F_FIELD;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ";"_fu, fu_STR{});
     return member;
 }
 
-static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& endKind, const fu_STR& endVal, const bool sTruct)
+static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& endKind, const fu_STR& endVal, const bool sTruct)
 {
     const int line0 = (_idx_0 ? tokens_0[(_idx_0 - 1)].line : fu::Default<int>::value);
     const int col00 = _col0_0;
@@ -1525,7 +1542,7 @@ static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const f
             colNN = _col0_0;
 
         lineNN = token.line;
-        s_Node expr = (sTruct ? parseStructItem(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0) : parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0));
+        s_Node expr = (sTruct ? parseStructItem(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0) : parseStatement(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0));
         if (!((expr.kind != "call"_fu) || ((expr.flags & (F_ID | F_ACCESS)) == 0) || (expr.items.size() > 1) || (tokens_0[_idx_0].value == endVal)))
             fail_Lint(fname_0, tokens_0, _idx_0, _loc_0, "Orphan pure-looking expression."_fu);
 
@@ -1534,11 +1551,11 @@ static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const f
     return items;
 }
 
-static s_Node parseRoot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, fu_VEC<fu_STR>& _imports_0)
+static s_Node parseRoot(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     consume(fname_0, tokens_0, _idx_0, _loc_0, "sof"_fu, "sof"_fu, fu_STR{});
     _loc_0 = _idx_0;
-    s_Node out = make(modid_0, _loc_0, "root"_fu, parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _imports_0, "eof"_fu, "eof"_fu, false), 0, fu_STR{});
+    s_Node out = make(modid_0, _loc_0, "root"_fu, parseBlockLike(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, "eof"_fu, "eof"_fu, false), 0, fu_STR{});
     return out;
 }
 
@@ -1552,11 +1569,12 @@ s_ParserOutput parse(const int modid, const fu_STR& fname, const fu_VEC<s_Token>
     int _dollarAuto = 0;
     fu_VEC<fu_STR> _dollars {};
     int _anonFns = 0;
+    int _numReturns = 0;
     fu_VEC<fu_STR> _imports {};
     if (!(tokens[(tokens.size() - 1)].kind == "eof"_fu))
         fail(fname, tokens, _idx, _loc, "Missing `eof` token."_fu);
 
-    s_Node root = parseRoot(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _dollarAuto, _dollars, _anonFns, _imports);
+    s_Node root = parseRoot(modid, fname, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _dollarAuto, _dollars, _anonFns, _numReturns, _imports);
     return s_ParserOutput { s_Node(root), fu_VEC<fu_STR>(_imports) };
 }
 
