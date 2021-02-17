@@ -38,7 +38,7 @@ pub let F_FIELD         = 1 << 10;
 pub let F_GLOBAL        = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;
 // ... 13
-// ... 14
+pub let F_OPT_ARG       = 1 << 16;
 pub let F_CONVERSION    = 1 << 15;
 
 pub let F_MUT           = 1 << 16;
@@ -1280,31 +1280,45 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             // Named arguments.
             mut name = "";
             mut autoName = false;
+            mut optional = false;
 
-            if (tokens[_idx    ] .kind == "id" &&
-                tokens[_idx + 1] .kind == "op" &&
-                tokens[_idx + 1].value == ":")
-            {
-                name = tokens[_idx].value;
-                _idx += 2;
-
-                flags |= F_NAMED_ARGS;
-            }
-            else if (tokens[_idx].kind == "op"
-                  && tokens[_idx].value == ":")
+            let tok0 = tokens[_idx];
+            if (tok0.kind == "op" && tok0.value == ":")
             {
                 autoName = true;
-                _idx++;
-
-                flags |= F_NAMED_ARGS;
+                _idx += 1;
+            }
+            else if (tok0.kind == "id")
+            {
+                let tok1 = tokens[_idx + 1];
+                if (tok1.kind == "op")
+                {
+                    if (tok1.value == ":")
+                    {
+                        name = tok0.value;
+                        _idx += 2;
+                    }
+                    else if (tok1.value == "?")
+                    {
+                        let tok2 = tokens[_idx + 2];
+                        if (tok2.kind == "op" && tok2.value == ":")
+                        {
+                            optional = true;
+                            name = tok0.value;
+                            _idx += 3;
+                        }
+                    }
+                }
             }
 
             let expr = parseExpression(P_RESET);
             if (autoName)
                 name = getAutoName(expr);
+            if (name)
+                flags |= F_NAMED_ARGS;
 
             out_args.push(
-                name    ? createArgID(name, expr)
+                name    ? createArgID(name, expr, flags: optional && F_OPT_ARG)
                         : expr);
         }
 
