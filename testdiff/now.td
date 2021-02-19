@@ -14448,7 +14448,7 @@ int main() { return fu_MAIN(); }
         struct A { a: i32; };
         struct B { b: i32; };
 
-        implicit fn bananas(a: A) B(a.a * 2);
+        using fn bananas(a: A) B(a.a * 2);
 
         fn main() 1.A.b - 2;
 

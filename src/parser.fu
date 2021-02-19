@@ -475,7 +475,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 if (v == "typedef")     return parseTypedef();
 
                 if (v == "fn")          return parseFnDecl();
-                if (v == "implicit")    return parseConversionDecl();
+                if (v == "using")       return parseConversionDecl();
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
