@@ -191,6 +191,11 @@ inline const int F_GLOBAL = (1 << 11);
 inline const int F_NOCOPY = (1 << 12);
                                 #endif
 
+                                #ifndef DEF_F_OPT_ARG
+                                #define DEF_F_OPT_ARG
+inline const int F_OPT_ARG = (1 << 16);
+                                #endif
+
                                 #ifndef DEF_F_CONVERSION
                                 #define DEF_F_CONVERSION
 inline const int F_CONVERSION = (1 << 15);
@@ -859,7 +864,7 @@ static s_Node parseStatement(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
             if (v == "fn"_fu)
                 return parseFnDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, 0, bool{});
 
-            if (v == "implicit"_fu)
+            if (v == "using"_fu)
                 return parseConversionDecl(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
 
             if (v == "inline"_fu)
@@ -1095,23 +1100,43 @@ static int parseCallArgs(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
         first = false;
         fu_STR name {};
         bool autoName = false;
-        if ((tokens_0[_idx_0].kind == "id"_fu) && (tokens_0[(_idx_0 + 1)].kind == "op"_fu) && (tokens_0[(_idx_0 + 1)].value == ":"_fu))
-        {
-            name = tokens_0[_idx_0].value;
-            _idx_0 += 2;
-            flags |= F_NAMED_ARGS;
-        }
-        else if ((tokens_0[_idx_0].kind == "op"_fu) && (tokens_0[_idx_0].value == ":"_fu))
+        bool optional = false;
+        const s_Token& tok0 = tokens_0[_idx_0];
+        if ((tok0.kind == "op"_fu) && (tok0.value == ":"_fu))
         {
             autoName = true;
-            _idx_0++;
-            flags |= F_NAMED_ARGS;
+            _idx_0 += 1;
+        }
+        else if (tok0.kind == "id"_fu)
+        {
+            const s_Token& tok1 = tokens_0[(_idx_0 + 1)];
+            if (tok1.kind == "op"_fu)
+            {
+                if (tok1.value == ":"_fu)
+                {
+                    name = tok0.value;
+                    _idx_0 += 2;
+                }
+                else if (tok1.value == "?"_fu)
+                {
+                    const s_Token& tok2 = tokens_0[(_idx_0 + 2)];
+                    if ((tok2.kind == "op"_fu) && (tok2.value == ":"_fu))
+                    {
+                        optional = true;
+                        name = tok0.value;
+                        _idx_0 += 3;
+                    };
+                };
+            };
         };
         s_Node expr = parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0);
         if (autoName)
             name = getAutoName(fname_0, tokens_0, _idx_0, _loc_0, expr);
 
-        out_args.push((name ? createArgID(modid_0, _loc_0, name, expr, 0) : s_Node(expr)));
+        if (name)
+            flags |= F_NAMED_ARGS;
+
+        out_args.push((name ? createArgID(modid_0, _loc_0, name, expr, (optional ? F_OPT_ARG : fu::Default<int>::value)) : s_Node(expr)));
     };
     return flags;
 }

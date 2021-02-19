@@ -84,6 +84,7 @@ int MODID(const s_Module&);
 int Region_toArgIndex(const s_Region&);
 int Region_toLocalIndex(const s_Region&);
 int parse10i32(int&, const fu_STR&);
+int popcount(const s_BitSet&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_Lifetime Lifetime_makeShared(const s_Lifetime&);
 s_Lifetime Lifetime_static();
@@ -146,6 +147,7 @@ void Scope_pop(s_Scope&, const s_ScopeMemo&, fu_VEC<s_Helpers>&);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 void Scope_set(s_Scope&, const fu_STR&, const s_Target&, bool);
 void add(s_BitSet&, int);
+void rem(s_BitSet&, int);
 
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -1294,6 +1296,11 @@ static int countUsings(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenI
 inline const int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
+                                #ifndef DEF_F_OPT_ARG
+                                #define DEF_F_OPT_ARG
+inline const int F_OPT_ARG = (1 << 16);
+                                #endif
+
                                 #ifndef DEF_F_ACCESS
                                 #define DEF_F_ACCESS
 inline const int F_ACCESS = (1 << 4);
@@ -1403,9 +1410,9 @@ inline const int F_SPREAD_INLINE = (1 << 25);
 inline const int F_INLINE = (1 << 29);
                                 #endif
 
-                                #ifndef DEFt_unpackAddrOfFn_fUiU
-                                #define DEFt_unpackAddrOfFn_fUiU
-inline void unpackAddrOfFn_fUiU(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Template& tEmplate_0, int& parent_idx_0, const fu_STR& canon, int)
+                                #ifndef DEFt_unpackAddrOfFn_0GDY
+                                #define DEFt_unpackAddrOfFn_0GDY
+inline void unpackAddrOfFn_0GDY(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Template& tEmplate_0, int& parent_idx_0, const fu_STR& canon, int)
 {
     int i = 0;
     while (i < canon.size())
@@ -2498,7 +2505,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
     {
         s_Type arg_t { args.mutref(i).type };
         if (type_isAddrOfFn(arg_t))
-            unpackAddrOfFn_fUiU(ctx_0, module_0, _scope_0, tEmplate, parent_idx, arg_t.vtype.canon, 0);
+            unpackAddrOfFn_0GDY(ctx_0, module_0, _scope_0, tEmplate, parent_idx, arg_t.vtype.canon, 0);
 
     };
     const bool isInline = !!(tEmplate.node.flags & F_INLINE);
@@ -3009,7 +3016,7 @@ static void reorderByNumUsings(fu_VEC<int>& result, const fu_VEC<s_Argument>& ho
     };
 }
 
-static bool reorderByArgIDs(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, const fu_VEC<s_Argument>& host_args, const int num_usings)
+static bool reorderByArgIDs(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, s_BitSet&& optional, const fu_VEC<s_Argument>& host_args, const int num_usings)
 {
     result.clear();
     int used = 0;
@@ -3030,8 +3037,10 @@ static bool reorderByArgIDs(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, co
             };
         }
         else
+        {
             used++;
-
+            rem(optional, i);
+        };
         result.push(idx);
     };
     if (used != names.size())
@@ -3042,12 +3051,15 @@ static bool reorderByArgIDs(fu_VEC<int>& result, const fu_VEC<fu_STR>& names, co
                 used++;
 
         };
-        if (used != names.size())
+        if ((used + popcount(optional)) != names.size())
             return false;
 
     };
     while (result && (result.mutref((result.size() - 1)) < 0))
         result.pop();
+
+    if (result.size() != names.size())
+        return true;
 
     for (int i = 0; i < result.size(); i++)
     {
@@ -3567,17 +3579,24 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
 {
     s_Target matchIdx {};
     s_Target DEBUG_assertMatch {};
-    const int minArity = args.size();
-    const int maxArity = (minArity + (scope.usings ? countUsings(ctx_0, _info_0, _here_0, _ss_0, scope, local_scope) : int{}));
+    int minArity = args.size();
+    const int numUsings = (scope.usings ? countUsings(ctx_0, _info_0, _here_0, _ss_0, scope, local_scope) : int{});
+    const int maxArity = (minArity + numUsings);
     fu_VEC<fu_STR> names {};
+    s_BitSet optional {};
     if (flags & F_NAMED_ARGS)
     {
         bool some = false;
-        for (int i = 0; i < minArity; i++)
+        for (int i = 0; i < args.size(); i++)
         {
             s_SolvedNode arg { args[i] };
             const fu_STR* _0;
             names.push(((arg.kind == "argid"_fu) ? (*(_0 = &(((void)(some = true), arg.value))) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})) : fu::Default<fu_STR>::value));
+            if (arg.flags & F_OPT_ARG)
+            {
+                minArity--;
+                add(optional, i);
+            };
         };
         if (!(some))
             fail(ctx_0, _info_0, _here_0, fu_STR{});
@@ -3595,7 +3614,7 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
         if (local_scope && !target)
         {
             s_BitSet seen {};
-            if (maxArity > minArity)
+            if (numUsings)
             {
                 const fu_VEC<s_Target>& items_1 = scope.usings;
                 const fu_VEC<s_ScopeSkip>& scope_skip = (local_scope ? _ss_0.usings : fu::Default<fu_VEC<s_ScopeSkip>>::value);
@@ -3649,19 +3668,22 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
                 const int num_usings = (!isZeroInit && (overload.min > minArity) ? (overload.min - minArity) : int{});
                 if (!names)
                     reorderByNumUsings(reorder, host_args, args.size(), num_usings);
-                else if (!reorderByArgIDs(reorder, names, host_args, num_usings))
+                else if (!reorderByArgIDs(reorder, names, s_BitSet(optional), host_args, num_usings))
+                    goto L_081;
+
+                if (optional && reorder && (reorder.size() < args.size()) && (reorder.size() < overload.max))
                     goto L_081;
 
                 fu_STR temp {};
                 fu_STR& args_mangled_1 = (reorder ? temp : args_mangled);
                 fu_VEC<fu_VEC<s_Target>> conversions_1 {};
-                if (overload.min || args.size())
+                int _1 {};
+                const int N = std::min(std::max(((_1 = reorder.size()) ? _1 : args.size()), (!isZeroInit ? overload.min : fu::Default<int>::value)), overload.max);
+                if (N)
                 {
-                    if (!((reorder.size() >= args.size()) || !reorder))
+                    if (!((reorder.size() >= args.size()) || !reorder || optional))
                         fail(ctx_0, _info_0, _here_0, "reorder < args."_fu);
 
-                    int _1 {};
-                    const int N = std::max(((_1 = reorder.size()) ? _1 : args.size()), (!isZeroInit ? overload.min : fu::Default<int>::value));
                     fu_VEC<s_SolvedNode> undo_literal_fixup { args };
                     for (int i = 0; i < N; i++)
                     {
@@ -3772,7 +3794,7 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
         if (!isZeroInit)
         {
             const fu_VEC<s_Argument>& host_args = matched.args;
-            if (host_args.size() > args.size())
+            if ((host_args.size() > args.size()) || optional)
                 args.resize(host_args.size());
 
             for (int i = 0; i < args.size(); i++)
@@ -4730,7 +4752,7 @@ static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0, s_Node
     };
 }
 
-inline static s_Node astReplace_ERet(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node_1, int)
+inline static s_Node astReplace_8Pa3(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node_1, int)
 {
     s_Node node_2 { node_1 };
     walk(placeholder_0, field_0, node_2);
@@ -4751,7 +4773,7 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     {
         const s_ScopeItem& field = fields[i];
         if (GET(ctx_0, module_0, _scope_0, target(field)).kind == "field"_fu)
-            items_ast += astReplace_ERet(placeholder, field, body_template, 0);
+            items_ast += astReplace_8Pa3(placeholder, field, body_template, 0);
 
     };
     fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, true, -1, 0);

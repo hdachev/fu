@@ -80,9 +80,9 @@ void rem(s_BitSet& _, const int idx)
 
 int popcount(const s_BitSet& _)
 {
-    int sum = 0;
     const int N = (_._data.size() >> 3);
-    fu::view<int64_t> i64s = fu::view_of(fu::get_view(_._data, 0, (N << 3)), int64_t{});
+    fu::view<int64_t> i64s = fu::view_of(_._data, int64_t{});
+    int sum = 0;
     for (int i = 0; i < i64s.size(); i++)
         sum += __builtin_popcountll(i64s[i]);
 

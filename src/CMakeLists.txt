@@ -16,6 +16,7 @@ set(FU_INPUTS
     scope.fu
     ../lib/file.fu
     context.fu
+    ../lib/bit.fu
     bitset.fu
     intlit.fu
     addroffn.fu
