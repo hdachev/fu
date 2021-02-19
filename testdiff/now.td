@@ -11555,6 +11555,60 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn a0o0() 0;
+        fn a1o0(a : i32) a;
+        fn a2o1(a : i32, b?: i32) a + b;
+        fn a2o2(a?: i32, b?: i32) a + b;
+        fn main() a0o0(a?: 1, b?: 2) *      1   //      .
+                + a1o0(a?: 1, b?: 2) *     10   //     10
+                + a2o1(a?: 1, b?: 2) *    100   //    300
+                + a2o2(a?: 1, b?: 2) *   1000   //   3000
+                + a2o1(a : 1, /*
+                              c
+                              /*/
+                              b
+                              //*/
+                               ?: 2) *  10000   //  30000
+                + a2o1(a : 1)        * 100000   // 100000
+                                // ----------------------
+                                     - 133310;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int a0o0()
+{
+    return 0;
+}
+
+static int a1o0(const int a)
+{
+    return a;
+}
+
+static int a2o1(const int a, const int b)
+{
+    return a + b;
+}
+
+static int a2o2(const int a, const int b)
+{
+    return a + b;
+}
+
+int fu_MAIN()
+{
+    return ((((((a0o0() * 1) + (a1o0(1) * 10)) + (a2o1(1, 2) * 100)) + (a2o2(1, 2) * 1000)) + (a2o1(1, 2) * 10000)) + (a2o1(1, 0) * 100000)) - 133310;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn main() {
             let ret: i8 =
             /*
