@@ -505,14 +505,14 @@ pub fn solve(
     }
 
     fn reorderByArgIDs(ref result: i32[],
-        names: string[], host_args: Argument[], num_usings!: i32): bool
+        names: string[], mut optional: bitset::BitSet,
+        host_args: Argument[], num_usings!: i32): bool
     {
         result.clear();
 
         //
         mut used   = 0;
         mut offset = num_usings;
-
         for (mut i = 0; i < host_args.len; i++)
         {
             mut idx = names.find(host_args[i].name);
@@ -531,6 +531,7 @@ pub fn solve(
             else
             {
                 used++;
+                optional.rem(i);
             }
 
             result.push(idx);
@@ -544,7 +545,7 @@ pub fn solve(
                 if (!names[i])
                     used++;
 
-            if (used != names.len)
+            if (used + optional.popcount != names.len)
                 return false;
         }
 
@@ -552,11 +553,15 @@ pub fn solve(
         while (result && result[result.len - 1] < 0)
             result.pop();
 
-        // Return nothing if not needed.
+        // See if needed.
+        if (result.len != names.len)
+            return true;
+
         for (mut i = 0; i < result.len; i++)
             if (result[i] != i)
                 return true;
 
+        // Else return no reorder.
         result.clear();
         return true;
     }
@@ -570,21 +575,29 @@ pub fn solve(
         mut matchIdx: Target;
         mut DEBUG_assertMatch: Target;
 
-        let minArity = args.len;
-        let maxArity = minArity + (scope.usings && countUsings(:scope, :local_scope));
+        mut minArity    = args.len;
+        let numUsings   = scope.usings && countUsings(:scope, :local_scope);
+        let maxArity    = minArity + numUsings;
 
         // Prep labelled args for remap.
         mut names: string[];
+        mut optional: bitset::BitSet;
         if (flags & F_NAMED_ARGS)
         {
             mut some = false;
 
-            for (mut i = 0; i < minArity; i++)
+            for (mut i = 0; i < args.len; i++)
             {
                 let arg = args[i];
                 names.push(arg.kind == "argid"
                     ? { some = true; arg.value } || fail()
                     : "");
+
+                if (arg.flags & F_OPT_ARG)
+                {
+                    minArity--;
+                    optional.add(i);
+                }
             }
 
             some || fail();
@@ -620,7 +633,7 @@ pub fn solve(
                     for (mut i = -1; i < visit.len; i++)
                     {
                         let modid = i >= 0 ? visit[i] : type.modid;
-                        if (seen.bitset::has(modid))
+                        if (seen.has(modid))
                             continue;
 
                         // Lazy init -
@@ -628,14 +641,14 @@ pub fn solve(
                         //   and everything we've already traversed.
                         if (!seen)
                         {
-                            seen.bitset::add(0);
-                            seen.bitset::add(module.modid);
+                            seen.add(0);
+                            seen.add(module.modid);
                             scope.imports.each(
                                 local_scope && _ss.imports,
-                                    |shadow modid| seen.bitset::add(modid));
+                                    |shadow modid| seen.add(modid));
                         }
 
-                        if (!seen.bitset::add_once(modid))
+                        if (!seen.add_once(modid))
                             continue;
 
                         //
@@ -647,7 +660,7 @@ pub fn solve(
                 }
 
                 // Usings.
-                if (maxArity > minArity)
+                if (numUsings)
                     scope.usings.each(
                         local_scope && _ss.usings,
                             |u| visitTypeImports(GET(u).type));
@@ -699,8 +712,15 @@ pub fn solve(
 
                     if (!names)
                         reorderByNumUsings(reorder, host_args, args.len, :num_usings);
-                    else if (!reorderByArgIDs(reorder, names, host_args, :num_usings))
+                    else if (!reorderByArgIDs(reorder, names, optional, host_args, :num_usings))
                         continue :NEXT;
+
+                    // Forbid optional argument ambiguities -
+                    //  We should either have all optional args satisfied at the receiver or sender part,
+                    //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
+                    if (optional && reorder)
+                        if (reorder.len < args.len && reorder.len < overload.max)
+                            continue :NEXT; // TODO NICE ERROR HERE
 
                     //
                     mut temp: string;
@@ -748,11 +768,13 @@ pub fn solve(
                     shadow mut conversions: Target[][];
                     ///////////////////////////////////
 
-                    if (overload.min || args.len)
+                    let N = (reorder.len || args.len)
+                        .max(!isZeroInit && overload.min)
+                        .min(overload.max);
+
+                    if (N)
                     {
-                        reorder.len >= args.len || !reorder || fail("reorder < args.");
-                        let N = (reorder.len || args.len)
-                            .max(!isZeroInit && overload.min);
+                        reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
 
                         /////////////////
                         // Literal fixup.
@@ -928,7 +950,7 @@ pub fn solve(
             {
                 // Mutate call args last thing.
                 let host_args = matched.args;
-                if (host_args.len > args.len)
+                if (host_args.len > args.len || optional)
                     args.resize(host_args.len);
 
                 // Defaults & implicit argument injection.
