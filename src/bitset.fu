@@ -42,3 +42,35 @@ pub fn has(using _: BitSet, idx: i32)
     return _data.len > bucket
         && _data[bucket] & mask != 0;
 }
+
+pub fn rem(using _: &mut BitSet, idx: i32)
+{
+    let no_neg = idx < 0 ? -1 : 0;
+    let bucket = idx / 8 | no_neg;
+    if (_data.len > bucket)
+    {
+        let bit  = idx % 8;
+        let mask = 1 << bit.u8;
+
+        _data[bucket] &= ~mask;
+    }
+}
+
+pub fn popcount(using _: BitSet)
+{
+    mut sum = 0;
+
+    let N = _data.len >> 3;
+    let i64s = _data[0, N << 3].view(i64);
+    for (mut i = 0; i < i64s.len; i++)
+        sum += bit::popcount(i64s[i]);
+
+    mut tail: i64;
+    for (mut i = N << 3; i < _data.len; i++) {
+        tail <<= 8;
+        tail |= _data[i].i64;
+    }
+
+    sum += bit::popcount(tail);
+    return sum;
+}
