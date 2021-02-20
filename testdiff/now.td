@@ -14560,6 +14560,65 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct A { a: i32; };
+        struct B { b: i32; };
+
+        using fn bananas(a) B(a.a * 2); // <- template
+
+        fn main() 1.A.b - 2;
+
+-----
+
+struct s_A;
+struct s_B;
+
+                                #ifndef DEF_s_B
+                                #define DEF_s_B
+struct s_B
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A
+                                #define DEF_s_A
+struct s_A
+{
+    int a;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static s_B bananas_F2U0(const s_A& a)
+{
+    return s_B { (a.a * 2) };
+}
+
+int fu_MAIN()
+{
+    return bananas_F2U0(s_A { 1 }).b - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn fn_v(fn, v) fn(v);
         struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
         fn main() {
