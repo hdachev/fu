@@ -811,7 +811,7 @@ pub fn solve(
                                     continue :ARG_OK;
 
                                 // Usings - can't match on explicitly named arguments.
-                                if !(host_arg.flags & F_MUSTNAME)
+                                if !(host_arg.flags & F_MUSTNAME || flags & F_CONVERSION)
                                 {
                                     // Can't proceed if we don't know what we're looking for.
                                     //  If we decide to not support more than a single using,
@@ -866,18 +866,19 @@ pub fn solve(
                             /////////////////
 
                             // Go through conversions here.
-                            let conversion = tryConvert(:scope, :local_scope, :expect, :actual);
-                            if (conversion)
+                            if !(flags & F_CONVERSION)
                             {
-                                conversions.grow_if_oob(i) = conversion;
-                                continue :ARG_OK;
+                                let conversion = tryConvert(:scope, :local_scope, :expect, :actual);
+                                if (conversion)
+                                {
+                                    conversions.grow_if_oob(i) = conversion;
+                                    continue :ARG_OK;
+                                }
                             }
 
                             // Nope, args fail.
-                            {
-                                args = undo_literal_fixup;
-                                continue :NEXT;
-                            }
+                            args = undo_literal_fixup;
+                            continue :NEXT;
                         }
                     }
 
@@ -1031,14 +1032,28 @@ pub fn solve(
         let has_converts = scope.converts.len;
         let ss_converts = local_scope && _ss.converts;
 
+        mut _args: SolvedNode[];
+        mut _conversions: Target[][];
+
         fn descend(from: Type, nullary!: bool, isStruct!: bool)
         {
             fn foreach(t: Target)
             {
-                let convert = GET(t);
-                if (nullary || isAssignableAsArgument(
-                    from, /*into*/host: convert.args.first.type))
+                if (!nullary) {
+                    _args.resize(1);
+                    _args[0].type = from;
+                }
+
+                mut candidate: Target;
+                if (nullary || (candidate = tryMatch__mutargs(
+                    target: t,
+                    scope: Scope, local_scope: false, id: "",
+                    args: _args, conversions: _conversions,
+                    flags: F_CONVERSION)))
                 {
+                    shadow let t = nullary ? t : candidate;
+
+                    let convert = GET(t);
                     let convertType = convert.kind == "field"
                         ? add_refs(from: from || fail(), to: convert.type)
                         : convert.type;
