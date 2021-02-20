@@ -355,7 +355,7 @@ pub fn has(items: [$T], scope_skip: ScopeSkip[], item: $T, start = 0)
     return false;
 }
 
-pub inline fn each(
+pub fn each(
     items: [$T],
     scope_skip: ScopeSkip[],
     fn,
@@ -375,6 +375,23 @@ pub inline fn each(
             fn(items[i]);
 
         i0 = ss.end;
+    }
+}
+
+pub fn reveach(items: [$T], ss: ScopeSkip[], fn)
+{
+    mut ssi = ss.len - 1;
+    mut ssN = ssi >= 0 && ss[ssi].end - 1;
+
+    for (mut i = items.len; i --> 0; )
+    {
+        if (ssi >= 0 && i == ssN) {
+            i   = ss[ssi--].start;
+            ssN = ssi >= 0 && ss[ssi].end - 1;
+            continue;
+        }
+
+        fn(items[i], i);
     }
 }
 

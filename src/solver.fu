@@ -2816,23 +2816,8 @@ pub fn solve(
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
     {
-        //////////////////////////////////////////
-        let ss  = _ss.helpers;                  //
-        mut ssi = ss.len - 1;                   //
-        mut ssN = ssi >= 0 && ss[ssi].end - 1;  //
-        //////////////////////////////////////////
-
-        for (mut i = _helpers.len; i --> 0; )
+        _helpers.reveach(_ss.helpers, |item, i|
         {
-            //////////////////////////////////////////
-            if (ssi >= 0 && i == ssN) {             //
-                i   = ss[ssi--].start;              //
-                ssN = ssi >= 0 && ss[ssi].end - 1;  //
-                continue;                           //
-            }                                       //
-            //////////////////////////////////////////
-
-            let item = _helpers[i];
             if !(item.mask & HM_CanReturn)
                 continue;
             if (item.mask & HM_Lambda && !lambdaOK)
@@ -2841,37 +2826,22 @@ pub fn solve(
                 continue;
 
             return i;
-        }
+        });
 
         fail("No return `" ~ id ~ "` in scope.");
     }
 
     fn Scope_lookupLabel(id: string, cont!: bool): i32
     {
-        //////////////////////////////////////////
-        let ss  = _ss.helpers;                  //
-        mut ssi = ss.len - 1;                   //
-        mut ssN = ssi >= 0 && ss[ssi].end - 1;  //
-        //////////////////////////////////////////
-
         mut CONTINUE_BELOW: i32;
 
-        for (mut i = _helpers.len; i --> 0; )
+        _helpers.reveach(_ss.helpers, |item, ref i|
         {
-            //////////////////////////////////////////
-            if (ssi >= 0 && i == ssN) {             //
-                i   = ss[ssi--].start;              //
-                ssN = ssi >= 0 && ss[ssi].end - 1;  //
-                continue;                           //
-            }                                       //
-            //////////////////////////////////////////
-
             // Continue into first return when possible,
             //  this comparison works because of the scope skips.
             if (i < CONTINUE_BELOW - 1)
                 i++;
 
-            let item = _helpers[i];
             if !(item.mask & HM_CanBreak)
             {
                 if (!CONTINUE_BELOW)
@@ -2903,7 +2873,7 @@ pub fn solve(
             }
 
             return i;
-        }
+        });
 
         fail("No label `" ~ id ~ "` in scope.");
     }
