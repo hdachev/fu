@@ -3437,6 +3437,19 @@ pub fn runTests()
                                      - 133310;
     `);
 
+    ZERO(`
+        pub fn reveach(items: [$T], fn)
+            for (mut i = items.len; i --> 0; )
+                fn(items[i], i?: i);
+
+        pub fn main() {
+            mut sum = 0;
+            [1, 2, 3].reveach(|x   | sum += x          );
+            [1, 2, 3].reveach(|x, i| sum += x * i * 100);
+            return sum - 806;
+        }
+    `);
+
 
     // Intlit sizechecks.
 
