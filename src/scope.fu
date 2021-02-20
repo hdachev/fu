@@ -332,29 +332,6 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 
 ////////////////////////////////
 
-pub fn has(items: [$T], scope_skip: ScopeSkip[], item: $T, start = 0)
-{
-    // TODO return out of each here.
-    let END_DUMMY = ScopeSkip(start: items.len, end: items.len);
-
-    mut i0 = start;
-    for (mut i = 0; i < scope_skip.len + 1; i++)
-    {
-        let ss = i < scope_skip.len ? scope_skip[i] : END_DUMMY;
-        if (ss.end <= i0)
-            continue;
-
-        let i1 = ss.start;
-        for (shadow mut i = i0; i < i1; i++)
-            if (items[i] == item)
-                return true;
-
-        i0 = ss.end;
-    }
-
-    return false;
-}
-
 pub fn each(
     items: [$T],
     scope_skip: ScopeSkip[],
