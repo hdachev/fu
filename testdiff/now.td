@@ -11609,6 +11609,62 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub fn reveach(items: [$T], fn)
+            for (mut i = items.len; i --> 0; )
+                fn(items[i], i?: i);
+
+        pub fn main() {
+            mut sum = 0;
+            [1, 2, 3].reveach(|x   | sum += x          );
+            [1, 2, 3].reveach(|x, i| sum += x * i * 100);
+            return sum - 806;
+        }
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_reveach_kJRA
+                                #define DEFt_reveach_kJRA
+inline void reveach_kJRA(int& sum_0, const fu_VEC<int>& items, int)
+{
+    for (int i = items.size(); i-- > 0; )
+    {
+        const int x = items[i];
+        sum_0 += x;
+    };
+}
+                                #endif
+
+                                #ifndef DEFt_reveach_RihI
+                                #define DEFt_reveach_RihI
+inline void reveach_RihI(int& sum_0, const fu_VEC<int>& items, int)
+{
+    for (int i = items.size(); i-- > 0; )
+    {
+        const int x = items[i];
+        int& i_1 = i;
+        sum_0 += ((x * i_1) * 100);
+    };
+}
+                                #endif
+
+int fu_MAIN()
+{
+    int sum = 0;
+    reveach_kJRA(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
+    reveach_RihI(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
+    return sum - 806;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn main() {
             let ret: i8 =
             /*

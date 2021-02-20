@@ -489,26 +489,31 @@ pub fn solve(
 
     //
 
-    fn reorderByNumUsings(ref result: i32[],
+    fn reorderByNumUsings(
+        ref use_reorder: bool, ref reorder: i32[],
         host_args: Argument[], num_args: i32, num_usings!: i32)
     {
-        result.clear();
+        reorder.clear();
 
         if (num_usings)
         {
             for (mut i = 0; i < host_args.len; i++)
             {
                 let x = i - num_usings;
-                result.push(x >= 0 && x < num_args ? x : -1);
+                reorder.push(x >= 0 && x < num_args ? x : -1);
             }
         }
+
+        use_reorder = !!reorder;
     }
 
-    fn reorderByArgIDs(ref result: i32[],
+    fn reorderByArgIDs(
+        ref use_reorder: bool, ref reorder: i32[],
         names: string[], mut optional: bitset::BitSet,
         host_args: Argument[], num_usings!: i32): bool
     {
-        result.clear();
+        use_reorder = true;
+        reorder.clear();
 
         //
         mut used   = 0;
@@ -534,7 +539,7 @@ pub fn solve(
                 optional.rem(i);
             }
 
-            result.push(idx);
+            reorder.push(idx);
         }
 
         // Fail if some name ended up unused.
@@ -550,19 +555,21 @@ pub fn solve(
         }
 
         // Drop trailing misses.
-        while (result && result[result.len - 1] < 0)
-            result.pop();
+        while (reorder && reorder[reorder.len - 1] < 0)
+            reorder.pop();
 
         // See if needed.
-        if (result.len != names.len)
+        if (reorder.len != names.len)
             return true;
 
-        for (mut i = 0; i < result.len; i++)
-            if (result[i] != i)
+        for (mut i = 0; i < reorder.len; i++)
+            if (reorder[i] != i)
                 return true;
 
-        // Else return no reorder.
-        result.clear();
+        // Matches but no need for the reorder stuff.
+        reorder.clear();
+        use_reorder = false;
+
         return true;
     }
 
@@ -575,9 +582,10 @@ pub fn solve(
         mut matchIdx: Target;
         mut DEBUG_assertMatch: Target;
 
-        mut minArity    = args.len;
-        let numUsings   = scope.usings && countUsings(:scope, :local_scope);
-        let maxArity    = minArity + numUsings;
+        mut minArity        = args.len;
+        let numUsings       = scope.usings && countUsings(:scope, :local_scope);
+        let explicitArity   = minArity;
+        let maxArity        = explicitArity + numUsings;
 
         // Prep labelled args for remap.
         mut names: string[];
@@ -700,19 +708,20 @@ pub fn solve(
                     ////////////////////////////////////////////
 
                     // Arity check.
-                    let isZeroInit = isType && !minArity;
+                    let isZeroInit = isType && !explicitArity;
                     if (!isZeroInit)
                         if (overload.max < minArity || overload.min > maxArity)
                             continue :NEXT;
 
                     // Reorder by argument names or number of implicit `using` args.
                     let host_args   = overload.args;
-                    let num_usings  = !isZeroInit && overload.min > minArity
-                                    && overload.min - minArity;
+                    let num_usings  = !isZeroInit && overload.min > explicitArity
+                                    && overload.min - explicitArity;
 
+                    mut use_reorder = false;
                     if (!names)
-                        reorderByNumUsings(reorder, host_args, args.len, :num_usings);
-                    else if (!reorderByArgIDs(reorder, names, optional, host_args, :num_usings))
+                        reorderByNumUsings(:use_reorder, :reorder, host_args, args.len, :num_usings);
+                    else if (!reorderByArgIDs(:use_reorder, :reorder, names, optional, host_args, :num_usings))
                         continue :NEXT;
 
                     // Forbid optional argument ambiguities -
@@ -725,7 +734,7 @@ pub fn solve(
                     //
                     mut temp: string;
                     shadow ref args_mangled =
-                        reorder ? temp : args_mangled;
+                        use_reorder ? temp : args_mangled;
 
                     fn disambig()
                     {
@@ -768,9 +777,8 @@ pub fn solve(
                     shadow mut conversions: Target[][];
                     ///////////////////////////////////
 
-                    let N = (reorder.len || args.len)
-                        .max(!isZeroInit && overload.min)
-                        .min(overload.max);
+                    let N = (use_reorder ? reorder.len : args.len)
+                        .max(!isZeroInit && overload.min);
 
                     if (N)
                     {
@@ -877,8 +885,8 @@ pub fn solve(
                     if (overload.kind == "template")
                     {
                         let specIdx = trySpecialize(
-                            :overloadIdx, :args, :reorder,
-                            :args_mangled ||= mangleArguments(args, reorder));
+                            :overloadIdx, :args, :reorder, :use_reorder,
+                            :args_mangled ||= mangleArguments(args, :reorder, :use_reorder));
 
                         if (!specIdx)
                             continue :NEXT;
@@ -902,7 +910,7 @@ pub fn solve(
                     SWAP(conversions, conversions_out);
 
                     // Do reorder.
-                    if (reorder)
+                    if (use_reorder)
                     {
                         // TODO:
                         // I shouldn't need this pass, just swaps must do.
@@ -945,7 +953,7 @@ pub fn solve(
         {
             let matched = GET(matchIdx);
 
-            let isZeroInit = matched.kind == "type" && !minArity;
+            let isZeroInit = matched.kind == "type" && !explicitArity;
             if (!isZeroInit)
             {
                 // Mutate call args last thing.
@@ -1668,14 +1676,10 @@ pub fn solve(
         return mangle;
     }
 
-    fn mangleArguments(args: [SolvedNode], reorder: [i32]): string
+    fn mangleArguments(args: [SolvedNode], reorder: [i32], use_reorder: bool): string
     {
-        if (!reorder)
+        if (!use_reorder)
             return mangleArguments(args);
-        else
-            reorder.len >= args.len || fail(
-                "mangleArguments: `reorder.len < args.len`,"
-                    ~ " then `!reorder` checks become ambiguous.");
 
         mut mangle = "";
         mut commas = 0;
@@ -1707,13 +1711,13 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[], reorder: [i32],
+        overloadIdx: Target, args: SolvedNode[], reorder: [i32], use_reorder: bool,
         args_mangled: string)
             : Target
     {
         // TODO memoize the whole mangle.
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
-        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle, :reorder);
+        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle, :reorder, :use_reorder);
 
         return !spec.is_SPECFAIL && spec;
     }
@@ -1771,11 +1775,11 @@ pub fn solve(
     fn doTrySpecialize(
         into?: Target,
         overloadIdx?: Target, mut args?: SolvedNode[],
-        mut mangle?: string, reorder?: [i32])
+        mut mangle?: string, reorder?: [i32], use_reorder?: bool)
             : Target
     {
         // TODO FIX reorder with gaps
-        if (reorder)
+        if (use_reorder)
         {
             mut reordered: SolvedNode[];
             for (mut i = 0; i < reorder.len; i++)
