@@ -143,6 +143,8 @@ pub struct Partial
 pub struct Argument
 {
     name?:      string;
+    autocall?:  string;
+
     type?:      Type;
     default?:   SolvedNode;
     flags?:     i32;

@@ -833,6 +833,12 @@ pub fn solve(
                                     continue :NEXT;
                             }
 
+                            // Autocall.
+                            if (host_arg.autocall)
+                            {
+                                fail("AUTOCALL !!!");
+                            }
+
                             // Templates.
                             if (!expect)
                                 continue :ARG_OK;
@@ -1604,6 +1610,21 @@ pub fn solve(
 
     //
 
+    fn Autocall_splice(ref name: string): string
+    {
+        for (mut i = 0; i < name.len; i++)
+        {
+            if (name[i] == '.')
+            {
+                let ret = name.slice(i + 1);
+                name.shrink(i);
+                return ret;
+            }
+        }
+
+        fail("Autocall: no `.` in id `" ~ name ~ "`.");
+    }
+
     fn uPrepFn_A(node: Node): SolvedNode
     {
         let id          = node.value;
@@ -1617,22 +1638,19 @@ pub fn solve(
         mut args: Argument[];
         for (mut i = 0; i < max; i++)
         {
-            let arg     = node.items[i];
-            let name    = arg.value || fail("TemplateDecl: no argname.");
-            let annot   = arg.items[LET_TYPE];
-            let init    = arg.items[LET_INIT];
+            let arg         = node.items[i];
+            mut name        = arg.value || fail("TemplateDecl: no argname.");
 
-            //////////////////////////////////////////////////
-            //                                              //
-            // Pre-typing template annots?                  //
-            //  Perhaps do this lazily?                     //
-            //
-            let typed   = !(arg.flags & F_TEMPLATE);
-            let type    = typed && annot && evalTypeAnnot(annot).type;
-            let default = typed && init  && solveNode(init, :type);
-            args.push(Argument(:name, :type, :default));
-            //                                              //
-            //////////////////////////////////////////////////
+            let autocall    = arg.flags & F_COMPOUND_ID && Autocall_splice(name);
+            let annot       = arg.items[LET_TYPE];
+            let init        = arg.items[LET_INIT];
+
+            // Pre-typing template annots
+            //  Perhaps do this lazily?
+            let typed       = !(arg.flags & F_TEMPLATE);
+            let type        = typed && annot && evalTypeAnnot(annot).type;
+            let default     = typed && init  && solveNode(init, :type);
+            args.push(Argument(:name, :autocall, :type, :default));
 
             if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
                 min++;
@@ -2202,12 +2220,16 @@ pub fn solve(
                     let argNode = items[i];
                     argNode.kind == "let" || fail();
 
-                    let isImplicit = !!(argNode.flags & F_IMPLICIT);
+                    mut name        = argNode.value;
+                    let autocall    = argNode.flags & F_COMPOUND_ID && Autocall_splice(name);
+                    let isImplicit  = !!(argNode.flags & F_IMPLICIT);
+
                     let arg = Argument(
-                        type:       argNode.type  || fail(),
-                        name:       argNode.value || fail(),
-                        default:    !isImplicit && argNode.items[LET_INIT],
-                        flags:      argNode.flags);
+                        :name,
+                        :autocall,
+                        :argNode.flags,
+                        :argNode.type || fail(),
+                        default: !isImplicit && argNode.items[LET_INIT]);
 
                     if (!arg.default && !isImplicit)
                         min++;
@@ -3135,6 +3157,11 @@ pub fn solve(
             "solveLet: ref without lifetime: `" ~ id ~ "`.");
 
         mut shadows = !!(out.flags & F_SHADOW);
+
+        // TODO FIX: AUTOCALL ////////
+        let cleanID = out.flags & F_COMPOUND_ID && id.slice(0, id.find('.'));
+        shadow let id = cleanID || id;
+        //////////////////////////////
 
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
