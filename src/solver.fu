@@ -265,12 +265,12 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, flags: i32, type: Type): Lifetime
+    fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32, type: Type): Lifetime
     {
         target.modid == module.modid || fail("not from this module");
 
         // Globals?
-        if (flags & F_GLOBAL)
+        if (!local_of)
             return Lifetime_static();
 
         // Alias?
@@ -344,7 +344,9 @@ pub fn solve(
     fn Binding(id: string, mut type: Type, ref flags!: i32, ref shadows!: bool, reuse?: Target)
     {
         mut name = id;
-        let global = flags & F_GLOBAL;
+
+        //
+        let local_of = _current_fn.target.index;
 
         // Unique identifiers.
         if (_root_scope)
@@ -374,17 +376,12 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (OPTI_autoshadow && !global && !any)
+            if (OPTI_autoshadow && local_of && !any)
             {
                 shadows = true;
                 flags |= F_SHADOW;
             }
         }
-
-        //
-        let local_of = _current_fn.target.index;
-        if (local_of)
-            !global || fail("Nope, getting it wrong.");
 
         // Reserve the slot.
         let target = reuse || Scope_create(_scope, kind: "var", :name, :flags, :local_of);
@@ -400,7 +397,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target, flags, type);
+            let lifetime = Lifetime_fromBinding(target, :local_of, :flags, type);
 
             ///////////////////////////////////////////////////////////////
             ///////////////////////////////////////////////////////////////
@@ -3141,10 +3138,6 @@ pub fn solve(
 
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
-            let global = !_current_fn;
-            if (global)
-                out.flags |= F_GLOBAL;
-
             ////////////////////////////////////////////////////////////////
             if (OPTI_dedupe_vars && !(out.flags & F_ARG))
             {
@@ -3173,8 +3166,12 @@ pub fn solve(
             ////////////////////////////////////////////////////////////////
 
             let target = out.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
-            if (global)
-                GET_mut(target).solved = out;
+
+            // TODO FIX global inits, why the whole thing? Get rid of this.
+            //  Currently need init for out-of-module cg, but this here is lame.
+            ref overload = GET_mut(target);
+            if (!overload.local_of)
+                overload.solved = out;
 
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)

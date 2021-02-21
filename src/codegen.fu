@@ -883,13 +883,13 @@ pub fn cpp_codegen(
         return head ~ " {}";
     }
 
-    fn cgLet(node: SolvedNode): string
+    fn cgLet(node: SolvedNode, global!: bool): string
     {
         if (node.type.addroffn::type_isZST)
             return "";
 
         mut src = binding(node, doInit: true);
-        if !(node.flags & F_GLOBAL)
+        if (!global)
             return src;
 
         /////////////
@@ -918,7 +918,7 @@ pub fn cpp_codegen(
             return;
 
         let o = GET(target);
-        cgLet(o.solved);
+        cgLet(o.solved, global: true);
     }
 
     fn cgJump(node: SolvedNode): string
@@ -1180,7 +1180,7 @@ pub fn cpp_codegen(
 
         if (target.kind == "var")
         {
-            if (target.flags & F_GLOBAL)
+            if (!target.local_of)
             {
                 if (node.target.modid != module.modid)
                     cgForeignGlobal(node.target);
@@ -1797,7 +1797,7 @@ pub fn cpp_codegen(
         if (k == "or")          return cgOr(node, mode);
         if (k == "and")         return cgAnd(node, mode);
 
-        if (k == "let")         return cgLet(node);
+        if (k == "let")         return cgLet(node, global: !_current_fn.index);
 
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);
