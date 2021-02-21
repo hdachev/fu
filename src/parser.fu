@@ -53,7 +53,7 @@ pub let F_SHADOW        = 1 << 23;
 pub let F_NAMED_ARGS    = 1 << 24;
 pub let F_SPREAD_INLINE = 1 << 25;
 pub let F_REST_ARG      = 1 << 26;
-let     F_PATTERN       = 1 << 27;
+// ... 27
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
 pub let F_LAMBDA        = 1 << 30;
@@ -730,8 +730,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (!expr && tryConsume("id", "case"))
         {
             mut branches: Node[] = [];
-
-            flags |= F_PATTERN;
 
             fn parseBranch(noCond?: bool)
             {
