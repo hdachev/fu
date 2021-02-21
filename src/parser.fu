@@ -29,7 +29,7 @@ pub let F_PREFIX        = 1 << 2;
 pub let F_POSTFIX       = 1 << 3;
 pub let F_ACCESS        = 1 << 4;
 let     F_ID            = 1 << 5;
-pub let F_QUALIFIED     = 1 << 6;
+pub let F_COMPOUND_ID   = 1 << 6;
 let     F_PARENS        = 1 << 7;
 
 pub let F_LOCAL         = 1 << 8;
@@ -52,7 +52,7 @@ pub let F_SHADOW        = 1 << 23;
 
 pub let F_NAMED_ARGS    = 1 << 24;
 pub let F_SPREAD_INLINE = 1 << 25;
-// ... 26
+pub let F_REST_ARG      = 1 << 26;
 let     F_PATTERN       = 1 << 27;
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
@@ -896,10 +896,24 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (tryConsume("id", "mut"     ))   flags |= F_MUT;
         if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
-        let id          = consume("id").value;
+        mut id          = consume("id").value;
+        mut mustname    = xqmark && tryConsume("op", "!");
+
+        if (xqmark && tryConsume("op", "."))
+        {
+            flags |= F_COMPOUND_ID;
+
+            id ~= consume("id").value;
+            while (tryConsume("op", "::"))
+                id ~= "\t" ~ consume("id").value;
+        }
+
+        if (xqmark && tryConsume("op", "[]"))
+            flags |= F_REST_ARG;
 
         let optional    = xqmark && tryConsume("op", "?");
-        let mustname    = xqmark && tryConsume("op", "!");
+        mustname      ||= xqmark && tryConsume("op", "!"); // TODO remove, backcompat
+
         let type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
@@ -1227,13 +1241,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     {
         if (expr.kind != "call" ||
             expr.items && (expr.items.len != 1 || !(expr.flags & F_ACCESS)) ||
-            expr.flags & F_QUALIFIED)
+            expr.flags & F_COMPOUND_ID)
         {
             _idx--;
             fail();
         }
 
-        expr.flags |= F_QUALIFIED;
+        expr.flags |= F_COMPOUND_ID;
 
         mut path = expr.value;
         for (;;)

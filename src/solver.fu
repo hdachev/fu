@@ -3313,7 +3313,7 @@ pub fn solve(
         mut overloadIdx: Target;
         mut shadows: bool;
 
-        let qualified = flags & F_QUALIFIED;
+        let qualified = flags & F_COMPOUND_ID;
         let scope = qualified
             ? dequalify_andGetScope(id)
             : _scope;
@@ -3599,7 +3599,7 @@ pub fn solve(
         if (!id) target || fail();
 
         // Qualified?
-        let qualified = node.flags & F_QUALIFIED;
+        let qualified = node.flags & F_COMPOUND_ID;
         let scope = qualified
             ? dequalify_andGetScope(id)
             : _scope;
