@@ -14619,6 +14619,233 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct A0 { a0: i32; };
+        struct A1 { a1: i32; };
+        struct B  { b:  i32; };
+
+        fn a0(a1: A1) a1.a1 * 100;
+        fn bananas(a) B(a.a0 * 2); // <- template
+        fn woot(a.bananas: B) a.b; // <- check
+
+        fn main() 1.A0.woot + 1.A1.woot - 202;
+
+-----
+
+struct s_A0;
+struct s_A1;
+struct s_B;
+
+static int a0(const s_A1&);
+
+                                #ifndef DEF_s_B
+                                #define DEF_s_B
+struct s_B
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A0
+                                #define DEF_s_A0
+struct s_A0
+{
+    int a0;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a0
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A1
+                                #define DEF_s_A1
+struct s_A1
+{
+    int a1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a1
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int woot(const s_B& a)
+{
+    return a.b;
+}
+
+inline static s_B bananas_ekfV(const s_A0& a)
+{
+    return s_B { (a.a0 * 2) };
+}
+
+static int a0(const s_A1& a1)
+{
+    return a1.a1 * 100;
+}
+
+inline static s_B bananas_yCL0(const s_A1& a)
+{
+    return s_B { (a0(a) * 2) };
+}
+
+int fu_MAIN()
+{
+    return (woot(bananas_ekfV(s_A0 { 1 })) + woot(bananas_yCL0(s_A1 { 1 }))) - 202;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct A0 { a0: i32; };
+        struct A1 { a1: i32; };
+        struct B0 { b0: i32; };
+        struct B1 { b1: i32; };
+        struct C  { c:  i32; };
+
+        fn bananas(using _: A0) B0(a0 * 2);
+        fn bananas(using _: A1) B1(a1 * 3);
+        using fn c0(using _: B0) C(c: b0 * 5);
+        using fn c1(using _: B1) C(c: b1 * 7);
+        fn woot(using a.bananas: C) c; // extra conversion
+
+        fn main() 1.A0.woot + 1.A1.woot - 31;
+
+-----
+
+struct s_A0;
+struct s_A1;
+struct s_B0;
+struct s_B1;
+struct s_C;
+
+static s_B1 bananas(const s_A1&);
+
+                                #ifndef DEF_s_C
+                                #define DEF_s_C
+struct s_C
+{
+    int c;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || c
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_B0
+                                #define DEF_s_B0
+struct s_B0
+{
+    int b0;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b0
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A0
+                                #define DEF_s_A0
+struct s_A0
+{
+    int a0;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a0
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_B1
+                                #define DEF_s_B1
+struct s_B1
+{
+    int b1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b1
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A1
+                                #define DEF_s_A1
+struct s_A1
+{
+    int a1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a1
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int woot(const s_C& a)
+{
+    return a.c;
+}
+
+static s_C c0(const s_B0& _)
+{
+    return s_C { (_.b0 * 5) };
+}
+
+static s_B0 bananas(const s_A0& _)
+{
+    return s_B0 { (_.a0 * 2) };
+}
+
+static s_C c1(const s_B1& _)
+{
+    return s_C { (_.b1 * 7) };
+}
+
+static s_B1 bananas(const s_A1& _)
+{
+    return s_B1 { (_.a1 * 3) };
+}
+
+int fu_MAIN()
+{
+    return (woot(c0(bananas(s_A0 { 1 }))) + woot(c1(bananas(s_A1 { 1 })))) - 31;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn fn_v(fn, v) fn(v);
         struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
         fn main() {

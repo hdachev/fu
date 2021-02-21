@@ -4361,7 +4361,7 @@ pub fn runTests()
         fn main() 1.A0.woot + 1.A1.woot - 31;
     `);
 
-    ZERO(`
+    TODO(`
         struct A0 { a0: i32; };
         struct A1 { a1: i32; };
         struct B0 { b:  i32; };
@@ -4374,7 +4374,7 @@ pub fn runTests()
         fn main() 1.A0.woot + 1.A1.woot - 5;
     `);
 
-    ZERO(`
+    TODO(`
         fn to_debug_str(a: i32) a     * 2;
         fn to_debug_str(b: u32) b.i32 * 3;
 
