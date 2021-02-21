@@ -899,7 +899,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         {
             flags |= F_COMPOUND_ID;
 
-            id ~= consume("id").value;
+            id ~= "." ~ consume("id").value;
             while (tryConsume("op", "::"))
                 id ~= "\t" ~ consume("id").value;
         }
