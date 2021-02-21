@@ -34,7 +34,7 @@ let     F_PARENS        = 1 << 7;
 
 // ... 8
 pub let F_ARG           = 1 << 9;
-pub let F_FIELD         = 1 << 10;
+// ... 10
 pub let F_GLOBAL        = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;
 // ... 13
@@ -336,8 +336,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseStructItem(): Node
     {
         mut member = parseLet(xqmark: true);
-        member.flags |= F_FIELD;
-
         consume("op", ";");
         return member;
     }

@@ -382,7 +382,7 @@ pub fn solve(
         }
 
         //
-        let local_of = !(flags & F_FIELD) && _current_fn.target.index;
+        let local_of = _current_fn.target.index;
         if (local_of)
             !global || fail("Nope, getting it wrong.");
 
@@ -3116,9 +3116,6 @@ pub fn solve(
 
     fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
     {
-        node.flags & F_FIELD && fail(
-            "solveLet: got a field: " ~ node.value);
-
         let out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
 
