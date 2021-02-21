@@ -384,10 +384,7 @@ pub fn solve(
         //
         let local_of = !(flags & F_FIELD) && _current_fn.target.index;
         if (local_of)
-        {
             !global || fail("Nope, getting it wrong.");
-            flags |= F_LOCAL;
-        }
 
         // Reserve the slot.
         let target = reuse || Scope_create(_scope, kind: "var", :name, :flags, :local_of);
@@ -3992,7 +3989,7 @@ pub fn solve(
             if (_current_fn)
             {
                 let o = GET(target);
-                if (o.flags & F_LOCAL)
+                if (o.kind == "var" && o.local_of)
                     _current_fn.locals_used.set::add(target.index);
 
                 _current_fn.locals_used.set::add(o.closes_over);
