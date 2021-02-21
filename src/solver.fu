@@ -833,17 +833,24 @@ pub fn solve(
                                     continue :NEXT;
                             }
 
+                            //
+                            mut actual = args[callsiteIndex].type;
+
                             // Autocall.
                             if (host_arg.autocall)
                             {
-                                fail("AUTOCALL !!!");
+                                let conversion = tryConvert(:scope, :local_scope, :actual, id: host_arg.autocall);
+                                if (!conversion)
+                                    continue :NEXT;
+
+                                actual = GET(conversion.last).type;
+                                conversions.grow_if_oob(i) = conversion;
                             }
 
                             // Templates.
                             if (!expect)
                                 continue :ARG_OK;
 
-                            let actual = args[callsiteIndex].type;
                             if (isAssignableAsArgument(expect, actual))
                                 continue :ARG_OK;
 
@@ -871,7 +878,7 @@ pub fn solve(
                                 let conversion = tryConvert(:scope, :local_scope, :expect, :actual);
                                 if (conversion)
                                 {
-                                    conversions.grow_if_oob(i) = conversion;
+                                    conversions.grow_if_oob(i) ~= conversion;
                                     continue :ARG_OK;
                                 }
                             }
@@ -1022,6 +1029,21 @@ pub fn solve(
         return count;
     }
 
+    fn tryConvert(scope: Scope, local_scope: bool, actual: Type, id: string): Target[]
+    {
+        mut args: SolvedNode[];
+        mut conversions: Target[][];
+
+        // TODO FIX ////////////
+        args.resize(1);
+        args[0].type = actual;
+        ////////////////////////
+
+        let match = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions);
+        return match
+            && conversions.if_first ~ match;
+    }
+
     fn tryConvert(
         scope: Scope, local_scope: bool,
         expect: Type, actual?: Type): Target[]
@@ -1032,8 +1054,10 @@ pub fn solve(
         let has_converts = scope.converts.len;
         let ss_converts = local_scope && _ss.converts;
 
+        // TODO FIX ////////////
         mut _args: SolvedNode[];
         mut _conversions: Target[][];
+        ////////////////////////
 
         fn descend(from: Type, nullary!: bool, isStruct!: bool)
         {
