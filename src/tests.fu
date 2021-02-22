@@ -4361,6 +4361,12 @@ pub fn runTests()
         fn main() 1.A0.woot + 1.A1.woot - 31;
     `);
 
+    ZERO(`
+        fn sqr(a: i32) a * a;
+        fn woot(a.sqr) a + 1;
+        fn main() 2.woot - 5;
+    `);
+
     TODO(`
         struct A0 { a0: i32; };
         struct A1 { a1: i32; };
