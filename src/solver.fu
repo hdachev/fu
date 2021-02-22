@@ -670,6 +670,10 @@ pub fn solve(
         //
         mut alternate_ids: string[];
 
+        ///////////////////////////
+        mut args_out: SolvedNode[];
+        ///////////////////////////
+
         for (;;)
         {
             mut scope_iterator: i32;
@@ -685,6 +689,8 @@ pub fn solve(
                 ///////////////////////////////////
                 ref conversions_out = conversions;
                 shadow mut conversions: Target[][];
+
+                shadow mut args = args;
                 ///////////////////////////////////
 
                 TEST_AGAIN: while (true)
@@ -777,12 +783,6 @@ pub fn solve(
                     if (N)
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
-
-                        /////////////////
-                        // Literal fixup.
-                        let undo_literal_fixup = args;
-                        //        /LITFIX
-                        /////////////////
 
                         ARG_OK:
                         for (mut i = 0; i < N; i++)
@@ -884,7 +884,6 @@ pub fn solve(
                             }
 
                             // Nope, args fail.
-                            args = undo_literal_fixup;
                             continue :NEXT;
                         }
                     }
@@ -914,27 +913,25 @@ pub fn solve(
                     // Forbid ambiguity.
                     disambig();
 
-                    // Output conversions /////////////
-                    SWAP(conversions, conversions_out);
-                    ///////////////////////////////////
-
                     // Do reorder.
                     if (use_reorder)
                     {
-                        // TODO:
-                        // I shouldn't need this pass, just swaps must do.
-                        mut new_args: SolvedNode[];
-                        new_args.resize(reorder.len);
-
+                        args_out.resize(reorder.len);
                         for (mut i = 0; i < reorder.len; i++)
                         {
                             let idx = reorder[i];
                             if (idx >= 0)
-                                new_args[i] = args[idx];
+                                args_out[i] = args[idx];
                         }
-
-                        args = new_args;
                     }
+                    else
+                    {
+                        SWAP(args, args_out);
+                    }
+
+                    // Output conversions /////////////
+                    SWAP(conversions, conversions_out);
+                    ///////////////////////////////////
 
                     // Done!
                     matchIdx = overloadIdx;
@@ -960,6 +957,10 @@ pub fn solve(
 
         if (matchIdx)
         {
+            /////////////////////
+            SWAP(args, args_out);
+            /////////////////////
+
             let matched = GET(matchIdx);
 
             let isZeroInit = matched.kind == "type" && !explicitArity;
