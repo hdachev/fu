@@ -682,6 +682,11 @@ pub fn solve(
                     scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
                     dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
+                ///////////////////////////////////
+                ref conversions_out = conversions;
+                shadow mut conversions: Target[][];
+                ///////////////////////////////////
+
                 TEST_AGAIN: while (true)
                 {
                     let overload = GET(overloadIdx);
@@ -765,11 +770,6 @@ pub fn solve(
                                 ~ ", as seen from " ~ callsite.fnName ~ ".");
                         }
                     }
-
-                    ///////////////////////////////////
-                    ref conversions_out = conversions;
-                    shadow mut conversions: Target[][];
-                    ///////////////////////////////////
 
                     let N = (use_reorder ? reorder.len : args.len)
                         .max(!isZeroInit && overload.min);
@@ -914,8 +914,9 @@ pub fn solve(
                     // Forbid ambiguity.
                     disambig();
 
-                    // Output conversions.
+                    // Output conversions /////////////
                     SWAP(conversions, conversions_out);
+                    ///////////////////////////////////
 
                     // Do reorder.
                     if (use_reorder)
