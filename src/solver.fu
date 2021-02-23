@@ -786,15 +786,18 @@ pub fn solve(
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
 
+                        let use_rest    = host_args.if_last.flags & F_REST_ARG && !TODO_FIX_skip_autocalls;
+                        let REST_START  = use_rest ? host_args.len - 1 : 0x7fffffff.i32;
+
                         ARG_OK:
                         for (mut i = 0; i < N; i++)
                         {
-                            let host_arg = host_args[i];
-                            let expect = host_arg.type;
+                            let host_arg    = host_args[i < REST_START ? i : REST_START];
+                            let expect      = host_arg.type;
 
                             // Its either reorder or args, asserted above [^].
-                            let callsiteIndex   = i < reorder.len   ? reorder[i]
-                                                : i < args.len      ? i
+                            let callsiteIndex   = use_reorder   ? reorder[i]
+                                                : i < args.len  ? i
                                                 : /*using*/ -1;
 
                             if (callsiteIndex < 0)
@@ -890,6 +893,27 @@ pub fn solve(
 
                             // Nope, args fail.
                             continue :NEXT;
+                        }
+
+                        if (use_rest)
+                        {
+                            mut rest: SolvedNode[];
+                            rest.resize(N - REST_START);
+
+                            for (mut i = N; i --> REST_START; )
+                            {
+                                // TODO FIX copy/paste from above.
+                                let callsiteIndex   = use_reorder   ? reorder[i]
+                                                    : i < args.len  ? i
+                                                    : /*using*/ -1;
+
+                                rest[i - REST_START] = args[callsiteIndex];
+                                if (i > REST_START)
+                                    use_reorder ? reorder.pop()
+                                                : args.splice(callsiteIndex, 1);
+                                else
+                                    args[callsiteIndex] = createArrayLiteral(:rest.first.token, rest);
+                            }
                         }
                     }
 
@@ -1692,11 +1716,12 @@ pub fn solve(
         let isTemplate  = !!(node.flags & F_TEMPLATE);
         let status      = !isTemplate && SS_LAZY; // Actual template fns are eager.
 
+        let N           = node.items.len + FN_ARGS_BACK;
         mut min         = 0;
-        let max         = node.items.len + FN_ARGS_BACK;
+        mut max         = N;
 
         mut args: Argument[];
-        for (mut i = 0; i < max; i++)
+        for (mut i = 0; i < N; i++)
         {
             let arg         = node.items[i];
             mut name        = arg.value || fail("TemplateDecl: no argname.");
@@ -1710,10 +1735,13 @@ pub fn solve(
             let typed       = !(arg.flags & F_TEMPLATE);
             let type        = typed && annot && evalTypeAnnot(annot).type;
             let default     = typed && init  && solveNode(init, :type);
-            args.push(Argument(:name, :autocall, :type, :default));
+            args.push(Argument(:name, :autocall, :arg.flags, :type, :default));
 
             if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
                 min++;
+
+            if (arg.flags & F_REST_ARG)
+                max = 0x7fffffff.i32;
         }
 
         //
@@ -2271,11 +2299,12 @@ pub fn solve(
             {
                 shadow let items = out.items;
 
+                let N = items.len + FN_ARGS_BACK;
                 mut min = 0;
-                let max = items.len + FN_ARGS_BACK;
+                mut max = N;
                 shadow mut args: Argument[];
 
-                for (mut i = 0; i < max; i++)
+                for (mut i = 0; i < N; i++)
                 {
                     let argNode = items[i];
                     argNode.kind == "let" || fail();
@@ -2293,6 +2322,9 @@ pub fn solve(
 
                     if (!arg.default && !isImplicit)
                         min++;
+
+                    if (arg.flags & F_REST_ARG)
+                        max = 0x7fffffff.i32;
 
                     args.push(arg);
                 }
@@ -3714,9 +3746,14 @@ pub fn solve(
                 target: lookupStruct(type).target);
 
         // Nope, it's an array literal.
-        mut items   = solveNodes(node.items, itemType);
-        mut startAt = 0;
+        return createArrayLiteral(:node.token,
+            solveNodes(node.items, itemType),
+                itemType);
+    }
 
+    fn createArrayLiteral(token: TokenIdx, mut items: SolvedNode[], mut itemType?: Type)
+    {
+        mut startAt = 0;
         if (!itemType && items.len)
         {
             let head = items[startAt++] || fail();
@@ -3742,7 +3779,7 @@ pub fn solve(
         for (mut i = 0; i < items.len; i++)
             maybeCopyOrMove(items[i], itemType);
 
-        return solved(node, createArray(itemType), items);
+        return SolvedNode("arrlit", :token, :items, type: createArray(itemType));
     }
 
 
