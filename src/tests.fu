@@ -4334,6 +4334,12 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn sqr(a: i32) a * a;
+        fn woot(a.sqr) a + 1;
+        fn main() 2.woot - 5;
+    `);
+
+    ZERO(`
         struct A0 { a0: i32; };
         struct A1 { a1: i32; };
         struct B  { b:  i32; };
@@ -4362,12 +4368,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn sqr(a: i32) a * a;
-        fn woot(a.sqr) a + 1;
-        fn main() 2.woot - 5;
-    `);
-
-    TODO(`
         struct A0 { a0: i32; };
         struct A1 { a1: i32; };
         struct B0 { b:  i32; };
@@ -4378,6 +4378,11 @@ pub fn runTests()
         fn woot(a.bananas) a.b; // <- template
 
         fn main() 1.A0.woot + 1.A1.woot - 5;
+    `);
+
+    TODO(`
+        fn varargs(a[]) a[0] + a[1];
+        fn main() varargs(1, 2) - 3;
     `);
 
     TODO(`
@@ -4393,7 +4398,7 @@ pub fn runTests()
             return a;
         }
 
-        fn main() inspect(5, 0x7) - 12;
+        fn main() inspect(5, 0x7) - 31;
     `);
 
 

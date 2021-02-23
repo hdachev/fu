@@ -14619,6 +14619,36 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn sqr(a: i32) a * a;
+        fn woot(a.sqr) a + 1;
+        fn main() 2.woot - 5;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+inline static int woot_U3Pf(const int a)
+{
+    return a + 1;
+}
+
+static int sqr(const int a)
+{
+    return a * a;
+}
+
+int fu_MAIN()
+{
+    return woot_U3Pf(sqr(2)) - 5;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct A0 { a0: i32; };
         struct A1 { a1: i32; };
         struct B  { b:  i32; };
@@ -14837,6 +14867,116 @@ static s_B1 bananas(const s_A1& _)
 int fu_MAIN()
 {
     return (woot(c0(bananas(s_A0 { 1 }))) + woot(c1(bananas(s_A1 { 1 })))) - 31;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct A0 { a0: i32; };
+        struct A1 { a1: i32; };
+        struct B0 { b:  i32; };
+        struct B1 { b:  i32; };
+
+        fn bananas(a0: A0) B0(a0.a0 * 2);
+        fn bananas(a1: A1) B1(a1.a1 * 3);
+        fn woot(a.bananas) a.b; // <- template
+
+        fn main() 1.A0.woot + 1.A1.woot - 5;
+
+-----
+
+struct s_A0;
+struct s_A1;
+struct s_B0;
+struct s_B1;
+
+static s_B1 bananas(const s_A1&);
+
+                                #ifndef DEF_s_B0
+                                #define DEF_s_B0
+struct s_B0
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A0
+                                #define DEF_s_A0
+struct s_A0
+{
+    int a0;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a0
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_B1
+                                #define DEF_s_B1
+struct s_B1
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A1
+                                #define DEF_s_A1
+struct s_A1
+{
+    int a1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a1
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static int woot_GzXT(const s_B0& a)
+{
+    return a.b;
+}
+
+static s_B0 bananas(const s_A0& a0)
+{
+    return s_B0 { (a0.a0 * 2) };
+}
+
+inline static int woot_xJ0F(const s_B1& a)
+{
+    return a.b;
+}
+
+static s_B1 bananas(const s_A1& a1)
+{
+    return s_B1 { (a1.a1 * 3) };
+}
+
+int fu_MAIN()
+{
+    return (woot_GzXT(bananas(s_A0 { 1 })) + woot_xJ0F(bananas(s_A1 { 1 }))) - 5;
 }
 
 #endif
