@@ -4380,12 +4380,12 @@ pub fn runTests()
         fn main() 1.A0.woot + 1.A1.woot - 5;
     `);
 
-    TODO(`
+    ZERO(`
         fn varargs(a[]) a[0] + a[1];
         fn main() varargs(1, 2) - 3;
     `);
 
-    TODO(`
+    ZERO(`
         fn to_debug_str(a: i32) a     * 2;
         fn to_debug_str(b: u32) b.i32 * 3;
 
@@ -4398,7 +4398,7 @@ pub fn runTests()
             return a;
         }
 
-        fn main() inspect(5, 0x7) - 31;
+        fn main() inspect(5.i32, 7.u32) - 31;
     `);
 
 

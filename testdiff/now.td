@@ -14986,6 +14986,84 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn varargs(a[]) a[0] + a[1];
+        fn main() varargs(1, 2) - 3;
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int varargs_I28a(const fu_VEC<int>& a)
+{
+    return a[0] + a[1];
+}
+
+int fu_MAIN()
+{
+    return varargs_I28a(fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }) - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn to_debug_str(a: i32) a     * 2;
+        fn to_debug_str(b: u32) b.i32 * 3;
+
+        fn inspect(items.to_debug_str[]) // <- varargs!
+        {
+            mut a = 0;
+            for (mut i = 0; i < items.len; i++)
+                a += items[i];
+
+            return a;
+        }
+
+        fn main() inspect(5.i32, 7.u32) - 31;
+
+-----
+#include <cstdint>
+#include <fu/vec.h>
+
+static int to_debug_str(uint32_t);
+
+#ifndef FU_NO_FDEFs
+
+inline static int inspect_I28a(const fu_VEC<int>& items)
+{
+    int a = 0;
+    for (int i = 0; i < items.size(); i++)
+        a += items[i];
+
+    return a;
+}
+
+static int to_debug_str(const int a)
+{
+    return a * 2;
+}
+
+static int to_debug_str(const uint32_t b)
+{
+    return int(b) * 3;
+}
+
+int fu_MAIN()
+{
+    return inspect_I28a(fu_VEC<int> { fu_VEC<int>::INIT<2> { to_debug_str(int(5)), to_debug_str(uint32_t(7)) } }) - 31;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn fn_v(fn, v) fn(v);
         struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
         fn main() {
