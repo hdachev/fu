@@ -1646,7 +1646,7 @@ pub fn cpp_codegen(
         {
             include("<fu/default.h>");
 
-            return "fu::Default<" ~ typeAnnot(clear_refs(type)) ~ ">::value";
+            return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
         }
 
         return typeAnnot(type) ~ "{}";
