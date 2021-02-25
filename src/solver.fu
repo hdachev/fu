@@ -1021,33 +1021,6 @@ pub fn solve(
                     }
                 }
             }
-
-            // `using` codegen.
-            if (conversions)
-            {
-                let convRead = createRead("__using");
-                for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
-                {
-                    let conversion = conversions[argIdx];
-                    if (conversion)
-                    {
-                        for (mut i = 0; i < conversion.len; i++)
-                        {
-                            let t = conversion[i];
-                            let o = GET(t);
-                            if (o.min || o.max && args[argIdx])
-                            {
-                                args[argIdx] = CallerNode(convRead, t, [ args[argIdx] ]);
-                                continue;
-                            }
-
-                            i && fail("Bad conversion chain, non-leading nullary: `" ~ o.name ~ "`.");
-                            args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
-                            args[argIdx] = CallerNode(convRead, t);
-                        }
-                    }
-                }
-            }
         }
 
         if (DEBUG_assertMatch)
@@ -3727,6 +3700,28 @@ pub fn solve(
         let callTargIdx = match__mutargs(
             :scope, local_scope: !qualified,
             :id, :args, :conversions, :node.flags, :target);
+
+        // `using` codegen.
+        for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
+        {
+            let conversion = conversions[argIdx];
+            let convRead = conversion && createRead("__using");
+
+            for (mut i = 0; i < conversion.len; i++)
+            {
+                let t = conversion[i];
+                let o = GET(t);
+                if (o.min || o.max && args[argIdx])
+                {
+                    args[argIdx] = CallerNode(convRead, t, [ args[argIdx] ]);
+                    continue;
+                }
+
+                i && fail("Bad conversion chain, non-leading nullary: `" ~ o.name ~ "`.");
+                args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
+                args[argIdx] = CallerNode(convRead, t);
+            }
+        }
 
         //
         return CallerNode(node, callTargIdx, args, :kills);
