@@ -4381,6 +4381,23 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn times_implicit(x: i32, implicit y: i32) x * y;
+        fn times7(x: i32) x * 7;
+
+        fn woot(a.times_implicit, b: u32) a * b.i32;
+        fn woot(a: i32, b.times7: i32) a * b;
+
+        fn test0() 3.woot(2.i32);
+
+        fn test1() {
+            let implicit y = 7;
+            return 3.woot(2.u32);
+        }
+
+        fn main() test0 + test1 * 1000 - 42042;
+    `);
+
+    ZERO(`
         fn varargs(a[]) a[0] + a[1];
         fn main() varargs(1, 2) - 3;
     `);
