@@ -690,6 +690,7 @@ pub fn solve(
                 ref conversions_out = conversions;
                 shadow mut conversions: Target[][];
 
+                ref args_in = args;
                 shadow mut args = args;
 
                 mut TODO_FIX_skip_autocalls = false;
@@ -838,6 +839,13 @@ pub fn solve(
                                     continue :NEXT;
                             }
 
+                            fn __conv(t: Target) {
+                                mut n: SolvedNode;
+                                n.kind = "__conv";
+                                n.type = GET(t).type;
+                                return n;
+                            }
+
                             // Autocall.
                             if (host_arg.autocall && !TODO_FIX_skip_autocalls)
                             {
@@ -845,20 +853,27 @@ pub fn solve(
                                 mut autocall_conversions:   Target[][];
 
                                 autocall_args.resize(1);
-                                SWAP(args[callsiteIndex], autocall_args[0]);
+                                SWAP(args[callsiteIndex], autocall_args.only);
 
                                 let t = tryMatch__mutargs(:scope, :local_scope, id: host_arg.autocall, args: autocall_args, conversions: autocall_conversions);
                                 if (!t)
                                     continue :NEXT;
 
-                                args[callsiteIndex] = CallerNode(createRead("__autocall"), t, autocall_args);
+                                // So we keep retypes and such.
+                                SWAP(args_in[callsiteIndex], autocall_args.only);
+
+                                if (autocall_conversions)
+                                    conversions.grow_if_oob(i) ~= autocall_conversions.only;
+
+                                conversions.grow_if_oob(i) ~= t;
+                                args[callsiteIndex] = __conv(t);
                             }
 
                             // Templates.
                             if (!expect)
                                 continue :ARG_OK;
 
-                            mut actual = args[callsiteIndex].type;
+                            let actual = args[callsiteIndex].type;
                             if (isAssignableAsArgument(expect, actual))
                                 continue :ARG_OK;
 
@@ -866,9 +881,10 @@ pub fn solve(
                             // Literal fixup.
                             if (considerRetyping(:expect, :actual))
                             {
-                                ref arg = args[callsiteIndex];
-                                if (arg.kind == "argid")
-                                    arg = arg.items.only;
+                                ref        arg = args[callsiteIndex];
+                                shadow ref arg = arg.kind == "argid"
+                                    ? arg.items.only
+                                    : arg;
 
                                 let retype = tryRetyping(arg, expect);
                                 if (isAssignableAsArgument(expect, retype))
@@ -887,6 +903,7 @@ pub fn solve(
                                 if (conversion)
                                 {
                                     conversions.grow_if_oob(i) ~= conversion;
+                                    args[callsiteIndex] = __conv(conversion.last);
                                     continue :ARG_OK;
                                 }
                             }
@@ -944,6 +961,14 @@ pub fn solve(
                     // Forbid ambiguity.
                     disambig();
 
+                    // Remove __conv helpers.
+                    for (mut i = 0; i < args_in.len; i++)
+                    {
+                        let callsiteIndex = use_reorder ? reorder[i] : i < args_in.len ? i : -1;
+                        if (callsiteIndex >= 0 && conversions[i])
+                            SWAP(args[callsiteIndex], args_in[callsiteIndex]);
+                    }
+
                     // Do reorder.
                     if (use_reorder)
                     {
@@ -987,41 +1012,7 @@ pub fn solve(
         }
 
         if (matchIdx)
-        {
-            /////////////////////
             SWAP(args, args_out);
-            /////////////////////
-
-            let matched = GET(matchIdx);
-
-            let isZeroInit = matched.kind == "type" && !explicitArity;
-            if (!isZeroInit)
-            {
-                // Mutate call args last thing.
-                let host_args = matched.args;
-                if (host_args.len > args.len || optional)
-                    args.resize(host_args.len);
-
-                // Defaults & implicit argument injection.
-                for (mut i = 0; i < args.len; i++)
-                {
-                    if (!args[i] && !conversions.unless_oob(i))
-                    {
-                        let host_arg = host_args[i];
-
-                        args[i] = host_arg.default ||
-                        {
-                            host_arg.flags & F_IMPLICIT || fail(
-                                "tryMatch: about to implicit-bind a non-implicit argument: `"
-                                    ~ host_arg.name ~ ": " ~ serializeType(host_arg.type) ~ "`.");
-
-                            bindImplicitArg(:host_arg.name,
-                                            :host_arg.type, becauseOf: matchIdx)
-                        };
-                    }
-                }
-            }
-        }
 
         if (DEBUG_assertMatch)
             DEBUG_assertMatch == matchIdx || fail(
@@ -1060,21 +1051,6 @@ pub fn solve(
         mut count = 0;
         scope.usings.each(scope_skip, |u| u ? count++ : fail());
         return count;
-    }
-
-    fn tryConvert(scope: Scope, local_scope: bool, actual: Type, id: string): Target[]
-    {
-        mut args: SolvedNode[];
-        mut conversions: Target[][];
-
-        // TODO FIX ////////////
-        args.resize(1);
-        args[0].type = actual;
-        ////////////////////////
-
-        let match = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions);
-        return match
-            && conversions.if_first ~ match;
     }
 
     fn tryConvert(
@@ -4031,6 +4007,33 @@ pub fn solve(
             : SolvedNode
     {
         let overload = GET(target);
+
+        // This was previously part of tryMatch,
+        //  but we can just as easily do it here.
+        let isZeroInit = overload.kind == "type" && !args.len;
+        if (!isZeroInit)
+        {
+            // Defaults & implicit argument injection.
+            let host_args = overload.args;
+            args.resize(host_args.len);
+            for (mut i = 0; i < args.len; i++)
+            {
+                if (!args[i])
+                {
+                    let host_arg = host_args[i];
+
+                    args[i] = host_arg.default ||
+                    {
+                        host_arg.flags & F_IMPLICIT || fail(
+                            "tryMatch: about to implicit-bind a non-implicit argument: `"
+                                ~ host_arg.name ~ ": " ~ serializeType(host_arg.type) ~ "`.");
+
+                        bindImplicitArg(:host_arg.name,
+                                        :host_arg.type, becauseOf: target)
+                    };
+                }
+            }
+        }
 
         // HACK -
         //  TBD how we make this stuff work in real life.
