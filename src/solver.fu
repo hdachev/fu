@@ -787,7 +787,7 @@ pub fn solve(
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
 
-                        let use_rest    = host_args.if_last.flags & F_REST_ARG && !TODO_FIX_skip_autocalls;
+                        let use_rest    = host_args.if_last.flags & F_REST_ARG;
                         let REST_START  = use_rest ? host_args.len - 1 : 0x7fffffff.i32;
 
                         ARG_OK:
@@ -910,27 +910,6 @@ pub fn solve(
 
                             // Nope, args fail.
                             continue :NEXT;
-                        }
-
-                        if (use_rest)
-                        {
-                            mut rest: SolvedNode[];
-                            rest.resize(N - REST_START);
-
-                            for (mut i = N; i --> REST_START; )
-                            {
-                                // TODO FIX copy/paste from above.
-                                let callsiteIndex   = use_reorder   ? reorder[i]
-                                                    : i < args.len  ? i
-                                                    : /*using*/ -1;
-
-                                rest[i - REST_START] = args[callsiteIndex];
-                                if (i > REST_START)
-                                    use_reorder ? reorder.pop()
-                                                : args.splice(callsiteIndex, 1);
-                                else
-                                    args[callsiteIndex] = createArrayLiteral(:rest.first.token, rest);
-                            }
                         }
                     }
 
@@ -3722,7 +3701,7 @@ pub fn solve(
                 itemType);
     }
 
-    fn createArrayLiteral(token: TokenIdx, mut items: SolvedNode[], mut itemType?: Type)
+    fn solveArrayLiteral_itemType(items: SolvedNode[], mut itemType?: Type)
     {
         mut startAt = 0;
         if (!itemType && items.len)
@@ -3746,6 +3725,13 @@ pub fn solve(
         //
         if (itemType.is_ref || itemType.lifetime)
             fail("Array items cannot be refs.");
+
+        return itemType;
+    }
+
+    fn createArrayLiteral(token: TokenIdx, mut items: SolvedNode[], itemType?: Type)
+    {
+        shadow let itemType = solveArrayLiteral_itemType(items, itemType);
 
         for (mut i = 0; i < items.len; i++)
             maybeCopyOrMove(items[i], itemType);
@@ -4007,6 +3993,25 @@ pub fn solve(
             : SolvedNode
     {
         let overload = GET(target);
+
+        // Rest params.
+        let use_rest = overload.args.if_last.flags & F_REST_ARG;
+        if (use_rest)
+        {
+            let REST_START = use_rest ? overload.args.len - 1 : 0x7fffffff.i32;
+
+            mut rest: SolvedNode[];
+            rest.resize(args.len - REST_START);
+
+            for (mut i = args.len; i --> REST_START; )
+            {
+                SWAP(rest[i - REST_START], args[i]);
+                if (i > REST_START)
+                    args.splice(i, 1);
+                else
+                    args[i] = createArrayLiteral(:rest.first.token, rest);
+            }
+        }
 
         // This was previously part of tryMatch,
         //  but we can just as easily do it here.
