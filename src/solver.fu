@@ -3737,13 +3737,8 @@ pub fn solve(
         }
 
         for (mut i = start; i < items.len; i++)
-        {
-            itemType = type_trySuper(
+            itemType = superType("Array literal: ",
                 itemType, (items[i] || fail()).type);
-
-            itemType || fail(
-                "[array literal] No common supertype.");
-        }
 
         // TODO cleanup
         if (itemType.is_ref || itemType.lifetime)
@@ -3846,8 +3841,7 @@ pub fn solve(
 
         if (!type.is_void)
         {
-            type = type_trySuper(cons.type, alt.type) || fail(
-                "[if] No common supertype: `" ~ serializeType(cons.type) ~ " : " ~ serializeType(alt.type) ~ "`.");
+            type = superType("if/else: ", cons.type, alt.type);
 
             type.is_ref || !type.lifetime || fail("[if] stray lifetime");
             maybeCopyOrMove(cons, type);
