@@ -173,6 +173,7 @@ pub fn cpp_codegen(
             // Avoid #include noise when possible.
             if (c == "i32")     return "int";
             if (c == "i16")     return "short";
+            if (c == "u32")     return "unsigned";
 
             if (c == "bool")    return "bool";
 
