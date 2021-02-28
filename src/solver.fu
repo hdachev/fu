@@ -3725,19 +3725,18 @@ pub fn solve(
                 itemType);
     }
 
-    fn solveArrayLiteral_itemType(items: SolvedNode[], mut itemType?: Type)
+    fn solveArrayLiteral_itemType(items: [SolvedNode], mut itemType?: Type, mut start = 0)
     {
-        mut startAt = 0;
-        if (!itemType && items.len)
+        if (!itemType)
         {
-            let head = items[startAt++] || fail();
+            if (start == items.len)
+                return fail("Cannot infer empty arraylit.");
+
+            let head = items[start++] || fail();
             itemType = clear_refs(head.type);
         }
 
-        if (!itemType)
-            return fail("Cannot infer empty arraylit.");
-
-        for (mut i = startAt; i < items.len; i++)
+        for (mut i = start; i < items.len; i++)
         {
             itemType = type_trySuper(
                 itemType, (items[i] || fail()).type);
@@ -3746,7 +3745,7 @@ pub fn solve(
                 "[array literal] No common supertype.");
         }
 
-        //
+        // TODO cleanup
         if (itemType.is_ref || itemType.lifetime)
             fail("Array items cannot be refs.");
 
