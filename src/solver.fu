@@ -808,8 +808,13 @@ pub fn solve(
                         ARG_OK:
                         for (mut i = 0; i < N; i++)
                         {
-                            let host_arg    = host_args[i < REST_START ? i : REST_START];
+                            let rest        = i >= REST_START;
+                            let host_arg    = host_args[rest ? REST_START : i];
                             let expect      = host_arg.type;
+
+                            // TODO FIX!
+                            if (TODO_FIX_skip_autocalls && rest)
+                                continue :ARG_OK;
 
                             // Its either reorder or args, asserted above [^].
                             let callsiteIndex   = use_reorder   ? reorder[i]
