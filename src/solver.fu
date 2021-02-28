@@ -795,14 +795,15 @@ pub fn solve(
                         }
                     }
 
+                    mut REST_TYPE: Type;
+                    let REST_START = overload.findRestStart();
+
                     let N = (use_reorder ? reorder.len : args.len)
                         .max(!isZeroInit && overload.min);
 
                     if (N)
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
-
-                        let REST_START = overload.findRestStart();
 
                         ARG_OK:
                         for (mut i = 0; i < N; i++)
@@ -878,7 +879,8 @@ pub fn solve(
                             if (!expect)
                                 continue :ARG_OK;
 
-                            let actual = conversions.len > i && conversions[i]
+                            let hasConv = conversions.len > i && conversions[i].len;
+                            let actual = hasConv
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
 
@@ -887,7 +889,7 @@ pub fn solve(
 
                             /////////////////
                             // Literal fixup.
-                            if (considerRetyping(:expect, :actual))
+                            if (!hasConv && considerRetyping(:expect, :actual))
                             {
                                 ref        arg = args[callsiteIndex];
                                 shadow ref arg = arg.kind == "argid"
@@ -920,6 +922,27 @@ pub fn solve(
                         }
                     }
 
+                    if (REST_START < N)
+                    {
+                        for (mut i = REST_START; i < N; i++)
+                        {
+                            let hasConv         = conversions.len > i && conversions[i].len;
+                            let callsiteIndex   = use_reorder ? reorder[i] : i;
+                            let actual          = hasConv
+                                ? GET(conversions[i].last).type
+                                : args[callsiteIndex].type;
+
+                            REST_TYPE = i == REST_START
+                                ? solveArrlit_itemType_init(head: actual)
+                                : type_trySuper(REST_TYPE, actual);
+
+                            if (!REST_TYPE)
+                                continue :NEXT;
+                        }
+
+                        REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
+                    }
+
                     // Specialize.
                     if (overload.kind == "template")
                     {
@@ -929,11 +952,13 @@ pub fn solve(
                             (use_reorder || conversions
                                 ? cant_reuse : reusable_mangle)
                             ||= mangleArguments(
-                                :args, :reorder, :use_reorder, :conversions);
+                                :args, :reorder, :use_reorder, :conversions,
+                                :REST_START, :REST_TYPE);
 
                         let specIdx = trySpecialize(
                             :overloadIdx, :args, :reorder, :use_reorder,
-                            :conversions, :args_mangled);
+                            :conversions, :args_mangled,
+                            :REST_START, :REST_TYPE);
 
                         if (!specIdx)
                             continue :NEXT;
@@ -1320,7 +1345,7 @@ pub fn solve(
 
         if (k == "let")         return solveLet(node, :deadcode_on_never);
         if (k == "call")        return solveCall(node, :kills);
-        if (k == "arrlit")      return solveArrayLiteral(node, type);
+        if (k == "arrlit")      return solveArrlit(node, type);
 
         if (k == "if")          return solveIf(node, type);
         if (k == "or")          return solveOr(node, type);
@@ -1726,11 +1751,15 @@ pub fn solve(
         return mangle;
     }
 
-    fn mangleArguments(args: [SolvedNode], reorder: [i32], use_reorder: bool, conversions: Target[][]): string
+    fn mangleArguments(
+        args: [SolvedNode], reorder: [i32],
+        use_reorder: bool, conversions: Target[][],
+        REST_START: i32, REST_TYPE: Type): string
     {
         mut mangle = "";
 
-        let N = use_reorder ? reorder.len : args.len;
+        let REST_END = use_reorder ? reorder.len : args.len;
+        let N = REST_END.min(REST_START);
         for (mut i = 0; i < N; i++)
         {
             if (i)
@@ -1747,6 +1776,14 @@ pub fn solve(
                     args[callsiteIndex].type);
         }
 
+        if (REST_START < REST_END)
+        {
+            if (REST_START)
+                mangle ~= ",";
+
+            mangle ~= serializeType(REST_TYPE);
+        }
+
         return mangle;
     }
 
@@ -1760,7 +1797,8 @@ pub fn solve(
 
     fn trySpecialize(
         overloadIdx: Target, args: SolvedNode[], args_mangled: string,
-        reorder: [i32], use_reorder: bool, conversions: Target[][])
+        reorder: [i32], use_reorder: bool, conversions: Target[][],
+        REST_START: i32, REST_TYPE: Type)
             : Target
     {
         // TODO memoize the whole mangle.
@@ -1773,7 +1811,8 @@ pub fn solve(
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
         let spec = _specs[mangle] || doTrySpecialize(
             :overloadIdx, :args, :mangle,
-            :reorder, :use_reorder, :conversions);
+            :reorder, :use_reorder, :conversions,
+            :REST_START, :REST_TYPE);
 
         return !spec.is_SPECFAIL && spec;
     }
@@ -1831,7 +1870,8 @@ pub fn solve(
     fn doTrySpecialize(
         into?: Target,
         overloadIdx?: Target, mut args?: SolvedNode[],
-        mut mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][])
+        mut mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
+        REST_START?: i32, REST_TYPE?: Type)
             : Target
     {
         // TODO FIX reorder with gaps
@@ -1858,6 +1898,13 @@ pub fn solve(
                 a.kind = "__conv";
                 a.type = GET(c.last).type;
             }
+        }
+
+        if (REST_TYPE)
+        {
+            ref a  = args[REST_START];
+            a.kind = "__rest";
+            a.type = REST_TYPE;
         }
 
         //
@@ -3710,7 +3757,7 @@ pub fn solve(
     // I feel this should be a fncall instead of this here.
     //  It's varargs - so is it a template or what?
 
-    fn solveArrayLiteral(node: Node, type: Type): SolvedNode
+    fn solveArrlit(node: Node, type: Type): SolvedNode
     {
         mut itemType = type && tryClear_array(type);
 
@@ -3720,41 +3767,52 @@ pub fn solve(
                 target: lookupStruct(type).target);
 
         // Nope, it's an array literal.
-        return createArrayLiteral(:node.token,
+        return createArrlit(:node.token,
             solveNodes(node.items, itemType),
                 itemType);
     }
 
-    fn solveArrayLiteral_itemType(items: [SolvedNode], mut itemType?: Type, mut start = 0)
+    fn solveArrlit_itemType_init(head!: Type)
     {
+        // Super trivial, just don't want to hardcode this here.
+        return clear_refs(head) || fail();
+    }
+
+    fn solveArrlit_itemType(items: [SolvedNode], mut itemType?: Type, mut start = 0)
+    {
+        // Init.
         if (!itemType)
         {
             if (start == items.len)
                 return fail("Cannot infer empty arraylit.");
 
-            let head = items[start++] || fail();
-            itemType = clear_refs(head.type);
+            itemType = solveArrlit_itemType_init(head: items[start++].type);
+        }
+        else if (itemType.is_ref)
+        {
+            fail("Array items cannot be refs. TODO Why an error? Should this not just clear_refs?");
         }
 
+        // Rest is simple inter.
         for (mut i = start; i < items.len; i++)
-            itemType = superType("Array literal: ",
-                itemType, (items[i] || fail()).type);
-
-        // TODO cleanup
-        if (itemType.is_ref || itemType.lifetime)
-            fail("Array items cannot be refs.");
+            itemType = superType("Array literal: ", itemType, items[i].type);
 
         return itemType;
     }
 
-    fn createArrayLiteral(token: TokenIdx, mut items: SolvedNode[], itemType?: Type)
+    fn solveArrlit_done(itemType!: Type)
     {
-        shadow let itemType = solveArrayLiteral_itemType(items, itemType);
+        return createArray(itemType);
+    }
+
+    fn createArrlit(token: TokenIdx, mut items: SolvedNode[], itemType?: Type)
+    {
+        shadow let itemType = solveArrlit_itemType(items, itemType);
 
         for (mut i = 0; i < items.len; i++)
             maybeCopyOrMove(items[i], itemType);
 
-        return SolvedNode("arrlit", :token, :items, type: createArray(itemType));
+        return SolvedNode("arrlit", :token, :items, type: solveArrlit_done(:itemType));
     }
 
 
@@ -4024,7 +4082,7 @@ pub fn solve(
                 if (i > REST_START)
                     args.splice(i, 1);
                 else
-                    args[i] = createArrayLiteral(:rest.first.token, rest);
+                    args[i] = createArrlit(:rest.first.token, rest);
             }
         }
 
