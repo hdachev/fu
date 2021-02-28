@@ -2138,9 +2138,9 @@ pub fn runTests()
             // Notice the "let" would bind cleanly,
             //  if it weren't for the "&&", which loses the mutrefsness.
             //
-            let badref = args.len && args[0];   -----------------
-            args = [ Arg(11) ];                 INVALID REFERENCE
-            return badref;                      -----------------
+            let badref = args.len && args[0];
+            args = [ Arg(11) ]; // INVALIDATE badref.
+            return badref;
         }
 
         fn main()
