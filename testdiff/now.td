@@ -14986,6 +14986,69 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn times_implicit(x: i32, implicit y: i32) x * y;
+        fn times7(x: i32) x * 7;
+
+        fn woot(a.times_implicit, b: u32) a * b.i32;
+        fn woot(a: i32, b.times7: i32) a * b;
+
+        fn test0() 3.woot(2.i32);
+
+        fn test1() {
+            let implicit y = 7;
+            return 3.woot(2.u32);
+        }
+
+        fn main() test0 + test1 * 1000 - 42042;
+
+-----
+#include <cstdint>
+
+#ifndef FU_NO_FDEFs
+
+static int woot(const int a, const int b)
+{
+    return a * b;
+}
+
+static int times7(const int x)
+{
+    return x * 7;
+}
+
+static int test0()
+{
+    return woot(3, times7(int(2)));
+}
+
+inline static int woot_lVgz(const int a, const uint32_t b)
+{
+    return a * int(b);
+}
+
+static int times_implicit(const int x, const int y)
+{
+    return x * y;
+}
+
+static int test1()
+{
+    const int y = 7;
+    return woot_lVgz(times_implicit(3, y), uint32_t(2));
+}
+
+int fu_MAIN()
+{
+    return (test0() + (test1() * 1000)) - 42042;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn varargs(a[]) a[0] + a[1];
         fn main() varargs(1, 2) - 3;
 
