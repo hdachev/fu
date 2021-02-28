@@ -575,6 +575,18 @@ pub fn solve(
         return true;
     }
 
+    fn findRestStart(overload: Overload)
+    {
+        for (mut i = overload.args.len; i --> 0; )
+        {
+            let arg = overload.args[i];
+            if  (arg.flags & F_REST_ARG) return i;
+            if !(arg.flags & F_IMPLICIT) break;
+        }
+
+        return overload.args.len;
+    }
+
     fn tryMatch__mutargs(
         scope: Scope, local_scope: bool,
         mut id: string, ref args: SolvedNode[],
@@ -790,8 +802,7 @@ pub fn solve(
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
 
-                        let use_rest    = host_args.if_last.flags & F_REST_ARG;
-                        let REST_START  = use_rest ? host_args.len - 1 : 0x7fffffff.i32;
+                        let REST_START = overload.findRestStart();
 
                         ARG_OK:
                         for (mut i = 0; i < N; i++)
@@ -4008,11 +4019,9 @@ pub fn solve(
         let overload = GET(target);
 
         // Rest params.
-        let use_rest = overload.args.if_last.flags & F_REST_ARG;
-        if (use_rest)
+        let REST_START = overload.findRestStart();
+        if (REST_START < args.len)
         {
-            let REST_START = use_rest ? overload.args.len - 1 : 0x7fffffff.i32;
-
             mut rest: SolvedNode[];
             rest.resize(args.len - REST_START);
 
