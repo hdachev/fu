@@ -103,6 +103,14 @@ pub fn solve(
     fn ANON(): string = "0" ~ _anons++;
 
 
+    // Can't we just list them all and scan through?
+    //  Do we need the mangling nonsense?
+    //   We can bucket however many times we want here,
+    //    its append only and trivial to maintain.
+
+    mut _specs:         Map(string, Target); // mangle -> spec
+
+
     //
 
     let t_string = createArray(t_byte);
@@ -606,7 +614,7 @@ pub fn solve(
         }
 
         mut reorder: i32[];
-        mut args_mangled: string;
+        mut reusable_mangle: string;
 
         // Argument & `using` dependent lookup,
         //  basically we do everything we can to get rid of imports.
@@ -739,11 +747,6 @@ pub fn solve(
                         if (reorder.len < args.len && reorder.len < overload.max)
                             continue :NEXT; // TODO NICE ERROR HERE
 
-                    //
-                    mut temp: string;
-                    shadow ref args_mangled =
-                        use_reorder ? temp : args_mangled;
-
                     fn disambig()
                     {
                         if (matchIdx)
@@ -839,13 +842,6 @@ pub fn solve(
                                     continue :NEXT;
                             }
 
-                            fn __conv(t: Target) {
-                                mut n: SolvedNode;
-                                n.kind = "__conv";
-                                n.type = GET(t).type;
-                                return n;
-                            }
-
                             // Autocall.
                             if (host_arg.autocall && !TODO_FIX_skip_autocalls)
                             {
@@ -859,21 +855,22 @@ pub fn solve(
                                 if (!t)
                                     continue :NEXT;
 
-                                // So we keep retypes and such.
-                                SWAP(args_in[callsiteIndex], autocall_args.only);
+                                SWAP(args[callsiteIndex], autocall_args.only);
 
                                 if (autocall_conversions)
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
 
                                 conversions.grow_if_oob(i) ~= t;
-                                args[callsiteIndex] = __conv(t);
                             }
 
                             // Templates.
                             if (!expect)
                                 continue :ARG_OK;
 
-                            let actual = args[callsiteIndex].type;
+                            let actual = conversions.len > i && conversions[i]
+                                ? GET(conversions[i].last).type
+                                : args[callsiteIndex].type;
+
                             if (isAssignableAsArgument(expect, actual))
                                 continue :ARG_OK;
 
@@ -903,7 +900,6 @@ pub fn solve(
                                 if (conversion)
                                 {
                                     conversions.grow_if_oob(i) ~= conversion;
-                                    args[callsiteIndex] = __conv(conversion.last);
                                     continue :ARG_OK;
                                 }
                             }
@@ -916,9 +912,17 @@ pub fn solve(
                     // Specialize.
                     if (overload.kind == "template")
                     {
+                        mut cant_reuse: string;
+
+                        shadow ref args_mangled =
+                            (use_reorder || conversions
+                                ? cant_reuse : reusable_mangle)
+                            ||= mangleArguments(
+                                :args, :reorder, :use_reorder, :conversions);
+
                         let specIdx = trySpecialize(
                             :overloadIdx, :args, :reorder, :use_reorder,
-                            :args_mangled ||= mangleArguments(args, :reorder, :use_reorder));
+                            :conversions, :args_mangled);
 
                         if (!specIdx)
                             continue :NEXT;
@@ -939,14 +943,6 @@ pub fn solve(
 
                     // Forbid ambiguity.
                     disambig();
-
-                    // Remove __conv helpers.
-                    for (mut i = 0; i < args_in.len; i++)
-                    {
-                        let callsiteIndex = use_reorder ? reorder[i] : i < args_in.len ? i : -1;
-                        if (callsiteIndex >= 0 && conversions[i])
-                            SWAP(args[callsiteIndex], args_in[callsiteIndex]);
-                    }
 
                     // Do reorder.
                     if (use_reorder)
@@ -1719,27 +1715,25 @@ pub fn solve(
         return mangle;
     }
 
-    fn mangleArguments(args: [SolvedNode], reorder: [i32], use_reorder: bool): string
+    fn mangleArguments(args: [SolvedNode], reorder: [i32], use_reorder: bool, conversions: Target[][]): string
     {
-        if (!use_reorder)
-            return mangleArguments(args);
-
         mut mangle = "";
-        mut commas = 0;
 
-        for (mut i = 0; i < reorder.len; i++)
+        let N = use_reorder ? reorder.len : args.len;
+        for (mut i = 0; i < N; i++)
         {
-            while (commas > 0)
-            {
+            if (i)
                 mangle ~= ",";
-                commas--;
-            }
 
-            let callsiteIndex = reorder[i];
-            if (callsiteIndex >= 0 && callsiteIndex < args.len)
-                mangle ~= serializeType(args[callsiteIndex].type);
+            let callsiteIndex = use_reorder ? reorder[i] : i;
 
-            commas++;
+            if (conversions.len > i && conversions[i].len)
+                mangle ~= serializeType(
+                    GET(conversions[i].last).type);
+
+            else if (callsiteIndex >= 0 && callsiteIndex <= args.len)
+                mangle ~= serializeType(
+                    args[callsiteIndex].type);
         }
 
         return mangle;
@@ -1754,13 +1748,21 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[], reorder: [i32], use_reorder: bool,
-        args_mangled: string)
+        overloadIdx: Target, args: SolvedNode[], args_mangled: string,
+        reorder: [i32], use_reorder: bool, conversions: Target[][])
             : Target
     {
         // TODO memoize the whole mangle.
+        //  Or use a hash here, perhaps nest them per template or smth.
+        //   Also this prefix is nasty, unless we can reuse between modules.
+        //
+        // TODO perhaps reuse between modules?
+        //  Would make the prefix stuff more meaningful.
+        //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
-        let spec = module.out.specs[mangle] || doTrySpecialize(:overloadIdx, :args, :mangle, :reorder, :use_reorder);
+        let spec = _specs[mangle] || doTrySpecialize(
+            :overloadIdx, :args, :mangle,
+            :reorder, :use_reorder, :conversions);
 
         return !spec.is_SPECFAIL && spec;
     }
@@ -1818,7 +1820,7 @@ pub fn solve(
     fn doTrySpecialize(
         into?: Target,
         overloadIdx?: Target, mut args?: SolvedNode[],
-        mut mangle?: string, reorder?: [i32], use_reorder?: bool)
+        mut mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][])
             : Target
     {
         // TODO FIX reorder with gaps
@@ -1833,7 +1835,18 @@ pub fn solve(
                         && args[callsiteIndex]);
             }
 
-            args = reordered;
+            SWAP(args, reordered);
+        }
+
+        for (mut i = 0; i < conversions.len; i++)
+        {
+            let c = conversions[i];
+            if (c)
+            {
+                ref a  = args[i];
+                a.kind = "__conv";
+                a.type = GET(c.last).type;
+            }
         }
 
         //
@@ -1884,7 +1897,7 @@ pub fn solve(
         {
             isInline && fail("inline.setSpec");
 
-            ref t = module.out.specs[mangle] ||= Target;
+            ref t = _specs[mangle] ||= Target;
 
             fn id(shadow target)
                 target.modid != -1  ? `"` ~ GET(target).name ~ `"`
@@ -2053,7 +2066,7 @@ pub fn solve(
 
                     if (mangle00 != mangle)
                     {
-                        let preexisting = module.out.specs[mangle] || Target();
+                        let preexisting = _specs[mangle] || Target();
                         if (preexisting)
                         {
                             setSpec(mangle00, preexisting);
@@ -2343,7 +2356,7 @@ pub fn solve(
                     mut preexisting: Target;
                     if (mangle0 != mangle)
                     {
-                        preexisting = module.out.specs[mangle] || Target();
+                        preexisting = _specs[mangle] || Target();
                         setSpec(mangle0, preexisting || target);
                     }
 
