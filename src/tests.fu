@@ -3903,6 +3903,20 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        pub struct Target { modid: i32; packed: u32; };
+
+        pub fn index(t: Target) i32(t.packed & 0x7fffffff);
+
+        pub fn local_eq(t: Target, index: i32, implicit modid: i32)
+            modid - t.modid || index - t.index;
+
+        fn main() {
+            let implicit modid = 1;
+            return local_eq(Target(1, 0x80000002), 7) - 5;
+        }
+    `);
+
 
     // Return inference.
 
