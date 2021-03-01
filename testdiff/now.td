@@ -4754,7 +4754,7 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    const fu_STR& s = fu::Default<fu_STR>::value;
+    const fu_STR& s = (*(const fu_STR*)fu::NIL);
     return (s ? 1 : 0);
 }
 
@@ -5076,7 +5076,7 @@ int fu_MAIN()
 {
     fu_STR x = "hello"_fu;
     fu_STR y = "world"_fu;
-    const fu_STR& w = (x ? y : fu::Default<fu_STR>::value);
+    const fu_STR& w = (x ? y : (*(const fu_STR*)fu::NIL));
     return ((w == "world"_fu) ? 0 : 1);
 }
 
@@ -5246,7 +5246,7 @@ static fu_VEC<int> gen(const int len)
 static int test(const int len)
 {
     fu_VEC<int> x = fu_VEC<int> { fu_VEC<int>::INIT<2> { -5, +5 } };
-    const fu_VEC<int>& y = (gen(len) ? x : fu::Default<fu_VEC<int>>::value);
+    const fu_VEC<int>& y = (gen(len) ? x : (*(const fu_VEC<int>*)fu::NIL));
     return int(x[(y.size() / 2)]);
 }
 
@@ -8111,7 +8111,6 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-#include <cstdint>
 
 struct s_TEA;
 
@@ -8119,8 +8118,8 @@ struct s_TEA;
                                 #define DEF_s_TEA
 struct s_TEA
 {
-    uint32_t v0;
-    uint32_t v1;
+    unsigned v0;
+    unsigned v1;
     explicit operator bool() const noexcept
     {
         return false
@@ -8138,8 +8137,8 @@ int fu_MAIN()
     s_TEA tea {};
 
     {
-        uint32_t sum {};
-        uint32_t delta = 0x9e3779b9u;
+        unsigned sum {};
+        unsigned delta = 0x9e3779b9u;
         for (int i = 0; i < 4; i++)
         {
             sum += delta;
@@ -8238,6 +8237,70 @@ inline static int rec_cases_UmdU(const s_X& a)
         a_1.i /= 2;
         return rec_cases_JcCf(a_1);
     }
+    else
+        return rec_cases_U3Pf(a.i);
+
+}
+
+int fu_MAIN()
+{
+    return rec_cases_UmdU(s_X { 1 });
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        //! FN_recursion FN_resolve
+        fn rec_cases(a: $T)
+        case ($T -> @primitive) {
+            if (a)      return rec_cases(a / 2);
+            else        return a;
+        }
+        default {
+            if (a.i)    return rec_cases($T(i: a.i / 2));
+            else        return rec_cases(a.i);
+        }
+
+        struct X { i: i32; };
+        fn main() X(1).rec_cases;
+
+-----
+
+struct s_X;
+
+                                #ifndef DEF_s_X
+                                #define DEF_s_X
+struct s_X
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static int rec_cases_U3Pf(const int a)
+{
+    if (a)
+        return rec_cases_U3Pf((a / 2));
+    else
+        return int(a);
+
+}
+
+inline static int rec_cases_UmdU(const s_X& a)
+{
+    if (a.i)
+        return rec_cases_UmdU(s_X { (a.i / 2) });
     else
         return rec_cases_U3Pf(a.i);
 
@@ -8569,7 +8632,7 @@ static const fu_STR& next(const fu_VEC<fu_STR>& args_0, int& idx_0)
     if (i < args_0.size())
         return args_0[i];
 
-    return fu::Default<fu_STR>::value;
+    return (*(const fu_STR*)fu::NIL);
 }
 
 static int cli_handle(const fu_VEC<fu_STR>& args)
@@ -8983,7 +9046,7 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return a ? b : fu::Default<s_NoCopy>::value;
+    return a ? b : (*(const s_NoCopy*)fu::NIL);
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
@@ -9055,7 +9118,7 @@ static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
 
 static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
 {
-    return a ? b : fu::Default<s_NoCopy>::value;
+    return a ? b : (*(const s_NoCopy*)fu::NIL);
 }
 
 static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
@@ -9390,7 +9453,7 @@ static fu_STR FAIL(const fu_STR& x)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
-        return fu_STR((ZERO(x) ? e : fu::Default<fu_STR>::value));
+        return fu_STR((ZERO(x) ? e : (*(const fu_STR*)fu::NIL)));
     }
 ;
     return ctx;
@@ -10045,7 +10108,7 @@ static float lin2srgb(const float l)
     return ((l <= 0.0031308f) ? (l * 12.92f) : ((1.055f * std::pow(l, (1.0f / float(2.4)))) - 0.055f));
 }
 
-static uint32_t lin255(const float v)
+static unsigned lin255(const float v)
 {
     return uint32_t((std::min(std::max(lin2srgb(v), 0.0f), 1.0f) * 255.99f));
 }
@@ -10463,7 +10526,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return a ? a[0] : fu::Default<int>::value;
+    return a ? a[0] : (*(const int*)fu::NIL);
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -10496,7 +10559,7 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return a ? a[0] : fu::Default<int>::value;
+    return a ? a[0] : (*(const int*)fu::NIL);
 }
 
 static int hello(const fu_VEC<int>& a)
@@ -10533,12 +10596,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return a ? a[0] : fu::Default<int>::value;
+    return a ? a[0] : (*(const int*)fu::NIL);
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return a ? a[0] : fu::Default<fu_VEC<int>>::value;
+    return a ? a[0] : (*(const fu_VEC<int>*)fu::NIL);
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10581,12 +10644,12 @@ int main() { return fu_MAIN(); }
 
 inline static int if_first_I28a(const fu_VEC<int>& a)
 {
-    return a ? a[0] : fu::Default<int>::value;
+    return a ? a[0] : (*(const int*)fu::NIL);
 }
 
 inline static const fu_VEC<int>& if_first_ggNI(const fu_VEC<fu_VEC<int>>& a)
 {
-    return a ? a[0] : fu::Default<fu_VEC<int>>::value;
+    return a ? a[0] : (*(const fu_VEC<int>*)fu::NIL);
 }
 
 static fu_VEC<fu_VEC<int>> list()
@@ -10771,9 +10834,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static uint32_t test(const fu_STR& hey)
+static unsigned test(const fu_STR& hey)
 {
-    return fu::view_of(hey, uint32_t{})[0];
+    return fu::view_of(hey, unsigned{})[0];
 }
 
 int fu_MAIN()
@@ -11974,13 +12037,12 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-#include <cstdint>
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    const uint32_t ret = 4294967295u;
+    const unsigned ret = 4294967295u;
     return int((ret - 0xffffffffu));
 }
 
@@ -15021,7 +15083,7 @@ static int test0()
     return woot(3, times7(int(2)));
 }
 
-inline static int woot_lVgz(const int a, const uint32_t b)
+inline static int woot_lVgz(const int a, const unsigned b)
 {
     return a * int(b);
 }
@@ -15092,7 +15154,7 @@ int main() { return fu_MAIN(); }
 #include <cstdint>
 #include <fu/vec.h>
 
-static int to_debug_str(uint32_t);
+static int to_debug_str(unsigned);
 
 #ifndef FU_NO_FDEFs
 
@@ -15110,7 +15172,7 @@ static int to_debug_str(const int a)
     return a * 2;
 }
 
-static int to_debug_str(const uint32_t b)
+static int to_debug_str(const unsigned b)
 {
     return int(b) * 3;
 }
@@ -15678,7 +15740,7 @@ struct s_sB_U3Pf
                                 #define DEF_s_sB_aXiX
 struct s_sB_aXiX
 {
-    uint32_t hey;
+    unsigned hey;
     explicit operator bool() const noexcept
     {
         return false
@@ -15695,7 +15757,7 @@ inline static s_sB_U3Pf fB_U3Pf(const int a)
     return s_sB_U3Pf { (a + 2) };
 }
 
-inline static s_sB_aXiX fB_aXiX(const uint32_t a)
+inline static s_sB_aXiX fB_aXiX(const unsigned a)
 {
     return s_sB_aXiX { (a + 2u) };
 }
