@@ -2482,6 +2482,12 @@ pub fn runTests()
         fn main() X(1).rec_cases;
     `);
 
+    ZERO(`
+        struct X { i: i32; };
+        type Y = X;
+        fn main() Y(1).i / 2;
+    `);
+
 
     // Let's try something new.
 
@@ -4585,6 +4591,17 @@ pub fn runTests()
         fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey //*F
             ; /*/ .i32; //*/
+    `);
+
+    ZERO(`
+        fn sB(t: $T) struct { hey: $T; };
+
+        // Prep for the thing below.
+        fn test(x) x.hey - 1;
+
+        // 'a' must be callable.
+        type a = sB(i32);
+        fn main() a(1).test;
     `);
 
     TODO(`
