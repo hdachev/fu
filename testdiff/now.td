@@ -8318,6 +8318,42 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct X { i: i32; };
+        type Y = X;
+        fn main() Y(1).i / 2;
+
+-----
+
+struct s_X;
+
+                                #ifndef DEF_s_X
+                                #define DEF_s_X
+struct s_X
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    return s_X { 1 }.i / 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct SolvedNode {
             value: i32;
             items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
@@ -15765,6 +15801,52 @@ inline static s_sB_aXiX fB_aXiX(const unsigned a)
 int fu_MAIN()
 {
     return fB_U3Pf(1).hey - int(fB_aXiX(uint32_t(1)).hey);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn sB(t: $T) struct { hey: $T; };
+
+        // Prep for the thing below.
+        fn test(x) x.hey - 1;
+
+        // 'a' must be callable.
+        type a = sB(i32);
+        fn main() a(1).test;
+
+-----
+
+struct s_sB_U3Pf;
+
+                                #ifndef DEF_s_sB_U3Pf
+                                #define DEF_s_sB_U3Pf
+struct s_sB_U3Pf
+{
+    int hey;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || hey
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static int test_Cp6V(const s_sB_U3Pf& x)
+{
+    return x.hey - 1;
+}
+
+int fu_MAIN()
+{
+    return test_Cp6V(s_sB_U3Pf { 1 });
 }
 
 #endif

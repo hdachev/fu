@@ -3329,7 +3329,13 @@ pub fn solve(
     fn solveTypedef(node: Node): SolvedNode
     {
         let annot = evalTypeAnnot(node.items.only);
-        Scope_Typedef(_scope, node.value, annot.type, node.flags);
+
+        // TODO FIX see the typeparams stuff, its the same mess.
+        if (annot.type.isStruct)
+            Scope_set(_scope, node.value, lookupStruct(annot.type).target, shadows: false);
+        else
+            Scope_Typedef(_scope, node.value, annot.type, node.flags);
+
         return createEmpty();
     }
 
