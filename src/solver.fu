@@ -2242,7 +2242,7 @@ pub fn solve(
                         if (m.id == param)
                         {
                             let o = GET(m.target);
-                            o.kind == "type" && o.max == 0 || fail(
+                            o.kind == "type"/* && o.max == 0*/ || fail(
                                 "tryGetArgSpecType: Not a typeparam: `"
                                     ~ o.kind ~ ":" ~ param ~ "(" ~ o.max ~ ")`.");
 
@@ -2479,9 +2479,22 @@ pub fn solve(
         typeParams.pairs(|id, type|
         {
             let name = "$" ~ id;
-            let target = Scope_Typedef(_scope,
-                id: "", // dont Scope_add
-                name: "$" ~ id, :type, flags: 0);
+
+            fn checkStruct(shadow type: Type)
+            {
+                // TODO FIX The thing is the type param might not be the naked value type,
+                //  but e.g. a reference or something. It's muddy what we have right now.
+                //   Consider getting rid of the $argname params, should obsolete this.
+                //
+                let t = lookupStruct(type).target;
+                return GET(t).type == type && t;
+            }
+
+            let target = type.isStruct
+                && checkStruct(type)
+                || Scope_Typedef(_scope,
+                    id: "", // dont Scope_add
+                    name: "$" ~ id, :type, flags: 0);
 
             Scope_set(res, name, :target, shadows: false);
         });

@@ -2466,7 +2466,7 @@ pub fn runTests()
         fn main() X(1).rec_cases;
     `);
 
-    TODO(`
+    ZERO(`
         //! FN_recursion FN_resolve
         fn rec_cases(a: $T)
         case ($T -> @primitive) {
