@@ -884,18 +884,41 @@ pub fn cpp_codegen(
         return head ~ " {}";
     }
 
-    fn cgLet(node: SolvedNode, global!: bool): string
+    fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
     {
         if (node.type.addroffn::type_isZST)
             return "";
 
-        mut src = binding(node, doInit: true);
+        // GLOBALS ///////////////////////////////////////////////
+        fn isIntegerConstant(expr)
+        {
+            if (expr.kind == "int")
+                return true;
+
+            if (expr.kind == "call")
+            {
+                let t = GET(expr.target);
+                if (t.kind == "__native" && t.flags & F_OPERATOR)
+                {
+                    for (mut i = 0; i < expr.items.len; i++)
+                        if (!expr.items[i].isIntegerConstant)
+                            return true;
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        let intconst = global
+            && node.type.quals & (q_primitive | q_floating_pt) == q_primitive
+            && node.items[LET_INIT].isIntegerConstant;
+        // GLOBALS ///////////////////////////////////////////////
+
+        mut src = binding(node, doInit: !foreign || intconst);
         if (!global)
             return src;
-
-        /////////////
-        // Globals //
-        /////////////
 
         // cpp17 inline const syntax sugars.
         if (src.starts(with: "const "))
@@ -904,10 +927,12 @@ pub fn cpp_codegen(
         // Hide when possible.
         if (!(node.flags & F_PUB))
             _fdef  ~= "\nstatic const " ~ src ~ ";\n";
+        else if (!intconst)
+            _fdef  ~= "\nextern const " ~ src ~ ";\n";
         else
             _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
                     ~ "\n                                #define DEF_" ~ node.value
-                    ~ "\ninline const " ~ src ~ ";"
+                    ~ "\ninline constexpr " ~ src ~ ";"
                     ~ "\n                                #endif\n";
 
         return "";
@@ -919,7 +944,7 @@ pub fn cpp_codegen(
             return;
 
         let o = GET(target);
-        cgLet(o.solved, global: true);
+        cgLet(o.solved, global: true, foreign: true);
     }
 
     fn cgJump(node: SolvedNode): string
