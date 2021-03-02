@@ -3876,7 +3876,7 @@ pub fn runTests()
     `
     ]);
 
-    TODO([`
+    ZERO([`
         // a private fn
         fn createShader(src: string) = src;
 

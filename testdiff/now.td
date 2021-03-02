@@ -10314,7 +10314,7 @@ int main() { return fu_MAIN(); }
 
                                 #ifndef DEF_A_u8
                                 #define DEF_A_u8
-inline const uint8_t A_u8 = uint8_t(0x0u);
+inline constexpr uint8_t A_u8 = uint8_t(0x0u);
                                 #endif
 
 static uint8_t ATTRIB(const uint8_t type, const int count, const bool srgb)
@@ -12974,113 +12974,107 @@ int main() { return fu_MAIN(); }
 
                                 #ifndef DEF_pad0
                                 #define DEF_pad0
-inline const int pad0 = 0;
+inline constexpr int pad0 = 0;
                                 #endif
 
                                 #ifndef DEF_pad1
                                 #define DEF_pad1
-inline const int pad1 = 1;
+inline constexpr int pad1 = 1;
                                 #endif
 
                                 #ifndef DEF_pad2
                                 #define DEF_pad2
-inline const int pad2 = 2;
+inline constexpr int pad2 = 2;
                                 #endif
 
                                 #ifndef DEF_pad3
                                 #define DEF_pad3
-inline const int pad3 = 3;
+inline constexpr int pad3 = 3;
                                 #endif
 
                                 #ifndef DEF_pad4
                                 #define DEF_pad4
-inline const int pad4 = 4;
+inline constexpr int pad4 = 4;
                                 #endif
 
                                 #ifndef DEF_pad5
                                 #define DEF_pad5
-inline const int pad5 = 5;
+inline constexpr int pad5 = 5;
                                 #endif
 
                                 #ifndef DEF_pad6
                                 #define DEF_pad6
-inline const int pad6 = 6;
+inline constexpr int pad6 = 6;
                                 #endif
 
                                 #ifndef DEF_pad7
                                 #define DEF_pad7
-inline const int pad7 = 7;
+inline constexpr int pad7 = 7;
                                 #endif
 
                                 #ifndef DEF_pad8
                                 #define DEF_pad8
-inline const int pad8 = 8;
+inline constexpr int pad8 = 8;
                                 #endif
 
                                 #ifndef DEF_pad9
                                 #define DEF_pad9
-inline const int pad9 = 9;
+inline constexpr int pad9 = 9;
                                 #endif
 
                                 #ifndef DEF_PAD0
                                 #define DEF_PAD0
-inline const int PAD0 = 0;
+inline constexpr int PAD0 = 0;
                                 #endif
 
                                 #ifndef DEF_PAD1
                                 #define DEF_PAD1
-inline const int PAD1 = 1;
+inline constexpr int PAD1 = 1;
                                 #endif
 
                                 #ifndef DEF_PAD2
                                 #define DEF_PAD2
-inline const int PAD2 = 2;
+inline constexpr int PAD2 = 2;
                                 #endif
 
                                 #ifndef DEF_PAD3
                                 #define DEF_PAD3
-inline const int PAD3 = 3;
+inline constexpr int PAD3 = 3;
                                 #endif
 
                                 #ifndef DEF_PAD4
                                 #define DEF_PAD4
-inline const int PAD4 = 4;
+inline constexpr int PAD4 = 4;
                                 #endif
 
                                 #ifndef DEF_PAD5
                                 #define DEF_PAD5
-inline const int PAD5 = 5;
+inline constexpr int PAD5 = 5;
                                 #endif
 
                                 #ifndef DEF_PAD6
                                 #define DEF_PAD6
-inline const int PAD6 = 6;
+inline constexpr int PAD6 = 6;
                                 #endif
 
                                 #ifndef DEF_PAD7
                                 #define DEF_PAD7
-inline const int PAD7 = 7;
+inline constexpr int PAD7 = 7;
                                 #endif
 
                                 #ifndef DEF_PAD8
                                 #define DEF_PAD8
-inline const int PAD8 = 8;
+inline constexpr int PAD8 = 8;
                                 #endif
 
                                 #ifndef DEF_PAD9
                                 #define DEF_PAD9
-inline const int PAD9 = 9;
+inline constexpr int PAD9 = 9;
                                 #endif
 
-                                #ifndef DEF_A
-                                #define DEF_A
-inline const fu_STR A = "hello"_fu;
-                                #endif
+extern const fu_STR A = "hello"_fu;
 
-                                #ifndef DEF_B
-                                #define DEF_B
-inline const fu_STR B = "world"_fu;
-                                #endif
+extern const fu_STR B = "world"_fu;
 
 #endif
 
@@ -13105,15 +13099,9 @@ inline const fu_STR B = "world"_fu;
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEF_A
-                                #define DEF_A
-inline const fu_STR A = "hello"_fu;
-                                #endif
+extern const fu_STR A;
 
-                                #ifndef DEF_B
-                                #define DEF_B
-inline const fu_STR B = "world"_fu;
-                                #endif
+extern const fu_STR B;
 
 static int test(const int i)
 {
@@ -13262,6 +13250,55 @@ int test(const s_ModuleOutputs& a)
 int fu_MAIN()
 {
     return test(s_ModuleOutputs{});
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // a private fn
+        fn createShader(src: string) = src;
+
+        // inits a public let
+        pub let GEOMETRY_PASS_TEST = createShader("source code");
+
+-----
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+static const fu_STR& createShader(const fu_STR& src)
+{
+    return src;
+}
+
+extern const fu_STR GEOMETRY_PASS_TEST { createShader("source code"_fu) };
+
+#endif
+
+-----
+
+        // a private fn
+        fn createShader(src: string) = src;
+
+        // inits a public let
+        pub let GEOMETRY_PASS_TEST = createShader("source code");
+
+        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;
+
+-----
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+extern const fu_STR GEOMETRY_PASS_TEST;
+
+int fu_MAIN()
+{
+    return GEOMETRY_PASS_TEST.size() - 11;
 }
 
 #endif
