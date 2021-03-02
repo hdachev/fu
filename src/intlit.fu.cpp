@@ -40,13 +40,13 @@ struct s_Intlit
 s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
 {
     const std::byte c_sign = sign_prefix_value_suffix[0];
-    const std::byte sign = (((c_sign == std::byte('-')) || (c_sign == std::byte('+'))) ? c_sign : fu::Default<std::byte>::value);
+    const std::byte sign = (((c_sign == std::byte('-')) || (c_sign == std::byte('+'))) ? c_sign : (*(const std::byte*)fu::NIL));
     fu::view<std::byte> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ((sign != std::byte{}) ? 1 : int{}), sign_prefix_value_suffix.size());
-    const std::byte c_prefix = ((prefix_value_suffix.size() > 1) ? prefix_value_suffix[1] : fu::Default<std::byte>::value);
-    const std::byte prefix = (((c_prefix == std::byte('x')) || (c_prefix == std::byte('o')) || (c_prefix == std::byte('b'))) && (prefix_value_suffix[0] == std::byte('0')) ? c_prefix : fu::Default<std::byte>::value);
+    const std::byte c_prefix = ((prefix_value_suffix.size() > 1) ? prefix_value_suffix[1] : (*(const std::byte*)fu::NIL));
+    const std::byte prefix = (((c_prefix == std::byte('x')) || (c_prefix == std::byte('o')) || (c_prefix == std::byte('b'))) && (prefix_value_suffix[0] == std::byte('0')) ? c_prefix : (*(const std::byte*)fu::NIL));
     fu::view<std::byte> value_suffix = fu::get_view(prefix_value_suffix, ((prefix != std::byte{}) ? 2 : int{}), prefix_value_suffix.size());
-    const std::byte c_suffix = (value_suffix.size() ? value_suffix[(value_suffix.size() - 1)] : fu::Default<std::byte>::value);
-    const std::byte suffix = ((c_suffix == std::byte('u')) ? c_suffix : fu::Default<std::byte>::value);
+    const std::byte c_suffix = (value_suffix.size() ? value_suffix[(value_suffix.size() - 1)] : (*(const std::byte*)fu::NIL));
+    const std::byte suffix = ((c_suffix == std::byte('u')) ? c_suffix : (*(const std::byte*)fu::NIL));
     fu::view<std::byte> value = fu::get_view(value_suffix, 0, (value_suffix.size() - ((suffix != std::byte{}) ? 1 : int{})));
     const uint64_t base = ((prefix == std::byte('x')) ? uint64_t(16) : ((prefix == std::byte('o')) ? uint64_t(8) : ((prefix == std::byte('b')) ? uint64_t(2) : uint64_t(10))));
     fu_STR error {};

@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/map.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -176,7 +175,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -323,6 +322,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -330,6 +330,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -434,7 +435,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -514,7 +515,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -526,7 +526,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -664,14 +663,6 @@ inline fu_VEC<s_Struct>& clone_zQF6(fu_VEC<s_Struct>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_tt3Q
-                                #define DEFt_clone_tt3Q
-inline fu_MAP<fu_STR, s_Target>& clone_tt3Q(fu_MAP<fu_STR, s_Target>& a)
-{
-    return a;
-}
-                                #endif
-
                                 #ifndef DEFt_clone_R7Io
                                 #define DEFt_clone_R7Io
 inline s_SolvedNode& clone_R7Io(s_SolvedNode& a)
@@ -745,7 +736,6 @@ inline s_ModuleOutputs clone_JkQQ(s_ModuleOutputs& a)
     {
         res.deps = clone_mrln(a.deps);
         res.types = clone_zQF6(a.types);
-        res.specs = clone_tt3Q(a.specs);
         res.solve = clone_FES7(a.solve);
         res.cpp = clone_jB4B(a.cpp);
     };
@@ -789,9 +779,6 @@ s_Context solvePrelude()
     return ctx;
 }
 
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-inline const s_Context CTX_PRELUDE = solvePrelude();
-                                #endif
+extern const s_Context CTX_PRELUDE = solvePrelude();
 
 #endif

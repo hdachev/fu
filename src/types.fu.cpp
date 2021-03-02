@@ -145,99 +145,99 @@ static const int q_ref = (1 << 1);
 
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy
-inline const int q_rx_copy = (1 << 2);
+inline constexpr int q_rx_copy = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_q_trivial
                                 #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
+inline constexpr int q_trivial = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_q_primitive
                                 #define DEF_q_primitive
-inline const int q_primitive = (1 << 4);
+inline constexpr int q_primitive = (1 << 4);
                                 #endif
 
                                 #ifndef DEF_q_arithmetic
                                 #define DEF_q_arithmetic
-inline const int q_arithmetic = (1 << 5);
+inline constexpr int q_arithmetic = (1 << 5);
                                 #endif
 
                                 #ifndef DEF_q_integral
                                 #define DEF_q_integral
-inline const int q_integral = (1 << 6);
+inline constexpr int q_integral = (1 << 6);
                                 #endif
 
                                 #ifndef DEF_q_signed
                                 #define DEF_q_signed
-inline const int q_signed = (1 << 7);
+inline constexpr int q_signed = (1 << 7);
                                 #endif
 
                                 #ifndef DEF_q_unsigned
                                 #define DEF_q_unsigned
-inline const int q_unsigned = (1 << 8);
+inline constexpr int q_unsigned = (1 << 8);
                                 #endif
 
                                 #ifndef DEF_q_floating_pt
                                 #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 9);
+inline constexpr int q_floating_pt = (1 << 9);
                                 #endif
 
                                 #ifndef DEF_q_rx_resize
                                 #define DEF_q_rx_resize
-inline const int q_rx_resize = (1 << 10);
+inline constexpr int q_rx_resize = (1 << 10);
                                 #endif
 
 static const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu, "resize"_fu } };
 
                                 #ifndef DEF_q_REF_EXTENSIONS
                                 #define DEF_q_REF_EXTENSIONS
-inline const int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
+inline constexpr int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
                                 #endif
 
                                 #ifndef DEF_q_MUTINVAR
                                 #define DEF_q_MUTINVAR
-inline const int q_MUTINVAR = ~q_REF_EXTENSIONS;
+inline constexpr int q_MUTINVAR = ~q_REF_EXTENSIONS;
                                 #endif
 
                                 #ifndef DEF_e_exit
                                 #define DEF_e_exit
-inline const int e_exit = (1 << 0);
+inline constexpr int e_exit = (1 << 0);
                                 #endif
 
                                 #ifndef DEF_e_crash
                                 #define DEF_e_crash
-inline const int e_crash = (1 << 1);
+inline constexpr int e_crash = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_e_div0
                                 #define DEF_e_div0
-inline const int e_div0 = (1 << 2);
+inline constexpr int e_div0 = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_e_segv
                                 #define DEF_e_segv
-inline const int e_segv = (1 << 3);
+inline constexpr int e_segv = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_e_throw
                                 #define DEF_e_throw
-inline const int e_throw = (1 << 4);
+inline constexpr int e_throw = (1 << 4);
                                 #endif
 
                                 #ifndef DEF_e_io
                                 #define DEF_e_io
-inline const int e_io = (1 << 8);
+inline constexpr int e_io = (1 << 8);
                                 #endif
 
                                 #ifndef DEF_e_malloc
                                 #define DEF_e_malloc
-inline const int e_malloc = (1 << 12);
+inline constexpr int e_malloc = (1 << 12);
                                 #endif
 
                                 #ifndef DEF_e_memcpy
                                 #define DEF_e_memcpy
-inline const int e_memcpy = (1 << 13);
+inline constexpr int e_memcpy = (1 << 13);
                                 #endif
 
 uint64_t u64(const s_Target& t)
@@ -345,7 +345,7 @@ s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
                                 #define DEFt_if_first_hGoN
 inline const s_Region& if_first_hGoN(const fu_VEC<s_Region>& s)
 {
-    return s.size() ? s[0] : fu::Default<s_Region>::value;
+    return s.size() ? s[0] : (*(const s_Region*)fu::NIL);
 }
                                 #endif
 
@@ -353,7 +353,7 @@ inline const s_Region& if_first_hGoN(const fu_VEC<s_Region>& s)
                                 #define DEFt_if_last_hGoN
 inline const s_Region& if_last_hGoN(const fu_VEC<s_Region>& s)
 {
-    return s.size() ? s[(s.size() - 1)] : fu::Default<s_Region>::value;
+    return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
 }
                                 #endif
 
@@ -399,108 +399,66 @@ bool operator==(const s_Type& a, const s_Type& b)
 
                                 #ifndef DEF_Trivial
                                 #define DEF_Trivial
-inline const int Trivial = (q_rx_copy | q_trivial);
+inline constexpr int Trivial = (q_rx_copy | q_trivial);
                                 #endif
 
                                 #ifndef DEF_Primitive
                                 #define DEF_Primitive
-inline const int Primitive = (Trivial | q_primitive);
+inline constexpr int Primitive = (Trivial | q_primitive);
                                 #endif
 
                                 #ifndef DEF_Arithmetic
                                 #define DEF_Arithmetic
-inline const int Arithmetic = (Primitive | q_arithmetic);
+inline constexpr int Arithmetic = (Primitive | q_arithmetic);
                                 #endif
 
                                 #ifndef DEF_Integral
                                 #define DEF_Integral
-inline const int Integral = (Arithmetic | q_integral);
+inline constexpr int Integral = (Arithmetic | q_integral);
                                 #endif
 
                                 #ifndef DEF_SignedInt
                                 #define DEF_SignedInt
-inline const int SignedInt = (Integral | q_signed);
+inline constexpr int SignedInt = (Integral | q_signed);
                                 #endif
 
                                 #ifndef DEF_UnsignedInt
                                 #define DEF_UnsignedInt
-inline const int UnsignedInt = (Integral | q_unsigned);
+inline constexpr int UnsignedInt = (Integral | q_unsigned);
                                 #endif
 
                                 #ifndef DEF_FloatingPt
                                 #define DEF_FloatingPt
-inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
+inline constexpr int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
                                 #endif
 
-                                #ifndef DEF_t_i8
-                                #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_i16
-                                #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_i32
-                                #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_i64
-                                #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_u8
-                                #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_u16
-                                #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_u32
-                                #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_u64
-                                #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_f32
-                                #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_f64
-                                #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_void
-                                #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_bool
-                                #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_never
-                                #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
 
-                                #ifndef DEF_t_byte
-                                #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
 
 bool is_never(const s_Type& t)
 {
@@ -641,7 +599,7 @@ int parse10i32(int& offset, const fu_STR& str)
     int result {};
     for (; ; )
     {
-        const std::byte c = ((offset < str.size()) ? str[offset] : fu::Default<std::byte>::value);
+        const std::byte c = ((offset < str.size()) ? str[offset] : (*(const std::byte*)fu::NIL));
         if ((c < std::byte('0')) || (c > std::byte('9')))
             break;
 

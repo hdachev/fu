@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -70,7 +69,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -333,6 +332,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -340,6 +340,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -444,7 +445,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -524,7 +525,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -536,7 +536,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -640,72 +639,72 @@ struct s_Helpers
 
                                 #ifndef DEF_SS_LAZY
                                 #define DEF_SS_LAZY
-inline const uint32_t SS_LAZY = (0x1u << 0u);
+inline constexpr unsigned SS_LAZY = (0x1u << 0u);
                                 #endif
 
                                 #ifndef DEF_SS_DID_START
                                 #define DEF_SS_DID_START
-inline const uint32_t SS_DID_START = (0x1u << 1u);
+inline constexpr unsigned SS_DID_START = (0x1u << 1u);
                                 #endif
 
                                 #ifndef DEF_SS_DIRTY
                                 #define DEF_SS_DIRTY
-inline const uint32_t SS_DIRTY = (0x1u << 2u);
+inline constexpr unsigned SS_DIRTY = (0x1u << 2u);
                                 #endif
 
                                 #ifndef DEF_SS_FINALIZED
                                 #define DEF_SS_FINALIZED
-inline const uint32_t SS_FINALIZED = (0x1u << 3u);
+inline constexpr unsigned SS_FINALIZED = (0x1u << 3u);
                                 #endif
 
                                 #ifndef DEF_SS_UPDATED
                                 #define DEF_SS_UPDATED
-inline const uint32_t SS_UPDATED = (0x1u << 4u);
+inline constexpr unsigned SS_UPDATED = (0x1u << 4u);
                                 #endif
 
                                 #ifndef DEF_SS_TYPE_RECUR
                                 #define DEF_SS_TYPE_RECUR
-inline const uint32_t SS_TYPE_RECUR = (0x1u << 16u);
+inline constexpr unsigned SS_TYPE_RECUR = (0x1u << 16u);
                                 #endif
 
                                 #ifndef DEF_SS_FN_RECUR
                                 #define DEF_SS_FN_RECUR
-inline const uint32_t SS_FN_RECUR = (0x1u << 17u);
+inline constexpr unsigned SS_FN_RECUR = (0x1u << 17u);
                                 #endif
 
                                 #ifndef DEF_HM_CanBreak
                                 #define DEF_HM_CanBreak
-inline const short HM_CanBreak = (short(1) << short(0));
+inline constexpr short HM_CanBreak = (short(1) << short(0));
                                 #endif
 
                                 #ifndef DEF_HM_CanReturn
                                 #define DEF_HM_CanReturn
-inline const short HM_CanReturn = (short(1) << short(1));
+inline constexpr short HM_CanReturn = (short(1) << short(1));
                                 #endif
 
                                 #ifndef DEF_HM_Anon
                                 #define DEF_HM_Anon
-inline const short HM_Anon = (short(1) << short(2));
+inline constexpr short HM_Anon = (short(1) << short(2));
                                 #endif
 
                                 #ifndef DEF_HM_Function
                                 #define DEF_HM_Function
-inline const short HM_Function = (short(1) << short(3));
+inline constexpr short HM_Function = (short(1) << short(3));
                                 #endif
 
                                 #ifndef DEF_HM_Lambda
                                 #define DEF_HM_Lambda
-inline const short HM_Lambda = (short(1) << short(4));
+inline constexpr short HM_Lambda = (short(1) << short(4));
                                 #endif
 
                                 #ifndef DEF_HM_Struct
                                 #define DEF_HM_Struct
-inline const short HM_Struct = (short(1) << short(5));
+inline constexpr short HM_Struct = (short(1) << short(5));
                                 #endif
 
                                 #ifndef DEF_HM_LabelUsed
                                 #define DEF_HM_LabelUsed
-inline const short HM_LabelUsed = (short(1) << short(6));
+inline constexpr short HM_LabelUsed = (short(1) << short(6));
                                 #endif
 
 s_Target target(const s_ScopeItem& si)
@@ -720,7 +719,7 @@ bool ScopeItem_shadows(const s_ScopeItem& si)
 
 s_ScopeItem ScopeItem(const fu_STR& id, const s_Target& target, const bool shadows)
 {
-    return s_ScopeItem { fu_STR(id), int(target.modid), (uint32_t(target.index) | (shadows ? (0x1u << 31u) : uint32_t{})) };
+    return s_ScopeItem { fu_STR(id), int(target.modid), (uint32_t(target.index) | (shadows ? (0x1u << 31u) : unsigned{})) };
 }
 
 s_ScopeItem& target_TODOFIX(s_ScopeItem& si, const s_Target& target)
@@ -748,17 +747,17 @@ int structIndex(const fu_STR& canon)
 
                                 #ifndef DEF_F_NOCOPY
                                 #define DEF_F_NOCOPY
-inline const int F_NOCOPY = (1 << 12);
+inline constexpr int F_NOCOPY = (1 << 12);
                                 #endif
 
                                 #ifndef DEF_q_trivial
                                 #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
+inline constexpr int q_trivial = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy
-inline const int q_rx_copy = (1 << 2);
+inline constexpr int q_rx_copy = (1 << 2);
                                 #endif
 
 s_Type initStruct(const fu_STR& name, const int flags, const bool SELF_TEST, s_Module& module)
@@ -795,7 +794,7 @@ s_Struct& lookupStruct_mut(const fu_STR& canon, s_Module& module)
 
                                 #ifndef DEF_F_PUB
                                 #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
+inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
 s_Scope Scope_exports(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
@@ -917,14 +916,14 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
 
                                 #ifndef DEF_F_SHADOW
                                 #define DEF_F_SHADOW
-inline const int F_SHADOW = (1 << 23);
+inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_SolvedNode& solved, const int local_of, const fu_STR& name, const uint32_t status, const s_Module& module)
+s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_SolvedNode& solved, const int local_of, const fu_STR& name, const unsigned status, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, uint32_t(status), int(local_of), fu_VEC<int>{}, fu_VEC<s_ScopeItem>{} };
+    s_Overload item = s_Overload { fu_STR(kind), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags), int(min), int(max), fu_VEC<s_Argument>(args), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, unsigned(status), int(local_of), fu_VEC<int>{}, fu_VEC<s_ScopeItem>{} };
     scope.overloads.push(item);
     if (id)
     {
@@ -934,7 +933,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s
     return target;
 }
 
-s_Target Scope_create(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_SolvedNode& solved, const int local_of, const uint32_t status, const fu_VEC<s_ScopeItem>& extra_items, const s_Module& module)
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const int min, const int max, const fu_VEC<s_Argument>& args, const s_SolvedNode& solved, const int local_of, const unsigned status, const fu_VEC<s_ScopeItem>& extra_items, const s_Module& module)
 {
     const int modid = MODID(module);
     const s_Target target = s_Target { int(modid), (scope.overloads.size() + 1) };
@@ -964,145 +963,38 @@ void Scope_set(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Target& tar
     items.push(ScopeItem(id, target, shadows));
 }
 
-s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Template& tEmplate, const fu_STR& name, const uint32_t status, const s_Module& module)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const s_Template& tEmplate, const fu_STR& name, const unsigned status, const s_Module& module)
 {
     return Scope_add(scope, "type"_fu, id, type, flags, 0, 0, fu_VEC<s_Argument>{}, tEmplate, s_SolvedNode{}, 0, name, status, module);
 }
 
-                                #ifndef DEF_Trivial
-                                #define DEF_Trivial
-inline const int Trivial = (q_rx_copy | q_trivial);
-                                #endif
+extern const s_Type t_i8;
 
-                                #ifndef DEF_q_primitive
-                                #define DEF_q_primitive
-inline const int q_primitive = (1 << 4);
-                                #endif
+extern const s_Type t_i16;
 
-                                #ifndef DEF_Primitive
-                                #define DEF_Primitive
-inline const int Primitive = (Trivial | q_primitive);
-                                #endif
+extern const s_Type t_i32;
 
-                                #ifndef DEF_q_arithmetic
-                                #define DEF_q_arithmetic
-inline const int q_arithmetic = (1 << 5);
-                                #endif
+extern const s_Type t_i64;
 
-                                #ifndef DEF_Arithmetic
-                                #define DEF_Arithmetic
-inline const int Arithmetic = (Primitive | q_arithmetic);
-                                #endif
+extern const s_Type t_u8;
 
-                                #ifndef DEF_q_integral
-                                #define DEF_q_integral
-inline const int q_integral = (1 << 6);
-                                #endif
+extern const s_Type t_u16;
 
-                                #ifndef DEF_Integral
-                                #define DEF_Integral
-inline const int Integral = (Arithmetic | q_integral);
-                                #endif
+extern const s_Type t_u32;
 
-                                #ifndef DEF_q_signed
-                                #define DEF_q_signed
-inline const int q_signed = (1 << 7);
-                                #endif
+extern const s_Type t_u64;
 
-                                #ifndef DEF_SignedInt
-                                #define DEF_SignedInt
-inline const int SignedInt = (Integral | q_signed);
-                                #endif
+extern const s_Type t_f32;
 
-                                #ifndef DEF_t_i8
-                                #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_f64;
 
-                                #ifndef DEF_t_i16
-                                #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_bool;
 
-                                #ifndef DEF_t_i32
-                                #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_byte;
 
-                                #ifndef DEF_t_i64
-                                #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_void;
 
-                                #ifndef DEF_q_unsigned
-                                #define DEF_q_unsigned
-inline const int q_unsigned = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_UnsignedInt
-                                #define DEF_UnsignedInt
-inline const int UnsignedInt = (Integral | q_unsigned);
-                                #endif
-
-                                #ifndef DEF_t_u8
-                                #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u16
-                                #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u32
-                                #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u64
-                                #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_q_floating_pt
-                                #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 9);
-                                #endif
-
-                                #ifndef DEF_FloatingPt
-                                #define DEF_FloatingPt
-inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-                                #endif
-
-                                #ifndef DEF_t_f32
-                                #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_f64
-                                #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_bool
-                                #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_byte
-                                #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_void
-                                #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_never
-                                #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_never;
 
 s_Scope listGlobals(const s_Module& module)
 {

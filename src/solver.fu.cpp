@@ -98,9 +98,9 @@ s_Scope listGlobals(const s_Module&);
 s_ScopeMemo Scope_snap(const s_Scope&, const fu_VEC<s_Helpers>&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 s_Struct& lookupStruct_mut(const fu_STR&, s_Module&);
-s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Template&, const fu_STR&, uint32_t, const s_Module&);
-s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_SolvedNode&, int, const fu_STR&, uint32_t, const s_Module&);
-s_Target Scope_create(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_SolvedNode&, int, uint32_t, const fu_VEC<s_ScopeItem>&, const s_Module&);
+s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const s_Template&, const fu_STR&, unsigned, const s_Module&);
+s_Target Scope_add(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_Template&, const s_SolvedNode&, int, const fu_STR&, unsigned, const s_Module&);
+s_Target Scope_create(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, int, int, const fu_VEC<s_Argument>&, const s_SolvedNode&, int, unsigned, const fu_VEC<s_ScopeItem>&, const s_Module&);
 s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, const fu_VEC<s_ScopeSkip>&, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
 s_Target target(const s_ScopeItem&);
 s_Token _token(const s_TokenIdx&, const s_Context&);
@@ -120,29 +120,32 @@ s_Type tryClear_mutref(const s_Type&);
 s_Type tryClear_ref(const s_Type&);
 s_Type tryClear_sliceable(const s_Type&);
 s_Type type_trySuper(const s_Type&, const s_Type&);
-static bool lazySolveStart(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Target&, const s_Overload&);
-static fu_STR mangleArguments(fu::view<s_SolvedNode>, fu::view<int>, bool);
-static fu_VEC<s_SolvedNode> solveNodes(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const fu_VEC<s_Node>&, const s_Type&, const s_Type&, bool, bool, int, int);
+static bool lazySolveStart(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Target&, const s_Overload&);
+static fu_STR mangleArguments(const s_Context&, s_Module&, s_Scope&, fu::view<s_SolvedNode>, fu::view<int>, bool, const fu_VEC<fu_VEC<s_Target>>&, int, const s_Type&);
+static fu_VEC<s_SolvedNode> solveNodes(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const fu_VEC<s_Node>&, const s_Type&, const s_Type&, bool, bool, int, int);
 static int& left(s_Target&);
 static int& right(s_Target&);
 static s_Helpers& h(fu_VEC<s_Helpers>&, int&);
 static s_Overload GET(const s_Context&, s_Module&, s_Scope&, const s_Target&);
 static s_Overload fnd(const s_Context&, s_Module&, s_Scope&, int);
+static s_SolvedNode CallerNode(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const s_Target&, fu_VEC<s_SolvedNode>&&, int);
 static s_SolvedNode createLet(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, int&, s_CurrentFn&, const fu_STR&, int, const s_SolvedNode&);
-static s_SolvedNode evalTypeAnnot(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Node&, const fu_MAP<fu_STR, s_Type>&);
+static s_SolvedNode evalTypeAnnot(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const fu_MAP<fu_STR, s_Type>&);
+static s_SolvedNode solveArrlit(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const s_Type&);
 static s_SolvedNode solveInt(const s_Context&, fu_VEC<s_Info>&, s_TokenIdx&, const s_Node&, const s_Type&);
-static s_SolvedNode solveLet(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Node&, const s_Type&, const s_Target&, bool);
+static s_SolvedNode solveLet(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const s_Type&, const s_Target&, bool);
 static s_SolvedNode solveLet(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, s_CurrentFn&, s_SolvedNode&&, const fu_STR&, const s_Target&, bool);
-static s_SolvedNode solveLetLike_dontTouchScope(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Node&, const s_Type&, bool);
-static s_SolvedNode solveNode(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Node&, const s_Type&, bool, int);
+static s_SolvedNode solveLetLike_dontTouchScope(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const s_Type&, bool);
+static s_SolvedNode solveNode(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const s_Type&, bool, int);
 static s_SolvedNode solveNum(const s_Node&, const s_Type&);
 static s_SolvedNode solveStr(const s_Context&, fu_VEC<s_Info>&, s_TokenIdx&, const s_Type&, const s_Node&);
 static s_Target Binding(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, s_CurrentFn&, const fu_STR&, s_Type&&, int&, bool&, const s_Target&);
-static s_Target tryMatch__mutargs(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Scope&, bool, fu_STR&&, fu_VEC<s_SolvedNode>&, fu_VEC<fu_VEC<s_Target>>&, int, const s_Target&);
+static s_Target tryMatch__mutargs(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Scope&, bool, fu_STR&&, fu_VEC<s_SolvedNode>&, fu_VEC<fu_VEC<s_Target>>&, int, const s_Target&);
 static s_Type Scope_lookupType(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeSkipMemos&, const s_Node&);
-static s_Type T(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, const s_Type&, const s_Node&, const fu_MAP<fu_STR, s_Type>&, int);
+static s_Type T(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Node&, const fu_MAP<fu_STR, s_Type>&, int);
+static s_Type solveArrlit_itemType(const s_Context&, fu_VEC<s_Info>&, s_TokenIdx&, fu::view<s_SolvedNode>, s_Type&&, int);
 static void Scope_import(const s_Context&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeSkipMemos&, int);
-static void descend(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeSkipMemos&, const s_Scope&, bool, const s_Type&, const s_Type&, fu_VEC<s_Target>&, fu_VEC<s_Target>&, int, const fu_VEC<s_ScopeSkip>&, const s_Type&, bool, bool);
+static void descend(const s_Context&, s_Module&, fu_VEC<s_Info>&, s_TokenIdx&, s_Scope&, s_ScopeMemo&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, int&, s_CurrentFn&, fu_VEC<s_Helpers>&, int&, fu_MAP<fu_STR, s_Target>&, const s_Type&, const s_Scope&, bool, const s_Type&, const s_Type&, fu_VEC<s_Target>&, fu_VEC<s_Target>&, int, const fu_VEC<s_ScopeSkip>&, fu_VEC<s_SolvedNode>&, fu_VEC<fu_VEC<s_Target>>&, const s_Type&, bool, bool);
 void Scope_pop(s_Scope&, const s_ScopeMemo&, fu_VEC<s_Helpers>&);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 void Scope_set(s_Scope&, const fu_STR&, const s_Target&, bool);
@@ -295,7 +298,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -312,6 +315,7 @@ struct s_ScopeItem
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -319,6 +323,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -449,7 +454,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -625,7 +630,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -637,7 +641,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -855,52 +858,52 @@ struct s_MapFields
 
                                 #ifndef DEF_N_FnRecursion
                                 #define DEF_N_FnRecursion
-inline const int N_FnRecursion = (1 << 0);
+inline constexpr int N_FnRecursion = (1 << 0);
                                 #endif
 
                                 #ifndef DEF_N_FnResolve
                                 #define DEF_N_FnResolve
-inline const int N_FnResolve = (1 << 1);
+inline constexpr int N_FnResolve = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_N_FnReopen
                                 #define DEF_N_FnReopen
-inline const int N_FnReopen = (1 << 2);
+inline constexpr int N_FnReopen = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_N_TypeRecursion
                                 #define DEF_N_TypeRecursion
-inline const int N_TypeRecursion = (1 << 3);
+inline constexpr int N_TypeRecursion = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_N_TypeResolve
                                 #define DEF_N_TypeResolve
-inline const int N_TypeResolve = (1 << 4);
+inline constexpr int N_TypeResolve = (1 << 4);
                                 #endif
 
                                 #ifndef DEF_N_TypeReopen
                                 #define DEF_N_TypeReopen
-inline const int N_TypeReopen = (1 << 5);
+inline constexpr int N_TypeReopen = (1 << 5);
                                 #endif
 
                                 #ifndef DEF_N_DeadCode
                                 #define DEF_N_DeadCode
-inline const int N_DeadCode = (1 << 6);
+inline constexpr int N_DeadCode = (1 << 6);
                                 #endif
 
                                 #ifndef DEF_N_DeadCall
                                 #define DEF_N_DeadCall
-inline const int N_DeadCall = (1 << 7);
+inline constexpr int N_DeadCall = (1 << 7);
                                 #endif
 
                                 #ifndef DEF_N_DeadLet
                                 #define DEF_N_DeadLet
-inline const int N_DeadLet = (1 << 8);
+inline constexpr int N_DeadLet = (1 << 8);
                                 #endif
 
                                 #ifndef DEF_N_DeadIf
                                 #define DEF_N_DeadIf
-inline const int N_DeadIf = (1 << 9);
+inline constexpr int N_DeadIf = (1 << 9);
                                 #endif
 
 static const bool OPTI_autoshadow = true;
@@ -919,35 +922,7 @@ static const bool SELF_TEST = true;
 
 static const bool CANNOT_definit_mutrefs = true;
 
-                                #ifndef DEF_q_rx_copy
-                                #define DEF_q_rx_copy
-inline const int q_rx_copy = (1 << 2);
-                                #endif
-
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline const int q_trivial = (1 << 3);
-                                #endif
-
-                                #ifndef DEF_Trivial
-                                #define DEF_Trivial
-inline const int Trivial = (q_rx_copy | q_trivial);
-                                #endif
-
-                                #ifndef DEF_q_primitive
-                                #define DEF_q_primitive
-inline const int q_primitive = (1 << 4);
-                                #endif
-
-                                #ifndef DEF_Primitive
-                                #define DEF_Primitive
-inline const int Primitive = (Trivial | q_primitive);
-                                #endif
-
-                                #ifndef DEF_t_byte
-                                #define DEF_t_byte
-inline const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_byte;
 
 static void _Scope_import__forceCopy(const s_Context& ctx_0, s_Scope& _scope_0, const int modid)
 {
@@ -959,10 +934,7 @@ static s_SolvedNode solved(const s_Node& node, const s_Type& type, const fu_VEC<
     return s_SolvedNode { fu_STR(node.kind), int(node.flags), fu_STR(node.value), fu_VEC<s_SolvedNode>(items), s_TokenIdx(node.token), s_Type(type), s_Target(target) };
 }
 
-                                #ifndef DEF_t_void
-                                #define DEF_t_void
-inline const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_void;
 
 static int unorderedClassify(const fu_STR& kind)
 {
@@ -979,14 +951,11 @@ static int unorderedClassify(const fu_STR& kind)
                                 #define DEFt_if_last_kEWY
 inline const s_SolvedNode& if_last_kEWY(fu_VEC<s_SolvedNode>& s)
 {
-    return s.size() ? s.mutref((s.size() - 1)) : fu::Default<s_SolvedNode>::value;
+    return s.size() ? s.mutref((s.size() - 1)) : (*(const s_SolvedNode*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEF_t_never
-                                #define DEF_t_never
-inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_never;
 
 [[noreturn]] static fu::never fail(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, fu_STR&& reason)
 {
@@ -1007,7 +976,7 @@ inline const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifet
 
                                 #ifndef DEF_HM_Function
                                 #define DEF_HM_Function
-inline const short HM_Function = (short(1) << short(3));
+inline constexpr short HM_Function = (short(1) << short(3));
                                 #endif
 
 static void checkAssignable(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const s_Type& host, const s_Type& guest, const fu_STR& err, const fu_STR& id, const fu_STR& sep)
@@ -1050,6 +1019,16 @@ static s_Overload& GET_mut(s_Module& module_0, s_Scope& _scope_0, const s_Target
 
     return _scope_0.overloads.mutref((target.index - 1));
 }
+
+                                #ifndef DEF_q_rx_copy
+                                #define DEF_q_rx_copy
+inline constexpr int q_rx_copy = (1 << 2);
+                                #endif
+
+                                #ifndef DEF_q_trivial
+                                #define DEF_q_trivial
+inline constexpr int q_trivial = (1 << 3);
+                                #endif
 
 static s_SolvedNode createCopy(const s_SolvedNode& node)
 {
@@ -1115,20 +1094,20 @@ static s_SolvedNode createBlock(const s_TokenIdx& token, const s_Type& type, con
 
                                 #ifndef DEF_HM_LabelUsed
                                 #define DEF_HM_LabelUsed
-inline const short HM_LabelUsed = (short(1) << short(6));
+inline constexpr short HM_LabelUsed = (short(1) << short(6));
                                 #endif
 
-static s_SolvedNode solveBlock(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type, const int fnbody_of, const short mask, const int kills)
+static s_SolvedNode solveBlock(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type, const int fnbody_of, const short mask, const int kills)
 {
     const s_TokenIdx& token = node.token;
     fu_VEC<s_Node> nodes = ((node.kind == "block"_fu) ? fu_VEC<s_Node>(node.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(node) } });
-    const fu_STR& id = ((node.kind == "block"_fu) ? node.value : fu::Default<fu_STR>::value);
+    const fu_STR& id = ((node.kind == "block"_fu) ? node.value : (*(const fu_STR*)fu::NIL));
     const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
     fu_DEFER(Scope_pop(_scope_0, scope0, _helpers_0));
     const int helpers_idx = _helpers_0.size();
     _helpers_0 += s_Helpers { int(fnbody_of), fu_STR(id), short(mask), (fnbody_of ? -1 : int(_current_fn_0.out.target.index)), int(kills), s_Type(type), s_Type{}, fu_VEC<int>{} };
     const bool expr = (!fnbody_of && !is_void(type));
-    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, nodes, t_void, type, expr, true, -1, (helpers_idx + 1));
+    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, nodes, t_void, type, expr, true, -1, (helpers_idx + 1));
     s_Helpers& h = _helpers_0.mutref(helpers_idx);
     if (fnbody_of)
     {
@@ -1189,43 +1168,57 @@ static s_SolvedNode solveBlock(const s_Context& ctx_0, s_Module& module_0, fu_VE
 
                                 #ifndef DEF_HM_CanBreak
                                 #define DEF_HM_CanBreak
-inline const short HM_CanBreak = (short(1) << short(0));
+inline constexpr short HM_CanBreak = (short(1) << short(0));
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
-inline const int F_TEMPLATE = (1 << 28);
+inline constexpr int F_TEMPLATE = (1 << 28);
                                 #endif
 
                                 #ifndef DEF_SS_LAZY
                                 #define DEF_SS_LAZY
-inline const uint32_t SS_LAZY = (0x1u << 0u);
+inline constexpr unsigned SS_LAZY = (0x1u << 0u);
                                 #endif
 
                                 #ifndef DEF_FN_RET_BACK
                                 #define DEF_FN_RET_BACK
-inline const int FN_RET_BACK = -2;
+inline constexpr int FN_RET_BACK = -2;
                                 #endif
+
+                                #ifndef DEF_F_COMPOUND_ID
+                                #define DEF_F_COMPOUND_ID
+inline constexpr int F_COMPOUND_ID = (1 << 6);
+                                #endif
+
+static fu_STR Autocall_splice(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, fu_STR& name)
+{
+    for (int i = 0; i < name.size(); i++)
+    {
+        if (name.mutref(i) == std::byte('.'))
+        {
+            fu_STR ret = fu::slice(name, (i + 1));
+            name.shrink(i);
+            return ret;
+        };
+    };
+    fail(ctx_0, _info_0, _here_0, (("Autocall: no `.` in id `"_fu + name) + "`."_fu));
+}
 
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
-inline const int LET_TYPE = 0;
+inline constexpr int LET_TYPE = 0;
                                 #endif
 
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
-inline const int LET_INIT = 1;
+inline constexpr int LET_INIT = 1;
                                 #endif
 
-static s_Type T(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node_0, const fu_MAP<fu_STR, s_Type>& typeParams_0, const int i)
+static s_Type T(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node_0, const fu_MAP<fu_STR, s_Type>& typeParams_0, const int i)
 {
-    return evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node_0.items[i], typeParams_0).type;
+    return evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node_0.items[i], typeParams_0).type;
 }
-
-                                #ifndef DEF_F_QUALIFIED
-                                #define DEF_F_QUALIFIED
-inline const int F_QUALIFIED = (1 << 6);
-                                #endif
 
 static const s_Module& findModule(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const fu_STR& fuzimport)
 {
@@ -1256,9 +1249,9 @@ static const s_Scope& dequalify_andGetScope(const s_Context& ctx_0, s_Module& mo
     return _scope_0;
 }
 
-                                #ifndef DEFt_each_6fxi
-                                #define DEFt_each_6fxi
-inline void each_6fxi(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, int& count_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_lgG7
+                                #define DEFt_each_lgG7
+inline void each_lgG7(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, int& count_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -1285,30 +1278,25 @@ inline void each_6fxi(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenId
 
 static int countUsings(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope, const bool local_scope)
 {
-    const fu_VEC<s_ScopeSkip>& scope_skip = (local_scope ? _ss_0.usings : fu::Default<fu_VEC<s_ScopeSkip>>::value);
+    const fu_VEC<s_ScopeSkip>& scope_skip = (local_scope ? _ss_0.usings : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL));
     int count = 0;
-    each_6fxi(ctx_0, _info_0, _here_0, count, scope.usings, scope_skip, 0, 0);
+    each_lgG7(ctx_0, _info_0, _here_0, count, scope.usings, scope_skip, 0, 0);
     return count;
 }
 
                                 #ifndef DEF_F_NAMED_ARGS
                                 #define DEF_F_NAMED_ARGS
-inline const int F_NAMED_ARGS = (1 << 24);
+inline constexpr int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
                                 #ifndef DEF_F_OPT_ARG
                                 #define DEF_F_OPT_ARG
-inline const int F_OPT_ARG = (1 << 16);
+inline constexpr int F_OPT_ARG = (1 << 16);
                                 #endif
 
-                                #ifndef DEF_F_ACCESS
-                                #define DEF_F_ACCESS
-inline const int F_ACCESS = (1 << 4);
-                                #endif
-
-                                #ifndef DEFt_each_ILpx
-                                #define DEFt_each_ILpx
-inline void each_ILpx(s_BitSet& seen_0, const fu_VEC<int>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_Isxj
+                                #define DEFt_each_Isxj
+inline void each_Isxj(s_BitSet& seen_0, const fu_VEC<int>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -1342,7 +1330,7 @@ static void visitTypeImports(const s_Context& ctx_0, s_Module& module_0, s_Scope
         {
             add(seen_0, 0);
             add(seen_0, module_0.modid);
-            each_ILpx(seen_0, scope_0.imports, (local_scope_0 ? _ss_0.imports : fu::Default<fu_VEC<s_ScopeSkip>>::value), 0, 0);
+            each_Isxj(seen_0, scope_0.imports, (local_scope_0 ? _ss_0.imports : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), 0, 0);
         };
         if (!add_once(seen_0, modid))
             continue;
@@ -1365,9 +1353,9 @@ static s_Overload GET(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scop
     return s_Overload(ctx_0.modules[target.modid].out.solve.scope.overloads[(target.index - 1)]);
 }
 
-                                #ifndef DEFt_each_ZyBh
-                                #define DEFt_each_ZyBh
-inline void each_ZyBh(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, fu_STR& id_0, fu_VEC<s_Target>& extra_items_0, s_BitSet& seen_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_w1FX
+                                #define DEFt_each_w1FX
+inline void each_w1FX(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, fu_STR& id_0, fu_VEC<s_Target>& extra_items_0, s_BitSet& seen_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -1388,59 +1376,72 @@ inline void each_ZyBh(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scop
 }
                                 #endif
 
+                                #ifndef DEF_F_ACCESS
+                                #define DEF_F_ACCESS
+inline constexpr int F_ACCESS = (1 << 4);
+                                #endif
+
                                 #ifndef DEF_F_METHOD
                                 #define DEF_F_METHOD
-inline const int F_METHOD = (1 << 0);
+inline constexpr int F_METHOD = (1 << 0);
                                 #endif
 
                                 #ifndef DEF_F_INFIX
                                 #define DEF_F_INFIX
-inline const int F_INFIX = (1 << 1);
+inline constexpr int F_INFIX = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_F_PREFIX
                                 #define DEF_F_PREFIX
-inline const int F_PREFIX = (1 << 2);
+inline constexpr int F_PREFIX = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
                                 #define DEF_F_POSTFIX
-inline const int F_POSTFIX = (1 << 3);
+inline constexpr int F_POSTFIX = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_F_IMPLICIT
                                 #define DEF_F_IMPLICIT
-inline const int F_IMPLICIT = (1 << 17);
+inline constexpr int F_IMPLICIT = (1 << 17);
                                 #endif
 
                                 #ifndef DEF_SS_DID_START
                                 #define DEF_SS_DID_START
-inline const uint32_t SS_DID_START = (0x1u << 1u);
+inline constexpr unsigned SS_DID_START = (0x1u << 1u);
                                 #endif
 
                                 #ifndef DEF_SS_FINALIZED
                                 #define DEF_SS_FINALIZED
-inline const uint32_t SS_FINALIZED = (0x1u << 3u);
+inline constexpr unsigned SS_FINALIZED = (0x1u << 3u);
                                 #endif
 
                                 #ifndef DEF_SS_DIRTY
                                 #define DEF_SS_DIRTY
-inline const uint32_t SS_DIRTY = (0x1u << 2u);
+inline constexpr unsigned SS_DIRTY = (0x1u << 2u);
+                                #endif
+
+                                #ifndef DEFt_last_DRKs
+                                #define DEFt_last_DRKs
+inline const s_Target& last_DRKs(const fu_VEC<s_Target>& s)
+{
+    return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
+}
                                 #endif
 
                                 #ifndef DEF_F_SPREAD_INLINE
                                 #define DEF_F_SPREAD_INLINE
-inline const int F_SPREAD_INLINE = (1 << 25);
+inline constexpr int F_SPREAD_INLINE = (1 << 25);
                                 #endif
 
                                 #ifndef DEF_F_INLINE
                                 #define DEF_F_INLINE
-inline const int F_INLINE = (1 << 29);
+inline constexpr int F_INLINE = (1 << 29);
                                 #endif
 
-                                #ifndef DEFt_unpackAddrOfFn_LrpO
-                                #define DEFt_unpackAddrOfFn_LrpO
-inline void unpackAddrOfFn_LrpO(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Template& tEmplate_0, int& parent_idx_0, const fu_STR& canon, int)
+                                #ifndef DEFt_unpackAddrOfFn_3c1h
+                                #define DEFt_unpackAddrOfFn_3c1h
+inline void unpackAddrOfFn_3c1h(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Template& tEmplate_0, int& parent_idx_0, const fu_STR& canon, int)
 {
     int i = 0;
     while (i < canon.size())
@@ -1474,23 +1475,23 @@ static bool is_SPECFAIL(const s_Target& target)
     return target.modid == -1;
 }
 
-inline static fu_STR id_Hlhp(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Target& target_1)
-{
-    return ((target_1.modid != -1) ? (("\""_fu + GET(ctx_0, module_0, _scope_0, target_1).name) + "\""_fu) : "SPEC_FAIL"_fu);
-}
-
 inline static fu_STR id_CEnz(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const s_Target& target_1)
 {
     return ((target_1.modid != -1) ? (("\""_fu + GET(ctx_0, module_0, _scope_0, target_1).name) + "\""_fu) : "SPEC_FAIL"_fu);
 }
 
-static void setSpec(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, bool isInline_0, const fu_STR& mangle_1, const s_Target& target, const bool nx)
+inline static fu_STR id_Hlhp(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, s_Target& target_1)
+{
+    return ((target_1.modid != -1) ? (("\""_fu + GET(ctx_0, module_0, _scope_0, target_1).name) + "\""_fu) : "SPEC_FAIL"_fu);
+}
+
+static void setSpec(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, fu_MAP<fu_STR, s_Target>& _specs_0, bool isInline_0, const fu_STR& mangle_1, const s_Target& target, const bool nx)
 {
     if (isInline_0)
         fail(ctx_0, _info_0, _here_0, "inline.setSpec"_fu);
 
     s_Target* _0;
-    s_Target& t = (*(_0 = &(module_0.out.specs.upsert(mangle_1))) ? *_0 : *_0 = s_Target{});
+    s_Target& t = (*(_0 = &(_specs_0.upsert(mangle_1))) ? *_0 : *_0 = s_Target{});
     if (!((!t && nx) || (is_SPECFAIL(t) && !nx)))
         fail(ctx_0, _info_0, _here_0, ((((((((("About to screw up royally, replacing spec: "_fu + t.index) + " with "_fu) + target.index) + ", mangle: "_fu) + mangle_1) + ", that's: "_fu) + id_Hlhp(ctx_0, module_0, _scope_0, t)) + " becoming "_fu) + id_CEnz(ctx_0, module_0, _scope_0, target)));
 
@@ -1501,7 +1502,7 @@ static void setSpec(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& 
                                 #define DEFt_if_last_314q
 inline const s_ScopeSkip& if_last_314q(fu_VEC<s_ScopeSkip>& s)
 {
-    return s.size() ? s.mutref((s.size() - 1)) : fu::Default<s_ScopeSkip>::value;
+    return s.size() ? s.mutref((s.size() - 1)) : (*(const s_ScopeSkip*)fu::NIL);
 }
                                 #endif
 
@@ -1598,9 +1599,9 @@ static s_Type Scope_lookupType(const s_Context& ctx_0, s_Module& module_0, fu_VE
     int scope_iterator {};
     s_Target overloadIdx {};
     bool shadows {};
-    const int qualified = (flags & F_QUALIFIED);
+    const int qualified = (flags & F_COMPOUND_ID);
     const s_Scope& scope = (qualified ? dequalify_andGetScope(ctx_0, module_0, _info_0, _here_0, _scope_0, id) : _scope_0);
-    while ((overloadIdx = search(scope.items, id, scope_iterator, (!qualified ? _ss_0.items : fu::Default<fu_VEC<s_ScopeSkip>>::value), shadows, s_Target{}, fu::view<s_Target>{}, fu::view<s_ScopeItem>{})))
+    while ((overloadIdx = search(scope.items, id, scope_iterator, (!qualified ? _ss_0.items : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), shadows, s_Target{}, fu::view<s_Target>{}, fu::view<s_ScopeItem>{})))
     {
         s_Overload maybe = GET(ctx_0, module_0, _scope_0, overloadIdx);
         if (maybe.kind == "type"_fu)
@@ -1620,105 +1621,25 @@ static bool want(const s_Type& type_0, const s_Type& t)
     return type_0.vtype.canon == t.vtype.canon;
 }
 
-                                #ifndef DEF_q_arithmetic
-                                #define DEF_q_arithmetic
-inline const int q_arithmetic = (1 << 5);
-                                #endif
+extern const s_Type t_f32;
 
-                                #ifndef DEF_Arithmetic
-                                #define DEF_Arithmetic
-inline const int Arithmetic = (Primitive | q_arithmetic);
-                                #endif
+extern const s_Type t_f64;
 
-                                #ifndef DEF_q_floating_pt
-                                #define DEF_q_floating_pt
-inline const int q_floating_pt = (1 << 9);
-                                #endif
+extern const s_Type t_i32;
 
-                                #ifndef DEF_q_signed
-                                #define DEF_q_signed
-inline const int q_signed = (1 << 7);
-                                #endif
+extern const s_Type t_i64;
 
-                                #ifndef DEF_FloatingPt
-                                #define DEF_FloatingPt
-inline const int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
-                                #endif
+extern const s_Type t_i16;
 
-                                #ifndef DEF_t_f32
-                                #define DEF_t_f32
-inline const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_i8;
 
-                                #ifndef DEF_t_f64
-                                #define DEF_t_f64
-inline const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u32;
 
-                                #ifndef DEF_q_integral
-                                #define DEF_q_integral
-inline const int q_integral = (1 << 6);
-                                #endif
+extern const s_Type t_u64;
 
-                                #ifndef DEF_Integral
-                                #define DEF_Integral
-inline const int Integral = (Arithmetic | q_integral);
-                                #endif
+extern const s_Type t_u16;
 
-                                #ifndef DEF_SignedInt
-                                #define DEF_SignedInt
-inline const int SignedInt = (Integral | q_signed);
-                                #endif
-
-                                #ifndef DEF_t_i32
-                                #define DEF_t_i32
-inline const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i64
-                                #define DEF_t_i64
-inline const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i16
-                                #define DEF_t_i16
-inline const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_i8
-                                #define DEF_t_i8
-inline const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_q_unsigned
-                                #define DEF_q_unsigned
-inline const int q_unsigned = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_UnsignedInt
-                                #define DEF_UnsignedInt
-inline const int UnsignedInt = (Integral | q_unsigned);
-                                #endif
-
-                                #ifndef DEF_t_u32
-                                #define DEF_t_u32
-inline const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u64
-                                #define DEF_t_u64
-inline const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u16
-                                #define DEF_t_u16
-inline const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
-
-                                #ifndef DEF_t_u8
-                                #define DEF_t_u8
-inline const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_u8;
 
 static s_Type solveInt(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const fu_STR& v, const s_Type& type)
 {
@@ -1804,7 +1725,7 @@ static s_Type tryRetyping(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_Tok
 
                                 #ifndef DEF_F_MUT
                                 #define DEF_F_MUT
-inline const int F_MUT = (1 << 16);
+inline constexpr int F_MUT = (1 << 16);
                                 #endif
 
 static bool trySolveTypeParams(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Node& node, s_Type&& type, fu_MAP<fu_STR, s_Type>& typeParams)
@@ -1881,7 +1802,7 @@ inline static fu_STR mangleArguments_kEWY(fu_VEC<s_SolvedNode>& args)
 
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
-inline const int FN_BODY_BACK = -1;
+inline constexpr int FN_BODY_BACK = -1;
                                 #endif
 
 static s_Type evalTypeParam(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const fu_STR& id, const fu_MAP<fu_STR, s_Type>& typeParams)
@@ -1890,13 +1811,13 @@ static s_Type evalTypeParam(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s
     return (_0 = s_Type(typeParams[id])) ? static_cast<s_Type&&>(_0) : (_0 = Scope_lookupType(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, ("$"_fu + (id ? id : fail(ctx_0, _info_0, _here_0, "Falsy type param id."_fu))), 0)) ? static_cast<s_Type&&>(_0) : fail(ctx_0, _info_0, _here_0, (("No type param `$"_fu + id) + "` in scope."_fu));
 }
 
-static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, fu_MAP<fu_STR, s_Type>& typeParams)
+static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, fu_MAP<fu_STR, s_Type>& typeParams)
 {
     if (node.kind == "and"_fu)
     {
         for (int i = 0; i < node.items.size(); i++)
         {
-            if (!evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[i], typeParams))
+            if (!evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[i], typeParams))
                 return false;
 
         };
@@ -1906,7 +1827,7 @@ static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s
     {
         for (int i = 0; i < node.items.size(); i++)
         {
-            if (evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[i], typeParams))
+            if (evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[i], typeParams))
                 return true;
 
         };
@@ -1922,16 +1843,22 @@ static bool evalTypePattern(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s
             return type_has(evalTypeParam(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, left.value, typeParams), (right.value ? right.value : fail(ctx_0, _info_0, _here_0, "Falsy type tag."_fu)));
         else
         {
-            s_Type actual = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, left, typeParams).type;
+            s_Type actual = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, left, typeParams).type;
             return trySolveTypeParams(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, right, s_Type(actual), typeParams);
         };
     };
     fail(ctx_0, _info_0, _here_0, (((("TODO evalTypePattern fallthrough: "_fu + node.kind) + "("_fu) + node.items.size()) + ")"_fu));
 }
 
-                                #ifndef DEFt_pairs_KAyR
-                                #define DEFt_pairs_KAyR
-inline void pairs_KAyR(s_Module& module_0, s_Scope& _scope_0, fu_VEC<s_ScopeItem>& res_0, const fu_MAP<fu_STR, s_Type>& a, int)
+static const s_Target& checkStruct(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const s_Type& type_1)
+{
+    const s_Target& t = lookupStruct(type_1, module_0, ctx_0).target;
+    return (GET(ctx_0, module_0, _scope_0, t).type == type_1) ? t : (*(const s_Target*)fu::NIL);
+}
+
+                                #ifndef DEFt_pairs_6paU
+                                #define DEFt_pairs_6paU
+inline void pairs_6paU(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, fu_VEC<s_ScopeItem>& res_0, const fu_MAP<fu_STR, s_Type>& a, int)
 {
     const fu_VEC<fu_STR>& k = a.m_keys;
     const fu_VEC<s_Type>& v = a.m_values;
@@ -1940,22 +1867,23 @@ inline void pairs_KAyR(s_Module& module_0, s_Scope& _scope_0, fu_VEC<s_ScopeItem
         const fu_STR& id = k[i];
         const s_Type& type = v[i];
         fu_STR name = ("$"_fu + id);
-        const s_Target target = Scope_Typedef(_scope_0, fu::Default<fu_STR>::value, type, 0, s_Template{}, ("$"_fu + id), 0u, module_0);
+        s_Target _0 {};
+        const s_Target target = ((_0 = s_Target((isStruct(type) ? checkStruct(ctx_0, module_0, _scope_0, type) : (*(const s_Target*)fu::NIL)))) ? _0 : Scope_Typedef(_scope_0, (*(const fu_STR*)fu::NIL), type, 0, s_Template{}, ("$"_fu + id), 0u, module_0));
         Scope_set(res_0, name, target, false);
     };
 }
                                 #endif
 
-static fu_VEC<s_ScopeItem> intoScopeItems(s_Module& module_0, s_Scope& _scope_0, const fu_MAP<fu_STR, s_Type>& typeParams)
+static fu_VEC<s_ScopeItem> intoScopeItems(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const fu_MAP<fu_STR, s_Type>& typeParams)
 {
     fu_VEC<s_ScopeItem> res {};
-    pairs_KAyR(module_0, _scope_0, res, typeParams, 0);
+    pairs_6paU(ctx_0, module_0, _scope_0, res, typeParams, 0);
     return res;
 }
 
                                 #ifndef DEF_F_ARG
                                 #define DEF_F_ARG
-inline const int F_ARG = (1 << 9);
+inline constexpr int F_ARG = (1 << 9);
                                 #endif
 
 static s_Type tryGetArgSpecType(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, const fu_VEC<s_ScopeItem>& extra_items_0, const fu_STR& id)
@@ -1967,7 +1895,7 @@ static s_Type tryGetArgSpecType(const s_Context& ctx_0, s_Module& module_0, fu_V
         if (m.id == param)
         {
             s_Overload o = GET(ctx_0, module_0, _scope_0, target(m));
-            if (!((o.kind == "type"_fu) && (o.max == 0)))
+            if (!(o.kind == "type"_fu))
                 fail(ctx_0, _info_0, _here_0, (((((("tryGetArgSpecType: Not a typeparam: `"_fu + o.kind) + ":"_fu) + param) + "("_fu) + o.max) + ")`."_fu));
 
             return static_cast<s_Type&&>(o.type);
@@ -1976,14 +1904,9 @@ static s_Type tryGetArgSpecType(const s_Context& ctx_0, s_Module& module_0, fu_V
     return s_Type{};
 }
 
-                                #ifndef DEF_F_FIELD
-                                #define DEF_F_FIELD
-inline const int F_FIELD = (1 << 10);
-                                #endif
-
                                 #ifndef DEF_F_REF
                                 #define DEF_F_REF
-inline const int F_REF = (1 << 22);
+inline constexpr int F_REF = (1 << 22);
                                 #endif
 
 static s_SolvedNode solveLetLike_dontTouchScope(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, int& _notes_0, const s_TokenIdx& token, const fu_STR& id, int flags, s_SolvedNode&& init, s_Type&& annot, const s_Type& specType, const bool deadcode_on_never)
@@ -2033,31 +1956,26 @@ static s_SolvedNode solveLetLike_dontTouchScope(const s_Context& ctx_0, fu_VEC<s
     return s_SolvedNode { "let"_fu, int(flags), fu_STR(id), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { s_SolvedNode{}, s_SolvedNode(init) } }, s_TokenIdx(token), s_Type(t_let), s_Target{} };
 }
 
-static s_SolvedNode solveLetLike_dontTouchScope(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& specType, const bool deadcode_on_never)
+static s_SolvedNode solveLetLike_dontTouchScope(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& specType, const bool deadcode_on_never)
 {
     const s_Node& n_annot = node.items[LET_TYPE];
-    s_Type annot = (specType ? s_Type(specType) : (n_annot ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_annot, fu_MAP<fu_STR, s_Type>{}).type : s_Type{}));
+    s_Type annot = (specType ? s_Type(specType) : (n_annot ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_annot, fu_MAP<fu_STR, s_Type>{}).type : s_Type{}));
     if (annot && (node.flags & F_REF))
         annot = add_mutref(s_Type(annot), Lifetime_temporary());
 
     const s_Node& n_init = node.items[LET_INIT];
-    s_SolvedNode init = (n_init ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_init, annot, bool{}, 0) : s_SolvedNode{});
+    s_SolvedNode init = (n_init ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_init, annot, bool{}, 0) : s_SolvedNode{});
     return solveLetLike_dontTouchScope(ctx_0, _info_0, _here_0, _notes_0, node.token, node.value, int(node.flags), s_SolvedNode(init), s_Type(annot), specType, deadcode_on_never);
 }
 
                                 #ifndef DEF_F_SHADOW
                                 #define DEF_F_SHADOW
-inline const int F_SHADOW = (1 << 23);
-                                #endif
-
-                                #ifndef DEF_F_GLOBAL
-                                #define DEF_F_GLOBAL
-inline const int F_GLOBAL = (1 << 11);
+inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
                                 #ifndef DEF_F_USING
                                 #define DEF_F_USING
-inline const int F_USING = (1 << 18);
+inline constexpr int F_USING = (1 << 18);
                                 #endif
 
 static s_SolvedNode createEmpty(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const fu_STR& kind, const s_Type& type, const s_Target& target)
@@ -2065,9 +1983,9 @@ static s_SolvedNode createEmpty(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0,
     return s_SolvedNode { fu_STR(kind), 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_Type(type), s_Target(target) };
 }
 
-                                #ifndef DEFt_each_NZL1
-                                #define DEFt_each_NZL1
-inline void each_NZL1(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const fu_STR& id_0, int& any_0, int& same_0, fu_VEC<s_ScopeItem>& items, fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_GaTO
+                                #define DEFt_each_GaTO
+inline void each_GaTO(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const fu_STR& id_0, int& any_0, int& same_0, fu_VEC<s_ScopeItem>& items, fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -2093,11 +2011,6 @@ inline void each_NZL1(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scop
         i0 = ss.end;
     };
 }
-                                #endif
-
-                                #ifndef DEF_F_LOCAL
-                                #define DEF_F_LOCAL
-inline const int F_LOCAL = (1 << 8);
                                 #endif
 
 static s_Overload fnd(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const int index)
@@ -2160,12 +2073,12 @@ static s_Lifetime Lifetime_test(const s_Context& ctx_0, s_Module& module_0, fu_V
     return s_Lifetime(lifetime);
 }
 
-static s_Lifetime Lifetime_fromBinding(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_CurrentFn& _current_fn_0, const s_Target& target, const int flags, const s_Type& type)
+static s_Lifetime Lifetime_fromBinding(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_CurrentFn& _current_fn_0, const s_Target& target, const int local_of, const int flags, const s_Type& type)
 {
     if (!(target.modid == module_0.modid))
         fail(ctx_0, _info_0, _here_0, "not from this module"_fu);
 
-    if (flags & F_GLOBAL)
+    if (!local_of)
         return Lifetime_static();
 
     const int isArg = (flags & F_ARG);
@@ -2180,28 +2093,20 @@ static s_Lifetime Lifetime_fromBinding(const s_Context& ctx_0, s_Module& module_
 static s_Target Binding(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, s_CurrentFn& _current_fn_0, const fu_STR& id, s_Type&& type, int& flags, bool& shadows, const s_Target& reuse)
 {
     fu_STR name { id };
-    const int global = (flags & F_GLOBAL);
+    const int local_of = _current_fn_0.out.target.index;
     if (_root_scope_0)
     {
         int any = 0;
         int same = 0;
-        each_NZL1(ctx_0, module_0, _scope_0, id, any, same, _scope_0.items, _ss_0.declash, 0, _root_scope_0.items_len);
+        each_GaTO(ctx_0, module_0, _scope_0, id, any, same, _scope_0.items, _ss_0.declash, 0, _root_scope_0.items_len);
         if (same)
             name += ("_"_fu + same);
 
-        if (OPTI_autoshadow && !global && !any)
+        if (OPTI_autoshadow && local_of && !any)
         {
             shadows = true;
             flags |= F_SHADOW;
         };
-    };
-    const int local_of = (!(flags & F_FIELD) ? _current_fn_0.out.target.index : fu::Default<int>::value);
-    if (local_of)
-    {
-        if (!(!global))
-            fail(ctx_0, _info_0, _here_0, "Nope, getting it wrong."_fu);
-
-        flags |= F_LOCAL;
     };
     const s_Target target = (reuse ? s_Target(reuse) : Scope_create(_scope_0, "var"_fu, name, s_Type{}, flags, 0, 0, fu_VEC<s_Argument>{}, s_SolvedNode{}, local_of, 0u, fu_VEC<s_ScopeItem>{}, module_0));
     if (SELF_TEST && reuse)
@@ -2214,7 +2119,7 @@ static s_Target Binding(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Inf
     s_Overload& overload = GET_mut(module_0, _scope_0, target);
 
     {
-        s_Lifetime lifetime = Lifetime_fromBinding(ctx_0, module_0, _info_0, _here_0, _scope_0, _current_fn_0, target, flags, type);
+        s_Lifetime lifetime = Lifetime_fromBinding(ctx_0, module_0, _info_0, _here_0, _scope_0, _current_fn_0, target, local_of, flags, type);
         if (flags & F_ARG)
             type.lifetime = s_Lifetime{};
 
@@ -2239,12 +2144,10 @@ static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<
         fail(ctx_0, _info_0, _here_0, (("solveLet: ref without lifetime: `"_fu + id) + "`."_fu));
 
     bool shadows = !!(out.flags & F_SHADOW);
-    if (!X_unpackAddrOfFnBinding(_scope_0.items, id, out.type, shadows))
+    fu_STR cleanID = ((out.flags & F_COMPOUND_ID) ? fu::slice(id, 0, fu::lfind(id, std::byte('.'), 0)) : fu_STR{});
+    const fu_STR& id_1 = (cleanID ? cleanID : id);
+    if (!X_unpackAddrOfFnBinding(_scope_0.items, id_1, out.type, shadows))
     {
-        const bool global = !_current_fn_0;
-        if (global)
-            out.flags |= F_GLOBAL;
-
         if (OPTI_dedupe_vars && !(out.flags & F_ARG))
         {
             s_SolvedNode init { out.items[LET_INIT] };
@@ -2256,7 +2159,7 @@ static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<
                 {
                     if (isAssignable(other.type, out.type))
                     {
-                        Scope_set(_scope_0, id, target, shadows);
+                        Scope_set(_scope_0, id_1, target, shadows);
                         if (out.flags & F_USING)
                             _scope_0.usings.push(target);
 
@@ -2265,11 +2168,12 @@ static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<
                 };
             };
         };
-        const s_Target target { (out.target = Binding(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, id, s_Type(out.type), out.flags, shadows, reuse)) };
-        if (global)
-            GET_mut(module_0, _scope_0, target).solved = out;
+        const s_Target target { (out.target = Binding(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, id_1, s_Type(out.type), out.flags, shadows, reuse)) };
+        s_Overload& overload = GET_mut(module_0, _scope_0, target);
+        if (!overload.local_of)
+            overload.solved = out;
 
-        Scope_set(_scope_0, id, target, shadows);
+        Scope_set(_scope_0, id_1, target, shadows);
         if (out.flags & F_USING)
             _scope_0.usings.push(target);
 
@@ -2277,12 +2181,9 @@ static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<
     return static_cast<s_SolvedNode&&>(out);
 }
 
-static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& specType, const s_Target& reuse, const bool deadcode_on_never)
+static s_SolvedNode solveLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& specType, const s_Target& reuse, const bool deadcode_on_never)
 {
-    if (node.flags & F_FIELD)
-        fail(ctx_0, _info_0, _here_0, ("solveLet: got a field: "_fu + node.value));
-
-    s_SolvedNode out = solveLetLike_dontTouchScope(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, specType, deadcode_on_never);
+    s_SolvedNode out = solveLetLike_dontTouchScope(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, specType, deadcode_on_never);
     fu_STR& id = out.value;
     return solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, s_SolvedNode(out), id, reuse, deadcode_on_never);
 }
@@ -2356,8 +2257,13 @@ static fu_STR ANON(int& _anons_0)
 
 static s_Template createTemplate(s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, const s_Node& node)
 {
-    return s_Template { s_Node(node), fu_VEC<int>((!_current_fn_0 ? _scope_0.imports : fu::Default<fu_VEC<int>>::value)), (_current_fn_0 ? Scope_snap(_scope_0, _helpers_0) : s_ScopeMemo{}), s_ScopeSkipMemos((_current_fn_0 ? _ss_0 : fu::Default<s_ScopeSkipMemos>::value)) };
+    return s_Template { s_Node(node), fu_VEC<int>((!_current_fn_0 ? _scope_0.imports : (*(const fu_VEC<int>*)fu::NIL))), (_current_fn_0 ? Scope_snap(_scope_0, _helpers_0) : s_ScopeMemo{}), s_ScopeSkipMemos((_current_fn_0 ? _ss_0 : (*(const s_ScopeSkipMemos*)fu::NIL))) };
 }
+
+                                #ifndef DEF_F_REST_ARG
+                                #define DEF_F_REST_ARG
+inline constexpr int F_REST_ARG = (1 << 26);
+                                #endif
 
 static s_Overload GET_local(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const int index)
 {
@@ -2366,25 +2272,31 @@ static s_Overload GET_local(const s_Context& ctx_0, s_Module& module_0, s_Scope&
 
                                 #ifndef DEF_SS_UPDATED
                                 #define DEF_SS_UPDATED
-inline const uint32_t SS_UPDATED = (0x1u << 4u);
+inline constexpr unsigned SS_UPDATED = (0x1u << 4u);
                                 #endif
 
 static void updateScope(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_CurrentFn& _current_fn_0, bool isInline_0, s_Target& target_0, const s_CurrentFn& out_1, const s_Type& retval)
 {
     const fu_VEC<s_SolvedNode>& items_1 = out_1.out.items;
+    const int N = (items_1.size() + FN_RET_BACK);
     int min = 0;
-    const int max = (items_1.size() + FN_RET_BACK);
+    int max = N;
     fu_VEC<s_Argument> args_1 {};
-    for (int i = 0; i < max; i++)
+    for (int i = 0; i < N; i++)
     {
         const s_SolvedNode& argNode = items_1[i];
         if (!(argNode.kind == "let"_fu))
             fail(ctx_0, _info_0, _here_0, fu_STR{});
 
+        fu_STR name { argNode.value };
+        fu_STR autocall = ((argNode.flags & F_COMPOUND_ID) ? Autocall_splice(ctx_0, _info_0, _here_0, name) : fu_STR{});
         const bool isImplicit = !!(argNode.flags & F_IMPLICIT);
-        s_Argument arg = s_Argument { fu_STR((argNode.value ? argNode.value : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_Type((argNode.type ? argNode.type : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_SolvedNode((!isImplicit ? argNode.items[LET_INIT] : fu::Default<s_SolvedNode>::value)), int(argNode.flags) };
+        s_Argument arg = s_Argument { fu_STR(name), fu_STR(autocall), s_Type((argNode.type ? argNode.type : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_SolvedNode((!isImplicit ? argNode.items[LET_INIT] : (*(const s_SolvedNode*)fu::NIL))), int(argNode.flags) };
         if (!arg.dEfault && !isImplicit)
             min++;
+
+        if (arg.flags & F_REST_ARG)
+            max = int(0x7fffffffu);
 
         args_1.push(arg);
     };
@@ -2442,20 +2354,20 @@ inline static fu_STR mangleArguments_zMI6(const fu_VEC<s_Argument>& args)
 
                                 #ifndef DEF_HM_CanReturn
                                 #define DEF_HM_CanReturn
-inline const short HM_CanReturn = (short(1) << short(1));
+inline constexpr short HM_CanReturn = (short(1) << short(1));
                                 #endif
 
                                 #ifndef DEF_F_LAMBDA
                                 #define DEF_F_LAMBDA
-inline const int F_LAMBDA = (1 << 30);
+inline constexpr int F_LAMBDA = (1 << 30);
                                 #endif
 
                                 #ifndef DEF_HM_Lambda
                                 #define DEF_HM_Lambda
-inline const short HM_Lambda = (short(1) << short(4));
+inline constexpr short HM_Lambda = (short(1) << short(4));
                                 #endif
 
-static void lazySolveEnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, s_Overload& o)
+static void lazySolveEnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, s_Overload& o)
 {
     fu_VEC<int> reopen {};
     const int parent = o.local_of;
@@ -2506,11 +2418,11 @@ static void lazySolveEnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_In
     for (int i = 0; i < reopen.size(); i++)
     {
         const s_Target t = s_Target { int(module_0.modid), int(reopen.mutref(i)) };
-        lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, t, GET(ctx_0, module_0, _scope_0, t));
+        lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, t, GET(ctx_0, module_0, _scope_0, t));
     };
 }
 
-static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Target& into, const s_Target& overloadIdx, fu_VEC<s_SolvedNode>&& args, fu_STR&& mangle, fu::view<int> reorder, const bool use_reorder)
+static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Target& into, const s_Target& overloadIdx, fu_VEC<s_SolvedNode>&& args, fu_STR&& mangle, fu::view<int> reorder, const bool use_reorder, const fu_VEC<fu_VEC<s_Target>>& conversions, const int REST_START, const s_Type& REST_TYPE)
 {
     if (use_reorder)
     {
@@ -2518,9 +2430,25 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
         for (int i = 0; i < reorder.size(); i++)
         {
             const int callsiteIndex = reorder[i];
-            reordered.push(((callsiteIndex >= 0) && (callsiteIndex < args.size()) ? args.mutref(callsiteIndex) : fu::Default<s_SolvedNode>::value));
+            reordered.push(((callsiteIndex >= 0) && (callsiteIndex < args.size()) ? args.mutref(callsiteIndex) : (*(const s_SolvedNode*)fu::NIL)));
         };
-        args = reordered;
+        std::swap(args, reordered);
+    };
+    for (int i = 0; i < conversions.size(); i++)
+    {
+        const fu_VEC<s_Target>& c = conversions[i];
+        if (c)
+        {
+            s_SolvedNode& a = args.mutref(i);
+            a.kind = "__conv"_fu;
+            a.type = GET(ctx_0, module_0, _scope_0, last_DRKs(c)).type;
+        };
+    };
+    if (REST_TYPE)
+    {
+        s_SolvedNode& a = args.mutref(REST_START);
+        a.kind = "__rest"_fu;
+        a.type = REST_TYPE;
     };
     fu_VEC<s_SolvedNode> args00 { args };
     fu_STR mangle00 { mangle };
@@ -2532,12 +2460,12 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
     {
         s_Type arg_t { args.mutref(i).type };
         if (type_isAddrOfFn(arg_t))
-            unpackAddrOfFn_LrpO(ctx_0, module_0, _scope_0, tEmplate, parent_idx, arg_t.vtype.canon, 0);
+            unpackAddrOfFn_3c1h(ctx_0, module_0, _scope_0, tEmplate, parent_idx, arg_t.vtype.canon, 0);
 
     };
     const bool isInline = !!(tEmplate.node.flags & F_INLINE);
     if (!into && !isInline)
-        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle, SPECFAIL, true);
+        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle, SPECFAIL, true);
 
     s_Target target {};
 
@@ -2573,7 +2501,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                             continue;
 
                     };
-                    const s_SolvedNode& inValue = ((args.size() > i) ? args.mutref(i) : fu::Default<s_SolvedNode>::value);
+                    const s_SolvedNode& inValue = ((args.size() > i) ? args.mutref(i) : (*(const s_SolvedNode*)fu::NIL));
                     s_Type inType { inValue.type };
                     const s_Node* _0;
                     const s_Node& argNode = (*(_0 = &(items[i])) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}));
@@ -2623,7 +2551,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                         if (annot)
                         {
                             const bool argOk = (inType && trySolveTypeParams(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, annot, s_Type(inType), typeParams));
-                            ok = (ok ? argOk : fu::Default<bool>::value);
+                            ok = (ok ? argOk : (*(const bool*)fu::NIL));
                             if (!ok && !remangle)
                                 break;
 
@@ -2639,14 +2567,14 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                 if (mangle00 != mangle)
                 {
                     s_Target _4 {};
-                    const s_Target preexisting = ((_4 = s_Target(module_0.out.specs[mangle])) ? _4 : s_Target{});
+                    const s_Target preexisting = ((_4 = s_Target(_specs_0[mangle])) ? _4 : s_Target{});
                     if (preexisting)
                     {
-                        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle00, preexisting, bool{});
+                        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle00, preexisting, bool{});
                         return preexisting;
                     };
                     if (!into)
-                        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle, SPECFAIL, true);
+                        setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle, SPECFAIL, true);
 
                 };
             };
@@ -2663,7 +2591,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                 for (int i = 0; i < branches.size(); i++)
                 {
                     const s_Node& cond = branches[i].items[0];
-                    if (cond && !evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, cond, typeParams))
+                    if (cond && !evalTypePattern(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, cond, typeParams))
                     {
                         typeParams = undo;
                         continue;
@@ -2688,7 +2616,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
             };
         };
         fu_STR mangle0 { mangle };
-        fu_VEC<s_ScopeItem> extra_items = (into ? fu_VEC<s_ScopeItem>(original.extra_items) : intoScopeItems(module_0, _scope_0, typeParams));
+        fu_VEC<s_ScopeItem> extra_items = (into ? fu_VEC<s_ScopeItem>(original.extra_items) : intoScopeItems(ctx_0, module_0, _scope_0, typeParams));
         target = (into ? s_Target(into) : Scope_create(_scope_0, "_no_kind_yet_"_fu, fu_STR{}, s_Type{}, 0, 0, 0, fu_VEC<s_Argument>{}, s_SolvedNode{}, parent_idx, (SS_DID_START | SS_LAZY), extra_items, module_0));
         if (!_current_fn_0.out.target)
             _anons_0 = 0;
@@ -2724,7 +2652,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
             };
             const s_Node& n_arg = inItems[i];
             s_Type specType = (spec ? tryGetArgSpecType(ctx_0, module_0, _info_0, _here_0, _scope_0, extra_items, n_arg.value) : s_Type{});
-            outItems.mutref(i) = solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_arg, specType, reuse, bool{});
+            outItems.mutref(i) = solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_arg, specType, reuse, bool{});
         };
         const s_Node& n_ret = inItems[(inItems.size() + FN_RET_BACK)];
         const s_Node& n_body = inItems[(inItems.size() + FN_BODY_BACK)];
@@ -2738,7 +2666,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                 fail(ctx_0, _info_0, _here_0, (("solveFn: Body not a block: `"_fu + n_body.kind) + "`."_fu));
 
         };
-        s_Type ret_expect = (n_ret ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_ret, fu_MAP<fu_STR, s_Type>{}).type : s_Type{});
+        s_Type ret_expect = (n_ret ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_ret, fu_MAP<fu_STR, s_Type>{}).type : s_Type{});
         s_Type ret_seed { (n_ret ? (ret_expect ? ret_expect : fail(ctx_0, _info_0, _here_0, ("falsy ret_expect: "_fu + n_fn.value))) : t_never) };
         if (ret_seed.lifetime)
             ret_seed.lifetime = (native ? Lifetime_fromNative(ctx_0, module_0, _info_0, _here_0, _scope_0, inItems, fu::get_view_mut(_current_fn_0.out.items, 0, (_current_fn_0.out.items.size() + FN_RET_BACK)), ret_seed) : Lifetime_static());
@@ -2776,17 +2704,17 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
                 if (mangle0 != mangle)
                 {
                     s_Target _8 {};
-                    preexisting = ((_8 = s_Target(module_0.out.specs[mangle])) ? _8 : s_Target{});
-                    setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle0, (preexisting ? preexisting : target), bool{});
+                    preexisting = ((_8 = s_Target(_specs_0[mangle])) ? _8 : s_Target{});
+                    setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle0, (preexisting ? preexisting : target), bool{});
                 };
                 const bool nx = (mangle00 != mangle);
                 if (nx && (mangle00 != mangle0))
-                    setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle00, (preexisting ? preexisting : target), bool{});
+                    setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle00, (preexisting ? preexisting : target), bool{});
 
                 if (preexisting)
                     return preexisting;
 
-                setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, isInline, mangle, target, nx);
+                setSpec(ctx_0, module_0, _info_0, _here_0, _scope_0, _specs_0, isInline, mangle, target, nx);
             };
         };
         if (!isInline)
@@ -2794,7 +2722,7 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
             s_Type retval { ret_seed };
             if (!native)
             {
-                s_SolvedNode s_body = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_body, ret_expect, target.index, short((((HM_Function | HM_CanReturn) | HM_LabelUsed) | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : fu::Default<short>::value))), 0);
+                s_SolvedNode s_body = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_body, ret_expect, target.index, short((((HM_Function | HM_CanReturn) | HM_LabelUsed) | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : (*(const short*)fu::NIL)))), 0);
                 retval = s_body.type;
                 outItems.mutref((outItems.size() + FN_BODY_BACK)) = (s_body ? s_body : fail(ctx_0, _info_0, _here_0, "falsy body"_fu));
             };
@@ -2803,16 +2731,16 @@ static s_Target doTrySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_V
         };
     };
     s_Overload& o = GET_mut(module_0, _scope_0, target);
-    lazySolveEnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, o);
+    lazySolveEnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, o);
     return target;
 }
 
                                 #ifndef DEF_HM_Struct
                                 #define DEF_HM_Struct
-inline const short HM_Struct = (short(1) << short(5));
+inline constexpr short HM_Struct = (short(1) << short(5));
                                 #endif
 
-static s_SolvedNode solveMember(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node_1)
+static s_SolvedNode solveMember(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node_1)
 {
     if (!(node_1.kind == "let"_fu))
         fail(ctx_0, _info_0, _here_0, ("solveStructMembers_1: "_fu + node_1.kind));
@@ -2820,17 +2748,17 @@ static s_SolvedNode solveMember(const s_Context& ctx_0, s_Module& module_0, fu_V
     if (node_1.items[LET_INIT] && (node_1.items[LET_INIT].kind != "definit"_fu))
         fail(ctx_0, _info_0, _here_0, ((("All structs must be zerofilled by default."_fu + " Please remove the initializer of struct member `"_fu) + node_1.value) + "`."_fu));
 
-    return solveLetLike_dontTouchScope(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node_1, s_Type{}, bool{});
+    return solveLetLike_dontTouchScope(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node_1, s_Type{}, bool{});
 }
 
-                                #ifndef DEFt_map_4pmq
-                                #define DEFt_map_4pmq
-inline fu_VEC<s_SolvedNode> map_4pmq(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, fu_VEC<s_Node>& a, int)
+                                #ifndef DEFt_map_itgv
+                                #define DEFt_map_itgv
+inline fu_VEC<s_SolvedNode> map_itgv(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, fu_VEC<s_Node>& a, int)
 {
     fu_VEC<s_SolvedNode> res {};
     res.grow<false>(a.size());
     for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = solveMember(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, a[i]);
+        res.mutref(i) = solveMember(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, a[i]);
 
     return res;
 }
@@ -2838,7 +2766,7 @@ inline fu_VEC<s_SolvedNode> map_4pmq(const s_Context& ctx_0, s_Module& module_0,
 
                                 #ifndef DEF_F_PUB
                                 #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
+inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEFt_add_2vji
@@ -2897,10 +2825,10 @@ inline bool add_DNSI(fu_VEC<int>& dest, const fu_VEC<int>& src)
 
                                 #ifndef DEF_F_MUSTNAME
                                 #define DEF_F_MUSTNAME
-inline const int F_MUSTNAME = (1 << 19);
+inline constexpr int F_MUSTNAME = (1 << 19);
                                 #endif
 
-static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const bool solve, s_Node&& node, const s_Target& into)
+static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const bool solve, s_Node&& node, const s_Target& into)
 {
     s_SolvedNode out = solved(node, (into ? GET(ctx_0, module_0, _scope_0, into).type : s_Type{}), fu_VEC<s_SolvedNode>{}, into);
     fu_STR origId { node.value };
@@ -2924,13 +2852,13 @@ static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, fu
     _helpers_0 += s_Helpers { int((out.target.index ? out.target.index : fail(ctx_0, _info_0, _here_0, (("solveStruct: no out.target: `"_fu + origId) + "`."_fu)))), fu_STR{}, short(HM_Struct), 0, 0, s_Type{}, s_Type{}, fu_VEC<int>{} };
     fu_VEC<s_Target> structConverts {};
     fu_VEC<int> structImports {};
-    fu_VEC<s_SolvedNode> members = map_4pmq(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, 0);
+    fu_VEC<s_SolvedNode> members = map_itgv(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, 0);
 
     {
         fu_VEC<s_ScopeItem>& innerScope = lookupStruct_mut(out.type.vtype.canon, module_0).items;
         if (!innerScope && members)
         {
-            fu_VEC<s_Argument> args = fu_VEC<s_Argument> { fu_VEC<s_Argument>::INIT<1> { s_Argument { "this"_fu, despeculateStruct(s_Type(out.type)), s_SolvedNode{}, 0 } } };
+            fu_VEC<s_Argument> args = fu_VEC<s_Argument> { fu_VEC<s_Argument>::INIT<1> { s_Argument { "this"_fu, fu_STR{}, despeculateStruct(s_Type(out.type)), s_SolvedNode{}, 0 } } };
             for (int i = 0; i < members.size(); i++)
             {
                 fu_STR id { node.items.mutref(i).value };
@@ -2985,7 +2913,7 @@ static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, fu
         for (int i = 0; i < members.size(); i++)
         {
             const s_SolvedNode& member = members[i];
-            s_Argument arg = s_Argument { fu_STR((member.value ? member.value : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_Type((member.type ? member.type : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_SolvedNode(member.items[LET_INIT]), (member.flags & F_MUSTNAME) };
+            s_Argument arg = s_Argument { fu_STR((member.value ? member.value : fail(ctx_0, _info_0, _here_0, fu_STR{}))), fu_STR{}, s_Type((member.type ? member.type : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_SolvedNode(member.items[LET_INIT]), (member.flags & F_MUSTNAME) };
             if (!arg.dEfault)
                 min++;
 
@@ -3003,11 +2931,11 @@ static s_SolvedNode __solveStruct(const s_Context& ctx_0, s_Module& module_0, fu
             overload.status |= SS_UPDATED;
 
     };
-    lazySolveEnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, GET_mut(module_0, _scope_0, out.target));
+    lazySolveEnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, GET_mut(module_0, _scope_0, out.target));
     return s_SolvedNode{};
 }
 
-static bool lazySolveStart(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Target& target, const s_Overload& overload)
+static bool lazySolveStart(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Target& target, const s_Overload& overload)
 {
     if ((overload.status & (SS_DID_START | SS_LAZY)) != SS_LAZY)
         return false;
@@ -3020,9 +2948,9 @@ static bool lazySolveStart(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_
 
         o.status |= SS_DID_START;
         if ((o.kind == "template"_fu) || (o.kind == "fn"_fu))
-            doTrySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, target, s_Target{}, fu_VEC<s_SolvedNode>{}, fu_STR{}, fu::view<int>{}, bool{});
+            doTrySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, target, s_Target{}, fu_VEC<s_SolvedNode>{}, fu_STR{}, fu::view<int>{}, bool{}, fu_VEC<fu_VEC<s_Target>>{}, 0, s_Type{});
         else if (o.kind == "type"_fu)
-            __solveStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, true, s_Node(o.tEmplate.node), target);
+            __solveStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, true, s_Node(o.tEmplate.node), target);
         else
             fail(ctx_0, _info_0, _here_0, (("lazySolveStart: kind is `"_fu + o.kind) + "`."_fu));
 
@@ -3101,12 +3029,24 @@ static bool reorderByArgIDs(bool& use_reorder, fu_VEC<int>& reorder, const fu_VE
     return true;
 }
 
-                                #ifndef DEFt_first_zMI6
-                                #define DEFt_first_zMI6
-inline const s_Argument& first_zMI6(const fu_VEC<s_Argument>& s)
+static int findRestStart(const s_Overload& overload)
 {
-    return (s.size() ? s[0] : fu::fail("len == 0"_fu));
+    for (int i = overload.args.size(); i-- > 0; )
+    {
+        const s_Argument& arg = overload.args[i];
+        if (arg.flags & F_REST_ARG)
+            return i;
+
+        if (!(arg.flags & F_IMPLICIT))
+            break;
+
+    };
+    return overload.args.size();
 }
+
+                                #ifndef DEF_F_CONVERSION
+                                #define DEF_F_CONVERSION
+inline constexpr int F_CONVERSION = (1 << 15);
                                 #endif
 
 static fu_STR explain(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, fu::view<s_Target> path_1)
@@ -3127,25 +3067,32 @@ static fu_STR explain(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scop
     return res;
 }
 
-static void foreach(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, const s_Type& from_0, bool nullary_0, const s_Target& t)
+static void foreach(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, fu_VEC<s_SolvedNode>& _args_0, fu_VEC<fu_VEC<s_Target>>& _conversions_0, const s_Type& from_0, bool nullary_0, const s_Target& t)
 {
-    s_Overload convert = GET(ctx_0, module_0, _scope_0, t);
-    if (nullary_0 || isAssignableAsArgument(first_zMI6(convert.args).type, from_0))
+    if (!nullary_0)
     {
+        _args_0.resize(1);
+        _args_0.mutref(0).type = from_0;
+    };
+    s_Target candidate {};
+    if (nullary_0 || (candidate = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, s_Scope{}, false, fu_STR((*(const fu_STR*)fu::NIL)), _args_0, _conversions_0, F_CONVERSION, t)))
+    {
+        const s_Target& t_1 = (nullary_0 ? t : candidate);
+        s_Overload convert = GET(ctx_0, module_0, _scope_0, t_1);
         s_Type convertType = ((convert.kind == "field"_fu) ? add_refs((from_0 ? from_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})), s_Type(convert.type)) : s_Type(convert.type));
         const bool isStruct_1 = isStruct(convertType);
         if (isAssignableAsArgument(expect_0, convertType))
         {
             if (match_0)
             {
-                fu_STR suffix = (((("\n\t"_fu + explain(ctx_0, module_0, _scope_0, match_0)) + "\n\tand:"_fu) + "\n\t"_fu) + explain(ctx_0, module_0, _scope_0, (path_0 + t)));
+                fu_STR suffix = (((("\n\t"_fu + explain(ctx_0, module_0, _scope_0, match_0)) + "\n\tand:"_fu) + "\n\t"_fu) + explain(ctx_0, module_0, _scope_0, (path_0 + t_1)));
                 if (actual_0)
                     fail(ctx_0, _info_0, _here_0, ((((("Conversion ambiguity, multiple ways to convert `"_fu + serializeType(actual_0)) + "` into `"_fu) + serializeType(expect_0)) + "`: "_fu) + suffix));
                 else
                     fail(ctx_0, _info_0, _here_0, ((("`using` ambiguity, multiple ways to obtain a `"_fu + serializeType(expect_0)) + "` in this scope: "_fu) + suffix));
 
             };
-            match_0 = (path_0 + t);
+            match_0 = (path_0 + t_1);
         }
         else
         {
@@ -3156,7 +3103,7 @@ static void foreach(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& 
                 {
                     for (int i = path_0.size(); i-- > 0; )
                     {
-                        if (path_0[i] == t)
+                        if (path_0[i] == t_1)
                         {
                             fu_STR err = "Conversion loop:"_fu;
                             for (int i_1 = i; i_1 < path_0.size(); i_1++)
@@ -3174,17 +3121,17 @@ static void foreach(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& 
                         };
                     };
                 };
-                path_0.push(t);
+                path_0.push(t_1);
                 fu_DEFER(path_0.pop());
-                descend(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, convertType, false, isStruct_1);
+                descend(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, convertType, false, isStruct_1);
             };
         };
     };
 }
 
-                                #ifndef DEFt_each_b06l
-                                #define DEFt_each_b06l
-inline void each_b06l(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, const s_Type& from_0, bool nullary_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_H6Fb
+                                #define DEFt_each_H6Fb
+inline void each_H6Fb(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, fu_VEC<s_SolvedNode>& _args_0, fu_VEC<fu_VEC<s_Target>>& _conversions_0, const s_Type& from_0, bool nullary_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -3198,16 +3145,16 @@ inline void each_b06l(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>
         for (int i_1 = i0; i_1 < i1; i_1++)
         {
             const s_Target& u = items[i_1];
-            foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, from_0, nullary_0, u);
+            foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, from_0, nullary_0, u);
         };
         i0 = ss.end;
     };
 }
                                 #endif
 
-                                #ifndef DEFt_each_ab4V
-                                #define DEFt_each_ab4V
-inline void each_ab4V(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, const s_Type& from_0, bool nullary_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_oG4q
+                                #define DEFt_each_oG4q
+inline void each_oG4q(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, fu_VEC<s_SolvedNode>& _args_0, fu_VEC<fu_VEC<s_Target>>& _conversions_0, const s_Type& from_0, bool nullary_0, const fu_VEC<s_Target>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -3219,39 +3166,41 @@ inline void each_ab4V(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>
 
         const int i1 = ss.start;
         for (int i_1 = i0; i_1 < i1; i_1++)
-            foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, from_0, nullary_0, items[i_1]);
+            foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, from_0, nullary_0, items[i_1]);
 
         i0 = ss.end;
     };
 }
                                 #endif
 
-static void descend(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, const s_Type& from, const bool nullary, const bool isStruct)
+static void descend(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope_0, bool local_scope_0, const s_Type& expect_0, const s_Type& actual_0, fu_VEC<s_Target>& match_0, fu_VEC<s_Target>& path_0, int has_converts_0, const fu_VEC<s_ScopeSkip>& ss_converts_0, fu_VEC<s_SolvedNode>& _args_0, fu_VEC<fu_VEC<s_Target>>& _conversions_0, const s_Type& from, const bool nullary, const bool isStruct)
 {
     if (nullary)
-        each_b06l(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, from, nullary, scope_0.usings, (local_scope_0 ? _ss_0.usings : fu::Default<fu_VEC<s_ScopeSkip>>::value), 0, 0);
+        each_H6Fb(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, from, nullary, scope_0.usings, (local_scope_0 ? _ss_0.usings : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), 0, 0);
     else
     {
         if (isStruct)
         {
             const fu_VEC<s_Target>& inner = lookupStruct(from, module_0, ctx_0).converts;
             for (int i = 0; i < inner.size(); i++)
-                foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, from, nullary, inner[i]);
+                foreach(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, from, nullary, inner[i]);
 
         };
         if (has_converts_0)
-            each_ab4V(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, from, nullary, scope_0.converts, ss_converts_0, 0, 0);
+            each_oG4q(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope_0, local_scope_0, expect_0, actual_0, match_0, path_0, has_converts_0, ss_converts_0, _args_0, _conversions_0, from, nullary, scope_0.converts, ss_converts_0, 0, 0);
 
     };
 }
 
-static fu_VEC<s_Target> tryConvert(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeSkipMemos& _ss_0, const s_Scope& scope, const bool local_scope, const s_Type& expect, const s_Type& actual)
+static fu_VEC<s_Target> tryConvert(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope, const bool local_scope, const s_Type& expect, const s_Type& actual)
 {
     fu_VEC<s_Target> match {};
     fu_VEC<s_Target> path {};
     const int has_converts = scope.converts.size();
-    const fu_VEC<s_ScopeSkip>& ss_converts = (local_scope ? _ss_0.converts : fu::Default<fu_VEC<s_ScopeSkip>>::value);
-    descend(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope, local_scope, expect, actual, match, path, has_converts, ss_converts, actual, !actual, isStruct(actual));
+    const fu_VEC<s_ScopeSkip>& ss_converts = (local_scope ? _ss_0.converts : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL));
+    fu_VEC<s_SolvedNode> _args {};
+    fu_VEC<fu_VEC<s_Target>> _conversions {};
+    descend(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, expect, actual, match, path, has_converts, ss_converts, _args, _conversions, actual, !actual, isStruct(actual));
     return match;
 }
 
@@ -3266,11 +3215,6 @@ inline fu_VEC<s_Target>& grow_if_oob_qwZA(fu_VEC<fu_VEC<s_Target>>& a, int& i)
 }
                                 #endif
 
-static bool considerRetyping(const s_Type& expect, const s_Type& actual)
-{
-    return ((expect.vtype.quals & actual.vtype.quals) & q_arithmetic) != 0;
-}
-
                                 #ifndef DEFt_only_kEWY
                                 #define DEFt_only_kEWY
 inline s_SolvedNode& only_kEWY(fu_VEC<s_SolvedNode>& s)
@@ -3279,48 +3223,76 @@ inline s_SolvedNode& only_kEWY(fu_VEC<s_SolvedNode>& s)
 }
                                 #endif
 
-static s_Target trySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Target& overloadIdx, const fu_VEC<s_SolvedNode>& args, fu::view<int> reorder, const bool use_reorder, const fu_STR& args_mangled)
+                                #ifndef DEFt_only_vKnO
+                                #define DEFt_only_vKnO
+inline fu_VEC<s_Target>& only_vKnO(fu_VEC<fu_VEC<s_Target>>& s)
 {
-    fu_STR mangle = ((((overloadIdx.modid + "#"_fu) + overloadIdx.index) + " "_fu) + args_mangled);
-    s_Target _0 {};
-    const s_Target spec = ((_0 = s_Target(module_0.out.specs[mangle])) ? _0 : doTrySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, s_Target{}, overloadIdx, fu_VEC<s_SolvedNode>(args), fu_STR(mangle), reorder, use_reorder));
-    return s_Target((!is_SPECFAIL(spec) ? spec : fu::Default<s_Target>::value));
+    return ((s.size() == 1) ? s.mutref(0) : fu::fail(("len != 1: "_fu + s.size())));
+}
+                                #endif
+
+                                #ifndef DEFt_last_pHkT
+                                #define DEFt_last_pHkT
+inline s_Target& last_pHkT(fu_VEC<s_Target>& s)
+{
+    return (s.size() ? s.mutref((s.size() - 1)) : fu::fail("len == 0"_fu));
+}
+                                #endif
+
+                                #ifndef DEF_q_arithmetic
+                                #define DEF_q_arithmetic
+inline constexpr int q_arithmetic = (1 << 5);
+                                #endif
+
+static bool considerRetyping(const s_Type& expect, const s_Type& actual)
+{
+    return ((expect.vtype.quals & actual.vtype.quals) & q_arithmetic) != 0;
 }
 
-inline static fu_STR mangleArguments_gMB0(fu::view<s_SolvedNode> args)
+static s_Type solveArrlit_itemType_init(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const s_Type& head)
+{
+    s_Type _0 {};
+    return (_0 = clear_refs(s_Type(head))) ? static_cast<s_Type&&>(_0) : fail(ctx_0, _info_0, _here_0, fu_STR{});
+}
+
+static s_Type solveArrlit_done(const s_Type& itemType)
+{
+    return createArray(itemType);
+}
+
+static fu_STR mangleArguments(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, fu::view<s_SolvedNode> args, fu::view<int> reorder, const bool use_reorder, const fu_VEC<fu_VEC<s_Target>>& conversions, const int REST_START, const s_Type& REST_TYPE)
 {
     fu_STR mangle {};
-    for (int i = 0; i < args.size(); i++)
+    const int REST_END = (use_reorder ? reorder.size() : args.size());
+    const int N = std::min(REST_END, REST_START);
+    for (int i = 0; i < N; i++)
     {
         if (i)
             mangle += ","_fu;
 
-        mangle += serializeType(args[i].type);
+        const int callsiteIndex = (use_reorder ? reorder[i] : i);
+        if ((conversions.size() > i) && conversions[i].size())
+            mangle += serializeType(GET(ctx_0, module_0, _scope_0, last_DRKs(conversions[i])).type);
+        else if ((callsiteIndex >= 0) && (callsiteIndex <= args.size()))
+            mangle += serializeType(args[callsiteIndex].type);
+
+    };
+    if (REST_START < REST_END)
+    {
+        if (REST_START)
+            mangle += ","_fu;
+
+        mangle += serializeType(REST_TYPE);
     };
     return mangle;
 }
 
-static fu_STR mangleArguments(fu::view<s_SolvedNode> args, fu::view<int> reorder, const bool use_reorder)
+static s_Target trySpecialize(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Target& overloadIdx, const fu_VEC<s_SolvedNode>& args, const fu_STR& args_mangled, fu::view<int> reorder, const bool use_reorder, const fu_VEC<fu_VEC<s_Target>>& conversions, const int REST_START, const s_Type& REST_TYPE)
 {
-    if (!use_reorder)
-        return mangleArguments_gMB0(args);
-
-    fu_STR mangle {};
-    int commas = 0;
-    for (int i = 0; i < reorder.size(); i++)
-    {
-        while (commas > 0)
-        {
-            mangle += ","_fu;
-            commas--;
-        };
-        const int callsiteIndex = reorder[i];
-        if ((callsiteIndex >= 0) && (callsiteIndex < args.size()))
-            mangle += serializeType(args[callsiteIndex].type);
-
-        commas++;
-    };
-    return mangle;
+    fu_STR mangle = ((((overloadIdx.modid + "#"_fu) + overloadIdx.index) + " "_fu) + args_mangled);
+    s_Target _0 {};
+    const s_Target spec = ((_0 = s_Target(_specs_0[mangle])) ? _0 : doTrySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, s_Target{}, overloadIdx, fu_VEC<s_SolvedNode>(args), fu_STR(mangle), reorder, use_reorder, conversions, REST_START, REST_TYPE));
+    return s_Target((!is_SPECFAIL(spec) ? spec : (*(const s_Target*)fu::NIL)));
 }
 
 static s_Overload GETfn(const s_Context& ctx_0, s_Module& module_0, s_Scope& _scope_0, const int idx)
@@ -3369,246 +3341,7 @@ inline fu_STR& last_Y3Ia(fu_VEC<fu_STR>& s)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_qwZA
-                                #define DEFt_unless_oob_qwZA
-inline const fu_VEC<s_Target>& unless_oob_qwZA(fu_VEC<fu_VEC<s_Target>>& a, int& i)
-{
-    return (i < a.size()) ? a.mutref(i) : fu::Default<fu_VEC<s_Target>>::value;
-}
-                                #endif
-
-static s_SolvedNode createLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, const s_Target& target, const int flags)
-{
-    s_Overload overload = GET(ctx_0, module_0, _scope_0, target);
-    return s_SolvedNode { "let"_fu, int(flags), fu_STR(overload.name), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_Type(overload.type), s_Target(target) };
-}
-
-static s_Target injectImplicitArg(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, s_CurrentFn& _current_fn_0, const fu_STR& id, const s_Type& type, const s_Target& becauseOf)
-{
-    if (!(_current_fn_0.out.items))
-        fail(ctx_0, _info_0, _here_0, (((("No implicit `"_fu + id) + "` in scope, needed to call `"_fu) + GET(ctx_0, module_0, _scope_0, becauseOf).name) + "`."_fu));
-
-    for (int i = 0; i < (_current_fn_0.out.items.size() + FN_RET_BACK); i++)
-    {
-        s_SolvedNode arg { _current_fn_0.out.items[i] };
-        if (arg.value == id)
-        {
-            checkAssignable(ctx_0, _info_0, _here_0, type, arg.type, "Implicit arg collision"_fu, id, fu_STR{});
-            return s_Target((arg.target ? arg.target : fail(ctx_0, _info_0, _here_0, fu_STR{})));
-        };
-    };
-    bool shadows {};
-    int flags = (F_IMPLICIT | F_ARG);
-    const s_Target ret = Binding(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, id, s_Type(type), flags, shadows, s_Target{});
-    s_SolvedNode newArgNode = createLet(ctx_0, module_0, _info_0, _here_0, _scope_0, ret, F_IMPLICIT);
-    const int newArgIdx = (_current_fn_0.out.items.size() + FN_RET_BACK);
-    _current_fn_0.out.items.insert(newArgIdx, newArgNode);
-    return ret;
-}
-
-                                #ifndef DEFt_if_first_hGoN
-                                #define DEFt_if_first_hGoN
-inline const s_Region& if_first_hGoN(const fu_VEC<s_Region>& s)
-{
-    return s.size() ? s[0] : fu::Default<s_Region>::value;
-}
-                                #endif
-
-static s_Lifetime Lifetime_replaceArgsAtCallsite(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const s_Overload& overload, fu::view<s_SolvedNode> argNodes)
-{
-    const fu_VEC<s_Region>& returned = overload.type.lifetime.uni0n;
-    const fu_VEC<s_SolvedNode>& items = overload.solved.items;
-    if (!Region_isArg(if_first_hGoN(returned)))
-        return s_Lifetime { fu_VEC<s_Region>(returned) };
-
-    const int head = items[0].target.index;
-    const int tail = items[((items.size() + FN_RET_BACK) - 1)].target.index;
-    s_Lifetime keep {};
-    s_Lifetime replace {};
-    int offset = (items.size() + FN_RET_BACK);
-    for (int i = 0; i < returned.size(); i++)
-    {
-        const s_Region& region = returned[i];
-        const int index = Region_toArgIndex(region);
-        if ((index < head) || (index > tail))
-        {
-            keep.uni0n += region;
-            continue;
-        };
-        while (offset--)
-        {
-            const int here = items[offset].target.index;
-            if (here == index)
-            {
-                const s_SolvedNode& argNode = argNodes[offset];
-                s_Lifetime argLt = (is_ref(argNode.type) ? s_Lifetime((argNode.type.lifetime ? argNode.type.lifetime : fail(ctx_0, _info_0, _here_0, "refarg without lifetime"_fu))) : Lifetime_temporary());
-                replace = Lifetime_union(replace, argLt);
-                break;
-            };
-            if (!(here > index))
-                fail(ctx_0, _info_0, _here_0, "nope, going backwards"_fu);
-
-        };
-    };
-    return Lifetime_union(keep, replace);
-}
-
-static bool isFnOrType(const s_Helpers& h)
-{
-    return !!(h.mask & (HM_Function | HM_Struct));
-}
-
-                                #ifndef DEF_SS_TYPE_RECUR
-                                #define DEF_SS_TYPE_RECUR
-inline const uint32_t SS_TYPE_RECUR = (0x1u << 16u);
-                                #endif
-
-                                #ifndef DEF_SS_FN_RECUR
-                                #define DEF_SS_FN_RECUR
-inline const uint32_t SS_FN_RECUR = (0x1u << 17u);
-                                #endif
-
-static void detectRecursion(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, int& _notes_0, fu_VEC<s_Helpers>& _helpers_0, const s_Target& target, const s_Overload& overload)
-{
-    if ((overload.status & (SS_FINALIZED | SS_LAZY)) != SS_LAZY)
-        return;
-
-    const int note = ((overload.kind == "type"_fu) ? N_TypeRecursion : N_FnRecursion);
-    const uint32_t status = ((overload.kind == "type"_fu) ? SS_TYPE_RECUR : SS_FN_RECUR);
-    for (int i = _helpers_0.size(); i-- > 0; )
-    {
-        s_Helpers h { _helpers_0[i] };
-        if (!isFnOrType(h))
-            continue;
-
-        if (h.mask & HM_Lambda)
-            fail(ctx_0, _info_0, _here_0, "Recursive lambda, what happened here?"_fu);
-
-        GET_mut(module_0, _scope_0, s_Target { int(module_0.modid), int(h.target) }).status |= status;
-        _notes_0 |= note;
-        if (h.target == target.index)
-            return;
-
-    };
-    fail(ctx_0, _info_0, _here_0, (((("detectRecursion: no _helpers entry for `"_fu + overload.name) + " ("_fu) + overload.status) + ")`."_fu));
-}
-
-                                #ifndef DEFt_last_ZDQv
-                                #define DEFt_last_ZDQv
-inline const s_Node& last_ZDQv(const fu_VEC<s_Node>& s)
-{
-    return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
-}
-                                #endif
-
-static s_SolvedNode createLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, int& _notes_0, s_CurrentFn& _current_fn_0, const fu_STR& id, const int flags, const s_SolvedNode& init)
-{
-    s_SolvedNode out = solveLetLike_dontTouchScope(ctx_0, _info_0, _here_0, _notes_0, init.token, id, int(flags), s_SolvedNode(init), s_Type{}, s_Type{}, bool{});
-    return solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, s_SolvedNode(out), id, s_Target{}, bool{});
-}
-
-static s_SolvedNode CallerNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Target& target, fu_VEC<s_SolvedNode>&& args, const int kills)
-{
-    s_Overload overload = GET(ctx_0, module_0, _scope_0, target);
-    s_Type type { overload.type };
-    if (overload.kind == "field"_fu)
-    {
-        s_Type* _0;
-        type = add_refs((*(_0 = &(only_kEWY(args).type)) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})), s_Type(overload.type));
-    }
-    else if (args)
-    {
-        fu_VEC<s_Argument>& host_args = (overload.args ? overload.args : fail(ctx_0, _info_0, _here_0, "CallerNode: no host args."_fu));
-        for (int i = 0; i < args.size(); i++)
-        {
-            s_SolvedNode* _1;
-            maybeCopyOrMove(ctx_0, _info_0, _here_0, (*(_1 = &(args.mutref(i))) ? *_1 : fail(ctx_0, _info_0, _here_0, fu_STR{})), host_args[i].type, true);
-        };
-        if (is_ref(type))
-            type.lifetime = Lifetime_test(ctx_0, module_0, _info_0, _here_0, _scope_0, _current_fn_0, Lifetime_replaceArgsAtCallsite(ctx_0, _info_0, _here_0, overload, args), true);
-
-    };
-    if (target.modid == module_0.modid)
-    {
-        if ((overload.kind == "fn"_fu) || (overload.kind == "type"_fu))
-        {
-            for (int i = _helpers_0.size(); i-- > 0; )
-            {
-                s_Helpers& h = _helpers_0.mutref(i);
-                if (isFnOrType(h))
-                {
-                    s_Overload& o = GET_mut(module_0, _scope_0, target);
-                    add_2vji(o.used_by, h.target);
-                    detectRecursion(ctx_0, module_0, _info_0, _here_0, _scope_0, _notes_0, _helpers_0, target, o);
-                    break;
-                };
-            };
-        };
-        if (_current_fn_0)
-        {
-            s_Overload o = GET(ctx_0, module_0, _scope_0, target);
-            if (o.flags & F_LOCAL)
-                add_7gVc(_current_fn_0.locals_used, target.index);
-
-            add_DNSI(_current_fn_0.locals_used, o.closes_over);
-        };
-    };
-    if (overload.kind == "inline"_fu)
-    {
-        const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
-        s_ScopeSkipMemos ss0 { _ss_0 };
-        fu_DEFER(
-        {
-            Scope_pop(_scope_0, scope0, _helpers_0);
-            _ss_0 = ss0;
-        });
-        ScopeSkip_setup(ctx_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, overload.tEmplate, scope0, true);
-        _scope_0.items += overload.extra_items;
-        s_Node& n_fn = overload.tEmplate.node;
-        const s_Node& n_body = last_ZDQv(n_fn.items);
-        s_Type& ret_expect = overload.type;
-        fu_VEC<s_SolvedNode> result {};
-        if (!(overload.args.size() == args.size()))
-            fail(ctx_0, _info_0, _here_0, "inline: arglen mismatch"_fu);
-
-        result.resize((args.size() + 1));
-        for (int i = 0; i < args.size(); i++)
-        {
-            const s_Argument& slot = overload.args[i];
-            result.mutref(i) = createLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _notes_0, _current_fn_0, slot.name, (slot.flags & ~F_ARG), args.mutref(i));
-        };
-        s_SolvedNode s_body = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_body, ret_expect, 0, short((HM_CanReturn | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : fu::Default<short>::value))), kills);
-        last_kEWY(result) = s_body;
-        return createBlock(node.token, s_body.type, result, s_Target{});
-    };
-    s_SolvedNode out = solved(node, type, args, s_Target{});
-    out.target = target;
-    return out;
-}
-
-static s_Node createRead(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const fu_STR& id)
-{
-    return s_Node { "call"_fu, 0, fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx((_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}))) };
-}
-
-static s_SolvedNode bindImplicitArg(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const fu_STR& name, const s_Type& type, const s_Target& becauseOf)
-{
-    fu_VEC<s_SolvedNode> args {};
-    fu_VEC<fu_VEC<s_Target>> conversions {};
-    s_Target _0 {};
-    const s_Target target = ((_0 = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, _scope_0, true, fu_STR(name), args, conversions, F_IMPLICIT, s_Target{})) ? _0 : (_0 = injectImplicitArg(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, name, type, becauseOf)) ? _0 : fail(ctx_0, _info_0, _here_0, fu_STR{}));
-    if ((args.size() != 0) || (conversions.size() != 0))
-        fail(ctx_0, _info_0, _here_0, "dunno what happened here"_fu);
-
-    s_Overload o = GET(ctx_0, module_0, _scope_0, target);
-    if (!(o.flags & F_IMPLICIT))
-        fail(ctx_0, _info_0, _here_0, (((("Matching a non-implicit item in scope: `"_fu + name) + "`, binds to call to `"_fu) + GET(ctx_0, module_0, _scope_0, becauseOf).name) + "`."_fu));
-
-    checkAssignable(ctx_0, _info_0, _here_0, type, o.type, (("Implicit `"_fu + name) + "` type mismatch"_fu), fu_STR{}, fu_STR{});
-    return CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, createRead(ctx_0, _info_0, _here_0, "__implicit"_fu), target, fu_VEC<s_SolvedNode>{}, 0);
-}
-
-static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Scope& scope, const bool local_scope, fu_STR&& id, fu_VEC<s_SolvedNode>& args, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags, const s_Target& target)
+static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope, const bool local_scope, fu_STR&& id, fu_VEC<s_SolvedNode>& args, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags, const s_Target& target)
 {
     s_Target matchIdx {};
     s_Target DEBUG_assertMatch {};
@@ -3625,7 +3358,7 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
         {
             s_SolvedNode arg { args[i] };
             const fu_STR* _0;
-            names.push(((arg.kind == "argid"_fu) ? (*(_0 = &(((void)(some = true), arg.value))) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})) : fu::Default<fu_STR>::value));
+            names.push(((arg.kind == "argid"_fu) ? (*(_0 = &(((void)(some = true), arg.value))) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})) : (*(const fu_STR*)fu::NIL)));
             if (arg.flags & F_OPT_ARG)
             {
                 minArity--;
@@ -3637,34 +3370,38 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
 
     };
     fu_VEC<int> reorder {};
-    fu_STR args_mangled {};
-    const fu_VEC<s_ScopeItem>& field_items = (local_scope && ((flags & F_ACCESS) || !minArity) && (minArity <= 1) && maxArity ? _field_items_0 : fu::Default<fu_VEC<s_ScopeItem>>::value);
+    fu_STR reusable_mangle {};
+    fu_VEC<s_Target> extra_items {};
+    if (local_scope && !target)
+    {
+        s_BitSet seen {};
+        if (numUsings)
+            each_w1FX(ctx_0, module_0, _scope_0, _ss_0, scope, local_scope, id, extra_items, seen, scope.usings, (local_scope ? _ss_0.usings : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), 0, 0);
+
+        if (flags & ((((F_ACCESS | F_METHOD) | F_INFIX) | F_PREFIX) | F_POSTFIX))
+        {
+            for (int i = 0; i < args.size(); i++)
+                visitTypeImports(ctx_0, module_0, _ss_0, scope, local_scope, id, extra_items, seen, args.mutref(i).type);
+
+        };
+    };
+    const fu_VEC<s_ScopeItem>& field_items = (local_scope && ((flags & F_ACCESS) || !minArity) && (minArity <= 1) && maxArity ? _field_items_0 : (*(const fu_VEC<s_ScopeItem>*)fu::NIL));
     fu_VEC<fu_STR> alternate_ids {};
+    fu_VEC<s_SolvedNode> args_out {};
     for (; ; )
     {
         int scope_iterator {};
         s_Target overloadIdx {};
-        fu_VEC<s_Target> extra_items {};
-        if (local_scope && !target)
-        {
-            s_BitSet seen {};
-            if (numUsings)
-                each_ZyBh(ctx_0, module_0, _scope_0, _ss_0, scope, local_scope, id, extra_items, seen, scope.usings, (local_scope ? _ss_0.usings : fu::Default<fu_VEC<s_ScopeSkip>>::value), 0, 0);
-
-            if (flags & ((((F_ACCESS | F_METHOD) | F_INFIX) | F_PREFIX) | F_POSTFIX))
-            {
-                for (int i = 0; i < args.size(); i++)
-                    visitTypeImports(ctx_0, module_0, _ss_0, scope, local_scope, id, extra_items, seen, args.mutref(i).type);
-
-            };
-        };
         bool shadows {};
-        while ((overloadIdx = search(scope.items, id, scope_iterator, (local_scope ? ((flags & F_IMPLICIT) ? _ss_0.declash : _ss_0.items) : fu::Default<fu_VEC<s_ScopeSkip>>::value), shadows, target, extra_items, field_items)))
+        while ((overloadIdx = search(scope.items, id, scope_iterator, (local_scope ? ((flags & F_IMPLICIT) ? _ss_0.declash : _ss_0.items) : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), shadows, target, extra_items, field_items)))
         { {
+            fu_VEC<fu_VEC<s_Target>> conversions_1 {};
+            fu_VEC<s_SolvedNode> args_1 { args };
+            bool TODO_FIX_skip_autocalls = false;
             while (true)
             {
                 s_Overload overload = GET(ctx_0, module_0, _scope_0, overloadIdx);
-                if (lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, overloadIdx, overload))
+                if (lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, overloadIdx, overload))
                     continue;
 
                 const bool isType = (overload.kind == "type"_fu);
@@ -3677,45 +3414,48 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
                 };
                 const bool isZeroInit = (isType && !explicitArity);
                 if (!isZeroInit && ((overload.max < minArity) || (overload.min > maxArity)))
-                    goto L_080;
+                    goto L_0112;
 
                 const fu_VEC<s_Argument>& host_args = overload.args;
                 const int num_usings = (!isZeroInit && (overload.min > explicitArity) ? (overload.min - explicitArity) : int{});
                 bool use_reorder = false;
                 if (!names)
-                    reorderByNumUsings(use_reorder, reorder, host_args, args.size(), num_usings);
+                    reorderByNumUsings(use_reorder, reorder, host_args, args_1.size(), num_usings);
                 else if (!reorderByArgIDs(use_reorder, reorder, names, s_BitSet(optional), host_args, num_usings))
-                    goto L_080;
+                    goto L_0112;
 
-                if (optional && reorder && (reorder.size() < args.size()) && (reorder.size() < overload.max))
-                    goto L_080;
+                if (optional && reorder && (reorder.size() < args_1.size()) && (reorder.size() < overload.max))
+                    goto L_0112;
 
-                fu_STR temp {};
-                fu_STR& args_mangled_1 = (use_reorder ? temp : args_mangled);
-                fu_VEC<fu_VEC<s_Target>> conversions_1 {};
-                const int N = std::max((use_reorder ? reorder.size() : args.size()), (!isZeroInit ? overload.min : fu::Default<int>::value));
+                s_Type REST_TYPE {};
+                const int REST_START = findRestStart(overload);
+                const int N = std::max((use_reorder ? reorder.size() : args_1.size()), (!isZeroInit ? overload.min : (*(const int*)fu::NIL)));
                 if (N)
                 {
-                    if (!((reorder.size() >= args.size()) || !reorder || optional))
+                    if (!((reorder.size() >= args_1.size()) || !reorder || optional))
                         fail(ctx_0, _info_0, _here_0, "reorder < args."_fu);
 
-                    fu_VEC<s_SolvedNode> undo_literal_fixup { args };
                     for (int i = 0; i < N; i++)
                     {
-                        const s_Argument& host_arg = host_args[i];
+                        const bool rest = (i >= REST_START);
+                        const s_Argument& host_arg = host_args[(rest ? REST_START : i)];
                         const s_Type& expect = host_arg.type;
-                        const int callsiteIndex = ((i < reorder.size()) ? int(reorder[i]) : ((i < args.size()) ? int(i) : -1));
+                        if (TODO_FIX_skip_autocalls && rest)
+                            continue;
+
+                        const int callsiteIndex = (use_reorder ? int(reorder[i]) : ((i < args_1.size()) ? int(i) : -1));
                         if (callsiteIndex < 0)
                         {
                             if (host_arg.dEfault || (host_arg.flags & F_IMPLICIT))
                                 continue;
 
-                            if (!(host_arg.flags & F_MUSTNAME))
+                            int _1 {};
+                            if (!((_1 = (host_arg.flags & F_MUSTNAME)) ? _1 : (flags & F_CONVERSION)))
                             {
                                 const s_Type& expect_1 = (expect ? expect : host_arg.dEfault.type);
                                 if (expect_1)
                                 {
-                                    fu_VEC<s_Target> conversion = tryConvert(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope, local_scope, expect_1, s_Type{});
+                                    fu_VEC<s_Target> conversion = tryConvert(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, expect_1, s_Type{});
                                     if (conversion)
                                     {
                                         grow_if_oob_qwZA(conversions_1, i) = conversion;
@@ -3723,77 +3463,112 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
                                     };
                                 };
                             };
-                            goto L_080;
+                            goto L_0112;
                         };
                         if (host_arg.flags & F_MUSTNAME)
                         {
                             if ((names.size() <= callsiteIndex) || !names.mutref(callsiteIndex))
-                                goto L_080;
+                                goto L_0112;
 
+                        };
+                        if (host_arg.autocall && !TODO_FIX_skip_autocalls)
+                        {
+                            fu_VEC<s_SolvedNode> autocall_args {};
+                            fu_VEC<fu_VEC<s_Target>> autocall_conversions {};
+                            autocall_args.resize(1);
+                            std::swap(args_1.mutref(callsiteIndex), only_kEWY(autocall_args));
+                            const s_Target t = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, fu_STR(host_arg.autocall), autocall_args, autocall_conversions, 0, s_Target{});
+                            if (!t)
+                                goto L_0112;
+
+                            std::swap(args_1.mutref(callsiteIndex), only_kEWY(autocall_args));
+                            if (autocall_conversions)
+                                grow_if_oob_qwZA(conversions_1, i) += only_vKnO(autocall_conversions);
+
+                            grow_if_oob_qwZA(conversions_1, i) += t;
                         };
                         if (!expect)
                             continue;
 
-                        s_Type actual { args.mutref(callsiteIndex).type };
+                        const int hasConv = ((conversions_1.size() > i) ? conversions_1.mutref(i).size() : int{});
+                        s_Type actual = (hasConv ? GET(ctx_0, module_0, _scope_0, last_pHkT(conversions_1.mutref(i))).type : s_Type(args_1.mutref(callsiteIndex).type));
                         if (isAssignableAsArgument(expect, actual))
                             continue;
 
-                        if (considerRetyping(expect, actual))
+                        if (!hasConv && considerRetyping(expect, actual))
                         {
-                            s_SolvedNode& arg = args.mutref(callsiteIndex);
-                            if (arg.kind == "argid"_fu)
-                                arg = only_kEWY(arg.items);
-
-                            s_Type retype = tryRetyping(ctx_0, _info_0, _here_0, arg, expect);
+                            s_SolvedNode& arg = args_1.mutref(callsiteIndex);
+                            s_SolvedNode& arg_1 = ((arg.kind == "argid"_fu) ? only_kEWY(arg.items) : arg);
+                            s_Type retype = tryRetyping(ctx_0, _info_0, _here_0, arg_1, expect);
                             if (isAssignableAsArgument(expect, retype))
                             {
-                                arg.type = retype;
+                                arg_1.type = retype;
                                 continue;
                             };
                         };
-                        fu_VEC<s_Target> conversion = tryConvert(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, scope, local_scope, expect, actual);
-                        if (conversion)
+                        if (!(flags & F_CONVERSION))
                         {
-                            grow_if_oob_qwZA(conversions_1, i) = conversion;
-                            continue;
+                            fu_VEC<s_Target> conversion = tryConvert(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, expect, actual);
+                            if (conversion)
+                            {
+                                grow_if_oob_qwZA(conversions_1, i) += conversion;
+                                continue;
+                            };
                         };
-                        args = undo_literal_fixup;
-                        goto L_080;
+                        goto L_0112;
                     };
+                };
+                if (REST_START < N)
+                {
+                    for (int i = REST_START; i < N; i++)
+                    {
+                        const int hasConv = ((conversions_1.size() > i) ? conversions_1.mutref(i).size() : int{});
+                        const int callsiteIndex = (use_reorder ? reorder.mutref(i) : i);
+                        s_Type actual = (hasConv ? GET(ctx_0, module_0, _scope_0, last_pHkT(conversions_1.mutref(i))).type : s_Type(args_1.mutref(callsiteIndex).type));
+                        REST_TYPE = ((i == REST_START) ? solveArrlit_itemType_init(ctx_0, _info_0, _here_0, actual) : type_trySuper(REST_TYPE, actual));
+                        if (!REST_TYPE)
+                            goto L_0112;
+
+                    };
+                    REST_TYPE = solveArrlit_done(REST_TYPE);
                 };
                 if (overload.kind == "template"_fu)
                 {
-                    fu_STR* _1;
-                    const s_Target specIdx = trySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, overloadIdx, args, reorder, use_reorder, (*(_1 = &(args_mangled_1)) ? *_1 : *_1 = mangleArguments(args, reorder, use_reorder)));
+                    fu_STR cant_reuse {};
+                    fu_STR* _2;
+                    fu_STR& args_mangled = (*(_2 = &(((use_reorder || conversions_1) ? cant_reuse : reusable_mangle))) ? *_2 : *_2 = mangleArguments(ctx_0, module_0, _scope_0, args_1, reorder, use_reorder, conversions_1, REST_START, REST_TYPE));
+                    const s_Target specIdx = trySpecialize(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, overloadIdx, args_1, args_mangled, reorder, use_reorder, conversions_1, REST_START, REST_TYPE);
                     if (!specIdx)
-                        goto L_080;
+                        goto L_0112;
 
                     overloadIdx = specIdx;
                     DEBUG_assertMatch = specIdx;
+                    TODO_FIX_skip_autocalls = true;
                     continue;
                 };
                 disambig(ctx_0, module_0, _info_0, _here_0, _scope_0, _current_fn_0, id, matchIdx, overloadIdx);
-                std::swap(conversions_1, conversions);
                 if (use_reorder)
                 {
-                    fu_VEC<s_SolvedNode> new_args {};
-                    new_args.resize(reorder.size());
+                    args_out.resize(reorder.size());
                     for (int i = 0; i < reorder.size(); i++)
                     {
                         const int idx = reorder[i];
                         if ((idx >= 0))
-                            new_args.mutref(i) = args[idx];
+                            args_out.mutref(i) = args_1[idx];
 
                     };
-                    args = new_args;
-                };
+                }
+                else
+                    std::swap(args_1, args_out);
+
+                std::swap(conversions_1, conversions);
                 matchIdx = overloadIdx;
                 if (shadows)
                     goto L_NEXT;
 
                 break;
             };
-          } L_080:;
+          } L_0112:;
         } L_NEXT:;
 
         if (!alternate_ids)
@@ -3803,25 +3578,8 @@ static s_Target tryMatch__mutargs(const s_Context& ctx_0, s_Module& module_0, fu
         alternate_ids.pop();
     };
     if (matchIdx)
-    {
-        s_Overload matched = GET(ctx_0, module_0, _scope_0, matchIdx);
-        const bool isZeroInit = ((matched.kind == "type"_fu) && !explicitArity);
-        if (!isZeroInit)
-        {
-            const fu_VEC<s_Argument>& host_args = matched.args;
-            if ((host_args.size() > args.size()) || optional)
-                args.resize(host_args.size());
+        std::swap(args, args_out);
 
-            for (int i = 0; i < args.size(); i++)
-            {
-                if (!args.mutref(i) && !unless_oob_qwZA(conversions, i))
-                {
-                    const s_Argument& host_arg = host_args[i];
-                    args.mutref(i) = (host_arg.dEfault ? s_SolvedNode(host_arg.dEfault) : ((void)((host_arg.flags & F_IMPLICIT) || fail(ctx_0, _info_0, _here_0, (((("tryMatch: about to implicit-bind a non-implicit argument: `"_fu + host_arg.name) + ": "_fu) + serializeType(host_arg.type)) + "`."_fu))), bindImplicitArg(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, host_arg.name, host_arg.type, matchIdx)));
-                };
-            };
-        };
-    };
     if (DEBUG_assertMatch)
     {
         if (!(DEBUG_assertMatch == matchIdx))
@@ -3882,7 +3640,7 @@ static fu_STR actualArgs(const fu_VEC<s_SolvedNode>& args_1)
     int scope_iterator {};
     s_Target target {};
     bool shadows {};
-    while ((target = search(scope.items, id, scope_iterator, (local_scope ? _ss_0.items : fu::Default<fu_VEC<s_ScopeSkip>>::value), shadows, s_Target{}, fu::view<s_Target>{}, (local_scope ? _field_items_0 : fu::Default<fu_VEC<s_ScopeItem>>::value))))
+    while ((target = search(scope.items, id, scope_iterator, (local_scope ? _ss_0.items : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL)), shadows, s_Target{}, fu::view<s_Target>{}, (local_scope ? _field_items_0 : (*(const fu_VEC<s_ScopeItem>*)fu::NIL)))))
         overloads.push(target);
 
     int min = int(0x7fffffffu);
@@ -3914,20 +3672,315 @@ static fu_STR actualArgs(const fu_VEC<s_SolvedNode>& args_1)
     };
 }
 
-static s_Target match__mutargs(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Scope& scope, const bool local_scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags, const s_Target& target)
+static s_Target match__mutargs(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Scope& scope, const bool local_scope, const fu_STR& id, fu_VEC<s_SolvedNode>& args, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags, const s_Target& target)
 {
-    const s_Target ret = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, scope, local_scope, fu_STR(id), args, conversions, flags, target);
+    const s_Target ret = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, fu_STR(id), args, conversions, flags, target);
     if (ret)
         return ret;
 
-    const s_Target debug = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, scope, local_scope, fu_STR(id), args, conversions, flags, target);
+    const s_Target debug = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, local_scope, fu_STR(id), args, conversions, flags, target);
     if (debug)
         return debug;
 
     NICERR_mismatch(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, _field_items_0, _current_fn_0, scope, local_scope, id, args);
 }
 
-static s_SolvedNode solveCall(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Target& target, const int kills)
+static s_Node createRead(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const fu_STR& id)
+{
+    return s_Node { "call"_fu, 0, fu_STR(id), fu_VEC<s_Node>{}, s_TokenIdx((_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}))) };
+}
+
+static s_Type solveArrlit_itemType(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, fu::view<s_SolvedNode> items, s_Type&& itemType, int start)
+{
+    if (!itemType)
+    {
+        if (start == items.size())
+            fail(ctx_0, _info_0, _here_0, "Cannot infer empty arraylit."_fu);
+
+        itemType = solveArrlit_itemType_init(ctx_0, _info_0, _here_0, items[start++].type);
+    }
+    else if (is_ref(itemType))
+        fail(ctx_0, _info_0, _here_0, "Array items cannot be refs. TODO Why an error? Should this not just clear_refs?"_fu);
+
+    for (int i = start; i < items.size(); i++)
+        itemType = superType(ctx_0, _info_0, _here_0, "Array literal: "_fu, itemType, items[i].type);
+
+    return static_cast<s_Type&&>(itemType);
+}
+
+static s_SolvedNode createArrlit(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const s_TokenIdx& token, fu_VEC<s_SolvedNode>&& items, const s_Type& itemType)
+{
+    s_Type itemType_1 = solveArrlit_itemType(ctx_0, _info_0, _here_0, items, s_Type(itemType), 0);
+    for (int i = 0; i < items.size(); i++)
+        maybeCopyOrMove(ctx_0, _info_0, _here_0, items.mutref(i), itemType_1, false);
+
+    return s_SolvedNode { "arrlit"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>(items), s_TokenIdx(token), solveArrlit_done(itemType_1), s_Target{} };
+}
+
+                                #ifndef DEFt_first_kEWY
+                                #define DEFt_first_kEWY
+inline s_SolvedNode& first_kEWY(fu_VEC<s_SolvedNode>& s)
+{
+    return (s.size() ? s.mutref(0) : fu::fail("len == 0"_fu));
+}
+                                #endif
+
+static s_SolvedNode createLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, const s_Target& target, const int flags)
+{
+    s_Overload overload = GET(ctx_0, module_0, _scope_0, target);
+    return s_SolvedNode { "let"_fu, int(flags), fu_STR(overload.name), fu_VEC<s_SolvedNode>{}, s_TokenIdx((_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{}))), s_Type(overload.type), s_Target(target) };
+}
+
+static s_Target injectImplicitArg(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, s_CurrentFn& _current_fn_0, const fu_STR& id, const s_Type& type, const s_Target& becauseOf)
+{
+    if (!(_current_fn_0.out.items))
+        fail(ctx_0, _info_0, _here_0, (((("No implicit `"_fu + id) + "` in scope, needed to call `"_fu) + GET(ctx_0, module_0, _scope_0, becauseOf).name) + "`."_fu));
+
+    for (int i = 0; i < (_current_fn_0.out.items.size() + FN_RET_BACK); i++)
+    {
+        s_SolvedNode arg { _current_fn_0.out.items[i] };
+        if (arg.value == id)
+        {
+            checkAssignable(ctx_0, _info_0, _here_0, type, arg.type, "Implicit arg collision"_fu, id, fu_STR{});
+            return s_Target((arg.target ? arg.target : fail(ctx_0, _info_0, _here_0, fu_STR{})));
+        };
+    };
+    bool shadows {};
+    int flags = (F_IMPLICIT | F_ARG);
+    const s_Target ret = Binding(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, id, s_Type(type), flags, shadows, s_Target{});
+    s_SolvedNode newArgNode = createLet(ctx_0, module_0, _info_0, _here_0, _scope_0, ret, F_IMPLICIT);
+    const int newArgIdx = (_current_fn_0.out.items.size() + FN_RET_BACK);
+    _current_fn_0.out.items.insert(newArgIdx, newArgNode);
+    return ret;
+}
+
+static s_SolvedNode bindImplicitArg(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const fu_STR& name, const s_Type& type, const s_Target& becauseOf)
+{
+    fu_VEC<s_SolvedNode> args {};
+    fu_VEC<fu_VEC<s_Target>> conversions {};
+    s_Target _0 {};
+    const s_Target target = ((_0 = tryMatch__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, _scope_0, true, fu_STR(name), args, conversions, F_IMPLICIT, s_Target{})) ? _0 : (_0 = injectImplicitArg(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, name, type, becauseOf)) ? _0 : fail(ctx_0, _info_0, _here_0, fu_STR{}));
+    if ((args.size() != 0) || (conversions.size() != 0))
+        fail(ctx_0, _info_0, _here_0, "dunno what happened here"_fu);
+
+    s_Overload o = GET(ctx_0, module_0, _scope_0, target);
+    if (!(o.flags & F_IMPLICIT))
+        fail(ctx_0, _info_0, _here_0, (((("Matching a non-implicit item in scope: `"_fu + name) + "`, binds to call to `"_fu) + GET(ctx_0, module_0, _scope_0, becauseOf).name) + "`."_fu));
+
+    checkAssignable(ctx_0, _info_0, _here_0, type, o.type, (("Implicit `"_fu + name) + "` type mismatch"_fu), fu_STR{}, fu_STR{});
+    return CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, createRead(ctx_0, _info_0, _here_0, "__implicit"_fu), target, fu_VEC<s_SolvedNode>{}, 0);
+}
+
+                                #ifndef DEFt_if_first_hGoN
+                                #define DEFt_if_first_hGoN
+inline const s_Region& if_first_hGoN(const fu_VEC<s_Region>& s)
+{
+    return s.size() ? s[0] : (*(const s_Region*)fu::NIL);
+}
+                                #endif
+
+static s_Lifetime Lifetime_replaceArgsAtCallsite(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, const s_Overload& overload, fu::view<s_SolvedNode> argNodes)
+{
+    const fu_VEC<s_Region>& returned = overload.type.lifetime.uni0n;
+    const fu_VEC<s_SolvedNode>& items = overload.solved.items;
+    if (!Region_isArg(if_first_hGoN(returned)))
+        return s_Lifetime { fu_VEC<s_Region>(returned) };
+
+    const int head = items[0].target.index;
+    const int tail = items[((items.size() + FN_RET_BACK) - 1)].target.index;
+    s_Lifetime keep {};
+    s_Lifetime replace {};
+    int offset = (items.size() + FN_RET_BACK);
+    for (int i = 0; i < returned.size(); i++)
+    {
+        const s_Region& region = returned[i];
+        const int index = Region_toArgIndex(region);
+        if ((index < head) || (index > tail))
+        {
+            keep.uni0n += region;
+            continue;
+        };
+        while (offset--)
+        {
+            const int here = items[offset].target.index;
+            if (here == index)
+            {
+                const s_SolvedNode& argNode = argNodes[offset];
+                s_Lifetime argLt = (is_ref(argNode.type) ? s_Lifetime((argNode.type.lifetime ? argNode.type.lifetime : fail(ctx_0, _info_0, _here_0, "refarg without lifetime"_fu))) : Lifetime_temporary());
+                replace = Lifetime_union(replace, argLt);
+                break;
+            };
+            if (!(here > index))
+                fail(ctx_0, _info_0, _here_0, "nope, going backwards"_fu);
+
+        };
+    };
+    return Lifetime_union(keep, replace);
+}
+
+static bool isFnOrType(const s_Helpers& h)
+{
+    return !!(h.mask & (HM_Function | HM_Struct));
+}
+
+                                #ifndef DEF_SS_TYPE_RECUR
+                                #define DEF_SS_TYPE_RECUR
+inline constexpr unsigned SS_TYPE_RECUR = (0x1u << 16u);
+                                #endif
+
+                                #ifndef DEF_SS_FN_RECUR
+                                #define DEF_SS_FN_RECUR
+inline constexpr unsigned SS_FN_RECUR = (0x1u << 17u);
+                                #endif
+
+static void detectRecursion(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, int& _notes_0, fu_VEC<s_Helpers>& _helpers_0, const s_Target& target, const s_Overload& overload)
+{
+    if ((overload.status & (SS_FINALIZED | SS_LAZY)) != SS_LAZY)
+        return;
+
+    const int note = ((overload.kind == "type"_fu) ? N_TypeRecursion : N_FnRecursion);
+    const unsigned status = ((overload.kind == "type"_fu) ? SS_TYPE_RECUR : SS_FN_RECUR);
+    for (int i = _helpers_0.size(); i-- > 0; )
+    {
+        s_Helpers h { _helpers_0[i] };
+        if (!isFnOrType(h))
+            continue;
+
+        if (h.mask & HM_Lambda)
+            fail(ctx_0, _info_0, _here_0, "Recursive lambda, what happened here?"_fu);
+
+        GET_mut(module_0, _scope_0, s_Target { int(module_0.modid), int(h.target) }).status |= status;
+        _notes_0 |= note;
+        if (h.target == target.index)
+            return;
+
+    };
+    fail(ctx_0, _info_0, _here_0, (((("detectRecursion: no _helpers entry for `"_fu + overload.name) + " ("_fu) + overload.status) + ")`."_fu));
+}
+
+                                #ifndef DEFt_last_ZDQv
+                                #define DEFt_last_ZDQv
+inline const s_Node& last_ZDQv(const fu_VEC<s_Node>& s)
+{
+    return (s.size() ? s[(s.size() - 1)] : fu::fail("len == 0"_fu));
+}
+                                #endif
+
+static s_SolvedNode createLet(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, int& _notes_0, s_CurrentFn& _current_fn_0, const fu_STR& id, const int flags, const s_SolvedNode& init)
+{
+    s_SolvedNode out = solveLetLike_dontTouchScope(ctx_0, _info_0, _here_0, _notes_0, init.token, id, int(flags), s_SolvedNode(init), s_Type{}, s_Type{}, bool{});
+    return solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _current_fn_0, s_SolvedNode(out), id, s_Target{}, bool{});
+}
+
+static s_SolvedNode CallerNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Target& target, fu_VEC<s_SolvedNode>&& args, const int kills)
+{
+    s_Overload overload = GET(ctx_0, module_0, _scope_0, target);
+    const int REST_START = findRestStart(overload);
+    if (REST_START < args.size())
+    {
+        fu_VEC<s_SolvedNode> rest {};
+        rest.resize((args.size() - REST_START));
+        for (int i = args.size(); i-- > REST_START; )
+        {
+            std::swap(rest.mutref((i - REST_START)), args.mutref(i));
+            if (i > REST_START)
+                args.splice(i, 1);
+            else
+                args.mutref(i) = createArrlit(ctx_0, _info_0, _here_0, first_kEWY(rest).token, fu_VEC<s_SolvedNode>(rest), s_Type{});
+
+        };
+    };
+    const bool isZeroInit = ((overload.kind == "type"_fu) && !args.size());
+    if (!isZeroInit)
+    {
+        fu_VEC<s_Argument>& host_args = overload.args;
+        args.resize(host_args.size());
+        for (int i = 0; i < args.size(); i++)
+        {
+            if (!args.mutref(i))
+            {
+                const s_Argument& host_arg = host_args[i];
+                args.mutref(i) = (host_arg.dEfault ? s_SolvedNode(host_arg.dEfault) : ((void)((host_arg.flags & F_IMPLICIT) || fail(ctx_0, _info_0, _here_0, (((("tryMatch: about to implicit-bind a non-implicit argument: `"_fu + host_arg.name) + ": "_fu) + serializeType(host_arg.type)) + "`."_fu))), bindImplicitArg(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, host_arg.name, host_arg.type, target)));
+            };
+        };
+    };
+    s_Type type { overload.type };
+    if (overload.kind == "field"_fu)
+    {
+        s_Type* _0;
+        type = add_refs((*(_0 = &(only_kEWY(args).type)) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})), s_Type(overload.type));
+    }
+    else if (args)
+    {
+        fu_VEC<s_Argument>& host_args = (overload.args ? overload.args : fail(ctx_0, _info_0, _here_0, "CallerNode: no host args."_fu));
+        for (int i = 0; i < args.size(); i++)
+        {
+            s_SolvedNode* _1;
+            maybeCopyOrMove(ctx_0, _info_0, _here_0, (*(_1 = &(args.mutref(i))) ? *_1 : fail(ctx_0, _info_0, _here_0, fu_STR{})), host_args[i].type, true);
+        };
+        if (is_ref(type))
+            type.lifetime = Lifetime_test(ctx_0, module_0, _info_0, _here_0, _scope_0, _current_fn_0, Lifetime_replaceArgsAtCallsite(ctx_0, _info_0, _here_0, overload, args), true);
+
+    };
+    if (target.modid == module_0.modid)
+    {
+        if ((overload.kind == "fn"_fu) || (overload.kind == "type"_fu))
+        {
+            for (int i = _helpers_0.size(); i-- > 0; )
+            {
+                s_Helpers& h = _helpers_0.mutref(i);
+                if (isFnOrType(h))
+                {
+                    s_Overload& o = GET_mut(module_0, _scope_0, target);
+                    add_2vji(o.used_by, h.target);
+                    detectRecursion(ctx_0, module_0, _info_0, _here_0, _scope_0, _notes_0, _helpers_0, target, o);
+                    break;
+                };
+            };
+        };
+        if (_current_fn_0)
+        {
+            s_Overload o = GET(ctx_0, module_0, _scope_0, target);
+            if ((o.kind == "var"_fu) && o.local_of)
+                add_7gVc(_current_fn_0.locals_used, target.index);
+
+            add_DNSI(_current_fn_0.locals_used, o.closes_over);
+        };
+    };
+    if (overload.kind == "inline"_fu)
+    {
+        const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
+        s_ScopeSkipMemos ss0 { _ss_0 };
+        fu_DEFER(
+        {
+            Scope_pop(_scope_0, scope0, _helpers_0);
+            _ss_0 = ss0;
+        });
+        ScopeSkip_setup(ctx_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, overload.tEmplate, scope0, true);
+        _scope_0.items += overload.extra_items;
+        s_Node& n_fn = overload.tEmplate.node;
+        const s_Node& n_body = last_ZDQv(n_fn.items);
+        s_Type& ret_expect = overload.type;
+        fu_VEC<s_SolvedNode> result {};
+        if (!(overload.args.size() == args.size()))
+            fail(ctx_0, _info_0, _here_0, "inline: arglen mismatch"_fu);
+
+        result.resize((args.size() + 1));
+        for (int i = 0; i < args.size(); i++)
+        {
+            const s_Argument& slot = overload.args[i];
+            result.mutref(i) = createLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _notes_0, _current_fn_0, slot.name, (slot.flags & ~F_ARG), args.mutref(i));
+        };
+        s_SolvedNode s_body = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_body, ret_expect, 0, short((HM_CanReturn | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : (*(const short*)fu::NIL)))), kills);
+        last_kEWY(result) = s_body;
+        return createBlock(node.token, s_body.type, result, s_Target{});
+    };
+    s_SolvedNode out = solved(node, type, args, s_Target{});
+    out.target = target;
+    return out;
+}
+
+static s_SolvedNode solveCall(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Target& target, const int kills)
 {
     fu_STR id { node.value };
     if (!id)
@@ -3936,16 +3989,16 @@ static s_SolvedNode solveCall(const s_Context& ctx_0, s_Module& module_0, fu_VEC
             fail(ctx_0, _info_0, _here_0, fu_STR{});
 
     };
-    const int qualified = (node.flags & F_QUALIFIED);
+    const int qualified = (node.flags & F_COMPOUND_ID);
     const s_Scope& scope = (qualified ? dequalify_andGetScope(ctx_0, module_0, _info_0, _here_0, _scope_0, id) : _scope_0);
-    fu_VEC<s_SolvedNode> args = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, s_Type{}, s_Type{}, bool{}, true, -1, 0);
+    fu_VEC<s_SolvedNode> args = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, s_Type{}, s_Type{}, bool{}, true, -1, 0);
     if (is_never(if_last_kEWY(args).type))
     {
         _notes_0 |= N_DeadCall;
         return createBlock(node.token, t_never, args, s_Target{});
     };
     fu_VEC<fu_VEC<s_Target>> conversions {};
-    const s_Target callTargIdx = match__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, scope, !qualified, id, args, conversions, node.flags, target);
+    const s_Target callTargIdx = match__mutargs(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, scope, !qualified, id, args, conversions, node.flags, target);
     for (int argIdx = 0; argIdx < conversions.size(); argIdx++)
     {
         fu_VEC<s_Target> conversion { conversions[argIdx] };
@@ -3956,7 +4009,7 @@ static s_SolvedNode solveCall(const s_Context& ctx_0, s_Module& module_0, fu_VEC
             s_Overload o = GET(ctx_0, module_0, _scope_0, t);
             if (o.min || (o.max && args.mutref(argIdx)))
             {
-                args.mutref(argIdx) = CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, convRead, t, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(args[argIdx]) } }, 0);
+                args.mutref(argIdx) = CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, convRead, t, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(args[argIdx]) } }, 0);
                 continue;
             };
             if (i)
@@ -3965,13 +4018,13 @@ static s_SolvedNode solveCall(const s_Context& ctx_0, s_Module& module_0, fu_VEC
             if (args.mutref(argIdx))
                 fail(ctx_0, _info_0, _here_0, "Bad conversion chain, about to throw away an argnode."_fu);
 
-            args.mutref(argIdx) = CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, convRead, t, fu_VEC<s_SolvedNode>{}, 0);
+            args.mutref(argIdx) = CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, convRead, t, fu_VEC<s_SolvedNode>{}, 0);
         };
     };
-    return CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, callTargIdx, fu_VEC<s_SolvedNode>(args), kills);
+    return CallerNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, callTargIdx, fu_VEC<s_SolvedNode>(args), kills);
 }
 
-static s_SolvedNode evalTypeAnnot(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const fu_MAP<fu_STR, s_Type>& typeParams)
+static s_SolvedNode evalTypeAnnot(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const fu_MAP<fu_STR, s_Type>& typeParams)
 {
     if (node.kind == "call"_fu)
     {
@@ -3979,62 +4032,62 @@ static s_SolvedNode evalTypeAnnot(const s_Context& ctx_0, s_Module& module_0, fu
         if (items.size() == 1)
         {
             if (node.value == "&"_fu)
-                return solved(node, add_ref(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
+                return solved(node, add_ref(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
 
             if (node.value == "&mut"_fu)
-                return solved(node, add_mutref(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
+                return solved(node, add_mutref(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
 
             if (node.value == "[]"_fu)
-                return solved(node, createArray(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 0)), fu_VEC<s_SolvedNode>{}, s_Target{});
+                return solved(node, createArray(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 0)), fu_VEC<s_SolvedNode>{}, s_Target{});
 
         }
         else if (items.size() == 2)
         {
             if (node.value == "Map"_fu)
-                return solved(node, createMap(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 0), T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 1)), fu_VEC<s_SolvedNode>{}, s_Target{});
+                return solved(node, createMap(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 0), T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 1)), fu_VEC<s_SolvedNode>{}, s_Target{});
 
         };
-        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Target{}, 0);
+        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Target{}, 0);
     }
     else if (node.kind == "typeparam"_fu)
         return solved(node, evalTypeParam(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, node.value, typeParams), fu_VEC<s_SolvedNode>{}, s_Target{});
     else if ((node.kind == "arrlit"_fu) && (node.items.size() == 1))
-        return solved(node, createSlice(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
+        return solved(node, createSlice(T(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, typeParams, 0), Lifetime_temporary()), fu_VEC<s_SolvedNode>{}, s_Target{});
 
     fail(ctx_0, _info_0, _here_0, (((("TODO evalTypeAnnot: "_fu + node.kind) + "["_fu) + node.items.size()) + "]"_fu));
 }
-
-                                #ifndef DEF_F_CONVERSION
-                                #define DEF_F_CONVERSION
-inline const int F_CONVERSION = (1 << 15);
-                                #endif
 
 static s_SolvedNode createFnDef(const s_TokenIdx& token, const s_Type& type, const s_Target& target)
 {
     return s_SolvedNode { "fndef"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_TokenIdx(token), s_Type(type), s_Target(target) };
 }
 
-static s_SolvedNode uPrepFn_A(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode uPrepFn_A(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     const fu_STR& id = node.value;
     const int local_of = _current_fn_0.out.target.index;
     const bool isTemplate = !!(node.flags & F_TEMPLATE);
-    const uint32_t status = (!isTemplate ? SS_LAZY : fu::Default<uint32_t>::value);
+    const unsigned status = (!isTemplate ? SS_LAZY : (*(const unsigned*)fu::NIL));
+    const int N = (node.items.size() + FN_RET_BACK);
     int min = 0;
-    const int max = (node.items.size() + FN_RET_BACK);
+    int max = N;
     fu_VEC<s_Argument> args {};
-    for (int i = 0; i < max; i++)
+    for (int i = 0; i < N; i++)
     {
         const s_Node& arg = node.items[i];
-        const fu_STR& name = (arg.value ? arg.value : fail(ctx_0, _info_0, _here_0, "TemplateDecl: no argname."_fu));
+        fu_STR name { (arg.value ? arg.value : fail(ctx_0, _info_0, _here_0, "TemplateDecl: no argname."_fu)) };
+        fu_STR autocall = ((arg.flags & F_COMPOUND_ID) ? Autocall_splice(ctx_0, _info_0, _here_0, name) : fu_STR{});
         const s_Node& annot = arg.items[LET_TYPE];
         const s_Node& init = arg.items[LET_INIT];
         const bool typed = !(arg.flags & F_TEMPLATE);
-        s_Type type = (typed && annot ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, annot, fu_MAP<fu_STR, s_Type>{}).type : s_Type{});
-        s_SolvedNode dEfault = (typed && init ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, init, type, bool{}, 0) : s_SolvedNode{});
-        args.push(s_Argument { fu_STR(name), s_Type(type), s_SolvedNode(dEfault), 0 });
+        s_Type type = (typed && annot ? evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, annot, fu_MAP<fu_STR, s_Type>{}).type : s_Type{});
+        s_SolvedNode dEfault = (typed && init ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, init, type, bool{}, 0) : s_SolvedNode{});
+        args.push(s_Argument { fu_STR(name), fu_STR(autocall), s_Type(type), s_SolvedNode(dEfault), int(arg.flags) });
         if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
             min++;
+
+        if (arg.flags & F_REST_ARG)
+            max = int(0x7fffffffu);
 
     };
     s_Template tEmplate = createTemplate(_scope_0, _ss_0, _current_fn_0, _helpers_0, node);
@@ -4045,19 +4098,19 @@ static s_SolvedNode uPrepFn_A(const s_Context& ctx_0, s_Module& module_0, fu_VEC
     return createFnDef(node.token, X_addrofTarget(tDecl), tDecl);
 }
 
-static s_SolvedNode uPrepStruct(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode uPrepStruct(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
-    return __solveStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, false, s_Node(node), s_Target{});
+    return __solveStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, false, s_Node(node), s_Target{});
 }
 
-static s_SolvedNode unorderedPrep_A(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode unorderedPrep_A(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     const fu_STR& k = node.kind;
     if (k == "fn"_fu)
-        return uPrepFn_A(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return uPrepFn_A(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "struct"_fu)
-        return uPrepStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return uPrepStruct(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     fail(ctx_0, _info_0, _here_0, ("TODO: "_fu + k));
 }
@@ -4078,7 +4131,7 @@ static void unorderedPrep_B(s_Module& module_0, s_Scope& _scope_0, fu_VEC<s_Help
 
 }
 
-static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const fu_VEC<s_Node>& nodes, const s_Type& type_all, const s_Type& type_last, const bool use_type_last, const bool deadcode_on_never, const int as_blocks_after, const int kills)
+static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const fu_VEC<s_Node>& nodes, const s_Type& type_all, const s_Type& type_last, const bool use_type_last, const bool deadcode_on_never, const int as_blocks_after, const int kills)
 {
     fu_VEC<s_SolvedNode> result {};
     const s_TokenIdx here0 { _here_0 };
@@ -4094,7 +4147,7 @@ static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_
         {
             _here_0 = (node.token ? node.token : _here_0);
             const s_Type& type = (((i == (nodes.size() - 1)) && use_type_last) ? type_last : type_all);
-            s_SolvedNode solved = (((as_blocks_after >= 0) && (as_blocks_after <= i)) ? solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, type, 0, HM_CanBreak, 0) : solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, type, deadcode_on_never, ((i == (nodes.size() - 1)) ? kills : fu::Default<int>::value)));
+            s_SolvedNode solved = (((as_blocks_after >= 0) && (as_blocks_after <= i)) ? solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, type, 0, HM_CanBreak, 0) : solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, type, deadcode_on_never, ((i == (nodes.size() - 1)) ? kills : (*(const int*)fu::NIL))));
             result += solved;
             if (deadcode_on_never && is_never(solved.type))
             {
@@ -4118,7 +4171,7 @@ static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_
                 break;
             };
             _here_0 = (node_1.token ? node_1.token : _here_0);
-            result += unorderedPrep_A(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node_1);
+            result += unorderedPrep_A(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node_1);
         };
         if (!(i1 > i0))
             fail(ctx_0, _info_0, _here_0, fu_STR{});
@@ -4141,7 +4194,7 @@ static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_
                 const s_Node& node_1 = (*(_2 = &(nodes[i_1])) ? *_2 : fail(ctx_0, _info_0, _here_0, "solveNodes, solve: falsy node"_fu));
                 _here_0 = (node_1.token ? node_1.token : _here_0);
                 const s_Target into { result.mutref((i_1 + offset)).target };
-                if (lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, into, GET(ctx_0, module_0, _scope_0, into)))
+                if (lazySolveStart(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, into, GET(ctx_0, module_0, _scope_0, into)))
                     repeat = true;
 
             };
@@ -4150,9 +4203,9 @@ static fu_VEC<s_SolvedNode> solveNodes(const s_Context& ctx_0, s_Module& module_
     return result;
 }
 
-static s_SolvedNode solveRoot(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveRoot(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
-    return solved(node, t_void, solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, t_void, s_Type{}, bool{}, bool{}, -1, 0), s_Target{});
+    return solved(node, t_void, solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, t_void, s_Type{}, bool{}, bool{}, -1, 0), s_Target{});
 }
 
                                 #ifndef DEFt_only_ZDQv
@@ -4163,65 +4216,36 @@ inline const s_Node& only_ZDQv(const fu_VEC<s_Node>& s)
 }
                                 #endif
 
-static s_SolvedNode solveArgID(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type)
+static s_SolvedNode solveArgID(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type)
 {
-    s_SolvedNode expr = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, only_ZDQv(node.items), type, bool{}, 0);
+    s_SolvedNode expr = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, only_ZDQv(node.items), type, bool{}, 0);
     return solved(node, expr.type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(expr) } }, s_Target{});
 }
 
-static s_SolvedNode solveArrayLiteral(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type)
+static s_SolvedNode solveArrlit(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type)
 {
     s_Type itemType = (type ? tryClear_array(type) : s_Type{});
     if (!itemType && isStruct(type))
-        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, lookupStruct(type, module_0, ctx_0).target, 0);
+        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, lookupStruct(type, module_0, ctx_0).target, 0);
 
-    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, itemType, s_Type{}, bool{}, bool{}, -1, 0);
-    int startAt = 0;
-    if (!itemType && items.size())
-    {
-        s_SolvedNode* _0;
-        s_SolvedNode head { (*(_0 = &(items.mutref(startAt++))) ? *_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})) };
-        itemType = clear_refs(s_Type(head.type));
-    };
-    if (!itemType)
-        fail(ctx_0, _info_0, _here_0, "Cannot infer empty arraylit."_fu);
-
-    for (int i = startAt; i < items.size(); i++)
-    {
-        s_SolvedNode* _1;
-        itemType = type_trySuper(itemType, (*(_1 = &(items.mutref(i))) ? *_1 : fail(ctx_0, _info_0, _here_0, fu_STR{})).type);
-        if (!(itemType))
-            fail(ctx_0, _info_0, _here_0, "[array literal] No common supertype."_fu);
-
-    };
-    if (is_ref(itemType) || itemType.lifetime)
-        fail(ctx_0, _info_0, _here_0, "Array items cannot be refs."_fu);
-
-    for (int i = 0; i < items.size(); i++)
-        maybeCopyOrMove(ctx_0, _info_0, _here_0, items.mutref(i), itemType, false);
-
-    return solved(node, createArray(itemType), items, s_Target{});
+    return createArrlit(ctx_0, _info_0, _here_0, node.token, solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, itemType, s_Type{}, bool{}, bool{}, -1, 0), itemType);
 }
 
-                                #ifndef DEF_t_bool
-                                #define DEF_t_bool
-inline const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
-                                #endif
+extern const s_Type t_bool;
 
-static s_SolvedNode solveIf(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
+static s_SolvedNode solveIf(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
 {
-    s_SolvedNode cond = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[0], t_bool, bool{}, 0);
+    s_SolvedNode cond = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[0], t_bool, bool{}, 0);
     if (is_never(cond.type))
     {
         _notes_0 |= N_DeadIf;
         return cond;
     };
-    s_SolvedNode cons = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[1], type, 0, HM_CanBreak, 0);
-    s_SolvedNode alt = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[2], (type ? type : cons.type), 0, HM_CanBreak, 0);
+    s_SolvedNode cons = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[1], type, 0, HM_CanBreak, 0);
+    s_SolvedNode alt = solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[2], (type ? type : cons.type), 0, HM_CanBreak, 0);
     if (!is_void(type))
     {
-        s_Type _0 {};
-        type = ((_0 = type_trySuper(cons.type, alt.type)) ? static_cast<s_Type&&>(_0) : fail(ctx_0, _info_0, _here_0, (((("[if] No common supertype: `"_fu + serializeType(cons.type)) + " : "_fu) + serializeType(alt.type)) + "`."_fu)));
+        type = superType(ctx_0, _info_0, _here_0, "if/else: "_fu, cons.type, alt.type);
         if (!(is_ref(type) || !type.lifetime))
             fail(ctx_0, _info_0, _here_0, "[if] stray lifetime"_fu);
 
@@ -4234,9 +4258,9 @@ static s_SolvedNode solveIf(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s
     return solved(node, (type ? type : fail(ctx_0, _info_0, _here_0, fu_STR{})), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { s_SolvedNode(cond), s_SolvedNode(cons), s_SolvedNode(alt) } }, s_Target{});
 }
 
-static s_SolvedNode solveOr(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
+static s_SolvedNode solveOr(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
 {
-    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, (is_void(type) ? t_bool : type), type, true, true, 1, 0);
+    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, (is_void(type) ? t_bool : type), type, true, true, 1, 0);
     if (items.size() < 2)
         return static_cast<s_SolvedNode&&>(only_kEWY(items));
 
@@ -4255,7 +4279,7 @@ static s_SolvedNode solveOr(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s
                 hasNever = true;
                 continue;
             };
-            const s_SolvedNode& andLast = (hasNever && (item.kind == "and"_fu) && item.items ? item.items[(item.items.size() - 1)] : fu::Default<s_SolvedNode>::value);
+            const s_SolvedNode& andLast = (hasNever && (item.kind == "and"_fu) && item.items ? item.items[(item.items.size() - 1)] : (*(const s_SolvedNode*)fu::NIL));
             const s_Type& itemType = ((andLast && !is_never(andLast.type)) ? andLast.type : item.type);
             if (sumType)
             {
@@ -4289,9 +4313,9 @@ inline const s_SolvedNode& only_XB32(const fu_VEC<s_SolvedNode>& s)
 }
                                 #endif
 
-static s_SolvedNode solveAnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
+static s_SolvedNode solveAnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, s_Type&& type)
 {
-    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items, (is_void(type) ? t_bool : type), type, true, true, 1, 0);
+    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items, (is_void(type) ? t_bool : type), type, true, true, 1, 0);
     if (items.size() < 2)
         return s_SolvedNode(only_XB32(items));
 
@@ -4337,43 +4361,43 @@ static s_SolvedNode solveAnd(const s_Context& ctx_0, s_Module& module_0, fu_VEC<
 
                                 #ifndef DEF_HM_Anon
                                 #define DEF_HM_Anon
-inline const short HM_Anon = (short(1) << short(2));
+inline constexpr short HM_Anon = (short(1) << short(2));
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
                                 #define DEF_LOOP_INIT
-inline const int LOOP_INIT = 0;
+inline constexpr int LOOP_INIT = 0;
                                 #endif
 
                                 #ifndef DEF_LOOP_COND
                                 #define DEF_LOOP_COND
-inline const int LOOP_COND = 1;
+inline constexpr int LOOP_COND = 1;
                                 #endif
 
                                 #ifndef DEF_LOOP_BODY
                                 #define DEF_LOOP_BODY
-inline const int LOOP_BODY = 2;
+inline constexpr int LOOP_BODY = 2;
                                 #endif
 
                                 #ifndef DEF_LOOP_POST_COND
                                 #define DEF_LOOP_POST_COND
-inline const int LOOP_POST_COND = 3;
+inline constexpr int LOOP_POST_COND = 3;
                                 #endif
 
                                 #ifndef DEF_LOOP_POST
                                 #define DEF_LOOP_POST
-inline const int LOOP_POST = 4;
+inline constexpr int LOOP_POST = 4;
                                 #endif
 
-static s_SolvedNode solveLetStatement(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveLetStatement(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     if (!(node.kind == "let"_fu))
         fail(ctx_0, _info_0, _here_0, (("Expected a `let` statement, got: `"_fu + node.kind) + "`."_fu));
 
-    return solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, t_void, bool{}, 0);
+    return solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, t_void, bool{}, 0);
 }
 
-static s_SolvedNode solveLoop(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveLoop(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
     fu_DEFER(Scope_pop(_scope_0, scope0, _helpers_0));
@@ -4384,11 +4408,11 @@ static s_SolvedNode solveLoop(const s_Context& ctx_0, s_Module& module_0, fu_VEC
     const s_Node& n_body = node.items[LOOP_BODY];
     const s_Node& n_post_cond = node.items[LOOP_POST_COND];
     const s_Node& n_post = node.items[LOOP_POST];
-    s_SolvedNode init = (n_init ? solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_init) : s_SolvedNode{});
-    s_SolvedNode pre_cond = (n_pre_cond ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_pre_cond, t_bool, bool{}, 0) : s_SolvedNode{});
-    s_SolvedNode body = (n_body ? solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_body, t_void, 0, HM_CanBreak, 0) : s_SolvedNode{});
-    s_SolvedNode post_cond = (n_post_cond ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_post_cond, t_bool, bool{}, 0) : s_SolvedNode{});
-    s_SolvedNode post = (n_post ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, n_post, t_void, bool{}, 0) : s_SolvedNode{});
+    s_SolvedNode init = (n_init ? solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_init) : s_SolvedNode{});
+    s_SolvedNode pre_cond = (n_pre_cond ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_pre_cond, t_bool, bool{}, 0) : s_SolvedNode{});
+    s_SolvedNode body = (n_body ? solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_body, t_void, 0, HM_CanBreak, 0) : s_SolvedNode{});
+    s_SolvedNode post_cond = (n_post_cond ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_post_cond, t_bool, bool{}, 0) : s_SolvedNode{});
+    s_SolvedNode post = (n_post ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, n_post, t_void, bool{}, 0) : s_SolvedNode{});
     s_Helpers h { _helpers_0[brk_idx] };
     const short label_used = (h.mask & HM_LabelUsed);
     const s_Type& type = ((!pre_cond && !post_cond && !label_used) ? t_never : t_void);
@@ -4431,7 +4455,7 @@ static int Scope_lookupReturn(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s
 
                                 #ifndef DEF_F_SINGLE_STMT
                                 #define DEF_F_SINGLE_STMT
-inline const int F_SINGLE_STMT = (1 << 31);
+inline constexpr int F_SINGLE_STMT = (1 << 31);
                                 #endif
 
 static int Scope_lookupLabel(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_Helpers>& _helpers_0, const fu_STR& id, const bool cont)
@@ -4521,11 +4545,11 @@ static int& right(s_Target& target)
     return target.index;
 }
 
-static s_SolvedNode solveJump(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const int kills)
+static s_SolvedNode solveJump(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const int kills)
 {
     int helpers_idx = ((node.kind == "return"_fu) ? Scope_lookupReturn(ctx_0, _info_0, _here_0, _ss_0, _helpers_0, node.value, !!(node.flags & F_SINGLE_STMT)) : Scope_lookupLabel(ctx_0, _info_0, _here_0, _ss_0, _helpers_0, node.value, (node.kind == "continue"_fu)));
     s_Type* _0;
-    s_SolvedNode expr = (node.items ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, only_ZDQv(node.items), (*(_0 = &(h(_helpers_0, helpers_idx).ret_actual)) ? *_0 : h(_helpers_0, helpers_idx).ret_expect), bool{}, (helpers_idx + 1)) : s_SolvedNode{});
+    s_SolvedNode expr = (node.items ? solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, only_ZDQv(node.items), (*(_0 = &(h(_helpers_0, helpers_idx).ret_actual)) ? *_0 : h(_helpers_0, helpers_idx).ret_expect), bool{}, (helpers_idx + 1)) : s_SolvedNode{});
     if (is_never(expr.type))
         return expr;
 
@@ -4577,6 +4601,16 @@ static s_SolvedNode solveNum(const s_Node& node, const s_Type& type)
     return solved(node, solveNum(node.value, type), fu_VEC<s_SolvedNode>{}, s_Target{});
 }
 
+                                #ifndef DEF_q_integral
+                                #define DEF_q_integral
+inline constexpr int q_integral = (1 << 6);
+                                #endif
+
+                                #ifndef DEF_q_floating_pt
+                                #define DEF_q_floating_pt
+inline constexpr int q_floating_pt = (1 << 9);
+                                #endif
+
 static s_SolvedNode createDefinit(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Type&& type)
 {
     const s_TokenIdx token { (_here_0 ? _here_0 : fail(ctx_0, _info_0, _here_0, fu_STR{})) };
@@ -4622,16 +4656,16 @@ static s_SolvedNode solveDefinit(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0
     return (_0 = tryCreateDefinit(ctx_0, _info_0, _here_0, type)) ? static_cast<s_SolvedNode&&>(_0) : fail(ctx_0, _info_0, _here_0, ("Cannot definit: "_fu + serializeType(type)));
 }
 
-static s_SolvedNode solveCatch(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveCatch(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     if (!(node.items.size() == 3))
         fail(ctx_0, _info_0, _here_0, fu_STR{});
 
-    s_SolvedNode var_ok = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[0]);
+    s_SolvedNode var_ok = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[0]);
     const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
     fu_DEFER(Scope_pop(_scope_0, scope0, _helpers_0));
-    s_SolvedNode var_err = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[1]);
-    s_SolvedNode cAtch = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[2], s_Type{}, bool{}, 0);
+    s_SolvedNode var_err = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[1]);
+    s_SolvedNode cAtch = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[2], s_Type{}, bool{}, 0);
     s_Type& type = var_ok.type;
     if (!(is_never(cAtch.type)))
         fail(ctx_0, _info_0, _here_0, "[let catch]: catch clause must exit local scope."_fu);
@@ -4649,23 +4683,23 @@ static s_SolvedNode solveImport(const s_Context& ctx_0, fu_VEC<s_Info>& _info_0,
     return createEmpty(ctx_0, _info_0, _here_0, "empty"_fu, t_void, s_Target{});
 }
 
-static s_SolvedNode solveDefer(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveDefer(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
-    s_SolvedNode item = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, only_ZDQv(node.items), s_Type{}, bool{}, 0);
+    s_SolvedNode item = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, only_ZDQv(node.items), s_Type{}, bool{}, 0);
     return solved(node, t_void, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(item) } }, s_Target{});
 }
 
-static s_SolvedNode solveTryCatch(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveTryCatch(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     if (!(node.items.size() == 3))
         fail(ctx_0, _info_0, _here_0, fu_STR{});
 
     const s_ScopeMemo scope0 = Scope_snap(_scope_0, _helpers_0);
-    s_SolvedNode tRy = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[0], s_Type{}, bool{}, 0);
+    s_SolvedNode tRy = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[0], s_Type{}, bool{}, 0);
     Scope_pop(_scope_0, scope0, _helpers_0);
     const s_ScopeMemo scope0_1 = Scope_snap(_scope_0, _helpers_0);
-    s_SolvedNode err = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[1]);
-    s_SolvedNode cAtch = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[2], s_Type{}, bool{}, 0);
+    s_SolvedNode err = solveLetStatement(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[1]);
+    s_SolvedNode cAtch = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[2], s_Type{}, bool{}, 0);
     Scope_pop(_scope_0, scope0_1, _helpers_0);
     if (!((err.kind == "let"_fu) && isAssignableAsArgument(err.type, t_string_0)))
         fail(ctx_0, _info_0, _here_0, ("catch: exceptions are strings,"_fu + " consider dropping the annotation."_fu));
@@ -4674,19 +4708,23 @@ static s_SolvedNode solveTryCatch(const s_Context& ctx_0, s_Module& module_0, fu
     return solved(node, type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { s_SolvedNode(tRy), s_SolvedNode(err), s_SolvedNode(cAtch) } }, s_Target{});
 }
 
-static s_SolvedNode solveTypedef(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveTypedef(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
-    s_SolvedNode annot = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, only_ZDQv(node.items), fu_MAP<fu_STR, s_Type>{});
-    Scope_Typedef(_scope_0, node.value, annot.type, node.flags, s_Template{}, fu_STR{}, 0u, module_0);
+    s_SolvedNode annot = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, only_ZDQv(node.items), fu_MAP<fu_STR, s_Type>{});
+    if (isStruct(annot.type))
+        Scope_set(_scope_0, node.value, lookupStruct(annot.type, module_0, ctx_0).target, false);
+    else
+        Scope_Typedef(_scope_0, node.value, annot.type, node.flags, s_Template{}, fu_STR{}, 0u, module_0);
+
     return createEmpty(ctx_0, _info_0, _here_0, "empty"_fu, t_void, s_Target{});
 }
 
-static s_SolvedNode solveTypeAssert(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveTypeAssert(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     const s_Node& left = node.items[0];
     const s_Node& right = node.items[1];
-    s_Type expect = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, right, fu_MAP<fu_STR, s_Type>{}).type;
-    s_SolvedNode actual = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, left, expect, bool{}, 0);
+    s_Type expect = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, right, fu_MAP<fu_STR, s_Type>{}).type;
+    s_SolvedNode actual = solveNode(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, left, expect, bool{}, 0);
     checkAssignable(ctx_0, _info_0, _here_0, expect, actual.type, "Type assertion failed"_fu, fu_STR{}, fu_STR{});
     return actual;
 }
@@ -4706,9 +4744,9 @@ static void visitScope(s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow
 
 }
 
-                                #ifndef DEFt_each_WP3b
-                                #define DEFt_each_WP3b
-inline void each_WP3b(s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_0, fu_VEC<s_Target>& result_0, const fu_VEC<s_Struct>& a, int)
+                                #ifndef DEFt_each_rEpt
+                                #define DEFt_each_rEpt
+inline void each_rEpt(s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_0, fu_VEC<s_Target>& result_0, const fu_VEC<s_Struct>& a, int)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -4720,12 +4758,12 @@ inline void each_WP3b(s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_
 
 static void visitTypes(s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_0, fu_VEC<s_Target>& result_0, const s_Module& module_1)
 {
-    each_WP3b(_ss_0, id_0, shadow_0, result_0, module_1.out.types, 0);
+    each_rEpt(_ss_0, id_0, shadow_0, result_0, module_1.out.types, 0);
 }
 
-                                #ifndef DEFt_each_iSkL
-                                #define DEFt_each_iSkL
-inline void each_iSkL(const s_Context& ctx_0, s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_0, fu_VEC<s_Target>& result_0, fu_VEC<int>& items, fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_sNFv
+                                #define DEFt_each_sNFv
+inline void each_sNFv(const s_Context& ctx_0, s_ScopeSkipMemos& _ss_0, const fu_STR& id_0, bool& shadow_0, fu_VEC<s_Target>& result_0, fu_VEC<int>& items, fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -4755,7 +4793,7 @@ static s_SolvedNode solveAddrOfFn(const s_Context& ctx_0, s_Module& module_0, fu
     if (node.flags & F_ACCESS)
     {
         visitTypes(_ss_0, id, shadow, result, module_0);
-        each_iSkL(ctx_0, _ss_0, id, shadow, result, _scope_0.imports, _ss_0.imports, 0, 0);
+        each_sNFv(ctx_0, _ss_0, id, shadow, result, _scope_0.imports, _ss_0.imports, 0, 0);
     };
     if (!(result))
         fail(ctx_0, _info_0, _here_0, (("No `fn "_fu + id) + "` in scope."_fu));
@@ -4764,9 +4802,9 @@ static s_SolvedNode solveAddrOfFn(const s_Context& ctx_0, s_Module& module_0, fu
     return createEmpty(ctx_0, _info_0, _here_0, "empty"_fu, type, s_Target{});
 }
 
-static s_SolvedNode solveDeclExpr(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveDeclExpr(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
-    return s_SolvedNode(only_XB32(solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(node) } }, s_Type{}, s_Type{}, bool{}, bool{}, -1, 0)));
+    return s_SolvedNode(only_XB32(solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(node) } }, s_Type{}, s_Type{}, bool{}, bool{}, -1, 0)));
 }
 
 static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0, s_Node& node_2)
@@ -4784,18 +4822,18 @@ static void walk(const fu_STR& placeholder_0, const s_ScopeItem& field_0, s_Node
     };
 }
 
-inline static s_Node astReplace_05ml(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node_1, int)
+inline static s_Node astReplace_q4Ak(const fu_STR& placeholder_0, const s_ScopeItem& field_0, const s_Node& node_1, int)
 {
     s_Node node_2 { node_1 };
     walk(placeholder_0, field_0, node_2);
     return node_2;
 }
 
-static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node)
+static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node)
 {
     const fu_STR& placeholder = node.value;
     const s_Node& body_template = node.items[1];
-    s_Type fields_of = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node.items[0], fu_MAP<fu_STR, s_Type>{}).type;
+    s_Type fields_of = evalTypeAnnot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node.items[0], fu_MAP<fu_STR, s_Type>{}).type;
     if (!(isStruct(fields_of)))
         fail(ctx_0, _info_0, _here_0, (("[for fieldname]: This is not a struct: `"_fu + serializeType(fields_of)) + "`."_fu));
 
@@ -4805,55 +4843,55 @@ static s_SolvedNode solveForFieldsOf(const s_Context& ctx_0, s_Module& module_0,
     {
         const s_ScopeItem& field = fields[i];
         if (GET(ctx_0, module_0, _scope_0, target(field)).kind == "field"_fu)
-            items_ast += astReplace_05ml(placeholder, field, body_template, 0);
+            items_ast += astReplace_q4Ak(placeholder, field, body_template, 0);
 
     };
-    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, true, -1, 0);
+    fu_VEC<s_SolvedNode> items = solveNodes(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, items_ast, s_Type{}, s_Type{}, bool{}, true, -1, 0);
     const s_Type& type = (is_never(last_XB32(items).type) ? t_never : t_void);
     return createBlock(node.token, type, items, s_Target{});
 }
 
-static s_SolvedNode solveNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type, const bool deadcode_on_never, const int kills)
+static s_SolvedNode solveNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC<s_Info>& _info_0, s_TokenIdx& _here_0, s_Scope& _scope_0, s_ScopeMemo& _root_scope_0, s_ScopeSkipMemos& _ss_0, fu_VEC<s_ScopeItem>& _field_items_0, int& _notes_0, s_CurrentFn& _current_fn_0, fu_VEC<s_Helpers>& _helpers_0, int& _anons_0, fu_MAP<fu_STR, s_Target>& _specs_0, const s_Type& t_string_0, const s_Node& node, const s_Type& type, const bool deadcode_on_never, const int kills)
 {
     const fu_STR& k = node.kind;
     if (k == "root"_fu)
-        return solveRoot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveRoot(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "block"_fu)
-        return solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, type, 0, HM_CanBreak, kills);
+        return solveBlock(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, type, 0, HM_CanBreak, kills);
 
     if (k == "argid"_fu)
-        return solveArgID(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, type);
+        return solveArgID(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, type);
 
     if (k == "let"_fu)
-        return solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Type{}, s_Target{}, deadcode_on_never);
+        return solveLet(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Type{}, s_Target{}, deadcode_on_never);
 
     if (k == "call"_fu)
-        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Target{}, kills);
+        return solveCall(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Target{}, kills);
 
     if (k == "arrlit"_fu)
-        return solveArrayLiteral(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, type);
+        return solveArrlit(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, type);
 
     if (k == "if"_fu)
-        return solveIf(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Type(type));
+        return solveIf(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Type(type));
 
     if (k == "or"_fu)
-        return solveOr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Type(type));
+        return solveOr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Type(type));
 
     if (k == "and"_fu)
-        return solveAnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, s_Type(type));
+        return solveAnd(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, s_Type(type));
 
     if (k == "loop"_fu)
-        return solveLoop(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveLoop(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "break"_fu)
-        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, kills);
+        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, kills);
 
     if (k == "return"_fu)
-        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, kills);
+        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, kills);
 
     if (k == "continue"_fu)
-        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node, kills);
+        return solveJump(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node, kills);
 
     if (k == "int"_fu)
         return solveInt(ctx_0, _info_0, _here_0, node, type);
@@ -4871,22 +4909,22 @@ static s_SolvedNode solveNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC
         return solveDefinit(ctx_0, _info_0, _here_0, type);
 
     if (k == "catch"_fu)
-        return solveCatch(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveCatch(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "import"_fu)
         return solveImport(ctx_0, _info_0, _here_0, _scope_0, _ss_0, node);
 
     if (k == "defer"_fu)
-        return solveDefer(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveDefer(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "try"_fu)
-        return solveTryCatch(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveTryCatch(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "typedef"_fu)
-        return solveTypedef(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveTypedef(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "typeassert"_fu)
-        return solveTypeAssert(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveTypeAssert(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "typeparam"_fu)
         return solveTypeParam(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, node);
@@ -4895,13 +4933,13 @@ static s_SolvedNode solveNode(const s_Context& ctx_0, s_Module& module_0, fu_VEC
         return solveAddrOfFn(ctx_0, module_0, _info_0, _here_0, _scope_0, _ss_0, node);
 
     if (k == "fn"_fu)
-        return solveDeclExpr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveDeclExpr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "struct"_fu)
-        return solveDeclExpr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveDeclExpr(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     if (k == "forfieldsof"_fu)
-        return solveForFieldsOf(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, t_string_0, node);
+        return solveForFieldsOf(ctx_0, module_0, _info_0, _here_0, _scope_0, _root_scope_0, _ss_0, _field_items_0, _notes_0, _current_fn_0, _helpers_0, _anons_0, _specs_0, t_string_0, node);
 
     fail(ctx_0, _info_0, _here_0, ("TODO: "_fu + k));
 }
@@ -4918,6 +4956,7 @@ s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module
     s_CurrentFn _current_fn {};
     fu_VEC<s_Helpers> _helpers {};
     int _anons {};
+    fu_MAP<fu_STR, s_Target> _specs {};
     s_Type t_string = createArray(t_byte);
     if (module.modid)
     {
@@ -4927,7 +4966,7 @@ s_SolverOutput solve(const s_Node& parse, const s_Context& ctx, s_Module& module
     else
         _scope = listGlobals(module);
 
-    s_SolvedNode root = solveNode(ctx, module, _info, _here, _scope, _root_scope, _ss, _field_items, _notes, _current_fn, _helpers, _anons, t_string, parse, s_Type{}, bool{}, 0);
+    s_SolvedNode root = solveNode(ctx, module, _info, _here, _scope, _root_scope, _ss, _field_items, _notes, _current_fn, _helpers, _anons, _specs, t_string, parse, s_Type{}, bool{}, 0);
     if (_current_fn)
         fail(ctx, _info, _here, "non-empty _current_fn."_fu);
 

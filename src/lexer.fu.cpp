@@ -157,7 +157,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             std::byte max = std::byte('9');
             if (c == std::byte('0'))
             {
-                const std::byte c_1 = ((idx < end) ? src[idx] : fu::Default<std::byte>::value);
+                const std::byte c_1 = ((idx < end) ? src[idx] : (*(const std::byte*)fu::NIL));
                 if ((c_1 == std::byte('x')) || (c_1 == std::byte('X')))
                 {
                     hex = true;
@@ -192,7 +192,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 }
                 else if (c_1 == std::byte('.'))
                 {
-                    const std::byte c_2 = ((idx < end) ? src[idx] : fu::Default<std::byte>::value);
+                    const std::byte c_2 = ((idx < end) ? src[idx] : (*(const std::byte*)fu::NIL));
                     if (!(((c_2 >= std::byte('0')) && (c_2 <= std::byte('9'))) || (hex && (((c_2 >= std::byte('a')) && (c_2 <= std::byte('f'))) || ((c_2 >= std::byte('A')) && (c_2 <= std::byte('F')))))))
                     {
                         idx--;

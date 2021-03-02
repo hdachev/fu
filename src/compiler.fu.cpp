@@ -52,7 +52,6 @@ fu_STR cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_Context ZERO(const fu_STR&, s_TestDiffs&);
-s_Context solvePrelude();
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 s_ModuleStat ModuleStat_now();
@@ -206,7 +205,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -353,6 +352,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -360,6 +360,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -464,7 +465,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -544,7 +545,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -556,7 +556,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -672,7 +671,7 @@ struct s_TestDiffs
                                 #define DEFt_if_last_YeU3
 inline std::byte if_last_YeU3(const fu_STR& s)
 {
-    return s.size() ? s[(s.size() - 1)] : fu::Default<std::byte>::value;
+    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
 }
                                 #endif
 
@@ -695,20 +694,11 @@ fu_STR locate_PRJDIR()
     return dir;
 }
 
-                                #ifndef DEF_PRJDIR
-                                #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
-                                #endif
+extern const fu_STR PRJDIR = locate_PRJDIR();
 
-                                #ifndef DEF_DEFAULT_WORKSPACE
-                                #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
-                                #endif
+extern const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
 
-                                #ifndef DEF_FULIB
-                                #define DEF_FULIB
-inline const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
-                                #endif
+extern const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
 
                                 #ifndef DEFt_clone_U3Pf
                                 #define DEFt_clone_U3Pf
@@ -745,14 +735,6 @@ inline const fu_VEC<int>& clone_I28a(const fu_VEC<int>& a)
                                 #ifndef DEFt_clone_RsM6
                                 #define DEFt_clone_RsM6
 inline const fu_VEC<s_Struct>& clone_RsM6(const fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_SkF7
-                                #define DEFt_clone_SkF7
-inline const fu_MAP<fu_STR, s_Target>& clone_SkF7(const fu_MAP<fu_STR, s_Target>& a)
 {
     return a;
 }
@@ -831,7 +813,6 @@ inline s_ModuleOutputs clone_KHmT(const s_ModuleOutputs& a)
     {
         res.deps = clone_I28a(a.deps);
         res.types = clone_RsM6(a.types);
-        res.specs = clone_SkF7(a.specs);
         res.solve = clone_7EYp(a.solve);
         res.cpp = clone_YeU3(a.cpp);
     };
@@ -908,10 +889,7 @@ inline s_Context clone_MVIm(const s_Context& a)
 }
                                 #endif
 
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-inline const s_Context CTX_PRELUDE = solvePrelude();
-                                #endif
+extern const s_Context CTX_PRELUDE;
 
                                 #ifndef DEFt_clone_cBw5
                                 #define DEFt_clone_cBw5
@@ -948,14 +926,6 @@ inline fu_VEC<int>& clone_mrln(fu_VEC<int>& a)
                                 #ifndef DEFt_clone_zQF6
                                 #define DEFt_clone_zQF6
 inline fu_VEC<s_Struct>& clone_zQF6(fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_tt3Q
-                                #define DEFt_clone_tt3Q
-inline fu_MAP<fu_STR, s_Target>& clone_tt3Q(fu_MAP<fu_STR, s_Target>& a)
 {
     return a;
 }
@@ -1034,7 +1004,6 @@ inline s_ModuleOutputs clone_JkQQ(s_ModuleOutputs& a)
     {
         res.deps = clone_mrln(a.deps);
         res.types = clone_zQF6(a.types);
-        res.specs = clone_tt3Q(a.specs);
         res.solve = clone_FES7(a.solve);
         res.cpp = clone_jB4B(a.cpp);
     };
@@ -1304,7 +1273,7 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
-        return fu_STR((ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs) ? e : fu::Default<fu_STR>::value));
+        return fu_STR((ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs) ? e : (*(const fu_STR*)fu::NIL)));
     }
 ;
     fu_STR bad = "\nDID NOT THROW:\n"_fu;

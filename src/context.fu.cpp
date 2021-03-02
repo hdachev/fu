@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/default.h>
 #include <fu/io.h>
 #include <fu/map.h>
@@ -184,7 +183,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -331,6 +330,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -338,6 +338,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -442,7 +443,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -522,7 +523,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -534,7 +534,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -682,7 +681,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx
     fu_STR path = (from + name);
     fu_STR cached { ctx.fuzzy[path] };
     if (cached)
-        return fu_STR(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
+        return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     fu_STR resolve = tryResolve(from, name, ctx, path);
     (ctx.fuzzy.upsert(path) = (resolve ? fu_STR(resolve) : "\v"_fu));
@@ -722,7 +721,7 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
 {
     fu_STR cached { ctx.files[path] };
     if (cached)
-        return fu_STR(((cached == "\v"_fu) ? fu::Default<fu_STR>::value : cached));
+        return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     fu_STR read = fu::file_read(path);
     (ctx.files.upsert(path) = (read ? fu_STR(read) : "\v"_fu));
@@ -777,14 +776,6 @@ inline const fu_VEC<int>& clone_I28a(const fu_VEC<int>& a)
                                 #ifndef DEFt_clone_RsM6
                                 #define DEFt_clone_RsM6
 inline const fu_VEC<s_Struct>& clone_RsM6(const fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_SkF7
-                                #define DEFt_clone_SkF7
-inline const fu_MAP<fu_STR, s_Target>& clone_SkF7(const fu_MAP<fu_STR, s_Target>& a)
 {
     return a;
 }
@@ -863,7 +854,6 @@ inline s_ModuleOutputs clone_KHmT(const s_ModuleOutputs& a)
     {
         res.deps = clone_I28a(a.deps);
         res.types = clone_RsM6(a.types);
-        res.specs = clone_SkF7(a.specs);
         res.solve = clone_7EYp(a.solve);
         res.cpp = clone_YeU3(a.cpp);
     };
@@ -918,12 +908,12 @@ const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s
 
 const fu_VEC<int>& lookupTypeImports(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type) ? lookupStruct(type, module, ctx).imports : fu::Default<fu_VEC<int>>::value;
+    return isStruct(type) ? lookupStruct(type, module, ctx).imports : (*(const fu_VEC<int>*)fu::NIL);
 }
 
 const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type) ? lookupStruct(type, module, ctx).converts : fu::Default<fu_VEC<s_Target>>::value;
+    return isStruct(type) ? lookupStruct(type, module, ctx).converts : (*(const fu_VEC<s_Target>*)fu::NIL);
 }
 
 #endif

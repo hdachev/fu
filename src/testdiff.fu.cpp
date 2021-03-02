@@ -54,7 +54,7 @@ void set_next(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& actual)
 const fu_STR& get_current(const s_TestDiffs& diffs, const fu_STR& key)
 {
     const fu_STR* _0;
-    return *(_0 = &(diffs._current[key])) ? *_0 : fu::Default<fu_STR>::value;
+    return *(_0 = &(diffs._current[key])) ? *_0 : (*(const fu_STR*)fu::NIL);
 }
 
 #endif

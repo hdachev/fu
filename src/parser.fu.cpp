@@ -134,143 +134,131 @@ struct s_Token
 
                                 #ifndef DEF_F_METHOD
                                 #define DEF_F_METHOD
-inline const int F_METHOD = (1 << 0);
+inline constexpr int F_METHOD = (1 << 0);
                                 #endif
 
                                 #ifndef DEF_F_INFIX
                                 #define DEF_F_INFIX
-inline const int F_INFIX = (1 << 1);
+inline constexpr int F_INFIX = (1 << 1);
                                 #endif
 
                                 #ifndef DEF_F_PREFIX
                                 #define DEF_F_PREFIX
-inline const int F_PREFIX = (1 << 2);
+inline constexpr int F_PREFIX = (1 << 2);
                                 #endif
 
                                 #ifndef DEF_F_POSTFIX
                                 #define DEF_F_POSTFIX
-inline const int F_POSTFIX = (1 << 3);
+inline constexpr int F_POSTFIX = (1 << 3);
                                 #endif
 
                                 #ifndef DEF_F_ACCESS
                                 #define DEF_F_ACCESS
-inline const int F_ACCESS = (1 << 4);
+inline constexpr int F_ACCESS = (1 << 4);
                                 #endif
 
 static const int F_ID = (1 << 5);
 
-                                #ifndef DEF_F_QUALIFIED
-                                #define DEF_F_QUALIFIED
-inline const int F_QUALIFIED = (1 << 6);
+                                #ifndef DEF_F_COMPOUND_ID
+                                #define DEF_F_COMPOUND_ID
+inline constexpr int F_COMPOUND_ID = (1 << 6);
                                 #endif
 
 static const int F_PARENS = (1 << 7);
 
-                                #ifndef DEF_F_LOCAL
-                                #define DEF_F_LOCAL
-inline const int F_LOCAL = (1 << 8);
-                                #endif
-
                                 #ifndef DEF_F_ARG
                                 #define DEF_F_ARG
-inline const int F_ARG = (1 << 9);
-                                #endif
-
-                                #ifndef DEF_F_FIELD
-                                #define DEF_F_FIELD
-inline const int F_FIELD = (1 << 10);
-                                #endif
-
-                                #ifndef DEF_F_GLOBAL
-                                #define DEF_F_GLOBAL
-inline const int F_GLOBAL = (1 << 11);
+inline constexpr int F_ARG = (1 << 9);
                                 #endif
 
                                 #ifndef DEF_F_NOCOPY
                                 #define DEF_F_NOCOPY
-inline const int F_NOCOPY = (1 << 12);
+inline constexpr int F_NOCOPY = (1 << 12);
                                 #endif
 
                                 #ifndef DEF_F_OPT_ARG
                                 #define DEF_F_OPT_ARG
-inline const int F_OPT_ARG = (1 << 16);
+inline constexpr int F_OPT_ARG = (1 << 16);
                                 #endif
 
                                 #ifndef DEF_F_CONVERSION
                                 #define DEF_F_CONVERSION
-inline const int F_CONVERSION = (1 << 15);
+inline constexpr int F_CONVERSION = (1 << 15);
                                 #endif
 
                                 #ifndef DEF_F_MUT
                                 #define DEF_F_MUT
-inline const int F_MUT = (1 << 16);
+inline constexpr int F_MUT = (1 << 16);
                                 #endif
 
                                 #ifndef DEF_F_IMPLICIT
                                 #define DEF_F_IMPLICIT
-inline const int F_IMPLICIT = (1 << 17);
+inline constexpr int F_IMPLICIT = (1 << 17);
                                 #endif
 
                                 #ifndef DEF_F_USING
                                 #define DEF_F_USING
-inline const int F_USING = (1 << 18);
+inline constexpr int F_USING = (1 << 18);
                                 #endif
 
                                 #ifndef DEF_F_MUSTNAME
                                 #define DEF_F_MUSTNAME
-inline const int F_MUSTNAME = (1 << 19);
+inline constexpr int F_MUSTNAME = (1 << 19);
                                 #endif
 
                                 #ifndef DEF_F_PUB
                                 #define DEF_F_PUB
-inline const int F_PUB = (1 << 20);
+inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
                                 #ifndef DEF_F_OPERATOR
                                 #define DEF_F_OPERATOR
-inline const int F_OPERATOR = (1 << 21);
+inline constexpr int F_OPERATOR = (1 << 21);
                                 #endif
 
                                 #ifndef DEF_F_REF
                                 #define DEF_F_REF
-inline const int F_REF = (1 << 22);
+inline constexpr int F_REF = (1 << 22);
                                 #endif
 
                                 #ifndef DEF_F_SHADOW
                                 #define DEF_F_SHADOW
-inline const int F_SHADOW = (1 << 23);
+inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
                                 #ifndef DEF_F_NAMED_ARGS
                                 #define DEF_F_NAMED_ARGS
-inline const int F_NAMED_ARGS = (1 << 24);
+inline constexpr int F_NAMED_ARGS = (1 << 24);
                                 #endif
 
                                 #ifndef DEF_F_SPREAD_INLINE
                                 #define DEF_F_SPREAD_INLINE
-inline const int F_SPREAD_INLINE = (1 << 25);
+inline constexpr int F_SPREAD_INLINE = (1 << 25);
                                 #endif
 
-static const int F_PATTERN = (1 << 27);
+                                #ifndef DEF_F_REST_ARG
+                                #define DEF_F_REST_ARG
+inline constexpr int F_REST_ARG = (1 << 26);
+                                #endif
 
                                 #ifndef DEF_F_TEMPLATE
                                 #define DEF_F_TEMPLATE
-inline const int F_TEMPLATE = (1 << 28);
+inline constexpr int F_TEMPLATE = (1 << 28);
                                 #endif
 
                                 #ifndef DEF_F_INLINE
                                 #define DEF_F_INLINE
-inline const int F_INLINE = (1 << 29);
+inline constexpr int F_INLINE = (1 << 29);
                                 #endif
 
                                 #ifndef DEF_F_LAMBDA
                                 #define DEF_F_LAMBDA
-inline const int F_LAMBDA = (1 << 30);
+inline constexpr int F_LAMBDA = (1 << 30);
                                 #endif
 
                                 #ifndef DEF_F_SINGLE_STMT
                                 #define DEF_F_SINGLE_STMT
-inline const int F_SINGLE_STMT = (1 << 31);
+inline constexpr int F_SINGLE_STMT = (1 << 31);
                                 #endif
 
 static const int P_RESET = 1000;
@@ -322,52 +310,52 @@ static const s_BINOP BINOP = setupOperators();
 
                                 #ifndef DEF_LET_TYPE
                                 #define DEF_LET_TYPE
-inline const int LET_TYPE = 0;
+inline constexpr int LET_TYPE = 0;
                                 #endif
 
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
-inline const int LET_INIT = 1;
+inline constexpr int LET_INIT = 1;
                                 #endif
 
                                 #ifndef DEF_FN_RET_BACK
                                 #define DEF_FN_RET_BACK
-inline const int FN_RET_BACK = -2;
+inline constexpr int FN_RET_BACK = -2;
                                 #endif
 
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
-inline const int FN_BODY_BACK = -1;
+inline constexpr int FN_BODY_BACK = -1;
                                 #endif
 
                                 #ifndef DEF_TYPECTOR_BACK
                                 #define DEF_TYPECTOR_BACK
-inline const int TYPECTOR_BACK = -1;
+inline constexpr int TYPECTOR_BACK = -1;
                                 #endif
 
                                 #ifndef DEF_LOOP_INIT
                                 #define DEF_LOOP_INIT
-inline const int LOOP_INIT = 0;
+inline constexpr int LOOP_INIT = 0;
                                 #endif
 
                                 #ifndef DEF_LOOP_COND
                                 #define DEF_LOOP_COND
-inline const int LOOP_COND = 1;
+inline constexpr int LOOP_COND = 1;
                                 #endif
 
                                 #ifndef DEF_LOOP_BODY
                                 #define DEF_LOOP_BODY
-inline const int LOOP_BODY = 2;
+inline constexpr int LOOP_BODY = 2;
                                 #endif
 
                                 #ifndef DEF_LOOP_POST_COND
                                 #define DEF_LOOP_POST_COND
-inline const int LOOP_POST_COND = 3;
+inline constexpr int LOOP_POST_COND = 3;
                                 #endif
 
                                 #ifndef DEF_LOOP_POST
                                 #define DEF_LOOP_POST
-inline const int LOOP_POST = 4;
+inline constexpr int LOOP_POST = 4;
                                 #endif
 
 static const int M_LINT_UNARY_PRECEDENCE = (1 << 0);
@@ -967,7 +955,6 @@ static int parseFnBodyOrPattern(int modid_0, const fu_STR& fname_0, const fu_VEC
     if (!expr && tryConsume(tokens_0, _idx_0, "id"_fu, "case"_fu))
     {
         fu_VEC<s_Node> branches {};
-        flags |= F_PATTERN;
         do
             parseBranch(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, branches, bool{});
         while (tryConsume(tokens_0, _idx_0, "id"_fu, "case"_fu));
@@ -1136,7 +1123,7 @@ static int parseCallArgs(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Toke
         if (name)
             flags |= F_NAMED_ARGS;
 
-        out_args.push((name ? createArgID(modid_0, _loc_0, name, expr, (optional ? F_OPT_ARG : fu::Default<int>::value)) : s_Node(expr)));
+        out_args.push((name ? createArgID(modid_0, _loc_0, name, expr, (optional ? F_OPT_ARG : (*(const int*)fu::NIL))) : s_Node(expr)));
     };
     return flags;
 }
@@ -1404,12 +1391,12 @@ static s_Node tryParseBinary(int modid_0, const fu_STR& fname_0, const fu_VEC<s_
 
 static s_Node parseQualifierChain(const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, fu_VEC<fu_STR>& _imports_0, s_Node&& expr)
 {
-    if ((expr.kind != "call"_fu) || (expr.items && ((expr.items.size() != 1) || !(expr.flags & F_ACCESS))) || (expr.flags & F_QUALIFIED))
+    if ((expr.kind != "call"_fu) || (expr.items && ((expr.items.size() != 1) || !(expr.flags & F_ACCESS))) || (expr.flags & F_COMPOUND_ID))
     {
         _idx_0--;
         fail(fname_0, tokens_0, _idx_0, _loc_0, fu_STR{});
     };
-    expr.flags |= F_QUALIFIED;
+    expr.flags |= F_COMPOUND_ID;
     fu_STR path { expr.value };
     for (; ; )
     {
@@ -1512,8 +1499,21 @@ static s_Node parseLet(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>
         flags |= F_REF;
 
     fu_STR id = consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value;
-    s_Token optional = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "?"_fu) : s_Token{});
     s_Token mustname = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "!"_fu) : s_Token{});
+    if (xqmark && tryConsume(tokens_0, _idx_0, "op"_fu, "."_fu))
+    {
+        flags |= F_COMPOUND_ID;
+        id += ("."_fu + consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value);
+        while (tryConsume(tokens_0, _idx_0, "op"_fu, "::"_fu))
+            id += ("\t"_fu + consume(fname_0, tokens_0, _idx_0, _loc_0, "id"_fu, fu::view<std::byte>{}, fu_STR{}).value);
+
+    };
+    if (xqmark && tryConsume(tokens_0, _idx_0, "op"_fu, "[]"_fu))
+        flags |= F_REST_ARG;
+
+    s_Token optional = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "?"_fu) : s_Token{});
+    s_Token* _0;
+    (*(_0 = &(mustname)) ? *_0 : *_0 = (xqmark ? tryConsume(tokens_0, _idx_0, "op"_fu, "!"_fu) : s_Token{}));
     s_Node type = tryPopTypeAnnot(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0);
     s_Node init = (optional ? createDefinit(modid_0, _loc_0) : (tryConsume(tokens_0, _idx_0, "op"_fu, "="_fu) ? parseExpression(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, P_RESET, 0) : s_Node{}));
     if (mustname)
@@ -1525,14 +1525,13 @@ static s_Node parseLet(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>
 static s_Node parseStructItem(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0)
 {
     s_Node member = parseLet(modid_0, fname_0, tokens_0, _idx_0, _loc_0, _col0_0, _precedence_0, _fnDepth_0, _dollarAuto_0, _dollars_0, _anonFns_0, _numReturns_0, _imports_0, true);
-    member.flags |= F_FIELD;
     consume(fname_0, tokens_0, _idx_0, _loc_0, "op"_fu, ";"_fu, fu_STR{});
     return member;
 }
 
 static fu_VEC<s_Node> parseBlockLike(int modid_0, const fu_STR& fname_0, const fu_VEC<s_Token>& tokens_0, int& _idx_0, int& _loc_0, int& _col0_0, int& _precedence_0, int& _fnDepth_0, int& _dollarAuto_0, fu_VEC<fu_STR>& _dollars_0, int& _anonFns_0, int& _numReturns_0, fu_VEC<fu_STR>& _imports_0, const fu_STR& endKind, const fu_STR& endVal, const bool sTruct)
 {
-    const int line0 = (_idx_0 ? tokens_0[(_idx_0 - 1)].line : fu::Default<int>::value);
+    const int line0 = (_idx_0 ? tokens_0[(_idx_0 - 1)].line : (*(const int*)fu::NIL));
     const int col00 = _col0_0;
     int colNN = -1;
     int lineNN = line0;

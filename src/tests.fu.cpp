@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -42,7 +41,6 @@ struct s_ValueType;
 
 fu_STR FAIL(const fu_STR&, s_TestDiffs&);
 fu_STR FAIL(const fu_VEC<fu_STR>&, s_TestDiffs&);
-fu_STR locate_PRJDIR();
 fu_STR serialize(const s_TestDiffs&);
 fu_STR snippet2cpp(const fu_STR&);
 s_Context ZERO(const fu_STR&, s_TestDiffs&);
@@ -205,7 +203,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -352,6 +350,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -359,6 +358,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -463,7 +463,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -543,7 +543,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -555,7 +554,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -659,10 +657,7 @@ int self_test()
     return (fu::lfind(cpp, "int main()"_fu, 0) ? 0 : 101);
 }
 
-                                #ifndef DEF_PRJDIR
-                                #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
-                                #endif
+extern const fu_STR PRJDIR;
 
 static fu_STR EXPR(fu_STR& assertion_0, const fu_STR& varname)
 {
@@ -921,7 +916,7 @@ void runTests()
     ZERO("\n        struct Module  { cpp:    string; };\n        struct Context { module: Module; };     // Simplification of next test, no need to consider COW here\n\n        fn snippet2cpp(cpp: string): string {\n            let ctx = Context( Module(cpp) );\n            {\n                let module = ctx.module;        // This was const Module& =  ... which can't be moved from.\n                if (module.cpp)\n                    return module.cpp;          ;; EXPECT return static_cast<fu_STR&&>\n            }\n\n            return \"\";\n        }\n\n        fn main() snippet2cpp(\"1\").len - 1;\n    "_fu, testdiffs);
     ZERO("\n        struct Module  { cpp:     string;   };\n        struct Context { modules: Module[]; };  // Module[] is COW-capable -\n                                                //  - either prove there's no COW,\n        fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.\n            let ctx = Context([ Module(cpp) ]);\n            for (mut i = 0; i < ctx.modules.len; i++)\n            {\n                let module = ctx.modules[i];    ;; TODO .unique(i)\n                if (module.cpp)\n                    return module.cpp;          ;; TODO return static_cast<fu_STR&&>\n            }\n\n            return \"\";\n        }\n\n        fn main() snippet2cpp(\"1\").len - 1;\n    "_fu, testdiffs);
     ZERO("\n        //! DEAD_code, TODO FIX no dead code here really, noticed before reopen.\n        //  Perhaps we want to \"undo\" these markers somehow?\n        //   Or have them per scope entry and discard?\n\n        fn test(x: string) {\n            // cg fail: fwd annots of the two fns where unconsting hey to \"enable move\",\n            //          basically the decision was made in the wrong scope.\n            let hey = \"hey\";\n            fn inner(you: string) you && hey ~ you || outer(\"what#1\");\n            fn outer(arg: string) inner(arg && \" \" ~ arg) || inner(\"what#2\");\n            return outer(x); //! FN_recursion FN_reopen\n        }\n\n        fn main() test(\"you\").len - 7;\n    "_fu, testdiffs);
-    TODO("\n        struct Arg { i: i32; };\n\n        // A mutref fail.\n        fn mutargs(args: &mut Arg[])\n        {\n            // This miscompiles to ref into args,\n            //  after which we invalidate the reference.\n            //\n            // Notice the \"let\" would bind cleanly,\n            //  if it weren't for the \"&&\", which loses the mutrefsness.\n            //\n            let badref = args.len && args[0];   -----------------\n            args = [ Arg(11) ];                 INVALID REFERENCE\n            return badref;                      -----------------\n        }\n\n        fn main()\n        {\n            mut args = [ Arg(7) ];\n            return mutargs(args).i - 7;\n        }\n    "_fu, testdiffs);
+    TODO("\n        struct Arg { i: i32; };\n\n        // A mutref fail.\n        fn mutargs(args: &mut Arg[])\n        {\n            // This miscompiles to ref into args,\n            //  after which we invalidate the reference.\n            //\n            // Notice the \"let\" would bind cleanly,\n            //  if it weren't for the \"&&\", which loses the mutrefsness.\n            //\n            let badref = args.len && args[0];\n            args = [ Arg(11) ]; // INVALIDATE badref.\n            return badref;\n        }\n\n        fn main()\n        {\n            mut args = [ Arg(7) ];\n            return mutargs(args).i - 7;\n        }\n    "_fu, testdiffs);
     ZERO("\n        pub struct Target { modid!: i32; packed!: i32; };\n        pub inline fn index(a: Target) a.packed;\n\n        //////////////////////////////////////////////////////////////////\n        // TODO module autosplit, we need to generate import variations //\n        //////////////////////////////////////////////////////////////////\n\n        struct CurrentFn { using target: Target; };\n        fn hello(c?: CurrentFn) c.index;\n        fn main() hello;\n    "_fu, testdiffs);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub struct Target { modid!: i32; packed!: i32; };\n        pub inline fn index(a: Target) a.packed;\n    "_fu, "\n        import _0;\n        struct CurrentFn { using target: Target; };\n        fn hello(c?: CurrentFn) c.index;\n        fn main() hello;\n    "_fu } }, testdiffs);
     ZERO("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu, testdiffs);
@@ -939,7 +934,8 @@ void runTests()
     ZERO("\n        struct TEA\n        {\n            v0: u32;\n            v1: u32;\n        }\n\n        inline fn r4(using _: &mut TEA, sum: &mut u32)\n        {\n            mut delta: u32 = 0x9e3779b9;\n\n            for (mut i = 0; i < 4; i++) {\n                sum += delta;\n\n                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);\n                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);\n            }\n        }\n\n        // Stack overflow solving this,\n        //  argmax is +inf, and it just\n        //   re-enters and re-enters.\n        inline fn r4(tea: &mut TEA) {\n            mut sum: u32; tea.r4(sum);\n        }\n\n        fn main() {\n            mut tea: TEA;\n            tea.r4();\n            return (tea.v0 ^ tea.v0).i32;\n        }\n    "_fu, testdiffs);
     TODO("\n        struct ScopeSkip {\n            min: i32;\n            max: i32;\n        };\n\n        fn main() {\n            let a = 1;\n            mut x: ScopeSkip; x = [ -2, 0 ]; // Inference fail.\n            mut t: ScopeSkip; t = x.min && [ x.min, a ];\n            return a + t.min + t.max;\n        }\n    "_fu, testdiffs);
     ZERO("\n        // Same as below, but avoids the $T call, which is also broken somehow.\n        //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -\n        //   we emit useless overloads for mutrefs when its clearly useless.\n\n        //! FN_recursion FN_resolve\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i) {\n                shadow mut a = a;\n                a.i /= 2;\n                return rec_cases(a);\n            }\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
-    TODO("\n        //! FN_recursion FN_resolve\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i)    return rec_cases($T(i: a.i / 2));\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
+    ZERO("\n        //! FN_recursion FN_resolve\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i)    return rec_cases($T(i: a.i / 2));\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
+    ZERO("\n        struct X { i: i32; };\n        type Y = X;\n        fn main() Y(1).i / 2;\n    "_fu, testdiffs);
     ZERO("\n        struct SolvedNode {\n            value: i32;\n            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve\n        };\n\n        fn visitNodes(_v: &mut $V, _n: SolvedNode) {\n\n            fn traverse(v: &mut $V, n: SolvedNode) {\n                v.visit(n);\n                for (mut i = 0; i < n.items.len; i++)\n                    traverse(v, n.items[i]); //! FN_recursion FN_resolve\n            }\n\n            traverse(_v, _n);\n        };\n\n        struct Visitor {\n            sum: i32;\n        };\n\n        fn visit(using v: &mut Visitor, node: SolvedNode) {\n            sum += node.value;\n        };\n\n        fn main(): i32 {\n            let tree = SolvedNode(3,\n                [ SolvedNode(5), SolvedNode(7) ]);\n\n            // This is an aside, managed to lose the copy qual when working structs\n            // Initially noticed it because visitNodes tried to change its sighash\n            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy\n\n            mut myVisitor: Visitor;\n            myVisitor.visitNodes(tree);\n            return myVisitor.sum - 15;\n        };\n\n    "_fu, testdiffs);
     ZERO("\n        return 0 > 1 ? throw(\"should type check\") : 0;\n    "_fu, testdiffs);
     ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1; //! DEAD_code\n        }\n\n        fn main(): i32 {\n            let x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return x || 7;\n        }\n    "_fu, testdiffs);
@@ -1047,9 +1043,10 @@ void runTests()
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn add(ref to: $T[], item: $T) {\n            for (mut i = 0; i < to.len; i++) {\n                if (to[i] >= item) {\n                    if (to[i] != item)\n                        to.insert(i, item);\n\n                    return;\n                }\n            }\n\n            to.push(item);\n        }\n    "_fu, "\n        fn main() {\n            mut x = [1, 2, 3];\n            x._0::add(3); if (x.len != 3) return 33;\n            x._0::add(4); return x.len - x[3];\n        }\n    "_fu } }, testdiffs);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;\n        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;\n\n        pub let A = \"hello\";\n        pub let B = \"world\";\n    "_fu, "\n        import _0;\n        fn test(i: i32) {\n            let v = i & 1 ? A : B;\n            return v.len;\n        }\n\n        fn main() 0.test - 1.test;\n    "_fu } }, testdiffs);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn clone(a: $T)\n        case ($T -> @copy) a;\n        case ($T -> $T) {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n    "_fu, "\n        pub nocopy struct Scope { x: i32; };\n\n        pub struct ModuleOutputs {\n            deps: i32[];\n            scope: Scope;\n        };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a._0::clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu } }, testdiffs);
-    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        // a private fn\n        fn createShader(src: string) = src;\n\n        // inits a public let\n        pub let GEOMETRY_PASS_TEST = createShader(\"source code\");\n    "_fu, "\n        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;\n    "_fu } }, testdiffs);
+    ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        // a private fn\n        fn createShader(src: string) = src;\n\n        // inits a public let\n        pub let GEOMETRY_PASS_TEST = createShader(\"source code\");\n    "_fu, "\n        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;\n    "_fu } }, testdiffs);
     ZERO("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu, testdiffs);
     ZERO("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu, testdiffs);
+    TODO("\n        pub struct Target { modid: i32; packed: u32; };\n\n        pub fn index(t: Target) i32(t.packed & 0x7fffffff);\n\n        pub fn local_eq(t: Target, index: i32, implicit modid: i32)\n            modid - t.modid || index - t.index;\n\n        fn main() {\n            let implicit modid = 1;\n            return local_eq(Target(1, 0x80000002), 7) - 5;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct HasInt { i: i32; };\n\n        fn test(s: HasInt): &i32 {\n            let i = s.i;\n            return i;\n        }\n\n        fn main() HasInt(-1).test + 1;\n    "_fu, testdiffs);
     ZERO("\n        fn test(implicit x: i32): &i32 = x;\n        fn main() test(3) - 3;\n    "_fu, testdiffs);
     ZERO("\n        fn test(implicit x: i32): &i32 {\n            fn inner() x;\n            return inner;\n        }\n\n        fn main() test(3) - 3;\n    "_fu, testdiffs);
@@ -1080,6 +1077,14 @@ void runTests()
     ZERO("\n        fn each(items: $T[], fn) {\n            for (mut i = 0; i < items.len; i++) // <- one i\n                fn(items[i]);\n        }\n\n        fn main() {\n            mut i = 0;                  // <- another i, i got them to shadow each other\n            [1, 2].each(|x| i += x);    //      in the everything-a-free-function\n            return i - 3;               //      impl of closures\n        }\n    "_fu, testdiffs);
     ZERO("\n        mut sum = 2;\n\n        fn FnDecl_update(parent_idx: i32) {\n            fn each(fn) fn();\n            each(|| makeDirty(:parent_idx));\n        }\n\n        fn makeDirty(parent_idx: i32): void {\n            sum += parent_idx;\n        }\n\n        FnDecl_update(1);\n\n        return sum - 3;\n    "_fu, testdiffs);
     ZERO("\n        struct A { a: i32; };\n        struct B { b: i32; };\n\n        using fn bananas(a: A) B(a.a * 2);\n\n        fn main() 1.A.b - 2;\n    "_fu, testdiffs);
+    ZERO("\n        struct A { a: i32; };\n        struct B { b: i32; };\n\n        using fn bananas(a) B(a.a * 2); // <- template\n\n        fn main() 1.A.b - 2;\n    "_fu, testdiffs);
+    ZERO("\n        fn sqr(a: i32) a * a;\n        fn woot(a.sqr) a + 1;\n        fn main() 2.woot - 5;\n    "_fu, testdiffs);
+    ZERO("\n        struct A0 { a0: i32; };\n        struct A1 { a1: i32; };\n        struct B  { b:  i32; };\n\n        fn a0(a1: A1) a1.a1 * 100;\n        fn bananas(a) B(a.a0 * 2); // <- template\n        fn woot(a.bananas: B) a.b; // <- check\n\n        fn main() 1.A0.woot + 1.A1.woot - 202;\n    "_fu, testdiffs);
+    ZERO("\n        struct A0 { a0: i32; };\n        struct A1 { a1: i32; };\n        struct B0 { b0: i32; };\n        struct B1 { b1: i32; };\n        struct C  { c:  i32; };\n\n        fn bananas(using _: A0) B0(a0 * 2);\n        fn bananas(using _: A1) B1(a1 * 3);\n        using fn c0(using _: B0) C(c: b0 * 5);\n        using fn c1(using _: B1) C(c: b1 * 7);\n        fn woot(using a.bananas: C) c; // extra conversion\n\n        fn main() 1.A0.woot + 1.A1.woot - 31;\n    "_fu, testdiffs);
+    ZERO("\n        struct A0 { a0: i32; };\n        struct A1 { a1: i32; };\n        struct B0 { b:  i32; };\n        struct B1 { b:  i32; };\n\n        fn bananas(a0: A0) B0(a0.a0 * 2);\n        fn bananas(a1: A1) B1(a1.a1 * 3);\n        fn woot(a.bananas) a.b; // <- template\n\n        fn main() 1.A0.woot + 1.A1.woot - 5;\n    "_fu, testdiffs);
+    ZERO("\n        fn times_implicit(x: i32, implicit y: i32) x * y;\n        fn times7(x: i32) x * 7;\n\n        fn woot(a.times_implicit, b: u32) a * b.i32;\n        fn woot(a: i32, b.times7: i32) a * b;\n\n        fn test0() 3.woot(2.i32);\n\n        fn test1() {\n            let implicit y = 7;\n            return 3.woot(2.u32);\n        }\n\n        fn main() test0 + test1 * 1000 - 42042;\n    "_fu, testdiffs);
+    ZERO("\n        fn varargs(a[]) a[0] + a[1];\n        fn main() varargs(1, 2) - 3;\n    "_fu, testdiffs);
+    ZERO("\n        fn to_debug_str(a: i32) a     * 2;\n        fn to_debug_str(b: u32) b.i32 * 3;\n\n        fn inspect(items.to_debug_str[]) // <- varargs!\n        {\n            mut a = 0;\n            for (mut i = 0; i < items.len; i++)\n                a += items[i];\n\n            return a;\n        }\n\n        fn main() inspect(5.i32, 7.u32) - 31;\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(fn, v) fn(v);\n        struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(x, v) x(v);             // same but name conflict - x arg and .x field\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_w(x, y) x(y);             // same thing but\n        fn fn_v(y, x) fn_w(fn y, x);    // extra nasty\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
@@ -1090,6 +1095,7 @@ void runTests()
     ZERO("\n        //! FN_recursion FN_reopen\n        //! DEAD_code DEAD_call\n        fn use_a(implicit a: i32) a * a;\n        fn use_b(implicit b: i32) b * b;\n        fn use_c(implicit c: i32) c * c;\n\n        fn parseStuff(x: i32) {\n            fn doStuff(y: i32) doSomething(y * y);\n            return doStuff(x * x);\n        }\n\n        fn doSomething(x: i32) {\n            fn doSomething_inner(y: i32) y * use_a * descend(y * y);\n            return doSomething_inner(x * x);\n        }\n\n        fn descend(x: i32) { // <- x here\n            fn descend_inner(y: i32)\n                y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?\n                      : doSomethingElse(y * y) * use_c;\n\n            return descend_inner(x * x);\n        }\n\n        fn doSomethingElse(x: i32) {\n            fn doSomethingElse_inner(y: i32) y * use_b;\n            return doSomethingElse_inner(x * x);\n        }\n\n        fn main() {\n            let implicit a = 0;\n            let implicit b = 0;\n            let implicit c = 0;\n            return parseStuff(0);\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu, testdiffs);
     FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ; /*/ .i32; //*/\n    "_fu, testdiffs);
+    ZERO("\n        fn sB(t: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     TODO("\n        fn sB(t: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T =\n            x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            outer: {\n                inner: {\n                    if (x > 1) break: outer;\n                    if (x > 0) break: inner;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            return {\n                BLOCK: {\n                    if (x & 1) break :BLOCK 1;\n                    if (x & 2) return 2;\n                    3\n                }\n            };\n        }\n\n        fn main() 4.test - 5.test - 6.test; // 3-1-2\n    "_fu, testdiffs);

@@ -10,7 +10,6 @@
 #include <fu/vec/slice.h>
 #include <iostream>
 
-fu_STR locate_PRJDIR();
 fu_STR path_join(const fu_STR&, const fu_STR&);
 int self_test();
 static int cli_handle(const fu_VEC<fu_STR>&, const fu_STR&);
@@ -29,10 +28,7 @@ static fu_STR next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
     return fu_STR{};
 }
 
-                                #ifndef DEF_PRJDIR
-                                #define DEF_PRJDIR
-inline const fu_STR PRJDIR = locate_PRJDIR();
-                                #endif
+extern const fu_STR PRJDIR;
 
 static void runTestsAndBuildCompiler()
 {
@@ -64,10 +60,7 @@ static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0
     };
 }
 
-                                #ifndef DEF_DEFAULT_WORKSPACE
-                                #define DEF_DEFAULT_WORKSPACE
-inline const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
-                                #endif
+extern const fu_STR DEFAULT_WORKSPACE;
 
 static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 {

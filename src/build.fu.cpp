@@ -194,7 +194,7 @@ struct s_ScopeItem
 {
     fu_STR id;
     int modid;
-    uint32_t packed;
+    unsigned packed;
     explicit operator bool() const noexcept
     {
         return false
@@ -341,6 +341,7 @@ struct s_SolvedNode
 struct s_Argument
 {
     fu_STR name;
+    fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
@@ -348,6 +349,7 @@ struct s_Argument
     {
         return false
             || name
+            || autocall
             || type
             || dEfault
             || flags
@@ -452,7 +454,7 @@ struct s_Overload
     s_Template tEmplate;
     s_SolvedNode solved;
     fu_VEC<int> used_by;
-    uint32_t status;
+    unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
@@ -532,7 +534,6 @@ struct s_ModuleOutputs
 {
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
-    fu_MAP<fu_STR, s_Target> specs;
     s_SolverOutput solve;
     fu_STR cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
@@ -544,7 +545,6 @@ struct s_ModuleOutputs
         return false
             || deps
             || types
-            || specs
             || solve
             || cpp
         ;
@@ -644,7 +644,7 @@ struct s_Context
                                 #define DEFt_if_last_jB4B
 inline std::byte if_last_jB4B(fu_STR& s)
 {
-    return s.size() ? s.mutref((s.size() - 1)) : fu::Default<std::byte>::value;
+    return s.size() ? s.mutref((s.size() - 1)) : (*(const std::byte*)fu::NIL);
 }
                                 #endif
 
@@ -878,7 +878,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         for (int i = 0; i < ctx.modules.size(); i++)
         {
             const s_Module& module = ctx.modules[i];
-            const fu_STR& data = (i ? module.out.cpp : fu::Default<fu_STR>::value);
+            const fu_STR& data = (i ? module.out.cpp : (*(const fu_STR*)fu::NIL));
             fu_STR fname = (data ? (module.fname + ".cpp"_fu) : fu_STR{});
             fu_STR fname_1 = (fname ? update_file(fname, data, dir_src, dir_cpp) : fu_STR{});
             cpp_files.push(fname_1);

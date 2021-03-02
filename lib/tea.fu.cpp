@@ -12,8 +12,8 @@ s_TEA hash(fu::view<std::byte>);
                                 #define DEF_s_TEA
 struct s_TEA
 {
-    uint32_t v0;
-    uint32_t v1;
+    unsigned v0;
+    unsigned v1;
     explicit operator bool() const noexcept
     {
         return false
@@ -29,13 +29,13 @@ struct s_TEA
 s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
 {
     const int u32len = (u8view.size() & ~3);
-    fu::view<uint32_t> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), uint32_t{});
+    fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
     for (int i = 1; i < u32view.size(); i += 2)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        uint32_t sum {};
-        uint32_t delta = 0x9e3779b9u;
+        unsigned sum {};
+        unsigned delta = 0x9e3779b9u;
         for (int i_1 = 0; i_1 < 16; i_1++)
         {
             sum += delta;
@@ -50,7 +50,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
 
 
         {
-            uint32_t last {};
+            unsigned last {};
             for (int i = u32len; i < u8view.size(); i++)
             {
                 last <<= 8u;
@@ -58,8 +58,8 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
             };
             res.v1 ^= last;
         };
-        uint32_t sum {};
-        uint32_t delta = 0x9e3779b9u;
+        unsigned sum {};
+        unsigned delta = 0x9e3779b9u;
         for (int i = 0; i < 16; i++)
         {
             sum += delta;
