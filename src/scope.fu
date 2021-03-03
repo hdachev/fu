@@ -212,6 +212,8 @@ pub nocopy struct Scope
     imports:    i32[];
     usings:     Target[];
     converts:   Target[];
+
+    pub_count:  i32;
 };
 
 pub fn target(si: ScopeItem)
@@ -306,7 +308,8 @@ pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struc
 
 pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 {
-    mut result: ScopeItem[] = field_items;
+    mut result:  ScopeItem[] = field_items;
+    mut private: ScopeItem[];
 
     for (mut i = 0; i < scope.items.len; i++)
     {
@@ -314,10 +317,13 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         if (item.target.modid == modid)
         {
             let overload = scope.overloads[item.target.index - 1];
-            if (!modid || overload.flags & F_PUB)
-                result.push(item);
+            (!modid || overload.flags & F_PUB ? result : private)
+                .push(item);
         }
     }
+
+    let pub_count = result.len;
+    result ~= private;
 
     let no_imports: i32[];
     let no_usings: Target[];
@@ -326,6 +332,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         items: result,
         :scope.overloads,
         :scope.converts,
+        :pub_count,
         imports: no_imports,
         usings:  no_usings);
 }

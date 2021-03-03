@@ -120,12 +120,13 @@ pub fn solve(
 
     //
 
-    fn _Scope_import__forceCopy(modid: i32): void
+    fn _Scope_import__forceCopy(modid: i32, private?!: bool): void
     {
-        _scope.items ~= ctx.modules[modid].out.solve.scope.items;
+        let s = ctx.modules[modid].out.solve.scope;
+        _scope.items ~= s.items[0, private ? s.items.len : s.pub_count];
     }
 
-    fn Scope_import(modid: i32): void
+    fn Scope_import(modid: i32, private?!: bool): void
     {
         _scope.imports.each(_ss.imports, |import|
         {
@@ -135,7 +136,7 @@ pub fn solve(
 
         modid || fail("Attempting to import modid-0.");
         _scope.imports ~= modid;
-        _Scope_import__forceCopy(modid);
+        _Scope_import__forceCopy(modid, :private);
     }
 
     fn GET(target: Target): Overload
@@ -1867,7 +1868,7 @@ pub fn solve(
         // We'll need the original imports in scope
         //  in order to solve type params & pattern match below.
         for (mut i = 0; i < template.imports.len; i++)
-            Scope_import(template.imports[i]);
+            Scope_import(template.imports[i], private: i == 0);
     }
 
 
