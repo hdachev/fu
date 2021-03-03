@@ -490,6 +490,12 @@ pub fn runTests()
     ]);
 
     ZERO(`
+        pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;
+        let dont_leak_me = 1;
+        fn main() inl_id_leak(dont_leak_me * 2) - 2;
+    `);
+
+    ZERO(`
         let static = 1;
         fn template(arg) static + arg;
         let arg = 7;                        // <- template shouldn't see this
@@ -3909,7 +3915,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         pub struct Target { modid: i32; packed: u32; };
 
         pub fn index(t: Target) i32(t.packed & 0x7fffffff);
