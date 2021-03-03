@@ -350,7 +350,7 @@ pub fn each(
 
         let i1 = ss.start;
         for (shadow mut i = i0; i < i1; i++)
-            fn(items[i]);
+            fn(items[i], index?: i);
 
         i0 = ss.end;
     }

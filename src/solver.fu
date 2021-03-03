@@ -359,23 +359,24 @@ pub fn solve(
         // Unique identifiers.
         if (_root_scope)
         {
-            mut any     = 0;
-            mut same    = 0;
+            mut autoshadow  = 0;
+            mut id_clashes  = 0;
 
-            _scope.items.each(_ss.declash, |item|
+            _scope.items.each(_ss.declash, |item, index|
             {
+                let root = index <= _root_scope.items_len;
+
                 if (item.id == id)
                 {
-                    any++;
-                    let o = GET(item.target);
-                    if (o.kind == "var")
-                        same++;
-                }
-            },
-            start: _root_scope.items_len);
+                    if (!root)
+                        autoshadow++;
 
-            if (same)
-                name ~= "_" ~ same;
+                    id_clashes++;
+                }
+            });
+
+            if (id_clashes)
+                name ~= "_" ~ id_clashes;
 
             // LEAKY TEMPLATES, part 1:
             //  All locals are F_SHADOW - this is a usability thing really,
@@ -384,7 +385,7 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (OPTI_autoshadow && local_of && !any)
+            if (OPTI_autoshadow && local_of && !autoshadow)
             {
                 shadows = true;
                 flags |= F_SHADOW;
