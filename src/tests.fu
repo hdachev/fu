@@ -4696,11 +4696,11 @@ pub fn runTests()
         fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
     `);
 
-    TODO(`
+    ZERO(`
         fn outer() {
             mut sum = 0;
 
-            fn inner(v: i32) {
+            inline fn inner(v: i32) {
                 for (mut i = 0; i < 10; i++) {
                     sum += v;
                     if (sum > 40)

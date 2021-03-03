@@ -16217,6 +16217,67 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn outer() {
+            mut sum = 0;
+
+            inline fn inner(v: i32) {
+                for (mut i = 0; i < 10; i++) {
+                    sum += v;
+                    if (sum > 40)
+                        return :outer sum;
+                }
+
+                return v * 2;
+            }
+
+            mut x = 1;
+            for (;;) x = inner(x);
+        }
+
+        fn main() outer - 42; // extra points for style
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int outer()
+{
+    int sum = 0;
+    int x = 1;
+    for (; ; )
+    {
+        int _0 {};
+        x = (__extension__ (
+        {
+            const int v = x;
+            int _1 {};
+            _0 = ((__extension__ (
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    sum += v;
+                    if (sum > 40)
+                        return sum;
+
+                };
+                _1 = ((v * 2));
+            }), int(_1)));
+        }), int(_0));
+    };
+}
+
+int fu_MAIN()
+{
+    return outer() - 42;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         inline fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);

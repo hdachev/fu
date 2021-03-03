@@ -1431,11 +1431,11 @@ pub fn solve(
             solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string): SolvedNode
     {
         let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
-        let id    = node.kind == "block" && node.value;
+        shadow let id = id || node.kind == "block" && node.value;
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
@@ -2445,6 +2445,7 @@ pub fn solve(
                     let s_body = solveBlock(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
+                        id: n_fn.value,
                         mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
                     retval = s_body.type;
@@ -4226,6 +4227,7 @@ pub fn solve(
             let s_body = solveBlock(
                 n_body, type: ret_expect,
                 mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                id: n_fn.value,
                 :kills);
 
             result.last = s_body;
