@@ -1677,15 +1677,42 @@ static const int dont_leak_me = 1;
 
                                 #ifndef DEFt_identity_U3Pf
                                 #define DEFt_identity_U3Pf
-inline int identity_U3Pf(const int dont_leak_me)
+inline int identity_U3Pf(const int dont_leak_me_1)
 {
-    return dont_leak_me;
+    return dont_leak_me_1;
 }
                                 #endif
 
 int fu_MAIN()
 {
     return identity_U3Pf((dont_leak_me * 2)) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;
+        let dont_leak_me = 1;
+        fn main() inl_id_leak(dont_leak_me * 2) - 2;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static const int dont_leak_me = 1;
+
+int fu_MAIN()
+{
+    int _0 {};
+    return (__extension__ (
+    {
+        const int dont_leak_me_1 = (dont_leak_me * 2);
+        _0 = (dont_leak_me_1);
+    }), int(_0)) - 2;
 }
 
 #endif
@@ -1709,9 +1736,9 @@ static const int sTatic = 1;
 
 static const int arg = 7;
 
-inline static int template_U3Pf(const int arg)
+inline static int template_U3Pf(const int arg_1)
 {
-    return sTatic + arg;
+    return sTatic + arg_1;
 }
 
 static const int result = template_U3Pf((arg / -4));
@@ -2920,11 +2947,11 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const fu_VEC<int>& view)
+static int test(const fu_VEC<int>& view_1)
 {
     int sum = 0;
-    for (int i = 0; i < view.size(); i++)
-        sum += view[i];
+    for (int i = 0; i < view_1.size(); i++)
+        sum += view_1[i];
 
     return sum - 15;
 }
@@ -2961,11 +2988,11 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const fu_VEC<int>& view)
+static int test(const fu_VEC<int>& view_1)
 {
     int sum = 0;
-    for (int i = 0; i < view.size(); i++)
-        sum += view[i];
+    for (int i = 0; i < view_1.size(); i++)
+        sum += view_1[i];
 
     return sum - 15;
 }
@@ -5234,19 +5261,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<int> gen(const int len)
+static fu_VEC<int> gen(const int len_1)
 {
     fu_VEC<int> res {};
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len_1; i++)
         res += i;
 
     return res;
 }
 
-static int test(const int len)
+static int test(const int len_1)
 {
     fu_VEC<int> x = fu_VEC<int> { fu_VEC<int>::INIT<2> { -5, +5 } };
-    const fu_VEC<int>& y = (gen(len) ? x : (*(const fu_VEC<int>*)fu::NIL));
+    const fu_VEC<int>& y = (gen(len_1) ? x : (*(const fu_VEC<int>*)fu::NIL));
     return int(x[(y.size() / 2)]);
 }
 
@@ -5874,9 +5901,9 @@ struct s_Partial
 
 #ifndef FU_NO_FDEFs
 
-static int Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min, const int max, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tEmplate, const s_Partial& partial)
+static int Scope_add(s_Scope& scope, const fu_STR& kind, const fu_STR& id, const s_Type& type, const int min_1, const int max_1, const fu_VEC<fu_STR>& arg_n, const fu_VEC<s_Type>& arg_t, const fu_VEC<s_SolvedNode>& arg_d, const s_Template& tEmplate, const s_Partial& partial)
 {
-    return (((((((((scope.i + kind.size()) + id.size()) + type.i) + min) + max) + arg_n.size()) + arg_t.size()) + arg_d.size()) + tEmplate.i) + partial.i;
+    return (((((((((scope.i + kind.size()) + id.size()) + type.i) + min_1) + max_1) + arg_n.size()) + arg_t.size()) + arg_d.size()) + tEmplate.i) + partial.i;
 }
 
 int fu_MAIN()
@@ -5884,11 +5911,11 @@ int fu_MAIN()
     s_Scope _scope {};
     fu_STR id {};
     const s_Type t_template {};
-    const int min {};
-    const int max {};
+    const int min_1 {};
+    const int max_1 {};
     fu_VEC<fu_STR> arg_n {};
     const s_Template tEmplate {};
-    return Scope_add(_scope, fu_STR{}, id, t_template, min, max, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{});
+    return Scope_add(_scope, fu_STR{}, id, t_template, min_1, max_1, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{});
 }
 
 #endif
@@ -13355,6 +13382,64 @@ int fu_MAIN()
         return 1;
     };
     return 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        pub struct Target { modid: i32; packed: u32; };
+
+        pub fn index(t: Target) i32(t.packed & 0x7fffffff);
+
+        pub fn local_eq(t: Target, index: i32, implicit modid: i32)
+            modid - t.modid || index - t.index;
+
+        fn main() {
+            let implicit modid = 1;
+            return local_eq(Target(1, 0x80000002), 7) - 5;
+        }
+
+-----
+
+struct s_Target;
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    unsigned packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || packed
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int index(const s_Target& t)
+{
+    return int((t.packed & 0x7fffffffu));
+}
+
+int local_eq(const s_Target& t, const int index_1, const int modid)
+{
+    int _0 {};
+    return (_0 = (modid - t.modid)) ? _0 : (index_1 - index(t));
+}
+
+int fu_MAIN()
+{
+    const int modid = 1;
+    return local_eq(s_Target { 1, 0x80000002u }, 7, modid) - 5;
 }
 
 #endif
