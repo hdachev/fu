@@ -2042,7 +2042,7 @@ pub fn runTests()
             while (idx < end) {
                 let c = src[idx++];
                 if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
-                    return idx;
+                    return idx - 1;
             }
 
             return src.len;

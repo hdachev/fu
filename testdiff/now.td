@@ -7021,6 +7021,87 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
+                    return idx - 1;
+            }
+
+            return src.len;
+        }
+
+-----
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+static const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+
+#endif
+
+-----
+
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
+                    return idx - 1;
+            }
+
+            return src.len;
+        }
+
+        fn main() _0::lex("3 - 3") - 2; // <- from here
+
+-----
+#include <cstdint>
+#include <fu/str.h>
+#include <fu/vec/find.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_lex_YeU3
+                                #define DEFt_lex_YeU3
+inline int lex_YeU3(const fu_STR& src)
+{
+    const int end = src.size();
+    int idx = 0;
+    while (idx < end)
+    {
+        const std::byte c = src[idx++];
+        if (fu::has(OPTOKENS, c))
+            return idx - 1;
+
+    };
+    return src.size();
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return lex_YeU3("3 - 3"_fu) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn each(a: [$T], fn, start?!: i32)
             for (mut i = start; i < a.len; i++)
                 fn(a[i]);
