@@ -92,21 +92,74 @@ pub fn build(
                 ;
 
     //
-    mut Fs: string[];
-    mut len_all: i32;
+    let fulib_cpp = CodegenOutput(src: file::read(fulib));
 
-    let fulib_cpp = file::read(fulib);
+    // Map modules into translation units,
+    //  this is the partial unity build thing,
+    //   we could use this to guarantee static init order,
+    //    access to private values & optimize build time.
+    mut unit_mapping: i32[];
+    mut unit_fnames: string[];
 
     for (mut i = 0; i < ctx.modules.len; i++)
     {
         let module  = ctx.modules[i];
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
+        if (!cpp.src)
+        {
+            unit_mapping ~= -1;
+            continue;
+        }
 
-        let F       = cpp &&    dir_wrk ~ "o-" ~ tea::hash16(GCChash ~ cpp)
-                                        ~  "-" ~ cpp.len;
+        mut unit = i;
+        for (shadow mut i = 0; i < cpp.unity.len; i++)
+        {
+            let u = unit_mapping[cpp.unity[i]];
+            if (unit > u)
+                unit = u;
+        }
 
-        Fs.push(F);
+        for (shadow mut i = 0; i < cpp.unity.len; i++)
+        {
+            let m = cpp.unity[i];
+            let u = unit_mapping[m];
+            if (u != unit)
+                for (shadow mut i = u; i < unit_mapping.len; i++)
+                    if (unit_mapping[i] == u)
+                        unit_mapping[i] = unit;
+        }
+
+        unit_mapping ~= unit;
+        unit_fnames.grow_if_oob(unit) = i ? module.fname : "fulib runtime";
+    }
+
+    // Concat unit sources.
+    mut units: string[];
+
+    for (mut i = 0; i < ctx.modules.len; i++)
+    {
+        let module  = ctx.modules[i];
+        let cpp     = i ? module.out.cpp
+                        : fulib_cpp;
+        if (cpp.src)
+            units.grow_if_oob(unit_mapping[i]) ~= cpp.src;
+    }
+
+    //
+    mut Fs: string[];
+    mut len_all: i32;
+
+    for (mut i = 0; i < units.len; i++)
+    {
+        let cpp = units[i];
+        if (!cpp)
+            continue;
+
+        let F = dir_wrk ~ "o-" ~ tea::hash16(GCChash ~ cpp)
+                        ~  "-" ~ cpp.len;
+
+        Fs.grow_if_oob(i) = F;
         len_all += cpp.len;
     }
 
@@ -148,7 +201,7 @@ pub fn build(
             {
                 explain ~= "\nSources:\n";
                 for (mut i = 1; i < ctx.modules.len; i++)
-                    explain ~= ctx.modules[i].out.cpp;
+                    explain ~= ctx.modules[i].out.cpp.src;
             }
         }
 
@@ -177,9 +230,7 @@ pub fn build(
                     ? ctx.modules[i].fname.path_filename
                     : "fulib runtime";
 
-                let cpp = i ? ctx.modules[i].out.cpp
-                            : fulib_cpp;
-
+                let cpp = units[i];
                 file::write(F_cpp, cpp);
 
                 println("  BUILD ", human, " ", F_cpp);
@@ -200,7 +251,7 @@ pub fn build(
         let F_tmp = F_exe ~ ".tmp";
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
-        for (mut i = 0; i < ctx.modules.len; i++)
+        for (mut i = 0; i < Fs.len; i++)
         {
             let F = Fs[i];
             if (F)
@@ -261,12 +312,10 @@ pub fn build(
 
         mut cpp_files: string[];
 
-        for (mut i = 0; i < ctx.modules.len; i++)
+        for (mut i = 1; i < units.len; i++)
         {
-            let module  = ctx.modules[i];
-            let data    = i && module.out.cpp;
-
-            let fname           = data && module.fname ~ ".cpp";
+            let data            = units[i];
+            let fname           = data  && unit_fnames[i] ~ ".cpp";
             shadow let fname    = fname && update_file(
                 :fname, :data,
                 :dir_src, dir_out: dir_cpp);

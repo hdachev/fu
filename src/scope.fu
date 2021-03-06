@@ -36,7 +36,7 @@ pub struct ModuleOutputs
     deps:       i32[];
     types:      Struct[];
     solve:      SolverOutput;
-    cpp:        string;
+    cpp:        CodegenOutput;
 };
 
 pub struct ModuleStats
@@ -78,6 +78,13 @@ pub struct SolverOutput
 
     // Important solver events for testing.
     notes:  i32;
+};
+
+pub struct CodegenOutput
+{
+    unity?:         i32[];
+    unity_because?: i32[];
+    using src:      string;
 };
 
 pub struct ScopeSkip

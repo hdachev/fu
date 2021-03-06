@@ -1288,7 +1288,7 @@ pub fn solve(
                 else if (targets.len > 1)
                     result ~= ", available overloads:\n\t\t";
                 else
-                    result ~= ", expects: ";
+                    result ~= ".\nExpect: ";
 
                 let overload = GET(targets[i]);
 
@@ -1298,9 +1298,10 @@ pub fn solve(
                 {
                     let arg = overload.args[i];
                     if (i)
-                        result ~= ", ";
+                        result ~= ",";
 
-                    result ~=  arg.name
+                    result ~= "\n\t"
+                            ~  arg.name
                             ~ (arg.flags & F_MUSTNAME ? "!" : "")
                             ~ (arg.default ? "?: " : ": ")
                             ~ (arg.type ? humanizeType(arg.type) : "$");

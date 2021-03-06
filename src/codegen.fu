@@ -32,7 +32,7 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
 pub fn cpp_codegen(
     implicit module: Module,
     implicit ctx: Context,
-    root: SolvedNode): string
+    root: SolvedNode): CodegenOutput
 {
     mut _libs: Map(string, string);
     mut _tfwd: Map(string, string);
@@ -46,6 +46,9 @@ pub fn cpp_codegen(
 
     mut _indent: string = "\n";
     mut _hasMain: i32;
+
+    mut _unity:         i32[];
+    mut _unity_because: i32[];
 
     struct cg_Blockval
     {
@@ -926,7 +929,16 @@ pub fn cpp_codegen(
 
         // Hide when possible.
         if (!(node.flags & F_PUB))
-            _fdef  ~= "\nstatic const " ~ src ~ ";\n";
+        {
+            // We can't "forward declare" foreign private globals.
+            if (!foreign)
+                _fdef  ~= "\nstatic const " ~ src ~ ";\n";
+
+            // But we can unity-build ourselves with them.
+            else
+                _unity.set::add(node.target.modid || fail(),
+                    _unity_because, node.target.index);
+        }
         else if (!intconst)
             _fdef  ~= "\nextern const " ~ src ~ ";\n";
         else
@@ -1950,5 +1962,9 @@ pub fn cpp_codegen(
     root.kind == "root" || fail();
 
     let src = cgNode(root);
-    return src;
+
+    return CodegenOutput(
+        :src,
+        unity:          _unity,
+        unity_because:  _unity_because);
 }

@@ -17,6 +17,26 @@ pub fn add(ref dest: $T[], item: $T)
     return true;
 }
 
+pub fn add(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] != item) {
+                dest.insert(i, item);
+                extras.insert(i, extra);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    dest.push(item);
+    extras.push(extra);
+    return true;
+}
+
 pub fn add(ref dest: $T[], src: $T[])
 {
     mut some = false;
