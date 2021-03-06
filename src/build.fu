@@ -39,41 +39,6 @@ fn update_file(
     return fname;
 }
 
-fn getLinkOrder(modules: Module[]): i32[]
-{
-    mut link_order: i32[] = [ 0 ];
-
-    fn visit(module: Module): void
-    {
-        let link_id = module.modid;
-        if (link_order.has(link_id))
-            return;
-
-        let fuzimports = module.in.parse.fuzimports;
-        for (mut i = 0; i < fuzimports.len; i++)
-        {
-            let fname = resolveFile_x(fuzimports[i]);
-            for (shadow mut i = 1; i < modules.len; i++)
-            {
-                let m = modules[i];
-                if (m.fname == fname)
-                {
-                    visit(m);
-                    break;
-                }
-            }
-        }
-
-        link_order.has(link_id) && throw("link order broken");
-        link_order.push(link_id);
-    }
-
-    for (mut i = 1; i < modules.len; i++)
-        visit(modules[i]);
-
-    return link_order;
-}
-
 
 //
 
@@ -191,7 +156,6 @@ pub fn build(
     }
 
     //
-    let link_order = getLinkOrder(ctx.modules);
     let exe_size = file::size(F_exe);
     if (exe_size < 1 && (bin || run))
     {
@@ -236,9 +200,9 @@ pub fn build(
         let F_tmp = F_exe ~ ".tmp";
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
-        for (mut i = 0; i < link_order.len; i++)
+        for (mut i = 0; i < ctx.modules.len; i++)
         {
-            let F = Fs[link_order[i]];
+            let F = Fs[i];
             if (F)
                 cmd ~= F ~ ".o ";
         }
@@ -324,10 +288,9 @@ pub fn build(
                       ~ "#include <fu/_fulib.cpp>\n"
                       ~ "#endif\n\n";
 
-                link_order.len == cpp_files.len || throw("lo.len != cf.len");
-                for (mut i = 0; i < link_order.len; i++)
+                for (mut i = 0; i < cpp_files.len; i++)
                 {
-                    let incl = cpp_files[link_order[i]];
+                    let incl = cpp_files[i];
                     if (incl)
                         data ~= "#include \"" ~ path_relative(unity, incl) ~ "\"\n";
                 }
@@ -345,18 +308,15 @@ pub fn build(
                 mut inputs:  string[];
                 mut outputs: string[];
 
-                link_order.len == cpp_files.len || throw("lo.len != cf.len (2)");
-
                 mut main: string;
                 mut includes: string;
 
-                for (mut i = 1; i < link_order.len; i++)
+                for (mut i = 1; i < cpp_files.len; i++)
                 {
-                    let moduleIdx = link_order[i];
-                    let module = ctx.modules[moduleIdx];
+                    let module = ctx.modules[i];
 
                     let input = path_relative(CMakeLists, module.fname);
-                    if (moduleIdx == 1)
+                    if (i == 1)
                         main = input;
 
                     inputs.push(input);
@@ -366,7 +326,7 @@ pub fn build(
                     if (file::size(custom) > 0)
                         includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
 
-                    let cpp_file = cpp_files[moduleIdx];
+                    let cpp_file = cpp_files[i];
                     if (cpp_file)
                         outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
                 }
