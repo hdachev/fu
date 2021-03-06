@@ -474,6 +474,12 @@ pub fn runTests()
         return X(1).hey;
     `);
 
+    TODO(`
+        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
+        struct Test { using a: i32[]; };
+        fn main() Test.a_len;
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?
