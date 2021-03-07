@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./str.h"
+#include <fu/str.h>
 
 template <typename T>
 void cow_vec_test(int cap0, int cap1)
