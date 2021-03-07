@@ -15,6 +15,7 @@
 //
 
 #include "./cow_vec_test.hpp"
+#include "./task_stack.hpp"
 
 
 // So lets go.
