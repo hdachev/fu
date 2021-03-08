@@ -21,50 +21,6 @@
 #endif
 
 
-//
-
-#if fu_ARC__DETECT_MEMORY_LEAKS
-#include <stdio.h>
-
-struct fu_DEBUG_CNTDWN
-{
-    std::atomic_int m_cnt;
-
-    const char* topic;
-    fu_DEBUG_CNTDWN(const char* topic)
-        : topic(topic) {}
-
-    ~fu_DEBUG_CNTDWN()
-    {
-        if (m_cnt == 0)
-            return;
-
-        printf("\n\x1B[31m  FATAL:\n    Debug Countdown != 0:\n      topic: %s\n      m_cnt: %i\x1B[0m\n\n", topic, (int)m_cnt);
-        std::abort();
-    }
-};
-
-#endif
-
-#if fu_ARC__PROFILE_MEMORY
-
-struct fu_DEBUG_COUNTER
-{
-    std::atomic_int m_cnt;
-
-    const char* topic;
-    fu_DEBUG_COUNTER(const char* topic)
-        : topic(topic) {}
-
-    ~fu_DEBUG_COUNTER()
-    {
-        printf("\x1B[36m  STAT: %s\tm_cnt: %i\x1B[0m\n", topic, (int)m_cnt);
-    }
-};
-
-#endif
-
-
 // Putting the nasty shit here.
 
 struct alignas(16) fu_ARC
@@ -74,21 +30,10 @@ struct alignas(16) fu_ARC
     #if fu_ARC__DETECT_MEMORY_LEAKS
     int   DEBUG_bytes;
     void* DEBUG_self; // overwrite detector
-
-    inline static fu_DEBUG_CNTDWN CDOWN_count { "Leaked Alloc Count" };
-    inline static fu_DEBUG_CNTDWN CDOWN_bytes { "Leaked Alloc Bytes" };
     #endif
 
-    #if fu_ARC__PROFILE_MEMORY
-    inline static fu_DEBUG_COUNTER STAT_count { "Total Alloc Count" };
-    inline static fu_DEBUG_COUNTER STAT_bytes { "Total Alloc Bytes" };
-
-    inline static int ALLOC_STAT_COUNT() { return STAT_count.m_cnt; }
-    inline static int ALLOC_STAT_BYTES() { return STAT_bytes.m_cnt; }
-    #else
-    inline static int ALLOC_STAT_COUNT() { return 0; }
-    inline static int ALLOC_STAT_BYTES() { return 0; }
-    #endif
+    static int ALLOC_STAT_COUNT();
+    static int ALLOC_STAT_BYTES();
 
     fu_INL void incr() noexcept {
         m_arc.fetch_add(
