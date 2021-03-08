@@ -277,14 +277,22 @@ struct fu_VEC
     {
         assert(old_capa > SMALL_CAPA);
 
-        fu_ARC* arc = UNSAFE__arc(old_data);
-        if (!SHAREABLE || arc->decr()) {
+        if constexpr (SHAREABLE) {
+            fu_ARC* arc = UNSAFE__arc(old_data);
+            if (arc->decr()) {
+                DESTROY_range(
+                    old_data,
+                    old_data + old_size);
+
+                fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+            }
+        }
+        else {
             DESTROY_range(
                 old_data,
                 old_data + old_size);
 
-            if constexpr (SHAREABLE)    fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
-            else                        fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
+            fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
         }
     }
 
@@ -305,14 +313,18 @@ struct fu_VEC
     fu_INL static void UNIQ__Dealloc_DontRunDtors(
         T* old_data, i32 old_capa) noexcept
     {
-        fu_ARC* arc = UNSAFE__arc(old_data);
+        if constexpr (SHAREABLE) {
+            fu_ARC* arc = UNSAFE__arc(old_data);
 
-        #ifndef NDEBUG
-        assert(!SHAREABLE || arc->decr() && "not unique");
-        #endif
+            #ifndef NDEBUG
+            assert(arc->decr() && "not unique");
+            #endif
 
-        if constexpr (SHAREABLE)    fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
-        else                        fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
+            fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+        }
+        else {
+            fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
+        }
     }
 
 
