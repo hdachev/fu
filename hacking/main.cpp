@@ -16,6 +16,7 @@
 
 #include "./cow_vec_test.hpp"
 #include "./task_stack.hpp"
+#include "./task_stack_test.hpp"
 
 
 // So lets go.
@@ -24,7 +25,9 @@ int main(int argc, const char * argv[])
 {
     cow_vec_tests();
     self_test();
-    runTestsAndBuildCompiler();
+    // runTestsAndBuildCompiler();
+
+    TaskStack_Test();
 
     return 0;
 }

@@ -27,7 +27,7 @@ namespace
     struct Task;
     struct TaskSlice_Data;
 
-    typedef bool (*TaskSlice_Run)(TaskSlice_Data* ts);
+    typedef void (*TaskSlice_Run)(TaskSlice_Data* ts);
     typedef bool (*Task_TrySlice)(Task* t, TaskSlice_Run*  run,
                                            TaskSlice_Data* data);
     struct Task
@@ -40,7 +40,7 @@ namespace
         ////////////////////////
     };
 
-    struct TaskSlice_Data { void* data[4]; };
+    struct TaskSlice_Data { void* a; void* b; void* c; void* d; };
 
     struct TaskStack
     {
@@ -64,8 +64,10 @@ namespace
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
 
-    void Worker_Notify_One()
+    void TaskStack_Push(Task* task)
     {
+        Tasks.stack.push((char*) task);
+
         // Notifications are best effort,
         //  we totally can fail to wake up a worker.
         //
@@ -77,7 +79,7 @@ namespace
         #endif
     }
 
-    void Worker_Loop()
+    void TaskStack_Worker_Loop()
     {
         bool notify_another = false;
 
@@ -152,13 +154,13 @@ namespace
             count = count > 1 ? count : 1;
 
         for (i32 i = 0; i < count; i++)
-            std::thread { Worker_Loop }
+            std::thread { TaskStack_Worker_Loop }
                 .detach();
 
-        printf("Detached %u worker threads.", count);
+        printf("Detached %u worker threads.\n", count);
 
         return count;
     }
 
-    static const i32 NUM_WORKERS = WorkerSet_Create();
+    static const i32 TaskStack_Worker_Count = WorkerSet_Create();
 }
