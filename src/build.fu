@@ -260,7 +260,7 @@ pub fn build(
         }
 
         // This is not amazing.
-        let LIBS = process::LINUX && " -ldl";
+        let LIBS = process::LINUX && " -ldl -pthread";
 
         {
             println("   LINK ", F_exe);

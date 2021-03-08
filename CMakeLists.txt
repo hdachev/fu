@@ -10,9 +10,14 @@ project(${PROJECT_NAME})
 file(GLOB hacking_exe_src hacking/*.cpp)
 include_directories(include/)
 
+# -pthread
+find_package(Threads REQUIRED)
+link_libraries(Threads::Threads)
+
+# dlopen
 if (UNIX)
-    link_libraries(dl)
-endif (UNIX)
+  link_libraries(dl)
+endif ()
 
 add_executable(hacking_exe ${hacking_exe_src})
 
