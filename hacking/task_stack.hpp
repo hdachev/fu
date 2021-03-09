@@ -64,19 +64,23 @@ namespace
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
 
-    void TaskStack_Push(Task* task)
+    inline void TaskStack_Notify()
     {
-        Tasks.stack.push((char*) task);
-
         // Notifications are best effort,
         //  we totally can fail to wake up a worker.
         //
         #ifndef use_cpp20_ATOMIC_FLAG_WAIT
             Tasks.cv.notify_one();
         #else
-            if (Tasks.wake_up.test_and_set(std::memory_order_relaxed) == false)
-                Tasks.wake_up.notify_one();
+            Tasks.wake_up.test_and_set(std::memory_order_release);
+            Tasks.wake_up.notify_one();
         #endif
+    }
+
+    void TaskStack_Push(Task* task)
+    {
+        Tasks.stack.push((char*) task);
+        TaskStack_Notify();
     }
 
     void TaskStack_Worker_Loop()
@@ -95,13 +99,8 @@ namespace
                     std::unique_lock<std::mutex> lock(Tasks.mutex);
                     Tasks.cv.wait(lock);
                 #else
-                    // Clearing the flag after sleeping:
-                    //  - we'll make one more attempt to find work;
-                    //  - helps someone else wake up if we block;
-                    //  - when all workers wake up this will stay set.
-                    //
-                    Tasks.wake_up.wait(false, std::memory_order_acquire);
                     Tasks.wake_up.clear(std::memory_order_release);
+                    Tasks.wake_up.wait(false, std::memory_order_acquire);
                 #endif
 
                 notify_another = true;
@@ -125,12 +124,7 @@ namespace
             if (notify_another)
             {
                 notify_another = false;
-
-                #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-                    Tasks.cv.notify_one();
-                #else
-                    Tasks.wake_up.notify_one();
-                #endif
+                TaskStack_Notify();
             }
 
             // Finally, do the work.
