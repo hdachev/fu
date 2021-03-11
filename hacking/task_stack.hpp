@@ -25,22 +25,17 @@ namespace
     ////////////////////////////////////////////////////////////////
 
     struct Task;
-    struct TaskSlice_Data;
+    typedef void (*Task_Run)(Task* t);
 
-    typedef void (*TaskSlice_Run)(TaskSlice_Data* ts);
-    typedef bool (*Task_TrySlice)(Task* t, TaskSlice_Run*  run,
-                                           TaskSlice_Data* data);
     struct Task
     {
         // Padding for the next-task thing.
         void* LOCKFREE_STACK_next;
 
-        ////////////////////////
-        Task_TrySlice try_slice;
-        ////////////////////////
+        /////////////
+        Task_Run run;
+        /////////////
     };
-
-    struct TaskSlice_Data { void* a; void* b; void* c; void* d; };
 
     struct TaskStack
     {
@@ -107,19 +102,6 @@ namespace
                 continue;
             }
 
-            TaskSlice_Run  run  = nullptr;
-            TaskSlice_Data data = {};
-
-            bool can_be_sliced_further = task->try_slice(task, &run, &data);
-            if (!run)
-                continue;
-
-            // We'll put the task back on the stack
-            //  only if this isn't the final slice.
-            //
-            if (can_be_sliced_further)
-                Tasks.stack.push((char*) task);
-
             // Notify another worker if we just found work.
             if (notify_another)
             {
@@ -128,7 +110,7 @@ namespace
             }
 
             // Finally, do the work.
-            run(&data);
+            task->run(task);
         }
     }
 
