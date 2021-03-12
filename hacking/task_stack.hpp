@@ -37,15 +37,15 @@ namespace
         /////////////
     };
 
-    struct TaskStack
+    struct alignas(64) TaskStack
     {
-        lockfree::stack</* default align of 8 */> stack;
+        lockfree::stack< 3/* = alignof 8*/ > stack;
 
         #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+            char mutex_ANTISHARE[64 - sizeof(stack)];
+
             std::mutex mutex;
             std::condition_variable cv;
-        #else
-            std::atomic_flag wake_up;
         #endif
     };
 
@@ -74,8 +74,7 @@ namespace
         #ifndef use_cpp20_ATOMIC_FLAG_WAIT
             Tasks.cv.notify_one();
         #else
-            Tasks.wake_up.test_and_set(std::memory_order_release);
-            Tasks.wake_up.notify_one();
+            Tasks.stack.head.notify_one();
         #endif
     }
 
@@ -101,8 +100,9 @@ namespace
                     std::unique_lock<std::mutex> lock(Tasks.mutex);
                     Tasks.cv.wait(lock);
                 #else
-                    Tasks.wake_up.clear(std::memory_order_release);
-                    Tasks.wake_up.wait(false, std::memory_order_acquire);
+                    auto head = Task.stack.head.load(std::memory_order_relaxed);
+                    if (Task.stack.untag(head) == nullptr)
+                        Tasks.stack.head.wait(head, std::memory_order_acquire);
                 #endif
 
                 notify_another = true;

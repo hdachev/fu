@@ -7,8 +7,8 @@
 namespace lockfree
 {
     // Use 4 for align(16), greater alignments are safer.
-    template <unsigned ALIGN_BITS = 3>
-    class stack
+    template <unsigned ALIGN_BITS/* = 3 */>
+    struct stack
     {
         typedef uint64_t u64;
 
@@ -17,7 +17,7 @@ namespace lockfree
             std::atomic<Node*> next;
         };
 
-        std::atomic_uint64_t head;
+        std::atomic_uint64_t head {};
 
 
         // Pointer validation.
@@ -30,7 +30,7 @@ namespace lockfree
 
         // Pointer tagging.
 
-        inline u64 tag(const Node* ptr, u64 lastID)
+        static inline u64 tag(const Node* ptr, u64 lastID)
         {
             // Ptrs are 48bit vals,
             //  ours are 44bit because 16-byte align,
@@ -44,14 +44,14 @@ namespace lockfree
                  | ((lastID + 1) << (48-ALIGN_BITS));
         }
 
-        inline Node* untag(u64 tagged_ptr)
+        static inline Node* untag(u64 tagged_ptr)
         {
             return (Node*)(
                 (tagged_ptr << ALIGN_BITS)
                     & PTR_48);
         }
 
-        inline u64 tagof(u64 tagged_ptr)
+        static inline u64 tagof(u64 tagged_ptr)
         {
             return u64(tagged_ptr) >> (48-ALIGN_BITS);
         }
@@ -59,7 +59,6 @@ namespace lockfree
 
         // We sync on the .next pointers.
 
-    public:
         void push(char* mem)
         {
             Node* node = (Node*)mem;
