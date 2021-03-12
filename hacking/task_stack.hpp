@@ -49,7 +49,14 @@ namespace
         #endif
     };
 
-    static TaskStack Tasks {};
+    struct alignas(TaskStack) TaskStack_NoDtor
+    {
+        char buf[sizeof(TaskStack)];
+        TaskStack_NoDtor() { new (buf) TaskStack(); }
+    };
+
+    static TaskStack_NoDtor s_Tasks {};
+    #define Tasks (*(TaskStack*)(&s_Tasks))
 
 
 
@@ -113,6 +120,8 @@ namespace
             task->run(task);
         }
     }
+
+    #undef Tasks
 
 
 

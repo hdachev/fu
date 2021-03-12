@@ -19,7 +19,7 @@ void MyTask_Run(Task* t)
 
 static void TaskStack_Test()
 {
-    int N = 1024;
+    int N = TaskStack_Worker_Count * 128;
 
     for (int i = 0; i < N; i++)
     {
