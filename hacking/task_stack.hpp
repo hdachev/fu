@@ -3,8 +3,6 @@
 #include <lockfree/stack.hpp>
 
 #include <thread>
-#include <cstdio>
-
 
 #if __cplusplus > 201703L
 #define use_cpp20_ATOMIC_FLAG_WAIT
@@ -81,7 +79,6 @@ namespace
     void TaskStack_Push(Task* task)
     {
         Tasks.stack.push((char*) task);
-        TaskStack_Notify();
     }
 
     void TaskStack_Worker_Loop()
@@ -121,6 +118,18 @@ namespace
         }
     }
 
+    bool TaskStack_TryWork()
+    {
+        Task* task = (Task*) Tasks.stack.try_pop();
+        if (task)
+        {
+            task->run(task);
+            return true;
+        }
+
+        return false;
+    }
+
     #undef Tasks
 
 
@@ -130,22 +139,128 @@ namespace
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
 
-    i32 WorkerSet_Create()
+    int WorkerSet_Create()
     {
         // Number of workers = number of cores,
         //  + main thread.
         //
-        i32 count = std::thread::hardware_concurrency();
+        int count = std::thread::hardware_concurrency();
             count = count > 1 ? count : 1;
 
-        for (i32 i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
             std::thread { TaskStack_Worker_Loop }
                 .detach();
-
-        printf("Detached %u worker threads.\n", count);
 
         return count;
     }
 
-    static const i32 TaskStack_Worker_Count = WorkerSet_Create();
+    static const int TaskStack_Worker_Count = WorkerSet_Create();
+
+
+
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+
+    template <typename Fn>
+    void parallel_for(size_t size, size_t per_batch, const Fn& fn)
+    {
+        /////////////////////////////
+
+        struct parfor_Control
+        {
+            const Fn& fn;
+
+            std::atomic_int pending;
+
+            #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+                char mutex_ANTISHARE[64 - sizeof(std::atomic_int)];
+
+                std::mutex mutex;
+                std::condition_variable cv;
+            #endif
+        };
+
+        struct parfor_Task: Task
+        {
+            parfor_Control* control;
+            size_t start, end;
+        };
+
+        const auto parfor_run = [](Task* t)
+        {
+            parfor_Task* task = (parfor_Task*) t;
+            task->control->fn(task->start, task->end);
+
+            // Report done.
+            if (task->control->pending.fetch_add(
+                -1, std::memory_order_release) == 1)
+            {
+                #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+                    task->control->cv.notify_one();
+                #else
+                    task->control->pending.notify_one();
+                #endif
+            }
+        };
+
+        /////////////////////////////
+
+        // There may be no point in suspending at all.
+        if (size < per_batch * 2) {
+            fn(0, size);
+            return;
+        }
+
+        size_t batches = size / per_batch;
+        if (batches > TaskStack_Worker_Count)
+            batches = TaskStack_Worker_Count;
+
+        per_batch = size / batches;
+
+        parfor_Control* control = (parfor_Control*) alloca(
+            sizeof(parfor_Control)  +
+            sizeof(parfor_Task)     * batches);
+
+        //
+        parfor_Task* tasks = (parfor_Task*) &control[1];
+        new (control) parfor_Control { fn, batches };
+
+        for (int i = 0; i < batches; i++) {
+            auto& t = tasks[i];
+
+            t.run                   = parfor_run;
+            t.control               = control;
+
+            t.start = size_t(i) * per_batch;
+            t.end   = i < batches - 1
+                ? t.start + per_batch
+                : size;
+
+            TaskStack_Push(&t);
+        }
+
+        TaskStack_Notify();
+
+        // Now for the stupid part -
+        //  This is pretty horrible, because we might end up sleeping and not working,
+        //   and waiting-by-doing-work can lock things up if we pop a big task.
+
+        // Go!
+        int pending;
+        while ((pending = control->pending.load(std::memory_order_acquire)))
+        {
+            // In the absence of fibers this is the best we can do.
+            if (!TaskStack_TryWork())
+            {
+                #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+                    std::unique_lock<std::mutex> lock(control->mutex);
+                    control->cv.wait(lock);
+                #else
+                    control->pending.wait(pending, std::memory_order_acquire);
+                #endif
+            }
+        }
+    }
 }
