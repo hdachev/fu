@@ -232,6 +232,35 @@ pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[]): Context
 {
+    // Fuzzing module splits.
+    for (mut i = 0; i < sources.len; i++)
+    {
+        ref src = sources[i];
+        for (;;)
+        {
+            mut start0 = src.find("<split/>");
+            if (start0 < 0)
+                break;
+
+            // Avoid trailing whitespace.
+            let start00 = start0;
+            let start1  = start0 + 8;
+            while (start0 && src[start0 - 1] == ' ') start0--;
+
+            // We'll test with and without a module split here.
+            let moduleA = src.slice(0, start0);
+            let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+            let without = src[0, start0] ~ src[start1, src.len];
+
+            sources[i]  = without;
+            ZERO(:testdiffs, :sources);
+
+            // Continue with the greater modules count here.
+            sources[i]  = moduleA;
+            sources.insert(i + 1, moduleB);
+        }
+    }
+
     // Test variations, very primitive fuzzing.
     for (mut i = 0; i < sources.len; i++)
     {
@@ -256,11 +285,11 @@ pub fn ZERO(
             let with    = src[0, start0] ~ src[start1, end0] ~ src[end1, src.len];
             let without = src[0, start0]                     ~ src[end1, src.len];
 
-            sources[i]  = with;
+            sources[i]  = without;
             ZERO(:testdiffs, :sources);
 
-            // Continue without.
-            sources[i]  = without;
+            // Continue with the more complex test here.
+            sources[i]  = with;
         }
     }
 

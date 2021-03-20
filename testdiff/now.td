@@ -7394,9 +7394,7 @@ int main() { return fu_MAIN(); }
         pub struct Target { modid!: i32; packed!: i32; };
         pub inline fn index(a: Target) a.packed;
 
-        //////////////////////////////////////////////////////////////////
-        // TODO module autosplit, we need to generate import variations //
-        //////////////////////////////////////////////////////////////////
+
 
         struct CurrentFn { using target: Target; };
         fn hello(c?: CurrentFn) c.index;
@@ -7460,6 +7458,7 @@ int main() { return fu_MAIN(); }
         pub struct Target { modid!: i32; packed!: i32; };
         pub inline fn index(a: Target) a.packed;
 
+
 -----
 
 -----
@@ -7468,6 +7467,7 @@ int main() { return fu_MAIN(); }
         pub inline fn index(a: Target) a.packed;
 
         import _0;
+
         struct CurrentFn { using target: Target; };
         fn hello(c?: CurrentFn) c.index;
         fn main() hello;
@@ -8491,6 +8491,117 @@ int main() { return fu_MAIN(); }
                 [ SolvedNode(5), SolvedNode(7) ]);
 
 
+
+            mut myVisitor: Visitor;
+            myVisitor.visitNodes(tree);
+            return myVisitor.sum - 15;
+        };
+
+
+-----
+#include <fu/vec.h>
+
+struct s_SolvedNode;
+struct s_Visitor;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    int value;
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || value
+            || items
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Visitor
+                                #define DEF_s_Visitor
+struct s_Visitor
+{
+    int sum;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || sum
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static void visit(s_Visitor& v, const s_SolvedNode& node)
+{
+    v.sum += node.value;
+}
+
+static void traverse(s_Visitor& v, const s_SolvedNode& n)
+{
+    visit(v, n);
+    for (int i = 0; i < n.items.size(); i++)
+        traverse(v, n.items[i]);
+
+}
+
+inline static void visitNodes_7vqN(s_Visitor& _v, const s_SolvedNode& _n)
+{
+    traverse(_v, _n);
+}
+
+int fu_MAIN()
+{
+    s_SolvedNode tree = s_SolvedNode { 3, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { s_SolvedNode { 5, fu_VEC<s_SolvedNode>{} }, s_SolvedNode { 7, fu_VEC<s_SolvedNode>{} } } } };
+    s_Visitor myVisitor {};
+    visitNodes_7vqN(myVisitor, tree);
+    return myVisitor.sum - 15;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct SolvedNode {
+            value: i32;
+            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
+        };
+
+        fn visitNodes(_v: &mut $V, _n: SolvedNode) {
+
+            fn traverse(v: &mut $V, n: SolvedNode) {
+                v.visit(n);
+                for (mut i = 0; i < n.items.len; i++)
+                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
+            }
+
+            traverse(_v, _n);
+        };
+
+        struct Visitor {
+            sum: i32;
+        };
+
+        fn visit(using v: &mut Visitor, node: SolvedNode) {
+            sum += node.value;
+        };
+
+        fn main(): i32 {
+            let tree = SolvedNode(3,
+                [ SolvedNode(5), SolvedNode(7) ]);
+
+
             //! NONTRIV_autocopy
             //  This is an aside, managed to lose the copy qual when working structs
             //   Initially noticed it because visitNodes tried to change its sighash
@@ -8570,117 +8681,6 @@ int fu_MAIN()
     if (cpy)
     {
     };
-    s_Visitor myVisitor {};
-    visitNodes_7vqN(myVisitor, tree);
-    return myVisitor.sum - 15;
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-
------
-
-        struct SolvedNode {
-            value: i32;
-            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
-        };
-
-        fn visitNodes(_v: &mut $V, _n: SolvedNode) {
-
-            fn traverse(v: &mut $V, n: SolvedNode) {
-                v.visit(n);
-                for (mut i = 0; i < n.items.len; i++)
-                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
-            }
-
-            traverse(_v, _n);
-        };
-
-        struct Visitor {
-            sum: i32;
-        };
-
-        fn visit(using v: &mut Visitor, node: SolvedNode) {
-            sum += node.value;
-        };
-
-        fn main(): i32 {
-            let tree = SolvedNode(3,
-                [ SolvedNode(5), SolvedNode(7) ]);
-
-
-
-            mut myVisitor: Visitor;
-            myVisitor.visitNodes(tree);
-            return myVisitor.sum - 15;
-        };
-
-
------
-#include <fu/vec.h>
-
-struct s_SolvedNode;
-struct s_Visitor;
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    int value;
-    fu_VEC<s_SolvedNode> items;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || value
-            || items
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Visitor
-                                #define DEF_s_Visitor
-struct s_Visitor
-{
-    int sum;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || sum
-        ;
-    }
-};
-                                #endif
-
-#ifndef FU_NO_FDEFs
-
-static void visit(s_Visitor& v, const s_SolvedNode& node)
-{
-    v.sum += node.value;
-}
-
-static void traverse(s_Visitor& v, const s_SolvedNode& n)
-{
-    visit(v, n);
-    for (int i = 0; i < n.items.size(); i++)
-        traverse(v, n.items[i]);
-
-}
-
-inline static void visitNodes_7vqN(s_Visitor& _v, const s_SolvedNode& _n)
-{
-    traverse(_v, _n);
-}
-
-int fu_MAIN()
-{
-    s_SolvedNode tree = s_SolvedNode { 3, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { s_SolvedNode { 5, fu_VEC<s_SolvedNode>{} }, s_SolvedNode { 7, fu_VEC<s_SolvedNode>{} } } } };
     s_Visitor myVisitor {};
     visitNodes_7vqN(myVisitor, tree);
     return myVisitor.sum - 15;
