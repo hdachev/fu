@@ -10,105 +10,7 @@
 
 namespace
 {
-    typedef int32_t i32;
-
     typedef uint32_t u32;
-    typedef uint64_t u64;
-
-
-    //
-
-    class LockFree_StackOf_44BitPtrs
-    {
-        struct Node
-        {
-            u64 m_NEXT;
-        };
-
-        std::atomic_uint64_t m_HEAD;
-
-
-        // Pointer tagging.
-
-        inline u64 tag(const Node* ptr, i32 lastID)
-        {
-            // Ptrs are 48bit vals,
-            //  ours are 44bit because 16-byte align,
-            //   so we use the rest for a u20 ABA tag.
-
-            assert(!(u64(ptr) & ~0xfffffffffff0)
-                && "LockFree_StackOf_44BitPtrs: Not a 44bit ptr.");
-
-            return  (u64(ptr)         >>     4)
-                 | ((u64(lastID) + 1) << (48-4));
-        }
-
-        inline Node* untag(u64 tagged_ptr)
-        {
-            return (Node*)(
-                (tagged_ptr << 4)
-                    & 0xffffffffffff);
-        }
-
-        inline i32 tagof(u64 tagged_ptr)
-        {
-            return i32(u64(tagged_ptr) >> (48-4));
-        }
-
-
-        // Lock free release.
-
-    public:
-        inline void push(char* mem)
-        {
-            Node* node = (Node*)mem;
-
-            u64 state0 = m_HEAD.load(
-                std::memory_order_relaxed);
-
-            Retry:
-            {
-                node->m_NEXT = state0;
-                const u64 state1 = tag(node, tagof(state0));
-
-                assert(untag(state1) == node
-                    && "LockFree_StackOf_44BitPtrs: Tagging broke ptr.");
-
-                if (!m_HEAD.compare_exchange_weak(
-                    state0, state1,
-                        std::memory_order_release,
-                        std::memory_order_relaxed))
-                {
-                    goto Retry;
-                }
-            }
-        }
-
-        inline char* try_pop()
-        {
-            u64 state0 = m_HEAD.load(
-                std::memory_order_relaxed);
-
-            Retry:
-            {
-                const Node* node = untag(state0);
-                if (node)
-                {
-                    const u64 state1 = node->m_NEXT;
-
-                    if (!m_HEAD.compare_exchange_weak(
-                        state0, state1,
-                            std::memory_order_acquire,
-                            std::memory_order_relaxed))
-                    {
-                        goto Retry;
-                    }
-                }
-
-                return (char*)node;
-            }
-        }
-    };
 
 
     //
@@ -136,7 +38,7 @@ namespace
 
         struct alignas(MAX_CACHELINE_bytes) Bucket
         {
-            LockFree_StackOf_44BitPtrs m_stack;
+            lockfree::stack<4 /*alignas(16)*/> m_stack;
         };
 
         Bucket m_buckets[NUM_BUCKETS];
