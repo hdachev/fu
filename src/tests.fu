@@ -1700,7 +1700,7 @@ pub fn runTests()
             mut path = p.split("/");
 
             for (mut i = path.len; i --> 0; ) {
-                let part = path[i];
+                let part = path[i]; //! NONTRIV_autocopy not needed
                 if (part == "." || !part && i > 0 && i < path.len - 1)
                     path.splice(i, 1);
             }
@@ -2089,7 +2089,7 @@ pub fn runTests()
         struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
 
         fn snippet2cpp(cpp: string): string {
-            let ctx = Context( Module(cpp) );
+            let ctx = Context( Module(cpp) );   //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
@@ -2107,7 +2107,7 @@ pub fn runTests()
         struct Context { modules: Module[]; };  // Module[] is COW-capable -
                                                 //  - either prove there's no COW,
         fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.
-            let ctx = Context([ Module(cpp) ]);
+            let ctx = Context([ Module(cpp) ]); //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
             for (mut i = 0; i < ctx.modules.len; i++)
             {
                 let module = ctx.modules[i];    ;; TODO .unique(i)
@@ -2532,9 +2532,12 @@ pub fn runTests()
             let tree = SolvedNode(3,
                 [ SolvedNode(5), SolvedNode(7) ]);
 
-            // This is an aside, managed to lose the copy qual when working structs
-            // Initially noticed it because visitNodes tried to change its sighash
+            <alt>
+            //! NONTRIV_autocopy
+            //  This is an aside, managed to lose the copy qual when working structs
+            //   Initially noticed it because visitNodes tried to change its sighash
             mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy
+            </alt>
 
             mut myVisitor: Visitor;
             myVisitor.visitNodes(tree);
@@ -2797,7 +2800,7 @@ pub fn runTests()
             let a = [7, 11];
             let b = {
                 BRK: {
-                    if (x & 2) break :BRK c;
+                    if (x & 2) break :BRK c; //! NONTRIV_autocopy
                     if (x & 1) break :BRK [ x ]; // a val
                     a; // a ref
                 }
@@ -2814,7 +2817,7 @@ pub fn runTests()
     ZERO(`
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test) {
+        fn test(mut x: Test) { //! NONTRIV_autocopy
             x.i[0] += x.i[1];
             return x;
         }
@@ -2828,7 +2831,7 @@ pub fn runTests()
     ZERO(`
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test): Test {
+        fn test(mut x: Test): Test { //! NONTRIV_autocopy
             x.i[0] += x.i[1];
             return x;
         }
@@ -2857,7 +2860,7 @@ pub fn runTests()
         // The thing below but shorter:
         //  the '|| throw' introduces a bullshit lambda during codegen,
         //   which misreturns a dangling reference to its own frame.
-        fn test(x: string) [x][0] || throw("nope!");
+        fn test(x: string) [x][0] || throw("nope!"); //! NONTRIV_autocopy the [x][0] is an roundabout copy
         fn main() "what".test.len - 4;
     `);
 
@@ -2869,7 +2872,7 @@ pub fn runTests()
 
         fn solveNodes(n: Node[]) {
             mut r: SolvedNode[];
-            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind);
+            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind); //! NONTRIV_autocopy
             return r;
         }
 
@@ -3361,7 +3364,7 @@ pub fn runTests()
         fn rec_copy(ref a: Node) {
             // If implemented naively,
             //  by the time you copy stuff it's no longer there.
-            a = a.items[0];
+            a = a.items[0]; //! NONTRIV_autocopy
         }
 
         fn main() {
@@ -3880,7 +3883,7 @@ pub fn runTests()
         };
 
         pub fn test(a: ModuleOutputs) {
-            let b = a._0::clone();
+            let b = a._0::clone(); //! NONTRIV_autocopy deps
             return a.deps.len - b.deps.len;
         }
 
@@ -3890,7 +3893,7 @@ pub fn runTests()
 
     ZERO([`
         // a private fn
-        fn createShader(src: string) = src;
+        fn createShader(src: string) = src; //! NONTRIV_autocopy xref lost here, stupid
 
         // inits a public let
         pub let GEOMETRY_PASS_TEST = createShader("source code");

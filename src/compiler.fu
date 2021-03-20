@@ -167,6 +167,7 @@ let NOTES = [
     "DEAD_call",
     "DEAD_let",
     "DEAD_if",
+    "NONTRIV_autocopy",
 ];
 
 pub fn compile_snippets(sources: string[], fnames?: string[]): Context
@@ -231,9 +232,40 @@ pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[]): Context
 {
-    mut expectations: string[][];
+    // Test variations, very primitive fuzzing.
+    for (mut i = 0; i < sources.len; i++)
+    {
+        ref src = sources[i];
+        for (;;)
+        {
+            mut start0 = src.find("<alt>");
+            if (start0 < 0)
+                break;
+
+            mut end0 = src.find("</alt>", start: start0);
+            end0 >= 0 || throw("No closing `</alt>` for `<alt>`.");
+
+            // Avoid trailing whitespace.
+            let start1 = start0 + 5;
+            let end1   = end0   + 6;
+            while (start0 && src[start0 - 1] == ' ') start0--;
+            while (          src[end0   - 1] == ' ') end0--;
+
+            // We'll retry two times - with an without the alt.
+            //  This allows us to fuzz different combinations with little effort.
+            let with    = src[0, start0] ~ src[start1, end0] ~ src[end1, src.len];
+            let without = src[0, start0]                     ~ src[end1, src.len];
+
+            sources[i]  = with;
+            ZERO(:testdiffs, :sources);
+
+            // Continue without.
+            sources[i]  = without;
+        }
+    }
 
     //
+    mut expectations: string[][];
     for (mut i = 0; i < sources.len; i++)
     {
         ref src = sources[i];

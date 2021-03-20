@@ -6041,7 +6041,7 @@ int main() { return fu_MAIN(); }
             mut path = p.split("/");
 
             for (mut i = path.len; i --> 0; ) {
-                let part = path[i];
+                let part = path[i]; //! NONTRIV_autocopy not needed
                 if (part == "." || !part && i > 0 && i < path.len - 1)
                     path.splice(i, 1);
             }
@@ -7186,7 +7186,7 @@ int main() { return fu_MAIN(); }
         struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
 
         fn snippet2cpp(cpp: string): string {
-            let ctx = Context( Module(cpp) );
+            let ctx = Context( Module(cpp) );   //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
@@ -7263,7 +7263,7 @@ int main() { return fu_MAIN(); }
         struct Context { modules: Module[]; };  // Module[] is COW-capable -
                                                 //  - either prove there's no COW,
         fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.
-            let ctx = Context([ Module(cpp) ]);
+            let ctx = Context([ Module(cpp) ]); //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
             for (mut i = 0; i < ctx.modules.len; i++)
             {
                 let module = ctx.modules[i];    // TODO .unique(i)
@@ -8490,9 +8490,12 @@ int main() { return fu_MAIN(); }
             let tree = SolvedNode(3,
                 [ SolvedNode(5), SolvedNode(7) ]);
 
-            // This is an aside, managed to lose the copy qual when working structs
-            // Initially noticed it because visitNodes tried to change its sighash
+
+            //! NONTRIV_autocopy
+            //  This is an aside, managed to lose the copy qual when working structs
+            //   Initially noticed it because visitNodes tried to change its sighash
             mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy
+
 
             mut myVisitor: Visitor;
             myVisitor.visitNodes(tree);
@@ -8567,6 +8570,117 @@ int fu_MAIN()
     if (cpy)
     {
     };
+    s_Visitor myVisitor {};
+    visitNodes_7vqN(myVisitor, tree);
+    return myVisitor.sum - 15;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct SolvedNode {
+            value: i32;
+            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
+        };
+
+        fn visitNodes(_v: &mut $V, _n: SolvedNode) {
+
+            fn traverse(v: &mut $V, n: SolvedNode) {
+                v.visit(n);
+                for (mut i = 0; i < n.items.len; i++)
+                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
+            }
+
+            traverse(_v, _n);
+        };
+
+        struct Visitor {
+            sum: i32;
+        };
+
+        fn visit(using v: &mut Visitor, node: SolvedNode) {
+            sum += node.value;
+        };
+
+        fn main(): i32 {
+            let tree = SolvedNode(3,
+                [ SolvedNode(5), SolvedNode(7) ]);
+
+
+
+            mut myVisitor: Visitor;
+            myVisitor.visitNodes(tree);
+            return myVisitor.sum - 15;
+        };
+
+
+-----
+#include <fu/vec.h>
+
+struct s_SolvedNode;
+struct s_Visitor;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    int value;
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || value
+            || items
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Visitor
+                                #define DEF_s_Visitor
+struct s_Visitor
+{
+    int sum;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || sum
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static void visit(s_Visitor& v, const s_SolvedNode& node)
+{
+    v.sum += node.value;
+}
+
+static void traverse(s_Visitor& v, const s_SolvedNode& n)
+{
+    visit(v, n);
+    for (int i = 0; i < n.items.size(); i++)
+        traverse(v, n.items[i]);
+
+}
+
+inline static void visitNodes_7vqN(s_Visitor& _v, const s_SolvedNode& _n)
+{
+    traverse(_v, _n);
+}
+
+int fu_MAIN()
+{
+    s_SolvedNode tree = s_SolvedNode { 3, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<2> { s_SolvedNode { 5, fu_VEC<s_SolvedNode>{} }, s_SolvedNode { 7, fu_VEC<s_SolvedNode>{} } } } };
     s_Visitor myVisitor {};
     visitNodes_7vqN(myVisitor, tree);
     return myVisitor.sum - 15;
@@ -9400,7 +9514,7 @@ int main() { return fu_MAIN(); }
             let a = [7, 11];
             let b = {
                 BRK: {
-                    if (x & 2) break :BRK c;
+                    if (x & 2) break :BRK c; //! NONTRIV_autocopy
                     if (x & 1) break :BRK [ x ]; // a val
                     a; // a ref
                 }
@@ -9452,7 +9566,7 @@ int main() { return fu_MAIN(); }
 
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test) {
+        fn test(mut x: Test) { //! NONTRIV_autocopy
             x.i[0] += x.i[1];
             return x;
         }
@@ -9504,7 +9618,7 @@ int main() { return fu_MAIN(); }
 
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test): Test {
+        fn test(mut x: Test): Test { //! NONTRIV_autocopy
             x.i[0] += x.i[1];
             return x;
         }
@@ -9618,7 +9732,7 @@ int main() { return fu_MAIN(); }
         // The thing below but shorter:
         //  the '|| throw' introduces a bullshit lambda during codegen,
         //   which misreturns a dangling reference to its own frame.
-        fn test(x: string) [x][0] || throw("nope!");
+        fn test(x: string) [x][0] || throw("nope!"); //! NONTRIV_autocopy the [x][0] is an roundabout copy
         fn main() "what".test.len - 4;
 
 -----
@@ -9653,7 +9767,7 @@ int main() { return fu_MAIN(); }
 
         fn solveNodes(n: Node[]) {
             mut r: SolvedNode[];
-            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind);
+            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind); //! NONTRIV_autocopy
             return r;
         }
 
@@ -11504,7 +11618,7 @@ int main() { return fu_MAIN(); }
         fn rec_copy(ref a: Node) {
             // If implemented naively,
             //  by the time you copy stuff it's no longer there.
-            a = a.items[0];
+            a = a.items[0]; //! NONTRIV_autocopy
         }
 
         fn main() {
@@ -13257,7 +13371,7 @@ int main() { return fu_MAIN(); }
         };
 
         pub fn test(a: ModuleOutputs) {
-            let b = a._0::clone();
+            let b = a._0::clone(); //! NONTRIV_autocopy deps
             return a.deps.len - b.deps.len;
         }
 
@@ -13368,7 +13482,7 @@ int main() { return fu_MAIN(); }
 -----
 
         // a private fn
-        fn createShader(src: string) = src;
+        fn createShader(src: string) = src; //! NONTRIV_autocopy xref lost here, stupid
 
         // inits a public let
         pub let GEOMETRY_PASS_TEST = createShader("source code");
@@ -13390,7 +13504,7 @@ extern const fu_STR GEOMETRY_PASS_TEST { createShader("source code"_fu) };
 -----
 
         // a private fn
-        fn createShader(src: string) = src;
+        fn createShader(src: string) = src; //! NONTRIV_autocopy xref lost here, stupid
 
         // inits a public let
         pub let GEOMETRY_PASS_TEST = createShader("source code");

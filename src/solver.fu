@@ -20,6 +20,8 @@ pub let N_DeadCall          = 1 << 7;
 pub let N_DeadLet           = 1 << 8;
 pub let N_DeadIf            = 1 << 9;
 
+pub let N_NonTrivAutoCopy   = 1 << 10;
+
 
 //
 
@@ -4276,8 +4278,11 @@ pub fn solve(
         if !(slot.quals & q_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
-        if (!USE_nontriv_autocopy && !(node.type.quals & q_trivial))
-            fail("Non-trivial implicit copy.");
+        if !(node.type.quals & q_trivial)
+        {
+            USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
+            _notes |= N_NonTrivAutoCopy;
+        }
 
         // Here we go.
         node = createCopy(node);
