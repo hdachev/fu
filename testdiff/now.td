@@ -1342,7 +1342,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion
         fn self_rec_template(x: $T): $T
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
@@ -1367,10 +1366,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion
         fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;
         fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;
         fn main() ab_rec(11) + 200;
@@ -1400,6 +1399,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
@@ -1785,7 +1785,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion
         fn inner(i: i32): i32
             i > 0 ? outer(i - 1) : 0;
 
@@ -1819,10 +1818,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_reopen
         fn test(one: i32)
         {
             let zero = one - 1;
@@ -1871,10 +1870,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         fn inner(i: i32): i32
             outer(i - 1);
 
@@ -1911,10 +1911,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         fn inner_noret(i: i32)
             outer_noret(i - 1);
 
@@ -1951,10 +1952,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
@@ -1985,10 +1987,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_reopen
         fn inner_templ(i): i32
             outer_templ(i - 1);
 
@@ -2025,10 +2027,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_reopen
         fn inner_templ_noret(i)
             outer_templ_noret(i - 1);
 
@@ -2065,10 +2067,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         fn outer(i: i32): i32
             i > 0   ? inner(i)
                     : 2 * i;
@@ -2105,10 +2108,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
@@ -2141,10 +2145,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_reopen
         fn outer_templ(i): i32
             i > 0   ? inner_templ(i)
                     : 2 * i;
@@ -2181,10 +2185,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_reopen
         fn outer(implicit x: i32, i: i32): i32
             i > 0   ? inner(i)
                     : x + i;
@@ -2221,10 +2226,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_reopen
         fn outer(implicit x: i32, i: i32)
             i > 0   ? inner(i)
                     : x + i;
@@ -2277,10 +2282,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -2314,10 +2320,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -2351,10 +2358,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn returns_x(implicit x: i32): i32
             = x;
 
@@ -2402,10 +2410,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn noret_x(implicit x: i32) x;
 
         fn templ_calls_self_2(call_self): i32
@@ -2440,6 +2449,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -2625,7 +2636,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion
         fn goto0(x): i32 = x ? goto0(x / 2) : 0;
         fn main() goto0(1);
 
@@ -2647,10 +2657,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
 
 -----
 
-        //! FN_recursion FN_resolve
         fn goto0(x) x ? goto0(x / 2) : 0;
         fn main() goto0(1);
 
@@ -2672,10 +2682,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve
         fn goto0(x) x ? goto0(x / 2) : x; // ideally same as above
         fn main() goto0(1);
 
@@ -2697,10 +2708,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve
         fn goto0(x) x && goto0(x / 2); // ideally same as above [again]
         fn main() goto0(1);
 
@@ -2722,6 +2734,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -2763,7 +2777,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion FN_resolve
         fn hello(ref a: i32[], ref b: i32[], x: i32): &mut i32[] {
             if (x == 0) return a;
             if (x == 1) return b;
@@ -2805,6 +2818,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -3741,7 +3756,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        struct SelfRec { x: SelfRec[]; }; //! TYPE_recursion TYPE_resolve
+        struct SelfRec { x: SelfRec[]; };
         fn main() SelfRec( [ SelfRec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
 
 -----
@@ -3778,11 +3793,13 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
 
 -----
 
-        struct ABRec { x: BARec[]; }; //! TYPE_recursion TYPE_reopen
-        struct BARec { x: ABRec[]; }; //! TYPE_recursion TYPE_reopen
+        struct ABRec { x: BARec[]; };
+        struct BARec { x: ABRec[]; };
         fn main() ABRec( [ BARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
 
 -----
@@ -3838,12 +3855,14 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_reopen
 
 -----
 
-        struct ABRec { x: BARec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_reopen
-        struct BARec { x: ABRec[]; y: ABBARec[]; }; //! TYPE_recursion TYPE_reopen
-        struct ABBARec { x: ABRec[]; y: BARec[]; }; //! TYPE_recursion TYPE_reopen
+        struct ABRec { x: BARec[]; y: ABBARec[]; };
+        struct BARec { x: ABRec[]; y: ABBARec[]; };
+        struct ABBARec { x: ABRec[]; y: BARec[]; };
         fn main() ABRec( [ BARec() ], [ ABBARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
 
 -----
@@ -3924,6 +3943,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_reopen
 
 -----
 
@@ -5660,7 +5681,7 @@ int main() { return fu_MAIN(); }
             kind:       string;
             flags?:     i32;
             value?:     string;
-            items?:     SolvedNode[]; //! TYPE_recursion TYPE_resolve
+            items?:     SolvedNode[];
             token:      Token;
 
             type:       Type;
@@ -5778,6 +5799,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
 
 -----
 
@@ -6041,7 +6064,7 @@ int main() { return fu_MAIN(); }
             mut path = p.split("/");
 
             for (mut i = path.len; i --> 0; ) {
-                let part = path[i]; //! NONTRIV_autocopy not needed
+                let part = path[i];
                 if (part == "." || !part && i > 0 && i < path.len - 1)
                     path.splice(i, 1);
             }
@@ -6104,6 +6127,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
@@ -6385,7 +6409,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
@@ -6412,10 +6435,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve FN_reopen
         fn main()
         {
             mut target = 0;
@@ -6442,10 +6466,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_reopen
         fn main()
         {
             mut target = 0;
@@ -6486,10 +6511,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
-        //! FN_recursion FN_resolve DEAD_call
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || /*
                               a = A(incr(a))    /*/         // Lint should complain here,
@@ -6520,10 +6546,12 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_call
 
 -----
 
-        //! FN_recursion FN_reopen DEAD_call
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || (a = B(incr(a)));
         fn B(ref b: i32) b || (b = A(incr(b)));
@@ -6560,10 +6588,12 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// DEAD_call
 
 -----
 
-        //! FN_recursion FN_reopen DEAD_call
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) { ref aa = a || (a = B(incr(a))); return aa; }
         fn B(ref b: i32) { ref bb = b || (b = A(incr(b))); return bb; }
@@ -6602,10 +6632,12 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// DEAD_call
 
 -----
 
-        //! FN_recursion FN_reopen DEAD_let DEAD_code
         fn main()
         {
             mut target = 0;
@@ -6672,10 +6704,13 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// DEAD_code
+// DEAD_let
 
 -----
 
-        //! FN_recursion FN_reopen
         fn main()
         {
             mut target = 0;
@@ -6735,6 +6770,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
 
 -----
 
@@ -7186,7 +7223,7 @@ int main() { return fu_MAIN(); }
         struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
 
         fn snippet2cpp(cpp: string): string {
-            let ctx = Context( Module(cpp) );   //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
+            let ctx = Context( Module(cpp) );
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
@@ -7256,6 +7293,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
@@ -7263,7 +7301,7 @@ int main() { return fu_MAIN(); }
         struct Context { modules: Module[]; };  // Module[] is COW-capable -
                                                 //  - either prove there's no COW,
         fn snippet2cpp(cpp: string): string {   //  - or don't attempt to move out the item.
-            let ctx = Context([ Module(cpp) ]); //! NONTRIV_autocopy we're copying 'cpp' on its way into Module.
+            let ctx = Context([ Module(cpp) ]);
             for (mut i = 0; i < ctx.modules.len; i++)
             {
                 let module = ctx.modules[i];    // TODO .unique(i)
@@ -7335,12 +7373,9 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
-
-        //! DEAD_code, TODO FIX no dead code here really, noticed before reopen.
-        //  Perhaps we want to "undo" these markers somehow?
-        //   Or have them per scope entry and discard?
 
         fn test(x: string) {
             // cg fail: fwd annots of the two fns where unconsting hey to "enable move",
@@ -7348,7 +7383,7 @@ int main() { return fu_MAIN(); }
             let hey = "hey";
             fn inner(you: string) you && hey ~ you || outer("what#1");
             fn outer(arg: string) inner(arg && " " ~ arg) || inner("what#2");
-            return outer(x); //! FN_recursion FN_reopen
+            return outer(x);
         }
 
         fn main() test("you").len - 7;
@@ -7388,6 +7423,9 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// DEAD_code
 
 -----
 
@@ -8268,7 +8306,6 @@ int main() { return fu_MAIN(); }
         //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -
         //   we emit useless overloads for mutrefs when its clearly useless.
 
-        //! FN_recursion FN_resolve
         fn rec_cases(a: $T)
         case ($T -> @primitive) {
             if (a)      return rec_cases(a / 2);
@@ -8359,10 +8396,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve
         fn rec_cases(a: $T)
         case ($T -> @primitive) {
             if (a)      return rec_cases(a / 2);
@@ -8423,6 +8461,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -8464,7 +8504,7 @@ int main() { return fu_MAIN(); }
 
         struct SolvedNode {
             value: i32;
-            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
+            items?: SolvedNode[];
         };
 
         fn visitNodes(_v: &mut $V, _n: SolvedNode) {
@@ -8472,7 +8512,7 @@ int main() { return fu_MAIN(); }
             fn traverse(v: &mut $V, n: SolvedNode) {
                 v.visit(n);
                 for (mut i = 0; i < n.items.len; i++)
-                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
+                    traverse(v, n.items[i]);
             }
 
             traverse(_v, _n);
@@ -8570,12 +8610,16 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// TYPE_recursion
+// TYPE_resolve
 
 -----
 
         struct SolvedNode {
             value: i32;
-            items?: SolvedNode[]; //! TYPE_recursion TYPE_resolve
+            items?: SolvedNode[];
         };
 
         fn visitNodes(_v: &mut $V, _n: SolvedNode) {
@@ -8583,7 +8627,7 @@ int main() { return fu_MAIN(); }
             fn traverse(v: &mut $V, n: SolvedNode) {
                 v.visit(n);
                 for (mut i = 0; i < n.items.len; i++)
-                    traverse(v, n.items[i]); //! FN_recursion FN_resolve
+                    traverse(v, n.items[i]);
             }
 
             traverse(_v, _n);
@@ -8602,9 +8646,8 @@ int main() { return fu_MAIN(); }
                 [ SolvedNode(5), SolvedNode(7) ]);
 
 
-            //! NONTRIV_autocopy
-            //  This is an aside, managed to lose the copy qual when working structs
-            //   Initially noticed it because visitNodes tried to change its sighash
+            // This is an aside, managed to lose the copy qual when working structs
+            //  Initially noticed it because visitNodes tried to change its sighash
             mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy
 
 
@@ -8690,6 +8733,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
 
 -----
 
@@ -8715,7 +8763,7 @@ int main() { return fu_MAIN(); }
 
         fn throw_hey(): i32 {
             throw("hey");
-            return 1; //! DEAD_code
+            return 1;
         }
 
         fn main(): i32 {
@@ -8758,6 +8806,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -8766,7 +8815,7 @@ int main() { return fu_MAIN(); }
         }
 
         fn main(): i32 {
-            let x = throw_hey() //! DEAD_code
+            let x = throw_hey()
                 catch err
                     return err.len - 3;
 
@@ -8804,12 +8853,13 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
         fn throw_hey(): i32 {
             throw("hey");
-            return 1; //! DEAD_code
+            return 1;
         }
 
         fn main(): i32 {
@@ -8854,6 +8904,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -9514,7 +9565,7 @@ int main() { return fu_MAIN(); }
             let a = [7, 11];
             let b = {
                 BRK: {
-                    if (x & 2) break :BRK c; //! NONTRIV_autocopy
+                    if (x & 2) break :BRK c;
                     if (x & 1) break :BRK [ x ]; // a val
                     a; // a ref
                 }
@@ -9561,12 +9612,13 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test) { //! NONTRIV_autocopy
+        fn test(mut x: Test) {
             x.i[0] += x.i[1];
             return x;
         }
@@ -9613,12 +9665,13 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
         struct Test { i: i32[]; };
 
-        fn test(mut x: Test): Test { //! NONTRIV_autocopy
+        fn test(mut x: Test): Test {
             x.i[0] += x.i[1];
             return x;
         }
@@ -9665,6 +9718,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
@@ -9732,7 +9786,7 @@ int main() { return fu_MAIN(); }
         // The thing below but shorter:
         //  the '|| throw' introduces a bullshit lambda during codegen,
         //   which misreturns a dangling reference to its own frame.
-        fn test(x: string) [x][0] || throw("nope!"); //! NONTRIV_autocopy the [x][0] is an roundabout copy
+        fn test(x: string) [x][0] || throw("nope!");
         fn main() "what".test.len - 4;
 
 -----
@@ -9757,6 +9811,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
@@ -9767,7 +9822,7 @@ int main() { return fu_MAIN(); }
 
         fn solveNodes(n: Node[]) {
             mut r: SolvedNode[];
-            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind); //! NONTRIV_autocopy
+            for (mut i = 0; i < n.len; i++) r ~= SolvedNode(n[i].kind);
             return r;
         }
 
@@ -9846,6 +9901,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
@@ -11611,14 +11667,14 @@ int main() { return fu_MAIN(); }
 -----
 
         struct Node {
-            items?: Node[]; //! TYPE_recursion TYPE_resolve
+            items?: Node[];
             stuff?: Node[];
         };
 
         fn rec_copy(ref a: Node) {
             // If implemented naively,
             //  by the time you copy stuff it's no longer there.
-            a = a.items[0]; //! NONTRIV_autocopy
+            a = a.items[0];
         }
 
         fn main() {
@@ -11670,6 +11726,9 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
 
 -----
 
@@ -13371,7 +13430,7 @@ int main() { return fu_MAIN(); }
         };
 
         pub fn test(a: ModuleOutputs) {
-            let b = a._0::clone(); //! NONTRIV_autocopy deps
+            let b = a._0::clone();
             return a.deps.len - b.deps.len;
         }
 
@@ -13478,11 +13537,12 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 
         // a private fn
-        fn createShader(src: string) = src; //! NONTRIV_autocopy xref lost here, stupid
+        fn createShader(src: string) = src;
 
         // inits a public let
         pub let GEOMETRY_PASS_TEST = createShader("source code");
@@ -13500,11 +13560,12 @@ static const fu_STR& createShader(const fu_STR& src)
 extern const fu_STR GEOMETRY_PASS_TEST { createShader("source code"_fu) };
 
 #endif
+// NONTRIV_autocopy
 
 -----
 
         // a private fn
-        fn createShader(src: string) = src; //! NONTRIV_autocopy xref lost here, stupid
+        fn createShader(src: string) = src;
 
         // inits a public let
         pub let GEOMETRY_PASS_TEST = createShader("source code");
@@ -14119,7 +14180,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion FN_resolve
         fn main()
         {
             mut sum = 0;
@@ -14164,10 +14224,11 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
-        //! FN_recursion FN_resolve
         fn main()
         {
             mut sum = 0;
@@ -14229,6 +14290,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -15906,8 +15969,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //! FN_recursion FN_reopen
-        //! DEAD_code DEAD_call
         fn use_a(implicit a: i32) a * a;
         fn use_b(implicit b: i32) b * b;
         fn use_c(implicit c: i32) c * c;
@@ -16018,6 +16079,10 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// DEAD_code
+// DEAD_call
 
 -----
 

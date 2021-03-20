@@ -197,16 +197,11 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
         mut notes = module.out.solve.notes;
         for (mut bit = 0; bit < NOTES.len && notes; bit++)
         {
-            let mask = 1 << bit;
+            let mask  = 1 << bit;
             let isset = notes & mask;
-            let annot = NOTES[bit];
             notes &= ~mask;
             if (isset)
-                module.in.src.has(annot) || throw(
-                    "SLOW:\n\tMissing " ~ annot ~ " annotation:\n" ~ module.in.src);
-            else
-                module.in.src.has(annot) && throw(
-                    "OVERANNOT:\n\t" ~ annot ~ " not needed for this snippet:\n" ~ module.in.src);
+                module.out.cpp.src ~= "// " ~ NOTES[bit] ~ "\n";
         }
     }
 
