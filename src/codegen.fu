@@ -123,7 +123,7 @@ pub fn cpp_codegen(
                 return fwd ~ "&";
 
             // Pass primitives by value.
-            if (type.quals & q_primitive)
+            if (type.is_primitive)
                 return (mode & M_ARGUMENT | mode & M_CONST) && !(mode & M_FWDECL)
                      ? "const " ~ fwd
                      : fwd;
@@ -134,7 +134,7 @@ pub fn cpp_codegen(
             //  let b = a.b;    // B& b = a.b;      // const B& wouldn't allow move
             //  return b;       // return move(b);  // here
             //
-            if (!(type.quals & q_trivial) && !(mode & M_ARGUMENT)
+            if (!(type.is_trivial) && !(mode & M_ARGUMENT)
                 && type.lifetime.Lifetime_compareToIndex(_current_fn.index) > 0
                 && _current_fn.modid == module.modid)
             {
@@ -148,20 +148,20 @@ pub fn cpp_codegen(
                 // TODO Tracking ref use and 'moved-from'-ness.
                 //
                 let fnret = GET(Target(:module.modid, index: _current_fn.index)).type;
-                if !(fnret.quals & q_trivial || fnret.is_ref)
+                if !(fnret.is_trivial || fnret.is_ref)
                     return fwd ~ "&";
             }
 
             return "const " ~ fwd ~ "&";
         }
 
-        if ((mode & M_ARGUMENT) && !(type.quals & q_primitive))
+        if ((mode & M_ARGUMENT) && !(type.is_primitive))
             return fwd ~ "&&";
 
         // Const members cannot be moved from -
         //  So let's only do this for trivial types -
         //   Currently this is more of a way to validate the codegen.
-        if ((mode & M_CONST) && (type.quals & q_trivial))
+        if ((mode & M_CONST) && (type.is_trivial))
             return "const " ~ fwd;
 
         return fwd;
@@ -171,7 +171,7 @@ pub fn cpp_codegen(
     {
         let c = type.canon;
 
-        if (type.quals & q_primitive)
+        if (type.is_primitive)
         {
             // Avoid #include noise when possible.
             if (c == "i32")     return "int";
@@ -286,7 +286,7 @@ pub fn cpp_codegen(
             def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.name) ~ ";";
         }
 
-        if !(t.quals & q_rx_copy)
+        if !(t.is_rx_copy)
         {
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
@@ -857,7 +857,7 @@ pub fn cpp_codegen(
             if (init.kind == "copy" && !node.type.is_ref)
             {
                 let expr = cgNode(init.items.only);
-                if (node.type.quals & q_primitive)
+                if (node.type.is_primitive)
                     return head ~ " = " ~ expr;
 
                 return head ~ " { " ~ expr ~ " }";
@@ -915,7 +915,7 @@ pub fn cpp_codegen(
         }
 
         let intconst = global
-            && node.type.quals & (q_primitive | q_floating_pt) == q_primitive
+            && node.type.is_primitive && !node.type.is_floating_pt
             && node.items[LET_INIT].isIntegerConstant;
         // GLOBALS ///////////////////////////////////////////////
 
@@ -1410,11 +1410,11 @@ pub fn cpp_codegen(
     {
         mut src = node.value;
 
-        if (node.type.quals & q_unsigned)
+        if (node.type.is_unsigned)
             if (!src.has('u'))
                 src ~= 'u';
 
-        if (node.type.quals & q_floating_pt)
+        if (node.type.is_floating_pt)
         {
             if (!src.has('.'))
                 src ~= ".0";
@@ -1443,7 +1443,7 @@ pub fn cpp_codegen(
                 return "(-9223372036854775807-1)";
         }
 
-        if (node.type.quals & q_integral &&
+        if (node.type.is_integral &&
             node.type.canon != "u32" && node.type.canon != "i32")
         {
             if (node.type.canon == "u64" || node.type.canon == "i64") {
@@ -1645,7 +1645,7 @@ pub fn cpp_codegen(
         if (tv.ptrflip)
             return "*(" ~ tv.id ~ " = &(" ~ expr ~ ")) ? *" ~ tv.id ~ " : ";
 
-        if (type.quals & q_trivial)
+        if (type.is_trivial)
             return "(" ~ tv.id ~ " = " ~ expr ~ ") ? " ~ tv.id ~ " : ";
 
         return "(" ~ tv.id ~ " = " ~ expr ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
@@ -1895,7 +1895,7 @@ pub fn cpp_codegen(
 
     fn cgMove(type: Type, src: string): string
     {
-        if (type.quals & q_trivial)
+        if (type.is_trivial)
             return cgClone(type, src);
 
         return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";

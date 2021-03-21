@@ -197,6 +197,18 @@ pub fn is_void (t: Type) t.vtype == t_void .vtype;
 pub fn is_bool (t: Type) t.vtype == t_bool .vtype;
 
 
+//
+
+pub fn is_trivial    (t: Type) t.quals & q_trivial;
+pub fn is_rx_copy    (t: Type) t.quals & q_rx_copy;
+
+pub fn is_primitive  (t: Type) t.quals & q_primitive;
+pub fn is_floating_pt(t: Type) t.quals & q_floating_pt;
+pub fn is_integral   (t: Type) t.quals & q_integral;
+pub fn is_signed     (t: Type) t.quals & q_signed;
+pub fn is_unsigned   (t: Type) t.quals & q_unsigned;
+
+
 // TODO non zsts, non-empty structs, etc.
 
 pub fn maybe_nonzero(t: Type) t.is_never || t.is_void;

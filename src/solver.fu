@@ -453,12 +453,12 @@ pub fn solve(
         if (type.is_ref)
             type.lifetime = Lifetime_static();
 
-        if (type.quals & q_integral)
+        if (type.is_integral)
             return SolvedNode(
                 kind: "int", :token, :type,
                 value: "0");
 
-        if (type.quals & q_floating_pt)
+        if (type.is_floating_pt)
             return SolvedNode(
                 kind: "real", :token, :type,
                 value: "0");
@@ -4275,10 +4275,10 @@ pub fn solve(
             return;
         }
 
-        if !(slot.quals & q_rx_copy)
+        if !(slot.is_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
-        if !(node.type.quals & q_trivial)
+        if !(node.type.is_trivial)
         {
             USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
             _notes |= N_NonTrivAutoCopy;
