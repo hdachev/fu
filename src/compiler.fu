@@ -9,6 +9,8 @@ fn compile(fname: string, via: string = "")
 {
     let implicit mut module = getModule(fname).clone();
 
+    let options = options::Options_default;
+
     // Inputs are only dependent on the one file in question.
     if (!module.in)
     {
@@ -22,7 +24,7 @@ fn compile(fname: string, via: string = "")
         let lexer_result = lexer::lex(:fname, :src);
 
         let stat1 = ModuleStat_now();
-        let parser_result = parser::parse( :module.modid, :fname, :lexer_result.tokens );
+        let parser_result = parser::parse( :module.modid, :fname, :lexer_result.tokens, :options );
 
         let stat2 = ModuleStat_now();
 

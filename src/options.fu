@@ -1,0 +1,19 @@
+
+pub struct Lint
+{
+    maxwarn: i32;
+};
+
+pub struct Options
+{
+    using lint: Lint;
+};
+
+pub fn Lint_lax() =
+    Lint(maxwarn: 10);
+
+pub fn Lint_strict() =
+    Lint();
+
+pub fn Options_default() =
+    Options(lint: Lint_strict());

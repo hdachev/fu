@@ -1,5 +1,6 @@
 import helpers;
 import lexer;
+import options;
 
 
 //
@@ -160,9 +161,13 @@ pub struct ParserOutput
 {
     root:       Node;
     fuzimports: string[];
+    warnings:   string[];
 }
 
-pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
+
+//
+
+pub fn parse(modid: i32, fname: string, tokens: Token[], options: Options): ParserOutput
 {
     mut _idx        = 0;
     mut _loc        = 0;
@@ -180,7 +185,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    mut _imports    : string[];
+    mut _imports: string[];
+    mut warnings: string[];
 
     fn registerImport(mut value: string): string
     {
@@ -202,7 +208,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
     //
 
-    fn fail(mut reason: string = "")
+    fn fail_compose(mut reason: string)
     {
         let loc  = tokens[_loc];
         let here = tokens[_idx];
@@ -220,13 +226,20 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             ? "@" ~ l1 ~ ":" ~ c1
             : "@" ~ l0 ~ ":" ~ c0 ~ ".." ~ l1 ~ ":" ~ c1;
 
-        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
+        return fname ~ " " ~ addr ~ ":\n\t" ~ reason;
     }
 
-    fn fail_Lint(reason: string)
+    fn fail(mut reason: string = "")
     {
-        // TODO allow opt out
-        return fail("Lint: " ~ reason);
+        throw(fail_compose(reason));
+    }
+
+    fn warn(reason: string)
+    {
+        if (warnings.len == options.maxwarn)
+            return fail(reason);
+
+        warnings ~= fail_compose(reason);
     }
 
     fn make(
@@ -375,7 +388,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 let line1 = token.line;
                 let col1  = token.col;
 
-                line1 == line0 || col1 == _col0 || fail_Lint(
+                line1 == line0 || col1 == _col0 || warn(
                     "Inconsistent indent at closing `" ~ token.value ~ "`: expected " ~ (_col0 - 1)
                         ~ ", got " ~ (col1 - 1)
                         ~ ". Block starts on line " ~ line0 ~ ".");
@@ -385,12 +398,12 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
             //
             _col0 = token.col;
-            _col0 > col00 || fail_Lint(
+            _col0 > col00 || warn(
                 "Inconsistent indent at `" ~ token.value ~ "`: expected more than " ~ col00
                     ~ ", got " ~ _col0 ~ ". Block starts on line " ~ line0 ~ ".");
 
             // Consistent indentation within blocks.
-            colNN < 0 || colNN == _col0 || token.line == lineNN || fail_Lint(
+            colNN < 0 || colNN == _col0 || token.line == lineNN || warn(
                 "Inconsistent indent at `" ~ token.value ~ "`: expected exactly " ~ colNN
                     ~ ", got " ~ _col0 ~ ". Previous statement starts on line " ~ lineNN ~ ".");
 
@@ -409,7 +422,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
                 || ((expr.flags & (F_ID | F_ACCESS)) == 0)
                 || expr.items.len > 1
                 || tokens[_idx].value == endVal
-                || fail_Lint("Orphan pure-looking expression.");
+                || warn("Orphan pure-looking expression.");
 
             items.push(expr);
         }
@@ -560,7 +573,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
         if (peek.kind == "op" && peek.value == ";")
             _idx++;
         else if (peek.kind != "op" || peek.value != "}")
-            fail_Lint("Missing semicollon before `" ~ peek.value ~ "`.");
+            warn("Missing semicollon before `" ~ peek.value ~ "`.");
 
         return expr;
     }
@@ -610,7 +623,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     fn parseLambda(noArgs_noClosingPipe?!: bool): Node
     {
         if (noArgs_noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
-            fail_Lint("Unparenthesized `|| lambda` within a binary expression.");
+            warn("Unparenthesized `|| lambda` within a binary expression.");
 
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
@@ -998,7 +1011,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
 
         //
         if (left.kind == "and" || left.kind == "or")
-            left.flags & F_PARENS || fail_Lint(
+            left.flags & F_PARENS || warn(
                 "Unparenthesized `" ~ left.kind ~ "` on the left side of an `" ~ op ~ "`.");
 
         //
@@ -1042,7 +1055,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
             let v = token.value;
 
             fn lint()
-                mode & M_LINT_UNARY_PRECEDENCE && fail_Lint(
+                mode & M_LINT_UNARY_PRECEDENCE && warn(
                     "Here the unary -/+ separates from the numeric literal,"
                         ~ " and wraps around the whole expression."
                         ~ " Please parenthesize explicitly to make this obvious.");
@@ -1624,5 +1637,5 @@ pub fn parse(modid: i32, fname: string, tokens: Token[]): ParserOutput
     let root = parseRoot();
 
     return ParserOutput(
-        :root, fuzimports: _imports);
+        :root, fuzimports: _imports, :warnings);
 }
