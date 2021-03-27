@@ -107,7 +107,7 @@ pub fn solve(
 
     //
 
-    Scope_create(_scope, kind: "_module_top_");
+    let MODULE_TOP    = Scope_create(_scope, kind: "_module_top_");
 
 
     // Can't we just list them all and scan through?
@@ -169,6 +169,48 @@ pub fn solve(
     fn GET_local(index: i32)
     {
         return GET(Target(modid: module.modid, :index));
+    }
+
+
+    //
+
+    using fn SolvedNodeData(nid: SolvedNode)
+    {
+        return nid.nodeown
+            && GET(nid.nodeown).nodes[nid.nodeidx];
+    }
+
+    fn MUT(ref nid: SolvedNode)
+    {
+        if (nid.nodeown.modid != module.modid)
+        {
+            mut t = SolvedNode(kind: "", token: TokenIdx, type: Type);
+            return MUT(t) = SolvedNodeData(nid);
+        }
+
+        return GET_mut(nid.nodeown).nodes[nid.nodeidx];
+    }
+
+    fn SolvedNode(
+        kind:       string,
+        token:      TokenIdx,
+        type:       Type,
+        flags?:     i32,
+        value?:     string,
+        items?:     SolvedNode[],
+        target?:    Target)
+    {
+        let data    = SolvedNodeData(
+            :kind, :flags, :value,
+            :items, :token, :type, :target);
+
+        let nodeown = _current_fn.target || MODULE_TOP;
+
+        ref nodes   = GET_mut(nodeown).nodes;
+        let nodeidx = nodes.len;
+        nodes      ~= data;
+
+        return SolvedNode(:nodeown, :nodeidx);
     }
 
 
@@ -1096,7 +1138,7 @@ pub fn solve(
                     if (!TODO_FIX_convert_args)
                         TODO_FIX_convert_args = [ SolvedNode(kind: "", token: TokenIdx(), type: Type()) ];
 
-                    TODO_FIX_convert_args[0].type = from;
+                    TODO_FIX_convert_args[0].MUT.type = from;
                 }
 
                 mut candidate: Target;
@@ -2225,7 +2267,7 @@ pub fn solve(
             }
 
             /////////////////////////////////
-            shadow ref outItems = _current_fn.items;
+            shadow ref outItems = _current_fn.MUT.items;
             if (into)
                 outItems = GET(into).solved.items;
 
@@ -2454,10 +2496,14 @@ pub fn solve(
 
                     retval = s_body.type;
 
+                    shadow ref outItems = _current_fn.MUT.items;
+
                     // MUT DURING SOLVE,
                     //  implicit args splice in
                     outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
                 }
+
+                shadow ref outItems = _current_fn.MUT.items;
 
                 // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
                 //  Sighashes include return value.
@@ -2527,9 +2573,10 @@ pub fn solve(
         {
             let template = createTemplate(:node);
 
+            shadow ref out = out.MUT;
+
             out.type && assert();
             out.type = initStruct(:name, :node.flags, :SELF_TEST);
-
             out.target = Scope_Typedef(_scope, id: origId, :name,
                 :out.type, :node.flags, :template,
                 status: SS_LAZY);
@@ -2618,6 +2665,8 @@ pub fn solve(
 
         // Add a default constructor.
         {
+            shadow ref out = out.MUT;
+
             mut commonQuals = -1;
             for (mut i = 0; i < members.len; i++)
                 commonQuals &= members[i].type.quals;
@@ -3308,7 +3357,7 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
-            let target = out.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
+            let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
 
             // TODO FIX global inits, why the whole thing? Get rid of this.
             //  Currently need init for out-of-module cg, but this here is lame.
@@ -3882,7 +3931,7 @@ pub fn solve(
         let ret         = Binding(id, type, :flags, :shadows);
         let newArgNode  = createLet(ret, F_IMPLICIT);
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-        _current_fn.items.insert(newArgIdx, newArgNode);
+        _current_fn.MUT.items.insert(newArgIdx, newArgNode);
 
         return ret;
     }
@@ -4171,7 +4220,7 @@ pub fn solve(
                 {
                     let retype = tryRetyping(arg, expect);
                     if (isAssignableAsArgument(expect, retype))
-                        arg.type = retype;
+                        arg.MUT.type = retype;
                 }
             }
             //        /LITFIX
@@ -4264,9 +4313,11 @@ pub fn solve(
         return solved(node, type, args, :target);
     }
 
-    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
+    fn maybeCopyOrMove(ref nidx: SolvedNode, slot: Type,
         isArgument = false): void
     {
+        ref node = MUT(nidx);
+
         // Clear mutrefs unless needed.
         if !(slot.is_mutref)
             node.type = clear_mutref(node.type);
@@ -4304,7 +4355,7 @@ pub fn solve(
         }
 
         // Here we go.
-        node = createCopy(node);
+        nidx = createCopy(nidx);
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
@@ -4428,9 +4479,9 @@ pub fn solve(
                 {
                     shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
                     _here = node.token || _here;
-                    let into = result[i + offset].target;
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
+                    mut into = result[i + offset].target; // TODO FIX not mut, just want a val here
                     if (lazySolveStart(into, GET(into)))
                         repeat = true;
                 }

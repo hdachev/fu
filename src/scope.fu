@@ -104,19 +104,25 @@ pub struct ScopeMemo
 
 pub struct SolvedNode
 {
+    nodeown:    Target;
+    nodeidx:    i32;
+};
+
+pub struct SolvedNodeData
+{
     kind:       string;
-    flags?:     i32;
+    flags:      i32;
 
     ////////////////////////////////
     // room for one more i32 here //
     ////////////////////////////////
 
-    value?:     string;
-    items?:     SolvedNode[];
+    value:      string;
+    items:      SolvedNode[];
     token:      TokenIdx;
 
     using type: Type;
-    target?:    Target;
+    target:     Target;
 };
 
 pub struct ScopeSkipMemos
@@ -173,6 +179,9 @@ pub struct Overload
     //   [ modid / thing ] slot here.
     template:   Template;
     solved:     SolvedNode;
+
+    // The new nodelists.
+    nodes?:     SolvedNodeData[];
 
     // Target.index, Target.modid is current module modid.
     //

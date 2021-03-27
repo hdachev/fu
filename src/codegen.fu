@@ -90,6 +90,12 @@ pub fn cpp_codegen(
         return target && GET(target);
     }
 
+    using fn SolvedNodeData(nid: SolvedNode)
+    {
+        return nid.nodeown
+            && GET(nid.nodeown).nodes[nid.nodeidx];
+    }
+
     fn fail(reason = "") throw(reason);
 
     fn left (target: Target) target.modid;
