@@ -2138,6 +2138,27 @@ pub fn runTests()
         fn main() hello;
     `);
 
+    ZERO(`
+        struct ID   { offset: i32;  };
+        struct Data { items:  ID[]; };
+
+        using fn Data(implicit all: Data[], nid: ID): Data {
+            return all[nid.offset];
+        }
+
+        fn test(node: ID) {
+            let init = node.items[0];
+            return init.items.len;
+        }
+
+        fn main() {
+            let implicit all =  [ Data([ ID(1)      ])
+                                , Data([ ID, ID, ID ]) ];
+
+            return 0.ID.test - 3;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 

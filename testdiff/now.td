@@ -7565,6 +7565,85 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct ID   { offset: i32;  };
+        struct Data { items:  ID[]; };
+
+        using fn Data(implicit all: Data[], nid: ID) {
+            return all[nid.offset];
+        }
+
+        fn test(node: ID) {
+            let init = node.items[0];
+            return init.items.len;
+        }
+
+        fn main() {
+            let implicit all =  [ Data([ ID(1)      ])
+                                , Data([ ID, ID, ID ]) ];
+
+            return 0.ID.test - 3;
+        }
+
+-----
+#include <fu/vec.h>
+
+struct s_Data;
+struct s_ID;
+
+                                #ifndef DEF_s_ID
+                                #define DEF_s_ID
+struct s_ID
+{
+    int offset;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || offset
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Data
+                                #define DEF_s_Data
+struct s_Data
+{
+    fu_VEC<s_ID> items;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_Data& Data(const s_ID& nid, const fu_VEC<s_Data>& all)
+{
+    return all[nid.offset];
+}
+
+static int test(const s_ID& node, const fu_VEC<s_Data>& all)
+{
+    const s_ID& init = Data(node, all).items[0];
+    return Data(init, all).items.size();
+}
+
+int fu_MAIN()
+{
+    fu_VEC<s_Data> all = fu_VEC<s_Data> { fu_VEC<s_Data>::INIT<2> { s_Data { fu_VEC<s_ID> { fu_VEC<s_ID>::INIT<1> { s_ID { 1 } } } }, s_Data { fu_VEC<s_ID> { fu_VEC<s_ID>::INIT<3> { s_ID{}, s_ID{}, s_ID{} } } } } };
+    return test(s_ID { 0 }, all) - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
