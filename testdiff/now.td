@@ -7568,7 +7568,7 @@ int main() { return fu_MAIN(); }
         struct ID   { offset: i32;  };
         struct Data { items:  ID[]; };
 
-        using fn Data(implicit all: Data[], nid: ID) {
+        using fn Data(implicit all: Data[], nid: ID): Data {
             return all[nid.offset];
         }
 
@@ -7620,14 +7620,14 @@ struct s_Data
 
 #ifndef FU_NO_FDEFs
 
-static const s_Data& Data(const s_ID& nid, const fu_VEC<s_Data>& all)
+static s_Data Data(const s_ID& nid, const fu_VEC<s_Data>& all)
 {
-    return all[nid.offset];
+    return s_Data(all[nid.offset]);
 }
 
 static int test(const s_ID& node, const fu_VEC<s_Data>& all)
 {
-    const s_ID& init = Data(node, all).items[0];
+    const s_ID init { Data(node, all).items[0] };
     return Data(init, all).items.size();
 }
 
@@ -7641,6 +7641,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
 

@@ -267,10 +267,7 @@ pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 pub fn is_ref2temp(type: Type): bool
 {
     return type.lifetime.uni0n.if_last == Region_TEMP
-        && (type.is_ref || throw("is_ref2temp: has lts but isnt ref"))
-        && (type.lifetime.uni0n.len == 1 || throw(
-            "TODO FIX: this is a legacy assert, should be ok if union.len > 1. "
-                ~ "Remove assert at will, currently just wondering why it doesn't trigger."));
+        && (type.is_ref || throw("is_ref2temp: has lts but isnt ref"));
 }
 
 
