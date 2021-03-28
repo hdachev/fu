@@ -3250,13 +3250,13 @@ pub fn solve(
 
     fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
     {
-        let out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
+        mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
-
-        return solveLet(:out, :id, :reuse, :deadcode_on_never);
+        solveLet(:out, :id, :reuse, :deadcode_on_never);
+        return out;
     }
 
-    fn solveLet(mut out!: SolvedNode, id!: string, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
+    fn solveLet(ref out!: SolvedNode, id!: string, reuse?!: Target, deadcode_on_never?!: bool)
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -3265,7 +3265,7 @@ pub fn solve(
                 deadcode_on_never && out.type.is_never || fail(
                     "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
 
-            return out;
+            return;
         }
 
         !out.type.is_ref || out.type.lifetime || fail(
@@ -3300,7 +3300,8 @@ pub fn solve(
                             if (out.flags & F_USING)
                                 _scope.usings.push(target);
 
-                            return createEmpty();
+                            out = createEmpty();
+                            return;
                         }
                     }
                 }
@@ -3319,14 +3320,13 @@ pub fn solve(
             if (out.flags & F_USING)
                 _scope.usings.push(target);
         }
-
-        return out;
     }
 
     fn createLet(id: string, flags: i32, init: SolvedNode)
     {
-        let out = solveLetLike_dontTouchScope(:init.token, :flags, :id, :init);
-        return solveLet(:out, :id);
+        mut out = solveLetLike_dontTouchScope(:init.token, :flags, :id, :init);
+        solveLet(:out, :id);
+        return out;
     }
 
 
