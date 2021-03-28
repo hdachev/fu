@@ -352,7 +352,7 @@ pub fn solve(
 
     //
 
-    fn Binding(id: string, mut type: Type, ref flags!: i32, ref shadows!: bool, reuse?: Target)
+    fn Binding(id: string, mut type: Type, flags!: i32, ref shadows!: bool, reuse?: Target)
     {
         mut name = id;
 
@@ -389,10 +389,7 @@ pub fn solve(
             //  it might optimize scope lookups all over the place.
             //
             if (OPTI_autoshadow && local_of && !autoshadow)
-            {
                 shadows = true;
-                flags |= F_SHADOW;
-            }
         }
 
         // Reserve the slot.
