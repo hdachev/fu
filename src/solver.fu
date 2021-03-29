@@ -119,6 +119,11 @@ pub fn solve(
 
     type TypeParams = Map(string, Type);
 
+    // TODO FIX /////////////////////////////////
+    mut TODO_FIX_convert_args: SolvedNode[];
+    mut TODO_FIX_convert_conversions: Target[][];
+    /////////////////////////////////////////////
+
 
     //
 
@@ -1080,25 +1085,23 @@ pub fn solve(
         let has_converts = scope.converts.len;
         let ss_converts = local_scope && _ss.converts;
 
-        // TODO FIX ////////////
-        mut _args: SolvedNode[];
-        mut _conversions: Target[][];
-        ////////////////////////
-
         fn descend(from: Type, nullary!: bool, isStruct!: bool)
         {
             fn foreach(t: Target)
             {
-                if (!nullary) {
-                    _args.resize(1);
-                    _args[0].type = from;
+                if (!nullary)
+                {
+                    if (!TODO_FIX_convert_args)
+                        TODO_FIX_convert_args = [ SolvedNode(kind: "", token: TokenIdx(), type: Type()) ];
+
+                    TODO_FIX_convert_args[0].type = from;
                 }
 
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
                     target: t,
                     scope: Scope, local_scope: false, id: "",
-                    args: _args, conversions: _conversions,
+                    args: TODO_FIX_convert_args, conversions: TODO_FIX_convert_conversions,
                     flags: F_CONVERSION)))
                 {
                     shadow let t = nullary ? t : candidate;
