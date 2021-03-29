@@ -1903,19 +1903,11 @@ pub fn solve(
         {
             let c = conversions[i];
             if (c)
-            {
-                ref a  = args[i];
-                a.kind = "__conv";
-                a.type = GET(c.last).type;
-            }
+                args[i] = SolvedNode(kind: "__conv", type: GET(c.last).type, token: TokenIdx());
         }
 
         if (REST_TYPE)
-        {
-            ref a  = args[REST_START];
-            a.kind = "__rest";
-            a.type = REST_TYPE;
-        }
+            args[REST_START] = SolvedNode(kind: "__rest", type: REST_TYPE, token: TokenIdx());
 
         //
         let args00 = args;
