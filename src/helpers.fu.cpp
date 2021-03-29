@@ -96,9 +96,9 @@ fu_STR path_normalize(const fu_STR& p)
 
 fu_STR path_relative(const fu_STR& from, const fu_STR& to)
 {
-    const int min = ((from.size() < to.size()) ? from.size() : to.size());
+    const int min_1 = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
-    for (int i = 0; i < min; i++)
+    for (int i = 0; i < min_1; i++)
     {
         const std::byte a = from[i];
         const std::byte b = to[i];

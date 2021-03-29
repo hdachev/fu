@@ -302,12 +302,12 @@ bool Region_isTemp(const s_Region& region)
     return region == Region_TEMP;
 }
 
-                                #ifndef DEFt_union_olxq
-                                #define DEFt_union_olxq
-inline fu_VEC<s_Region> union_olxq(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
+                                #ifndef DEFt_union_4Dpy
+                                #define DEFt_union_4Dpy
+inline fu_VEC<s_Region> union_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
 {
     if (a.size() < b.size())
-        return union_olxq(b, a);
+        return union_4Dpy(b, a);
 
     fu_VEC<s_Region> a_1 { a };
     int x = 0;
@@ -338,20 +338,20 @@ inline fu_VEC<s_Region> union_olxq(const fu_VEC<s_Region>& a, const fu_VEC<s_Reg
 
 s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
 {
-    return s_Lifetime { union_olxq(a.uni0n, b.uni0n) };
+    return s_Lifetime { union_4Dpy(a.uni0n, b.uni0n) };
 }
 
-                                #ifndef DEFt_if_first_hGoN
-                                #define DEFt_if_first_hGoN
-inline const s_Region& if_first_hGoN(const fu_VEC<s_Region>& s)
+                                #ifndef DEFt_if_first_tWdF
+                                #define DEFt_if_first_tWdF
+inline const s_Region& if_first_tWdF(const fu_VEC<s_Region>& s)
 {
     return s.size() ? s[0] : (*(const s_Region*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_if_last_hGoN
-                                #define DEFt_if_last_hGoN
-inline const s_Region& if_last_hGoN(const fu_VEC<s_Region>& s)
+                                #ifndef DEFt_if_last_tWdF
+                                #define DEFt_if_last_tWdF
+inline const s_Region& if_last_tWdF(const fu_VEC<s_Region>& s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
 }
@@ -359,7 +359,7 @@ inline const s_Region& if_last_hGoN(const fu_VEC<s_Region>& s)
 
 int Lifetime_compareToIndex(const s_Lifetime& lifetime, const int index)
 {
-    return ((Region_toLocalIndex(if_first_hGoN(lifetime.uni0n)) > index) ? +1 : ((Region_toLocalIndex(if_last_hGoN(lifetime.uni0n)) < index) ? -1 : 0));
+    return ((Region_toLocalIndex(if_first_tWdF(lifetime.uni0n)) > index) ? +1 : ((Region_toLocalIndex(if_last_tWdF(lifetime.uni0n)) < index) ? -1 : 0));
 }
 
 s_Lifetime Lifetime_makeShared(const s_Lifetime& lifetime)
@@ -475,6 +475,41 @@ bool is_bool(const s_Type& t)
     return t.vtype == t_bool.vtype;
 }
 
+int is_trivial(const s_Type& t)
+{
+    return t.vtype.quals & q_trivial;
+}
+
+int is_rx_copy(const s_Type& t)
+{
+    return t.vtype.quals & q_rx_copy;
+}
+
+int is_primitive(const s_Type& t)
+{
+    return t.vtype.quals & q_primitive;
+}
+
+int is_floating_pt(const s_Type& t)
+{
+    return t.vtype.quals & q_floating_pt;
+}
+
+int is_integral(const s_Type& t)
+{
+    return t.vtype.quals & q_integral;
+}
+
+int is_signed(const s_Type& t)
+{
+    return t.vtype.quals & q_signed;
+}
+
+int is_unsigned(const s_Type& t)
+{
+    return t.vtype.quals & q_unsigned;
+}
+
 bool maybe_nonzero(const s_Type& t)
 {
     return is_never(t) || is_void(t);
@@ -518,7 +553,7 @@ s_Type add_mutref(s_Type&& type, const s_Lifetime& lifetime)
 
 bool is_ref2temp(const s_Type& type)
 {
-    return (if_last_hGoN(type.lifetime.uni0n) == Region_TEMP) && (is_ref(type) || fu::fail("is_ref2temp: has lts but isnt ref"_fu)) && ((type.lifetime.uni0n.size() == 1) || fu::fail(("TODO FIX: this is a legacy assert, should be ok if union.len > 1. "_fu + "Remove assert at will, currently just wondering why it doesn't trigger."_fu)));
+    return (if_last_tWdF(type.lifetime.uni0n) == Region_TEMP) && (is_ref(type) || fu::fail("is_ref2temp: has lts but isnt ref"_fu));
 }
 
 s_Type clear_refs(s_Type&& type)

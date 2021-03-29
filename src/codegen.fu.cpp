@@ -19,6 +19,7 @@
 
 struct s_Argument;
 struct s_BitSet;
+struct s_CodegenOutput;
 struct s_Context;
 struct s_Effects;
 struct s_Intlit;
@@ -69,25 +70,49 @@ bool type_isZST(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 fu_STR ID(const fu_STR&);
 int Lifetime_compareToIndex(const s_Lifetime&, int);
+int is_floating_pt(const s_Type&);
+int is_integral(const s_Type&);
+int is_primitive(const s_Type&);
+int is_rx_copy(const s_Type&);
+int is_trivial(const s_Type&);
+int is_unsigned(const s_Type&);
 s_Intlit Intlit(fu::view<std::byte>);
 s_MapFields tryClear_map(const s_Type&);
 s_Target target(const s_ScopeItem&);
 s_Type clear_refs(s_Type&&);
 s_Type tryClear_array(const s_Type&);
 s_Type tryClear_sliceable(const s_Type&);
-static fu_STR ARG(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const fu_VEC<s_SolvedNode>&, int);
-static fu_STR cgAnd(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, int);
-static fu_STR cgAnd(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, fu::view<s_SolvedNode>, const s_Type&, int);
-static fu_STR cgAppend(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, const fu_STR&);
-static fu_STR cgBlock(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, int);
-static fu_STR cgFn(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, int);
-static fu_STR cgMoveOrClone(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, int);
-static fu_STR cgNode(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&, int);
-static fu_STR cgTryCatch(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, const s_SolvedNode&);
+static fu_STR ARG(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const fu_VEC<s_SolvedNode>&, int);
+static fu_STR cgAnd(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, int);
+static fu_STR cgAnd(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, fu::view<s_SolvedNode>, const s_Type&, int);
+static fu_STR cgAppend(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, const fu_STR&);
+static fu_STR cgBlock(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, int);
+static fu_STR cgFn(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, int);
+static fu_STR cgMoveOrClone(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, int);
+static fu_STR cgNode(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&, int);
+static fu_STR cgTryCatch(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, const s_SolvedNode&);
 static fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>&, bool);
 static fu_STR typeAnnot(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_STR&, s_cg_CurrentFn&, const s_Type&, int);
 static fu_STR via(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_STR&, s_cg_CurrentFn&, s_TEMPVAR&, const s_Type&, const fu_STR&);
-static fu_STR via(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, s_cg_CurrentFn&, s_TEMPVAR&, const s_Type&, const s_SolvedNode&);
+static fu_STR via(const s_Module&, const s_Context&, fu_MAP<fu_STR, fu_STR>&, fu_MAP<fu_STR, fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, s_BitSet&, fu_STR&, fu_STR&, fu_STR&, int&, fu_VEC<int>&, fu_VEC<int>&, s_cg_CurrentFn&, s_TEMPVAR&, const s_Type&, const s_SolvedNode&);
+
+                                #ifndef DEF_s_CodegenOutput
+                                #define DEF_s_CodegenOutput
+struct s_CodegenOutput
+{
+    fu_VEC<int> unity;
+    fu_VEC<int> unity_because;
+    fu_STR src;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || unity
+            || unity_because
+            || src
+        ;
+    }
+};
+                                #endif
 
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -301,11 +326,13 @@ struct s_ParserOutput
 {
     s_Node root;
     fu_VEC<fu_STR> fuzimports;
+    fu_VEC<fu_STR> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || fuzimports
+            || warnings
         ;
     }
 };
@@ -522,6 +549,7 @@ struct s_Scope
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
+    int pub_count;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -534,6 +562,7 @@ struct s_Scope
             || imports
             || usings
             || converts
+            || pub_count
         ;
     }
 };
@@ -568,7 +597,7 @@ struct s_ModuleOutputs
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
-    fu_STR cpp;
+    s_CodegenOutput cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -818,13 +847,13 @@ static const int M_LOOP_BODY = (1 << 9);
     fu::fail(reason);
 }
 
-static s_Overload GET(const s_Module& module_0, const s_Context& ctx_0, const s_Target& target)
+static s_Overload GET(const s_Module& module_0, const s_Context& ctx_0, const s_Target& target_5)
 {
-    if (!(target.index > 0))
+    if (!(target_5.index > 0))
         fu_ASSERT();
 
-    const s_Module& m = ((target.modid == module_0.modid) ? module_0 : ctx_0.modules[target.modid]);
-    return s_Overload(m.out.solve.scope.overloads[(target.index - 1)]);
+    const s_Module& m = ((target_5.modid == module_0.modid) ? module_0 : ctx_0.modules[target_5.modid]);
+    return s_Overload(m.out.solve.scope.overloads[(target_5.index - 1)]);
 }
 
 static void include(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_STR& lib)
@@ -834,22 +863,22 @@ static void include(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_STR& lib)
 
 }
 
-static fu_STR REST(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& items_0, const int start)
+static fu_STR ARG(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& items_5_0, const int i)
 {
-    fu_STR src {};
-    for (int i = start; i < items_0.size(); i++)
-    {
-        if (i > start)
-            src += ", "_fu;
-
-        src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items_0[i], 0);
-    };
-    return src;
+    return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5_0[i], 0);
 }
 
-static fu_STR ARG(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& items_0, const int i)
+static fu_STR REST(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& items_5_0, const int start_1)
 {
-    return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items_0[i], 0);
+    fu_STR src_2 {};
+    for (int i = start_1; i < items_5_0.size(); i++)
+    {
+        if (i > start_1)
+            src_2 += ", "_fu;
+
+        src_2 += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5_0[i], 0);
+    };
+    return src_2;
 }
 
                                 #ifndef DEFt_last_YeU3
@@ -860,16 +889,16 @@ inline std::byte last_YeU3(const fu_STR& s)
 }
                                 #endif
 
-static bool binSkipParens(const fu_STR& id, const int mode)
+static bool binSkipParens(const fu_STR& id_2, const int mode)
 {
     if (mode & M_STMT)
         return true;
 
     if (mode & M_PARENS)
     {
-        if (last_YeU3(id) == std::byte('='))
+        if (last_YeU3(id_2) == std::byte('='))
         {
-            if ((id == "=="_fu) || (id == "!="_fu))
+            if ((id_2 == "=="_fu) || (id_2 == "!="_fu))
                 return true;
 
             return false;
@@ -878,11 +907,6 @@ static bool binSkipParens(const fu_STR& id, const int mode)
     };
     return false;
 }
-
-                                #ifndef DEF_q_primitive
-                                #define DEF_q_primitive
-inline constexpr int q_primitive = (1 << 4);
-                                #endif
 
 static fu_STR annotateNever(fu_MAP<fu_STR, fu_STR>& _libs_0)
 {
@@ -910,14 +934,9 @@ static fu_STR structId(const s_Type& t)
     fail((("Bad structId: `"_fu + t.vtype.canon) + "`."_fu));
 }
 
-                                #ifndef DEF_q_rx_copy
-                                #define DEF_q_rx_copy
-inline constexpr int q_rx_copy = (1 << 2);
-                                #endif
-
-static s_Overload try_GET(const s_Module& module_0, const s_Context& ctx_0, const s_Target& target)
+static s_Overload try_GET(const s_Module& module_0, const s_Context& ctx_0, const s_Target& target_5)
 {
-    return target ? GET(module_0, ctx_0, target) : s_Overload{};
+    return target_5 ? GET(module_0, ctx_0, target_5) : s_Overload{};
 }
 
                                 #ifndef DEF_SS_TYPE_RECUR
@@ -927,8 +946,8 @@ inline constexpr unsigned SS_TYPE_RECUR = (0x1u << 16u);
 
 static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& t, const s_Struct& s)
 {
-    fu_STR id = structId(t);
-    fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\nstruct "_fu) + id) + "\n{"_fu);
+    fu_STR id_2 = structId(t);
+    fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id_2) + "\n                                #define DEF_"_fu) + id_2) + "\nstruct "_fu) + id_2) + "\n{"_fu);
     fu_STR indent = "\n    "_fu;
     const fu_VEC<s_ScopeItem>& fields = s.items;
     for (int i = 0; i < fields.size(); i++)
@@ -939,19 +958,19 @@ static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu
 
         def += ((((indent + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, field.type, 0)) + " "_fu) + ID(field.name)) + ";"_fu);
     };
-    if (!(t.vtype.quals & q_rx_copy))
+    if (!is_rx_copy(t))
     {
-        def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = delete;"_fu);
-        def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) = default;"_fu);
-        def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu);
-        def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) = default;"_fu);
+        def += (((("\n    "_fu + id_2) + "(const "_fu) + id_2) + "&) = delete;"_fu);
+        def += (((("\n    "_fu + id_2) + "("_fu) + id_2) + "&&) = default;"_fu);
+        def += (((("\n    "_fu + id_2) + "& operator=(const "_fu) + id_2) + "&) = delete;"_fu);
+        def += (((("\n    "_fu + id_2) + "& operator=("_fu) + id_2) + "&&) = default;"_fu);
     }
     else if (try_GET(module_0, ctx_0, s.target).status & SS_TYPE_RECUR)
     {
-        def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = default;"_fu);
-        def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) = default;"_fu);
-        def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) = default;"_fu);
-        def += (((((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "& selfrec) { return *this = "_fu) + id) + "(selfrec); }"_fu);
+        def += (((("\n    "_fu + id_2) + "(const "_fu) + id_2) + "&) = default;"_fu);
+        def += (((("\n    "_fu + id_2) + "("_fu) + id_2) + "&&) = default;"_fu);
+        def += (((("\n    "_fu + id_2) + "& operator=("_fu) + id_2) + "&&) = default;"_fu);
+        def += (((((("\n    "_fu + id_2) + "& operator=(const "_fu) + id_2) + "& selfrec) { return *this = "_fu) + id_2) + "(selfrec); }"_fu);
     };
     def += "\n    explicit operator bool() const noexcept"_fu;
     def += "\n    {"_fu;
@@ -964,10 +983,10 @@ static fu_STR declareStruct(const s_Module& module_0, const s_Context& ctx_0, fu
     return def + "\n};\n                                #endif\n"_fu;
 }
 
-static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type)
+static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type_3)
 {
-    const fu_STR& c = type.vtype.canon;
-    if (type.vtype.quals & q_primitive)
+    const fu_STR& c = type_3.vtype.canon;
+    if (is_primitive(type_3))
     {
         if (c == "i32"_fu)
             return "int"_fu;
@@ -1017,7 +1036,7 @@ static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu
     if (c == "never"_fu)
         return annotateNever(_libs_0);
 
-    s_Type arrayItem = tryClear_array(type);
+    s_Type arrayItem = tryClear_array(type_3);
     if (arrayItem)
     {
         if (arrayItem == t_byte)
@@ -1027,18 +1046,18 @@ static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu
         include(_libs_0, "<fu/vec.h>"_fu);
         return ("fu_VEC<"_fu + itemAnnot) + ">"_fu;
     };
-    s_Type sliceItem = tryClear_sliceable(type);
+    s_Type sliceItem = tryClear_sliceable(type_3);
     if (sliceItem)
     {
         fu_STR itemAnnot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, sliceItem, 0);
         include(_libs_0, "<fu/view.h>"_fu);
-        if (is_mutref(type))
+        if (is_mutref(type_3))
             return ("fu::view_mut<"_fu + itemAnnot) + ">"_fu;
         else
             return ("fu::view<"_fu + itemAnnot) + ">"_fu;
 
     };
-    s_MapFields mapPair = tryClear_map(type);
+    s_MapFields mapPair = tryClear_map(type_3);
     if (mapPair)
     {
         fu_STR k = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, mapPair.key, 0);
@@ -1047,72 +1066,67 @@ static fu_STR typeAnnotBase(const s_Module& module_0, const s_Context& ctx_0, fu
         return ((("fu_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu;
     };
     const s_Struct* _0;
-    const s_Struct& tdef = (*(_0 = &(lookupStruct(type, module_0, ctx_0))) ? *_0 : fail(("TODO: "_fu + type.vtype.canon)));
-    fu_STR id = structId(type);
+    const s_Struct& tdef = (*(_0 = &(lookupStruct(type_3, module_0, ctx_0))) ? *_0 : fail(("TODO: "_fu + type_3.vtype.canon)));
+    fu_STR id_2 = structId(type_3);
     if (!fu::has(_tfwd_0, c))
     {
-        (_tfwd_0.upsert(c) = (("struct "_fu + id) + ";\n"_fu));
-        _tdef_0 += declareStruct(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, tdef);
+        (_tfwd_0.upsert(c) = (("struct "_fu + id_2) + ";\n"_fu));
+        _tdef_0 += declareStruct(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, tdef);
     };
-    return id;
+    return id_2;
 }
 
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline constexpr int q_trivial = (1 << 3);
-                                #endif
-
-static fu_STR typeAnnot(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type, const int mode)
+static fu_STR typeAnnot(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type_3, const int mode)
 {
-    if ((mode & M_ARGUMENT) && type_isZST(type))
+    if ((mode & M_ARGUMENT) && type_isZST(type_3))
         return "int"_fu;
 
-    fu_STR fwd = typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type);
-    if (is_ref(type))
+    fu_STR fwd = typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3);
+    if (is_ref(type_3))
     {
         if (fu::lmatch(fwd, "fu::view"_fu))
             return fwd;
 
-        if (is_mutref(type))
+        if (is_mutref(type_3))
             return fwd + "&"_fu;
 
-        if (type.vtype.quals & q_primitive)
+        if (is_primitive(type_3))
             return ((((mode & M_ARGUMENT) | (mode & M_CONST)) && !(mode & M_FWDECL)) ? ("const "_fu + fwd) : fu_STR(fwd));
 
-        if (!(type.vtype.quals & q_trivial) && !(mode & M_ARGUMENT) && (Lifetime_compareToIndex(type.lifetime, _current_fn_0.target.index) > 0) && (_current_fn_0.target.modid == module_0.modid))
+        if (!is_trivial(type_3) && !(mode & M_ARGUMENT) && (Lifetime_compareToIndex(type_3.lifetime, _current_fn_0.target.index) > 0) && (_current_fn_0.target.modid == module_0.modid))
         {
             s_Type fnret = GET(module_0, ctx_0, s_Target { int(module_0.modid), int(_current_fn_0.target.index) }).type;
-            if (!((fnret.vtype.quals & q_trivial) || is_ref(fnret)))
+            if (!(is_trivial(fnret) || is_ref(fnret)))
                 return fwd + "&"_fu;
 
         };
         return ("const "_fu + fwd) + "&"_fu;
     };
-    if ((mode & M_ARGUMENT) && !(type.vtype.quals & q_primitive))
+    if ((mode & M_ARGUMENT) && !is_primitive(type_3))
         return fwd + "&&"_fu;
 
-    if ((mode & M_CONST) && (type.vtype.quals & q_trivial))
+    if ((mode & M_CONST) && is_trivial(type_3))
         return "const "_fu + fwd;
 
     return fwd;
 }
 
-static fu_STR cgDefault(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type)
+static fu_STR cgDefault(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type_3)
 {
-    if (is_mutref(type))
+    if (is_mutref(type_3))
         fail("Cannot definit mutrefs."_fu);
 
-    if (is_ref(type))
+    if (is_ref(type_3))
     {
         include(_libs_0, "<fu/default.h>"_fu);
-        return ("(*(const "_fu + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, clear_refs(s_Type(type)), 0)) + "*)fu::NIL)"_fu;
+        return ("(*(const "_fu + typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, clear_refs(s_Type(type_3)), 0)) + "*)fu::NIL)"_fu;
     };
-    return typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, 0) + "{}"_fu;
+    return typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, 0) + "{}"_fu;
 }
 
-                                #ifndef DEFt_grow_if_oob_BRC8
-                                #define DEFt_grow_if_oob_BRC8
-inline s_BitSet& grow_if_oob_BRC8(fu_VEC<s_BitSet>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_wAZG
+                                #define DEFt_grow_if_oob_wAZG
+inline s_BitSet& grow_if_oob_wAZG(fu_VEC<s_BitSet>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -1121,22 +1135,17 @@ inline s_BitSet& grow_if_oob_BRC8(fu_VEC<s_BitSet>& a, const int i)
 }
                                 #endif
 
-static bool add_once(fu_VEC<s_BitSet>& bs, const s_Target& target)
+static bool add_once(fu_VEC<s_BitSet>& bs, const s_Target& target_5)
 {
-    return add_once(grow_if_oob_BRC8(bs, target.modid), target.index);
+    return add_once(grow_if_oob_wAZG(bs, target_5.modid), target_5.index);
 }
-
-                                #ifndef DEF_q_floating_pt
-                                #define DEF_q_floating_pt
-inline constexpr int q_floating_pt = (1 << 9);
-                                #endif
 
                                 #ifndef DEF_F_OPERATOR
                                 #define DEF_F_OPERATOR
 inline constexpr int F_OPERATOR = (1 << 21);
                                 #endif
 
-inline static bool isIntegerConstant_e505(const s_Module& module_0, const s_Context& ctx_0, const s_SolvedNode& expr)
+inline static bool isIntegerConstant_eMx0(const s_Module& module_0, const s_Context& ctx_0, const s_SolvedNode& expr)
 {
     if (expr.kind == "int"_fu)
         return true;
@@ -1148,7 +1157,7 @@ inline static bool isIntegerConstant_e505(const s_Module& module_0, const s_Cont
         {
             for (int i = 0; i < expr.items.size(); i++)
             {
-                if (!isIntegerConstant_e505(module_0, ctx_0, expr.items[i]))
+                if (!isIntegerConstant_eMx0(module_0, ctx_0, expr.items[i]))
                     return true;
 
             };
@@ -1173,15 +1182,15 @@ inline constexpr int F_MUT = (1 << 16);
 inline constexpr int F_ARG = (1 << 9);
                                 #endif
 
-                                #ifndef DEFt_only_XB32
-                                #define DEFt_only_XB32
-inline const s_SolvedNode& only_XB32(const fu_VEC<s_SolvedNode>& s)
+                                #ifndef DEFt_only_Vh3M
+                                #define DEFt_only_Vh3M
+inline const s_SolvedNode& only_Vh3M(const fu_VEC<s_SolvedNode>& s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
                                 #endif
 
-static fu_STR binding(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const bool doInit, const bool forceMut)
+static fu_STR binding(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const bool doInit, const bool forceMut)
 {
     fu_VEC<fu_STR> _tv0 {};
     if (!_current_fn_0.target.index)
@@ -1189,35 +1198,35 @@ static fu_STR binding(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
 
     fu_DEFER(if (!_current_fn_0.target.index)
         std::swap(_tv0, _current_fn_0.TEMPVARs););
-    fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type, (((((node.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
-    if ((node.flags & F_ARG) && type_isZST(node.type))
+    fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type, (((((node_1.flags & F_MUT) == 0) && !forceMut) ? int(M_CONST) : 0) | (((node_1.flags & F_ARG) == 0) ? 0 : int(M_ARGUMENT))));
+    if ((node_1.flags & F_ARG) && type_isZST(node_1.type))
         return annot;
 
-    s_Overload overload = GET(module_0, ctx_0, node.target);
-    fu_STR& id = (overload.name ? overload.name : fail(fu_STR{}));
-    fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id));
-    s_SolvedNode init = (node.items ? s_SolvedNode(node.items[LET_INIT]) : s_SolvedNode{});
-    if (!doInit || (node.flags & F_ARG))
+    s_Overload overload = GET(module_0, ctx_0, node_1.target);
+    fu_STR& id_2 = (overload.name ? overload.name : fail(fu_STR{}));
+    fu_STR head = (((annot ? annot : fail(fu_STR{})) + " "_fu) + ID(id_2));
+    s_SolvedNode init = (node_1.items ? s_SolvedNode(node_1.items[LET_INIT]) : s_SolvedNode{});
+    if (!doInit || (node_1.flags & F_ARG))
         return head;
 
     if (init)
     {
-        if ((init.kind == "copy"_fu) && !is_ref(node.type))
+        if ((init.kind == "copy"_fu) && !is_ref(node_1.type))
         {
-            fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, only_XB32(init.items), 0);
-            if (node.type.vtype.quals & q_primitive)
+            fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, only_Vh3M(init.items), 0);
+            if (is_primitive(node_1.type))
                 return (head + " = "_fu) + expr;
 
             return ((head + " { "_fu) + expr) + " }"_fu;
         };
         if ((init.kind == "definit"_fu) && !is_ref(init.type))
         {
-            if (!(init.type == node.type))
+            if (!(init.type == node_1.type))
                 fail("what's this now"_fu);
 
             return head + " {}"_fu;
         };
-        fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, init, 0);
+        fu_STR expr = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, init, 0);
         if (!_current_fn_0.target.index && _current_fn_0.TEMPVARs)
         {
             fu_STR annot_1 = (fu::lmatch(annot, "const "_fu) ? fu::slice(annot, 6) : fu_STR(annot));
@@ -1235,46 +1244,75 @@ static fu_STR binding(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
 inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
-static fu_STR cgLet(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const bool global, const bool foreign)
+                                #ifndef DEFt_add_z7rU
+                                #define DEFt_add_z7rU
+inline bool add_z7rU(fu_VEC<int>& dest, const int item, fu_VEC<int>& extras, const int extra)
 {
-    if (type_isZST(node.type))
+    for (int i = 0; i < dest.size(); i++)
+    {
+        if ((dest.mutref(i) >= item))
+        {
+            if (dest.mutref(i) != item)
+            {
+                dest.insert(i, item);
+                extras.insert(i, extra);
+                return true;
+            };
+            return false;
+        };
+    };
+    dest.push(item);
+    extras.push(extra);
+    return true;
+}
+                                #endif
+
+static fu_STR cgLet(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const bool global, const bool foreign)
+{
+    if (type_isZST(node_1.type))
         return fu_STR{};
 
-    const bool intconst = (global && ((node.type.vtype.quals & (q_primitive | q_floating_pt)) == q_primitive) && isIntegerConstant_e505(module_0, ctx_0, node.items[LET_INIT]));
-    fu_STR src = binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, (!foreign || bool(intconst)), false);
+    const bool intconst = (global && is_primitive(node_1.type) && !is_floating_pt(node_1.type) && isIntegerConstant_eMx0(module_0, ctx_0, node_1.items[LET_INIT]));
+    fu_STR src_2 = binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, (!foreign || bool(intconst)), false);
     if (!global)
-        return src;
+        return src_2;
 
-    if (fu::lmatch(src, "const "_fu))
-        src = fu::slice(src, 6);
+    if (fu::lmatch(src_2, "const "_fu))
+        src_2 = fu::slice(src_2, 6);
 
-    if (!(node.flags & F_PUB))
-        _fdef_0 += (("\nstatic const "_fu + src) + ";\n"_fu);
+    if (!(node_1.flags & F_PUB))
+    {
+        if (!foreign)
+            _fdef_0 += (("\nstatic const "_fu + src_2) + ";\n"_fu);
+        else
+            add_z7rU(_unity_0, (node_1.target.modid ? node_1.target.modid : fail(fu_STR{})), _unity_because_0, node_1.target.index);
+
+    }
     else if (!intconst)
-        _fdef_0 += (("\nextern const "_fu + src) + ";\n"_fu);
+        _fdef_0 += (("\nextern const "_fu + src_2) + ";\n"_fu);
     else
-        _fdef_0 += ((((((("\n                                #ifndef DEF_"_fu + node.value) + "\n                                #define DEF_"_fu) + node.value) + "\ninline constexpr "_fu) + src) + ";"_fu) + "\n                                #endif\n"_fu);
+        _fdef_0 += ((((((("\n                                #ifndef DEF_"_fu + node_1.value) + "\n                                #define DEF_"_fu) + node_1.value) + "\ninline constexpr "_fu) + src_2) + ";"_fu) + "\n                                #endif\n"_fu);
 
     return fu_STR{};
 }
 
-static void cgForeignGlobal(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target)
+static void cgForeignGlobal(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target_5)
 {
-    if (!add_once(_ffwd_0, target))
+    if (!add_once(_ffwd_0, target_5))
         return;
 
-    s_Overload o = GET(module_0, ctx_0, target);
-    cgLet(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, o.solved, true, true);
+    s_Overload o = GET(module_0, ctx_0, target_5);
+    cgLet(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, o.solved, true, true);
 }
 
-static fu_STR localID(const s_Module& module_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target, const s_Overload& overload)
+static fu_STR localID(const s_Module& module_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target_5, const s_Overload& overload)
 {
     fu_STR ok = ID(overload.name);
-    if ((target.modid == module_0.modid) && (overload.local_of == _current_fn_0.target.index))
+    if ((target_5.modid == module_0.modid) && (overload.local_of == _current_fn_0.target.index))
         return ok;
 
-    if (has(_current_fn_0.dupes, target.index))
-        return (ok + "_0"_fu) + target.index;
+    if (has(_current_fn_0.dupes, target_5.index))
+        return (ok + "_0"_fu) + target_5.index;
 
     return ok + "_0"_fu;
 }
@@ -1332,16 +1370,16 @@ inline bool add_fhrp(fu_VEC<fu_STR>& dest, const fu_STR& item)
 }
                                 #endif
 
-static fu_STR generateLocalID(const s_Module& module_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target, const s_Overload& overload, fu_VEC<fu_STR>& seen)
+static fu_STR generateLocalID(const s_Module& module_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target_5, const s_Overload& overload, fu_VEC<fu_STR>& seen)
 {
     fu_STR ok = ID(overload.name);
-    if ((target.modid == module_0.modid) && (overload.local_of == _current_fn_0.target.index))
+    if ((target_5.modid == module_0.modid) && (overload.local_of == _current_fn_0.target.index))
         return ok;
 
     if (!add_fhrp(seen, ok))
     {
-        add_once(_current_fn_0.dupes, target.index);
-        return (ok + "_0"_fu) + target.index;
+        add_once(_current_fn_0.dupes, target_5.index);
+        return (ok + "_0"_fu) + target_5.index;
     };
     return ok + "_0"_fu;
 }
@@ -1351,22 +1389,22 @@ static fu_STR generateLocalID(const s_Module& module_0, s_cg_CurrentFn& _current
 inline constexpr int F_POSTFIX = (1 << 3);
                                 #endif
 
-static fu_STR cgFnSignature(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fn)
+static fu_STR cgFnSignature(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fn)
 {
     s_Overload overload = GET(module_0, ctx_0, fn.target);
-    const fu_VEC<s_SolvedNode>& items = fn.items;
+    const fu_VEC<s_SolvedNode>& items_5 = fn.items;
     fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, (overload.type ? overload.type : fail(fu_STR{})), M_RETVAL);
-    fu_STR id { overload.name };
-    if (id == "main"_fu)
+    fu_STR id_2 { overload.name };
+    if (id_2 == "main"_fu)
     {
         _hasMain_0 = ((fn.items.size() + FN_RET_BACK) ? 2 : 1);
-        id = "fu_MAIN"_fu;
+        id_2 = "fu_MAIN"_fu;
     }
     else if (overload.flags & F_OPERATOR)
-        id = ("operator"_fu + valid_operator(id));
+        id_2 = ("operator"_fu + valid_operator(id_2));
 
     fu_STR linkage = (((is_never(overload.type) ? "[[noreturn]] "_fu : fu_STR{}) + ((fn.flags & F_TEMPLATE) ? "inline "_fu : fu_STR{})) + (!(fn.flags & F_PUB) ? "static "_fu : fu_STR{}));
-    fu_STR src = ((((linkage + annot) + " "_fu) + id) + "("_fu);
+    fu_STR src_2 = ((((linkage + annot) + " "_fu) + id_2) + "("_fu);
     int needComma = 0;
 
     {
@@ -1374,30 +1412,30 @@ static fu_STR cgFnSignature(const s_Module& module_0, const s_Context& ctx_0, fu
         for (int i = 0; i < overload.closes_over.size(); i++)
         {
             if (needComma++)
-                src += ", "_fu;
+                src_2 += ", "_fu;
 
             const s_Target t = s_Target { int(module_0.modid), int(overload.closes_over[i]) };
             s_Overload o = GET(module_0, ctx_0, t);
-            src += ((typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, o.type, 0) + " "_fu) + generateLocalID(module_0, _current_fn_0, t, o, seen));
+            src_2 += ((typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, o.type, 0) + " "_fu) + generateLocalID(module_0, _current_fn_0, t, o, seen));
         };
     };
-    for (int i = 0; i < (items.size() + FN_RET_BACK); i++)
+    for (int i = 0; i < (items_5.size() + FN_RET_BACK); i++)
     {
         if (needComma++)
-            src += ", "_fu;
+            src_2 += ", "_fu;
 
         const s_SolvedNode* _0;
-        src += binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, (*(_0 = &(items[i])) ? *_0 : fail(fu_STR{})), false, false);
+        src_2 += binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, (*(_0 = &(items_5[i])) ? *_0 : fail(fu_STR{})), false, false);
     };
     if (overload.flags & F_POSTFIX)
     {
         if (!(overload.flags & F_OPERATOR))
             fu_ASSERT();
 
-        src += ", /*postfix*/int "_fu;
+        src_2 += ", /*postfix*/int "_fu;
     };
-    src += ")"_fu;
-    return src;
+    src_2 += ")"_fu;
+    return src_2;
 }
 
 static bool exprOK(fu::view<s_SolvedNode> nodes)
@@ -1416,7 +1454,7 @@ static bool exprOK(fu::view<s_SolvedNode> nodes)
     return true;
 }
 
-static fu_VEC<fu_STR> cgNodes(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, const int mode, const fu_STR& trail)
+static fu_VEC<fu_STR> cgNodes(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, const int mode, const fu_STR& trail)
 {
     fu_VEC<fu_STR> result {};
     fu_VEC<fu_STR> _tv0 {};
@@ -1427,11 +1465,11 @@ static fu_VEC<fu_STR> cgNodes(const s_Module& module_0, const s_Context& ctx_0, 
         std::swap(_tv0, _current_fn_0.TEMPVARs););
     for (int i = 0; i < nodes.size(); i++)
     {
-        const s_SolvedNode& node = nodes[i];
-        const bool isTrail = (trail && (i == (nodes.size() - 1)) && !maybe_nonzero(node.type));
-        fu_STR src = (node ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, (isTrail ? (mode & ~M_STMT) : int(mode))) : fu_STR{});
-        if (!(src || (mode & M_STMT)))
-            fail((("cgNodes: empty `"_fu + node.kind) + ".`"_fu));
+        const s_SolvedNode& node_1 = nodes[i];
+        const bool isTrail = (trail && (i == (nodes.size() - 1)) && !maybe_nonzero(node_1.type));
+        fu_STR src_2 = (node_1 ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, (isTrail ? (mode & ~M_STMT) : int(mode))) : fu_STR{});
+        if (!(src_2 || (mode & M_STMT)))
+            fail((("cgNodes: empty `"_fu + node_1.kind) + ".`"_fu));
 
         if ((mode & M_STMT) && _current_fn_0.TEMPVARs)
         {
@@ -1439,64 +1477,56 @@ static fu_VEC<fu_STR> cgNodes(const s_Module& module_0, const s_Context& ctx_0, 
             _current_fn_0.TEMPVARs.clear();
         };
         if (isTrail)
-            src = (((trail + "("_fu) + src) + ")"_fu);
+            src_2 = (((trail + "("_fu) + src_2) + ")"_fu);
 
-        result.push(src);
+        result.push(src_2);
     };
     return result;
 }
 
-static fu_STR cgComma(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes)
+static fu_STR cgComma(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes)
 {
-    fu_VEC<fu_STR> items = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, nodes, 0, fu_STR{});
-    if (!items.size())
+    fu_VEC<fu_STR> items_5 = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, nodes, 0, fu_STR{});
+    if (!items_5.size())
         return "(false /*empty parens*/)"_fu;
 
-    if (items.size() == 1)
-        return fu_STR(items[0]);
+    if (items_5.size() == 1)
+        return fu_STR(items_5[0]);
 
-    fu_STR src = "("_fu;
-    for (int i = 0; i < items.size(); i++)
+    fu_STR src_2 = "("_fu;
+    for (int i = 0; i < items_5.size(); i++)
     {
         if (i)
-            src += ", "_fu;
+            src_2 += ", "_fu;
 
-        if (i < (items.size() - 1))
-            src += "(void)"_fu;
+        if (i < (items_5.size() - 1))
+            src_2 += "(void)"_fu;
 
-        src += items[i];
+        src_2 += items_5[i];
     };
-    return src + ")"_fu;
+    return src_2 + ")"_fu;
 }
 
-static fu_STR emitTEMPVAR(s_cg_CurrentFn& _current_fn_0, const fu_STR& annot, bool& ptrflip, const fu_STR& id)
+static fu_STR emitTEMPVAR(s_cg_CurrentFn& _current_fn_0, const fu_STR& annot, bool& ptrflip, const fu_STR& id_2)
 {
     ptrflip = (annot[(annot.size() - 1)] == std::byte('&'));
-    fu_STR id_1 = (id ? fu_STR(id) : ("_"_fu + _current_fn_0.numTEMPVARs++));
-    _current_fn_0.TEMPVARs += (ptrflip ? ((fu::get_view(annot, 0, (annot.size() - 1)) + "* "_fu) + id_1) : (((annot + " "_fu) + id_1) + " {}"_fu));
-    return id_1;
+    fu_STR id_3 = (id_2 ? fu_STR(id_2) : ("_"_fu + _current_fn_0.numTEMPVARs++));
+    _current_fn_0.TEMPVARs += (ptrflip ? ((fu::get_view(annot, 0, (annot.size() - 1)) + "* "_fu) + id_3) : (((annot + " "_fu) + id_3) + " {}"_fu));
+    return id_3;
 }
 
-static fu_STR cgClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type, const fu_STR& src)
+static fu_STR cgClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type_3, const fu_STR& src_2)
 {
-    return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type) + "("_fu) + src) + ")"_fu;
+    return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3) + "("_fu) + src_2) + ")"_fu;
 }
 
-static fu_STR cgMove(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type, const fu_STR& src)
+static fu_STR cgMove(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Type& type_3, const fu_STR& src_2)
 {
-    if (type.vtype.quals & q_trivial)
-        return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, src);
+    if (is_trivial(type_3))
+        return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, src_2);
 
-    return ((("static_cast<"_fu + typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type)) + "&&>("_fu) + src) + ")"_fu;
+    return ((("static_cast<"_fu + typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3)) + "&&>("_fu) + src_2) + ")"_fu;
 }
-
-                                #ifndef DEFt_if_last_YeU3
-                                #define DEFt_if_last_YeU3
-inline std::byte if_last_YeU3(const fu_STR& s)
-{
-    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
-}
-                                #endif
 
                                 #ifndef DEFt_if_first_YeU3
                                 #define DEFt_if_first_YeU3
@@ -1506,22 +1536,30 @@ inline std::byte if_first_YeU3(const fu_STR& s)
 }
                                 #endif
 
-static fu_STR cgStatements(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, int& count, const fu_STR& trail)
+                                #ifndef DEFt_if_last_YeU3
+                                #define DEFt_if_last_YeU3
+inline std::byte if_last_YeU3(const fu_STR& s)
 {
-    fu_VEC<fu_STR> lines = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, nodes, M_STMT, trail);
+    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
+}
+                                #endif
+
+static fu_STR cgStatements(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, int& count, const fu_STR& trail)
+{
+    fu_VEC<fu_STR> lines = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, nodes, M_STMT, trail);
     count = lines.size();
-    fu_STR src {};
+    fu_STR src_2 {};
     for (int i = 0; i < lines.size(); i++)
     {
         const fu_STR& line = lines[i];
         if (line)
-            src += (((if_first_YeU3(line) == std::byte('\n')) ? (std::byte('\n') + line) : (_indent_0 + line)) + ((if_last_YeU3(line) == std::byte(';')) ? std::byte('\n') : std::byte(';')));
+            src_2 += (((if_first_YeU3(line) == std::byte('\n')) ? (std::byte('\n') + line) : (_indent_0 + line)) + ((if_last_YeU3(line) == std::byte(';')) ? std::byte('\n') : std::byte(';')));
 
     };
-    return src;
+    return src_2;
 }
 
-static fu_STR cgBlock(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, const bool skipCurlies, const bool gnuStmtExpr, const s_Target& label, const s_Type& type)
+static fu_STR cgBlock(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_VEC<s_SolvedNode>& nodes, const bool skipCurlies, const bool gnuStmtExpr, const s_Target& label, const s_Type& type_3)
 {
     fu_STR indent0 { _indent_0 };
     _indent_0 += "    "_fu;
@@ -1530,92 +1568,92 @@ static fu_STR cgBlock(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
     fu_STR close = (gnuStmtExpr ? "}))"_fu : "}"_fu);
     fu_STR trail {};
     s_Overload lbl = (label ? GET(module_0, ctx_0, label) : s_Overload{});
-    fu_STR& name = lbl.name;
+    fu_STR& name_3 = lbl.name;
     const int blockvals0 = _current_fn_0.blockvals.size();
     fu_DEFER(_current_fn_0.blockvals.shrink(blockvals0));
-    if (type && !is_void(type))
+    if (type_3 && !is_void(type_3))
     {
         bool ptrflip = false;
-        fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, 0);
-        fu_STR id = emitTEMPVAR(_current_fn_0, annot, ptrflip, (name ? (("L_"_fu + name) + "_v"_fu) : fu_STR{}));
+        fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, 0);
+        fu_STR id_2 = emitTEMPVAR(_current_fn_0, annot, ptrflip, (name_3 ? (("L_"_fu + name_3) + "_v"_fu) : fu_STR{}));
         _current_fn_0.blockvals += s_cg_Blockval { int(label.index), bool(ptrflip) };
-        fu_STR out = (ptrflip ? ("*"_fu + id) : cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, id));
-        close = (("}), "_fu + out) + ")"_fu);
-        trail = (id + " = "_fu);
+        fu_STR out_1 = (ptrflip ? ("*"_fu + id_2) : cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, id_2));
+        close = (("}), "_fu + out_1) + ")"_fu);
+        trail = (id_2 + " = "_fu);
         if (ptrflip)
             trail += "&"_fu;
 
     };
     int count {};
-    fu_STR src = cgStatements(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, nodes, count, trail);
+    fu_STR src_2 = cgStatements(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, nodes, count, trail);
     if (lbl.name)
     {
-        fu_STR prefixed_id = ("L_"_fu + name);
-        if (fu::has(src, (("goto "_fu + prefixed_id) + ";"_fu)))
+        fu_STR prefixed_id = ("L_"_fu + name_3);
+        if (fu::has(src_2, (("goto "_fu + prefixed_id) + ";"_fu)))
         {
             close = (((("  } "_fu + prefixed_id) + ":;"_fu) + indent0) + close);
             open = "{ {"_fu;
         };
     };
     if (!skipCurlies || (nodes.size() != 1) || (count != 1) || ((nodes[0].kind != "jump"_fu) && (nodes[0].kind != "call"_fu)))
-        src = (((((gnuOpen + indent0) + open) + src) + indent0) + close);
+        src_2 = (((((gnuOpen + indent0) + open) + src_2) + indent0) + close);
 
     _indent_0 = indent0;
-    return src;
+    return src_2;
 }
 
-static fu_STR cgBlock(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgBlock(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    fu_VEC<s_SolvedNode> items = ((node.kind == "block"_fu) ? fu_VEC<s_SolvedNode>(node.items) : fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(node) } });
-    const s_Target& label = ((node.kind == "block"_fu) ? node.target : (*(const s_Target*)fu::NIL));
+    fu_VEC<s_SolvedNode> items_5 = ((node_1.kind == "block"_fu) ? fu_VEC<s_SolvedNode>(node_1.items) : fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(node_1) } });
+    const s_Target& label = ((node_1.kind == "block"_fu) ? node_1.target : (*(const s_Target*)fu::NIL));
     if (mode & M_LOOP_BODY)
         _current_fn_0.can_cont = label.index;
 
     bool expr = !(mode & M_STMT);
-    if (expr && !label && exprOK(items))
-        return cgComma(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items);
+    if (expr && !label && exprOK(items_5))
+        return cgComma(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5);
 
-    return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, !!(mode & M_OPT_CURLIES), expr, label, (expr ? node.type : (*(const s_Type*)fu::NIL)));
+    return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, !!(mode & M_OPT_CURLIES), expr, label, (expr ? node_1.type : (*(const s_Type*)fu::NIL)));
 }
 
-static void ensureFwdDecl(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target)
+static void ensureFwdDecl(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target_5)
 {
-    s_Overload overload = GET(module_0, ctx_0, target);
+    s_Overload overload = GET(module_0, ctx_0, target_5);
     if ((overload.kind != "fn"_fu) || (overload.name == "main"_fu))
         return;
 
-    if (!add_once(_ffwd_0, target))
+    if (!add_once(_ffwd_0, target_5))
         return;
 
-    s_cg_CurrentFn current_fn0 = s_cg_CurrentFn { s_Target(target), s_BitSet{}, 0, fu_VEC<fu_STR>{}, fu_VEC<s_cg_Blockval>{}, 0, 0 };
+    s_cg_CurrentFn current_fn0 = s_cg_CurrentFn { s_Target(target_5), s_BitSet{}, 0, fu_VEC<fu_STR>{}, fu_VEC<s_cg_Blockval>{}, 0, 0 };
     fu_DEFER(std::swap(_current_fn_0, current_fn0));
     std::swap(_current_fn_0, current_fn0);
-    fu_STR& id = (overload.name ? overload.name : fail(fu_STR{}));
+    fu_STR& id_2 = (overload.name ? overload.name : fail(fu_STR{}));
     s_Type& ret = (overload.type ? overload.type : fail(fu_STR{}));
     fu_STR annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, ret, M_RETVAL);
     const int isOp = (overload.flags & F_OPERATOR);
-    fu_STR name = (isOp ? ("operator"_fu + valid_operator(id)) : fu_STR(id));
+    fu_STR name_3 = (isOp ? ("operator"_fu + valid_operator(id_2)) : fu_STR(id_2));
     fu_STR linkage = (((is_never(overload.type) ? "[[noreturn]] "_fu : fu_STR{}) + ((overload.flags & F_TEMPLATE) ? "inline "_fu : fu_STR{})) + (!(overload.flags & F_PUB) ? "static "_fu : fu_STR{}));
-    fu_STR src = ((((linkage + annot) + " "_fu) + name) + "("_fu);
+    fu_STR src_2 = ((((linkage + annot) + " "_fu) + name_3) + "("_fu);
     int needComma = 0;
     for (int i = 0; i < overload.closes_over.size(); i++)
     {
         if (needComma++)
-            src += ", "_fu;
+            src_2 += ", "_fu;
 
         s_Overload o = GET(module_0, ctx_0, s_Target { int(module_0.modid), int(overload.closes_over[i]) });
-        src += typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, o.type, 0);
+        src_2 += typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, o.type, 0);
     };
-    fu_VEC<s_Argument>& args = overload.args;
-    for (int i = 0; i < args.size(); i++)
+    fu_VEC<s_Argument>& args_1 = overload.args;
+    for (int i = 0; i < args_1.size(); i++)
     {
         if (needComma++)
-            src += ", "_fu;
+            src_2 += ", "_fu;
 
-        src += typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, args[i].type, (M_ARGUMENT | M_FWDECL));
+        src_2 += typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, args_1[i].type, (M_ARGUMENT | M_FWDECL));
     };
-    src += ");\n"_fu;
-    _ffwd_src_0 += src;
+    src_2 += ");\n"_fu;
+    _ffwd_src_0 += src_2;
     return;
 }
 
@@ -1640,34 +1678,34 @@ static fu_STR valid_identifier(fu_STR&& str)
     return static_cast<fu_STR&&>(str);
 }
 
-static fu_STR cgFn(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fn, const int mode)
+static fu_STR cgFn(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fn, const int mode)
 {
     fu_STR indent0 { _indent_0 };
-    const fu_VEC<s_SolvedNode>& items = fn.items;
-    const s_SolvedNode& body = items[(items.size() + FN_BODY_BACK)];
+    const fu_VEC<s_SolvedNode>& items_5 = fn.items;
+    const s_SolvedNode& body = items_5[(items_5.size() + FN_BODY_BACK)];
     s_Overload overload = GET(module_0, ctx_0, fn.target);
-    fu_STR& id = overload.name;
+    fu_STR& id_2 = overload.name;
     if (!(overload.status & SS_FINALIZED))
-        fail(("cgFn: fn not finalized: "_fu + id));
+        fail(("cgFn: fn not finalized: "_fu + id_2));
 
     if (!body)
     {
         if (!(overload.kind == "__native"_fu))
-            fail(("cgFn: no body on non-native: "_fu + id));
+            fail(("cgFn: no body on non-native: "_fu + id_2));
 
         return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
     };
     _indent_0 = "\n"_fu;
-    fu_STR src {};
+    fu_STR src_2 {};
 
     {
         s_cg_CurrentFn current_fn0 = s_cg_CurrentFn { s_Target(fn.target), s_BitSet{}, 0, fu_VEC<fu_STR>{}, fu_VEC<s_cg_Blockval>{}, 0, 0 };
         fu_DEFER(std::swap(_current_fn_0, current_fn0));
         std::swap(_current_fn_0, current_fn0);
-        src += cgFnSignature(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, fn);
-        src += cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, body, M_STMT);
+        src_2 += cgFnSignature(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, fn);
+        src_2 += cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, body, M_STMT);
     };
-    if (fu::has(_fdef_0, (id ? id : fail(fu_STR{}))))
+    if (fu::has(_fdef_0, (id_2 ? id_2 : fail(fu_STR{}))))
         ensureFwdDecl(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _tdef_0, _current_fn_0, fn.target);
 
     _indent_0 = indent0;
@@ -1675,50 +1713,50 @@ static fu_STR cgFn(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_S
     if (dedupe)
         _fdef_0 += ((("\n                                #ifndef DEFt_"_fu + dedupe) + "\n                                #define DEFt_"_fu) + dedupe);
 
-    _fdef_0 += (("\n"_fu + src) + "\n"_fu);
+    _fdef_0 += (("\n"_fu + src_2) + "\n"_fu);
     if (dedupe)
         _fdef_0 += "                                #endif\n"_fu;
 
     return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
 }
 
-static void ensureFnDef(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target, const s_Overload& overload)
+static void ensureFnDef(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_Target& target_5, const s_Overload& overload)
 {
-    if (!(target.modid == module_0.modid))
-        fail((((((((("ensureFnDef: fndef is needed outside of its original scope: "_fu + target.modid) + " vs "_fu) + module_0.modid) + ": `"_fu) + overload.kind) + " "_fu) + overload.name) + "`."_fu));
+    if (!(target_5.modid == module_0.modid))
+        fail((((((((("ensureFnDef: fndef is needed outside of its original scope: "_fu + target_5.modid) + " vs "_fu) + module_0.modid) + ": `"_fu) + overload.kind) + " "_fu) + overload.name) + "`."_fu));
 
-    if (!add_once(_idef_0, target.index))
+    if (!add_once(_idef_0, target_5.index))
         return;
 
-    const s_SolvedNode& node = overload.solved;
-    if (!(node.kind == "fn"_fu))
+    const s_SolvedNode& node_1 = overload.solved;
+    if (!(node_1.kind == "fn"_fu))
         fail("ensureFnDef non-fn"_fu);
 
-    cgFn(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, M_STMT);
+    cgFn(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, M_STMT);
 }
 
-static fu_STR via(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, s_TEMPVAR& tv, const s_Type& type, const fu_STR& expr)
+static fu_STR via(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, s_TEMPVAR& tv, const s_Type& type_3, const fu_STR& expr)
 {
     if (!tv.id)
-        tv.id = emitTEMPVAR(_current_fn_0, (tv.annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, 0)), tv.ptrflip, fu_STR{});
+        tv.id = emitTEMPVAR(_current_fn_0, (tv.annot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, 0)), tv.ptrflip, fu_STR{});
 
     if (tv.ptrflip)
         return ((((("*("_fu + tv.id) + " = &("_fu) + expr) + ")) ? *"_fu) + tv.id) + " : "_fu;
 
-    if (type.vtype.quals & q_trivial)
+    if (is_trivial(type_3))
         return ((((("("_fu + tv.id) + " = "_fu) + expr) + ") ? "_fu) + tv.id) + " : "_fu;
 
     return ((((((("("_fu + tv.id) + " = "_fu) + expr) + ") ? static_cast<"_fu) + tv.annot) + "&&>("_fu) + tv.id) + ") : "_fu;
 }
 
-static bool isFieldChain(const s_Module& module_0, const s_Context& ctx_0, const s_SolvedNode& node)
+static bool isFieldChain(const s_Module& module_0, const s_Context& ctx_0, const s_SolvedNode& node_1)
 {
-    if (node.kind != "call"_fu)
+    if (node_1.kind != "call"_fu)
         return false;
 
-    s_Overload t = GET(module_0, ctx_0, node.target);
+    s_Overload t = GET(module_0, ctx_0, node_1.target);
     if (t.kind == "field"_fu)
-        return isFieldChain(module_0, ctx_0, only_XB32(node.items));
+        return isFieldChain(module_0, ctx_0, only_Vh3M(node_1.items));
 
     if (t.kind == "var"_fu)
         return true;
@@ -1726,126 +1764,126 @@ static bool isFieldChain(const s_Module& module_0, const s_Context& ctx_0, const
     return false;
 }
 
-static void cgAppend_visit(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const fu_STR& canon, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src)
+static void cgAppend_visit(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const fu_STR& canon_1, const fu_STR& into, const s_SolvedNode& stuff, fu_STR& src_2)
 {
-    if ((stuff.kind != "call"_fu) || (stuff.value != "~"_fu) || (stuff.type.vtype.canon != canon) || (stuff.items.size() != 2))
+    if ((stuff.kind != "call"_fu) || (stuff.value != "~"_fu) || (stuff.type.vtype.canon != canon_1) || (stuff.items.size() != 2))
     {
-        fu_STR val = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, stuff, 0);
-        if (src.size() > 1)
-            src += ", "_fu;
+        fu_STR val = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, stuff, 0);
+        if (src_2.size() > 1)
+            src_2 += ", "_fu;
 
-        src += ((into + " += "_fu) + val);
+        src_2 += ((into + " += "_fu) + val);
     }
     else
     {
-        cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, canon, into, stuff.items[0], src);
-        cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, canon, into, stuff.items[1], src);
+        cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, canon_1, into, stuff.items[0], src_2);
+        cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, canon_1, into, stuff.items[1], src_2);
     };
 }
 
-static fu_STR cgAppend(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const fu_STR& into)
+static fu_STR cgAppend(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const fu_STR& into)
 {
-    fu_STR src = "("_fu;
-    cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.type.vtype.canon, into, node.items[1], src);
-    src += ")"_fu;
-    return src;
+    fu_STR src_2 = "("_fu;
+    cgAppend_visit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.type.vtype.canon, into, node_1.items[1], src_2);
+    src_2 += ")"_fu;
+    return src_2;
 }
 
-static fu_STR cgPrint(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_VEC<fu_STR>& items)
+static fu_STR cgPrint(fu_MAP<fu_STR, fu_STR>& _libs_0, const fu_VEC<fu_STR>& items_5)
 {
     include(_libs_0, "<iostream>"_fu);
-    fu_STR src = "(std::cout"_fu;
-    for (int i = 0; i < items.size(); i++)
-        src += (" << "_fu + items[i]);
+    fu_STR src_2 = "(std::cout"_fu;
+    for (int i = 0; i < items_5.size(); i++)
+        src_2 += (" << "_fu + items_5[i]);
 
-    src += " << '\\n')"_fu;
-    return src;
+    src_2 += " << '\\n')"_fu;
+    return src_2;
 }
 
-static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
     s_Overload _0 {};
-    s_Overload target = ((_0 = GET(module_0, ctx_0, node.target)) ? static_cast<s_Overload&&>(_0) : fail(fu_STR{}));
+    s_Overload target_5 = ((_0 = GET(module_0, ctx_0, node_1.target)) ? static_cast<s_Overload&&>(_0) : fail(fu_STR{}));
     fu_VEC<fu_STR> _items {};
-    const fu_VEC<s_SolvedNode>& items = node.items;
-    if ((target.kind == "__native"_fu) && target.tEmplate.node.items)
+    const fu_VEC<s_SolvedNode>& items_5 = node_1.items;
+    if ((target_5.kind == "__native"_fu) && target_5.tEmplate.node.items)
     {
-        fu_STR id { target.tEmplate.node.items[0].value };
-        if (target.tEmplate.node.items.size() > 1)
+        fu_STR id_2 { target_5.tEmplate.node.items[0].value };
+        if (target_5.tEmplate.node.items.size() > 1)
         {
-            include(_libs_0, id);
-            id = target.tEmplate.node.items[1].value;
+            include(_libs_0, id_2);
+            id_2 = target_5.tEmplate.node.items[1].value;
         };
-        if (id.mutref(0) == std::byte('.'))
+        if (id_2.mutref(0) == std::byte('.'))
         {
-            if (items.size() > 1)
-                return (((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + id) + "("_fu) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + ")"_fu;
+            if (items_5.size() > 1)
+                return (((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + id_2) + "("_fu) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + ")"_fu;
 
-            return ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + id;
+            return ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + id_2;
         };
-        if (items)
+        if (items_5)
         {
-            if (hasIdentifierChars(id))
-                return ((id + "("_fu) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0)) + ")"_fu;
+            if (hasIdentifierChars(id_2))
+                return ((id_2 + "("_fu) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0)) + ")"_fu;
 
-            if (binSkipParens(id, mode))
-                return (((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + " "_fu) + id) + " "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1);
+            if (binSkipParens(id_2, mode))
+                return (((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + " "_fu) + id_2) + " "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1);
 
-            return ((((("("_fu + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0)) + " "_fu) + id) + " "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + ")"_fu;
+            return ((((("("_fu + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0)) + " "_fu) + id_2) + " "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + ")"_fu;
         };
-        return id;
+        return id_2;
     };
-    if (target.kind == "type"_fu)
+    if (target_5.kind == "type"_fu)
     {
-        if (!items)
-            return cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, target.type);
+        if (!items_5)
+            return cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, target_5.type);
 
-        if (!(isStruct(target.type)))
+        if (!(isStruct(target_5.type)))
             fail("cgCall: defctor/type not a struct."_fu);
 
-        fu_STR args = REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0);
-        return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, target.type) + " { "_fu) + args) + " }"_fu;
+        fu_STR args_1 = REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0);
+        return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, target_5.type) + " { "_fu) + args_1) + " }"_fu;
     };
-    fu_STR& id = (target.name ? target.name : fail(fu_STR{}));
-    if (target.kind == "var"_fu)
+    fu_STR& id_2 = (target_5.name ? target_5.name : fail(fu_STR{}));
+    if (target_5.kind == "var"_fu)
     {
-        if (!target.local_of)
+        if (!target_5.local_of)
         {
-            if (node.target.modid != module_0.modid)
-                cgForeignGlobal(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.target);
+            if (node_1.target.modid != module_0.modid)
+                cgForeignGlobal(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.target);
 
-            return ID(id);
+            return ID(id_2);
         };
-        return localID(module_0, _current_fn_0, node.target, target);
+        return localID(module_0, _current_fn_0, node_1.target, target_5);
     };
-    if (target.kind == "field"_fu)
-        return (ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + "."_fu) + ID(id);
+    if (target_5.kind == "field"_fu)
+        return (ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + "."_fu) + ID(id_2);
 
-    if (node.target.modid && (target.kind == "fn"_fu))
+    if (node_1.target.modid && (target_5.kind == "fn"_fu))
     {
-        if ((target.solved.flags & F_TEMPLATE) || !(target.solved.flags & F_PUB))
-            ensureFnDef(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.target, target);
-        else if (node.target.modid != module_0.modid)
-            ensureFwdDecl(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _tdef_0, _current_fn_0, node.target);
+        if ((target_5.solved.flags & F_TEMPLATE) || !(target_5.solved.flags & F_PUB))
+            ensureFnDef(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.target, target_5);
+        else if (node_1.target.modid != module_0.modid)
+            ensureFwdDecl(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _tdef_0, _current_fn_0, node_1.target);
 
     };
-    if (target.flags & F_OPERATOR)
+    if (target_5.flags & F_OPERATOR)
     {
         const s_SolvedNode* _1;
-        const s_SolvedNode& head = (*(_1 = &(items[0])) ? *_1 : fail(fu_STR{}));
-        if (items.size() == 1)
-            return ((node.flags & F_POSTFIX) ? (ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + valid_operator(id)) : (valid_operator(id) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0)));
+        const s_SolvedNode& head = (*(_1 = &(items_5[0])) ? *_1 : fail(fu_STR{}));
+        if (items_5.size() == 1)
+            return ((node_1.flags & F_POSTFIX) ? (ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + valid_operator(id_2)) : (valid_operator(id_2) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0)));
 
-        if (items.size() == 2)
+        if (items_5.size() == 2)
         {
-            if (id == "[]"_fu)
+            if (id_2 == "[]"_fu)
             {
-                if (is_mutref(node.type))
-                    return ((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + ".mutref("_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + ")"_fu;
+                if (is_mutref(node_1.type))
+                    return ((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + ".mutref("_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + ")"_fu;
 
-                return ((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0) + "["_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + "]"_fu;
+                return ((ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0) + "["_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + "]"_fu;
             };
-            if (id == "="_fu)
+            if (id_2 == "="_fu)
             {
                 if ((head.kind == "call"_fu) && (head.value == "[]"_fu) && (head.items.size() == 2))
                 {
@@ -1854,11 +1892,11 @@ static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
                     {
                         const s_SolvedNode* _3;
                         const s_SolvedNode* _4;
-                        return ((((("("_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, (*(_4 = &(head.items[0])) ? *_4 : fail(fu_STR{})), 0)) + ".upsert("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, (*(_3 = &(head.items[1])) ? *_3 : fail(fu_STR{})), 0)) + ") = "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + ")"_fu;
+                        return ((((("("_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, (*(_3 = &(head.items[0])) ? *_3 : fail(fu_STR{})), 0)) + ".upsert("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, (*(_4 = &(head.items[1])) ? *_4 : fail(fu_STR{})), 0)) + ") = "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + ")"_fu;
                     };
                 };
             };
-            if (id == "||="_fu)
+            if (id_2 == "||="_fu)
             {
                 fu_STR arg0 {};
                 if ((head.kind == "call"_fu) && (head.value == "[]"_fu) && (head.items.size() == 2))
@@ -1868,127 +1906,117 @@ static fu_STR cgCall(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
                     {
                         const s_SolvedNode* _6;
                         const s_SolvedNode* _7;
-                        arg0 = (((cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, (*(_7 = &(head.items[0])) ? *_7 : fail(fu_STR{})), 0) + ".upsert("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, (*(_6 = &(head.items[1])) ? *_6 : fail(fu_STR{})), 0)) + ")"_fu);
+                        arg0 = (((cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, (*(_6 = &(head.items[0])) ? *_6 : fail(fu_STR{})), 0) + ".upsert("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, (*(_7 = &(head.items[1])) ? *_7 : fail(fu_STR{})), 0)) + ")"_fu);
                     };
                 };
                 fu_STR* _8;
-                (*(_8 = &(arg0)) ? *_8 : *_8 = ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0));
+                (*(_8 = &(arg0)) ? *_8 : *_8 = ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0));
                 s_TEMPVAR tv {};
                 fu_STR condcons = via(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, tv, head.type, arg0);
                 fu_STR alt = (tv.ptrflip ? ("*"_fu + tv.id) : fu_STR((tv.id ? tv.id : arg0)));
-                return (((("("_fu + condcons) + alt) + " = "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1)) + ")"_fu;
+                return (((("("_fu + condcons) + alt) + " = "_fu) + ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1)) + ")"_fu;
             };
-            if ((id == "~="_fu) && type_isArray(head.type) && isFieldChain(module_0, ctx_0, node.items[0]) && (node.items[1].value == "~"_fu) && (node.items[1].type.vtype.canon == head.type.vtype.canon))
-                return cgAppend(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0));
+            if ((id_2 == "~="_fu) && type_isArray(head.type) && isFieldChain(module_0, ctx_0, node_1.items[0]) && (node_1.items[1].value == "~"_fu) && (node_1.items[1].type.vtype.canon == head.type.vtype.canon))
+                return cgAppend(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0));
 
-            fu_STR arg0 = ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0);
+            fu_STR arg0 = ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0);
             fu_STR arg1 {};
-            if (((id == "="_fu) || (id == "||="_fu) || (id == "&&="_fu)) && (items[1].kind == "copy"_fu))
-                arg1 = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, only_XB32(items[1].items), 0);
+            if (((id_2 == "="_fu) || (id_2 == "||="_fu) || (id_2 == "&&="_fu)) && (items_5[1].kind == "copy"_fu))
+                arg1 = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, only_Vh3M(items_5[1].items), 0);
 
-            fu_STR op = valid_operator(id);
+            fu_STR op = valid_operator(id_2);
             if (binSkipParens(op, mode))
-                return (((arg0 + " "_fu) + op) + " "_fu) + (arg1 ? fu_STR(arg1) : ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1));
+                return (((arg0 + " "_fu) + op) + " "_fu) + (arg1 ? fu_STR(arg1) : ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1));
             else
-                return ((((("("_fu + arg0) + " "_fu) + op) + " "_fu) + (arg1 ? fu_STR(arg1) : ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 1))) + ")"_fu;
+                return ((((("("_fu + arg0) + " "_fu) + op) + " "_fu) + (arg1 ? fu_STR(arg1) : ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 1))) + ")"_fu;
 
         };
     };
-    if ((id == "CLONE"_fu) && (items.size() == 1))
-        return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0));
+    if ((id_2 == "CLONE"_fu) && (items_5.size() == 1))
+        return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0));
 
-    if ((id == "STEAL"_fu) && (items.size() == 1))
-        return cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0));
+    if ((id_2 == "STEAL"_fu) && (items_5.size() == 1))
+        return cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type, ARG(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0));
 
-    if (id == "println"_fu)
-        return cgPrint(_libs_0, cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0, fu_STR{}));
+    if (id_2 == "println"_fu)
+        return cgPrint(_libs_0, cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0, fu_STR{}));
 
-    if (!(id != "__native"_fu))
+    if (!(id_2 != "__native"_fu))
         fu_ASSERT();
 
     fu_STR closure {};
-    if (target.closes_over)
+    if (target_5.closes_over)
     {
-        for (int i = 0; i < target.closes_over.size(); i++)
+        for (int i = 0; i < target_5.closes_over.size(); i++)
         {
             if (i)
                 closure += ", "_fu;
 
-            const s_Target t = s_Target { int(module_0.modid), int(target.closes_over[i]) };
+            const s_Target t = s_Target { int(module_0.modid), int(target_5.closes_over[i]) };
             s_Overload o = GET(module_0, ctx_0, t);
             closure += localID(module_0, _current_fn_0, t, o);
         };
-        if (items)
+        if (items_5)
             closure += ", "_fu;
 
     };
-    return (((ID(id) + "("_fu) + closure) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items, 0)) + ")"_fu;
+    return (((ID(id_2) + "("_fu) + closure) + REST(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5, 0)) + ")"_fu;
 }
 
-                                #ifndef DEF_q_unsigned
-                                #define DEF_q_unsigned
-inline constexpr int q_unsigned = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_q_integral
-                                #define DEF_q_integral
-inline constexpr int q_integral = (1 << 6);
-                                #endif
-
-static fu_STR cgLiteral(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgLiteral(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
-    fu_STR src { node.value };
-    if ((node.type.vtype.quals & q_unsigned) && !fu::has(src, std::byte('u')))
-        src += std::byte('u');
+    fu_STR src_2 { node_1.value };
+    if (is_unsigned(node_1.type) && !fu::has(src_2, std::byte('u')))
+        src_2 += std::byte('u');
 
-    if (node.type.vtype.quals & q_floating_pt)
+    if (is_floating_pt(node_1.type))
     {
-        if (!fu::has(src, std::byte('.')))
-            src += ".0"_fu;
+        if (!fu::has(src_2, std::byte('.')))
+            src_2 += ".0"_fu;
 
-        if (node.type.vtype.canon == "f32"_fu)
+        if (node_1.type.vtype.canon == "f32"_fu)
         {
-            if (fu::has(src, std::byte('x')))
-                src = (("float("_fu + src) + ")"_fu);
+            if (fu::has(src_2, std::byte('x')))
+                src_2 = (("float("_fu + src_2) + ")"_fu);
             else
-                src += "f"_fu;
+                src_2 += "f"_fu;
 
         }
-        else if (node.type.vtype.canon != "f64"_fu)
+        else if (node_1.type.vtype.canon != "f64"_fu)
             fu_ASSERT();
 
     };
-    if (fu::lmatch(src, "0o"_fu))
-        src.splice(1, 1);
+    if (fu::lmatch(src_2, "0o"_fu))
+        src_2.splice(1, 1);
 
-    if (src.size() > 16)
+    if (src_2.size() > 16)
     {
-        s_Intlit parse = Intlit(src);
-        if (parse.negative && (parse.absval == 0x8000000000000000ull))
+        s_Intlit parse_3 = Intlit(src_2);
+        if (parse_3.negative && (parse_3.absval == 0x8000000000000000ull))
             return "(-9223372036854775807-1)"_fu;
 
     };
-    if ((node.type.vtype.quals & q_integral) && (node.type.vtype.canon != "u32"_fu) && (node.type.vtype.canon != "i32"_fu))
+    if (is_integral(node_1.type) && (node_1.type.vtype.canon != "u32"_fu) && (node_1.type.vtype.canon != "i32"_fu))
     {
-        if ((node.type.vtype.canon == "u64"_fu) || (node.type.vtype.canon == "i64"_fu))
+        if ((node_1.type.vtype.canon == "u64"_fu) || (node_1.type.vtype.canon == "i64"_fu))
         {
-            if (!fu::has(src, std::byte('l')))
-                return src + "ll"_fu;
+            if (!fu::has(src_2, std::byte('l')))
+                return src_2 + "ll"_fu;
 
         }
         else
-            return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type) + "("_fu) + src) + ")"_fu;
+            return ((typeAnnotBase(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type) + "("_fu) + src_2) + ")"_fu;
 
     };
-    return src;
+    return src_2;
 }
 
-static fu_STR cgCharLiteral(const s_SolvedNode& node)
+static fu_STR cgCharLiteral(const s_SolvedNode& node_1)
 {
     fu_STR esc {};
-    for (int i = 0; i < node.value.size(); i++)
+    for (int i = 0; i < node_1.value.size(); i++)
     {
-        const std::byte c = node.value[i];
+        const std::byte c = node_1.value[i];
         if (c == std::byte('\n'))
             esc += "\\n"_fu;
         else if (c == std::byte('\r'))
@@ -2008,13 +2036,13 @@ static fu_STR cgCharLiteral(const s_SolvedNode& node)
     return ("std::byte('"_fu + esc) + "')"_fu;
 }
 
-static fu_STR cgStringLiteral(fu_MAP<fu_STR, fu_STR>& _libs_0, const s_SolvedNode& node)
+static fu_STR cgStringLiteral(fu_MAP<fu_STR, fu_STR>& _libs_0, const s_SolvedNode& node_1)
 {
     annotateString(_libs_0);
     fu_STR esc {};
-    for (int i = 0; i < node.value.size(); i++)
+    for (int i = 0; i < node_1.value.size(); i++)
     {
-        const std::byte c = node.value[i];
+        const std::byte c = node_1.value[i];
         if (c == std::byte('\n'))
             esc += "\\n"_fu;
         else if (c == std::byte('\r'))
@@ -2034,25 +2062,25 @@ static fu_STR cgStringLiteral(fu_MAP<fu_STR, fu_STR>& _libs_0, const s_SolvedNod
     return ("\""_fu + esc) + "\"_fu"_fu;
 }
 
-static fu_STR cgArrayLiteral(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgArrayLiteral(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    if (node.target)
-        return cgCall(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+    if (node_1.target)
+        return cgCall(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
-    fu_VEC<fu_STR> items = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.items, 0, fu_STR{});
-    if (!items.size())
-        return cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type);
+    fu_VEC<fu_STR> items_5 = cgNodes(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.items, 0, fu_STR{});
+    if (!items_5.size())
+        return cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type);
 
     s_Type _0 {};
-    s_Type itemType = ((_0 = tryClear_array(node.type)) ? static_cast<s_Type&&>(_0) : fail(fu_STR{}));
+    s_Type itemType = ((_0 = tryClear_array(node_1.type)) ? static_cast<s_Type&&>(_0) : fail(fu_STR{}));
     fu_STR itemAnnot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, itemType, 0);
-    fu_STR arrayAnnot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.type, 0);
-    return ((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items.size()) + "> { "_fu) + fu::join(items, ", "_fu)) + " } }"_fu;
+    fu_STR arrayAnnot = typeAnnot(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.type, 0);
+    return ((((((arrayAnnot + " { "_fu) + arrayAnnot) + "::INIT<"_fu) + items_5.size()) + "> { "_fu) + fu::join(items_5, ", "_fu)) + " } }"_fu;
 }
 
-static fu_STR cgDefaultInit(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgDefaultInit(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    return cgArrayLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+    return cgArrayLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 }
 
 static bool supportsNRVO(s_cg_CurrentFn& _current_fn_0, const s_Overload& o)
@@ -2060,187 +2088,187 @@ static bool supportsNRVO(s_cg_CurrentFn& _current_fn_0, const s_Overload& o)
     return (o.kind == "var"_fu) && !(o.flags & F_ARG) && (o.local_of == _current_fn_0.target.index);
 }
 
-static fu_STR cgMoveOrClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const fu_STR& kind, const s_Type& type, const fu_STR& src)
+static fu_STR cgMoveOrClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_STR& _tdef_0, s_cg_CurrentFn& _current_fn_0, const fu_STR& kind_3, const s_Type& type_3, const fu_STR& src_2)
 {
-    if (kind == "move"_fu)
-        return cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, src);
+    if (kind_3 == "move"_fu)
+        return cgMove(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, src_2);
 
-    return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type, src);
+    return cgClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3, src_2);
 }
 
-static fu_STR cgMoveOrClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgMoveOrClone(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    const s_SolvedNode& expr = only_XB32(node.items);
-    if ((mode & M_RETURN) && (node.kind == "move"_fu))
+    const s_SolvedNode& expr = only_Vh3M(node_1.items);
+    if ((mode & M_RETURN) && (node_1.kind == "move"_fu))
     {
         const bool nrvo = ((expr.kind == "call"_fu) && (expr.items.size() == 0) && supportsNRVO(_current_fn_0, GET(module_0, ctx_0, expr.target)));
         if (nrvo)
-            return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, expr, 0);
+            return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, expr, 0);
 
     };
-    return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node.kind, node.type, cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, expr, 0));
+    return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1.kind, node_1.type, cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, expr, 0));
 }
 
-static fu_STR blockWrapSubstatement(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR blockWrapSubstatement(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, ((M_STMT | M_OPT_CURLIES) | mode));
+    return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, ((M_STMT | M_OPT_CURLIES) | mode));
 }
 
-static fu_STR blockWrap_unlessIf(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
+static fu_STR blockWrap_unlessIf(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_2)
 {
-    return (((node_1.kind == "if"_fu) || (node_1.kind == "and"_fu)) ? (" "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node_1, M_STMT)) : blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node_1, 0));
+    return (((node_2.kind == "if"_fu) || (node_2.kind == "and"_fu)) ? (" "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_2, M_STMT)) : blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_2, 0));
 }
 
-static fu_STR cgIf(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgIf(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    const s_SolvedNode& n0 = node.items[0];
-    const s_SolvedNode& n1 = node.items[1];
-    const s_SolvedNode& n2 = node.items[2];
+    const s_SolvedNode& n0 = node_1.items[0];
+    const s_SolvedNode& n1 = node_1.items[1];
+    const s_SolvedNode& n2 = node_1.items[2];
     const bool stmt = !!(mode & M_STMT);
-    fu_STR cond = (n0 ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n0, (M_RETBOOL | (stmt ? M_PARENS : (*(const int*)fu::NIL)))) : fu_STR{});
-    fu_STR cons = (n1 ? (stmt ? blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n1, 0) : cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n1, 0)) : fu_STR{});
-    fu_STR alt = (n2 ? (stmt ? blockWrap_unlessIf(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n2) : cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n2, 0)) : fu_STR{});
+    fu_STR cond = (n0 ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n0, (M_RETBOOL | (stmt ? M_PARENS : (*(const int*)fu::NIL)))) : fu_STR{});
+    fu_STR cons = (n1 ? (stmt ? blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n1, 0) : cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n1, 0)) : fu_STR{});
+    fu_STR alt = (n2 ? (stmt ? blockWrap_unlessIf(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n2) : cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n2, 0)) : fu_STR{});
     if (stmt)
         return ((("if ("_fu + cond) + ")"_fu) + cons) + (alt ? ((_indent_0 + "else"_fu) + alt) : fu_STR{});
 
     return ((((("("_fu + cond) + " ? "_fu) + cons) + " : "_fu) + alt) + ")"_fu;
 }
 
-static void cgAndOr_concat(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, fu_STR& src, const fu_STR& op, fu::view<s_SolvedNode> items, const bool parens)
+static void cgAndOr_concat(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, fu_STR& src_2, const fu_STR& op, fu::view<s_SolvedNode> items_5, const bool parens)
 {
-    const int mode = (M_RETBOOL | (parens && (items.size() == 1) ? M_PARENS : (*(const int*)fu::NIL)));
-    for (int i = 0; i < items.size(); i++)
+    const int mode = (M_RETBOOL | (parens && (items_5.size() == 1) ? M_PARENS : (*(const int*)fu::NIL)));
+    for (int i = 0; i < items_5.size(); i++)
     {
         if (i)
-            src += op;
+            src_2 += op;
 
-        src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[i], mode);
+        src_2 += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[i], mode);
     };
 }
 
-static fu_STR via(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, s_TEMPVAR& tv, const s_Type& type, const s_SolvedNode& expr)
+static fu_STR via(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, s_TEMPVAR& tv, const s_Type& type_3, const s_SolvedNode& expr)
 {
     if (isFieldChain(module_0, ctx_0, expr))
     {
-        fu_STR trivial = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, expr, 0);
+        fu_STR trivial = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, expr, 0);
         return ((trivial + " ? "_fu) + trivial) + " : "_fu;
     };
     if ((expr.kind == "copy"_fu) || (expr.kind == "move"_fu))
     {
-        const fu_STR& kind = expr.kind;
-        const s_SolvedNode& expr_1 = only_XB32(expr.items);
+        const fu_STR& kind_3 = expr.kind;
+        const s_SolvedNode& expr_1 = only_Vh3M(expr.items);
         if (isFieldChain(module_0, ctx_0, expr_1))
         {
-            fu_STR trivial = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, expr_1, 0);
-            return ((trivial + " ? "_fu) + cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, kind, type, trivial)) + " : "_fu;
+            fu_STR trivial = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, expr_1, 0);
+            return ((trivial + " ? "_fu) + cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, kind_3, type_3, trivial)) + " : "_fu;
         };
     };
-    return via(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, tv, type, cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, expr, 0));
+    return via(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, tv, type_3, cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, expr, 0));
 }
 
-static fu_STR cgOr(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgOr(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    const s_Type& type = node.type;
-    const fu_VEC<s_SolvedNode>& items = node.items;
+    const s_Type& type_3 = node_1.type;
+    const fu_VEC<s_SolvedNode>& items_5 = node_1.items;
     const bool stmt = !!(mode & M_STMT);
     if (stmt)
     {
-        fu_STR src = "if (!("_fu;
-        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " || "_fu, fu::get_view(items, 0, (items.size() - 1)), true);
-        src += "))"_fu;
-        src += blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[(items.size() - 1)], 0);
-        return src;
+        fu_STR src_2 = "if (!("_fu;
+        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " || "_fu, fu::get_view(items_5, 0, (items_5.size() - 1)), true);
+        src_2 += "))"_fu;
+        src_2 += blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[(items_5.size() - 1)], 0);
+        return src_2;
     };
-    fu_STR src = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
-    if (is_bool(type))
-        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " || "_fu, items, true);
+    fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
+    if (is_bool(type_3))
+        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " || "_fu, items_5, true);
     else
     {
         s_TEMPVAR tv {};
-        for (int i = 0; i < (items.size() - 1); i++)
+        for (int i = 0; i < (items_5.size() - 1); i++)
         {
             const s_SolvedNode* _0;
-            const s_SolvedNode& item = (*(_0 = &(items[i])) ? *_0 : fail(fu_STR{}));
+            const s_SolvedNode& item = (*(_0 = &(items_5[i])) ? *_0 : fail(fu_STR{}));
             s_SolvedNode tail { item };
             if (item.kind == "and"_fu)
             {
-                const fu_VEC<s_SolvedNode>& items_1 = item.items;
+                const fu_VEC<s_SolvedNode>& items_6 = item.items;
                 const s_SolvedNode* _1;
-                tail = (*(_1 = &(items_1[(items_1.size() - 1)])) ? *_1 : fail(fu_STR{}));
-                cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " && "_fu, fu::get_view(items_1, 0, (items_1.size() - 1)), bool{});
-                src += " && "_fu;
+                tail = (*(_1 = &(items_6[(items_6.size() - 1)])) ? *_1 : fail(fu_STR{}));
+                cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " && "_fu, fu::get_view(items_6, 0, (items_6.size() - 1)), bool{});
+                src_2 += " && "_fu;
             };
-            src += via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, tv, type, tail);
+            src_2 += via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, tv, type_3, tail);
         };
         const s_SolvedNode* _2;
-        const s_SolvedNode& tail = (*(_2 = &(items[(items.size() - 1)])) ? *_2 : fail(fu_STR{}));
-        src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, tail, 0);
+        const s_SolvedNode& tail = (*(_2 = &(items_5[(items_5.size() - 1)])) ? *_2 : fail(fu_STR{}));
+        src_2 += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, tail, 0);
     };
     if (!(mode & M_PARENS))
-        src += ")"_fu;
+        src_2 += ")"_fu;
 
-    return src;
+    return src_2;
 }
 
-static fu_STR cgAnd(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, fu::view<s_SolvedNode> items, const s_Type& type, const int mode)
+static fu_STR cgAnd(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, fu::view<s_SolvedNode> items_5, const s_Type& type_3, const int mode)
 {
     const bool stmt = !!(mode & M_STMT);
     if (stmt)
     {
-        fu_STR src = "if ("_fu;
-        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " && "_fu, fu::get_view(items, 0, (items.size() - 1)), true);
-        src += ")"_fu;
-        src += blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[(items.size() - 1)], 0);
-        return src;
+        fu_STR src_2 = "if ("_fu;
+        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " && "_fu, fu::get_view(items_5, 0, (items_5.size() - 1)), true);
+        src_2 += ")"_fu;
+        src_2 += blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[(items_5.size() - 1)], 0);
+        return src_2;
     };
-    fu_STR src = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
-    if (is_bool(type))
-        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " && "_fu, items, true);
+    fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
+    if (is_bool(type_3))
+        cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " && "_fu, items_5, true);
     else
     {
         s_TEMPVAR tv {};
-        if (is_mutref(type))
+        if (is_mutref(type_3))
         {
-            for (int i = 0; i < items.size(); i++)
+            for (int i = 0; i < items_5.size(); i++)
             {
-                const s_SolvedNode& item = items[i];
-                if (i < (items.size() - 1))
-                    src += ("!"_fu + via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, tv, type, item));
+                const s_SolvedNode& item = items_5[i];
+                if (i < (items_5.size() - 1))
+                    src_2 += ("!"_fu + via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, tv, type_3, item));
                 else
-                    src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, item, 0);
+                    src_2 += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, item, 0);
 
             };
         }
         else
         {
-            const int N = items.size();
-            const bool retSecondLast = is_never(items[(N - 1)].type);
+            const int N = items_5.size();
+            const bool retSecondLast = is_never(items_5[(N - 1)].type);
             const int condEnd = (retSecondLast ? (N - 2) : (N - 1));
-            cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, src, " && "_fu, fu::get_view(items, 0, condEnd), bool{});
+            cgAndOr_concat(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, src_2, " && "_fu, fu::get_view(items_5, 0, condEnd), bool{});
             if (retSecondLast)
             {
                 if (condEnd)
-                    src += " && "_fu;
+                    src_2 += " && "_fu;
 
-                src += ("!"_fu + via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, tv, type, items[(N - 2)]));
-                src += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[(N - 1)], 0);
+                src_2 += ("!"_fu + via(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, tv, type_3, items_5[(N - 2)]));
+                src_2 += cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[(N - 1)], 0);
             }
             else
             {
-                src += (" ? "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[(N - 1)], 0));
-                src += (" : "_fu + cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type));
+                src_2 += (" ? "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[(N - 1)], 0));
+                src_2 += (" : "_fu + cgDefault(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, type_3));
             };
         };
     };
     if (!(mode & M_PARENS))
-        src += ")"_fu;
+        src_2 += ")"_fu;
 
-    return src;
+    return src_2;
 }
 
-static fu_STR cgAnd(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgAnd(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    return cgAnd(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.items, node.type, mode);
+    return cgAnd(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.items, node_1.type, mode);
 }
 
 static fu_STR cgMain(fu_MAP<fu_STR, fu_STR>& _libs_0, int& _hasMain_0)
@@ -2255,17 +2283,17 @@ static fu_STR cgMain(fu_MAP<fu_STR, fu_STR>& _libs_0, int& _hasMain_0)
     return (((((((("\n\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"_fu) + "\n}\n"_fu;
 }
 
-static fu_STR collectDedupes(fu_VEC<fu_STR>&& values, const bool leadingNewline)
+static fu_STR collectDedupes(fu_VEC<fu_STR>&& values_1, const bool leadingNewline)
 {
-    if (!values.size())
+    if (!values_1.size())
         return fu_STR{};
 
-    fu_STR out = (leadingNewline ? "\n"_fu : fu_STR{});
-    fu::sort(values);
-    for (int i = 0; i < values.size(); i++)
-        out += values.mutref(i);
+    fu_STR out_1 = (leadingNewline ? "\n"_fu : fu_STR{});
+    fu::sort(values_1);
+    for (int i = 0; i < values_1.size(); i++)
+        out_1 += values_1.mutref(i);
 
-    return out;
+    return out_1;
 }
 
 static fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes, const bool leadingNewline)
@@ -2273,16 +2301,16 @@ static fu_STR collectDedupes(const fu_MAP<fu_STR, fu_STR>& dedupes, const bool l
     return collectDedupes(fu_VEC<fu_STR>(dedupes.m_values), leadingNewline);
 }
 
-static fu_STR cgRoot(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& root_1)
+static fu_STR cgRoot(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& root_3)
 {
     int count {};
-    fu_STR src = cgStatements(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, root_1.items, count, fu_STR{});
+    fu_STR src_2 = cgStatements(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, root_3.items, count, fu_STR{});
     fu_STR main = cgMain(_libs_0, _hasMain_0);
     fu_STR header = ((((collectDedupes(_libs_0, bool{}) + collectDedupes(_tfwd_0, true)) + collectDedupes(fu_VEC<fu_STR>(_ffwd_src_0), true)) + _tdef_0) + (_fdef_0 ? (("\n#ifndef FU_NO_FDEFs\n"_fu + _fdef_0) + "\n#endif\n"_fu) : fu_STR{}));
-    return (header + src) + main;
+    return (header + src_2) + main;
 }
 
-static fu_STR cgFnDef(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fndef, const int mode)
+static fu_STR cgFnDef(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& fndef, const int mode)
 {
     s_Overload o = GET(module_0, ctx_0, fndef.target);
     s_SolvedNode& n = o.solved;
@@ -2292,7 +2320,7 @@ static fu_STR cgFnDef(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<f
     if (!(n.kind == "fn"_fu))
         fail("cgFnDef non-fn"_fu);
 
-    return cgFn(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n, mode);
+    return cgFn(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n, mode);
 }
 
 static fu_STR cgEmpty(const int mode)
@@ -2300,20 +2328,20 @@ static fu_STR cgEmpty(const int mode)
     return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
 }
 
-static int left(const s_Target& target)
+static int left(const s_Target& target_5)
 {
-    return target.modid;
+    return target_5.modid;
 }
 
-static int right(const s_Target& target)
+static int right(const s_Target& target_5)
 {
-    return target.index;
+    return target_5.index;
 }
 
-static fu_STR cgJump(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgJump(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
-    const int dest_idx = left(node.target);
-    const int expr_idx = right(node.target);
+    const int dest_idx = left(node_1.target);
+    const int expr_idx = right(node_1.target);
     const bool use_return = (dest_idx == _current_fn_0.target.index);
     s_Overload dest = GET(module_0, ctx_0, s_Target { int(module_0.modid), int(dest_idx) });
     if (expr_idx)
@@ -2335,22 +2363,22 @@ static fu_STR cgJump(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
                 };
             };
             fu_STR assign = (hasval ? (("L_"_fu + dest.name) + "_v = "_fu) : fu_STR{});
-            fu_STR value = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, head, (!assign ? M_STMT : (*(const int*)fu::NIL)));
+            fu_STR value_3 = cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, head, (!assign ? M_STMT : (*(const int*)fu::NIL)));
             if (ptrflip)
-                value = (("&("_fu + value) + ")"_fu);
+                value_3 = (("&("_fu + value_3) + ")"_fu);
 
-            return (((("{ "_fu + assign) + value) + "; goto L_"_fu) + dest.name) + "; }"_fu;
+            return (((("{ "_fu + assign) + value_3) + "; goto L_"_fu) + dest.name) + "; }"_fu;
         };
         if (is_never(head.type))
         {
             if (is_never(dest.type))
-                return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, head, M_STMT);
+                return cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, head, M_STMT);
 
             if (is_void(dest.type))
-                return "return (void) "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, head, M_RETURN);
+                return "return (void) "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, head, M_RETURN);
 
         };
-        return "return "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, head, (M_PARENS | M_RETURN));
+        return "return "_fu + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, head, (M_PARENS | M_RETURN));
     };
     if (use_return)
         return "return"_fu;
@@ -2389,7 +2417,7 @@ inline constexpr int LOOP_POST_COND = 3;
 inline constexpr int LOOP_POST = 4;
                                 #endif
 
-static fu_STR cgLoop(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgLoop(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
     const int can_cont0 = _current_fn_0.can_cont;
     const int can_break0 = _current_fn_0.can_break;
@@ -2400,25 +2428,25 @@ static fu_STR cgLoop(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
     });
     _current_fn_0.can_cont = 0;
     _current_fn_0.can_break = 0;
-    const fu_VEC<s_SolvedNode>& items = node.items;
-    const s_SolvedNode& n_init = items[LOOP_INIT];
-    const s_SolvedNode& n_cond = items[LOOP_COND];
-    const s_SolvedNode& n_body = items[LOOP_BODY];
-    const s_SolvedNode& n_pcnd = items[LOOP_POST_COND];
-    const s_SolvedNode& n_post = items[LOOP_POST];
-    fu_STR init = (n_init ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n_init, M_STMT) : fu_STR{});
-    fu_STR cond = (n_cond ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n_cond, (M_RETBOOL | M_PARENS)) : fu_STR{});
-    fu_STR pcnd = (n_pcnd ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n_pcnd, M_RETBOOL) : fu_STR{});
-    fu_STR post = (n_post ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n_post, M_STMT) : fu_STR{});
-    const s_Target& label = node.target;
+    const fu_VEC<s_SolvedNode>& items_5 = node_1.items;
+    const s_SolvedNode& n_init = items_5[LOOP_INIT];
+    const s_SolvedNode& n_cond = items_5[LOOP_COND];
+    const s_SolvedNode& n_body = items_5[LOOP_BODY];
+    const s_SolvedNode& n_pcnd = items_5[LOOP_POST_COND];
+    const s_SolvedNode& n_post = items_5[LOOP_POST];
+    fu_STR init = (n_init ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n_init, M_STMT) : fu_STR{});
+    fu_STR cond = (n_cond ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n_cond, (M_RETBOOL | M_PARENS)) : fu_STR{});
+    fu_STR pcnd = (n_pcnd ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n_pcnd, M_RETBOOL) : fu_STR{});
+    fu_STR post = (n_post ? cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n_post, M_STMT) : fu_STR{});
+    const s_Target& label = node_1.target;
     _current_fn_0.can_break = label.index;
-    fu_STR body = (n_body ? blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, n_body, M_LOOP_BODY) : fu_STR{});
+    fu_STR body = (n_body ? blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, n_body, M_LOOP_BODY) : fu_STR{});
     fu_STR breakLabel {};
     s_Overload lbl = (label ? GET(module_0, ctx_0, label) : s_Overload{});
-    fu_STR& name = lbl.name;
-    if (body && name)
+    fu_STR& name_3 = lbl.name;
+    if (body && name_3)
     {
-        fu_STR brk = ("L_"_fu + name);
+        fu_STR brk = ("L_"_fu + name_3);
         if (fu::has(body, (("goto "_fu + brk) + ";"_fu)))
             breakLabel = ((" "_fu + brk) + ":;"_fu);
 
@@ -2441,89 +2469,89 @@ static fu_STR cgTryCatch(fu_STR& _indent_0, const fu_STR& tRy, const fu_STR& err
     return ((((((((((((((((_indent_0 + "try"_fu) + _indent_0) + "{"_fu) + tRy) + _indent_0) + "}"_fu) + _indent_0) + "catch (const std::exception& o_0)"_fu) + _indent_0) + "{"_fu) + _indent_0) + "    fu_STR "_fu) + ID(err)) + " = fu_TO_STR(o_0.what());\n"_fu) + cAtch) + _indent_0) + "}\n"_fu;
 }
 
-static fu_STR cgTryCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgTryCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
-    const fu_VEC<s_SolvedNode>& items = node.items;
-    fu_STR tRy = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[0], 0);
-    fu_STR err = GET(module_0, ctx_0, items[1].target).name;
-    fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[2], 0);
+    const fu_VEC<s_SolvedNode>& items_5 = node_1.items;
+    fu_STR tRy = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[0], 0);
+    fu_STR err = GET(module_0, ctx_0, items_5[1].target).name;
+    fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[2], 0);
     return cgTryCatch(_indent_0, tRy, err, cAtch);
 }
 
-static fu_STR cgCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgCatch(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
-    const fu_VEC<s_SolvedNode>& items = node.items;
-    const s_SolvedNode& var_name = items[0];
-    fu_STR try_init = (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[0].items[LET_INIT], 0) + ";"_fu);
-    fu_STR err = GET(module_0, ctx_0, items[1].target).name;
-    fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, items[2], 0);
-    fu_STR vardecl = (!is_never(var_name.type) ? (binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, var_name, false, true) + " = {};"_fu) : fu_STR{});
+    const fu_VEC<s_SolvedNode>& items_5 = node_1.items;
+    const s_SolvedNode& var_name = items_5[0];
+    fu_STR try_init = (cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[0].items[LET_INIT], 0) + ";"_fu);
+    fu_STR err = GET(module_0, ctx_0, items_5[1].target).name;
+    fu_STR cAtch = blockWrapSubstatement(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, items_5[2], 0);
+    fu_STR vardecl = (!is_never(var_name.type) ? (binding(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, var_name, false, true) + " = {};"_fu) : fu_STR{});
     return vardecl + cgTryCatch(_indent_0, (is_never(var_name.type) ? ((_indent_0 + "    "_fu) + try_init) : ((((_indent_0 + "    "_fu) + var_name.value) + " = "_fu) + try_init)), err, cAtch);
 }
 
-static fu_STR cgDefer(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node)
+static fu_STR cgDefer(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1)
 {
     include(_libs_0, "<fu/defer.h>"_fu);
-    fu_STR which = ((node.value == "err"_fu) ? "fu_DEFER_IF_ERR"_fu : ((node.value == "ok"_fu) ? "fu_DEFER_IF_OK"_fu : "fu_DEFER"_fu));
-    return ((which + "("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, only_XB32(node.items), M_STMT)) + ")"_fu;
+    fu_STR which = ((node_1.value == "err"_fu) ? "fu_DEFER_IF_ERR"_fu : ((node_1.value == "ok"_fu) ? "fu_DEFER_IF_OK"_fu : "fu_DEFER"_fu));
+    return ((which + "("_fu) + cgNode(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, only_Vh3M(node_1.items), M_STMT)) + ")"_fu;
 }
 
-static fu_STR cgNode(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node, const int mode)
+static fu_STR cgNode(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu_STR, fu_STR>& _libs_0, fu_MAP<fu_STR, fu_STR>& _tfwd_0, fu_VEC<s_BitSet>& _ffwd_0, fu_VEC<fu_STR>& _ffwd_src_0, s_BitSet& _idef_0, fu_STR& _tdef_0, fu_STR& _fdef_0, fu_STR& _indent_0, int& _hasMain_0, fu_VEC<int>& _unity_0, fu_VEC<int>& _unity_because_0, s_cg_CurrentFn& _current_fn_0, const s_SolvedNode& node_1, const int mode)
 {
-    const fu_STR& k = node.kind;
+    const fu_STR& k = node_1.kind;
     if (k == "call"_fu)
-        return cgCall(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgCall(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "int"_fu)
-        return cgLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node);
+        return cgLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1);
 
     if (k == "real"_fu)
-        return cgLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node);
+        return cgLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _tdef_0, _current_fn_0, node_1);
 
     if (k == "char"_fu)
-        return cgCharLiteral(node);
+        return cgCharLiteral(node_1);
 
     if (k == "str"_fu)
-        return cgStringLiteral(_libs_0, node);
+        return cgStringLiteral(_libs_0, node_1);
 
     if (k == "arrlit"_fu)
-        return cgArrayLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgArrayLiteral(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "definit"_fu)
-        return cgDefaultInit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgDefaultInit(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "copy"_fu)
-        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "move"_fu)
-        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "nrvo"_fu)
-        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgMoveOrClone(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "if"_fu)
-        return cgIf(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgIf(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "or"_fu)
-        return cgOr(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgOr(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "and"_fu)
-        return cgAnd(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgAnd(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "let"_fu)
-        return cgLet(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, !_current_fn_0.target.index, bool{});
+        return cgLet(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, !_current_fn_0.target.index, bool{});
 
     if (k == "root"_fu)
-        return cgRoot(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgRoot(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     if (k == "block"_fu)
-        return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "argid"_fu)
-        return cgComma(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node.items);
+        return cgComma(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1.items);
 
     if (k == "fndef"_fu)
-        return cgFnDef(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgFnDef(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "struct"_fu)
         return cgEmpty(mode);
@@ -2532,27 +2560,27 @@ static fu_STR cgNode(const s_Module& module_0, const s_Context& ctx_0, fu_MAP<fu
         return cgEmpty(mode);
 
     if (!(mode & M_STMT))
-        return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node, mode);
+        return cgBlock(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1, mode);
 
     if (k == "jump"_fu)
-        return cgJump(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgJump(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     if (k == "loop"_fu)
-        return cgLoop(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgLoop(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     if (k == "try"_fu)
-        return cgTryCatch(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgTryCatch(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     if (k == "catch"_fu)
-        return cgCatch(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgCatch(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     if (k == "defer"_fu)
-        return cgDefer(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _current_fn_0, node);
+        return cgDefer(module_0, ctx_0, _libs_0, _tfwd_0, _ffwd_0, _ffwd_src_0, _idef_0, _tdef_0, _fdef_0, _indent_0, _hasMain_0, _unity_0, _unity_because_0, _current_fn_0, node_1);
 
     fail(("TODO: "_fu + k));
 }
 
-fu_STR cpp_codegen(const s_SolvedNode& root, const s_Module& module, const s_Context& ctx)
+s_CodegenOutput cpp_codegen(const s_SolvedNode& root_2, const s_Module& module, const s_Context& ctx)
 {
     fu_MAP<fu_STR, fu_STR> _libs {};
     fu_MAP<fu_STR, fu_STR> _tfwd {};
@@ -2563,12 +2591,14 @@ fu_STR cpp_codegen(const s_SolvedNode& root, const s_Module& module, const s_Con
     fu_STR _fdef {};
     fu_STR _indent = "\n"_fu;
     int _hasMain {};
+    fu_VEC<int> _unity {};
+    fu_VEC<int> _unity_because {};
     s_cg_CurrentFn _current_fn {};
-    if (!(root.kind == "root"_fu))
+    if (!(root_2.kind == "root"_fu))
         fail(fu_STR{});
 
-    fu_STR src = cgNode(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, _current_fn, root, 0);
-    return src;
+    fu_STR src_2 = cgNode(module, ctx, _libs, _tfwd, _ffwd, _ffwd_src, _idef, _tdef, _fdef, _indent, _hasMain, _unity, _unity_because, _current_fn, root_2, 0);
+    return s_CodegenOutput { fu_VEC<int>(_unity), fu_VEC<int>(_unity_because), fu_STR(src_2) };
 }
 
 #endif

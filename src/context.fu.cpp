@@ -11,6 +11,7 @@
 #include <fu/vec/slice.h>
 
 struct s_Argument;
+struct s_CodegenOutput;
 struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
@@ -133,11 +134,13 @@ struct s_ParserOutput
 {
     s_Node root;
     fu_VEC<fu_STR> fuzimports;
+    fu_VEC<fu_STR> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || fuzimports
+            || warnings
         ;
     }
 };
@@ -478,6 +481,7 @@ struct s_Scope
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
+    int pub_count;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -490,6 +494,7 @@ struct s_Scope
             || imports
             || usings
             || converts
+            || pub_count
         ;
     }
 };
@@ -517,6 +522,24 @@ struct s_SolverOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_CodegenOutput
+                                #define DEF_s_CodegenOutput
+struct s_CodegenOutput
+{
+    fu_VEC<int> unity;
+    fu_VEC<int> unity_because;
+    fu_STR src;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || unity
+            || unity_because
+            || src
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleOutputs
                                 #define DEF_s_ModuleOutputs
 struct s_ModuleOutputs
@@ -524,7 +547,7 @@ struct s_ModuleOutputs
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
-    fu_STR cpp;
+    s_CodegenOutput cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -639,7 +662,7 @@ fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return fu_STR(ctx.modules[idx.modid].fname);
 }
 
-static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& ctx_0, const fu_STR& path_0)
+static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_3_0, s_Context& ctx_0, const fu_STR& path_0)
 {
     const bool exists = (fu::file_size(path_0) >= 0);
     if (exists)
@@ -647,7 +670,7 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& 
 
 
     {
-        fu_STR path_1 = ((from_0 + "lib/"_fu) + name_0);
+        fu_STR path_1 = ((from_0 + "lib/"_fu) + name_3_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -655,7 +678,7 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& 
     };
 
     {
-        fu_STR path_1 = ((from_0 + "vendor/"_fu) + name_0);
+        fu_STR path_1 = ((from_0 + "vendor/"_fu) + name_3_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -663,7 +686,7 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& 
     };
 
     {
-        fu_STR path_1 = ((from_0 + "fu/lib/"_fu) + name_0);
+        fu_STR path_1 = ((from_0 + "fu/lib/"_fu) + name_3_0);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -673,17 +696,17 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_0, s_Context& 
     if (!fallback || (fallback.size() >= from_0.size()))
         return fu_STR{};
 
-    return resolveFile(fallback, name_0, ctx_0);
+    return resolveFile(fallback, name_3_0, ctx_0);
 }
 
-static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)
+static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
-    fu_STR path = (from + name);
+    fu_STR path = (from + name_3);
     fu_STR cached { ctx.fuzzy[path] };
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    fu_STR resolve = tryResolve(from, name, ctx, path);
+    fu_STR resolve = tryResolve(from, name_3, ctx, path);
     (ctx.fuzzy.upsert(path) = (resolve ? fu_STR(resolve) : "\v"_fu));
     return resolve;
 }
@@ -694,14 +717,14 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
     if (fuzzy > 0)
     {
         fu_STR from = fu::slice(path, 0, fuzzy);
-        fu_STR name = fu::slice(path, (fuzzy + 1));
-        if (from && name && !fu::has(name, std::byte('\v')))
+        fu_STR name_3 = fu::slice(path, (fuzzy + 1));
+        if (from && name_3 && !fu::has(name_3, std::byte('\v')))
         {
-            fu_STR res = resolveFile(from, name, ctx);
+            fu_STR res = resolveFile(from, name_3, ctx);
             if (res)
                 return res;
 
-            fu_STR prepopulated = (from + name);
+            fu_STR prepopulated = (from + name_3);
             if (fu::has(ctx.files, prepopulated))
                 return prepopulated;
 
@@ -728,16 +751,16 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
     return read;
 }
 
-s_Module& getModule(const fu_STR& fname, s_Context& ctx)
+s_Module& getModule(const fu_STR& fname_2, s_Context& ctx)
 {
     for (int i = 0; i < ctx.modules.size(); i++)
     {
-        if (ctx.modules.mutref(i).fname == fname)
+        if (ctx.modules.mutref(i).fname == fname_2)
             return ctx.modules.mutref(i);
 
     };
     const int i = ctx.modules.size();
-    ctx.modules.push(s_Module { int(i), fu_STR(fname), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
+    ctx.modules.push(s_Module { int(i), fu_STR(fname_2), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
     return ctx.modules.mutref(i);
 }
 
@@ -757,9 +780,9 @@ inline const fu_STR& clone_YeU3(const fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_wTk9
-                                #define DEFt_clone_wTk9
-inline const s_ModuleInputs& clone_wTk9(const s_ModuleInputs& a)
+                                #ifndef DEFt_clone_MAvM
+                                #define DEFt_clone_MAvM
+inline const s_ModuleInputs& clone_MAvM(const s_ModuleInputs& a)
 {
     return a;
 }
@@ -773,114 +796,123 @@ inline const fu_VEC<int>& clone_I28a(const fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_RsM6
-                                #define DEFt_clone_RsM6
-inline const fu_VEC<s_Struct>& clone_RsM6(const fu_VEC<s_Struct>& a)
+                                #ifndef DEFt_clone_mnFp
+                                #define DEFt_clone_mnFp
+inline const fu_VEC<s_Struct>& clone_mnFp(const fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_e505
-                                #define DEFt_clone_e505
-inline const s_SolvedNode& clone_e505(const s_SolvedNode& a)
+                                #ifndef DEFt_clone_eMx0
+                                #define DEFt_clone_eMx0
+inline const s_SolvedNode& clone_eMx0(const s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_QkHS
-                                #define DEFt_clone_QkHS
-inline const fu_VEC<s_ScopeItem>& clone_QkHS(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_lMT8
+                                #define DEFt_clone_lMT8
+inline const fu_VEC<s_ScopeItem>& clone_lMT8(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_sKWF
-                                #define DEFt_clone_sKWF
-inline const fu_VEC<s_Overload>& clone_sKWF(const fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_CCvd
+                                #define DEFt_clone_CCvd
+inline const fu_VEC<s_Overload>& clone_CCvd(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_DRKs
-                                #define DEFt_clone_DRKs
-inline const fu_VEC<s_Target>& clone_DRKs(const fu_VEC<s_Target>& a)
+                                #ifndef DEFt_clone_mnBR
+                                #define DEFt_clone_mnBR
+inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_NfTs
-                                #define DEFt_clone_NfTs
-inline s_Scope clone_NfTs(const s_Scope& a)
+                                #ifndef DEFt_clone_LzbS
+                                #define DEFt_clone_LzbS
+inline s_Scope clone_LzbS(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_QkHS(a.items);
-        res.overloads = clone_sKWF(a.overloads);
+        res.items = clone_lMT8(a.items);
+        res.overloads = clone_CCvd(a.overloads);
         res.imports = clone_I28a(a.imports);
-        res.usings = clone_DRKs(a.usings);
-        res.converts = clone_DRKs(a.converts);
+        res.usings = clone_mnBR(a.usings);
+        res.converts = clone_mnBR(a.converts);
+        res.pub_count = clone_U3Pf(a.pub_count);
     };
     return res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_7EYp
-                                #define DEFt_clone_7EYp
-inline s_SolverOutput clone_7EYp(const s_SolverOutput& a)
+                                #ifndef DEFt_clone_v5Nc
+                                #define DEFt_clone_v5Nc
+inline s_SolverOutput clone_v5Nc(const s_SolverOutput& a)
 {
     s_SolverOutput res {};
 
     {
-        res.root = clone_e505(a.root);
-        res.scope = clone_NfTs(a.scope);
+        res.root = clone_eMx0(a.root);
+        res.scope = clone_LzbS(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_KHmT
-                                #define DEFt_clone_KHmT
-inline s_ModuleOutputs clone_KHmT(const s_ModuleOutputs& a)
-{
-    s_ModuleOutputs res {};
-
-    {
-        res.deps = clone_I28a(a.deps);
-        res.types = clone_RsM6(a.types);
-        res.solve = clone_7EYp(a.solve);
-        res.cpp = clone_YeU3(a.cpp);
-    };
-    return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_0nZo
-                                #define DEFt_clone_0nZo
-inline const s_ModuleStats& clone_0nZo(const s_ModuleStats& a)
+                                #ifndef DEFt_clone_Z1e1
+                                #define DEFt_clone_Z1e1
+inline const s_CodegenOutput& clone_Z1e1(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_UnoC
-                                #define DEFt_clone_UnoC
-inline s_Module clone_UnoC(const s_Module& a)
+                                #ifndef DEFt_clone_1Fpu
+                                #define DEFt_clone_1Fpu
+inline s_ModuleOutputs clone_1Fpu(const s_ModuleOutputs& a)
+{
+    s_ModuleOutputs res {};
+
+    {
+        res.deps = clone_I28a(a.deps);
+        res.types = clone_mnFp(a.types);
+        res.solve = clone_v5Nc(a.solve);
+        res.cpp = clone_Z1e1(a.cpp);
+    };
+    return res;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_rT76
+                                #define DEFt_clone_rT76
+inline const s_ModuleStats& clone_rT76(const s_ModuleStats& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_PUXh
+                                #define DEFt_clone_PUXh
+inline s_Module clone_PUXh(const s_Module& a)
 {
     s_Module res {};
 
     {
         res.modid = clone_U3Pf(a.modid);
         res.fname = clone_YeU3(a.fname);
-        res.in = clone_wTk9(a.in);
-        res.out = clone_KHmT(a.out);
-        res.stats = clone_0nZo(a.stats);
+        res.in = clone_MAvM(a.in);
+        res.out = clone_1Fpu(a.out);
+        res.stats = clone_rT76(a.stats);
     };
     return res;
 }
@@ -892,28 +924,28 @@ void setModule(const s_Module& module, s_Context& ctx)
     if (!(current.fname == module.fname))
         fu_ASSERT();
 
-    current = clone_UnoC(module);
+    current = clone_PUXh(module);
 }
 
-const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
-    if (type.vtype.modid == module.modid)
+    if (type_3.vtype.modid == module.modid)
     {
         const s_Struct* _0;
-        return *(_0 = &(module.out.types[structIndex(type.vtype.canon)])) ? *_0 : fu_ASSERT();
+        return *(_0 = &(module.out.types[structIndex(type_3.vtype.canon)])) ? *_0 : fu_ASSERT();
     };
     const s_Struct* _1;
-    return *(_1 = &(ctx.modules[type.vtype.modid].out.types[structIndex(type.vtype.canon)])) ? *_1 : fu_ASSERT();
+    return *(_1 = &(ctx.modules[type_3.vtype.modid].out.types[structIndex(type_3.vtype.canon)])) ? *_1 : fu_ASSERT();
 }
 
-const fu_VEC<int>& lookupTypeImports(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<int>& lookupTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type) ? lookupStruct(type, module, ctx).imports : (*(const fu_VEC<int>*)fu::NIL);
+    return isStruct(type_3) ? lookupStruct(type_3, module, ctx).imports : (*(const fu_VEC<int>*)fu::NIL);
 }
 
-const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type) ? lookupStruct(type, module, ctx).converts : (*(const fu_VEC<s_Target>*)fu::NIL);
+    return isStruct(type_3) ? lookupStruct(type_3, module, ctx).converts : (*(const fu_VEC<s_Target>*)fu::NIL);
 }
 
 #endif

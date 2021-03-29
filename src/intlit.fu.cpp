@@ -58,11 +58,11 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
             continue;
 
         const uint64_t ci = (uint64_t(c) - ((c < std::byte('a')) ? uint64_t(std::byte('0')) : uint64_t(std::byte('a'))));
-        const uint64_t last = absval;
+        const uint64_t last_1 = absval;
         absval *= base;
         absval += ci;
         fu_STR* _0;
-        (*(_0 = &(error)) ? *_0 : *_0 = ((last != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
+        (*(_0 = &(error)) ? *_0 : *_0 = ((last_1 != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
     };
     const bool uNsigned = ((suffix == std::byte('u')) || (base != 10ull));
     const bool negative = (sign == std::byte('-'));

@@ -25,9 +25,9 @@ int main(int argc, const char * argv[])
 {
     cow_vec_tests();
     self_test();
-    // runTestsAndBuildCompiler();
+    runTestsAndBuildCompiler();
 
-    TaskStack_Test();
+    // TaskStack_Test();
 
     return 0;
 }

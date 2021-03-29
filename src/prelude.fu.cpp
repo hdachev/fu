@@ -3,16 +3,19 @@
 #include <fu/vec.h>
 
 struct s_Argument;
+struct s_CodegenOutput;
 struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
+struct s_Lint;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
 struct s_ModuleStat;
 struct s_ModuleStats;
 struct s_Node;
+struct s_Options;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Region;
@@ -33,7 +36,8 @@ struct s_ValueType;
 
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
-s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&);
+s_Options Options_default();
+s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&, const s_Options&);
 s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
 void setModule(const s_Module&, s_Context&);
 
@@ -125,11 +129,13 @@ struct s_ParserOutput
 {
     s_Node root;
     fu_VEC<fu_STR> fuzimports;
+    fu_VEC<fu_STR> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || fuzimports
+            || warnings
         ;
     }
 };
@@ -470,6 +476,7 @@ struct s_Scope
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
+    int pub_count;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -482,6 +489,7 @@ struct s_Scope
             || imports
             || usings
             || converts
+            || pub_count
         ;
     }
 };
@@ -509,6 +517,24 @@ struct s_SolverOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_CodegenOutput
+                                #define DEF_s_CodegenOutput
+struct s_CodegenOutput
+{
+    fu_VEC<int> unity;
+    fu_VEC<int> unity_because;
+    fu_STR src;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || unity
+            || unity_because
+            || src
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleOutputs
                                 #define DEF_s_ModuleOutputs
 struct s_ModuleOutputs
@@ -516,7 +542,7 @@ struct s_ModuleOutputs
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
-    fu_STR cpp;
+    s_CodegenOutput cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -619,6 +645,34 @@ struct s_Context
 };
                                 #endif
 
+                                #ifndef DEF_s_Lint
+                                #define DEF_s_Lint
+struct s_Lint
+{
+    int maxwarn;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || maxwarn
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Options
+                                #define DEF_s_Options
+struct s_Options
+{
+    s_Lint lint;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || lint
+        ;
+    }
+};
+                                #endif
+
 #ifndef FU_NO_FDEFs
 
 static const fu_STR prelude_src = "\n\n\n// Some lolcode.\n\nfn STEAL (a: &mut $T): $T __native;\nfn CLONE (a: &    $T) case ($T -> @copy): $T __native;\nfn SWAP  (a: &mut $T, b: &mut $T): void __native(\"<utility>\", \"std::swap\");\n\nfn println(): void __native;\nfn println(a: $A): void __native;\nfn println(a: $A, b: $B): void __native;\nfn println(a: $A, b: $B, c: $C): void __native;\nfn println(a: $A, b: $B, c: $C, d: $D): void __native;\nfn println(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;\nfn println(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;\n\n\n// Arithmetics.\n\nfn +(a: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T) case ($T -> @arithmetic): $T __native;\n\nfn +(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\nfn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;\n\nfn %(a: $T, b: $T)\n    case ($T -> @integral): $T __native;\n    case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::fmod\");\n\nfn ++(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;\nfn --(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;\npostfix fn ++(a: &mut $T) case ($T -> @arithmetic): $T __native;\npostfix fn --(a: &mut $T) case ($T -> @arithmetic): $T __native;\n\nfn +=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;\nfn -=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;\nfn *=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;\nfn /=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;\n\nfn ==(a: $T, b: $T) case ($T -> @primitive): bool __native;\nfn !=(a: $T, b: $T) case ($T -> @primitive): bool __native;\n\nfn > (a: $T, b: $T) case ($T -> @primitive): bool __native;\nfn < (a: $T, b: $T) case ($T -> @primitive): bool __native;\nfn >=(a: $T, b: $T) case ($T -> @primitive): bool __native;\nfn <=(a: $T, b: $T) case ($T -> @primitive): bool __native;\n\n\n// Bitwise.\n\nfn  ~(a: $T)        case ($T -> @integral): $T __native;\nfn  &(a: $T, b: $T) case ($T -> @integral): $T __native;\nfn  |(a: $T, b: $T) case ($T -> @integral): $T __native;\nfn  ^(a: $T, b: $T) case ($T -> @integral): $T __native;\nfn <<(a: $T, b: $T) case ($T -> @integral): $T __native;\nfn >>(a: $T, b: $T) case ($T -> @integral): $T __native;\n\nfn  &=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;\nfn  |=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;\nfn  ^=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;\nfn <<=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;\nfn >>=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;\n\n\n// Numeric conversions.\n\nfn  i8(v: $T) case ($T -> @primitive):  i8 __native(\"<cstdint>\",  \"int8_t\");\nfn i16(v: $T) case ($T -> @primitive): i16 __native(\"short\");\nfn i32(v: $T) case ($T -> @primitive): i32 __native(\"int\");\nfn i64(v: $T) case ($T -> @primitive): i64 __native(\"<cstdint>\", \"int64_t\");\n\nfn  u8(v: $T) case ($T -> @primitive):  u8 __native(\"<cstdint>\",  \"uint8_t\");\nfn u16(v: $T) case ($T -> @primitive): u16 __native(\"<cstdint>\", \"uint16_t\");\nfn u32(v: $T) case ($T -> @primitive): u32 __native(\"<cstdint>\", \"uint32_t\");\nfn u64(v: $T) case ($T -> @primitive): u64 __native(\"<cstdint>\", \"uint64_t\");\n\nfn f32(v: $T) case ($T -> @primitive): f32 __native(\"float\");\nfn f64(v: $T) case ($T -> @primitive): f64 __native(\"double\");\n\nfn byte(v: $T) case ($T -> @primitive): byte __native(\"<cstddef>\", \"std::byte\");\n\n\n// Math.\n\nfn abs(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::abs\");\nfn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native(\"<algorithm>\", \"std::max\");\nfn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native(\"<algorithm>\", \"std::min\");\n\nfn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::exp\");\nfn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::exp2\");\nfn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::log\");\nfn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::log10\");\nfn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::log2\");\n\nfn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::pow\");\nfn sqrt (v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::sqrt\");\nfn cbrt (v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::cbrt\");\nfn hypot(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::hypot\");\n\nfn ceil (v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::ceil\");\nfn floor(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::floor\");\nfn trunc(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::trunc\");\nfn round(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::round\");\n\nfn sin(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::sin\");\nfn cos(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::cos\");\nfn tan(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::tan\");\n\nfn asin(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::asin\");\nfn acos(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::acos\");\nfn atan(v: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::atan\");\n\nfn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native(\"<cmath>\", \"std::atan2\");\n\nfn PI():  f64 __native(\"<math.h>\", \"M_PI\");\nfn E():   f64 __native(\"<math.h>\", \"M_E\");\nfn INF(): f64 __native(\"<math.h>\", \"INFINITY\");\nfn NAN(): f64 __native(\"<math.h>\", \"NAN\");\n\nfn nan(v: $T) case ($T -> @floating_point): bool __native(\"<cmath>\", \"std::isnan\");\nfn inf(v: $T) case ($T -> @floating_point): bool __native(\"<cmath>\", \"std::isinf\");\nfn finite(v: $T) case ($T -> @floating_point): bool __native(\"<cmath>\", \"std::isfinite\");\n\n\n// Logic.\n\nfn !(v: $T): bool __native;\nfn true (): bool __native(\"true\");\nfn false(): bool __native(\"false\");\n\n\n// Assignment.\n\nfn   =(a: &mut $T, mut b: $T): &mut $T __native;\nfn ||=(a: &mut $T, mut b: $T): &mut $T __native;\nfn &&=(a: &mut $T, mut b: $T): void __native;\n\n\n// Arrays.\n//\n// TODO mutval push/insert/unshift, just like the assignments above.\n// TODO trivial .=\n\nfn len (a: [$T]): i32 __native(\".size()\");\n\nfn [](a: [$T], i: i32)\n    case ($a -> &mut $T[]): &mut $T __native;\n    case ($a -> &mut [$T]): &mut $T __native;\n    case ($a -> &    [$T]): &    $T __native;\n    case ($a ->      $T[]):      $T __native;\n\nfn [](a: [$T], start: i32, end: i32)\n    case ($a -> &mut $T[]): &mut [$T] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    case ($a -> &mut [$T]): &mut [$T] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    case ($a -> &    [$T]): &    [$T] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn    push(a: &mut $T[], b: $T): void __native(\".push\");\nfn unshift(a: &mut $T[], b: $T): void __native(\".unshift\");\nfn  insert(a: &mut $T[], i: i32, b: $T): void __native(\".insert\");\n\nfn  slice(a: $T[], start: i32, end: i32): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn  slice(a: $T[], start: i32): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn substr(a: $T[], start: i32, end: i32): $T[] __native(\"<fu/vec/slice.h>\", \"fu::substr\");\n\nfn splice(a: &mut $T[], start: i32, count: i32): void  __native(\".splice\");\nfn splice(a: &mut $T[], start: i32, count: i32, b: [$T]): void  __native(\".splice\");\n\nfn    pop(a: &mut $T[]): void __native(\".pop()\");\nfn  shift(a: &mut $T[]): void __native(\".shift()\");\n\nfn  clear(a: &mut $T[]): void __native(\".clear()\");\nfn shrink(a: &mut $T[], len: i32): void __native(\".shrink\");\n\nfn resize(a: &mut $T[], len: i32): void __native(\".resize\");\nfn   grow(a: &mut $T[], len: i32): void __native(\".grow\");\n\nfn resize_junk(a: &mut $T[], len: i32): void __native(\".resize<false>\");\nfn   grow_junk(a: &mut $T[], len: i32): void __native(\".grow<false>\");\n\nfn sort(a: &mut $T[]): void __native(\"<fu/vec/sort.h>\", \"fu::sort\");\n\n\n// String likes.\n\nfn ==(a: [$T], b: [$T]) case ($T -> @primitive): bool __native(\"<fu/vec/cmp.h>\", \"==\");\nfn !=(a: [$T], b: [$T]) case ($T -> @primitive): bool __native(\"<fu/vec/cmp.h>\", \"!=\");\n\nfn starts(a: [$T], with: [$T]) case ($T -> @primitive): bool __native(\"<fu/vec/find.h>\", \"fu::lmatch\");\nfn   ends(a: [$T], with: [$T]) case ($T -> @primitive): bool __native(\"<fu/vec/find.h>\", \"fu::rmatch\");\nfn starts(a: [$T], with:   $T) case ($T -> @primitive): bool __native(\"<fu/vec/find.h>\", \"fu::lmatch\");\nfn   ends(a: [$T], with:   $T) case ($T -> @primitive): bool __native(\"<fu/vec/find.h>\", \"fu::rmatch\");\n\nfn find(a: [$T], b: [$T], start = 0) case ($T -> @primitive): i32  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn has (a: [$T], b: [$T])            case ($T -> @primitive): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Strings.\n\ntype string = byte[];\n\nfn  >(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \">\");\nfn  <(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \"<\");\nfn >=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \">=\");\nfn <=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \"<=\");\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn   split(str: string, sep: string): string[] __native(\"<fu/vec/split.h>\", \"fu::split\");\nfn    join(a: string[], sep: string): string __native(\"<fu/vec/join.h>\", \"fu::join\");\nfn replace(in: string, all: string, with: string): string __native(\"<fu/vec/replace.h>\", \"fu::replace\");\n\n\n// D-style concats.\n\nfn ~(a: [$T], b: [$T]): $T[] __native(\"<fu/vec/concat.h>\",     \"+\");\nfn ~(a: [$T], b:  $T ): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\nfn ~(a:  $T , b: [$T]): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\n\nfn ~=(a: &mut $T[], b: [$T]): &mut $T[] __native(\"<fu/vec/concat.h>\",     \"+=\");\nfn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native(\"<fu/vec/concat_one.h>\", \"+=\");\n\nfn ~ (a: string, b: $T)      case ($T -> @arithmetic):      string __native(\"<fu/vec/concat_str.h>\", \"+\");\nfn ~ (a: $T, b: string)      case ($T -> @arithmetic):      string __native(\"<fu/vec/concat_str.h>\", \"+\");\nfn ~=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native(\"<fu/vec/concat_str.h>\", \"+=\");\n\n\n// Maps.\n\nfn [](a: &Map($K, $V), b: $K)\n    case ($a -> &mut Map($K, $V)): &mut $V __native;\n    case ($a -> &    Map($K, $V)): &    $V __native;\n    case ($a ->      Map($K, $V)):      $V __native;\n\nfn keys  (a: &Map($K, $V)): &$K[] __native(\".m_keys\");\nfn values(a: &Map($K, $V)): &$V[] __native(\".m_values\");\nfn has   (a: Map($K, $V), b: $K): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Fun with views.\n\nfn view(a: [$T], t: $U)\n    case ($a -> &mut [$T] && $T -> @trivial && $U -> @trivial): &mut [$U] __native(\"<fu/view.h>\", \"fu::view_of_mut\");\n    case (                   $T -> @trivial && $U -> @trivial):      [$U] __native(\"<fu/view.h>\", \"fu::view_of\");\n\nfn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native(\"<fu/view.h>\", \"fu::view_assign\");\n\n\n// Assertions, bugs & fails.\n//  TODO i dont actually think we want to have nullary stuff in prelude,\n//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.\n\nfn throw(reason: string): never __native(\"<fu/never.h>\", \"fu::fail\");\nfn assert(): never __native(\"<fu/never.h>\", \"fu_ASSERT()\");\nfn TODO(): never __native(\"<fu/never.h>\", \"fu_TODO()\");\n\n\n// TODO FIX: these here mean to support arrays of strings.\n\nfn find(a: [$T], b: $T, start = 0): i32  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn has (a: [$T], b: $T):            bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n"_fu;
@@ -639,9 +693,9 @@ inline fu_STR& clone_jB4B(fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_udgC
-                                #define DEFt_clone_udgC
-inline s_ModuleInputs& clone_udgC(s_ModuleInputs& a)
+                                #ifndef DEFt_clone_MSxx
+                                #define DEFt_clone_MSxx
+inline s_ModuleInputs& clone_MSxx(s_ModuleInputs& a)
 {
     return a;
 }
@@ -655,114 +709,123 @@ inline fu_VEC<int>& clone_mrln(fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_zQF6
-                                #define DEFt_clone_zQF6
-inline fu_VEC<s_Struct>& clone_zQF6(fu_VEC<s_Struct>& a)
+                                #ifndef DEFt_clone_Z8AT
+                                #define DEFt_clone_Z8AT
+inline fu_VEC<s_Struct>& clone_Z8AT(fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_R7Io
-                                #define DEFt_clone_R7Io
-inline s_SolvedNode& clone_R7Io(s_SolvedNode& a)
+                                #ifndef DEFt_clone_7Uy6
+                                #define DEFt_clone_7Uy6
+inline s_SolvedNode& clone_7Uy6(s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_j8Mo
-                                #define DEFt_clone_j8Mo
-inline fu_VEC<s_ScopeItem>& clone_j8Mo(fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_wtPU
+                                #define DEFt_clone_wtPU
+inline fu_VEC<s_ScopeItem>& clone_wtPU(fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_Zi4U
-                                #define DEFt_clone_Zi4U
-inline fu_VEC<s_Overload>& clone_Zi4U(fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_uLeQ
+                                #define DEFt_clone_uLeQ
+inline fu_VEC<s_Overload>& clone_uLeQ(fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_pHkT
-                                #define DEFt_clone_pHkT
-inline fu_VEC<s_Target>& clone_pHkT(fu_VEC<s_Target>& a)
+                                #ifndef DEFt_clone_uIm6
+                                #define DEFt_clone_uIm6
+inline fu_VEC<s_Target>& clone_uIm6(fu_VEC<s_Target>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_5h8t
-                                #define DEFt_clone_5h8t
-inline s_Scope clone_5h8t(s_Scope& a)
+                                #ifndef DEFt_clone_Wa46
+                                #define DEFt_clone_Wa46
+inline s_Scope clone_Wa46(s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_j8Mo(a.items);
-        res.overloads = clone_Zi4U(a.overloads);
+        res.items = clone_wtPU(a.items);
+        res.overloads = clone_uLeQ(a.overloads);
         res.imports = clone_mrln(a.imports);
-        res.usings = clone_pHkT(a.usings);
-        res.converts = clone_pHkT(a.converts);
+        res.usings = clone_uIm6(a.usings);
+        res.converts = clone_uIm6(a.converts);
+        res.pub_count = clone_cBw5(a.pub_count);
     };
     return res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_FES7
-                                #define DEFt_clone_FES7
-inline s_SolverOutput clone_FES7(s_SolverOutput& a)
+                                #ifndef DEFt_clone_Pu6M
+                                #define DEFt_clone_Pu6M
+inline s_SolverOutput clone_Pu6M(s_SolverOutput& a)
 {
     s_SolverOutput res {};
 
     {
-        res.root = clone_R7Io(a.root);
-        res.scope = clone_5h8t(a.scope);
+        res.root = clone_7Uy6(a.root);
+        res.scope = clone_Wa46(a.scope);
         res.notes = clone_cBw5(a.notes);
     };
     return res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_JkQQ
-                                #define DEFt_clone_JkQQ
-inline s_ModuleOutputs clone_JkQQ(s_ModuleOutputs& a)
-{
-    s_ModuleOutputs res {};
-
-    {
-        res.deps = clone_mrln(a.deps);
-        res.types = clone_zQF6(a.types);
-        res.solve = clone_FES7(a.solve);
-        res.cpp = clone_jB4B(a.cpp);
-    };
-    return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_krr2
-                                #define DEFt_clone_krr2
-inline s_ModuleStats& clone_krr2(s_ModuleStats& a)
+                                #ifndef DEFt_clone_tPpZ
+                                #define DEFt_clone_tPpZ
+inline s_CodegenOutput& clone_tPpZ(s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_iIE7
-                                #define DEFt_clone_iIE7
-inline s_Module clone_iIE7(s_Module& a)
+                                #ifndef DEFt_clone_qwPy
+                                #define DEFt_clone_qwPy
+inline s_ModuleOutputs clone_qwPy(s_ModuleOutputs& a)
+{
+    s_ModuleOutputs res {};
+
+    {
+        res.deps = clone_mrln(a.deps);
+        res.types = clone_Z8AT(a.types);
+        res.solve = clone_Pu6M(a.solve);
+        res.cpp = clone_tPpZ(a.cpp);
+    };
+    return res;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_1H6K
+                                #define DEFt_clone_1H6K
+inline s_ModuleStats& clone_1H6K(s_ModuleStats& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_NwlG
+                                #define DEFt_clone_NwlG
+inline s_Module clone_NwlG(s_Module& a)
 {
     s_Module res {};
 
     {
         res.modid = clone_cBw5(a.modid);
         res.fname = clone_jB4B(a.fname);
-        res.in = clone_udgC(a.in);
-        res.out = clone_JkQQ(a.out);
-        res.stats = clone_krr2(a.stats);
+        res.in = clone_MSxx(a.in);
+        res.out = clone_qwPy(a.out);
+        res.stats = clone_1H6K(a.stats);
     };
     return res;
 }
@@ -771,9 +834,10 @@ inline s_Module clone_iIE7(s_Module& a)
 s_Context solvePrelude()
 {
     s_Context ctx {};
-    s_Module module = clone_iIE7(getModule(fu_STR{}, ctx));
+    s_Module module = clone_NwlG(getModule(fu_STR{}, ctx));
     s_LexerOutput lexed = lex(prelude_src, "__prelude"_fu);
-    s_Node root = parse(0, "__prelude"_fu, lexed.tokens).root;
+    const s_Options options = Options_default();
+    s_Node root = parse(0, "__prelude"_fu, lexed.tokens, options).root;
     module.out.solve = solve(root, ctx, module);
     setModule(module, ctx);
     return ctx;

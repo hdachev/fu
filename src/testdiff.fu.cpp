@@ -38,10 +38,10 @@ s_TestDiffs parse(const fu_STR& str)
 fu_STR serialize(const s_TestDiffs& diffs)
 {
     fu_STR res {};
-    const fu_VEC<fu_STR>& keys = diffs._next.m_keys;
-    const fu_VEC<fu_STR>& values = diffs._next.m_values;
-    for (int i = 0; i < keys.size(); i++)
-        res += (((keys[i] + "\n-----\n"_fu) + values[i]) + "\n-----\n"_fu);
+    const fu_VEC<fu_STR>& keys_1 = diffs._next.m_keys;
+    const fu_VEC<fu_STR>& values_1 = diffs._next.m_values;
+    for (int i = 0; i < keys_1.size(); i++)
+        res += (((keys_1[i] + "\n-----\n"_fu) + values_1[i]) + "\n-----\n"_fu);
 
     return res;
 }

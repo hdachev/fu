@@ -152,9 +152,9 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         {
             bool hex = false;
             bool dot = false;
-            bool exp = false;
+            bool exp_1 = false;
             bool ob = false;
-            std::byte max = std::byte('9');
+            std::byte max_1 = std::byte('9');
             if (c == std::byte('0'))
             {
                 const std::byte c_1 = ((idx < end) ? src[idx] : (*(const std::byte*)fu::NIL));
@@ -166,13 +166,13 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 else if ((c_1 == std::byte('o')) || (c_1 == std::byte('O')))
                 {
                     ob = true;
-                    max = std::byte('7');
+                    max_1 = std::byte('7');
                     idx++;
                 }
                 else if ((c_1 == std::byte('b')) || (c_1 == std::byte('B')))
                 {
                     ob = true;
-                    max = std::byte('1');
+                    max_1 = std::byte('1');
                     idx++;
                 }
                 else if ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))
@@ -182,7 +182,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if (((c_1 >= std::byte('0')) && (c_1 <= max)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F'))))))
+                if (((c_1 >= std::byte('0')) && (c_1 <= max_1)) || (hex && (((c_1 >= std::byte('a')) && (c_1 <= std::byte('f'))) || ((c_1 >= std::byte('A')) && (c_1 <= std::byte('F'))))))
                 {
                 }
                 else if (ob)
@@ -198,20 +198,20 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                         idx--;
                         break;
                     };
-                    if (dot || exp)
+                    if (dot || exp_1)
                         err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
 
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == std::byte('p')) || (c_1 == std::byte('P'))) : ((c_1 == std::byte('e')) || (c_1 == std::byte('E')))))
                 {
-                    if (exp)
+                    if (exp_1)
                         err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
 
                     if ((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+'))))
                         idx++;
 
-                    exp = true;
+                    exp_1 = true;
                 }
                 else
                 {
@@ -226,10 +226,10 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             {
                 const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
-                if (hex && dot && !exp)
+                if (hex && dot && !exp_1)
                     err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
                 else
-                    token(line, lidx, tokens, ((dot || exp) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
+                    token(line, lidx, tokens, ((dot || exp_1) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
 
             };
         }

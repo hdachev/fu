@@ -20,6 +20,7 @@
 #include <iostream>
 
 struct s_Argument;
+struct s_CodegenOutput;
 struct s_Context;
 struct s_Effects;
 struct s_LexerOutput;
@@ -54,7 +55,6 @@ fu_STR path_filename(const fu_STR&);
 fu_STR path_join(const fu_STR&, const fu_STR&);
 fu_STR path_noext(const fu_STR&);
 fu_STR path_relative(const fu_STR&, const fu_STR&);
-fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -144,11 +144,13 @@ struct s_ParserOutput
 {
     s_Node root;
     fu_VEC<fu_STR> fuzimports;
+    fu_VEC<fu_STR> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
             || fuzimports
+            || warnings
         ;
     }
 };
@@ -489,6 +491,7 @@ struct s_Scope
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
+    int pub_count;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -501,6 +504,7 @@ struct s_Scope
             || imports
             || usings
             || converts
+            || pub_count
         ;
     }
 };
@@ -528,6 +532,24 @@ struct s_SolverOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_CodegenOutput
+                                #define DEF_s_CodegenOutput
+struct s_CodegenOutput
+{
+    fu_VEC<int> unity;
+    fu_VEC<int> unity_because;
+    fu_STR src;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || unity
+            || unity_because
+            || src
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ModuleOutputs
                                 #define DEF_s_ModuleOutputs
 struct s_ModuleOutputs
@@ -535,7 +557,7 @@ struct s_ModuleOutputs
     fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
-    fu_STR cpp;
+    s_CodegenOutput cpp;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -648,55 +670,31 @@ inline std::byte if_last_jB4B(fu_STR& s)
 }
                                 #endif
 
-static void visit(const fu_VEC<s_Module>& modules_0, fu_VEC<int>& link_order_0, const s_Module& module, const s_Context& ctx)
+                                #ifndef DEFt_grow_if_oob_kK0z
+                                #define DEFt_grow_if_oob_kK0z
+inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, int& i)
 {
-    const int link_id = module.modid;
-    if (fu::has(link_order_0, link_id))
-        return;
+    if ((a.size() <= i))
+        a.grow((i + 1));
 
-    const fu_VEC<fu_STR>& fuzimports = module.in.parse.fuzimports;
-    for (int i = 0; i < fuzimports.size(); i++)
-    {
-        fu_STR fname = resolveFile_x(fuzimports[i], ctx);
-        for (int i_1 = 1; i_1 < modules_0.size(); i_1++)
-        {
-            const s_Module& m = modules_0[i_1];
-            if (m.fname == fname)
-            {
-                visit(modules_0, link_order_0, m, ctx);
-                break;
-            };
-        };
-    };
-    if (fu::has(link_order_0, link_id))
-        fu::fail("link order broken"_fu);
-
-    link_order_0.push(link_id);
+    return a.mutref(i);
 }
+                                #endif
 
-static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context& ctx)
+[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, const fu_STR& onfail_0, const s_Context& ctx_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp_1)
 {
-    fu_VEC<int> link_order = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
-    for (int i = 1; i < modules.size(); i++)
-        visit(modules, link_order, modules[i], ctx);
-
-    return link_order;
-}
-
-[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, const fu_STR& onfail_0, const s_Context& ctx_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp)
-{
-    if (!cpp)
+    if (!cpp_1)
     {
         for (int i = Fs_0.size(); i-- > 0; )
         {
             if (Fs_0.mutref(i))
-                cpp += (("#include \""_fu + Fs_0.mutref(i)) + ".cpp\"\n"_fu);
+                cpp_1 += (("#include \""_fu + Fs_0.mutref(i)) + ".cpp\"\n"_fu);
 
         };
     };
-    fu_STR fname = (dir_wrk_0 + "failing-testcase.cpp"_fu);
-    (std::cout << ("  WRITE "_fu + fname) << '\n');
-    fu::file_write(fname, cpp);
+    fu_STR fname_1 = (dir_wrk_0 + "failing-testcase.cpp"_fu);
+    (std::cout << ("  WRITE "_fu + fname_1) << '\n');
+    fu::file_write(fname_1, cpp_1);
     if (!stdout_0)
         stdout_0 = (("[ EXIT CODE "_fu + code_0) + " ]"_fu);
 
@@ -711,7 +709,7 @@ static fu_VEC<int> getLinkOrder(const fu_VEC<s_Module>& modules, const s_Context
         {
             explain += "\nSources:\n"_fu;
             for (int i = 1; i < ctx_0.modules.size(); i++)
-                explain += ctx_0.modules[i].out.cpp;
+                explain += ctx_0.modules[i].out.cpp.src;
 
         };
     };
@@ -726,36 +724,36 @@ inline int only_joGv(fu::view<int> s)
 }
                                 #endif
 
-static fu_STR ensure_local_fname(const fu_STR& fname, const fu_STR& dir_src)
+static fu_STR ensure_local_fname(const fu_STR& fname_1, const fu_STR& dir_src)
 {
-    if (fu::lmatch(fname, dir_src))
-        return fu_STR(fname);
+    if (fu::lmatch(fname_1, dir_src))
+        return fu_STR(fname_1);
 
     fu_STR foreign = (dir_src + ".foreign/"_fu);
     fu::fs_mkdir_p(fu_STR(foreign));
-    fu_STR rel = fu::replace(fu::replace(path_relative(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
+    fu_STR rel = fu::replace(fu::replace(path_relative(dir_src, fname_1), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
     return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+static fu_STR update_file(const fu_STR& fname_1, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
 {
-    fu_STR fname_1 = ensure_local_fname(fname, dir_src);
-    if (!(fu::lmatch(fname_1, dir_src)))
+    fu_STR fname_2 = ensure_local_fname(fname_1, dir_src);
+    if (!(fu::lmatch(fname_2, dir_src)))
         fu::fail("ensure_local_fname broken"_fu);
 
-    fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
-    if (fu::file_read(fname_2) != data)
+    fu_STR fname_3 = (dir_out + fu::slice(fname_2, dir_src.size()));
+    if (fu::file_read(fname_3) != data)
     {
-        const int err = fu::file_write(fname_2, data);
+        const int err = fu::file_write(fname_3, data);
         if (err)
-            fu::fail(((("Failed to write `"_fu + fname_2) + "`, error: #"_fu) + err));
+            fu::fail(((("Failed to write `"_fu + fname_3) + "`, error: #"_fu) + err));
 
-        (std::cout << ("  WROTE "_fu + fname_2) << '\n');
+        (std::cout << ("  WROTE "_fu + fname_3) << '\n');
     };
-    return fname_2;
+    return fname_3;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, const fu_STR& scheme, const fu_STR& onfail, const s_Context& ctx)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, const fu_STR& scheme, const fu_STR& onfail, const s_Context& ctx)
 {
     if (if_last_jB4B(dir_wrk) != std::byte('/'))
     {
@@ -782,23 +780,69 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu_STR GCC_CMD = (GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu);
-    fu_VEC<fu_STR> Fs {};
-    int len_all {};
-    fu_STR fulib_cpp = fu::file_read(fulib);
+    fu_STR GCC_CMD = ((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wdouble-promotion "_fu);
+    s_CodegenOutput fulib_cpp = s_CodegenOutput { fu_VEC<int>{}, fu_VEC<int>{}, fu::file_read(fulib) };
+    fu_VEC<int> unit_mapping {};
+    fu_VEC<fu_STR> unit_fnames {};
     for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
-        const fu_STR& cpp = (i ? module.out.cpp : fulib_cpp);
-        fu_STR F = (cpp ? ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp), 16)) + "-"_fu) + cpp.size()) : fu_STR{});
-        Fs.push(F);
-        len_all += cpp.size();
+        const s_CodegenOutput& cpp_1 = (i ? module.out.cpp : fulib_cpp);
+        if (!cpp_1.src)
+        {
+            unit_mapping += -1;
+            continue;
+        };
+        int unit = i;
+        for (int i_1 = 0; i_1 < cpp_1.unity.size(); i_1++)
+        {
+            const int u = unit_mapping[cpp_1.unity[i_1]];
+            if (unit > u)
+                unit = u;
+
+        };
+        for (int i_1 = 0; i_1 < cpp_1.unity.size(); i_1++)
+        {
+            const int m = cpp_1.unity[i_1];
+            const int u = unit_mapping[m];
+            if (u != unit)
+            {
+                for (int i_2 = u; i_2 < unit_mapping.size(); i_2++)
+                {
+                    if (unit_mapping.mutref(i_2) == u)
+                        unit_mapping.mutref(i_2) = unit;
+
+                };
+            };
+        };
+        unit_mapping += unit;
+        grow_if_oob_kK0z(unit_fnames, unit) = (i ? fu_STR(module.fname) : "fulib runtime"_fu);
+    };
+    fu_VEC<fu_STR> units {};
+    for (int i = 0; i < ctx.modules.size(); i++)
+    {
+        const s_Module& module = ctx.modules[i];
+        const s_CodegenOutput& cpp_1 = (i ? module.out.cpp : fulib_cpp);
+        if (cpp_1.src)
+            grow_if_oob_kK0z(units, unit_mapping.mutref(i)) += cpp_1.src;
+
+    };
+    fu_VEC<fu_STR> Fs {};
+    int len_all {};
+    for (int i = 0; i < units.size(); i++)
+    {
+        fu_STR cpp_1 { units[i] };
+        if (!cpp_1)
+            continue;
+
+        fu_STR F = ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp_1), 16)) + "-"_fu) + cpp_1.size());
+        grow_if_oob_kK0z(Fs, i) = F;
+        len_all += cpp_1.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
     fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + hash16(fu::join(Fs, "/"_fu), 16)) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
     int code {};
     fu_STR stdout {};
-    fu_VEC<int> link_order = getLinkOrder(ctx.modules, ctx);
     const int exe_size = fu::file_size(F_exe);
     if ((exe_size < 1) && (bin || run))
     {
@@ -814,14 +858,14 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             if (fu::file_size(F_obj) < 1)
             {
                 fu_STR human = (i ? path_filename(ctx.modules[i].fname) : "fulib runtime"_fu);
-                const fu_STR& cpp = (i ? ctx.modules[i].out.cpp : fulib_cpp);
-                fu::file_write(F_cpp, cpp);
+                fu_STR cpp_1 { units[i] };
+                fu::file_write(F_cpp, cpp_1);
                 (std::cout << "  BUILD "_fu << human << " "_fu << F_cpp << '\n');
                 const double t0 = fu::now_hr();
                 int _0 {};
                 code = ((_0 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _0 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
-                    ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR(cpp));
+                    ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR(cpp_1));
 
                 const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
@@ -829,14 +873,14 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
-        for (int i = 0; i < link_order.size(); i++)
+        for (int i = 0; i < Fs.size(); i++)
         {
-            fu_STR F { Fs[link_order[i]] };
+            fu_STR F { Fs[i] };
             if (F)
                 cmd += (F + ".o "_fu);
 
         };
-        fu_STR LIBS = (fu_LINUX ? " -ldl"_fu : fu_STR{});
+        fu_STR LIBS = (fu_LINUX ? " -ldl -pthread"_fu : fu_STR{});
 
         {
             (std::cout << "   LINK "_fu << F_exe << '\n');
@@ -875,49 +919,41 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     {
         fu::fs_mkdir_p(fu_STR(dir_cpp));
         fu_VEC<fu_STR> cpp_files {};
-        for (int i = 0; i < ctx.modules.size(); i++)
+        for (int i = 1; i < units.size(); i++)
         {
-            const s_Module& module = ctx.modules[i];
-            const fu_STR& data = (i ? module.out.cpp : (*(const fu_STR*)fu::NIL));
-            fu_STR fname = (data ? (module.fname + ".cpp"_fu) : fu_STR{});
-            fu_STR fname_1 = (fname ? update_file(fname, data, dir_src, dir_cpp) : fu_STR{});
-            cpp_files.push(fname_1);
+            fu_STR data { units[i] };
+            fu_STR fname_1 = (data ? (unit_fnames.mutref(i) + ".cpp"_fu) : fu_STR{});
+            fu_STR fname_2 = (fname_1 ? update_file(fname_1, data, dir_src, dir_cpp) : fu_STR{});
+            cpp_files.push(fname_2);
         };
-        fu_STR CMakeLists = (unity ? path_join(path_dirname(unity), "CMakeLists.txt"_fu) : fu_STR{});
-        if (unity || CMakeLists)
+        fu_STR CMakeLists = (unity_1 ? path_join(path_dirname(unity_1), "CMakeLists.txt"_fu) : fu_STR{});
+        if (unity_1 || CMakeLists)
         {
-            if (unity)
+            if (unity_1)
             {
                 fu_STR data = "#pragma once\n\n"_fu;
                 data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
-                if (!(link_order.size() == cpp_files.size()))
-                    fu::fail("lo.len != cf.len"_fu);
-
-                for (int i = 0; i < link_order.size(); i++)
+                for (int i = 0; i < cpp_files.size(); i++)
                 {
-                    fu_STR incl { cpp_files[link_order[i]] };
+                    fu_STR incl { cpp_files[i] };
                     if (incl)
-                        data += (("#include \""_fu + path_relative(unity, incl)) + "\"\n"_fu);
+                        data += (("#include \""_fu + path_relative(unity_1, incl)) + "\"\n"_fu);
 
                 };
-                update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
+                update_file((unity_1 + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
             if (CMakeLists)
             {
                 fu_STR data = "cmake_minimum_required(VERSION 3.6)\n\n"_fu;
                 fu_VEC<fu_STR> inputs {};
                 fu_VEC<fu_STR> outputs {};
-                if (!(link_order.size() == cpp_files.size()))
-                    fu::fail("lo.len != cf.len (2)"_fu);
-
                 fu_STR main {};
                 fu_STR includes {};
-                for (int i = 1; i < link_order.size(); i++)
+                for (int i = 1; i < cpp_files.size(); i++)
                 {
-                    const int moduleIdx = link_order[i];
-                    const s_Module& module = ctx.modules[moduleIdx];
+                    const s_Module& module = ctx.modules[i];
                     fu_STR input = path_relative(CMakeLists, module.fname);
-                    if (moduleIdx == 1)
+                    if (i == 1)
                         main = input;
 
                     inputs.push(input);
@@ -925,7 +961,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                     if (fu::file_size(custom) > 0)
                         includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu);
 
-                    fu_STR cpp_file { cpp_files[moduleIdx] };
+                    fu_STR cpp_file { cpp_files[i] };
                     if (cpp_file)
                         outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_file)));
 
@@ -934,8 +970,8 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu);
                 data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu);
                 data += (("set(FU_INPUTS\n    "_fu + fu::join(inputs, "\n    "_fu)) + ")\n\n"_fu);
-                if (unity)
-                    data += ((("set(FU_OUTPUTS\n    "_fu + "${CMAKE_CURRENT_SOURCE_DIR}/"_fu) + path_relative(CMakeLists, unity)) + ".unity.cpp)\n\n"_fu);
+                if (unity_1)
+                    data += ((("set(FU_OUTPUTS\n    "_fu + "${CMAKE_CURRENT_SOURCE_DIR}/"_fu) + path_relative(CMakeLists, unity_1)) + ".unity.cpp)\n\n"_fu);
                 else
                     data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu);
 
