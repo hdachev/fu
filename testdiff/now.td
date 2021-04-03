@@ -15685,6 +15685,72 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct vec32  { x: f32; };
+        struct conv32 { v: f32; };
+
+        using inline fn convert(v: i32): conv32 = [ v.f32 ]; // no litfix
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+
+-----
+
+struct s_conv32;
+struct s_vec32;
+
+                                #ifndef DEF_s_vec32
+                                #define DEF_s_vec32
+struct s_vec32
+{
+    float x;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || x
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_conv32
+                                #define DEF_s_conv32
+struct s_conv32
+{
+    float v;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    s_vec32 _0 {};
+    return int(((__extension__ (
+    {
+        s_conv32 _1 {};
+        const s_conv32 a = (__extension__ (
+        {
+            const int v = 1;
+            _1 = (s_conv32 { float(v) });
+        }), s_conv32(_1));
+        const s_vec32 b = s_vec32 { 1.0f };
+        _0 = (s_vec32 { (a.v / b.x) });
+    }), s_vec32(_0)).x - 1.0f));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn fn_v(fn, v) fn(v);
         struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
         fn main() {
