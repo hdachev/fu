@@ -902,17 +902,14 @@ pub fn solve(
                             // Literal fixup.
                             if (!hasConv && considerRetyping(:expect, :actual))
                             {
-                                ref        arg = args[callsiteIndex];
-                                shadow ref arg = arg.kind == "argid"
+                                let        arg = args[callsiteIndex];
+                                shadow let arg = arg.kind == "argid"
                                     ? arg.items.only
                                     : arg;
 
                                 let retype = tryRetyping(arg, expect);
                                 if (isAssignableAsArgument(expect, retype))
-                                {
-                                    arg.type = retype;
                                     continue :ARG_OK;
-                                }
                             }
                             //        /LITFIX
                             /////////////////
@@ -4150,6 +4147,27 @@ pub fn solve(
         else if (args)
         {
             let host_args = overload.args || fail("CallerNode: no host args.");
+
+            /////////////////
+            // Literal fixup.
+            for (mut i = 0; i < args.len; i++)
+            {
+                // Drop argids at this point, not useful.
+                ref arg = args[i];
+                if (arg.kind == "argid")
+                    arg = arg.items.only;
+
+                let expect = host_args[i].type;
+                if (considerRetyping(:expect, arg.type))
+                {
+                    let retype = tryRetyping(arg, expect);
+                    if (isAssignableAsArgument(expect, retype))
+                        arg.type = retype;
+                }
+            }
+            //        /LITFIX
+            /////////////////
+
             for (mut i = 0; i < args.len; i++)
                 maybeCopyOrMove(
                     args[i] || fail(), host_args[i].type,
