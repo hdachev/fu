@@ -12104,8 +12104,7 @@ inline void reveach_RihI(int& sum_0, const fu_VEC<int>& items, int)
     for (int i = items.size(); i-- > 0; )
     {
         const int x = items[i];
-        int& i_1 = i;
-        sum_0 += ((x * i_1) * 100);
+        sum_0 += ((x * i) * 100);
     };
 }
                                 #endif
