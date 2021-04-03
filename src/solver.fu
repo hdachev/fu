@@ -1107,6 +1107,8 @@ pub fn solve(
                     shadow let t = nullary ? t : candidate;
 
                     let convert = GET(t);
+                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert.kind ~ " " ~ convert.name ~ "`.");
+
                     let convertType = convert.kind == "field"
                         ? add_refs(from: from || fail(), to: convert.type)
                         : convert.type;
@@ -1960,7 +1962,7 @@ pub fn solve(
             ref t = _specs[mangle] ||= Target;
 
             fn id(shadow target)
-                target.modid != -1  ? `"` ~ GET(target).name ~ `"`
+                target.modid != -1  ? "`" ~ GET(target).name ~ "`"
                                     : "SPEC_FAIL";
 
             !t && nx || t.is_SPECFAIL && !nx || fail(
@@ -2399,7 +2401,7 @@ pub fn solve(
                     }
 
                     ref overload        = GET_mut(target);
-                    overload.name       = isInline ? ANON() : name;
+                    overload.name       = name;
                     overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
                     overload.template   = native ? createTemplate(n_body) : template;
                 }
