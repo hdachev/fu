@@ -4419,6 +4419,46 @@ pub fn runTests()
         fn main() inspect(5.i32, 7.u32) - 31;
     `);
 
+    ZERO(`
+        struct vec32  { x: f32; };
+        struct conv32 { v: f32; };
+
+        using inline fn convert(v: i32): conv32 = [ v.f32 ]; // no litfix
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+    `);
+
+    TODO(`
+        struct vec32  { x: f32; };
+        struct conv32 { v: f32; };
+
+        using inline fn convert(v: f32): conv32 = [ v ]; // litfix in a conv: i32 -> f32
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x, a.v / b.y, a.v / b.z);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+    `);
+
+    TODO(`
+        struct vec_u  { x: u32; };
+        struct vec32  { x: f32; };
+        struct vec64  { x: f64; };
+
+        struct conv_u { v: u32; };
+        struct conv32 { v: f32; };
+        struct conv64 { v: f64; };
+
+        using inline fn convert(v: u32): conv_u = [ v ]; // matchfail before
+        using inline fn convert(v: f32): conv32 = [ v ];
+        using inline fn convert(v: f64): conv64 = [ v ]; // matchfail after
+
+        inline fn /(a: conv_u, b: vec_u) vec_u(a.v / b.x);
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+        inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+    `);
+
 
     // Addrofns of struct fields.
 
