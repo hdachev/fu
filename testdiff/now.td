@@ -1519,9 +1519,9 @@ inline s_Scope clone_DXfV(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEFt_map_hF5c
-                                #define DEFt_map_hF5c
-inline fu_VEC<s_Scope> map_hF5c(const fu_VEC<s_Scope>& a, int)
+                                #ifndef DEFt_map_paF7
+                                #define DEFt_map_paF7
+inline fu_VEC<s_Scope> map_paF7(const fu_VEC<s_Scope>& a, int)
 {
     fu_VEC<s_Scope> res {};
     res.grow<false>(a.size());
@@ -1536,7 +1536,7 @@ inline fu_VEC<s_Scope> map_hF5c(const fu_VEC<s_Scope>& a, int)
                                 #define DEFt_clone_gQjd
 inline fu_VEC<s_Scope> clone_gQjd(const fu_VEC<s_Scope>& a)
 {
-    return map_hF5c(a, 0);
+    return map_paF7(a, 0);
 }
                                 #endif
 
@@ -6667,7 +6667,7 @@ static int __solveStruct(int&, int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& each_0sBg(int& arg_0, int x_0, int& cond, int)
+inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
 {
     return !cond ? cond : (arg_0 += x_0);
 }
@@ -6684,7 +6684,7 @@ static void checkRecursions(int& target_0, int& o, const int incr)
 
 static int __solveStruct(int& target_0, int arg, const int x)
 {
-    each_0sBg(arg, x, arg, 0);
+    each_4rxG(arg, x, arg, 0);
     if (arg)
     {
         int& o = GET_mut(target_0, arg);
@@ -6926,9 +6926,9 @@ struct s_ScopeSkip
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_each_sJgb
-                                #define DEFt_each_sJgb
-inline void each_sJgb(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
+                                #ifndef DEFt_each_tqHt
+                                #define DEFt_each_tqHt
+inline void each_tqHt(int& sum_0, const fu_VEC<int>& items, const fu_VEC<s_ScopeSkip>& scope_skip, int, const int start)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -6953,7 +6953,7 @@ int test(const fu_VEC<int>& items)
 {
     int sum = 0;
     fu_VEC<s_ScopeSkip> ss {};
-    each_sJgb(sum, items, ss, 0, sum);
+    each_tqHt(sum, items, ss, 0, sum);
     return sum;
 }
 
@@ -7155,7 +7155,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_hTsr(int& sum_0, const fu_VEC<int>& a, int, const int start)
+inline static void each_bcyN(int& sum_0, const fu_VEC<int>& a, int, const int start)
 {
     for (int i = start; i < a.size(); i++)
     {
@@ -7168,7 +7168,7 @@ int fu_MAIN()
 {
     int sum = 0;
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } };
-    each_hTsr(sum, a, 0, sum);
+    each_bcyN(sum, a, 0, sum);
     return sum - 6;
 }
 
@@ -8664,7 +8664,7 @@ static void walk(const fu_STR& a_0, const fu_STR& b_0, s_Node& node_1)
     };
 }
 
-inline static s_Node astReplace_KavC(const fu_STR& a_0, const fu_STR& b_0, const s_Node& node, int)
+inline static s_Node astReplace_YQ1M(const fu_STR& a_0, const fu_STR& b_0, const s_Node& node, int)
 {
     s_Node node_1 { node };
     walk(a_0, b_0, node_1);
@@ -8673,7 +8673,7 @@ inline static s_Node astReplace_KavC(const fu_STR& a_0, const fu_STR& b_0, const
 
 static s_Node test(const s_Node& n, const fu_STR& a, const fu_STR& b)
 {
-    return astReplace_KavC(a, b, n, 0);
+    return astReplace_YQ1M(a, b, n, 0);
 }
 
 int fu_MAIN()
@@ -10217,7 +10217,7 @@ static int visit(int& x_0, const int item)
     return x_0++;
 }
 
-inline static int apply_Gmz5(int& x_0, int, const int v)
+inline static int apply_rDLy(int& x_0, int, const int v)
 {
     return visit(x_0, v);
 }
@@ -10227,7 +10227,7 @@ static void scope_using(int& x_0, const int via)
     if (x_0)
         fu::fail("this reports return t_never"_fu);
 
-    apply_Gmz5(x_0, 0, via);
+    apply_rDLy(x_0, 0, via);
 }
 
 int fu_MAIN()
@@ -12198,9 +12198,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_reveach_kJRA
-                                #define DEFt_reveach_kJRA
-inline void reveach_kJRA(int& sum_0, const fu_VEC<int>& items, int)
+                                #ifndef DEFt_reveach_jEDG
+                                #define DEFt_reveach_jEDG
+inline void reveach_jEDG(int& sum_0, const fu_VEC<int>& items, int)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -12210,9 +12210,9 @@ inline void reveach_kJRA(int& sum_0, const fu_VEC<int>& items, int)
 }
                                 #endif
 
-                                #ifndef DEFt_reveach_RihI
-                                #define DEFt_reveach_RihI
-inline void reveach_RihI(int& sum_0, const fu_VEC<int>& items, int)
+                                #ifndef DEFt_reveach_copc
+                                #define DEFt_reveach_copc
+inline void reveach_copc(int& sum_0, const fu_VEC<int>& items, int)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -12225,8 +12225,8 @@ inline void reveach_RihI(int& sum_0, const fu_VEC<int>& items, int)
 int fu_MAIN()
 {
     int sum = 0;
-    reveach_kJRA(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
-    reveach_RihI(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
+    reveach_jEDG(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
+    reveach_copc(sum, fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0);
     return sum - 806;
 }
 
@@ -14982,14 +14982,14 @@ inline static int mul2_U3Pf(const int a)
     return a * 2;
 }
 
-inline static int test_Yqt7(const int b, int)
+inline static int test_hzQH(const int b, int)
 {
     return mul2_U3Pf((1 + mul2_U3Pf(b)));
 }
 
 int fu_MAIN()
 {
-    return 14 - test_Yqt7(3, 0);
+    return 14 - test_hzQH(3, 0);
 }
 
 #endif
@@ -15021,7 +15021,7 @@ inline static int sqr_U3Pf(const int x)
     return x * x;
 }
 
-inline static fu_VEC<int> map_OOnE(const fu_VEC<int>& items, int)
+inline static fu_VEC<int> map_oLcM(const fu_VEC<int>& items, int)
 {
     fu_VEC<int> result {};
     for (int i = 0; i < items.size(); i++)
@@ -15032,7 +15032,7 @@ inline static fu_VEC<int> map_OOnE(const fu_VEC<int>& items, int)
 
 int fu_MAIN()
 {
-    return map_OOnE(fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } }, 0)[0] - 4;
+    return map_oLcM(fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } }, 0)[0] - 4;
 }
 
 #endif
@@ -15057,7 +15057,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
+inline static int reduce_bajh(const fu_VEC<int>& items, int, const int init)
 {
     int result = init;
     for (int i = 0; i < items.size(); i++)
@@ -15074,7 +15074,7 @@ inline static int reduce_HEZr(const fu_VEC<int>& items, int, const int init)
 
 int fu_MAIN()
 {
-    return reduce_HEZr(fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0, 0) - 3;
+    return reduce_bajh(fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0, 0) - 3;
 }
 
 #endif
@@ -15100,7 +15100,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_kJRA(int& i_0, const fu_VEC<int>& items, int)
+inline static void each_jEDG(int& i_0, const fu_VEC<int>& items, int)
 {
     for (int i = 0; i < items.size(); i++)
     {
@@ -15112,7 +15112,7 @@ inline static void each_kJRA(int& i_0, const fu_VEC<int>& items, int)
 int fu_MAIN()
 {
     int i = 0;
-    each_kJRA(i, fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0);
+    each_jEDG(i, fu_VEC<int> { fu_VEC<int>::INIT<2> { 1, 2 } }, 0);
     return i - 3;
 }
 
@@ -15147,14 +15147,14 @@ static void makeDirty(int& sum_0, const int parent_idx)
     sum_0 += parent_idx;
 }
 
-inline static void each_FE0s(int& sum_0, int parent_idx_0, int)
+inline static void each_uae5(int& sum_0, int parent_idx_0, int)
 {
     makeDirty(sum_0, parent_idx_0);
 }
 
 static void FnDecl_update(int& sum_0, const int parent_idx)
 {
-    each_FE0s(sum_0, parent_idx, 0);
+    each_uae5(sum_0, parent_idx, 0);
 }
 
 int fu_MAIN()
@@ -15892,12 +15892,12 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_v_Jgvc(int, const s_XY& v)
+inline static int fn_v_NUPh(int, const s_XY& v)
 {
     return v.x;
 }
 
-inline static int fn_v_NUPh(int, const s_XY& v)
+inline static int fn_v_9qoR(int, const s_XY& v)
 {
     return v.y;
 }
@@ -15905,7 +15905,7 @@ inline static int fn_v_NUPh(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24;
+    return (fn_v_NUPh(0, v) + fn_v_9qoR(0, v)) - 24;
 }
 
 #endif
@@ -15944,12 +15944,12 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_v_Jgvc(int, const s_XY& v)
+inline static int fn_v_NUPh(int, const s_XY& v)
 {
     return v.x;
 }
 
-inline static int fn_v_NUPh(int, const s_XY& v)
+inline static int fn_v_9qoR(int, const s_XY& v)
 {
     return v.y;
 }
@@ -15957,7 +15957,7 @@ inline static int fn_v_NUPh(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_Jgvc(0, v) + fn_v_NUPh(0, v)) - 24;
+    return (fn_v_NUPh(0, v) + fn_v_9qoR(0, v)) - 24;
 }
 
 #endif
@@ -15997,19 +15997,9 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_w_NUPh(int, const s_XY& y)
-{
-    return y.x;
-}
-
-inline static int fn_v_NUPh(int, const s_XY& x)
-{
-    return fn_w_NUPh(0, x);
-}
-
 inline static int fn_w_9qoR(int, const s_XY& y)
 {
-    return y.y;
+    return y.x;
 }
 
 inline static int fn_v_9qoR(int, const s_XY& x)
@@ -16017,10 +16007,20 @@ inline static int fn_v_9qoR(int, const s_XY& x)
     return fn_w_9qoR(0, x);
 }
 
+inline static int fn_w_dXmM(int, const s_XY& y)
+{
+    return y.y;
+}
+
+inline static int fn_v_dXmM(int, const s_XY& x)
+{
+    return fn_w_dXmM(0, x);
+}
+
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_NUPh(0, v) + fn_v_9qoR(0, v)) - 24;
+    return (fn_v_9qoR(0, v) + fn_v_dXmM(0, v)) - 24;
 }
 
 #endif
@@ -16042,14 +16042,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_uae5(int depth1_0, int)
+inline static int identity_sqbD(int depth1_0, int)
 {
     return depth1_0;
 }
 
 inline static int outer_U3Pf(const int depth1)
 {
-    return identity_uae5(depth1, 0);
+    return identity_sqbD(depth1, 0);
 }
 
 int fu_MAIN()
@@ -16078,19 +16078,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_VSHQ(int depth0_0, int)
+inline static int identity_U8wp(int depth0_0, int)
 {
     return depth0_0;
 }
 
-inline static int outer_uae5(int depth0_0, int)
+inline static int outer_sqbD(int depth0_0, int)
 {
-    return identity_VSHQ(depth0_0, 0);
+    return identity_U8wp(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    return outer_uae5(depth0, 0);
+    return outer_sqbD(depth0, 0);
 }
 
 int fu_MAIN()
@@ -16121,24 +16121,24 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_lY2z(int depth0_0, int)
+inline static int identity_XNBG(int depth0_0, int)
 {
     return depth0_0;
 }
 
-inline static int inner_U8wp(int depth0_0, int)
+inline static int inner_kdxo(int depth0_0, int)
 {
-    return identity_lY2z(depth0_0, 0);
+    return identity_XNBG(depth0_0, 0);
 }
 
-inline static int outer_uae5(int depth0_0, int)
+inline static int outer_sqbD(int depth0_0, int)
 {
-    return inner_U8wp(depth0_0, 0);
+    return inner_kdxo(depth0_0, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    return outer_uae5(depth0, 0);
+    return outer_sqbD(depth0, 0);
 }
 
 int fu_MAIN()
@@ -16185,34 +16185,34 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int first_inner_i5k8(int depth0_0, int sum_0, int sum_038, int)
+inline static int first_inner_BIiZ(int depth0_0, int sum_0, int sum_039, int)
 {
-    const int sum = ((depth0_0 + sum_0) + sum_038);
+    const int sum = ((depth0_0 + sum_0) + sum_039);
     return sum;
 }
 
-inline static int first_AUSd(int depth0_0, int sum_0, int)
+inline static int first_t3FB(int depth0_0, int sum_0, int)
 {
     const int sum = (depth0_0 + sum_0);
-    return first_inner_i5k8(depth0_0, sum_0, sum, 0);
+    return first_inner_BIiZ(depth0_0, sum_0, sum, 0);
 }
 
-inline static int second_inner_z5ia(int depth0_0, int sum_0, int sum_020, int)
+inline static int second_inner_Rf2N(int depth0_0, int sum_0, int sum_021, int)
 {
-    const int sum = ((depth0_0 + sum_0) + sum_020);
-    return sum + first_AUSd(depth0_0, sum, 0);
+    const int sum = ((depth0_0 + sum_0) + sum_021);
+    return sum + first_t3FB(depth0_0, sum, 0);
 }
 
-inline static int second_lY2z(int depth0_0, int sum_0, int)
+inline static int second_XNBG(int depth0_0, int sum_0, int)
 {
     const int sum = (depth0_0 + sum_0);
-    return second_inner_z5ia(depth0_0, sum_0, sum, 0);
+    return second_inner_Rf2N(depth0_0, sum_0, sum, 0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
     const int sum = (depth0 + depth0);
-    return second_lY2z(depth0, sum, 0);
+    return second_XNBG(depth0, sum, 0);
 }
 
 int fu_MAIN()
@@ -16708,7 +16708,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int some_kJRA(const fu_VEC<int>& arr, int)
+inline static int some_jEDG(const fu_VEC<int>& arr, int)
 {
 
     {
@@ -16725,7 +16725,7 @@ inline static int some_kJRA(const fu_VEC<int>& arr, int)
 
 int fu_MAIN()
 {
-    return some_kJRA(fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0) - 2;
+    return some_jEDG(fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } }, 0) - 2;
 }
 
 #endif
@@ -16858,7 +16858,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop1d_B7Rx(int& x_0, const int i0, const int i1, int)
+inline static void loop1d_GBxW(int& x_0, const int i0, const int i1, int)
 {
     for (int i = i0; i < i1; i++)
     {
@@ -16871,7 +16871,7 @@ inline static void loop1d_B7Rx(int& x_0, const int i0, const int i1, int)
 int fu_MAIN()
 {
     int x = 0;
-    loop1d_B7Rx(x, 0, 10, 0);
+    loop1d_GBxW(x, 0, 10, 0);
     return x - 1;
 }
 
@@ -16946,7 +16946,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_11kI(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
+inline static void loop2d_CSvR(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
 {
     for (int y = y0; y < y1; y++)
     {
@@ -16968,7 +16968,7 @@ inline static void loop2d_11kI(int& sum_0, const int x0, const int x1, const int
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_11kI(sum, 0, 10, 10, 12, 0);
+    loop2d_CSvR(sum, 0, 10, 10, 12, 0);
     return sum - 21;
 }
 
@@ -17009,7 +17009,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_CSvR(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
+inline static void loop2d_jyEs(int& sum_0, const int x0, const int x1, const int y0, const int y1, int)
 {
     for (int i = y0; i < y1; i++)
     {
@@ -17031,7 +17031,7 @@ inline static void loop2d_CSvR(int& sum_0, const int x0, const int x1, const int
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_CSvR(sum, 0, 10, 10, 12, 0);
+    loop2d_jyEs(sum, 0, 10, 10, 12, 0);
     return sum - 21;
 }
 
