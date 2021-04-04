@@ -146,7 +146,7 @@ pub fn solve(
         _Scope_import__forceCopy(modid, :private);
     }
 
-    fn GET(target: Target): Overload
+    fn GET(target: Target)
     {
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
@@ -161,7 +161,7 @@ pub fn solve(
         return _scope.overloads[target.index - 1];
     }
 
-    fn GET_local(index: i32): Overload
+    fn GET_local(index: i32)
     {
         return GET(Target(modid: module.modid, :index));
     }

@@ -74,7 +74,7 @@ pub fn cpp_codegen(
 
     mut _current_fn: cg_CurrentFn;
 
-    fn GET(target: Target): Overload
+    fn GET(target: Target)
     {
         target.index > 0 || assert();
 
@@ -85,7 +85,7 @@ pub fn cpp_codegen(
         return m.out.solve.scope.overloads[target.index - 1];
     }
 
-    fn try_GET(target: Target): Overload
+    fn try_GET(target: Target)
     {
         return target && GET(target);
     }
