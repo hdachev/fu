@@ -105,6 +105,11 @@ pub fn solve(
     fn ANON(): string = "0" ~ _anons++;
 
 
+    //
+
+    Scope_create(_scope, kind: "_module_top_");
+
+
     // Can't we just list them all and scan through?
     //  Do we need the mangling nonsense?
     //   We can bucket however many times we want here,
