@@ -1035,7 +1035,7 @@ pub fn solve(
 
         if (DEBUG_assertMatch)
             DEBUG_assertMatch == matchIdx || fail(
-                "Did specialize something but ended up not using it.");
+                "Specialized `" ~ GET(DEBUG_assertMatch).name ~ "` but ended up not using it.");
 
         return matchIdx;
     }

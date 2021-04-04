@@ -2469,6 +2469,44 @@ pub fn runTests()
         fn main() Y(1).i / 2;
     `);
 
+    ZERO(`
+        struct Node {
+            kind  ?: string;
+            items ?: Node[];
+            value ?: string;
+        };
+
+        fn astReplace(node: Node, mutate): Node {
+            fn walk(shadow ref node: Node) {
+                for (mut i = 0; i < node.items.len; i++)
+                    walk(node.items[i]);
+
+                mutate(node);
+            }
+
+            shadow mut node = node;
+            walk(node);
+            return node;
+        }
+
+        fn test(n: Node, a: string, b: string) {
+            return astReplace(n, |ref item: Node| {
+                if (item.value == a) {
+                    if (item.items.len == 1 && item.kind == "call")
+                        item.value = b;
+                    else if (item.kind == "str")
+                        item.value = b;
+                }
+            });
+        }
+
+        fn main() {
+            let v0 = Node(kind: "str", value: "woot");
+            let v1 = v0.test("woot", "who");
+            return v1.value.len - 3;
+        }
+    `);
+
 
     // Let's try something new.
 
