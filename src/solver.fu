@@ -1754,7 +1754,7 @@ pub fn solve(
             if (i)
                 mangle ~= ",";
 
-            mangle ~= serializeType(args[i].type);
+            mangle ~= serializeType(args[i]);
         }
 
         return mangle;
@@ -1819,7 +1819,7 @@ pub fn solve(
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
         let spec = _specs[mangle] || doTrySpecialize(
-            :overloadIdx, :args, :mangle,
+            :overloadIdx, args_in:args, :mangle,
             :reorder, :use_reorder, :conversions,
             :REST_START, :REST_TYPE);
 
@@ -1878,35 +1878,37 @@ pub fn solve(
 
     fn doTrySpecialize(
         into?: Target,
-        overloadIdx?: Target, mut args?: SolvedNode[],
+        overloadIdx?: Target, args_in?: SolvedNode[],
         mut mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
             : Target
     {
-        // TODO FIX reorder with gaps
+        mut args: Type[];
         if (use_reorder)
         {
-            mut reordered: SolvedNode[];
             for (mut i = 0; i < reorder.len; i++)
             {
                 let callsiteIndex = reorder[i];
-                reordered.push(
-                    callsiteIndex >= 0 && callsiteIndex < args.len
-                        && args[callsiteIndex]);
+                args.push(
+                    callsiteIndex >= 0 && callsiteIndex < args_in.len
+                        && args_in[callsiteIndex].type);
             }
-
-            SWAP(args, reordered);
+        }
+        else
+        {
+            for (mut i = 0; i < args_in.len; i++)
+                args.push(args_in[i].type);
         }
 
         for (mut i = 0; i < conversions.len; i++)
         {
             let c = conversions[i];
             if (c)
-                args[i] = SolvedNode(kind: "__conv", type: GET(c.last).type, token: TokenIdx());
+                args[i] = GET(c.last).type;
         }
 
         if (REST_TYPE)
-            args[REST_START] = SolvedNode(kind: "__rest", type: REST_TYPE, token: TokenIdx());
+            args[REST_START] = REST_TYPE;
 
         //
         let args00 = args;
@@ -1929,7 +1931,7 @@ pub fn solve(
             //
             for (mut i = 0; i < args.len; i++)
             {
-                let arg_t = args[i].type;
+                let arg_t = args[i];
                 if (addroffn::type_isAddrOfFn(arg_t))
                 {
                     addroffn::unpackAddrOfFn(arg_t.canon, |target|
@@ -2025,8 +2027,10 @@ pub fn solve(
                                 continue;
                         }
 
-                        let inValue = args.len > i && args[i];
-                        mut inType  = inValue.type;
+                        mut inType  = args.len > i && args[i];
+                        let inValue = reorder
+                            ? reorder.len > i && reorder[i] >= 0 && args_in[reorder[i]]
+                            : args_in.len > i && args_in[i];
 
                         let argNode = items[i] || fail();
                         let annot   = argNode.items[LET_TYPE];
@@ -2052,7 +2056,7 @@ pub fn solve(
                                 let retype = tryRetyping(inValue, paramType);
                                 if (retype && retype.canon != inType.canon)
                                 {
-                                    inType   = args[i].type = retype;
+                                    inType   = args[i] = retype;
                                     remangle = true;
                                 }
                             }
@@ -2076,7 +2080,7 @@ pub fn solve(
                             let exactType = original.args[i].type;
                             if (exactType)
                             {
-                                args[i].type = exactType;
+                                args[i] = exactType;
                                 continue;
                             }
 
