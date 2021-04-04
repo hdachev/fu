@@ -8582,6 +8582,119 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct Node {
+            kind  ?: string;
+            items ?: Node[];
+            value ?: string;
+        };
+
+        fn astReplace(node: Node, mutate): Node {
+            fn walk(shadow ref node: Node) {
+                for (mut i = 0; i < node.items.len; i++)
+                    walk(node.items[i]);
+
+                mutate(node);
+            }
+
+            shadow mut node = node;
+            walk(node);
+            return node;
+        }
+
+        fn test(n: Node, a: string, b: string) {
+            return astReplace(n, |ref item: Node| {
+                if (item.value == a) {
+                    if (item.items.len == 1 && item.kind == "call")
+                        item.value = b;
+                    else if (item.kind == "str")
+                        item.value = b;
+                }
+            });
+        }
+
+        fn main() {
+            let v0 = Node(kind: "str", value: "woot");
+            let v1 = v0.test("woot", "who");
+            return v1.value.len - 3;
+        }
+
+-----
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+
+struct s_Node;
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_STR kind;
+    fu_VEC<s_Node> items;
+    fu_STR value;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || items
+            || value
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static void walk(const fu_STR& a_0, const fu_STR& b_0, s_Node& node_1)
+{
+    for (int i = 0; i < node_1.items.size(); i++)
+        walk(a_0, b_0, node_1.items.mutref(i));
+
+    if (node_1.value == a_0)
+    {
+        if ((node_1.items.size() == 1) && (node_1.kind == "call"_fu))
+            node_1.value = b_0;
+        else if (node_1.kind == "str"_fu)
+            node_1.value = b_0;
+
+    };
+}
+
+inline static s_Node astReplace_KavC(const fu_STR& a_0, const fu_STR& b_0, const s_Node& node, int)
+{
+    s_Node node_1 { node };
+    walk(a_0, b_0, node_1);
+    return node_1;
+}
+
+static s_Node test(const s_Node& n, const fu_STR& a, const fu_STR& b)
+{
+    return astReplace_KavC(a, b, n, 0);
+}
+
+int fu_MAIN()
+{
+    s_Node v0 = s_Node { "str"_fu, fu_VEC<s_Node>{}, "woot"_fu };
+    s_Node v1 = test(v0, "woot"_fu, "who"_fu);
+    return v1.value.size() - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+
+-----
+
         struct SolvedNode {
             value: i32;
             items?: SolvedNode[];
