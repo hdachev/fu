@@ -4256,9 +4256,7 @@ pub fn solve(
         }
 
         //
-        mut out = solved(node, type, args);
-        out.target = target;
-        return out;
+        return solved(node, type, args, :target);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
