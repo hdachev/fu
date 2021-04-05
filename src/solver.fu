@@ -30,8 +30,8 @@ let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
-let USE_retval_narrowing    = false; // TODO not safe without borrowck
-let USE_ref_to_mutref       = false;
+let USE_retval_narrowing    = true;
+let USE_ref_to_mutref       = false; // TODO
 
 let SELF_TEST               = true;
 
@@ -347,7 +347,8 @@ pub fn solve(
             ? Region_fromArgIndex(index)
             : Region_fromLocalIndex(index);
 
-        return Lifetime_test(Lifetime(uni0n: [ region ]));
+        let res = Lifetime_test(Lifetime(uni0n: [ region ]));
+        return res;
     }
 
     fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
