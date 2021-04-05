@@ -1745,7 +1745,7 @@ static const int result = template_U3Pf((arg / -4));
 
 int fu_MAIN()
 {
-    return int(result);
+    return result;
 }
 
 #endif
@@ -2302,12 +2302,12 @@ int main() { return fu_MAIN(); }
 
 static int returns_x(const int x)
 {
-    return int(x);
+    return x;
 }
 
 static int calls_self_1(const bool call_self, const int x)
 {
-    return (!call_self ? returns_x(x) : (calls_self_1(false, x) * 2));
+    return (!call_self ? int(returns_x(x)) : (calls_self_1(false, x) * 2));
 }
 
 int fu_MAIN()
@@ -2340,12 +2340,12 @@ int main() { return fu_MAIN(); }
 
 static int returns_x(const int x)
 {
-    return int(x);
+    return x;
 }
 
 static int calls_self_2(const bool call_self, const int x)
 {
-    return (call_self ? (calls_self_2(false, x) * 3) : returns_x(x));
+    return (call_self ? (calls_self_2(false, x) * 3) : int(returns_x(x)));
 }
 
 int fu_MAIN()
@@ -2391,13 +2391,13 @@ static int do_call_self(int add_0, const int mul, const int x)
 
 static int returns_x(const int x)
 {
-    return int(x);
+    return x;
 }
 
 static int calls_self_3(const bool call_self, const int x)
 {
     const int add = 1;
-    return (call_self ? do_call_self(add, 4, x) : returns_x(x));
+    return (call_self ? do_call_self(add, 4, x) : int(returns_x(x)));
 }
 
 int fu_MAIN()
@@ -6485,7 +6485,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int __solveStruct(int&, int);
+static int& __solveStruct(int&, int);
 
 #ifndef FU_NO_FDEFs
 
@@ -6494,11 +6494,11 @@ static int& GET_mut(int& target_0, int& x)
     return x ? x : (target_0 = __solveStruct(target_0, int((target_0 += 1))));
 }
 
-static int __solveStruct(int& target_0, int arg)
+static int& __solveStruct(int& target_0, int arg)
 {
     int& o = GET_mut(target_0, arg);
     o += target_0;
-    return int(target_0);
+    return target_0;
 }
 
 int fu_MAIN()
@@ -7048,7 +7048,7 @@ static const s_BINOP BINOP = setupOperators_U3Pf(-1);
 int fu_MAIN()
 {
     const int precedence = BINOP.PRECEDENCE["|>"_fu];
-    return int(precedence);
+    return precedence;
 }
 
 #endif
@@ -7620,14 +7620,14 @@ struct s_Data
 
 #ifndef FU_NO_FDEFs
 
-static s_Data Data(const s_ID& nid, const fu_VEC<s_Data>& all)
+static const s_Data& Data(const s_ID& nid, const fu_VEC<s_Data>& all)
 {
-    return s_Data(all[nid.offset]);
+    return all[nid.offset];
 }
 
 static int test(const s_ID& node, const fu_VEC<s_Data>& all)
 {
-    const s_ID init { Data(node, all).items[0] };
+    const s_ID& init = Data(node, all).items[0];
     return Data(init, all).items.size();
 }
 
@@ -7641,7 +7641,6 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
-// NONTRIV_autocopy
 
 -----
 
@@ -8973,17 +8972,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int throw_hey()
+[[noreturn]] static fu::never throw_hey()
 {
     fu::fail("hey"_fu);
 }
 
 int fu_MAIN()
 {
-    int x = {};
+
     try
     {
-        x = throw_hey();
+        throw_hey();
     }
     catch (const std::exception& o_0)
     {
@@ -8992,7 +8991,6 @@ int fu_MAIN()
         return err.size() - 3;
     }
 ;
-    return x ? int(x) : 7;
 }
 
 #endif
@@ -9072,7 +9070,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int throw_hey()
+[[noreturn]] static fu::never throw_hey()
 {
     fu::fail("hey"_fu);
 }
@@ -9082,7 +9080,7 @@ int fu_MAIN()
 
     try
     {
-        return throw_hey();
+        throw_hey();
     }
     catch (const std::exception& o_0)
     {
