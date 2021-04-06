@@ -214,12 +214,6 @@ pub fn solve(
     }
 
 
-    // Hacking a pair of local indices into a target.
-
-    fn left (ref target: Target) target.modid;
-    fn right(ref target: Target) target.index;
-
-
     //
 
     fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
@@ -1553,10 +1547,7 @@ pub fn solve(
         if (!h.ret_actual.is_ref)
         {
             for (mut i = 0; i < h.returns.len; i++)
-            {
-                ref ret = GET_mut(Target(:module.modid, index: h.returns[i]));
-                maybeCopyOrMove(ret.solved, h.ret_actual);
-            }
+                maybeCopyOrMove(h.returns[i].MUT.items.only, h.ret_actual);
 
             if (!fnbody_of && items && !h.ret_actual.is_void)
                 maybeCopyOrMove(items.last, h.ret_actual);
@@ -2910,10 +2901,8 @@ pub fn solve(
             return expr;
 
         // Lazy labels.
-        mut target: Target(-1, -1);
-
-        target.left = h.target ||=
-            Scope_addLabel(h.id, :h.local_of).index;
+        let target = Target(:module.modid,
+            h.target ||= Scope_addLabel(h.id, :h.local_of).index);
 
         h.mask |= HM_LabelUsed;
 
@@ -2925,7 +2914,7 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(target.left);
+            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(target.index);
             if (ltCompare >= 0)
             {
                 if (ltCompare > 0)
@@ -2950,18 +2939,17 @@ pub fn solve(
 
         reportReturnType(:helpers_idx, expr.type);
 
-        target.right = Scope_create(_scope, "jump",
-            local_of: target.left || fail(),
-            solved: expr).index;
+        //
+        let jump = createJump(:node.token, :target, expr);
+        h.returns ~= jump;
+        return jump;
 
-        h.returns ~= target.right;
-
-        return createJump(:node.token, :target);
     }
 
-    fn createJump(token: TokenIdx, target: Target)
+    fn createJump(token: TokenIdx, target: Target, expr?: SolvedNode)
     {
-        return SolvedNode(:token, "jump", type: t_never, :target);
+        return SolvedNode(:token, "jump", type: t_never, :target,
+            items: expr && [ expr ]);
     }
 
     fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)

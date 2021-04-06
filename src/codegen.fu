@@ -98,9 +98,6 @@ pub fn cpp_codegen(
 
     fn fail(reason = "") throw(reason);
 
-    fn left (target: Target) target.modid;
-    fn right(target: Target) target.index;
-
 
     //
 
@@ -967,16 +964,14 @@ pub fn cpp_codegen(
 
     fn cgJump(node: SolvedNode): string
     {
-        let dest_idx    = node.target.left;
-        let expr_idx    = node.target.right;
+        let dest_idx    = node.target.index;
 
         let use_return  = dest_idx == _current_fn.target.index;
         let dest        = GET(Target(:module.modid, dest_idx));
 
-        if (expr_idx)
+        if (node.items)
         {
-            let o       = GET(Target(:module.modid, expr_idx));
-            let head    = o.solved || fail();
+            let head    = node.items.only;
 
             // Break with value.
             if (!use_return)
