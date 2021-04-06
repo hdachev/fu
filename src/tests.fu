@@ -54,6 +54,12 @@ fn TODO(src: string[])
     throw("TODO test is actually passing: " ~ src.join("\n\n"));
 }
 
+fn TODO_gcc(src: string)
+{
+    if (process::LINUX)     TODO(src);
+    else                    ZERO(src);
+}
+
 
 // Run the whole battery & build self.
 
@@ -1828,7 +1834,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_gcc(`
         fn main()
         {
             mut target = 0;
