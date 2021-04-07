@@ -29,6 +29,7 @@ let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 
+let USE_relax_mutrefs       = true;
 let USE_nontriv_autocopy    = true;
 let USE_retval_narrowing    = true;
 let USE_ref_to_mutref       = false; // TODO
@@ -1547,7 +1548,15 @@ pub fn solve(
         if (!h.ret_actual.is_ref)
         {
             for (mut i = 0; i < h.returns.len; i++)
-                maybeCopyOrMove(h.returns[i].MUT.items.only, h.ret_actual);
+            {
+                // TODO FIX nodeidx unstable because createCopy,
+                //  ref to only is in smallvec -
+                //   so createCopy invalidates the ref.
+                //
+                mut r = h.returns[i].items.only;
+                maybeCopyOrMove(r, h.ret_actual);
+                h.returns[i].MUT.items.only = r;
+            }
 
             if (!fnbody_of && items && !h.ret_actual.is_void)
                 maybeCopyOrMove(items.last, h.ret_actual);
@@ -4302,14 +4311,12 @@ pub fn solve(
         return solved(node, type, args, :target);
     }
 
-    fn maybeCopyOrMove(ref nidx: SolvedNode, slot: Type,
+    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
         isArgument = false): void
     {
-        ref node = MUT(nidx);
-
         // Clear mutrefs unless needed.
-        if !(slot.is_mutref)
-            node.type = clear_mutref(node.type);
+        if (USE_relax_mutrefs && !slot.is_mutref)
+            node.MUT.type = clear_mutref(node.type);
 
         // No copy needed when the slot is a reference.
         if (slot.is_ref)
@@ -4318,7 +4325,7 @@ pub fn solve(
             //  in which case we're better off binding a temporary,
             //   else we risk cache missing on the useless global defval.
             if (node.kind == "definit" && isArgument)
-                node.type = clear_refs(node.type);
+                node.MUT.type = clear_refs(node.type);
 
             return;
         }
@@ -4330,21 +4337,21 @@ pub fn solve(
         // Definits can just as well emit values.
         if (node.kind == "definit")
         {
-            node.type = clear_refs(node.type);
+            node.MUT.type = clear_refs(node.type);
             return;
         }
 
-        if !(slot.is_rx_copy)
+        if (!slot.is_rx_copy)
             fail("Needs an explicit STEAL or CLONE.");
 
-        if !(node.type.is_trivial)
+        if (!node.type.is_trivial)
         {
             USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
             _notes |= N_NonTrivAutoCopy;
         }
 
         // Here we go.
-        nidx = createCopy(nidx);
+        node = createCopy(node);
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
