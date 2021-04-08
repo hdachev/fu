@@ -1088,7 +1088,7 @@ pub fn cpp_codegen(
             return cgDefault(node.type);
 
         let itemType = tryClear_array(node.type) || fail();
-        let itemAnnot = typeAnnot(itemType);
+        let _itemAnnot = typeAnnot(itemType);
 
         let arrayAnnot = typeAnnot(node.type);
         return arrayAnnot ~ " { " ~ arrayAnnot

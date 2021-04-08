@@ -3,7 +3,8 @@ import compiler;
 
 // A quick self-test without I/O.
 
-let TEST_SRC = `
+let TEST_SRC =
+`
     fn test(one: i32) {
         let zero = one - 1;
         let two  = one * 2;
@@ -2631,11 +2632,11 @@ pub fn runTests()
         }
 
         fn main(): i32 {
-            let x = throw_hey()
+            let _x = throw_hey()
                 catch err
                     return err.len - 3;
 
-            return x || 7;
+            return _x || 7;
         }
     `);
 
@@ -2645,11 +2646,11 @@ pub fn runTests()
         }
 
         fn main(): i32 {
-            let x = throw_hey()
+            let _x = throw_hey()
                 catch err
                     return err.len - 3;
 
-            return x || 7;
+            return _x || 7;
         }
     `);
 

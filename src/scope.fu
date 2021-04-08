@@ -207,7 +207,9 @@ pub struct Helpers
 
     ret_expect?:    Type;
     ret_actual?:    Type;
+
     returns?:       SolvedNode[];
+    vars?:          i32[];
 };
 
 pub struct ScopeItem

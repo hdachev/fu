@@ -464,6 +464,10 @@ pub fn solve(
         // Reserve the slot.
         let target = reuse || Scope_create(_scope, kind: "var", :name, :flags, :local_of);
 
+        // TODO FIX not listing args, they end up in the wrong helpers bucket.
+        if (_helpers && !(flags & F_ARG))
+            _helpers.last.vars ~= target.index;
+
         // Double check.
         if (SELF_TEST && reuse)
         {
@@ -1600,6 +1604,15 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
 
+        // Check var usage.
+        let vars = _helpers[helpers_idx].vars;
+        for (mut i = 0; i < vars.len; i++)
+        {
+            let var = GET_local(vars[i]);
+            var.callsites || var.name.if_first == '_' || fail(
+                "Unused variable: `" ~ var.name ~ "`: prefix with an underscore if this is expected.");
+        }
+
         // Control flow.
         return createBlock(:token, :items,
             type: h.ret_actual || t_void,
@@ -1980,7 +1993,6 @@ pub fn solve(
             args[REST_START] = REST_TYPE;
 
         //
-        let args00 = args;
         let mangle00 = mangle;
         let SPECFAIL = Target(modid: -1, index: 0);
 
@@ -4306,7 +4318,9 @@ pub fn solve(
         if (target.modid == module.modid)
         {
             // Tracking call graph & type annotations.
-            if (overload.kind == "fn" || overload.kind == "type")
+            if (overload.kind == "fn"   ||
+                overload.kind == "type" ||
+                overload.kind == "var")
             {
                 ref o = GET_mut(target);
                 o.callsites ~= callsite;
