@@ -183,12 +183,8 @@ pub struct Overload
     // The new nodelists.
     nodes?:     SolvedNodeData[];
 
-    // Target.index, Target.modid is current module modid.
-    //
-    // Note that when closures call their enclosing function,
-    //  the index we use is the one of the enclosing function.
-    //   See CallerNode, that's where we keep track of users.
-    used_by?:   i32[]; // <- watch out for closures
+    // The new used_by.
+    callsites?: SolvedNode[];
 
     // Solver state. // maybe we need flags enums already
     status?:    u32; // <- u32 to differentiate from flags

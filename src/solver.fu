@@ -183,6 +183,7 @@ pub fn solve(
 
     fn MUT(ref nid: SolvedNode)
     {
+        // TODO FIX this is bad: here because of arg defaults from other modules
         if (nid.nodeown.modid != module.modid)
         {
             mut t = SolvedNode(kind: "", token: TokenIdx, type: Type);
@@ -2288,7 +2289,7 @@ pub fn solve(
             }
 
             /////////////////////////////////
-            shadow ref outItems = _current_fn.MUT.items;
+            fn outItems() _current_fn.MUT.items;
             if (into)
                 outItems = GET(into).solved.items;
 
@@ -2437,7 +2438,7 @@ pub fn solve(
                     overload.closes_over = closes_over;
                 }
 
-                if (overload.used_by)
+                if (overload.callsites)
                 {
                     // TODO FIX starting the diff with just number of arguments,
                     //  which is fine for implicit cycling,
@@ -2517,14 +2518,10 @@ pub fn solve(
 
                     retval = s_body.type;
 
-                    shadow ref outItems = _current_fn.MUT.items;
-
                     // MUT DURING SOLVE,
                     //  implicit args splice in
                     outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
                 }
-
-                shadow ref outItems = _current_fn.MUT.items;
 
                 // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
                 //  Sighashes include return value.
@@ -2735,7 +2732,7 @@ pub fn solve(
             overload.args   = args;
             overload.type   = out.type;
 
-            if (overload.used_by)
+            if (overload.callsites)
                 if (quals0 != quals1)
                     overload.status |= SS_UPDATED;
         }
@@ -2782,10 +2779,19 @@ pub fn solve(
         {
             o.status &= ~SS_UPDATED;
 
+            mut dedupe: Target;
+
             NEXT_USER:
-            for (mut i = 0; i < o.used_by.len; i++)
+            for (mut i = 0; i < o.callsites.len; i++)
             {
-                mut index = o.used_by[i];
+                let callsite = o.callsites[i].nodeown;
+                if (callsite == dedupe)
+                    continue;
+
+                dedupe = callsite;
+
+                //
+                mut index = callsite.index;
 
                 GO_UP:
                 for (;;)
@@ -4302,18 +4308,9 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (overload.kind == "fn" || overload.kind == "type")
             {
-                // Locate immediate caller, fn or type.
-                for (mut i = _helpers.len; i --> 0; )
-                {
-                    ref h = _helpers[i];
-                    if (h.isFnOrType)
-                    {
-                        ref o = GET_mut(target);
-                        o.used_by.set::add(h.target);
-                        detectRecursion(target, o);
-                        break;
-                    }
-                }
+                ref o = GET_mut(target);
+                o.callsites ~= callsite;
+                detectRecursion(target, o);
             }
 
             // Robust closure tracking.
