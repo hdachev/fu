@@ -4235,37 +4235,6 @@ pub fn solve(
                     tempsOK: true);
         }
 
-        // Track deps.
-        if (target.modid == module.modid)
-        {
-            // Tracking call graph & type annotations.
-            if (overload.kind == "fn" || overload.kind == "type")
-            {
-                // Locate immediate caller, fn or type.
-                for (mut i = _helpers.len; i --> 0; )
-                {
-                    ref h = _helpers[i];
-                    if (h.isFnOrType)
-                    {
-                        ref o = GET_mut(target);
-                        o.used_by.set::add(h.target);
-                        detectRecursion(target, o);
-                        break;
-                    }
-                }
-            }
-
-            // Robust closure tracking.
-            if (_current_fn)
-            {
-                let o = GET(target);
-                if (o.kind == "var" && o.local_of)
-                    _current_fn.locals_used.set::add(target.index);
-
-                _current_fn.locals_used.set::add(o.closes_over);
-            }
-        }
-
         // Inliner.
         if (overload.kind == "inline")
         {
@@ -4308,7 +4277,40 @@ pub fn solve(
         }
 
         //
-        return solved(node, type, args, :target);
+        let callsite = solved(node, type, args, :target);
+
+        // Track deps.
+        if (target.modid == module.modid)
+        {
+            // Tracking call graph & type annotations.
+            if (overload.kind == "fn" || overload.kind == "type")
+            {
+                // Locate immediate caller, fn or type.
+                for (mut i = _helpers.len; i --> 0; )
+                {
+                    ref h = _helpers[i];
+                    if (h.isFnOrType)
+                    {
+                        ref o = GET_mut(target);
+                        o.used_by.set::add(h.target);
+                        detectRecursion(target, o);
+                        break;
+                    }
+                }
+            }
+
+            // Robust closure tracking.
+            if (_current_fn)
+            {
+                let o = GET(target);
+                if (o.kind == "var" && o.local_of)
+                    _current_fn.locals_used.set::add(target.index);
+
+                _current_fn.locals_used.set::add(o.closes_over);
+            }
+        }
+
+        return callsite;
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
