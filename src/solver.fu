@@ -192,6 +192,9 @@ pub fn solve(
         return GET_mut(nid.nodeown).nodes[nid.nodeidx];
     }
 
+    fn isFnOrType(h: Helpers): bool
+        !!(h.mask & (HM_Function | HM_Struct));
+
     fn SolvedNode(
         kind:       string,
         token:      TokenIdx,
@@ -205,7 +208,24 @@ pub fn solve(
             :kind, :flags, :value,
             :items, :token, :type, :target);
 
-        let nodeown = _current_fn.target || MODULE_TOP;
+        mut nodeown = MODULE_TOP;
+
+        // Locate immediate caller, fn or type.
+        //
+        // TODO OPTIMIZE
+        //  Previously used _current_fn.target,
+        //   but can't because of callsite tracking.
+        //    Could be something like _current_fn_or_type.
+        //
+        for (mut i = _helpers.len; i --> 0; )
+        {
+            let h = _helpers[i];
+            if (h.isFnOrType)
+            {
+                nodeown = Target(:module.modid, h.target);
+                break;
+            }
+        }
 
         ref nodes   = GET_mut(nodeown).nodes;
         let nodeidx = nodes.len;
@@ -2827,9 +2847,6 @@ pub fn solve(
             lazySolveStart(t, GET(t));
         }
     }
-
-    fn isFnOrType(h: Helpers): bool
-        !!(h.mask & (HM_Function | HM_Struct));
 
     fn detectRecursion(target: Target, overload: Overload): void
     {
