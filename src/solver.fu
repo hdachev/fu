@@ -31,7 +31,6 @@ let OPTI_flatten_blocks     = true;
 
 let USE_relax_mutrefs       = true;
 let USE_nontriv_autocopy    = true;
-let USE_retval_narrowing    = true;
 let USE_ref_to_mutref       = false; // TODO
 
 let SELF_TEST               = true;
@@ -1535,35 +1534,21 @@ pub fn solve(
         // finalizeReturns (helpers_idx: i32, bodyType: Type)
         ref h = _helpers[helpers_idx];
 
-        // TODO FIX these apply to regular blocks as well,
-        //  decide if you want fns to be like blocks or the other way round,
-        //   but these ifs gotta go.
-        if (fnbody_of)
+        if (items.if_last.type.is_never)
         {
-            if (items.if_last.type.is_never)
-            {
-                if (!h.ret_actual)
-                    h.ret_actual = t_never;
-            }
-            else
-            {
-                if (h.ret_actual)
-                    isAssignable(host: t_void, h.ret_actual) || fail(
-                        "Non-void returning fn missing a final return.");
+            if (!h.ret_actual)
+                h.ret_actual = t_never;
+        }
+        else if (fnbody_of)
+        {
+            // TODO FIX these apply to regular blocks as well,
+            //  decide if you want fns to be like blocks or the other way round,
+            //   but these ifs gotta go.
+            if (h.ret_actual)
+                isAssignable(host: t_void, h.ret_actual) || fail(
+                    "Non-void returning fn missing a final return.");
 
-                h.ret_actual = t_void;
-            }
-
-            // TODO FIX disable return value narrowing,
-            //  we're getting some aliasing somewhere.
-            if (!USE_retval_narrowing && h.ret_expect)
-            {
-                let lt0         = h.ret_actual.lifetime;
-                h.ret_actual    = h.ret_expect;
-
-                if (h.ret_actual.is_ref)
-                    h.ret_actual.lifetime = lt0 || fail("expected ref, got no lt0");
-            }
+            h.ret_actual = t_void;
         }
 
         if (!fnbody_of && items && !h.ret_actual.is_void)
