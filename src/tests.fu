@@ -1531,6 +1531,16 @@ pub fn runTests()
         //*/
     `);
 
+    FAIL(`
+        let y = [ 1 ];
+        let //*F
+            z /*/ _z //ERR unused
+            //*/
+            = [ 2 ];
+
+        return y[0] - 1;
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
