@@ -11375,7 +11375,6 @@ int main() { return fu_MAIN(); }
             test([-1, +1]);
 
 -----
-#include <fu/vec.h>
 #include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
@@ -11387,7 +11386,7 @@ static int test(fu::view<int> hey)
 
 int fu_MAIN()
 {
-    return test(fu_VEC<int> { fu_VEC<int>::INIT<2> { -1, +1 } });
+    return test(fu::view<int> { fu::view<int>::INIT<2> { -1, +1 } });
 }
 
 #endif
@@ -11685,7 +11684,7 @@ static void test(fu::view_mut<int> x, fu::view<s_Hey> y)
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
-    test(a, fu_VEC<s_Hey> { fu_VEC<s_Hey>::INIT<1> { s_Hey { 13 } } });
+    test(a, fu::view<s_Hey> { fu::view<s_Hey>::INIT<1> { s_Hey { 13 } } });
     return a.mutref(0) - 13;
 }
 
@@ -11747,7 +11746,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <cstdint>
-#include <fu/str.h>
 #include <fu/vec/cmp.h>
 #include <fu/view.h>
 
@@ -11760,7 +11758,7 @@ static bool test(fu::view<std::byte> a, fu::view<std::byte> b)
 
 int fu_MAIN()
 {
-    return (test(fu_STR{}, fu::view<std::byte>{}) ? 0 : 1);
+    return (test(fu::view<std::byte>{}, fu::view<std::byte>{}) ? 0 : 1);
 }
 
 #endif
