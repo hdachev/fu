@@ -2283,6 +2283,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // FN_recursion
+// FN_resolve
 // FN_reopen
 
 -----
@@ -5556,6 +5557,72 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        let y = [ 1 ];
+        let
+        /*
+        /*/ lax //*/ //ERR unused
+        z = [ 2 ];
+
+        return y[0] - 1
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    fu_VEC<int> y = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    [[maybe_unused]] fu_VEC<int> z = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
+    return y[0] - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn fail(a: string) throw("hey: " ~ a);
+        fn hello(a: string,
+            /*
+            /*/ lax //*/ //ERR unused
+            b: string)
+                a && fail(a) ? b : a;
+
+        fn main() hello("", "nope").len;
+
+-----
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec/concat.h>
+
+#ifndef FU_NO_FDEFs
+
+[[noreturn]] static fu::never fail(const fu_STR& a)
+{
+    fu::fail(("hey: "_fu + a));
+}
+
+static const fu_STR& hello(const fu_STR& a, const fu_STR&)
+{
+    return ((a) ? fail(a) : a);
+}
+
+int fu_MAIN()
+{
+    return hello(fu_STR{}, "nope"_fu).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// DEAD_if_cons
+
+-----
+
 
     struct BINOP {
         P: Map(string, i32);
@@ -6667,7 +6734,7 @@ static int __solveStruct(int&, int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& each_4rxG(int& arg_0, int x_0, int& cond, int)
+inline static int& each_lKdG(int& arg_0, int x_0, int& cond, int)
 {
     return !cond ? cond : (arg_0 += x_0);
 }
@@ -6684,7 +6751,7 @@ static void checkRecursions(int& target_0, int& o, const int incr)
 
 static int __solveStruct(int& target_0, int arg, const int x)
 {
-    each_4rxG(arg, x, arg, 0);
+    each_lKdG(arg, x, arg, 0);
     if (arg)
     {
         int& o = GET_mut(target_0, arg);
@@ -9023,11 +9090,11 @@ int main() { return fu_MAIN(); }
         }
 
         fn main(): i32 {
-            let x = throw_hey()
+            let _x = throw_hey()
                 catch err
                     return err.len - 3;
 
-            return x || 7;
+            return _x || 7;
         }
 
 -----
@@ -9070,11 +9137,11 @@ int main() { return fu_MAIN(); }
         }
 
         fn main(): i32 {
-            let x = throw_hey()
+            let _x = throw_hey()
                 catch err
                     return err.len - 3;
 
-            return x || 7;
+            return _x || 7;
         }
 
 -----
@@ -16406,7 +16473,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn sA(t: $T) struct { hey: $T; };
+        fn sA(_: $T) struct { hey: $T; };
 
         fn fA(a: $T): sA($T) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
@@ -16448,7 +16515,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn sB(t: $T) struct { hey: $T; };
+        fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey /*
@@ -16512,7 +16579,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn sB(t: $T) struct { hey: $T; };
+        fn sB(_: $T) struct { hey: $T; };
 
         // Prep for the thing below.
         fn test(x) x.hey - 1;
