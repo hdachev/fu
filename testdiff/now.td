@@ -7644,6 +7644,70 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct Context
+        {
+            fuzzy: Map(string, string);
+            files: string[];
+        }
+
+        fn resolveFile(
+            implicit ctx: &mut Context,
+            from: string, name: string): string
+        {
+            let path    = from ~ name;
+            let cached  = ctx.fuzzy[path];
+            if (cached)
+                return cached == "" ? "" : cached;
+
+            fn tryResolve(): string
+            {
+                let exists = file::size(path) >= 0;
+                if (exists)
+                    return path;
+
+                return "";
+            };
+
+            let resolve = tryResolve();
+            ctx.fuzzy[path] = resolve || "";
+            return resolve;
+        }
+
+        pub fn resolveFile(
+            implicit ctx: &mut Context,
+            path: string): string
+        {
+            let fuzzy = path.find('');
+            if (fuzzy > 0)
+            {
+                let from = path.slice(0, fuzzy);
+                let name = path.slice(fuzzy + 1);
+                if (from && name && !name.has(''))
+                {
+                    let res = resolveFile(:from, :name);
+                    if (res)
+                        return res;
+
+                    // Tests have the files prepopulated,
+                    //  we only pay the cost of lookup when about to fail compile.
+                    let prepopulated = from ~ name;
+                    if (ctx.files.has(prepopulated))
+                        return prepopulated;
+                }
+            }
+
+            return path;
+        }
+
+        fn main() {
+            let implicit mut ctx: Context;
+            return resolveFile("a").len - 1;
+        }
+
+-----
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
