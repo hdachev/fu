@@ -1533,12 +1533,23 @@ pub fn runTests()
 
     FAIL(`
         let y = [ 1 ];
-        let //*F
-            z /*/ _z //ERR unused
-            //*/
-            = [ 2 ];
+        let
+        //*F
+        /*/ lax //*/ //ERR unused
+        z = [ 2 ];
 
-        return y[0] - 1;
+        return y[0] - 1
+    `);
+
+    FAIL(`
+        fn fail(a: string) throw("hey: " ~ a);
+        fn hello(a: string,
+            //*F
+            /*/ lax //*/ //ERR unused
+            b: string)
+                a && fail(a) ? b : a;
+
+        fn main() hello("", "nope").len;
     `);
 
 

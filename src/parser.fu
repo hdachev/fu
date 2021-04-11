@@ -33,7 +33,7 @@ let     F_ID            = 1 << 5;
 pub let F_COMPOUND_ID   = 1 << 6;
 let     F_PARENS        = 1 << 7;
 
-// ... 8
+pub let F_LAX           = 1 << 8;
 pub let F_ARG           = 1 << 9;
 // ... 10
 // ... 11
@@ -476,6 +476,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: Options): Pars
             if (!_fnDepth || peek.kind == "id")
             {
                 if (v == "let")         return parseLetStmt();
+                if (v == "lax")         return { _idx--; parseLetStmt() };
                 if (v == "mut")         return { _idx--; parseLetStmt() };
                 if (v == "ref")         return { _idx--; parseLetStmt() };
                 if (v == "struct")      return parseStructDecl();
@@ -901,11 +902,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: Options): Pars
 
         if (tryConsume("id", "using"   ))   flags |= F_USING;
         if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
+        if (tryConsume("id", "lax"     ))   flags |= F_LAX;
         if (tryConsume("id", "shadow"  ))   flags |= F_SHADOW;
         if (tryConsume("id", "mut"     ))   flags |= F_MUT;
         if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
         mut id          = consume("id").value;
+        if (id[0] == '_')
+            flags |= F_LAX;
+
         mut mustname    = xqmark && tryConsume("op", "!");
 
         if (xqmark && tryConsume("op", "."))
