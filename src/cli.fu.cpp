@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <fu/default.h>
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -19,13 +20,13 @@ void saySomethingNice();
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
+static const fu_STR& next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
 {
     const int i = idx_0++;
     if (i < argv_0.size())
-        return fu_STR(argv_0[i]);
+        return argv_0[i];
 
-    return fu_STR{};
+    return (*(const fu_STR*)fu::NIL);
 }
 
 extern const fu_STR PRJDIR;
@@ -65,7 +66,7 @@ extern const fu_STR DEFAULT_WORKSPACE;
 static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 {
     int idx = 0;
-    fu_STR self = next(argv, idx);
+    const fu_STR& self = next(argv, idx);
     if (argv.size() == 1)
     {
         (std::cout << "\n\tHello! "_fu << self << '\n');
@@ -92,7 +93,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     int options {};
     fu_STR scheme {};
     bool run {};
-    fu_STR val = next(argv, idx);
+    fu_STR val { next(argv, idx) };
     while ((val.size() > 1) && (val.mutref(0) == std::byte('-')))
     {
         fu_STR opt { val };
@@ -146,7 +147,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     };
 
     {
-        fu_STR val_1 = next(argv, idx);
+        const fu_STR& val_1 = next(argv, idx);
         if (val_1)
             fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 

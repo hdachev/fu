@@ -31,6 +31,7 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
+struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -220,6 +221,22 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -293,36 +310,6 @@ struct s_Type
             || vtype
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -432,6 +419,32 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
@@ -445,7 +458,8 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
-    fu_VEC<int> used_by;
+    fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
@@ -462,7 +476,8 @@ struct s_Overload
             || args
             || tEmplate
             || solved
-            || used_by
+            || nodes
+            || callsites
             || status
             || local_of
             || closes_over
@@ -652,14 +667,14 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-s_Token _token(const s_TokenIdx& idx, const s_Context& ctx)
+const s_Token& _token(const s_TokenIdx& idx, const s_Context& ctx)
 {
-    return s_Token(ctx.modules[idx.modid].in.lex.tokens[idx.tokidx]);
+    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 }
 
-fu_STR _fname(const s_TokenIdx& idx, const s_Context& ctx)
+const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
 {
-    return fu_STR(ctx.modules[idx.modid].fname);
+    return ctx.modules[idx.modid].fname;
 }
 
 static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_3_0, s_Context& ctx_0, const fu_STR& path_0)
@@ -804,25 +819,25 @@ inline const fu_VEC<s_Struct>& clone_mnFp(const fu_VEC<s_Struct>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_eMx0
-                                #define DEFt_clone_eMx0
-inline const s_SolvedNode& clone_eMx0(const s_SolvedNode& a)
+                                #ifndef DEFt_clone_VD7r
+                                #define DEFt_clone_VD7r
+inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_lMT8
-                                #define DEFt_clone_lMT8
-inline const fu_VEC<s_ScopeItem>& clone_lMT8(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_T2hh
+                                #define DEFt_clone_T2hh
+inline const fu_VEC<s_ScopeItem>& clone_T2hh(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_CCvd
-                                #define DEFt_clone_CCvd
-inline const fu_VEC<s_Overload>& clone_CCvd(const fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_evat
+                                #define DEFt_clone_evat
+inline const fu_VEC<s_Overload>& clone_evat(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
@@ -836,15 +851,15 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_LzbS
-                                #define DEFt_clone_LzbS
-inline s_Scope clone_LzbS(const s_Scope& a)
+                                #ifndef DEFt_clone_DhUn
+                                #define DEFt_clone_DhUn
+inline s_Scope clone_DhUn(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_lMT8(a.items);
-        res.overloads = clone_CCvd(a.overloads);
+        res.items = clone_T2hh(a.items);
+        res.overloads = clone_evat(a.overloads);
         res.imports = clone_I28a(a.imports);
         res.usings = clone_mnBR(a.usings);
         res.converts = clone_mnBR(a.converts);
@@ -861,8 +876,8 @@ inline s_SolverOutput clone_v5Nc(const s_SolverOutput& a)
     s_SolverOutput res {};
 
     {
-        res.root = clone_eMx0(a.root);
-        res.scope = clone_LzbS(a.scope);
+        res.root = clone_VD7r(a.root);
+        res.scope = clone_DhUn(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;

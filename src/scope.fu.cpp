@@ -30,6 +30,7 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
+struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -222,6 +223,22 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -295,36 +312,6 @@ struct s_Type
             || vtype
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -434,6 +421,32 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
@@ -447,7 +460,8 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
-    fu_VEC<int> used_by;
+    fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
@@ -464,7 +478,8 @@ struct s_Overload
             || args
             || tEmplate
             || solved
-            || used_by
+            || nodes
+            || callsites
             || status
             || local_of
             || closes_over
@@ -641,7 +656,8 @@ struct s_Helpers
     int kills;
     s_Type ret_expect;
     s_Type ret_actual;
-    fu_VEC<int> returns;
+    fu_VEC<s_SolvedNode> returns;
+    fu_VEC<int> vars;
     explicit operator bool() const noexcept
     {
         return false
@@ -653,6 +669,7 @@ struct s_Helpers
             || ret_expect
             || ret_actual
             || returns
+            || vars
         ;
     }
 };
@@ -754,7 +771,7 @@ s_ScopeItem& target_TODOFIX(s_ScopeItem& si, const s_Target& target_1)
 
 int MODID(const s_Module& module)
 {
-    return int(module.modid);
+    return module.modid;
 }
 
 bool isStruct(const s_Type& type)
@@ -801,7 +818,7 @@ s_Type initStruct(const fu_STR& name, const int flags_1, const bool SELF_TEST, s
     };
     module.out.types += s_Struct { fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{} };
     const int specualtive_quals = ((flags_1 & F_NOCOPY) ? int(q_trivial) : (q_rx_copy | q_trivial));
-    return s_Type { s_ValueType { int(specualtive_quals), MODID(module), fu_STR(canon_1) }, s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { int(specualtive_quals), int(MODID(module)), fu_STR(canon_1) }, s_Lifetime{}, s_Effects{} };
 }
 
 s_Type despeculateStruct(s_Type&& type)
@@ -947,7 +964,7 @@ s_Target Scope_add(s_Scope& scope, const fu_STR& kind_1, const fu_STR& id, const
 {
     const int modid_3 = MODID(module);
     const s_Target target_1 = s_Target { int(modid_3), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind_1), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags_1), int(min_1), int(max_1), fu_VEC<s_Argument>(args), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<int>{}, unsigned(status), int(local_of), fu_VEC<int>{}, fu_VEC<s_ScopeItem>{} };
+    s_Overload item = s_Overload { fu_STR(kind_1), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags_1), int(min_1), int(max_1), fu_VEC<s_Argument>(args), s_Template(tEmplate), s_SolvedNode(solved), fu_VEC<s_SolvedNodeData>{}, fu_VEC<s_SolvedNode>{}, unsigned(status), int(local_of), fu_VEC<int>{}, fu_VEC<s_ScopeItem>{} };
     scope.overloads.push(item);
     if (id)
     {

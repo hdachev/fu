@@ -156,9 +156,9 @@ fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_t9Il
-                                #define DEFt_unpackAddrOfFn_t9Il
-inline void unpackAddrOfFn_t9Il(fu_VEC<s_ScopeItem>& out_1_0, const fu_STR& id_2_0, bool shadows_0, const fu_STR& canon_1, int)
+                                #ifndef DEFt_unpackAddrOfFn_a5BM
+                                #define DEFt_unpackAddrOfFn_a5BM
+inline void unpackAddrOfFn_a5BM(fu_VEC<s_ScopeItem>& out_1_0, const fu_STR& id_2_0, bool shadows_0, const fu_STR& canon_1, int)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -182,7 +182,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_t9Il(out_1, id_2, shadows, type_3.vtype.canon, 0);
+    unpackAddrOfFn_a5BM(out_1, id_2, shadows, type_3.vtype.canon, 0);
     return true;
 }
 

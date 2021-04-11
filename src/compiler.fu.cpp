@@ -40,6 +40,7 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
+struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -246,6 +247,22 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -319,36 +336,6 @@ struct s_Type
             || vtype
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -458,6 +445,32 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
@@ -471,7 +484,8 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
-    fu_VEC<int> used_by;
+    fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
@@ -488,7 +502,8 @@ struct s_Overload
             || args
             || tEmplate
             || solved
-            || used_by
+            || nodes
+            || callsites
             || status
             || local_of
             || closes_over
@@ -795,25 +810,25 @@ inline const fu_VEC<s_Struct>& clone_mnFp(const fu_VEC<s_Struct>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_eMx0
-                                #define DEFt_clone_eMx0
-inline const s_SolvedNode& clone_eMx0(const s_SolvedNode& a)
+                                #ifndef DEFt_clone_VD7r
+                                #define DEFt_clone_VD7r
+inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_lMT8
-                                #define DEFt_clone_lMT8
-inline const fu_VEC<s_ScopeItem>& clone_lMT8(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_T2hh
+                                #define DEFt_clone_T2hh
+inline const fu_VEC<s_ScopeItem>& clone_T2hh(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_CCvd
-                                #define DEFt_clone_CCvd
-inline const fu_VEC<s_Overload>& clone_CCvd(const fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_evat
+                                #define DEFt_clone_evat
+inline const fu_VEC<s_Overload>& clone_evat(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
@@ -827,15 +842,15 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_LzbS
-                                #define DEFt_clone_LzbS
-inline s_Scope clone_LzbS(const s_Scope& a)
+                                #ifndef DEFt_clone_DhUn
+                                #define DEFt_clone_DhUn
+inline s_Scope clone_DhUn(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_lMT8(a.items);
-        res.overloads = clone_CCvd(a.overloads);
+        res.items = clone_T2hh(a.items);
+        res.overloads = clone_evat(a.overloads);
         res.imports = clone_I28a(a.imports);
         res.usings = clone_mnBR(a.usings);
         res.converts = clone_mnBR(a.converts);
@@ -852,8 +867,8 @@ inline s_SolverOutput clone_v5Nc(const s_SolverOutput& a)
     s_SolverOutput res {};
 
     {
-        res.root = clone_eMx0(a.root);
-        res.scope = clone_LzbS(a.scope);
+        res.root = clone_VD7r(a.root);
+        res.scope = clone_DhUn(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;
@@ -909,9 +924,9 @@ inline s_Module clone_PUXh(const s_Module& a)
 }
                                 #endif
 
-                                #ifndef DEFt_map_h9wd
-                                #define DEFt_map_h9wd
-inline fu_VEC<s_Module> map_h9wd(const fu_VEC<s_Module>& a, int)
+                                #ifndef DEFt_map_j9F3
+                                #define DEFt_map_j9F3
+inline fu_VEC<s_Module> map_j9F3(const fu_VEC<s_Module>& a, int)
 {
     fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
@@ -926,7 +941,7 @@ inline fu_VEC<s_Module> map_h9wd(const fu_VEC<s_Module>& a, int)
                                 #define DEFt_clone_vQi3
 inline fu_VEC<s_Module> clone_vQi3(const fu_VEC<s_Module>& a)
 {
-    return map_h9wd(a, 0);
+    return map_j9F3(a, 0);
 }
                                 #endif
 
@@ -995,25 +1010,25 @@ inline fu_VEC<s_Struct>& clone_Z8AT(fu_VEC<s_Struct>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_7Uy6
-                                #define DEFt_clone_7Uy6
-inline s_SolvedNode& clone_7Uy6(s_SolvedNode& a)
+                                #ifndef DEFt_clone_AV3V
+                                #define DEFt_clone_AV3V
+inline s_SolvedNode& clone_AV3V(s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_wtPU
-                                #define DEFt_clone_wtPU
-inline fu_VEC<s_ScopeItem>& clone_wtPU(fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_T4lA
+                                #define DEFt_clone_T4lA
+inline fu_VEC<s_ScopeItem>& clone_T4lA(fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_uLeQ
-                                #define DEFt_clone_uLeQ
-inline fu_VEC<s_Overload>& clone_uLeQ(fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_zrrm
+                                #define DEFt_clone_zrrm
+inline fu_VEC<s_Overload>& clone_zrrm(fu_VEC<s_Overload>& a)
 {
     return a;
 }
@@ -1027,15 +1042,15 @@ inline fu_VEC<s_Target>& clone_uIm6(fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_Wa46
-                                #define DEFt_clone_Wa46
-inline s_Scope clone_Wa46(s_Scope& a)
+                                #ifndef DEFt_clone_J3Oj
+                                #define DEFt_clone_J3Oj
+inline s_Scope clone_J3Oj(s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_wtPU(a.items);
-        res.overloads = clone_uLeQ(a.overloads);
+        res.items = clone_T4lA(a.items);
+        res.overloads = clone_zrrm(a.overloads);
         res.imports = clone_mrln(a.imports);
         res.usings = clone_uIm6(a.usings);
         res.converts = clone_uIm6(a.converts);
@@ -1052,8 +1067,8 @@ inline s_SolverOutput clone_Pu6M(s_SolverOutput& a)
     s_SolverOutput res {};
 
     {
-        res.root = clone_7Uy6(a.root);
-        res.scope = clone_Wa46(a.scope);
+        res.root = clone_AV3V(a.root);
+        res.scope = clone_J3Oj(a.scope);
         res.notes = clone_cBw5(a.notes);
     };
     return res;
@@ -1175,17 +1190,17 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
                 solve += m.mutref(i).stats.solve;
                 codegen += m.mutref(i).stats.codegen;
             };
-            ModuleStat_print(lex, "\n    lex "_fu, fu_STR{});
-            ModuleStat_print(parse, "  parse "_fu, fu_STR{});
-            ModuleStat_print(solve, "  solve "_fu, fu_STR{});
+            ModuleStat_print(lex, "\n    lex "_fu, (*(const fu_STR*)fu::NIL));
+            ModuleStat_print(parse, "  parse "_fu, (*(const fu_STR*)fu::NIL));
+            ModuleStat_print(solve, "  solve "_fu, (*(const fu_STR*)fu::NIL));
             ModuleStat_print(codegen, "codegen "_fu, "\n"_fu);
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
     };
-    build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, fu_STR{}, ctx);
+    build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), ctx);
 }
 
-static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if"_fu, "NONTRIV_autocopy"_fu } };
+static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<12> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if"_fu, "DEAD_if_cons"_fu, "NONTRIV_autocopy"_fu } };
 
 static fu_STR ensure_main(const fu_STR& src)
 {
@@ -1352,8 +1367,8 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
         };
     };
     const bool run = true;
-    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "debug"_fu, "print-src"_fu, ctx);
-    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, "print-src"_fu, ctx);
+    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), "debug"_fu, "print-src"_fu, ctx);
+    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), "print-src"_fu, ctx);
 
     {
         fu_STR key {};

@@ -40,6 +40,7 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
+struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -230,6 +231,22 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -303,36 +320,6 @@ struct s_Type
             || vtype
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -442,6 +429,32 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
@@ -455,7 +468,8 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
-    fu_VEC<int> used_by;
+    fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
@@ -472,7 +486,8 @@ struct s_Overload
             || args
             || tEmplate
             || solved
-            || used_by
+            || nodes
+            || callsites
             || status
             || local_of
             || closes_over

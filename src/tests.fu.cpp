@@ -2,6 +2,7 @@
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
+#include <fu/util.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
@@ -29,6 +30,7 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
+struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -238,6 +240,22 @@ struct s_Struct
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -311,36 +329,6 @@ struct s_Type
             || vtype
             || lifetime
             || effects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    fu_STR kind;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || flags
-            || value
-            || items
-            || token
-            || type
-            || target
         ;
     }
 };
@@ -450,6 +438,32 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    fu_STR kind;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || flags
+            || value
+            || items
+            || token
+            || type
+            || target
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
@@ -463,7 +477,8 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
-    fu_VEC<int> used_by;
+    fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<int> closes_over;
@@ -480,7 +495,8 @@ struct s_Overload
             || args
             || tEmplate
             || solved
-            || used_by
+            || nodes
+            || callsites
             || status
             || local_of
             || closes_over
@@ -736,6 +752,15 @@ static void ARROPS(s_TestDiffs& testdiffs_0, const fu_STR& literal, const fu_STR
     ZERO(src, testdiffs_0);
 }
 
+static void TODO_gcc(const fu_STR& src, s_TestDiffs& testdiffs)
+{
+    if (fu_LINUX)
+        TODO(src, testdiffs);
+    else
+        ZERO(src, testdiffs);
+
+}
+
 void runTests()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
@@ -889,6 +914,8 @@ void runTests()
     ZERO("\n        {\n            return 0;\n        }\n    "_fu, testdiffs);
     FAIL("\n        {\n            return 0; //ERR block\n        //*F\n       }\n        /*/\n        }\n        //*/\n    "_fu, testdiffs);
     FAIL("\n        {\n            return 0; //ERR block\n        //*F\n         }\n        /*/\n        }\n        //*/\n    "_fu, testdiffs);
+    FAIL("\n        let y = [ 1 ];\n        let\n        //*F\n        /*/ lax //*/ //ERR unused\n        z = [ 2 ];\n\n        return y[0] - 1\n    "_fu, testdiffs);
+    FAIL("\n        fn fail(a: string) throw(\"hey: \" ~ a);\n        fn hello(a: string,\n            //*F\n            /*/ lax //*/ //ERR unused\n            b: string)\n                a && fail(a) ? b : a;\n\n        fn main() hello(\"\", \"nope\").len;\n    "_fu, testdiffs);
     ZERO("\n\n    struct BINOP {\n        P: Map(string, i32);\n    };\n\n    fn setupOperators(): BINOP\n    {\n        mut out: BINOP;\n\n        fn binop(op: string)\n            out.P[op] = 7;\n\n        binop(\",\");\n\n        return out;\n    }\n\n    shadow let BINOP = setupOperators();\n    let P_COMMA = BINOP.P[\",\"] || assert();\n\n    fn main() P_COMMA - 7;\n\n    "_fu, testdiffs);
     ZERO("\n\n        // -no-lambda\n        // This converted to a ref-returning\n        // logical chain for some reason.\n        let hex = true;\n        let trail = \"x\";\n        if (!(trail >= \"0\" && trail <= \"9\") &&\n            !(hex && (trail >= \"a\" && trail <= \"f\"\n                   || trail >= \"A\" && trail <= \"F\")))\n        {\n            return 0;\n        }\n\n        return 1;\n\n    "_fu, testdiffs);
     ZERO("\n        struct Type     { i: i32; };\n        struct Token    { i: i32; };\n        struct ScopeIdx { i: i32; };\n\n        struct SolvedNode\n        {\n            kind:       string;\n            flags?:     i32;\n            value?:     string;\n            items?:     SolvedNode[];\n            token:      Token;\n\n            type:       Type;\n            target?:    ScopeIdx;\n        };\n\n        let _here: Token;\n\n        fn createDefaultInit(type: Type): SolvedNode\n        {\n            // Broken arg re-arrange.\n            return SolvedNode(\n                kind: \"definit\",\n                token: _here,\n                :type);\n        }\n\n        return createDefaultInit(Type()).target.i;\n    "_fu, testdiffs);
@@ -904,7 +931,7 @@ void runTests()
     ZERO("\n        fn target(implicit ref _target: i32) _target;\n\n        // this suddenly reported that it doesn't see __solveStruct\n        fn GET_mut(ref x: i32) x || target;\n\n        // while i was trying to reproduce an ambig \"o\" fail here\n        fn __solveStruct(mut arg: i32): i32 {\n            if (arg) {\n                ref o = GET_mut(arg);\n                o++;\n                checkRecursions(o, o);\n            }\n            return arg;\n        }\n\n        fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n        fn main()\n        {\n            let implicit mut _target = 0;\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn main()\n        {\n            mut target = 0;\n            fn GET_mut(ref x: i32) x || GET_mut(target += 1);\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn main()\n        {\n            mut target = 0;\n            fn GET_mut(ref x: i32) x || GET_mut(++target);\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
-    ZERO("\n        fn main()\n        {\n            mut target = 0;\n            fn __solveStruct(mut arg: i32): i32 {\n                ref o = GET_mut(arg); o += target;\n                return target;\n            }\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));\n            return __solveStruct(0) - 2;\n        }\n    "_fu, testdiffs);
+    TODO_gcc("\n        fn main()\n        {\n            mut target = 0;\n            fn __solveStruct(mut arg: i32): i32 {\n                ref o = GET_mut(arg); o += target;\n                return target;\n            }\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));\n            return __solveStruct(0) - 2;\n        }\n    "_fu, testdiffs);
     FAIL("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) a || //*F\n                              a = A(incr(a))    /*/         // Lint should complain here,\n                             (a = A(incr(a))); //*/         //  this was an honest mistake.\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
     ZERO("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) a || (a = B(incr(a)));\n        fn B(ref b: i32) b || (b = A(incr(b)));\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
     ZERO("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) { ref aa = a || (a = B(incr(a))); return aa; }\n        fn B(ref b: i32) { ref bb = b || (b = A(incr(b))); return bb; }\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
@@ -922,6 +949,7 @@ void runTests()
     TODO("\n        struct Arg { i: i32; };\n\n        // A mutref fail.\n        fn mutargs(args: &mut Arg[])\n        {\n            // This miscompiles to ref into args,\n            //  after which we invalidate the reference.\n            //\n            // Notice the \"let\" would bind cleanly,\n            //  if it weren't for the \"&&\", which loses the mutrefsness.\n            //\n            let badref = args.len && args[0];\n            args = [ Arg(11) ]; // INVALIDATE badref.\n            return badref;\n        }\n\n        fn main()\n        {\n            mut args = [ Arg(7) ];\n            return mutargs(args).i - 7;\n        }\n    "_fu, testdiffs);
     ZERO("\n        pub struct Target { modid!: i32; packed!: i32; };\n        pub inline fn index(a: Target) a.packed;\n\n        <split/>\n\n        struct CurrentFn { using target: Target; };\n        fn hello(c?: CurrentFn) c.index;\n        fn main() hello;\n    "_fu, testdiffs);
     ZERO("\n        struct ID   { offset: i32;  };\n        struct Data { items:  ID[]; };\n\n        using fn Data(implicit all: Data[], nid: ID): Data {\n            return all[nid.offset];\n        }\n\n        fn test(node: ID) {\n            let init = node.items[0];\n            return init.items.len;\n        }\n\n        fn main() {\n            let implicit all =  [ Data([ ID(1)      ])\n                                , Data([ ID, ID, ID ]) ];\n\n            return 0.ID.test - 3;\n        }\n    "_fu, testdiffs);
+    ZERO("\n        struct Context\n        {\n            fuzzy: Map(string, string);\n            files: string[];\n        }\n\n        fn resolveFile(\n            implicit ctx: &mut Context,\n            from: string, name: string): string\n        {\n            let path    = from ~ name;\n            let cached  = ctx.fuzzy[path];\n            if (cached)\n                return cached == \"\v\" ? \"\" : cached;\n\n            fn tryResolve(): string\n            {\n                let exists = file::size(path) >= 0;\n                if (exists)\n                    return path;\n\n                return \"\";\n            };\n\n            let resolve = tryResolve();\n            ctx.fuzzy[path] = resolve || \"\v\";\n            return resolve;\n        }\n\n        pub fn resolveFile(\n            implicit ctx: &mut Context,\n            path: string): string\n        {\n            let fuzzy = path.find('\v');\n            if (fuzzy > 0)\n            {\n                let from = path.slice(0, fuzzy);\n                let name = path.slice(fuzzy + 1);\n                if (from && name && !name.has('\v'))\n                {\n                    let res = resolveFile(:from, :name);\n                    if (res)\n                        return res;\n\n                    // Tests have the files prepopulated,\n                    //  we only pay the cost of lookup when about to fail compile.\n                    let prepopulated = from ~ name;\n                    if (ctx.files.has(prepopulated))\n                        return prepopulated;\n                }\n            }\n\n            return path;\n        }\n\n        fn main() {\n            let implicit mut ctx: Context;\n            return resolveFile(\"a\").len - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu, testdiffs);
     ZERO("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw(\"woot\");\n    "_fu, testdiffs);
     ZERO("\n\n        struct TrueStory { kind: string; value: string; };\n\n        mut specialized = TrueStory(kind: \"fn\", value: \"val\");\n\n        specialized.kind == \"fn\" && specialized.value || throw(\"nope\");\n\n        let v: &mut string = specialized.kind == \"fn\"\n                          && specialized.value\n                          || throw(\"nope\");\n        v ~= \"ue\";\n\n        return specialized.value == \"value\" ? 0 : 1;\n\n    "_fu, testdiffs);
@@ -939,10 +967,11 @@ void runTests()
     ZERO("\n        // Same as below, but avoids the $T call, which is also broken somehow.\n        //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -\n        //   we emit useless overloads for mutrefs when its clearly useless.\n\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i) {\n                shadow mut a = a;\n                a.i /= 2;\n                return rec_cases(a);\n            }\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
     ZERO("\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i)    return rec_cases($T(i: a.i / 2));\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
     ZERO("\n        struct X { i: i32; };\n        type Y = X;\n        fn main() Y(1).i / 2;\n    "_fu, testdiffs);
+    ZERO("\n        struct Node {\n            kind  ?: string;\n            items ?: Node[];\n            value ?: string;\n        };\n\n        fn astReplace(node: Node, mutate): Node {\n            fn walk(shadow ref node: Node) {\n                for (mut i = 0; i < node.items.len; i++)\n                    walk(node.items[i]);\n\n                mutate(node);\n            }\n\n            shadow mut node = node;\n            walk(node);\n            return node;\n        }\n\n        fn test(n: Node, a: string, b: string) {\n            return astReplace(n, |ref item: Node| {\n                if (item.value == a) {\n                    if (item.items.len == 1 && item.kind == \"call\")\n                        item.value = b;\n                    else if (item.kind == \"str\")\n                        item.value = b;\n                }\n            });\n        }\n\n        fn main() {\n            let v0 = Node(kind: \"str\", value: \"woot\");\n            let v1 = v0.test(\"woot\", \"who\");\n            return v1.value.len - 3;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct SolvedNode {\n            value: i32;\n            items?: SolvedNode[];\n        };\n\n        fn visitNodes(_v: &mut $V, _n: SolvedNode) {\n\n            fn traverse(v: &mut $V, n: SolvedNode) {\n                v.visit(n);\n                for (mut i = 0; i < n.items.len; i++)\n                    traverse(v, n.items[i]);\n            }\n\n            traverse(_v, _n);\n        };\n\n        struct Visitor {\n            sum: i32;\n        };\n\n        fn visit(using v: &mut Visitor, node: SolvedNode) {\n            sum += node.value;\n        };\n\n        fn main(): i32 {\n            let tree = SolvedNode(3,\n                [ SolvedNode(5), SolvedNode(7) ]);\n\n            <alt>\n            // This is an aside, managed to lose the copy qual when working structs\n            //  Initially noticed it because visitNodes tried to change its sighash\n            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy\n            </alt>\n\n            mut myVisitor: Visitor;\n            myVisitor.visitNodes(tree);\n            return myVisitor.sum - 15;\n        };\n\n    "_fu, testdiffs);
     ZERO("\n        return 0 > 1 ? throw(\"should type check\") : 0;\n    "_fu, testdiffs);
-    ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1;\n        }\n\n        fn main(): i32 {\n            let x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return x || 7;\n        }\n    "_fu, testdiffs);
-    ZERO("\n        fn throw_hey() {\n            throw(\"hey\");\n        }\n\n        fn main(): i32 {\n            let x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return x || 7;\n        }\n    "_fu, testdiffs);
+    ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1;\n        }\n\n        fn main(): i32 {\n            let _x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return _x || 7;\n        }\n    "_fu, testdiffs);
+    ZERO("\n        fn throw_hey() {\n            throw(\"hey\");\n        }\n\n        fn main(): i32 {\n            let _x = throw_hey()\n                catch err\n                    return err.len - 3;\n\n            return _x || 7;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn throw_hey(): i32 {\n            throw(\"hey\");\n            return 1;\n        }\n\n        fn main(): i32 {\n            try {\n                return throw_hey();\n            }\n            catch (e) {\n                return e.len - 3;\n            }\n\n            return 11;\n        }\n    "_fu, testdiffs);
     ZERO("\n\n        fn main()\n            cli_handle([ \"hello\", \"you\" ]);\n\n        fn cli_handle(args: string[]): i32\n        {\n            mut idx = 0;\n\n            fn next() {\n                let i = idx++;\n                if (i < args.len)\n                    return args[i];\n\n                return \"\";\n            }\n\n            // Router.\n            return next().len - 5;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn test() {\n            mut x = 5;\n            return x;\n        }\n\n        fn main()\n            test() - 5;\n    "_fu, testdiffs);
@@ -1088,6 +1117,9 @@ void runTests()
     ZERO("\n        fn times_implicit(x: i32, implicit y: i32) x * y;\n        fn times7(x: i32) x * 7;\n\n        fn woot(a.times_implicit, b: u32) a * b.i32;\n        fn woot(a: i32, b.times7: i32) a * b;\n\n        fn test0() 3.woot(2.i32);\n\n        fn test1() {\n            let implicit y = 7;\n            return 3.woot(2.u32);\n        }\n\n        fn main() test0 + test1 * 1000 - 42042;\n    "_fu, testdiffs);
     ZERO("\n        fn varargs(a[]) a[0] + a[1];\n        fn main() varargs(1, 2) - 3;\n    "_fu, testdiffs);
     ZERO("\n        fn to_debug_str(a: i32) a     * 2;\n        fn to_debug_str(b: u32) b.i32 * 3;\n\n        fn inspect(items.to_debug_str[]) // <- varargs!\n        {\n            mut a = 0;\n            for (mut i = 0; i < items.len; i++)\n                a += items[i];\n\n            return a;\n        }\n\n        fn main() inspect(5.i32, 7.u32) - 31;\n    "_fu, testdiffs);
+    ZERO("\n        struct vec32  { x: f32; };\n        struct conv32 { v: f32; };\n\n        using inline fn convert(v: i32): conv32 = [ v.f32 ]; // no litfix\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
+    TODO("\n        struct vec32  { x: f32; };\n        struct conv32 { v: f32; };\n\n        using inline fn convert(v: f32): conv32 = [ v ]; // litfix in a conv: i32 -> f32\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x, a.v / b.y, a.v / b.z);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
+    TODO("\n        struct vec_u  { x: u32; };\n        struct vec32  { x: f32; };\n        struct vec64  { x: f64; };\n\n        struct conv_u { v: u32; };\n        struct conv32 { v: f32; };\n        struct conv64 { v: f64; };\n\n        using inline fn convert(v: u32): conv_u = [ v ]; // matchfail before\n        using inline fn convert(v: f32): conv32 = [ v ];\n        using inline fn convert(v: f64): conv64 = [ v ]; // matchfail after\n\n        inline fn /(a: conv_u, b: vec_u) vec_u(a.v / b.x);\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);\n        inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(fn, v) fn(v);\n        struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(x, v) x(v);             // same but name conflict - x arg and .x field\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_w(x, y) x(y);             // same thing but\n        fn fn_v(y, x) fn_w(fn y, x);    // extra nasty\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
@@ -1096,10 +1128,10 @@ void runTests()
     ZERO("\n        fn test(depth0) {\n            fn identity(x) x;\n            fn outer(depth1) {\n                fn inner(depth2) {\n                    let sum = depth2; inline fn lambda2() sum; return identity(fn lambda2);\n                }\n                let sum = depth1; inline fn lambda1() sum; return inner(fn lambda1);\n            }\n            let sum = depth0; inline fn lambda0() sum; return outer(fn lambda0);\n        }\n        fn main() test(0);\n    "_fu, testdiffs);
     ZERO("\n        fn test(depth0)\n        {\n            fn first(depth1) {\n                fn first_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum;\n                }\n\n                let sum = depth0 + depth1;\n                return first_inner(|| sum);\n            }\n\n            fn second(depth1) {\n                fn second_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum + first(|| sum);\n                }\n\n                let sum = depth0 + depth1;\n                return second_inner(|| sum);\n            }\n\n            let sum = depth0 + depth0;\n            return second(|| sum);\n        }\n\n        fn main() test(0);\n    "_fu, testdiffs);
     ZERO("\n        fn use_a(implicit a: i32) a * a;\n        fn use_b(implicit b: i32) b * b;\n        fn use_c(implicit c: i32) c * c;\n\n        fn parseStuff(x: i32) {\n            fn doStuff(y: i32) doSomething(y * y);\n            return doStuff(x * x);\n        }\n\n        fn doSomething(x: i32) {\n            fn doSomething_inner(y: i32) y * use_a * descend(y * y);\n            return doSomething_inner(x * x);\n        }\n\n        fn descend(x: i32) { // <- x here\n            fn descend_inner(y: i32)\n                y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?\n                      : doSomethingElse(y * y) * use_c;\n\n            return descend_inner(x * x);\n        }\n\n        fn doSomethingElse(x: i32) {\n            fn doSomethingElse_inner(y: i32) y * use_b;\n            return doSomethingElse_inner(x * x);\n        }\n\n        fn main() {\n            let implicit a = 0;\n            let implicit b = 0;\n            let implicit c = 0;\n            return parseStuff(0);\n        }\n    "_fu, testdiffs);
-    ZERO("\n        fn sA(t: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu, testdiffs);
-    FAIL("\n        fn sB(t: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ; /*/ .i32; //*/\n    "_fu, testdiffs);
-    ZERO("\n        fn sB(t: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
-    TODO("\n        fn sB(t: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T =\n            x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
+    ZERO("\n        fn sA(_: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu, testdiffs);
+    FAIL("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ; /*/ .i32; //*/\n    "_fu, testdiffs);
+    ZERO("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
+    TODO("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T =\n            x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            outer: {\n                inner: {\n                    if (x > 1) break: outer;\n                    if (x > 0) break: inner;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            return {\n                BLOCK: {\n                    if (x & 1) break :BLOCK 1;\n                    if (x & 2) return 2;\n                    3\n                }\n            };\n        }\n\n        fn main() 4.test - 5.test - 6.test; // 3-1-2\n    "_fu, testdiffs);
     ZERO("\n        fn test(a: i32) {\n            mut w = 3;\n            OUTER: w += {\n                INNER: {\n                    if (a & 1)  break: INNER;\n                    else        break: OUTER;\n                };\n                5\n            };\n            return w;\n        }\n        fn main() 0.test + 1.test - 11;\n    "_fu, testdiffs);
