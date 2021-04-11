@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "./inl.h"
+#include "./util.h"
 
 namespace fu {
 
@@ -58,6 +58,31 @@ struct view
     fu_INL explicit operator bool() const noexcept
     {
         return m_size != 0;
+    }
+
+
+    // Copy/pasted from vec.
+
+    template <int32_t new_size>
+    struct INIT
+    {
+        static_assert(new_size > 0);
+
+        T data[new_size];
+
+        INIT(const INIT&) = delete;
+        INIT(INIT&&) /* -MOV-CTOR- */ = default;
+
+        INIT& operator=(const INIT&) = delete;
+        INIT& operator=(INIT&&) = delete;
+    };
+
+    template <int32_t new_size>
+    inline view(INIT<new_size>&& init) noexcept
+        : m_data { init.data }
+        , m_size { new_size }
+    {
+        static_assert(new_size > 0);
     }
 };
 
