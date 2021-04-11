@@ -169,6 +169,7 @@ let NOTES = [
     "DEAD_call",
     "DEAD_let",
     "DEAD_if",
+    "DEAD_if_cons",
     "NONTRIV_autocopy",
 ];
 

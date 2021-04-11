@@ -19,8 +19,9 @@ pub let N_DeadCode          = 1 << 6;
 pub let N_DeadCall          = 1 << 7;
 pub let N_DeadLet           = 1 << 8;
 pub let N_DeadIf            = 1 << 9;
+pub let N_DeadIfCons        = 1 << 10;
 
-pub let N_NonTrivAutoCopy   = 1 << 10;
+pub let N_NonTrivAutoCopy   = 1 << 11;
 
 
 //
@@ -3993,9 +3994,17 @@ pub fn solve(
 
     //
 
+    fn TODO_FIX_pop(ref items: SolvedNode[])
+    {
+        // TODO FIX pop should just return the last element, this is idiotic.
+        mut last = items.last;
+        items.pop();
+        return last;
+    }
+
     fn solveIf(node: Node, mut type: Type): SolvedNode
     {
-        let cond    = solveNode(node.items[0], t_bool);
+        mut cond    = solveNode(node.items[0], t_bool);
 
         // Dead code elim.
         if (cond.type.is_never)
@@ -4004,7 +4013,11 @@ pub fn solve(
             return cond;
         }
 
-        mut cons    = solveBlock(node.items[1], :type);
+        // `a && THROWS ? b : c` is the same as `a ? THROWS : b`
+        mut cons    = cond.kind == "and" && cond.items.last.type.is_never
+            ? { _notes |= N_DeadIfCons; cond.MUT.items.TODO_FIX_pop }
+            : solveBlock(node.items[1], :type);
+
         mut alt     = solveBlock(node.items[2], type: type || cons.type);
 
         if (!type.is_void)
