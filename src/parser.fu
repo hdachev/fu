@@ -35,6 +35,7 @@ let     F_PARENS        = 1 << 7;
 
 pub let F_LAX           = 1 << 8;
 pub let F_ARG           = 1 << 9;
+pub let F_UNUSED        = 1 << 10;
 // ... 10
 // ... 11
 pub let F_NOCOPY        = 1 << 12;

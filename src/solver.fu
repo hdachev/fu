@@ -1603,9 +1603,15 @@ pub fn solve(
         let vars = _helpers[helpers_idx].vars;
         for (mut i = 0; i < vars.len; i++)
         {
-            let var = GET_local(vars[i]);
-            var.callsites || var.flags & F_LAX || fail(
+            let index = vars[i];
+            let var = GET_local(index);
+            if (var.callsites)
+                continue;
+
+            var.flags & F_LAX || fail(
                 "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
+
+            GET_mut(Target(:index, :module.modid)).flags |= F_UNUSED;
         }
 
         // Control flow.

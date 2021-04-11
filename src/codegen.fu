@@ -837,18 +837,22 @@ pub fn cpp_codegen(
         }
         //////////////////////////////////////////////////////////
 
+        let isArg = node.flags & F_ARG;
         let annot = typeAnnot(
             node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
-                     | (node.flags & F_ARG == 0 ? 0 : M_ARGUMENT));
+                     | (isArg && M_ARGUMENT));
 
-        if (node.flags & F_ARG && node.type.addroffn::type_isZST)
+        if (isArg && node.type.addroffn::type_isZST)
             return annot;
 
         let overload = GET(node.target);
-        let id = overload.name || fail();
+        let isUnused = overload.flags & F_UNUSED;
+        if (isArg && isUnused)
+            return annot;
 
-        let head = (annot || fail()) ~ " " ~ ID(id);
-        let init = node.items ? node.items[LET_INIT] : SolvedNode;
+        let id      = overload.name || fail();
+        let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ ID(id);
+        let init    = node.items ? node.items[LET_INIT] : SolvedNode;
 
         if (!doInit || (node.flags & F_ARG))
             return head;
