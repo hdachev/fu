@@ -4715,14 +4715,14 @@ pub fn runTests()
     // Template structs.
 
     ZERO(`
-        fn sA(t: $T) struct { hey: $T; };
+        fn sA(_: $T) struct { hey: $T; };
 
         fn fA(a: $T): sA($T) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
     `);
 
     FAIL(`
-        fn sB(t: $T) struct { hey: $T; };
+        fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey //*F
@@ -4730,7 +4730,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn sB(t: $T) struct { hey: $T; };
+        fn sB(_: $T) struct { hey: $T; };
 
         // Prep for the thing below.
         fn test(x) x.hey - 1;
@@ -4741,7 +4741,7 @@ pub fn runTests()
     `);
 
     TODO(`
-        fn sB(t: $T) struct { hey: $T; };
+        fn sB(_: $T) struct { hey: $T; };
 
         // Pattern & partial spec, how?
         fn test(x: sB($T)): $T =

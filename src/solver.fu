@@ -108,6 +108,7 @@ pub fn solve(
     //
 
     let MODULE_TOP    = Scope_create(_scope, kind: "_module_top_");
+    _helpers         ~= Helpers(target: MODULE_TOP.index, "_module_top_");
 
 
     // Can't we just list them all and scan through?
@@ -463,9 +464,7 @@ pub fn solve(
         // Reserve the slot.
         let target = reuse || Scope_create(_scope, kind: "var", :name, :flags, :local_of);
 
-        // TODO FIX not listing args, they end up in the wrong helpers bucket.
-        if (_helpers && !(flags & F_ARG))
-            _helpers.last.vars ~= target.index;
+        _helpers.last.vars ~= target.index;
 
         // Double check.
         if (SELF_TEST && reuse)
@@ -1501,7 +1500,7 @@ pub fn solve(
             solveNodes(node.items, t_void));
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?: i32): SolvedNode
     {
         let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
@@ -1518,6 +1517,16 @@ pub fn solve(
             target:     fnbody_of,
             local_of:   fnbody_of ? -1 : _current_fn.target.index,
             :kills);
+
+        // TODO FIX Steal arguments from one level up, this real messy.
+        if (steal)
+        {
+            ref old = _helpers[helpers_idx - 1].vars;
+            ref new = _helpers[helpers_idx    ].vars;
+
+            new ~= old[old.len - steal, old.len];
+            old.shrink(old.len - steal);
+        }
 
         let expr        = !fnbody_of && !type.is_void;
         mut items       = solveNodes(
@@ -2048,10 +2057,13 @@ pub fn solve(
         {
             let scope0 = Scope_snap(_scope);
             let ss0 = _ss;
+            let helpers0vars = _helpers.last.vars.len;
 
             defer {
                 Scope_pop(_scope, scope0);
                 _ss = ss0;
+                if (_helpers)
+                    _helpers.last.vars.shrink(helpers0vars);
             }
 
             ScopeSkip_setup(:template, :scope0, :isInline);
@@ -2511,7 +2523,8 @@ pub fn solve(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
                         id: n_fn.value,
-                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                        steal: _helpers.last.vars.len - helpers0vars);
 
                     retval = s_body.type;
 
@@ -4260,10 +4273,13 @@ pub fn solve(
         {
             let scope0 = Scope_snap(_scope);
             let ss0 = _ss;
+            let helpers0vars = _helpers.last.vars.len;
 
             defer {
                 Scope_pop(_scope, scope0);
                 _ss = ss0;
+                if (_helpers)
+                    _helpers.last.vars.shrink(helpers0vars);
             }
 
             ScopeSkip_setup(:overload.template, :scope0, isInline: true);
@@ -4289,7 +4305,8 @@ pub fn solve(
                 n_body, type: ret_expect,
                 mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
                 id: n_fn.value,
-                :kills);
+                :kills,
+                steal: _helpers.last.vars.len - helpers0vars);
 
             result.last = s_body;
 
