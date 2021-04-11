@@ -44,6 +44,10 @@ pub let q_REF_EXTENSIONS
 
 pub let q_MUTINVAR = ~q_REF_EXTENSIONS;
 
+pub let q_RELAXABLE
+    = q_REF_EXTENSIONS
+    | q_mutref;
+
 
 //
 
@@ -527,4 +531,19 @@ pub fn type_trySuper(a: Type, b: Type)
         effects: type_inter(a.effects, b.effects),
         lifetime: quals & q_ref &&
             Lifetime_union(a.lifetime, b.lifetime));
+}
+
+
+//
+
+pub fn try_relax(ref type: Type, slot!: Type): bool
+{
+    if !((type.quals &~ slot.quals) & q_RELAXABLE)
+        return false;
+
+    if (!slot.is_mutref)
+        type = clear_mutref(type);
+
+    type.quals &= slot.quals | ~q_RELAXABLE;
+    return true;
 }

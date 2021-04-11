@@ -1091,7 +1091,7 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        let itemType = tryClear_array(node.type) || fail();
+        let itemType = tryClear_sliceable(node.type) || fail();
         let _itemAnnot = typeAnnot(itemType);
 
         let arrayAnnot = typeAnnot(node.type);

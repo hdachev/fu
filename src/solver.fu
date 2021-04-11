@@ -30,7 +30,6 @@ let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 
-let USE_relax_mutrefs       = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = false; // TODO
 
@@ -1486,6 +1485,20 @@ pub fn solve(
         let k = node.kind;
         if (k == "fn")
             uPrepFn_B(into);
+    }
+
+
+    //
+
+    fn propagateType(ref node: SolvedNode, slot: Type)
+    {
+        if !(node.MUT.type.try_relax(:slot))
+            return;
+
+        // STUFF!
+        // let k = node.kind;
+        // if (k == "and" || k == "or")
+        //     node.items.each(|i| propagateType(i, :slot));
     }
 
 
@@ -4366,8 +4379,7 @@ pub fn solve(
         isArgument = false): void
     {
         // Clear mutrefs unless needed.
-        if (USE_relax_mutrefs && !slot.is_mutref)
-            node.MUT.type = clear_mutref(node.type);
+        propagateType(:node, :slot);
 
         // No copy needed when the slot is a reference.
         if (slot.is_ref)
