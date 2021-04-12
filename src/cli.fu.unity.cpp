@@ -25,4 +25,3 @@
 #include "build.fu.cpp"
 #include "testdiff.fu.cpp"
 #include "tests.fu.cpp"
-#include "hello.fu.cpp"

@@ -153,8 +153,6 @@ fn runTestsAndBuildCompiler()
 {
     runTests();
 
-    hello::saySomethingNice();
-
     cli_handle(
         cwd: PRJDIR,
         [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);

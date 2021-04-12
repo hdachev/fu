@@ -34,7 +34,6 @@ extern const fu_STR PRJDIR;
 static void runTestsAndBuildCompiler()
 {
     runTests();
-    saySomethingNice();
     cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, PRJDIR);
 }
 
