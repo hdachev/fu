@@ -1614,17 +1614,34 @@ pub fn solve(
 
         // Check var usage.
         let vars = _helpers[helpers_idx].vars;
-        for (mut i = 0; i < vars.len; i++)
+        for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
             let var = GET_local(index);
+
+            //
+            mut usage: Type;
             if (var.callsites)
-                continue;
+            {
+                usage = var.callsites[0].type;
+                for (shadow mut i = 1; i < var.callsites.len; i++)
+                    usage = type_tryIntersect(usage, var.callsites[i].type) || fail(
+                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name ~ "`.");
+            }
+            else
+            {
+                // TODO FIX: the relax thing shouldn't be conditional,
+                //  just use the most relaxed type possible.
+                //
+                var.flags & F_LAX || fail(
+                    "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
-            var.flags & F_LAX || fail(
-                "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
+                GET_mut(Target(:index, :module.modid)).flags |= F_UNUSED;
+            }
 
-            GET_mut(Target(:index, :module.modid)).flags |= F_UNUSED;
+            // Either way, try to relax.
+            GET_mut(Target(:index, :module.modid)).solved
+                .MUT.type.try_relax(slot: usage);
         }
 
         // Control flow.
@@ -3409,12 +3426,7 @@ pub fn solve(
             ////////////////////////////////////////////////////////////////
 
             let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
-
-            // TODO FIX global inits, why the whole thing? Get rid of this.
-            //  Currently need init for out-of-module cg, but this here is lame.
-            ref overload = GET_mut(target);
-            if (!overload.local_of)
-                overload.solved = out;
+            GET_mut(target).solved = out;
 
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)

@@ -104,6 +104,9 @@ pub struct Lifetime { uni0n!: Region[]; };
 pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
     Lifetime(uni0n: set::union(a.uni0n, b.uni0n));
 
+fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
+    Lifetime(uni0n: set::inter(a.uni0n, b.uni0n));
+
 pub fn Lifetime_compareToIndex(lifetime: Lifetime, index: i32)
 {
     return lifetime.uni0n.if_first.Region_toLocalIndex > index  ? +1
@@ -129,20 +132,11 @@ pub struct ValueType
     canon: string;
 };
 
-pub struct Effects
-{
-    raw: i32;
-};
-
 pub struct Type
 {
     using vtype:    ValueType;
     lifetime?:      Lifetime;
-    effects?:       Effects;
 };
-
-fn type_inter(a: Effects, b: Effects)
-    Effects( raw: a.raw | b.raw );
 
 
 //
@@ -155,13 +149,9 @@ fn ==(a: ValueType, b: ValueType)
 pub fn ==(a: Lifetime, b: Lifetime)
     a.uni0n.view(i32) == b.uni0n.view(i32);
 
-pub fn ==(a: Effects, b: Effects)
-    a.raw == b.raw;
-
 pub fn ==(a: Type, b: Type)
     a.vtype    == b.vtype    &&
-    a.lifetime == b.lifetime &&
-    a.effects  == b.effects;
+    a.lifetime == b.lifetime;
 
 
 //
@@ -524,13 +514,28 @@ pub fn type_trySuper(a: Type, b: Type)
     let quals = a.quals & b.quals;
 
     return Type(
-        ValueType(
-            :a.canon,
-            :quals,
-            :a.modid),
-        effects: type_inter(a.effects, b.effects),
+        ValueType(:a.canon, :quals, :a.modid),
         lifetime: quals & q_ref &&
             Lifetime_union(a.lifetime, b.lifetime));
+}
+
+pub fn type_tryIntersect(a: Type, b: Type)
+{
+    if (a.canon != b.canon || a.modid != b.modid)
+        return a.is_never || b.is_never
+             ? t_never
+             : Type;
+
+    let quals = a.quals | b.quals;
+
+    // Refs must retain at least one lifetime.
+    let lifetime = Lifetime_inter(a.lifetime, b.lifetime);
+    if (quals & q_ref && !lifetime)
+        return Type;
+
+    return Type(
+        ValueType(:a.canon, :quals, :a.modid),
+        :lifetime);
 }
 
 

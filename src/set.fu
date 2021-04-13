@@ -94,3 +94,34 @@ pub fn union(a: $T[], b: $T[]): $T[]
 
     return a;
 }
+
+pub fn inter(a: $T[], b: $T[]): $T[]
+{
+    if (a.len > b.len)
+        return inter(b, a);
+
+    shadow mut a = a;
+
+    mut x = 0;
+    mut y = 0;
+    while (x < a.len && y < b.len) {
+        let X = a[x];
+        let Y = b[y];
+
+        if (X == Y) {
+            x++;
+            y++;
+        }
+        else if (X > Y) {
+            y++;
+        }
+        else {
+            a.splice(x, 1);
+        }
+    }
+
+    if (x < a.len)
+        a.shrink(x);
+
+    return a;
+}
