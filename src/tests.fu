@@ -2249,6 +2249,23 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct S { i: i32; };
+
+        fn hello(ref s: S, w: i32) {
+            infix fn |=(ref s: S, v: i32)
+                s.i |= v << w;
+
+            s |= 2;
+        }
+
+        fn main() {
+            mut s = 1.S;
+            s.hello(3);
+            return s.i - 17;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
@@ -3281,6 +3298,8 @@ pub fn runTests()
 
         fn main()
             test([-1, +1]);
+
+        ;; EXPECT fu::view<int>::INIT<2> { -1, +1 }
     `);
 
     ZERO(`
@@ -3385,6 +3404,8 @@ pub fn runTests()
     ZERO(`
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
+
+        ;; EXPECT test(fu::view<std::byte>{}, fu::view<std::byte>{})
     `);
 
 
