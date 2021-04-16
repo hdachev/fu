@@ -3408,6 +3408,12 @@ pub fn runTests()
         ;; EXPECT test(fu::view<std::byte>{}, fu::view<std::byte>{})
     `);
 
+    TODO(`
+        let NOTES = [ "AAA", "BBB", "CCC" ];
+        fn what(annot: string) NOTES.find(annot[1, annot.len]);
+        fn main() what("!BBB") - 1;
+    `);
+
 
     // Don't repeat yourself ctors.
 
@@ -4893,6 +4899,8 @@ pub fn runTests()
             });
             return sum - 6;
         }
+
+        ;; !NONTRIV_autocopy
     `);
 
     ZERO(`

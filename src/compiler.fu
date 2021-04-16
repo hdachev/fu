@@ -1,15 +1,14 @@
 import helpers;
 import context;
 import stat;
+import options;
 
 
 //
 
-fn compile(fname: string, via: string = "")
+fn compile(fname: string, via: string = "", options?: Options)
 {
     let implicit mut module = getModule(fname).clone();
-
-    let options = options::Options_default;
 
     // Inputs are only dependent on the one file in question.
     if (!module.in)
@@ -60,7 +59,8 @@ fn compile(fname: string, via: string = "")
         //
         let stat0 = ModuleStat_now();
         module.out.solve = solver::solve(
-            module.in.parse.root);
+            module.in.parse.root,
+            :options);
 
         let stat1 = ModuleStat_now();
         module.out.cpp = codegen::cpp_codegen(
@@ -173,7 +173,7 @@ let NOTES = [
     "NONTRIV_autocopy",
 ];
 
-pub fn compile_snippets(sources: string[], fnames?: string[]): Context
+pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context
 {
     fn ensure_main(src: string)
         src.has("fn main(")
@@ -191,7 +191,8 @@ pub fn compile_snippets(sources: string[], fnames?: string[]): Context
         let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
 
         ctx.files[fname] = src;
-        compile(:fname);
+        compile(:fname, options:
+            options.len > i && options[i]);
     }
 
     for (mut i = 0; i < ctx.modules.len; i++)
@@ -293,6 +294,7 @@ pub fn ZERO(
 
     //
     mut expectations: string[][];
+    mut options: Options[];
     for (mut i = 0; i < sources.len; i++)
     {
         ref src = sources[i];
@@ -308,6 +310,8 @@ pub fn ZERO(
         }
 
         // Collect ;; TODO and ;; EXPECTs.
+        mut break_notes: i32;
+
         mut start = 0;
         while ((start = src.find(" ;; ", :start)) >= 0)
         {
@@ -315,20 +319,32 @@ pub fn ZERO(
             if (end < 0)
                 end = src.len;
 
-            expectations.grow_if_oob(i) ~= src.slice(start + 4, end);
+            let annot = src.slice(start + 4, end);
+            if (annot[0] == '!')
+            {
+                let idx = NOTES.find(annot.slice(1, annot.len));
+                idx >= 0 || throw("Bad break_note: `;; " ~ annot ~ "`.");
+                break_notes |= 1 << idx;
+            }
+            else
+            {
+                expectations.grow_if_oob(i) ~= annot;
+            }
 
             // Turn ;; commands into // comments and hop over.
             src[start + 1]  = '/';
             src[start + 2]  = '/';
             start           = end;
         }
+
+        options ~= Options(:break_notes);
     }
 
     // We can now safely do the nowrites second -
     //  so that we can first test if the thing works,
     //   and only then allow you to persist it as an OK test output.
     //
-    let ctx = compile_snippets(:sources);
+    let ctx = compile_snippets(:sources, :options);
 
     // Deal with expectations first, nicer errors.
     for (mut i = 0; i < expectations.len; i++)

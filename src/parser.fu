@@ -1,6 +1,5 @@
 import helpers;
 import lexer;
-import options;
 
 
 //
@@ -168,7 +167,7 @@ pub struct ParserOutput
 
 //
 
-pub fn parse(modid: i32, fname: string, tokens: Token[], options: Options): ParserOutput
+pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Options): ParserOutput
 {
     mut _idx        = 0;
     mut _loc        = 0;

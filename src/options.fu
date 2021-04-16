@@ -1,4 +1,7 @@
 
+
+// Zeroinit = default build options.
+
 pub struct Lint
 {
     maxwarn: i32;
@@ -6,14 +9,9 @@ pub struct Lint
 
 pub struct Options
 {
-    using lint: Lint;
+    using lint?: Lint;
+    break_notes?: i32;
 };
 
 pub fn Lint_lax() =
     Lint(maxwarn: 10);
-
-pub fn Lint_strict() =
-    Lint();
-
-pub fn Options_default() =
-    Options(lint: Lint_strict());
