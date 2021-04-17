@@ -4405,11 +4405,18 @@ pub fn solve(
         // No copy needed when the slot is a reference.
         if (slot.is_ref)
         {
-            // Except if we're talking a fnarg,
-            //  in which case we're better off binding a temporary,
-            //   else we risk cache missing on the useless global defval.
-            if (node.kind == "definit" && isArgument)
-                node.MUT.type = clear_refs(node.type);
+            if (node.type.is_trivial)
+            {
+                // Except if we're talking a fnarg,
+                //  in which case we're better off binding a temporary,
+                //   else we risk cache missing on the useless global defval.
+                //
+                // We only do it for trivial types because
+                //  we don't want to add a destructor call here.
+                //
+                if (node.kind == "definit" && isArgument)
+                    node.MUT.type = clear_refs(node.type);
+            }
 
             return;
         }
