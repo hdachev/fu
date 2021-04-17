@@ -16,6 +16,7 @@ let M_FWDECL            = 1 << 6;
 let M_PARENS            = 1 << 7;
 let M_OPT_CURLIES       = 1 << 8;
 let M_LOOP_BODY         = 1 << 9;
+let M_MUTVAR            = 1 << 10;
 
 
 //
@@ -115,7 +116,7 @@ pub fn cpp_codegen(
         if (mode & M_ARGUMENT && type.addroffn::type_isZST)
             return "int";
 
-        let fwd = typeAnnotBase(type);
+        let fwd = typeAnnotBase(type, :mode);
 
         if (type.is_ref)
         {
@@ -170,7 +171,7 @@ pub fn cpp_codegen(
         return fwd;
     }
 
-    fn typeAnnotBase(type: Type): string
+    fn typeAnnotBase(type: Type, mode?: i32): string
     {
         let c = type.canon;
 
@@ -225,7 +226,7 @@ pub fn cpp_codegen(
             let itemAnnot = typeAnnot(sliceItem);
 
             include("<fu/view.h>");
-            if (type.is_mutref)
+            if (type.is_mutref || mode & M_MUTVAR)
                 return "fu::view_mut<" ~ itemAnnot ~ ">";
             else
                 return "fu::view<" ~ itemAnnot ~ ">";
@@ -839,8 +840,9 @@ pub fn cpp_codegen(
 
         let isArg = node.flags & F_ARG;
         let annot = typeAnnot(
-            node.type, (node.flags & F_MUT == 0 && !forceMut ? M_CONST : 0)
-                     | (isArg && M_ARGUMENT));
+            node.type, (node.flags & F_MUT == 0 && !forceMut && M_CONST)
+                     | (isArg && M_ARGUMENT)
+                     | (node.flags & F_MUT && M_MUTVAR));
 
         if (isArg && node.type.addroffn::type_isZST)
             return annot;
