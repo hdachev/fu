@@ -11411,7 +11411,6 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-#include <fu/vec.h>
 #include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
@@ -11423,7 +11422,8 @@ static int& test(fu::view_mut<int> hey)
 
 int fu_MAIN()
 {
-    fu_VEC<int> hey = fu_VEC<int> { fu_VEC<int>::INIT<2> { -1, +1 } };
+    auto _0 = fu::slate<2, int> { -1, +1 };
+    fu::view_mut<int> hey = _0;
     return int(test(hey));
 }
 
