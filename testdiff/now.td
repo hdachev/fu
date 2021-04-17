@@ -5594,9 +5594,12 @@ int main() { return fu_MAIN(); }
         fn main() hello("", "nope").len;
 
 -----
+#include <cstdint>
+#include <fu/default.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
+#include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
 
@@ -5605,14 +5608,14 @@ int main() { return fu_MAIN(); }
     fu::fail(("hey: "_fu + a));
 }
 
-static const fu_STR& hello(const fu_STR& a, const fu_STR&)
+static const fu_STR& hello(const fu_STR& a, fu::view<std::byte>)
 {
     return ((a) ? fail(a) : a);
 }
 
 int fu_MAIN()
 {
-    return hello(fu_STR{}, "nope"_fu).size();
+    return hello((*(const fu_STR*)fu::NIL), "nope"_fu).size();
 }
 
 #endif
@@ -5910,6 +5913,7 @@ int main() { return fu_MAIN(); }
             :template);
 
 -----
+#include <fu/default.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 
@@ -6005,7 +6009,7 @@ int fu_MAIN()
     const int max_1 {};
     fu_VEC<fu_STR> arg_n {};
     const s_Template tEmplate {};
-    return Scope_add(_scope, fu_STR{}, id, t_template, min_1, max_1, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{});
+    return Scope_add(_scope, (*(const fu_STR*)fu::NIL), id, t_template, min_1, max_1, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{});
 }
 
 #endif
@@ -6917,7 +6921,7 @@ static s_Overload GET(const s_Target& target)
     return s_Overload { ("N"_fu + target.index), ("I"_fu + target.index) };
 }
 
-inline static fu_STR name_zs0j(s_Target& target)
+inline static fu_STR name_zs0j(const s_Target& target)
 {
     return GET(target).id;
 }
@@ -6925,7 +6929,7 @@ inline static fu_STR name_zs0j(s_Target& target)
 static fu_STR setSpec(fu_MAP<fu_STR, s_Target>& specs_0, const fu_STR& mangle)
 {
     s_Target* _0;
-    s_Target& t = (*(_0 = &(specs_0.upsert(mangle))) ? *_0 : *_0 = s_Target{});
+    const s_Target& t = (*(_0 = &(specs_0.upsert(mangle))) ? *_0 : *_0 = s_Target{});
     return name_zs0j(t);
 }
 
@@ -11374,6 +11378,8 @@ int main() { return fu_MAIN(); }
         fn main()
             test([-1, +1]);
 
+        // EXPECT fu::slate<2, int> { -1, +1 }
+
 -----
 #include <fu/view.h>
 
@@ -11386,7 +11392,7 @@ static int test(fu::view<int> hey)
 
 int fu_MAIN()
 {
-    return test(fu::view<int> { fu::view<int>::INIT<2> { -1, +1 } });
+    return test(fu::slate<2, int> { -1, +1 });
 }
 
 #endif
@@ -11463,7 +11469,6 @@ int main() { return fu_MAIN(); }
 
 -----
 #include <cstddef>
-#include <cstdint>
 #include <fu/str.h>
 #include <fu/view.h>
 
@@ -11684,7 +11689,7 @@ static void test(fu::view_mut<int> x, fu::view<s_Hey> y)
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
-    test(a, fu::view<s_Hey> { fu::view<s_Hey>::INIT<1> { s_Hey { 13 } } });
+    test(a, fu::slate<1, s_Hey> { s_Hey { 13 } });
     return a.mutref(0) - 13;
 }
 
@@ -11743,6 +11748,8 @@ int main() { return fu_MAIN(); }
 
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
+
+        // EXPECT test(fu::view<std::byte>{}, fu::view<std::byte>{})
 
 -----
 #include <cstdint>
@@ -14571,6 +14578,7 @@ int main() { return fu_MAIN(); }
         }
 
 -----
+#include <fu/default.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -14601,7 +14609,7 @@ static void compile(int& sum_0, const fu_STR& fname, const fu_STR& via)
 int fu_MAIN()
 {
     int sum = 0;
-    compile(sum, "ab"_fu, fu_STR{});
+    compile(sum, "ab"_fu, (*(const fu_STR*)fu::NIL));
     return sum - 2;
 }
 
@@ -16936,6 +16944,8 @@ int main() { return fu_MAIN(); }
             });
             return sum - 6;
         }
+
+        // !NONTRIV_autocopy
 
 -----
 #include <fu/vec.h>
