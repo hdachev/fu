@@ -890,6 +890,13 @@ pub fn cpp_codegen(
                 return head ~ init;
             }
 
+            // HACK - cpp temporary object lifetimes are really not helpful here.
+            if (!node.type.is_ref && annot.starts(with: "fu::view"))
+            {
+                mut ptrflip: bool;
+                return head ~ " = " ~ emitTEMPVAR("auto", :ptrflip, :expr);
+            }
+
             return head ~ " = " ~ expr;
         }
 
@@ -1093,16 +1100,16 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        let itemType = tryClear_sliceable(node.type) || fail();
-        let _itemAnnot = typeAnnot(itemType);
+        // fu::slate literals
+        let list = "{ " ~ items.join(", ") ~ " }";
+        let annot = typeAnnotBase(node.type);
+        if (annot.starts(with: "fu::view<"))
+            return "fu::slate<" ~ items.len ~ ", " ~ annot.slice(9) ~ " " ~ list;
 
-        let arrayAnnot = typeAnnot(node.type);
-        return arrayAnnot ~ " { " ~ arrayAnnot
-            ~ "::INIT<" ~ items.len ~ "> { "
-                ~ items.join(", ") ~ " } }";
+        return annot ~ " { " ~ annot ~ "::INIT<" ~ items.len ~ "> " ~ list ~ " }";
     }
 
-    fn cgDefaultInit(node: SolvedNode, mode: i32): string
+    fn cgDefinit(node: SolvedNode, mode: i32): string
     {
         return cgArrayLiteral(node, mode);
     }
@@ -1689,8 +1696,11 @@ pub fn cpp_codegen(
 
         if (type.is_ref)
         {
-            include("<fu/default.h>");
+            let annot = typeAnnot(clear_refs(type));
+            if (annot.starts(with: "fu::view"))
+                return annot ~ "{}";
 
+            include("<fu/default.h>");
             return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
         }
 
@@ -1832,7 +1842,7 @@ pub fn cpp_codegen(
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, mode);
-        if (k == "definit")     return cgDefaultInit(node, mode);
+        if (k == "definit")     return cgDefinit(node, mode);
 
         if (k == "copy")        return cgMoveOrClone(node, mode);
         if (k == "move")        return cgMoveOrClone(node, mode);
@@ -1916,14 +1926,14 @@ pub fn cpp_codegen(
 
     //
 
-    fn emitTEMPVAR(annot: string, ref ptrflip!: bool, id?: string): string
+    fn emitTEMPVAR(annot: string, ref ptrflip!: bool, id?: string, expr?: string): string
     {
         ptrflip = annot[annot.len - 1] == '&';
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
         _current_fn.TEMPVARs ~=
             ptrflip ? annot[0, annot.len - 1] ~ "* " ~ id
-                    : annot ~ " " ~ id ~ " {}"; // TODO dont init trivial
+                    : annot ~ " " ~ id ~ (expr ? " = " ~ expr : " {}"); // TODO dont init trivial
 
         return id;
     }
