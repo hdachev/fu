@@ -149,13 +149,11 @@ fn &&=(a: &mut $T, mut b: $T): void __native;
 fn len (a: [$T]): i32 __native(".size()");
 
 fn [](a: [$T], i: i32)
-    case ($a -> &mut $T[]): &mut $T __native;
     case ($a -> &mut [$T]): &mut $T __native;
     case ($a -> &    [$T]): &    $T __native;
     case ($a ->      $T[]):      $T __native;
 
 fn [](a: [$T], start: i32, end: i32)
-    case ($a -> &mut $T[]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
     case ($a -> &mut [$T]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
     case ($a -> &    [$T]): &    [$T] __native("<fu/view.h>", "fu::get_view");
 
