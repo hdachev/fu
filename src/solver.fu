@@ -190,7 +190,7 @@ pub fn solve(
             && GET(nid.nodeown).nodes[nid.nodeidx];
     }
 
-    fn MUT(ref nid: SolvedNode)
+    fn MUT(nid: SolvedNode)
     {
         // TODO FIX this is bad: here because of arg defaults from other modules
         if (nid.nodeown.modid != module.modid)
@@ -1499,15 +1499,15 @@ pub fn solve(
 
     //
 
-    fn propagateType(ref node: SolvedNode, slot: Type)
+    fn propagateType(node: SolvedNode, slot: Type)
     {
         if !(node.MUT.type.try_relax(:slot))
             return;
 
-        // STUFF!
-        // let k = node.kind;
-        // if (k == "and" || k == "or")
-        //     node.items.each(|i| propagateType(i, :slot));
+        //
+        let k = node.kind;
+        if (k == "let")
+            node.items[LET_INIT].propagateType(node.type);
     }
 
 
@@ -1649,8 +1649,8 @@ pub fn solve(
             }
 
             // Either way, try to relax.
-            GET_mut(Target(:index, :module.modid)).solved
-                .MUT.type.try_relax(slot: usage);
+            GET_mut(Target(:index, :module.modid))
+                .solved.propagateType(usage);
         }
 
         // Control flow.
@@ -4405,6 +4405,7 @@ pub fn solve(
         // No copy needed when the slot is a reference.
         if (slot.is_ref)
         {
+            // TODO move this to codegen
             if (node.type.is_trivial)
             {
                 // Except if we're talking a fnarg,
