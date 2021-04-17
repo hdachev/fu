@@ -53,7 +53,7 @@ struct fu_MAP
                     return m_values[int(i - i0)];
         }
 
-        return fu::Default<V>::value;
+        return *(const V*)fu::NIL;
     }
 
     V& mutref(const K& key) noexcept

@@ -3299,7 +3299,7 @@ pub fn runTests()
         fn main()
             test([-1, +1]);
 
-        ;; EXPECT fu::view<int>::INIT<2> { -1, +1 }
+        ;; EXPECT fu::slate<2, int> { -1, +1 }
     `);
 
     ZERO(`

@@ -14,7 +14,7 @@ struct view
     typedef T fu_ANY_value_type;
 
     const T* m_data;
-    int32_t m_size;
+    const int32_t m_size;
 
     fu_INL view() noexcept
         : m_data { nullptr }
@@ -59,31 +59,6 @@ struct view
     {
         return m_size != 0;
     }
-
-
-    // Copy/pasted from vec.
-
-    template <int32_t new_size>
-    struct INIT
-    {
-        static_assert(new_size > 0);
-
-        T data[new_size];
-
-        INIT(const INIT&) = delete;
-        INIT(INIT&&) /* -MOV-CTOR- */ = default;
-
-        INIT& operator=(const INIT&) = delete;
-        INIT& operator=(INIT&&) = delete;
-    };
-
-    template <int32_t new_size>
-    inline view(INIT<new_size>&& init) noexcept
-        : m_data { init.data }
-        , m_size { new_size }
-    {
-        static_assert(new_size > 0);
-    }
 };
 
 template <typename T>
@@ -94,7 +69,12 @@ struct view_mut
     typedef T fu_ANY_value_type;
 
     T* m_data;
-    int32_t m_size;
+    const int32_t m_size;
+
+    fu_INL view_mut() noexcept
+        : m_data { nullptr }
+        , m_size { 0 }
+    {}
 
     fu_INL view_mut(T* data, int32_t size) noexcept
         : m_data { data }
@@ -151,6 +131,67 @@ struct view_mut
 
     fu_INL explicit operator bool() const noexcept
     {
+        return m_size != 0;
+    }
+};
+
+
+// Slice literals -
+
+template <int32_t m_size, typename T>
+struct slate
+{
+    typedef T value_type;
+    typedef T fu_VIEW_value_type; // i guess this is how we match non-vecs?
+    typedef T fu_ANY_value_type;
+
+    static_assert(m_size > 0);
+
+    T m_data[m_size];
+
+    fu_INL const T* data() const noexcept {
+        return m_data;
+    }
+
+    fu_INL T* data_mut() noexcept {
+        return m_data;
+    }
+
+    fu_INL int32_t size() const noexcept {
+        return m_size;
+    }
+
+    fu_INL const T& operator[](int32_t idx) const noexcept
+    {
+        const T* ok = m_data + idx;
+
+        #if fu_RETAIL
+        return *ok;
+
+        #else
+        return (uint32_t) idx < (uint32_t) m_size
+             ? *ok
+             : *((T*)1);
+
+        #endif
+    }
+
+    fu_INL T& mutref(i32 idx) noexcept
+    {
+        T* ok = m_data + idx;
+
+        #if fu_RETAIL
+        return *ok;
+
+        #else
+        return (uint32_t) idx < (uint32_t) m_size
+             ? *ok
+             : *((T*)1);
+
+        #endif
+    }
+
+    fu_INL explicit operator bool() const noexcept {
         return m_size != 0;
     }
 };
