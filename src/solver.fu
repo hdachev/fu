@@ -1506,8 +1506,17 @@ pub fn solve(
 
         //
         let k = node.kind;
+        let t = node.target;
         if (k == "let")
-            node.items[LET_INIT].propagateType(node.type);
+            return node.items[LET_INIT].propagateType(node.type);
+
+        if (k == "call")
+        {
+            let o = GET(t);
+
+            if (o.kind == "field")
+                return node.items[0].propagateType(node.type);
+        }
     }
 
 

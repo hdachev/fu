@@ -1532,7 +1532,7 @@ pub fn runTests()
     `);
 
     FAIL(`
-        let y = [ 1 ];              ;; EXPECT fu::slate<1, int> { 1 }
+        let y = [ 1 ];              ;; TODO fu::slate<1, int> { 1 }
         let
         //*F
         /*/ lax //*/ //ERR unused
@@ -4976,6 +4976,19 @@ pub fn runTests()
             });
 
             return sum - 21;
+        }
+    `);
+
+
+    // Relaxer.
+
+    ZERO(`
+        struct AB { a: i32; b: i32; };
+        fn sqr   (ref x: i32) x * x;
+        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b); ;; EXPECT const s_AB&
+        fn main() {
+            mut ab = AB(3, 5);
+            return ab.outer - 34;
         }
     `);
 
