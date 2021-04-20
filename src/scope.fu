@@ -119,7 +119,6 @@ pub struct SolvedNodeData
 
     value:      string;
     items:      SolvedNode[];
-    token:      TokenIdx;
 
     using type: Type;
     target:     Target;

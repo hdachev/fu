@@ -195,7 +195,7 @@ pub fn solve(
         // TODO FIX this is bad: here because of arg defaults from other modules
         if (nid.nodeown.modid != module.modid)
         {
-            mut t = SolvedNode(kind: "", token: TokenIdx, type: Type);
+            mut t = SolvedNode(kind: "", type: Type);
             return MUT(t) = SolvedNodeData(nid);
         }
 
@@ -207,7 +207,6 @@ pub fn solve(
 
     fn SolvedNode(
         kind:       string,
-        token:      TokenIdx,
         type:       Type,
         flags?:     i32,
         value?:     string,
@@ -216,7 +215,7 @@ pub fn solve(
     {
         let data    = SolvedNodeData(
             :kind, :flags, :value,
-            :items, :token, :type, :target);
+            :items, :type, :target);
 
         mut nodeown = MODULE_TOP;
 
@@ -525,23 +524,16 @@ pub fn solve(
 
     fn createDefinit(mut type: Type): SolvedNode
     {
-        let token = _here || fail();
-
         if (type.is_ref)
             type.lifetime = Lifetime_static();
 
         if (type.is_integral)
-            return SolvedNode(
-                kind: "int", :token, :type,
-                value: "0");
+            return SolvedNode(kind: "int", :type, value: "0");
 
         if (type.is_floating_pt)
-            return SolvedNode(
-                kind: "real", :token, :type,
-                value: "0");
+            return SolvedNode(kind: "real", :type, value: "0");
 
-        return SolvedNode(
-            kind: "definit", :token, :type);
+        return SolvedNode(kind: "definit", :type);
     }
 
     fn solveDefinit(type: Type): SolvedNode
@@ -1164,7 +1156,7 @@ pub fn solve(
                 if (!nullary)
                 {
                     if (!TODO_FIX_convert_args)
-                        TODO_FIX_convert_args = [ SolvedNode(kind: "", token: TokenIdx(), type: Type()) ];
+                        TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
 
                     TODO_FIX_convert_args[0].MUT.type = from;
                 }
@@ -1534,7 +1526,6 @@ pub fn solve(
 
     fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?: i32): SolvedNode
     {
-        let token = node.token;
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
 
@@ -1663,12 +1654,12 @@ pub fn solve(
         }
 
         // Control flow.
-        return createBlock(:token, :items,
+        return createBlock(:items,
             type: h.ret_actual || t_void,
             label: h.mask & HM_LabelUsed && Target(:module.modid, h.target));
     }
 
-    fn createBlock(token: TokenIdx, type: Type, items: SolvedNode[], label?: Target): SolvedNode
+    fn createBlock(type: Type, items: SolvedNode[], label?: Target): SolvedNode
     {
         // Compact + stress test.
         if (!label && items.len)
@@ -1687,7 +1678,7 @@ pub fn solve(
                 return items.last;
         }
 
-        return SolvedNode(kind: "block", :type, :items, :token, target: label);
+        return SolvedNode(kind: "block", :type, :items, target: label);
     }
 
 
@@ -1777,9 +1768,7 @@ pub fn solve(
 
     fn createEmpty(kind = "empty", type = t_void, target?: Target): SolvedNode
     {
-        return SolvedNode(
-            :kind, :type, :target,
-            token: _here || fail());
+        return SolvedNode(:kind, :type, :target);
     }
 
 
@@ -1857,7 +1846,6 @@ pub fn solve(
             _scope.converts.push(tDecl);
 
         return createFnDef(
-            token: node.token,
             target: tDecl,
             type: addroffn::X_addrofTarget(tDecl));
     }
@@ -1869,9 +1857,9 @@ pub fn solve(
             template.scope_memo = Scope_snap(_scope);
     }
 
-    fn createFnDef(token: TokenIdx, type: Type, target: Target): SolvedNode
+    fn createFnDef(type: Type, target: Target): SolvedNode
     {
-        return SolvedNode(kind: "fndef", :type, :target, :token);
+        return SolvedNode(kind: "fndef", :type, :target);
     }
 
 
@@ -3006,7 +2994,7 @@ pub fn solve(
         if (!node.items)
         {
             reportReturnType(:helpers_idx, t_void);
-            return createJump(:node.token, :target);
+            return createJump(:target);
         }
 
         if (expr.type.is_ref)
@@ -3037,15 +3025,15 @@ pub fn solve(
         reportReturnType(:helpers_idx, expr.type);
 
         //
-        let jump = createJump(:node.token, :target, expr);
+        let jump = createJump(:target, expr);
         h.returns ~= jump;
         return jump;
 
     }
 
-    fn createJump(token: TokenIdx, target: Target, expr?: SolvedNode)
+    fn createJump(target: Target, expr?: SolvedNode)
     {
-        return SolvedNode(:token, "jump", type: t_never, :target,
+        return SolvedNode("jump", type: t_never, :target,
             items: expr && [ expr ]);
     }
 
@@ -3268,7 +3256,7 @@ pub fn solve(
         let items = solveNodes(items_ast, deadcode_on_never: true);
         let type  = items.last.type.is_never ? t_never : t_void;
 
-        return createBlock(node.token, type, items);
+        return createBlock(type, items);
     }
 
 
@@ -3288,13 +3276,13 @@ pub fn solve(
         let init    = n_init && solveNode(n_init, annot);
 
         return solveLetLike_dontTouchScope(
-            :node.token, node.value, :node.flags,
+            node.value, :node.flags,
             :annot, :init,
             :specType, :deadcode_on_never);
     }
 
     fn solveLetLike_dontTouchScope(
-        token: TokenIdx, id: string, mut flags: i32,
+        id: string, mut flags: i32,
         mut init!: SolvedNode,
         mut annot?!: Type, specType?!: Type,
         deadcode_on_never?!: bool): SolvedNode
@@ -3379,7 +3367,7 @@ pub fn solve(
         //  We could move init out of here?
         //   So we can edit out of order maybe?
         return SolvedNode(
-            kind: "let", value: id, :flags, :token,
+            kind: "let", value: id, :flags,
             type: t_let, items: [ SolvedNode, init ]);
     }
 
@@ -3454,7 +3442,7 @@ pub fn solve(
 
     fn createLet(id: string, flags: i32, init: SolvedNode)
     {
-        mut out = solveLetLike_dontTouchScope(:init.token, :flags, :id, :init);
+        mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
         solveLet(:out, :id);
         return out;
     }
@@ -3878,7 +3866,7 @@ pub fn solve(
         if (args.if_last.type.is_never)
         {
             _notes |= N_DeadCall;
-            return createBlock(node.token, t_never, args);
+            return createBlock(t_never, args);
         }
 
         //
@@ -3927,7 +3915,7 @@ pub fn solve(
                 target: lookupStruct(type).target);
 
         // Nope, it's an array literal.
-        return createArrlit(:node.token,
+        return createArrlit(
             solveNodes(node.items, itemType),
                 itemType);
     }
@@ -3965,14 +3953,14 @@ pub fn solve(
         return createArray(itemType);
     }
 
-    fn createArrlit(token: TokenIdx, mut items: SolvedNode[], itemType?: Type)
+    fn createArrlit(mut items: SolvedNode[], itemType?: Type)
     {
         shadow let itemType = solveArrlit_itemType(items, itemType);
 
         for (mut i = 0; i < items.len; i++)
             maybeCopyOrMove(items[i], itemType);
 
-        return SolvedNode("arrlit", :token, :items, type: solveArrlit_done(:itemType));
+        return SolvedNode("arrlit", :items, type: solveArrlit_done(:itemType));
     }
 
 
@@ -3983,7 +3971,7 @@ pub fn solve(
         let overload = GET(target);
 
         return SolvedNode(
-            kind: "let", :flags, token: _here || fail(),
+            kind: "let", :flags,
             value: overload.name, :overload.type, :target);
     }
 
@@ -4230,7 +4218,6 @@ pub fn solve(
             kind:  node.kind ,
             flags: node.flags,
             value: node.value,
-            token: node.token,
 
             :items, :type, :target);
     }
@@ -4254,7 +4241,7 @@ pub fn solve(
                 if (i > REST_START)
                     args.splice(i, 1);
                 else
-                    args[i] = createArrlit(:rest.first.token, rest);
+                    args[i] = createArrlit(rest);
             }
         }
 
@@ -4372,7 +4359,7 @@ pub fn solve(
 
             result.last = s_body;
 
-            return createBlock(:node.token, result, :s_body.type);
+            return createBlock(result, :s_body.type);
         }
 
         //
@@ -4459,14 +4446,12 @@ pub fn solve(
         SolvedNode(
             kind:   "copy",
             items:  [ node ],
-            token:  node.token,
             type:   clear_refs(node.type));
 
     fn createMove(node: SolvedNode): SolvedNode
         SolvedNode(
             kind:   "move",
             items:  [ node ],
-            token:  node.token,
             type:   clear_refs(node.type));
 
 

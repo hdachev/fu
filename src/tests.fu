@@ -4985,7 +4985,7 @@ pub fn runTests()
     ZERO(`
         struct AB { a: i32; b: i32; };
         fn sqr   (ref x: i32) x * x;
-        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b); ;; EXPECT const s_AB&
+        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b); ;; TODO const s_AB&
         fn main() {
             mut ab = AB(3, 5);
             return ab.outer - 34;
