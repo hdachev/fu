@@ -150,12 +150,11 @@ fn len (a: [$T]): i32 __native(".size()");
 
 fn [](a: [$T], i: i32)
     case ($a -> &mut [$T]): &mut $T __native;
-    case ($a -> &    [$T]): &    $T __native;
-    case ($a ->      $T[]):      $T __native;
+    default               : &    $T __native;
 
 fn [](a: [$T], start: i32, end: i32)
     case ($a -> &mut [$T]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
-    case ($a -> &    [$T]): &    [$T] __native("<fu/view.h>", "fu::get_view");
+    default               : &    [$T] __native("<fu/view.h>", "fu::get_view");
 
 fn    push(a: &mut $T[], b: $T): void __native(".push");
 fn unshift(a: &mut $T[], b: $T): void __native(".unshift");
@@ -234,8 +233,7 @@ fn ~=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native("<fu
 
 fn [](a: &Map($K, $V), b: $K)
     case ($a -> &mut Map($K, $V)): &mut $V __native;
-    case ($a -> &    Map($K, $V)): &    $V __native;
-    case ($a ->      Map($K, $V)):      $V __native;
+    default                      : &    $V __native;
 
 fn keys  (a: &Map($K, $V)): &$K[] __native(".m_keys");
 fn values(a: &Map($K, $V)): &$V[] __native(".m_values");
