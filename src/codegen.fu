@@ -113,7 +113,7 @@ pub fn cpp_codegen(
 
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
-        if (mode & M_ARGUMENT && type.addroffn::type_isZST)
+        if (type.addroffn::type_isZST)
             return "int";
 
         let fwd = typeAnnotBase(type, :mode);
@@ -636,8 +636,8 @@ pub fn cpp_codegen(
         }
 
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
-                    ~ (  fn.flags & F_TEMPLATE && "inline ")
-                    ~ (!(fn.flags & F_PUB)     && "static ");
+                    ~ (  overload.flags & F_TEMPLATE && "inline ")
+                    ~ (!(overload.flags & F_PUB)     && "static ");
 
         mut src = linkage ~ annot ~ " " ~ id ~ "(";
 
@@ -759,7 +759,7 @@ pub fn cpp_codegen(
     {
         let o = GET(fndef.target);
         let n = o.solved;
-        if !(n.flags & F_PUB)
+        if !(n && o.flags & F_PUB)
             return mode & M_STMT ? "" : "0";
 
         n.kind == "fn" || fail("cgFnDef non-fn");
@@ -812,8 +812,8 @@ pub fn cpp_codegen(
         _indent = indent0;
         //////////////////
 
-        let dedupe = fn.flags & F_PUB
-                  && fn.flags & F_TEMPLATE
+        let dedupe = overload.flags & F_PUB
+                  && overload.flags & F_TEMPLATE
                   && overload.name.valid_identifier;
 
         if (dedupe)
@@ -838,16 +838,17 @@ pub fn cpp_codegen(
         }
         //////////////////////////////////////////////////////////
 
-        let isArg = node.flags & F_ARG;
-        let annot = typeAnnot(
-            node.type, (node.flags & F_MUT == 0 && !forceMut && M_CONST)
-                     | (isArg && M_ARGUMENT)
-                     | (node.flags & F_MUT && M_MUTVAR));
+        let overload = node.target && GET(node.target);
 
-        if (isArg && node.type.addroffn::type_isZST)
+        let isArg = overload.flags & F_ARG;
+        let annot = typeAnnot(
+            node.type, (overload.flags & F_MUT == 0 && !forceMut && M_CONST)
+                     | (isArg && M_ARGUMENT)
+                     | (overload.flags & F_MUT && M_MUTVAR));
+
+        if (!node.target)
             return annot;
 
-        let overload = GET(node.target);
         let isUnused = overload.flags & F_UNUSED;
         if (isArg && isUnused)
             return annot;
@@ -856,7 +857,7 @@ pub fn cpp_codegen(
         let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ ID(id);
         let init    = node.items ? node.items[LET_INIT] : SolvedNode;
 
-        if (!doInit || (node.flags & F_ARG))
+        if (!doInit || isArg)
             return head;
 
         if (init)
@@ -944,7 +945,7 @@ pub fn cpp_codegen(
             src = src.slice(6);
 
         // Hide when possible.
-        if (!(node.flags & F_PUB))
+        if (!(GET(node.target).flags & F_PUB))
         {
             // We can't "forward declare" foreign private globals.
             if (!foreign)
