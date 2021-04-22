@@ -1261,7 +1261,7 @@ pub fn cpp_codegen(
 
             if (items.len == 1)
             {
-                return node.flags & F_POSTFIX
+                return target.flags & F_POSTFIX
                      ? ARG(0) ~ id.valid_operator
                      : id.valid_operator ~ ARG(0);
             }

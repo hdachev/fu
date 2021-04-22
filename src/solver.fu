@@ -3879,7 +3879,6 @@ pub fn solve(
         for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
         {
             let conversion = conversions[argIdx];
-            let convRead = conversion && createRead("__using");
 
             for (mut i = 0; i < conversion.len; i++)
             {
@@ -3887,18 +3886,18 @@ pub fn solve(
                 let o = GET(t);
                 if (o.min || o.max && args[argIdx])
                 {
-                    args[argIdx] = CallerNode(convRead, t, [ args[argIdx] ]);
+                    args[argIdx] = CallerNode("__using.a", t, [ args[argIdx] ]);
                     continue;
                 }
 
                 i && fail("Bad conversion chain, non-leading nullary: `" ~ o.name ~ "`.");
                 args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
-                args[argIdx] = CallerNode(convRead, t);
+                args[argIdx] = CallerNode("__using.b", t);
             }
         }
 
         //
-        return CallerNode(node, callTargIdx, args, :kills);
+        return CallerNode(node.value, callTargIdx, args, :kills);
     }
 
 
@@ -4024,8 +4023,7 @@ pub fn solve(
 
         checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch");
 
-        return CallerNode(
-            createRead("__implicit"), :target);
+        return CallerNode("__implicit", :target);
     }
 
 
@@ -4223,7 +4221,8 @@ pub fn solve(
     }
 
     fn CallerNode(
-        node: Node, target: Target, mut args: SolvedNode[] = [], kills?!: i32)
+        debug: string,
+        target: Target, mut args: SolvedNode[] = [], kills?!: i32)
             : SolvedNode
     {
         let overload = GET(target);
@@ -4363,7 +4362,9 @@ pub fn solve(
         }
 
         //
-        let callsite = solved(node, type, args, :target);
+        let callsite = SolvedNode(
+            "call", flags: 0, value: debug,
+                    :type, args, :target);
 
         // Track deps.
         if (target.modid == module.modid)
