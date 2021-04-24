@@ -134,7 +134,12 @@ pub fn solve(
 
     let t_string = createArray(t_byte);
 
-    type TypeParams = Map(string, Type);
+    struct TypeParam {
+        matched:  Type;
+        consumed: Type;
+    };
+
+    type TypeParams = Map(string, TypeParam);
 
     // TODO FIX /////////////////////////////////
     mut TODO_FIX_convert_args: SolvedNode[];
@@ -2122,6 +2127,9 @@ pub fn solve(
             mut ok = true;
             mut typeParams: TypeParams;
 
+            fn isNativeBody(n_body: Node)
+                n_body.kind == "call" && n_body.value == "__native";
+
             if (!into)
             {
                 let kind    = template.node.kind;
@@ -2169,7 +2177,7 @@ pub fn solve(
                         {
                             let paramType =
                                 annot.kind == "typeparam"
-                                    ? typeParams[annot.value] ||= Type
+                                    ? (typeParams[annot.value] ||= TypeParam).matched
                                     : annot.kind == "call" && !annot.items
                                         && Scope_lookupType(annot);
 
@@ -2212,7 +2220,7 @@ pub fn solve(
 
                             // Same pattern - grabs a mutref.
                             ref argName_typeParam =
-                                typeParams[argName] ||= Type;
+                                typeParams[argName] ||= TypeParam;
 
                             // Values vs refs.
                             //  TODO actually this is rather stupid, isn't it,
@@ -2226,7 +2234,7 @@ pub fn solve(
                             //
                             (argName_typeParam && fail(
                                 "Type param name collision with argument: `" ~ argName ~ "`."))
-                                    = inType;
+                                    .matched = inType;
 
                             // Type check.
                             if (annot)
@@ -2297,6 +2305,24 @@ pub fn solve(
 
                             let n_body = cons[cons.len + FN_BODY_BACK];
                             sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
+
+                            if (n_body.isNativeBody)
+                            {
+                                // Native relaxer.
+                                //  We can't reason about the code of "native" fns,
+                                //   so we relax based on type assertions here.
+                                //
+                                for (shadow mut i = 0; i < numArgs; i++)
+                                {
+                                    let argNode = items[i] || fail();
+                                    let id = argNode.value;
+                                    if (typeParams.has(id))
+                                    {
+                                        ref tp = typeParams[id];
+                                        tp.matched = tp.consumed;
+                                    }
+                                }
+                            }
                         }
 
                         did_match = true;
@@ -2399,7 +2425,7 @@ pub fn solve(
             // Builtin?
             n_body || fail("solveFn: no body.");
 
-            let native = n_body.kind == "call" && n_body.value == "__native";
+            let native = n_body.isNativeBody;
             if (!native)
                 n_body.kind == "block" || fail("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 
@@ -2601,7 +2627,7 @@ pub fn solve(
     {
         mut res: ScopeItem[];
 
-        typeParams.pairs(|id, type|
+        typeParams.pairs(|id, tp|
         {
             let name = "$" ~ id;
 
@@ -2615,6 +2641,7 @@ pub fn solve(
                 return GET(t).type == type && t;
             }
 
+            let type = tp.matched;
             let target = type.isStruct
                 && checkStruct(type)
                 || Scope_Typedef(_scope,
@@ -3599,9 +3626,9 @@ pub fn solve(
 
     fn evalTypeParam(id: string, typeParams?: TypeParams): Type
     {
-        return typeParams[id] || Scope_lookupType(
-                    "$" ~ (id || fail("Falsy type param id.")))
-                              || fail("No type param `$" ~ id ~ "` in scope.");
+        return typeParams[id].matched || Scope_lookupType(
+                            "$" ~ (id || fail("Falsy type param id.")))
+                                      || fail("No type param `$" ~ id ~ "` in scope.");
     }
 
     fn solveTypeParam(node: Node): SolvedNode
@@ -3749,10 +3776,10 @@ pub fn solve(
 
             // What is happening here?
             // This is crazy, no?
-            ref _param = (typeParams[id] ||= Type);
+            ref _param = (typeParams[id] ||= TypeParam);
             if (_param)
             {
-                let union = type_trySuper(_param, type);
+                let union = type_trySuper(_param.matched, type);
                 if (!union)
                     return false;
 
@@ -3767,7 +3794,7 @@ pub fn solve(
             // After the match we need this to e.g. lift `non_zero`
             //  from integral results, etc.
             //
-            _param = relax_typeParam(type);
+            _param.matched = relax_typeParam(type);
 
             return true;
         }
@@ -3782,7 +3809,7 @@ pub fn solve(
         return fail("TODO trySolveTypeParams fallthrough");
     }
 
-    fn evalTypePattern(node: Node, ref typeParams: Map(string, Type)): bool
+    fn evalTypePattern(node: Node, ref typeParams: TypeParams): bool
     {
         if (node.kind == "and")
         {
@@ -3816,9 +3843,21 @@ pub fn solve(
             {
                 let actual = evalTypeAnnot(left, typeParams).type;
 
-                return trySolveTypeParams(
+                let ok = trySolveTypeParams(
                     type: actual, node: right,
                         :typeParams);
+
+                if (ok && left.kind == "typeparam")
+                {
+                    let id = left.value;
+                    ref tp = typeParams[id];
+
+                    tp.consumed = tp.consumed
+                        ? type_tryIntersect(tp.consumed, actual) || fail("typeassert intersect fail.")
+                        : actual;
+                }
+
+                return ok;
             }
         }
 
