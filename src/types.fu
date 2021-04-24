@@ -541,7 +541,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
 //
 
-pub fn try_relax(ref type: Type, slot!: Type): bool
+pub fn try_relax(ref type: Type, slot!?: Type): bool
 {
     if !((type.quals &~ slot.quals) & q_RELAXABLE)
         return false;
@@ -551,4 +551,9 @@ pub fn try_relax(ref type: Type, slot!: Type): bool
 
     type.quals &= slot.quals | ~q_RELAXABLE;
     return true;
+}
+
+pub fn relax_typeParam(mut type: Type)
+{
+    return clear_refs(type);
 }
