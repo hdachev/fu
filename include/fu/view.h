@@ -14,7 +14,7 @@ struct view
     typedef T fu_ANY_value_type;
 
     const T* m_data;
-    const int32_t m_size;
+    int32_t m_size;
 
     fu_INL view() noexcept
         : m_data { nullptr }
@@ -31,6 +31,14 @@ struct view
         : m_data { vec.data() }
         , m_size { vec.size() }
     {}
+
+    template <typename V>
+    view& ptr_reassign(const V& vec) noexcept
+    {
+        m_data = vec.data();
+        m_size = vec.size();
+        return *this;
+    }
 
     fu_INL const T* data() const noexcept {
         return m_data;
@@ -69,7 +77,7 @@ struct view_mut
     typedef T fu_ANY_value_type;
 
     T* m_data;
-    const int32_t m_size;
+    int32_t m_size;
 
     fu_INL view_mut() noexcept
         : m_data { nullptr }
@@ -86,6 +94,14 @@ struct view_mut
         : m_data { vec.data_mut() }
         , m_size { vec.size() }
     {}
+
+    template <typename V>
+    view_mut& ptr_reassign(V& vec) noexcept
+    {
+        m_data = vec.data();
+        m_size = vec.size();
+        return *this;
+    }
 
     fu_INL const T* data() const noexcept {
         return m_data;
