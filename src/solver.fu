@@ -1655,9 +1655,15 @@ pub fn solve(
                 GET_mut(Target(:index, :module.modid)).flags |= F_UNUSED;
             }
 
+            ref o = GET_mut(Target(:index, :module.modid));
+
+            ////////////////////////////////////////
+            // TODO one of these two is redundant //
+            o.type.try_relax(slot: usage); /////////
+            ////////////////////////////////////////
+
             // Either way, try to relax.
-            GET_mut(Target(:index, :module.modid))
-                .solved.propagateType(usage);
+            o.solved.propagateType(usage);
         }
 
         // Control flow.
