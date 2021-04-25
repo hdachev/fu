@@ -2908,10 +2908,10 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn test(x: i32) {
-            let c = [10007];
-            let a = [7, 11];
-            let b = {
+        fn test(x: i32) {                       // none of these need vecs
+            let c = [10007];                    ;; TODO fu::slate<1, int> { 10007 }
+            let a = [7, 11];                    ;; TODO fu::slate<2, int> { 7, 11 }
+            let b = {                           ;; TODO fu::slate<1, int> { int(x) }
                 BRK: {
                     if (x & 2) break :BRK c;
                     if (x & 1) break :BRK [ x ]; // a val
