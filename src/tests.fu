@@ -1532,11 +1532,11 @@ pub fn runTests()
     `);
 
     FAIL(`
-        let y = [ 1 ];              ;; EXPECT fu::slate<1, int> { 1 }
+        let y = [ 1 ];              ;; TODO fu::slate<1, int> { 1 }
         let
         //*F
         /*/ lax //*/ //ERR unused
-        z = [ 2 ];                  ;; EXPECT fu::slate<1, int> { 2 }
+        z = [ 2 ];                  ;; TODO fu::slate<1, int> { 2 }
 
         return y[0] - 1
     `);

@@ -206,24 +206,24 @@ pub fn cpp_codegen(
         if (c == "void")   return "void";
         if (c == "never")  return annotateNever();
 
-        // Arrays & strings.
-        let arrayItem = tryClear_array(type);
+        // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
+        let arrayItem = tryClear_sliceable(type);
         if (arrayItem)
         {
-            if (arrayItem == t_byte)
-                return annotateString();
+            // Arrays & strings.
+            if (type.type_isArray || !type.is_ref)
+            {
+                if (arrayItem == t_byte)
+                    return annotateString();
 
+                let itemAnnot = typeAnnot(arrayItem);
+
+                include("<fu/vec.h>");
+                return "fu_VEC<" ~ itemAnnot ~ ">";
+            }
+
+            //
             let itemAnnot = typeAnnot(arrayItem);
-
-            include("<fu/vec.h>");
-            return "fu_VEC<" ~ itemAnnot ~ ">";
-        }
-
-        // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
-        let sliceItem = tryClear_sliceable(type);
-        if (sliceItem)
-        {
-            let itemAnnot = typeAnnot(sliceItem);
 
             include("<fu/view.h>");
             if (type.is_mutref || mode & M_MUTVAR)
@@ -891,13 +891,6 @@ pub fn cpp_codegen(
                 return head ~ init;
             }
 
-            // HACK - cpp temporary object lifetimes are really not helpful here.
-            if (!node.type.is_ref && annot.starts(with: "fu::view"))
-            {
-                mut ptrflip: bool;
-                return head ~ " = " ~ emitTEMPVAR("auto", :ptrflip, :expr);
-            }
-
             return head ~ " = " ~ expr;
         }
 
@@ -1092,7 +1085,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgArrayLiteral(node: SolvedNode, mode: i32): string
+    fn cgArrayLiteral(node: SolvedNode, mode: i32, callarg: Type): string
     {
         if (node.target)
             return cgCall(node, mode);
@@ -1101,18 +1094,19 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        // fu::slate literals
         let list = "{ " ~ items.join(", ") ~ " }";
         let annot = typeAnnotBase(node.type);
-        if (annot.starts(with: "fu::view<"))
-            return "fu::slate<" ~ items.len ~ ", " ~ annot.slice(9) ~ " " ~ list;
+
+        // fu::slate literals
+        if (callarg.is_ref && !callarg.type_isArray)
+            return "fu::slate<" ~ items.len ~ ", " ~ annot.slice(7) ~ " " ~ list;
 
         return annot ~ " { " ~ annot ~ "::INIT<" ~ items.len ~ "> " ~ list ~ " }";
     }
 
-    fn cgDefinit(node: SolvedNode, mode: i32): string
+    fn cgDefinit(node: SolvedNode, mode: i32, callarg: Type): string
     {
-        return cgArrayLiteral(node, mode);
+        return cgArrayLiteral(node, mode, callarg);
     }
 
     fn hasNonIdentifierChars(id: string)
@@ -1173,7 +1167,7 @@ pub fn cpp_codegen(
                 if (i > start)
                     src ~= ", ";
 
-                src ~= cgNode(items[i]);
+                src ~= cgNode(items[i], callarg: target.args[i].type);
             }
 
             return src;
@@ -1697,7 +1691,7 @@ pub fn cpp_codegen(
 
         if (type.is_ref)
         {
-            let annot = typeAnnot(clear_refs(type));
+            let annot = typeAnnot(type);
             if (annot.starts(with: "fu::view"))
                 return annot ~ "{}";
 
@@ -1832,7 +1826,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgNode(node: SolvedNode, mode: i32 = 0): string
+    fn cgNode(node: SolvedNode, mode: i32 = 0, callarg?: Type): string
     {
         let k = node.kind;
 
@@ -1842,8 +1836,8 @@ pub fn cpp_codegen(
         if (k == "real")        return cgLiteral(node);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
-        if (k == "arrlit")      return cgArrayLiteral(node, mode);
-        if (k == "definit")     return cgDefinit(node, mode);
+        if (k == "arrlit")      return cgArrayLiteral(node, mode, :callarg);
+        if (k == "definit")     return cgDefinit(node, mode, :callarg);
 
         if (k == "copy")        return cgMoveOrClone(node, mode);
         if (k == "move")        return cgMoveOrClone(node, mode);

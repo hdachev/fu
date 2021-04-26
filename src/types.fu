@@ -412,7 +412,7 @@ pub fn tryClear_array(type: Type): Type
 //  Slices are refs to arrays,
 //   with revoked copy & resize priviledges.
 
-fn type_isSliceable(type: Type): bool
+pub fn type_isSliceable(type: Type): bool
 {
     return type.canon.starts(with: "[]");
 }
