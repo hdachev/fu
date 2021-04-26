@@ -541,9 +541,14 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
 //
 
+pub fn will_relax(ref type: Type, slot!: Type): bool
+{
+    return (type.quals &~ slot.quals) & q_RELAXABLE != 0;
+}
+
 pub fn try_relax(ref type: Type, slot!?: Type): bool
 {
-    if !((type.quals &~ slot.quals) & q_RELAXABLE)
+    if (!will_relax(type, :slot))
         return false;
 
     if (!slot.is_mutref)

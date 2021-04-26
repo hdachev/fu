@@ -171,6 +171,7 @@ let NOTES = [
     "DEAD_if",
     "DEAD_if_cons",
     "NONTRIV_autocopy",
+    "RELAX_respec",
 ];
 
 pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context

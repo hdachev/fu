@@ -23,6 +23,8 @@ pub let N_DeadIfCons        = 1 << 10;
 
 pub let N_NonTrivAutoCopy   = 1 << 11;
 
+pub let N_RelaxRespec       = 1 << 12;
+
 
 //
 
@@ -382,22 +384,25 @@ pub fn solve(
         return res;
     }
 
+    fn Lifetime_argLetsForOverload(overload: Overload)
+        overload.solved.items[0, overload.solved.items.len + FN_ARGS_BACK];
+
     fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
     {
         let returned    = overload.type.lifetime.uni0n;
-        let items       = overload.solved.items;
+        let items       = overload.Lifetime_argLetsForOverload;
 
         // Nothing to do if empty/non-arg.
         if (!Region_isArg(returned.if_first))
             return Lifetime(uni0n: returned);
 
         let head = items[0].target.index;
-        let tail = items[items.len + FN_ARGS_BACK - 1].target.index;
+        let tail = items[items.len - 1].target.index;
 
         mut keep:       Lifetime;
         mut replace:    Lifetime;
 
-        mut offset = items.len + FN_ARGS_BACK;
+        mut offset = items.len;
 
         for (mut i = 0; i < returned.len; i++)
         {
@@ -1032,10 +1037,7 @@ pub fn solve(
 
                         shadow ref args_mangled =
                             (use_reorder || conversions
-                                ? cant_reuse : reusable_mangle)
-                            ||= mangleArguments(
-                                :args, :reorder, :use_reorder, :conversions,
-                                :REST_START, :REST_TYPE);
+                                ? cant_reuse : reusable_mangle);
 
                         let specIdx = trySpecialize(
                             :overloadIdx, :args, :reorder, :use_reorder,
@@ -1512,9 +1514,91 @@ pub fn solve(
         if (k == "call")
         {
             let o = GET(t);
-
             if (o.kind == "field")
                 return node.items[0].propagateType(node.type);
+
+            // TODO if/and/or, easy.
+
+            // Template spec relaxer, this is nasty.
+            //  Not sure what the ideal method to deal with this here would be,
+            //   we're basically just going back and redoing things,
+            //    and we don't have the original shit to work with.
+            //
+            if (o.spec_of && o.type.is_ref)
+            {
+                mut args: SolvedNode[];
+                mut some = false;
+
+                let argLets = o.Lifetime_argLetsForOverload;
+
+                for (mut i = 0; i < node.items.len; i++)
+                {
+                    let orig = node.items[i];
+
+                    // Otherwise the `==` fn never gets "imported".
+                    //  I guess we should move away from the cpp "intrinsics" for these?
+                    //
+                    fn TODO_FIX_has(a: Region[], b: Region)
+                    {
+                        for (shadow mut i = 0; i < a.len; i++)
+                            if (a[i] == b)
+                                return true;
+
+                        return false;
+                    }
+
+                    // We'll only attempt to relax arguments whose lifetimes appear in the return value.
+                    //  There's this other thing, perhaps we only need to relax a single such argument?
+                    //
+                    if (o.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(argLets[i].target.index)))
+                    {
+                        mut type = orig.type;
+                        if (type.try_relax(:slot))
+                        {
+                            some = true;
+                            args ~= SolvedNode("__relaxed", :type);
+                            continue;
+                        }
+                    }
+
+                    args ~= orig;
+                }
+
+                if (some)
+                {
+                    mut args_mangled: string;
+                    let spec = trySpecialize(
+                        o.spec_of, :args, :args_mangled, REST_START: args.len);
+
+                    if (spec && !(spec == o.spec_of))
+                    {
+                        let o1 = GET(spec);
+                        if (!o1.type.isAssignable(host: node.type))
+                            fail("What is this.");
+
+                        //////////////////////////
+                        // TODO rewire callsite //
+                        //////////////////////////
+
+                        node.MUT.target = spec;
+                        _notes |= N_RelaxRespec;
+
+                        for (mut i = 0; i < node.items.len; i++)
+                        {
+                            let orig = node.items[i];
+                            let next = args[i];
+                            if (next.kind == "__relaxed")
+                            {
+                                // println("RELAX `" ~ o.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
+                                orig.propagateType(next.type);
+                            }
+                        }
+                    }
+                }
+
+                // Done with templates.
+                return;
+            }
         }
     }
 
@@ -1937,11 +2021,15 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[], args_mangled: string,
-        reorder: [i32], use_reorder: bool, conversions: Target[][],
-        REST_START: i32, REST_TYPE: Type)
+        overloadIdx: Target, args: SolvedNode[], ref args_mangled: string,
+        REST_START: i32, REST_TYPE?: Type,
+        reorder?: [i32], use_reorder?: bool, conversions?: Target[][])
             : Target
     {
+        args_mangled ||= mangleArguments(
+                :args, :reorder, :use_reorder, :conversions,
+                :REST_START, :REST_TYPE);
+
         // TODO memoize the whole mangle.
         //  Or use a hash here, perhaps nest them per template or smth.
         //   Also this prefix is nasty, unless we can reuse between modules.
@@ -2560,6 +2648,7 @@ pub fn solve(
                     overload.name       = name;
                     overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
                     overload.template   = native ? createTemplate(n_body) : template;
+                    overload.spec_of    = overloadIdx;
                 }
 
                 updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed);

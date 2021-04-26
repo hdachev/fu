@@ -178,6 +178,7 @@ pub struct Overload
     //   [ modid / thing ] slot here.
     template:   Template;
     solved:     SolvedNode;
+    spec_of?:   Target;
 
     // The new nodelists.
     nodes?:     SolvedNodeData[];
