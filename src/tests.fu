@@ -5022,6 +5022,13 @@ pub fn runTests()
         fn main() "WORLD!".ascii_lower[2].i32 - 'r'.i32;
     `);
 
+    ZERO(`
+        fn main() {
+            mut a = [[ 7 ]];
+            return a[0][0] - 7;        ;; EXPECT a[0][0]
+        }
+    `);
+
 
     // Enum basics.
 
