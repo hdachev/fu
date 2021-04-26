@@ -4983,6 +4983,15 @@ pub fn runTests()
     // Relaxer.
 
     ZERO(`
+        fn hello(a) a * a;          ;; EXPECT (const int a)
+        fn main() {
+            mut a = 3;
+            let b = hello(a);
+            return b - 9;
+        }
+    `);
+
+    ZERO(`
         struct AB { a: i32; b: i32; };
         fn sqr   (ref x: i32) x * x;
         fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b);        ;; EXPECT const s_AB&
@@ -4990,6 +4999,27 @@ pub fn runTests()
             mut ab = AB(3, 5);
             return ab.outer - 34;
         }
+    `);
+
+    ZERO(`
+        pub fn ascii_lower(a: string): string
+        {
+            let offset = 'a'.i32 - 'A'.i32;
+
+            mut res = a;
+            for (mut i = 0; i < res.len; i++)
+            {
+                let c = res[i];
+                if (c >= 'A' && c <= 'Z')
+                    res[i] = byte(c.i32 + offset);
+            }
+
+            return res;
+        }
+
+        <split/>
+
+        fn main() "WORLD!".ascii_lower[2].i32 - 'r'.i32;
     `);
 
 
