@@ -1848,6 +1848,28 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn target(implicit ref _itarg: i32) _itarg;
+
+        fn main()
+        {
+            let implicit mut _itarg = 0;
+            fn GET_mut(ref x: i32) x || GET_mut(target += 1);
+            return GET_mut(target) - 1;
+        }
+    `);
+
+    ZERO(`
+        fn target(implicit ref _itarg: i32) _itarg;
+        fn GET_mut(ref x: i32) x || GET_mut(target += 1);
+
+        fn main()
+        {
+            let implicit mut _itarg = 0;
+            return GET_mut(target) - 1;
+        }
+    `);
+
+    ZERO(`
         fn main()
         {
             mut target = 0;
