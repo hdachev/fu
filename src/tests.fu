@@ -1917,6 +1917,17 @@ pub fn runTests()
     ZERO(`
         fn main()
         {
+            fn each(cond, cons) cond && cons();
+            fn arg(implicit ref __arg: i32) __arg;
+            fn __solveStruct(x = 3) each(arg, || arg += x);
+            let implicit mut __arg = 1;
+            return __solveStruct - 4;
+        }
+    `);
+
+    ZERO(`
+        fn main()
+        {
             mut target = 0;
 
             fn each(cond, cons) cond && cons();
