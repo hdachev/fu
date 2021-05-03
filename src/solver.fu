@@ -436,7 +436,7 @@ pub fn solve(
                     break;
                 }
 
-                here > index || fail("nope, going backwards");
+                !here || here > index || fail("nope, going backwards");
             }
         }
 
@@ -4404,6 +4404,9 @@ pub fn solve(
             }
         }
 
+        // TODO FIX things are getting messy
+        shadow let overload = GET(target);
+
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
@@ -4417,6 +4420,7 @@ pub fn solve(
         else if (args)
         {
             let host_args = overload.args || fail("CallerNode: no host args.");
+            host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
 
             /////////////////
             // Literal fixup.
