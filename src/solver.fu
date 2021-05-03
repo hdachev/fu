@@ -441,7 +441,7 @@ pub fn solve(
 
     //
 
-    fn Binding(id: string, mut type: Type, flags!: i32, ref shadows!: bool, reuse?: Target)
+    fn Binding(id: string, mut type: Type, flags!: i32, ref shadows!: bool)
     {
         mut name = id;
 
@@ -482,17 +482,9 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = reuse || Scope_create(_scope, kind: "var", :name, :flags, :local_of);
+        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of);
 
         _helpers.last.vars ~= target.index;
-
-        // Double check.
-        if (SELF_TEST && reuse)
-        {
-            let preexisting = GET(reuse);
-            preexisting.name == name && preexisting.kind == "var" && preexisting.flags == flags && preexisting.local_of == local_of
-                || fail("Binding reuse mismatch.");
-        }
 
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
@@ -2496,20 +2488,9 @@ pub fn solve(
                     return Type;
                 }
 
-                // Arg target reuse, because of the resolve loop:
-                //  the strict retType equality checks lifetimes,
-                //   and they are expressed in terms of scope positions:
-                //    if we don't reuse arg targets, resolve loops forever.
-                //
-                ref preexisting = outItems[i];
-                let reuse       = preexisting.target;
-                if (reuse)
-                    preexisting.kind == "let" && preexisting.flags & F_ARG || fail(
-                        "__solveFn: arg target reuse: something is looking off.");
-
                 let n_arg       = inItems[i];
                 let specType    = spec && tryGetArgSpecType(n_arg.value);
-                outItems[i]     = solveLet(n_arg, :specType, :reuse);
+                outItems[i]     = solveLet(n_arg, :specType);
             }
 
             /////////////////////////////////////////////////////
@@ -3495,15 +3476,15 @@ pub fn solve(
             type: t_let, items: [ SolvedNode, init ]);
     }
 
-    fn solveLet(node: Node, specType?!: Type, reuse?!: Target, deadcode_on_never?!: bool): SolvedNode
+    fn solveLet(node: Node, specType?!: Type, deadcode_on_never?!: bool): SolvedNode
     {
         mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
         let id  = out.value;
-        solveLet(:out, :id, :reuse, :deadcode_on_never);
+        solveLet(:out, :id, :deadcode_on_never);
         return out;
     }
 
-    fn solveLet(ref out!: SolvedNode, id!: string, reuse?!: Target, deadcode_on_never?!: bool)
+    fn solveLet(ref out!: SolvedNode, id!: string, deadcode_on_never?!: bool)
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -3555,7 +3536,7 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
-            let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :reuse, :shadows);
+            let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
             GET_mut(target).solved = out;
 
             Scope_set(_scope, :id, :target, :shadows);
