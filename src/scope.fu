@@ -559,11 +559,13 @@ pub fn Scope_create(
     min?!: i32, max?!: i32, args?: Argument[],
     solved?: SolvedNode, local_of?!: i32,
     status?: u32,
-    extra_items?: ScopeItem[]): Target
+    extra_items?: ScopeItem[],
+
+    recycle?: i32): Target
 {
     let modid = MODID;
     let target = Target(:modid,
-        index: scope.overloads.len + 1);
+        index: recycle || scope.overloads.len + 1);
 
     mut item: Overload;
 
@@ -579,7 +581,10 @@ pub fn Scope_create(
     item.status         = status;
     item.extra_items    = extra_items;
 
-    scope.overloads.push(item);
+    if (recycle)
+        scope.overloads[recycle - 1] = item;
+    else
+        scope.overloads.push(item);
 
     return target;
 }

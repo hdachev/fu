@@ -108,6 +108,9 @@ pub fn solve(
     {
         using out:      SolvedNode;
         locals_used?:   i32[];
+
+        recycle:        i32[];
+        recycle_next?:  i32;
     };
 
     mut _current_fn:    CurrentFn;
@@ -116,6 +119,8 @@ pub fn solve(
 
     mut _anons:         i32;
     fn ANON(): string = "0" ~ _anons++;
+
+    mut _recycle:       i32[][];
 
 
     //
@@ -482,7 +487,13 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of);
+        let recycle =   _current_fn.recycle.len > _current_fn.recycle_next
+                    &&  _current_fn.recycle[_current_fn.recycle_next++];
+
+        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, :recycle);
+
+        if (_current_fn)
+            _recycle.grow_if_oob(_current_fn.target.index) ~= target.index;
 
         _helpers.last.vars ~= target.index;
 
@@ -2439,9 +2450,14 @@ pub fn solve(
             ////////////////////////////////////
 
             // Go!
+            mut recycle: i32[];
+            if (_recycle.len > target.index)
+                SWAP(_recycle[target.index], recycle);
+
             mut out = CurrentFn(
                 solved(n_fn,
-                    :target, type: addroffn::X_addrofTarget(target)));
+                    :target, type: addroffn::X_addrofTarget(target)),
+                        :recycle);
 
             let root_scope0 = _root_scope;
             if (!root_scope0)
