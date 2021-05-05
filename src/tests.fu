@@ -2299,6 +2299,23 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn lex(src: string) {
+            let end = src.len;
+            mut idx = 0;
+
+            fn err_str(idx1: i32) {
+                while (idx < end && src[idx] == ' ') idx++;
+                return src.slice(idx, idx1);
+            }
+
+            fn err(idx1_x2: i32) err_str(idx1_x2 /2);
+            return err(end *2);
+        }
+
+        fn main() lex("    hello").len - 5;
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
