@@ -4126,12 +4126,12 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn test(implicit x: i32): &i32 = x;
+        fn test(x: i32): &i32 = x;
         fn main() test(3) - 3;
     `);
 
     ZERO(`
-        fn test(implicit x: i32): &i32 {
+        fn test(x: i32): &i32 {
             fn inner() x;
             return inner;
         }
@@ -4142,7 +4142,7 @@ pub fn runTests()
     ZERO(`
         struct I { v: i32; };
 
-        fn test(implicit x: I): &i32 {
+        fn test(x: I): &i32 {
             fn inner() x.v;
             return inner;
         }
@@ -4153,7 +4153,7 @@ pub fn runTests()
     ZERO(`
         struct I { v: i32[]; };
 
-        fn test(implicit x: I): &i32 {
+        fn test(x: I): &i32 {
             fn inner() x.v[0];
             return inner;
         }
@@ -4164,7 +4164,7 @@ pub fn runTests()
     ZERO(`
         struct I { v: i32[]; };
 
-        fn test(implicit x: I): &i32 {
+        fn test(x: I): &i32 {
             fn inner() {
                 let v = x.v;
                 return v[0];

@@ -1907,7 +1907,7 @@ pub fn solve(
 
         let N           = node.items.len + FN_ARGS_BACK;
         mut min         = 0;
-        mut max         = N;
+        mut max         = 0;
 
         mut args: Argument[];
         for (mut i = 0; i < N; i++)
@@ -1926,8 +1926,13 @@ pub fn solve(
             let default     = typed && init  && solveNode(init, :type);
             args.push(Argument(:name, :autocall, :arg.flags, :type, :default));
 
-            if (!arg.items[LET_INIT] && !(arg.flags & F_IMPLICIT))
-                min++;
+            if (!(arg.flags & F_IMPLICIT))
+            {
+                if (max != 0x7fffffff.i32)
+                    max++;
+                if (!arg.items[LET_INIT])
+                    min++;
+            }
 
             if (arg.flags & F_REST_ARG)
                 max = 0x7fffffff.i32;
@@ -2545,9 +2550,9 @@ pub fn solve(
 
                 let N = items.len + FN_ARGS_BACK;
                 mut min = 0;
-                mut max = N;
-                shadow mut args: Argument[];
+                mut max = 0;
 
+                shadow mut args: Argument[];
                 for (mut i = 0; i < N; i++)
                 {
                     let argNode = items[i];
@@ -2564,13 +2569,18 @@ pub fn solve(
                         :argNode.type || fail(),
                         default: !isImplicit && argNode.items[LET_INIT]);
 
-                    if (!arg.default && !isImplicit)
-                        min++;
+                    args.push(arg);
+
+                    if (!isImplicit)
+                    {
+                        if (max != 0x7fffffff.i32)
+                            max++;
+                        if (!arg.default)
+                            min++;
+                    }
 
                     if (arg.flags & F_REST_ARG)
                         max = 0x7fffffff.i32;
-
-                    args.push(arg);
                 }
 
                 // Unconditionally replacing the stuff.

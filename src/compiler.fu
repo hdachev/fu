@@ -253,7 +253,7 @@ pub fn ZERO(
             let without = src[0, start0] ~ src[start1, src.len];
 
             sources[i]  = without;
-            ZERO(:testdiffs, :sources);
+            ZERO(:sources);
 
             // Continue with the greater modules count here.
             sources[i]  = moduleA;
@@ -286,7 +286,7 @@ pub fn ZERO(
             let without = src[0, start0]                     ~ src[end1, src.len];
 
             sources[i]  = without;
-            ZERO(:testdiffs, :sources);
+            ZERO(:sources);
 
             // Continue with the more complex test here.
             sources[i]  = with;
