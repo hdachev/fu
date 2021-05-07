@@ -4278,6 +4278,41 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn A(implicit _A: i32[]) _A;
+        fn B(implicit _B:  u8[]) _B;
+
+        fn AB(x: i32) A[x] - B[x].i32;
+        fn BA(x: i32) B[x].i32 - A[x];
+
+        fn cycleA_inner(x: i32)
+            x & 1   ? either(x + 1) + AB(x)
+                    : BA(x);
+
+        fn cycleA_outer(x: i32)
+            x & 1   ? cycleA_inner(x + 1) + AB(x)
+                    : BA(x);
+
+        fn cycleB_inner(x: i32)
+            x & 2   ? either(x + 1) + BA(x)
+                    : AB(x);
+
+        fn cycleB_outer(x: i32)
+            x & 2   ? cycleB_inner(x + 1) + BA(x)
+                    : AB(x);
+
+        fn either(x: i32)
+            x & 4   ? cycleA_outer(x)
+                    : cycleB_outer(x);
+
+        fn main() {
+            let implicit _A = [ 0,    1,    2    ];
+            let implicit _B = [ 0.u8, 1.u8, 2.u8 ];
+
+            return either(0);
+        }
+    `);
+
 
     // Dead code elim.
 
