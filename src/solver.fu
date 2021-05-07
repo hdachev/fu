@@ -2585,9 +2585,25 @@ pub fn solve(
 
                 // Unconditionally replacing the stuff.
                 ref overload    = GET_mut(target);
+                mut change      = false;
 
-                let retval0     = overload.type;
-                let args_len0   = overload.args.len;
+                if (overload.callsites)
+                {
+                    change = args.len != overload.args.len
+                        || !(overload.type == retval);
+
+                    if (!change) for (mut i = 0; i < args.len; i++)
+                    {
+                        let a = args[i];
+                        let b = overload.args[i];
+                        if !(a.name == b.name && a.type == b.type)
+                        {
+                            change = true;
+                            break;
+                        }
+                    }
+                }
+
                 let closure0    = overload.closes_over.len;
 
                 overload.min    = min;
@@ -2619,18 +2635,8 @@ pub fn solve(
                     overload.closes_over = closes_over;
                 }
 
-                if (overload.callsites)
-                {
-                    // TODO FIX starting the diff with just number of arguments,
-                    //  which is fine for implicit cycling,
-                    //   then we gotta move on to bigger and better things.
-                    if (args_len0 != overload.args.len          ||
-                        closure0  != overload.closes_over.len   ||
-                        !(retval0 == overload.type))
-                    {
-                        overload.status |= SS_UPDATED;
-                    }
-                }
+                if (change || overload.callsites && closure0 != overload.closes_over.len)
+                    overload.status |= SS_UPDATED;
             }
 
             // Enable recursion.
