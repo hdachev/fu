@@ -1635,7 +1635,7 @@ pub fn solve(
             local_of:   fnbody_of ? -1 : _current_fn.target.index,
             :kills);
 
-        // TODO FIX Steal arguments from one level up, this real messy.
+        // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
         if (steal)
         {
             ref old = _helpers[helpers_idx - 1].vars;
@@ -1721,6 +1721,26 @@ pub fn solve(
         {
             let index = vars[i];
             let var = GET_local(index);
+
+            // TODO FIX ARGSTEAL Lift implicit arguments up -
+            //  they pop up randomly during bodysolve.
+            if (var.flags & F_ARG && !fnbody_of)
+            {
+                var.flags & F_IMPLICIT || fail(
+                    "This shouldnt happen for regular arguments.");
+
+                for (shadow mut i = helpers_idx; i --> 0; )
+                {
+                    ref parent = _helpers[i];
+                    if (parent.isFnOrType)
+                    {
+                        parent.vars ~= index;
+                        break;
+                    }
+                }
+
+                continue;
+            }
 
             //
             mut usage: Type;
