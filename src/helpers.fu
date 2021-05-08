@@ -198,3 +198,22 @@ pub fn pairs(a: Map($K, $V), fn)
     for (mut i = 0; i < k.len; i++)
         fn(k[i], v[i]);
 }
+
+
+//
+
+pub fn parse10i32(offset: &mut i32, str: string): i32
+{
+    mut result: i32;
+    while (offset < str.len)
+    {
+        let c = str[offset];
+        if (c < '0' || c > '9')
+            break;
+
+        offset++;
+        result = result * 10 + (c.i32 - '0'.i32);
+    }
+
+    return result;
+}

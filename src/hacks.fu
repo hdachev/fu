@@ -1,0 +1,14 @@
+
+pub fn ClosureID(index!: i32) "`" ~ index;
+
+pub fn tryParseClosureID(id!: string)
+{
+    if (id[0] == '`')
+    {
+        mut   offset = 1;
+        defer offset == id.len || throw("Bad ClosureID.");
+        return helpers::parse10i32(offset, id);
+    }
+
+    return 0;
+}

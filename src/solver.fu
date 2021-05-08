@@ -107,7 +107,6 @@ pub fn solve(
     struct CurrentFn
     {
         using out:      SolvedNode;
-        locals_used?:   i32[];
 
         recycle:        i32[];
         recycle_next?:  i32;
@@ -1749,7 +1748,8 @@ pub fn solve(
                 usage = var.callsites[0].type;
                 for (shadow mut i = 1; i < var.callsites.len; i++)
                     usage = type_tryIntersect(usage, var.callsites[i].type) || fail(
-                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name ~ "`.");
+                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
+                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(var.callsites[i].type) ~ "`.");
             }
             else
             {
@@ -2624,8 +2624,6 @@ pub fn solve(
                     }
                 }
 
-                let closure0    = overload.closes_over.len;
-
                 overload.min    = min;
                 overload.max    = max;
                 overload.args   = args;
@@ -2641,21 +2639,7 @@ pub fn solve(
                 overload.flags  = out.flags;
                 overload.solved = out.out;
 
-                // See which one of the locals we've used are not our own.
-                {
-                    mut closes_over: i32[];
-
-                    for (mut i = 0; i < out.locals_used.len; i++)
-                    {
-                        let o = GET_local(out.locals_used[i]);
-                        if (o.local_of != target.index)
-                            closes_over ~= out.locals_used[i];
-                    }
-
-                    overload.closes_over = closes_over;
-                }
-
-                if (change || overload.callsites && closure0 != overload.closes_over.len)
+                if (change)
                     overload.status |= SS_UPDATED;
             }
 
@@ -4179,6 +4163,22 @@ pub fn solve(
         mut args: SolvedNode[];
         mut conversions: Target[][];
 
+        // CLOSURE-ID-HACK
+        {
+            let index = hacks::tryParseClosureID(:id);
+            if (index)
+            {
+                let target = Target(:module.modid, :index);
+                let o = GET(target);
+                if (o.local_of == _current_fn.target.index)
+                {
+                    o.kind == "var" || fail("CLOSURE-ID-HACK #2");
+                    return CallerNode("__closure", target);
+                }
+            }
+        }
+        // CLOSURE-ID-HACK
+
         let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, flags: F_IMPLICIT)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
@@ -4391,7 +4391,7 @@ pub fn solve(
 
     fn CallerNode(
         debug: string,
-        target: Target, mut args: SolvedNode[] = [], kills?!: i32)
+        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32)
             : SolvedNode
     {
         let overload = GET(target);
@@ -4452,86 +4452,112 @@ pub fn solve(
             type = add_refs(from: args.only.type || fail(), to: overload.type)
         }
 
-        // Tag copies and moves.
-        else if (args)
+        // So we're turning closeovers into implicit arguments -
+        //  previously we tracked them separately but we're making everything more samey.
+        else if (overload.kind == "var")
         {
-            let host_args = overload.args || fail("CallerNode: no host args.");
-            host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
-
-            /////////////////
-            // Literal fixup.
-            for (mut i = 0; i < args.len; i++)
+            if (overload.local_of &&
+                overload.local_of != _current_fn.target.index)
             {
-                // Drop argids at this point, not useful.
-                ref arg = args[i];
-                if (arg.kind == "argid")
-                    arg = arg.items.only;
+                // CLOSURE-ID-HACK
+                // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
+                //  complicated close-over schemes do this but its really confusing so not exactly sure why,
+                //   there's a good test for it.
+                let index = hacks::tryParseClosureID(id: overload.name) || target.index;
 
-                let expect = host_args[i].type;
-                if (considerRetyping(:expect, arg.type))
-                {
-                    let retype = tryRetyping(arg, expect);
-                    if (isAssignableAsArgument(expect, retype))
-                        arg.MUT.type = retype;
-                }
+                target = injectImplicitArg(
+                    id:     hacks::ClosureID(:index),
+                    type:   overload.type, becauseOf: target);
+                // CLOSURE-ID-HACK
+
+                type = GET(target).type;
             }
-            //        /LITFIX
-            /////////////////
-
-            for (mut i = 0; i < args.len; i++)
-                maybeCopyOrMove(
-                    args[i] || fail(), host_args[i].type,
-                    isArgument: true);
-
-            if (type.is_ref)
-                type.lifetime = Lifetime_test(
-                    Lifetime_replaceArgsAtCallsite(overload, args),
-                    tempsOK: true);
         }
 
-        // Inliner.
-        if (overload.kind == "inline")
+        // Funcs & co.
+        else
         {
-            let scope0 = Scope_snap(_scope);
-            let ss0 = _ss;
-            let helpers0vars = _helpers.last.vars.len;
-
-            defer {
-                Scope_pop(_scope, scope0);
-                _ss = ss0;
-                if (_helpers)
-                    _helpers.last.vars.shrink(helpers0vars);
-            }
-
-            ScopeSkip_setup(:overload.template, :scope0, isInline: true);
-            _scope.items ~= overload.extra_items;
-
-            //
-            let n_fn        = overload.template.node;
-            let n_body      = n_fn.items.last;
-            let ret_expect  = overload.type;
-
-            mut result: SolvedNode[];
-            overload.args.len == args.len || fail("inline: arglen mismatch");
-            result.resize(args.len + 1);
-
-            for (mut i = 0; i < args.len; i++)
+            // Tag copies and moves.
+            if (args)
             {
-                let slot = overload.args[i];
-                result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
-                    :slot.flags &~ F_ARG); // As if not an arg.
+                let host_args = overload.args || fail("CallerNode: no host args.");
+                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
+
+                /////////////////
+                // Literal fixup.
+                for (mut i = 0; i < args.len; i++)
+                {
+                    // Drop argids at this point, not useful.
+                    ref arg = args[i];
+                    if (arg.kind == "argid")
+                        arg = arg.items.only;
+
+                    let expect = host_args[i].type;
+                    if (considerRetyping(:expect, arg.type))
+                    {
+                        let retype = tryRetyping(arg, expect);
+                        if (isAssignableAsArgument(expect, retype))
+                            arg.MUT.type = retype;
+                    }
+                }
+                //        /LITFIX
+                /////////////////
+
+                for (mut i = 0; i < args.len; i++)
+                    maybeCopyOrMove(
+                        args[i] || fail(), host_args[i].type,
+                        isArgument: true);
+
+                if (type.is_ref)
+                    type.lifetime = Lifetime_test(
+                        Lifetime_replaceArgsAtCallsite(overload, args),
+                        tempsOK: true);
             }
 
-            let s_body = solveBlock(
-                n_body, type: ret_expect,
-                mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
-                id: n_fn.value,
-                :kills,
-                steal: _helpers.last.vars.len - helpers0vars);
+            // Inliner.
+            if (overload.kind == "inline")
+            {
+                let scope0 = Scope_snap(_scope);
+                let ss0 = _ss;
+                let helpers0vars = _helpers.last.vars.len;
 
-            result.last = s_body;
+                defer {
+                    Scope_pop(_scope, scope0);
+                    _ss = ss0;
+                    if (_helpers)
+                        _helpers.last.vars.shrink(helpers0vars);
+                }
 
-            return createBlock(result, :s_body.type);
+                ScopeSkip_setup(:overload.template, :scope0, isInline: true);
+                _scope.items ~= overload.extra_items;
+
+                //
+                let n_fn        = overload.template.node;
+                let n_body      = n_fn.items.last;
+                let ret_expect  = overload.type;
+
+                mut result: SolvedNode[];
+                overload.args.len == args.len || fail("inline: arglen mismatch");
+                result.resize(args.len + 1);
+
+                for (mut i = 0; i < args.len; i++)
+                {
+                    let slot = overload.args[i];
+                    result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
+                        :slot.flags &~ F_ARG); // As if not an arg.
+                }
+
+                let s_body = solveBlock(
+                    n_body, type: ret_expect,
+                    mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                    id: n_fn.value,
+                    :kills,
+                    steal: _helpers.last.vars.len - helpers0vars);
+
+                result.last = s_body;
+
+                return createBlock(result, :s_body.type);
+            }
         }
 
         //
@@ -4550,16 +4576,6 @@ pub fn solve(
                 ref o = GET_mut(target);
                 o.callsites ~= callsite;
                 detectRecursion(target, o);
-            }
-
-            // Robust closure tracking.
-            if (_current_fn)
-            {
-                let o = GET(target);
-                if (o.kind == "var" && o.local_of)
-                    _current_fn.locals_used.set::add(target.index);
-
-                _current_fn.locals_used.set::add(o.closes_over);
             }
         }
 

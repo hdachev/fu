@@ -344,22 +344,6 @@ pub fn humanizeType(type: Type)
     return result;
 }
 
-pub fn parse10i32(offset: &mut i32, str: string): i32
-{
-    mut result: i32;
-    for (;;)
-    {
-        let c = offset < str.len && str[offset];
-        if (c < '0' || c > '9')
-            break;
-
-        offset++;
-        result = result * 10 + (c.i32 - '0'.i32);
-    }
-
-    return result;
-}
-
 pub fn parseType(str: string): ValueType
 {
     mut offset: i32;

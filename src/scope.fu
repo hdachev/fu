@@ -191,7 +191,6 @@ pub struct Overload
 
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
     local_of?:  i32;
-    closes_over?: i32[];
 
     // What about this then?
     extra_items?: ScopeItem[];
@@ -269,7 +268,7 @@ pub fn isStruct(type: Type)
 pub fn structIndex(canon: string): i32
 {
     mut offset = 1;
-    return canon[0] == '$' ? parse10i32(:offset, canon) : -1;
+    return canon[0] == '$' ? helpers::parse10i32(:offset, canon) : -1;
 }
 
 pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_TEST!: bool)

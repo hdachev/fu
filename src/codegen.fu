@@ -51,6 +51,14 @@ pub fn cpp_codegen(
     mut _unity:         i32[];
     mut _unity_because: i32[];
 
+
+    //
+
+    mut _ids_dedupe:    i32[];
+
+
+    //
+
     struct cg_Blockval
     {
         index: i32;
@@ -60,7 +68,6 @@ pub fn cpp_codegen(
     struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
     {                   //  Or prefix structs with module name?
         using target:   Target;
-        dupes?:         BitSet;
 
         numTEMPVARs?:   i32;
         TEMPVARs?:      string[];
@@ -69,6 +76,8 @@ pub fn cpp_codegen(
 
         can_break?:     i32;
         can_cont?:      i32;
+
+        _ids_used?:     string[];
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -425,31 +434,58 @@ pub fn cpp_codegen(
 
     //
 
-    fn localID(target: Target, overload: Overload)
+    fn localID(target: Target, dedupe?: bool)
     {
-        let ok = ID(overload.name);
-        if (target.modid == module.modid && overload.local_of == _current_fn.index)
-            return ok;
+        let o  = GET(target);
+        mut id = o.name;
 
-        if (_current_fn.dupes.has(target.index))
-            return ok ~ "_0" ~ target.index;
+        // CLOSURE-ID-HACK
+        let index = hacks::tryParseClosureID(:id);
+        if (index)
+            id = GET(Target(:module.modid, :index)).name;
+        // CLOSURE-ID-HACK
 
-        return ok ~ "_0";
-    }
+        id = ID(id);
 
-    fn generateLocalID(target: Target, overload: Overload, ref seen: string[])
-    {
-        let ok = ID(overload.name);
-        if (target.modid == module.modid && overload.local_of == _current_fn.index)
-            return ok;
-
-        if (!seen.set::add(ok))
+        if (target.modid == module.modid)
         {
-            _current_fn.dupes.add_once(target.index);
-            return ok ~ "_0" ~ target.index;
+            // Dedupe #1.
+            if (dedupe)
+            {
+                mut dupes = 0;
+
+                REPEAT:
+                for (;;)
+                {
+                    let candidate = dupes
+                        ? id ~ '_' ~ dupes
+                        : id;
+
+                    ref _ids_used = _current_fn._ids_used;
+                    for (mut i = 0; i < _ids_used.len; i++)
+                    {
+                        if (_ids_used[i] == candidate)
+                        {
+                            dupes++;
+                            continue :REPEAT;
+                        }
+                    }
+
+                    _ids_used ~= candidate;
+                    break;
+                }
+
+                if (dupes)
+                    _ids_dedupe.grow_if_oob(target.index) = dupes;
+            }
+
+            // Dedupe #2.
+            let dupes = _ids_dedupe.len > target.index && _ids_dedupe[target.index];
+            if (dupes)
+                return id ~ '_' ~ dupes;
         }
 
-        return ok ~ "_0";
+        return id;
     }
 
 
@@ -548,6 +584,11 @@ pub fn cpp_codegen(
 
     fn cgBlock(nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool, label!: Target, type: Type): string
     {
+        ///////////////////////////////////////////////
+        let _ids_used0 = _current_fn._ids_used.len;
+        defer _current_fn._ids_used.shrink(_ids_used0);
+        ///////////////////////////////////////////////
+
         let indent0 = _indent;
         _indent ~= "    ";
 
@@ -641,26 +682,9 @@ pub fn cpp_codegen(
 
         mut src = linkage ~ annot ~ " " ~ id ~ "(";
 
-        mut needComma = 0;
-
-        // Ridiculous nonsense.
-        {
-            mut seen: string[] = [];
-
-            for (mut i = 0; i < overload.closes_over.len; i++)
-            {
-                if (needComma++)
-                    src ~= ", ";
-
-                let t = Target(:module.modid, index: overload.closes_over[i]);
-                let o = GET(t);
-                src ~= typeAnnot(o.type) ~ " " ~ generateLocalID(t, o, seen);
-            }
-        }
-
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
-            if (needComma++)
+            if (i)
                 src ~= ", ";
 
             src ~= binding(items[i] || fail());
@@ -706,24 +730,10 @@ pub fn cpp_codegen(
 
         mut src = linkage ~ annot ~ " " ~ name ~ "(";
 
-        mut needComma = 0;
-
-        for (mut i = 0; i < overload.closes_over.len; i++)
-        {
-            if (needComma++)
-                src ~= ", ";
-
-            let o = GET(Target(
-                modid: module.modid,
-                index: overload.closes_over[i]));
-
-            src ~= typeAnnot(o.type);
-        }
-
         let args = overload.args;
         for (mut i = 0; i < args.len; i++)
         {
-            if (needComma++)
+            if (i)
                 src ~= ", ";
 
             src ~= typeAnnot(args[i].type, M_ARGUMENT | M_FWDECL);
@@ -853,8 +863,9 @@ pub fn cpp_codegen(
         if (isArg && isUnused)
             return annot;
 
-        let id      = overload.name || fail();
-        let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ ID(id);
+        let id      = localID(:node.target, dedupe: !!overload.local_of);
+
+        let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ id;
         let init    = node.items ? node.items[LET_INIT] : SolvedNode;
 
         if (!doInit || isArg)
@@ -1235,7 +1246,7 @@ pub fn cpp_codegen(
                 return ID(id); // TODO ensure const emit.
             }
 
-            return localID(node.target, target);
+            return localID(:node.target);
         }
 
         if (target.kind == "field")
@@ -1341,24 +1352,7 @@ pub fn cpp_codegen(
 
         id != "__native" || assert();
 
-        mut closure = "";
-        if (target.closes_over)
-        {
-            for (mut i = 0; i < target.closes_over.len; i++)
-            {
-                if (i)
-                    closure ~= ", ";
-
-                let t = Target(modid: module.modid, index: target.closes_over[i]);
-                let o = GET(t);
-                closure ~= localID(t, o);
-            }
-
-            if (items)
-                closure ~= ", ";
-        }
-
-        return ID(id) ~ "(" ~ closure ~ REST ~ ")";
+        return ID(id) ~ "(" ~ REST ~ ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
