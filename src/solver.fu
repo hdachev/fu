@@ -4419,7 +4419,7 @@ pub fn solve(
         if (!isZeroInit)
         {
             // Defaults & implicit argument injection.
-            let host_args = overload.args;
+            mut host_args = overload.args;
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
