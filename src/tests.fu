@@ -5114,6 +5114,34 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Overload     { args: Argument[]; };
+        struct SolvedNode   { x: i32; };
+        struct Argument     { x: i32; default: SolvedNode; };
+
+        pub fn test(overload: Overload, ref args: SolvedNode[])
+        {
+            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument>
+
+            args.resize(host_args.len);
+            for (mut i = 0; i < args.len; i++)
+            {
+                if (!args[i])
+                {
+                    let host_arg = host_args[i];
+                    args[i] = host_arg.default;
+                }
+            }
+        }
+
+        fn main() {
+            let o: Overload;
+            mut args: SolvedNode[];
+            test(o, args);
+            return args.len;
+        }
+    `);
+
 
     // Enum basics.
 
