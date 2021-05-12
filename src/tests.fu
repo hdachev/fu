@@ -2316,6 +2316,50 @@ pub fn runTests()
         fn main() lex("    hello").len - 5;
     `);
 
+    ZERO(`
+        pub fn ZERO(implicit ref sum: i32, mut sources: string[])
+        {
+            // Fuzzing module splits.
+            for (mut i = 0; i < sources.len; i++)
+            {
+                // Note: redundant "ref" here.
+                ref src = sources[i];
+                for (;;)
+                {
+                    mut start0 = src.find("[split/]");
+                    if (start0 < 0)
+                        break;
+
+                    // Avoid trailing whitespace.
+                    let start00 = start0;
+                    let start1  = start0 + 8;
+                    while (start0 && src[start0 - 1] == ' ') start0--;
+
+                    // We'll test with and without a module split here.
+                    let moduleA = src.slice(0, start0);
+                    let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+                    let without = src[0, start0] ~ src[start1, src.len];
+
+                    sources[i]  = without;
+                    ZERO(:sources);
+
+                    // Continue with the greater modules count here.
+                    sources[i]  = moduleA;
+                    sources.insert(i + 1, moduleB);
+                }
+            }
+        }
+
+        fn main() {
+            let implicit mut sum: i32;
+
+            ZERO( "AAAA|BB[split/]CC".split("|") );
+            let expect = 4+2+2 + 4+2+2 + 10; // 10 = "import _0;"
+
+            return sum - expect;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
@@ -5117,11 +5161,11 @@ pub fn runTests()
     ZERO(`
         struct Overload     { args: Argument[]; };
         struct SolvedNode   { x: i32; };
-        struct Argument     { x: i32; default: SolvedNode; };
+        struct Argument     { default: SolvedNode; };
 
         pub fn test(overload: Overload, ref args: SolvedNode[])
         {
-            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument>
+            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument> host_args
 
             args.resize(host_args.len);             // .len didnt relax its arg
             for (mut i = 0; i < args.len; i++)
@@ -5135,10 +5179,13 @@ pub fn runTests()
         }
 
         fn main() {
-            let o: Overload;
+            mut o: Overload;
+            for (mut i = 0; i < 3; i++)
+                o.args ~= Argument(default: SolvedNode(x: i));
+
             mut args: SolvedNode[];
             test(o, args);
-            return args.len;
+            return args.len - args[args.len - 1].x - 1;
         }
     `);
 
