@@ -1106,11 +1106,19 @@ pub fn cpp_codegen(
             return cgDefault(node.type);
 
         let list = "{ " ~ items.join(", ") ~ " }";
+
+        // TODO FIX this also includes vec.h for fu::slate literals.
         let annot = typeAnnotBase(node.type);
 
         // fu::slate literals
         if (callarg.is_ref && !callarg.type_isArray)
-            return "fu::slate<" ~ items.len ~ ", " ~ annot.slice(7) ~ " " ~ list;
+        {
+            include("<fu/view.h>");
+
+            // Putting a comma around,
+            //  because the `,` misparses in places like argument lists.
+            return "(fu::slate<" ~ items.len ~ ", " ~ annot.slice(7) ~ " " ~ list ~ ")";
+        }
 
         return annot ~ " { " ~ annot ~ "::INIT<" ~ items.len ~ "> " ~ list ~ " }";
     }

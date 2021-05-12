@@ -5123,7 +5123,7 @@ pub fn runTests()
         {
             let host_args = overload.args;          ;; EXPECT fu::view<s_Argument>
 
-            args.resize(host_args.len);
+            args.resize(host_args.len);             // .len didnt relax its arg
             for (mut i = 0; i < args.len; i++)
             {
                 if (!args[i])

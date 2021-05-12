@@ -2427,24 +2427,6 @@ pub fn solve(
 
                             let n_body = cons[cons.len + FN_BODY_BACK];
                             sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
-
-                            if (n_body.isNativeBody)
-                            {
-                                // Native relaxer.
-                                //  We can't reason about the code of "native" fns,
-                                //   so we relax based on type assertions here.
-                                //
-                                for (shadow mut i = 0; i < numArgs; i++)
-                                {
-                                    let argNode = items[i] || fail();
-                                    let id = argNode.value;
-                                    if (typeParams.has(id))
-                                    {
-                                        ref tp = typeParams[id];
-                                        tp.matched = tp.consumed;
-                                    }
-                                }
-                            }
                         }
 
                         did_match = true;
@@ -2455,6 +2437,25 @@ pub fn solve(
                     //  Can't return, faking RAII here.
                     if (!did_match)
                         return SPECFAIL;
+                }
+
+                // Native relaxer.
+                //  We can't reason about the code of "native" fns,
+                //   so we relax based on type assertions here.
+                //
+                let n_body = n_fn.items[n_fn.items.len + FN_BODY_BACK];
+                if (n_body.isNativeBody)
+                {
+                    for (shadow mut i = 0; i < numArgs; i++)
+                    {
+                        let argNode = items[i] || fail();
+                        let id = argNode.value;
+                        if (typeParams.has(id))
+                        {
+                            ref tp = typeParams[id];
+                            tp.matched = tp.consumed;
+                        }
+                    }
                 }
             }
 
