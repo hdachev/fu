@@ -838,6 +838,38 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub fn ZERO(implicit ref sum: i32, mut x: i32) {
+            while (x) {
+                ZERO( --x ); // Same as below but without the unused 'y' thing,
+                sum += x;    //  everything works because the call to ZERO isnt really unconditional,
+            }                //   and if it were, then the never return would actually be correct.
+        }
+
+        fn main() {
+            let implicit mut sum = 0;
+            ZERO(4);
+            return sum - 11;
+        }
+    `);
+
+    ZERO(`
+        pub fn ZERO(implicit ref sum: i32, mut x: i32) {
+            while (x) {
+                let y = x / 2;
+                ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,
+                ZERO(   y ); //  meaning y remains unused here on first solve.
+                sum += x;
+            }
+        }
+
+        fn main() {
+            let implicit mut sum = 0;
+            ZERO(4);
+            return sum - 12;
+        }
+    `);
+
 
     //
 

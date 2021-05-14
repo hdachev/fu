@@ -1753,9 +1753,6 @@ pub fn solve(
             }
             else
             {
-                // TODO FIX: the relax thing shouldn't be conditional,
-                //  just use the most relaxed type possible.
-                //
                 var.flags & F_LAX || fail(
                     "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
