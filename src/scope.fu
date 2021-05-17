@@ -163,37 +163,37 @@ pub struct Argument
 
 pub struct Overload
 {
-    kind:       string;
-    name:       string;
-    type:       Type;
-    flags:      i32;
+    kind:           string;
+    name:           string;
+    type:           Type;
+    flags:          i32;
 
     // Arity.
-    min:        i32;
-    max:        i32;
-    args:       Argument[];
+    min:            i32;
+    max:            i32;
+    args:           Argument[];
 
     // TODO move exotic bloat over to module,
     //  all trailers can fit in the same
     //   [ modid / thing ] slot here.
-    template:   Template;
-    solved:     SolvedNode;
-    spec_of?:   Target;
+    template:       Template;
+    solved:         SolvedNode;
+    spec_of?:       Target;
 
     // The new nodelists.
-    nodes?:     SolvedNodeData[];
+    nodes?:         SolvedNodeData[];
 
     // The new used_by.
-    callsites?: SolvedNode[];
+    callsites?:     SolvedNode[];
 
     // Solver state. // maybe we need flags enums already
-    status?:    u32; // <- u32 to differentiate from flags
+    status?:        u32; // <- u32 to differentiate from flags
 
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
-    local_of?:  i32;
+    local_of?:      i32;
 
     // What about this then?
-    extra_items?: ScopeItem[];
+    extra_items?:   ScopeItem[];
 };
 
 pub struct Helpers

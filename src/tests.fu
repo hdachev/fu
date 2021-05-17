@@ -853,7 +853,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO(`
         pub fn ZERO(implicit ref sum: i32, mut x: i32) {
             while (x) {
                 let y = x / 2;
@@ -2349,7 +2349,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub fn ZERO(implicit ref sum: i32, mut sources: string[])
+        pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void
         {
             // Fuzzing module splits.
             for (mut i = 0; i < sources.len; i++)
@@ -2362,12 +2362,10 @@ pub fn runTests()
                     if (start0 < 0)
                         break;
 
-                    // Avoid trailing whitespace.
                     let start00 = start0;
                     let start1  = start0 + 8;
                     while (start0 && src[start0 - 1] == ' ') start0--;
 
-                    // We'll test with and without a module split here.
                     let moduleA = src.slice(0, start0);
                     let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
                     let without = src[0, start0] ~ src[start1, src.len];
@@ -2375,7 +2373,6 @@ pub fn runTests()
                     sources[i]  = without;
                     ZERO(:sources);
 
-                    // Continue with the greater modules count here.
                     sources[i]  = moduleA;
                     sources.insert(i + 1, moduleB);
                 }
