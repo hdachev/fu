@@ -851,6 +851,7 @@ pub fn cpp_codegen(
         let overload = node.target && GET(node.target);
 
         let isArg = overload.flags & F_ARG;
+
         let annot = typeAnnot(
             node.type, (overload.flags & F_MUT == 0 && !forceMut && M_CONST)
                      | (isArg && M_ARGUMENT)
@@ -864,13 +865,11 @@ pub fn cpp_codegen(
             return annot;
 
         let id      = localID(:node.target, dedupe: !!overload.local_of);
-
         let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ id;
-        let init    = node.items ? node.items[LET_INIT] : SolvedNode;
-
         if (!doInit || isArg)
             return head;
 
+        let init    = node.items ? node.items[LET_INIT] : SolvedNode;
         if (init)
         {
             // Cleaner copy-init setup,
