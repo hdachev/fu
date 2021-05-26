@@ -2376,13 +2376,15 @@ pub fn runTests()
                     sources[i]  = moduleA;
                     sources.insert(i + 1, moduleB);
                 }
+
+                sum += src.len;
             }
         }
 
         fn main() {
             let implicit mut sum: i32;
 
-            ZERO( "AAAA|BB[split/]CC".split("|") );
+            ZERO( "AAAA|BB[split/]CC".::split("|") );
             let expect = 4+2+2 + 4+2+2 + 10; // 10 = "import _0;"
 
             return sum - expect;
