@@ -26,7 +26,7 @@ struct view
         , m_size { size }
     {}
 
-    template <typename V>
+    template <typename V, typename = decltype(*((const T**)1) = std::declval<V>().data())>
     fu_INL view(const V& vec) noexcept
         : m_data { vec.data() }
         , m_size { vec.size() }
