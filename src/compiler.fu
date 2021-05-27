@@ -235,9 +235,10 @@ pub fn ZERO(
     // Fuzzing module splits.
     for (mut i = 0; i < sources.len; i++)
     {
-        ref src = sources[i];
         for (;;)
         {
+            ref src = sources[i];
+
             mut start0 = src.find("<split/>");
             if (start0 < 0)
                 break;
@@ -264,9 +265,10 @@ pub fn ZERO(
     // Test variations, very primitive fuzzing.
     for (mut i = 0; i < sources.len; i++)
     {
-        ref src = sources[i];
         for (;;)
         {
+            ref src = sources[i];
+
             mut start0 = src.find("<alt>");
             if (start0 < 0)
                 break;
