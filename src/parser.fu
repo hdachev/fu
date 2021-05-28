@@ -1591,7 +1591,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         }
 
         //
-        let init = !tryConsume("op", ";") && parseLetStmt();
+        let init = !tryConsume("op", ";") && parseStatement();
+        if (init && init.kind != "let")
+            fail("`for` expects a `let` statement, got a `" ~ init.kind ~ "`.");
+
         let pre_cond = !tryConsume("op", ";") && parseExpressionStatement();
 
         let token = tokens[_idx];
