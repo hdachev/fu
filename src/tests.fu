@@ -203,6 +203,13 @@ pub fn runTests()
         return sum - 16;
     `);
 
+    TODO(`
+        mut i = 5;
+        mut sum = 0;
+        while (let x = i--) sum += x - i;
+        return sum - 5;
+    `);
+
     ZERO(`
         fn named(a: i32, b: i32)
             a - b * 2;
