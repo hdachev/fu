@@ -359,6 +359,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        //*F
+        let sum = 0;
+        /*/
+        mut sum = 0;
+        //*/
+        while (sum < 15)
+            sum++; //ERR ++ overload
+
+        return sum - 15;
+-----
+/home/tuti/fu/__tests__/_0.fu @11:13:
+	`++postfix` bad args.
+Expect: ++postfix(
+	a: $)
+Actual: (
+	i32: ref copy trivial primitive arithmetic integral signed).
+-----
+
         /*
         let sum = 0;
         /*/
@@ -567,6 +585,29 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct Range {
+            min: i32;
+            max: i32;
+        }
+
+        //*F
+        let r =
+        /*/
+        mut r =
+        //*/
+        Range(1, 2);
+
+        r.min++; //ERR ++ overload
+        return r.max - r.min;
+-----
+/home/tuti/fu/__tests__/_0.fu @17:14:
+	`++postfix` bad args.
+Expect: ++postfix(
+	a: $)
+Actual: (
+	i32: ref copy trivial primitive arithmetic integral signed).
 -----
 
         struct Range {
@@ -788,6 +829,21 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct A { x: i32; y: i32; };
+        struct B { x: i32; z: i32; };
+        fn test(using a: A, using b: B)
+            //*F
+            x + z;
+            /*/
+            y + z;
+            //*/
+
+        fn main() test(A(1, 1), B(-1, -1));
+-----
+/home/tuti/fu/__tests__/_0.fu @6:13:
+	Ambiguous callsite, matches multiple items in scope: `x` from global scope and global scope, as seen from `test`.
 -----
 
         struct A { x: i32; y: i32; };
@@ -4766,6 +4822,21 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        //*F
+        fn test(a = "hello") a.len; //ERR assign
+        /*/
+        fn test(a = 0) a + 1;
+        //*/
+        fn main() test(-1);
+-----
+/home/tuti/fu/__tests__/_0.fu @7:9:
+	`test` bad args.
+Expect: test(
+	a?: []+28byte: ref)
+Actual: (
+	i32: copy trivial primitive arithmetic integral signed).
+-----
+
         /*
         fn test(a = "hello") a.len; //ERR assign
         /*/
@@ -5092,6 +5163,21 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct Test { x: i32; }
+        fn test(t: &mut Test) t.x++;
+        mut t = Test();
+        //*F
+        t.test; //ERR orphan
+        /*/
+        t.test();
+        //*/
+
+        return t.x - 1;
+-----
+/home/tuti/fu/__tests__/_0.fu @7:9..14:9:
+	Orphan pure-looking expression.
 -----
 
         struct Test { x: i32; }
@@ -5534,6 +5620,22 @@ int main() { return fu_MAIN(); }
 -----
 
         {
+        //*F
+        {
+            return 0; //ERR block
+        }
+        /*/
+            {
+                return 0;
+            }
+        }
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @5:9..7:9:
+	Inconsistent indent at `{`: expected more than 9, got 9. Block starts on line 5.
+-----
+
+        {
         /*
         {
             return 0; //ERR block
@@ -5583,6 +5685,18 @@ int main() { return fu_MAIN(); }
 
         {
             return 0; //ERR block
+        //*F
+       }
+        /*/
+        }
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @6:13..13:1:
+	Inconsistent indent at closing `}`: expected 8, got 7. Block starts on line 5.
+-----
+
+        {
+            return 0; //ERR block
         /*
        }
         /*/
@@ -5607,6 +5721,18 @@ int main() { return fu_MAIN(); }
 
         {
             return 0; //ERR block
+        //*F
+         }
+        /*/
+        }
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @6:13..13:1:
+	Inconsistent indent at closing `}`: expected 8, got 9. Block starts on line 5.
+-----
+
+        {
+            return 0; //ERR block
         /*
          }
         /*/
@@ -5627,6 +5753,18 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        let y = [ 1 ];              ;; TODO fu::slate<1, int> { 1 }
+        let
+        //*F
+        /*/ lax //*/ //ERR unused
+        z = [ 2 ];                  ;; TODO fu::slate<1, int> { 2 }
+
+        return y[0] - 1
+-----
+/home/tuti/fu/__tests__/_0.fu @5:45:
+	Missing semicollon before `fu`.
 -----
 
         let y = [ 1 ];              // TODO fu::slate<1, int> { 1 }
@@ -5654,6 +5792,19 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn fail(a: string) throw("hey: " ~ a);
+        fn hello(a: string,
+            //*F
+            /*/ lax //*/ //ERR unused
+            b: string)
+                a && fail(a) ? b : a;
+
+        fn main() hello("", "nope").len;
+-----
+/home/tuti/fu/__tests__/_0.fu @3:9:
+	Unused variable: `b`: make it `lax` if this is intentional.
 -----
 
         fn fail(a: string) throw("hey: " ~ a);
@@ -6695,6 +6846,16 @@ int main() { return fu_MAIN(); }
 -----
 
         fn incr(ref a: i32) ++a;
+        fn A(ref a: i32) a || //*F
+                              a = A(incr(a))    /*/         // Lint should complain here,
+                             (a = A(incr(a))); //*/         //  this was an honest mistake.
+        fn main() { mut v = 0; return A(v) - 1; }
+-----
+/home/tuti/fu/__tests__/_0.fu @4:33..6:9:
+	Unparenthesized `or` on the left side of an `=`.
+-----
+
+        fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || /*
                               a = A(incr(a))    /*/         // Lint should complain here,
                              (a = A(incr(a))); //*/         //  this was an honest mistake.
@@ -6992,6 +7153,42 @@ int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_reopen
 
+-----
+
+        struct ValueType { modid: i32; };
+        struct Type { using vtype: ValueType; };
+        struct Target { modid: i32; index: i32; };
+        struct Overload { name: string; id: string; };
+
+        fn GET(target: Target): Overload =
+            Overload(
+                name: "N" ~ target.index,
+                  id: "I" ~ target.index);
+
+        fn main() {
+            mut specs: Map(string, Target);
+
+            fn setSpec(mangle: string) {
+                ref t = specs[mangle] ||= Target;
+
+                // This template should start expanding on GET(target).name,
+                //  which should conflict with overload name.
+                fn name(shadow target)
+                    GET(target) //*F
+                        .name; /*/ .id; //*/
+
+                return t.name;
+            }
+
+            return setSpec("hey").len - 2;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @21:21:
+	`GET` bad args.
+Expect: GET(
+	target: 1:$2Target: ref copy trivial)
+Actual: (
+	1:$3Overload: ref copy).
 -----
 
         struct ValueType { modid: i32; };
@@ -8219,6 +8416,32 @@ int main() { return fu_MAIN(); }
 -----
 
         struct ScopeIdx { raw: i32; };
+        //*F
+        fn thing(x: i32) x;
+        /*/
+        fn thing(x: i32) ScopeIdx(x);
+        //*/
+        mut _return_scope: ScopeIdx;
+
+        fn hey(x: i32) {
+            let scope0 = thing(x);
+            _return_scope = scope0; //overload
+            return _return_scope.raw;
+        }
+
+        return hey(0);
+-----
+/home/tuti/fu/__tests__/_0.fu @15:13:
+	`=` bad args.
+Expect: =(
+	a: $,
+	b: $)
+Actual: (
+	1:$0ScopeIdx: mutref ref copy trivial,
+	i32: ref copy trivial primitive arithmetic integral signed).
+-----
+
+        struct ScopeIdx { raw: i32; };
         /*
         fn thing(x: i32) x;
         /*/
@@ -8512,6 +8735,32 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        pub struct ScopeSkip {
+            start: i32;
+            end:   i32;
+        };
+
+        pub fn search(skip: ScopeSkip = [])
+            skip.end - skip.start;
+
+        pub fn main()
+            //*F
+            ScopeSkip(min: -1, max: +1)
+            /*/
+            ScopeSkip(start: -1, end: +1)
+            //*/
+                .end - 1;
+-----
+/home/tuti/fu/__tests__/_0.fu @12:13:
+	`ScopeSkip` bad args.
+Expect: ScopeSkip(
+	start: i32: copy trivial primitive arithmetic integral signed,
+	end: i32: copy trivial primitive arithmetic integral signed)
+Actual: (
+	min: i32: copy trivial primitive arithmetic integral signed,
+	max: i32: copy trivial primitive arithmetic integral signed).
 -----
 
         pub struct ScopeSkip {
@@ -9721,6 +9970,23 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct Copied { x: i32; };
+
+        fn main() {
+            let a = Copied(1);
+            mut b = a;
+            b.x++;
+            return b.x - a.x * 2;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @10:13:
+	Needs an explicit STEAL or CLONE.
 -----
 
         /*
@@ -12182,6 +12448,24 @@ int main() { return fu_MAIN(); }
 -----
 
         struct Test {
+        //*F
+            a: i32;
+        /*/
+            a?: i32;
+        //*/
+            b: i32;
+        };
+
+        return Test(b: 1).a;
+-----
+/home/tuti/fu/__tests__/_0.fu @14:16:
+	`Test` expects at least 2 arguments, 1 provided.
+Expect: Test(
+	a: i32: copy trivial primitive arithmetic integral signed,
+	b: i32: copy trivial primitive arithmetic integral signed)
+-----
+
+        struct Test {
         /*
             a: i32;
         /*/
@@ -12224,6 +12508,24 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct Test {
+            b: i32;
+        //*F
+            a: i32;
+        /*/
+            a?: i32;
+        //*/
+        };
+
+        return Test(1).a;
+-----
+/home/tuti/fu/__tests__/_0.fu @14:16:
+	`Test` expects at least 2 arguments, 1 provided.
+Expect: Test(
+	b: i32: copy trivial primitive arithmetic integral signed,
+	a: i32: copy trivial primitive arithmetic integral signed)
 -----
 
         struct Test {
@@ -12363,6 +12665,23 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(a: i32, b!: i32 = 1) a + b;
+        //*F
+        return test(-2, +2);
+        /*/
+        return test(-2, b: +2);
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @7:9:
+	`test` bad args.
+Expect: test(
+	a: i32: ref copy trivial primitive arithmetic integral signed,
+	b!?: i32: ref copy trivial primitive arithmetic integral signed)
+Actual: (
+	i32: copy trivial primitive arithmetic integral signed,
+	i32: copy trivial primitive arithmetic integral signed).
+-----
+
+        fn test(a: i32, b!: i32 = 1) a + b;
         /*
         return test(-2, +2);
         /*/
@@ -12388,6 +12707,24 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct Test { a: i32; b!: i32; };
+        fn test(t: Test) t.a + t.b;
+        //*F
+        return Test(-2, +2).test;
+        /*/
+        return Test(-2, b: +2).test;
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @8:16:
+	`Test` bad args.
+Expect: Test(
+	a: i32: copy trivial primitive arithmetic integral signed,
+	b!: i32: copy trivial primitive arithmetic integral signed)
+Actual: (
+	i32: copy trivial primitive arithmetic integral signed,
+	i32: copy trivial primitive arithmetic integral signed).
 -----
 
         struct Test { a: i32; b!: i32; };
@@ -12435,6 +12772,24 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        struct Test { a?: i32; b?!: i32; };
+        fn test(t: Test) t.a + t.b;
+        //*F
+        return Test(-2, +2).test;
+        /*/
+        return Test(b: +2).test - 2;
+        //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @8:16:
+	`Test` bad args.
+Expect: Test(
+	a?: i32: copy trivial primitive arithmetic integral signed,
+	b!?: i32: copy trivial primitive arithmetic integral signed)
+Actual: (
+	i32: copy trivial primitive arithmetic integral signed,
+	i32: copy trivial primitive arithmetic integral signed).
 -----
 
         struct Test { a?: i32; b?!: i32; };
@@ -12549,6 +12904,34 @@ int main() { return fu_MAIN(); }
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
+                + a2o1(a : 1, //*F
+                              c
+                              /*/
+                              b
+                              //*/
+                               ?: 2) *  10000   //  30000
+                + a2o1(a : 1)        * 100000   // 100000
+                                // ----------------------
+                                     - 133310;
+-----
+/home/tuti/fu/__tests__/_0.fu @10:19:
+	`a2o1` bad args.
+Expect: a2o1(
+	a: i32: ref copy trivial primitive arithmetic integral signed,
+	b?: i32: ref copy trivial primitive arithmetic integral signed)
+Actual: (
+	a: i32: copy trivial primitive arithmetic integral signed,
+	c: i32: copy trivial primitive arithmetic integral signed).
+-----
+
+        fn a0o0() 0;
+        fn a1o0(a : i32) a;
+        fn a2o1(a : i32, b?: i32) a + b;
+        fn a2o2(a?: i32, b?: i32) a + b;
+        fn main() a0o0(a?: 1, b?: 2) *      1   //      .
+                + a1o0(a?: 1, b?: 2) *     10   //     10
+                + a2o1(a?: 1, b?: 2) *    100   //    300
+                + a2o2(a?: 1, b?: 2) *   1000   //   3000
                 + a2o1(a : 1, /*
                               c
                               /*/
@@ -12653,6 +13036,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: i8 =
+            //*F
+            128
+            /*/
+            127
+            //*/
+            ;
+
+            return (ret - 100).i32 - 27;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: i8 =
             /*
             128
             /*/
@@ -12679,6 +13078,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: i16 =
+            //*F
+            32768
+            /*/
+            32767
+            //*/
+            ;
+
+            return (ret - 32700).i32 - 67;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
         fn main() {
@@ -12712,6 +13127,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: i32 =
+            //*F
+            2147483648
+            /*/
+            2147483647
+            //*/
+            ;
+
+            return (ret - 2147483600).i32 - 47;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: i32 =
             /*
             2147483648
             /*/
@@ -12737,6 +13168,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: i64 =
+            //*F
+            9223372036854775808
+            /*/
+            9223372036854775807
+            //*/
+            ;
+
+            return (ret - 9223372036854775800).i32 - 7;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Bad int literal.
 -----
 
         fn main() {
@@ -12771,6 +13218,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: i8 =
+            //*F
+            -129
+            /*/
+            -128
+            //*/
+            ;
+
+            return (ret + 100).i32 + 28;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: i8 =
             /*
             -129
             /*/
@@ -12797,6 +13260,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: i16 =
+            //*F
+            -32769
+            /*/
+            -32768
+            //*/
+            ;
+
+            return (ret + 32700).i32 + 68;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
         fn main() {
@@ -12830,6 +13309,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: i32 =
+            //*F
+            -2147483649
+            /*/
+            -2147483648
+            //*/
+            ;
+
+            return (ret + 2147483600).i32 + 48;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: i32 =
             /*
             -2147483649
             /*/
@@ -12855,6 +13350,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: i64 =
+            //*F
+            -9223372036854775809
+            /*/
+            -9223372036854775808
+            //*/
+            ;
+
+            return (ret + 9223372036854775800).i32 + 8;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Oversized signed int literal.
 -----
 
         fn main() {
@@ -12889,6 +13400,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: u8 =
+            //*F
+            256
+            /*/
+            255
+            //*/
+            ;
+
+            return (ret - 0xff).i32;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: u8: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: u8 =
             /*
             256
             /*/
@@ -12915,6 +13442,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: u16 =
+            //*F
+            65536
+            /*/
+            65535
+            //*/
+            ;
+
+            return (ret - 0xffff).i32;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: u16: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
 -----
 
         fn main() {
@@ -12949,6 +13492,22 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             let ret: u32 =
+            //*F
+            4294967296
+            /*/
+            4294967295
+            //*/
+            ;
+
+            return (ret - 0xffffffff).i32;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Type annotation does not match init expression `ret`: u32: copy trivial primitive arithmetic integral unsigned=i64: copy trivial primitive arithmetic integral signed
+-----
+
+        fn main() {
+            let ret: u32 =
             /*
             4294967296
             /*/
@@ -12974,6 +13533,22 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn main() {
+            let ret: u64 =
+            //*F
+            18446744073709551616
+            /*/
+            18446744073709551615
+            //*/
+            ;
+
+            return (ret - 0xffffffffffffffff).i32;
+        }
+-----
+/home/tuti/fu/__tests__/_0.fu @3:13:
+	Integer literal overflows a u64.
 -----
 
         fn main() {
@@ -13054,6 +13629,18 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        //*F
+        /*/
+        pub
+        //*/
+        fn hello() 3;
+        import _0;
+        fn main() 6 - hello * 2;
+-----
+/home/tuti/fu/__tests__/_1.fu @3:23:
+	`hello` is not defined in this scope: `main`.
 -----
 
         /*
@@ -15049,6 +15636,22 @@ int main() { return fu_MAIN(); }
         fn hello(x: i32) {
             if (x & 1)
                 return x * 2;
+            //*F
+            x; //ERR return
+            /*/
+            return x;
+            //*/
+        }
+
+        fn main() 0.hello;
+-----
+/home/tuti/fu/__tests__/_0.fu @4:17:
+	Non-void returning fn missing a final return.
+-----
+
+        fn hello(x: i32) {
+            if (x & 1)
+                return x * 2;
             /*
             x; //ERR return
             /*/
@@ -15139,6 +15742,38 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        //
+        // The -1.abs problem.
+        //
+        // Ruby lexes the minus into the numeric literal.
+        //  This is kinda inconsistent, altough it does make sense.
+        //
+        // Rust & all c-likes lex to -abs(1).
+        //  Rust linters warn about this.
+        //
+        // One thing we can do is change the precedence of some unaries
+        //  to above method call - others, like ! benefit from usual precedence.
+        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
+        //    but the & op usually works the way you want it to.
+        //     So introducing more precedence rules is a really questionable idea.
+        //
+        // We'll go the rust way for starters,
+        //  this will be a compile time error for now.
+        //
+        fn test()
+        //*F
+            -1.0
+        /*/
+            (-1.0)
+        //*/
+                .abs;
+
+        fn main() test ? 0 : 7;
+-----
+/home/tuti/fu/__tests__/_0.fu @22:14..26:18:
+	Here the unary -/+ separates from the numeric literal, and wraps around the whole expression. Please parenthesize explicitly to make this obvious.
 -----
 
         //
@@ -15437,6 +16072,25 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn test(a: $A, b: $B) b + //*F
+            a;
+            /*/
+            $B(a);
+            //*/
+        fn main() i8(-1).test(+1);
+-----
+/home/tuti/fu/__tests__/_0.fu @2:9:
+	`+` bad args, available overloads:
+		+(
+	a: $,
+	b: $)
+		+(
+	a: $)
+Actual: (
+	i32: ref copy trivial primitive arithmetic integral signed,
+	i8: ref copy trivial primitive arithmetic integral signed).
 -----
 
         fn test(a: $A, b: $B) b + /*
@@ -16914,6 +17568,24 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn fB(a: $T): sB($T) = [ a + 2 ];
+        fn main() 1.fB.hey - 1.u32.fB.hey //*F
+            ; /*/ .i32; //*/
+-----
+/home/tuti/fu/__tests__/_0.fu @5:9:
+	`-` bad args, available overloads:
+		-(
+	a: $,
+	b: $)
+		-(
+	a: $)
+Actual: (
+	i32: copy trivial primitive arithmetic integral signed,
+	u32: copy trivial primitive arithmetic integral unsigned).
 -----
 
         fn sB(_: $T) struct { hey: $T; };
