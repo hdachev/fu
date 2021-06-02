@@ -414,11 +414,29 @@ fn FAIL_replace(mut sources: string[]): string[]
 fn indent(src: string): string
     src.replace(all: "\n", with: "\n\t");
 
-pub fn FAIL(sources: string[]): string
+pub fn FAIL(
+    implicit ref testdiffs: testdiff::TestDiffs,
+    sources: string[]): string
 {
-    let ctx = compile_snippets(sources)
-        catch e
-            return ZERO(FAIL_replace(sources)) && e;
+    let ctx = compile_snippets(sources) catch e
+    {
+        mut key = "";
+        for (mut i = 0; i < sources.len; i++)
+        {
+            let src = sources[i];
+
+            // Trim trailing spaces to help with manual testdiff edits.
+            for (mut r = src.len; r --> 0; ) if (src[r] != ' ')
+            {
+                key ~= src[0, r];
+                break;
+            }
+        }
+
+        testdiffs.testdiff::set_next(key, e);
+
+        return ZERO(FAIL_replace(sources)) && e;
+    }
 
     mut bad = "\nDID NOT THROW:\n";
 
