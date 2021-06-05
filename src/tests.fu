@@ -1739,6 +1739,22 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn path_normalize(p: string): string {
+            mut path = p.split("/");
+
+            for (mut i = path.len; i --> 0; ) {
+                let part: &string = path[i];
+                if (part == "." || !part && i > 0 && i < path.len - 1)
+                    path.splice(i, 1);
+            }
+
+            return path.join("/");
+        }
+
+        fn main() path_normalize("./hello///hey") == "hello/hey" ? 0 : 1;
+    `);
+
+    ZERO(`
 
         fn path_normalize(p: string): string {
             mut path = p.split("/");
