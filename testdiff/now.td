@@ -6354,6 +6354,55 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn path_normalize(p: string): string {
+            mut path = p.split("/");
+
+            for (mut i = path.len; i --> 0; ) {
+                let part: &string = path[i];
+                if (part == "." || !part && i > 0 && i < path.len - 1)
+                    path.splice(i, 1);
+            }
+
+            return path.join("/");
+        }
+
+        fn main() path_normalize("./hello///hey") == "hello/hey" ? 0 : 1;
+
+-----
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/join.h>
+#include <fu/vec/split.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR path_normalize(const fu_STR& p)
+{
+    fu_VEC<fu_STR> path = fu::split(p, "/"_fu);
+    for (int i = path.size(); i-- > 0; )
+    {
+        const fu_STR& part = path[i];
+        if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
+            path.splice(i, 1);
+
+    };
+    return fu::join(path, "/"_fu);
+}
+
+int fu_MAIN()
+{
+    return ((path_normalize("./hello///hey"_fu) == "hello/hey"_fu) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
 
         fn path_normalize(p: string): string {
             mut path = p.split("/");
