@@ -4590,12 +4590,13 @@ pub fn solve(
         // Track deps.
         if (target.modid == module.modid)
         {
+            ref o = GET_mut(target);
+
             // Tracking call graph & type annotations.
-            if (overload.kind == "fn"   ||
-                overload.kind == "type" ||
-                overload.kind == "var")
+            if (o.kind == "fn"   ||
+                o.kind == "type" ||
+                o.kind == "var")
             {
-                ref o = GET_mut(target);
                 o.callsites ~= callsite;
                 detectRecursion(target, o);
             }
