@@ -3432,12 +3432,6 @@ pub fn solve(
         let n_init  = node.items[LET_INIT];
         let init    = n_init && solveNode(n_init, annot);
 
-        //////////////////////////////////////////////////////
-        // TODO FIX this propagateType shit is really bad   //
-        if (init && annot)                                  //
-            propagateType(node: init, slot: annot);         //
-        //////////////////////////////////////////////////////
-
         return solveLetLike_dontTouchScope(
             node.value, :node.flags,
             :annot, :init,
@@ -3475,8 +3469,6 @@ pub fn solve(
                 checkAssignable(host: annot, init.type,
                     "Type annotation does not match init expression",
                         id, "=");
-
-                annot.lifetime = init.type.lifetime;
             }
         }
 
@@ -3488,6 +3480,10 @@ pub fn solve(
             _notes |= N_DeadLet;
             return init;
         }
+
+        //
+        if (annot.is_mutref)
+            flags |= F_REF;
 
         if (flags & F_REF)
         {
@@ -3501,19 +3497,21 @@ pub fn solve(
         }
 
         //
-        let t_let   = annot
+        let t_let   = annot && (flags & (F_ARG | F_MUT) || !init.type)
+
                         ? flags & F_ARG && !(flags & F_MUT)
                             ? add_ref(annot, Lifetime_temporary)
                             : annot
-                    : init.type.is_mutref || flags & F_MUT || killref
-                        ? flags & F_REF && !killref
-                            ? init.type
-                            : TODO_ref_to_mutref && !(flags & F_MUT) && !killref
-                                ? clear_mutref(init.type)
-                                : clear_refs(init.type)
-                        : flags & F_ARG && !(flags & F_MUT)
-                            ? add_ref(init.type, Lifetime_temporary)
-                            : init.type;
+
+                        : init.type.is_mutref || flags & F_MUT || killref
+                            ? flags & F_REF && !killref
+                                ? init.type
+                                : TODO_ref_to_mutref && !(flags & F_MUT) && !killref
+                                    ? clear_mutref(init.type)
+                                    : clear_refs(init.type)
+                            : flags & F_ARG && !(flags & F_MUT)
+                                ? add_ref(init.type, Lifetime_temporary)
+                                : init.type;
 
         // TODO clean this up: inliner broke for `v: &mut T` arg annots,
         //  which don't have the F_REF flag, which drops the mutrefness here on createLet.
