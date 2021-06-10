@@ -388,13 +388,13 @@ pub fn solve(
         return res;
     }
 
-    fn Lifetime_argLetsForOverload(overload: Overload)
+    fn arg_lets(overload: Overload)
         overload.solved.items[0, overload.solved.items.len + FN_ARGS_BACK];
 
     fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
     {
         let returned    = overload.type.lifetime.uni0n;
-        let items       = overload.Lifetime_argLetsForOverload;
+        let items       = overload.arg_lets;
 
         // Nothing to do if empty/non-arg.
         if (!Region_isArg(returned.if_first))
@@ -1539,7 +1539,7 @@ pub fn solve(
             //
             if (o.spec_of && o.type.is_ref)
             {
-                let argLets = o.Lifetime_argLetsForOverload;
+                let argLets = o.arg_lets;
 
                 mut relaxed: SolvedNode[];
                 for (mut i = 0; i < node.items.len; i++)
@@ -3472,10 +3472,11 @@ pub fn solve(
             }
         }
 
-        let killref = init.type.is_ref2temp();
+        let t_init  = init.type;
+        let killref = t_init.is_ref2temp();
 
         // Dead code elim.
-        if (deadcode_on_never && init.type.is_never)
+        if (deadcode_on_never && t_init.is_never)
         {
             _notes |= N_DeadLet;
             return init;
@@ -3487,31 +3488,31 @@ pub fn solve(
 
         if (flags & F_REF)
         {
-            init.type.is_mutref || init.type.is_never && annot
+            t_init.is_mutref    || t_init.is_never && annot
                                 || !init && flags & F_ARG || fail(
                 "`ref` variables must be initialized to a mutable reference: `" ~ id ~ "`"
-                    ~ (init.type ? " = " ~ humanizeType(init.type) : "."));
+                    ~ (t_init ? " = " ~ humanizeType(t_init) : "."));
 
             killref && fail(
                 "`ref` varibles cannot bind to temporaries.");
         }
 
         //
-        let t_let   = annot && (flags & (F_ARG | F_MUT) || !init.type)
+        mut t_let   = annot && (flags & (F_ARG | F_MUT) || !t_init)
 
                         ? flags & F_ARG && !(flags & F_MUT)
                             ? add_ref(annot, Lifetime_temporary)
                             : annot
 
-                        : init.type.is_mutref || flags & F_MUT || killref
-                            ? flags & F_REF && !killref
-                                ? init.type
+                        : t_init.is_mutref || flags & F_MUT || killref
+                            ? flags & F_REF                                     && (!killref || fail("redundant, see above, refs cant bind to temps"))
+                                ? t_init
                                 : TODO_ref_to_mutref && !(flags & F_MUT) && !killref
-                                    ? clear_mutref(init.type)
-                                    : clear_refs(init.type)
+                                    ? clear_mutref(t_init)
+                                    : clear_refs(t_init)
                             : flags & F_ARG && !(flags & F_MUT)
-                                ? add_ref(init.type, Lifetime_temporary)
-                                : init.type;
+                                ? add_ref(t_init, Lifetime_temporary)
+                                : t_init;
 
         // TODO clean this up: inliner broke for `v: &mut T` arg annots,
         //  which don't have the F_REF flag, which drops the mutrefness here on createLet.
@@ -3522,7 +3523,14 @@ pub fn solve(
             flags |= F_REF;
 
         if (init)
+        {
             maybeCopyOrMove(init, t_let);
+
+            // Can change due to propagate type:
+            //  let a = b[i]: mutref -> ref unions-in a static lt.
+            if (t_let.lifetime && !(flags & F_ARG))
+                t_let.lifetime = init.lifetime || fail();
+        }
 
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
