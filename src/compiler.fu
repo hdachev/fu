@@ -58,9 +58,7 @@ fn compile(fname: string, via: string = "", options?: Options)
 
         //
         let stat0 = ModuleStat_now();
-        module.out.solve = solver::solve(
-            module.in.parse.root,
-            :options);
+        module.out.solve = solver::solve(:options);
 
         let stat1 = ModuleStat_now();
         module.out.cpp = codegen::cpp_codegen(

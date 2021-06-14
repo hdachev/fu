@@ -277,10 +277,18 @@ pub fn solvePrelude(): Context
     let implicit mut module = getModule("").helpers::clone();
 
     let options: options::Options;
-    let lexed   = lexer::lex(prelude_src, "__prelude");
-    let root    = parser::parse(0, "__prelude", :lexed.tokens, :options ).root;
 
-    module.out.solve = solver::solve(root, :options);
+    let src     = prelude_src;
+    let fname   = "__prelude";
+    let lexed   = lexer::lex(:src, :fname);
+    let parsed  = parser::parse(0, :fname, :lexed.tokens, :options );
+
+    module.in = scope::ModuleInputs(
+        :src, lex: lexed,
+        parse: parsed);
+
+    setModule(module);
+    module.out.solve = solver::solve(:options);
     setModule(module);
 
     return ctx;

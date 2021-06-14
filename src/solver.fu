@@ -55,9 +55,10 @@ let CANNOT_definit_mutrefs  = true;
 pub fn solve(
     implicit ctx: Context,
     implicit ref module: Module,
-    parse: Node,
     options: options::Options): SolverOutput
 {
+    let parse = module.in.parse.root;
+
     struct Info
     {
         here: TokenIdx;
