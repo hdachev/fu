@@ -589,7 +589,10 @@ pub fn cpp_codegen(
         defer _current_fn._ids_used.shrink(_ids_used0);
         ///////////////////////////////////////////////
 
-        let indent0 = _indent;
+        //////////////////////
+        mut indent0 = _indent; //REF2MUTREF
+        defer _indent = indent0;
+        //////////////////////
         _indent ~= "    ";
 
         let gnuOpen = gnuStmtExpr && "(__extension__ (";
@@ -642,7 +645,6 @@ pub fn cpp_codegen(
         if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "jump" && nodes[0].kind != "call")
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
-        _indent = indent0;
         return src;
     }
 
@@ -779,7 +781,8 @@ pub fn cpp_codegen(
     fn cgFn(fn: SolvedNode, mode: i32): string
     {
         //////////////////////
-        let indent0 = _indent;
+        mut indent0 = _indent; //REF2MUTREF
+        defer _indent = indent0;
         //////////////////////
 
         let items = fn.items;
@@ -817,10 +820,6 @@ pub fn cpp_codegen(
         //  it could itself have written to _fdef.
         if (_fdef.has(id || fail()))
             ensureFwdDecl(fn.target);
-
-        //////////////////
-        _indent = indent0;
-        //////////////////
 
         let dedupe = overload.flags & F_PUB
                   && overload.flags & F_TEMPLATE

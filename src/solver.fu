@@ -33,8 +33,8 @@ let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
+let USE_ref_to_mutref       = true;
 
-let TODO_ref_to_mutref      = false;
 let TODO_copy_inside        = false;
 
 let SELF_TEST               = true;
@@ -2175,7 +2175,7 @@ pub fn solve(
             args[REST_START] = REST_TYPE;
 
         //
-        let mangle00 = mangle;
+        mut mangle00 = mangle; //REF2MUTREF
         let SPECFAIL = Target(modid: -1, index: 0);
 
         //
@@ -2244,7 +2244,7 @@ pub fn solve(
 
         {
             let scope0 = Scope_snap(_scope);
-            let ss0 = _ss;
+            mut ss0 = _ss; //REF2MUTREF
             let helpers0vars = _helpers.last.vars.len;
 
             defer {
@@ -2476,7 +2476,7 @@ pub fn solve(
             }
 
             // Populate scope.
-            let mangle0 = mangle;
+            mut mangle0 = mangle; //REF2MUTREF
 
             let extra_items = into
                 ? original.extra_items
@@ -2501,7 +2501,7 @@ pub fn solve(
                     :target, type: addroffn::X_addrofTarget(target)),
                         :recycle);
 
-            let root_scope0 = _root_scope;
+            mut root_scope0 = _root_scope; //REF2MUTREF
             if (!root_scope0)
                 _root_scope = scope0;
 
@@ -3508,7 +3508,7 @@ pub fn solve(
                         : t_init.is_mutref || flags & F_MUT || killref
                             ? flags & F_REF                                     && (!killref || fail("redundant, see above, refs cant bind to temps"))
                                 ? t_init
-                                : TODO_ref_to_mutref && !(flags & F_MUT) && !killref
+                                : USE_ref_to_mutref && !(flags & F_MUT) && !killref
                                     ? clear_mutref(t_init)
                                     : clear_refs(t_init)
                             : flags & F_ARG && !(flags & F_MUT)
@@ -4037,12 +4037,6 @@ pub fn solve(
         mut id = node.value;
         if (!id) target || fail();
 
-        // Qualified?
-        let qualified = node.flags & F_COMPOUND_ID;
-        let scope = qualified
-            ? dequalify_andGetScope(id)
-            : _scope;
-
         // Dead code elim.
         mut args = solveNodes(node.items, deadcode_on_never: true);
         if (args.if_last.type.is_never)
@@ -4050,6 +4044,12 @@ pub fn solve(
             _notes |= N_DeadCall;
             return createBlock(t_never, args);
         }
+
+        // Qualified?
+        let qualified = node.flags & F_COMPOUND_ID;
+        let scope = qualified
+            ? dequalify_andGetScope(id)
+            : _scope;
 
         //
         mut conversions: Target[][];
@@ -4547,7 +4547,7 @@ pub fn solve(
             if (overload.kind == "inline")
             {
                 let scope0 = Scope_snap(_scope);
-                let ss0 = _ss;
+                mut ss0 = _ss; //REF2MUTREF
                 let helpers0vars = _helpers.last.vars.len;
 
                 defer {
@@ -4688,10 +4688,10 @@ pub fn solve(
     {
         mut result: SolvedNode[];
 
-        ////////////////////////////////////////////////////////
-        let here0   = _here;
+        ////////////////////
+        mut here0   = _here; //REF2MUTREF
         defer _here = here0;
-        ////////////////////////////////////////////////////////
+        ////////////////////
 
         //
         for (mut i = 0; i < nodes.len; i++)
