@@ -6445,7 +6445,7 @@ static fu_STR path_normalize(const fu_STR& p)
     fu_VEC<fu_STR> path = fu::split(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
-        fu_STR part { path[i] };
+        const fu_STR& part = path[i];
         if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
             path.splice(i, 1);
 
@@ -6473,7 +6473,6 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
-// NONTRIV_autocopy
 // RELAX_respec
 
 -----
