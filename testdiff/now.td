@@ -10811,6 +10811,63 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub fn test(x: i32): i32[] { // !NONTRIV_autocopy
+            mut a = [ 4 ];
+            mut b = [ 5 ];
+            mut c = [ 6 ];
+
+            for (mut i = 0; i < x; i++) {
+                a.unshift(x);
+                b.unshift(x);
+                c.unshift(x);
+            }
+
+            inline fn which() {
+                return :test x & 1 ? a : b;
+            }
+
+            if !(x & 2)
+                return which();
+
+            return c;
+        }
+
+        fn main() test(2)[2] + test(1)[1] - 2 * test(0)[0];
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+fu_VEC<int> test(const int x)
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 4 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 5 } };
+    fu_VEC<int> c = fu_VEC<int> { fu_VEC<int>::INIT<1> { 6 } };
+    for (int i = 0; i < x; i++)
+    {
+        a.unshift(x);
+        b.unshift(x);
+        c.unshift(x);
+    };
+    if (!(x & 2))
+        return static_cast<fu_VEC<int>&&>(((x & 1) ? a : b));
+
+    return c;
+}
+
+int fu_MAIN()
+{
+    return (test(2)[2] + test(1)[1]) - (2 * test(0)[0]);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn incr_x_to_1(ref x: i32) {
             x && throw("this reports return t_never");
             fn incr_x() { return x++; }
