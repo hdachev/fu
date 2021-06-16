@@ -2822,6 +2822,7 @@ pub fn solve(
         // Struct fields only.
         mut structConverts: Target[];
         mut structImports:  i32[];
+        mut flat_cnt:       i32;
 
         // Struct members, pass 0.
         fn solveMember(shadow node: Node)
@@ -2875,6 +2876,8 @@ pub fn solve(
                 ref field = GET_mut(item.target);
                 field.type = member.type;
 
+                flat_cnt += tryLookupStruct(member.type).flat_cnt || 1;
+
                 if (member.flags & F_USING)
                 {
                     structConverts.push(item.target);
@@ -2891,12 +2894,15 @@ pub fn solve(
         {
             shadow ref out = out.MUT;
 
+            mut CHANGE = false;
+
             mut commonQuals = -1;
             for (mut i = 0; i < members.len; i++)
                 commonQuals &= members[i].type.quals;
 
             let quals0 = out.type.quals;
             let quals1 = out.type.quals &= commonQuals;
+            CHANGE   ||= quals0 != quals1;
 
             //
             {
@@ -2904,6 +2910,10 @@ pub fn solve(
                 s.target    = out.target || fail("No struct/out.target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
+
+                let flat0   = s.flat_cnt;
+                s.flat_cnt  = flat_cnt;
+                CHANGE    ||= flat0 != flat_cnt;
 
                 GET(s.target).status & SS_DID_START || fail(
                     "Setting stuff but missing SS_DID_START.");
@@ -2938,9 +2948,8 @@ pub fn solve(
             overload.args   = args;
             overload.type   = out.type;
 
-            if (overload.callsites)
-                if (quals0 != quals1)
-                    overload.status |= SS_UPDATED;
+            if (CHANGE && overload.callsites)
+                overload.status |= SS_UPDATED;
         }
 
         //

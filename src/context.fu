@@ -169,8 +169,11 @@ pub fn lookupStruct(
         || assert();
 }
 
+pub fn tryLookupStruct(type: Type)
+    type.isStruct && lookupStruct(type);
+
 pub fn lookupTypeImports(type: Type)
-    type.isStruct && lookupStruct(type).imports;
+    tryLookupStruct(type).imports;
 
 pub fn lookupTypeConverts(type: Type)
-    type.isStruct && lookupStruct(type).converts;
+    tryLookupStruct(type).converts;

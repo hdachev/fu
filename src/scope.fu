@@ -67,6 +67,8 @@ pub struct Struct
     items?:     ScopeItem[];
     imports?:   i32[];
     converts?:  Target[];
+
+    flat_cnt?:  i32;
 };
 
 ////
