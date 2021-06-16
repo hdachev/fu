@@ -30,12 +30,6 @@ const int     fu_ERR_FS_BadPath     = -102;
 
 /////////////////////////////////////////////
 
-#ifndef fu_EXPLICIT
-    #define fu_EXPLICIT explicit
-#endif
-
-/////////////////////////////////////////////
-
 #ifdef _MSC_VER
     #define fu_INL __forceinline
 #else
