@@ -35,8 +35,6 @@ let OPTI_flatten_blocks     = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
-let TODO_copy_inside        = false;
-
 let SELF_TEST               = true;
 
 let CANNOT_definit_mutrefs  = true;
@@ -2361,10 +2359,7 @@ pub fn solve(
                                 typeParams[argName] ||= TypeParam;
 
                             // Values vs refs.
-                            //  TODO actually this is rather stupid, isn't it,
-                            //   what if it were all just refs and we did the copy internally,
-                            //    only if necessary, and as late as possible.
-                            if (argNode.flags & F_MUT && !TODO_copy_inside)
+                            if (argNode.flags & F_MUT)
                                 inType = clear_refs(inType);
                             else
                                 inType = add_ref(inType, Lifetime_temporary);
