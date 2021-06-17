@@ -1,8 +1,10 @@
+#include <cstdint>
 #include <fu/mem/arc.h>
 #include <fu/now.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
+#include <fu/view.h>
 #include <iostream>
 
 struct s_ModuleStat;
@@ -49,7 +51,7 @@ s_ModuleStat ModuleStat_now()
     return s_ModuleStat { fu::now_hr(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, const fu_STR& suffix)
+void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<std::byte> suffix)
 {
     (std::cout << prefix << a.time << " s\t"_fu << ((((a.alloc_count + " allocs\t"_fu) + a.alloc_bytes) + " bytes"_fu) + suffix) << '\n');
 }

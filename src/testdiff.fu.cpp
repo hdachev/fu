@@ -4,6 +4,7 @@
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/split.h>
+#include <fu/view.h>
 
 struct s_TestDiffs;
 
@@ -38,8 +39,8 @@ s_TestDiffs parse(const fu_STR& str)
 fu_STR serialize(const s_TestDiffs& diffs)
 {
     fu_STR res {};
-    const fu_VEC<fu_STR>& keys_1 = diffs._next.m_keys;
-    const fu_VEC<fu_STR>& values_1 = diffs._next.m_values;
+    fu::view<fu_STR> keys_1 = diffs._next.m_keys;
+    fu::view<fu_STR> values_1 = diffs._next.m_values;
     for (int i = 0; i < keys_1.size(); i++)
         res += (((keys_1[i] + "\n-----\n"_fu) + values_1[i]) + "\n-----\n"_fu);
 

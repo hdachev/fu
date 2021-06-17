@@ -20,7 +20,6 @@
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
-struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Lint;
@@ -61,14 +60,13 @@ s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 s_ModuleStat ModuleStat_now();
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
-s_Options Options_default();
 s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&, const s_Options&);
-s_SolverOutput solve(const s_Node&, const s_Context&, s_Module&);
-static void compile(const fu_STR&, const fu_STR&, s_Context&);
-void ModuleStat_print(const s_ModuleStat&, const fu_STR&, const fu_STR&);
-void ZERO_SAME(const fu_VEC<fu_STR>&, s_TestDiffs&);
-void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, const fu_STR&, const fu_STR&, const s_Context&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
+static void compile(const fu_STR&, fu::view<std::byte>, const s_Options&, s_Context&);
+void ModuleStat_print(const s_ModuleStat&, const fu_STR&, fu::view<std::byte>);
+void ZERO_SAME(fu::view<fu_STR>, s_TestDiffs&);
+void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<std::byte>, const fu_STR&, const s_Context&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void setModule(const s_Module&, s_Context&);
 void set_next(s_TestDiffs&, const fu_STR&, const fu_STR&);
@@ -309,33 +307,17 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || effects
         ;
     }
 };
@@ -453,7 +435,6 @@ struct s_SolvedNodeData
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
     s_Type type;
     s_Target target;
     explicit operator bool() const noexcept
@@ -463,7 +444,6 @@ struct s_SolvedNodeData
             || flags
             || value
             || items
-            || token
             || type
             || target
         ;
@@ -484,11 +464,11 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
+    s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
-    fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
     explicit operator bool() const noexcept
     {
@@ -502,11 +482,11 @@ struct s_Overload
             || args
             || tEmplate
             || solved
+            || spec_of
             || nodes
             || callsites
             || status
             || local_of
-            || closes_over
             || extra_items
         ;
     }
@@ -710,10 +690,12 @@ struct s_Lint
 struct s_Options
 {
     s_Lint lint;
+    int break_notes;
     explicit operator bool() const noexcept
     {
         return false
             || lint
+            || break_notes
         ;
     }
 };
@@ -739,7 +721,7 @@ struct s_TestDiffs
 
                                 #ifndef DEFt_if_last_YeU3
                                 #define DEFt_if_last_YeU3
-inline std::byte if_last_YeU3(const fu_STR& s)
+inline std::byte if_last_YeU3(fu::view<std::byte> s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
 }
@@ -926,7 +908,7 @@ inline s_Module clone_PUXh(const s_Module& a)
 
                                 #ifndef DEFt_map_j9F3
                                 #define DEFt_map_j9F3
-inline fu_VEC<s_Module> map_j9F3(const fu_VEC<s_Module>& a, int)
+inline fu_VEC<s_Module> map_j9F3(fu::view<s_Module> a, int)
 {
     fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
@@ -939,7 +921,7 @@ inline fu_VEC<s_Module> map_j9F3(const fu_VEC<s_Module>& a, int)
 
                                 #ifndef DEFt_clone_vQi3
                                 #define DEFt_clone_vQi3
-inline fu_VEC<s_Module> clone_vQi3(const fu_VEC<s_Module>& a)
+inline fu_VEC<s_Module> clone_vQi3(fu::view<s_Module> a)
 {
     return map_j9F3(a, 0);
 }
@@ -970,91 +952,19 @@ inline s_Context clone_MVIm(const s_Context& a)
 
 extern const s_Context CTX_PRELUDE;
 
-                                #ifndef DEFt_clone_cBw5
-                                #define DEFt_clone_cBw5
-inline int& clone_cBw5(int& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_jB4B
-                                #define DEFt_clone_jB4B
-inline fu_STR& clone_jB4B(fu_STR& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_MSxx
-                                #define DEFt_clone_MSxx
-inline s_ModuleInputs& clone_MSxx(s_ModuleInputs& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_mrln
-                                #define DEFt_clone_mrln
-inline fu_VEC<int>& clone_mrln(fu_VEC<int>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_Z8AT
-                                #define DEFt_clone_Z8AT
-inline fu_VEC<s_Struct>& clone_Z8AT(fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_AV3V
-                                #define DEFt_clone_AV3V
-inline s_SolvedNode& clone_AV3V(s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_T4lA
-                                #define DEFt_clone_T4lA
-inline fu_VEC<s_ScopeItem>& clone_T4lA(fu_VEC<s_ScopeItem>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_zrrm
-                                #define DEFt_clone_zrrm
-inline fu_VEC<s_Overload>& clone_zrrm(fu_VEC<s_Overload>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_uIm6
-                                #define DEFt_clone_uIm6
-inline fu_VEC<s_Target>& clone_uIm6(fu_VEC<s_Target>& a)
-{
-    return a;
-}
-                                #endif
-
                                 #ifndef DEFt_clone_J3Oj
                                 #define DEFt_clone_J3Oj
-inline s_Scope clone_J3Oj(s_Scope& a)
+inline s_Scope clone_J3Oj(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_T4lA(a.items);
-        res.overloads = clone_zrrm(a.overloads);
-        res.imports = clone_mrln(a.imports);
-        res.usings = clone_uIm6(a.usings);
-        res.converts = clone_uIm6(a.converts);
-        res.pub_count = clone_cBw5(a.pub_count);
+        res.items = clone_T2hh(a.items);
+        res.overloads = clone_evat(a.overloads);
+        res.imports = clone_I28a(a.imports);
+        res.usings = clone_mnBR(a.usings);
+        res.converts = clone_mnBR(a.converts);
+        res.pub_count = clone_U3Pf(a.pub_count);
     };
     return res;
 }
@@ -1062,72 +972,55 @@ inline s_Scope clone_J3Oj(s_Scope& a)
 
                                 #ifndef DEFt_clone_Pu6M
                                 #define DEFt_clone_Pu6M
-inline s_SolverOutput clone_Pu6M(s_SolverOutput& a)
+inline s_SolverOutput clone_Pu6M(const s_SolverOutput& a)
 {
     s_SolverOutput res {};
 
     {
-        res.root = clone_AV3V(a.root);
+        res.root = clone_VD7r(a.root);
         res.scope = clone_J3Oj(a.scope);
-        res.notes = clone_cBw5(a.notes);
+        res.notes = clone_U3Pf(a.notes);
     };
     return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_tPpZ
-                                #define DEFt_clone_tPpZ
-inline s_CodegenOutput& clone_tPpZ(s_CodegenOutput& a)
-{
-    return a;
 }
                                 #endif
 
                                 #ifndef DEFt_clone_qwPy
                                 #define DEFt_clone_qwPy
-inline s_ModuleOutputs clone_qwPy(s_ModuleOutputs& a)
+inline s_ModuleOutputs clone_qwPy(const s_ModuleOutputs& a)
 {
     s_ModuleOutputs res {};
 
     {
-        res.deps = clone_mrln(a.deps);
-        res.types = clone_Z8AT(a.types);
+        res.deps = clone_I28a(a.deps);
+        res.types = clone_mnFp(a.types);
         res.solve = clone_Pu6M(a.solve);
-        res.cpp = clone_tPpZ(a.cpp);
+        res.cpp = clone_Z1e1(a.cpp);
     };
     return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_1H6K
-                                #define DEFt_clone_1H6K
-inline s_ModuleStats& clone_1H6K(s_ModuleStats& a)
-{
-    return a;
 }
                                 #endif
 
                                 #ifndef DEFt_clone_NwlG
                                 #define DEFt_clone_NwlG
-inline s_Module clone_NwlG(s_Module& a)
+inline s_Module clone_NwlG(const s_Module& a)
 {
     s_Module res {};
 
     {
-        res.modid = clone_cBw5(a.modid);
-        res.fname = clone_jB4B(a.fname);
-        res.in = clone_MSxx(a.in);
+        res.modid = clone_U3Pf(a.modid);
+        res.fname = clone_YeU3(a.fname);
+        res.in = clone_MAvM(a.in);
         res.out = clone_qwPy(a.out);
-        res.stats = clone_1H6K(a.stats);
+        res.stats = clone_rT76(a.stats);
     };
     return res;
 }
                                 #endif
 
-static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
+static void compile(const fu_STR& fname, fu::view<std::byte> via, const s_Options& options, s_Context& ctx)
 {
     s_Module module = clone_NwlG(getModule(fname, ctx));
-    const s_Options options = Options_default();
     if (!module.in)
     {
         module.out = s_ModuleOutputs{};
@@ -1153,10 +1046,10 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     {
         fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
         for (int i = 0; i < fuzimports.size(); i++)
-            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), ctx);
+            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), s_Options{}, ctx);
 
         const s_ModuleStat stat0 = ModuleStat_now();
-        module.out.solve = solve(module.in.parse.root, ctx, module);
+        module.out.solve = solve(options, ctx, module);
         const s_ModuleStat stat1 = ModuleStat_now();
         module.out.cpp = cpp_codegen(module.out.solve.root, module, ctx);
         const s_ModuleStat stat2 = ModuleStat_now();
@@ -1166,14 +1059,14 @@ static void compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx)
     };
 }
 
-void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, const fu_STR& scheme)
+void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<std::byte> scheme)
 {
     s_Context ctx = clone_MVIm(CTX_PRELUDE);
 
     {
         (std::cout << "COMPILE "_fu << fname << '\n');
         const double t0 = fu::now_hr();
-        compile(fname, fu_STR{}, ctx);
+        compile(fname, fu::view<std::byte>{}, s_Options{}, ctx);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
         if ((t1 - t0) > 0.025)
@@ -1182,17 +1075,17 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
             s_ModuleStat parse {};
             s_ModuleStat solve {};
             s_ModuleStat codegen {};
-            fu_VEC<s_Module>& m = ctx.modules;
+            fu::view<s_Module> m = ctx.modules;
             for (int i = 0; i < m.size(); i++)
             {
-                lex += m.mutref(i).stats.lex;
-                parse += m.mutref(i).stats.parse;
-                solve += m.mutref(i).stats.solve;
-                codegen += m.mutref(i).stats.codegen;
+                lex += m[i].stats.lex;
+                parse += m[i].stats.parse;
+                solve += m[i].stats.solve;
+                codegen += m[i].stats.codegen;
             };
-            ModuleStat_print(lex, "\n    lex "_fu, (*(const fu_STR*)fu::NIL));
-            ModuleStat_print(parse, "  parse "_fu, (*(const fu_STR*)fu::NIL));
-            ModuleStat_print(solve, "  solve "_fu, (*(const fu_STR*)fu::NIL));
+            ModuleStat_print(lex, "\n    lex "_fu, fu::view<std::byte>{});
+            ModuleStat_print(parse, "  parse "_fu, fu::view<std::byte>{});
+            ModuleStat_print(solve, "  solve "_fu, fu::view<std::byte>{});
             ModuleStat_print(codegen, "codegen "_fu, "\n"_fu);
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
@@ -1200,14 +1093,14 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), ctx);
 }
 
-static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<12> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if"_fu, "DEAD_if_cons"_fu, "NONTRIV_autocopy"_fu } };
+static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<13> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if"_fu, "DEAD_if_cons"_fu, "NONTRIV_autocopy"_fu, "RELAX_respec"_fu } };
 
 static fu_STR ensure_main(const fu_STR& src)
 {
     return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
 }
 
-s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& fnames)
+s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
 {
     s_Context ctx = clone_MVIm(CTX_PRELUDE);
     for (int i = 0; i < sources.size(); i++)
@@ -1216,11 +1109,11 @@ s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& 
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
         fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
         (ctx.files.upsert(fname) = fu_STR(src));
-        compile(fname, fu_STR{}, ctx);
+        compile(fname, fu::view<std::byte>{}, ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)), ctx);
     };
-    for (int i = 0; i < ctx.modules.size(); i++)
+    for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
     {
-        s_Module& module = ctx.modules.mutref(i);
+        s_Module& module = ctx.modules.mutref(i_1);
         int notes = module.out.solve.notes;
         for (int bit = 0; (bit < NOTES.size()) && notes; bit++)
         {
@@ -1238,7 +1131,7 @@ s_Context compile_snippets(const fu_VEC<fu_STR>& sources, const fu_VEC<fu_STR>& 
 fu_STR snippet2cpp(const fu_STR& src)
 {
     fu_STR fname = "SNIPPET"_fu;
-    s_Context ctx = compile_snippets(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(fname) } });
+    s_Context ctx = compile_snippets((fu::slate<1, fu_STR> { fu_STR(src) }), (fu::slate<1, fu_STR> { fu_STR(fname) }), fu_VEC<s_Options>{});
     for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
@@ -1251,7 +1144,7 @@ fu_STR snippet2cpp(const fu_STR& src)
 
                                 #ifndef DEFt_grow_if_oob_4ey5
                                 #define DEFt_grow_if_oob_4ey5
-inline fu_VEC<fu_STR>& grow_if_oob_4ey5(fu_VEC<fu_VEC<fu_STR>>& a, int& i)
+inline fu_VEC<fu_STR>& grow_if_oob_4ey5(fu_VEC<fu_VEC<fu_STR>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -1264,32 +1157,32 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
 {
     for (int i = 0; i < sources.size(); i++)
     {
-        fu_STR& src = sources.mutref(i);
         for (; ; )
         {
+            const fu_STR& src = sources[i];
             int start0 = fu::lfind(src, "<split/>"_fu, 0);
             if (start0 < 0)
                 break;
 
             const int start00 = start0;
             const int start1 = (start0 + 8);
-            while (start0 && (src.mutref((start0 - 1)) == std::byte(' ')))
+            while (start0 && (src[(start0 - 1)] == std::byte(' ')))
                 start0--;
 
             fu_STR moduleA = fu::slice(src, 0, start0);
-            fu_STR moduleB = ((((fu::get_view_mut(src, start0, start00) + "import _"_fu) + i) + ";"_fu) + fu::get_view_mut(src, start1, src.size()));
-            fu_STR without = (fu::get_view_mut(src, 0, start0) + fu::get_view_mut(src, start1, src.size()));
+            fu_STR moduleB = ((((fu::get_view(src, start0, start00) + "import _"_fu) + i) + ";"_fu) + fu::get_view(src, start1, src.size()));
+            fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, start1, src.size()));
             sources.mutref(i) = without;
             ZERO(fu_VEC<fu_STR>(sources), testdiffs);
             sources.mutref(i) = moduleA;
             sources.insert((i + 1), moduleB);
         };
     };
-    for (int i = 0; i < sources.size(); i++)
+    for (int i_1 = 0; i_1 < sources.size(); i_1++)
     {
-        fu_STR& src = sources.mutref(i);
         for (; ; )
         {
+            fu::view<std::byte> src = sources[i_1];
             int start0 = fu::lfind(src, "<alt>"_fu, 0);
             if (start0 < 0)
                 break;
@@ -1300,31 +1193,33 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
 
             const int start1 = (start0 + 5);
             const int end1 = (end0 + 6);
-            while (start0 && (src.mutref((start0 - 1)) == std::byte(' ')))
+            while (start0 && (src[(start0 - 1)] == std::byte(' ')))
                 start0--;
 
-            while (src.mutref((end0 - 1)) == std::byte(' '))
+            while (src[(end0 - 1)] == std::byte(' '))
                 end0--;
 
-            fu_STR with = ((fu::get_view_mut(src, 0, start0) + fu::get_view_mut(src, start1, end0)) + fu::get_view_mut(src, end1, src.size()));
-            fu_STR without = (fu::get_view_mut(src, 0, start0) + fu::get_view_mut(src, end1, src.size()));
-            sources.mutref(i) = without;
+            fu_STR with = ((fu::get_view(src, 0, start0) + fu::get_view(src, start1, end0)) + fu::get_view(src, end1, src.size()));
+            fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, end1, src.size()));
+            sources.mutref(i_1) = without;
             ZERO(fu_VEC<fu_STR>(sources), testdiffs);
-            sources.mutref(i) = with;
+            sources.mutref(i_1) = with;
         };
     };
     fu_VEC<fu_VEC<fu_STR>> expectations {};
-    for (int i = 0; i < sources.size(); i++)
+    fu_VEC<s_Options> options {};
+    for (int i_2 = 0; i_2 < sources.size(); i_2++)
     {
-        fu_STR& src = sources.mutref(i);
+        fu_STR& src = sources.mutref(i_2);
 
         {
             int end = src.size();
-            for (int r = src.size(); (r-- > 0) && (src.mutref(r) == std::byte(' ')); )
+            for (int r = src.size(); (r-- > 0) && (src[r] == std::byte(' ')); )
                 end = r;
 
             src.shrink(end);
         };
+        int break_notes_1 {};
         int start = 0;
         while (((start = fu::lfind(src, " ;; "_fu, start)) >= 0))
         {
@@ -1332,21 +1227,33 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             if (end < 0)
                 end = src.size();
 
-            grow_if_oob_4ey5(expectations, i) += fu::slice(src, (start + 4), end);
+            fu_STR annot = fu::slice(src, (start + 4), end);
+            if (annot[0] == std::byte('!'))
+            {
+                const int idx = fu::lfind(NOTES, fu::slice(annot, 1, annot.size()), 0);
+                if (!((idx >= 0)))
+                    fu::fail((("Bad break_note: `;; "_fu + annot) + "`."_fu));
+
+                break_notes_1 |= (1 << idx);
+            }
+            else
+                grow_if_oob_4ey5(expectations, i_2) += annot;
+
             src.mutref((start + 1)) = std::byte('/');
             src.mutref((start + 2)) = std::byte('/');
             start = end;
         };
+        options += s_Options { s_Lint{}, int(break_notes_1) };
     };
-    s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
-    for (int i = 0; i < expectations.size(); i++)
+    s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{}, options);
+    for (int i_3 = 0; i_3 < expectations.size(); i_3++)
     {
-        fu_VEC<fu_STR> arr { expectations[i] };
-        fu_STR src { sources[i] };
-        const s_CodegenOutput& cpp = ctx.modules[(i + 1)].out.cpp;
-        for (int i_1 = 0; i_1 < arr.size(); i_1++)
+        fu_VEC<fu_STR> arr { expectations[i_3] };
+        fu_STR src { sources[i_3] };
+        const s_CodegenOutput& cpp = ctx.modules[(i_3 + 1)].out.cpp;
+        for (int i_1_1 = 0; i_1_1 < arr.size(); i_1_1++)
         {
-            const fu_STR& x = arr[i_1];
+            const fu_STR& x = arr[i_1_1];
             const int idx = fu::lfind(x, std::byte(' '), 0);
             fu_STR cmd = fu::slice(x, 0, idx);
             fu_STR rest = fu::slice(x, (idx + 1));
@@ -1368,14 +1275,14 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
     };
     const bool run = true;
     build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), "debug"_fu, "print-src"_fu, ctx);
-    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), "print-src"_fu, ctx);
+    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), fu::view<std::byte>{}, "print-src"_fu, ctx);
 
     {
         fu_STR key {};
-        for (int i = 0; i < sources.size(); i++)
+        for (int i_4 = 0; i_4 < sources.size(); i_4++)
         {
-            key += sources.mutref(i);
-            const s_CodegenOutput& actual = ctx.modules[((i + ctx.modules.size()) - sources.size())].out.cpp;
+            key += sources[i_4];
+            const s_CodegenOutput& actual = ctx.modules[((i_4 + ctx.modules.size()) - sources.size())].out.cpp;
             set_next(testdiffs, key, actual.src);
         };
     };
@@ -1400,13 +1307,29 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
     s_Context ctx = {};
     try
     {
-        ctx = compile_snippets(sources, fu_VEC<fu_STR>{});
+        ctx = compile_snippets(sources, fu_VEC<fu_STR>{}, fu_VEC<s_Options>{});
     }
     catch (const std::exception& o_0)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
+    {
+        fu_STR key {};
+        for (int i = 0; i < sources.size(); i++)
+        {
+            fu::view<std::byte> src = sources[i];
+            for (int r = src.size(); r-- > 0; )
+            {
+                if (src[r] != std::byte(' '))
+                {
+                    key += fu::get_view(src, 0, r);
+                    break;
+                };
+            };
+        };
+        set_next(testdiffs, key, e);
         return fu_STR((ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs) ? e : (*(const fu_STR*)fu::NIL)));
+    }
     }
 ;
     fu_STR bad = "\nDID NOT THROW:\n"_fu;
@@ -1419,12 +1342,12 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
     fu::fail(bad);
 }
 
-void ZERO_SAME(const fu_VEC<fu_VEC<fu_STR>>& alts, s_TestDiffs& testdiffs)
+void ZERO_SAME(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
 {
     fu_VEC<s_Module> expect = ZERO(fu_VEC<fu_STR>(alts[0]), testdiffs).modules;
     for (int i = 1; i < alts.size(); i++)
     {
-        fu_VEC<s_Module> actual = compile_snippets(alts[i], fu_VEC<fu_STR>{}).modules;
+        fu_VEC<s_Module> actual = compile_snippets(alts[i], fu_VEC<fu_STR>{}, fu_VEC<s_Options>{}).modules;
         if (expect.size() != actual.size())
             fu::fail("ZERO_SAME: expect/actual len mismatch."_fu);
 
@@ -1449,7 +1372,7 @@ fu_STR FAIL(const fu_STR& src, s_TestDiffs& testdiffs)
     return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
 }
 
-void ZERO_SAME(const fu_VEC<fu_STR>& alts, s_TestDiffs& testdiffs)
+void ZERO_SAME(fu::view<fu_STR> alts, s_TestDiffs& testdiffs)
 {
     fu_VEC<fu_VEC<fu_STR>> wrap {};
     for (int i = 0; i < alts.size(); i++)

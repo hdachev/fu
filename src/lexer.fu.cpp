@@ -8,11 +8,12 @@
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 
 struct s_LexerOutput;
 struct s_Token;
 
-[[noreturn]] static fu::never err(const fu_STR&, const fu_STR&, int, int&, int&, int&, const fu_STR&, int, int);
+[[noreturn]] static fu::never err(fu::view<std::byte>, int, int, const fu_STR&, int&, int, int&, const fu_STR&, int&);
 fu_STR ascii_lower(const fu_STR&);
 
                                 #ifndef DEF_s_Token
@@ -61,28 +62,28 @@ static const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 
 static const fu_VEC<fu_STR> MBOPS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<40> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
 
-static void token(int& line_0, int& lidx_0, fu_VEC<s_Token>& tokens_0, const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1)
+static void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, int& lidx, fu_VEC<s_Token>& tokens, int& line)
 {
-    const int col = (idx0 - lidx_0);
-    tokens_0.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line_0), int(col) });
+    const int col = (idx0 - lidx);
+    tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
 }
 
-[[noreturn]] static fu::never err_str(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const fu_STR& reason)
+[[noreturn]] static fu::never err_str(fu::view<std::byte> kind, const int idx0, fu::view<std::byte> reason, int& idx, const int end, const fu_STR& src, int& lidx, const fu_STR& fname, int& line)
 {
-    while ((idx_0 < end_0) && (src_0[idx_0] > std::byte(' ')))
-        idx_0++;
+    while ((idx < end) && (src[idx] > std::byte(' ')))
+        idx++;
 
-    const int col = (idx0 - lidx_0);
-    fu_STR value = fu::slice(src_0, idx0, idx_0);
-    fu::fail((((((((((((("LEX ERROR: "_fu + fname_0) + "@"_fu) + line_0) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
+    const int col = (idx0 - lidx);
+    fu_STR value = fu::slice(src, idx0, idx);
+    fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
 }
 
-[[noreturn]] static fu::never err(const fu_STR& src_0, const fu_STR& fname_0, int end_0, int& line_0, int& lidx_0, int& idx_0, const fu_STR& kind, const int idx0, const int reason)
+[[noreturn]] static fu::never err(fu::view<std::byte> kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, int& lidx, const fu_STR& fname, int& line)
 {
-    err_str(src_0, fname_0, end_0, line_0, lidx_0, idx_0, kind, idx0, (("`"_fu + src_0[reason]) + "`"_fu));
+    err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
 
-static fu_STR unescapeStr(const fu_STR& esc, const int idx0, const int idx1)
+static fu_STR unescapeStr(fu::view<std::byte> esc, const int idx0, const int idx1)
 {
     fu_STR out {};
     const int n = (idx1 - 1);
@@ -118,7 +119,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
-    token(line, lidx, tokens, "sof"_fu, "sof"_fu, idx, idx);
+    token("sof"_fu, "sof"_fu, idx, idx, lidx, tokens, line);
     while (idx < end)
     {
         const int idx0 = idx;
@@ -146,7 +147,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             const int idx1 = idx;
-            token(line, lidx, tokens, "id"_fu, fu::slice(src, idx0, idx1), idx0, idx1);
+            token("id"_fu, fu::slice(src, idx0, idx1), idx0, idx1, lidx, tokens, line);
         }
         else if ((c >= std::byte('0')) && (c <= std::byte('9')))
         {
@@ -176,7 +177,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     idx++;
                 }
                 else if ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))
-                    err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu));
+                    err_str("real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
 
             };
             while (idx < end)
@@ -199,14 +200,14 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                         break;
                     };
                     if (dot || exp_1)
-                        err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
+                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == std::byte('p')) || (c_1 == std::byte('P'))) : ((c_1 == std::byte('e')) || (c_1 == std::byte('E')))))
                 {
                     if (exp_1)
-                        err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
+                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     if ((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+'))))
                         idx++;
@@ -221,15 +222,15 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             };
             const std::byte trail = src[(idx - 1)];
             if (!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F'))))))
-                err(src, fname, end, line, lidx, idx, "real"_fu, idx0, (idx - 1));
+                err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
                 if (hex && dot && !exp_1)
-                    err_str(src, fname, end, line, lidx, idx, "real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu));
+                    err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
-                    token(line, lidx, tokens, ((dot || exp_1) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1);
+                    token(((dot || exp_1) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1, lidx, tokens, line);
 
             };
         }
@@ -257,7 +258,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             if (!ok)
-                err_str(src, fname, end, line, lidx, idx, "str"_fu, idx0, "Unterminated string literal."_fu);
+                err_str("str"_fu, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
@@ -265,9 +266,9 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 const bool cHar = (c == std::byte('\''));
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
                 if (cHar && (str.size() != 1))
-                    err_str(src, fname, end, line, lidx, idx, "char"_fu, idx0, ("Char literal len != 1: "_fu + str.size()));
+                    err_str("char"_fu, idx0, ("Char literal len != 1: "_fu + str.size()), idx, end, src, lidx, fname, line);
                 else
-                    token(line, lidx, tokens, kind, str, idx0, idx1);
+                    token(kind, str, idx0, idx1, lidx, tokens, line);
 
             };
         }
@@ -321,15 +322,15 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 idx--;
                 break;
             };
-            token(line, lidx, tokens, "op"_fu, candidate, idx0, idx);
+            token("op"_fu, candidate, idx0, idx, lidx, tokens, line);
         }
         else
-            err(src, fname, end, line, lidx, idx, "?"_fu, idx0, idx0);
+            err("?"_fu, idx0, idx0, src, idx, end, lidx, fname, line);
 
     };
     line++;
     lidx = (idx + 0);
-    token(line, lidx, tokens, "eof"_fu, "eof"_fu, idx, idx);
+    token("eof"_fu, "eof"_fu, idx, idx, lidx, tokens, line);
     return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
 }
 

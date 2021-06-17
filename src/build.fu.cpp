@@ -22,7 +22,6 @@
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
-struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Module;
@@ -53,9 +52,9 @@ struct s_ValueType;
 fu_STR hash16(fu::view<std::byte>, int);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
-fu_STR path_join(const fu_STR&, const fu_STR&);
+fu_STR path_join(fu::view<std::byte>, const fu_STR&);
 fu_STR path_noext(const fu_STR&);
-fu_STR path_relative(const fu_STR&, const fu_STR&);
+fu_STR path_relative(fu::view<std::byte>, const fu_STR&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -293,33 +292,17 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || effects
         ;
     }
 };
@@ -437,7 +420,6 @@ struct s_SolvedNodeData
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
     s_Type type;
     s_Target target;
     explicit operator bool() const noexcept
@@ -447,7 +429,6 @@ struct s_SolvedNodeData
             || flags
             || value
             || items
-            || token
             || type
             || target
         ;
@@ -468,11 +449,11 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
+    s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
-    fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
     explicit operator bool() const noexcept
     {
@@ -486,11 +467,11 @@ struct s_Overload
             || args
             || tEmplate
             || solved
+            || spec_of
             || nodes
             || callsites
             || status
             || local_of
-            || closes_over
             || extra_items
         ;
     }
@@ -687,7 +668,7 @@ inline std::byte if_last_jB4B(fu_STR& s)
 
                                 #ifndef DEFt_grow_if_oob_kK0z
                                 #define DEFt_grow_if_oob_kK0z
-inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, int& i)
+inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -696,39 +677,39 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, int& i)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR& dir_wrk_0, const fu_STR& onfail_0, const s_Context& ctx_0, fu_VEC<fu_STR>& Fs_0, int& code_0, fu_STR& stdout_0, fu_STR&& cpp_1)
+[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu_VEC<fu_STR>& Fs, fu_STR& dir_wrk, fu_STR& stdout, int& code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
     {
-        for (int i = Fs_0.size(); i-- > 0; )
+        for (int i = Fs.size(); i-- > 0; )
         {
-            if (Fs_0.mutref(i))
-                cpp_1 += (("#include \""_fu + Fs_0.mutref(i)) + ".cpp\"\n"_fu);
+            if (Fs.mutref(i))
+                cpp_1 += (("#include \""_fu + Fs[i]) + ".cpp\"\n"_fu);
 
         };
     };
-    fu_STR fname_1 = (dir_wrk_0 + "failing-testcase.cpp"_fu);
+    fu_STR fname_1 = (dir_wrk + "failing-testcase.cpp"_fu);
     (std::cout << ("  WRITE "_fu + fname_1) << '\n');
     fu::file_write(fname_1, cpp_1);
-    if (!stdout_0)
-        stdout_0 = (("[ EXIT CODE "_fu + code_0) + " ]"_fu);
+    if (!stdout)
+        stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
 
     fu_STR explain {};
-    if (onfail_0)
+    if (onfail)
     {
         explain = "\nFailing testcase:\n\n"_fu;
-        for (int i = 1; i < ctx_0.modules.size(); i++)
-            explain += ((onfail_0 == "print-src"_fu) ? fu_STR(ctx_0.modules[i].in.src) : (ctx_0.modules[i].fname + "\n"_fu));
+        for (int i = 1; i < ctx.modules.size(); i++)
+            explain += ((onfail == "print-src"_fu) ? fu_STR(ctx.modules[i].in.src) : (ctx.modules[i].fname + "\n"_fu));
 
-        if (onfail_0 == "print-src"_fu)
+        if (onfail == "print-src"_fu)
         {
             explain += "\nSources:\n"_fu;
-            for (int i = 1; i < ctx_0.modules.size(); i++)
-                explain += ctx_0.modules[i].out.cpp.src;
+            for (int i_1 = 1; i_1 < ctx.modules.size(); i_1++)
+                explain += ctx.modules[i_1].out.cpp.src;
 
         };
     };
-    fu::fail((("Smth broke:\n\n"_fu + stdout_0) + explain));
+    fu::fail((("Smth broke:\n\n"_fu + stdout) + explain));
 }
 
                                 #ifndef DEFt_only_joGv
@@ -739,7 +720,7 @@ inline int only_joGv(fu::view<int> s)
 }
                                 #endif
 
-static fu_STR ensure_local_fname(const fu_STR& fname_1, const fu_STR& dir_src)
+static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<std::byte> dir_src)
 {
     if (fu::lmatch(fname_1, dir_src))
         return fu_STR(fname_1);
@@ -750,7 +731,7 @@ static fu_STR ensure_local_fname(const fu_STR& fname_1, const fu_STR& dir_src)
     return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname_1, const fu_STR& data, const fu_STR& dir_src, const fu_STR& dir_out)
+static fu_STR update_file(const fu_STR& fname_1, fu::view<std::byte> data, fu::view<std::byte> dir_src, fu::view<std::byte> dir_out)
 {
     fu_STR fname_2 = ensure_local_fname(fname_1, dir_src);
     if (!(fu::lmatch(fname_2, dir_src)))
@@ -768,7 +749,7 @@ static fu_STR update_file(const fu_STR& fname_1, const fu_STR& data, const fu_ST
     return fname_3;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, const fu_STR& scheme, const fu_STR& onfail, const s_Context& ctx)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<std::byte> scheme, const fu_STR& onfail, const s_Context& ctx)
 {
     if (if_last_jB4B(dir_wrk) != std::byte('/'))
     {
@@ -816,15 +797,15 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 unit = u;
 
         };
-        for (int i_1 = 0; i_1 < cpp_1.unity.size(); i_1++)
+        for (int i_1_1 = 0; i_1_1 < cpp_1.unity.size(); i_1_1++)
         {
-            const int m = cpp_1.unity[i_1];
+            const int m = cpp_1.unity[i_1_1];
             const int u = unit_mapping[m];
             if (u != unit)
             {
                 for (int i_2 = u; i_2 < unit_mapping.size(); i_2++)
                 {
-                    if (unit_mapping.mutref(i_2) == u)
+                    if (unit_mapping[i_2] == u)
                         unit_mapping.mutref(i_2) = unit;
 
                 };
@@ -834,24 +815,24 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         grow_if_oob_kK0z(unit_fnames, unit) = (i ? fu_STR(module.fname) : "fulib runtime"_fu);
     };
     fu_VEC<fu_STR> units {};
-    for (int i = 0; i < ctx.modules.size(); i++)
+    for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
     {
-        const s_Module& module = ctx.modules[i];
-        const s_CodegenOutput& cpp_1 = (i ? module.out.cpp : fulib_cpp);
+        const s_Module& module = ctx.modules[i_1];
+        const s_CodegenOutput& cpp_1 = (i_1 ? module.out.cpp : fulib_cpp);
         if (cpp_1.src)
-            grow_if_oob_kK0z(units, unit_mapping.mutref(i)) += cpp_1.src;
+            grow_if_oob_kK0z(units, unit_mapping[i_1]) += cpp_1.src;
 
     };
     fu_VEC<fu_STR> Fs {};
     int len_all {};
-    for (int i = 0; i < units.size(); i++)
+    for (int i_2 = 0; i_2 < units.size(); i_2++)
     {
-        fu_STR cpp_1 { units[i] };
+        fu_STR cpp_1 { units[i_2] };
         if (!cpp_1)
             continue;
 
         fu_STR F = ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp_1), 16)) + "-"_fu) + cpp_1.size());
-        grow_if_oob_kK0z(Fs, i) = F;
+        grow_if_oob_kK0z(Fs, i_2) = F;
         len_all += cpp_1.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
@@ -861,9 +842,9 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     const int exe_size = fu::file_size(F_exe);
     if ((exe_size < 1) && (bin || run))
     {
-        for (int i = 0; i < Fs.size(); i++)
+        for (int i_3 = 0; i_3 < Fs.size(); i_3++)
         {
-            fu_STR F { Fs[i] };
+            fu_STR F { Fs[i_3] };
             if (!F)
                 continue;
 
@@ -872,15 +853,15 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             fu_STR F_obj = (F + ".o"_fu);
             if (fu::file_size(F_obj) < 1)
             {
-                fu_STR human = (i ? path_filename(ctx.modules[i].fname) : "fulib runtime"_fu);
-                fu_STR cpp_1 { units[i] };
+                fu_STR human = (i_3 ? path_filename(ctx.modules[i_3].fname) : "fulib runtime"_fu);
+                fu_STR cpp_1 { units[i_3] };
                 fu::file_write(F_cpp, cpp_1);
                 (std::cout << "  BUILD "_fu << human << " "_fu << F_cpp << '\n');
                 const double t0 = fu::now_hr();
                 int _0 {};
                 code = ((_0 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _0 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
-                    ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR(cpp_1));
+                    ERR(fu_STR(cpp_1), Fs, dir_wrk, stdout, code, onfail, ctx);
 
                 const double t1 = fu::now_hr();
                 (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
@@ -888,9 +869,9 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
         fu_STR cmd = (((GCC_CMD + "-o "_fu) + F_tmp) + " "_fu);
-        for (int i = 0; i < Fs.size(); i++)
+        for (int i_4 = 0; i_4 < Fs.size(); i_4++)
         {
-            fu_STR F { Fs[i] };
+            fu_STR F { Fs[i_4] };
             if (F)
                 cmd += (F + ".o "_fu);
 
@@ -905,13 +886,13 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             if (code)
             {
                 (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
-                ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
+                ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
             };
             const double t1 = fu::now_hr();
             (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
         };
         if (code)
-            ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
+            ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
 
     };
     if (run)
@@ -923,21 +904,21 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             code = fu::shell_exec(fu_STR(F_exe), stdout);
             const bool pure = true;
             if (pure)
-                fu::file_write(F_exe, fu::view_of(fu_VEC<int> { fu_VEC<int>::INIT<1> { int(code) } }, std::byte{}));
+                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), std::byte{}));
 
         };
     };
     if (code)
-        ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
+        ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
 
     if (dir_cpp && dir_src)
     {
         fu::fs_mkdir_p(fu_STR(dir_cpp));
         fu_VEC<fu_STR> cpp_files {};
-        for (int i = 1; i < units.size(); i++)
+        for (int i_3 = 1; i_3 < units.size(); i_3++)
         {
-            fu_STR data { units[i] };
-            fu_STR fname_1 = (data ? (unit_fnames.mutref(i) + ".cpp"_fu) : fu_STR{});
+            fu_STR data { units[i_3] };
+            fu_STR fname_1 = (data ? (unit_fnames[i_3] + ".cpp"_fu) : fu_STR{});
             fu_STR fname_2 = (fname_1 ? update_file(fname_1, data, dir_src, dir_cpp) : fu_STR{});
             cpp_files.push(fname_2);
         };
@@ -948,9 +929,9 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             {
                 fu_STR data = "#pragma once\n\n"_fu;
                 data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
-                for (int i = 0; i < cpp_files.size(); i++)
+                for (int i_4 = 0; i_4 < cpp_files.size(); i_4++)
                 {
-                    fu_STR incl { cpp_files[i] };
+                    fu_STR incl { cpp_files[i_4] };
                     if (incl)
                         data += (("#include \""_fu + path_relative(unity_1, incl)) + "\"\n"_fu);
 
@@ -964,11 +945,11 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 fu_VEC<fu_STR> outputs {};
                 fu_STR main {};
                 fu_STR includes {};
-                for (int i = 1; i < cpp_files.size(); i++)
+                for (int i_4 = 1; i_4 < cpp_files.size(); i_4++)
                 {
-                    const s_Module& module = ctx.modules[i];
+                    const s_Module& module = ctx.modules[i_4];
                     fu_STR input = path_relative(CMakeLists, module.fname);
-                    if (i == 1)
+                    if (i_4 == 1)
                         main = input;
 
                     inputs.push(input);
@@ -976,7 +957,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                     if (fu::file_size(custom) > 0)
                         includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu);
 
-                    fu_STR cpp_file { cpp_files[i] };
+                    fu_STR cpp_file { cpp_files[i_4] };
                     if (cpp_file)
                         outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_file)));
 
@@ -1006,7 +987,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        ERR(dir_wrk, onfail, ctx, Fs, code, stdout, fu_STR{});
+        ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
 
 }
 

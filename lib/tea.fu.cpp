@@ -51,16 +51,16 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
 
         {
             unsigned last {};
-            for (int i = u32len; i < u8view.size(); i++)
+            for (int i_1 = u32len; i_1 < u8view.size(); i_1++)
             {
                 last <<= 8u;
-                last |= uint32_t(u8view[i]);
+                last |= uint32_t(u8view[i_1]);
             };
             res.v1 ^= last;
         };
         unsigned sum {};
         unsigned delta = 0x9e3779b9u;
-        for (int i = 0; i < 16; i++)
+        for (int i_1 = 0; i_1 < 16; i_1++)
         {
             sum += delta;
             res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));

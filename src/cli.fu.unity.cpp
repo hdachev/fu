@@ -19,6 +19,7 @@
 #include "intlit.fu.cpp"
 #include "addroffn.fu.cpp"
 #include "../lib/tea.fu.cpp"
+#include "hacks.fu.cpp"
 #include "codegen.fu.cpp"
 #include "cpp.fu.cpp"
 #include "prelude.fu.cpp"

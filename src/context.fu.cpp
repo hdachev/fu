@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/default.h>
 #include <fu/io.h>
 #include <fu/map.h>
@@ -9,11 +10,11 @@
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
-struct s_Effects;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Module;
@@ -44,7 +45,7 @@ struct s_ValueType;
 bool isStruct(const s_Type&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
-int structIndex(const fu_STR&);
+int structIndex(fu::view<std::byte>);
 static fu_STR resolveFile(const fu_STR&, const fu_STR&, s_Context&);
 
                                 #ifndef DEF_s_Token
@@ -283,33 +284,17 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || effects
         ;
     }
 };
@@ -427,7 +412,6 @@ struct s_SolvedNodeData
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
     s_Type type;
     s_Target target;
     explicit operator bool() const noexcept
@@ -437,7 +421,6 @@ struct s_SolvedNodeData
             || flags
             || value
             || items
-            || token
             || type
             || target
         ;
@@ -458,11 +441,11 @@ struct s_Overload
     fu_VEC<s_Argument> args;
     s_Template tEmplate;
     s_SolvedNode solved;
+    s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
-    fu_VEC<int> closes_over;
     fu_VEC<s_ScopeItem> extra_items;
     explicit operator bool() const noexcept
     {
@@ -476,11 +459,11 @@ struct s_Overload
             || args
             || tEmplate
             || solved
+            || spec_of
             || nodes
             || callsites
             || status
             || local_of
-            || closes_over
             || extra_items
         ;
     }
@@ -677,15 +660,15 @@ const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
-static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_3_0, s_Context& ctx_0, const fu_STR& path_0)
+static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
-    const bool exists = (fu::file_size(path_0) >= 0);
+    const bool exists = (fu::file_size(path) >= 0);
     if (exists)
-        return fu_STR(path_0);
+        return fu_STR(path);
 
 
     {
-        fu_STR path_1 = ((from_0 + "lib/"_fu) + name_3_0);
+        fu_STR path_1 = ((from + "lib/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -693,7 +676,7 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_3_0, s_Context
     };
 
     {
-        fu_STR path_1 = ((from_0 + "vendor/"_fu) + name_3_0);
+        fu_STR path_1 = ((from + "vendor/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
@@ -701,17 +684,17 @@ static fu_STR tryResolve(const fu_STR& from_0, const fu_STR& name_3_0, s_Context
     };
 
     {
-        fu_STR path_1 = ((from_0 + "fu/lib/"_fu) + name_3_0);
+        fu_STR path_1 = ((from + "fu/lib/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return path_1;
 
     };
-    fu_STR fallback = path_dirname(from_0);
-    if (!fallback || (fallback.size() >= from_0.size()))
+    fu_STR fallback = path_dirname(from);
+    if (!fallback || (fallback.size() >= from.size()))
         return fu_STR{};
 
-    return resolveFile(fallback, name_3_0, ctx_0);
+    return resolveFile(fallback, name_3, ctx);
 }
 
 static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
@@ -721,7 +704,7 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& c
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    fu_STR resolve = tryResolve(from, name_3, ctx, path);
+    fu_STR resolve = tryResolve(path, from, name_3, ctx);
     (ctx.fuzzy.upsert(path) = (resolve ? fu_STR(resolve) : "\v"_fu));
     return resolve;
 }
@@ -750,7 +733,7 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 
 fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 {
-    fu_STR clean = fu::replace(path, "\v"_fu, fu_STR{});
+    fu_STR clean = fu::replace(path, "\v"_fu, (*(const fu_STR*)fu::NIL));
     const fu_STR& match = ctx.fuzzy[clean];
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
@@ -770,13 +753,13 @@ s_Module& getModule(const fu_STR& fname_2, s_Context& ctx)
 {
     for (int i = 0; i < ctx.modules.size(); i++)
     {
-        if (ctx.modules.mutref(i).fname == fname_2)
+        if (ctx.modules[i].fname == fname_2)
             return ctx.modules.mutref(i);
 
     };
-    const int i = ctx.modules.size();
-    ctx.modules.push(s_Module { int(i), fu_STR(fname_2), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
-    return ctx.modules.mutref(i);
+    const int i_1 = ctx.modules.size();
+    ctx.modules.push(s_Module { int(i_1), fu_STR(fname_2), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
+    return ctx.modules.mutref(i_1);
 }
 
                                 #ifndef DEFt_clone_U3Pf

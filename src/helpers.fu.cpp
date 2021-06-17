@@ -8,10 +8,11 @@
 #include <fu/vec/join.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/split.h>
+#include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
 
-bool hasIdentifierChars(const fu_STR& id)
+bool hasIdentifierChars(fu::view<std::byte> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -85,16 +86,16 @@ fu_STR path_normalize(const fu_STR& p)
             path.splice(i, 1);
 
     };
-    for (int i = 1; i < path.size(); i++)
+    for (int i_1 = 1; i_1 < path.size(); i_1++)
     {
-        if (path.mutref(i) == ".."_fu)
-            path.splice(--i, 2);
+        if (path[i_1] == ".."_fu)
+            path.splice(--i_1, 2);
 
     };
     return fu::join(path, "/"_fu);
 }
 
-fu_STR path_relative(const fu_STR& from, const fu_STR& to)
+fu_STR path_relative(fu::view<std::byte> from, const fu_STR& to)
 {
     const int min_1 = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -110,9 +111,9 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
 
     };
     fu_STR res {};
-    for (int i = same; i < from.size(); i++)
+    for (int i_1 = same; i_1 < from.size(); i_1++)
     {
-        if (from[i] == std::byte('/'))
+        if (from[i_1] == std::byte('/'))
             res += "../"_fu;
 
     };
@@ -120,7 +121,7 @@ fu_STR path_relative(const fu_STR& from, const fu_STR& to)
     return res;
 }
 
-fu_STR path_join(const fu_STR& a, const fu_STR& b)
+fu_STR path_join(fu::view<std::byte> a, const fu_STR& b)
 {
     return ((b && (b[0] == std::byte('/'))) ? path_normalize(b) : path_normalize(((a + std::byte('/')) + b)));
 }
@@ -142,6 +143,21 @@ fu_STR ascii_lower(const fu_STR& a)
 std::byte ascii_upper(const std::byte c)
 {
     return (((c >= std::byte('a')) && (c <= std::byte('z'))) ? std::byte((int(c) + (int(std::byte('A')) - int(std::byte('a'))))) : std::byte(c));
+}
+
+int parse10i32(int& offset, fu::view<std::byte> str)
+{
+    int result {};
+    while (offset < str.size())
+    {
+        const std::byte c = str[offset];
+        if ((c < std::byte('0')) || (c > std::byte('9')))
+            break;
+
+        offset++;
+        result = ((result * 10) + (int(c) - int(std::byte('0'))));
+    };
+    return result;
 }
 
 #endif

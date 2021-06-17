@@ -1,11 +1,12 @@
+#include <cstdint>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
+#include <fu/view.h>
 
-struct s_Effects;
 struct s_Lifetime;
 struct s_Region;
 struct s_ScopeItem;
@@ -13,7 +14,7 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32(int&, const fu_STR&);
+int parse10i32(int&, fu::view<std::byte>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_ValueType
@@ -62,33 +63,21 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Effects effects;
+    s_Type(const s_Type&) = delete;
+    s_Type(s_Type&&) = default;
+    s_Type& operator=(const s_Type&) = delete;
+    s_Type& operator=(s_Type&&) = default;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || effects
         ;
     }
 };
@@ -145,7 +134,7 @@ bool type_isCTC(const s_Type& type_3)
     return type_isZST(type_3);
 }
 
-fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
+fu_STR packAddrOfFn(fu::view<s_Target> targets)
 {
     fu_STR res {};
     for (int i = 0; i < targets.size(); i++)
@@ -158,7 +147,7 @@ fu_STR packAddrOfFn(const fu_VEC<s_Target>& targets)
 
                                 #ifndef DEFt_unpackAddrOfFn_a5BM
                                 #define DEFt_unpackAddrOfFn_a5BM
-inline void unpackAddrOfFn_a5BM(fu_VEC<s_ScopeItem>& out_1_0, const fu_STR& id_2_0, bool shadows_0, const fu_STR& canon_1, int)
+inline void unpackAddrOfFn_a5BM(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -172,7 +161,7 @@ inline void unpackAddrOfFn_a5BM(fu_VEC<s_ScopeItem>& out_1_0, const fu_STR& id_2
 
         const int index_2 = parse10i32(i, canon_1);
         const s_Target target_5 = s_Target { int(modid_4), int(index_2) };
-        Scope_set(out_1_0, id_2_0, target_5, shadows_0);
+        Scope_set(out_1, id_2, target_5, shadows);
     };
 }
                                 #endif
@@ -182,13 +171,13 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_a5BM(out_1, id_2, shadows, type_3.vtype.canon, 0);
+    unpackAddrOfFn_a5BM(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 
 s_Type X_addrofTarget(const s_Target& target_5)
 {
-    return s_Type { s_ValueType { 0, 0, packAddrOfFn(fu_VEC<s_Target> { fu_VEC<s_Target>::INIT<1> { s_Target(target_5) } }) }, s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType { 0, 0, packAddrOfFn((fu::slate<1, s_Target> { s_Target(target_5) })) }, s_Lifetime{} };
 }
 
 #endif

@@ -87,10 +87,10 @@ int popcount(const s_BitSet& _)
         sum += __builtin_popcountll(i64s[i]);
 
     int64_t tail {};
-    for (int i = (N << 3); i < _._data.size(); i++)
+    for (int i_1 = (N << 3); i_1 < _._data.size(); i_1++)
     {
         tail <<= 8ll;
-        tail |= int64_t(_._data[i]);
+        tail |= int64_t(_._data[i_1]);
     };
     sum += __builtin_popcountll(tail);
     return sum;

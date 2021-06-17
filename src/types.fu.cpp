@@ -10,7 +10,6 @@
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 
-struct s_Effects;
 struct s_Lifetime;
 struct s_MapFields;
 struct s_Region;
@@ -18,11 +17,11 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-bool operator==(const s_Effects&, const s_Effects&);
 bool operator==(const s_Lifetime&, const s_Lifetime&);
 bool operator==(const s_Region&, const s_Region&);
 bool operator==(const s_Type&, const s_Type&);
 bool operator>(const s_Region&, const s_Region&);
+int parse10i32(int&, fu::view<std::byte>);
 s_Lifetime Lifetime_static();
 s_Type add_ref(s_Type&&, const s_Lifetime&);
 static bool operator==(const s_ValueType&, const s_ValueType&);
@@ -71,20 +70,6 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_Effects
-                                #define DEF_s_Effects
-struct s_Effects
-{
-    int raw;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || raw
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
@@ -109,13 +94,11 @@ struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Effects effects;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || effects
         ;
     }
 };
@@ -198,6 +181,11 @@ inline constexpr int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
                                 #ifndef DEF_q_MUTINVAR
                                 #define DEF_q_MUTINVAR
 inline constexpr int q_MUTINVAR = ~q_REF_EXTENSIONS;
+                                #endif
+
+                                #ifndef DEF_q_RELAXABLE
+                                #define DEF_q_RELAXABLE
+inline constexpr int q_RELAXABLE = (q_REF_EXTENSIONS | q_mutref);
                                 #endif
 
                                 #ifndef DEF_e_exit
@@ -343,7 +331,7 @@ s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
 
                                 #ifndef DEFt_if_first_tWdF
                                 #define DEFt_if_first_tWdF
-inline const s_Region& if_first_tWdF(const fu_VEC<s_Region>& s)
+inline const s_Region& if_first_tWdF(fu::view<s_Region> s)
 {
     return s.size() ? s[0] : (*(const s_Region*)fu::NIL);
 }
@@ -351,7 +339,7 @@ inline const s_Region& if_first_tWdF(const fu_VEC<s_Region>& s)
 
                                 #ifndef DEFt_if_last_tWdF
                                 #define DEFt_if_last_tWdF
-inline const s_Region& if_last_tWdF(const fu_VEC<s_Region>& s)
+inline const s_Region& if_last_tWdF(fu::view<s_Region> s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
 }
@@ -382,11 +370,6 @@ bool operator==(const s_Lifetime& a, const s_Lifetime& b)
     return fu::view_of(a.uni0n, int{}) == fu::view_of(b.uni0n, int{});
 }
 
-bool operator==(const s_Effects& a, const s_Effects& b)
-{
-    return a.raw == b.raw;
-}
-
 static bool operator==(const s_ValueType& a, const s_ValueType& b)
 {
     return (a.quals == b.quals) && (a.modid == b.modid) && (a.canon == b.canon);
@@ -394,7 +377,7 @@ static bool operator==(const s_ValueType& a, const s_ValueType& b)
 
 bool operator==(const s_Type& a, const s_Type& b)
 {
-    return (a.vtype == b.vtype) && (a.lifetime == b.lifetime) && (a.effects == b.effects);
+    return (a.vtype == b.vtype) && (a.lifetime == b.lifetime);
 }
 
                                 #ifndef DEF_Trivial
@@ -432,33 +415,33 @@ inline constexpr int UnsignedInt = (Integral | q_unsigned);
 inline constexpr int FloatingPt = ((Arithmetic | q_floating_pt) | q_signed);
                                 #endif
 
-extern const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_i8 = s_Type { s_ValueType { int(SignedInt), 0, "i8"_fu }, s_Lifetime{} };
 
-extern const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_i16 = s_Type { s_ValueType { int(SignedInt), 0, "i16"_fu }, s_Lifetime{} };
 
-extern const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_i32 = s_Type { s_ValueType { int(SignedInt), 0, "i32"_fu }, s_Lifetime{} };
 
-extern const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_i64 = s_Type { s_ValueType { int(SignedInt), 0, "i64"_fu }, s_Lifetime{} };
 
-extern const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_u8 = s_Type { s_ValueType { int(UnsignedInt), 0, "u8"_fu }, s_Lifetime{} };
 
-extern const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_u16 = s_Type { s_ValueType { int(UnsignedInt), 0, "u16"_fu }, s_Lifetime{} };
 
-extern const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_u32 = s_Type { s_ValueType { int(UnsignedInt), 0, "u32"_fu }, s_Lifetime{} };
 
-extern const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_u64 = s_Type { s_ValueType { int(UnsignedInt), 0, "u64"_fu }, s_Lifetime{} };
 
-extern const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_f32 = s_Type { s_ValueType { int(FloatingPt), 0, "f32"_fu }, s_Lifetime{} };
 
-extern const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_f64 = s_Type { s_ValueType { int(FloatingPt), 0, "f64"_fu }, s_Lifetime{} };
 
-extern const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_void = s_Type { s_ValueType { 0, 0, "void"_fu }, s_Lifetime{} };
 
-extern const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_bool = s_Type { s_ValueType { int(Primitive), 0, "bool"_fu }, s_Lifetime{} };
 
-extern const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_never = s_Type { s_ValueType { 0, 0, "never"_fu }, s_Lifetime{} };
 
-extern const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{}, s_Effects{} };
+extern const s_Type t_byte = s_Type { s_ValueType { int(Primitive), 0, "byte"_fu }, s_Lifetime{} };
 
 bool is_never(const s_Type& t)
 {
@@ -626,21 +609,6 @@ fu_STR humanizeType(const s_Type& type)
 
         };
     };
-    return fu_STR(result);
-}
-
-int parse10i32(int& offset, const fu_STR& str)
-{
-    int result {};
-    for (; ; )
-    {
-        const std::byte c = ((offset < str.size()) ? str[offset] : (*(const std::byte*)fu::NIL));
-        if ((c < std::byte('0')) || (c > std::byte('9')))
-            break;
-
-        offset++;
-        result = ((result * 10) + (int(c) - int(std::byte('0'))));
-    };
     return result;
 }
 
@@ -668,7 +636,7 @@ s_Type createArray(const s_Type& item)
     fu_STR canon = ("[]"_fu + serializeType(item));
     const int quals = ((item.vtype.quals & q_rx_copy) | q_rx_resize);
     const int modid = 0;
-    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, s_Lifetime(item.lifetime) };
 }
 
 s_Type tryClear_array(const s_Type& type)
@@ -677,7 +645,12 @@ s_Type tryClear_array(const s_Type& type)
         return s_Type{};
 
     s_ValueType vtype = parseType(fu::slice(type.vtype.canon, 2));
-    return s_Type { s_ValueType(vtype), s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType(vtype), s_Lifetime{} };
+}
+
+bool type_isSliceable(const s_Type& type)
+{
+    return fu::lmatch(type.vtype.canon, "[]"_fu);
 }
 
 s_Type createSlice(const s_Type& item, const s_Lifetime& lifetime)
@@ -687,18 +660,13 @@ s_Type createSlice(const s_Type& item, const s_Lifetime& lifetime)
     return add_ref(s_Type(out), lifetime);
 }
 
-static bool type_isSliceable(const s_Type& type)
-{
-    return fu::lmatch(type.vtype.canon, "[]"_fu);
-}
-
 s_Type tryClear_sliceable(const s_Type& type)
 {
     if (!type_isSliceable(type))
         return s_Type{};
 
     s_ValueType vtype = parseType(fu::slice(type.vtype.canon, 2));
-    return s_Type { s_ValueType(vtype), s_Lifetime{}, s_Effects{} };
+    return s_Type { s_ValueType(vtype), s_Lifetime{} };
 }
 
 bool type_isMap(const s_Type& type)
@@ -711,7 +679,7 @@ s_Type createMap(const s_Type& key, const s_Type& vtype)
     fu_STR canon = ((("{"_fu + serializeType(key)) + "}"_fu) + serializeType(vtype));
     const int quals = ((key.vtype.quals & vtype.vtype.quals) & q_rx_copy);
     const int modid = 0;
-    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, Lifetime_union(key.lifetime, vtype.lifetime), s_Effects{} };
+    return s_Type { s_ValueType { int(quals), int(modid), fu_STR(canon) }, Lifetime_union(key.lifetime, vtype.lifetime) };
 }
 
 s_MapFields tryClear_map(const s_Type& type)
@@ -732,7 +700,7 @@ s_MapFields tryClear_map(const s_Type& type)
 
             fu_STR ckey = fu::slice(type.vtype.canon, 1, i);
             fu_STR cval = fu::slice(type.vtype.canon, (i + 1));
-            return s_MapFields { s_Type { parseType(ckey), s_Lifetime{}, s_Effects{} }, s_Type { parseType(cval), s_Lifetime{}, s_Effects{} } };
+            return s_MapFields { s_Type { parseType(ckey), s_Lifetime{} }, s_Type { parseType(cval), s_Lifetime{} } };
         };
     };
     fu_ASSERT();
@@ -748,18 +716,85 @@ bool type_has(const s_Type& type, const fu_STR& tag)
     return (type.vtype.quals & mask) == mask;
 }
 
-static s_Effects type_inter(const s_Effects& a, const s_Effects& b)
-{
-    return s_Effects { (a.raw | b.raw) };
-}
-
 s_Type type_trySuper(const s_Type& a, const s_Type& b)
 {
     if ((a.vtype.canon != b.vtype.canon) || (a.vtype.modid != b.vtype.modid))
         return (is_never(a) ? s_Type(b) : (is_never(b) ? s_Type(a) : s_Type{}));
 
     const int quals = (a.vtype.quals & b.vtype.quals);
-    return s_Type { s_ValueType { int(quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, ((quals & q_ref) ? Lifetime_union(a.lifetime, b.lifetime) : s_Lifetime{}), type_inter(a.effects, b.effects) };
+    return s_Type { s_ValueType { int(quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, ((quals & q_ref) ? Lifetime_union(a.lifetime, b.lifetime) : s_Lifetime{}) };
+}
+
+                                #ifndef DEFt_inter_4Dpy
+                                #define DEFt_inter_4Dpy
+inline fu_VEC<s_Region> inter_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
+{
+    if (a.size() > b.size())
+        return inter_4Dpy(b, a);
+
+    fu_VEC<s_Region> a_1 { a };
+    int x = 0;
+    int y = 0;
+    while ((x < a_1.size()) && (y < b.size()))
+    {
+        const s_Region X { a_1[x] };
+        const s_Region& Y = b[y];
+        if (X == Y)
+        {
+            x++;
+            y++;
+        }
+        else if (X > Y)
+            y++;
+        else
+            a_1.splice(x, 1);
+
+    };
+    if (x < a_1.size())
+        a_1.shrink(x);
+
+    return a_1;
+}
+                                #endif
+
+static s_Lifetime Lifetime_inter(const s_Lifetime& a, const s_Lifetime& b)
+{
+    return s_Lifetime { inter_4Dpy(a.uni0n, b.uni0n) };
+}
+
+s_Type type_tryIntersect(const s_Type& a, const s_Type& b)
+{
+    if ((a.vtype.canon != b.vtype.canon) || (a.vtype.modid != b.vtype.modid))
+        return ((is_never(a) || is_never(b)) ? s_Type(t_never) : s_Type{});
+
+    const int quals = (a.vtype.quals | b.vtype.quals);
+    s_Lifetime lifetime = Lifetime_inter(a.lifetime, b.lifetime);
+    if ((quals & q_ref) && !lifetime)
+        return s_Type{};
+
+    return s_Type { s_ValueType { int(quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, s_Lifetime(lifetime) };
+}
+
+bool will_relax(const s_Type& type, const s_Type& slot)
+{
+    return ((type.vtype.quals & ~slot.vtype.quals) & q_RELAXABLE) != 0;
+}
+
+bool try_relax(s_Type& type, const s_Type& slot)
+{
+    if (!will_relax(type, slot))
+        return false;
+
+    if (!is_mutref(slot))
+        type = clear_mutref(s_Type(type));
+
+    type.vtype.quals &= (slot.vtype.quals | ~q_RELAXABLE);
+    return true;
+}
+
+s_Type relax_typeParam(s_Type&& type)
+{
+    return clear_refs(s_Type(type));
 }
 
 #endif

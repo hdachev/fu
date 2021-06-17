@@ -9,22 +9,22 @@
 #include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
+#include <fu/view.h>
 #include <iostream>
 
-fu_STR path_join(const fu_STR&, const fu_STR&);
+fu_STR path_join(fu::view<std::byte>, const fu_STR&);
 int self_test();
 static int cli_handle(const fu_VEC<fu_STR>&, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
 void runTests();
-void saySomethingNice();
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& next(const fu_VEC<fu_STR>& argv_0, int& idx_0)
+static const fu_STR& next(int& idx, const fu_VEC<fu_STR>& argv)
 {
-    const int i = idx_0++;
-    if (i < argv_0.size())
-        return argv_0[i];
+    const int i = idx++;
+    if (i < argv.size())
+        return argv[i];
 
     return (*(const fu_STR*)fu::NIL);
 }
@@ -37,26 +37,26 @@ static void runTestsAndBuildCompiler()
     cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, PRJDIR);
 }
 
-static fu_STR abs(const fu_STR& cwd_0, const fu_STR& path)
+static fu_STR abs(const fu_STR& path, const fu_STR& cwd)
 {
-    return path && (path[0] != std::byte('-')) ? path_join(cwd_0, path) : fu_STR{};
+    return path && (path[0] != std::byte('-')) ? path_join(cwd, path) : fu_STR{};
 }
 
-static void option(const fu_VEC<fu_STR>& argv_0, const fu_STR& cwd_0, int& idx_0, int& options_0, fu_STR& val_0, fu_STR& opt_0, const fu_STR& sHort, const fu_STR& lOng, const int o, fu_STR& dir)
+static void option(fu::view<std::byte> sHort, fu::view<std::byte> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, const fu_STR& cwd, int& idx, const fu_VEC<fu_STR>& argv)
 {
-    if ((opt_0 == sHort) || (opt_0 == lOng))
+    if ((opt == sHort) || (opt == lOng))
     {
-        options_0 |= o;
-        if (opt_0 == lOng)
+        options |= o;
+        if (opt == lOng)
         {
             if (dir)
-                fu::fail((((opt_0 + ": already set to `"_fu) + dir) + "`."_fu));
+                fu::fail((((opt + ": already set to `"_fu) + dir) + "`."_fu));
 
             fu_STR _0 {};
-            dir = ((_0 = abs(cwd_0, val_0)) ? static_cast<fu_STR&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val_0) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
-            val_0 = next(argv_0, idx_0);
+            dir = ((_0 = abs(val, cwd)) ? static_cast<fu_STR&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
+            val = next(idx, argv);
         };
-        opt_0 = fu_STR{};
+        opt = fu_STR{};
     };
 }
 
@@ -65,7 +65,7 @@ extern const fu_STR DEFAULT_WORKSPACE;
 static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 {
     int idx = 0;
-    const fu_STR& self = next(argv, idx);
+    const fu_STR& self = next(idx, argv);
     if (argv.size() == 1)
     {
         (std::cout << "\n\tHello! "_fu << self << '\n');
@@ -92,25 +92,25 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     int options {};
     fu_STR scheme {};
     bool run {};
-    fu_STR val { next(argv, idx) };
-    while ((val.size() > 1) && (val.mutref(0) == std::byte('-')))
+    fu_STR val { next(idx, argv) };
+    while ((val.size() > 1) && (val[0] == std::byte('-')))
     {
         fu_STR opt { val };
-        if (opt.mutref(1) != std::byte('-'))
+        if (opt[1] != std::byte('-'))
         {
             opt = fu_STR { fu_STR::INIT<1> { std::byte(opt[1]) } };
             val = (std::byte('-') + fu::slice(val, 2));
             if (val == "-"_fu)
-                val = next(argv, idx);
+                val = next(idx, argv);
 
         }
         else
-            val = next(argv, idx);
+            val = next(idx, argv);
 
-        option(argv, cwd, idx, options, val, opt, "-"_fu, "--src"_fu, 0, dir_src);
-        option(argv, cwd, idx, options, val, opt, "c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp);
-        option(argv, cwd, idx, options, val, opt, "o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj);
-        option(argv, cwd, idx, options, val, opt, "b"_fu, "--bin"_fu, EMIT_BIN, bin);
+        option("-"_fu, "--src"_fu, 0, dir_src, opt, options, val, cwd, idx, argv);
+        option("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp, opt, options, val, cwd, idx, argv);
+        option("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj, opt, options, val, cwd, idx, argv);
+        option("b"_fu, "--bin"_fu, EMIT_BIN, bin, opt, options, val, cwd, idx, argv);
         if ((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu))
         {
             if (scheme)
@@ -138,7 +138,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
 
     };
     fu_STR _0 {};
-    fu_STR fname = ((_0 = abs(cwd, val)) ? static_cast<fu_STR&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
+    fu_STR fname = ((_0 = abs(val, cwd)) ? static_cast<fu_STR&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
     if (options & EMIT_BIN)
     {
         fu_STR* _1;
@@ -146,7 +146,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     };
 
     {
-        const fu_STR& val_1 = next(argv, idx);
+        const fu_STR& val_1 = next(idx, argv);
         if (val_1)
             fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 
