@@ -3582,6 +3582,24 @@ pub fn runTests()
     `);
 
     TODO(`
+        // My investigation so far:
+        //
+        // When we spec find(), the second arg is a view, not an array, so the $T specs to a less than array:
+        //  next thing that happens is that the first argument, which is $T[] specs to an array of views except they're not even refs for some reason.
+        //   so then we try to use the spec but quals matching doesn't descend through the type cannon, so they mismatch with:
+        //
+        // First arg of find(), the $T[] to search:
+        //
+        // ACTUAL CANON: []+1028[]+28byte
+        //                        ^^^^^^^ of bytes
+        //                 ^^^^^^^ of arrays (resize + copy)
+        //               ^^ view of
+        //
+        // EXPECT CANON: [][]+28byte
+        //                   ^^^^^^^ of bytes
+        //                 ^^ not a view (not a ref), nor an array - no resize/copy
+        //               ^^ view of
+        //
         let NOTES = [ "AAA", "BBB", "CCC" ];
         fn what(annot: string) NOTES.find(annot[1, annot.len]);
         fn main() what("!BBB") - 1;
