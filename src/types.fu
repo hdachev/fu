@@ -38,30 +38,30 @@ let TAGS =
 
 //
 
-pub let q_REF_EXTENSIONS
+let q_REF_EXTENSIONS
     = q_rx_copy
     | q_rx_resize;
 
-pub let q_MUTINVAR = ~q_REF_EXTENSIONS;
+let q_MUTINVAR = ~q_REF_EXTENSIONS;
 
-pub let q_RELAXABLE
+let q_RELAXABLE
     = q_REF_EXTENSIONS
     | q_mutref;
 
 
 //
 
-pub let e_exit      = 1 <<  0;
-pub let e_crash     = 1 <<  1;
-pub let e_div0      = 1 <<  2;
-pub let e_segv      = 1 <<  3;
+// let e_exit      = 1 <<  0;
+// let e_crash     = 1 <<  1;
+// let e_div0      = 1 <<  2;
+// let e_segv      = 1 <<  3;
 
-pub let e_throw     = 1 <<  4;
+// let e_throw     = 1 <<  4;
 
-pub let e_io        = 1 <<  8;
+// let e_io        = 1 <<  8;
 
-pub let e_malloc    = 1 << 12;
-pub let e_memcpy    = 1 << 13;
+// let e_malloc    = 1 << 12;
+// let e_memcpy    = 1 << 13;
 
 
 //
@@ -219,13 +219,21 @@ pub fn maybe_nonzero(t: Type) t.is_never || t.is_void;
 //     reference, they inherit invariance and you're prevented
 //      from doing anything bad.
 
+fn areQualsAssignable(host: i32, guest: i32): bool
+{
+    return host & guest == host
+        && (!(host & q_mutref) ||
+              host & q_MUTINVAR == guest & q_MUTINVAR)
+}
+
+
+//
+
 pub fn isAssignable(host: Type, guest: Type): bool
 {
-    return host.canon == guest.canon
-        && host.modid == guest.modid
-            && host.quals & guest.quals == host.quals
-            && (!(host.quals & q_mutref) ||
-                  host.quals & q_MUTINVAR == guest.quals & q_MUTINVAR)
+    return host.modid == guest.modid
+        && isCanonAssignable(host: host.canon, guest.canon)
+        && areQualsAssignable(host: host.quals, guest.quals)
         || guest.is_never;
 }
 
@@ -360,6 +368,41 @@ pub fn parseType(str: string): ValueType
 
     return ValueType(
         :modid, :canon, :quals);
+}
+
+fn isCanonAssignable(host: string, guest: string)
+{
+    mut x = 0;
+    mut y = 0;
+    while (x < host.len && y < guest.len)
+    {
+        let c =  host[x++];
+        let o = guest[y++];
+        if (c != o)
+        {
+            if (o == '+')
+            {
+                parse10i32(y, guest);
+
+                x--;
+                continue;
+            }
+
+            return false;
+        }
+
+        if (c == '+')
+        {
+            let a = parse10i32(x, host);
+            let b = parse10i32(y, guest);
+
+            if (!areQualsAssignable(host: a, b))
+                return false;
+        }
+    }
+
+    return x == host.len
+        && y == guest.len;
 }
 
 
