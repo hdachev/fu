@@ -3581,9 +3581,7 @@ pub fn runTests()
         ;; EXPECT test(fu::view<std::byte>{}, fu::view<std::byte>{})
     `);
 
-    TODO(`
-        // My investigation so far:
-        //
+    ZERO(`
         // When we spec find(), the second arg is a view, not an array, so the $T specs to a less than array:
         //  next thing that happens is that the first argument, which is $T[] specs to an array of views except they're not even refs for some reason.
         //   so then we try to use the spec but quals matching doesn't descend through the type cannon, so they mismatch with:
