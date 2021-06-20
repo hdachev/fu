@@ -2337,7 +2337,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         struct S { i: i32; };
 
         fn hello(ref s: S, w: i32) {

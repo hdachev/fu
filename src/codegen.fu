@@ -670,13 +670,16 @@ pub fn cpp_codegen(
         let annot = typeAnnot(overload.type || fail(), M_RETVAL);
 
         mut id = overload.name;
-        if (id == "main") {
+        if (id == "main"){
             _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
             id = "fu_MAIN";
         }
-        else if (overload.flags & F_OPERATOR) {
+
+        let isOp = overload.flags & F_OPERATOR && items.len + FN_ARGS_BACK <= 2;
+        if (isOp)
             id = "operator" ~ id.valid_operator;
-        }
+        else
+            id = id.valid_identifier;
 
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
                     ~ (  overload.flags & F_TEMPLATE && "inline ")
@@ -723,9 +726,9 @@ pub fn cpp_codegen(
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
 
-        let isOp    = overload.flags & F_OPERATOR;
+        let isOp    = overload.flags & F_OPERATOR && overload.args.len <= 2;
 
-        let name    = isOp ? "operator" ~ id.valid_operator : id;
+        let name    = isOp ? "operator" ~ id.valid_operator : id.valid_identifier;
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
                     ~ (overload.flags & F_TEMPLATE && "inline ")
                   ~ (!(overload.flags & F_PUB)     && "static ");
@@ -1266,7 +1269,8 @@ pub fn cpp_codegen(
                 ensureFwdDecl(node.target);
         }
 
-        if (target.flags & F_OPERATOR)
+        let isOp = target.flags & F_OPERATOR && items.len <= 2;
+        if (isOp)
         {
             let head = items[0] || fail();
 
@@ -1358,7 +1362,7 @@ pub fn cpp_codegen(
 
         id != "__native" || assert();
 
-        return ID(id) ~ "(" ~ REST ~ ")";
+        return ID(id.valid_identifier) ~ "(" ~ REST ~ ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
