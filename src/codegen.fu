@@ -1845,7 +1845,6 @@ pub fn cpp_codegen(
 
         if (k == "copy")        return cgMoveOrClone(node, mode);
         if (k == "move")        return cgMoveOrClone(node, mode);
-        if (k == "nrvo")        return cgMoveOrClone(node, mode);
 
         if (k == "if")          return cgIf(node, mode);
         if (k == "or")          return cgOr(node, mode);
