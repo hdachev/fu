@@ -4,6 +4,11 @@ import lexer;
 
 //
 
+let use_AUTOPUB     = true;
+
+
+//
+
 pub struct TokenIdx // 8b vs 48b, nobrainer
 {
     modid:  i32;
@@ -182,6 +187,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     mut _numReturns = 0;
 
+    mut _hasPUB     = false;
+
 
     //
 
@@ -294,6 +301,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         mut out = make("root",
             parseBlockLike("eof", "eof"));
+
+        // Autopub.
+        if (use_AUTOPUB && !_hasPUB) for (mut i = 0; i < out.items.len; i++)
+        {
+            ref item = out.items[i];
+
+            let k = item.kind;
+            if (k == "fn" || k == "let" || k == "typedef")
+                if !(item.flags & F_SHADOW)
+                    set_PUB(item.flags);
+        }
 
         return out;
     }
@@ -433,13 +451,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     // Watch out, we want to not allow pubs & shadows together.
 
+    fn set_PUB(ref flags: i32)
+    {
+        flags |= F_PUB;
+        flags & F_SHADOW && fail("Cannot pub a shadow.");
+
+        _hasPUB = true;
+    }
+
     fn parsePub(): Node
     {
         _fnDepth && fail("Cannot pub from within a fn.");
-
         mut out = parseStatement();
-        out.flags |= F_PUB;
-        out.flags & F_SHADOW && fail("Cannot pub a shadow.");
+        set_PUB(out.flags);
         return out;
     }
 
@@ -721,7 +745,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             else if (type.kind != "call" || type.value != "i32" || type.items.len)
                 fail("fn main() must return i32.");
 
-            flags |= F_PUB;
+            set_PUB(flags);
         }
 
         //

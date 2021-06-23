@@ -3978,6 +3978,7 @@ pub fn runTests()
 
     FAIL([
     `
+        pub fn noop() {} // AUTOPUB
         //*F
         /*/
         pub

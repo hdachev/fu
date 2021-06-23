@@ -332,7 +332,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         if (item.target.modid == modid)
         {
             let overload = scope.overloads[item.target.index - 1];
-            (!modid || overload.flags & F_PUB ? result : private)
+            (overload.flags & F_PUB ? result : private)
                 .push(item);
         }
     }
