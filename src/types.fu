@@ -338,7 +338,7 @@ pub fn serializeType(type: Type)
     if (type.quals)
         prefix ~= "+" ~ type.quals;
 
-    return prefix ~ type.canon;
+    return prefix ~ (type.canon || throw("serializeType: !type.canon"));
 }
 
 pub fn humanizeType(type: Type)

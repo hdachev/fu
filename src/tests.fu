@@ -1378,7 +1378,7 @@ pub fn runTests()
             }
 
             sum += x * 1000 + 100;
-            if (x > 1)
+            if (x > 1) ;; EXPECT break;
                 break; // anon
         }
 

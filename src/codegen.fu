@@ -54,14 +54,9 @@ pub fn cpp_codegen(
 
     //
 
-    mut _ids_dedupe:    i32[];
-
-
-    //
-
     struct cg_Blockval
     {
-        index: i32;
+        label: Target;
         ptrflip: bool;
     };
 
@@ -74,10 +69,11 @@ pub fn cpp_codegen(
 
         blockvals?:     cg_Blockval[];
 
-        can_break?:     i32;
-        can_cont?:      i32;
+        can_break?:     Target;
+        can_cont?:      Target;
 
         _ids_used?:     string[];
+        _ids_dedupe?:   i32[];
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -87,6 +83,9 @@ pub fn cpp_codegen(
     fn GET(target: Target)
     {
         target.index > 0 || assert();
+
+        if (target.modid < 0)
+            return module.out.solve.scope.overloads[-target.modid - 1].locals[target.index - 1];
 
         let m = target.modid == module.modid
             ? module
@@ -148,7 +147,7 @@ pub fn cpp_codegen(
             //  return b;       // return move(b);  // here
             //
             if (!(type.is_trivial) && !(mode & M_ARGUMENT)
-                && type.lifetime.Lifetime_compareToIndex(_current_fn.index) > 0
+                && type.lifetime.Lifetime_compareToIndex(0) > 0
                 && _current_fn.modid == module.modid)
             {
                 // TODO only do this when strictly useful, weakens our validation.
@@ -440,15 +439,17 @@ pub fn cpp_codegen(
         mut id = o.name;
 
         // CLOSURE-ID-HACK
-        let index = hacks::tryParseClosureID(:id);
-        if (index)
-            id = GET(Target(:module.modid, :index)).name;
+        let t = hacks::tryParseClosureID(:id, :MODID);
+        if (t)
+            id = GET(t).name;
         // CLOSURE-ID-HACK
 
         id = ID(id);
 
-        if (target.modid == module.modid)
+        if (o.local_of)
         {
+            ref _ids_dedupe = _current_fn._ids_dedupe;
+
             // Dedupe #1.
             if (dedupe)
             {
@@ -544,7 +545,7 @@ pub fn cpp_codegen(
 
         ///////////////////////////////////////////
         if (mode & M_LOOP_BODY)
-            _current_fn.can_cont = label.index;
+            _current_fn.can_cont = label;
         ///////////////////////////////////////////
 
         // We'll try to avoid block expressions as much as we can.
@@ -615,7 +616,7 @@ pub fn cpp_codegen(
             let id      = emitTEMPVAR(annot, :ptrflip, name && "L_" ~ name ~ "_v");
 
             // Blockvals! //////////////////////////////////////////////
-            _current_fn.blockvals ~= cg_Blockval(:label.index, ptrflip);
+            _current_fn.blockvals ~= cg_Blockval(:label, ptrflip);
             ////////////////////////////////////////////////////////////
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
@@ -866,7 +867,7 @@ pub fn cpp_codegen(
         if (isArg && isUnused)
             return annot;
 
-        let id      = localID(:node.target, dedupe: !!overload.local_of);
+        let id      = localID(:node.target, dedupe: true);
         let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ id;
         if (!doInit || isArg)
             return head;
@@ -983,10 +984,10 @@ pub fn cpp_codegen(
 
     fn cgJump(node: SolvedNode): string
     {
-        let dest_idx    = node.target.index;
+        let dest_idx    = node.target;
 
-        let use_return  = dest_idx == _current_fn.target.index;
-        let dest        = GET(Target(:module.modid, dest_idx));
+        let use_return  = dest_idx == _current_fn.target;
+        let dest        = GET(dest_idx);
 
         if (node.items)
         {
@@ -1001,7 +1002,7 @@ pub fn cpp_codegen(
                 for (mut i = _current_fn.blockvals.len; i --> 0; )
                 {
                     let bv = _current_fn.blockvals[i];
-                    if (bv.index == dest_idx)
+                    if (bv.label == dest_idx)
                     {
                         hasval = true;
                         ptrflip = bv.ptrflip;
@@ -1726,16 +1727,16 @@ pub fn cpp_codegen(
 
     fn cgLoop(node: SolvedNode): string
     {
-        let can_cont0 = _current_fn.can_cont;
-        let can_break0 = _current_fn.can_break;
+        mut can_cont0 = _current_fn.can_cont;
+        mut can_break0 = _current_fn.can_break;
 
         defer {
             _current_fn.can_cont = can_cont0;
             _current_fn.can_break = can_break0;
         }
 
-        _current_fn.can_cont = 0;
-        _current_fn.can_break = 0;
+        _current_fn.can_cont = Target();
+        _current_fn.can_break = Target();
 
         //
         let items = node.items;
@@ -1753,7 +1754,7 @@ pub fn cpp_codegen(
 
         //
         let label = node.target;
-        _current_fn.can_break = label.index;
+        _current_fn.can_break = label;
 
         mut body = n_body && blockWrapSubstatement(n_body, M_LOOP_BODY);
 

@@ -184,6 +184,7 @@ pub struct Overload
 
     // The new nodelists.
     nodes?:         SolvedNodeData[];
+    locals?:        Overload[];
 
     // The new used_by.
     callsites?:     SolvedNode[];
@@ -200,7 +201,8 @@ pub struct Overload
 
 pub struct Helpers
 {
-    target?!:       i32;
+    target?!:       Target;
+
     id?:            string;
     mask?!:         i16;
     local_of?!:     i32;
@@ -526,11 +528,16 @@ pub fn Scope_create(
     extra_items?: ScopeItem[],
     template?: Template,
 
-    recycle?: i32): Target
+    recycle?: i32,
+    nest?: bool): Target
 {
-    let modid = MODID;
-    let target = Target(:modid,
-        index: recycle || scope.overloads.len + 1);
+    ref overloads = nest && local_of
+        ? scope.overloads[local_of - 1].locals
+        : scope.overloads;
+
+    let target = Target(
+        modid: nest && -local_of || MODID,
+        index: recycle || overloads.len + 1);
 
     mut item: Overload;
 
@@ -548,9 +555,9 @@ pub fn Scope_create(
     item.extra_items    = extra_items;
 
     if (recycle)
-        scope.overloads[recycle - 1] = item;
+        overloads[recycle - 1] = item;
     else
-        scope.overloads.push(item);
+        overloads.push(item);
 
     return target;
 }

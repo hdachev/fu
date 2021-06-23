@@ -1,14 +1,24 @@
+import types;
 
-pub fn ClosureID(index!: i32) "`" ~ index;
+pub fn ClosureID(using target: Target)
+    modid < 0
+        ? "`" ~ index ~ "-" ~ -modid
+        : "`" ~ index;
 
-pub fn tryParseClosureID(id!: string)
+pub fn tryParseClosureID(id!: string, MODID: i32)
 {
     if (id[0] == '`')
     {
         mut   offset = 1;
         defer offset == id.len || throw("Bad ClosureID.");
-        return helpers::parse10i32(offset, id);
+
+        let index = helpers::parse10i32(offset, id);
+        let modid = id.len > offset
+            ? -helpers::parse10i32(++offset, id)
+            : MODID;
+
+        return Target(:modid, :index);
     }
 
-    return 0;
+    return [];
 }

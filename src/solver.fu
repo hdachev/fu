@@ -34,6 +34,7 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
+pub let USE_nesting         = false;
 
 let SELF_TEST               = true;
 
@@ -124,7 +125,7 @@ pub fn solve(
     //
 
     let MODULE_TOP    = Scope_create(_scope, kind: "_module_top_");
-    _helpers         ~= Helpers(target: MODULE_TOP.index, "_module_top_");
+    _helpers         ~= Helpers(target: MODULE_TOP, "_module_top_");
 
 
     // Can't we just list them all and scan through?
@@ -175,22 +176,41 @@ pub fn solve(
 
     fn GET(target: Target)
     {
+        if (target.modid < 0)
+            return _scope.overloads[-target.modid - 1].locals[target.index - 1];
+
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
 
-        return ctx.modules[target.modid]
+        let o = ctx.modules[target.modid]
             .out.solve.scope.overloads[target.index - 1];
+
+        o.local_of && fail(
+            "Working with locals from other modules would "
+                ~ "prevent bucketing overloads within other overloads: " ~ o.kind ~ " " ~ o.name);
+
+        return o;
     }
 
     fn GET_mut(target: Target)
     {
+        if (target.modid < 0)
+            return _scope.overloads[-target.modid - 1].locals[target.index - 1];
+
         target.index > 0 && target.modid == MODID || assert();
         return _scope.overloads[target.index - 1];
     }
 
     fn GET_local(index: i32)
     {
-        return GET(Target(modid: module.modid, :index));
+        return GET_mut(Target(modid: module.modid, :index));
+    }
+
+    fn GET_nested(index: i32)
+    {
+        return USE_nesting
+             ? GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index))
+             : GET_local(:index);
     }
 
 
@@ -243,7 +263,7 @@ pub fn solve(
             let h = _helpers[i];
             if (h.isFnOrType)
             {
-                nodeown = Target(:module.modid, h.target);
+                nodeown = h.target;
                 break;
             }
         }
@@ -338,7 +358,7 @@ pub fn solve(
                 }
 
                 fn fnd(index: i32)
-                    GET(Target(:module.modid, :index));
+                    GET_nested(:index);
 
                 let index = region.Region_toLocalIndex;
                 let local = index && fnd(index);
@@ -366,7 +386,7 @@ pub fn solve(
 
     fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32, type: Type): Lifetime
     {
-        target.modid == module.modid || fail("not from this module");
+        target.modid < 0 || target.modid < 0 || target.modid == module.modid || fail("not from this module");
 
         // Globals?
         if (!local_of)
@@ -490,7 +510,7 @@ pub fn solve(
         let recycle =   _current_fn.recycle.len > _current_fn.recycle_next
                     &&  _current_fn.recycle[_current_fn.recycle_next++];
 
-        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, :recycle);
+        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, :recycle, nest: USE_nesting);
 
         if (_current_fn)
             _recycle.grow_if_oob(_current_fn.target.index) ~= target.index;
@@ -982,7 +1002,7 @@ pub fn solve(
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
 
-                            if (isAssignableAsArgument(expect, actual))
+                            if (isAssignableAsArgument(expect, actual || fail("tryMatch: !actual")))
                                 continue :ARG_OK;
 
                             /////////////////
@@ -1654,7 +1674,7 @@ pub fn solve(
         let helpers_idx = _helpers.len;
         _helpers       ~= Helpers(:id, :mask,
             ret_expect: type,
-            target:     fnbody_of,
+            target:     fnbody_of && Target(:module.modid, fnbody_of),
             local_of:   fnbody_of ? -1 : _current_fn.target.index,
             :kills);
 
@@ -1743,7 +1763,7 @@ pub fn solve(
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
-            let var = GET_local(index);
+            let var = GET_nested(:index);
 
             // TODO FIX ARGSTEAL Lift implicit arguments up -
             //  they pop up randomly during bodysolve.
@@ -1780,10 +1800,10 @@ pub fn solve(
                 var.flags & F_LAX || fail(
                     "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
-                GET_mut(Target(:index, :module.modid)).flags |= F_UNUSED;
+                GET_nested(:index).flags |= F_UNUSED;
             }
 
-            ref o = GET_mut(Target(:index, :module.modid));
+            ref o = GET_nested(:index);
 
             ////////////////////////////////////////
             // TODO one of these two is redundant //
@@ -1797,7 +1817,7 @@ pub fn solve(
         // Control flow.
         return createBlock(:items,
             type: h.ret_actual || t_void,
-            label: h.mask & HM_LabelUsed && Target(:module.modid, h.target));
+            label: h.mask & HM_LabelUsed && h.target);
     }
 
     fn createBlock(type: Type, items: SolvedNode[], label?: Target): SolvedNode
@@ -2068,7 +2088,7 @@ pub fn solve(
 
     fn is_SPECFAIL(target: Target): bool
     {
-        return target.modid == -1;
+        return target.modid == 2147483647;
     }
 
     fn trySpecialize(
@@ -2183,7 +2203,7 @@ pub fn solve(
 
         //
         mut mangle00 = mangle; //REF2MUTREF
-        let SPECFAIL = Target(modid: -1, index: 0);
+        let SPECFAIL = Target(modid: 2147483647, index: 0);
 
         //
         let original = GET(overloadIdx || into || fail());
@@ -2206,7 +2226,7 @@ pub fn solve(
                 {
                     addroffn::unpackAddrOfFn(arg_t.canon, |target|
                     {
-                        if (target.modid == module.modid)
+                        if (target.modid < 0 || target.modid == module.modid)
                         {
                             let overload = GET(target);
                             if (overload.flags & F_SPREAD_INLINE)
@@ -2231,8 +2251,8 @@ pub fn solve(
             ref t = _specs[mangle] ||= Target;
 
             fn id(shadow target)
-                target.modid != -1  ? "`" ~ GET(target).name ~ "`"
-                                    : "SPEC_FAIL";
+                target.is_SPECFAIL  ? "SPEC_FAIL"
+                                    : "`" ~ GET(target).name ~ "`";
 
             !t && nx || t.is_SPECFAIL && !nx || fail(
                 "About to screw up royally, replacing spec: "
@@ -2836,7 +2856,7 @@ pub fn solve(
         let    helpers0 = _helpers.len;
         defer _helpers.shrink(helpers0);
 
-        _helpers ~= Helpers(mask: HM_Struct, target: out.target.index || fail(
+        _helpers ~= Helpers(mask: HM_Struct, target: out.target || fail(
             "solveStruct: no out.target: `" ~ origId ~ "`."));
         ///////////////////////////////////////////////
 
@@ -3108,10 +3128,10 @@ pub fn solve(
                 continue;
 
             h.mask & HM_Lambda && fail("Recursive lambda, what happened here?");
-            GET_mut(Target(:module.modid, index: h.target)).status |= status;
+            GET_mut(h.target).status |= status;
             _notes |= note;
 
-            if (h.target == target.index)
+            if (h.target == target)
                 return;
         }
 
@@ -3169,8 +3189,7 @@ pub fn solve(
             return expr;
 
         // Lazy labels.
-        let target = Target(:module.modid,
-            h.target ||= Scope_addLabel(h.id, :h.local_of).index);
+        let target = h.target ||= Scope_addLabel(h.id, :h.local_of);
 
         h.mask |= HM_LabelUsed;
 
@@ -3182,7 +3201,9 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(target.index);
+            let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(
+                (!USE_nesting || target.modid < 0) && target.index);
+
             if (ltCompare >= 0)
             {
                 if (ltCompare > 0)
@@ -3267,7 +3288,7 @@ pub fn solve(
     {
         return Scope_create(_scope, "label",
             name: id || ANON(),
-            type: Type, flags: F_SHADOW, :local_of);
+            type: Type, flags: F_SHADOW, :local_of, nest: USE_nesting);
     }
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
@@ -3374,7 +3395,7 @@ pub fn solve(
 
         return solved(node, type,
             [ init, pre_cond, body, post_cond, post ],
-                target: label_used && Target(:module.modid, h.target));
+                target: label_used && h.target);
     }
 
 
@@ -4223,10 +4244,9 @@ pub fn solve(
 
         // CLOSURE-ID-HACK
         {
-            let index = hacks::tryParseClosureID(:id);
-            if (index)
+            let target = hacks::tryParseClosureID(:id, :MODID);
+            if (target)
             {
-                let target = Target(:module.modid, :index);
                 let o = GET(target);
                 if (o.local_of == _current_fn.target.index)
                 {
@@ -4500,14 +4520,14 @@ pub fn solve(
 
         // TODO FIX things are getting messy
         shadow let overload = GET(target);
+        mut type = overload.type;
 
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
-        mut type = overload.type;
         if (overload.kind == "field")
         {
-            type = add_refs(from: args.only.type || fail(), to: overload.type)
+            type = add_refs(from: args.only.type || fail(), to: overload.type);
         }
 
         // So we're turning closeovers into implicit arguments -
@@ -4521,14 +4541,14 @@ pub fn solve(
                 // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
                 //  complicated close-over schemes do this but its really confusing so not exactly sure why,
                 //   there's a good test for it.
-                let index = hacks::tryParseClosureID(id: overload.name) || target.index;
-
                 target = injectImplicitArg(
-                    id:     hacks::ClosureID(:index),
+                    id:     hacks::ClosureID(
+                            hacks::tryParseClosureID(id: overload.name, :MODID) || target),
+
                     type:   overload.type, becauseOf: target);
                 // CLOSURE-ID-HACK
 
-                type = GET(target).type;
+                type = GET(target).type || fail("CallerNode (var): !type");
             }
         }
 
@@ -4624,7 +4644,7 @@ pub fn solve(
                     :type, args, :target);
 
         // Track deps.
-        if (target.modid == module.modid)
+        if (target.modid < 0 || target.modid == module.modid)
         {
             ref o = GET_mut(target);
 
@@ -4845,6 +4865,8 @@ pub fn solve(
         let root = solveNode(parse);
 
         _current_fn && fail("non-empty _current_fn.");
+
+        // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
         // Run the thing.
         return SolverOutput(:root,
