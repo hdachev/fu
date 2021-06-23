@@ -1980,10 +1980,12 @@ pub fn solve(
         //
         let template = createTemplate(node);
 
-        let tDecl = Scope_add(_scope,
-            kind: "template", :id, Type,
+        let tDecl = Scope_create(_scope,
+            kind: "template",
             :min, :max, :args, :template,
             :node.flags, :local_of, :status);
+
+        Scope_set(_scope, target: tDecl, :id, shadows: !!(node.flags & F_SHADOW));
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
@@ -2775,8 +2777,8 @@ pub fn solve(
             let type = tp.matched;
             let target = type.isStruct
                 && checkStruct(type)
-                || Scope_Typedef(_scope,
-                    id: "", // dont Scope_add
+                || Scope_create(_scope,
+                    kind: "type",
                     name: "$" ~ id, :type, flags: 0);
 
             Scope_set(res, name, :target, shadows: false);

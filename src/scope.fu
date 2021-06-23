@@ -516,43 +516,6 @@ pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 
 ////////////////////////////////
 
-pub fn Scope_add(
-    scope: &mut Scope,
-    kind: string, id: string, type: Type,
-    flags!: i32,
-
-    min?:           i32,
-    max?:           i32,
-    args?:          Argument[],
-    template?:      Template,
-    solved?:        SolvedNode,
-    local_of?:      i32,
-    name?:          string,
-    status?:        u32): Target
-{
-    let modid = MODID;
-    let target = Target(:modid,
-        index: scope.overloads.len + 1);
-
-    let item = Overload(
-        name: name || id || throw("Falsy Scope_add(id)."),
-        :kind, :flags, :type,
-        :min, :max, :args,
-        :template, :solved,
-        :local_of,
-        :status);
-
-    scope.overloads.push(item);
-
-    if (id)
-    {
-        let shadows = !!(flags & F_SHADOW);
-        Scope_set(:scope, :id, :target, :shadows);
-    }
-
-    return target;
-}
-
 pub fn Scope_create(
     scope: &mut Scope,
     kind = "_no_kind_yet_", name?!: string,
@@ -561,6 +524,7 @@ pub fn Scope_create(
     solved?: SolvedNode, local_of?!: i32,
     status?: u32,
     extra_items?: ScopeItem[],
+    template?: Template,
 
     recycle?: i32): Target
 {
@@ -577,6 +541,7 @@ pub fn Scope_create(
     item.min            = min;
     item.max            = max;
     item.args           = args;
+    item.template       = template;
     item.solved         = solved;
     item.local_of       = local_of;
     item.status         = status;
@@ -603,7 +568,12 @@ pub fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: b
 pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string,
     status?: u32)
 {
-    return Scope_add(:scope, "type", :id, :name, :type, :flags, :template, :status);
+    let target = Scope_create(:scope, "type", :type, :flags, :template, :name, :status);
+
+    if (id)
+        Scope_set(:scope, :id, :target, shadows: !!(flags & F_SHADOW));
+
+    return target;
 }
 
 
