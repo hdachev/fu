@@ -716,6 +716,11 @@ pub fn solve(
 
         // Argument & `using` dependent lookup,
         //  basically we do everything we can to get rid of imports.
+        //
+        // THIS LOOKS WORSE THAN IT IS:
+        //  We only pushback stuff when the modules are not imported and there's an actual match,
+        //   and we could possibly further filter them by arity.
+        //
         mut extra_items: Target[];
         if (local_scope && !target)
         {
@@ -2761,6 +2766,8 @@ pub fn solve(
                 //  but e.g. a reference or something. It's muddy what we have right now.
                 //   Consider getting rid of the $argname params, should obsolete this.
                 //
+                // See solveTypedef below.
+                //
                 let t = lookupStruct(type).target;
                 return GET(t).type == type && t;
             }
@@ -3629,6 +3636,10 @@ pub fn solve(
         let annot = evalTypeAnnot(node.items.only);
 
         // TODO FIX see the typeparams stuff, its the same mess.
+        //  The original typedef is setup to work as a constructor, which the Scope_Typedef here won't do.
+        //   Perhaps this is fine but we only want to do it if the annot is exactly the same as the original,
+        //    or perhaps if the original is assignable to this annot or something?
+        //
         if (annot.type.isStruct)
             Scope_set(_scope, node.value, lookupStruct(annot.type).target, shadows: false);
         else
