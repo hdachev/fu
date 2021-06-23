@@ -2680,10 +2680,20 @@ pub fn solve(
                         }
                     }
 
+                    fn HACK_nativeNameParts() // __native(id) or __native("include", id)
+                    {
+                        shadow mut name = "";
+                        if (native && n_body.items)
+                            for (mut i = 0; i < n_body.items.len; i++)
+                                name ~= "\n" ~ n_body.items[i].value;
+
+                        return name;
+                    }
+
                     ref overload        = GET_mut(target);
-                    overload.name       = name;
+                    overload.name       = HACK_nativeNameParts || name;
                     overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
-                    overload.template   = native ? createTemplate(n_body) : template;
+                    overload.template   = template;
                     overload.spec_of    = overloadIdx;
                 }
 

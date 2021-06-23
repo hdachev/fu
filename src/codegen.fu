@@ -1196,13 +1196,15 @@ pub fn cpp_codegen(
         fn ARG(i: i32) cgNode(items[i]);
 
         // Builtin specs.
-        if (target.kind == "__native" && target.template.node.items)
+        if (target.kind == "__native" && target.name[0] == '\n')
         {
-            mut id = target.template.node.items[0].value;
-            if (target.template.node.items.len > 1)
+            mut id = target.name.slice(1);
+
+            let idx = id.find('\n');
+            if (idx > -1)
             {
-                include(id);
-                id = target.template.node.items[1].value;
+                include(id.slice(0, idx));
+                id = id.slice(idx + 1);
             }
 
             if (id[0] == '.')
