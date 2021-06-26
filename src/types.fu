@@ -75,7 +75,13 @@ pub fn ==(a: Target, b: Target)
     a.index == b.index;
 
 
+// LIFETIMES
 //
+// static      = int min
+// arguments   = int neg
+// fn frame    = 0
+// locals      = int pos
+// temporary   = int max
 
 pub struct Region { index!: i32; };
 
@@ -92,7 +98,8 @@ pub fn Region_isArg(region: Region) region.index < 0;
 pub fn Region_toArgIndex(region: Region) -1 - region.Region_toLocalIndex;
 pub fn Region_fromArgIndex(index: i32) Region_fromLocalIndex(-1 - index);
 
-let Region_TEMP = Region_fromLocalIndex(0x7fffffff.i32);
+let Region_TEMP     = Region_fromLocalIndex(0x7fffffff.i32);
+let Region_STATIC   = Region_fromLocalIndex(0x80000000.i32);
 
 pub fn Region_isTemp(region: Region) region == Region_TEMP;
 
@@ -118,7 +125,7 @@ pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
     Lifetime_union(lifetime, Lifetime_static);
 
 pub fn Lifetime_static(): Lifetime =
-    Lifetime(uni0n: [ Region ]);
+    Lifetime(uni0n: [ Region_STATIC ]);
 
 pub fn Lifetime_temporary(): Lifetime =
     Lifetime(uni0n: [ Region_TEMP ]);

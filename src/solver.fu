@@ -396,6 +396,8 @@ pub fn solve(
         let items       = overload.arg_lets;
 
         // Nothing to do if empty/non-arg.
+        // TODO FIX this opti no longer works correctly
+        //  since the static LT now looks like an argument (is negative).
         if (!Region_isArg(returned.if_first))
             return Lifetime(uni0n: returned);
 
