@@ -2228,9 +2228,6 @@ pub fn runTests()
             // This miscompiles to ref into args,
             //  after which we invalidate the reference.
             //
-            // Notice the "let" would bind cleanly,
-            //  if it weren't for the "&&", which loses the mutrefsness.
-            //
             let badref = args.len && args[0];
             args = [ Arg(11) ]; // INVALIDATE badref.
             return badref;
@@ -3040,6 +3037,9 @@ pub fn runTests()
     TODO(`
         struct Lifetime { woot: Lifetime[]; };
 
+        // We could codegen this as a cpp template!
+        //  We'd need to auto& all inner locals too.
+        //
         fn Lifetime_test(x: Lifetime) {
             x.woot.len & 1 && throw("This is very important.");
             for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);
@@ -3049,6 +3049,11 @@ pub fn runTests()
         fn Lifetime_fromBinding(x: i32) {
             mut woot: Lifetime[];
             for (mut i = 0; i < x; i++) woot[i] = Lifetime();
+
+            // Or we can just add const_casts at such callsites,
+            //  so that things end up working as if the call was inlined,
+            //   which weakens the validation we get but is way cleaner.
+            //
             return Lifetime_test(Lifetime(:woot));
         }
 
