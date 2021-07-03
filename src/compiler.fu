@@ -414,7 +414,7 @@ fn indent(src: string): string
 
 pub fn FAIL(
     implicit ref testdiffs: testdiff::TestDiffs,
-    sources: string[]): string
+    sources: string[])
 {
     let ctx = compile_snippets(sources) catch e
     {
@@ -424,16 +424,33 @@ pub fn FAIL(
             let src = sources[i];
 
             // Trim trailing spaces to help with manual testdiff edits.
-            for (mut r = src.len; r --> 0; ) if (src[r] != ' ')
+            for (shadow mut i = src.len; i --> 0; ) if (src[i] != ' ')
             {
-                key ~= src[0, r];
+                key ~= src[0, i];
                 break;
             }
         }
 
-        testdiffs.testdiff::set_next(key, e);
+        // Trim leading slashes till first newline, this is the path/.fu part,
+        //  this may include an abspath we dont want in testdiff.
+        mut start   = 0;
+        mut startOK = false;
+        for (shadow mut i = 0; i < e.len; i++)
+        {
+            let c = e[i];
+            if (c == '/')
+                start = i + 1;
+            else if (c == '@')
+                startOK = true;
+            else if (c == '\n')
+                break;
+        }
 
-        return ZERO(FAIL_replace(sources)) && e;
+        startOK || throw("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n" ~ e);
+
+        testdiffs.testdiff::set_next(key, e.slice(start));
+
+        return ZERO(FAIL_replace(sources));
     }
 
     mut bad = "\nDID NOT THROW:\n";
