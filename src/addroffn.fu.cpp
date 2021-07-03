@@ -145,9 +145,9 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_a5BM
-                                #define DEFt_unpackAddrOfFn_a5BM
-inline void unpackAddrOfFn_a5BM(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_4JZ8
+                                #define DEFt_unpackAddrOfFn_4JZ8
+inline void unpackAddrOfFn_4JZ8(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -171,7 +171,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_a5BM(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_4JZ8(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 

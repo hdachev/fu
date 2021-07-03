@@ -25,6 +25,7 @@ set(FU_INPUTS
     intlit.fu
     addroffn.fu
     ../lib/tea.fu
+    hacks.fu
     codegen.fu
     cpp.fu
     ../lib/env.fu

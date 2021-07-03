@@ -173,60 +173,11 @@ inline constexpr int q_rx_resize = (1 << 10);
 
 static const fu_VEC<fu_STR> TAGS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<11> { "mutref"_fu, "ref"_fu, "copy"_fu, "trivial"_fu, "primitive"_fu, "arithmetic"_fu, "integral"_fu, "signed"_fu, "unsigned"_fu, "floating_point"_fu, "resize"_fu } };
 
-                                #ifndef DEF_q_REF_EXTENSIONS
-                                #define DEF_q_REF_EXTENSIONS
-inline constexpr int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
-                                #endif
+static const int q_REF_EXTENSIONS = (q_rx_copy | q_rx_resize);
 
-                                #ifndef DEF_q_MUTINVAR
-                                #define DEF_q_MUTINVAR
-inline constexpr int q_MUTINVAR = ~q_REF_EXTENSIONS;
-                                #endif
+static const int q_MUTINVAR = ~q_REF_EXTENSIONS;
 
-                                #ifndef DEF_q_RELAXABLE
-                                #define DEF_q_RELAXABLE
-inline constexpr int q_RELAXABLE = (q_REF_EXTENSIONS | q_mutref);
-                                #endif
-
-                                #ifndef DEF_e_exit
-                                #define DEF_e_exit
-inline constexpr int e_exit = (1 << 0);
-                                #endif
-
-                                #ifndef DEF_e_crash
-                                #define DEF_e_crash
-inline constexpr int e_crash = (1 << 1);
-                                #endif
-
-                                #ifndef DEF_e_div0
-                                #define DEF_e_div0
-inline constexpr int e_div0 = (1 << 2);
-                                #endif
-
-                                #ifndef DEF_e_segv
-                                #define DEF_e_segv
-inline constexpr int e_segv = (1 << 3);
-                                #endif
-
-                                #ifndef DEF_e_throw
-                                #define DEF_e_throw
-inline constexpr int e_throw = (1 << 4);
-                                #endif
-
-                                #ifndef DEF_e_io
-                                #define DEF_e_io
-inline constexpr int e_io = (1 << 8);
-                                #endif
-
-                                #ifndef DEF_e_malloc
-                                #define DEF_e_malloc
-inline constexpr int e_malloc = (1 << 12);
-                                #endif
-
-                                #ifndef DEF_e_memcpy
-                                #define DEF_e_memcpy
-inline constexpr int e_memcpy = (1 << 13);
-                                #endif
+static const int q_RELAXABLE = (q_REF_EXTENSIONS | q_mutref);
 
 uint64_t u64(const s_Target& t)
 {
@@ -285,6 +236,8 @@ s_Region Region_fromArgIndex(const int index)
 
 static const s_Region Region_TEMP = Region_fromLocalIndex(int(0x7fffffffu));
 
+static const s_Region Region_STATIC = Region_fromLocalIndex(int(0x80000000u));
+
 bool Region_isTemp(const s_Region& region)
 {
     return region == Region_TEMP;
@@ -302,7 +255,7 @@ inline fu_VEC<s_Region> union_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Reg
     int y = 0;
     while ((x < a_1.size()) && (y < b.size()))
     {
-        const s_Region X { a_1[x] };
+        const s_Region& X = a_1[x];
         const s_Region& Y = b[y];
         if ((X >= Y))
         {
@@ -357,7 +310,7 @@ s_Lifetime Lifetime_makeShared(const s_Lifetime& lifetime)
 
 s_Lifetime Lifetime_static()
 {
-    return s_Lifetime { fu_VEC<s_Region> { fu_VEC<s_Region>::INIT<1> { s_Region{} } } };
+    return s_Lifetime { fu_VEC<s_Region> { fu_VEC<s_Region>::INIT<1> { s_Region(Region_STATIC) } } };
 }
 
 s_Lifetime Lifetime_temporary()
@@ -498,9 +451,44 @@ bool maybe_nonzero(const s_Type& t)
     return is_never(t) || is_void(t);
 }
 
+static bool areQualsAssignable(const int host, const int guest)
+{
+    return ((host & guest) == host) && (!(host & q_mutref) || ((host & q_MUTINVAR) == (guest & q_MUTINVAR)));
+}
+
+static bool isCanonAssignable(fu::view<std::byte> host, fu::view<std::byte> guest)
+{
+    int x = 0;
+    int y = 0;
+    while ((x < host.size()) && (y < guest.size()))
+    {
+        const std::byte c = host[x++];
+        const std::byte o = guest[y++];
+        if (c != o)
+        {
+            if (o == std::byte('+'))
+            {
+                parse10i32(y, guest);
+                x--;
+                continue;
+            };
+            return false;
+        };
+        if (c == std::byte('+'))
+        {
+            const int a = parse10i32(x, host);
+            const int b = parse10i32(y, guest);
+            if (!areQualsAssignable(a, b))
+                return false;
+
+        };
+    };
+    return (x == host.size()) && (y == guest.size());
+}
+
 bool isAssignable(const s_Type& host, const s_Type& guest)
 {
-    return ((host.vtype.canon == guest.vtype.canon) && (host.vtype.modid == guest.vtype.modid) && ((host.vtype.quals & guest.vtype.quals) == host.vtype.quals) && (!(host.vtype.quals & q_mutref) || ((host.vtype.quals & q_MUTINVAR) == (guest.vtype.quals & q_MUTINVAR)))) || is_never(guest);
+    return ((host.vtype.modid == guest.vtype.modid) && isCanonAssignable(host.vtype.canon, guest.vtype.canon) && areQualsAssignable(host.vtype.quals, guest.vtype.quals)) || is_never(guest);
 }
 
 bool isAssignableAsArgument(const s_Type& host, const s_Type& guest)
@@ -590,7 +578,7 @@ fu_STR serializeType(const s_Type& type)
     if (type.vtype.quals)
         prefix += ("+"_fu + type.vtype.quals);
 
-    return prefix + type.vtype.canon;
+    return prefix + (type.vtype.canon ? type.vtype.canon : fu::fail("serializeType: !type.canon"_fu));
 }
 
 fu_STR humanizeType(const s_Type& type)
@@ -706,9 +694,23 @@ s_MapFields tryClear_map(const s_Type& type)
     fu_ASSERT();
 }
 
-bool type_has(const s_Type& type, const fu_STR& tag)
+                                #ifndef DEFt_find_ByEn
+                                #define DEFt_find_ByEn
+inline int find_ByEn(fu::view<fu_STR> a, fu::view<std::byte> b)
 {
-    const int idx = fu::lfind(TAGS, tag, 0);
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+bool type_has(const s_Type& type, fu::view<std::byte> tag)
+{
+    const int idx = find_ByEn(TAGS, tag);
     if (!((idx >= 0)))
         fu::fail((("Unknown type tag: `"_fu + tag) + "`."_fu));
 
@@ -737,7 +739,7 @@ inline fu_VEC<s_Region> inter_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Reg
     int y = 0;
     while ((x < a_1.size()) && (y < b.size()))
     {
-        const s_Region X { a_1[x] };
+        const s_Region& X = a_1[x];
         const s_Region& Y = b[y];
         if (X == Y)
         {

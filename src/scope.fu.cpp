@@ -46,7 +46,6 @@ int parse10i32(int&, fu::view<std::byte>);
 s_ScopeItem ScopeItem(const fu_STR&, const s_Target&, bool);
 s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, const fu_VEC<s_ScopeSkip>&, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
-void Scope_set(s_Scope&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -209,6 +208,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    int flat_cnt;
     explicit operator bool() const noexcept
     {
         return false
@@ -217,6 +217,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || flat_cnt
         ;
     }
 };
@@ -443,10 +444,15 @@ struct s_Overload
     s_SolvedNode solved;
     s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_Overload> locals;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<s_ScopeItem> extra_items;
+    s_Overload(const s_Overload&) = default;
+    s_Overload(s_Overload&&) = default;
+    s_Overload& operator=(s_Overload&&) = default;
+    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -461,6 +467,7 @@ struct s_Overload
             || solved
             || spec_of
             || nodes
+            || locals
             || callsites
             || status
             || local_of
@@ -630,7 +637,7 @@ struct s_Module
                                 #define DEF_s_Helpers
 struct s_Helpers
 {
-    int target;
+    s_Target target;
     fu_STR id;
     short mask;
     int local_of;
@@ -797,7 +804,7 @@ s_Type initStruct(const fu_STR& name, const int flags_1, const bool SELF_TEST, s
 
         };
     };
-    module.out.types += s_Struct { fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{} };
+    module.out.types += s_Struct { fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, 0 };
     const int specualtive_quals = ((flags_1 & F_NOCOPY) ? int(q_trivial) : (q_rx_copy | q_trivial));
     return s_Type { s_ValueType { int(specualtive_quals), int(MODID(module)), fu_STR(canon_1) }, s_Lifetime{} };
 }
@@ -828,7 +835,7 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid_3, const fu_VEC<s_Sc
         if (target(item).modid == modid_3)
         {
             const s_Overload& overload = scope.overloads[(target(item).index - 1)];
-            ((!modid_3 || (overload.flags & F_PUB)) ? result : pRivate).push(item);
+            ((overload.flags & F_PUB) ? result : pRivate).push(item);
         };
     };
     const int pub_count = result.size();
@@ -936,29 +943,11 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return cmp(a, b) == 0;
 }
 
-                                #ifndef DEF_F_SHADOW
-                                #define DEF_F_SHADOW
-inline constexpr int F_SHADOW = (1 << 23);
-                                #endif
-
-s_Target Scope_add(s_Scope& scope, const fu_STR& kind_1, const fu_STR& id, const s_Type& type, const int flags_1, const int min_1, const int max_1, const fu_VEC<s_Argument>& args, const s_Template& tEmplate, const s_SolvedNode& solved, const int local_of, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const int min_1, const int max_1, const fu_VEC<s_Argument>& args, const s_SolvedNode& solved, const int local_of, const unsigned status, const fu_VEC<s_ScopeItem>& extra_items, const s_Template& tEmplate, const int recycle, const bool nest, const s_Module& module)
 {
-    const int modid_3 = MODID(module);
-    const s_Target target_1 = s_Target { int(modid_3), (scope.overloads.size() + 1) };
-    s_Overload item = s_Overload { fu_STR(kind_1), fu_STR((name ? name : id ? id : fu::fail("Falsy Scope_add(id)."_fu))), s_Type(type), int(flags_1), int(min_1), int(max_1), fu_VEC<s_Argument>(args), s_Template(tEmplate), s_SolvedNode(solved), s_Target{}, fu_VEC<s_SolvedNodeData>{}, fu_VEC<s_SolvedNode>{}, unsigned(status), int(local_of), fu_VEC<s_ScopeItem>{} };
-    scope.overloads.push(item);
-    if (id)
-    {
-        const bool shadows = !!(flags_1 & F_SHADOW);
-        Scope_set(scope, id, target_1, shadows);
-    };
-    return target_1;
-}
-
-s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const int min_1, const int max_1, const fu_VEC<s_Argument>& args, const s_SolvedNode& solved, const int local_of, const unsigned status, const fu_VEC<s_ScopeItem>& extra_items, const int recycle, const s_Module& module)
-{
-    const int modid_3 = MODID(module);
-    const s_Target target_1 = s_Target { int(modid_3), (recycle ? int(recycle) : (scope.overloads.size() + 1)) };
+    fu_VEC<s_Overload>& overloads = ((nest && local_of) ? scope.overloads.mutref((local_of - 1)).locals : scope.overloads);
+    int _0 {};
+    const s_Target target_1 = s_Target { (nest && (_0 = -local_of) ? _0 : int(MODID(module))), (recycle ? int(recycle) : (overloads.size() + 1)) };
     s_Overload item {};
     item.name = name;
     item.kind = kind_1;
@@ -967,14 +956,15 @@ s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, 
     item.min = min_1;
     item.max = max_1;
     item.args = args;
+    item.tEmplate = tEmplate;
     item.solved = solved;
     item.local_of = local_of;
     item.status = status;
     item.extra_items = extra_items;
     if (recycle)
-        scope.overloads.mutref((recycle - 1)) = item;
+        overloads.mutref((recycle - 1)) = item;
     else
-        scope.overloads.push(item);
+        overloads.push(item);
 
     return target_1;
 }
@@ -989,9 +979,18 @@ void Scope_set(fu_VEC<s_ScopeItem>& items_1, const fu_STR& id, const s_Target& t
     items_1.push(ScopeItem(id, target_1, shadows));
 }
 
+                                #ifndef DEF_F_SHADOW
+                                #define DEF_F_SHADOW
+inline constexpr int F_SHADOW = (1 << 23);
+                                #endif
+
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags_1, const s_Template& tEmplate, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    return Scope_add(scope, "type"_fu, id, type, flags_1, 0, 0, fu_VEC<s_Argument>{}, tEmplate, s_SolvedNode{}, 0, name, status, module);
+    const s_Target target_1 = Scope_create(scope, "type"_fu, name, type, flags_1, 0, 0, fu_VEC<s_Argument>{}, s_SolvedNode{}, 0, status, fu_VEC<s_ScopeItem>{}, tEmplate, 0, bool{}, module);
+    if (id)
+        Scope_set(scope, id, target_1, !!(flags_1 & F_SHADOW));
+
+    return target_1;
 }
 
 extern const s_Type t_i8;

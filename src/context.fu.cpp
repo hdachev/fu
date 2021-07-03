@@ -209,6 +209,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    int flat_cnt;
     explicit operator bool() const noexcept
     {
         return false
@@ -217,6 +218,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || flat_cnt
         ;
     }
 };
@@ -443,10 +445,15 @@ struct s_Overload
     s_SolvedNode solved;
     s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_Overload> locals;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<s_ScopeItem> extra_items;
+    s_Overload(const s_Overload&) = default;
+    s_Overload(s_Overload&&) = default;
+    s_Overload& operator=(s_Overload&&) = default;
+    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -461,6 +468,7 @@ struct s_Overload
             || solved
             || spec_of
             || nodes
+            || locals
             || callsites
             || status
             || local_of
@@ -660,6 +668,34 @@ const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
+                                #ifndef DEFt_find_qVFp
+                                #define DEFt_find_qVFp
+inline int find_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_has_qVFp
+                                #define DEFt_has_qVFp
+inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
+
 static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
     const bool exists = (fu::file_size(path) >= 0);
@@ -700,7 +736,7 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
 static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
     fu_STR path = (from + name_3);
-    fu_STR cached { ctx.fuzzy[path] };
+    const fu_STR& cached = ctx.fuzzy[path];
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
@@ -711,12 +747,12 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& c
 
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
-    const int fuzzy = fu::lfind(path, std::byte('\v'), 0);
+    const int fuzzy = find_qVFp(path, std::byte('\v'));
     if (fuzzy > 0)
     {
         fu_STR from = fu::slice(path, 0, fuzzy);
         fu_STR name_3 = fu::slice(path, (fuzzy + 1));
-        if (from && name_3 && !fu::has(name_3, std::byte('\v')))
+        if (from && name_3 && !has_qVFp(name_3, std::byte('\v')))
         {
             fu_STR res = resolveFile(from, name_3, ctx);
             if (res)
@@ -740,7 +776,7 @@ fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 
 fu_STR getFile(fu_STR&& path, s_Context& ctx)
 {
-    fu_STR cached { ctx.files[path] };
+    const fu_STR& cached = ctx.files[path];
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
@@ -936,14 +972,19 @@ const s_Struct& lookupStruct(const s_Type& type_3, const s_Module& module, const
     return *(_1 = &(ctx.modules[type_3.vtype.modid].out.types[structIndex(type_3.vtype.canon)])) ? *_1 : fu_ASSERT();
 }
 
+const s_Struct& tryLookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+{
+    return isStruct(type_3) ? lookupStruct(type_3, module, ctx) : (*(const s_Struct*)fu::NIL);
+}
+
 const fu_VEC<int>& lookupTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type_3) ? lookupStruct(type_3, module, ctx).imports : (*(const fu_VEC<int>*)fu::NIL);
+    return tryLookupStruct(type_3, module, ctx).imports;
 }
 
 const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type_3) ? lookupStruct(type_3, module, ctx).converts : (*(const fu_VEC<s_Target>*)fu::NIL);
+    return tryLookupStruct(type_3, module, ctx).converts;
 }
 
 #endif

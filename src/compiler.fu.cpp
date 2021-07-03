@@ -50,11 +50,11 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-fu_STR FAIL(const fu_STR&, s_TestDiffs&);
-fu_STR FAIL(const fu_VEC<fu_STR>&, s_TestDiffs&);
 fu_STR getFile(fu_STR&&, s_Context&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_CodegenOutput cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
+s_Context FAIL(const fu_STR&, s_TestDiffs&);
+s_Context FAIL(const fu_VEC<fu_STR>&, s_TestDiffs&);
 s_Context ZERO(const fu_STR&, s_TestDiffs&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
@@ -232,6 +232,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    int flat_cnt;
     explicit operator bool() const noexcept
     {
         return false
@@ -240,6 +241,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || flat_cnt
         ;
     }
 };
@@ -466,10 +468,15 @@ struct s_Overload
     s_SolvedNode solved;
     s_Target spec_of;
     fu_VEC<s_SolvedNodeData> nodes;
+    fu_VEC<s_Overload> locals;
     fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     fu_VEC<s_ScopeItem> extra_items;
+    s_Overload(const s_Overload&) = default;
+    s_Overload(s_Overload&&) = default;
+    s_Overload& operator=(s_Overload&&) = default;
+    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -484,6 +491,7 @@ struct s_Overload
             || solved
             || spec_of
             || nodes
+            || locals
             || callsites
             || status
             || local_of
@@ -1044,7 +1052,7 @@ static void compile(const fu_STR& fname, fu::view<std::byte> via, const s_Option
     };
     if (!module.out)
     {
-        fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
+        fu::view<fu_STR> fuzimports = module.in.parse.fuzimports;
         for (int i = 0; i < fuzimports.size(); i++)
             compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), s_Options{}, ctx);
 
@@ -1142,6 +1150,35 @@ fu_STR snippet2cpp(const fu_STR& src)
     return fu_STR{};
 }
 
+                                #ifndef DEFt_find_KWjg
+                                #define DEFt_find_KWjg
+inline int find_KWjg(fu::view<std::byte> a, const std::byte b, int start)
+{
+    start = ((start > 0) ? int(start) : 0);
+    for (int i = start; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_find_ByEn
+                                #define DEFt_find_ByEn
+inline int find_ByEn(fu::view<fu_STR> a, fu::view<std::byte> b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
                                 #ifndef DEFt_grow_if_oob_4ey5
                                 #define DEFt_grow_if_oob_4ey5
 inline fu_VEC<fu_STR>& grow_if_oob_4ey5(fu_VEC<fu_VEC<fu_STR>>& a, const int i)
@@ -1150,6 +1187,20 @@ inline fu_VEC<fu_STR>& grow_if_oob_4ey5(fu_VEC<fu_VEC<fu_STR>>& a, const int i)
         a.grow((i + 1));
 
     return a.mutref(i);
+}
+                                #endif
+
+                                #ifndef DEFt_find_qVFp
+                                #define DEFt_find_qVFp
+inline int find_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
 }
                                 #endif
 
@@ -1223,14 +1274,14 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
         int start = 0;
         while (((start = fu::lfind(src, " ;; "_fu, start)) >= 0))
         {
-            int end = fu::lfind(src, std::byte('\n'), (start + 4));
+            int end = find_KWjg(src, std::byte('\n'), (start + 4));
             if (end < 0)
                 end = src.size();
 
             fu_STR annot = fu::slice(src, (start + 4), end);
             if (annot[0] == std::byte('!'))
             {
-                const int idx = fu::lfind(NOTES, fu::slice(annot, 1, annot.size()), 0);
+                const int idx = find_ByEn(NOTES, fu::slice(annot, 1, annot.size()));
                 if (!((idx >= 0)))
                     fu::fail((("Bad break_note: `;; "_fu + annot) + "`."_fu));
 
@@ -1248,13 +1299,13 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
     s_Context ctx = compile_snippets(sources, fu_VEC<fu_STR>{}, options);
     for (int i_3 = 0; i_3 < expectations.size(); i_3++)
     {
-        fu_VEC<fu_STR> arr { expectations[i_3] };
-        fu_STR src { sources[i_3] };
+        fu::view<fu_STR> arr = expectations[i_3];
+        fu::view<std::byte> src = sources[i_3];
         const s_CodegenOutput& cpp = ctx.modules[(i_3 + 1)].out.cpp;
         for (int i_1_1 = 0; i_1_1 < arr.size(); i_1_1++)
         {
             const fu_STR& x = arr[i_1_1];
-            const int idx = fu::lfind(x, std::byte(' '), 0);
+            const int idx = find_qVFp(x, std::byte(' '));
             fu_STR cmd = fu::slice(x, 0, idx);
             fu_STR rest = fu::slice(x, (idx + 1));
             const bool found = fu::has(cpp.src, rest);
@@ -1302,7 +1353,7 @@ static fu_STR indent(const fu_STR& src)
     return fu::replace(src, "\n"_fu, "\n\t"_fu);
 }
 
-fu_STR FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
+s_Context FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 {
     s_Context ctx = {};
     try
@@ -1318,17 +1369,33 @@ fu_STR FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
         for (int i = 0; i < sources.size(); i++)
         {
             fu::view<std::byte> src = sources[i];
-            for (int r = src.size(); r-- > 0; )
+            for (int i_1 = src.size(); i_1-- > 0; )
             {
-                if (src[r] != std::byte(' '))
+                if (src[i_1] != std::byte(' '))
                 {
-                    key += fu::get_view(src, 0, r);
+                    key += fu::get_view(src, 0, i_1);
                     break;
                 };
             };
         };
-        set_next(testdiffs, key, e);
-        return fu_STR((ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs) ? e : (*(const fu_STR*)fu::NIL)));
+        int start = 0;
+        bool startOK = false;
+        for (int i_1 = 0; i_1 < e.size(); i_1++)
+        {
+            const std::byte c = e[i_1];
+            if (c == std::byte('/'))
+                start = (i_1 + 1);
+            else if (c == std::byte('@'))
+                startOK = true;
+            else if (c == std::byte('\n'))
+                break;
+
+        };
+        if (!(startOK))
+            fu::fail(("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n"_fu + e));
+
+        set_next(testdiffs, key, fu::slice(e, start));
+        return ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs);
     }
     }
 ;
@@ -1367,7 +1434,7 @@ s_Context ZERO(const fu_STR& src, s_TestDiffs& testdiffs)
     return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
 }
 
-fu_STR FAIL(const fu_STR& src, s_TestDiffs& testdiffs)
+s_Context FAIL(const fu_STR& src, s_TestDiffs& testdiffs)
 {
     return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
 }

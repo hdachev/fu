@@ -3,10 +3,10 @@
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
-#include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 
@@ -111,6 +111,34 @@ static fu_STR unescapeStr(fu::view<std::byte> esc, const int idx0, const int idx
     };
     return out;
 }
+
+                                #ifndef DEFt_has_qVFp
+                                #define DEFt_has_qVFp
+inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
+
+                                #ifndef DEFt_has_ByEn
+                                #define DEFt_has_ByEn
+inline bool has_ByEn(fu::view<fu_STR> a, fu::view<std::byte> b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
 
 s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
 {
@@ -304,16 +332,16 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
         }
-        else if (fu::has(OPTOKENS, c))
+        else if (has_qVFp(OPTOKENS, c))
         {
             fu_STR candidate = fu_STR { fu_STR::INIT<1> { std::byte(c) } };
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if (fu::has(OPTOKENS, c_1))
+                if (has_qVFp(OPTOKENS, c_1))
                 {
                     fu_STR c1 = (candidate + c_1);
-                    if (fu::has(MBOPS, c1))
+                    if (has_ByEn(MBOPS, c1))
                     {
                         candidate = c1;
                         continue;
