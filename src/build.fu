@@ -361,10 +361,9 @@ pub fn build(
                 mut main: string;
                 mut includes: string;
 
-                for (mut i = 1; i < cpp_files.len; i++)
+                for (mut i = 1; i < ctx.modules.len; i++)
                 {
                     let module = ctx.modules[i];
-
                     let input = path_relative(CMakeLists, module.fname);
                     if (i == 1)
                         main = input;
@@ -375,7 +374,10 @@ pub fn build(
                     let custom = module.fname ~ ".cmake";
                     if (file::size(custom) > 0)
                         includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
+                }
 
+                for (mut i = 0; i < cpp_files.len; i++)
+                {
                     let cpp_file = cpp_files[i];
                     if (cpp_file)
                         outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
