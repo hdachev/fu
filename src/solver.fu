@@ -34,7 +34,6 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
-pub let USE_nesting         = true;
 
 let SELF_TEST               = true;
 
@@ -198,16 +197,9 @@ pub fn solve(
         return _scope.overloads[target.index - 1];
     }
 
-    fn GET_local(index: i32)
-    {
-        return GET_mut(Target(modid: module.modid, :index));
-    }
-
     fn GET_nested(index: i32)
     {
-        return USE_nesting
-             ? GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index))
-             : GET_local(:index);
+        return GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index));
     }
 
 
@@ -489,7 +481,7 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, nest: USE_nesting);
+        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, nest: true);
 
         _helpers.last.vars ~= target.index;
 
@@ -3187,7 +3179,7 @@ pub fn solve(
         if (expr.type.is_ref)
         {
             let ltCompare = expr.type.lifetime.Lifetime_compareToIndex(
-                (!USE_nesting || target.modid < 0) && target.index);
+                target.modid < 0 && target.index); // Else zero, the fn frame!
 
             if (ltCompare >= 0)
             {
@@ -3273,7 +3265,7 @@ pub fn solve(
     {
         return Scope_create(_scope, "label",
             name: id || ANON(),
-            type: Type, flags: F_SHADOW, :local_of, nest: USE_nesting);
+            type: Type, flags: F_SHADOW, :local_of, nest: true);
     }
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
