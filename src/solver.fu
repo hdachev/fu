@@ -127,6 +127,8 @@ pub fn solve(
     let MODULE_TOP    = Scope_create(_scope, kind: "_module_top_");
     _helpers         ~= Helpers(target: MODULE_TOP, "_module_top_");
 
+    mut _current_fn_or_type = MODULE_TOP;
+
 
     // Can't we just list them all and scan through?
     //  Do we need the mangling nonsense?
@@ -249,24 +251,7 @@ pub fn solve(
             :kind, :flags, :value,
             :items, :type, :target);
 
-        mut nodeown = MODULE_TOP;
-
-        // Locate immediate caller, fn or type.
-        //
-        // TODO OPTIMIZE
-        //  Previously used _current_fn.target,
-        //   but can't because of callsite tracking.
-        //    Could be something like _current_fn_or_type.
-        //
-        for (mut i = _helpers.len; i --> 0; )
-        {
-            let h = _helpers[i];
-            if (h.isFnOrType)
-            {
-                nodeown = h.target;
-                break;
-            }
-        }
+        let nodeown = _current_fn_or_type;
 
         ref nodes   = GET_mut(nodeown).nodes;
         let nodeidx = nodes.len;
@@ -2510,6 +2495,10 @@ pub fn solve(
             target = into || Scope_create(_scope, local_of: parent_idx,
                 status: SS_DID_START | SS_LAZY, :extra_items);
 
+            mut current_fn_or_type0     = _current_fn_or_type;
+            defer _current_fn_or_type   = current_fn_or_type0;
+            _current_fn_or_type         = target;
+
             ////////////////////////////////////
             // Reset anon counters /////////////
             if (!_current_fn.target) _anons = 0;
@@ -2858,6 +2847,10 @@ pub fn solve(
 
         _helpers ~= Helpers(mask: HM_Struct, target: out.target || fail(
             "solveStruct: no out.target: `" ~ origId ~ "`."));
+
+        mut current_fn_or_type0     = _current_fn_or_type;
+        defer _current_fn_or_type   = current_fn_or_type0;
+        _current_fn_or_type         = out.target;
         ///////////////////////////////////////////////
 
         // Struct fields only.
