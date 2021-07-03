@@ -369,9 +369,9 @@ int main() { return fu_MAIN(); }
 
         return sum - 15;
 -----
-/home/tuti/fu/__tests__/_0.fu @11:13:
+_0.fu @11:13:
 	`++postfix` bad args.
-Expect: ++postfix(
+Expect: (
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
@@ -602,9 +602,9 @@ int main() { return fu_MAIN(); }
         r.min++; //ERR ++ overload
         return r.max - r.min;
 -----
-/home/tuti/fu/__tests__/_0.fu @17:14:
+_0.fu @17:14:
 	`++postfix` bad args.
-Expect: ++postfix(
+Expect: (
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
@@ -842,7 +842,7 @@ int main() { return fu_MAIN(); }
 
         fn main() test(A(1, 1), B(-1, -1));
 -----
-/home/tuti/fu/__tests__/_0.fu @6:13:
+_0.fu @6:13:
 	Ambiguous callsite, matches multiple items in scope: `x` from global scope and global scope, as seen from `test`.
 -----
 
@@ -4254,9 +4254,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_find_o2eL
+                                #define DEFt_find_o2eL
+inline int find_o2eL(fu::view<int> a, const int b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
 int fu_MAIN()
 {
-    return fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * fu::lfind((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14, 0));
+    return fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * find_o2eL((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14));
 }
 
 #endif
@@ -4278,9 +4292,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_has_o2eL
+                                #define DEFt_has_o2eL
+inline bool has_o2eL(fu::view<int> a, const int b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
+
 int fu_MAIN()
 {
-    return ((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (fu::has((fu::slate<4, int> { 1, 14, 96, 2 }), 14) ? 2 : 0)) - 3;
+    return ((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (has_o2eL((fu::slate<4, int> { 1, 14, 96, 2 }), 14) ? 2 : 0)) - 3;
 }
 
 #endif
@@ -4829,7 +4857,7 @@ int main() { return fu_MAIN(); }
         //*/
         fn main() test(-1);
 -----
-/home/tuti/fu/__tests__/_0.fu @7:9:
+_0.fu @7:9:
 	`test` bad args.
 Expect: test(
 	a?: []+28byte: ref)
@@ -5123,7 +5151,7 @@ int main() { return fu_MAIN(); }
             }
 
             sum += x * 1000 + 100;
-            if (x > 1)
+            if (x > 1) // EXPECT break;
                 break; // anon
         }
 
@@ -5176,7 +5204,7 @@ int main() { return fu_MAIN(); }
 
         return t.x - 1;
 -----
-/home/tuti/fu/__tests__/_0.fu @7:9..14:9:
+_0.fu @7:9..14:9:
 	Orphan pure-looking expression.
 -----
 
@@ -5631,7 +5659,7 @@ int main() { return fu_MAIN(); }
         }
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @5:9..7:9:
+_0.fu @5:9..7:9:
 	Inconsistent indent at `{`: expected more than 9, got 9. Block starts on line 5.
 -----
 
@@ -5691,7 +5719,7 @@ int main() { return fu_MAIN(); }
         }
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @6:13..13:1:
+_0.fu @6:13..13:1:
 	Inconsistent indent at closing `}`: expected 8, got 7. Block starts on line 5.
 -----
 
@@ -5727,7 +5755,7 @@ int main() { return fu_MAIN(); }
         }
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @6:13..13:1:
+_0.fu @6:13..13:1:
 	Inconsistent indent at closing `}`: expected 8, got 9. Block starts on line 5.
 -----
 
@@ -5763,7 +5791,7 @@ int main() { return fu_MAIN(); }
 
         return y[0] - 1
 -----
-/home/tuti/fu/__tests__/_0.fu @5:45:
+_0.fu @5:45:
 	Missing semicollon before `fu`.
 -----
 
@@ -5803,7 +5831,7 @@ int main() { return fu_MAIN(); }
 
         fn main() hello("", "nope").len;
 -----
-/home/tuti/fu/__tests__/_0.fu @3:9:
+_0.fu @3:9:
 	Unused variable: `b`: make it `lax` if this is intentional.
 -----
 
@@ -6893,13 +6921,58 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn main()
+        {
+            mut target = 0;
+            fn __solveStruct(mut arg: i32): i32 {
+                ref o = GET_mut(arg); o += target;
+                return target;
+            }
+
+            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));
+            return __solveStruct(0) - 2;
+        }
+
+-----
+
+static int& __solveStruct(int, int&);
+
+#ifndef FU_NO_FDEFs
+
+static int& GET_mut(int& x, int& target)
+{
+    return x ? x : (target = __solveStruct(int((target += 1)), target));
+}
+
+static int& __solveStruct(int arg, int& target)
+{
+    int& o = GET_mut(arg, target);
+    o += target;
+    return target;
+}
+
+int fu_MAIN()
+{
+    int target = 0;
+    return __solveStruct(0, target) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+
+-----
+
         fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || //*F
                               a = A(incr(a))    /*/         // Lint should complain here,
                              (a = A(incr(a))); //*/         //  this was an honest mistake.
         fn main() { mut v = 0; return A(v) - 1; }
 -----
-/home/tuti/fu/__tests__/_0.fu @4:33..6:9:
+_0.fu @4:33..6:9:
 	Unparenthesized `or` on the left side of an `=`.
 -----
 
@@ -7043,14 +7116,14 @@ static int& arg(int& __arg)
     return __arg;
 }
 
-inline static int& each_D53Q(int& cond, int, int& __arg, const int x)
+inline static int& each_mAc5(int& cond, int, int& __arg, const int x)
 {
     return !cond ? cond : (arg(__arg) += x);
 }
 
 static int& __solveStruct(const int x, int& __arg)
 {
-    return each_D53Q(arg(__arg), 0, __arg, x);
+    return each_mAc5(arg(__arg), 0, __arg, x);
 }
 
 int fu_MAIN()
@@ -7095,7 +7168,7 @@ static int __solveStruct(int, int, int&);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& each_4rxG(int& cond, int, int& arg, const int x)
+inline static int& each_I4AC(int& cond, int, int& arg, const int x)
 {
     return !cond ? cond : (arg += x);
 }
@@ -7112,7 +7185,7 @@ static void checkRecursions(int& o, const int incr, int& target)
 
 static int __solveStruct(int arg, const int x, int& target)
 {
-    each_4rxG(arg, 0, arg, x);
+    each_I4AC(arg, 0, arg, x);
     if (arg)
     {
         int& o = GET_mut(arg, target);
@@ -7231,7 +7304,7 @@ int main() { return fu_MAIN(); }
             return setSpec("hey").len - 2;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @21:21:
+_0.fu @21:21:
 	`GET` bad args.
 Expect: GET(
 	target: 1:$2Target: ref copy trivial)
@@ -7391,9 +7464,9 @@ struct s_ScopeSkip
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_each_tqHt
-                                #define DEFt_each_tqHt
-inline void each_tqHt(fu::view<int> items, fu::view<s_ScopeSkip> scope_skip, int, const int start, int& sum)
+                                #ifndef DEFt_each_yrhS
+                                #define DEFt_each_yrhS
+inline void each_yrhS(fu::view<int> items, fu::view<s_ScopeSkip> scope_skip, int, const int start, int& sum)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -7418,7 +7491,7 @@ int test(fu::view<int> items)
 {
     int sum = 0;
     fu_VEC<s_ScopeSkip> ss {};
-    each_tqHt(items, ss, 0, sum, sum);
+    each_yrhS(items, ss, 0, sum, sum);
     return sum;
 }
 
@@ -7572,10 +7645,23 @@ static const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 -----
 #include <cstdint>
 #include <fu/str.h>
-#include <fu/vec/find.h>
 #include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_has_qVFp
+                                #define DEFt_has_qVFp
+inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
 
                                 #ifndef DEFt_lex_YeU3
                                 #define DEFt_lex_YeU3
@@ -7586,7 +7672,7 @@ inline int lex_YeU3(fu::view<std::byte> src)
     while (idx < end)
     {
         const std::byte c = src[idx++];
-        if (fu::has(OPTOKENS, c))
+        if (has_qVFp(OPTOKENS, c))
             return idx - 1;
 
     };
@@ -7623,7 +7709,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_bcyN(fu::view<int> a, int, const int start, int& sum)
+inline static void each_bajh(fu::view<int> a, int, const int start, int& sum)
 {
     for (int i = start; i < a.size(); i++)
     {
@@ -7636,7 +7722,7 @@ int fu_MAIN()
 {
     int sum = 0;
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<3> { 1, 2, 3 } };
-    each_bcyN(a, 0, sum, sum);
+    each_bajh(a, 0, sum, sum);
     return sum - 6;
 }
 
@@ -8182,6 +8268,65 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct S { i: i32; };
+
+        fn hello(ref s: S, w: i32) {
+            infix fn |=(ref s: S, v: i32)
+                s.i |= v << w;
+
+            s |= 2;
+        }
+
+        fn main() {
+            mut s = 1.S;
+            s.hello(3);
+            return s.i - 17;
+        }
+
+-----
+
+struct s_S;
+
+                                #ifndef DEF_s_S
+                                #define DEF_s_S
+struct s_S
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int& bM7bN3(s_S& s_1, const int v, const int w)
+{
+    return (s_1.i |= (v << w));
+}
+
+static void hello(s_S& s, const int w)
+{
+    bM7bN3(s, 2, w);
+}
+
+int fu_MAIN()
+{
+    s_S s = s_S { 1 };
+    hello(s, 3);
+    return s.i - 17;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn lex(src: string) {
             let end = src.len;
             mut idx = 0;
@@ -8479,9 +8624,9 @@ int main() { return fu_MAIN(); }
 
         return hey(0);
 -----
-/home/tuti/fu/__tests__/_0.fu @15:13:
+_0.fu @15:13:
 	`=` bad args.
-Expect: =(
+Expect: (
 	a: $,
 	b: $)
 Actual: (
@@ -8801,7 +8946,7 @@ int main() { return fu_MAIN(); }
             //*/
                 .end - 1;
 -----
-/home/tuti/fu/__tests__/_0.fu @12:13:
+_0.fu @12:13:
 	`ScopeSkip` bad args.
 Expect: ScopeSkip(
 	start: i32: copy trivial primitive arithmetic integral signed,
@@ -9356,7 +9501,7 @@ static void walk(s_Node& node_1, const fu_STR& a, const fu_STR& b)
     };
 }
 
-inline static s_Node astReplace_YQ1M(const s_Node& node, int, const fu_STR& a, const fu_STR& b)
+inline static s_Node astReplace_LMjz(const s_Node& node, int, const fu_STR& a, const fu_STR& b)
 {
     s_Node node_1 { node };
     walk(node_1, a, b);
@@ -9365,7 +9510,7 @@ inline static s_Node astReplace_YQ1M(const s_Node& node, int, const fu_STR& a, c
 
 static s_Node test(const s_Node& n, const fu_STR& a, const fu_STR& b)
 {
-    return astReplace_YQ1M(n, 0, a, b);
+    return astReplace_LMjz(n, 0, a, b);
 }
 
 int fu_MAIN()
@@ -10033,7 +10178,7 @@ int main() { return fu_MAIN(); }
             return b.x - a.x * 2;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @10:13:
+_0.fu @10:13:
 	Needs an explicit STEAL or CLONE.
 -----
 
@@ -10642,21 +10787,34 @@ int main() { return fu_MAIN(); }
 #include <fu/default.h>
 #include <fu/never.h>
 #include <fu/str.h>
-#include <fu/vec/find.h>
 #include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_find_qVFp
+                                #define DEFt_find_qVFp
+inline int find_qVFp(fu::view<std::byte> a, const std::byte b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
 static int compile_snippets(fu::view<std::byte> x)
 {
     int _0 {};
-    return !(_0 = fu::lfind(x, std::byte('a'), 0)) ? _0 : fu::fail("throw#1"_fu);
+    return !(_0 = find_qVFp(x, std::byte('a'))) ? _0 : fu::fail("throw#1"_fu);
 }
 
 static int ZERO(fu::view<std::byte> x)
 {
     int _0 {};
-    return !(_0 = fu::lfind(x, std::byte('b'), 0)) ? _0 : fu::fail("throw#2"_fu);
+    return !(_0 = find_qVFp(x, std::byte('b'))) ? _0 : fu::fail("throw#2"_fu);
 }
 
 static fu_STR FAIL(fu::view<std::byte> x)
@@ -10987,7 +11145,7 @@ static int visit(const int item, int& x)
     return x++;
 }
 
-inline static int apply_FmCS(int, const int v, int& x)
+inline static int apply_wNZW(int, const int v, int& x)
 {
     return visit(v, x);
 }
@@ -10997,7 +11155,7 @@ static void scope_using(const int via, int& x)
     if (x)
         fu::fail("this reports return t_never"_fu);
 
-    apply_FmCS(0, via, x);
+    apply_wNZW(0, via, x);
 }
 
 int fu_MAIN()
@@ -12424,6 +12582,68 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        // When we spec find(), the second arg is a view, not an array, so the $T specs to a less than array:
+        //  next thing that happens is that the first argument, which is $T[] specs to an array of views except they're not even refs for some reason.
+        //   so then we try to use the spec but quals matching doesn't descend through the type cannon, so they mismatch with:
+        //
+        // First arg of find(), the $T[] to search:
+        //
+        // ACTUAL CANON: []+1028[]+28byte
+        //                        ^^^^^^^ of bytes
+        //                 ^^^^^^^ of arrays (resize + copy)
+        //               ^^ view of
+        //
+        // EXPECT CANON: [][]+28byte
+        //                   ^^^^^^^ of bytes
+        //                 ^^ not a view (not a ref), nor an array - no resize/copy
+        //               ^^ view of
+        //
+        let NOTES = [ "AAA", "BBB", "CCC" ];
+        fn what(annot: string) NOTES.find(annot[1, annot.len]);
+        fn main() what("!BBB") - 1;
+
+-----
+#include <cstdint>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "AAA"_fu, "BBB"_fu, "CCC"_fu } };
+
+                                #ifndef DEFt_find_8G5Q
+                                #define DEFt_find_8G5Q
+inline int find_8G5Q(fu::view<fu_STR> a, fu::view<std::byte> b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+static int what(fu::view<std::byte> annot)
+{
+    return find_8G5Q(NOTES, fu::get_view(annot, 1, annot.size()));
+}
+
+int fu_MAIN()
+{
+    return what("!BBB"_fu) - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct Hey { i: i32; }
 
         fn main() {
@@ -12563,7 +12783,7 @@ int main() { return fu_MAIN(); }
 
         return Test(b: 1).a;
 -----
-/home/tuti/fu/__tests__/_0.fu @14:16:
+_0.fu @14:16:
 	`Test` expects at least 2 arguments, 1 provided.
 Expect: Test(
 	a: i32: copy trivial primitive arithmetic integral signed,
@@ -12626,7 +12846,7 @@ int main() { return fu_MAIN(); }
 
         return Test(1).a;
 -----
-/home/tuti/fu/__tests__/_0.fu @14:16:
+_0.fu @14:16:
 	`Test` expects at least 2 arguments, 1 provided.
 Expect: Test(
 	b: i32: copy trivial primitive arithmetic integral signed,
@@ -12776,7 +12996,7 @@ int main() { return fu_MAIN(); }
         return test(-2, b: +2);
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @7:9:
+_0.fu @7:9:
 	`test` bad args.
 Expect: test(
 	a: i32: ref copy trivial primitive arithmetic integral signed,
@@ -12822,7 +13042,7 @@ int main() { return fu_MAIN(); }
         return Test(-2, b: +2).test;
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @8:16:
+_0.fu @8:16:
 	`Test` bad args.
 Expect: Test(
 	a: i32: copy trivial primitive arithmetic integral signed,
@@ -12887,7 +13107,7 @@ int main() { return fu_MAIN(); }
         return Test(b: +2).test - 2;
         //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @8:16:
+_0.fu @8:16:
 	`Test` bad args.
 Expect: Test(
 	a?: i32: copy trivial primitive arithmetic integral signed,
@@ -13019,7 +13239,7 @@ int main() { return fu_MAIN(); }
                                 // ----------------------
                                      - 133310;
 -----
-/home/tuti/fu/__tests__/_0.fu @10:19:
+_0.fu @10:19:
 	`a2o1` bad args.
 Expect: a2o1(
 	a: i32: ref copy trivial primitive arithmetic integral signed,
@@ -13100,9 +13320,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_reveach_jEDG
-                                #define DEFt_reveach_jEDG
-inline void reveach_jEDG(fu::view<int> items, int, int& sum)
+                                #ifndef DEFt_reveach_kJRA
+                                #define DEFt_reveach_kJRA
+inline void reveach_kJRA(fu::view<int> items, int, int& sum)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -13112,9 +13332,9 @@ inline void reveach_jEDG(fu::view<int> items, int, int& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_reveach_yNHy
-                                #define DEFt_reveach_yNHy
-inline void reveach_yNHy(fu::view<int> items, int, int& sum)
+                                #ifndef DEFt_reveach_Lyav
+                                #define DEFt_reveach_Lyav
+inline void reveach_Lyav(fu::view<int> items, int, int& sum)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -13127,8 +13347,8 @@ inline void reveach_yNHy(fu::view<int> items, int, int& sum)
 int fu_MAIN()
 {
     int sum = 0;
-    reveach_jEDG((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
-    reveach_yNHy((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
+    reveach_kJRA((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
+    reveach_Lyav((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
     return sum - 806;
 }
 
@@ -13151,7 +13371,7 @@ int main() { return fu_MAIN(); }
             return (ret - 100).i32 - 27;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13197,7 +13417,7 @@ int main() { return fu_MAIN(); }
             return (ret - 32700).i32 - 67;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13242,7 +13462,7 @@ int main() { return fu_MAIN(); }
             return (ret - 2147483600).i32 - 47;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13287,7 +13507,7 @@ int main() { return fu_MAIN(); }
             return (ret - 9223372036854775800).i32 - 7;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Bad int literal.
 -----
 
@@ -13333,7 +13553,7 @@ int main() { return fu_MAIN(); }
             return (ret + 100).i32 + 28;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13379,7 +13599,7 @@ int main() { return fu_MAIN(); }
             return (ret + 32700).i32 + 68;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13424,7 +13644,7 @@ int main() { return fu_MAIN(); }
             return (ret + 2147483600).i32 + 48;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13469,7 +13689,7 @@ int main() { return fu_MAIN(); }
             return (ret + 9223372036854775800).i32 + 8;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Oversized signed int literal.
 -----
 
@@ -13515,7 +13735,7 @@ int main() { return fu_MAIN(); }
             return (ret - 0xff).i32;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: u8: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13561,7 +13781,7 @@ int main() { return fu_MAIN(); }
             return (ret - 0xffff).i32;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: u16: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13607,7 +13827,7 @@ int main() { return fu_MAIN(); }
             return (ret - 0xffffffff).i32;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Type annotation does not match init expression `ret`: u32: copy trivial primitive arithmetic integral unsigned=i64: copy trivial primitive arithmetic integral signed
 -----
 
@@ -13652,7 +13872,7 @@ int main() { return fu_MAIN(); }
             return (ret - 0xffffffffffffffff).i32;
         }
 -----
-/home/tuti/fu/__tests__/_0.fu @3:13:
+_0.fu @3:13:
 	Integer literal overflows a u64.
 -----
 
@@ -13736,6 +13956,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub fn noop() {} // AUTOPUB
         //*F
         /*/
         pub
@@ -13744,10 +13965,11 @@ int main() { return fu_MAIN(); }
         import _0;
         fn main() 6 - hello * 2;
 -----
-/home/tuti/fu/__tests__/_1.fu @3:23:
+_1.fu @3:23:
 	`hello` is not defined in this scope: `main`.
 -----
 
+        pub fn noop() {} // AUTOPUB
         /*
         /*/
         pub
@@ -13758,6 +13980,10 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
+void noop()
+{
+}
+
 int hello()
 {
     return 3;
@@ -13767,6 +13993,7 @@ int hello()
 
 -----
 
+        pub fn noop() {} // AUTOPUB
         /*
         /*/
         pub
@@ -15750,7 +15977,7 @@ int main() { return fu_MAIN(); }
 
         fn main() 0.hello;
 -----
-/home/tuti/fu/__tests__/_0.fu @4:17:
+_0.fu @4:17:
 	Non-void returning fn missing a final return.
 -----
 
@@ -15877,7 +16104,7 @@ int main() { return fu_MAIN(); }
 
         fn main() test ? 0 : 7;
 -----
-/home/tuti/fu/__tests__/_0.fu @22:14..26:18:
+_0.fu @22:14..26:18:
 	Here the unary -/+ separates from the numeric literal, and wraps around the whole expression. Please parenthesize explicitly to make this obvious.
 -----
 
@@ -16186,12 +16413,12 @@ int main() { return fu_MAIN(); }
             //*/
         fn main() i8(-1).test(+1);
 -----
-/home/tuti/fu/__tests__/_0.fu @2:9:
+_0.fu @2:9:
 	`+` bad args, available overloads:
-		+(
+		(
 	a: $,
 	b: $)
-		+(
+		(
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed,
@@ -16387,7 +16614,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_jEDG(fu::view<int> items, int, int& i)
+inline static void each_kJRA(fu::view<int> items, int, int& i)
 {
     for (int i_1 = 0; i_1 < items.size(); i_1++)
     {
@@ -16399,7 +16626,7 @@ inline static void each_jEDG(fu::view<int> items, int, int& i)
 int fu_MAIN()
 {
     int i = 0;
-    each_jEDG((fu::slate<2, int> { 1, 2 }), 0, i);
+    each_kJRA((fu::slate<2, int> { 1, 2 }), 0, i);
     return i - 3;
 }
 
@@ -16434,14 +16661,14 @@ static void makeDirty(const int parent_idx, int& sum)
     sum += parent_idx;
 }
 
-inline static void each_uae5(int, const int parent_idx, int& sum)
+inline static void each_Mmc6(int, const int parent_idx, int& sum)
 {
     makeDirty(parent_idx, sum);
 }
 
 static void FnDecl_update(const int parent_idx, int& sum)
 {
-    each_uae5(0, parent_idx, sum);
+    each_Mmc6(0, parent_idx, sum);
 }
 
 int fu_MAIN()
@@ -17331,14 +17558,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_sqbD(int, const int depth1)
+inline static int identity_FE0s(int, const int depth1)
 {
     return depth1;
 }
 
 inline static int outer_U3Pf(const int depth1)
 {
-    return identity_sqbD(0, depth1);
+    return identity_FE0s(0, depth1);
 }
 
 int fu_MAIN()
@@ -17367,19 +17594,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_kdxo(int, const int depth0)
+inline static int identity_VSHQ(int, const int depth0)
 {
     return depth0;
 }
 
-inline static int outer_sqbD(int, const int depth0)
+inline static int outer_uae5(int, const int depth0)
 {
-    return identity_kdxo(0, depth0);
+    return identity_VSHQ(0, depth0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    return outer_sqbD(0, depth0);
+    return outer_uae5(0, depth0);
 }
 
 int fu_MAIN()
@@ -17410,24 +17637,24 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_7hgM(int, const int depth0)
+inline static int identity_lY2z(int, const int depth0)
 {
     return depth0;
 }
 
-inline static int inner_cj0H(int, const int depth0)
+inline static int inner_U8wp(int, const int depth0)
 {
-    return identity_7hgM(0, depth0);
+    return identity_lY2z(0, depth0);
 }
 
-inline static int outer_sqbD(int, const int depth0)
+inline static int outer_uae5(int, const int depth0)
 {
-    return inner_cj0H(0, depth0);
+    return inner_U8wp(0, depth0);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
-    return outer_sqbD(0, depth0);
+    return outer_uae5(0, depth0);
 }
 
 int fu_MAIN()
@@ -17474,34 +17701,34 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int first_inner_Ma3U(int, const int depth0, const int sum, const int sum_1)
+inline static int first_inner_Do1r(int, const int depth0, const int sum, const int sum_1)
 {
     const int sum_2 = ((depth0 + sum) + sum_1);
     return sum_2;
 }
 
-inline static int first_i5k8(int, const int depth0, const int sum)
+inline static int first_hrzv(int, const int depth0, const int sum)
 {
     const int sum_1 = (depth0 + sum);
-    return first_inner_Ma3U(0, depth0, sum, sum_1);
+    return first_inner_Do1r(0, depth0, sum, sum_1);
 }
 
-inline static int second_inner_nNg1(int, const int depth0, const int sum, const int sum_1)
+inline static int second_inner_2zoy(int, const int depth0, const int sum, const int sum_1)
 {
     const int sum_2 = ((depth0 + sum) + sum_1);
-    return sum_2 + first_i5k8(0, depth0, sum_2);
+    return sum_2 + first_hrzv(0, depth0, sum_2);
 }
 
-inline static int second_XNBG(int, const int depth0, const int sum)
+inline static int second_U8wp(int, const int depth0, const int sum)
 {
     const int sum_1 = (depth0 + sum);
-    return second_inner_nNg1(0, depth0, sum, sum_1);
+    return second_inner_2zoy(0, depth0, sum, sum_1);
 }
 
 inline static int test_U3Pf(const int depth0)
 {
     const int sum = (depth0 + depth0);
-    return second_XNBG(0, depth0, sum);
+    return second_U8wp(0, depth0, sum);
 }
 
 int fu_MAIN()
@@ -17681,12 +17908,12 @@ int main() { return fu_MAIN(); }
         fn main() 1.fB.hey - 1.u32.fB.hey //*F
             ; /*/ .i32; //*/
 -----
-/home/tuti/fu/__tests__/_0.fu @5:9:
+_0.fu @5:9:
 	`-` bad args, available overloads:
-		-(
+		(
 	a: $,
 	b: $)
-		-(
+		(
 	a: $)
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
@@ -18167,7 +18394,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop1d_GBxW(const int i0, const int i1, int, int& x)
+inline static void loop1d_B7Rx(const int i0, const int i1, int, int& x)
 {
     for (int i = i0; i < i1; i++)
     {
@@ -18180,7 +18407,7 @@ inline static void loop1d_GBxW(const int i0, const int i1, int, int& x)
 int fu_MAIN()
 {
     int x = 0;
-    loop1d_GBxW(0, 10, 0, x);
+    loop1d_B7Rx(0, 10, 0, x);
     return x - 1;
 }
 
@@ -18255,7 +18482,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_CSvR(const int x0, const int x1, const int y0, const int y1, int, int& sum)
+inline static void loop2d_11kI(const int x0, const int x1, const int y0, const int y1, int, int& sum)
 {
     for (int y = y0; y < y1; y++)
     {
@@ -18277,7 +18504,7 @@ inline static void loop2d_CSvR(const int x0, const int x1, const int y0, const i
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_CSvR(0, 10, 10, 12, 0, sum);
+    loop2d_11kI(0, 10, 10, 12, 0, sum);
     return sum - 21;
 }
 
@@ -18318,7 +18545,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_jyEs(const int x0, const int x1, const int y0, const int y1, int, int& sum)
+inline static void loop2d_CSvR(const int x0, const int x1, const int y0, const int y1, int, int& sum)
 {
     for (int i = y0; i < y1; i++)
     {
@@ -18340,7 +18567,7 @@ inline static void loop2d_jyEs(const int x0, const int x1, const int y0, const i
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_jyEs(0, 10, 10, 12, 0, sum);
+    loop2d_CSvR(0, 10, 10, 12, 0, sum);
     return sum - 21;
 }
 
