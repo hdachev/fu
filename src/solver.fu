@@ -170,10 +170,10 @@ pub fn solve(
         _Scope_import__forceCopy(modid, :private);
     }
 
-    fn GET(target: Target)
+    using fn GET(target: Target)
     {
         if (target.modid < 0)
-            return _scope.overloads[-target.modid - 1].locals[target.index - 1];
+            return _scope.extended[-target.modid - 1].locals[target.index - 1];
 
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
@@ -191,7 +191,7 @@ pub fn solve(
     fn GET_mut(target: Target)
     {
         if (target.modid < 0)
-            return _scope.overloads[-target.modid - 1].locals[target.index - 1];
+            return _scope.extended[-target.modid - 1].locals[target.index - 1];
 
         target.index > 0 && target.modid == MODID || assert();
         return _scope.overloads[target.index - 1];
@@ -202,13 +202,28 @@ pub fn solve(
         return GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index));
     }
 
+    using fn EXT(target: Target)
+    {
+        if (target.modid == module.modid)
+            return _scope.extended.grow_if_oob(target.index - 1);
+
+        return target.modid >= 0
+            && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index - 1);
+    }
+
+    fn EXT_mut(target: Target)
+    {
+        target.modid == module.modid || assert();
+        return _scope.extended.grow_if_oob(target.index - 1);
+    }
+
 
     //
 
     using fn SolvedNodeData(nid: SolvedNode)
     {
         return nid.nodeown
-            && GET(nid.nodeown).nodes[nid.nodeidx];
+            && nid.nodeown.nodes[nid.nodeidx];
     }
 
     fn MUT(nid: SolvedNode)
@@ -220,7 +235,7 @@ pub fn solve(
             return MUT(t) = SolvedNodeData(nid);
         }
 
-        return GET_mut(nid.nodeown).nodes[nid.nodeidx];
+        return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
     }
 
     fn isFnOrType(h: Helpers): bool
@@ -240,7 +255,7 @@ pub fn solve(
 
         let nodeown = _current_fn_or_type;
 
-        ref nodes   = GET_mut(nodeown).nodes;
+        ref nodes   = nodeown.EXT_mut.nodes;
         let nodeidx = nodes.len;
         nodes      ~= data;
 
@@ -272,9 +287,7 @@ pub fn solve(
                 {
                     res && fail("Ambiguous __native lifetime.");
 
-                    let arg = args[i];
-                    let o = GET(arg.target);
-                    res = o.type;
+                    res = args[i].target.type;
                     res.lifetime || fail("Missing arg lifetime.");
                 }
             }
@@ -651,16 +664,16 @@ pub fn solve(
         return true;
     }
 
-    fn findRestStart(overload: Overload)
+    fn findRestStart(ext: Extended)
     {
-        for (mut i = overload.args.len; i --> 0; )
+        for (mut i = ext.args.len; i --> 0; )
         {
-            let arg = overload.args[i];
+            let arg = ext.args[i];
             if  (arg.flags & F_REST_ARG) return i;
             if !(arg.flags & F_IMPLICIT) break;
         }
 
-        return overload.args.len;
+        return ext.args.len;
     }
 
     fn tryMatch__mutargs(
@@ -816,15 +829,16 @@ pub fn solve(
                     ////////////////////////////////////////////
 
                     // Arity check.
+                    let arity = overloadIdx.EXT;
                     let isZeroInit = isType && !explicitArity;
                     if (!isZeroInit)
-                        if (overload.max < minArity || overload.min > maxArity)
+                        if (arity.max < minArity || arity.min > maxArity)
                             continue :NEXT;
 
                     // Reorder by argument names or number of implicit `using` args.
-                    let host_args   = overload.args;
-                    let num_usings  = !isZeroInit && overload.min > explicitArity
-                                    && overload.min - explicitArity;
+                    let host_args   = arity.args;
+                    let num_usings  = !isZeroInit && arity.min > explicitArity
+                                    && arity.min - explicitArity;
 
                     mut use_reorder = false;
                     if (!names)
@@ -836,7 +850,7 @@ pub fn solve(
                     //  We should either have all optional args satisfied at the receiver or sender part,
                     //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
                     if (optional && reorder)
-                        if (reorder.len < args.len && reorder.len < overload.max)
+                        if (reorder.len < args.len && reorder.len < arity.max)
                             continue :NEXT; // TODO NICE ERROR HERE
 
                     fn disambig()
@@ -876,10 +890,10 @@ pub fn solve(
                     }
 
                     mut REST_TYPE: Type;
-                    let REST_START = overload.findRestStart();
+                    let REST_START = arity.findRestStart();
 
                     let N = (use_reorder ? reorder.len : args.len)
-                        .max(!isZeroInit && overload.min);
+                        .max(!isZeroInit && arity.min);
 
                     if (N)
                     {
@@ -1342,7 +1356,7 @@ pub fn solve(
         mut max = 0;
         for (mut i = 0; i < overloads.len; i++)
         {
-            let o = GET(overloads[i]);
+            let o = overloads[i];
             if (min > o.min) min = o.min;
             if (max < o.max) max = o.max;
         }
@@ -1360,7 +1374,7 @@ pub fn solve(
                 else
                     result ~= ".\nExpect: ";
 
-                let overload = GET(targets[i]);
+                let overload = targets[i];
 
                 result ~= overload.name ~ "(";
 
@@ -1500,7 +1514,7 @@ pub fn solve(
 
         //
         let k = node.kind;
-        let t = node.target;
+        mut t = node.target; // TODO BORROWCK danglefix
         if (k == "let")
         {
             let init = node.items[LET_INIT];
@@ -1517,8 +1531,7 @@ pub fn solve(
 
         if (k == "call")
         {
-            let o = GET(t);
-            if (o.kind == "field")
+            if (t.kind == "field")
                 return node.items[0].propagateType(node.type);
 
             // TODO if/and/or, easy.
@@ -1528,9 +1541,9 @@ pub fn solve(
             //   we're basically just going back and redoing things,
             //    and we don't have the original shit to work with.
             //
-            if (o.spec_of && o.type.is_ref)
+            if (t.spec_of && t.type.is_ref)
             {
-                let argLets = o.arg_lets;
+                let argLets = t.arg_lets;
 
                 mut relaxed: SolvedNode[];
                 for (mut i = 0; i < node.items.len; i++)
@@ -1552,7 +1565,7 @@ pub fn solve(
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (o.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(argLets[i].target.index)))
+                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(argLets[i].target.index)))
                     {
                         mut type = orig.type;
                         if (type.try_relax(:slot))
@@ -1573,11 +1586,11 @@ pub fn solve(
                 {
                     mut args_mangled: string;
                     let spec = trySpecialize(
-                        o.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
+                        t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
 
-                    if (spec && !(spec == o.spec_of))
+                    if (spec && !(spec == t.spec_of))
                     {
-                        mut o1 = GET(spec);
+                        let o1 = GET(spec);
                         if (!o1.type.isAssignable(host: node.type))
                             fail("What is this.");
 
@@ -1600,7 +1613,7 @@ pub fn solve(
                             let next = relaxed[i];
                             if (next.kind == "__relaxed")
                             {
-                                // println("RELAX `" ~ o.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
+                                // println("RELAX `" ~ t.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
                                 orig.propagateType(next.type);
                             }
                         }
@@ -1965,12 +1978,15 @@ pub fn solve(
         }
 
         //
-        let template = createTemplate(node);
-
         let tDecl = Scope_create(_scope,
             kind: "template",
-            :min, :max, :args, :template,
             :node.flags, :local_of, :status);
+
+        ref ext = tDecl.EXT_mut;
+        ext.min = min;
+        ext.max = max;
+        ext.args = args;
+        ext.template = createTemplate(node);
 
         Scope_set(_scope, target: tDecl, :id, shadows: !!(node.flags & F_SHADOW));
 
@@ -1985,7 +2001,7 @@ pub fn solve(
 
     fn uPrepFn_B(target: Target)
     {
-        ref template = GET_mut(target).template;
+        ref template = target.EXT_mut.template;
         if (template.scope_memo)
             template.scope_memo = Scope_snap(_scope);
     }
@@ -2171,7 +2187,7 @@ pub fn solve(
         let SPECFAIL = Target(modid: 2147483647, index: 0);
 
         //
-        let original = GET(overloadIdx || into || fail());
+        let original = overloadIdx || into || fail();
         mut template = original.template;
 
         mut parent_idx = original.local_of;
@@ -2469,13 +2485,13 @@ pub fn solve(
             // Populate scope.
             mut mangle0 = mangle; //REF2MUTREF
 
-            let extra_items = into
-                ? original.extra_items
-                : typeParams.intoScopeItems();
-
             // Prep reject.
             target = into || Scope_create(_scope, local_of: parent_idx,
-                status: SS_DID_START | SS_LAZY, :extra_items);
+                status: SS_DID_START | SS_LAZY);
+
+            let extra_items = into
+                ? original.extra_items
+                : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
 
             mut current_fn_or_type0     = _current_fn_or_type;
             defer _current_fn_or_type   = current_fn_or_type0;
@@ -2488,7 +2504,7 @@ pub fn solve(
 
             // Go!
             {
-                ref o = GET_mut(target);
+                ref o = EXT_mut(target);
                 o.locals.clear();
                 o.nodes.clear();
             }
@@ -2531,7 +2547,7 @@ pub fn solve(
                             let o = GET(m.target);
                             o.kind == "type"/* && o.max == 0*/ || fail(
                                 "tryGetArgSpecType: Not a typeparam: `"
-                                    ~ o.kind ~ ":" ~ param ~ "(" ~ o.max ~ ")`.");
+                                    ~ o.kind ~ ":" ~ param ~ "(" ~ m.target.max ~ ")`.");
 
                             return o.type;
                         }
@@ -2616,17 +2632,19 @@ pub fn solve(
 
                 // Unconditionally replacing the stuff.
                 ref overload    = GET_mut(target);
+                ref ext         = target.EXT_mut;
+
                 mut change      = false;
 
                 if (overload.callsites)
                 {
-                    change = args.len != overload.args.len
+                    change = args.len != ext.args.len
                         || !(overload.type == retval);
 
                     if (!change) for (mut i = 0; i < args.len; i++)
                     {
                         let a = args[i];
-                        let b = overload.args[i];
+                        let b = ext.args[i];
                         if !(a.name == b.name && a.type == b.type)
                         {
                             change = true;
@@ -2635,9 +2653,9 @@ pub fn solve(
                     }
                 }
 
-                overload.min    = min;
-                overload.max    = max;
-                overload.args   = args;
+                ext.min     = min;
+                ext.max     = max;
+                ext.args    = args;
 
                 overload.type   = retval;
                 if (isInline)
@@ -2685,8 +2703,10 @@ pub fn solve(
                     ref overload        = GET_mut(target);
                     overload.name       = HACK_nativeNameParts || name;
                     overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
-                    overload.template   = template;
-                    overload.spec_of    = overloadIdx;
+
+                    ref ext             = target.EXT_mut;
+                    ext.template        = template;
+                    ext.spec_of         = overloadIdx;
                 }
 
                 updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed);
@@ -2696,7 +2716,7 @@ pub fn solve(
                 {
                     let start   = mangle0.find(' ') + 1 || fail();
                     mangle      = mangle0.slice(0, start)
-                                ~ mangleArguments(GET(target).args);
+                                ~ mangleArguments(target.args);
 
                     mut preexisting: Target;
                     if (mangle0 != mangle)
@@ -2806,15 +2826,15 @@ pub fn solve(
 
         if (!out.target)
         {
-            let template = createTemplate(:node);
-
             shadow ref out = out.MUT;
 
             out.type && assert();
             out.type = initStruct(:name, :node.flags, :SELF_TEST);
             out.target = Scope_Typedef(_scope, id: origId, :name,
-                :out.type, :node.flags, :template,
+                :out.type, :node.flags,
                 status: SS_LAZY);
+
+            out.target.EXT_mut.template = createTemplate(:node);
         }
 
         if (!solve)
@@ -2870,7 +2890,12 @@ pub fn solve(
                     let id = node.items[i].value;
                     let target = Scope_create(
                         _scope, "field", name: id || fail(),
-                        min: 1, max: 1, flags: F_PUB, :args);
+                        flags: F_PUB);
+
+                    ref ext     = EXT_mut(target);
+                    ext.args    = args;
+                    ext.min     = 1;
+                    ext.max     = 1;
 
                     Scope_set(innerScope, :id, :target, shadows: false);
                 }
@@ -2958,9 +2983,11 @@ pub fn solve(
             if (max && !min) min++;
 
             ref overload    = GET_mut(out.target);
-            overload.min    = min;
-            overload.max    = max;
-            overload.args   = args;
+            ref ext         = EXT_mut(out.target);
+
+            ext.min         = min;
+            ext.max         = max;
+            ext.args        = args;
             overload.type   = out.type;
 
             if (CHANGE && overload.callsites)
@@ -2991,7 +3018,7 @@ pub fn solve(
             if (o.kind == "template" || o.kind == "fn")
                 doTrySpecialize(into: target);
             else if (o.kind == "type")
-                __solveStruct(solve: true, :o.template.node, into: target);
+                __solveStruct(solve: true, :target.template.node, into: target);
             else
                 fail("lazySolveStart: kind is `" ~ o.kind ~ "`.");
         }
@@ -4089,14 +4116,13 @@ pub fn solve(
             for (mut i = 0; i < conversion.len; i++)
             {
                 let t = conversion[i];
-                let o = GET(t);
-                if (o.min || o.max && args[argIdx])
+                if (t.min || t.max && args[argIdx])
                 {
                     args[argIdx] = CallerNode("__using.a", t, [ args[argIdx] ]);
                     continue;
                 }
 
-                i && fail("Bad conversion chain, non-leading nullary: `" ~ o.name ~ "`.");
+                i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
                 args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
                 args[argIdx] = CallerNode("__using.b", t);
             }
@@ -4173,11 +4199,9 @@ pub fn solve(
 
     fn createLet(target: Target, flags: i32 = 0): SolvedNode
     {
-        let overload = GET(target);
-
         return SolvedNode(
             kind: "let", :flags,
-            value: overload.name, :overload.type, :target);
+            value: target.name, :target.type, :target);
     }
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
@@ -4446,10 +4470,8 @@ pub fn solve(
         mut target: Target, mut args: SolvedNode[] = [], kills?!: i32)
             : SolvedNode
     {
-        let overload = GET(target);
-
         // Rest params.
-        let REST_START = overload.findRestStart();
+        let REST_START = target.findRestStart();
         if (REST_START < args.len)
         {
             mut rest: SolvedNode[];
@@ -4467,11 +4489,11 @@ pub fn solve(
 
         // This was previously part of tryMatch,
         //  but we can just as easily do it here.
-        let isZeroInit = overload.kind == "type" && !args.len;
+        let isZeroInit = target.kind == "type" && !args.len;
         if (!isZeroInit)
         {
             // Defaults & implicit argument injection.
-            mut host_args = overload.args;
+            mut host_args = target.args;
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
@@ -4492,23 +4514,22 @@ pub fn solve(
             }
         }
 
-        shadow let overload = GET(target); // TODO BORROWCK danglefix
-        mut type = overload.type;
+        mut type = target.type;
 
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
-        if (overload.kind == "field")
+        if (target.kind == "field")
         {
-            type = add_refs(from: args.only.type || fail(), to: overload.type);
+            type = add_refs(from: args.only.type || fail(), to: target.type);
         }
 
         // So we're turning closeovers into implicit arguments -
         //  previously we tracked them separately but we're making everything more samey.
-        else if (overload.kind == "var")
+        else if (target.kind == "var")
         {
-            if (overload.local_of &&
-                overload.local_of != _current_fn.target.index)
+            if (target.local_of &&
+                target.local_of != _current_fn.target.index)
             {
                 // CLOSURE-ID-HACK
                 // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
@@ -4516,9 +4537,9 @@ pub fn solve(
                 //   there's a good test for it.
                 target = injectImplicitArg(
                     id:     hacks::ClosureID(
-                            hacks::tryParseClosureID(id: overload.name, :MODID) || target),
+                            hacks::tryParseClosureID(id: target.name, :MODID) || target),
 
-                    type:   overload.type, becauseOf: target);
+                    type:   target.type, becauseOf: target);
                 // CLOSURE-ID-HACK
 
                 type = GET(target).type || fail("CallerNode (var): !type");
@@ -4531,7 +4552,7 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
-                let host_args = overload.args || fail("CallerNode: no host args.");
+                let host_args = target.args || fail("CallerNode: no host args.");
                 host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
 
                 /////////////////
@@ -4559,18 +4580,14 @@ pub fn solve(
                         args[i] || fail(), host_args[i].type,
                         isArgument: true);
 
-                shadow let overload = GET(target); // TODO BORROWCK danglefix
-
                 if (type.is_ref)
                     type.lifetime = Lifetime_test(
-                        Lifetime_replaceArgsAtCallsite(overload, args),
+                        Lifetime_replaceArgsAtCallsite(target, args),
                         tempsOK: true);
             }
 
-            shadow let overload = GET(target); // TODO BORROWCK danglefix
-
             // Inliner.
-            if (overload.kind == "inline")
+            if (target.kind == "inline")
             {
                 let scope0 = Scope_snap(_scope);
                 mut ss0 = _ss; //REF2MUTREF
@@ -4583,21 +4600,24 @@ pub fn solve(
                         _helpers.last.vars.shrink(helpers0vars);
                 }
 
-                ScopeSkip_setup(:overload.template, :scope0, isInline: true);
-                _scope.items ~= overload.extra_items;
+                let template    = target.template;
+
+                ScopeSkip_setup(:template, :scope0, isInline: true);
+                _scope.items ~= target.extra_items;
 
                 //
-                let n_fn        = overload.template.node;
+                let n_fn        = template.node;
                 let n_body      = n_fn.items.last;
-                let ret_expect  = overload.type;
+                let ret_expect  = target.type;
+                let host_args   = target.args;
 
                 mut result: SolvedNode[];
-                overload.args.len == args.len || fail("inline: arglen mismatch");
+                host_args.len == args.len || fail("inline: arglen mismatch");
                 result.resize(args.len + 1);
 
                 for (mut i = 0; i < args.len; i++)
                 {
-                    let slot = overload.args[i];
+                    let slot = host_args[i];
                     result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
                         :slot.flags &~ F_ARG); // As if not an arg.
                 }

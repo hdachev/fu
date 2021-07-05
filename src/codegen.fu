@@ -85,7 +85,7 @@ pub fn cpp_codegen(
         target.index > 0 || assert();
 
         if (target.modid < 0)
-            return module.out.solve.scope.overloads[-target.modid - 1].locals[target.index - 1];
+            return module.out.solve.scope.extended[-target.modid - 1].locals[target.index - 1];
 
         let m = target.modid == module.modid
             ? module
@@ -99,10 +99,22 @@ pub fn cpp_codegen(
         return target && GET(target);
     }
 
+    fn EXT(target: Target)
+    {
+        if (target.modid == module.modid)
+            return module.out.solve.scope.extended.unless_oob(target.index - 1);
+
+        if (target.modid < 0)
+            return [];
+
+        return ctx.modules[target.modid]
+            .out.solve.scope.extended.unless_oob(target.index - 1);
+    }
+
     using fn SolvedNodeData(nid: SolvedNode)
     {
         return nid.nodeown
-            && GET(nid.nodeown).nodes[nid.nodeidx];
+            && nid.nodeown.EXT.nodes[nid.nodeidx];
     }
 
     fn fail(reason = "") throw(reason);
@@ -727,7 +739,8 @@ pub fn cpp_codegen(
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
 
-        let isOp    = overload.flags & F_OPERATOR && overload.args.len <= 2;
+        let args    = target.EXT.args;
+        let isOp    = overload.flags & F_OPERATOR && args.len <= 2;
 
         let name    = isOp ? "operator" ~ id.valid_operator : id.valid_identifier;
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
@@ -736,7 +749,6 @@ pub fn cpp_codegen(
 
         mut src = linkage ~ annot ~ " " ~ name ~ "(";
 
-        let args = overload.args;
         for (mut i = 0; i < args.len; i++)
         {
             if (i)
@@ -1176,6 +1188,7 @@ pub fn cpp_codegen(
 
     fn cgCall(node: SolvedNode, mode: i32): string
     {
+        let ext = node.target.EXT;
         let target = GET(node.target) || fail();
 
         mut _items: string[];
@@ -1188,7 +1201,7 @@ pub fn cpp_codegen(
                 if (i > start)
                     src ~= ", ";
 
-                src ~= cgNode(items[i], callarg: target.args[i].type);
+                src ~= cgNode(items[i], callarg: ext.args[i].type);
             }
 
             return src;

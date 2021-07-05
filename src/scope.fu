@@ -1,5 +1,6 @@
 import parser;
 import types;
+import helpers;
 
 pub let SS_LAZY         = 0x1 << 0;
 pub let SS_DID_START    = 0x1 << 1;
@@ -170,21 +171,10 @@ pub struct Overload
     type:           Type;
     flags:          i32;
 
-    // Arity.
-    min:            i32;
-    max:            i32;
-    args:           Argument[];
-
     // TODO move exotic bloat over to module,
     //  all trailers can fit in the same
     //   [ modid / thing ] slot here.
-    template:       Template;
     solved:         SolvedNode;
-    spec_of?:       Target;
-
-    // The new nodelists.
-    nodes?:         SolvedNodeData[];
-    locals?:        Overload[];
 
     // The new used_by.
     callsites?:     SolvedNode[];
@@ -194,6 +184,22 @@ pub struct Overload
 
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
     local_of?:      i32;
+};
+
+pub struct Extended
+{
+    // Arity.
+    min:            i32;
+    max:            i32;
+    args:           Argument[];
+
+    //
+    spec_of?:       Target;
+    template:       Template;
+
+    // The new nodelists.
+    nodes?:         SolvedNodeData[];
+    locals?:        Overload[];
 
     // What about this then?
     extra_items?:   ScopeItem[];
@@ -226,6 +232,8 @@ pub nocopy struct Scope
 {
     items:      ScopeItem[];
     overloads:  Overload[];
+    extended:   Extended[];
+
     imports:    i32[];
     usings:     Target[];
     converts:   Target[];
@@ -348,6 +356,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
     return Scope(
         items: result,
         :scope.overloads,
+        :scope.extended,
         :scope.converts,
         :pub_count,
         imports: no_imports,
@@ -522,17 +531,14 @@ pub fn Scope_create(
     scope: &mut Scope,
     kind = "_no_kind_yet_", name?!: string,
     type?: Type, flags?!: i32,
-    min?!: i32, max?!: i32, args?: Argument[],
     solved?: SolvedNode, local_of?!: i32,
     status?: u32,
-    extra_items?: ScopeItem[],
-    template?: Template,
 
     recycle?: i32,
     nest?: bool): Target
 {
     ref overloads = nest && local_of
-        ? scope.overloads[local_of - 1].locals
+        ? scope.extended.grow_if_oob(local_of - 1).locals
         : scope.overloads;
 
     let target = Target(
@@ -545,14 +551,10 @@ pub fn Scope_create(
     item.kind           = kind;
     item.flags          = flags;
     item.type           = type;
-    item.min            = min;
-    item.max            = max;
-    item.args           = args;
-    item.template       = template;
+
     item.solved         = solved;
     item.local_of       = local_of;
     item.status         = status;
-    item.extra_items    = extra_items;
 
     if (recycle)
         overloads[recycle - 1] = item;
@@ -572,10 +574,10 @@ pub fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: b
     items.push(ScopeItem( :id, :target, :shadows ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, template?: Template, name?: string,
+pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, name?: string,
     status?: u32)
 {
-    let target = Scope_create(:scope, "type", :type, :flags, :template, :name, :status);
+    let target = Scope_create(:scope, "type", :type, :flags, :name, :status);
 
     if (id)
         Scope_set(:scope, :id, :target, shadows: !!(flags & F_SHADOW));
