@@ -791,8 +791,7 @@ pub fn solve(
                 ref conversions_out = conversions;
                 shadow mut conversions: Target[][];
 
-                ref args_in = args;
-                shadow mut args = args;
+                shadow let args = args;
 
                 mut TODO_FIX_skip_autocalls = false;
                 ///////////////////////////////////
@@ -947,13 +946,11 @@ pub fn solve(
                                 mut autocall_conversions:   Target[][];
 
                                 autocall_args.resize(1);
-                                SWAP(args[callsiteIndex], autocall_args.only);
+                                autocall_args[0] = args[callsiteIndex];
 
                                 let t = tryMatch__mutargs(:scope, :local_scope, id: host_arg.autocall, args: autocall_args, conversions: autocall_conversions);
                                 if (!t)
                                     continue :NEXT;
-
-                                SWAP(args[callsiteIndex], autocall_args.only);
 
                                 if (autocall_conversions)
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
@@ -1073,7 +1070,7 @@ pub fn solve(
                     }
                     else
                     {
-                        SWAP(args, args_out);
+                        args_out = args;
                     }
 
                     // Output conversions /////////////

@@ -2671,7 +2671,7 @@ pub fn runTests()
 
         fn main() {
             let a = 1;
-            mut x: ScopeSkip; x = [ -2, 0 ]; // Inference fail.
+            mut x: ScopeSkip; x = []; x = [ -2, 0 ]; // Inference fail.
             mut t: ScopeSkip; t = x.min && [ x.min, a ];
             return a + t.min + t.max;
         }
@@ -3053,6 +3053,8 @@ pub fn runTests()
             // Or we can just add const_casts at such callsites,
             //  so that things end up working as if the call was inlined,
             //   which weakens the validation we get but is way cleaner.
+            //
+            // TODO: needs to track uniqueness for that to work.
             //
             return Lifetime_test(Lifetime(:woot));
         }
