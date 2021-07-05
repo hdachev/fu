@@ -4492,8 +4492,7 @@ pub fn solve(
             }
         }
 
-        // TODO FIX things are getting messy
-        shadow let overload = GET(target);
+        shadow let overload = GET(target); // TODO BORROWCK danglefix
         mut type = overload.type;
 
         // HACK -
@@ -4560,11 +4559,15 @@ pub fn solve(
                         args[i] || fail(), host_args[i].type,
                         isArgument: true);
 
+                shadow let overload = GET(target); // TODO BORROWCK danglefix
+
                 if (type.is_ref)
                     type.lifetime = Lifetime_test(
                         Lifetime_replaceArgsAtCallsite(overload, args),
                         tempsOK: true);
             }
+
+            shadow let overload = GET(target); // TODO BORROWCK danglefix
 
             // Inliner.
             if (overload.kind == "inline")
