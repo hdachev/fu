@@ -13,8 +13,8 @@ struct view
     typedef T fu_VIEW_value_type;
     typedef T fu_ANY_value_type;
 
-    const T*    const m_data;
-    int32_t     const m_size;
+    const T*    m_data;
+    int32_t     m_size;
 
     fu_INL view() noexcept
         : m_data { nullptr }
@@ -68,8 +68,8 @@ struct view_mut
     typedef T fu_VIEW_value_type;
     typedef T fu_ANY_value_type;
 
-    T*          const m_data;
-    int32_t     const m_size;
+    T*          m_data;
+    int32_t     m_size;
 
     fu_INL view_mut() noexcept
         : m_data { nullptr }
