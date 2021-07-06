@@ -1210,7 +1210,17 @@ pub fn solve(
 
                     shadow let isStruct = convertType.isStruct;
 
-                    if (isAssignableAsArgument(convertType, /*into*/host: expect))
+                    if (convert.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
+                    {
+                        // We ignore unsolved conversions:
+                        //  this means you can't use a using fn recursively,
+                        //   which solves the problem of unspecified return values,
+                        //    because initially the t_never assigns to everything.
+                        //
+                        // Wonder why this wasn't a bigger problem already,
+                        //  this fixes the "using GET, using EXT" situation.
+                    }
+                    else if (isAssignableAsArgument(convertType, /*into*/host: expect))
                     {
                         // Actual is assignable to current `from` type,
                         //  this means we've got a conversion edge that works.
