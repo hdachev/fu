@@ -423,7 +423,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn self_rec_template(x: $T): $T
+        fn self_rec_template(x: $T): $T                     ;; !FN_resolve
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
         fn main()

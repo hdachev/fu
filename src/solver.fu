@@ -1592,7 +1592,7 @@ pub fn solve(
 
                         node.MUT.target = spec;
 
-                        _notes |= N_RelaxRespec;
+                        makeNote(N_RelaxRespec);
 
                         for (mut i = 0; i < node.items.len; i++)
                         {
@@ -3054,7 +3054,7 @@ pub fn solve(
 
                     // Finally, a finalized, non-local of self,
                     //  gotta reopen & resolve now.
-                    _notes |= o.kind == "type" ? N_TypeReopen : N_FnReopen;
+                    makeNote(o.kind == "type" ? N_TypeReopen : N_FnReopen);
 
                     o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
                     reopen ~= index;
@@ -3073,7 +3073,7 @@ pub fn solve(
         {
             o.status & SS_FINALIZED && fail("Stray SS_FINALIZED.");
             o.status &= ~(SS_DID_START | SS_DIRTY);
-            _notes |= o.kind == "type" ? N_TypeResolve : N_FnResolve;
+            makeNote(o.kind == "type" ? N_TypeResolve : N_FnResolve);
         }
 
         //
@@ -3103,7 +3103,7 @@ pub fn solve(
 
             h.mask & HM_Lambda && fail("Recursive lambda, what happened here?");
             GET_mut(h.target).status |= status;
-            _notes |= note;
+            makeNote(note);
 
             if (h.target == target)
                 return;
@@ -3499,7 +3499,7 @@ pub fn solve(
         // Dead code elim.
         if (deadcode_on_never && t_init.is_never)
         {
-            _notes |= N_DeadLet;
+            makeNote(N_DeadLet);
             return init;
         }
 
@@ -4065,7 +4065,7 @@ pub fn solve(
         mut args = solveNodes(node.items, deadcode_on_never: true);
         if (args.if_last.type.is_never)
         {
-            _notes |= N_DeadCall;
+            makeNote(N_DeadCall);
             return createBlock(t_never, args);
         }
 
@@ -4265,13 +4265,13 @@ pub fn solve(
         // Dead code elim.
         if (cond.type.is_never)
         {
-            _notes |= N_DeadIf;
+            makeNote(N_DeadIf);
             return cond;
         }
 
         // `a && THROWS ? b : c` is the same as `a ? THROWS : b`
         mut cons    = cond.kind == "and" && cond.items.last.type.is_never
-            ? { _notes |= N_DeadIfCons; cond.MUT.items.TODO_FIX_pop }
+            ? { makeNote(N_DeadIfCons); cond.MUT.items.TODO_FIX_pop }
             : solveBlock(node.items[1], :type);
 
         mut alt     = solveBlock(node.items[2], type: type || cons.type);
@@ -4748,7 +4748,7 @@ pub fn solve(
                 if (deadcode_on_never && solved.type.is_never)
                 {
                     if (i < nodes.len - 1)
-                        _notes |= N_DeadCode;
+                        makeNote(N_DeadCode);
 
                     break;
                 }
