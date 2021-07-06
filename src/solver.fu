@@ -863,9 +863,12 @@ pub fn solve(
                                 ? "`" ~ GETfn(idx).name ~ "`"
                                 : "global scope";
 
-                            let inner = GET(matchIdx)   .local_of;      // first to match is innermost scope
-                            let outer = GET(overloadIdx).local_of;      // what we're currently looking is upscope
-                            let callsite = _current_fn.target.index;    // as seen from where we currently are
+                            let PREV        = matchIdx;
+                            let NEXT        = overloadIdx;
+
+                            let inner       = PREV.local_of;            // first to match is innermost scope
+                            let outer       = NEXT.local_of;            //  what we're currently looking is upscope
+                            let callsite    = _current_fn.target.index; //   as seen from where we currently are
 
                             if (SELF_TEST)
                             {
@@ -883,9 +886,9 @@ pub fn solve(
                                         ~ " as seen from " ~ callsite.fnName);
                             }
 
-                            fail("Ambiguous callsite, matches multiple items in scope: `" ~ id
-                                ~ "` from " ~ inner.fnName ~ " and " ~ outer.fnName
-                                ~ ", as seen from " ~ callsite.fnName ~ ".");
+                            fail("Ambiguous callsite, matches multiple items in scope: "
+                                ~ explainWhichFn(PREV, conversions_out) ~ " from `" ~ inner.fnName ~ "` and "
+                                ~ explainWhichFn(NEXT, conversions    ) ~ " from `" ~ outer.fnName ~ "`, as seen from " ~ callsite.fnName ~ ".");
                         }
                     }
 
@@ -1155,6 +1158,23 @@ pub fn solve(
         return count;
     }
 
+    fn explainConversion(shadow path: [Target])
+    {
+        mut res = "`";
+        for (mut i = 0; i < path.len; i++)
+        {
+            if (i) res ~= "` -> `";
+
+            let o = GET(path[i]);
+            res ~= o.kind ~ " " ~ o.name;
+
+            if (i < path.len) res ~= ": " ~ serializeType(o.type);
+        }
+
+        res ~= "`";
+        return res;
+    }
+
     fn tryConvert(
         scope: Scope, local_scope: bool,
         expect: Type, actual?: Type): Target[]
@@ -1201,25 +1221,8 @@ pub fn solve(
                         //  this means we've got a conversion edge that works.
                         if (match)
                         {
-                            fn explain(shadow path: [Target])
-                            {
-                                mut res = "`";
-                                for (mut i = 0; i < path.len; i++)
-                                {
-                                    if (i) res ~= "` -> `";
-
-                                    let o = GET(path[i]);
-                                    res ~= o.kind ~ " " ~ o.name;
-
-                                    if (i < path.len) res ~= ": " ~ serializeType(o.type);
-                                }
-
-                                res ~= "`";
-                                return res;
-                            }
-
-                            mut suffix  = "\n\t" ~ explain(match) ~ "\n\tand:"
-                                        ~ "\n\t" ~ explain(path ~ t);
+                            mut suffix  = "\n\t" ~ explainConversion(match) ~ "\n\tand:"
+                                        ~ "\n\t" ~ explainConversion(path ~ t);
 
                             if (actual)
                                 fail("Conversion ambiguity, multiple ways to convert `"
@@ -1327,6 +1330,31 @@ pub fn solve(
         return NICERR_mismatch(:scope, :local_scope, :id, :args);
     }
 
+    fn explainWhichFn(overload: Target, conversions?: Target[][])
+    {
+        mut result = overload.name ~ "(";
+
+        for (shadow mut i = 0; i < overload.args.len; i++)
+        {
+            let arg = overload.args[i];
+            if (i)
+                result ~= ",";
+
+            result ~= "\n\t"
+                    ~  arg.name
+                    ~ (arg.flags & F_MUSTNAME ? "!" : "")
+                    ~ (arg.default ? "?: " : ": ")
+                    ~ (arg.type ? humanizeType(arg.type) : "$");
+
+            let c = conversions.len > i && conversions[i];
+            if (c)
+                result ~= " via " ~ explainConversion(c);
+        }
+
+        result ~= ")";
+        return result;
+    }
+
     fn NICERR_mismatch(
         scope: Scope, local_scope: bool,
         id: string, args: SolvedNode[]): never
@@ -1374,24 +1402,7 @@ pub fn solve(
                 else
                     result ~= ".\nExpect: ";
 
-                let overload = targets[i];
-
-                result ~= overload.name ~ "(";
-
-                for (shadow mut i = 0; i < overload.args.len; i++)
-                {
-                    let arg = overload.args[i];
-                    if (i)
-                        result ~= ",";
-
-                    result ~= "\n\t"
-                            ~  arg.name
-                            ~ (arg.flags & F_MUSTNAME ? "!" : "")
-                            ~ (arg.default ? "?: " : ": ")
-                            ~ (arg.type ? humanizeType(arg.type) : "$");
-                }
-
-                result ~= ")";
+                result ~= explainWhichFn(targets[i]);
             }
 
             return result || ".";
