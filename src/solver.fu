@@ -40,6 +40,11 @@ let SELF_TEST               = true;
 let CANNOT_definit_mutrefs  = true;
 
 
+//
+
+let M_WILL_RETYPE: u16      = 1.u16 << 0;
+
+
 
 ///////////////////////////////////////
 ///////////////////////////////////////
@@ -528,21 +533,18 @@ pub fn solve(
             scope_skip: _current_fn && _ss);
     }
 
-    fn tryCreateDefinit(type: Type): SolvedNode
-    {
-        // Cannot definit mutrefs.
-        if (CANNOT_definit_mutrefs)
-            if (type.is_mutref)
-                return SolvedNode();
 
-        return createDefinit(type);
-    }
+    //
 
     fn createDefinit(mut type: Type): SolvedNode
     {
         if (type.is_ref)
             type.lifetime = Lifetime_static();
 
+        // TODO FIX this is backwards, its not always practical -
+        //  tryRetype just switches the type but doesn't switch from definit to int/real lit.
+        //   what'd be more useful is to have int & real literals snap to definit instead of these two.
+        //
         if (type.is_integral)
             return SolvedNode(kind: "int", :type, value: "0");
 
@@ -552,15 +554,34 @@ pub fn solve(
         return SolvedNode(kind: "definit", :type);
     }
 
-    fn solveDefinit(type: Type): SolvedNode
+    fn trySolveDefinit(type: Type, mode?: u16): Type
     {
         if (!type)
+        {
+            // This could return void at all times, but it makes for crappier errors,
+            //  so this is not a correctness thing, it's a usability thing.
+            if (mode & M_WILL_RETYPE)
+                return t_void;
+
             return fail(
                 "Cannot solve definit, no inferred type.");
+        }
 
-        return tryCreateDefinit(type)
-            || fail("Cannot definit: " ~ serializeType(type));
+        if (CANNOT_definit_mutrefs && type.is_mutref)
+            return [];
+
+        return type;
     }
+
+    fn solveDefinit(type: Type, mode: u16): SolvedNode
+    {
+        return createDefinit(
+            trySolveDefinit(:type, :mode) || fail(
+                "Cannot definit type: " ~ serializeType(type)));
+    }
+
+
+    //
 
     fn solveTypeAssert(node: Node): SolvedNode
     {
@@ -989,7 +1010,7 @@ pub fn solve(
 
                             /////////////////
                             // Literal fixup.
-                            if (!hasConv && considerRetyping(:expect, :actual))
+                            if (!hasConv)
                             {
                                 let        arg = args[callsiteIndex];
                                 shadow let arg = arg.kind == "argid"
@@ -1129,22 +1150,28 @@ pub fn solve(
 
     //
 
-    fn considerRetyping(expect: Type, actual: Type): bool
-    {
-        return expect.quals & actual.quals & q_arithmetic != 0;
-    }
-
     fn couldRetype(node: SolvedNode): bool
     {
         return node.kind == "int"
-            || node.kind == "real";
+            || node.kind == "real"
+            || node.kind == "definit";
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
     {
-        return node.kind == "int"  ? solveInt(node.value, expect)
-             : node.kind == "real" ? solveNum(node.value, expect)
-             : [];
+        if (node.type.quals & expect.quals & q_arithmetic)
+        {
+            if (node.kind == "int")
+                return solveInt(node.value, expect);
+
+            if (node.kind == "real")
+                return solveNum(node.value, expect);
+        }
+
+        if (node.kind == "definit")
+            return trySolveDefinit(expect);
+
+        return [];
     }
 
 
@@ -1443,7 +1470,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32): SolvedNode
+    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32, mode?: u16): SolvedNode
     {
         let k = node.kind;
 
@@ -1469,7 +1496,7 @@ pub fn solve(
         if (k == "str")         return solveStr(node);
         if (k == "char")        return solveChar(node);
 
-        if (k == "definit")     return solveDefinit(type);
+        if (k == "definit")     return solveDefinit(type, mode);
 
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
@@ -2289,6 +2316,7 @@ pub fn solve(
 
             //
             mut ok = true;
+            mut remangle = false;
             mut typeParams: TypeParams;
 
             fn isNativeBody(n_body: Node)
@@ -2303,7 +2331,6 @@ pub fn solve(
                 /////////////////
                 // Literal fixup.
                 mut retypeIndices: i32[];
-                mut remangle = false;
 
                 // First off, solve type params.
                 for (   mut pass_retype  = 0;
@@ -2735,20 +2762,21 @@ pub fn solve(
                                 ~ mangleArguments(target.args);
 
                     mut preexisting: Target;
-                    if (mangle0 != mangle)
+                    let nx0 = mangle0 != mangle;
+                    if (nx0)
                     {
                         preexisting = _specs[mangle] || Target();
                         setSpec(mangle0, preexisting || target);
                     }
 
-                    let nx = mangle00 != mangle;
-                    if (nx && mangle00 != mangle0)
+                    let nx00 = mangle00 != mangle;
+                    if (nx00 && mangle00 != mangle0)
                         setSpec(mangle00, preexisting || target);
 
                     if (preexisting)
                         return preexisting;
 
-                    setSpec(mangle, target, :nx);
+                    setSpec(mangle, target, nx: nx0 && nx00);
                 }
             }
 
@@ -4105,7 +4133,7 @@ pub fn solve(
         if (!id) target || fail();
 
         // Dead code elim.
-        mut args = solveNodes(node.items, deadcode_on_never: true);
+        mut args = solveNodes(node.items, deadcode_on_never: true, mode: M_WILL_RETYPE);
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadCall);
@@ -4581,7 +4609,6 @@ pub fn solve(
                         arg = arg.items.only;
 
                     let expect = host_args[i].type;
-                    if (considerRetyping(:expect, arg.type))
                     {
                         let retype = tryRetyping(arg, expect);
                         if (isAssignableAsArgument(expect, retype))
@@ -4746,7 +4773,8 @@ pub fn solve(
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
         as_blocks_after! = -1,
-        kills?!: i32): SolvedNode[]
+        kills?!: i32,
+        mode?: u16): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -4775,7 +4803,7 @@ pub fn solve(
                 let solved = as_blocks_after >= 0 && as_blocks_after <= i
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type,
-                        kills: i == nodes.len - 1 && kills);
+                        kills: i == nodes.len - 1 && kills, :mode);
 
                 //
                 result ~= solved;
