@@ -4152,28 +4152,8 @@ pub fn solve(
             :scope, local_scope: !qualified,
             :id, :args, :conversions, :node.flags, :target);
 
-        // `using` codegen.
-        for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
-        {
-            let conversion = conversions[argIdx];
-
-            for (mut i = 0; i < conversion.len; i++)
-            {
-                let t = conversion[i];
-                if (t.min || t.max && args[argIdx])
-                {
-                    args[argIdx] = CallerNode("__using.a", t, [ args[argIdx] ]);
-                    continue;
-                }
-
-                i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
-                args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
-                args[argIdx] = CallerNode("__using.b", t);
-            }
-        }
-
         //
-        return CallerNode(node.value, callTargIdx, args, :kills);
+        return CallerNode(node.value, callTargIdx, args, :kills, :conversions);
     }
 
 
@@ -4281,8 +4261,6 @@ pub fn solve(
     fn bindImplicitArg(name: string, type: Type, becauseOf!: Target): SolvedNode
     {
         let id = name;
-        mut args: SolvedNode[];
-        mut conversions: Target[][];
 
         // CLOSURE-ID-HACK
         {
@@ -4299,6 +4277,8 @@ pub fn solve(
         }
         // CLOSURE-ID-HACK
 
+        mut args: SolvedNode[];
+        mut conversions: Target[][];
         let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, flags: F_IMPLICIT)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
@@ -4511,9 +4491,29 @@ pub fn solve(
 
     fn CallerNode(
         debug: string,
-        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32)
+        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32, conversions?: Target[][])
             : SolvedNode
     {
+        // `using` codegen.
+        for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
+        {
+            let conversion = conversions[argIdx];
+
+            for (mut i = 0; i < conversion.len; i++)
+            {
+                let t = conversion[i];
+                if (t.min || t.max && args[argIdx])
+                {
+                    args[argIdx] = CallerNode("__using.a", t, [ args[argIdx] ]);
+                    continue;
+                }
+
+                i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
+                args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
+                args[argIdx] = CallerNode("__using.b", t);
+            }
+        }
+
         // Rest params.
         let REST_START = target.findRestStart();
         if (REST_START < args.len)
