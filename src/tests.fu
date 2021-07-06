@@ -4846,6 +4846,32 @@ pub fn runTests()
         fn main() i32 <| (1/vec32(1)).x - 1;
     `);
 
+    ZERO(`
+        pub struct Module       { modid: i32; };
+        pub struct Target       { modid: i32; index: i32; };
+        pub struct Type         { using vtype: ValueType; };
+        pub struct ValueType    { modid: i32; canon: string; };
+        pub struct Overload     { kind: string; locals?: Overload[]; };
+
+        fn main() {
+            let implicit mut overloads: Overload[];
+
+            using fn GET(target: Target, implicit overloads: Overload[]) {
+                target.index > 0 || assert();
+                if (target.modid < 0)
+                    return overloads[-target.modid - 1].locals[target.index - 1];
+                else
+                    return overloads[target.index - 1];
+            }
+
+            fn try_GET(target: Target)
+                target && GET(target);
+
+            overloads ~= Overload("What");
+            return try_GET(Target(0, 1)).kind.len - 4;
+        }
+    `);
+
 
     // Addrofns of struct fields.
 
