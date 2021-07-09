@@ -202,11 +202,6 @@ pub fn solve(
         return _scope.overloads[target.index - 1];
     }
 
-    fn GET_nested(index: i32)
-    {
-        return GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index));
-    }
-
     using fn EXT(target: Target)
     {
         if (target.modid == module.modid)
@@ -221,9 +216,6 @@ pub fn solve(
         target.modid == module.modid || assert();
         return _scope.extended.grow_if_oob(target.index - 1);
     }
-
-
-    //
 
     using fn SolvedNodeData(nid: SolvedNode)
     {
@@ -241,6 +233,11 @@ pub fn solve(
         }
 
         return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
+    }
+
+    fn GET_nested(index: i32)
+    {
+        return GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index));
     }
 
     fn isFnOrType(h: Helpers): bool
@@ -1217,7 +1214,19 @@ pub fn solve(
             fn foreach(t: Target)
             {
                 if (!nullary)
+                {
+                    // Decidability [A]:
+                    //
+                    // Enforce strict ordering of conversion functions -
+                    //  they can still solve out of order, but you can't use the syntax sugar
+                    //   before the `using` declaration. Makes everything way simpler.
+                    let here = _current_fn.target.index;
+                    if (here && t.index > here && t.modid == module.modid && t.local_of != here)
+                        return;
+
+                    //
                     TODO_FIX_convert_args[0].MUT.type = from;
+                }
 
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
@@ -1239,13 +1248,12 @@ pub fn solve(
 
                     if (convert.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
                     {
+                        // Decidability [B]:
+                        //
                         // We ignore unsolved conversions:
                         //  this means you can't use a using fn recursively,
                         //   which solves the problem of unspecified return values,
                         //    because initially the t_never assigns to everything.
-                        //
-                        // Wonder why this wasn't a bigger problem already,
-                        //  this fixes the "using GET, using EXT" situation.
                     }
                     else if (isAssignableAsArgument(convertType, /*into*/host: expect))
                     {
