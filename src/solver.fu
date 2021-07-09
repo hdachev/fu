@@ -1190,12 +1190,7 @@ pub fn solve(
             fn foreach(t: Target)
             {
                 if (!nullary)
-                {
-                    if (!TODO_FIX_convert_args)
-                        TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
-
                     TODO_FIX_convert_args[0].MUT.type = from;
-                }
 
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
@@ -4867,6 +4862,9 @@ pub fn solve(
         // Pre-populate prelude with primitive types and such.
         _scope = listGlobals();
     }
+
+    //
+    TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
 
     // Solve.
     {
