@@ -4466,7 +4466,7 @@ static s_SolvedNode solveBlock(const s_Node& node_1, const s_Type& type_3, const
             items_5 += unwrap;
         };
     };
-    fu::view<int> vars_1 = _helpers[helpers_idx].vars;
+    const auto& vars_1 = _helpers[helpers_idx].vars;
     for (int i = vars_1.size(); i-- > 0; )
     {
         const int index_2 = vars_1[i];
