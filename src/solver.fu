@@ -71,26 +71,6 @@ pub fn solve(
     mut _info:          Info[];
     mut _here:          TokenIdx;
 
-    fn fail(mut reason: string = ""): never
-    {
-        let here = _here._token;
-        if (!reason)
-            reason = "Unexpected `" ~ here.value ~ "`.";
-
-        let fname = _here._fname;
-        let addr = "@" ~ here.line ~ ":" ~ here.col;
-        for (mut i = _info.len; i --> 0; )
-        {
-            let info = _info[i];
-            shadow let here = info.here._token;
-            reason ~= here
-                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
-                : "\n\t" ~ info.text;
-        }
-
-        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
-    }
-
 
     //
 
@@ -99,14 +79,6 @@ pub fn solve(
     mut _ss:            ScopeSkipMemos;
     mut _field_items:   ScopeItem[];
     mut _notes:         i32;
-
-    fn makeNote(note: i32)
-    {
-        if (note & options.break_notes)
-            fail("`break_notes`: Unwanted event: `" ~ note ~ "`.");
-
-        _notes |= note;
-    }
 
     struct CurrentFn
     {
@@ -155,6 +127,44 @@ pub fn solve(
 
 
     //
+
+    fn fail(mut reason: string = ""): never
+    {
+        let here = _here._token;
+        if (!reason)
+            reason = "Unexpected `" ~ here.value ~ "`.";
+
+        let fname = _here._fname;
+        let addr = "@" ~ here.line ~ ":" ~ here.col;
+        for (mut i = _info.len; i --> 0; )
+        {
+            let info = _info[i];
+            shadow let here = info.here._token;
+            reason ~= here
+                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
+                : "\n\t" ~ info.text;
+        }
+
+        for (mut i = _helpers.len; i --> 0; )
+        {
+            let h = _helpers[i];
+            if (h.isFnOrType)
+            {
+                let o = _scope.overloads[h.target.index - 1];
+                reason ~= "\n\tSolving " ~ o.kind ~ " `" ~ o.name ~ "`.";
+            }
+        }
+
+        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
+    }
+
+    fn makeNote(note: i32)
+    {
+        if (note & options.break_notes)
+            fail("`break_notes`: Unwanted event: `" ~ note ~ "`.");
+
+        _notes |= note;
+    }
 
     fn _Scope_import__forceCopy(modid: i32, private?!: bool): void
     {
