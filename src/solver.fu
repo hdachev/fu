@@ -20,10 +20,11 @@ pub let N_DeadCall          = 1 << 7;
 pub let N_DeadLet           = 1 << 8;
 pub let N_DeadIf            = 1 << 9;
 pub let N_DeadIfCons        = 1 << 10;
+pub let N_DeadArrlit        = 1 << 11;
 
-pub let N_NonTrivAutoCopy   = 1 << 11;
+pub let N_NonTrivAutoCopy   = 1 << 12;
 
-pub let N_RelaxRespec       = 1 << 12;
+pub let N_RelaxRespec       = 1 << 13;
 
 
 //
@@ -120,11 +121,6 @@ pub fn solve(
 
     type TypeParams = Map(string, TypeParam);
 
-    // TODO FIX /////////////////////////////////
-    mut TODO_FIX_convert_args: SolvedNode[];
-    mut TODO_FIX_convert_conversions: Target[][];
-    /////////////////////////////////////////////
-
 
     //
 
@@ -150,7 +146,7 @@ pub fn solve(
             let h = _helpers[i];
             if (h.isFnOrType)
             {
-                let o = _scope.overloads[h.target.index - 1];
+                let o = GET(h.target);
                 reason ~= "\n\tSolving " ~ o.kind ~ " `" ~ o.name ~ "`.";
             }
         }
@@ -275,6 +271,11 @@ pub fn solve(
 
         return SolvedNode(:nodeown, :nodeidx);
     }
+
+    // TODO FIX /////////////////////////////////
+    mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
+    mut TODO_FIX_convert_conversions: Target[][];
+    /////////////////////////////////////////////
 
 
     //
@@ -1223,6 +1224,9 @@ pub fn solve(
         {
             fn foreach(t: Target)
             {
+                //////////////////////////////////////////////////
+                mut arg0type0 = TODO_FIX_convert_args[0].type;
+
                 if (!nullary)
                 {
                     // Decidability [A]:
@@ -1237,6 +1241,10 @@ pub fn solve(
                     //
                     TODO_FIX_convert_args[0].MUT.type = from;
                 }
+
+                defer if (!nullary)
+                    TODO_FIX_convert_args[0].MUT.type = arg0type0;
+                //////////////////////////////////////////////////
 
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
@@ -4147,9 +4155,6 @@ pub fn solve(
 
     fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
     {
-        mut id = node.value;
-        if (!id) target || fail();
-
         // Dead code elim.
         mut args = solveNodes(node.items, deadcode_on_never: true, mode: M_WILL_RETYPE);
         if (args.if_last.type.is_never)
@@ -4157,6 +4162,10 @@ pub fn solve(
             makeNote(N_DeadCall);
             return createBlock(t_never, args);
         }
+
+        //
+        mut id = node.value;
+        if (!id) target || fail();
 
         // Qualified?
         let qualified = node.flags & F_COMPOUND_ID;
@@ -4187,10 +4196,15 @@ pub fn solve(
             return solveCall(node,
                 target: lookupStruct(type).target);
 
-        // Nope, it's an array literal.
-        return createArrlit(
-            solveNodes(node.items, itemType),
-                itemType);
+        // Dead code elim.
+        mut args = solveNodes(node.items, itemType, deadcode_on_never: true/*, mode: M_WILL_RETYPE*/);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
+        if (args.if_last.type.is_never)
+        {
+            makeNote(N_DeadArrlit);
+            return createBlock(t_never, args);
+        }
+
+        return createArrlit(args, itemType);
     }
 
     fn solveArrlit_itemType_init(head!: Type)

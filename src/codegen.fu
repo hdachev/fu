@@ -80,7 +80,7 @@ pub fn cpp_codegen(
 
     mut _current_fn: cg_CurrentFn;
 
-    fn GET(target: Target)
+    using fn GET(target: Target)
     {
         target.index > 0 || assert();
 
@@ -99,7 +99,7 @@ pub fn cpp_codegen(
         return target && GET(target);
     }
 
-    fn EXT(target: Target)
+    using fn EXT(target: Target)
     {
         if (target.modid == module.modid)
             return module.out.solve.scope.extended.unless_oob(target.index - 1);
