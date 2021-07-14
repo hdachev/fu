@@ -277,6 +277,8 @@ pub fn solve(
     mut TODO_FIX_convert_conversions: Target[][];
     /////////////////////////////////////////////
 
+    let TODO_FIX_template_defarg = SolvedNode(kind: "__defarg", type: Type());
+
 
     //
 
@@ -848,7 +850,8 @@ pub fn solve(
 
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
-                    let isType = overload.kind == "type";
+                    let kind    = overload.kind;
+                    let isType  = kind == "type";
                     if (minArity && isType && !target)
                     {
                         let alt = overload.type.canon;
@@ -1070,7 +1073,7 @@ pub fn solve(
                     }
 
                     // Specialize.
-                    if (overload.kind == "template")
+                    if (kind == "template")
                     {
                         mut cant_reuse: string;
 
@@ -2010,62 +2013,24 @@ pub fn solve(
     {
         let id          = node.value;
         let local_of    = _current_fn.target.index;
-        let isTemplate  = !!(node.flags & F_TEMPLATE);
-        let status      = !isTemplate && SS_LAZY; // Actual template fns are eager.
+        let status      = SS_LAZY; // Actual template fns are eager.
 
-        let N           = node.items.len + FN_ARGS_BACK;
-        mut min         = 0;
-        mut max         = 0;
-
-        mut args: Argument[];
-        for (mut i = 0; i < N; i++)
-        {
-            let arg         = node.items[i];
-            mut name        = arg.value || fail("TemplateDecl: no argname.");
-
-            let autocall    = arg.flags & F_COMPOUND_ID && Autocall_splice(name);
-            let annot       = arg.items[LET_TYPE];
-            let init        = arg.items[LET_INIT];
-
-            // Pre-typing template annots
-            //  Perhaps do this lazily?
-            let typed       = !(arg.flags & F_TEMPLATE);
-            let type        = typed && annot && evalTypeAnnot(annot).type;
-            let default     = typed && init  && solveNode(init, :type);
-            args.push(Argument(:name, :autocall, :arg.flags, :type, :default));
-
-            if (!(arg.flags & F_IMPLICIT))
-            {
-                if (max != 0x7fffffff.i32)
-                    max++;
-                if (!arg.items[LET_INIT])
-                    min++;
-            }
-
-            if (arg.flags & F_REST_ARG)
-                max = 0x7fffffff.i32;
-        }
-
-        //
-        let tDecl = Scope_create(_scope,
-            kind: "template",
+        let target      = Scope_create(_scope,
+            kind: "fn", name: "__prep__",
             :node.flags, :local_of, :status);
 
-        ref ext = tDecl.EXT_mut;
-        ext.min = min;
-        ext.max = max;
-        ext.args = args;
-        ext.template = createTemplate(node);
+        ref ext         = target.EXT_mut;
+        ext.template    = createTemplate(node);
+        ext.min         = 0x7fffffff.i32;
+        ext.max         = 0;
 
-        Scope_set(_scope, target: tDecl, :id, shadows: !!(node.flags & F_SHADOW));
+        Scope_set(_scope, :target, :id, shadows: !!(node.flags & F_SHADOW));
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
-            _scope.converts.push(tDecl);
+            _scope.converts.push(target);
 
-        return createFnDef(
-            target: tDecl,
-            type: addroffn::X_addrofTarget(tDecl));
+        return createFnDef(:target, type: addroffn::X_addrofTarget(target));
     }
 
     fn uPrepFn_B(target: Target)
@@ -2602,7 +2567,11 @@ pub fn solve(
             // Arg decls.
             _scope.items ~= extra_items;
 
-            let spec = template.node.flags & F_TEMPLATE;
+            let isFirst     = !GET(target).solved;
+            let isTemplate  = template.node.flags & F_TEMPLATE;
+            let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
+            let isUnspec    = isTemplate && !isSpec;
+
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
                 fn tryGetArgSpecType(id: string): Type
@@ -2626,19 +2595,31 @@ pub fn solve(
                 }
 
                 let n_arg       = inItems[i];
-                let specType    = spec && tryGetArgSpecType(n_arg.value);
+
+                // TODO FIX Template prep: mock up free parameters.
+                //          Super unclean but at least its contained here.
+                if (isUnspec && (n_arg.flags & F_TEMPLATE || !n_arg.items[LET_TYPE]))
+                {
+                    outItems[i] = SolvedNode(
+                        kind: "let", flags: n_arg.flags, value: n_arg.value,
+                        type: Type(), items: [ SolvedNode, n_arg.items[LET_INIT] && TODO_FIX_template_defarg ]);
+
+                    continue;
+                }
+
+                let specType    = isSpec && tryGetArgSpecType(n_arg.value);
                 outItems[i]     = solveLet(n_arg, :specType);
             }
 
             /////////////////////////////////////////////////////
-            let n_ret   = inItems[inItems.len + FN_RET_BACK];
+            let n_ret   = !isUnspec && inItems[inItems.len + FN_RET_BACK];
             let n_body  = inItems[inItems.len + FN_BODY_BACK];
 
             // Builtin?
             n_body || fail("solveFn: no body.");
 
-            let native = n_body.isNativeBody;
-            if (!native)
+            let isNative = n_body.isNativeBody;
+            if (!isNative && !isUnspec)
                 n_body.kind == "block" || fail("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 
             // Return type annot.
@@ -2650,7 +2631,7 @@ pub fn solve(
 
             if (ret_seed.lifetime)
             {
-                ret_seed.lifetime = native
+                ret_seed.lifetime = isNative
                     ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK], ret_seed)
                     : Lifetime_static(); // we'll overpromise during prep
             }
@@ -2682,9 +2663,10 @@ pub fn solve(
                         :name,
                         :autocall,
                         :argNode.flags,
-                        :argNode.type || fail(),
+                        :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT]);
 
+                    arg.type || isUnspec || fail("Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
 
                     if (!isImplicit)
@@ -2735,21 +2717,20 @@ pub fn solve(
                     Lifetime_test(retval.lifetime);
 
                 overload.flags  = out.flags;
-                overload.solved = out.out;
+                overload.solved = !isUnspec && out.out;
 
                 if (change)
                     overload.status |= SS_UPDATED;
             }
 
             // Enable recursion.
-            let firstIteration = !GET(target).solved;
-            if (firstIteration)
+            if (isFirst)
             {
                 // Previously initScope:
                 {
                     // TODO FIX currently we only hash template names.
                     mut name = n_fn.value || fail("TODO anonymous fns");
-                    if (spec && !native && !isInline)
+                    if (isSpec && !isNative && !isInline)
                     {
                         let sig = mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
                         if (sig)
@@ -2762,7 +2743,7 @@ pub fn solve(
                     fn HACK_nativeNameParts() // __native(id) or __native("include", id)
                     {
                         shadow mut name = "";
-                        if (native && n_body.items)
+                        if (isNative && n_body.items)
                             for (mut i = 0; i < n_body.items.len; i++)
                                 name ~= "\n" ~ n_body.items[i].value;
 
@@ -2770,8 +2751,12 @@ pub fn solve(
                     }
 
                     ref overload        = GET_mut(target);
-                    overload.name       = HACK_nativeNameParts || name;
-                    overload.kind       = native ? "__native" : isInline ? "inline" : "fn";
+                    overload.name       = HACK_nativeNameParts || name || fail();
+
+                    overload.kind       = isUnspec      ? "template"
+                                        : isNative      ? "__native"
+                                        : isInline      ? "inline"
+                                                        : "fn";
 
                     ref ext             = target.EXT_mut;
                     ext.template        = template;
@@ -2806,12 +2791,14 @@ pub fn solve(
                 }
             }
 
+            mut didSetBody = false;
+
             // Regular fns again.
-            if (!isInline)
+            if (!isInline && !isUnspec)
             {
                 // The usual.
                 mut retval = ret_seed;
-                if (!native)
+                if (!isNative)
                 {
                     let s_body = solveBlock(
                         n_body, type: ret_expect,
@@ -2825,6 +2812,7 @@ pub fn solve(
                     // MUT DURING SOLVE,
                     //  implicit args splice in
                     outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+                    didSetBody = true;
                 }
 
                 // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
@@ -2834,6 +2822,13 @@ pub fn solve(
 
                 //
                 updateScope(_current_fn, :retval);
+            }
+
+            if (!didSetBody)
+            {
+                let o = GET(target);
+                o.kind != "fn" || fail(
+                    "did not set body on " ~ o.kind ~ " " ~ o.name ~ ": " ~ humanizeType(o.type));
             }
         }
 
@@ -3085,7 +3080,7 @@ pub fn solve(
             o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && fail("SS_DID_START: non-zero solver status: " ~ overload.status);
             o.status |= SS_DID_START;
 
-            if (o.kind == "template" || o.kind == "fn")
+            if (o.kind == "fn")
                 doTrySpecialize(into: target);
             else if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);

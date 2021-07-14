@@ -811,7 +811,7 @@ pub fn cpp_codegen(
         // Custom __natives.
         if (!body)
         {
-            overload.kind == "__native" || fail("cgFn: no body on non-native: " ~ id);
+            overload.kind == "__native" || fail("cgFn: no body on non-native: " ~ overload.kind ~ " " ~ id);
             return mode & M_STMT ? "" : "0";
         }
 

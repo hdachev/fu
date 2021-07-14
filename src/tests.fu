@@ -445,7 +445,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub fn map(a: [$T], fn) {
+        pub fn map(a: [$T], fn) {               ;; !DEAD_code
             mut res: fn($T)[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
