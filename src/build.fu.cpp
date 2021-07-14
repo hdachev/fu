@@ -22,6 +22,7 @@
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
+struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Module;
@@ -310,6 +311,34 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_STR name;
+    s_Type type;
+    int flags;
+    s_SolvedNode solved;
+    fu_VEC<s_SolvedNode> callsites;
+    unsigned status;
+    int local_of;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || type
+            || flags
+            || solved
+            || callsites
+            || status
+            || local_of
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -438,48 +467,28 @@ struct s_SolvedNodeData
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_s_Extended
+                                #define DEF_s_Extended
+struct s_Extended
 {
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
-    s_Template tEmplate;
-    s_SolvedNode solved;
     s_Target spec_of;
+    s_Template tEmplate;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
-    fu_VEC<s_SolvedNode> callsites;
-    unsigned status;
-    int local_of;
     fu_VEC<s_ScopeItem> extra_items;
-    s_Overload(const s_Overload&) = default;
-    s_Overload(s_Overload&&) = default;
-    s_Overload& operator=(s_Overload&&) = default;
-    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || type
-            || flags
             || min
             || max
             || args
-            || tEmplate
-            || solved
             || spec_of
+            || tEmplate
             || nodes
             || locals
-            || callsites
-            || status
-            || local_of
             || extra_items
         ;
     }
@@ -492,6 +501,7 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<s_Extended> extended;
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
@@ -505,6 +515,7 @@ struct s_Scope
         return false
             || items
             || overloads
+            || extended
             || imports
             || usings
             || converts

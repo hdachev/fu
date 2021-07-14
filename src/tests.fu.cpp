@@ -14,6 +14,7 @@
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
+struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Module;
@@ -321,6 +322,34 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_STR name;
+    s_Type type;
+    int flags;
+    s_SolvedNode solved;
+    fu_VEC<s_SolvedNode> callsites;
+    unsigned status;
+    int local_of;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || type
+            || flags
+            || solved
+            || callsites
+            || status
+            || local_of
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -449,48 +478,28 @@ struct s_SolvedNodeData
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_s_Extended
+                                #define DEF_s_Extended
+struct s_Extended
 {
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
-    s_Template tEmplate;
-    s_SolvedNode solved;
     s_Target spec_of;
+    s_Template tEmplate;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
-    fu_VEC<s_SolvedNode> callsites;
-    unsigned status;
-    int local_of;
     fu_VEC<s_ScopeItem> extra_items;
-    s_Overload(const s_Overload&) = default;
-    s_Overload(s_Overload&&) = default;
-    s_Overload& operator=(s_Overload&&) = default;
-    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || type
-            || flags
             || min
             || max
             || args
-            || tEmplate
-            || solved
             || spec_of
+            || tEmplate
             || nodes
             || locals
-            || callsites
-            || status
-            || local_of
             || extra_items
         ;
     }
@@ -503,6 +512,7 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<s_Extended> extended;
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
@@ -516,6 +526,7 @@ struct s_Scope
         return false
             || items
             || overloads
+            || extended
             || imports
             || usings
             || converts
@@ -797,7 +808,7 @@ void runTests()
     ZERO("\n        fn ab(a, b = -1) a + b*2;\n        fn main() ab(3.0, -1.5).i32;\n    "_fu, testdiffs);
     ZERO("\n        let NEG_ONE_FIVE = -1.5;\n        fn ab(a: $T, b: $T = -1) a + b*2;\n        fn main() ab(3, NEG_ONE_FIVE).i32;\n    "_fu, testdiffs);
     ZERO("\n        let TWO = 2.0;\n        fn ab(a: $T, b: $T = -1) a + b*2;\n        fn main() ab(TWO).i32;\n    "_fu, testdiffs);
-    ZERO("\n        fn self_rec_template(x: $T): $T\n            x > 0 ? self_rec_template(x / 2 - 5) : x;\n\n        fn main()\n            self_rec_template(7) + 2;\n    "_fu, testdiffs);
+    ZERO("\n        fn self_rec_template(x: $T): $T                     ;; !FN_resolve\n            x > 0 ? self_rec_template(x / 2 - 5) : x;\n\n        fn main()\n            self_rec_template(7) + 2;\n    "_fu, testdiffs);
     ZERO("\n        fn ab_rec(a: $T): $T = a ? ba_rec(a - 2) : -100;\n        fn ba_rec(a: $T): $T = a ? ab_rec(a - 7) : -200;\n        fn main() ab_rec(11) + 200;\n    "_fu, testdiffs);
     ZERO("\n        fn main() {\n            let a = 1;\n            fn add1(b) a + b;\n            return 2.add1 - 3;\n        }\n    "_fu, testdiffs);
     ZERO("\n        pub fn map(a: [$T], fn) {\n            mut res: fn($T)[];\n            res.grow_junk(a.len);\n            for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);\n            return res;\n        }\n\n        pub fn clone(a: $T)\n        case ($T -> @copy) a;\n        case ($T -> [$U]) a.map(fn clone);\n        default {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n\n        pub nocopy struct Scope { x: i32; };\n        pub struct ModuleOutputs { deps: Scope[]; };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a.clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu, testdiffs);
@@ -964,7 +975,7 @@ void runTests()
     FAIL("\n        pub struct ScopeSkip {\n            start: i32;\n            end:   i32;\n        };\n\n        pub fn search(skip: ScopeSkip = [])\n            skip.end - skip.start;\n\n        pub fn main()\n            //*F\n            ScopeSkip(min: -1, max: +1)\n            /*/\n            ScopeSkip(start: -1, end: +1)\n            //*/\n                .end - 1;\n    "_fu, testdiffs);
     ZERO("\n        struct vec3 { x?: f32; y?: f32; z?: f32; };\n\n        struct mat34 {\n            mx: vec3; my: vec3; mz: vec3;\n            mo: vec3;\n        };\n\n        inline fn mat34_identity()\n            mat34(\n                vec3(x: 1),\n                vec3(y: 1),\n                vec3(z: 1), vec3 /*point3*/);\n\n        // What broke is this using reports a conflict,\n        //  because 'determinant' got expanded within 'inverse',\n        //   and there's another using mat34 there.\n        //    Basically we totally don't want it to expand there.\n        inline fn determinant(using _: mat34): f32\n            - mz.x * my.y * mx.z + my.x * mz.y * mx.z + mz.x * mx.y * my.z\n            - mx.x * mz.y * my.z - my.x * mx.y * mz.z + mx.x * my.y * mz.z;\n\n        fn inverse(using mat: mat34): mat34\n        {\n            let idet = 1 / mat.determinant;\n\n            let i_mx = vec3(\n                idet * (- mz.y * my.z + my.y * mz.z),\n                idet * (+ mz.y * mx.z - mx.y * mz.z),\n                idet * (- my.y * mx.z + mx.y * my.z));\n\n            let i_my = vec3(\n                idet * (+ mz.x * my.z - my.x * mz.z),\n                idet * (- mz.x * mx.z + mx.x * mz.z),\n                idet * (+ my.x * mx.z - mx.x * my.z));\n\n            let i_mz = vec3(\n                idet * (- mz.x * my.y + my.x * mz.y),\n                idet * (+ mz.x * mx.y - mx.x * mz.y),\n                idet * (- my.x * mx.y + mx.x * my.y));\n\n            return mat34(\n                i_mx, i_my, i_mz,\n\n                vec3( // point3\n                      mo.x * -i_mx.x\n                    + mo.y * -i_my.x\n                    + mo.z * -i_mz.x,\n\n                      mo.x * -i_mx.y\n                    + mo.y * -i_my.y\n                    + mo.z * -i_mz.y,\n\n                      mo.x * -i_mx.z\n                    + mo.y * -i_my.z\n                    + mo.z * -i_mz.z));\n        }\n\n        fn main() i32 <|\n            mat34_identity.inverse.determinant - 1;\n    "_fu, testdiffs);
     ZERO("\n        struct TEA\n        {\n            v0: u32;\n            v1: u32;\n        }\n\n        inline fn r4(using _: &mut TEA, sum: &mut u32)\n        {\n            mut delta: u32 = 0x9e3779b9;\n\n            for (mut i = 0; i < 4; i++) {\n                sum += delta;\n\n                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);\n                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);\n            }\n        }\n\n        // Stack overflow solving this,\n        //  argmax is +inf, and it just\n        //   re-enters and re-enters.\n        inline fn r4(tea: &mut TEA) {\n            mut sum: u32; tea.r4(sum);\n        }\n\n        fn main() {\n            mut tea: TEA;\n            tea.r4();\n            return (tea.v0 ^ tea.v0).i32;\n        }\n    "_fu, testdiffs);
-    TODO("\n        struct ScopeSkip {\n            min: i32;\n            max: i32;\n        };\n\n        fn main() {\n            let a = 1;\n            mut x: ScopeSkip; x = [ -2, 0 ]; // Inference fail.\n            mut t: ScopeSkip; t = x.min && [ x.min, a ];\n            return a + t.min + t.max;\n        }\n    "_fu, testdiffs);
+    TODO("\n        struct ScopeSkip {\n            min: i32;\n            max: i32;\n        };\n\n        fn main() {\n            let a = 1;\n            mut x: ScopeSkip; x = []; x = [ -2, 0 ]; // Inference fail.\n            mut t: ScopeSkip; t = x.min && [ x.min, a ];\n            return a + t.min + t.max;\n        }\n    "_fu, testdiffs);
     ZERO("\n        // Same as below, but avoids the $T call, which is also broken somehow.\n        //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -\n        //   we emit useless overloads for mutrefs when its clearly useless.\n\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i) {\n                shadow mut a = a;\n                a.i /= 2;\n                return rec_cases(a);\n            }\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
     ZERO("\n        fn rec_cases(a: $T)\n        case ($T -> @primitive) {\n            if (a)      return rec_cases(a / 2);\n            else        return a;\n        }\n        default {\n            if (a.i)    return rec_cases($T(i: a.i / 2));\n            else        return rec_cases(a.i);\n        }\n\n        struct X { i: i32; };\n        fn main() X(1).rec_cases;\n    "_fu, testdiffs);
     ZERO("\n        struct X { i: i32; };\n        type Y = X;\n        fn main() Y(1).i / 2;\n    "_fu, testdiffs);
@@ -987,7 +998,7 @@ void runTests()
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a: NoCopy) a;\n        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;\n        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;\n        fn retargs_and(a: NoCopy, b: NoCopy) a && b;\n\n        fn main() {\n            let a: NoCopy;                      // <- b now temp\n\n            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, NoCopy)))).i;\n        }\n    "_fu, testdiffs);
     ZERO("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a) a;                    // <- now templates\n        fn  retargs_if(a, b) a.i ? b : a;\n        fn  retargs_or(a, b) a || b;\n        fn retargs_and(a, b) a && b;\n\n        fn main() {\n            mut a: NoCopy;                      // <- now muts\n            mut b: NoCopy;\n            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;\n            return a.i + b.i - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn as_blocks_after(x: i32) {\n            mut zero = 0;\n            if (x > 2) // a broken stmt emit lifted the loop out of the conditional\n                for (mut i = 0; i < x; i++)\n                    zero = i + i*zero;\n\n            return zero;\n        }\n\n        fn main() 2.as_blocks_after;\n    "_fu, testdiffs);
-    TODO("\n        struct Lifetime { woot: Lifetime[]; };\n\n        // We could codegen this as a cpp template!\n        //  We'd need to auto& all inner locals too.\n        //\n        fn Lifetime_test(x: Lifetime) {\n            x.woot.len & 1 && throw(\"This is very important.\");\n            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);\n            return x;\n        }\n\n        fn Lifetime_fromBinding(x: i32) {\n            mut woot: Lifetime[];\n            for (mut i = 0; i < x; i++) woot[i] = Lifetime();\n\n            // Or we can just add const_casts at such callsites,\n            //  so that things end up working as if the call was inlined,\n            //   which weakens the validation we get but is way cleaner.\n            //\n            return Lifetime_test(Lifetime(:woot));\n        }\n\n        fn main() 0.Lifetime_fromBinding.woot.len;\n    "_fu, testdiffs);
+    TODO("\n        struct Lifetime { woot: Lifetime[]; };\n\n        // We could codegen this as a cpp template!\n        //  We'd need to auto& all inner locals too.\n        //\n        fn Lifetime_test(x: Lifetime) {\n            x.woot.len & 1 && throw(\"This is very important.\");\n            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);\n            return x;\n        }\n\n        fn Lifetime_fromBinding(x: i32) {\n            mut woot: Lifetime[];\n            for (mut i = 0; i < x; i++) woot[i] = Lifetime();\n\n            // Or we can just add const_casts at such callsites,\n            //  so that things end up working as if the call was inlined,\n            //   which weakens the validation we get but is way cleaner.\n            //\n            // TODO: needs to track uniqueness for that to work.\n            //\n            return Lifetime_test(Lifetime(:woot));\n        }\n\n        fn main() 0.Lifetime_fromBinding.woot.len;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {                       // none of these need vecs\n            let c = [10007];                    ;; TODO fu::slate<1, int> { 10007 }\n            let a = [7, 11];                    ;; TODO fu::slate<2, int> { 7, 11 }\n            let b = {                           ;; TODO fu::slate<1, int> { int(x) }\n                BRK: {\n                    if (x & 2) break :BRK c;\n                    if (x & 1) break :BRK [ x ]; // a val\n                    a; // a ref\n                }\n            };\n            return a[0] - b[0] * a[1];\n        }\n\n        fn main() 1.test + 4;\n    "_fu, testdiffs);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test) {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test): Test {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu, testdiffs);
@@ -1124,6 +1135,7 @@ void runTests()
     ZERO("\n        struct vec32  { x: f32; };\n        struct conv32 { v: f32; };\n\n        using inline fn convert(v: i32): conv32 = [ v.f32 ]; // no litfix\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
     TODO("\n        struct vec32  { x: f32; };\n        struct conv32 { v: f32; };\n\n        using inline fn convert(v: f32): conv32 = [ v ]; // litfix in a conv: i32 -> f32\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x, a.v / b.y, a.v / b.z);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
     TODO("\n        struct vec_u  { x: u32; };\n        struct vec32  { x: f32; };\n        struct vec64  { x: f64; };\n\n        struct conv_u { v: u32; };\n        struct conv32 { v: f32; };\n        struct conv64 { v: f64; };\n\n        using inline fn convert(v: u32): conv_u = [ v ]; // matchfail before\n        using inline fn convert(v: f32): conv32 = [ v ];\n        using inline fn convert(v: f64): conv64 = [ v ]; // matchfail after\n\n        inline fn /(a: conv_u, b: vec_u) vec_u(a.v / b.x);\n        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);\n        inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);\n\n        fn main() i32 <| (1/vec32(1)).x - 1;\n    "_fu, testdiffs);
+    ZERO("\n        pub struct Module       { modid: i32; };\n        pub struct Target       { modid: i32; index: i32; };\n        pub struct Type         { using vtype: ValueType; };\n        pub struct ValueType    { modid: i32; canon: string; };\n        pub struct Overload     { kind: string; locals?: Overload[]; };\n\n        fn main() {\n            let implicit mut overloads: Overload[];\n\n            using fn GET(target: Target, implicit overloads: Overload[]) {\n                target.index > 0 || assert();\n                if (target.modid < 0)\n                    return overloads[-target.modid - 1].locals[target.index - 1];\n                else\n                    return overloads[target.index - 1];\n            }\n\n            fn try_GET(target: Target)\n                target && GET(target);\n\n            overloads ~= Overload(\"What\");\n            return try_GET(Target(0, 1)).kind.len - 4;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(fn, v) fn(v);\n        struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_v(x, v) x(v);             // same but name conflict - x arg and .x field\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fn_w(x, y) x(y);             // same thing but\n        fn fn_v(y, x) fn_w(fn y, x);    // extra nasty\n        struct XY { x: i32; y: i32; };\n        fn main() {\n            let v = XY(11, 13);\n            return fn_v(.x, v) + fn_v(.y, v) - 24;\n        }\n    "_fu, testdiffs);

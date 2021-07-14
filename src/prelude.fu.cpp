@@ -6,6 +6,7 @@
 struct s_Argument;
 struct s_CodegenOutput;
 struct s_Context;
+struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Lint;
@@ -295,6 +296,34 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_STR name;
+    s_Type type;
+    int flags;
+    s_SolvedNode solved;
+    fu_VEC<s_SolvedNode> callsites;
+    unsigned status;
+    int local_of;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || type
+            || flags
+            || solved
+            || callsites
+            || status
+            || local_of
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -423,48 +452,28 @@ struct s_SolvedNodeData
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_s_Extended
+                                #define DEF_s_Extended
+struct s_Extended
 {
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
-    s_Template tEmplate;
-    s_SolvedNode solved;
     s_Target spec_of;
+    s_Template tEmplate;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
-    fu_VEC<s_SolvedNode> callsites;
-    unsigned status;
-    int local_of;
     fu_VEC<s_ScopeItem> extra_items;
-    s_Overload(const s_Overload&) = default;
-    s_Overload(s_Overload&&) = default;
-    s_Overload& operator=(s_Overload&&) = default;
-    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || type
-            || flags
             || min
             || max
             || args
-            || tEmplate
-            || solved
             || spec_of
+            || tEmplate
             || nodes
             || locals
-            || callsites
-            || status
-            || local_of
             || extra_items
         ;
     }
@@ -477,6 +486,7 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<s_Extended> extended;
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
@@ -490,6 +500,7 @@ struct s_Scope
         return false
             || items
             || overloads
+            || extended
             || imports
             || usings
             || converts
@@ -731,9 +742,9 @@ inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_T2hh
-                                #define DEFt_clone_T2hh
-inline const fu_VEC<s_ScopeItem>& clone_T2hh(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_O6LQ
+                                #define DEFt_clone_O6LQ
+inline const fu_VEC<s_ScopeItem>& clone_O6LQ(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
@@ -747,6 +758,14 @@ inline const fu_VEC<s_Overload>& clone_evat(const fu_VEC<s_Overload>& a)
 }
                                 #endif
 
+                                #ifndef DEFt_clone_DPDX
+                                #define DEFt_clone_DPDX
+inline const fu_VEC<s_Extended>& clone_DPDX(const fu_VEC<s_Extended>& a)
+{
+    return a;
+}
+                                #endif
+
                                 #ifndef DEFt_clone_mnBR
                                 #define DEFt_clone_mnBR
 inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
@@ -755,15 +774,16 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_J3Oj
-                                #define DEFt_clone_J3Oj
-inline s_Scope clone_J3Oj(const s_Scope& a)
+                                #ifndef DEFt_clone_5cFI
+                                #define DEFt_clone_5cFI
+inline s_Scope clone_5cFI(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_T2hh(a.items);
+        res.items = clone_O6LQ(a.items);
         res.overloads = clone_evat(a.overloads);
+        res.extended = clone_DPDX(a.extended);
         res.imports = clone_I28a(a.imports);
         res.usings = clone_mnBR(a.usings);
         res.converts = clone_mnBR(a.converts);
@@ -781,7 +801,7 @@ inline s_SolverOutput clone_Pu6M(const s_SolverOutput& a)
 
     {
         res.root = clone_VD7r(a.root);
-        res.scope = clone_J3Oj(a.scope);
+        res.scope = clone_5cFI(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;

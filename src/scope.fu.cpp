@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <fu/default.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -11,6 +12,7 @@
 
 struct s_Argument;
 struct s_CodegenOutput;
+struct s_Extended;
 struct s_Helpers;
 struct s_LexerOutput;
 struct s_Lifetime;
@@ -301,6 +303,34 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_STR name;
+    s_Type type;
+    int flags;
+    s_SolvedNode solved;
+    fu_VEC<s_SolvedNode> callsites;
+    unsigned status;
+    int local_of;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || type
+            || flags
+            || solved
+            || callsites
+            || status
+            || local_of
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -429,48 +459,28 @@ struct s_SolvedNodeData
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_s_Extended
+                                #define DEF_s_Extended
+struct s_Extended
 {
-    fu_STR kind;
-    fu_STR name;
-    s_Type type;
-    int flags;
     int min;
     int max;
     fu_VEC<s_Argument> args;
-    s_Template tEmplate;
-    s_SolvedNode solved;
     s_Target spec_of;
+    s_Template tEmplate;
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
-    fu_VEC<s_SolvedNode> callsites;
-    unsigned status;
-    int local_of;
     fu_VEC<s_ScopeItem> extra_items;
-    s_Overload(const s_Overload&) = default;
-    s_Overload(s_Overload&&) = default;
-    s_Overload& operator=(s_Overload&&) = default;
-    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || type
-            || flags
             || min
             || max
             || args
-            || tEmplate
-            || solved
             || spec_of
+            || tEmplate
             || nodes
             || locals
-            || callsites
-            || status
-            || local_of
             || extra_items
         ;
     }
@@ -483,6 +493,7 @@ struct s_Scope
 {
     fu_VEC<s_ScopeItem> items;
     fu_VEC<s_Overload> overloads;
+    fu_VEC<s_Extended> extended;
     fu_VEC<int> imports;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
@@ -496,6 +507,7 @@ struct s_Scope
         return false
             || items
             || overloads
+            || extended
             || imports
             || usings
             || converts
@@ -842,7 +854,7 @@ s_Scope Scope_exports(const s_Scope& scope, const int modid_3, const fu_VEC<s_Sc
     result += pRivate;
     fu_VEC<int> no_imports {};
     fu_VEC<s_Target> no_usings {};
-    return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads), fu_VEC<int>(no_imports), fu_VEC<s_Target>(no_usings), fu_VEC<s_Target>(scope.converts), int(pub_count) };
+    return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope.overloads), fu_VEC<s_Extended>(scope.extended), fu_VEC<int>(no_imports), fu_VEC<s_Target>(no_usings), fu_VEC<s_Target>(scope.converts), int(pub_count) };
 }
 
 static void nextSkip(const fu_VEC<s_ScopeSkip>& scope_skip, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items_1)
@@ -943,9 +955,20 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return cmp(a, b) == 0;
 }
 
-s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const int min_1, const int max_1, const fu_VEC<s_Argument>& args, const s_SolvedNode& solved, const int local_of, const unsigned status, const fu_VEC<s_ScopeItem>& extra_items, const s_Template& tEmplate, const int recycle, const bool nest, const s_Module& module)
+                                #ifndef DEFt_grow_if_oob_RnoK
+                                #define DEFt_grow_if_oob_RnoK
+inline s_Extended& grow_if_oob_RnoK(fu_VEC<s_Extended>& a, const int i)
 {
-    fu_VEC<s_Overload>& overloads = ((nest && local_of) ? scope.overloads.mutref((local_of - 1)).locals : scope.overloads);
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const s_SolvedNode& solved, const int local_of, const unsigned status, const int recycle, const bool nest, const s_Module& module)
+{
+    fu_VEC<s_Overload>& overloads = ((nest && local_of) ? grow_if_oob_RnoK(scope.extended, (local_of - 1)).locals : scope.overloads);
     int _0 {};
     const s_Target target_1 = s_Target { (nest && (_0 = -local_of) ? _0 : int(MODID(module))), (recycle ? int(recycle) : (overloads.size() + 1)) };
     s_Overload item {};
@@ -953,14 +976,9 @@ s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, 
     item.kind = kind_1;
     item.flags = flags_1;
     item.type = type;
-    item.min = min_1;
-    item.max = max_1;
-    item.args = args;
-    item.tEmplate = tEmplate;
     item.solved = solved;
     item.local_of = local_of;
     item.status = status;
-    item.extra_items = extra_items;
     if (recycle)
         overloads.mutref((recycle - 1)) = item;
     else
@@ -984,9 +1002,9 @@ void Scope_set(fu_VEC<s_ScopeItem>& items_1, const fu_STR& id, const s_Target& t
 inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
-s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags_1, const s_Template& tEmplate, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags_1, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    const s_Target target_1 = Scope_create(scope, "type"_fu, name, type, flags_1, 0, 0, fu_VEC<s_Argument>{}, s_SolvedNode{}, 0, status, fu_VEC<s_ScopeItem>{}, tEmplate, 0, bool{}, module);
+    const s_Target target_1 = Scope_create(scope, "type"_fu, name, type, flags_1, s_SolvedNode{}, 0, status, 0, bool{}, module);
     if (id)
         Scope_set(scope, id, target_1, !!(flags_1 & F_SHADOW));
 
@@ -1024,20 +1042,20 @@ extern const s_Type t_never;
 s_Scope listGlobals(const s_Module& module)
 {
     s_Scope scope {};
-    Scope_Typedef(scope, "i8"_fu, t_i8, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "i16"_fu, t_i16, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "i32"_fu, t_i32, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "i64"_fu, t_i64, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "u8"_fu, t_u8, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "u16"_fu, t_u16, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "u32"_fu, t_u32, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "u64"_fu, t_u64, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "f32"_fu, t_f32, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "f64"_fu, t_f64, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "bool"_fu, t_bool, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "byte"_fu, t_byte, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "void"_fu, t_void, F_PUB, s_Template{}, fu_STR{}, 0u, module);
-    Scope_Typedef(scope, "never"_fu, t_never, F_PUB, s_Template{}, fu_STR{}, 0u, module);
+    Scope_Typedef(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     return scope;
 }
 
