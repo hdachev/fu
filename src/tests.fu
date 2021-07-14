@@ -2411,6 +2411,31 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode {
+            bli: i32;
+        };
+
+        // --> [2] ... triggered the solve of this fn, ...
+        fn SolvedNode(blah: string) {
+            return SolvedNode(blah.len.NOT_PREPPED_YET);
+        }
+
+        // [1] During prep, this type annotation ...
+        fn ARG_ANNOT_TRIGGERS_SOLVE(node: SolvedNode) {
+            return node.bli + 2;
+        }
+
+        // --> --> [3] ... which couldnt yet see this fn (prep didnt reach here).
+        fn NOT_PREPPED_YET(x: i32) {
+            return x * 2;
+        }
+
+        fn main() {
+            return ARG_ANNOT_TRIGGERS_SOLVE(SolvedNode("hello")) - (2*5+2);
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
