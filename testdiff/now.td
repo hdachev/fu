@@ -371,7 +371,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @11:13:
 	`++postfix` bad args.
-Expect: (
+Expect: ++postfix(
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
@@ -605,7 +605,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @17:14:
 	`++postfix` bad args.
-Expect: (
+Expect: ++postfix(
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
@@ -1492,7 +1492,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        pub fn map(a: [$T], fn) {
+        pub fn map(a: [$T], fn) {               // !DEAD_code
             mut res: fn($T)[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
@@ -8438,6 +8438,81 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct SolvedNode {
+            bli: i32;
+        };
+
+        // --> [2] ... triggered the solve of this fn, ...
+        fn SolvedNode(blah: string) {
+            return SolvedNode(blah.len.NOT_PREPPED_YET);
+        }
+
+        // [1] During prep, this type annotation ...
+        fn ARG_ANNOT_TRIGGERS_SOLVE(node: SolvedNode) {
+            return node.bli + 2;
+        }
+
+        // --> --> [3] ... which couldnt yet see this fn (prep didnt reach here).
+        fn NOT_PREPPED_YET(x: i32) {
+            return x * 2;
+        }
+
+        fn main() {
+            return ARG_ANNOT_TRIGGERS_SOLVE(SolvedNode("hello")) - (2*5+2);
+        }
+
+-----
+#include <cstdint>
+#include <fu/str.h>
+#include <fu/view.h>
+
+struct s_SolvedNode;
+
+static s_SolvedNode SolvedNode(fu::view<std::byte>);
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    int bli;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || bli
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int ARG_ANNOT_TRIGGERS_SOLVE(const s_SolvedNode& node)
+{
+    return node.bli + 2;
+}
+
+static int NOT_PREPPED_YET(const int x)
+{
+    return x * 2;
+}
+
+static s_SolvedNode SolvedNode(fu::view<std::byte> blah)
+{
+    return s_SolvedNode { NOT_PREPPED_YET(blah.size()) };
+}
+
+int fu_MAIN()
+{
+    return ARG_ANNOT_TRIGGERS_SOLVE(SolvedNode("hello"_fu)) - ((2 * 5) + 2);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
@@ -8637,7 +8712,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @15:13:
 	`=` bad args.
-Expect: (
+Expect: =(
 	a: $,
 	b: $)
 Actual: (
@@ -16450,10 +16525,10 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @2:9:
 	`+` bad args, available overloads:
-		(
+		+(
 	a: $,
 	b: $)
-		(
+		+(
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed,
@@ -18053,10 +18128,10 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @5:9:
 	`-` bad args, available overloads:
-		(
+		-(
 	a: $,
 	b: $)
-		(
+		-(
 	a: $)
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
