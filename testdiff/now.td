@@ -375,6 +375,7 @@ Expect: (
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         /*
@@ -608,6 +609,7 @@ Expect: (
 	a: $)
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         struct Range {
@@ -843,7 +845,10 @@ int main() { return fu_MAIN(); }
         fn main() test(A(1, 1), B(-1, -1));
 -----
 _0.fu @6:13:
-	Ambiguous callsite, matches multiple items in scope: `x` from global scope and global scope, as seen from `test`.
+	Ambiguous callsite, matches multiple items in scope: x(
+	this: 1:$1B via `var b: 1+14$1B`) from `global scope` and x(
+	this: 1:$0A via `var a: 1+14$0A`) from `global scope`, as seen from `test`.
+	Solving fn `test`.
 -----
 
         struct A { x: i32; y: i32; };
@@ -1398,7 +1403,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn self_rec_template(x: $T): $T
+        fn self_rec_template(x: $T): $T                     // !FN_resolve
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
         fn main()
@@ -4863,6 +4868,7 @@ Expect: test(
 	a?: []+28byte: ref)
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         /*
@@ -5833,6 +5839,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:9:
 	Unused variable: `b`: make it `lax` if this is intentional.
+	Solving fn `hello`.
 -----
 
         fn fail(a: string) throw("hey: " ~ a);
@@ -6261,7 +6268,7 @@ int fu_MAIN()
     const int max_1 {};
     fu_VEC<fu_STR> arg_n {};
     const s_Template tEmplate {};
-    return Scope_add(_scope, fu::view<std::byte>{}, id, t_template, min_1, max_1, arg_n, fu_VEC<s_Type>{}, fu_VEC<s_SolvedNode>{}, tEmplate, s_Partial{});
+    return Scope_add(_scope, fu::view<std::byte>{}, id, t_template, min_1, max_1, arg_n, fu::view<s_Type>{}, fu::view<s_SolvedNode>{}, tEmplate, s_Partial{});
 }
 
 #endif
@@ -7310,6 +7317,10 @@ Expect: GET(
 	target: 1:$2Target: ref copy trivial)
 Actual: (
 	1:$3Overload: ref copy).
+	Solving fn `name_Pfmx`.
+	Solving fn `name_zs0j`.
+	Solving fn `setSpec`.
+	Solving fn `main`.
 -----
 
         struct ValueType { modid: i32; };
@@ -7497,7 +7508,7 @@ int test(fu::view<int> items)
 
 int fu_MAIN()
 {
-    return test(fu_VEC<int>{});
+    return test(fu::view<int>{});
 }
 
 #endif
@@ -8632,6 +8643,8 @@ Expect: (
 Actual: (
 	1:$0ScopeIdx: mutref ref copy trivial,
 	i32: ref copy trivial primitive arithmetic integral signed).
+	Solving fn `hey`.
+	Solving fn `main`.
 -----
 
         struct ScopeIdx { raw: i32; };
@@ -8954,6 +8967,7 @@ Expect: ScopeSkip(
 Actual: (
 	min: i32: copy trivial primitive arithmetic integral signed,
 	max: i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         pub struct ScopeSkip {
@@ -10180,6 +10194,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @10:13:
 	Needs an explicit STEAL or CLONE.
+	Solving fn `main`.
 -----
 
         /*
@@ -12788,6 +12803,7 @@ _0.fu @14:16:
 Expect: Test(
 	a: i32: copy trivial primitive arithmetic integral signed,
 	b: i32: copy trivial primitive arithmetic integral signed)
+	Solving fn `main`.
 -----
 
         struct Test {
@@ -12851,6 +12867,7 @@ _0.fu @14:16:
 Expect: Test(
 	b: i32: copy trivial primitive arithmetic integral signed,
 	a: i32: copy trivial primitive arithmetic integral signed)
+	Solving fn `main`.
 -----
 
         struct Test {
@@ -13004,6 +13021,7 @@ Expect: test(
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         fn test(a: i32, b!: i32 = 1) a + b;
@@ -13050,6 +13068,7 @@ Expect: Test(
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         struct Test { a: i32; b!: i32; };
@@ -13115,6 +13134,7 @@ Expect: Test(
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         struct Test { a?: i32; b?!: i32; };
@@ -13247,6 +13267,7 @@ Expect: a2o1(
 Actual: (
 	a: i32: copy trivial primitive arithmetic integral signed,
 	c: i32: copy trivial primitive arithmetic integral signed).
+	Solving fn `main`.
 -----
 
         fn a0o0() 0;
@@ -13373,6 +13394,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13419,6 +13441,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13464,6 +13487,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13509,6 +13533,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Bad int literal.
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13555,6 +13580,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13601,6 +13627,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13646,6 +13673,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13691,6 +13719,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Oversized signed int literal.
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13737,6 +13766,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: u8: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13783,6 +13813,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: u16: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13829,6 +13860,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Type annotation does not match init expression `ret`: u32: copy trivial primitive arithmetic integral unsigned=i64: copy trivial primitive arithmetic integral signed
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13874,6 +13906,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @3:13:
 	Integer literal overflows a u64.
+	Solving fn `main`.
 -----
 
         fn main() {
@@ -13967,6 +14000,7 @@ int main() { return fu_MAIN(); }
 -----
 _1.fu @3:23:
 	`hello` is not defined in this scope: `main`.
+	Solving fn `main`.
 -----
 
         pub fn noop() {} // AUTOPUB
@@ -15979,6 +16013,7 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @4:17:
 	Non-void returning fn missing a final return.
+	Solving fn `hello`.
 -----
 
         fn hello(x: i32) {
@@ -16423,6 +16458,8 @@ _0.fu @2:9:
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed,
 	i8: ref copy trivial primitive arithmetic integral signed).
+	Solving fn `test_ZHMH`.
+	Solving fn `main`.
 -----
 
         fn test(a: $A, b: $B) b + /*
@@ -17379,6 +17416,112 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub struct Module       { modid: i32; };
+        pub struct Target       { modid: i32; index: i32; };
+        pub struct Type         { using vtype: ValueType; };
+        pub struct ValueType    { modid: i32; canon: string; };
+        pub struct Overload     { kind: string; locals?: Overload[]; };
+
+        fn main() {
+            let implicit mut overloads: Overload[];
+
+            using fn GET(target: Target, implicit overloads: Overload[]) {
+                target.index > 0 || assert();
+                if (target.modid < 0)
+                    return overloads[-target.modid - 1].locals[target.index - 1];
+                else
+                    return overloads[target.index - 1];
+            }
+
+            fn try_GET(target: Target)
+                target && GET(target);
+
+            overloads ~= Overload("What");
+            return try_GET(Target(0, 1)).kind.len - 4;
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+#include <fu/view.h>
+
+struct s_Overload;
+struct s_Target;
+
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_STR kind;
+    fu_VEC<s_Overload> locals;
+    s_Overload(const s_Overload&) = default;
+    s_Overload(s_Overload&&) = default;
+    s_Overload& operator=(s_Overload&&) = default;
+    s_Overload& operator=(const s_Overload& selfrec) { return *this = s_Overload(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || locals
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overloads_1)
+{
+    if (!(target.index > 0))
+        fu_ASSERT();
+
+    if (target.modid < 0)
+        return overloads_1[(-target.modid - 1)].locals[(target.index - 1)];
+    else
+        return overloads_1[(target.index - 1)];
+
+}
+
+static const s_Overload& try_GET(const s_Target& target, fu_VEC<s_Overload>& overloads)
+{
+    return target ? GET(target, overloads) : (*(const s_Overload*)fu::NIL);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<s_Overload> overloads {};
+    overloads += s_Overload { "What"_fu, fu_VEC<s_Overload>{} };
+    return try_GET(s_Target { 0, 1 }, overloads).kind.size() - 4;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+
+-----
+
         fn fn_v(fn, v) fn(v);
         struct XY { x: i32; y: i32; };  // fields weren't visible to addroffns
         fn main() {
@@ -17918,6 +18061,7 @@ _0.fu @5:9:
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	u32: copy trivial primitive arithmetic integral unsigned).
+	Solving fn `main`.
 -----
 
         fn sB(_: $T) struct { hey: $T; };
