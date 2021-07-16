@@ -1038,7 +1038,7 @@ pub fn solve(
                             // Go through conversions here.
                             if !(flags & F_CONVERSION)
                             {
-                                let conversion = tryConvert(:scope, :local_scope, :expect, :actual);
+                                let conversion = tryConvert(:scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
                                 if (conversion)
                                 {
                                     conversions.grow_if_oob(i) ~= conversion;
@@ -1215,15 +1215,19 @@ pub fn solve(
 
     fn tryConvert(
         scope: Scope, local_scope: bool,
-        expect: Type, actual?: Type): Target[]
+        expect: Type, actual?: Type, retype?: SolvedNode): Target[]
     {
         mut match:  Target[];
         mut path:   Target[];
 
-        let has_converts = scope.converts.len;
-        let ss_converts = local_scope && _ss.converts;
+        let has_converts    = scope.converts.len;
+        let ss_converts     = local_scope && _ss.converts;
 
-        fn descend(from: Type, nullary!: bool, isStruct!: bool)
+        ////////////////////////////////////
+        mut arg0 = TODO_FIX_convert_args[0];
+        ////////////////////////////////////
+
+        fn descend(from: Type, nullary!: bool, isStruct!: bool, root?: bool)
         {
             fn foreach(t: Target)
             {
@@ -1241,12 +1245,19 @@ pub fn solve(
                     if (here && t.index > here && t.modid == module.modid && t.local_of != here)
                         return;
 
-                    //
-                    TODO_FIX_convert_args[0].MUT.type = from;
+                    if (root && retype)
+                        TODO_FIX_convert_args[0] = retype;
+                    else
+                        TODO_FIX_convert_args[0].MUT.type = from;
                 }
 
                 defer if (!nullary)
-                    TODO_FIX_convert_args[0].MUT.type = arg0type0;
+                {
+                    if (root && retype)
+                        TODO_FIX_convert_args[0] = arg0;
+                    if !(root && retype) // TODO FIX, defer solves as an expression
+                        TODO_FIX_convert_args[0].MUT.type = arg0type0;
+                }
                 //////////////////////////////////////////////////
 
                 mut candidate: Target;
@@ -1365,7 +1376,7 @@ pub fn solve(
         }
 
         // Go.
-        descend(actual, nullary: !actual, :actual.isStruct);
+        descend(actual, nullary: !actual, :actual.isStruct, root: true);
 
         // We're done here.
         return match;
