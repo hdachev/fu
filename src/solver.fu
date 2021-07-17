@@ -1255,7 +1255,7 @@ pub fn solve(
                 {
                     if (root && retype)
                         TODO_FIX_convert_args[0] = arg0;
-                    if !(root && retype) // TODO FIX, defer solves as an expression
+                    else
                         TODO_FIX_convert_args[0].MUT.type = arg0type0;
                 }
                 //////////////////////////////////////////////////
@@ -4941,9 +4941,6 @@ pub fn solve(
         // Pre-populate prelude with primitive types and such.
         _scope = listGlobals();
     }
-
-    //
-    TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
 
     // Solve.
     {
