@@ -3778,7 +3778,7 @@ pub fn solve(
         ////////////////////////////////
 
         let var_err = solveLetStatement(node.items[1]);
-        let catch   = solveNode(node.items[2]);
+        let catch   = solveNode(node.items[2], t_void);
 
         let type = var_ok.type;
         catch.type.is_never || fail(
@@ -3801,7 +3801,7 @@ pub fn solve(
         let scope0  = Scope_snap(_scope);
         /////////////////////////////////
 
-        let try     = solveNode(node.items[0]);
+        let try     = solveNode(node.items[0], t_void);
 
         ///////////////////////////////////////
         Scope_pop(_scope, scope0);
@@ -3809,7 +3809,7 @@ pub fn solve(
         ///////////////////////////////////////
 
         let err     = solveLetStatement(node.items[1]);
-        let catch   = solveNode(node.items[2]);
+        let catch   = solveNode(node.items[2], t_void);
 
         //////////////////////////
         Scope_pop(_scope, scope0);
@@ -3853,8 +3853,11 @@ pub fn solve(
 
     fn solveDefer(node: Node): SolvedNode
     {
-        // TODO unless defer:ok, must be noexcept
-        let item = solveNode(node.items.only);
+        ////////////////////////////////////////////
+        // TODO unless defer:ok, must be noexcept //
+        ////////////////////////////////////////////
+
+        let item = solveNode(node.items.only, t_void);
         return solved(node, t_void, [ item ]);
     }
 
