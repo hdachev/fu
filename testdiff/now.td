@@ -17491,6 +17491,148 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct vec32  { x: f32; };
+        struct conv32 { v: f32; };
+
+        using inline fn convert(v: f32): conv32 = [ v ]; // litfix in a conv: i32 -> f32
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+
+-----
+
+struct s_conv32;
+struct s_vec32;
+
+                                #ifndef DEF_s_vec32
+                                #define DEF_s_vec32
+struct s_vec32
+{
+    float x;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || x
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_conv32
+                                #define DEF_s_conv32
+struct s_conv32
+{
+    float v;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    s_vec32 _0 {};
+    return int(((__extension__ (
+    {
+        s_conv32 _1 {};
+        const s_conv32 a = (__extension__ (
+        {
+            const float v = 1.0f;
+            _1 = (s_conv32 { float(v) });
+        }), s_conv32(_1));
+        const s_vec32 b = s_vec32 { 1.0f };
+        _0 = (s_vec32 { (a.v / b.x) });
+    }), s_vec32(_0)).x - 1.0f));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct vec_u  { x: u32; };
+        struct vec32  { x: f32; };
+        struct vec64  { x: f64; };
+
+        struct conv_u { v: u32; };
+        struct conv32 { v: f32; };
+        struct conv64 { v: f64; };
+
+        using inline fn convert(v: u32): conv_u = [ v ]; // matchfail before
+        using inline fn convert(v: f32): conv32 = [ v ];
+        using inline fn convert(v: f64): conv64 = [ v ]; // matchfail after
+
+        inline fn /(a: conv_u, b: vec_u) vec_u(a.v / b.x);
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+        inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);
+
+        fn main() i32 <| (1/vec32(1)).x - 1;
+
+-----
+
+struct s_conv32;
+struct s_vec32;
+
+                                #ifndef DEF_s_vec32
+                                #define DEF_s_vec32
+struct s_vec32
+{
+    float x;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || x
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_conv32
+                                #define DEF_s_conv32
+struct s_conv32
+{
+    float v;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    s_vec32 _0 {};
+    return int(((__extension__ (
+    {
+        s_conv32 _1 {};
+        const s_conv32 a = (__extension__ (
+        {
+            const float v = 1.0f;
+            _1 = (s_conv32 { float(v) });
+        }), s_conv32(_1));
+        const s_vec32 b = s_vec32 { 1.0f };
+        _0 = (s_vec32 { (a.v / b.x) });
+    }), s_vec32(_0)).x - 1.0f));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         pub struct Module       { modid: i32; };
         pub struct Target       { modid: i32; index: i32; };
         pub struct Type         { using vtype: ValueType; };
