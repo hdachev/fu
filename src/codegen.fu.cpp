@@ -1757,7 +1757,7 @@ static fu_STR cgFn(const s_SolvedNode& fn, const int mode, fu_STR& _indent, cons
     if (!body)
     {
         if (!(overload.kind == "__native"_fu))
-            fail(("cgFn: no body on non-native: "_fu + id_2));
+            fail(((("cgFn: no body on non-native: "_fu + overload.kind) + " "_fu) + id_2));
 
         return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
     };
