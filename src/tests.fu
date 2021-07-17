@@ -5355,6 +5355,26 @@ pub fn runTests()
     `);
 
 
+    // Borrow checker.
+
+    FAIL(`
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
+
+        fn main() {
+            mut x = 0;
+            //*F
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
+    `);
+
+
     // Enum basics.
 
     // FAIL(`

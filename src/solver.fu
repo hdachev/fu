@@ -36,6 +36,8 @@ let OPTI_flatten_blocks     = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
+let USE_bck_mutref_args     = true;
+
 let SELF_TEST               = true;
 
 let CANNOT_definit_mutrefs  = true;
@@ -462,6 +464,14 @@ pub fn solve(
         }
 
         return Lifetime_union(keep, replace);
+    }
+
+    using fn Region_GET(r: Region)
+    {
+        // TODO statics
+        let idx = Region_isArg(r)   ? Region_toArgIndex(r)
+                                    : Region_toLocalIndex(r);
+        return GET_nested(idx);
     }
 
 
@@ -4643,10 +4653,16 @@ pub fn solve(
                 let host_args = target.args || fail("CallerNode: no host args.");
                 host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
 
-                /////////////////
-                // Literal fixup.
+                // BORROWCK /////////
+                mut mr_first    = -1;
+                mut mr_last     = -1;
+                /////////////////////
+
                 for (mut i = 0; i < args.len; i++)
                 {
+                    /////////////////
+                    // Literal fixup.
+
                     // Drop argids at this point, not useful.
                     ref arg = args[i];
                     if (arg.kind == "argid")
@@ -4658,9 +4674,47 @@ pub fn solve(
                         if (isAssignableAsArgument(expect, retype))
                             arg.MUT.type = retype;
                     }
+                    //        /LITFIX
+                    /////////////////
+
+                    // BORROWCK: multiple mutrefs error,
+                    //  this is the only thing we can't workaround by copying.
+                    if (USE_bck_mutref_args && expect.is_mutref)
+                    {
+                        if (mr_first < 0)
+                        {
+                            mr_first = i;
+                        }
+                        else
+                        {
+                            let i0 = i;
+                            for (shadow mut i = mr_first; i <= mr_last; i++)
+                            {
+                                // TODO in the future we'll isref this,
+                                //  will need a little rewrite to make it symmetric.
+                                //
+                                if (host_args[i].is_mutref)
+                                {
+                                    let other = args[i];
+                                    let inter = Lifetime_inter(arg.type.lifetime, other.type.lifetime);
+                                    if (inter)
+                                    {
+                                        mut err = "BORROWCK: Mutref arguments " ~ i ~ " and " ~ i0 ~ " alias, both refer to:";
+                                        for (shadow mut i = 0; i < inter.uni0n.len; i++)
+                                        {
+                                            let o = inter.uni0n[i];
+                                            err ~= "\n\t" ~ o.kind ~ " " ~ o.name;
+                                        }
+
+                                        fail(err);
+                                    }
+                                }
+                            }
+                        }
+
+                        mr_last = i;
+                    }
                 }
-                //        /LITFIX
-                /////////////////
 
                 for (mut i = 0; i < args.len; i++)
                     maybeCopyOrMove(
