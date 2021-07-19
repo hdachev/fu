@@ -61,6 +61,8 @@ fn TODO_gcc(src: string)
     else                    ZERO(src);
 }
 
+fn TODO_borrowck(src: string) TODO(src);
+
 
 // Run the whole battery & build self.
 
@@ -1867,7 +1869,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn target(implicit ref _target: i32) _target;
 
         // this suddenly reported that it doesn't see __solveStruct
@@ -1893,7 +1895,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             mut target = 0;
@@ -1902,7 +1904,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn target(implicit ref _itarg: i32) _itarg;
 
         fn main()
@@ -1913,7 +1915,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn target(implicit ref _itarg: i32) _itarg;
         fn GET_mut(ref x: i32) x || GET_mut(target += 1);
 
@@ -1924,7 +1926,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             mut target = 0;
@@ -1969,7 +1971,7 @@ pub fn runTests()
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             fn each(cond, cons) cond && cons();
@@ -1980,7 +1982,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             mut target = 0;
@@ -2005,7 +2007,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             mut target = 0;
@@ -2219,7 +2221,7 @@ pub fn runTests()
         fn main() test("you").len - 7;
     `);
 
-    TODO(`
+    TODO_borrowck(`
         struct Arg { i: i32; };
 
         // A mutref fail.
@@ -3030,7 +3032,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         nocopy struct NoCopy { i: i32; };
 
         fn      retarg(a) a;                    // <- now templates
