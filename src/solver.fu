@@ -274,6 +274,7 @@ pub fn solve(
 
     // TODO FIX /////////////////////////////////
     mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
+    mut TODO_FIX_convert_reorder: i32[];
     mut TODO_FIX_convert_conversions: Target[][];
     /////////////////////////////////////////////
 
@@ -709,8 +710,10 @@ pub fn solve(
 
     fn tryMatch__mutargs(
         scope: Scope, local_scope: bool,
-        mut id: string, ref args: SolvedNode[],
+        mut id: string,
+        ref reorder: i32[],
         ref conversions: Target[][],
+        args?: [SolvedNode],
         flags?!: i32, target?!: Target): Target
     {
         mut matchIdx: Target;
@@ -745,7 +748,6 @@ pub fn solve(
             some || fail();
         }
 
-        mut reorder: i32[];
         mut reusable_mangle: string;
 
         // Argument & `using` dependent lookup,
@@ -815,10 +817,6 @@ pub fn solve(
         //
         mut alternate_ids: string[];
 
-        ///////////////////////////
-        mut args_out: SolvedNode[];
-        ///////////////////////////
-
         for (;;)
         {
             mut scope_iterator: i32;
@@ -834,6 +832,9 @@ pub fn solve(
                 ///////////////////////////////////
                 ref conversions_out = conversions;
                 shadow mut conversions: Target[][];
+
+                ref reorder_out = reorder;
+                shadow mut reorder: i32[];
 
                 shadow let args = args;
 
@@ -992,12 +993,13 @@ pub fn solve(
                             if (host_arg.autocall && !TODO_FIX_skip_autocalls)
                             {
                                 mut autocall_args:          SolvedNode[];
+                                mut autocall_reorder:       i32[];
                                 mut autocall_conversions:   Target[][];
 
                                 autocall_args.resize(1);
                                 autocall_args[0] = args[callsiteIndex];
 
-                                let t = tryMatch__mutargs(:scope, :local_scope, id: host_arg.autocall, args: autocall_args, conversions: autocall_conversions);
+                                let t = tryMatch__mutargs(:scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions);
                                 if (!t)
                                     continue :NEXT;
 
@@ -1005,6 +1007,7 @@ pub fn solve(
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
 
                                 conversions.grow_if_oob(i) ~= t;
+                                autocall_reorder.len < 2 || fail("autocall: reorder");
                             }
 
                             // Templates.
@@ -1106,23 +1109,8 @@ pub fn solve(
                     // Forbid ambiguity.
                     disambig();
 
-                    // Do reorder.
-                    if (use_reorder)
-                    {
-                        args_out.resize(reorder.len);
-                        for (mut i = 0; i < reorder.len; i++)
-                        {
-                            let idx = reorder[i];
-                            if (idx >= 0)
-                                args_out[i] = args[idx];
-                        }
-                    }
-                    else
-                    {
-                        args_out = args;
-                    }
-
                     // Output conversions /////////////
+                    SWAP(reorder,     reorder_out    );
                     SWAP(conversions, conversions_out);
                     ///////////////////////////////////
 
@@ -1147,9 +1135,6 @@ pub fn solve(
             alternate_ids.pop();
             //////////////////////////////////
         }
-
-        if (matchIdx)
-            SWAP(args, args_out);
 
         if (DEBUG_assertMatch)
             DEBUG_assertMatch == matchIdx || fail(
@@ -1264,7 +1249,9 @@ pub fn solve(
                 if (nullary || (candidate = tryMatch__mutargs(
                     target: t,
                     scope: Scope, local_scope: false, id: "",
-                    args: TODO_FIX_convert_args, conversions: TODO_FIX_convert_conversions,
+                    args: TODO_FIX_convert_args,
+                    reorder: TODO_FIX_convert_reorder,
+                    conversions: TODO_FIX_convert_conversions,
                     flags: F_CONVERSION)))
                 {
                     shadow let t = nullary ? t : candidate;
@@ -1388,14 +1375,15 @@ pub fn solve(
     fn match__mutargs(
         scope: Scope, local_scope: bool,
         id: string, ref args: SolvedNode[],
+        ref reorder: i32[],
         ref conversions: Target[][],
         flags: i32, target: Target): Target
     {
-        let ret = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions, :flags, :target);
+        let ret = tryMatch__mutargs(:scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
         if (ret)
             return ret;
 
-        let debug = tryMatch__mutargs(:scope, :local_scope, :id, :args, :conversions, :flags, :target);
+        let debug = tryMatch__mutargs(:scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
         if (debug)
             return debug;
 
@@ -4183,13 +4171,14 @@ pub fn solve(
             : _scope;
 
         //
+        mut reorder: i32[];
         mut conversions: Target[][];
         let callTargIdx = match__mutargs(
             :scope, local_scope: !qualified,
-            :id, :args, :conversions, :node.flags, :target);
+            :id, :args, :reorder, :conversions, :node.flags, :target);
 
         //
-        return CallerNode(node.value, callTargIdx, args, :kills, :conversions);
+        return CallerNode(node.value, callTargIdx, args, :kills, :reorder, :conversions);
     }
 
 
@@ -4318,14 +4307,11 @@ pub fn solve(
         }
         // CLOSURE-ID-HACK
 
-        mut args: SolvedNode[];
+        mut reorder: i32[];
         mut conversions: Target[][];
-        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :args, :conversions, flags: F_IMPLICIT)
+        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
-
-        if (args.len != 0 || conversions.len != 0)
-            fail("dunno what happened here");
 
         let o = GET(target);
         o.flags & F_IMPLICIT || fail(
@@ -4333,7 +4319,7 @@ pub fn solve(
 
         checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch");
 
-        return CallerNode("__implicit", :target);
+        return CallerNode("__implicit", :target, :reorder, :conversions);
     }
 
 
@@ -4532,9 +4518,25 @@ pub fn solve(
 
     fn CallerNode(
         debug: string,
-        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32, conversions?: Target[][])
+        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32, reorder?: i32[], conversions?: Target[][])
             : SolvedNode
     {
+        // Do reorder.
+        if (reorder)
+        {
+            // TODO FIX this can be done in place, a neat little algo with swaps
+            mut args_out: SolvedNode[]; args_out.resize(reorder.len);
+
+            for (mut i = 0; i < reorder.len; i++)
+            {
+                let idx = reorder[i];
+                if (idx >= 0)
+                    args_out[i] = args[idx];
+            }
+
+            args = args_out;
+        }
+
         // `using` codegen.
         for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
         {
