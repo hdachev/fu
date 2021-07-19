@@ -3815,6 +3815,17 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub fn noop() 0;
+        pub fn woot(ref i: i32, fn) i += fn(i?: i += 1); // Will not add 1.
+
+        fn main() {
+            mut sum = 0;
+            woot(sum, fn noop);
+            return sum;
+        }
+    `);
+
 
     // Intlit sizechecks.
 
