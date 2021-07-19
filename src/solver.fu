@@ -274,8 +274,6 @@ pub fn solve(
 
     // TODO FIX /////////////////////////////////
     mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
-    mut TODO_FIX_convert_reorder: i32[];
-    mut TODO_FIX_convert_conversions: Target[][];
     /////////////////////////////////////////////
 
     let TODO_FIX_template_defarg = SolvedNode(kind: "__defarg", type: Type());
@@ -1210,6 +1208,9 @@ pub fn solve(
 
         ////////////////////////////////////
         mut arg0 = TODO_FIX_convert_args[0];
+
+        mut TODO_FIX_reorder: i32[];
+        mut TODO_FIX_conversions: Target[][];
         ////////////////////////////////////
 
         fn descend(from: Type, nullary!: bool, isStruct!: bool, root?: bool)
@@ -1250,8 +1251,8 @@ pub fn solve(
                     target: t,
                     scope: Scope, local_scope: false, id: "",
                     args: TODO_FIX_convert_args,
-                    reorder: TODO_FIX_convert_reorder,
-                    conversions: TODO_FIX_convert_conversions,
+                    reorder: TODO_FIX_reorder,
+                    conversions: TODO_FIX_conversions,
                     flags: F_CONVERSION)))
                 {
                     shadow let t = nullary ? t : candidate;
