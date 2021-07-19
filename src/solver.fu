@@ -2844,8 +2844,7 @@ pub fn solve(
         }
 
         // Go!
-        ref o = GET_mut(target);
-        lazySolveEnd(o);
+        lazySolveEnd(target);
         return target;
     }
 
@@ -3071,7 +3070,7 @@ pub fn solve(
         }
 
         //
-        lazySolveEnd(GET_mut(out.target));
+        lazySolveEnd(out.target);
 
         // We're done here, return nothing.
         return SolvedNode();
@@ -3103,8 +3102,9 @@ pub fn solve(
         return true;
     }
 
-    fn lazySolveEnd(ref o: Overload): void
+    fn lazySolveEnd(t: Target): void
     {
+        ref o = GET_mut(t);
         mut reopen: i32[];
 
         let parent = o.local_of;
@@ -3182,7 +3182,7 @@ pub fn solve(
         //
         for (mut i = 0; i < reopen.len; i++)
         {
-            let t = Target(:module.modid, index: reopen[i]);
+            shadow let t = Target(:module.modid, index: reopen[i]);
             lazySolveStart(t, GET(t));
         }
     }
