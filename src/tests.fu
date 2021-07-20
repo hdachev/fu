@@ -5394,6 +5394,74 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) {
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                /*/
+                b++;
+                //*/
+            }
+            b++;
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) { // Lets be extra sure here.
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                b++;
+                /*/
+                b++;
+                a ~= 1;
+                //*/
+            }
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            for (mut i = 2; i --> 0; )
+            {
+                b++; // Same thing but reordered as a loop.
+                if (a.len & 3) {
+                    //*F
+                    a ~= 1; // Invalidates 'b' on next iter.
+                    /*/
+                    b++;
+                    //*/
+                }
+            }
+            a ~= 100; // Invalidates 'b' but that's fine!
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 105;
+        }
+    `);
+
 
     // Enum basics.
 
