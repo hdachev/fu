@@ -4385,7 +4385,7 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks_after: 1,
+        mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks: true,
             type_last: type,
             use_type_last: true,
             type_all: type.is_void ? t_bool : type);
@@ -4448,7 +4448,7 @@ pub fn solve(
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, deadcode_on_never: true, as_blocks_after: 1,
+        let items = solveNodes(node.items, deadcode_on_never: true,
             type_last: type,
             use_type_last: true,
             type_all: type.is_void ? t_bool : type);
@@ -4870,7 +4870,7 @@ pub fn solve(
         type_last?!: Type,
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
-        as_blocks_after! = -1,
+        as_blocks?!: bool,
         kills?!: i32,
         mode?: u16): SolvedNode[]
     {
@@ -4898,7 +4898,7 @@ pub fn solve(
                     ? type_last
                     : type_all;
 
-                let solved = as_blocks_after >= 0 && as_blocks_after <= i
+                let solved = as_blocks
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type,
                         kills: i == nodes.len - 1 && kills, :mode);

@@ -107,8 +107,8 @@ pub struct ScopeMemo
 
 pub struct SolvedNode
 {
-    nodeown:    Target;
-    nodeidx:    i32;
+    nodeown:    Target; // TODO need to clean up Argument.default, callsites & structs -
+    nodeidx:    i32;    //  We shouldn't need a target, all nodes are local to their fn.
 };
 
 pub struct SolvedNodeData
