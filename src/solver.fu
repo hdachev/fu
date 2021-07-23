@@ -36,8 +36,6 @@ let OPTI_flatten_blocks     = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
-let USE_bck_mutref_args     = true;
-
 let SELF_TEST               = true;
 
 let CANNOT_definit_mutrefs  = true;
@@ -3457,9 +3455,9 @@ pub fn solve(
         let n_post      = node.items[LOOP_POST];
 
         let init        = n_init      && solveLetStatement(n_init);
-        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
+        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond);
         let body        = n_body      && solveBlock(n_body, type: t_void);
-        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
+        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond);
         let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
@@ -4348,6 +4346,8 @@ pub fn solve(
     {
         mut cond    = solveNode(node.items[0], t_bool);
 
+        trackReadWrite(cond);
+
         // Dead code elim.
         if (cond.type.is_never)
         {
@@ -4443,7 +4443,7 @@ pub fn solve(
             }
         }
 
-        return solved(node, type, items);
+        return solvedAndOr(node, type, items);
     }
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
@@ -4509,7 +4509,21 @@ pub fn solve(
 
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
+        return solvedAndOr(node, type, items);
+    }
+
+    fn solvedAndOr(node: Node, type: Type, items: SolvedNode[])
+    {
+        // We read everything but the last argument.
+        for (mut i = 0; i < items.len - 1; i++)
+            trackReadWrite(items[i]);
+
         return solved(node, type, items);
+    }
+
+    fn trackReadWrite(node: SolvedNode, write?!: bool)
+    {
+        if (node) if (write) {};
     }
 
 
@@ -4679,7 +4693,7 @@ pub fn solve(
 
                     // BORROWCK: multiple mutrefs error,
                     //  this is the only thing we can't workaround by copying.
-                    if (USE_bck_mutref_args && expect.is_mutref)
+                    if (expect.is_mutref)
                     {
                         if (mr_first < 0)
                         {
@@ -4714,12 +4728,17 @@ pub fn solve(
 
                         mr_last = i;
                     }
-                }
 
-                for (mut i = 0; i < args.len; i++)
                     maybeCopyOrMove(
                         args[i] || fail(), host_args[i].type,
                         isArgument: true);
+
+                    // Usage: this is where we detect mutation.
+                    //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
+                    if (arg.is_ref)
+                        trackReadWrite(arg,
+                            write: !expect.is_mutref);
+                }
 
                 if (type.is_ref)
                     type.lifetime = Lifetime_test(
@@ -4845,21 +4864,28 @@ pub fn solve(
             makeNote(N_NonTrivAutoCopy);
         }
 
-        // Here we go.
         node = createCopy(node);
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
-        SolvedNode(
+    {
+        trackReadWrite(node);
+
+        return SolvedNode(
             kind:   "copy",
             items:  [ node ],
             type:   clear_refs(node.type));
+    }
 
     fn createMove(node: SolvedNode): SolvedNode
-        SolvedNode(
+    {
+        trackReadWrite(node);
+
+        return SolvedNode(
             kind:   "move",
             items:  [ node ],
             type:   clear_refs(node.type));
+    }
 
 
     //
