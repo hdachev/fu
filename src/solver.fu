@@ -3,6 +3,7 @@ import parser;
 import scope;
 import context;
 import types;
+import effects;
 
 
 // Solver notes.
@@ -84,6 +85,7 @@ pub fn solve(
     struct CurrentFn
     {
         using out:      SolvedNode;
+        using flow?:    Flow;
     };
 
     mut _current_fn:    CurrentFn;
@@ -4593,7 +4595,11 @@ pub fn solve(
 
     fn trackReadWrite(node: SolvedNode, write?!: bool)
     {
-        if (node) if (write) {};
+        if (node && write) {}
+
+        // _current_fn.flow.usage ~= Effect(
+        //     write ? EK_ReadWrite : EK_Read,
+        //         lifetime);
     }
 
 
@@ -5106,7 +5112,7 @@ pub fn solve(
 
         let root = solveNode(parse);
 
-        _current_fn && fail("non-empty _current_fn.");
+        _current_fn.out && fail("non-empty _current_fn.");
 
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
