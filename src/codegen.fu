@@ -17,6 +17,7 @@ let M_PARENS            = 1 << 7;
 let M_OPT_CURLIES       = 1 << 8;
 let M_LOOP_BODY         = 1 << 9;
 let M_MUTVAR            = 1 << 10;
+let M_MOVABLE           = 1 << 11;
 
 
 //
@@ -158,18 +159,12 @@ pub fn cpp_codegen(
             //  let b = a.b;    // B& b = a.b;      // const B& wouldn't allow move
             //  return b;       // return move(b);  // here
             //
-            if (!(type.is_trivial) && !(mode & M_ARGUMENT)
-                && type.lifetime.Lifetime_compareToIndex(0) > 0
-                && _current_fn.modid == module.modid)
+            if (mode & M_MOVABLE)
             {
-                // TODO only do this when strictly useful, weakens our validation.
-                //
                 // Only useful if current fn returns a nontriv value.
                 //  We could notice current fn does a move-return.
                 //   Ideally we would actually know the dependecy chain
                 //    so we'll only do this if really needed for this variable.
-                //
-                // TODO Tracking ref use and 'moved-from'-ness.
                 //
                 let fnret = GET(Target(:module.modid, index: _current_fn.index)).type;
                 if !(fnret.is_trivial || fnret.is_ref)
@@ -870,7 +865,8 @@ pub fn cpp_codegen(
         let annot = typeAnnot(
             node.type, (overload.flags & F_MUT == 0 && !forceMut && M_CONST)
                      | (isArg && M_ARGUMENT)
-                     | (overload.flags & F_MUT && M_MUTVAR));
+                     | (overload.flags & F_MUT && M_MUTVAR)
+                     | (overload.flags & F_MOVED_FROM && M_MOVABLE));
 
         if (!node.target)
             return annot;
