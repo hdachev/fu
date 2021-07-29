@@ -127,3 +127,46 @@ pub fn try_ReadWrite(using ref flow: Flow, block!: i32, target!: i32, mut write!
 }
 
 */
+
+pub fn Reference_track(ref flow: Flow, from: i32, to: i32/* this gotta be a union*/)
+{
+    flow.invalidates.len < from || fail("New ref: flow.invalidates already fits.");
+    flow.invalidates.grow(from);
+
+    //
+    let invals = flow.invalidates[to];
+
+    // So, if:
+    //  FROM = TO;
+
+    // Grand parents and siblings:
+    //  FROM invalidates everything TO invalidates.
+    if (invals)
+        flow.invalidates[from] = invals;
+
+    // Same thing backward:
+    //  Everything that TO invalidates potentially invalidates FROM.
+    for (mut i = 0; i < invals.len; i++)
+        flow.invalidates[invals[i]] ~= from;
+
+    // Parent rule, one-sided:
+    //  Finally, FROM invalidates TO.
+    flow.invalidates[to] ~= from;
+}
+
+pub fn Reference_untrack(ref flow: Flow, from: i32)
+{
+    let invals = flow.invalidates.unless_oob(from);
+
+    // Unlist any surviving backrefs.
+    for (mut i = 0; i < invals.len; i++)
+    {
+        let idx = flow.invalidates.unless_oob(invals[i]).find(from);
+        if (idx >= 0)
+            flow.invalidates[invals[i]].splice(idx, 1);
+    }
+
+    // And this should be all.
+    if (invals)
+        flow.invalidates[from] = [];
+}
