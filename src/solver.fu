@@ -3222,19 +3222,8 @@ pub fn solve(
 
 
     //////////////////////////////////////////////////////////
-    //
-    // Note - as soon as we re-assign the return value,
-    //  we want to re-iterate all the return statements,
-    //   because that can change our copy/move decision.
 
-    fn superType(reason: string, a: Type, b: Type)
-    {
-        return type_trySuper(a, b) || fail(reason
-            ~ "No common supertype: `"
-            ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
-    }
-
-    fn Lifetime_unwind(mut lifetime: Lifetime, upto: i32): Lifetime
+    fn Lifetime_climb(lifetime, visit, upto = 0)
     {
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
@@ -3245,10 +3234,18 @@ pub fn solve(
             if (r.Region_isTemp)
                 continue;
 
-            let o = r.Region_toLocalIndex().GET_nested();
+            ref o = r.Region_toLocalIndex().GET_nested();
             if (o.kind != "var")
-                continue;
+                fail("Lifetime_climb, not a var: " ~ o.kind ~ " " ~ o.name);
 
+            visit(:o, i?: i, lifetime?: lifetime);
+        }
+    }
+
+    fn Lifetime_unwind(mut lifetime: Lifetime, upto: i32): Lifetime
+    {
+        Lifetime_climb(:lifetime, :upto, visit: |o, i, shadow lifetime|
+        {
             let init = o.solved.items[LET_INIT].type;
             if !(init.is_ref)
                 continue;
@@ -3261,24 +3258,16 @@ pub fn solve(
             let N1      = lifetime.uni0n.len;
 
             i += N1 - N0;
-        }
+        });
 
         return lifetime;
     }
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime): Lifetime
     {
-        for (mut i = lifetime.uni0n.len; i --> 0; )
+        Lifetime_climb(:lifetime, visit: |o|
         {
-            let r = lifetime.uni0n[i];
-            if (r.Region_isArg)
-                break;
-
-            if (r.Region_isTemp)
-                continue;
-
-            ref o = r.Region_toLocalIndex().GET_nested();
-            if (o.kind != "var" || o.flags & F_MOVED_FROM)
+            if (o.flags & F_MOVED_FROM)
                 continue;
 
             o.flags |= F_MOVED_FROM;
@@ -3286,11 +3275,22 @@ pub fn solve(
             // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.humanizeType);
 
             let init = o.solved.items[LET_INIT].type;
-            if (init.lifetime)
+            if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
-        }
+        });
+    }
 
-        return lifetime;
+    //////////////////////////////////////////////////////////
+
+    // Note - as soon as we re-assign the return value,
+    //  we want to re-iterate all the return statements,
+    //   because that can change our copy/move decision.
+
+    fn superType(reason: string, a: Type, b: Type)
+    {
+        return type_trySuper(a, b) || fail(reason
+            ~ "No common supertype: `"
+            ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
     }
 
     fn solveJump(node: Node, kills: i32): SolvedNode
