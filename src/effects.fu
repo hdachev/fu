@@ -1,3 +1,5 @@
+import helpers;
+import types;
 
 pub let EK_Read         = 1; // `read(a)`                       -> Read `a`.
 pub let EK_ReadWrite    = 2; // `a0 = woot`                     ->
@@ -28,7 +30,8 @@ pub fn EK_isUse(effect: Effect)
 
 pub struct Flow
 {
-    usage:      Effect[];
+    usage:          Effect[];
+    invalidates:    i32[][];
 };
 
 /*
@@ -128,45 +131,67 @@ pub fn try_ReadWrite(using ref flow: Flow, block!: i32, target!: i32, mut write!
 
 */
 
-pub fn Reference_track(ref flow: Flow, from: i32, to: i32/* this gotta be a union*/)
+pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
 {
-    flow.invalidates.len < from || fail("New ref: flow.invalidates already fits.");
-    flow.invalidates.grow(from);
+    flow.invalidates.len <= left || assert();
 
-    //
-    let invals = flow.invalidates[to];
+    for (mut i = 0; i < right.uni0n.len; i++)
+    {
+        shadow let right = Region_asIndex(right.uni0n[i]);
+        if !(right)
+            continue;
 
-    // So, if:
-    //  FROM = TO;
+        // For each lifetime on the right of the assignment,
+        //  the invals are the stuff it kills on write.
+        mut invals = flow.invalidates.unless_oob(right);
 
-    // Grand parents and siblings:
-    //  FROM invalidates everything TO invalidates.
-    if (invals)
-        flow.invalidates[from] = invals;
+        // LEFT can show up in the inval lists
+        //  after we process the first lifetime.
+        !invals.set::rem(left) || i > 0 || assert();
 
-    // Same thing backward:
-    //  Everything that TO invalidates potentially invalidates FROM.
-    for (mut i = 0; i < invals.len; i++)
-        flow.invalidates[invals[i]] ~= from;
+        // So, if:
+        //  LEFT = &RIGHT;
+        if (invals)
+        {
+            // Grand parents and siblings:
+            //  LEFT invalidates everything RIGHT invalidates.
+            flow.invalidates.grow_if_oob(left) = invals;
 
-    // Parent rule, one-sided:
-    //  Finally, FROM invalidates TO.
-    flow.invalidates[to] ~= from;
+            // Same thing backward:
+            //  Everything that RIGHT invalidates potentially invalidates LEFT.
+            for (shadow mut i = 0; i < invals.len; i++)
+                flow.invalidates[invals[i]].set::add(left);
+        }
+
+        // Parent rule, one-sided:
+        //  Finally, RIGHT invalidates LEFT.
+        flow.invalidates.grow_if_oob(right).set::add(left);
+    }
 }
 
-pub fn Reference_untrack(ref flow: Flow, from: i32)
+pub fn Reference_untrack(ref flow: Flow, left: i32, right: Lifetime)
 {
-    let invals = flow.invalidates.unless_oob(from);
+    // Unlist parents.
+    for (mut i = 0; i < right.uni0n.len; i++)
+    {
+        shadow let right = Region_asIndex(right.uni0n[i]);
+        if (!right)
+            continue;
+
+        flow.invalidates[right].set::rem(left) || assert();
+    }
+
+    let invals = flow.invalidates.unless_oob(left);
 
     // Unlist any surviving backrefs.
     for (mut i = 0; i < invals.len; i++)
     {
-        let idx = flow.invalidates.unless_oob(invals[i]).find(from);
+        let idx = flow.invalidates.unless_oob(invals[i]).find(left);
         if (idx >= 0)
             flow.invalidates[invals[i]].splice(idx, 1);
     }
 
     // And this should be all.
     if (invals)
-        flow.invalidates[from] = [];
+        flow.invalidates[left] = [];
 }

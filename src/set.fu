@@ -39,6 +39,7 @@ pub fn add(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
 
 pub fn add(ref dest: $T[], src: $T[])
 {
+    // TODO FIX
     mut some = false;
     for (mut i = 0; i < src.len; i++)
         some = dest.add(src[i]) || some;
@@ -48,6 +49,7 @@ pub fn add(ref dest: $T[], src: $T[])
 
 pub fn rem(ref dest: $T[], item: $T)
 {
+    // TODO FIX
     for (mut i = 0; i < dest.len; i++) {
         if (dest[i] == item) {
             dest.splice(i, 1);

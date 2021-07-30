@@ -536,8 +536,6 @@ pub fn solve(
             let lifetime = Lifetime_fromBinding(target, :local_of, :flags, type);
 
             ///////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
             if (flags & F_ARG) ////////////////////////////////////////////
                 type.lifetime = Lifetime(); ///////////////////////////////
@@ -3763,10 +3761,12 @@ pub fn solve(
         shadow let id = cleanID || id;
         //////////////////////////////
 
+        let isArg = out.flags & F_ARG;
+
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
             ////////////////////////////////////////////////////////////////
-            if (OPTI_dedupe_vars && !(out.flags & F_ARG))
+            if (OPTI_dedupe_vars && !isArg)
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)
@@ -3795,6 +3795,16 @@ pub fn solve(
 
             let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
             GET_mut(target).solved = out;
+
+            ///////////////////////////////////////////////////////////////
+            // Track references.
+            if !(isArg)
+            {
+                let init = out.items[LET_INIT];
+                if (init.type.is_ref)
+                    Reference_track(_current_fn.flow, target.index, init.type.lifetime);
+            }
+            ///////////////////////////////////////////////////////////////
 
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)
