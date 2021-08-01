@@ -1,27 +1,21 @@
 import helpers;
 import types;
 
-pub let EK_Read         = 1; // `read(a)`                       -> Read `a`.
-pub let EK_ReadWrite    = 2; // `a0 = woot`                     ->
-pub let EK_Invalidate   = 3; // `a0; a1 = a0.smth; a0 = woot    -> ReadWrite `a0`, Invalidate `a1`.
+pub let EK_Read         = 1;
+pub let EK_ReadWrite    = 2;
 
-pub let EK_Def          = 4; // `a1 = a0.smth`                  -> Read `a0`, Ref `a1, a0`. Do we need the use?
-pub let EK_LoopStart    = 5; // We're in a loop! Removed on loop exit.
-pub let EK_LoopEnd      = 6;
+pub let EK_Def          = 3;
+pub let EK_LoopStart    = 4;
+pub let EK_LoopEnd      = 5;
 
-pub let EK_JumpStart    = 7; // A block that returns never, when advancing from the back will be skipped over.
-pub let EK_JumpEnd      = 8; //
-
-pub let EK_Noop         = 9; // e.g. Skip over this entry.
+pub let EK_JumpStart    = 6;
+pub let EK_JumpEnd      = 7;
 
 pub struct Effect
 {
-    kind:       i32;        // what
-    target:     i32;        // who
-
-    ////////////////////////////////////
-    // TODO ERRORINFO //////////////////
-    ////////////////////////////////////
+    kind:       i32;                // what
+    target:     i32;                // who
+    token:      parser::TokenIdx;   // where
 };
 
 pub fn EK_isUse(effect: Effect)
@@ -33,103 +27,6 @@ pub struct Flow
     usage:          Effect[];
     invalidates:    i32[][];
 };
-
-/*
-
-pub fn try_ReadWrite(using ref flow: Flow, block!: i32, target!: i32, mut write!?: bool)
-{
-    mut loop_ignore = 0;
-    mut last_loop_start = usage.len;
-
-    // A write invalidates reads that follow, so:
-    //
-    //  1. For every read or write, scan back for an invalidate entry.
-    //  2. For every invalidate IN A LOOP, scan forward for any uses that follow.
-    //
-    for (mut i0 = usage.len; i0 --> 0; )
-    {
-        let u = usage[i0];
-
-        ////////////////////////////////
-
-        if (u.kind == EK_JumpEnd && u.target < block) // Notice here we only ignore if we jump to a higher place.
-        {
-            // We've reached the "closing bracket" of a noreturn block,
-            //  we want to skip over everything it has to say here.
-            //
-            mut depth = 0;
-
-            for (mut i1 = i0; i1 --> 0; )
-            {
-                shadow let u = usage[i1];
-
-                if (u.kind == EK_JumpEnd)
-                {
-                    depth++;
-                }
-                else if (u.kind == EK_JumpStart)
-                {
-                    depth--;
-                    if (!depth)
-                    {
-                        i0 = i1;
-                        break;
-                    }
-                }
-            }
-        }
-
-        ////////////////////////////////
-
-        else if (u.kind == EK_LoopEnd)
-        {
-            loop_ignore++;
-        }
-        else if (u.kind == EK_LoopStart)
-        {
-            if (loop_ignore)
-            {
-                loop_ignore--;
-            }
-            else if (write)
-            {
-                // Scan back ... forward towards the last known cursor,
-                //  we cannot allow any reads that'd be invalidated by this.
-                //
-                for (mut i1 = i0; i1 < last_loop_start; i1++)
-                {
-                    shadow let u = usage[i1];
-
-                    if (u.EK_isUse && invalidated.has(u.target))
-                        fail("Write to " ~ target ~ " might invalidate preceding reads of "
-                                         ~ u.target ~ " on next loop iteration.");
-                }
-
-                last_loop_start = i0;
-            }
-        }
-
-        ////////////////////////////////
-
-        else if (u.kind == EK_Def)
-        {
-            // We're done when we reach the definition -
-            //  this cancels looping and such, if we're defined within the loop we don't care.
-            if (u.target == target)
-                break;
-        }
-
-        ////////////////////////////////
-
-        else if (u.kind == EK_Invalidate)
-        {
-            if (u.target == target)
-                fail("Cannot use " ~ target ~ " already invalidated here " ~ u.nodeidx);
-        }
-    }
-}
-
-*/
 
 pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
 {

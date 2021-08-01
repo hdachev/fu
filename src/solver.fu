@@ -73,6 +73,10 @@ pub fn solve(
     mut _info:          Info[];
     mut _here:          TokenIdx;
 
+    fn HERE(node: Node)
+        if (node.token)
+            _here = node.token;
+
 
     //
 
@@ -1517,6 +1521,8 @@ pub fn solve(
 
     fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32, mode?: u16): SolvedNode
     {
+        HERE(node);
+
         let k = node.kind;
 
         if (k == "root")        return solveRoot(node);
@@ -3342,7 +3348,7 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            mut original            = expr.type.lifetime; /* danglefix */
+            mut original            = expr.type.lifetime; // TODO BORROWCK danglefix
             let upto                = target.modid < 0 && target.index; // Else zero, the fn frame!
 
             expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:upto);
@@ -4603,13 +4609,158 @@ pub fn solve(
         return solved(node, type, items);
     }
 
+
+    //
+
     fn trackReadWrite(node: SolvedNode, write?!: bool)
     {
-        if (node && write) {}
+        if (node.type.is_ref)
+        {
+            // Check.
+            let regions = node.type.lifetime.uni0n;
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let target = Region_asIndex(regions[i]);
+                if (target)
+                    checkReadWrite(_current_fn.flow,
+                        block: 0, :write, :target);
+            }
 
-        // _current_fn.flow.usage ~= Effect(
-        //     write ? EK_ReadWrite : EK_Read,
-        //         lifetime);
+            // Track.
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let target = Region_asIndex(regions[i]);
+                if (target)
+                    _current_fn.flow.usage ~= Effect(
+                        kind: write ? EK_ReadWrite : EK_Read,
+                        :target, token: _here);
+            }
+        }
+    }
+
+    fn checkReadWrite(using flow: Flow, block!: i32, target!: i32, mut write!?: bool)
+    {
+        mut loop_ignore = 0;
+        mut last_loop_start = usage.len;
+
+        fn name(shadow target: i32)
+            GET_nested(target).name;
+
+        // A write invalidates reads that follow, so:
+        //
+        //  1. For every read or write, scan back for an invalidate entry.
+        //  2. For every invalidate IN A LOOP, scan forward for any uses that follow.
+        //
+        for (mut i0 = usage.len; i0 --> 0; )
+        {
+            let u = usage[i0];
+
+            ////////////////////////////////
+
+            if (u.kind == EK_JumpEnd && u.target < block) // Notice here we only ignore if we jump to a higher place.
+            {
+                // We've reached the "closing bracket" of a noreturn block,
+                //  we want to skip over everything it has to say here.
+                //
+                mut depth = 0;
+
+                for (mut i1 = i0; i1 --> 0; )
+                {
+                    shadow let u = usage[i1];
+
+                    if (u.kind == EK_JumpEnd)
+                    {
+                        depth++;
+                    }
+                    else if (u.kind == EK_JumpStart)
+                    {
+                        depth--;
+                        if (!depth)
+                        {
+                            i0 = i1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            ////////////////////////////////
+
+            else if (u.kind == EK_LoopEnd)
+            {
+                loop_ignore++;
+            }
+            else if (u.kind == EK_LoopStart)
+            {
+                if (loop_ignore)
+                {
+                    loop_ignore--;
+                }
+                else if (write)
+                {
+                    // Scan back ... forward towards the last known cursor,
+                    //  we cannot allow any reads that'd be invalidated by this.
+                    //
+                    let invalidated = flow.invalidates.unless_oob(target);
+
+                    for (mut i1 = i0; i1 < last_loop_start; i1++)
+                    {
+                        shadow let u = usage[i1];
+
+                        if (u.EK_isUse && invalidated.has(u.target))
+                            fail("BORROWCK: Write to `"
+                                ~ target.name ~ "` invalidates read of `"
+                                ~ u.target.name ~ "` at "
+                                ~ u.token.str ~ " on next loop iteration.");
+                    }
+
+                    last_loop_start = i0;
+                }
+            }
+
+            ////////////////////////////////
+
+            else if (u.kind == EK_Def)
+            {
+                // We're done when we reach the definition -
+                //  this cancels looping and such, if we're defined within the loop we don't care.
+                if (u.target == target)
+                    break;
+            }
+
+            ////////////////////////////////
+
+            else if (u.kind == EK_ReadWrite)
+            {
+                let invalidated = flow.invalidates.unless_oob(u.target);
+
+                if (invalidated.has(target))
+                    fail("BORROWCK: Cannot " ~ (write ? "write to" : "read from")
+                        ~ " `" ~ target.name ~ "`, reference invalidated by write to"
+                        ~ " `" ~ u.target.name ~ "` at "
+                        ~ u.token.str);
+
+                // Early exit.
+                if (u.target == target)
+                    break;
+            }
+            else if (u.kind == EK_Read)
+            {
+                // Early exit.
+                if (!write && u.target == target)
+                    break;
+            }
+        }
+    }
+
+    fn str(using token: TokenIdx)
+    {
+        let using t = token._token;
+
+        if (modid != module.modid)
+            return _fname ~ "@" ~ line ~ ":" ~ col;
+
+        return line ~ ":" ~ col;
     }
 
 
@@ -4821,9 +4972,8 @@ pub fn solve(
 
                     // Usage: this is where we detect mutation.
                     //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
-                    if (arg.is_ref)
-                        trackReadWrite(arg,
-                            write: !expect.is_mutref);
+                    if (arg.is_mutref)
+                        trackReadWrite(arg, write: expect.is_mutref);
                 }
 
                 if (type.is_ref)
@@ -4994,11 +5144,10 @@ pub fn solve(
         mut result: SolvedNode[];
 
         ////////////////////
-        mut here0   = _here; //REF2MUTREF
+        mut here0   = _here; // TODO BORROWCK danglefix
         defer _here = here0;
         ////////////////////
 
-        //
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
@@ -5009,7 +5158,7 @@ pub fn solve(
             mut unorderedClass = unorderedClassify(node.kind);
             if (!unorderedClass)
             {
-                _here = node.token || _here;
+                HERE(node);
 
                 let type = i == nodes.len - 1 && use_type_last
                     ? type_last
@@ -5058,7 +5207,7 @@ pub fn solve(
                     break;
                 }
 
-                _here = node.token || _here;
+                HERE(node);
                 result ~= unorderedPrep_A(node);
             }
 
@@ -5072,7 +5221,7 @@ pub fn solve(
             for (shadow mut i = i0; i < i1; i++)
             {
                 shadow let node = nodes[i] || fail("solveNodes, prep-b: falsy node");
-                _here = node.token || _here;
+                HERE(node);
                 unorderedPrep_B(:node, result[i + offset].target);
             }
 
@@ -5085,7 +5234,7 @@ pub fn solve(
                 for (shadow mut i = i0; i < i1; i++)
                 {
                     shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
-                    _here = node.token || _here;
+                    HERE(node);
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
                     mut into = result[i + offset].target; // TODO FIX not mut, just want a val here
