@@ -5148,6 +5148,24 @@ pub fn runTests()
     `);
 
     ZERO(`
+        pub fn test(x: i32[], y: i32[]) {
+            let z = {
+                BLOCK: {
+                    mut w: i32[] = x;
+                    if (y[0]) w ~= y;
+                    if (w[0] != 17)
+                        break :BLOCK w;
+                    x;
+                };
+            };
+
+            return z[0] + z[z.len - 1];
+        }
+
+        fn main() test([ 1 ], [ 2 ]) - 3;
+    `);
+
+    ZERO(`
         fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
