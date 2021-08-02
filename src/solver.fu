@@ -403,7 +403,7 @@ pub fn solve(
 
         // Alias?
         //
-        // The problem with this is that we lose the notion of what invalidates what -
+        // SHALLOW LIFETIMES: The problem with this is that we lose the notion of what invalidates what -
         //  var0, var1 = var0.smth, `var2 = var1.smth`:
         //   assigning to `var2` does not invalidate `var1` or `var0`.
         //
@@ -543,8 +543,9 @@ pub fn solve(
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
-            if (flags & F_ARG) ////////////////////////////////////////////
-                type.lifetime = Lifetime(); ///////////////////////////////
+            // SHALLOW LIFETIMES: Now we do this for all refs.           //
+            // if (flags & F_ARG) /////////////////////////////////////////
+            type.lifetime = Lifetime(); ///////////////////////////////////
             ///////////////////////////////////////////////////////////////
 
             overload.type = flags & F_MUT
@@ -1864,10 +1865,23 @@ pub fn solve(
             if (var.callsites)
             {
                 usage = var.callsites[0].type;
+
+                // TODO FIX SHALLOW LIFETIMES at jumps the lifetime is unwound, otherwise it aint, so that messes up the inter
+                usage.lifetime = var.type.lifetime; //
+                //////////////////////////////////////
+
                 for (shadow mut i = 1; i < var.callsites.len; i++)
-                    usage = type_tryIntersect(usage, var.callsites[i].type) || fail(
+                {
+                    mut other = var.callsites[i].type;
+
+                    // TODO FIX SHALLOW LIFETIMES /////
+                    other.lifetime = usage.lifetime; //
+                    ///////////////////////////////////
+
+                    usage = type_tryIntersect(usage, other) || fail(
                         "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
-                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(var.callsites[i].type) ~ "`.");
+                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
+                }
             }
             else
             {
@@ -4800,6 +4814,9 @@ pub fn solve(
         //  previously we tracked them separately but we're making everything more samey.
         else if (target.kind == "var")
         {
+            type.lifetime.uni0n.len == 1 || fail(
+                "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
+
             if (target.local_of &&
                 target.local_of != _current_fn.target.index)
             {
@@ -4814,7 +4831,7 @@ pub fn solve(
                     type:   target.type, becauseOf: target);
                 // CLOSURE-ID-HACK
 
-                type = GET(target).type || fail("CallerNode (var): !type");
+                type = GET(target).type || fail("CallerNode: !type on var " ~ target.name);
             }
         }
 
@@ -4824,13 +4841,15 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
-                let host_args = target.args || fail("CallerNode: no host args.");
-                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch.");
+                let host_args = target.args || fail("CallerNode: no host args: " ~ target.kind ~ " " ~ target.name);
+                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.kind ~ " " ~ target.name);
 
                 // BORROWCK /////////
                 mut mr_first    = -1;
                 mut mr_last     = -1;
                 /////////////////////
+
+                mut mr_unwound: Lifetime[];
 
                 for (mut i = 0; i < args.len; i++)
                 {
@@ -4862,6 +4881,17 @@ pub fn solve(
                         else
                         {
                             let i0 = i;
+
+                            //
+                            if !(mr_unwound)
+                            {
+                                mr_unwound.resize(args.len);
+                                mr_unwound[mr_first] = Lifetime_unwind(args[mr_first].type.lifetime, upto: 0);
+                            }
+
+                            let mr_arg = Lifetime_unwind(args[i].type.lifetime, upto: 0);
+
+                            //
                             for (shadow mut i = mr_first; i <= mr_last; i++)
                             {
                                 // TODO in the future we'll isref this,
@@ -4869,11 +4899,13 @@ pub fn solve(
                                 //
                                 if (host_args[i].is_mutref)
                                 {
-                                    let other = args[i];
-                                    let inter = Lifetime_inter(arg.type.lifetime, other.type.lifetime);
+                                    let inter = Lifetime_inter(mr_arg, mr_unwound[i]);
                                     if (inter)
                                     {
-                                        mut err = "BORROWCK: Mutref arguments " ~ i ~ " and " ~ i0 ~ " alias, both refer to:";
+                                        mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
+                                                ~ ": Mutref arguments #" ~ i  ~ " (" ~ host_args[i ].name ~ ")"
+                                                ~               " and #" ~ i0 ~ " (" ~ host_args[i0].name ~ ") alias, both refer to:";
+
                                         for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                         {
                                             let o = inter.uni0n[i];
@@ -4884,9 +4916,15 @@ pub fn solve(
                                     }
                                 }
                             }
+
+                            ///////////////////////
+                            mr_unwound[i] = mr_arg;
+                            ///////////////////////
                         }
 
+                        ////////////
                         mr_last = i;
+                        ////////////
                     }
 
                     maybeCopyOrMove(
