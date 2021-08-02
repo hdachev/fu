@@ -1,31 +1,9 @@
 import helpers;
 import types;
 
-pub let EK_Read         = 1;
-pub let EK_ReadWrite    = 2;
-
-pub let EK_Def          = 3;
-pub let EK_LoopStart    = 4;
-pub let EK_LoopEnd      = 5;
-
-pub let EK_JumpStart    = 6;
-pub let EK_JumpEnd      = 7;
-
-pub struct Effect
-{
-    kind:       i32;                // what
-    target:     i32;                // who
-    token:      parser::TokenIdx;   // where
-};
-
-pub fn EK_isUse(effect: Effect)
-    effect.kind == EK_Read ||
-    effect.kind == EK_ReadWrite;
-
 pub struct Flow
 {
-    usage:          Effect[];
-    invalidates:    i32[][];
+    invalidates: i32[][];
 };
 
 pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)

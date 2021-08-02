@@ -205,6 +205,18 @@ pub struct Extended
     extra_items?:   ScopeItem[];
 };
 
+pub struct RWEvent
+{
+    target:         i32;
+    token:          TokenIdx; // TODO: nodeidx
+};
+
+pub struct Events
+{
+    invalidated_by: RWEvent[];
+    used_in_a_loop: RWEvent[];
+};
+
 pub struct Helpers
 {
     target?!:       Target;
@@ -219,6 +231,10 @@ pub struct Helpers
 
     returns?:       SolvedNode[];
     vars?:          i32[];
+
+    // Events that occured in never-branches
+    //  that end with a jump out of this block.
+    on_exit?:       Events;
 };
 
 pub struct ScopeItem
