@@ -13455,6 +13455,46 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        pub fn noop() 0;
+        pub fn woot(ref i: i32, fn) i += fn(i?: i += 1); // Will not add 1.
+
+        fn main() {
+            mut sum = 0;
+            woot(sum, fn noop);
+            return sum;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int noop()
+{
+    return 0;
+}
+
+                                #ifndef DEFt_woot_kaAA
+                                #define DEFt_woot_kaAA
+inline int& woot_kaAA(int& i, int)
+{
+    return (i += noop());
+}
+                                #endif
+
+int fu_MAIN()
+{
+    int sum = 0;
+    woot_kaAA(sum, 0);
+    return sum;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         fn main() {
             let ret: i8 =
             //*F
@@ -19297,5 +19337,65 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
+
+        fn main() {
+            mut x = 0;
+            //*F
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
+-----
+_0.fu @13:13:
+	BORROWCK: Mutref arguments 0 and 1 alias, both refer to:
+	var x
+	Solving fn `main`.
+-----
+
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
+
+        fn main() {
+            mut x = 0;
+            /*
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test(int& a, int& b)
+{
+    return ++a + ++b;
+}
+
+int fu_MAIN()
+{
+    int x = 0;
+    int y = 0;
+    const int z = test(x, y);
+    return (x + y) - z;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
