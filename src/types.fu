@@ -119,13 +119,6 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
 pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
     Lifetime(uni0n: set::inter(a.uni0n, b.uni0n));
 
-pub fn Lifetime_compareToIndex(lifetime: Lifetime, index: i32)
-{
-    return lifetime.uni0n.if_first.Region_toLocalIndex > index  ? +1
-         : lifetime.uni0n.if_last .Region_toLocalIndex < index  ? -1
-                                                                :  0;
-}
-
 pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
     Lifetime_union(lifetime, Lifetime_static);
 

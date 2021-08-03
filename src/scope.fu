@@ -225,6 +225,7 @@ pub struct Helpers
     mask?!:         i16;
     local_of?!:     i32;
     kills?!:        i32;
+    locals_start?!: i32;
 
     ret_expect?:    Type;
     ret_actual?:    Type;

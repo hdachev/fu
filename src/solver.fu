@@ -250,14 +250,10 @@ pub fn solve(
         return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
     }
 
-    fn GET_current_fn()
-    {
-        return _scope.extended[_current_fn.target.index - 1];
-    }
-
     fn GET_next_local_index()
     {
-        return GET_current_fn().locals.len + 1;
+        return _current_fn.target.index
+            && _scope.extended[_current_fn.target.index - 1].locals.len + 1;
     }
 
     fn GET_nested(index: i32)
@@ -1758,11 +1754,11 @@ pub fn solve(
         ////////////////////////////////
 
         let helpers_idx = _helpers.len;
-        _helpers       ~= Helpers(:id, :mask,
-            ret_expect: type,
-            target:     fnbody_of && Target(:module.modid, fnbody_of),
-            local_of:   fnbody_of ? -1 : _current_fn.target.index,
-            :kills);
+        _helpers       ~= Helpers( :id, :mask, :kills,
+            ret_expect:     type,
+            target:         fnbody_of && Target(:module.modid, fnbody_of),
+            local_of:       fnbody_of ? -1 : _current_fn.target.index,
+            locals_start:   fnbody_of ? +1 : GET_next_local_index());
 
         // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
         if (steal)
@@ -3256,12 +3252,12 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_climb(lifetime, visit, upto = 0)
+    fn Lifetime_climb(lifetime, visit, locals_start?!: i32)
     {
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
             let r = lifetime.uni0n[i];
-            if (r.index < upto)
+            if (r.index < locals_start)
                 break;
 
             if (r.Region_isTemp)
@@ -3275,9 +3271,9 @@ pub fn solve(
         }
     }
 
-    fn Lifetime_unwind(mut lifetime: Lifetime, upto: i32): Lifetime
+    fn Lifetime_unwind(mut lifetime: Lifetime, locals_start?!: i32): Lifetime
     {
-        Lifetime_climb(:lifetime, :upto, visit: |o, i, shadow lifetime|
+        Lifetime_climb(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
         {
             let init = o.solved.items[LET_INIT].type;
             if !(init.is_ref)
@@ -3324,6 +3320,13 @@ pub fn solve(
         return type_trySuper(a, b) || fail(reason
             ~ "No common supertype: `"
             ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
+    }
+
+    fn Lifetime_vs(lifetime: Lifetime, locals_start!: i32)
+    {
+        return lifetime.uni0n.if_first.Region_toLocalIndex >= locals_start  ? +1
+             : lifetime.uni0n.if_last .Region_toLocalIndex <  locals_start  ? -1
+                                                                            :  0;
     }
 
     fn solveJump(node: Node, kills: i32): SolvedNode
@@ -3376,10 +3379,9 @@ pub fn solve(
         if (expr.type.is_ref)
         {
             mut original            = expr.type.lifetime; // TODO BORROWCK danglefix
-            let upto                = target.modid < 0 && target.index; // Else zero, the fn frame!
 
-            expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:upto);
-            let ltCompare           = expr.type.lifetime.Lifetime_compareToIndex(upto);
+            expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:h.locals_start);
+            let ltCompare           = expr.type.lifetime.Lifetime_vs    (:h.locals_start || fail());
 
             if (ltCompare >= 0)
             {
@@ -3549,7 +3551,11 @@ pub fn solve(
         //  ideally we'll only have labels on blocks -
         //   the continues-map-to-inner-block thing.
         let brk_idx     = _helpers.len;
-        _helpers       ~= Helpers(id: node.value, mask: HM_Anon|HM_CanBreak, local_of: _current_fn.target.index);
+        _helpers       ~= Helpers(
+            id:             node.value,
+            mask:           HM_Anon | HM_CanBreak,
+            local_of:       _current_fn.target.index,
+            locals_start:   GET_next_local_index());
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
@@ -4950,10 +4956,10 @@ pub fn solve(
                             if !(mr_unwound)
                             {
                                 mr_unwound.resize(args.len);
-                                mr_unwound[mr_first] = Lifetime_unwind(args[mr_first].type.lifetime, upto: 0);
+                                mr_unwound[mr_first] = Lifetime_unwind(args[mr_first].type.lifetime);
                             }
 
-                            let mr_arg = Lifetime_unwind(args[i].type.lifetime, upto: 0);
+                            let mr_arg = Lifetime_unwind(args[i].type.lifetime);
 
                             //
                             for (shadow mut i = mr_first; i <= mr_last; i++)
