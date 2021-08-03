@@ -92,6 +92,7 @@ pub fn solve(
         using flow?:    Flow;
 
         events?:        Events;
+        loop_start?:    i32;
     };
 
     mut _current_fn:    CurrentFn;
@@ -247,6 +248,16 @@ pub fn solve(
         }
 
         return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
+    }
+
+    fn GET_current_fn()
+    {
+        return _scope.extended[_current_fn.target.index - 1];
+    }
+
+    fn GET_next_local_index()
+    {
+        return GET_current_fn().locals.len + 1;
     }
 
     fn GET_nested(index: i32)
@@ -3547,6 +3558,13 @@ pub fn solve(
         let n_post      = node.items[LOOP_POST];
 
         let init        = n_init      && solveLetStatement(n_init);
+
+        ////////////////////////////////
+        let loop_start          = GET_next_local_index();
+        mut loop_start0         = _current_fn.loop_start;
+        _current_fn.loop_start  = loop_start;
+        ////////////////////////////////
+
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond);
         let body        = n_body      && solveBlock(n_body, type: t_void);
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond);
@@ -3558,6 +3576,20 @@ pub fn solve(
         let type        = !pre_cond && !post_cond && !label_used
                             ? t_never
                             : t_void;
+
+        ////////////////////////////////
+        if (_current_fn.loop_start > loop_start0)
+        {
+            ref events  = _current_fn.events.used_in_a_loop;
+            let N       = events.len.min(loop_start);
+            for (mut i = 0; i < N; i++)
+            {
+                ref e = events[i];
+                if (e.target == loop_start)
+                    e = [];
+            }
+        }
+        ////////////////////////////////
 
         return solved(node, type,
             [ init, pre_cond, body, post_cond, post ],
@@ -4630,7 +4662,7 @@ pub fn solve(
 
     fn trackReadWrite(node: SolvedNode, write?!: bool)
     {
-        if (!node.type.is_ref)
+        if (!node.type.is_ref || !_current_fn.target.index)
             return;
 
         fn name(shadow target: i32)
@@ -4657,37 +4689,69 @@ pub fn solve(
                         ~ u.token.str);
             }
 
-            if (write) if (events.used_in_a_loop.len > target)
+            if (write)
             {
-                let u = events.used_in_a_loop[target];
-                if (u.target)
-                    fail("BORROWCK: Write to `" ~ target.name ~ "`"
-                        ~ " invalidates the use of `" ~ u.target.name ~ "` at "
-                        ~ u.token.str
-                        ~ " on next loop iteration.");
+                let invalidates = _current_fn.flow.invalidates.unless_oob(target);
+                for (shadow mut i = 0; i < invalidates.len; i++)
+                {
+                    let other = invalidates[i];
+                    let u = events.used_in_a_loop.unless_oob(other);
+                    if (u.target)
+                    {
+                        fail("BORROWCK: Write to `" ~ target.name ~ "`"
+                            ~ " invalidates the use of `" ~ other.name ~ "` at "
+                            ~ u.token.str
+                            ~ " on next loop iteration."); // TODO loop starts at x:x!
+                    }
+                }
             }
         }
 
         // Track writes, easy.
-        if (write) for (mut i = 0; i < regions.len; i++)
+        if (write)
         {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
+            // println("INVALIDATION -------------------");
 
-            let invalidates = _current_fn.flow.invalidates.unless_oob(target);
-            for (shadow mut i = 0; i < invalidates.len; i++)
+            for (mut i = 0; i < regions.len; i++)
             {
-                ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
-                if (!u.target)
-                    u = RWEvent(:target, :token);
+                let target = Region_asIndex(regions[i]);
+                if (!target)
+                    continue;
+
+                // println("    region " ~ target.name ~ " #" ~ target);
+
+                let invalidates = _current_fn.flow.invalidates.unless_oob(target);
+                for (shadow mut i = 0; i < invalidates.len; i++)
+                {
+                    // println("        kills " ~ invalidates[i].name ~ " #" ~ invalidates[i]);
+
+                    ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
+                    if (!u.target)
+                        u = RWEvent(:target, :token);
+                }
             }
+
+            // println("--------------------------------");
         }
 
-        // TODO track reads-in-a-loop:
-        //  Not hard - keep track of the outermost entry.
-        //   Never ending branches are the worst because
-        //    we need to lift them out of here and into.
+        // Track reads in a loop.
+        let loop_start = _current_fn.loop_start;
+        if (loop_start)
+        {
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let target = Region_asIndex(regions[i]);
+                if (!target)
+                    continue;
+
+                if (target < loop_start)
+                {
+                    ref u = events.used_in_a_loop.grow_if_oob(target);
+                    if (!u.target)
+                        u = RWEvent(target: loop_start, :token);
+                }
+            }
+        }
     }
 
     fn str(using token: TokenIdx)
