@@ -3864,6 +3864,10 @@ pub fn solve(
                 if (init.type.is_ref)
                     Reference_track(_current_fn.flow, target.index, init.type.lifetime);
             }
+            else
+            {
+                Reference_trackArgument(_current_fn.flow, target.index);
+            }
             ///////////////////////////////////////////////////////////////
 
             Scope_set(_scope, :id, :target, :shadows);

@@ -3,8 +3,15 @@ import types;
 
 pub struct Flow
 {
-    invalidates: i32[][];
+    invalidates:    i32[][];
+    arg_aliases:    i32[][];
 };
+
+pub fn Reference_trackArgument(ref flow: Flow, left: i32)
+{
+    // Self aliases self.
+    flow.arg_aliases.grow_if_oob(left) ~= left;
+}
 
 pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
 {
@@ -41,6 +48,11 @@ pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
         // Parent rule, one-sided:
         //  Finally, RIGHT invalidates LEFT.
         flow.invalidates.grow_if_oob(right).set::add(left);
+
+        // Propagate alised arguments.
+        let args_aliased = flow.arg_aliases.unless_oob(right);
+        if (args_aliased)
+            flow.arg_aliases.grow_if_oob(left).set::add(args_aliased);
     }
 }
 
