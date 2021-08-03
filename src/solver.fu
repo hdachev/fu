@@ -3571,9 +3571,9 @@ pub fn solve(
         _current_fn.loop_start  = loop_start;
         ////////////////////////////////
 
-        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond);
+        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond); // call:#test
         let body        = n_body      && solveBlock(n_body, type: t_void);
-        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond);
+        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond); // call:#test
         let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
@@ -4488,7 +4488,7 @@ pub fn solve(
     {
         mut cond    = solveNode(node.items[0], t_bool);
 
-        trackReadWrite(cond);
+        trackReadWrite(cond); // call:#test
 
         // Dead code elim.
         if (cond.type.is_never)
@@ -4658,7 +4658,7 @@ pub fn solve(
     {
         // We read everything but the last argument.
         for (mut i = 0; i < items.len - 1; i++)
-            trackReadWrite(items[i]);
+            trackReadWrite(items[i]); // call:#test
 
         return solved(node, type, items);
     }
@@ -4966,25 +4966,32 @@ pub fn solve(
                             {
                                 // TODO in the future we'll isref this,
                                 //  will need a little rewrite to make it symmetric.
+                                if !(host_args[i].is_mutref)
+                                    continue;
+
+                                // Can the fn handle aliasing here?
+                                if (host_args[i0].risk_free.has(i) && host_args[i].risk_free.has(i0))
+                                    continue;
+
+                                // Do we see any aliasing here?
+                                let inter = Lifetime_inter(mr_arg, mr_unwound[i]);
+                                if !(inter)
+                                    continue;
+
+                                // TODO here we can verify subsets at risk + subsets written.
+
                                 //
-                                if (host_args[i].is_mutref)
+                                mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
+                                        ~ ": Mutref arguments #" ~ i  ~ " (" ~ host_args[i ].name ~ ")"
+                                        ~               " and #" ~ i0 ~ " (" ~ host_args[i0].name ~ ") alias, both refer to:";
+
+                                for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
-                                    let inter = Lifetime_inter(mr_arg, mr_unwound[i]);
-                                    if (inter)
-                                    {
-                                        mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
-                                                ~ ": Mutref arguments #" ~ i  ~ " (" ~ host_args[i ].name ~ ")"
-                                                ~               " and #" ~ i0 ~ " (" ~ host_args[i0].name ~ ") alias, both refer to:";
-
-                                        for (shadow mut i = 0; i < inter.uni0n.len; i++)
-                                        {
-                                            let o = inter.uni0n[i];
-                                            err ~= "\n\t" ~ o.kind ~ " " ~ o.name;
-                                        }
-
-                                        fail(err);
-                                    }
+                                    let o = inter.uni0n[i];
+                                    err ~= "\n\t" ~ o.kind ~ " " ~ o.name;
                                 }
+
+                                fail(err);
                             }
 
                             ///////////////////////
@@ -5136,7 +5143,7 @@ pub fn solve(
 
     fn createCopy(node: SolvedNode): SolvedNode
     {
-        trackReadWrite(node);
+        trackReadWrite(node); // call:#copy
 
         return SolvedNode(
             kind:   "copy",
@@ -5146,7 +5153,7 @@ pub fn solve(
 
     fn createMove(node: SolvedNode, original: Lifetime): SolvedNode
     {
-        trackReadWrite(node);
+        trackReadWrite(node); // call:#move
 
         // C++ codegen uses the F_MOVED_FROM flag
         //  to remove `const` annotations on locals & refs to locals.
