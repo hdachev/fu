@@ -1824,9 +1824,9 @@ pub fn runTests()
             let v0 = num_verts;
             let i0 = indices.len;
 
-            alloc(num_quads * 4, num_quads * 6);
-
             mut v1 = v0;
+
+            alloc(num_quads * 4, num_quads * 6);
 
             let indices_i32: &mut [i32] =
                 indices[i0, indices.len]
@@ -2377,7 +2377,7 @@ pub fn runTests()
             for (mut i = 0; i < sources.len; i++)
             {
                 // Note: redundant "ref" here.
-                ref src = sources[i];
+                fn src() = sources[i]; // bck: using a fn instead
                 for (;;)
                 {
                     mut start0 = src.find("[split/]");
