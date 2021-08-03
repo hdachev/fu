@@ -7,13 +7,16 @@ pub struct Flow
     arg_aliases:    i32[][];
 };
 
-pub fn Reference_trackArgument(ref flow: Flow, left: i32)
+pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
 {
-    // Self aliases self.
-    flow.arg_aliases.grow_if_oob(left) ~= left;
+    // Unfortunately we can't assert pretty much nothing about target & position -
+    //  fn x args dont emit a target entry. TBD what we can do here to validate this shit works.
+    //   position >= 0 && target > position || assert();
+    ref aa = flow.arg_aliases.grow_if_oob(target) && assert();
+    aa ~= position;
 }
 
-pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
+pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 {
     flow.invalidates.len <= left || assert();
 
@@ -56,7 +59,7 @@ pub fn Reference_track(ref flow: Flow, left: i32, right: Lifetime)
     }
 }
 
-pub fn Reference_untrack(ref flow: Flow, left: i32, right: Lifetime)
+pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 {
     // Unlist parents.
     for (mut i = 0; i < right.uni0n.len; i++)

@@ -218,6 +218,10 @@ pub struct Events
 {
     invalidated_by: RWEvent[];
     used_in_a_loop: RWEvent[];
+
+    // The arguments at risk aparata.
+    args_written:   bitset::BitSet;
+    args_in_a_loop: bitset::BitSet;
 };
 
 pub struct Helpers

@@ -2653,7 +2653,11 @@ pub fn solve(
                 }
 
                 let specType    = isSpec && tryGetArgSpecType(n_arg.value);
-                outItems[i]     = solveLet(n_arg, :specType);
+                let arg         = solveLet(n_arg, :specType);
+                outItems[i]     = arg;
+
+                if (!isUnspec)
+                    Reference_trackArgument(_current_fn.flow, arg.target.index, position: i);
             }
 
             /////////////////////////////////////////////////////
@@ -3862,11 +3866,7 @@ pub fn solve(
             {
                 let init = out.items[LET_INIT];
                 if (init.type.is_ref)
-                    Reference_track(_current_fn.flow, target.index, init.type.lifetime);
-            }
-            else
-            {
-                Reference_trackArgument(_current_fn.flow, target.index);
+                    Reference_trackLocalRef(_current_fn.flow, target.index, init.type.lifetime);
             }
             ///////////////////////////////////////////////////////////////
 
@@ -4439,6 +4439,8 @@ pub fn solve(
         let newArgNode  = createLet(ret, F_IMPLICIT);
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
         _current_fn.MUT.items.insert(newArgIdx, newArgNode);
+
+        Reference_trackArgument(_current_fn.flow, newArgNode.target.index, position: newArgIdx);
 
         return ret;
     }
