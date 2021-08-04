@@ -4680,11 +4680,12 @@ pub fn solve(
         fn name(shadow target: i32)
             GET_nested(target).name;
 
-        let token = _here;
+        let token   = _here;
         let regions = node.type.lifetime.uni0n;
 
-        // Check.
-        ref events = _current_fn.events;
+        // Writes invalidate subsequent reads.
+        ref flow    = _current_fn.flow;
+        ref events  = _current_fn.events;
         for (mut i = 0; i < regions.len; i++)
         {
             let target = Region_asIndex(regions[i]);
@@ -4701,68 +4702,90 @@ pub fn solve(
                         ~ u.token.str);
             }
 
-            if (write)
+            // ARGUMENTS AT RISK ////////////////////////
+            if (events.args_written)
             {
-                let invalidates = _current_fn.flow.invalidates.unless_oob(target);
-                for (shadow mut i = 0; i < invalidates.len; i++)
+                let args_aliased = flow.arg_aliases.unless_oob(target);
+                for (shadow mut i = 0; i < args_aliased.len; i++)
                 {
-                    let other = invalidates[i];
-                    let u = events.used_in_a_loop.unless_oob(other);
-                    if (u.target)
-                    {
-                        fail("BORROWCK: Write to `" ~ target.name ~ "`"
-                            ~ " invalidates the use of `" ~ other.name ~ "` at "
-                            ~ u.token.str
-                            ~ " on next loop iteration."); // TODO loop starts at x:x!
-                    }
+                    flow.args_at_risk.grow_if_oob(args_aliased[i])
+                        .set::add(events.args_written);
                 }
             }
+            /////////////////////////////////////////////
         }
 
-        // Track writes, easy.
-        if (write)
-        {
-            // println("INVALIDATION -------------------");
-
-            for (mut i = 0; i < regions.len; i++)
-            {
-                let target = Region_asIndex(regions[i]);
-                if (!target)
-                    continue;
-
-                // println("    region " ~ target.name ~ " #" ~ target);
-
-                let invalidates = _current_fn.flow.invalidates.unless_oob(target);
-                for (shadow mut i = 0; i < invalidates.len; i++)
-                {
-                    // println("        kills " ~ invalidates[i].name ~ " #" ~ invalidates[i]);
-
-                    ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
-                    if (!u.target)
-                        u = RWEvent(:target, :token);
-                }
-            }
-
-            // println("--------------------------------");
-        }
-
-        // Track reads in a loop.
         let loop_start = _current_fn.loop_start;
-        if (loop_start)
-        {
-            for (mut i = 0; i < regions.len; i++)
-            {
-                let target = Region_asIndex(regions[i]);
-                if (!target)
-                    continue;
 
-                if (target < loop_start)
+        if (write) for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            let invalidates     = flow.invalidates.unless_oob(target);
+            let args_aliased    = flow.arg_aliases.unless_oob(target);
+
+            // Writes in a loop invalidate preceding reads.
+            for (shadow mut i = 0; i < invalidates.len; i++)
+            {
+                let other = invalidates[i];
+                let u = events.used_in_a_loop.unless_oob(other);
+                if (u.target)
                 {
-                    ref u = events.used_in_a_loop.grow_if_oob(target);
-                    if (!u.target)
-                        u = RWEvent(target: loop_start, :token);
+                    fail("BORROWCK: Write to `" ~ target.name ~ "`"
+                        ~ " invalidates the use of `" ~ other.name ~ "` at "
+                        ~ u.token.str
+                        ~ " on next loop iteration."); // TODO loop starts at x:x!
                 }
             }
+
+            // Track writes, easy.
+            for (shadow mut i = 0; i < invalidates.len; i++)
+            {
+                ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
+                if (!u.target)
+                    u = RWEvent(:target, :token);
+            }
+
+            // ARGUMENTS AT RISK ////////////////////////
+            if (args_aliased)
+            {
+                events.args_written.set::add(args_aliased);
+
+                if (loop_start)
+                    for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
+                        flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
+                            .set::add(args_aliased);
+            }
+            /////////////////////////////////////////////
+        }
+
+        // Finally track reads and writes in a loop.
+        if (loop_start) for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            // Track uses.
+            if (target < loop_start)
+            {
+                ref u = events.used_in_a_loop.grow_if_oob(target);
+                if (!u.target)
+                    u = RWEvent(target: loop_start, :token);
+            }
+
+            // ARGUMENTS AT RISK ////////////////////////
+            let args_aliased = flow.arg_aliases.unless_oob(target);
+            if (args_aliased)
+            {
+                // And this clearly sucks
+                //  because we can't clean up after ourselves,
+                //   perhaps we don't want this but should use used_in_a_loop instead?
+                events.args_in_a_loop.set::add(args_aliased);
+            }
+            /////////////////////////////////////////////
         }
     }
 

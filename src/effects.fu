@@ -5,6 +5,7 @@ pub struct Flow
 {
     invalidates:    i32[][];
     arg_aliases:    i32[][];
+    args_at_risk:   i32[][];
 };
 
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
