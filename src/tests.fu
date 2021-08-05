@@ -3032,7 +3032,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         nocopy struct NoCopy { i: i32; };
 
         fn      retarg(a) a;                    // <- now templates
@@ -5459,6 +5459,24 @@ pub fn runTests()
             mut sum = 0;
             for (mut i = 0; i < arr.len; i++) sum += arr[i];
             return sum - 105;
+        }
+    `);
+
+    ZERO(`
+        // both args alias, but there's no risk of inval.
+        fn incr_a_or_b(ref a: i32, ref b: i32)
+            (a || b)++;
+
+        fn main() {
+            mut Z = 0;
+            mut A = 1;
+            mut B  = 0;
+
+            incr_a_or_b(Z, B); // incr B, now 1
+            incr_a_or_b(A, B); // incr A, now 2
+            incr_a_or_b(B, B); // incr _target, now 2 // alias!
+
+            return A - B; // 2-2
         }
     `);
 
