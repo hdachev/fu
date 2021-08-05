@@ -2708,12 +2708,28 @@ pub fn solve(
                     let autocall    = argNode.flags & F_COMPOUND_ID && Autocall_splice(name);
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
+                    // Risk-free.
+                    mut risk_free   = bitset::BitSet;
+                    if (!isNative && !isUnspec)
+                    {
+                        risk_free.add_range(0, N);
+                        let risk = out.flow.args_at_risk.unless_oob(i);
+                        for (shadow mut i = 0; i < risk.len; i++)
+                        {
+                            let r = risk[i];
+                            r >= 0 && r < N || fail("args_at_risk: Bad position: " ~ r ~ ", must be >=0, <" ~ N ~ ".");
+                            risk_free.rem(r);
+                        }
+                    }
+
+                    //
                     let arg = Argument(
                         :name,
                         :autocall,
                         :argNode.flags,
                         :argNode.type,
-                        default: !isImplicit && argNode.items[LET_INIT]);
+                        default: !isImplicit && argNode.items[LET_INIT],
+                        :risk_free);
 
                     arg.type || isUnspec || fail("Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);

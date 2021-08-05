@@ -56,6 +56,13 @@ pub fn rem(using _: &mut BitSet, idx: i32)
     }
 }
 
+pub fn add_range(using _: &mut BitSet, start: i32, end: i32)
+{
+    // TODO FIX !!!!!!!!!!!!!!!!!!!!!
+    for (mut i = start; i < end; i++)
+        add(i);
+}
+
 pub fn popcount(using _: BitSet)
 {
     mut sum = 0;
