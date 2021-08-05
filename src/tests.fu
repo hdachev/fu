@@ -5470,13 +5470,32 @@ pub fn runTests()
         fn main() {
             mut Z = 0;
             mut A = 1;
-            mut B  = 0;
+            mut B = 0;
 
             incr_a_or_b(Z, B); // incr B, now 1
             incr_a_or_b(A, B); // incr A, now 2
             incr_a_or_b(B, B); // incr _target, now 2 // alias!
 
-            return A - B; // 2-2
+            return (100*A + B) - 202;
+        }
+    `);
+
+    ZERO(`
+        // same as above -
+        //  but notice we increment twice, which breaks current setup.
+        fn incr_a_or_b_by2(ref a: i32, ref b: i32)
+            ++++(a || b);
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2(Z, B); // incr B, now 2
+            incr_a_or_b_by2(A, B); // incr A, now 4
+            incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!
+
+            return (100*A - B) - 404;
         }
     `);
 
