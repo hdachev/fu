@@ -5481,6 +5481,29 @@ pub fn runTests()
     `);
 
     ZERO(`
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            ref c = a || b;
+            return ++++c - 3; // double mutation of a union
+        }
+    `);
+
+    ZERO(`
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            return ++++(a || b) - 3; // same, without a helper var
+        }
+    `);
+
+    ZERO(`
         // same as below -
         //  but using a helper variable
         //   which provides a "name" for the outcome of a|b.
