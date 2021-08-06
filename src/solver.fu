@@ -3284,18 +3284,26 @@ pub fn solve(
                 continue;
 
             ref o = r.Region_toLocalIndex().GET_nested();
-            if (o.kind != "var")
-                fail("Lifetime_climb, not a var: " ~ o.kind ~ " " ~ o.name);
-
             visit(:o, i?: i, lifetime?: lifetime);
         }
+    }
+
+    fn Lifetime_climbType(o: Overload)
+    {
+        if (o.kind == "var")
+            return o.solved.items[LET_INIT].type;
+
+        o.kind == "lifetime" || fail(
+            "Lifetime_climbType: not a `var` nor `lifetime`: " ~ o.kind ~ " " ~ o.name);
+
+        return o.type;
     }
 
     fn Lifetime_unwind(mut lifetime: Lifetime, locals_start?!: i32): Lifetime
     {
         Lifetime_climb(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
         {
-            let init = o.solved.items[LET_INIT].type;
+            let init = o.Lifetime_climbType;
             if !(init.is_ref)
                 continue;
 
@@ -3323,7 +3331,7 @@ pub fn solve(
 
             // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.humanizeType);
 
-            let init = o.solved.items[LET_INIT].type;
+            let init = o.Lifetime_climbType;
             if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
         });
@@ -5056,7 +5064,25 @@ pub fn solve(
                     // Usage: this is where we detect mutation.
                     //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
                     if (arg.is_mutref)
+                    {
+                        // The `ref a = c; ref b = c; ++++(a || b)` problem:
+                        //  We need to have a single lifetime to describe what we're writing to,
+                        //   otherwise it just looks like two unions that are not correlated.
+                        if (arg.lifetime.uni0n.len > 1)
+                        {
+                            // We solve the problem by "naming" the lifetime.
+                            let left = Scope_create(_scope,
+                                nest: true, local_of: _current_fn.target.index,
+                                kind: "lifetime", type: arg.type, name: "[mutref union]")
+                                    .index;
+
+                            // This
+                            Reference_trackLocalRef(_current_fn.flow, :left, arg.type.lifetime);
+                            arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left) ];
+                        }
+
                         trackReadWrite(arg, write: expect.is_mutref);
+                    }
                 }
 
                 if (type.is_ref)
