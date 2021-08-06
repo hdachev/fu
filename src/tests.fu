@@ -5481,6 +5481,28 @@ pub fn runTests()
     `);
 
     ZERO(`
+        // same as below -
+        //  but using a helper variable
+        //   which provides a "name" for the outcome of a|b.
+        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            ++++x;
+        }
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2_via_x(Z, B); // incr B, now 2
+            incr_a_or_b_by2_via_x(A, B); // incr A, now 4
+            incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!
+
+            return (100*A - B) - 404;
+        }
+    `);
+
+    ZERO(`
         // same as above -
         //  but notice we increment twice, which breaks current setup.
         fn incr_a_or_b_by2(ref a: i32, ref b: i32)
