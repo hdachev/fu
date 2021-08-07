@@ -5503,6 +5503,28 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+            ref ab = a || b;
+            ref cd = c || d;
+            ++++ab;
+            ++++cd;
+        }
+
+        fn main() {
+            mut ab = 0;
+            mut cd = 0;
+            //*F
+            ab_cd(ab, cd, ab, cd);
+            /*/
+            ab_cd(ab, ab, cd, cd);
+            //*/
+            return ab - cd;
+        }
+    `);
+
     ZERO(`
         // same as below -
         //  but using a helper variable
