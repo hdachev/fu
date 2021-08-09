@@ -37,23 +37,17 @@ pub fn add(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
     return true;
 }
 
-pub fn add(ref dest: $T[], src: $T[])
-{
-    // TODO FIX
-    mut some = false;
-    for (mut i = 0; i < src.len; i++)
-        some = dest.add(src[i]) || some;
-
-    return some;
-}
-
 pub fn rem(ref dest: $T[], item: $T)
 {
-    // TODO FIX
+    // TODO bsearch instead
     for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] == item) {
-            dest.splice(i, 1);
-            return true;
+        if (dest[i] >= item) {
+            if (dest[i] == item) {
+                dest.splice(i, 1);
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -61,9 +55,8 @@ pub fn rem(ref dest: $T[], item: $T)
 }
 
 
-// TODO instead of this, loop twice -
-//  once to size things up,
-//   again to put everything in its place (N).
+
+// TODO these should actually work better if they're push-back style
 
 pub fn union(a: $T[], b: $T[]): $T[]
 {
@@ -71,7 +64,36 @@ pub fn union(a: $T[], b: $T[]): $T[]
         return union(b, a);
 
     shadow mut a = a;
+    a.add(b);
+    return a;
+}
 
+pub fn inter(a: $T[], b: $T[]): $T[]
+{
+    if (a.len > b.len)
+        return inter(b, a);
+
+    shadow mut a = a;
+    a.keep(b);
+    return a;
+}
+
+pub fn diff(a: $T[], b: $T[]): $T[]
+{
+    if (a.len > b.len)
+        return diff(b, a);
+
+    shadow mut a = a;
+    a.rem(b);
+    return a;
+}
+
+
+// TODO instead of this,
+//  make sure each item is moved exactly once.
+
+pub fn add(ref a: $T[], b: $T[])
+{
     mut x = 0;
     mut y = 0;
     while (x < a.len && y < b.len) {
@@ -80,7 +102,7 @@ pub fn union(a: $T[], b: $T[]): $T[]
 
         if (X >= Y) {
             if (X != Y) {
-                a.insert(x, Y);
+                a.insert(x, Y); // TODO FIX
                 y++;
             }
             else {
@@ -93,17 +115,10 @@ pub fn union(a: $T[], b: $T[]): $T[]
 
     if (y < b.len)
         a ~= b[y, b.len];
-
-    return a;
 }
 
-pub fn inter(a: $T[], b: $T[]): $T[]
+pub fn keep(ref a: $T[], b: $T[])
 {
-    if (a.len > b.len)
-        return inter(b, a);
-
-    shadow mut a = a;
-
     mut x = 0;
     mut y = 0;
     while (x < a.len && y < b.len) {
@@ -118,12 +133,35 @@ pub fn inter(a: $T[], b: $T[]): $T[]
             y++;
         }
         else {
-            a.splice(x, 1);
+            a.splice(x, 1); // TODO FIX
         }
     }
 
     if (x < a.len)
         a.shrink(x);
+
+    return a;
+}
+
+pub fn rem(ref a: $T[], b: $T[])
+{
+    mut x = 0;
+    mut y = 0;
+    while (x < a.len && y < b.len) {
+        let X = a[x];
+        let Y = b[y];
+
+        if (X == Y) {
+            a.splice(x, 1); // TODO FIX
+            y++;
+        }
+        else if (X > Y) {
+            y++;
+        }
+        else {
+            x++;
+        }
+    }
 
     return a;
 }
