@@ -5526,6 +5526,32 @@ pub fn runTests()
     `);
 
     FAIL(`
+        // a can alias b
+        // c can alias d
+        // e can alias f
+        // g can alias h
+        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
+                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
+        {
+            ab = a || b; cd = c || d; abcd = ab || cd;
+            ef = e || f; gh = g || h; efgh = ef || gh;
+            ++++abcd; ++++ab; ++++cd;
+            ++++efgh; ++++ef; ++++gh;
+        }
+
+        fn main() {
+            mut ab = 0; mut cd = 0;
+            mut ef = 0; mut gh = 0;
+            //*F
+            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
+            /*/
+            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+            //*/
+            return (ab + cd) - (ef + gh);
+        }
+    `);
+
+    FAIL(`
         // a cannot alias b
         pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
             ref x = a || b; ++x;
