@@ -5525,6 +5525,25 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        // a cannot alias b
+        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+            ref x = a || b; ++x;
+            ref y = b || a; ++y;
+        }
+
+        fn main() {
+            mut a = 0;
+            mut b = 0;
+            //*F
+            incr_a_or_b_and_b_or_a(a, a);
+            /*/
+            incr_a_or_b_and_b_or_a(a, b);
+            //*/
+            return a + b - 2;
+        }
+    `);
+
     ZERO(`
         // same as below -
         //  but using a helper variable
