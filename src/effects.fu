@@ -4,17 +4,30 @@ import types;
 pub struct Flow
 {
     invalidates:    i32[][];
-    arg_aliases:    i32[][];
-    args_at_risk:   i32[][];
+
+    // Arguments at risk analysis.
+    is_arg:         bitset::BitSet; // acceleration structure.
+    arg_targets:    i32[];          // argument targets at each position.
+    arg_positions:  i32[];          // arguments (position + 1) at each target.
+
+    arg_aliases:    i32[][];        // is_arg targets each target refers to.
+    args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
 };
 
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
 {
-    // Unfortunately we can't assert pretty much nothing about target & position -
-    //  fn x args dont emit a target entry. TBD what we can do here to validate this shit works.
-    //   position >= 0 && target > position || assert();
-    ref aa = flow.arg_aliases.grow_if_oob(target) && assert();
-    aa ~= position;
+    // Argument position -> target,
+    //  this is only needed for collecting the outcomes at the end.
+    flow.arg_targets.len <= position || assert();
+    flow.arg_targets.grow(position + 1);
+    flow.arg_targets[position] = target;
+
+    flow.arg_positions.len <= target || assert();
+    flow.arg_positions.grow(target + 1);
+    flow.arg_positions[target] = position + 1;
+
+    // Speed up memberships checks.
+    flow.is_arg.add(target);
 }
 
 pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
@@ -54,9 +67,11 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         flow.invalidates.grow_if_oob(right).set::add(left);
 
         // Propagate alised arguments.
-        let args_aliased = flow.arg_aliases.unless_oob(right);
-        if (args_aliased)
-            flow.arg_aliases.grow_if_oob(left).set::add(args_aliased);
+        if (flow.is_arg.has(right))
+        {
+            flow.is_arg.add(left);
+            flow.arg_aliases.grow_if_oob(left).set::add(right);
+        }
     }
 }
 
@@ -85,4 +100,114 @@ pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
     // And this should be all.
     if (invals)
         flow.invalidates[left] = [];
+}
+
+
+//
+
+pub fn ArgsAtRisk_shake(ref flow: Flow)
+{
+    // For each ARG USE AT RISK from a previous ARG WRITE ...
+    for (mut i = 0; i < flow.args_at_risk.len; i++)
+    {
+        let use             = i;
+        fn at_risk_from()   = flow.args_at_risk[use];
+
+        for (shadow mut i = at_risk_from.len; i --> 0; )
+        {
+            let write = at_risk_from[i];
+
+            // DEDUPE BELOW /////////////
+            at_risk_from.splice(i, 1); //
+            /////////////////////////////
+
+            ArgsAtRisk_shake(:flow, use, write);
+        }
+    }
+}
+
+fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
+{
+    for (;;)
+    {
+        // Write to AB does not invalidate a read from AB.
+        if (high == low)
+            return;
+
+        // Normalize the ascent.
+        //  We want to climb greater-first,
+        //   so that if we have read(ABC = AB || C) after write(AB),
+        //    C becomes at risk with A and B,
+        //     but A & B are fine together.
+        //
+        if (high < low)
+            SWAP(high, low);
+
+        // One edge - prefer storing index of lower in higher bitmask -
+        //  extra mileage for small bitmask optimizatons.
+
+        // DEDUPE ////////////////////////////////////////////////
+        // TODO this will be way faster as a bitmask. ////////////
+        flow.args_at_risk.grow_if_oob(high).set::add(low); //
+        { ////////////////////////////////////////////////////////
+            {
+                let highs = flow.arg_aliases.unless_oob(high);
+                if (highs)
+                {
+                    let last = highs.len - 1;
+                    for (mut i = 0; i < last; i++)
+                        ArgsAtRisk_shake(:flow, high: highs[i], :low);
+
+                    // Repeat here.
+                    high = highs[last];
+                    continue;
+                }
+            }
+
+            {
+                let lows = flow.arg_aliases.unless_oob(low);
+                if (lows)
+                {
+                    let last = lows.len - 1;
+                    for (mut i = 0; i < last; i++)
+                        ArgsAtRisk_shake(:flow, :high, low: lows[i]);
+
+                    // Repeat here.
+                    low = lows[last];
+                    continue;
+                }
+            }
+        }
+
+        break;
+    }
+}
+
+pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
+{
+    mut risk_free: bitset::BitSet;
+
+    if (position)
+    {
+        // Each bitset as small as possible -
+        //  lesser args listed in greater args bitsets -
+        //   so even if we have 200 args, most of the bitsets will be smallvecs.
+        risk_free.add_range(0, position);
+
+        let target          = flow.arg_targets.unless_oob(position);
+        let at_risk_from    = flow.args_at_risk.unless_oob(target);
+
+        for (mut i = 0; i < at_risk_from.len; i++)
+        {
+            let other           = at_risk_from[i];
+            if (other > target)
+                break;
+
+            let other_position  = flow.arg_positions.unless_oob(other) - 1;
+            if (other_position >= 0)
+                risk_free.rem(other_position);
+        }
+    }
+
+    return risk_free;
 }

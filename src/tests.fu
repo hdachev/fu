@@ -1895,7 +1895,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
@@ -1904,7 +1904,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
 
         fn main()
@@ -1915,7 +1915,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
         fn GET_mut(ref x: i32) x || GET_mut(target += 1);
 
@@ -1926,7 +1926,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
@@ -1971,7 +1971,7 @@ pub fn runTests()
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             fn each(cond, cons) cond && cons();
@@ -5533,8 +5533,8 @@ pub fn runTests()
         pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
                          ref e: i32, ref f: i32, ref g: i32, ref h: i32)
         {
-            ab = a || b; cd = c || d; abcd = ab || cd;
-            ef = e || f; gh = g || h; efgh = ef || gh;
+            ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
+            ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
             ++++abcd; ++++ab; ++++cd;
             ++++efgh; ++++ef; ++++gh;
         }
@@ -5588,7 +5588,7 @@ pub fn runTests()
             incr_a_or_b_by2_via_x(A, B); // incr A, now 4
             incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!
 
-            return (100*A - B) - 404;
+            return (100*A + B) - 404;
         }
     `);
 
@@ -5607,7 +5607,7 @@ pub fn runTests()
             incr_a_or_b_by2(A, B); // incr A, now 4
             incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!
 
-            return (100*A - B) - 404;
+            return (100*A + B) - 404;
         }
     `);
 

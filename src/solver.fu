@@ -2656,7 +2656,7 @@ pub fn solve(
                 let arg         = solveLet(n_arg, :specType);
                 outItems[i]     = arg;
 
-                if (!isUnspec)
+                if (!isUnspec && arg.target)
                     Reference_trackArgument(_current_fn.flow, arg.target.index, position: i);
             }
 
@@ -2708,19 +2708,10 @@ pub fn solve(
                     let autocall    = argNode.flags & F_COMPOUND_ID && Autocall_splice(name);
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
-                    // Risk-free.
-                    mut risk_free   = bitset::BitSet;
-                    if (!isNative && !isUnspec)
-                    {
-                        risk_free.add_range(0, N);
-                        let risk = out.flow.args_at_risk.unless_oob(i);
-                        for (shadow mut i = 0; i < risk.len; i++)
-                        {
-                            let r = risk[i];
-                            r >= 0 && r < N || fail("args_at_risk: Bad position: " ~ r ~ ", must be >=0, <" ~ N ~ ".");
-                            risk_free.rem(r);
-                        }
-                    }
+                    // ARGUMENTS AT RISK ////////////////////////
+                    let risk_free   = !isNative && !isUnspec
+                        && out.flow.ArgsAtRisk_listRiskFree(i);
+                    /////////////////////////////////////////////
 
                     //
                     let arg = Argument(
@@ -2878,6 +2869,10 @@ pub fn solve(
                     //  implicit args splice in
                     outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
                     didSetBody = true;
+
+                    // ARGUMENTS AT RISK ////////////////////////
+                    _current_fn.flow.ArgsAtRisk_shake(); ////////
+                    /////////////////////////////////////////////
                 }
 
                 // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
@@ -4560,7 +4555,8 @@ pub fn solve(
         mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks: true,
             type_last: type,
             use_type_last: true,
-            type_all: type.is_void ? t_bool : type);
+            type_all: type.is_void ? t_bool : type,
+            track_reads: node.items.len - 1);
 
         if (items.len < 2)
             return items.only;
@@ -4615,7 +4611,7 @@ pub fn solve(
             }
         }
 
-        return solvedAndOr(node, type, items);
+        return solved(node, type, items);
     }
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
@@ -4623,7 +4619,8 @@ pub fn solve(
         let items = solveNodes(node.items, deadcode_on_never: true,
             type_last: type,
             use_type_last: true,
-            type_all: type.is_void ? t_bool : type);
+            type_all: type.is_void ? t_bool : type,
+            track_reads: node.items.len - 1);
 
         if (items.len < 2)
             return items.only;
@@ -4681,15 +4678,11 @@ pub fn solve(
 
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
-        return solvedAndOr(node, type, items);
+        return solved(node, type, items);
     }
 
     fn solvedAndOr(node: Node, type: Type, items: SolvedNode[])
     {
-        // We read everything but the last argument.
-        for (mut i = 0; i < items.len - 1; i++)
-            trackReadWrite(items[i]); // call:#test
-
         return solved(node, type, items);
     }
 
@@ -4727,15 +4720,9 @@ pub fn solve(
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written)
-            {
-                let args_aliased = flow.arg_aliases.unless_oob(target);
-                for (shadow mut i = 0; i < args_aliased.len; i++)
-                {
-                    flow.args_at_risk.grow_if_oob(args_aliased[i])
-                        .set::add(events.args_written);
-                }
-            }
+            if (events.args_written && flow.is_arg.has(target))
+                flow.args_at_risk.grow_if_oob(target)
+                    .set::add(events.args_written);
             /////////////////////////////////////////////
         }
 
@@ -4747,8 +4734,7 @@ pub fn solve(
             if (!target)
                 continue;
 
-            let invalidates     = flow.invalidates.unless_oob(target);
-            let args_aliased    = flow.arg_aliases.unless_oob(target);
+            let invalidates = flow.invalidates.unless_oob(target);
 
             // Writes in a loop invalidate preceding reads.
             for (shadow mut i = 0; i < invalidates.len; i++)
@@ -4773,14 +4759,14 @@ pub fn solve(
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            if (args_aliased)
+            if (flow.is_arg.has(target))
             {
-                events.args_written.set::add(args_aliased);
+                events.args_written.set::add(target);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
                         flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
-                            .set::add(args_aliased);
+                            .set::add(target);
             }
             /////////////////////////////////////////////
         }
@@ -4801,13 +4787,12 @@ pub fn solve(
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            let args_aliased = flow.arg_aliases.unless_oob(target);
-            if (args_aliased)
+            if (flow.is_arg.has(target))
             {
                 // And this clearly sucks
                 //  because we can't clean up after ourselves,
                 //   perhaps we don't want this but should use used_in_a_loop instead?
-                events.args_in_a_loop.set::add(args_aliased);
+                events.args_in_a_loop.set::add(target);
             }
             /////////////////////////////////////////////
         }
@@ -5023,7 +5008,7 @@ pub fn solve(
                                     continue;
 
                                 // Can the fn handle aliasing here?
-                                if (host_args[i0].risk_free.has(i) && host_args[i].risk_free.has(i0))
+                                if (host_args[i0].risk_free.has(i))
                                     continue;
 
                                 // Do we see any aliasing here?
@@ -5247,6 +5232,7 @@ pub fn solve(
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
         as_blocks?!: bool,
+        track_reads?!: i32,
         kills?!: i32,
         mode?: u16): SolvedNode[]
     {
@@ -5277,6 +5263,9 @@ pub fn solve(
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type,
                         kills: i == nodes.len - 1 && kills, :mode);
+
+                if (i < track_reads)
+                    trackReadWrite(solved);
 
                 //
                 result ~= solved;
