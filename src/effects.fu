@@ -87,7 +87,7 @@ pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         flow.invalidates[right].set::rem(left) || assert();
     }
 
-    let invals = flow.invalidates.unless_oob(left);
+    let invals = flow.invalidates.try_steal(left);
 
     // Unlist any surviving backrefs.
     for (mut i = 0; i < invals.len; i++)
@@ -96,10 +96,6 @@ pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         if (idx >= 0)
             flow.invalidates[invals[i]].splice(idx, 1);
     }
-
-    // And this should be all.
-    if (invals)
-        flow.invalidates[left] = [];
 }
 
 

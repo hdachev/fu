@@ -29,6 +29,18 @@ pub fn grow_if_oob(a: &mut $T[], i: i32): &mut $T
 pub fn unless_oob(a: [$T], i: i32)
     i < a.len && a[i];
 
+pub fn try_steal(ref a: [$T], i: i32)
+{
+    if (i < a.len)
+    {
+        mut slot: $T;
+        SWAP(slot, a[i]);
+        return slot;
+    }
+
+    return [];
+}
+
 pub fn hasIdentifierChars(id: string)
 {
     for (mut i = 0; i < id.len; i++)
