@@ -3426,6 +3426,15 @@ pub fn solve(
                     expr = createCopy(expr);
                 }
             }
+            else
+            {
+                // This is not a real read/write -
+                //  but the thing is the ref will be used LATER, in the caller,
+                //   so we need to check it will be still valid there.
+                //
+                trackReadWrite(original.uni0n,
+                    is_jump: true);
+            }
         }
 
         reportReturnType(:helpers_idx, expr.type);
@@ -4689,16 +4698,21 @@ pub fn solve(
 
     //
 
-    fn trackReadWrite(node: SolvedNode, write?!: bool)
+    fn trackReadWrite(node: SolvedNode, write?!: bool, is_jump?!: bool)
     {
         if (!node.type.is_ref || !_current_fn.target.index)
             return;
 
+        let regions = node.type.lifetime.uni0n;
+        trackReadWrite(:regions, :write, :is_jump);
+    }
+
+    fn trackReadWrite(regions: Region[], write?!: bool, is_jump?!: bool)
+    {
         fn name(shadow target: i32)
             GET_nested(target).name;
 
         let token   = _here;
-        let regions = node.type.lifetime.uni0n;
 
         // Writes invalidate subsequent reads.
         ref flow    = _current_fn.flow;
@@ -4713,14 +4727,14 @@ pub fn solve(
             {
                 let u = events.invalidated_by[target];
                 if (u.target)
-                    fail("BORROWCK: Cannot " ~ (write ? "write to" : "read from")
+                    fail("BORROWCK: Cannot " ~ (write ? "write to" : is_jump ? "return" : "read from")
                         ~ " `" ~ target.name ~ "`, reference invalidated by write to"
                         ~ " `" ~ u.target.name ~ "` at "
                         ~ u.token.str);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written && flow.is_arg.has(target))
+            if (events.args_written && flow.is_arg.has(target) && !is_jump)
                 flow.args_at_risk.grow_if_oob(target)
                     .set::add(events.args_written);
             /////////////////////////////////////////////

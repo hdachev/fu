@@ -2233,7 +2233,7 @@ pub fn runTests()
             //*F
             ref
             /*/
-            let
+            mut
             //*/
                 badref = args[0];
             args = [ Arg(11) ]; // INVALIDATE badref.
