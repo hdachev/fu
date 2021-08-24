@@ -378,7 +378,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         struct! = false): Node[]
     {
         let line0   = _idx && tokens[_idx - 1].line;
-        let col00   = _col0;
+        mut col00   = _col0; /*bck fix*/
 
         mut colNN   = -1;
         mut lineNN  = line0;
@@ -480,7 +480,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseStatement(): Node
     {
         ///////////////////////////////////////////////
-        let loc0  = _loc;
+        mut loc0  = _loc; /*bck fix*/
         let token = tokens[_loc = _idx++] || fail();
         ///////////////////////////////////////////////
 
@@ -723,7 +723,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         let retIdx = items.len;
         items.push(type);
 
-        let numReturns0 = _numReturns;
+        mut numReturns0 = _numReturns; /*bck fix*/
 
         // Body or pattern (case/case).
         flags |= parseFnBodyOrPattern(items, :expr);
@@ -971,8 +971,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseExpression(p1: i32, mode?!: i32): Node
     {
         //////////////////////////////
-        let p0 = _precedence;
-        let loc0 = _loc;
+        mut p0 = _precedence; /*bck fix*/
+        mut loc0 = _loc; /*bck fix*/
         _precedence = p1;
         _loc = _idx;
         //////////////////////////////

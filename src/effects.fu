@@ -111,7 +111,7 @@ pub fn ArgsAtRisk_shake(ref flow: Flow)
 
         for (shadow mut i = at_risk_from.len; i --> 0; )
         {
-            let write = at_risk_from[i];
+            mut write = at_risk_from[i]; /*bck fix*/
 
             // DEDUPE BELOW /////////////
             at_risk_from.splice(i, 1); //
@@ -147,7 +147,7 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
         flow.args_at_risk.grow_if_oob(high).set::add(low); //
         { ////////////////////////////////////////////////////////
             {
-                let highs = flow.arg_aliases.unless_oob(high);
+                mut highs = flow.arg_aliases.unless_oob(high); /*bck fix*/
                 if (highs)
                 {
                     let last = highs.len - 1;
@@ -161,7 +161,7 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
             }
 
             {
-                let lows = flow.arg_aliases.unless_oob(low);
+                mut lows = flow.arg_aliases.unless_oob(low); /*bck fix*/
                 if (lows)
                 {
                     let last = lows.len - 1;
