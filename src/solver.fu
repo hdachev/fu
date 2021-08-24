@@ -4710,7 +4710,11 @@ pub fn solve(
     fn trackReadWrite(regions: Region[], write?!: bool, is_jump?!: bool)
     {
         fn name(shadow target: i32)
-            GET_nested(target).name;
+        {
+            let id = GET_nested(target).name;
+            let t = hacks::tryParseClosureID(:id, :MODID);
+            return t ? t.name : id;
+        }
 
         let token   = _here;
 
