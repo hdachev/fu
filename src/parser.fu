@@ -315,6 +315,13 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         return out;
     }
 
+    fn parseCompilerPragma(): Node
+    {
+        let ret = make("compiler", :consume("id").value);
+        consume("op", ";");
+        return ret;
+    }
+
 
     //
 
@@ -496,29 +503,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             let v = token.value;
             let peek = tokens[_idx];
 
-            if (!_fnDepth || peek.kind == "id")
-            {
-                if (v == "let")         return parseLetStmt();
-                if (v == "lax")         return { _idx--; parseLetStmt() };
-                if (v == "mut")         return { _idx--; parseLetStmt() };
-                if (v == "ref")         return { _idx--; parseLetStmt() };
-                if (v == "struct")      return parseStructDecl();
-                if (v == "pub")         return parsePub();
-                if (v == "shadow")      return parseShadow();
-
-                if (v == "type")        return parseTypedef();
-                if (v == "typedef")     return parseTypedef();
-
-                if (v == "fn")          return parseFnDecl();
-                if (v == "using")       return parseConversionDecl();
-                if (v == "inline")      return parseInlineDecl();
-                if (v == "infix")       return parseFixityDecl(F_INFIX);
-                if (v == "prefix")      return parseFixityDecl(F_PREFIX);
-                if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
-
-                if (v == "nocopy")      return parseNoCopy();
-            }
-
             if (_fnDepth)
             {
                 if (v == "if")          return parseIf();
@@ -543,14 +527,43 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                     return { _idx--; parseLabelledStatement() };
             }
 
-            if (v == "import" && (peek.kind == "id" || peek.kind == "str"))
-                return parseImport();
+            if (v == "fn" && (peek.kind == "id" || !_fnDepth))
+            {
+                                        return parseFnDecl();
+            }
+
+            if (peek.kind == "id")
+            {
+                if (v == "let")         return parseLetStmt();
+                if (v == "lax")         return { _idx--; parseLetStmt() };
+                if (v == "mut")         return { _idx--; parseLetStmt() };
+                if (v == "ref")         return { _idx--; parseLetStmt() };
+                if (v == "struct")      return parseStructDecl();
+                if (v == "type")        return parseTypedef();
+
+                if (v == "pub")         return parsePub();
+                if (v == "shadow")      return parseShadow();
+                if (v == "using")       return parseConversionDecl();
+
+                if (v == "nocopy")      return parseNoCopy();
+                if (v == "import")      return parseImport();
+                if (v == "compiler")    return parseCompilerPragma();
+
+                if (v == "inline")      return parseInlineDecl();
+                if (v == "infix")       return parseFixityDecl(F_INFIX);
+                if (v == "prefix")      return parseFixityDecl(F_PREFIX);
+                if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
+            }
         }
 
         ////////////
         _idx--;
         _loc = loc0;
         ////////////
+
+        // No expression statements outside of fns for now.
+        if (!_fnDepth)
+            fail();
 
         // Expression statement, followed by a semi.
         return parseExpressionStatement();

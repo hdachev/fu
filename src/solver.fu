@@ -1575,6 +1575,8 @@ pub fn solve(
         // Exotics
         if (k == "forfieldsof") return solveForFieldsOf(node);
 
+        if (k == "compiler")    return executeCompilerPragma(node);
+
         //
         return fail("TODO: " ~ k);
     }
@@ -2025,6 +2027,16 @@ pub fn solve(
     fn createEmpty(kind = "empty", type = t_void, target?: Target): SolvedNode
     {
         return SolvedNode(:kind, :type, :target);
+    }
+
+    fn executeCompilerPragma(node: Node)
+    {
+        if (node.value == "break")
+            hacks::compilerBreak();
+        else
+            fail("Unknown compiler pragma: `" ~ node.value ~ "`.");
+
+        return createEmpty();
     }
 
 

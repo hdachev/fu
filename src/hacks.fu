@@ -22,3 +22,10 @@ pub fn tryParseClosureID(id!: string, MODID: i32)
 
     return [];
 }
+
+pub fn compilerBreak()
+{
+    // Here for a more stable breakpoint file:line.
+    mut a = 5;
+    return a;
+}
