@@ -3,7 +3,7 @@
 #include "../vendor/crash/crash.cpp"
 
 #ifdef __linux__
-#include "../vendor/crash/crash-noop.cpp"
+#include "../vendor/crash/crash-linux.cpp"
 #endif
 
 #ifdef _WIN32
