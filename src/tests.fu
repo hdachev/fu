@@ -2443,6 +2443,45 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode       { nodeidx: i32; };
+        struct CurrentFn        { using out: SolvedNode; };
+
+        struct Target           { index: i32; };
+        struct SolvedNodeData   { target: Target; };
+        struct Overload         { nodes: SolvedNodeData[]; };
+
+        fn test(ref overloads: Overload[],
+                ref _current_fn: CurrentFn)
+        {
+            using fn GET(target: Target)
+            {
+                let o = overloads[target.index];
+                return o;
+            }
+
+            using fn SolvedNodeData(nid: SolvedNode)
+            {
+                let nodes = overloads[nid.nodeidx].nodes;
+                return nodes[nid.nodeidx];
+            }
+
+            let current_fn  = _current_fn.target;               // <- this is a ref into overloads
+            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads
+            if (debug_2) {}
+
+            mut frame       = current_fn.index;                 // <- which invalidates this read
+            return frame;
+        }
+
+        fn main() {
+            mut _current_fn = CurrentFn(SolvedNode(0));
+            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];
+
+            return test(overloads, _current_fn);
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
