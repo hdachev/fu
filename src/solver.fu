@@ -1623,7 +1623,7 @@ pub fn solve(
         mut t = node.target; // TODO BORROWCK danglefix
         if (k == "let")
         {
-            let init = node.items[LET_INIT];
+            let init = node.items && node.items[LET_INIT];
             if (init)
             {
                 node.items[LET_INIT].propagateType(node.type);
@@ -1908,6 +1908,7 @@ pub fn solve(
             ////////////////////////////////////////
 
             // Either way, try to relax.
+            o.solved.type || fail("!var.solved.type, can`t propagateType");
             o.solved.propagateType(usage);
         }
 
@@ -4446,11 +4447,15 @@ pub fn solve(
 
     //
 
-    fn createLet(target: Target, flags: i32 = 0): SolvedNode
+    fn createLet(id: string, type: Type, flags: i32, ref shadows!: bool): SolvedNode
     {
-        return SolvedNode(
+        let target = Binding(id, type, :flags, :shadows);
+        let ret = SolvedNode(
             kind: "let", :flags,
             value: target.name, :target.type, :target);
+
+        target.GET_mut.solved = ret;
+        return ret;
     }
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
@@ -4473,16 +4478,15 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        mut flags = F_IMPLICIT | F_ARG;
+        let flags = F_IMPLICIT | F_ARG;
 
-        let ret         = Binding(id, type, :flags, :shadows);
-        let newArgNode  = createLet(ret, F_IMPLICIT);
+        let newArgNode  = createLet(id, type, :flags, :shadows);
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
         _current_fn.MUT.items.insert(newArgIdx, newArgNode);
 
         Reference_trackArgument(_current_fn.flow, newArgNode.target.index, position: newArgIdx);
 
-        return ret;
+        return newArgNode.target;
     }
 
     fn bindImplicitArg(name: string, type: Type, becauseOf!: Target): SolvedNode
