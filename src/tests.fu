@@ -2482,6 +2482,57 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Token {
+            col: i32;
+            line: i32;
+            value: string;
+        };
+
+        fn parse(tokens: Token[]) {
+            mut _idx = 0;
+            mut _loc = 0;
+
+            fn fail(mut reason = "") {
+                let loc  = tokens[_loc];
+                let here = tokens[_idx];
+                if (!reason)
+                    reason = "Unexpected '" ~ here.value ~ "'.";
+
+                let l0 = loc.line;  let c0 = loc.col;
+                let l1 = here.line; let c1 = here.col;
+
+                let addr = l1 == l0
+                    ? "@" ~ l1 ~ ":" ~ c1
+                    : "@" ~ l0 ~ ":" ~ c0 ~ ".." ~ l1 ~ ":" ~ c1;
+
+                return throw(addr ~ ":\n\t" ~ reason);
+            }
+
+            fn consume(value: [byte], err = "") {
+                let token = tokens[_idx];
+                if (token.value == value) {
+                    _idx++;
+                    return token;
+                }
+
+                return fail((err || "Expected") ~ " '" ~ value ~ "', got '" ~ token.value ~ "'.");
+            }
+
+            fn parseRoot() {
+                let ret = consume("sof");
+                _loc = _idx;
+                return ret;
+            }
+
+            return parseRoot();
+        }
+
+        fn main() {
+            return parse([ Token(1, 1, "sof") ]).value.len - 3;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
