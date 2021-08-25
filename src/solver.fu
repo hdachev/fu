@@ -4470,7 +4470,7 @@ pub fn solve(
             if (arg.value == id)
             {
                 checkAssignable(host: type, arg.type,
-                    "Implicit arg collision", id);
+                    "Implicit arg collision", id.human);
 
                 return arg.target || fail();
             }
@@ -4723,13 +4723,17 @@ pub fn solve(
         trackReadWrite(:regions, :write, :is_jump);
     }
 
+    fn human(id: string)
+    {
+        let t = hacks::tryParseClosureID(:id, :MODID);
+        return t ? t.name : id;
+    }
+
     fn trackReadWrite(regions: Region[], write?!: bool, is_jump?!: bool)
     {
         fn name(shadow target: i32)
         {
-            let id = GET_nested(target).name;
-            let t = hacks::tryParseClosureID(:id, :MODID);
-            return t ? t.name : id;
+            return GET_nested(target).name.human;
         }
 
         let token   = _here;
