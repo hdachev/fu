@@ -3351,11 +3351,22 @@ pub fn solve(
     //  we want to re-iterate all the return statements,
     //   because that can change our copy/move decision.
 
-    fn superType(reason: string, a: Type, b: Type)
+    fn superType(reason: string, a: Type, b: Type, id?: string)
     {
-        return type_trySuper(a, b) || fail(reason
+        return type_trySuper(a, b) || fail(
+            (id && "`" ~ id.human ~ "`: ")
+            ~ reason
             ~ "No common supertype: `"
-            ~ serializeType(a) ~ "` <-> `" ~ serializeType(b) ~ "`.");
+            ~ serializeType(a) ~ "` | `" ~ serializeType(b) ~ "`.");
+    }
+
+    fn intersectionType(reason: string, a: Type, b: Type, id?: string)
+    {
+        return type_tryIntersect(a, b) || fail(
+            (id && "`" ~ id.human ~ "`: ")
+            ~ reason
+            ~ "Cannot intersect a common subtype: `"
+            ~ serializeType(a) ~ "` & `" ~ serializeType(b) ~ "`.");
     }
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!: i32)
@@ -4469,8 +4480,16 @@ pub fn solve(
             let arg = _current_fn.items[i];
             if (arg.value == id)
             {
-                checkAssignable(host: type, arg.type,
-                    "Implicit arg collision", id.human);
+                mut super = intersectionType(
+                    :id, "Implicit argument collision: ",
+                    add_ref(type, arg.type.lifetime), arg.type);
+
+                //////////////////////////////////////////////////////////
+                // TODO FIX just let the stuff below rerun?             //
+                //  Here we're monkey patching, this is just not good.  //
+                arg.MUT.type            = super;                        //
+                arg.target.GET_mut.type = super;                        //
+                //////////////////////////////////////////////////////////
 
                 return arg.target || fail();
             }
@@ -4999,6 +5018,8 @@ pub fn solve(
 
                 for (mut i = 0; i < args.len; i++)
                 {
+                    let host_arg = host_args[i];
+
                     /////////////////
                     // Literal fixup.
 
@@ -5007,7 +5028,7 @@ pub fn solve(
                     if (arg.kind == "argid")
                         arg = arg.items.only;
 
-                    let expect = host_args[i].type;
+                    let expect = host_arg.type;
                     {
                         let retype = tryRetyping(arg, expect);
                         if (isAssignableAsArgument(expect, retype))
