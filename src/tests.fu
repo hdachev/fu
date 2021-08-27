@@ -2454,24 +2454,55 @@ pub fn runTests()
         fn test(ref overloads: Overload[],
                 ref _current_fn: CurrentFn)
         {
-            using fn GET(target: Target)
-            {
+            using fn GET(target: Target) {
                 let o = overloads[target.index];
                 return o;
             }
 
-            using fn SolvedNodeData(nid: SolvedNode)
-            {
+            using fn SolvedNodeData(nid: SolvedNode) {
                 let nodes = overloads[nid.nodeidx].nodes;
                 return nodes[nid.nodeidx];
             }
 
             let current_fn  = _current_fn.target;               // <- this is a ref into overloads
             let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads
-            if (debug_2) {}
+            return debug_2 && current_fn.index;                 // <- which invalidates this read
+        }
 
-            mut frame       = current_fn.index;                 // <- which invalidates this read
-            return frame;
+        fn main() {
+            mut _current_fn = CurrentFn(SolvedNode(0));
+            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];
+
+            return test(overloads, _current_fn);
+        }
+    `);
+
+    ZERO(`
+        struct SolvedNode       { nodeidx: i32; };
+        struct CurrentFn        { using out: SolvedNode; };
+
+        struct Target           { index: i32; };
+        struct SolvedNodeData   { target: Target; };
+        struct Overload         { nodes: SolvedNodeData[]; };
+
+        fn test(ref overloads: Overload[],
+                ref _current_fn: CurrentFn)
+        {
+            using fn GET(target: Target) {
+                if (target.index != 303) // Same as above, different setup.
+                    return overloads[target.index];
+
+                return []; // Also this fails to solve: cannot definit mutref
+            }
+
+            using fn SolvedNodeData(nid: SolvedNode) {
+                return nid.nodeidx != 303 // Same as above, rewording as a logical.
+                    && overloads[nid.nodeidx].nodes[nid.nodeidx];
+            }
+
+            let current_fn  = _current_fn.target;               // <- this is a ref into overloads
+            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads
+            return debug_2 && current_fn.index;                 // <- which invalidates this read
         }
 
         fn main() {
