@@ -1808,7 +1808,6 @@ pub fn solve(
             reportReturnType(:helpers_idx, items.last.type);
 
         // cpy/move.
-        if (!h.ret_actual.is_ref)
         {
             for (mut i = 0; i < h.returns.len; i++)
             {
