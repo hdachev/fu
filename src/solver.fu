@@ -256,9 +256,9 @@ pub fn solve(
             && _scope.extended[_current_fn.target.index - 1].locals.len + 1;
     }
 
-    fn GET_nested(index: i32)
+    fn nested(index: i32)
     {
-        return GET_mut(Target(modid: -_current_fn.target.index || module.modid, :index));
+        return Target(modid: -_current_fn.target.index || module.modid, :index);
     }
 
     fn isFnOrType(h: Helpers): bool
@@ -374,7 +374,7 @@ pub fn solve(
                 }
 
                 fn fnd(index: i32)
-                    GET_nested(:index);
+                    GET(nested(:index));
 
                 let index = region.Region_toLocalIndex;
                 let local = index && fnd(index);
@@ -492,7 +492,7 @@ pub fn solve(
         // TODO statics
         let idx = Region_isArg(r)   ? Region_toArgIndex(r)
                                     : Region_toLocalIndex(r);
-        return GET_nested(idx);
+        return GET(nested(idx));
     }
 
 
@@ -1846,7 +1846,7 @@ pub fn solve(
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
-            let var = GET_nested(:index);
+            let var = GET(nested(:index));
 
             // TODO FIX ARGSTEAL Lift implicit arguments up -
             //  they pop up randomly during bodysolve.
@@ -1896,10 +1896,10 @@ pub fn solve(
                 var.flags & F_LAX || fail(
                     "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
-                GET_nested(:index).flags |= F_UNUSED;
+                GET_mut(nested(:index)).flags |= F_UNUSED;
             }
 
-            ref o = GET_nested(:index);
+            ref o = GET_mut(nested(:index));
 
             ////////////////////////////////////////
             // TODO one of these two is redundant //
@@ -3290,7 +3290,7 @@ pub fn solve(
             if (r.Region_isTemp)
                 continue;
 
-            ref o = r.Region_toLocalIndex().GET_nested();
+            ref o = GET_mut(nested(r.Region_toLocalIndex()));
             visit(:o, i?: i, lifetime?: lifetime);
         }
     }
@@ -4752,7 +4752,7 @@ pub fn solve(
     {
         fn name(shadow target: i32)
         {
-            return GET_nested(target).name.human;
+            return GET(nested(target)).name.human;
         }
 
         let token   = _here;
