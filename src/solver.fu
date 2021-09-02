@@ -1613,7 +1613,7 @@ pub fn solve(
 
     //
 
-    fn propagateType(node: SolvedNode, slot: Type)
+    fn propagateType(mut node: SolvedNode, slot: Type) // TODO BORROWCK danglefix
     {
         if !(node.MUT.type.try_relax(:slot))
             return;
@@ -1697,8 +1697,8 @@ pub fn solve(
                     if (spec && !(spec == t.spec_of))
                     {
                         let o1 = GET(spec);
-                        if (!o1.type.isAssignable(host: node.type))
-                            fail("What is this.");
+                        checkAssignable(host: node.type, o1.type,
+                            "Relaxed specialization does not return a subtype");
 
                         //////////////////////////
                         // TODO rewire callsite //
