@@ -4773,7 +4773,8 @@ pub fn solve(
                     fail("BORROWCK: Cannot " ~ (write ? "write to" : is_jump ? "return" : "read from")
                         ~ " `" ~ target.name ~ "`, reference invalidated by write to"
                         ~ " `" ~ u.target.name ~ "` at "
-                        ~ u.token.str);
+                        ~ u.token.str
+                        ~ RWEvent_stack(u.nodeidx, u.target));
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -4863,6 +4864,23 @@ pub fn solve(
             return _fname ~ "@" ~ line ~ ":" ~ col;
 
         return line ~ ":" ~ col;
+    }
+
+    fn RWEvent_stack(nodeidx: i32, target: i32)
+    {
+        let nodeown = _current_fn.target || fail("RWEvent_stack: no current fn.");
+        let node    = SolvedNode(:nodeown, :nodeidx);
+
+        if (node.kind != "call")
+            return "\n\tvia `" ~ node.kind ~ "`.";
+
+        // TODO this is the target we've written to,
+        //  see which mutref args aliase it at the callsite, then descend.
+        //
+        if (target) {}
+
+        let o = GET(node.target);
+        return "\n\tcall to `" ~ o.name ~ "`.";
     }
 
 
@@ -5102,7 +5120,7 @@ pub fn solve(
                     }
 
                     maybeCopyOrMove(
-                        args[i] || fail(), host_args[i].type,
+                        arg || fail(), host_arg.type,
                         isArgument: true);
 
                     // Usage: this is where we detect mutation.
@@ -5125,7 +5143,7 @@ pub fn solve(
                             arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left) ];
                         }
 
-                        trackReadWrite(arg, write: expect.is_mutref);
+                        trackReadWrite(arg, write: expect.is_mutref || fail("Not relaxed?"));
                     }
                 }
 
