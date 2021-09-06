@@ -211,7 +211,8 @@ pub struct Extended
 pub struct RWEvent
 {
     target:         i32;
-    token:          TokenIdx; // TODO: nodeidx
+    nodeidx:        i32;
+    token:          TokenIdx; // TODO: nodeidx should obsolete this
 };
 
 pub struct Events

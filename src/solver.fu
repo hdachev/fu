@@ -3455,7 +3455,7 @@ pub fn solve(
                 //  but the thing is the ref will be used LATER, in the caller,
                 //   so we need to check it will be still valid there.
                 //
-                trackReadWrite(original.uni0n,
+                trackReadWrite(original.uni0n, :expr.nodeidx,
                     is_jump: true);
             }
         }
@@ -4739,7 +4739,7 @@ pub fn solve(
             return;
 
         let regions = node.type.lifetime.uni0n;
-        trackReadWrite(:regions, :write, :is_jump);
+        trackReadWrite(:regions, :node.nodeidx, :write, :is_jump);
     }
 
     fn human(id: string)
@@ -4748,7 +4748,7 @@ pub fn solve(
         return t ? t.name : id;
     }
 
-    fn trackReadWrite(regions: Region[], write?!: bool, is_jump?!: bool)
+    fn trackReadWrite(regions: Region[], nodeidx: i32, write?!: bool, is_jump?!: bool)
     {
         fn name(shadow target: i32)
         {
@@ -4812,7 +4812,7 @@ pub fn solve(
             {
                 ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
                 if (!u.target)
-                    u = RWEvent(:target, :token);
+                    u = RWEvent(:target, :token, :nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -4840,7 +4840,7 @@ pub fn solve(
             {
                 ref u = events.used_in_a_loop.grow_if_oob(target);
                 if (!u.target)
-                    u = RWEvent(target: loop_start, :token);
+                    u = RWEvent(target: loop_start, :token, :nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
