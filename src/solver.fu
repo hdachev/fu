@@ -3917,7 +3917,7 @@ pub fn solve(
             {
                 let init = out.items[LET_INIT];
                 if (init.type.is_ref)
-                    Reference_trackLocalRef(_current_fn.flow, target.index, init.type.lifetime);
+                    trackLocalRef(left: target, right: init.type.lifetime);
             }
             ///////////////////////////////////////////////////////////////
 
@@ -4733,6 +4733,40 @@ pub fn solve(
 
     //
 
+    fn trackLocalRef(left: Target, right: Lifetime)
+    {
+        ref flow    = _current_fn.flow;
+        ref events  = _current_fn.events;
+
+        // Invalidate this ref immediately if anything on the right is already invalidated.
+        //  This allows us to set invalid refs up so long as they are not going to end up used later.
+        //
+        // TBD if this is amazing, kinda pointless, might want to error out immediately,
+        //  in which case we can just use a trackReadWrite(is_jump: true) here,
+        //   and replace the is_jump with a not_read_but: "return"|"ref" or something.
+        //
+        let regions = right.uni0n;
+        for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            if (events.invalidated_by.len > target)
+            {
+                let u = events.invalidated_by[target];
+                if (u.target)
+                {
+                    events.invalidated_by.grow_if_oob(left.index) = u;
+                    break;
+                }
+            }
+        }
+
+        //
+        return Reference_trackLocalRef(flow, left.index, :right);
+    }
+
     fn trackReadWrite(node: SolvedNode, write?!: bool, is_jump?!: bool)
     {
         if (!node.type.is_ref || !_current_fn.target.index)
@@ -4740,12 +4774,6 @@ pub fn solve(
 
         let regions = node.type.lifetime.uni0n;
         trackReadWrite(:regions, :node.nodeidx, :write, :is_jump);
-    }
-
-    fn human(id: string)
-    {
-        let t = hacks::tryParseClosureID(:id, :MODID);
-        return t ? t.name : id;
     }
 
     fn trackReadWrite(regions: Region[], nodeidx: i32, write?!: bool, is_jump?!: bool)
@@ -4854,6 +4882,12 @@ pub fn solve(
             }
             /////////////////////////////////////////////
         }
+    }
+
+    fn human(id: string)
+    {
+        let t = hacks::tryParseClosureID(:id, :MODID);
+        return t ? t.name : id;
     }
 
     fn str(using token: TokenIdx)
@@ -5139,12 +5173,11 @@ pub fn solve(
                             // We solve the problem by "naming" the lifetime.
                             let left = Scope_create(_scope,
                                 nest: true, local_of: _current_fn.target.index,
-                                kind: "lifetime", type: arg.type, name: "[mutref union]")
-                                    .index;
+                                kind: "lifetime", type: arg.type, name: "[mutref union]");
 
                             // This
-                            Reference_trackLocalRef(_current_fn.flow, :left, arg.type.lifetime);
-                            arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left) ];
+                            trackLocalRef(:left, arg.type.lifetime);
+                            arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
                         }
 
                         trackReadWrite(arg, write: expect.is_mutref || fail("Not relaxed?"));
