@@ -5123,8 +5123,12 @@ pub fn solve(
                         arg || fail(), host_arg.type,
                         isArgument: true);
 
-                    // Usage: this is where we detect mutation.
-                    //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
+                    shadow ref arg = args[i];
+
+                    // The mutref pseudovar trick, helps passing unions into fns,
+                    //  which can then return them for further modification -
+                    //   without this, a write to `a|b` invalidates both `a` and `b`,
+                    //    whilst a write to `c=a|b` allows further writes to `c`.
                     if (arg.is_mutref)
                     {
                         // The `ref a = c; ref b = c; ++++(a || b)` problem:
@@ -5146,6 +5150,17 @@ pub fn solve(
                         trackReadWrite(arg, write: expect.is_mutref || fail("Not relaxed?"));
                     }
                 }
+
+                // for (mut i = 0; i < args.len; i++)
+                // {
+                //     let arg     = args[i];
+                //     let expect  = host_args[i].type;
+                //
+                //     // Usage: this is where we detect mutation.
+                //     //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
+                //     if (arg.is_mutref)
+                //         trackReadWrite(args[i], write: expect.is_mutref || fail("Not relaxed?"));
+                // }
 
                 if (type.is_ref)
                     type.lifetime = Lifetime_test(
