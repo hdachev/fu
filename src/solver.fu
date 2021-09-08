@@ -4780,6 +4780,25 @@ pub fn solve(
     {
         fn name(shadow target: i32)
         {
+            let o = GET(nested(target));
+
+            // a|b|c instead of the useless [mutref union] thing.
+            if (o.kind == "lifetime")
+            {
+                mut str = o.name ~ "(";
+                for (mut i = 0; i < o.type.lifetime.uni0n.len; i++)
+                {
+                    if (i)
+                        str ~= "|";
+
+                    let t = Region_asIndex(o.type.lifetime.uni0n[i]);
+                    let n = t.name;
+                    str  ~= n;
+                }
+
+                return str ~ ")";
+            }
+
             return GET(nested(target)).name.human;
         }
 
@@ -5169,17 +5188,18 @@ pub fn solve(
                         //    whilst a write to `c=a|b` allows further writes to `c`.
                         if (arg.is_mutref)
                         {
-                            // The `ref a = c; ref b = c; ++++(a || b)` problem:
+                            // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
                             //  We need to have a single lifetime to describe what we're writing to,
                             //   otherwise it just looks like two unions that are not correlated.
                             if (arg.lifetime.uni0n.len > 1)
                             {
-                                // We solve the problem by "naming" the lifetime.
+                                // We solve the problem by "naming" the lifetime,
+                                //  as if there was a ref x = ... that we're passing in instead of this argument,
+                                //   allowing the fn to return x's lifetime, instead of the union.
                                 let left = Scope_create(_scope,
                                     nest: true, local_of: _current_fn.target.index,
-                                    kind: "lifetime", type: arg.type, name: "[mutref union]");
+                                    kind: "lifetime", type: arg.type, name: debug);
 
-                                //
                                 trackLocalRef(:left, arg.type.lifetime);
                                 arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
                             }
@@ -5262,21 +5282,13 @@ pub fn solve(
             "call", flags: 0, value: debug,
                     :type, args, :target);
 
-        // BORROWCK //
+        // BORROWCK ///////////////////////////////////////////////////
+        // Track all writes at once, not important for reads,
+        //  but tracking args one by one would prevent args-at-risk.
+        //
         if (bck_writes)
             trackReadWrite(bck_writes, :callsite.nodeidx, write: true);
-        // BORROWCK //
-
-        // for (mut i = 0; i < args.len; i++)
-        // {
-        //     let arg     = args[i];
-        //     let expect  = host_args[i].type;
-        //
-        //     // Usage: this is where we detect mutation.
-        //     //  TODO FIX arg might be mutref but not mutated, e.g. `|a, b| a || b`;
-        //     if (arg.is_mutref)
-        //         trackReadWrite(args[i], write: expect.is_mutref || fail("Not relaxed?"));
-        // }
+        ///////////////////////////////////////////////////////////////
 
         // Track deps.
         if (target.modid < 0 || target.modid == module.modid)
