@@ -3456,7 +3456,7 @@ pub fn solve(
                 //   so we need to check it will be still valid there.
                 //
                 trackReadWrite(original.uni0n, :expr.nodeidx,
-                    is_jump: true);
+                    not_read_from_but: "return");
             }
         }
 
@@ -4735,19 +4735,21 @@ pub fn solve(
 
     fn trackLocalRef(left: Target, right: Lifetime)
     {
+        trackReadWrite(right.uni0n, not_read_from_but: "bind to");
+
         return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
     }
 
-    fn trackReadWrite(node: SolvedNode, write?!: bool, is_jump?!: bool)
+    fn trackReadWrite(node: SolvedNode, write?!: bool, not_read_from_but?!: string)
     {
         if (!node.type.is_ref || !_current_fn.target.index)
             return;
 
         let regions = node.type.lifetime.uni0n;
-        trackReadWrite(:regions, :node.nodeidx, :write, :is_jump);
+        trackReadWrite(:regions, :node.nodeidx, :write, :not_read_from_but);
     }
 
-    fn trackReadWrite(regions: Region[], nodeidx: i32, write?!: bool, is_jump?!: bool)
+    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: bool, not_read_from_but?!: string)
     {
         fn name(shadow target: i32)
         {
@@ -4788,7 +4790,7 @@ pub fn solve(
             {
                 let u = events.invalidated_by[target];
                 if (u.target)
-                    fail("BORROWCK: Cannot " ~ (write ? "write to" : is_jump ? "return" : "read from")
+                    fail("BORROWCK: Cannot " ~ (write ? "write to" : not_read_from_but || "read from")
                         ~ " `" ~ target.name ~ "`, reference invalidated by write to"
                         ~ " `" ~ u.target.name ~ "` at "
                         ~ u.token.str
@@ -4796,7 +4798,7 @@ pub fn solve(
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written && flow.is_arg.has(target) && !is_jump)
+            if (events.args_written && flow.is_arg.has(target) && !not_read_from_but)
                 flow.args_at_risk.grow_if_oob(target)
                     .set::add(events.args_written);
             /////////////////////////////////////////////
@@ -4904,7 +4906,7 @@ pub fn solve(
         if (target) {}
 
         let o = GET(node.target);
-        return "\n\tcall to `" ~ o.name ~ "`.";
+        return "\n\t\tat call to `" ~ o.name ~ "`";
     }
 
 
