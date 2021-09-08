@@ -4735,36 +4735,7 @@ pub fn solve(
 
     fn trackLocalRef(left: Target, right: Lifetime)
     {
-        ref flow    = _current_fn.flow;
-        ref events  = _current_fn.events;
-
-        // Invalidate this ref immediately if anything on the right is already invalidated.
-        //  This allows us to set invalid refs up so long as they are not going to end up used later.
-        //
-        // TBD if this is amazing, kinda pointless, might want to error out immediately,
-        //  in which case we can just use a trackReadWrite(is_jump: true) here,
-        //   and replace the is_jump with a not_read_but: "return"|"ref" or something.
-        //
-        let regions = right.uni0n;
-        for (mut i = 0; i < regions.len; i++)
-        {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
-
-            if (events.invalidated_by.len > target)
-            {
-                let u = events.invalidated_by[target];
-                if (u.target)
-                {
-                    events.invalidated_by.grow_if_oob(left.index) = u;
-                    break;
-                }
-            }
-        }
-
-        //
-        return Reference_trackLocalRef(flow, left.index, :right);
+        return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
     }
 
     fn trackReadWrite(node: SolvedNode, write?!: bool, is_jump?!: bool)
