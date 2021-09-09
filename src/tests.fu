@@ -1594,6 +1594,324 @@ pub fn runTests()
     `);
 
 
+    // Borrow checker.
+
+    FAIL(`
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
+
+        fn main() {
+            mut x = 0;
+            //*F
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) {
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                /*/
+                b++;
+                //*/
+            }
+            b++;
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) { // Lets be extra sure here.
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                b++;
+                /*/
+                b++;
+                a ~= 1;
+                //*/
+            }
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            for (mut i = 2; i --> 0; )
+            {
+                b++; // Same thing but reordered as a loop.
+                if (a.len & 3) {
+                    //*F
+                    a ~= 1; // Invalidates 'b' on next iter.
+                    /*/
+                    b++;
+                    //*/
+                }
+            }
+            a ~= 100; // Invalidates 'b' but that's fine!
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 105;
+        }
+    `);
+
+    ZERO(`
+        // both args alias, but there's no risk of inval.
+        fn incr_a_or_b(ref a: i32, ref b: i32)
+            (a || b)++;
+
+        fn main() {
+            mut Z = 0;
+            mut A = 1;
+            mut B = 0;
+
+            incr_a_or_b(Z, B); // incr B, now 1
+            incr_a_or_b(A, B); // incr A, now 2
+            incr_a_or_b(B, B); // incr _target, now 2 // alias!
+
+            return (100*A + B) - 202;
+        }
+    `);
+
+    ZERO(`
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            ref c = a || b;
+            return ++++c - 3; // double mutation of a union
+        }
+    `);
+
+    ZERO(`
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            return ++++(a || b) - 3; // same, without a helper var
+        }
+    `);
+
+    FAIL(`
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+            ref ab = a || b;
+            ref cd = c || d;
+            ++++ab;
+            ++++cd;
+        }
+
+        fn main() {
+            mut ab = 0;
+            mut cd = 0;
+            //*F
+            ab_cd(ab, cd, ab, cd);
+            /*/
+            ab_cd(ab, ab, cd, cd);
+            //*/
+            return ab - cd;
+        }
+    `);
+
+    FAIL(`
+        // a can alias b
+        // c can alias d
+        // e can alias f
+        // g can alias h
+        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
+                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
+        {
+            ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
+            ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
+            ++++abcd; ++++ab; ++++cd;
+            ++++efgh; ++++ef; ++++gh;
+        }
+
+        fn main() {
+            mut ab = 0; mut cd = 0;
+            mut ef = 0; mut gh = 0;
+            //*F
+            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
+            /*/
+            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+            //*/
+            return (ab + cd) - (ef + gh);
+        }
+    `);
+
+    FAIL(`
+        // a cannot alias b
+        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+            ref x = a || b; ++x;
+            ref y = b || a; ++y;
+        }
+
+        fn main() {
+            mut a = 0;
+            mut b = 0;
+            //*F
+            incr_a_or_b_and_b_or_a(a, a);
+            /*/
+            incr_a_or_b_and_b_or_a(a, b);
+            //*/
+            return a + b - 2;
+        }
+    `);
+
+    ZERO(`
+        // same as below -
+        //  but using a helper variable
+        //   which provides a "name" for the outcome of a|b.
+        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            ++++x;
+        }
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2_via_x(Z, B); // incr B, now 2
+            incr_a_or_b_by2_via_x(A, B); // incr A, now 4
+            incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!
+
+            return (100*A + B) - 404;
+        }
+    `);
+
+    ZERO(`
+        // same as above -
+        //  but notice we increment twice, which breaks current setup.
+        fn incr_a_or_b_by2(ref a: i32, ref b: i32)
+            ++++(a || b);
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2(Z, B); // incr B, now 2
+            incr_a_or_b_by2(A, B); // incr A, now 4
+            incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!
+
+            return (100*A + B) - 404;
+        }
+    `);
+
+    FAIL(`
+        fn alias(ref arr: i32[], ref item: i32) {
+            arr ~= 1;
+            return item;
+        }
+
+        fn main() {
+            mut a = [ 0 ];
+            //*F
+            ref c = alias(a, a[0]);
+            /*/
+            mut b = [ 0 ];
+            ref c = alias(a, b[0]);
+            //*/
+            return c++;
+        }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            ref cc = bb || aa; // Mustn't compile.
+            return cc;
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+    `);
+
+    FAIL(`
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return bb || aa; // Same as above, but no explicit binding.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+    `);
+
+    FAIL(`
+        fn noop(x) x;
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return noop(bb || aa); // Same as above, but bound at callsite.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+    `);
+
+    FAIL(`
+        fn either(a, b) a || b;
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return either(bb, aa); // For completeness.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+    `);
+
+
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
     //   they just stressed our stuff in weird ways.
@@ -5498,324 +5816,6 @@ pub fn runTests()
             test(o, args);
             return args.len - args[args.len - 1].x - 1;
         }
-    `);
-
-
-    // Borrow checker.
-
-    FAIL(`
-        fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
-        }
-
-        fn main() {
-            mut x = 0;
-            //*F
-            ref y = x;
-            /*/
-            mut y = 0;
-            //*/
-            let z = test(x, y);
-            return x+y - z;
-        }
-    `);
-
-    FAIL(`
-        fn test(ref a: i32[]) {
-            ref b = a[0];
-            if (a.len & 1) {
-                //*F
-                a ~= 1; // Invalidates 'b'.
-                /*/
-                b++;
-                //*/
-            }
-            b++;
-        }
-
-        fn main() {
-            mut arr = [ 1 ]; test(arr);
-            mut sum = 0;
-            for (mut i = 0; i < arr.len; i++) sum += arr[i];
-            return sum - 3;
-        }
-    `);
-
-    FAIL(`
-        fn test(ref a: i32[]) {
-            ref b = a[0];
-            if (a.len & 1) { // Lets be extra sure here.
-                //*F
-                a ~= 1; // Invalidates 'b'.
-                b++;
-                /*/
-                b++;
-                a ~= 1;
-                //*/
-            }
-        }
-
-        fn main() {
-            mut arr = [ 1 ]; test(arr);
-            mut sum = 0;
-            for (mut i = 0; i < arr.len; i++) sum += arr[i];
-            return sum - 3;
-        }
-    `);
-
-    FAIL(`
-        fn test(ref a: i32[]) {
-            ref b = a[0];
-            for (mut i = 2; i --> 0; )
-            {
-                b++; // Same thing but reordered as a loop.
-                if (a.len & 3) {
-                    //*F
-                    a ~= 1; // Invalidates 'b' on next iter.
-                    /*/
-                    b++;
-                    //*/
-                }
-            }
-            a ~= 100; // Invalidates 'b' but that's fine!
-        }
-
-        fn main() {
-            mut arr = [ 1 ]; test(arr);
-            mut sum = 0;
-            for (mut i = 0; i < arr.len; i++) sum += arr[i];
-            return sum - 105;
-        }
-    `);
-
-    ZERO(`
-        // both args alias, but there's no risk of inval.
-        fn incr_a_or_b(ref a: i32, ref b: i32)
-            (a || b)++;
-
-        fn main() {
-            mut Z = 0;
-            mut A = 1;
-            mut B = 0;
-
-            incr_a_or_b(Z, B); // incr B, now 1
-            incr_a_or_b(A, B); // incr A, now 2
-            incr_a_or_b(B, B); // incr _target, now 2 // alias!
-
-            return (100*A + B) - 202;
-        }
-    `);
-
-    ZERO(`
-        struct V { v: i32; };
-
-        fn main() {
-            mut A: V = [ 1 ];
-            ref a = A.v;
-            ref b = A.v;
-            ref c = a || b;
-            return ++++c - 3; // double mutation of a union
-        }
-    `);
-
-    ZERO(`
-        struct V { v: i32; };
-
-        fn main() {
-            mut A: V = [ 1 ];
-            ref a = A.v;
-            ref b = A.v;
-            return ++++(a || b) - 3; // same, without a helper var
-        }
-    `);
-
-    FAIL(`
-        // a can alias b
-        // c can alias d
-        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
-            ref ab = a || b;
-            ref cd = c || d;
-            ++++ab;
-            ++++cd;
-        }
-
-        fn main() {
-            mut ab = 0;
-            mut cd = 0;
-            //*F
-            ab_cd(ab, cd, ab, cd);
-            /*/
-            ab_cd(ab, ab, cd, cd);
-            //*/
-            return ab - cd;
-        }
-    `);
-
-    FAIL(`
-        // a can alias b
-        // c can alias d
-        // e can alias f
-        // g can alias h
-        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
-                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
-        {
-            ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
-            ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
-            ++++abcd; ++++ab; ++++cd;
-            ++++efgh; ++++ef; ++++gh;
-        }
-
-        fn main() {
-            mut ab = 0; mut cd = 0;
-            mut ef = 0; mut gh = 0;
-            //*F
-            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
-            /*/
-            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
-            //*/
-            return (ab + cd) - (ef + gh);
-        }
-    `);
-
-    FAIL(`
-        // a cannot alias b
-        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
-            ref x = a || b; ++x;
-            ref y = b || a; ++y;
-        }
-
-        fn main() {
-            mut a = 0;
-            mut b = 0;
-            //*F
-            incr_a_or_b_and_b_or_a(a, a);
-            /*/
-            incr_a_or_b_and_b_or_a(a, b);
-            //*/
-            return a + b - 2;
-        }
-    `);
-
-    ZERO(`
-        // same as below -
-        //  but using a helper variable
-        //   which provides a "name" for the outcome of a|b.
-        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
-            ref x = a || b;
-            ++++x;
-        }
-
-        fn main() {
-            mut Z = 0;
-            mut A = 2;
-            mut B = 0;
-
-            incr_a_or_b_by2_via_x(Z, B); // incr B, now 2
-            incr_a_or_b_by2_via_x(A, B); // incr A, now 4
-            incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!
-
-            return (100*A + B) - 404;
-        }
-    `);
-
-    ZERO(`
-        // same as above -
-        //  but notice we increment twice, which breaks current setup.
-        fn incr_a_or_b_by2(ref a: i32, ref b: i32)
-            ++++(a || b);
-
-        fn main() {
-            mut Z = 0;
-            mut A = 2;
-            mut B = 0;
-
-            incr_a_or_b_by2(Z, B); // incr B, now 2
-            incr_a_or_b_by2(A, B); // incr A, now 4
-            incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!
-
-            return (100*A + B) - 404;
-        }
-    `);
-
-    FAIL(`
-        fn alias(ref arr: i32[], ref item: i32) {
-            arr ~= 1;
-            return item;
-        }
-
-        fn main() {
-            mut a = [ 0 ];
-            //*F
-            ref c = alias(a, a[0]);
-            /*/
-            mut b = [ 0 ];
-            ref c = alias(a, b[0]);
-            //*/
-            return c++;
-        }
-    `);
-
-    FAIL(`
-        fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
-
-            ref cc = bb || aa; // Mustn't compile.
-            return cc;
-        }
-
-        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
-    `);
-
-    FAIL(`
-        fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
-
-            return bb || aa; // Same as above, but no explicit binding.
-        }
-
-        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
-    `);
-
-    FAIL(`
-        fn noop(x) x;
-        fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
-
-            return noop(bb || aa); // Same as above, but bound at callsite.
-        }
-
-        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
-    `);
-
-    FAIL(`
-        fn either(a, b) a || b;
-        fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
-
-            return either(bb, aa); // For completeness.
-        }
-
-        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
     `);
 
 
