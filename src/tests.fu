@@ -5737,6 +5737,24 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        fn alias(ref arr: i32[], ref item: i32) {
+            arr ~= 1;
+            return item;
+        }
+
+        fn main() {
+            mut a = [ 0 ];
+            //*F
+            ref c = alias(a, a[0]);
+            /*/
+            mut b = [ 0 ];
+            ref c = alias(a, b[0]);
+            //*/
+            return c++;
+        }
+    `);
+
 
     // Enum basics.
 
