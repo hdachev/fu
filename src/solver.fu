@@ -4798,7 +4798,7 @@ pub fn solve(
             }
 
             // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written && flow.is_arg.has(target) && !not_read_from_but)
+            if (events.args_written && flow.is_arg.has(target))
                 flow.args_at_risk.grow_if_oob(target)
                     .set::add(events.args_written);
             /////////////////////////////////////////////
@@ -4878,8 +4878,9 @@ pub fn solve(
 
     fn human(id: string)
     {
-        let t = hacks::tryParseClosureID(:id, :MODID);
-        return t ? t.name : id;
+        let    t = hacks::tryParseClosureID(:id, :MODID);
+        return t ? GET(Target(:module.modid, t.local_of)).name ~ ":" ~ t.name
+                 : id;
     }
 
     fn str(using token: TokenIdx)
@@ -5127,13 +5128,14 @@ pub fn solve(
 
                                 //
                                 mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
-                                        ~ ": Mutref arguments #" ~ i  ~ " (" ~ host_args[i ].name ~ ")"
-                                        ~               " and #" ~ i0 ~ " (" ~ host_args[i0].name ~ ") alias, both refer to:";
+                                        ~ ": Mutref arguments `" ~ host_args[i ].name.human ~ "`"
+                                        ~               " and `" ~ host_args[i0].name.human ~ "`"
+                                        ~               " (args #" ~ i  ~ " and #" ~ i0 ~ ") alias, both refer to:";
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
                                     let o = inter.uni0n[i];
-                                    err ~= "\n\t" ~ o.kind ~ " " ~ o.name;
+                                    err ~= "\n\t\t" ~ o.kind ~ " " ~ o.name.human;
                                 }
 
                                 fail(err);
