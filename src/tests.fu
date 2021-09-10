@@ -1911,6 +1911,16 @@ pub fn runTests()
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
     `);
 
+    ZERO(`
+        fn what(ref cond: i32, ref cons: i32)
+            cond && (cons += 1);
+
+        fn main() {
+            mut x = 1;
+            return what(x, x) - 2;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
