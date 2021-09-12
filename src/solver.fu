@@ -2723,6 +2723,11 @@ pub fn solve(
                     // ARGUMENTS AT RISK ////////////////////////
                     let risk_free   = !isNative && !isUnspec
                         && out.flow.ArgsAtRisk_listRiskFree(i);
+
+                    let written_via = argNode.type.is_mutref
+                        && (isNative
+                            ? target // Self: assume all mutref taking natives do actually write.
+                            : out.events.args_written_via.unless_oob(i));
                     /////////////////////////////////////////////
 
                     //
@@ -2732,7 +2737,8 @@ pub fn solve(
                         :argNode.flags,
                         :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT],
-                        :risk_free);
+                        :risk_free,
+                        :written_via);
 
                     arg.type || isUnspec || fail("Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
@@ -4740,7 +4746,7 @@ pub fn solve(
         return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
     }
 
-    fn trackReadWrite(node: SolvedNode, write?!: bool, not_read_from_but?!: string)
+    fn trackReadWrite(node: SolvedNode, write?!: Target, not_read_from_but?!: string)
     {
         if (!node.type.is_ref || !_current_fn.target.index)
             return;
@@ -4749,7 +4755,7 @@ pub fn solve(
         trackReadWrite(:regions, :node.nodeidx, :write, :not_read_from_but);
     }
 
-    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: bool, not_read_from_but?!: string)
+    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: Target, not_read_from_but?!: string)
     {
         fn name(shadow target: i32)
         {
@@ -4840,6 +4846,7 @@ pub fn solve(
             if (flow.is_arg.has(target))
             {
                 events.args_written.set::add(target);
+                events.args_written_via.grow_if_oob(target) ||= write;
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -5161,7 +5168,7 @@ pub fn solve(
                         //  which can then return them for further modification -
                         //   without this, a write to `a|b` invalidates both `a` and `b`,
                         //    whilst a write to `c=a|b` allows further writes to `c`.
-                        if (arg.is_mutref)
+                        if (host_arg.written_via)
                         {
                             // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
                             //  We need to have a single lifetime to describe what we're writing to,
@@ -5180,6 +5187,7 @@ pub fn solve(
                             }
 
                             // We'll batch all writes together in a bit.
+                            arg.is_mutref || fail("Written but not mutref?");
                             expect.is_mutref || fail("Not relaxed?");
                             bck_writes.set::add(arg.lifetime.uni0n);
                         }
@@ -5257,13 +5265,13 @@ pub fn solve(
             "call", flags: 0, value: debug,
                     :type, args, :target);
 
-        // BORROWCK ///////////////////////////////////////////////////
+        // BORROWCK /////////////////////////////////////////////////////
         // Track all writes at once, not important for reads,
         //  but tracking args one by one would prevent args-at-risk.
         //
         if (bck_writes)
-            trackReadWrite(bck_writes, :callsite.nodeidx, write: true);
-        ///////////////////////////////////////////////////////////////
+            trackReadWrite(bck_writes, :callsite.nodeidx, write: target);
+        /////////////////////////////////////////////////////////////////
 
         // Track deps.
         if (target.modid < 0 || target.modid == module.modid)
