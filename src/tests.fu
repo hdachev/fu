@@ -1921,6 +1921,53 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Target {
+            overload: i32[];
+            extended: i32[];
+        };
+
+        fn which(ref t: Target, i: i32) i & 1
+            ? t.overload
+            : t.extended;
+
+        fn test(ref target: Target)
+        {
+            ref overload = target.which(target.overload.len);
+            ref extended = target.which(target.overload.len + 1);
+
+            mut change = false;
+            if (overload)
+            {
+                for (mut i = 0; i < overload.len; i++)
+                {
+                    let a = overload[i];
+                    let b = extended[i];
+                    if (a != b)
+                    {
+                        change = true;
+                        break;
+                    }
+                }
+            }
+
+            if (change)
+            {
+                extended[0] = 3;
+
+                shadow ref overload = target.which(target.overload.len);
+                overload[0] = 5; // Said write to overload invalidates ext on next loop iter.
+            }
+        }
+
+        fn main()
+        {
+            mut target = Target([ 0 ], [ 1 ]);
+            target.test();
+            return target.overload[0] * 10 + target.extended[0] * 100 - 350;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
