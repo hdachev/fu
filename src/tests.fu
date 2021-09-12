@@ -2197,7 +2197,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn target(implicit ref _target: i32) _target;
 
         // this suddenly reported that it doesn't see __solveStruct
@@ -2335,7 +2335,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
