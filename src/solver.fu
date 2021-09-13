@@ -3626,14 +3626,39 @@ pub fn solve(
 
         let init        = n_init      && solveLetStatement(n_init);
 
-        ////////////////////////////////
-        let loop_start          = GET_next_local_index();
-        mut loop_start0         = _current_fn.loop_start;
-        _current_fn.loop_start  = loop_start;
-        ////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
+        mut loop_start0                 = _current_fn.loop_start;
+        let loop_start                  = GET_next_local_index();
+
+        _current_fn.loop_start          = loop_start;
+        defer _current_fn.loop_start    = loop_start0;
+        ////////////////////////////////////////////////////////////////////////
 
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond); // call:#test
         let body        = n_body      && solveBlock(n_body, type: t_void);
+
+        ////////////////////////////////////////////////////////////////////////
+        if (loop_start > loop_start0)
+        {
+            ref events = _current_fn.events.used_in_a_loop;
+
+            if (loop_start0)
+            {
+                let N = events.len.min(loop_start);
+                for (mut i = loop_start0; i < N; i++)
+                {
+                    ref e = events[i];
+                    if (e.target == loop_start)
+                        e.target  = loop_start0;
+                }
+            }
+            else
+            {
+                events.shrink(0);
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////
+
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond); // call:#test
         let post        = n_post      && solveNode(n_post,      t_void);
 
@@ -3643,20 +3668,6 @@ pub fn solve(
         let type        = !pre_cond && !post_cond && !label_used
                             ? t_never
                             : t_void;
-
-        ////////////////////////////////
-        if (_current_fn.loop_start > loop_start0)
-        {
-            ref events  = _current_fn.events.used_in_a_loop;
-            let N       = events.len.min(loop_start);
-            for (mut i = 0; i < N; i++)
-            {
-                ref e = events[i];
-                if (e.target == loop_start)
-                    e = [];
-            }
-        }
-        ////////////////////////////////
 
         return solved(node, type,
             [ init, pre_cond, body, post_cond, post ],
