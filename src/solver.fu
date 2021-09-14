@@ -139,6 +139,7 @@ pub fn solve(
         if (!reason)
             reason = "Unexpected `" ~ here.value ~ "`.";
 
+        // What's happening and where?
         let fname = _here._fname;
         let addr = "@" ~ here.line ~ ":" ~ here.col;
         for (mut i = _info.len; i --> 0; )
@@ -150,13 +151,21 @@ pub fn solve(
                 : "\n\t" ~ info.text;
         }
 
+        // What were we currently solving?
+        mut newline = false;
         for (mut i = _helpers.len; i --> 0; )
         {
             let h = _helpers[i];
             if (h.isFnOrType)
             {
+                if (!newline)
+                {
+                    newline = true;
+                    reason ~= "\n";
+                }
+
                 let o = GET(h.target);
-                reason ~= "\n\tSolving " ~ o.kind ~ " `" ~ o.name ~ "`.";
+                reason ~= "\n\t\tSolving " ~ o.kind ~ " `" ~ o.name ~ "`.";
             }
         }
 
