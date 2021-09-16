@@ -1,4 +1,6 @@
 
+pub let DEV_DisableBCK = 0x1 << 0;
+
 
 // Zeroinit = default build options.
 
@@ -11,6 +13,8 @@ pub struct Options
 {
     using lint?: Lint;
     break_notes?: i32;
+
+    dev?: u32;
 };
 
 pub fn Lint_lax() =

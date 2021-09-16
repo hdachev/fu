@@ -52,7 +52,7 @@ fn compile(fname: string, via: string = "", options?: Options)
         // Ensure dependencies.
         let fuzimports = module.in.parse.fuzimports;
         for (mut i = 0; i < fuzimports.len; i++)
-            compile(
+            compile(:options,
                 fname: resolveFile(fuzimports[i]),
                   via: fname ~ " <- " ~ via);
 
@@ -114,11 +114,15 @@ pub fn build(
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
 
+    // TEMP ///////////////////////////////////
+    let options = Options(dev: DEV_DisableBCK);
+    ///////////////////////////////////////////
+
     {
         println("COMPILE ", fname);
 
         let t0 = now::hr();
-        compile(:fname);
+        compile(:fname, :options);
         let t1 = now::hr();
         let tt = t1 - t0;
 

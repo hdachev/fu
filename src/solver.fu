@@ -4815,7 +4815,7 @@ pub fn solve(
             if (events.invalidated_by.len > target)
             {
                 let u = events.invalidated_by[target];
-                if (u.target)
+                if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Cannot " ~ (write ? "write to" : not_read_from_but || "read from")
                         ~ " `" ~ target.name ~ "`, reference invalidated by write to"
                         ~ " `" ~ u.target.name ~ "` at "
@@ -4845,13 +4845,11 @@ pub fn solve(
             {
                 let other = invalidates[i];
                 let u = events.used_in_a_loop.unless_oob(other);
-                if (u.target)
-                {
+                if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Write to `" ~ target.name ~ "`"
                         ~ " invalidates the use of `" ~ other.name ~ "` at "
                         ~ u.token.str
                         ~ " on next loop iteration."); // TODO loop starts at x:x!
-                }
             }
 
             // Track writes, easy.

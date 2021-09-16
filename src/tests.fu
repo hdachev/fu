@@ -1968,7 +1968,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         struct Helper { vars: i32[]; };
 
         fn test(ref _helpers: Helper[], helpers_idx: i32) {
