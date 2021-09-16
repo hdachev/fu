@@ -1921,7 +1921,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         struct Target {
             overload: i32[];
             extended: i32[];
@@ -1965,6 +1965,22 @@ pub fn runTests()
             mut target = Target([ 0 ], [ 1 ]);
             target.test();
             return target.overload[0] * 10 + target.extended[0] * 100 - 350;
+        }
+    `);
+
+    ZERO(`
+        struct Helper { vars: i32[]; };
+
+        fn test(ref _helpers: Helper[], helpers_idx: i32) {
+            ref old = _helpers[helpers_idx - 1].vars;
+            ref new = _helpers[helpers_idx    ].vars;
+            new    ~= old[helpers_idx];
+        }
+
+        fn main() {
+            mut helpers = [ Helpers([ 1, 2 ]), Helpers([ 4, 8 ]) ];
+            test(helpers, 1);
+            return helpers[1][2] - 2;
         }
     `);
 
