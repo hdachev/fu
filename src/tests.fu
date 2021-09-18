@@ -1637,6 +1637,21 @@ pub fn runTests()
     `);
 
     FAIL(`
+        nocopy struct nci32 { i: i32; };
+
+        fn test(ref a: nci32, b: nci32) a.i++ || b.i;
+        fn main() {
+            mut x = nci32(0);
+            //*F
+            ref y = x;
+            /*/
+            let y = nci32(0);
+            //*/
+            return test(x, y);
+        }
+    `);
+
+    FAIL(`
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) { // Lets be extra sure here.
