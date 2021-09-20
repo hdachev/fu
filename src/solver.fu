@@ -169,7 +169,10 @@ pub fn solve(
             }
         }
 
-        return throw(fname ~ " " ~ addr ~ ":\n\t" ~ reason);
+        // Try to present a code snippet.
+        let snippet = formatCodeSnippet(_here);
+
+        return throw(fname ~ " " ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason);
     }
 
     fn makeNote(note: i32)

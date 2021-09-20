@@ -13,12 +13,14 @@ pub nocopy struct Context
     fuzzy: Map(string, string);
 };
 
+
+//
+
 pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 
 pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
-
 
 
 //
@@ -177,3 +179,41 @@ pub fn lookupTypeImports(type: Type)
 
 pub fn lookupTypeConverts(type: Type)
     tryLookupStruct(type).converts;
+
+
+//
+
+pub fn formatCodeSnippet(implicit ctx: Context, to: TokenIdx, mut from?: TokenIdx, extraLines = 2): string
+{
+    let src     = ctx.modules[to.modid].in.src;
+    let lines   = src.split("\n");
+
+    let start   = (from || to)._token;
+    let end     = to._token;
+
+    mut l_start = start.line - extraLines - 1;  // lines are 1 based.
+    mut l_end   =   end.line + extraLines;
+
+    l_start     = l_start.max(0);
+    l_end       = l_end  .min(lines.len);
+
+    // TODO use color to highlight the offending line & token
+    //
+    // FUN syntax highlight the thing!
+    //  Could use the lexer to re-lex
+    //   and add colors to each token value.
+
+    mut result  = "";
+    for (mut i = l_start; i < l_end; i++)
+    {
+        mut margin = (i + 1) ~ " | ";
+        while (margin.len < 8)
+            margin = " " ~ margin;
+
+        result ~= margin;
+        result ~= lines[i];
+        result ~= "\n";
+    }
+
+    return result;
+}
