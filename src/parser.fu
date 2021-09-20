@@ -1549,6 +1549,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     fn parseIf(): Node
     {
+        // Indentation lint for `else`s:
+        //  This catches problems such as | if (a) for (b) if (c) smth
+        //                                | else ...       <- will go to inner if instead of outer as indentation suggests was intended.
+        let token =             tokens[_idx - 1];
+        let prev  = _idx > 1 && tokens[_idx - 2];
+
+        shadow let token = prev.kind == "id" && prev.value == "else" ? prev : token;
+
         // A little bit of syntactic sugar -
         //  TBD if this is good or not, i'm 50/50.
         //   At least it's unambiguous.
@@ -1561,8 +1569,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             cond = createPrefix("!", cond);
 
         let cons = parseStatement();
-        if (tryConsume("id", "else"))
+
+        let else = tryConsume("id", "else");
+        if (else)
         {
+            else.line == token.line || else.col == token.col || warn(
+                "Inconsistent indent at `else`: expected " ~ token.col
+                    ~ ", got " ~ else.col
+                    ~ ". `if` starts on line " ~ token.line ~ ".");
+
             let alt = parseStatement();
             return createIf(cond, cons, alt);
         }

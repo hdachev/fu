@@ -1391,6 +1391,34 @@ pub fn runTests()
         return sum - 4312;
     `);
 
+    FAIL(`
+        fn test(ref sum: i32) {
+            FIRST: {
+                if (sum & 1)
+                    break:
+                        FIRST;
+                sum++;
+            }
+            SECOND: {
+                if (sum & 1)
+                    break: //*F
+                        FIRST; /*/ SECOND; //*/
+                sum++;
+
+                if (sum & 2)
+                    break:
+                        SECOND;
+                sum++;
+            }
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(sum);
+            return sum - 1;
+        }
+    `);
+
 
     // Lint.
 
@@ -3718,6 +3746,34 @@ pub fn runTests()
         }
 
         fn main() test(2)[2] + test(1)[1] - 2 * test(0)[0];
+    `);
+
+    FAIL(`
+        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
+            //*F
+            if (is_mutref)
+            /*/
+            if (is_mutref) {
+            //*/
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 1)
+                        sum += args[i];
+            //*F
+            /*/
+            }
+            //*/
+            else
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 2)
+                        sum += args[i];
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(true , [ 1,  2,  3  ], sum);
+            test(false, [ 11, 22, 33 ], sum);
+            return sum - 1 - 3 - 11 - 22;
+        }
     `);
 
 
