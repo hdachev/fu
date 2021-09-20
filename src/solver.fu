@@ -957,8 +957,8 @@ pub fn solve(
                             }
 
                             fail("Ambiguous callsite, matches multiple items in scope: "
-                                ~ explainWhichFn(PREV, conversions_out) ~ " from `" ~ inner.fnName ~ "` and "
-                                ~ explainWhichFn(NEXT, conversions    ) ~ " from `" ~ outer.fnName ~ "`, as seen from " ~ callsite.fnName ~ ".");
+                                ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
+                                ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
                         }
                     }
 
@@ -1432,26 +1432,33 @@ pub fn solve(
 
     fn explainWhichFn(overload: Target, conversions?: Target[][])
     {
-        mut result = overload.name ~ "(";
+        mut result = "`" ~ overload.name;
 
-        for (shadow mut i = 0; i < overload.args.len; i++)
+        if (overload.args)
         {
-            let arg = overload.args[i];
-            if (i)
-                result ~= ",";
+            result ~= "(";
 
-            result ~= "\n\t"
-                    ~  arg.name
-                    ~ (arg.flags & F_MUSTNAME ? "!" : "")
-                    ~ (arg.default ? "?: " : ": ")
-                    ~ (arg.type ? humanizeType(arg.type) : "$");
+            for (shadow mut i = 0; i < overload.args.len; i++)
+            {
+                let arg = overload.args[i];
+                if (i)
+                    result ~= ",";
 
-            let c = conversions.len > i && conversions[i];
-            if (c)
-                result ~= " via " ~ explainConversion(c);
+                result ~= "\n\t"
+                        ~  arg.name
+                        ~ (arg.flags & F_MUSTNAME ? "!" : "")
+                        ~ (arg.default ? "?: " : ": ")
+                        ~ (arg.type ? humanizeType(arg.type) : "$");
+
+                let c = conversions.len > i && conversions[i];
+                if (c)
+                    result ~= " via " ~ explainConversion(c);
+            }
+
+            result ~= ")";
         }
 
-        result ~= ")";
+        result ~= "`";
         return result;
     }
 
