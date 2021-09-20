@@ -682,7 +682,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 name == "++" || name == "--"
                     || fail("No such postfix operator: `" ~ name ~ "`.");
 
-                name ~= "postfix";
+                name = "postfix" ~ name;
             }
             else if (flags & F_INFIX)
             {
@@ -1112,7 +1112,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
             if (POSTFIX.has(v))
                 return createCall(
-                    v == "++" || v == "--" ? v ~ "postfix" : v,
+                    v == "++" || v == "--" ? "postfix" ~ v : v,
                         F_POSTFIX, [ head ]);
 
             if (v == "::")

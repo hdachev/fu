@@ -357,6 +357,9 @@ pub fn cpp_codegen(
 
     fn valid_operator(str: string): string
     {
+        mut start = 0;
+        mut some  = false;
+
         for (mut i = 0; i < str.len; i++)
         {
             let c = str[i];
@@ -365,11 +368,18 @@ pub fn cpp_codegen(
                 c >= '0' && c <= '9' ||
                 c == '_')
             {
-                return str.slice(0, i);
+                if (!some)
+                    start = i + 1;
+                else
+                    return str.slice(start, i);
+            }
+            else
+            {
+                some = true;
             }
         }
 
-        return str;
+        return start ? str.slice(start) : str;
     }
 
     fn valid_identifier(mut str: string): string
