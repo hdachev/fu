@@ -5093,22 +5093,24 @@ pub fn solve(
                 let host_args = target.args || fail("CallerNode: no host args: " ~ target.kind ~ " " ~ target.name);
                 host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.kind ~ " " ~ target.name);
 
-                // BORROWCK //////////
-                mut bck_first    = -1;
-                mut bck_last     = -1;
-                //////////////////////
+                // BORROWCK ///////////////////
+                mut mutref_first    = -1;    //
+                mut mutref_last     = -1;    //
+                mut ref_first       = -1;    //
+                mut ref_last        = -1;    //
+                                             //
+                mut bck_unwound: Lifetime[]; //
+                ///////////////////////////////
 
-                mut bck_unwound: Lifetime[];
-
-                for (mut i = 0; i < args.len; i++)
+                for (mut i0 = 0; i0 < args.len; i0++)
                 {
-                    let host_arg = host_args[i];
+                    let host_arg = host_args[i0];
 
                     /////////////////
                     // Literal fixup.
 
                     // Drop argids at this point, not useful.
-                    ref arg = args[i];
+                    ref arg = args[i0];
                     if (arg.kind == "argid")
                         arg = arg.items.only;
 
@@ -5123,49 +5125,40 @@ pub fn solve(
 
                     // BORROWCK: multiple mutrefs error,
                     //  this is the only thing we can't workaround by copying.
-                    if (expect.is_mutref)
+                    if (expect.is_ref)
                     {
-                        if (bck_first < 0)
+                        // Lazy init unwound lifetimes.
+                        if !(bck_unwound)
                         {
-                            bck_first = i;
-                        }
-                        else
-                        {
-                            let i0 = i;
-
-                            //
-                            if !(bck_unwound)
+                            if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
                             {
                                 bck_unwound.resize(args.len);
-                                bck_unwound[bck_first] = Lifetime_unwind(args[bck_first].type.lifetime);
+                                for (mut i = ref_first; i <= ref_last; i++)
+                                    bck_unwound[i] = Lifetime_unwind(args[i].type.lifetime);
                             }
+                        }
 
-                            let bck_arg = Lifetime_unwind(args[i].type.lifetime);
+                        // Validate aliasing.
+                        if (bck_unwound)
+                        {
+                            let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
 
-                            //
-                            for (shadow mut i = bck_first; i <= bck_last; i++)
+                            fn validate(i: i32)
                             {
-                                // TODO in the future we'll isref this,
-                                //  will need a little rewrite to make it symmetric.
-                                if !(host_args[i].is_mutref)
-                                    continue;
-
                                 // Can the fn handle aliasing here?
-                                if (host_args[i0].risk_free.has(i))
-                                    continue;
+                                if (host_arg.risk_free.has(i))
+                                    return;
 
                                 // Do we see any aliasing here?
-                                let inter = Lifetime_inter(bck_arg, bck_unwound[i]);
+                                let inter = Lifetime_inter(unwound, bck_unwound[i]);
                                 if !(inter)
-                                    continue;
+                                    return;
 
                                 // TODO here we can verify subsets at risk + subsets written.
-
-                                //
                                 mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
-                                        ~ ": Mutref arguments `" ~ host_args[i ].name.human ~ "`"
-                                        ~               " and `" ~ host_args[i0].name.human ~ "`"
-                                        ~               " (args #" ~ i  ~ " and #" ~ i0 ~ ") alias, both refer to:";
+                                        ~ ": Mutref arguments `" ~ host_args[i0].name.human ~ "`"
+                                        ~               " and `" ~ host_args[i ].name.human ~ "`"
+                                        ~               " (args #" ~ i0 ~ " and #" ~ i  ~ ") alias, both refer to:";
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
@@ -5176,14 +5169,34 @@ pub fn solve(
                                 fail(err);
                             }
 
-                            ///////////////////////
-                            bck_unwound[i] = bck_arg;
-                            ///////////////////////
+                            // If we have a mutref, go over all refs.
+                            if (expect.is_mutref) {
+                                for (mut i = ref_first; i <= ref_last; i++)
+                                    if (host_args[i].is_ref)
+                                        validate(i);
+                            }
+
+                            // Else we only care about mutrefs here.
+                            else if (bck_unwound) {
+                                for (mut i = mutref_first; i <= mutref_last; i++)
+                                    if (host_args[i].is_mutref)
+                                        validate(i);
+                            }
                         }
 
-                        ////////////
-                        bck_last = i;
-                        ////////////
+                        // Track the two lists.
+                        if (expect.is_mutref)
+                        {
+                            if (mutref_first < 0)
+                                mutref_first = i0;
+
+                            mutref_last = i0;
+                        }
+
+                        if (ref_first < 0)
+                            ref_first = i0;
+
+                        ref_last = i0;
                     }
 
                     maybeCopyOrMove(
@@ -5221,14 +5234,7 @@ pub fn solve(
                         }
                         else
                         {
-                            // TODO BORROWCK enable this after we get everything to compile without it,
-                            //  without this we're not validating constref args at all.
-                            //
-                            // TODO BORROWCK not every ref is a read ... do we care?
-                            //  We might be able to validate more programs but what's the point
-                            //   of computing things over invalid references?
-                            //
-                            // trackReadWrite(args[i]);
+                            trackReadWrite(args[i0]);
                         }
                     }
                 }
