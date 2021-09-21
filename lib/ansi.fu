@@ -1,0 +1,13 @@
+// https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#decorations
+// https://chrisyeh96.github.io/2020/03/28/terminal-colors.html
+
+let ESC = 27.byte ~ "[";
+
+pub fn ansi(a: i32)
+    ESC ~ a ~ 'm';
+
+pub fn ansi(a: i32, b: i32)
+    ESC ~ a ~ ';' ~ b ~ 'm';
+
+pub fn ansi(a: i32, b: i32, c: i32)
+    ESC ~ a ~ ';' ~ b ~ ';' ~ c ~ 'm';

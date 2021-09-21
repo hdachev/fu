@@ -206,12 +206,24 @@ pub fn formatCodeSnippet(implicit ctx: Context, to: TokenIdx, mut from?: TokenId
     mut result  = "";
     for (mut i = l_start; i < l_end; i++)
     {
-        mut margin = (i + 1) ~ " | ";
-        while (margin.len < 8)
-            margin = " " ~ margin;
+        // Extra lines: dim color, no line number
+        if (i < start.line - 1 || i >= end.line) {
+            result ~= ::ansi(38,5,250) ~ "      | ";
+        }
+        else {
+            mut margin = (i + 1) ~ " | ";
+            while (margin.len < 8)
+                margin = " " ~ margin;
 
-        result ~= margin;
+            result ~= margin;
+        }
+
         result ~= lines[i];
+
+        // Reset ansi coloring.
+        if (i < start.line - 1 || i >= end.line)
+            result ~= ::ansi(0);
+
         result ~= "\n";
     }
 
