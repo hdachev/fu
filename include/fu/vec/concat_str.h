@@ -37,19 +37,7 @@ inline fu_STR fu_TO_STR(unsigned int num) noexcept
 }
 
 
-// And once more.
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(const fu_STR& str, const T& t) noexcept
-{
-    return str + fu_TO_STR(t);
-}
-
-template <typename T, typename = decltype(fu_TO_STR(T()))>
-inline fu_STR operator+(const T& t, const fu_STR& str) noexcept
-{
-    return fu_TO_STR(t) + str;
-}
+//
 
 template <typename T, typename = decltype(fu_TO_STR(T()))>
 inline fu_STR operator+(fu_STR&& str, const T& t) noexcept
@@ -70,4 +58,21 @@ fu_STR& operator+=(fu_STR& str, const T& t) noexcept
 {
     str.append(fu_ZERO(), fu_TO_STR(t));
     return str;
+}
+
+
+// TODO FIX the include
+
+#include "./concat.h"
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+inline fu_STR operator+(const fu_STR& str, const T& t) noexcept
+{
+    return str + fu_TO_STR(t);
+}
+
+template <typename T, typename = decltype(fu_TO_STR(T()))>
+inline fu_STR operator+(const T& t, const fu_STR& str) noexcept
+{
+    return fu_TO_STR(t) + str;
 }
