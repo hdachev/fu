@@ -235,6 +235,8 @@ pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[]): Context
 {
+    mut TODO_split = false;
+
     // Fuzzing module splits.
     for (mut i = 0; i < sources.len; i++)
     {
@@ -243,12 +245,19 @@ pub fn ZERO(
             ref src = sources[i];
 
             mut start0 = src.find("<split/>");
+            mut start1 = start0 + 8;
             if (start0 < 0)
-                break;
+            {
+                start0 = src.find("<TODO::split/>");
+                start1 = start0 + 14;
+                if (start0 < 0)
+                    break;
+
+                TODO_split = true;
+            }
 
             // Avoid trailing whitespace.
             let start00 = start0;
-            let start1  = start0 + 8;
             while (start0 && src[start0 - 1] == ' ') start0--;
 
             // We'll test with and without a module split here.
@@ -263,6 +272,12 @@ pub fn ZERO(
             sources[i]  = moduleA;
             sources.insert(i + 1, moduleB);
         }
+    }
+
+    if (TODO_split)
+    {
+        TODO(:sources);
+        return [];
     }
 
     // Test variations, very primitive fuzzing.
@@ -497,8 +512,23 @@ pub fn ZERO_SAME(alts: string[][])
     }
 }
 
+pub fn TODO(sources: string[])
+{
+    try {
+        ZERO(:sources);
+    }
+    catch (e) {
+        println("  TODO: ", e, "\n", sources.join("\n\n"));
+        return;
+    }
+
+    throw("TODO test is actually passing: " ~ sources.join("\n\n"));
+}
+
+
 pub fn ZERO(src: string) ZERO(sources: [ src ]);
 pub fn FAIL(src: string) FAIL(sources: [ src ]);
+pub fn TODO(src: string) TODO(sources: [ src ]);
 
 pub fn ZERO_SAME(alts: string[])
 {

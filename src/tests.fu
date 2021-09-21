@@ -29,32 +29,6 @@ pub fn self_test(): i32
     return cpp.find("int main()") ? 0 : 101;
 }
 
-fn TODO(src: string)
-{
-    try {
-        ZERO(src);
-    }
-    catch (e) {
-        println("  TODO: ", e, "\n", src);
-        return;
-    }
-
-    throw("TODO test is actually passing: " ~ src);
-}
-
-fn TODO(src: string[])
-{
-    try {
-        ZERO(src);
-    }
-    catch (e) {
-        println("  TODO: ", e, "\n", src.join("\n\n"));
-        return;
-    }
-
-    throw("TODO test is actually passing: " ~ src.join("\n\n"));
-}
-
 fn TODO_gcc(src: string)
 {
     if (process::LINUX)     TODO(src);
@@ -2667,8 +2641,8 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub struct Target { modid!: i32; packed!: i32; };
-        pub inline fn index(a: Target) a.packed;
+        struct Target { modid!: i32; packed!: i32; };
+        inline fn index(a: Target) a.packed;
 
         <split/>
 
@@ -5317,18 +5291,18 @@ pub fn runTests()
     ZERO(`
         struct A { a: i32; };
         struct B { b: i32; };
-
         using fn bananas(a: A) B(a.a * 2);
 
+        <TODO::split/>
         fn main() 1.A.b - 2;
     `);
 
     ZERO(`
         struct A { a: i32; };
         struct B { b: i32; };
-
         using fn bananas(a) B(a.a * 2); // <- template
 
+        <TODO::split/>
         fn main() 1.A.b - 2;
     `);
 
@@ -5889,7 +5863,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub fn ascii_lower(a: string): string
+        fn ascii_lower(a: string): string
         {
             let offset = 'a'.i32 - 'A'.i32;
 
