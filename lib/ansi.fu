@@ -11,3 +11,9 @@ pub fn ansi(a: i32, b: i32)
 
 pub fn ansi(a: i32, b: i32, c: i32)
     ESC ~ a ~ ';' ~ b ~ ';' ~ c ~ 'm';
+
+
+//
+
+pub let RESET   = ansi(0);
+pub let DIM     = ansi(38,5,250);
