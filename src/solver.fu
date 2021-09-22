@@ -5155,10 +5155,15 @@ pub fn solve(
                                     return;
 
                                 // TODO here we can verify subsets at risk + subsets written.
-                                mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name
-                                        ~ ": Mutref arguments `" ~ host_args[i0].name.human ~ "`"
-                                        ~               " and `" ~ host_args[i ].name.human ~ "`"
-                                        ~               " (args #" ~ i0 ~ " and #" ~ i  ~ ") alias, both refer to:";
+
+                                // Error message.
+                                mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name;
+
+                                err ~= host_args.len == 2
+                                    ? ": Arguments alias, both refer to:"
+                                    : ": Arguments `" ~ host_args[i0].name.human ~ "`"
+                                    ~               " and `" ~ host_args[i ].name.human ~ "`"
+                                    ~               " (args #" ~ i0 ~ " and #" ~ i  ~ ") alias, both refer to:";
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
