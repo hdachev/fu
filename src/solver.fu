@@ -1,3 +1,4 @@
+import ansi;
 import helpers;
 import parser;
 import scope;
@@ -165,7 +166,7 @@ pub fn solve(
                 }
 
                 let o = GET(h.target);
-                reason ~= "\n\t\tSolving " ~ o.kind ~ " `" ~ o.name ~ "`.";
+                reason ~= "\n\t\tsolving " ~ o.kind.qKW ~ " " ~ o.name.qID;
             }
         }
 
@@ -4827,9 +4828,9 @@ pub fn solve(
                 let u = events.invalidated_by[target];
                 if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Cannot " ~ (write ? "write to" : not_read_from_but || "read from")
-                        ~ " `" ~ target.name ~ "`, reference invalidated by write to"
-                        ~ " `" ~ u.target.name ~ "` at "
-                        ~ u.token.str
+                        ~ " " ~ target.name.qBAD ~ ", reference invalidated by write to"
+                        ~ " " ~ u.target.name.qBAD ~ " at "
+                        ~ u.token.addr_and_snippet
                         ~ RWEvent_stack(u.nodeidx, u.target));
             }
 
@@ -4858,7 +4859,7 @@ pub fn solve(
                 if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Write to `" ~ target.name ~ "`"
                         ~ " invalidates the use of `" ~ other.name ~ "` at "
-                        ~ u.token.str
+                        ~ u.token.addr_and_snippet
                         ~ " on next loop iteration."); // TODO loop starts at x:x!
             }
 
@@ -4918,7 +4919,7 @@ pub fn solve(
                  : id;
     }
 
-    fn str(using token: TokenIdx)
+    fn addr(using token: TokenIdx)
     {
         let using t = token._token;
 
@@ -4928,13 +4929,18 @@ pub fn solve(
         return line ~ ":" ~ col;
     }
 
+    fn addr_and_snippet(using token: TokenIdx)
+    {
+        return token.addr ~ ":\n\n" ~ formatCodeSnippet(token);
+    }
+
     fn RWEvent_stack(nodeidx: i32, target: i32)
     {
         let nodeown = _current_fn.target || fail("RWEvent_stack: no current fn.");
         let node    = SolvedNode(:nodeown, :nodeidx);
 
         if (node.kind != "call")
-            return "\n\tvia `" ~ node.kind ~ "`.";
+            return "\n\tvia " ~ node.kind.qKW;
 
         // TODO this is the target we've written to,
         //  see which mutref args aliase it at the callsite, then descend.
@@ -4942,7 +4948,7 @@ pub fn solve(
         if (target) {}
 
         let o = GET(node.target);
-        return "\n\t\tat call to `" ~ o.name ~ "`";
+        return "\n\t\tat call to " ~ o.name.qID;
     }
 
 

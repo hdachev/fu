@@ -17,4 +17,23 @@ pub fn ansi(a: i32, b: i32, c: i32)
 
 pub let RESET   = ansi(0);
 pub let DIM     = ansi(37,2);
+
 pub let BAD     = ansi(31,1);
+
+
+// Syntax highlighting.
+
+let     ID      = ansi(34,1);
+let     KW      = ansi(35,1);
+
+
+//
+
+pub fn qBAD(id: string) =
+    BAD ~ (id || "``") ~ RESET;
+
+pub fn qID(id: string) =
+    ID ~ (id || "``") ~ RESET;
+
+pub fn qKW(id: string) =
+    KW ~ (id || "``") ~ RESET;
