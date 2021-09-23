@@ -3648,36 +3648,19 @@ pub fn solve(
         let init        = n_init      && solveLetStatement(n_init);
 
         ////////////////////////////////////////////////////////////////////////
-        mut loop_start0                 = _current_fn.loop_start;
-        let loop_start                  = GET_next_local_index();
+        mut loop_start0                     = _current_fn.loop_start;
+        let loop_start                      = GET_next_local_index();
+        mut events0                         = _current_fn.events.used_in_a_loop;
 
-        _current_fn.loop_start          = loop_start;
-        defer _current_fn.loop_start    = loop_start0;
+        _current_fn.loop_start              = loop_start;
+        defer _current_fn.loop_start        = loop_start0;
         ////////////////////////////////////////////////////////////////////////
 
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond); // call:#test
         let body        = n_body      && solveBlock(n_body, type: t_void);
 
         ////////////////////////////////////////////////////////////////////////
-        if (loop_start > loop_start0)
-        {
-            ref events = _current_fn.events.used_in_a_loop;
-
-            if (loop_start0)
-            {
-                let N = events.len.min(loop_start);
-                for (mut i = loop_start0; i < N; i++)
-                {
-                    ref e = events[i];
-                    if (e.target == loop_start)
-                        e.target  = loop_start0;
-                }
-            }
-            else
-            {
-                events.shrink(0);
-            }
-        }
+        _current_fn.events.used_in_a_loop   = events0;
         ////////////////////////////////////////////////////////////////////////
 
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond); // call:#test
