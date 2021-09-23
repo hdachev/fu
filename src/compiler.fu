@@ -518,7 +518,7 @@ pub fn TODO(sources: string[])
         ZERO(:sources);
     }
     catch (e) {
-        println("  TODO: ", e, "\n", sources.join("\n\n"));
+        println("  TODO: ", e);
         return;
     }
 

@@ -153,22 +153,23 @@ pub fn solve(
         }
 
         // What were we currently solving?
-        mut newline = false;
+        mut callstack = 0;
         for (mut i = _helpers.len; i --> 0; )
         {
             let h = _helpers[i];
             if (h.isFnOrType)
             {
-                if (!newline)
-                {
-                    newline = true;
-                    reason ~= "\n";
-                }
+                if (!callstack++)
+                    reason ~= "\n\n        Solving ";
+                else
+                    reason ~=   "\n                ";
 
                 let o = GET(h.target);
-                reason ~= "\n\t\tsolving " ~ o.kind.qKW ~ " " ~ o.name.qID;
+                reason ~= o.kind.qKW ~ " " ~ o.name.qID;
             }
         }
+
+        reason ~= '\n';
 
         // Try to present a code snippet.
         let snippet = formatCodeSnippet(_here);
@@ -4940,7 +4941,7 @@ pub fn solve(
         let node    = SolvedNode(:nodeown, :nodeidx);
 
         if (node.kind != "call")
-            return "\n\tvia " ~ node.kind.qKW;
+            return "\n\tVia " ~ node.kind.qKW;
 
         // TODO this is the target we've written to,
         //  see which mutref args aliase it at the callsite, then descend.
@@ -4948,7 +4949,7 @@ pub fn solve(
         if (target) {}
 
         let o = GET(node.target);
-        return "\n\t\tat call to " ~ o.name.qID;
+        return "\n\tAt call to " ~ o.name.qID;
     }
 
 
@@ -5176,19 +5177,21 @@ pub fn solve(
                                             slot: host_arg.type);
                                 }
 
-                                // Error message.
-                                mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name;
+                                // BORROWCK Error message.
+                                mut err = target.kind.qKW ~ " " ~ target.name.human.qID;
 
-                                err ~= host_args.len == 2
-                                    ? ": Arguments alias, both refer to:"
-                                    : ": Arguments `" ~ host_args[i0].name.human ~ "`"
-                                    ~               " and `" ~ host_args[i ].name.human ~ "`"
-                                    ~               " (args #" ~ i0 ~ " and #" ~ i  ~ ") alias, both refer to:";
+                                err ~= host_args.len == 2 && target.flags & F_OPERATOR
+                                    ?   ": Both operands refer to:\n"
+                                    :   ": Arguments " ~ host_args[i0].name.human.qBAD
+                                        ~      " and " ~ host_args[i ].name.human.qBAD
+                                        ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both refer to:\n";
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
                                     let o = inter.uni0n[i];
-                                    err ~= "\n\t\t" ~ o.kind ~ " " ~ o.name.human;
+
+                                    err ~=   "\n                ";
+                                    err ~= o.kind.qKW ~ " " ~ o.name.human.qID;
                                 }
 
                                 fail(err);
