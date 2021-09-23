@@ -2001,6 +2001,25 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn outer() {
+            mut sum = 0;
+            mut x = 1;
+            for (;;) {      // bck complained that the write to 'x' at the end
+                let v = x;  //  invalidates use of 'v' on next loop iter here, which is not true
+                for (mut i = 0; i < 10; i++) {
+                    sum += v;
+                    if (sum > 40)
+                        return sum;
+                }
+
+                x = v * 2;
+            }
+        }
+
+        fn main() outer - 42;
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
