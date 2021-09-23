@@ -5156,6 +5156,20 @@ pub fn solve(
 
                                 // TODO here we can verify subsets at risk + subsets written.
 
+                                // Try to resolve by injecting a copy.
+                                {
+                                    mut which = -1;
+                                    if !(host_arg.is_mutref)
+                                        which = i0;
+                                    else if !(host_args[i].is_mutref)
+                                        which = i;
+
+                                    if (which >= 0)
+                                        return BORROWCK_resolveByCopyToTemporary(
+                                            node: args[which],
+                                            slot: host_arg.type);
+                                }
+
                                 // Error message.
                                 mut err = "BORROWCK: " ~ target.kind ~ " " ~ target.name;
 
@@ -5328,6 +5342,13 @@ pub fn solve(
         }
 
         return callsite;
+    }
+
+    fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
+    {
+        mut temporary = clear_refs(slot);
+
+        return maybeCopyOrMove(:node, temporary);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
