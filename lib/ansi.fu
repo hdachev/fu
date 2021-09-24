@@ -23,8 +23,8 @@ pub let BAD     = ansi(31,1);
 
 // Syntax highlighting.
 
-let     ID      = ansi(34,1);
-let     KW      = ansi(35,1);
+let cID         = ansi(34,1);
+let cKW         = ansi(35,1);
 
 
 //
@@ -33,7 +33,7 @@ pub fn qBAD(id: string) =
     BAD ~ (id || "``") ~ RESET;
 
 pub fn qID(id: string) =
-    ID ~ (id || "``") ~ RESET;
+    cID ~ (id || "``") ~ RESET;
 
 pub fn qKW(id: string) =
-    KW ~ (id || "``") ~ RESET;
+    cKW ~ (id || "``") ~ RESET;

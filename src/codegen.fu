@@ -893,17 +893,6 @@ pub fn cpp_codegen(
         let init    = node.items ? node.items[LET_INIT] : SolvedNode;
         if (init)
         {
-            // Cleaner copy-init setup,
-            //  the default is super-verbose.
-            if (init.kind == "copy" && !node.type.is_ref)
-            {
-                let expr = cgNode(init.items.only);
-                if (node.type.is_primitive)
-                    return head ~ " = " ~ expr;
-
-                return head ~ " { " ~ expr ~ " }";
-            }
-
             // Definit.
             if (init.kind == "definit" && !init.type.is_ref)
             {
@@ -911,18 +900,36 @@ pub fn cpp_codegen(
                 return head ~ " {}";
             }
 
-            let expr = cgNode(init);
+            let isCopy = init.kind == "copy" && !node.type.is_ref;
+
+            // A less verbose copy init.
+            let expr = cgNode(
+                isCopy  ? init.items.only
+                        : init);
 
             // HACK - wrap in a lambda when we need temps here
             if (!_current_fn.index && _current_fn.TEMPVARs)
             {
                 shadow let annot = annot.starts(with: "const ") ? annot.slice(6) : annot;
-                shadow let init = " { []() -> " ~ annot ~ " {\n    " ~ _current_fn.TEMPVARs.join(";\n    ") ~ ";\n    return " ~ expr ~ ";\n}() }";
+                shadow let expr  = isCopy ? cgClone(init, expr) : expr;
+
+                shadow let iife  = " { []() -> " ~ annot ~ " {\n    " ~ _current_fn.TEMPVARs.join(";\n    ") ~ ";\n    return " ~ expr ~ ";\n}() }";
                 _current_fn.TEMPVARs.clear();
-                return head ~ init;
+                return head ~ iife;
             }
 
+            // I think we can use curlies everywhere,
+            //  here we make an exception for copy inits,
+            //   but we skip primitives which doesn't make sense -
+            //    curly init is BETTER for primitives because it prevents narrowing.
+            //*/
+            if (isCopy && !node.type.is_primitive)
+                return head ~ " { " ~ expr ~ " }";
+
             return head ~ " = " ~ expr;
+            /*/
+            return head ~ " { " ~ expr ~ " }";
+            //*/
         }
 
         return head ~ " {}";
