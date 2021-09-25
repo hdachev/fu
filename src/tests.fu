@@ -2028,6 +2028,21 @@ pub fn runTests()
         fn main() outer - 42;
     `);
 
+    ZERO(`
+        fn append_self(ref a: i32[])
+        {
+            let b = a;
+            a ~= b; // b narrowed down to a slice which is non-copyable
+                    //  but it (unfortunately) wanted to copy to a temp.
+        }
+
+        fn main() {
+            mut arr = [1, 2];
+            arr.append_self();
+            return arr[2] + arr[3] - 3;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
