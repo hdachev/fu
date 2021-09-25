@@ -5209,7 +5209,14 @@ pub fn solve(
 
                         ref_last = i0;
                     }
+                }
 
+                for (mut i0 = 0; i0 < args.len; i0++)
+                {
+                    let host_arg    = host_args[i0];
+                    ref arg         = args[i0];
+
+                    //
                     maybeCopyOrMove(
                         arg || fail(), host_arg.type,
                         isArgument: true);
@@ -5240,7 +5247,7 @@ pub fn solve(
 
                             // We'll batch all writes together in a bit.
                             arg.is_mutref || fail("Written but not mutref?");
-                            expect.is_mutref || fail("Not relaxed?");
+                            host_arg.is_mutref || fail("Not relaxed?");
                             bck_writes.set::add(arg.lifetime.uni0n);
                         }
                         else
@@ -5338,8 +5345,12 @@ pub fn solve(
 
     fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
     {
+        // Reconstruct a maybe-copyable value type -
+        //  slot is a ref which may not need q_rx_copy.
         mut temporary = clear_refs(slot);
+        temporary.quals |= node.type.quals & q_rx_copy;
 
+        //
         return maybeCopyOrMove(:node, temporary);
     }
 
