@@ -701,12 +701,17 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             fail("Not an operator: `" ~ name ~ "`.");
         }
 
-        if (!expr)
-            consume("op", "(");
-        else if (!tryConsume("op", "("))
-            return createAddrOfFn(:name, :flags);
+        //
+        let endv = tryConsume("op", "(") && ")";
+        if (!endv)
+        {
+            if (expr)
+                return createAddrOfFn(:name, :flags);
 
-        return parseFnDecl_cont(:flags, :name, :expr);
+            consume("op", "=");
+        }
+
+        return parseFnDecl_cont(:flags, :name, :expr, :endv);
     }
 
     fn createAddrOfFn(name!: string, flags!: i32): Node

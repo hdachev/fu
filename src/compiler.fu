@@ -180,7 +180,7 @@ let NOTES = [
 pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context
 {
     fn ensure_main(src: string)
-        src.has("fn main(")
+        src.has("fn main")
             ? src
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 

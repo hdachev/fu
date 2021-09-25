@@ -332,7 +332,7 @@ pub fn runTests()
 
     ZERO(`
         fn hey(a) a * a;
-        fn main() 0.hey;
+        fn main = 0.hey;
     `);
 
     ZERO(`
