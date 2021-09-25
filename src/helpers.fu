@@ -197,6 +197,20 @@ case ($T -> $T)
     return res;
 }
 
+pub fn steal(a: $T[], start: i32, end: i32)
+{
+    let size = end - start;
+
+    mut ret: $T[];
+    ret.resize(size);
+
+    for (mut i = 0; i < size; i++)
+        SWAP(ret[i], a[i + start]);
+
+    a.splice(start, count: size);
+    return ret;
+}
+
 
 //
 

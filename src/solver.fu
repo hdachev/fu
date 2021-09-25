@@ -1786,11 +1786,11 @@ pub fn solve(
         // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
         if (steal)
         {
-            ref old = _helpers[helpers_idx - 1].vars;
-            ref new = _helpers[helpers_idx    ].vars;
+            ref old  = _helpers[helpers_idx - 1].vars;
+            let vars = old.steal(old.len - steal, old.len);
 
-            new ~= old[old.len - steal, old.len];
-            old.shrink(old.len - steal);
+            ref new  = _helpers[helpers_idx    ].vars;
+            new     ~= vars;
         }
 
         let expr        = !fnbody_of && !type.is_void;
@@ -5381,7 +5381,7 @@ pub fn solve(
         }
 
         if (!slot.is_rx_copy)
-            fail("Needs an explicit STEAL or CLONE.");
+            fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(slot));
 
         if (!node.type.is_trivial)
         {
