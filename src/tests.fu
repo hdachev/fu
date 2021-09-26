@@ -2043,6 +2043,25 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        fn but_is_it_pure(ref x: i32) {
+            //*F
+            return x++;
+            /*/
+            return x;
+            //*/
+        }
+        pure fn pure_fn(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            return but_is_it_pure(x);
+        }
+        fn main() {
+            mut x = 0;
+            mut y = 0;
+            return pure_fn(x, y);
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
