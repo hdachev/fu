@@ -3085,6 +3085,32 @@ pub fn runTests()
         return hey(0);
     `);
 
+    ZERO(`
+        fn maybe_empty(N: i32) {
+            mut res: string[];
+            for (mut i = 0; i < N; i++) res ~= [ "world!" ]; // same as below but wrapped
+            return res;
+        }
+        fn main() {
+            mut arr = [ "Hello" ];
+            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
+            return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+    `);
+
+    TODO(`
+        fn maybe_empty(N: i32) {
+            mut res: string[];
+            for (mut i = 0; i < N; i++) res ~= "world!"; // cpp template issue here
+            return res;
+        }
+        fn main() {
+            mut arr = [ "Hello" ];
+            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
+            return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+    `);
+
 
     // Various templating fallacies.
     //
