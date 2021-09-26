@@ -249,7 +249,9 @@ struct fu_VEC
         //  incomplete type and all, here works.
         static_assert(sizeof(fu_VEC) == VEC_SIZE);
 
-        _SafeDealloc();
+        i32 shared_capa = this->shared_capa();
+        if (shared_capa > SMALL_CAPA)
+            SHARED__Dealloc(shared_capa);
 
         // Ensure things break badly in debug.
         #ifndef NDEBUG
@@ -262,20 +264,18 @@ struct fu_VEC
 
     // Safe release.
 
-    fu_INL void _SafeDealloc() noexcept
+    fu_INL void SHARED__Dealloc(i32 shared_capa) noexcept
     {
-        i32 shared_capa = this->shared_capa();
-        if (shared_capa > SMALL_CAPA)
-            SHARED__Dealloc(
-                (T*)big.data, big.size, shared_capa);
+        SHARED__Dealloc(
+            (T*)big.data, big.size, shared_capa);
 
         UNSAFE__Reset();
     }
 
     fu_INL static void SHARED__Dealloc(
-        T* old_data, i32 old_size, i32 old_capa) noexcept
+        T* old_data, i32 old_size, i32 shared_capa) noexcept
     {
-        assert(old_capa > SMALL_CAPA);
+        assert(shared_capa > SMALL_CAPA);
 
         if constexpr (SHAREABLE) {
             fu_ARC* arc = UNSAFE__arc(old_data);
@@ -284,7 +284,7 @@ struct fu_VEC
                     old_data,
                     old_data + old_size);
 
-                fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+                fu_ARC_DEALLOC(arc, shared_capa * sizeof(T));
             }
         }
         else {
@@ -292,7 +292,7 @@ struct fu_VEC
                 old_data,
                 old_data + old_size);
 
-            fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
+            fu_UNIQ_DEALLOC(old_data, shared_capa * sizeof(T));
         }
     }
 
@@ -913,13 +913,23 @@ struct fu_VEC
 
         MUT_mid(idx, del, src_size);
 
-        if (!TRIVIAL && src.slow_check_unique()) {
+        // Copy paste splice/append.
+        if constexpr (TRIVIAL)
             MEMCPY_range(new_data + idx, src_data, src_size);
-            src.UNIQ__Dealloc_DontRunDtors();
-        }
-        else {
-            CPY_ctor_range(new_data + idx, src_data, src_size);
-            src._SafeDealloc();
+
+        i32 shared_capa = src.shared_capa();
+        if (shared_capa > SMALL_CAPA)
+        {
+            if (!TRIVIAL && src.slow_check_unique()) {
+                MEMCPY_range(new_data + idx, src_data, src_size);
+                src.UNIQ__Dealloc_DontRunDtors();
+            }
+            else {
+                if constexpr (!TRIVIAL)
+                    CPY_ctor_range(new_data + idx, src_data, src_size);
+
+                src.SHARED__Dealloc(shared_capa);
+            }
         }
     }
 
@@ -962,13 +972,23 @@ struct fu_VEC
 
         i32 idx = old_size - del;
 
-        if (!TRIVIAL && src.slow_check_unique()) {
+        // Copy paste splice/append.
+        if constexpr (TRIVIAL)
             MEMCPY_range(new_data + idx, src_data, src_size);
-            src.UNIQ__Dealloc_DontRunDtors();
-        }
-        else {
-            CPY_ctor_range(new_data + idx, src_data, src_size);
-            src._SafeDealloc();
+
+        i32 shared_capa = src.shared_capa();
+        if (shared_capa > SMALL_CAPA)
+        {
+            if (!TRIVIAL && src.slow_check_unique()) {
+                MEMCPY_range(new_data + idx, src_data, src_size);
+                src.UNIQ__Dealloc_DontRunDtors();
+            }
+            else {
+                if constexpr (!TRIVIAL)
+                    CPY_ctor_range(new_data + idx, src_data, src_size);
+
+                src.SHARED__Dealloc(shared_capa);
+            }
         }
     }
 
