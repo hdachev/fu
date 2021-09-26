@@ -5156,8 +5156,8 @@ pub fn solve(
 
                                     if (which >= 0)
                                         return BORROWCK_resolveByCopyToTemporary(
-                                            node: args[which],
-                                            slot: host_arg.type);
+                                            node: args     [which],
+                                            slot: host_args[which].type);
                                 }
 
                                 // BORROWCK Error message.
@@ -5357,6 +5357,12 @@ pub fn solve(
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
         isArgument = false): void
     {
+        if (SELF_TEST)
+            slot.canon == node.canon || node.is_never || fail(
+                "Considering copy or move for incompatible types: "
+                    ~ humanizeType(slot) ~ " <- "
+                    ~ humanizeType(node));
+
         // Clear mutrefs unless needed.
         propagateType(:node, :slot);
 
