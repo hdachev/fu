@@ -2746,10 +2746,11 @@ pub fn solve(
                     let risk_free   = !isNative && !isUnspec
                         && out.flow.ArgsAtRisk_listRiskFree(i);
 
+                    let argTarget   = argNode.target;
                     let written_via = argNode.type.is_mutref
                         && (isNative
                             ? target // Self: assume all mutref taking natives do actually write.
-                            : out.events.args_written_via.unless_oob(i));
+                            : out.events.args_written_via.unless_oob(argTarget.index));
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
@@ -2914,9 +2915,10 @@ pub fn solve(
                     outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
                     didSetBody = true;
 
-                    // ARGUMENTS AT RISK ////////////////////////
-                    _current_fn.flow.ArgsAtRisk_shake(); ////////
-                    /////////////////////////////////////////////
+                    // ARGUMENTS AT RISK ///////////////////////////////////////////////////
+                    _current_fn.flow.ArgsAtRisk_shake();
+                    _current_fn.flow.ArgsWritten_shake(_current_fn.events.args_written_via);
+                    ////////////////////////////////////////////////////////////////////////
                 }
 
                 // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.

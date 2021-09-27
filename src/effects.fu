@@ -207,3 +207,24 @@ pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
 
     return risk_free;
 }
+
+
+//
+
+pub fn ArgsWritten_shake(flow: Flow, ref args: [$T])
+{
+    for (mut i = min(args.len, flow.arg_aliases.len); i --> 0; )
+    {
+        let x = args[i];
+        if (x)
+        {
+            let aliases = flow.arg_aliases[i];
+            for (shadow mut i = 0; i < aliases.len; i++)
+            {
+                ref y = args[aliases[i]];
+                if (!y)
+                    y = x;
+            }
+        }
+    }
+}
