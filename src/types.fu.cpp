@@ -226,12 +226,12 @@ bool Region_isArg(const s_Region& region)
 
 int Region_toArgIndex(const s_Region& region)
 {
-    return -1 - Region_toLocalIndex(region);
+    return -Region_toLocalIndex(region);
 }
 
 s_Region Region_fromArgIndex(const int index)
 {
-    return Region_fromLocalIndex((-1 - index));
+    return Region_fromLocalIndex(-index);
 }
 
 static const s_Region Region_TEMP = Region_fromLocalIndex(int(0x7fffffffu));
@@ -243,25 +243,26 @@ bool Region_isTemp(const s_Region& region)
     return region == Region_TEMP;
 }
 
-                                #ifndef DEFt_union_4Dpy
-                                #define DEFt_union_4Dpy
-inline fu_VEC<s_Region> union_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
+int Region_asIndex(const s_Region& r)
 {
-    if (a.size() < b.size())
-        return union_4Dpy(b, a);
+    return (((r == Region_TEMP) || (r == Region_STATIC)) ? 0 : ((r.index < 0) ? -r.index : int(r.index)));
+}
 
-    fu_VEC<s_Region> a_1 { a };
+                                #ifndef DEFt_add_SkaC
+                                #define DEFt_add_SkaC
+inline void add_SkaC(fu_VEC<s_Region>& a, fu::view<s_Region> b)
+{
     int x = 0;
     int y = 0;
-    while ((x < a_1.size()) && (y < b.size()))
+    while ((x < a.size()) && (y < b.size()))
     {
-        const s_Region& X = a_1[x];
+        const s_Region& X = a[x];
         const s_Region& Y = b[y];
         if ((X >= Y))
         {
             if (X != Y)
             {
-                a_1.insert(x, Y);
+                a.insert(x, Y);
                 y++;
             }
             else
@@ -271,8 +272,20 @@ inline fu_VEC<s_Region> union_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Reg
         x++;
     };
     if (y < b.size())
-        a_1 += fu::get_view(b, y, b.size());
+        a += fu::get_view(b, y, b.size());
 
+}
+                                #endif
+
+                                #ifndef DEFt_union_4Dpy
+                                #define DEFt_union_4Dpy
+inline fu_VEC<s_Region> union_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
+{
+    if (a.size() < b.size())
+        return union_4Dpy(b, a);
+
+    fu_VEC<s_Region> a_1 { a };
+    add_SkaC(a_1, b);
     return a_1;
 }
                                 #endif
@@ -282,25 +295,50 @@ s_Lifetime Lifetime_union(const s_Lifetime& a, const s_Lifetime& b)
     return s_Lifetime { union_4Dpy(a.uni0n, b.uni0n) };
 }
 
-                                #ifndef DEFt_if_first_tWdF
-                                #define DEFt_if_first_tWdF
-inline const s_Region& if_first_tWdF(fu::view<s_Region> s)
+                                #ifndef DEFt_keep_SkaC
+                                #define DEFt_keep_SkaC
+inline fu_VEC<s_Region>& keep_SkaC(fu_VEC<s_Region>& a, fu::view<s_Region> b)
 {
-    return s.size() ? s[0] : (*(const s_Region*)fu::NIL);
+    int x = 0;
+    int y = 0;
+    while ((x < a.size()) && (y < b.size()))
+    {
+        const s_Region& X = a[x];
+        const s_Region& Y = b[y];
+        if (X == Y)
+        {
+            x++;
+            y++;
+        }
+        else if (X > Y)
+            y++;
+        else
+            a.splice(x, 1);
+
+    };
+    if (x < a.size())
+        a.shrink(x);
+
+    return a;
 }
                                 #endif
 
-                                #ifndef DEFt_if_last_tWdF
-                                #define DEFt_if_last_tWdF
-inline const s_Region& if_last_tWdF(fu::view<s_Region> s)
+                                #ifndef DEFt_inter_4Dpy
+                                #define DEFt_inter_4Dpy
+inline fu_VEC<s_Region> inter_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
 {
-    return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
+    if (a.size() > b.size())
+        return inter_4Dpy(b, a);
+
+    fu_VEC<s_Region> a_1 { a };
+    keep_SkaC(a_1, b);
+    return a_1;
 }
                                 #endif
 
-int Lifetime_compareToIndex(const s_Lifetime& lifetime, const int index)
+s_Lifetime Lifetime_inter(const s_Lifetime& a, const s_Lifetime& b)
 {
-    return ((Region_toLocalIndex(if_first_tWdF(lifetime.uni0n)) > index) ? +1 : ((Region_toLocalIndex(if_last_tWdF(lifetime.uni0n)) < index) ? -1 : 0));
+    return s_Lifetime { inter_4Dpy(a.uni0n, b.uni0n) };
 }
 
 s_Lifetime Lifetime_makeShared(const s_Lifetime& lifetime)
@@ -522,6 +560,14 @@ s_Type add_mutref(s_Type&& type, const s_Lifetime& lifetime)
     return static_cast<s_Type&&>(type);
 }
 
+                                #ifndef DEFt_if_last_tWdF
+                                #define DEFt_if_last_tWdF
+inline const s_Region& if_last_tWdF(fu::view<s_Region> s)
+{
+    return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
+}
+                                #endif
+
 bool is_ref2temp(const s_Type& type)
 {
     return (if_last_tWdF(type.lifetime.uni0n) == Region_TEMP) && (is_ref(type) || fu::fail("is_ref2temp: has lts but isnt ref"_fu));
@@ -616,7 +662,7 @@ s_ValueType parseType(const fu_STR& str)
 
 bool type_isArray(const s_Type& type)
 {
-    return (type.vtype.quals & q_rx_resize) && fu::lmatch(type.vtype.canon, "[]"_fu);
+    return (type.vtype.quals & (q_rx_resize | q_rx_copy)) && fu::lmatch(type.vtype.canon, "[]"_fu);
 }
 
 s_Type createArray(const s_Type& item)
@@ -725,43 +771,6 @@ s_Type type_trySuper(const s_Type& a, const s_Type& b)
 
     const int quals = (a.vtype.quals & b.vtype.quals);
     return s_Type { s_ValueType { int(quals), int(a.vtype.modid), fu_STR(a.vtype.canon) }, ((quals & q_ref) ? Lifetime_union(a.lifetime, b.lifetime) : s_Lifetime{}) };
-}
-
-                                #ifndef DEFt_inter_4Dpy
-                                #define DEFt_inter_4Dpy
-inline fu_VEC<s_Region> inter_4Dpy(const fu_VEC<s_Region>& a, const fu_VEC<s_Region>& b)
-{
-    if (a.size() > b.size())
-        return inter_4Dpy(b, a);
-
-    fu_VEC<s_Region> a_1 { a };
-    int x = 0;
-    int y = 0;
-    while ((x < a_1.size()) && (y < b.size()))
-    {
-        const s_Region& X = a_1[x];
-        const s_Region& Y = b[y];
-        if (X == Y)
-        {
-            x++;
-            y++;
-        }
-        else if (X > Y)
-            y++;
-        else
-            a_1.splice(x, 1);
-
-    };
-    if (x < a_1.size())
-        a_1.shrink(x);
-
-    return a_1;
-}
-                                #endif
-
-static s_Lifetime Lifetime_inter(const s_Lifetime& a, const s_Lifetime& b)
-{
-    return s_Lifetime { inter_4Dpy(a.uni0n, b.uni0n) };
 }
 
 s_Type type_tryIntersect(const s_Type& a, const s_Type& b)

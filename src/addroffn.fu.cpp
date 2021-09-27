@@ -139,15 +139,15 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
     fu_STR res {};
     for (int i = 0; i < targets.size(); i++)
     {
-        const s_Target& target_5 = targets[i];
-        res += ((("@"_fu + target_5.modid) + ":"_fu) + target_5.index);
+        const s_Target& target_6 = targets[i];
+        res += ((("@"_fu + target_6.modid) + ":"_fu) + target_6.index);
     };
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_4JZ8
-                                #define DEFt_unpackAddrOfFn_4JZ8
-inline void unpackAddrOfFn_4JZ8(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_toGI
+                                #define DEFt_unpackAddrOfFn_toGI
+inline void unpackAddrOfFn_toGI(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -160,8 +160,8 @@ inline void unpackAddrOfFn_4JZ8(fu::view<std::byte> canon_1, int, fu_VEC<s_Scope
             fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon_1) + "`."_fu));
 
         const int index_2 = parse10i32(i, canon_1);
-        const s_Target target_5 = s_Target { int(modid_4), int(index_2) };
-        Scope_set(out_1, id_2, target_5, shadows);
+        const s_Target target_6 = s_Target { int(modid_4), int(index_2) };
+        Scope_set(out_1, id_2, target_6, shadows);
     };
 }
                                 #endif
@@ -171,13 +171,13 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_4JZ8(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_toGI(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 
-s_Type X_addrofTarget(const s_Target& target_5)
+s_Type X_addrofTarget(const s_Target& target_6)
 {
-    return s_Type { s_ValueType { 0, 0, packAddrOfFn((fu::slate<1, s_Target> { s_Target(target_5) })) }, s_Lifetime{} };
+    return s_Type { s_ValueType { 0, 0, packAddrOfFn((fu::slate<1, s_Target> { s_Target(target_6) })) }, s_Lifetime{} };
 }
 
 #endif

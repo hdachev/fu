@@ -47,4 +47,10 @@ s_Target tryParseClosureID(fu::view<std::byte> id, const int MODID)
     return s_Target{};
 }
 
+int compilerBreak()
+{
+    int a = 5;
+    return a;
+}
+
 #endif

@@ -20,6 +20,7 @@
 #include <iostream>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_CodegenOutput;
 struct s_Context;
 struct s_Extended;
@@ -339,6 +340,20 @@ struct s_Overload
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint8_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -348,6 +363,8 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
+    s_BitSet risk_free;
+    s_Target written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -356,6 +373,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || risk_free
+            || written_via
         ;
     }
 };
@@ -696,7 +715,7 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu_VEC<fu_STR>& Fs, fu_STR& dir_wrk, fu_STR& stdout, int& code, const fu_STR& onfail, const s_Context& ctx)
+[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu_VEC<fu_STR>& Fs, fu::view<std::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
     {

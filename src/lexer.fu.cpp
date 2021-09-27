@@ -13,7 +13,7 @@
 struct s_LexerOutput;
 struct s_Token;
 
-[[noreturn]] static fu::never err(fu::view<std::byte>, int, int, const fu_STR&, int&, int, int&, const fu_STR&, int&);
+[[noreturn]] static fu::never err(fu::view<std::byte>, int, int, const fu_STR&, int&, int, int, fu::view<std::byte>, int);
 fu_STR ascii_lower(const fu_STR&);
 
                                 #ifndef DEF_s_Token
@@ -62,13 +62,13 @@ static const fu_STR OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 
 static const fu_VEC<fu_STR> MBOPS = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<40> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
 
-static void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, int& lidx, fu_VEC<s_Token>& tokens, int& line)
+static void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, const int lidx, fu_VEC<s_Token>& tokens, const int line)
 {
     const int col = (idx0 - lidx);
     tokens.push(s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) });
 }
 
-[[noreturn]] static fu::never err_str(fu::view<std::byte> kind, const int idx0, fu::view<std::byte> reason, int& idx, const int end, const fu_STR& src, int& lidx, const fu_STR& fname, int& line)
+[[noreturn]] static fu::never err_str(fu::view<std::byte> kind, const int idx0, fu::view<std::byte> reason, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<std::byte> fname, const int line)
 {
     while ((idx < end) && (src[idx] > std::byte(' ')))
         idx++;
@@ -78,7 +78,7 @@ static void token(const fu_STR& kind, const fu_STR& value, const int idx0, const
     fu::fail((((((((((((("LEX ERROR: "_fu + fname) + "@"_fu) + line) + ":"_fu) + col) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
 }
 
-[[noreturn]] static fu::never err(fu::view<std::byte> kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, int& lidx, const fu_STR& fname, int& line)
+[[noreturn]] static fu::never err(fu::view<std::byte> kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, const int lidx, fu::view<std::byte> fname, const int line)
 {
     err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
@@ -205,7 +205,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     idx++;
                 }
                 else if ((c_1 >= std::byte('0')) && (c_1 <= std::byte('9')))
-                    err_str("real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
+                    err_str("real"_fu, int(idx0), ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
 
             };
             while (idx < end)
@@ -256,7 +256,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
                 if (hex && dot && !exp_1)
-                    err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
+                    err_str("real"_fu, int(idx0), ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
                     token(((dot || exp_1) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1, lidx, tokens, line);
 
@@ -286,7 +286,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             if (!ok)
-                err_str("str"_fu, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
+                err_str("str"_fu, int(idx0), "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
@@ -294,7 +294,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 const bool cHar = (c == std::byte('\''));
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
                 if (cHar && (str.size() != 1))
-                    err_str("char"_fu, idx0, ("Char literal len != 1: "_fu + str.size()), idx, end, src, lidx, fname, line);
+                    err_str("char"_fu, int(idx0), ("Char literal len != 1: "_fu + str.size()), idx, end, src, lidx, fname, line);
                 else
                     token(kind, str, idx0, idx1, lidx, tokens, line);
 

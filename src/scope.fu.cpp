@@ -11,7 +11,9 @@
 #include <fu/view.h>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_CodegenOutput;
+struct s_Events;
 struct s_Extended;
 struct s_Helpers;
 struct s_LexerOutput;
@@ -24,6 +26,7 @@ struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
+struct s_RWEvent;
 struct s_Region;
 struct s_Scope;
 struct s_ScopeItem;
@@ -331,6 +334,20 @@ struct s_Overload
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint8_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -340,6 +357,8 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
+    s_BitSet risk_free;
+    s_Target written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -348,6 +367,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || risk_free
+            || written_via
         ;
     }
 };
@@ -645,6 +666,46 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_RWEvent
+                                #define DEF_s_RWEvent
+struct s_RWEvent
+{
+    int target;
+    int nodeidx;
+    s_TokenIdx token;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || target
+            || nodeidx
+            || token
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Events
+                                #define DEF_s_Events
+struct s_Events
+{
+    fu_VEC<s_RWEvent> invalidated_by;
+    fu_VEC<s_RWEvent> used_in_a_loop;
+    fu_VEC<int> args_written;
+    fu_VEC<int> args_in_a_loop;
+    fu_VEC<s_Target> args_written_via;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || invalidated_by
+            || used_in_a_loop
+            || args_written
+            || args_in_a_loop
+            || args_written_via
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Helpers
                                 #define DEF_s_Helpers
 struct s_Helpers
@@ -654,10 +715,12 @@ struct s_Helpers
     short mask;
     int local_of;
     int kills;
+    int locals_start;
     s_Type ret_expect;
     s_Type ret_actual;
     fu_VEC<s_SolvedNode> returns;
     fu_VEC<int> vars;
+    s_Events on_exit;
     explicit operator bool() const noexcept
     {
         return false
@@ -666,10 +729,12 @@ struct s_Helpers
             || mask
             || local_of
             || kills
+            || locals_start
             || ret_expect
             || ret_actual
             || returns
             || vars
+            || on_exit
         ;
     }
 };
@@ -966,11 +1031,11 @@ inline s_Extended& grow_if_oob_RnoK(fu_VEC<s_Extended>& a, const int i)
 }
                                 #endif
 
-s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const s_SolvedNode& solved, const int local_of, const unsigned status, const int recycle, const bool nest, const s_Module& module)
+s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, const s_Type& type, const int flags_1, const s_SolvedNode& solved, const int local_of, const unsigned status, const bool nest, const s_Module& module)
 {
     fu_VEC<s_Overload>& overloads = ((nest && local_of) ? grow_if_oob_RnoK(scope.extended, (local_of - 1)).locals : scope.overloads);
     int _0 {};
-    const s_Target target_1 = s_Target { (nest && (_0 = -local_of) ? _0 : int(MODID(module))), (recycle ? int(recycle) : (overloads.size() + 1)) };
+    const s_Target target_1 = s_Target { (nest && (_0 = -local_of) ? _0 : int(MODID(module))), (overloads.size() + 1) };
     s_Overload item {};
     item.name = name;
     item.kind = kind_1;
@@ -979,11 +1044,7 @@ s_Target Scope_create(s_Scope& scope, const fu_STR& kind_1, const fu_STR& name, 
     item.solved = solved;
     item.local_of = local_of;
     item.status = status;
-    if (recycle)
-        overloads.mutref((recycle - 1)) = item;
-    else
-        overloads.push(item);
-
+    overloads.push(item);
     return target_1;
 }
 
@@ -1004,7 +1065,7 @@ inline constexpr int F_SHADOW = (1 << 23);
 
 s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags_1, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    const s_Target target_1 = Scope_create(scope, "type"_fu, name, type, flags_1, s_SolvedNode{}, 0, status, 0, bool{}, module);
+    const s_Target target_1 = Scope_create(scope, "type"_fu, name, type, flags_1, s_SolvedNode{}, 0, status, bool{}, module);
     if (id)
         Scope_set(scope, id, target_1, !!(flags_1 & F_SHADOW));
 

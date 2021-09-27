@@ -14,13 +14,13 @@
 
 fu_STR path_join(fu::view<std::byte>, const fu_STR&);
 int self_test();
-static int cli_handle(const fu_VEC<fu_STR>&, const fu_STR&);
+static int cli_handle(fu::view<fu_STR>, const fu_STR&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
 void runTests();
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& next(int& idx, const fu_VEC<fu_STR>& argv)
+static const fu_STR& next(int& idx, fu::view<fu_STR> argv)
 {
     const int i = idx++;
     if (i < argv.size())
@@ -34,15 +34,15 @@ extern const fu_STR PRJDIR;
 static void runTestsAndBuildCompiler()
 {
     runTests();
-    cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<5> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu } }, PRJDIR);
+    cli_handle((fu::slate<5, fu_STR> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu }), PRJDIR);
 }
 
-static fu_STR abs(const fu_STR& path, const fu_STR& cwd)
+static fu_STR abs(const fu_STR& path, fu::view<std::byte> cwd)
 {
     return path && (path[0] != std::byte('-')) ? path_join(cwd, path) : fu_STR{};
 }
 
-static void option(fu::view<std::byte> sHort, fu::view<std::byte> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, const fu_STR& cwd, int& idx, const fu_VEC<fu_STR>& argv)
+static void option(fu::view<std::byte> sHort, fu::view<std::byte> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, fu::view<std::byte> cwd, int& idx, fu::view<fu_STR> argv)
 {
     if ((opt == sHort) || (opt == lOng))
     {
@@ -62,7 +62,7 @@ static void option(fu::view<std::byte> sHort, fu::view<std::byte> lOng, const in
 
 extern const fu_STR DEFAULT_WORKSPACE;
 
-static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
+static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
 {
     int idx = 0;
     const fu_STR& self = next(idx, argv);
@@ -155,7 +155,7 @@ static int cli_handle(const fu_VEC<fu_STR>& argv, const fu_STR& cwd)
     return 0;
 }
 
-int fu_MAIN(const fu_VEC<fu_STR>& argv)
+int fu_MAIN(fu::view<fu_STR> argv)
 {
     return cli_handle(argv, fu::fs_cwd());
 }

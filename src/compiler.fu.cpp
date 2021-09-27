@@ -12,12 +12,14 @@
 #include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
+#include <fu/vec/join.h>
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 #include <iostream>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_CodegenOutput;
 struct s_Context;
 struct s_Extended;
@@ -61,10 +63,12 @@ s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 s_ModuleStat ModuleStat_now();
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
-s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&, const s_Options&);
+s_ParserOutput parse(int, const fu_STR&, fu::view<s_Token>, const s_Options&);
 s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
 static void compile(const fu_STR&, fu::view<std::byte>, const s_Options&, s_Context&);
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, fu::view<std::byte>);
+void TODO(const fu_STR&, s_TestDiffs&);
+void TODO(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void ZERO_SAME(fu::view<fu_STR>, s_TestDiffs&);
 void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<std::byte>, const fu_STR&, const s_Context&);
 void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
@@ -354,6 +358,20 @@ struct s_Overload
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint8_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -363,6 +381,8 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
+    s_BitSet risk_free;
+    s_Target written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -371,6 +391,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || risk_free
+            || written_via
         ;
     }
 };
@@ -710,11 +732,13 @@ struct s_Options
 {
     s_Lint lint;
     int break_notes;
+    unsigned dev;
     explicit operator bool() const noexcept
     {
         return false
             || lint
             || break_notes
+            || dev
         ;
     }
 };
@@ -819,9 +843,9 @@ inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_O6LQ
-                                #define DEFt_clone_O6LQ
-inline const fu_VEC<s_ScopeItem>& clone_O6LQ(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_3zJ1
+                                #define DEFt_clone_3zJ1
+inline const fu_VEC<s_ScopeItem>& clone_3zJ1(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
@@ -851,14 +875,14 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_zwKf
-                                #define DEFt_clone_zwKf
-inline s_Scope clone_zwKf(const s_Scope& a)
+                                #ifndef DEFt_clone_i0j8
+                                #define DEFt_clone_i0j8
+inline s_Scope clone_i0j8(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_O6LQ(a.items);
+        res.items = clone_3zJ1(a.items);
         res.overloads = clone_evat(a.overloads);
         res.extended = clone_DPDX(a.extended);
         res.imports = clone_I28a(a.imports);
@@ -878,7 +902,7 @@ inline s_SolverOutput clone_v5Nc(const s_SolverOutput& a)
 
     {
         res.root = clone_VD7r(a.root);
-        res.scope = clone_zwKf(a.scope);
+        res.scope = clone_i0j8(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;
@@ -934,9 +958,9 @@ inline s_Module clone_PUXh(const s_Module& a)
 }
                                 #endif
 
-                                #ifndef DEFt_map_j9F3
-                                #define DEFt_map_j9F3
-inline fu_VEC<s_Module> map_j9F3(fu::view<s_Module> a, int)
+                                #ifndef DEFt_map_wVtD
+                                #define DEFt_map_wVtD
+inline fu_VEC<s_Module> map_wVtD(fu::view<s_Module> a, int)
 {
     fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
@@ -951,7 +975,7 @@ inline fu_VEC<s_Module> map_j9F3(fu::view<s_Module> a, int)
                                 #define DEFt_clone_vQi3
 inline fu_VEC<s_Module> clone_vQi3(fu::view<s_Module> a)
 {
-    return map_j9F3(a, 0);
+    return map_wVtD(a, 0);
 }
                                 #endif
 
@@ -980,14 +1004,19 @@ inline s_Context clone_MVIm(const s_Context& a)
 
 extern const s_Context CTX_PRELUDE;
 
-                                #ifndef DEFt_clone_5cFI
-                                #define DEFt_clone_5cFI
-inline s_Scope clone_5cFI(const s_Scope& a)
+                                #ifndef DEF_DEV_DisableBCK
+                                #define DEF_DEV_DisableBCK
+inline constexpr unsigned DEV_DisableBCK = (0x1u << 0u);
+                                #endif
+
+                                #ifndef DEFt_clone_YBzp
+                                #define DEFt_clone_YBzp
+inline s_Scope clone_YBzp(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_O6LQ(a.items);
+        res.items = clone_3zJ1(a.items);
         res.overloads = clone_evat(a.overloads);
         res.extended = clone_DPDX(a.extended);
         res.imports = clone_I28a(a.imports);
@@ -1007,7 +1036,7 @@ inline s_SolverOutput clone_Pu6M(const s_SolverOutput& a)
 
     {
         res.root = clone_VD7r(a.root);
-        res.scope = clone_5cFI(a.scope);
+        res.scope = clone_YBzp(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;
@@ -1075,7 +1104,7 @@ static void compile(const fu_STR& fname, fu::view<std::byte> via, const s_Option
     {
         fu::view<fu_STR> fuzimports = module.in.parse.fuzimports;
         for (int i = 0; i < fuzimports.size(); i++)
-            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), s_Options{}, ctx);
+            compile(resolveFile(fuzimports[i], ctx), ((fname + " <- "_fu) + via), options, ctx);
 
         const s_ModuleStat stat0 = ModuleStat_now();
         module.out.solve = solve(options, ctx, module);
@@ -1091,11 +1120,12 @@ static void compile(const fu_STR& fname, fu::view<std::byte> via, const s_Option
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<std::byte> scheme)
 {
     s_Context ctx = clone_MVIm(CTX_PRELUDE);
+    const s_Options options = s_Options { s_Lint{}, 0, unsigned(DEV_DisableBCK) };
 
     {
         (std::cout << "COMPILE "_fu << fname << '\n');
         const double t0 = fu::now_hr();
-        compile(fname, fu::view<std::byte>{}, s_Options{}, ctx);
+        compile(fname, fu::view<std::byte>{}, options, ctx);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
         if ((t1 - t0) > 0.025)
@@ -1126,7 +1156,7 @@ static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<14> { 
 
 static fu_STR ensure_main(const fu_STR& src)
 {
-    return (fu::has(src, "fn main("_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
+    return (fu::has(src, "fn main"_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
 }
 
 s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
@@ -1173,7 +1203,7 @@ fu_STR snippet2cpp(const fu_STR& src)
 
                                 #ifndef DEFt_find_KWjg
                                 #define DEFt_find_KWjg
-inline int find_KWjg(fu::view<std::byte> a, const std::byte b, int start)
+inline int find_KWjg(const fu_STR& a, const std::byte b, int start)
 {
     start = ((start > 0) ? int(start) : 0);
     for (int i = start; i < a.size(); i++)
@@ -1227,17 +1257,24 @@ inline int find_qVFp(fu::view<std::byte> a, const std::byte b)
 
 s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
 {
+    bool TODO_split = false;
     for (int i = 0; i < sources.size(); i++)
     {
         for (; ; )
         {
             const fu_STR& src = sources[i];
             int start0 = fu::lfind(src, "<split/>"_fu, 0);
+            int start1 = (start0 + 8);
             if (start0 < 0)
-                break;
+            {
+                start0 = fu::lfind(src, "<TODO::split/>"_fu, 0);
+                start1 = (start0 + 14);
+                if (start0 < 0)
+                    break;
 
+                TODO_split = true;
+            };
             const int start00 = start0;
-            const int start1 = (start0 + 8);
             while (start0 && (src[(start0 - 1)] == std::byte(' ')))
                 start0--;
 
@@ -1250,11 +1287,16 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             sources.insert((i + 1), moduleB);
         };
     };
+    if (TODO_split)
+    {
+        TODO(sources, testdiffs);
+        return s_Context{};
+    };
     for (int i_1 = 0; i_1 < sources.size(); i_1++)
     {
         for (; ; )
         {
-            fu::view<std::byte> src = sources[i_1];
+            const fu_STR& src = sources[i_1];
             int start0 = fu::lfind(src, "<alt>"_fu, 0);
             if (start0 < 0)
                 break;
@@ -1315,7 +1357,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             src.mutref((start + 2)) = std::byte('/');
             start = end;
         };
-        options += s_Options { s_Lint{}, int(break_notes_1) };
+        options += s_Options { s_Lint{}, int(break_notes_1), 0u };
     };
     s_Context ctx = compile_snippets(sources, fu::view<fu_STR>{}, options);
     for (int i_3 = 0; i_3 < expectations.size(); i_3++)
@@ -1450,6 +1492,26 @@ void ZERO_SAME(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
     };
 }
 
+void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
+{
+
+    try
+    {
+        ZERO(fu_VEC<fu_STR>(sources), testdiffs);
+    }
+    catch (const std::exception& o_0)
+    {
+        fu_STR e = fu_TO_STR(o_0.what());
+
+    {
+        (std::cout << "  TODO: "_fu << e << '\n');
+        return;
+    }
+    }
+;
+    fu::fail(("TODO test is actually passing: "_fu + fu::join(sources, "\n\n"_fu)));
+}
+
 s_Context ZERO(const fu_STR& src, s_TestDiffs& testdiffs)
 {
     return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
@@ -1458,6 +1520,11 @@ s_Context ZERO(const fu_STR& src, s_TestDiffs& testdiffs)
 s_Context FAIL(const fu_STR& src, s_TestDiffs& testdiffs)
 {
     return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
+}
+
+void TODO(const fu_STR& src, s_TestDiffs& testdiffs)
+{
+    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src) } }, testdiffs);
 }
 
 void ZERO_SAME(fu::view<fu_STR> alts, s_TestDiffs& testdiffs)

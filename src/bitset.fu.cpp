@@ -78,6 +78,13 @@ void rem(s_BitSet& _, const int idx)
     };
 }
 
+void add_range(s_BitSet& _, const int start, const int end)
+{
+    for (int i = start; i < end; i++)
+        add(_, i);
+
+}
+
 int popcount(const s_BitSet& _)
 {
     int sum = 0;

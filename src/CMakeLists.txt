@@ -18,14 +18,16 @@ set(FU_INPUTS
     stat.fu
     ../lib/now.fu
     ../lib/alloc.fu
-    ../lib/file.fu
-    solver.fu
     bitset.fu
     ../lib/bit.fu
+    ../lib/file.fu
+    ../lib/ansi.fu
+    solver.fu
+    effects.fu
     intlit.fu
+    hacks.fu
     addroffn.fu
     ../lib/tea.fu
-    hacks.fu
     codegen.fu
     cpp.fu
     ../lib/env.fu

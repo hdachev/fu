@@ -1,9 +1,12 @@
+#include <cstdint>
 #include <fu/default.h>
 #include <fu/map.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_CodegenOutput;
 struct s_Context;
 struct s_Extended;
@@ -38,7 +41,7 @@ struct s_ValueType;
 
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
-s_ParserOutput parse(int, const fu_STR&, const fu_VEC<s_Token>&, const s_Options&);
+s_ParserOutput parse(int, const fu_STR&, fu::view<s_Token>, const s_Options&);
 s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
 void setModule(const s_Module&, s_Context&);
 
@@ -324,6 +327,20 @@ struct s_Overload
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint8_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -333,6 +350,8 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
+    s_BitSet risk_free;
+    s_Target written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -341,6 +360,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || risk_free
+            || written_via
         ;
     }
 };
@@ -680,11 +701,13 @@ struct s_Options
 {
     s_Lint lint;
     int break_notes;
+    unsigned dev;
     explicit operator bool() const noexcept
     {
         return false
             || lint
             || break_notes
+            || dev
         ;
     }
 };
@@ -742,9 +765,9 @@ inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_O6LQ
-                                #define DEFt_clone_O6LQ
-inline const fu_VEC<s_ScopeItem>& clone_O6LQ(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_3zJ1
+                                #define DEFt_clone_3zJ1
+inline const fu_VEC<s_ScopeItem>& clone_3zJ1(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
@@ -774,14 +797,14 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_5cFI
-                                #define DEFt_clone_5cFI
-inline s_Scope clone_5cFI(const s_Scope& a)
+                                #ifndef DEFt_clone_YBzp
+                                #define DEFt_clone_YBzp
+inline s_Scope clone_YBzp(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_O6LQ(a.items);
+        res.items = clone_3zJ1(a.items);
         res.overloads = clone_evat(a.overloads);
         res.extended = clone_DPDX(a.extended);
         res.imports = clone_I28a(a.imports);
@@ -801,7 +824,7 @@ inline s_SolverOutput clone_Pu6M(const s_SolverOutput& a)
 
     {
         res.root = clone_VD7r(a.root);
-        res.scope = clone_5cFI(a.scope);
+        res.scope = clone_YBzp(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;

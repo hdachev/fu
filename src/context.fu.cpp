@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <fu/default.h>
 #include <fu/io.h>
@@ -7,12 +8,15 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
+#include <fu/vec/split.h>
 #include <fu/view.h>
 
 struct s_Argument;
+struct s_BitSet;
 struct s_CodegenOutput;
 struct s_Context;
 struct s_Extended;
@@ -331,6 +335,20 @@ struct s_Overload
 };
                                 #endif
 
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu_VEC<uint8_t> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -340,6 +358,8 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     int flags;
+    s_BitSet risk_free;
+    s_Target written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -348,6 +368,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || risk_free
+            || written_via
         ;
     }
 };
@@ -857,9 +879,9 @@ inline const s_SolvedNode& clone_VD7r(const s_SolvedNode& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_O6LQ
-                                #define DEFt_clone_O6LQ
-inline const fu_VEC<s_ScopeItem>& clone_O6LQ(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_3zJ1
+                                #define DEFt_clone_3zJ1
+inline const fu_VEC<s_ScopeItem>& clone_3zJ1(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
@@ -889,14 +911,14 @@ inline const fu_VEC<s_Target>& clone_mnBR(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_zwKf
-                                #define DEFt_clone_zwKf
-inline s_Scope clone_zwKf(const s_Scope& a)
+                                #ifndef DEFt_clone_i0j8
+                                #define DEFt_clone_i0j8
+inline s_Scope clone_i0j8(const s_Scope& a)
 {
     s_Scope res {};
 
     {
-        res.items = clone_O6LQ(a.items);
+        res.items = clone_3zJ1(a.items);
         res.overloads = clone_evat(a.overloads);
         res.extended = clone_DPDX(a.extended);
         res.imports = clone_I28a(a.imports);
@@ -916,7 +938,7 @@ inline s_SolverOutput clone_v5Nc(const s_SolverOutput& a)
 
     {
         res.root = clone_VD7r(a.root);
-        res.scope = clone_zwKf(a.scope);
+        res.scope = clone_i0j8(a.scope);
         res.notes = clone_U3Pf(a.notes);
     };
     return res;
@@ -1005,6 +1027,52 @@ const fu_VEC<int>& lookupTypeImports(const s_Type& type_3, const s_Module& modul
 const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
 {
     return tryLookupStruct(type_3, module, ctx).converts;
+}
+
+extern const fu_STR DIM;
+
+extern const fu_STR RESET;
+
+extern const fu_STR BAD;
+
+fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extraLines, const s_Context& ctx)
+{
+    const fu_STR& src_2 = ctx.modules[to.modid].in.src;
+    fu_VEC<fu_STR> lines = fu::split(src_2, "\n"_fu);
+    const s_Token& start_1 = _token((from ? from : to), ctx);
+    const s_Token& end_1 = _token(to, ctx);
+    int l_start = ((start_1.line - extraLines) - 1);
+    int l_end = (end_1.line + extraLines);
+    l_start = std::max(l_start, 0);
+    l_end = std::min(l_end, lines.size());
+    fu_STR result {};
+    for (int i = l_start; i < l_end; i++)
+    {
+        if ((i < (start_1.line - 1)) || (i >= end_1.line))
+            result += (DIM + "      | "_fu);
+        else
+        {
+            fu_STR margin = ((i + 1) + " | "_fu);
+            while (margin.size() < 8)
+                margin = (" "_fu + margin);
+
+            result += margin;
+        };
+        fu_STR line_1 { lines[i] };
+        if (i == (end_1.line - 1))
+        {
+            const int c0 = std::max((end_1.col - 1), 0);
+            const int c1 = (c0 + std::min(end_1.value.size(), line_1.size()));
+            line_1.splice(c1, 0, RESET);
+            line_1.splice(c0, 0, BAD);
+        };
+        result += line_1;
+        if ((i < (start_1.line - 1)) || (i >= end_1.line))
+            result += RESET;
+
+        result += "\n"_fu;
+    };
+    return result;
 }
 
 #endif

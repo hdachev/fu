@@ -17,6 +17,11 @@ struct s_Lint
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEF_DEV_DisableBCK
+                                #define DEF_DEV_DisableBCK
+inline constexpr unsigned DEV_DisableBCK = (0x1u << 0u);
+                                #endif
+
 s_Lint Lint_lax()
 {
     return s_Lint { 10 };
