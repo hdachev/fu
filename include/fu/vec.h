@@ -1133,6 +1133,11 @@ struct fu_VEC
     {
         const T* ok = data() + idx;
 
+        #ifndef NDEBUG
+        assert((u32) idx < (u32) size());
+        return *ok;
+        #endif
+
         #if fu_RETAIL
         return *ok;
 
@@ -1149,6 +1154,11 @@ struct fu_VEC
         reserve();
 
         T* ok = (T*) data() + idx;
+
+        #ifndef NDEBUG
+        assert((u32) idx < (u32) size());
+        return *ok;
+        #endif
 
         #if fu_RETAIL
         return *ok;
