@@ -2062,6 +2062,27 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut _info: string[];
+
+            pure fn fail(mut reason: string = ""): never
+            {
+                // What's happening and where?
+                for (mut i = _info.len; i --> 0; )
+                {
+                    let info = _info[i];
+                    reason ~= info && i;
+                }
+
+                return throw(reason);
+            }
+
+            mut x = 0;
+            return x && fail();
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
