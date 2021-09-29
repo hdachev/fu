@@ -134,7 +134,7 @@ pub fn solve(
 
     //
 
-    fn fail(mut reason: string = ""): never
+    pure fn fail(mut reason: string = ""): never
     {
         let here = _here._token;
         if (!reason)
@@ -165,7 +165,7 @@ pub fn solve(
                     reason ~=   "\n                ";
 
                 let o = GET(h.target);
-                reason ~= o.kind.qKW ~ " " ~ o.name.qID;
+                reason ~= o.qWHAT;
             }
         }
 
@@ -175,6 +175,20 @@ pub fn solve(
         let snippet = formatCodeSnippet(_here);
 
         return throw(fname ~ " " ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason);
+    }
+
+    fn qWHAT(o: Overload)
+    {
+        return o.kind.qKW ~ " " ~ o.name.human.qID;
+    }
+
+    fn human(id: string)
+    {
+        let t = hacks::tryParseClosureID(:id, :MODID);
+        if (!t) return id;
+
+        let o = GET(t);
+        return GET(Target(:module.modid, o.local_of)).name ~ ":" ~ o.name;
     }
 
     fn makeNote(note: i32)
@@ -217,7 +231,7 @@ pub fn solve(
 
         o.local_of && fail(
             "Working with locals from other modules would "
-                ~ "prevent bucketing overloads within other overloads: " ~ o.kind ~ " " ~ o.name);
+                ~ "prevent bucketing overloads within other overloads: " ~ o.qWHAT);
 
         return o;
     }
@@ -1231,7 +1245,7 @@ pub fn solve(
             if (i) res ~= "` -> `";
 
             let o = GET(path[i]);
-            res ~= o.kind ~ " " ~ o.name;
+            res ~= o.qWHAT;
 
             if (i < path.len) res ~= ": " ~ serializeType(o.type);
         }
@@ -1302,7 +1316,7 @@ pub fn solve(
                     shadow let t = nullary ? t : candidate;
 
                     let convert = GET(t);
-                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert.kind ~ " " ~ convert.name ~ "`.");
+                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert.qWHAT ~ "`.");
 
                     let convertType = convert.kind == "field"
                         ? add_refs(from: from || fail(), to: convert.type)
@@ -1360,10 +1374,10 @@ pub fn solve(
                                             else    err ~= " `";
 
                                             shadow let convert = GET(path[i]);
-                                            err ~= convert.kind ~ " " ~ convert.name ~ ": " ~ serializeType(convertType) ~ "` ->";
+                                            err ~= convert.qWHAT ~ ": " ~ serializeType(convertType) ~ "` ->";
                                         }
 
-                                        err ~= "\n\t\t`" ~ convert.kind ~ " " ~ convert.name ~ "`.";
+                                        err ~= "\n\t\t`" ~ convert.qWHAT ~ "`.";
                                         fail(err);
                                     }
                                 }
@@ -2755,7 +2769,8 @@ pub fn solve(
 
                     // Validate `pure` asserts.
                     if (isPure && written_via)
-                        fail("Not pure: arg " ~ name.human.qID ~ " is written to via TODO EXPLAIN.");
+                        fail("Not pure: arg " ~ name.human.qID ~ " is written via "
+                            ~ written_via.qWHAT);
 
                     //
                     let arg = Argument(
@@ -2934,7 +2949,7 @@ pub fn solve(
             {
                 let o = GET(target);
                 o.kind != "fn" || fail(
-                    "did not set body on " ~ o.kind ~ " " ~ o.name ~ ": " ~ humanizeType(o.type));
+                    "did not set body on " ~ o.qWHAT ~ ": " ~ humanizeType(o.type));
             }
         }
 
@@ -3335,7 +3350,7 @@ pub fn solve(
             return o.solved.items[LET_INIT].type;
 
         o.kind == "lifetime" || fail(
-            "Lifetime_climbType: not a `var` nor `lifetime`: " ~ o.kind ~ " " ~ o.name);
+            "Lifetime_climbType: not a `var` nor `lifetime`: " ~ o.qWHAT);
 
         return o.type;
     }
@@ -4903,13 +4918,6 @@ pub fn solve(
         }
     }
 
-    fn human(id: string)
-    {
-        let    t = hacks::tryParseClosureID(:id, :MODID);
-        return t ? GET(Target(:module.modid, t.local_of)).name ~ ":" ~ t.name
-                 : id;
-    }
-
     fn addr(using token: TokenIdx)
     {
         let using t = token._token;
@@ -5087,8 +5095,8 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
-                let host_args = target.args || fail("CallerNode: no host args: " ~ target.kind ~ " " ~ target.name);
-                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.kind ~ " " ~ target.name);
+                let host_args = target.args || fail("CallerNode: no host args: " ~ target.qWHAT);
+                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
 
                 // BORROWCK ///////////////////
                 mut mutref_first    = -1;    //
@@ -5178,7 +5186,7 @@ pub fn solve(
                                 // BORROWCK Error message.
                                 if !(options.dev & options::DEV_DisableBCK)
                                 {
-                                    mut err = target.kind.qKW ~ " " ~ target.name.human.qID;
+                                    mut err = target.qWHAT;
 
                                     err ~= host_args.len == 2 && target.flags & F_OPERATOR
                                         ?   ": Both operands refer to:\n"
@@ -5191,7 +5199,7 @@ pub fn solve(
                                         let o = inter.uni0n[i];
 
                                         err ~=   "\n                ";
-                                        err ~= o.kind.qKW ~ " " ~ o.name.human.qID;
+                                        err ~= o.qWHAT;
                                     }
 
                                     fail(err);
