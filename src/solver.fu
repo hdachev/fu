@@ -134,7 +134,7 @@ pub fn solve(
 
     //
 
-    pure fn fail(mut reason: string = ""): never
+    fn fail(mut reason: string = ""): never
     {
         let here = _here._token;
         if (!reason)
@@ -218,7 +218,7 @@ pub fn solve(
         _Scope_import__forceCopy(modid, :private);
     }
 
-    using fn GET(target: Target)
+    using pure fn GET(target: Target)
     {
         if (target.modid < 0)
             return _scope.extended[-target.modid - 1].locals[target.index - 1];
@@ -2763,14 +2763,13 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = argNode.type.is_mutref
                         && (isNative
-                            ? target // Self: assume all mutref taking natives do actually write.
+                            ? ArgWrite(target, i) // Self: assume all mutref taking natives do actually write.
                             : out.events.args_written_via.unless_oob(argTarget.index));
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
                     if (isPure && written_via)
-                        fail("Not pure: arg " ~ name.human.qID ~ " is written via "
-                            ~ written_via.qWHAT);
+                        fail(target.qWHAT ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n" ~ written_via.qSTACK());
 
                     //
                     let arg = Argument(
@@ -4792,7 +4791,7 @@ pub fn solve(
         trackReadWrite(:regions, :node.nodeidx, :write, :not_read_from_but);
     }
 
-    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: Target, not_read_from_but?!: string)
+    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: Target, not_read_from_but?!: string, positions?!: i32[])
     {
         fn name(shadow target: i32)
         {
@@ -4881,7 +4880,7 @@ pub fn solve(
             if (flow.is_arg.has(target))
             {
                 events.args_written.set::add(target);
-                events.args_written_via.grow_if_oob(target) ||= write;
+                events.args_written_via.grow_if_oob(target) ||= ArgWrite(write, positions[i], :token);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -4948,6 +4947,20 @@ pub fn solve(
 
         let o = GET(node.target);
         return "\n\tAt call to " ~ o.name.qID;
+    }
+
+    fn qSTACK(written_via: ArgWrite)
+    {
+        if (!written_via.token)
+            return "";
+
+        let ret = "\n            via " ~ written_via.qWHAT ~ " at " ~ written_via.token.addr_and_snippet;
+
+        let host_arg = written_via.args[written_via.arg_position];
+        if (host_arg.written_via)
+            return ret ~ host_arg.written_via.qSTACK();
+
+        return ret;
     }
 
 
@@ -5054,6 +5067,7 @@ pub fn solve(
 
         // BORROWCK /////////////
         mut bck_writes: Region[];
+        mut bck_positions: i32[];
         /////////////////////////
 
         // HACK -
@@ -5253,7 +5267,7 @@ pub fn solve(
                         //  which can then return them for further modification -
                         //   without this, a write to `a|b` invalidates both `a` and `b`,
                         //    whilst a write to `c=a|b` allows further writes to `c`.
-                        if (host_arg.written_via)
+                        if (host_arg.written_via.target)
                         {
                             // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
                             //  We need to have a single lifetime to describe what we're writing to,
@@ -5274,7 +5288,8 @@ pub fn solve(
                             // We'll batch all writes together in a bit.
                             arg.is_mutref || fail("Written but not mutref?");
                             host_arg.is_mutref || fail("Not relaxed?");
-                            bck_writes.set::add(arg.lifetime.uni0n);
+                            bck_writes.set::add(arg.lifetime.uni0n,
+                                extras: bck_positions, extra: i0);
                         }
                         else
                         {
@@ -5348,7 +5363,10 @@ pub fn solve(
         //  but tracking args one by one would prevent args-at-risk.
         //
         if (bck_writes)
-            trackReadWrite(bck_writes, :callsite.nodeidx, write: target);
+        {
+            bck_positions.len == bck_writes.len || fail("bck_position.len is off");
+            trackReadWrite(bck_writes, :callsite.nodeidx, write: target, positions: bck_positions);
+        }
         /////////////////////////////////////////////////////////////////
 
         // Track deps.

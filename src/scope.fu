@@ -154,6 +154,13 @@ pub struct Partial
     target:     Target;
 };
 
+pub struct ArgWrite
+{
+    using target:   Target;
+    arg_position:   i32;
+    token?:         TokenIdx;
+};
+
 pub struct Argument
 {
     name?:          string;
@@ -165,7 +172,7 @@ pub struct Argument
 
     // subset_at_risk: bitset::BitSet;
     risk_free?:     bitset::BitSet;
-    written_via?:   Target;
+    written_via?:   ArgWrite;
 };
 
 pub struct Overload
@@ -224,7 +231,7 @@ pub struct Events
     // The arguments at risk aparata.
     args_written:       i32[];
     args_in_a_loop:     i32[];
-    args_written_via:   Target[];
+    args_written_via:   ArgWrite[];
 };
 
 pub struct Helpers

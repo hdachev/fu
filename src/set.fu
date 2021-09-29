@@ -117,6 +117,37 @@ pub fn add(ref a: $T[], b: $T[])
         a ~= b[y, b.len];
 }
 
+pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
+{
+    mut x = 0;
+    mut y = 0;
+    while (x < a.len && y < b.len) {
+        let X = a[x];
+        let Y = b[y];
+
+        if (X >= Y) {
+            if (X != Y) {
+                a.insert(x, Y); // TODO FIX
+                extras.insert(x, extra);
+                y++;
+            }
+            else {
+                y++;
+            }
+        }
+
+        x++;
+    }
+
+    if (y < b.len)
+    {
+        a ~= b[y, b.len];
+
+        while (y++ < b.len)
+            extras ~= extra;
+    }
+}
+
 pub fn keep(ref a: $T[], b: $T[])
 {
     mut x = 0;
