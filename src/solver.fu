@@ -2316,6 +2316,12 @@ pub fn solve(
         let original = overloadIdx || into || fail();
         mut template = original.template;
 
+        ////////////////////
+        mut here0   = _here; // TODO BORROWCK danglefix
+        defer _here = here0;
+        _here       = original.template.node.token;
+        ////////////////////
+
         mut parent_idx = original.local_of;
         {
             // If we're taking a closure as an argument,

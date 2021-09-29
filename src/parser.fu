@@ -488,7 +488,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseStatement(): Node
     {
         ///////////////////////////////////////////////
-        mut loc0  = _loc; /*bck fix*/
+        mut loc0 = _loc; /*bck fix*/
+        defer _loc = loc0;
         let token = tokens[_loc = _idx++] || fail();
         ///////////////////////////////////////////////
 
@@ -560,7 +561,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         ////////////
         _idx--;
-        _loc = loc0;
         ////////////
 
         // No expression statements outside of fns for now.
