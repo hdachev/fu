@@ -1818,10 +1818,46 @@ pub fn solve(
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
-        ///////////////////////////////////////////////////////////////
-        // finalizeReturns (helpers_idx: i32, bodyType: Type)
+        // Previously in solveJump, the move-vs-copy decision:
         ref h = _helpers[helpers_idx];
 
+        for (mut i = 0; i < h.returns.len; i++)
+        {
+            shadow ref expr = h.returns[i].MUT.items.only;
+
+            if (expr.is_ref)
+            {
+                mut original            = expr.type.lifetime; // TODO BORROWCK danglefix
+                expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:h.locals_start);
+
+                let ltCompare = expr.type.lifetime.Lifetime_vs(:h.locals_start || fail());
+                if (ltCompare >= 0)
+                {
+                    if (ltCompare > 0)
+                    {
+                        expr = createMove(expr, :original);
+                    }
+                    else
+                    {
+                        // Might survive, so we cant move,
+                        //  might not survive, so we can't return reference,
+                        //   so we have to copy.
+                        //
+                        // We'll try to prevent this from happening by hinting control flow
+                        //  primitives such as and/or/ifs to copy preemptively
+                        //   but this can happen after lt replace on callsite,
+                        //    when return might point to a temporary argument.
+                        //
+                        expr = createCopy(expr);
+                    }
+                }
+            }
+
+            reportReturnType(:helpers_idx, expr.type);
+        }
+
+        ///////////////////////////////////////////////////////////////
+        // finalizeReturns (helpers_idx: i32, bodyType: Type)
         if (items.if_last.type.is_never)
         {
             if (!h.ret_actual)
@@ -3478,43 +3514,16 @@ pub fn solve(
 
         if (expr.type.is_ref)
         {
-            mut original            = expr.type.lifetime; // TODO BORROWCK danglefix
+            // We do the lifetime compare & copy-vs-move stuff on block-exit now,
+            //  so that bck can promote refs to muts (which shortens lts) up the last second.
 
-            expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:h.locals_start);
-            let ltCompare           = expr.type.lifetime.Lifetime_vs    (:h.locals_start || fail());
-
-            if (ltCompare >= 0)
-            {
-                if (ltCompare > 0)
-                {
-                    expr = createMove(expr, :original);
-                }
-                else
-                {
-                    // Might survive, so we cant move,
-                    //  might not survive, so we can't return reference,
-                    //   so we have to copy.
-                    //
-                    // We'll try to prevent this from happening by hinting control flow
-                    //  primitives such as and/or/ifs to copy preemptively
-                    //   but this can happen after lt replace on callsite,
-                    //    when return might point to a temporary argument.
-                    //
-                    expr = createCopy(expr);
-                }
-            }
-            else
-            {
-                // This is not a real read/write -
-                //  but the thing is the ref will be used LATER, in the caller,
-                //   so we need to check it will be still valid there.
-                //
-                trackReadWrite(original.uni0n, :expr.nodeidx,
-                    not_read_from_but: "return");
-            }
+            // This is not a real read/write -
+            //  but the thing is the ref will be used LATER, in the caller,
+            //   so we need to check it will be still valid there.
+            //
+            trackReadWrite(expr.type.lifetime.uni0n, :expr.nodeidx,
+                not_read_from_but: "return");
         }
-
-        reportReturnType(:helpers_idx, expr.type);
 
         //
         let jump = createJump(:target, expr);
