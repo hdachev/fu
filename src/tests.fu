@@ -2062,7 +2062,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main() {
             mut _info: string[];
 
@@ -2497,7 +2497,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn main()
         {
             mut target = 0;
@@ -2865,7 +2865,7 @@ pub fn runTests()
         fn main() lex("    hello").len - 5;
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void
         {
             // Fuzzing module splits.
@@ -5985,7 +5985,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn ascii_lower(a: string): string
         {
             let offset = 'a'.i32 - 'A'.i32;

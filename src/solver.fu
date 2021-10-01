@@ -218,7 +218,7 @@ pub fn solve(
         _Scope_import__forceCopy(modid, :private);
     }
 
-    using pure fn GET(target: Target)
+    using fn GET(target: Target)
     {
         if (target.modid < 0)
             return _scope.extended[-target.modid - 1].locals[target.index - 1];
