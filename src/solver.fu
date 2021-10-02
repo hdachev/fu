@@ -40,8 +40,6 @@ let USE_ref_to_mutref       = true;
 
 let SELF_TEST               = true;
 
-let CANNOT_definit_mutrefs  = true;
-
 
 //
 

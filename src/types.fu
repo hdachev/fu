@@ -182,18 +182,20 @@ pub let t_u64       = Type(ValueType(modid: 0, canon: "u64", quals: UnsignedInt)
 pub let t_f32       = Type(ValueType(modid: 0, canon: "f32", quals: FloatingPt));
 pub let t_f64       = Type(ValueType(modid: 0, canon: "f64", quals: FloatingPt));
 
-pub let t_void      = Type(ValueType(modid: 0, canon: "void",  quals: 0));
-pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",  quals: Primitive));
-pub let t_never     = Type(ValueType(modid: 0, canon: "never", quals: 0));
+pub let t_void      = Type(ValueType(modid: 0, canon: "void",   quals: 0));
+pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",   quals: Primitive));
+pub let t_never     = Type(ValueType(modid: 0, canon: "never",  quals: 0));
+pub let t_zeroes    = Type(ValueType(modid: 0, canon: "zeroes", quals: 0));
 
 pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",     quals: Primitive));
 
 
 //
 
-pub fn is_never(t: Type) t.vtype == t_never.vtype;
-pub fn is_void (t: Type) t.vtype == t_void .vtype;
-pub fn is_bool (t: Type) t.vtype == t_bool .vtype;
+pub fn is_void  (t: Type) t.vtype == t_void  .vtype;
+pub fn is_bool  (t: Type) t.vtype == t_bool  .vtype;
+pub fn is_never (t: Type) t.vtype == t_never .vtype;
+pub fn is_zeroes(t: Type) t.vtype == t_zeroes.vtype;
 
 
 //
@@ -234,21 +236,21 @@ fn areQualsAssignable(host: i32, guest: i32): bool
 
 //
 
-pub fn isAssignable(host: Type, guest: Type): bool
+pub let CANNOT_definit_mutrefs = true;
+
+pub fn isAssignable(host: Type, guest: Type, extra?!: i32): bool
 {
     return host.modid == guest.modid
         && isCanonAssignable(host: host.canon, guest.canon)
-        && areQualsAssignable(host: host.quals, guest.quals)
-        || guest.is_never;
+        && areQualsAssignable(host: host.quals, guest.quals | extra)
+        || guest.is_never
+        || guest.is_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
 }
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
     // This has to go, it doesn't make amazing sense.
-    return isAssignable(host,
-        guest.quals & q_ref || !(host.quals & q_ref)
-            ? guest
-            : add_ref(guest, Lifetime_temporary));
+    return isAssignable(:host, :guest, extra: q_ref);
 }
 
 
@@ -539,9 +541,11 @@ pub fn type_has(type: Type, tag: string)
 pub fn type_trySuper(a: Type, b: Type)
 {
     if (a.canon != b.canon || a.modid != b.modid)
-        return a.is_never ? b
-             : b.is_never ? a
-             : Type();
+        return a.is_never  ? b
+             : b.is_never  ? a
+             : a.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
+             : b.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
+             : Type;
 
     let quals = a.quals & b.quals;
 
@@ -553,10 +557,10 @@ pub fn type_trySuper(a: Type, b: Type)
 
 pub fn type_tryIntersect(a: Type, b: Type)
 {
+    // Can't intersect with never or any -
+    //  you can't use a value as `never` or `any`.
     if (a.canon != b.canon || a.modid != b.modid)
-        return a.is_never || b.is_never
-             ? t_never
-             : Type;
+        return Type;
 
     let quals = a.quals | b.quals;
 
