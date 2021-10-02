@@ -1805,7 +1805,7 @@ pub fn solve(
 
         for (mut i = 0; i < h.returns.len; i++)
         {
-            shadow ref expr = h.returns[i].MUT.items.only;
+            shadow mut expr = h.returns[i].items.only;
 
             if (expr.is_ref)
             {
@@ -1833,6 +1833,8 @@ pub fn solve(
                         expr = createCopy(expr);
                     }
                 }
+
+                h.returns[i].MUT.items.only = expr;
             }
 
             reportReturnType(:helpers_idx, expr.type);
