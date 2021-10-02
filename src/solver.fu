@@ -41,11 +41,6 @@ let USE_ref_to_mutref       = true;
 let SELF_TEST               = true;
 
 
-//
-
-let M_WILL_RETYPE: u16      = 1.u16 << 0;
-
-
 
 ///////////////////////////////////////
 ///////////////////////////////////////
@@ -619,29 +614,18 @@ pub fn solve(
         return SolvedNode(kind: "definit", :type);
     }
 
-    fn trySolveDefinit(type: Type, mode?: u16): Type
+    fn trySolveDefinit(type: Type): Type
     {
         if (!type)
-        {
-            // This could return void at all times, but it makes for crappier errors,
-            //  so this is not a correctness thing, it's a usability thing.
-            if (mode & M_WILL_RETYPE)
-                return t_void;
+            return t_zeroes;
 
-            return fail(
-                "Cannot solve definit, no inferred type.");
-        }
-
-        if (CANNOT_definit_mutrefs && type.is_mutref)
-            return clear_mutref(type);
-
-        return type;
+        return type_trySuper(t_zeroes, type);
     }
 
-    fn solveDefinit(type: Type, mode: u16): SolvedNode
+    fn solveDefinit(type: Type): SolvedNode
     {
         return createDefinit(
-            trySolveDefinit(:type, :mode) || fail(
+            trySolveDefinit(:type) || fail(
                 "Cannot definit type: " ~ serializeType(type)));
     }
 
@@ -1562,7 +1546,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32, mode?: u16): SolvedNode
+    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32): SolvedNode
     {
         HERE(node);
 
@@ -1590,7 +1574,7 @@ pub fn solve(
         if (k == "str")         return solveStr(node);
         if (k == "char")        return solveChar(node);
 
-        if (k == "definit")     return solveDefinit(type, mode);
+        if (k == "definit")     return solveDefinit(type);
 
         if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
@@ -4414,7 +4398,7 @@ pub fn solve(
     fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
     {
         // Dead code elim.
-        mut args = solveNodes(node.items, deadcode_on_never: true, mode: M_WILL_RETYPE);
+        mut args = solveNodes(node.items, deadcode_on_never: true);
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadCall);
@@ -4456,7 +4440,7 @@ pub fn solve(
                 target: lookupStruct(type).target);
 
         // Dead code elim.
-        mut args = solveNodes(node.items, itemType, deadcode_on_never: true/*, mode: M_WILL_RETYPE*/);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
+        mut args = solveNodes(node.items, itemType, deadcode_on_never: true);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadArrlit);
@@ -5414,11 +5398,28 @@ pub fn solve(
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
         isArgument = false): void
     {
-        if (SELF_TEST)
-            slot.canon == node.canon || node.is_never || fail(
-                "Considering copy or move for incompatible types: "
-                    ~ humanizeType(slot) ~ " <- "
-                    ~ humanizeType(node));
+        if (slot.canon != node.canon && !node.is_never)
+        {
+            // TODO EASY instead of this replace the node with a createDefinit,
+            //  not doing it now because we need to make sure to keep all the side effects (if any) -
+            //   perhaps definits can carry an arg for effects?
+            //    Or just return a block with a definit after the expr?
+            //     But best to only do this if there are actual side effects, so there's that.
+            //      Perhaps createBlock should shake off all effect-free code.
+            //
+            // Just get a two arg createDefinit that ignores the expr if its a definit already,
+            //  else returns a block with the two things for starters.
+            //
+            if (node.kind == "definit" && !slot.is_mutref)
+            {
+                node.MUT.type = slot;
+                return;
+            }
+
+            fail("Considering copy or move for incompatible types: "
+                ~ humanizeType(slot) ~ " <- "
+                ~ humanizeType(node));
+        }
 
         // Clear mutrefs unless needed.
         propagateType(:node, :slot);
@@ -5502,8 +5503,7 @@ pub fn solve(
         deadcode_on_never?!: bool,
         as_blocks?!: bool,
         track_reads?!: i32,
-        kills?!: i32,
-        mode?: u16): SolvedNode[]
+        kills?!: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -5531,7 +5531,7 @@ pub fn solve(
                 let solved = as_blocks
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type,
-                        kills: i == nodes.len - 1 && kills, :mode);
+                        kills: i == nodes.len - 1 && kills);
 
                 if (i < track_reads)
                     trackReadWrite(solved);
