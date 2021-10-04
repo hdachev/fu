@@ -4757,160 +4757,6 @@ pub fn solve(
 
     //
 
-    fn trackLocalRef(left: Target, right: Lifetime)
-    {
-        return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
-    }
-
-    fn bck_name(shadow target: i32)
-    {
-        let o = GET(nested(target));
-
-        // a|b|c instead of the useless [mutref union] thing.
-        if (o.kind == "lifetime")
-        {
-            mut str = o.name ~ "(";
-            for (mut i = 0; i < o.type.lifetime.uni0n.len; i++)
-            {
-                if (i)
-                    str ~= "|";
-
-                let t = Region_asIndex(o.type.lifetime.uni0n[i]);
-                let n = t.bck_name;
-                str  ~= n;
-            }
-
-            return str ~ ")";
-        }
-
-        return GET(nested(target)).name.human;
-    }
-
-    fn bck_trackRead(node: SolvedNode)
-    {
-        if (!node.type.is_ref || !_current_fn.target.index)
-            return;
-
-        let regions = node.type.lifetime.uni0n;
-        bck_trackRead(:regions, :node.nodeidx);
-    }
-
-    fn bck_trackRead(regions: Region[], nodeidx!: i32)
-    {
-        let token       = _here;
-        ref flow        = _current_fn.flow;
-        ref events      = _current_fn.events;
-        let loop_start  = _current_fn.loop_start;
-
-        // Writes invalidate subsequent reads.
-        for (mut i = 0; i < regions.len; i++)
-        {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
-
-            if (events.invalidated_by.len > target)
-            {
-                let u = events.invalidated_by[target];
-                if (u.target && !(options.dev & options::DEV_DisableBCK))
-                    fail("BORROWCK: Cannot access"
-                        ~ " " ~ target.bck_name.qBAD ~ ", reference invalidated by write to"
-                        ~ " " ~ u.target.bck_name.qBAD ~ " at "
-                        ~ u.token.addr_and_snippet
-                        ~ RWEvent_stack(u.nodeidx, u.target));
-            }
-
-            // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written && flow.is_arg.has(target))
-                flow.args_at_risk.grow_if_oob(target)
-                    .set::add(events.args_written);
-            /////////////////////////////////////////////
-        }
-
-        // Track reads in a loop.
-        if (loop_start) for (mut i = 0; i < regions.len; i++)
-        {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
-
-            // Track uses.
-            if (target < loop_start)
-            {
-                ref u = events.used_in_a_loop.grow_if_oob(target);
-                if (!u.target)
-                    u = RWEvent(target: loop_start, :token, :nodeidx);
-            }
-
-            // ARGUMENTS AT RISK ////////////////////////
-            if (flow.is_arg.has(target))
-            {
-                // And this clearly sucks
-                //  because we can't clean up after ourselves,
-                //   perhaps we don't want this but should use used_in_a_loop instead?
-                events.args_in_a_loop.set::add(target);
-            }
-            /////////////////////////////////////////////
-        }
-    }
-
-
-    //
-
-    fn bck_trackWrites(regions: Region[], nodeidx!: i32, write!: Target, positions!: i32[])
-    {
-        let token       = _here;
-        ref flow        = _current_fn.flow;
-        ref events      = _current_fn.events;
-        let loop_start  = _current_fn.loop_start;
-
-        //
-        for (mut i = 0; i < regions.len; i++)
-        {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
-
-            let invalidates = flow.invalidates.unless_oob(target);
-
-            // Writes in a loop invalidate preceding reads.
-            for (shadow mut i = 0; i < invalidates.len; i++)
-            {
-                let other = invalidates[i];
-                let u = events.used_in_a_loop.unless_oob(other);
-                if (u.target && !(options.dev & options::DEV_DisableBCK))
-                    fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
-                        ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
-                        ~ u.token.addr_and_snippet
-                        ~ " on next loop iteration."); // TODO loop starts at x:x!
-            }
-
-            // Track writes, easy.
-            for (shadow mut i = 0; i < invalidates.len; i++)
-            {
-                ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
-                if (!u.target)
-                    u = RWEvent(:target, :token, :nodeidx);
-            }
-
-            // ARGUMENTS AT RISK ////////////////////////
-            if (flow.is_arg.has(target))
-            {
-                events.args_written.set::add(target);
-                events.args_written_via.grow_if_oob(target) ||= ArgWrite(write, positions[i], :token);
-
-                if (loop_start)
-                    for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
-                        flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
-                            .set::add(target);
-            }
-            /////////////////////////////////////////////
-        }
-    }
-
-
-    //
-
     fn addr(using token: TokenIdx)
     {
         let using t = token._token;
@@ -5612,7 +5458,164 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
-    fn borrowCheck(node: SolvedNodeData)
+    fn trackLocalRef(left: Target, right: Lifetime)
+    {
+        return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
+    }
+
+    fn bck_name(shadow target: i32)
+    {
+        let o = GET(nested(target));
+
+        // a|b|c instead of the useless [mutref union] thing.
+        if (o.kind == "lifetime")
+        {
+            mut str = o.name ~ "(";
+            for (mut i = 0; i < o.type.lifetime.uni0n.len; i++)
+            {
+                if (i)
+                    str ~= "|";
+
+                let t = Region_asIndex(o.type.lifetime.uni0n[i]);
+                let n = t.bck_name;
+                str  ~= n;
+            }
+
+            return str ~ ")";
+        }
+
+        return GET(nested(target)).name.human;
+    }
+
+
+    // Reads.
+
+    fn bck_trackRead(node: SolvedNode)
+    {
+        if (!node.type.is_ref || !_current_fn.target.index)
+            return;
+
+        let regions = node.type.lifetime.uni0n;
+        bck_trackRead(:regions, :node.nodeidx);
+    }
+
+    fn bck_trackRead(regions: Region[], nodeidx!: i32)
+    {
+        let token       = _here;
+        ref flow        = _current_fn.flow;
+        ref events      = _current_fn.events;
+        let loop_start  = _current_fn.loop_start;
+
+        // Writes invalidate subsequent reads.
+        for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            if (events.invalidated_by.len > target)
+            {
+                let u = events.invalidated_by[target];
+                if (u.target && !(options.dev & options::DEV_DisableBCK))
+                    fail("BORROWCK: Cannot access"
+                        ~ " " ~ target.bck_name.qBAD ~ ", reference invalidated by write to"
+                        ~ " " ~ u.target.bck_name.qBAD ~ " at "
+                        ~ u.token.addr_and_snippet
+                        ~ RWEvent_stack(u.nodeidx, u.target));
+            }
+
+            // ARGUMENTS AT RISK ////////////////////////
+            if (events.args_written && flow.is_arg.has(target))
+                flow.args_at_risk.grow_if_oob(target)
+                    .set::add(events.args_written);
+            /////////////////////////////////////////////
+        }
+
+        // Track reads in a loop.
+        if (loop_start) for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            // Track uses.
+            if (target < loop_start)
+            {
+                ref u = events.used_in_a_loop.grow_if_oob(target);
+                if (!u.target)
+                    u = RWEvent(target: loop_start, :token, :nodeidx);
+            }
+
+            // ARGUMENTS AT RISK ////////////////////////
+            if (flow.is_arg.has(target))
+            {
+                // And this clearly sucks
+                //  because we can't clean up after ourselves,
+                //   perhaps we don't want this but should use used_in_a_loop instead?
+                events.args_in_a_loop.set::add(target);
+            }
+            /////////////////////////////////////////////
+        }
+    }
+
+
+    // Writes.
+
+    fn bck_trackWrites(regions: Region[], nodeidx!: i32, write!: Target, positions!: i32[])
+    {
+        let token       = _here;
+        ref flow        = _current_fn.flow;
+        ref events      = _current_fn.events;
+        let loop_start  = _current_fn.loop_start;
+
+        //
+        for (mut i = 0; i < regions.len; i++)
+        {
+            let target = Region_asIndex(regions[i]);
+            if (!target)
+                continue;
+
+            let invalidates = flow.invalidates.unless_oob(target);
+
+            // Writes in a loop invalidate preceding reads.
+            for (shadow mut i = 0; i < invalidates.len; i++)
+            {
+                let other = invalidates[i];
+                let u = events.used_in_a_loop.unless_oob(other);
+                if (u.target && !(options.dev & options::DEV_DisableBCK))
+                    fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
+                        ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
+                        ~ u.token.addr_and_snippet
+                        ~ " on next loop iteration."); // TODO loop starts at x:x!
+            }
+
+            // Track writes, easy.
+            for (shadow mut i = 0; i < invalidates.len; i++)
+            {
+                ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
+                if (!u.target)
+                    u = RWEvent(:target, :token, :nodeidx);
+            }
+
+            // ARGUMENTS AT RISK ////////////////////////
+            if (flow.is_arg.has(target))
+            {
+                events.args_written.set::add(target);
+                events.args_written_via.grow_if_oob(target) ||= ArgWrite(write, positions[i], :token);
+
+                if (loop_start)
+                    for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
+                        flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
+                            .set::add(target);
+            }
+            /////////////////////////////////////////////
+        }
+    }
+
+
+    // Router.
+
+    fn bck_borrowCheck(node: SolvedNodeData)
     {
         let k = node.kind;
 
