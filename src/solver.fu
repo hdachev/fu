@@ -5617,7 +5617,54 @@ pub fn solve(
         return result;
     }
 
-    // SOLVE END
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //
+    // Borrow checker, runs. after relaxer, but before AAR (ideally) -
+    //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
+
+    fn borrowCheck(node: SolvedNodeData)
+    {
+        let k = node.kind;
+
+        if (k == "call")
+        {
+            // The bulk of it.
+        }
+        else if (k == "loop")
+        {
+            // The extra stuff we need to check backward jumps.
+        }
+        // else if (k == "if")
+        // {
+        //     // Isolate each branch from the other -
+        //     //  but combine the effects of both on exit.
+        //     //
+        //     // I don't think there's anything we can do for ands and ors,
+        //     //  until we get a notion of guarantees -
+        //     //   in which case we lose them all after first expr.
+        // }
+        // else if (k == "branch")
+        // {
+        //     // If broken-from, keep track of original effects
+        //     //  so we can append stuff from inner no-return branches that break here.
+        //     //
+        //     // If no-return, keep track of original effects so we can restore,
+        //     //  and add to the broken-from branch's after-effects.
+        // }
+        else
+        {
+            // Visit all children in sequence.
+        }
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
 
     // Import prelude / inject builtins.
     if (module.modid)
