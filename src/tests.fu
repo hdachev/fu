@@ -1936,7 +1936,7 @@ pub fn runTests()
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn what(ref cond: i32, ref cons: i32)
             cond && (cons += 1);
 
@@ -2385,7 +2385,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
@@ -2394,7 +2394,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
 
         fn main()
@@ -2405,7 +2405,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
         fn GET_mut(ref x: i32) x || GET_mut(target += 1);
 
@@ -2416,7 +2416,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
@@ -2461,7 +2461,7 @@ pub fn runTests()
         fn main() { mut v = 0; return A(v) - 1; }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             fn each(cond, cons) cond && cons();

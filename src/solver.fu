@@ -3496,19 +3496,6 @@ pub fn solve(
             return createJump(:target);
         }
 
-        if (expr.type.is_ref)
-        {
-            // We do the lifetime compare & copy-vs-move stuff on block-exit now,
-            //  so that bck can promote refs to muts (which shortens lts) up the last second.
-
-            // This is not a real read/write -
-            //  but the thing is the ref will be used LATER, in the caller,
-            //   so we need to check it will be still valid there.
-            //
-            trackReadWrite(expr.type.lifetime.uni0n, :expr.nodeidx,
-                not_read_from_but: "return");
-        }
-
         //
         let jump = createJump(:target, expr);
         h.returns ~= jump;
@@ -3676,14 +3663,14 @@ pub fn solve(
         defer _current_fn.loop_start        = loop_start0;
         ////////////////////////////////////////////////////////////////////////
 
-        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    trackReadWrite(pre_cond); // call:#test
+        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
         let body        = n_body      && solveBlock(n_body, type: t_void);
 
         ////////////////////////////////////////////////////////////////////////
         _current_fn.events.used_in_a_loop   = events0;
         ////////////////////////////////////////////////////////////////////////
 
-        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    trackReadWrite(post_cond); // call:#test
+        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
         let post        = n_post      && solveNode(n_post,      t_void);
 
         // Control flow.
@@ -4597,8 +4584,6 @@ pub fn solve(
     {
         mut cond    = solveNode(node.items[0], t_bool);
 
-        trackReadWrite(cond); // call:#test
-
         // Dead code elim.
         if (cond.type.is_never)
         {
@@ -4639,8 +4624,7 @@ pub fn solve(
         mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks: true,
             type_last: type,
             use_type_last: true,
-            type_all: type.is_void ? t_bool : type,
-            track_reads: node.items.len - 1);
+            type_all: type.is_void ? t_bool : type);
 
         if (items.len < 2)
             return items.only;
@@ -4703,8 +4687,7 @@ pub fn solve(
         let items = solveNodes(node.items, deadcode_on_never: true,
             type_last: type,
             use_type_last: true,
-            type_all: type.is_void ? t_bool : type,
-            track_reads: node.items.len - 1);
+            type_all: type.is_void ? t_bool : type);
 
         if (items.len < 2)
             return items.only;
@@ -4776,21 +4759,19 @@ pub fn solve(
 
     fn trackLocalRef(left: Target, right: Lifetime)
     {
-        trackReadWrite(right.uni0n, not_read_from_but: "bind to");
-
         return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
     }
 
-    fn trackReadWrite(node: SolvedNode, write?!: Target, not_read_from_but?!: string)
+    fn trackReadWrite(node: SolvedNode, write?!: Target)
     {
         if (!node.type.is_ref || !_current_fn.target.index)
             return;
 
         let regions = node.type.lifetime.uni0n;
-        trackReadWrite(:regions, :node.nodeidx, :write, :not_read_from_but);
+        trackReadWrite(:regions, :node.nodeidx, :write);
     }
 
-    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: Target, not_read_from_but?!: string, positions?!: i32[])
+    fn trackReadWrite(regions: Region[], nodeidx?!: i32, write?!: Target, positions?!: i32[])
     {
         fn name(shadow target: i32)
         {
@@ -4831,7 +4812,7 @@ pub fn solve(
             {
                 let u = events.invalidated_by[target];
                 if (u.target && !(options.dev & options::DEV_DisableBCK))
-                    fail("BORROWCK: Cannot " ~ (write ? "write to" : not_read_from_but || "read from")
+                    fail("BORROWCK: Cannot " ~ (write ? "write to" : "read from")
                         ~ " " ~ target.name.qBAD ~ ", reference invalidated by write to"
                         ~ " " ~ u.target.name.qBAD ~ " at "
                         ~ u.token.addr_and_snippet
@@ -5100,6 +5081,8 @@ pub fn solve(
 
                 type = GET(target).type || fail("CallerNode: !type on var " ~ target.name);
             }
+
+            trackReadWrite(type.lifetime.uni0n);
         }
 
         // Funcs & co.
@@ -5290,10 +5273,6 @@ pub fn solve(
                             bck_writes.set::add(arg.lifetime.uni0n,
                                 extras: bck_positions, extra: i0);
                         }
-                        else
-                        {
-                            trackReadWrite(args[i0]);
-                        }
                     }
                 }
 
@@ -5471,8 +5450,6 @@ pub fn solve(
 
     fn createCopy(node: SolvedNode): SolvedNode
     {
-        trackReadWrite(node); // call:#copy
-
         return SolvedNode(
             kind:   "copy",
             items:  [ node ],
@@ -5481,8 +5458,6 @@ pub fn solve(
 
     fn createMove(node: SolvedNode, original: Lifetime): SolvedNode
     {
-        trackReadWrite(node); // call:#move
-
         // C++ codegen uses the F_MOVED_FROM flag
         //  to remove `const` annotations on locals & refs to locals.
         //
@@ -5504,7 +5479,6 @@ pub fn solve(
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
         as_blocks?!: bool,
-        track_reads?!: i32,
         kills?!: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
@@ -5534,9 +5508,6 @@ pub fn solve(
                     ? solveBlock(:node, :type)
                     : solveNode(:node, :deadcode_on_never, :type,
                         kills: i == nodes.len - 1 && kills);
-
-                if (i < track_reads)
-                    trackReadWrite(solved);
 
                 //
                 result ~= solved;
