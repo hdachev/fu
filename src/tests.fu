@@ -2472,7 +2472,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
@@ -2497,7 +2497,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main()
         {
             mut target = 0;
