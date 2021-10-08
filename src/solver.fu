@@ -5651,6 +5651,11 @@ pub fn solve(
         //
         if (events.invalidated_by.unless_oob(index))
             events.invalidated_by[index] = RWEvent;
+
+        // The GET_next_local_index() thing doesn't work with LATE_BCK,
+        //  but this kinda fixes it.
+        if (_current_fn.loop_start > index)
+            _current_fn.loop_start = index;
     }
 
 
@@ -5854,7 +5859,7 @@ pub fn solve(
 
         // BORROWCK ////////////////////////////////////////////////////////////
         mut loop_start0                     = _current_fn.loop_start;
-        let loop_start                      = GET_next_local_index();
+        let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
         mut events0                         = _current_fn.events.used_in_a_loop;
 
         _current_fn.loop_start              = loop_start;
