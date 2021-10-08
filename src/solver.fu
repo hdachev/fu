@@ -296,7 +296,7 @@ pub fn solve(
     {
         let data    = SolvedNodeData(
             :kind, :flags, :value,
-            :items, :type, :target);
+            :items, :type, :target, token: _here);
 
         let nodeown = _current_fn_or_type;
 
@@ -5232,7 +5232,7 @@ pub fn solve(
         else if (bck_writes)
         {
             bck_positions.len == bck_writes.len || fail("bck_position.len is off");
-            bck_trackWrites(bck_writes, :callsite.nodeidx, write: target, positions: bck_positions);
+            bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
         }
         else if (target.kind == "var")
         {
@@ -5521,18 +5521,14 @@ pub fn solve(
 
     // Reads.
 
-    fn bck_trackRead(node: SolvedNode)
+    fn bck_trackRead(callsite: SolvedNode)
     {
-        if (!node.type.is_ref || !_current_fn.target.index)
+        if (!callsite.type.is_ref || !_current_fn.target.index)
             return;
 
-        let regions = node.type.lifetime.uni0n;
-        bck_trackRead(:regions, :node.nodeidx);
-    }
+        _here           = callsite.token;
 
-    fn bck_trackRead(regions: Region[], nodeidx!: i32)
-    {
-        let token       = _here;
+        let regions     = callsite.type.lifetime.uni0n;
         ref flow        = _current_fn.flow;
         ref events      = _current_fn.events;
         let loop_start  = _current_fn.loop_start;
@@ -5549,7 +5545,7 @@ pub fn solve(
                 let u = events.invalidated_by[target];
                 if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Cannot access"
-                        ~ " " ~ target.bck_name.qBAD ~ ", reference invalidated by write to"
+                        ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
                         ~ " " ~ u.target.bck_name.qBAD ~ " at "
                         ~ u.token.addr_and_snippet
                         ~ RWEvent_stack(u.nodeidx, u.target));
@@ -5574,7 +5570,7 @@ pub fn solve(
             {
                 ref u = events.used_in_a_loop.grow_if_oob(target);
                 if (!u.target)
-                    u = RWEvent(target: loop_start, :token, :nodeidx);
+                    u = RWEvent(target: loop_start, :callsite.token, :callsite.nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -5592,9 +5588,10 @@ pub fn solve(
 
     // Writes.
 
-    fn bck_trackWrites(regions: Region[], nodeidx!: i32, write!: Target, positions!: i32[])
+    fn bck_trackWrites(callsite: SolvedNode, regions: Region[], positions!: i32[])
     {
-        let token       = _here;
+        _here           = callsite.token;
+
         ref flow        = _current_fn.flow;
         ref events      = _current_fn.events;
         let loop_start  = _current_fn.loop_start;
@@ -5625,14 +5622,14 @@ pub fn solve(
             {
                 ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
                 if (!u.target)
-                    u = RWEvent(:target, :token, :nodeidx);
+                    u = RWEvent(:target, :callsite.token, :callsite.nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
             if (flow.is_arg.has(target))
             {
                 events.args_written.set::add(target);
-                events.args_written_via.grow_if_oob(target) ||= ArgWrite(write, positions[i], :token);
+                events.args_written_via.grow_if_oob(target) ||= ArgWrite(callsite.target, positions[i], :callsite.token);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -5834,7 +5831,7 @@ pub fn solve(
             if (bck_writes)
             {
                 bck_positions.len == bck_writes.len || fail("bck_position.len is off");
-                bck_trackWrites(bck_writes, :callsite.nodeidx, write: target, positions: bck_positions);
+                bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
             }
             /////////////////////////////////////////////////////////////////
         }
