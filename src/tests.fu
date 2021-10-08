@@ -1946,7 +1946,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         struct Target {
             overload: i32[];
             extended: i32[];

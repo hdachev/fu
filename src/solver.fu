@@ -37,7 +37,7 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
-let USE_late_bck            = false;
+let USE_late_bck            = true;
 
 let SELF_TEST               = true;
 
@@ -5643,6 +5643,34 @@ pub fn solve(
         }
     }
 
+    fn bck_trackInit(target: Target)
+    {
+        let index   = target.index;
+        ref events  = _current_fn.events;
+
+        // Clear invalidation event -
+        //  we mistakenly collect these for writes to vars we depend on before init event.
+        //   But this same technique can also be used for ref reassignment later on.
+        //
+        if (events.invalidated_by.unless_oob(index))
+            events.invalidated_by[index] = RWEvent;
+    }
+
+
+    //
+
+    fn bck_let(node: SolvedNode)
+    {
+        // Solve init expr.
+        bck_nodes(node.items);
+
+        // De-invalidate after init expr,
+        //  could be invalidated by the init expr, for example:
+        //   let c = a = b;
+        //
+        bck_trackInit(node.target);
+    }
+
 
     //
 
@@ -5865,19 +5893,23 @@ pub fn solve(
         if (k == "loop")
             return bck_loop(node);
 
+        // Variable initialization.
+        if (k == "let")
+            return bck_let(node);
+
         // Isolate cons from alt and combine effects on exit.
         // if (k == "if")
+        //     ...
+
+        // If broken-from, hide effects and append to jumped-to.
+        //
+        // if (k == "branch")
         //     ...
 
         // I don't think there's anything we can do for ands and ors,
         //  until we get a notion of guarantees -
         //   in which case we lose them all after first expr.
         // if (k == "and" || k == "or")
-        //     ...
-
-        // If broken-from, hide effects and append to jumped-to.
-        //
-        // if (k == "branch")
         //     ...
 
         // The default - descend recursively.
