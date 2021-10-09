@@ -1447,7 +1447,7 @@ pub fn solve(
                     result ~= ",";
 
                 result ~= "\n\t"
-                        ~  arg.name
+                        ~  arg.name.human.qID
                         ~ (arg.flags & F_MUSTNAME ? "!" : "")
                         ~ (arg.default ? "?: " : ": ")
                         ~ (arg.type ? humanizeType(arg.type) : "$");
@@ -1851,7 +1851,21 @@ pub fn solve(
         //    This will limit what we can do here for starters.
         //
         if (USE_late_bck && fnbody_of)
-            bck_nodes(items);
+        {
+            // Don't run further passes if dirty -
+            //  some of our AST might be broken,
+            //   invalidated callsites and such,
+            //    just finish up asap.
+            //
+            let status = Target(:module.modid, fnbody_of).status;
+            if !(status & SS_DIRTY)
+            {
+                if (SELF_TEST)
+                    test_nodes(items);
+
+                bck_nodes(items);
+            }
+        }
         //
         ///////////////////////////////////////////////////////////////
 
@@ -5837,8 +5851,9 @@ pub fn solve(
                         {
                             let arg = args[i0];
 
-                            arg.is_mutref || fail("Written but not mutref?");
-                            host_arg.is_mutref || fail("Not relaxed?");
+                            host_arg.is_mutref || fail(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
+                            arg.is_mutref      || fail(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
+
                             bck_writes.set::add(arg.lifetime.uni0n,
                                 extras: bck_positions, extra: i0);
                         }
@@ -5933,6 +5948,61 @@ pub fn solve(
         // The default - descend recursively.
         bck_nodes(node.items);
     }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    fn test_call(callsite: SolvedNode)
+    {
+        let host_args = callsite.target.args;
+        let args      = callsite.items;
+
+        // Zero init.
+        if (args.len == 0 && callsite.target.kind == "type")
+            return;
+
+        fn err(reason: string)
+        {
+            _here = callsite.token;
+            MUT(callsite);
+            fail(callsite.target.qWHAT ~ ": " ~ reason);
+        }
+
+        host_args.len == args.len || err(
+            "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
+                ~ "\n\t\t" ~ mangleArguments(args)
+                ~ "\n\t\t" ~ explainWhichFn(callsite.target));
+
+        for (mut i = 0; i < host_args.len; i++)
+        {
+            let host_arg = host_args[i];
+            let arg      = args[i];
+
+            isAssignableAsArgument(host: host_arg.type, arg.type)
+                || err("Arg #" ~ i ~ ", " ~ host_arg.name.human.qID
+                        ~ " not assignable to host_arg: "
+                        ~ humanizeType(host_arg.type) ~ " <- "
+                        ~ humanizeType(     arg.type));
+        }
+    }
+
+    fn test_node(node: SolvedNode)
+    {
+        let k = node.kind;
+        if (k == "call")
+            test_call(node);
+
+        test_nodes(node.items);
+    }
+
+    fn test_nodes(nodes: SolvedNode[])
+    {
+        for (mut i = 0; i < nodes.len; i++)
+            test_node(nodes[i]);
+    }
+
 
 
     //////////////////////////////////////////////////////////////////////////
