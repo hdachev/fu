@@ -1807,18 +1807,18 @@ pub fn solve(
         for (mut i = 0; i < h.returns.len; i++)
         {
             shadow mut expr = h.returns[i].items.only;
+            shadow mut type = expr.type;
 
             if (expr.is_ref)
             {
-                mut original            = expr.type.lifetime; // TODO BORROWCK danglefix
-                expr.MUT.type.lifetime  = expr.type.lifetime.Lifetime_unwind(:h.locals_start);
+                type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
+                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || fail());
 
-                let ltCompare = expr.type.lifetime.Lifetime_vs(:h.locals_start || fail());
                 if (ltCompare >= 0)
                 {
                     if (ltCompare > 0)
                     {
-                        expr = createMove(expr, :original);
+                        expr = createMove(expr);
                     }
                     else
                     {
@@ -1833,12 +1833,15 @@ pub fn solve(
                         //
                         expr = createCopy(expr);
                     }
-                }
 
-                h.returns[i].MUT.items.only = expr;
+                    h.returns[i].MUT.items.only = expr;
+                    type                        = expr.type;
+                }
             }
 
-            reportReturnType(:helpers_idx, expr.type);
+            // Report the unwound lifetime,
+            //  but leave the original lifetime on the expr for bck & co.
+            reportReturnType(:helpers_idx, type);
         }
 
 
@@ -1872,6 +1875,7 @@ pub fn solve(
             h.ret_actual = t_void;
         }
 
+        // TODO FIX I don't think this copies/moves correctly, this is most surely broken.
         if (!fnbody_of && items && !h.ret_actual.is_void)
             reportReturnType(:helpers_idx, items.last.type);
 
@@ -5349,12 +5353,12 @@ pub fn solve(
             type:   clear_refs(node.type));
     }
 
-    fn createMove(node: SolvedNode, original: Lifetime): SolvedNode
+    fn createMove(node: SolvedNode): SolvedNode
     {
         // C++ codegen uses the F_MOVED_FROM flag
         //  to remove `const` annotations on locals & refs to locals.
         //
-        Lifetime_F_MOVED_FROM(original);
+        Lifetime_F_MOVED_FROM(node.type.lifetime);
 
         return SolvedNode(
             kind:   "move",
@@ -5540,6 +5544,8 @@ pub fn solve(
             if (!target)
                 continue;
 
+            // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
+
             if (events.invalidated_by.len > target)
             {
                 let u = events.invalidated_by[target];
@@ -5603,6 +5609,8 @@ pub fn solve(
             if (!target)
                 continue;
 
+            // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
+
             let invalidates = flow.invalidates.unless_oob(target);
 
             // Writes in a loop invalidate preceding reads.
@@ -5643,7 +5651,15 @@ pub fn solve(
     fn bck_trackInit(target: Target)
     {
         let index   = target.index;
+
+        // TODO FIX addrofn emits target=0 lets,
+        //  this is stupid, no need for such garbage to stay in the ast.
+        if (!index)
+            return;
+
         ref events  = _current_fn.events;
+
+        // println("bck_trackInit " ~ target.index ~ " " ~ target.name);
 
         // Clear invalidation event -
         //  we mistakenly collect these for writes to vars we depend on before init event.

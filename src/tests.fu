@@ -2728,7 +2728,9 @@ pub fn runTests()
                 badref = args[0];
             args = [ Arg(11) ]; // INVALIDATE badref.
             return badref;
-        }
+        }       // oct2021: now latest issue here is that
+                //  this gets bcked AFTER jump lifetimes are unwound
+                //   and it all looks as if everything's fine (lt badref == lt args).
 
         fn main()
         {
