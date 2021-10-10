@@ -37,7 +37,6 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
-let USE_late_bck            = true;
 
 let SELF_TEST               = true;
 
@@ -1850,7 +1849,7 @@ pub fn solve(
         //   and cpy/mov is each block/inlined callsite.
         //    This will limit what we can do here for starters.
         //
-        if (USE_late_bck && fnbody_of)
+        if (fnbody_of)
         {
             // Don't run further passes if dirty -
             //  some of our AST might be broken,
@@ -4939,11 +4938,6 @@ pub fn solve(
 
         mut type = target.type;
 
-        // BORROWCK /////////////
-        mut bck_writes: Region[];
-        mut bck_positions: i32[];
-        /////////////////////////
-
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
@@ -4986,15 +4980,6 @@ pub fn solve(
                 let host_args = target.args || fail("CallerNode: no host args: " ~ target.qWHAT);
                 host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
 
-                // BORROWCK ///////////////////
-                mut mutref_first    = -1;    //
-                mut mutref_last     = -1;    //
-                mut ref_first       = -1;    //
-                mut ref_last        = -1;    //
-                                             //
-                mut bck_unwound: Lifetime[]; //
-                ///////////////////////////////
-
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
                     let host_arg = host_args[i0];
@@ -5015,129 +5000,6 @@ pub fn solve(
                     }
                     //        /LITFIX
                     /////////////////
-                }
-
-                if (!USE_late_bck) for (mut i0 = 0; i0 < args.len; i0++)
-                {
-                    let host_arg = host_args[i0];
-                    let expect = host_arg.type;
-
-                    // BORROWCK: multiple mutrefs error,
-                    //  this is the only thing we can't workaround by copying.
-                    if (expect.is_ref)
-                    {
-                        // Lazy init unwound lifetimes.
-                        if !(bck_unwound)
-                        {
-                            if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
-                            {
-                                bck_unwound.resize(args.len);
-                                for (mut i = ref_first; i <= ref_last; i++)
-                                    bck_unwound[i] = Lifetime_unwind(args[i].type.lifetime);
-                            }
-                        }
-
-                        // Validate aliasing.
-                        if (bck_unwound)
-                        {
-                            let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
-
-                            fn validate(i: i32)
-                            {
-                                // Can the fn handle aliasing here?
-                                if (host_arg.risk_free.has(i))
-                                    return;
-
-                                // Do we see any aliasing here?
-                                let inter = Lifetime_inter(unwound, bck_unwound[i]);
-                                if !(inter)
-                                    return;
-
-                                // TODO here we can verify subsets at risk + subsets written.
-                                let other = host_args[i];
-
-                                // Try to resolve by injecting a copy -
-                                //  We don't allow this on implicit arguments, which includes closures.
-                                //   Implicitly copying implicit arguments is a bit much.
-                                {
-                                    mut which = -1;
-                                    if !(host_arg.is_mutref || host_arg.flags & F_IMPLICIT)
-                                        which = i0;
-                                    else if !(other.is_mutref || other.flags & F_IMPLICIT)
-                                        which = i;
-
-                                    if (which >= 0)
-                                    {
-                                        // Don't attempt if no-copy, the error is not useful.
-                                        ref node = args[which];
-                                        if (node.is_rx_copy)
-                                            return BORROWCK_resolveByCopyToTemporary(
-                                                node: args     [which],
-                                                slot: host_args[which].type);
-                                    }
-                                }
-
-                                // BORROWCK Error message.
-                                if !(options.dev & options::DEV_DisableBCK)
-                                {
-                                    mut err = target.qWHAT;
-
-                                    err ~= host_args.len == 2 && target.flags & F_OPERATOR
-                                        ?   ": Both operands refer to:\n"
-                                        :   ": Arguments " ~ host_args[i0].name.human.qBAD
-                                            ~      " and " ~ host_args[i ].name.human.qBAD
-                                            ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both refer to:\n";
-
-                                    for (shadow mut i = 0; i < inter.uni0n.len; i++)
-                                    {
-                                        let o = inter.uni0n[i];
-
-                                        err ~=   "\n                ";
-                                        err ~= o.qWHAT;
-                                    }
-
-                                    fail(err);
-                                }
-                            }
-
-                            // If we have a mutref, go over all refs.
-                            if (expect.is_mutref) {
-                                for (mut i = ref_first; i <= ref_last; i++)
-                                    if (host_args[i].is_ref)
-                                        validate(i);
-                            }
-
-                            // Else we only care about mutrefs here.
-                            else if (bck_unwound) {
-                                for (mut i = mutref_first; i <= mutref_last; i++)
-                                    if (host_args[i].is_mutref)
-                                        validate(i);
-                            }
-                        }
-
-                        // Track the two lists.
-                        {
-                            if (ref_first < 0)
-                                ref_first = i0;
-
-                            ref_last = i0;
-                        }
-
-                        if (expect.is_mutref)
-                        {
-                            if (mutref_first < 0)
-                                mutref_first = i0;
-
-                            mutref_last = i0;
-                        }
-                    }
-                }
-
-                // BORROWCK: the pseudovar trick ////////////////////////////////////////////////
-                for (mut i0 = 0; i0 < args.len; i0++)
-                {
-                    let host_arg    = host_args[i0];
-                    ref arg         = args[i0];
 
                     //
                     maybeCopyOrMove(
@@ -5166,15 +5028,6 @@ pub fn solve(
 
                                 trackLocalRef(:left, arg.type.lifetime);
                                 arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
-                            }
-
-                            // We'll batch all writes together in a bit.
-                            if (!USE_late_bck)
-                            {
-                                arg.is_mutref || fail("Written but not mutref?");
-                                host_arg.is_mutref || fail("Not relaxed?");
-                                bck_writes.set::add(arg.lifetime.uni0n,
-                                    extras: bck_positions, extra: i0);
                             }
                         }
                     }
@@ -5240,26 +5093,6 @@ pub fn solve(
         let callsite = SolvedNode(
             "call", flags: 0, value: debug,
                     :type, args, :target);
-
-        // BORROWCK /////////////////////////////////////////////////////
-        // Track all writes at once, not important for reads,
-        //  but tracking args one by one would prevent args-at-risk.
-        //
-        if (USE_late_bck)
-        {
-            if (bck_writes || bck_positions)
-                fail("Collecting bck_data in CallerNode on USE_late_bck.");
-        }
-        else if (bck_writes)
-        {
-            bck_positions.len == bck_writes.len || fail("bck_position.len is off");
-            bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
-        }
-        else if (target.kind == "var")
-        {
-            bck_trackRead(callsite);
-        }
-        /////////////////////////////////////////////////////////////////
 
         // Track deps.
         if (target.modid < 0 || target.modid == module.modid)
