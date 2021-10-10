@@ -157,9 +157,8 @@ pub struct Partial
 
 pub struct ArgWrite
 {
-    using target:   Target;
-    arg_position:   i32;
-    token?:         TokenIdx;
+    nodeidx:        i32; // Callsite nodeidx.
+    arg_position:   i32; // Argument item idx.
 };
 
 pub struct Argument
@@ -221,7 +220,6 @@ pub struct RWEvent
 {
     target:         i32;
     nodeidx:        i32;
-    token:          TokenIdx; // TODO: nodeidx should obsolete this
 };
 
 pub struct Events

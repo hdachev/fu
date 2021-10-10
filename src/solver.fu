@@ -2820,7 +2820,7 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = argNode.type.is_mutref
                         && (isNative
-                            ? ArgWrite(target, i) // Self: assume all mutref taking natives do actually write.
+                            ? ArgWrite(-1, -1) // Self: assume all mutref taking natives do actually write.
                             : out.events.args_written_via.unless_oob(argTarget.index));
                     /////////////////////////////////////////////
 
@@ -4820,16 +4820,19 @@ pub fn solve(
         return "\n\tAt call to " ~ o.name.qID;
     }
 
-    fn qSTACK(written_via: ArgWrite)
+    fn qSTACK(written_via: ArgWrite, nodeown?: Target)
     {
-        if (!written_via.token)
+        if (written_via.nodeidx < 0)
             return "";
 
-        let ret = "\n            via " ~ written_via.qWHAT ~ " at " ~ written_via.token.addr_and_snippet;
+        let callsite = written_via.callsite(nodeown || _current_fn.target);
+        let target   = callsite.target;
 
-        let host_arg = written_via.args[written_via.arg_position];
+        let ret = "\n            via " ~ target.qWHAT ~ " at " ~ callsite.token.addr_and_snippet;
+
+        let host_arg = target.args[written_via.arg_position];
         if (host_arg.written_via)
-            return ret ~ host_arg.written_via.qSTACK();
+            return ret ~ host_arg.written_via.qSTACK(target);
 
         return ret;
     }
@@ -5147,7 +5150,7 @@ pub fn solve(
                         //  which can then return them for further modification -
                         //   without this, a write to `a|b` invalidates both `a` and `b`,
                         //    whilst a write to `c=a|b` allows further writes to `c`.
-                        if (host_arg.written_via.target)
+                        if (host_arg.written_via)
                         {
                             // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
                             //  We need to have a single lifetime to describe what we're writing to,
@@ -5536,6 +5539,16 @@ pub fn solve(
         return GET(nested(target)).name.human;
     }
 
+    fn callsite(rw: RWEvent)
+    {
+        return SolvedNode(nodeown: _current_fn.target, :rw.nodeidx);
+    }
+
+    fn callsite(aw: ArgWrite, nodeown: Target)
+    {
+        return SolvedNode(:nodeown, :aw.nodeidx);
+    }
+
 
     // Reads.
 
@@ -5567,7 +5580,7 @@ pub fn solve(
                     fail("BORROWCK: Cannot access"
                         ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
                         ~ " " ~ u.target.bck_name.qBAD ~ " at "
-                        ~ u.token.addr_and_snippet
+                        ~ u.callsite.token.addr_and_snippet
                         ~ RWEvent_stack(u.nodeidx, u.target));
             }
 
@@ -5590,7 +5603,7 @@ pub fn solve(
             {
                 ref u = events.used_in_a_loop.grow_if_oob(target);
                 if (!u.target)
-                    u = RWEvent(target: loop_start, :callsite.token, :callsite.nodeidx);
+                    u = RWEvent(target: loop_start, :callsite.nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -5635,7 +5648,7 @@ pub fn solve(
                 if (u.target && !(options.dev & options::DEV_DisableBCK))
                     fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
                         ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
-                        ~ u.token.addr_and_snippet
+                        ~ u.callsite.token.addr_and_snippet
                         ~ " on next loop iteration."); // TODO loop starts at x:x!
             }
 
@@ -5644,14 +5657,15 @@ pub fn solve(
             {
                 ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
                 if (!u.target)
-                    u = RWEvent(:target, :callsite.token, :callsite.nodeidx);
+                    u = RWEvent(:target, :callsite.nodeidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
             if (flow.is_arg.has(target))
             {
                 events.args_written.set::add(target);
-                events.args_written_via.grow_if_oob(target) ||= ArgWrite(callsite.target, positions[i], :callsite.token);
+                events.args_written_via.grow_if_oob(target) ||= ArgWrite(
+                    :callsite.nodeidx, arg_position: positions[i]);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -5847,7 +5861,7 @@ pub fn solve(
                         mutref_last = i0;
 
                         // We'll batch all writes together in a bit.
-                        if (host_arg.written_via.target)
+                        if (host_arg.written_via)
                         {
                             let arg = args[i0];
 
