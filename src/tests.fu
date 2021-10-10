@@ -2062,24 +2062,34 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main() {
             mut _info: string[];
 
-            pure fn fail(mut reason: string = ""): never
-            {
-                // What's happening and where?
-                for (mut i = _info.len; i --> 0; )
-                {
-                    let info = _info[i];
-                    reason ~= info && i;
+            pure fn fail(mut reason: string = "") {
+                for (mut i = _info.len; i --> 0; ) {
+                    ref info = _info[i]; // notice the ref, has to relax away
+                    reason ~= info<alt> && i</alt>;
                 }
 
-                return throw(reason);
+                return reason;
             }
 
-            mut x = 0;
-            return x && fail();
+            return fail.len;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut _info = "hey";
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info<alt> && info.i32</alt>;
+                return reason;
+            }
+
+            return fail.len / 4;
         }
     `);
 
