@@ -2043,7 +2043,7 @@ pub fn runTests()
         fn main() outer - 42;
     `);
 
-    ZERO(`
+    TODO_borrowck(`
         fn append_self(ref a: i32[])
         {
             let b = a;
