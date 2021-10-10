@@ -2081,15 +2081,15 @@ pub fn runTests()
 
     ZERO(`
         fn main() {
-            mut _info = "hey";
+            mut _info = [ 101 ];
 
             pure fn fail(mut reason: string = "") {
                 ref info = _info[0]; // <- notice the ref, has to relax away
-                reason ~= info<alt> && info.i32</alt>;
+                reason ~= info<alt> && ("" ~ info)</alt>;
                 return reason;
             }
 
-            return fail.len / 4;
+            return fail.len - 3; // "101".len is 3.
         }
     `);
 
@@ -3087,7 +3087,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-
         struct TrueStory { kind: string; value: string; };
 
         mut specialized = TrueStory(kind: "fn", value: "val");
@@ -3100,7 +3099,6 @@ pub fn runTests()
         v ~= "ue";
 
         return specialized.value == "value" ? 0 : 1;
-
     `);
 
     ZERO(`
@@ -3160,6 +3158,20 @@ pub fn runTests()
             mut arr = [ "Hello" ];
             for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
             return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+    `);
+
+    TODO(`
+        fn main() {
+            mut _info = "abc";
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info && info.i32;
+                return reason;
+            }
+
+            return fail.len - 2; // 'a' is 97, "97".len is 2.
         }
     `);
 
