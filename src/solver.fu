@@ -1953,6 +1953,16 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
 
         // Check var usage.
+        relaxBlockVars(helpers_idx, :fnbody_of);
+
+        // Control flow.
+        return createBlock(:items,
+            type: h.ret_actual || t_void,
+            label: h.mask & HM_LabelUsed && h.target);
+    }
+
+    fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32)
+    {
         mut /*TODO BORROWCK danglefix*/ vars = _helpers[helpers_idx].vars;
         for (mut i = vars.len; i --> 0; )
         {
@@ -2021,11 +2031,6 @@ pub fn solve(
             o.solved.type || fail("!var.solved.type, can`t propagateType");
             o.solved.propagateType(usage);
         }
-
-        // Control flow.
-        return createBlock(:items,
-            type: h.ret_actual || t_void,
-            label: h.mask & HM_LabelUsed && h.target);
     }
 
     fn createBlock(type: Type, items: SolvedNode[], label?: Target): SolvedNode
