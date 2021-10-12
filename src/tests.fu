@@ -5219,6 +5219,15 @@ pub fn runTests()
         fn main() 0.hello;
     `);
 
+    TODO(`
+        fn throws()         { throw("WHAT!");   }
+        fn myfn(a = throws) { return a;         } // never in default argument position!
+        fn main() {
+            try             { return myfn();                }
+            catch (e)       { return e == "WHAT!" ? 0 : 1;  }
+        }
+    `);
+
 
     // Let's start having fun.
 
