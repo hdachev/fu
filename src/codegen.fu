@@ -1888,8 +1888,7 @@ pub fn cpp_codegen(
         if (k == "argid")       return cgComma(node.items);
 
         // Empties.
-        if (k == "fndef")       return cgFnDef(node, mode);
-        if (k == "struct")      return cgEmpty(mode);
+        if (k == "fndef")       return cgFnDef(node, mode); // TODO no point in this here
         if (k == "empty")       return cgEmpty(mode);
 
         // Stuff that we can't cg as expressions.

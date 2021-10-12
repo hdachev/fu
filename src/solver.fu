@@ -3090,7 +3090,7 @@ pub fn solve(
 
     fn __solveStruct(solve!: bool, /*TODO BORROWCK danglefix*/mut node: Node, into?!: Target): SolvedNode
     {
-        mut out     = solved(node, target: into, type: into && GET(into).type);
+        mut out     = createEmpty(target: into, type: into && GET(into).type);
 
         let origId  = node.value;
         let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
@@ -3725,22 +3725,8 @@ pub fn solve(
             return init;
         }
 
-        ////////////////////////////////////////////////////////////////////////
-        mut loop_start0                     = _current_fn.loop_start;
-        let loop_start                      = GET_next_local_index();
-        mut events0                         = _current_fn.events.used_in_a_loop;
-
-        _current_fn.loop_start              = loop_start;
-        defer _current_fn.loop_start        = loop_start0;
-        ////////////////////////////////////////////////////////////////////////
-
         let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    // TODO deadcode noloop
         let body        = n_body      && solveBlock(n_body, type: t_void);  // TODO deadcode noloop
-
-        ////////////////////////////////////////////////////////////////////////
-        _current_fn.events.used_in_a_loop   = events0;
-        ////////////////////////////////////////////////////////////////////////
-
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    // TODO deadcode noloop
         let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
 
