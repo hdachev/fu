@@ -4682,7 +4682,7 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, deadcode_on_never: true, as_blocks: true,
+        mut items = solveNodes(node.items, deadcode_on_never: true,
             type_last: type,
             use_type_last: true,
             type_all: type.is_void ? t_bool : type);
@@ -5251,7 +5251,6 @@ pub fn solve(
         type_last?!: Type,
         use_type_last?!: bool,
         deadcode_on_never?!: bool,
-        as_blocks?!: bool,
         kills?!: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
@@ -5277,10 +5276,8 @@ pub fn solve(
                     ? type_last
                     : type_all;
 
-                let solved = as_blocks && 1>2 // TODO FIX breaks (a && b || c) propagation
-                    ? solveBlock(:node, :type)
-                    : solveNode(:node, :deadcode_on_never, :type,
-                        kills: i == nodes.len - 1 && kills);
+                let solved = solveNode(:node, :deadcode_on_never, :type,
+                    kills: i == nodes.len - 1 && kills);
 
                 //
                 result ~= solved;
