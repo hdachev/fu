@@ -1814,8 +1814,10 @@ pub fn cpp_codegen(
     fn cgCatch(node: SolvedNode): string
     {
         let items       = node.items;
-
         let var_name    = items[0];
+        if (var_name.kind != "let")
+            return cgTryCatch(node);
+
         let try_init    = cgNode(items[0].items[LET_INIT]) ~ ";";
         let err         = GET(items[1].target).name;
         let catch       = blockWrapSubstatement(items[2]);

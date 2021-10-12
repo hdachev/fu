@@ -20,13 +20,14 @@ pub let N_TypeReopen        = 1 << 5;
 pub let N_DeadCode          = 1 << 6;
 pub let N_DeadCall          = 1 << 7;
 pub let N_DeadLet           = 1 << 8;
-pub let N_DeadIf            = 1 << 9;
+pub let N_DeadIfCond        = 1 << 9;
 pub let N_DeadIfCons        = 1 << 10;
 pub let N_DeadArrlit        = 1 << 11;
+pub let N_DeadLoopInit      = 1 << 12;
 
-pub let N_NonTrivAutoCopy   = 1 << 12;
+pub let N_NonTrivAutoCopy   = 1 << 13;
 
-pub let N_RelaxRespec       = 1 << 13;
+pub let N_RelaxRespec       = 1 << 14;
 
 
 //
@@ -1546,7 +1547,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = [], deadcode_on_never?!: bool, kills?!: i32): SolvedNode
+    fn solveNode(node: Node, type: Type = [], kills?!: i32): SolvedNode
     {
         HERE(node);
 
@@ -1556,7 +1557,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type, :kills);
         if (k == "argid")       return solveArgID(node, :type);
 
-        if (k == "let")         return solveLet(node, :deadcode_on_never);
+        if (k == "let")         return solveLet(node);
         if (k == "call")        return solveCall(node, :kills);
         if (k == "arrlit")      return solveArrlit(node, type);
 
@@ -1778,12 +1779,12 @@ pub fn solve(
 
     fn solveRoot(node: Node): SolvedNode
     {
-        // TODO if deadcode_on_never here and if last is never,
-        //  the program will crash during static init.
-        //   Could we use this mechanism for static asserts?
-        //
-        return solved(node, t_void,
-            solveNodes(node.items, t_void));
+        let items = solveNodes(node.items, t_void);
+        if (!items.last.is_never)
+            return solved(node, t_void, items);
+
+        _here = items.last.token;
+        fail("Noreturn during static init: this program will never finish booting.");
     }
 
     fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?: i32): SolvedNode
@@ -1819,7 +1820,6 @@ pub fn solve(
             type_all:           t_void,
             type_last:          type,
             use_type_last:      expr,
-            deadcode_on_never:  true,
 
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
@@ -3719,6 +3719,11 @@ pub fn solve(
         let n_post      = node.items[LOOP_POST];
 
         let init        = n_init      && solveLetStatement(n_init);
+        if (init.type.is_never)
+        {
+            makeNote(N_DeadLoopInit);
+            return init;
+        }
 
         ////////////////////////////////////////////////////////////////////////
         mut loop_start0                     = _current_fn.loop_start;
@@ -3729,15 +3734,15 @@ pub fn solve(
         defer _current_fn.loop_start        = loop_start0;
         ////////////////////////////////////////////////////////////////////////
 
-        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);
-        let body        = n_body      && solveBlock(n_body, type: t_void);
+        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    // TODO deadcode noloop
+        let body        = n_body      && solveBlock(n_body, type: t_void);  // TODO deadcode noloop
 
         ////////////////////////////////////////////////////////////////////////
         _current_fn.events.used_in_a_loop   = events0;
         ////////////////////////////////////////////////////////////////////////
 
-        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);
-        let post        = n_post      && solveNode(n_post,      t_void);
+        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    // TODO deadcode noloop
+        let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
 
         // Control flow.
         let h           = _helpers[brk_idx];
@@ -3810,7 +3815,7 @@ pub fn solve(
 
         // Control flow & deadcode elim.
         //  TODO break & continue.
-        let items = solveNodes(items_ast, deadcode_on_never: true);
+        let items = solveNodes(items_ast);
         let type  = items.last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
@@ -3820,8 +3825,7 @@ pub fn solve(
     //
 
     fn solveLetLike_dontTouchScope(
-        node: Node, specType?!: Type,
-        deadcode_on_never?!: bool): SolvedNode
+        node: Node, specType?!: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
         mut annot   = specType || n_annot && evalTypeAnnot(n_annot).type;
@@ -3835,14 +3839,13 @@ pub fn solve(
         return solveLetLike_dontTouchScope(
             node.value, :node.flags,
             :annot, :init,
-            :specType, :deadcode_on_never);
+            :specType);
     }
 
     fn solveLetLike_dontTouchScope(
         id: string, mut flags: i32,
         mut init!: SolvedNode,
-        mut annot?!: Type, specType?!: Type,
-        deadcode_on_never?!: bool): SolvedNode
+        mut annot?!: Type, specType?!: Type): SolvedNode
     {
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
@@ -3876,7 +3879,7 @@ pub fn solve(
         let killref = t_init.is_ref2temp();
 
         // Dead code elim.
-        if (deadcode_on_never && t_init.is_never)
+        if (!(flags & F_ARG) && t_init.is_never)
         {
             makeNote(N_DeadLet);
             return init;
@@ -3940,21 +3943,21 @@ pub fn solve(
             type: t_let, items: [ SolvedNode, init ]);
     }
 
-    fn solveLet(node: Node, specType?!: Type, deadcode_on_never?!: bool): SolvedNode
+    fn solveLet(node: Node, specType?!: Type): SolvedNode
     {
-        mut out = solveLetLike_dontTouchScope(node, :specType, :deadcode_on_never);
+        mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
-        solveLet(:out, :id, :deadcode_on_never);
+        solveLet(:out, :id);
         return out;
     }
 
-    fn solveLet(ref out!: SolvedNode, id!: string, deadcode_on_never?!: bool)
+    fn solveLet(ref out!: SolvedNode, id!: string)
     {
         // Dead code elim.
         if (out.kind != "let")
         {
             if (SELF_TEST)
-                deadcode_on_never && out.type.is_never || fail(
+                out.type.is_never || fail(
                     "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
 
             return;
@@ -4453,7 +4456,7 @@ pub fn solve(
     fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
     {
         // Dead code elim.
-        mut args = solveNodes(node.items, deadcode_on_never: true);
+        mut args = solveNodes(node.items);
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadCall);
@@ -4495,7 +4498,7 @@ pub fn solve(
                 target: lookupStruct(type).target);
 
         // Dead code elim.
-        mut args = solveNodes(node.items, itemType, deadcode_on_never: true);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
+        mut args = solveNodes(node.items, itemType);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadArrlit);
@@ -4653,11 +4656,11 @@ pub fn solve(
         // Dead code elim.
         if (cond.type.is_never)
         {
-            makeNote(N_DeadIf);
+            makeNote(N_DeadIfCond);
             return cond;
         }
 
-        // `a && THROWS ? b : c` is the same as `a ? THROWS : b`
+        // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
         mut cons    = cond.kind == "and" && cond.items.last.type.is_never
             ? { makeNote(N_DeadIfCons); cond.MUT.items.TODO_FIX_pop }
             : solveBlock(node.items[1], :type);
@@ -4687,7 +4690,7 @@ pub fn solve(
 
     fn solveOr(node: Node, mut type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items, deadcode_on_never: true,
+        mut items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
             type_all: type.is_void ? t_bool : type);
@@ -4750,7 +4753,7 @@ pub fn solve(
 
     fn solveAnd(node: Node, mut type: Type): SolvedNode
     {
-        let items = solveNodes(node.items, deadcode_on_never: true,
+        let items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
             type_all: type.is_void ? t_bool : type);
@@ -5255,7 +5258,6 @@ pub fn solve(
         type_all?: Type,
         type_last?!: Type,
         use_type_last?!: bool,
-        deadcode_on_never?!: bool,
         kills?!: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
@@ -5281,14 +5283,14 @@ pub fn solve(
                     ? type_last
                     : type_all;
 
-                let solved = solveNode(:node, :deadcode_on_never, :type,
+                let solved = solveNode(:node, :type,
                     kills: i == nodes.len - 1 && kills);
 
                 //
                 result ~= solved;
 
                 // Dead code elim.
-                if (deadcode_on_never && solved.type.is_never)
+                if (solved.type.is_never)
                 {
                     if (i < nodes.len - 1)
                         makeNote(N_DeadCode);

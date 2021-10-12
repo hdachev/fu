@@ -170,9 +170,10 @@ let NOTES = [
     "DEAD_code",
     "DEAD_call",
     "DEAD_let",
-    "DEAD_if",
+    "DEAD_if_cond",
     "DEAD_if_cons",
     "DEAD_arrlit",
+    "DEAD_loop_init",
     "NONTRIV_autocopy",
     "RELAX_respec",
 ];
