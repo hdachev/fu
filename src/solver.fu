@@ -3512,17 +3512,22 @@ pub fn solve(
 
     fn solveJump(node: Node, kills: i32): SolvedNode
     {
-        mut helpers_idx = node.kind == "return"
+        let helpers_idx = node.kind == "return"
             ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_SINGLE_STMT))
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
+        return solveJump(:helpers_idx, :node.items, :kills);
+    }
+
+    fn solveJump(mut helpers_idx!: i32, items: [Node], kills: i32): SolvedNode
+    {
         /////////////////////////////
         fn h() _helpers[helpers_idx];
         /////////////////////////////
 
         // Deal with expression first, might noop the jump.
-        mut expr = node.items && solveNode(
-            node.items.only,
+        mut expr = items && solveNode(
+            items.only,
             type: h.ret_actual || h.ret_expect,
 
             // Kills is +1 so that kills=0 means noone.
@@ -3551,7 +3556,7 @@ pub fn solve(
 
         h.mask |= HM_LabelUsed;
 
-        if (!node.items)
+        if (!items)
         {
             reportReturnType(:helpers_idx, t_void);
             return createJump(:target);
