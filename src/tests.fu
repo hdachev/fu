@@ -2099,32 +2099,29 @@ pub fn runTests()
     //   they just stressed our stuff in weird ways.
 
     ZERO(`
+        struct BINOP {
+            P: Map(string, i32);
+        };
 
-    struct BINOP {
-        P: Map(string, i32);
-    };
+        fn setupOperators(): BINOP
+        {
+            mut out: BINOP;
 
-    fn setupOperators(): BINOP
-    {
-        mut out: BINOP;
+            fn binop(op: string)
+                out.P[op] = 7;
 
-        fn binop(op: string)
-            out.P[op] = 7;
+            binop(",");
 
-        binop(",");
+            return out;
+        }
 
-        return out;
-    }
+        shadow let BINOP = setupOperators();
+        let P_COMMA = BINOP.P[","] || assert();
 
-    shadow let BINOP = setupOperators();
-    let P_COMMA = BINOP.P[","] || assert();
-
-    fn main() P_COMMA - 7;
-
+        fn main() P_COMMA - 7;
     `);
 
     ZERO(`
-
         // -no-lambda
         // This converted to a ref-returning
         // logical chain for some reason.
@@ -2138,7 +2135,6 @@ pub fn runTests()
         }
 
         return 1;
-
     `);
 
     ZERO(`
@@ -2220,7 +2216,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-
         return false /* test */
              ? 0xffffff.i32 // what is this
              : 0 // madness
@@ -2257,7 +2252,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-
         fn path_normalize(p: string): string {
             mut path = p.split("/");
 
@@ -3494,7 +3488,6 @@ pub fn runTests()
             myVisitor.visitNodes(tree);
             return myVisitor.sum - 15;
         };
-
     `);
 
     ZERO(`
@@ -3549,7 +3542,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-
         fn main()
             cli_handle([ "hello", "you" ]);
 
