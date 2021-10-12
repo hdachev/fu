@@ -1824,9 +1824,19 @@ pub fn solve(
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
-        // Previously in solveJump, the move-vs-copy decision:
         ref h = _helpers[helpers_idx];
 
+        // Block tail expressions.
+        if (expr && items && !items.last.is_void)
+        {
+            // Pretend this is a jump, the jump node itself is never used
+            //  but we just go through the stuff below
+            //   to make it look like a regular return.
+            //
+            h.returns ~= createJump(target: Target(), items.last);
+        }
+
+        // Previously in solveJump, the move-vs-copy decision:
         for (mut i = 0; i < h.returns.len; i++)
         {
             shadow mut expr = h.returns[i].items.only;
@@ -1912,27 +1922,16 @@ pub fn solve(
             h.ret_actual = t_void;
         }
 
-        // TODO FIX I don't think this copies/moves correctly, this is most surely broken.
-        //  Should be a return like any other, consider injecting these in
-        //   parser or solveNodes or something so this special case isn't needed.
-        if (!fnbody_of && items && !h.ret_actual.is_void)
-            reportReturnType(:helpers_idx, items.last.type);
-
         // cpy/move.
+        for (mut i = 0; i < h.returns.len; i++)
         {
-            for (mut i = 0; i < h.returns.len; i++)
-            {
-                // TODO FIX nodeidx unstable because createCopy,
-                //  ref to only is in smallvec -
-                //   so createCopy invalidates the ref.
-                //
-                mut r = h.returns[i].items.only;
-                maybeCopyOrMove(r, h.ret_actual);
-                h.returns[i].MUT.items.only = r;
-            }
-
-            if (!fnbody_of && items && !h.ret_actual.is_void)
-                maybeCopyOrMove(items.last, h.ret_actual);
+            // TODO FIX nodeidx unstable because createCopy,
+            //  ref to only is in smallvec -
+            //   so createCopy invalidates the ref.
+            //
+            mut r = h.returns[i].items.only;
+            maybeCopyOrMove(r, h.ret_actual);
+            h.returns[i].MUT.items.only = r;
         }
         // end finalizeReturns
         ///////////////////////////////////////////////////////////////
@@ -5265,14 +5264,13 @@ pub fn solve(
             {
                 HERE(node);
 
-                let type = i == nodes.len - 1 && use_type_last
-                    ? type_last
-                    : type_all;
-
-                let solved = solveNode(:node, :type,
-                    kills: i == nodes.len - 1 && kills);
+                let last            = i == nodes.len - 1;
+                let type            = last && use_type_last ? type_last : type_all;
+                shadow let kills    = last && kills;
 
                 //
+                let solved = solveNode(:node, :type, :kills);
+
                 result ~= solved;
 
                 // Dead code elim.
