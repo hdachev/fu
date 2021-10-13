@@ -90,19 +90,24 @@ pub fn solve(
         loop_start?:    i32;
     };
 
-    mut _current_fn:    CurrentFn;
-    let implicit mut
-        _helpers:       Helpers[];
+    mut _current_fn:                CurrentFn;
+    let implicit mut _helpers:      Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
+    let implicit mut _helpers_data: HelpersData[];  // TODO rename, this is the block helpers repo, survives till end of function
+
+    fn push(data: HelpersData)
+    {
+        _helpers       ~= Helpers(index: _helpers_data.len);
+        _helpers_data  ~= data;
+    }
 
     mut _anons:         i32;
     fn ANON(): string = "0" ~ _anons++;
 
 
-    //
+    // Setup the module globals helper.
 
-    let MODULE_TOP    = Scope_create(_scope, kind: "_module_top_");
-    _helpers         ~= Helpers(target: MODULE_TOP, "_module_top_");
-
+    let MODULE_TOP = Scope_create(_scope, kind: "_module_top_");
+    push(HelpersData( target: MODULE_TOP,   id: "_module_top_"));
     mut _current_fn_or_type = MODULE_TOP;
 
 
@@ -127,6 +132,11 @@ pub fn solve(
 
 
     //
+
+    using fn GET(h: Helpers): HelpersData
+    {
+        return _helpers_data[h.index];
+    }
 
     fn fail(mut reason: string = ""): never
     {
@@ -292,11 +302,13 @@ pub fn solve(
         flags?:     i32,
         value?:     string,
         items?:     SolvedNode[],
-        target?:    Target)
+        target?:    Target,
+        helpers?:   i32)
     {
         let data    = SolvedNodeData(
             :kind, :flags, :value,
-            :items, :type, :target, token: _here);
+            :items, :type, :target, token: _here,
+            :helpers);
 
         let nodeown = _current_fn_or_type;
 
@@ -1787,7 +1799,7 @@ pub fn solve(
         fail("Noreturn during static init: this program will never finish booting.");
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?!: i32): SolvedNode
     {
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
@@ -1798,11 +1810,11 @@ pub fn solve(
         ////////////////////////////////
 
         let helpers_idx = _helpers.len;
-        _helpers       ~= Helpers( :id, :mask, :kills,
+        push(HelpersData( :id, :mask, :kills,
             ret_expect:     type,
             target:         fnbody_of && Target(:module.modid, fnbody_of),
             local_of:       fnbody_of ? -1 : _current_fn.target.index,
-            locals_start:   fnbody_of ? +1 : GET_next_local_index());
+            locals_start:   fnbody_of ? +1 : GET_next_local_index()));
 
         // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
         if (steal)
@@ -1824,7 +1836,7 @@ pub fn solve(
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
-        ref h = _helpers[helpers_idx];
+        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
 
         // Block tail expressions.
         if (expr && items && !items.last.is_void)
@@ -1877,6 +1889,25 @@ pub fn solve(
             reportReturnType(:helpers_idx, type);
         }
 
+        // TODO FIX this looks like bullshit,
+        //  there's gotta be a better way to do this.
+        if (items.if_last.type.is_never)
+        {
+            if (!h.ret_actual)
+                h.ret_actual = t_never;
+        }
+        else if (fnbody_of)
+        {
+            // TODO FIX these apply to regular blocks as well,
+            //  decide if you want fns to be like blocks or the other way round,
+            //   but these ifs gotta go.
+            if (h.ret_actual)
+                isAssignable(host: t_void, h.ret_actual) || fail(
+                    "Non-void returning fn missing a final return.");
+
+            h.ret_actual = t_void;
+        }
+
 
         // BORROWCK ///////////////////////////////////////////////////
         //  Running after cpy/mov because we run this once per fn,
@@ -1903,25 +1934,6 @@ pub fn solve(
         ///////////////////////////////////////////////////////////////
 
 
-        ///////////////////////////////////////////////////////////////
-        // finalizeReturns (helpers_idx: i32, bodyType: Type)
-        if (items.if_last.type.is_never)
-        {
-            if (!h.ret_actual)
-                h.ret_actual = t_never;
-        }
-        else if (fnbody_of)
-        {
-            // TODO FIX these apply to regular blocks as well,
-            //  decide if you want fns to be like blocks or the other way round,
-            //   but these ifs gotta go.
-            if (h.ret_actual)
-                isAssignable(host: t_void, h.ret_actual) || fail(
-                    "Non-void returning fn missing a final return.");
-
-            h.ret_actual = t_void;
-        }
-
         // cpy/move.
         for (mut i = 0; i < h.returns.len; i++)
         {
@@ -1933,8 +1945,6 @@ pub fn solve(
             maybeCopyOrMove(r, h.ret_actual);
             h.returns[i].MUT.items.only = r;
         }
-        // end finalizeReturns
-        ///////////////////////////////////////////////////////////////
 
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
@@ -1957,12 +1967,13 @@ pub fn solve(
         // Control flow.
         return createBlock(:items,
             type: h.ret_actual || t_void,
-            label: h.mask & HM_LabelUsed && h.target);
+            label: h.mask & HM_LabelUsed && h.target,
+            helpers: helpers_idx);
     }
 
     fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32)
     {
-        mut /*TODO BORROWCK danglefix*/ vars = _helpers[helpers_idx].vars;
+        mut vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
@@ -1977,7 +1988,7 @@ pub fn solve(
 
                 for (shadow mut i = helpers_idx; i --> 0; )
                 {
-                    ref parent = _helpers[i];
+                    let parent = _helpers[i];
                     if (parent.isFnOrType)
                     {
                         parent.vars ~= index;
@@ -2032,7 +2043,7 @@ pub fn solve(
         }
     }
 
-    fn createBlock(type: Type, items: SolvedNode[], label?: Target): SolvedNode
+    fn createBlock(type: Type, items: SolvedNode[], label?: Target, helpers?: i32): SolvedNode
     {
         // Compact + stress test.
         if (!label && items.len)
@@ -2051,7 +2062,7 @@ pub fn solve(
                 return items.last;
         }
 
-        return SolvedNode(kind: "block", :type, :items, target: label);
+        return SolvedNode(kind: "block", :type, :items, target: label, :helpers);
     }
 
 
@@ -2466,12 +2477,15 @@ pub fn solve(
             let scope0 = Scope_snap(_scope);
             mut ss0 = _ss; //REF2MUTREF
             let helpers0vars = _helpers.last.vars.len;
+            let helpers_data0 = _helpers_data.len;
 
             defer {
                 Scope_pop(_scope, scope0);
                 _ss = ss0;
-                if (_helpers)
+                if (_helpers) // TODO why the if? what's this
                     _helpers.last.vars.shrink(helpers0vars);
+
+                _helpers_data.shrink(helpers_data0);
             }
 
             ScopeSkip_setup(:template, :scope0, :isInline);
@@ -3113,11 +3127,15 @@ pub fn solve(
         GET_mut(out.target).status |= SS_DID_START;
 
         ///////////////////////////////////////////////
-        let    helpers0 = _helpers.len;
-        defer _helpers.shrink(helpers0);
+        let helpers0 = _helpers.len;
+        let helpers_data0 = _helpers_data.len;
+        defer {
+            _helpers.shrink(helpers0);
+            _helpers_data.shrink(helpers_data0);
+        }
 
-        _helpers ~= Helpers(mask: HM_Struct, target: out.target || fail(
-            "solveStruct: no out.target: `" ~ origId ~ "`."));
+        push(HelpersData(mask: HM_Struct, target: out.target || fail(
+            "solveStruct: no out.target: `" ~ origId ~ "`.")));
 
         mut current_fn_or_type0     = _current_fn_or_type;
         defer _current_fn_or_type   = current_fn_or_type0;
@@ -3520,9 +3538,7 @@ pub fn solve(
 
     fn solveJump(mut helpers_idx!: i32, items: [Node], kills: i32): SolvedNode
     {
-        /////////////////////////////
-        fn h() _helpers[helpers_idx];
-        /////////////////////////////
+        fn h = _helpers[helpers_idx];
 
         // Deal with expression first, might noop the jump.
         mut expr = items && solveNode(
@@ -3576,7 +3592,7 @@ pub fn solve(
 
     fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)
     {
-        ref h = _helpers[helpers_idx];
+        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
 
         h.ret_actual = ret_actual;
         h.ret_expect = ret_expect;
@@ -3584,7 +3600,7 @@ pub fn solve(
 
     fn reportReturnType(helpers_idx: i32, type: Type)
     {
-        ref h = _helpers[helpers_idx];
+        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
 
         // Regular block expects are best-effort type inference hints,
         //  whereas fn expects are explicit type annotations that must be enforced.
@@ -3705,11 +3721,11 @@ pub fn solve(
         //  ideally we'll only have labels on blocks -
         //   the continues-map-to-inner-block thing.
         let brk_idx     = _helpers.len;
-        _helpers       ~= Helpers(
+        push(HelpersData(
             id:             node.value,
             mask:           HM_Anon | HM_CanBreak,
             local_of:       _current_fn.target.index,
-            locals_start:   GET_next_local_index());
+            locals_start:   GET_next_local_index()));
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
