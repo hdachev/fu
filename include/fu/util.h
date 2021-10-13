@@ -63,8 +63,18 @@ struct fu_ZERO
     }
 
     fu_INL void operator=(int x) noexcept {
-        if (x)
-            assert(false);
+        assert(x == 0); (void) x;
+    }
+};
+
+struct fu_ONE
+{
+    fu_INL constexpr operator int() const noexcept {
+        return 1;
+    }
+
+    fu_INL void operator=(int x) noexcept {
+        assert(x == 1); (void) x;
     }
 };
 
@@ -81,8 +91,6 @@ struct fu_INT01
         return val ? 1 : 0;
     }
 };
-
-constexpr fu_INT01 fu_ONE { true };
 
 template <typename T>
 struct fu_MAYBE_POS {

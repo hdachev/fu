@@ -552,6 +552,16 @@ struct fu_VEC
                     old_capa = UNSAFE__MarkUnique();
                     goto CONSIDER_HOLDING_GROUND;
                 }
+
+                // Last chance to do nothing - insert nothing, delete nothing, shrink to same, etc.
+                if constexpr (!is_Init && !is_Clear && !is_Reserve)
+                {
+                    if (del + pop + insert + push == 0)
+                    {
+                        assert(false && "Just verifying that this opti is useful.");
+                        return nullptr;
+                    }
+                }
             }
         }
 
@@ -806,7 +816,7 @@ struct fu_VEC
     // High level operator helpers.
 
     #define Zero    fu_ZERO()
-    #define One     fu_ONE
+    #define One     fu_ONE()
 
     #define MUT_op(Init, Clear, Reserve, ...) i32 old_size; i32 new_size;\
         T* new_data = _Splice<Init, Clear, Reserve>(old_size, new_size,\
