@@ -211,6 +211,23 @@ pub fn steal(a: $T[], start: i32, end: i32)
     return ret;
 }
 
+pub fn remove(ref a: $T[], predicate)
+{
+    let size = a.len;
+    mut keep = 0;
+
+    for (mut i = 0; i < size; i++) {
+        if (!predicate(a[i])) {
+            if (i > keep)
+                SWAP(a[i], a[keep]);
+
+            keep++;
+        }
+    }
+
+    a.shrink(keep);
+}
+
 
 //
 
