@@ -16,10 +16,53 @@ template <  typename H, typename N,
             typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
             typename D = decltype(((H*)1)->data() - ((N*)1)->data())
                 >
-S lfind(const H& haystack, const N& needle, S start = S(0)) noexcept
+S lfind(const H& haystack, const N& needle) noexcept
 {
+    S size = haystack.size();
+    S start = 0;
+
     return fbstring_lfind(
-        haystack.data(), haystack.size(),
+        haystack.data(), size,
+        needle.data(), needle.size(), start);
+}
+
+// lfind substr
+template <  typename H, typename N,
+            typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
+            typename D = decltype(((H*)1)->data() - ((N*)1)->data())
+                >
+S lfind(const H& haystack, const N& needle, S start) noexcept
+{
+    S size = haystack.size();
+
+    assert(start >= 0 && start <= size);
+    start = start >    0 ? start :    0;
+    start = start < size ? start : size;
+
+    return fbstring_lfind(
+        haystack.data(), size,
+        needle.data(), needle.size(), start);
+}
+
+// lfind substr
+template <  typename H, typename N,
+            typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
+            typename D = decltype(((H*)1)->data() - ((N*)1)->data())
+                >
+S lfind(const H& haystack, const N& needle, S start, S end) noexcept
+{
+    S size = haystack.size();
+
+    assert(start >= 0 && start <= size);
+    start = start >    0 ? start :    0;
+    start = start < size ? start : size;
+
+    assert(end >= start && end <= size);
+    size  = size  <  end ? size  :  end;
+    size  = size  >    0 ? size  :    0;
+
+    return fbstring_lfind(
+        haystack.data(), size,
         needle.data(), needle.size(), start);
 }
 
