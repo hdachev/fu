@@ -1055,6 +1055,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         if (op == "||") return createOr (left, right);
         if (op == "&&") return createAnd(left, right);
 
+        if (left.kind == "and" || left.kind == "or")
+            left.flags & F_PARENS || warn(
+                "Unparenthesized `" ~ left.kind ~ "` on the left side of an `" ~ op ~ "`.");
+
         // Experimental sugar,
         //  pipeline operator basics.
         if (op == "|>") return pipelineRight(left, right);
@@ -1062,11 +1066,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         //
         if (op == "->") return typeAssert(left, right);
-
-        //
-        if (left.kind == "and" || left.kind == "or")
-            left.flags & F_PARENS || warn(
-                "Unparenthesized `" ~ left.kind ~ "` on the left side of an `" ~ op ~ "`.");
 
         //
         return createCall(
