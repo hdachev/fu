@@ -2069,7 +2069,7 @@ pub fn runTests()
             pure fn fail(mut reason: string = "") {
                 for (mut i = _info.len; i --> 0; ) {
                     ref info = _info[i]; // notice the ref, has to relax away
-                    reason ~= info<alt> && i</alt>;
+                    reason ~= info<alt> && i<alt/> ? i : []</alt>;
                 }
 
                 return reason;
@@ -2085,7 +2085,7 @@ pub fn runTests()
 
             pure fn fail(mut reason: string = "") {
                 ref info = _info[0]; // <- notice the ref, has to relax away
-                reason ~= info<alt> && ("" ~ info)</alt>;
+                reason ~= info<alt> && ("" ~ info)<alt/> ? ("" ~ info) : []</alt>;
                 return reason;
             }
 
