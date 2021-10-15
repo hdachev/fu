@@ -206,7 +206,7 @@ pub fn build(
             }
         }
 
-        return throw("Smth broke:\n\n" ~ stdout ~ explain);
+        return throw(stdout ~ explain);
     }
 
     //
