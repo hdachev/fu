@@ -396,6 +396,8 @@ pub fn ZERO(
     //
     let ctx = compile_snippets(:sources, :options);
 
+    mut testdiff_prepend = "";
+
     // Deal with expectations first, nicer errors.
     for (mut i = 0; i < expectations.len; i++)
     {
@@ -419,7 +421,7 @@ pub fn ZERO(
             else if (found)
                 throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
             else
-                println("  TODO: `;; " ~ x ~ "` in:\n" ~ src);
+                testdiff_prepend ~= ";; " ~ x ~ "\n";
         }
     }
 
@@ -434,15 +436,18 @@ pub fn ZERO(
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.
     //
     {
+        if (testdiff_prepend)
+            testdiff_prepend ~= "\n";
+
         mut key = "";
         for (mut i = 0; i < sources.len; i++)
         {
             key ~= sources[i];
             let actual = ctx.modules
                 [i + ctx.modules.len - sources.len]
-                    .out.cpp;
+                    .out.cpp.src;
 
-            testdiffs.set_next(key, actual);
+            testdiffs.set_next(key, testdiff_prepend ~ actual);
         }
     }
 
