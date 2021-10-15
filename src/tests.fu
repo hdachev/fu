@@ -5605,6 +5605,20 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct CodegenOutput { using src: string; };
+
+        fn test(ref str: string, out: CodegenOutput) {
+            str ~= out && "b";
+            return str ~ out;
+        }
+
+        fn main() {
+            mut str = "a";
+            return str.test(CodegenOutput("what")).len - 6; // "abwhat".len;
+        }
+    `);
+
 
     // Addrofns of struct fields.
 
