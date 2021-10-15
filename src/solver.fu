@@ -4820,6 +4820,11 @@ pub fn solve(
             }
         }
 
+        // Relax everything but the last thing to bool.
+        if (!CANNOT_definit_mutrefs || !type.is_mutref)
+            for (mut i = items.len - 1; i --> 0; )
+                implicitOperatorBool(items[i]);
+
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
         return solved(node, type, items);
