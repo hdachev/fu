@@ -232,6 +232,24 @@ pub fn snippet2cpp(src: string): string
     return "";
 }
 
+fn unindent_left(src: string, i0: i32): i32
+{
+    mut i1 = i0;
+    while (i1--)
+    {
+        let c = src[i1];
+        if (c != ' ')
+        {
+            if (c == '\n')
+                return i1 + 1;
+
+            break;
+        }
+    }
+
+    return i0;
+}
+
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[]): Context
@@ -295,22 +313,32 @@ pub fn ZERO(
             mut end0 = src.find("</alt>", start: start0);
             end0 >= 0 || throw("No closing `</alt>` for `<alt>`.");
 
-            // Avoid trailing whitespace.
+            // Avoid trailing spaces.
             let start1 = start0 + 5;
             let end1   = end0   + 6;
-            while (start0 && src[start0 - 1] == ' ') start0--;
-            while (          src[end0   - 1] == ' ') end0--;
 
-            // We'll retry two times - with an without the alt.
-            //  This allows us to fuzz different combinations with little effort.
-            let with    = src[0, start0] ~ src[start1, end0] ~ src[end1, src.len];
-            let without = src[0, start0]                     ~ src[end1, src.len];
+            start0 = src.unindent_left(start0);
+            end0   = src.unindent_left(end0);
 
-            sources[i]  = without;
-            ZERO(:sources);
+            let prefix = src[0, start0];
+            let suffix = src[end1, src.len];
 
-            // Continue with the more complex test here.
-            sources[i]  = with;
+            mut split  = src.slice(start1, end0).split("<alt/>");
+            if (split.len < 2)
+                split ~= "";
+
+            for (mut j = split.len; j --> 0; )
+            {
+                let part = split[j];
+                let end  = part.unindent_left(part.len);
+
+                sources[i] = prefix ~ part[0, end] ~ suffix;
+
+                // Re-run everything but the last alt,
+                //  which is gonna run anyway below.
+                if (j)
+                    ZERO(:sources);
+            }
         }
     }
 
