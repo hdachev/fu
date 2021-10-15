@@ -3745,6 +3745,10 @@ pub fn solve(
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    // TODO deadcode noloop
         let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
 
+        // Relax.
+        implicitOperatorBool(pre_cond);
+        implicitOperatorBool(post_cond);
+
         // Control flow.
         let h           = _helpers[brk_idx];
         let label_used  = h.mask & HM_LabelUsed;
@@ -4661,6 +4665,8 @@ pub fn solve(
             return cond;
         }
 
+        implicitOperatorBool(cond);
+
         // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
         mut cons    = cond.kind == "and" && cond.items.last.type.is_never
             ? { makeNote(N_DeadIfCons); cond.MUT.items.TODO_FIX_pop }
@@ -5156,6 +5162,11 @@ pub fn solve(
 
         //
         return maybeCopyOrMove(:node, temporary);
+    }
+
+    fn implicitOperatorBool(node: SolvedNode)
+    {
+        propagateType(:node, t_bool);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
