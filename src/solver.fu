@@ -38,6 +38,7 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
+let USE_mcom                = false;
 
 let SELF_TEST               = true;
 
@@ -1792,9 +1793,13 @@ pub fn solve(
     fn solveRoot(node: Node): SolvedNode
     {
         let items = solveNodes(node.items, t_void);
+
+        runAllPasses(items);
+
         if (!items.last.is_never)
             return solved(node, t_void, items);
 
+        //
         _here = items.last.token;
         fail("Noreturn during static init: this program will never finish booting.");
     }
@@ -1923,12 +1928,7 @@ pub fn solve(
             //
             let status = Target(:module.modid, fnbody_of).status;
             if !(status & SS_DIRTY)
-            {
-                if (SELF_TEST)
-                    test_nodes(items);
-
-                bck_nodes(items);
-            }
+                runAllPasses(items);
         }
         //
         ///////////////////////////////////////////////////////////////
@@ -3932,7 +3932,10 @@ pub fn solve(
 
         if (init)
         {
-            maybeCopyOrMove(init, t_let);
+            if (USE_mcom)
+                propagateType(init, t_let);
+            else
+                maybeCopyOrMove(init, t_let);
 
             // Can change due to propagate type:
             //  let a = b[i]: mutref -> ref unions-in a static lt.
@@ -5799,13 +5802,11 @@ pub fn solve(
     }
 
 
-    // Router.
+    // Borrow check router.
 
     fn bck_nodes(items: SolvedNode[])
-    {
         for (mut i = 0; i < items.len; i++)
             bck_node(items[i]);
-    }
 
     fn bck_node(node: SolvedNode)
     {
@@ -5847,7 +5848,7 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn test_call(callsite: SolvedNode)
+    fn test_CallSignature(callsite: SolvedNode)
     {
         let host_args = callsite.target.args;
         let args      = callsite.items;
@@ -5881,27 +5882,98 @@ pub fn solve(
         }
     }
 
-    fn test_node(node: SolvedNode)
-    {
-        let k = node.kind;
-        if (k == "call")
-            test_call(node);
 
-        test_nodes(node.items);
-    }
+    // AST validation router.
 
     fn test_nodes(nodes: SolvedNode[])
-    {
         for (mut i = 0; i < nodes.len; i++)
             test_node(nodes[i]);
+
+    fn test_node(node: SolvedNode)
+    {
+        test_nodes(node.items);
+
+        //
+        let k = node.kind;
+        if (k == "call")
+            return test_CallSignature(node);
     }
 
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    fn mcom_LetInit(node: SolvedNode)
+    {
+        if (node.items && !node.is_ref)
+        {
+            let init = node.items[LET_INIT];
+            if (init && init.is_ref)
+            {
+                // TODO FIX THIS MESS,
+                //  the get/set stuff is real stupid.
+                //
+                shadow mut init = init;
+                maybeCopyOrMove(init, node.type);
+                node.MUT.items[LET_INIT] = init;
+            }
+        }
+    }
+
+
+    // Maybe-copy-or-move router.
+
+    fn mcom_nodes(nodes: SolvedNode[])
+        for (mut i = 0; i < nodes.len; i++)
+            mcom_node(nodes[i]);
+
+    fn mcom_node(node: SolvedNode)
+    {
+        mcom_nodes(node.items);
+
+        //
+        let k = node.kind;
+        //
+        // if (k == "block")
+        //     return mcom_BlockReturns(node);
+        //
+        if (k == "let")
+            return mcom_LetInit(node);
+        //
+        // if (k == "call")
+        //     return mcom_CallArgs(node);
+        //
+        // if (k == "arrlit")
+        //     return mcom_Arrlit(node);
+        //
+        // if (k == "if")
+        //     return mcom_IfConsAlt(node);
+        //
+        // if (k == "or")
+        //     return mcom_OrAlts(node);
+    }
+
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    fn runAllPasses(nodes: SolvedNode[])
+    {
+        bck_nodes(nodes);
+
+        if (SELF_TEST)
+            test_nodes(nodes);
+
+        if (USE_mcom)
+            mcom_nodes(nodes);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     // Import prelude / inject builtins.
     if (module.modid)
