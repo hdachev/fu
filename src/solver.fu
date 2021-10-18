@@ -38,7 +38,9 @@ let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
+
 let USE_mcom                = false;
+let USE_defer_fmut          = false;
 
 let SELF_TEST               = true;
 
@@ -2040,6 +2042,24 @@ pub fn solve(
             // Either way, try to relax.
             o.solved.type || fail("!var.solved.type, can`t propagateType");
             o.solved.propagateType(usage);
+
+            //
+            if (!USE_mcom && USE_defer_fmut)
+            {
+                if (o.flags & F_MUT && usage.is_mutref)
+                {
+                    if (o.solved.items[LET_INIT].is_ref)
+                    {
+                        mut init = o.solved.items[LET_INIT];
+                        maybeCopyOrMove(init, o.solved.type);
+                        o.solved.MUT.items[LET_INIT] = init;
+                    }
+                }
+                else
+                {
+                    o.flags &= ~F_MUT;
+                }
+            }
         }
     }
 
@@ -3932,7 +3952,7 @@ pub fn solve(
 
         if (init)
         {
-            if (USE_mcom)
+            if (USE_mcom || USE_defer_fmut)
                 propagateType(init, t_let);
             else
                 maybeCopyOrMove(init, t_let);
