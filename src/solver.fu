@@ -40,7 +40,8 @@ let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
 let USE_mcom                = false;
-let USE_defer_fmut          = false;
+let USE_relax_F_MUT         = false;
+let USE_relax_sandwich      = false;
 
 let SELF_TEST               = true;
 
@@ -1646,7 +1647,7 @@ pub fn solve(
 
     //
 
-    fn propagateType(mut node: SolvedNode, slot: Type) // TODO BORROWCK danglefix
+    fn propagateType(mut node: SolvedNode, slot: Type, relax_mask!: i32) // TODO BORROWCK danglefix
     {
         let k = node.kind;
 
@@ -1656,7 +1657,7 @@ pub fn solve(
         //
         if (k == "and" || k == "or")
         {
-            propagateType(node.items, slot);
+            propagateType(node.items, slot, :relax_mask);
         }
         else if (k == "if")
         {
@@ -1665,11 +1666,11 @@ pub fn solve(
             //  best done in place during solveIf & solveLoop. //
             /////////////////////////////////////////////////////
 
-            propagateType(node.items[1, node.items.len], slot);
+            propagateType(node.items[1, node.items.len], slot, :relax_mask);
         }
 
         // Early exit.
-        if !(node.MUT.type.try_relax(:slot))
+        if !(node.MUT.type.try_relax(:slot, :relax_mask))
             return;
 
         //
@@ -1679,7 +1680,7 @@ pub fn solve(
             let init = node.items && node.items[LET_INIT];
             if (init)
             {
-                node.items[LET_INIT].propagateType(node.type);
+                node.items[LET_INIT].propagateType(node.type, :relax_mask);
 
                 // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
                 //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
@@ -1694,7 +1695,7 @@ pub fn solve(
         else if (k == "call")
         {
             if (t.kind == "field")
-                return node.items[0].propagateType(node.type);
+                return node.items[0].propagateType(node.type, :relax_mask);
 
             // Template spec relaxer, this is nasty.
             //  Not sure what the ideal method to deal with this here would be,
@@ -1728,7 +1729,7 @@ pub fn solve(
                     if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(argLets[i].target.index)))
                     {
                         mut type = orig.type;
-                        if (type.try_relax(:slot))
+                        if (type.try_relax(:slot, :relax_mask))
                         {
                             if (!relaxed)
                                 relaxed = node.items.slice(0, i);
@@ -1774,7 +1775,7 @@ pub fn solve(
                             if (next.kind == "__relaxed")
                             {
                                 // println("RELAX `" ~ t.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
-                                orig.propagateType(next.type);
+                                orig.propagateType(next.type, relax_mask: RELAX_all);
                             }
                         }
                     }
@@ -1783,10 +1784,10 @@ pub fn solve(
         }
     }
 
-    fn propagateType(items: [SolvedNode], type: Type)
+    fn propagateType(items: [SolvedNode], type: Type, relax_mask!: i32)
     {
         for (mut i = 0; i < items.len; i++)
-            propagateType(items[i], type);
+            propagateType(items[i], type, :relax_mask);
     }
 
 
@@ -1854,6 +1855,53 @@ pub fn solve(
             //
             h.returns ~= createJump(target: Target(), items.last);
         }
+
+        // There's a conflict between vars & returns.
+        let hasReturns = h.returns.len > 0;
+        if (hasReturns && USE_relax_sandwich)
+        {
+            // First off, compute a permissive estimate of the return value,
+            //  and use that to relax all locals.
+            for (mut i = 0; i < h.returns.len; i++)
+            {
+                shadow mut expr = h.returns[i].items.only;
+                reportReturnType(:helpers_idx, expr.type);
+            }
+
+            // NOW, IMPORTANTLY:
+            //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
+            //   There's a bit of a conflict of interest here with F_REFs and templates,
+            //    we can also start with non-F_REF but keep in mind that this worsens
+            //     the problem of const-vs-mut templates, so the rules are a bit blurry here.
+            //      We might be better off with explicit consts than explicit vars,
+            //       or perhaps allow ref vars to bind to constants.
+            //
+            if (h.ret_actual.is_mutref)
+            {
+                for (mut i = 0; i < h.returns.len; i++)
+                {
+                    shadow mut expr = h.returns[i].items.only;
+                    if (!expr.type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start))
+                    {
+                        reportReturnType(:helpers_idx, clear_mutref(expr.type));
+                        break;
+                    }
+                }
+            }
+
+            // In order to relax them locals we'll first need to relax their callsites.
+            for (mut i = 0; i < h.returns.len; i++)
+            {
+                shadow mut expr = h.returns[i].items.only;
+                propagateType(expr, h.ret_actual, relax_mask: RELAX_all);
+            }
+
+            // Now relax mutref & F_MUT variables.
+            relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_mutrefs_only);
+        }
+
+        // ////////
+
 
         // Previously in solveJump, the move-vs-copy decision:
         for (mut i = 0; i < h.returns.len; i++)
@@ -1964,7 +2012,7 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
 
         // Check var usage.
-        relaxBlockVars(helpers_idx, :fnbody_of);
+        relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_all);
 
         // Control flow.
         return createBlock(:items,
@@ -1973,7 +2021,7 @@ pub fn solve(
             helpers: helpers_idx);
     }
 
-    fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32)
+    fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32, relax_mask!: i32)
     {
         mut vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
         for (mut i = vars.len; i --> 0; )
@@ -2034,17 +2082,17 @@ pub fn solve(
 
             ref o = GET_mut(nested(:index));
 
-            ////////////////////////////////////////
-            // TODO one of these two is redundant //
-            o.type.try_relax(slot: usage); /////////
-            ////////////////////////////////////////
+            //////////////////////////////////////////////
+            // TODO one of these two is redundant       //
+            o.type.try_relax(slot: usage, :relax_mask); //
+            //////////////////////////////////////////////
 
             // Either way, try to relax.
             o.solved.type || fail("!var.solved.type, can`t propagateType");
-            o.solved.propagateType(usage);
+            o.solved.propagateType(usage, :relax_mask);
 
-            //
-            if (!USE_mcom && USE_defer_fmut)
+            // Lose the F_MUT annots on values that don't need them.
+            if (!USE_mcom && USE_relax_F_MUT)
             {
                 if (o.flags & F_MUT && usage.is_mutref)
                 {
@@ -3516,6 +3564,20 @@ pub fn solve(
         });
     }
 
+    fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start?!: i32): bool
+    {
+        Lifetime_climb(:lifetime, :locals_start, visit: |o|
+        {
+            o.type.is_mutref || fail(
+                "Checking for mutref-return-ok found non-mutref: " ~ o.qWHAT);
+
+            if (o.kind == "var" && !(o.flags & F_REF))
+                return false;
+        });
+
+        return true;
+    }
+
     //////////////////////////////////////////////////////////
 
     // Note - as soon as we re-assign the return value,
@@ -3952,8 +4014,8 @@ pub fn solve(
 
         if (init)
         {
-            if (USE_mcom || USE_defer_fmut)
-                propagateType(init, t_let);
+            if (USE_mcom || USE_relax_F_MUT)
+                propagateType(init, t_let, relax_mask: RELAX_all);
             else
                 maybeCopyOrMove(init, t_let);
 
@@ -5194,7 +5256,7 @@ pub fn solve(
 
     fn implicitOperatorBool(node: SolvedNode)
     {
-        propagateType(:node, t_bool);
+        propagateType(:node, t_bool, relax_mask: RELAX_all);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
@@ -5224,7 +5286,7 @@ pub fn solve(
         }
 
         // Clear mutrefs unless needed.
-        propagateType(:node, :slot);
+        propagateType(:node, :slot, relax_mask: RELAX_all);
 
         // No copy needed when the slot is a reference.
         if (slot.is_ref)

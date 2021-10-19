@@ -51,6 +51,12 @@ let q_RELAXABLE
 
 //
 
+pub let RELAX_mutrefs_only  = q_mutref      |0;
+pub let RELAX_all           = q_RELAXABLE   |0;
+
+
+//
+
 // let e_exit      = 1 <<  0;
 // let e_crash     = 1 <<  1;
 // let e_div0      = 1 <<  2;
@@ -577,20 +583,20 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
 //
 
-pub fn will_relax(ref type: Type, slot!: Type): bool
+pub fn will_relax(ref type: Type, slot!: Type, relax_mask!: i32): bool
 {
-    return (type.quals &~ slot.quals) & q_RELAXABLE != 0;
+    return (type.quals &~ slot.quals) & relax_mask != 0;
 }
 
-pub fn try_relax(ref type: Type, slot!?: Type): bool
+pub fn try_relax(ref type: Type, slot!: Type, relax_mask!: i32): bool
 {
-    if (!will_relax(type, :slot))
+    if (!will_relax(type, :slot, :relax_mask))
         return false;
 
     if (!slot.is_mutref)
         type = clear_mutref(type);
 
-    type.quals &= slot.quals | ~q_RELAXABLE;
+    type.quals &= slot.quals | ~relax_mask;
     return true;
 }
 
