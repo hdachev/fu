@@ -5765,9 +5765,21 @@ pub fn solve(
                                 {
                                     // Don't attempt if no-copy, the error is not useful.
                                     if (args[which].is_rx_copy)
-                                        return BORROWCK_resolveByCopyToTemporary(
-                                            node: callsite.MUT.items[which],
-                                            slot:          host_args[which].type);
+                                    {
+                                        shadow let argLet = target.arg_lets[which];
+
+                                        // Re: m_and_c_cant_alias_002 test:
+                                        //  We don't want to return a reference to the temporary,
+                                        //   so for now we just forbid this.
+                                        let argLt = Region_fromArgIndex(argLet.target.index);
+                                        let isReturned = target.type.lifetime.uni0n.has(argLt);
+                                        if (!isReturned)
+                                        {
+                                            return BORROWCK_resolveByCopyToTemporary(
+                                                node: callsite.MUT.items[which],
+                                                slot:          host_args[which].type);
+                                        }
+                                    }
                                 }
                             }
 
