@@ -3169,6 +3169,17 @@ pub fn runTests()
         }
     `);
 
+    TODO([
+    `
+        let q_mutref = 1;
+        pub let RELAX_mutref_only = q_mutref;
+        pub fn what(relax_mask!: i32) relax_mask -1;
+    `,
+    `
+        import _0;
+        fn main() what(RELAX_mutref_only);
+    `]);
+
 
     // Various templating fallacies.
     //
