@@ -187,7 +187,7 @@ pub fn build(
 
         //
         if (!stdout)
-            stdout = "[ EXIT CODE " ~ code ~ " ]";
+            stdout = "Exit code: " ~ code;
 
         mut explain = "";
         if (onfail)

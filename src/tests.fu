@@ -6094,6 +6094,49 @@ pub fn runTests()
         }
     `);
 
+    TODO_borrowck(`
+        struct S { hey: i32[]; };
+
+        fn m_and_c_cant_alias_001(ref m!: S, c!: S) {
+            m.hey.clear();
+            return c.hey; // noalias
+        }
+
+        fn test(ref mc: S) {
+            return m_and_c_cant_alias_001(m:mc, c:mc);  // Can't return a ref into c!
+        }                                               //  But can be made to work by creating an intermediate copyvar
+                                                        //   and move-returning from there.
+        fn main() {
+            mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
+            let hey = test(mc);
+            return hey.len - 10;
+        }
+    `);
+
+    FAIL(`
+        // !!!! The m_and_c_cant_alias_001 test obsoletes this,
+        // !!!!  this is just detects what we definitely don't want to see -
+        // !!!!   returning a reference into a temporary copy.
+        //
+        struct S { hey: i32[]; };
+
+        fn m_and_c_cant_alias_002(ref m: S, c: S) {
+            m.hey.clear();
+            return c.hey; // noalias
+        }
+
+        fn main() {
+            mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
+            //*F
+            let hey = m_and_c_cant_alias_002(mc, mc);
+            /*/
+            mut bc  = mc;
+            let hey = m_and_c_cant_alias_002(mc, bc);
+            //*/
+            return hey.len - 10;
+        }
+    `);
+
 
     // Enum basics.
 
