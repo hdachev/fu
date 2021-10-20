@@ -5,17 +5,19 @@ const fs        = require('fs');
 let _dirtyTime  = 0;
 let _dirty      = false;
 let _rebuild    = null;
-
+let _didRecycle = false;
 
 function triggerRebuild()
 {
     if (_rebuild)
         return;
 
-    // console.log('\n-----------\nRebuild ...\n-----------\n');
+    const cmd   = _didRecycle ? './cycle' : (_didRecycle = true, './recycle');
+
+    // console.log('\n-----------\nRebuild', cmd, '...\n-----------\n');
 
     _dirty      = false;
-    _rebuild    = cp.spawn('./cycle', {
+    _rebuild    = cp.spawn(cmd, {
         stdio: [process.stdin, process.stdout, process.stderr] });
 
     _rebuild.on('exit', (code, ...args) =>
