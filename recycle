@@ -3,9 +3,5 @@ set -e
 
 ./reset
 ./bootstrap
-
-./bin/fu self
-
-./bin/fu self
-./bin/fu self
-./bin/fu self
+mv ./bin/fu ./bin/fu.works
+./cycle

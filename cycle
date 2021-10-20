@@ -1,16 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ -f ./bin/fu.works ]; then
-    ./bin/fu.works self
-else
-    ./bin/fu self
-fi
-
+./bin/fu.works self
 ./bin/fu self
 ./bin/fu self
 ./bin/fu self
-
-if ! [ -f ./bin/fu.works ]; then
-    cp ./bin/fu ./bin/fu.works
-fi
