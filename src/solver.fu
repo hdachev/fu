@@ -483,9 +483,6 @@ pub fn solve(
         if (!Region_isArg(returned.if_first))
             return Lifetime(uni0n: returned);
 
-        let head = items[0].target.index;
-        let tail = items[items.len - 1].target.index;
-
         mut keep:       Lifetime;
         mut replace:    Lifetime;
 
@@ -493,14 +490,17 @@ pub fn solve(
 
         for (mut i = 0; i < returned.len; i++)
         {
-            let region      = returned[i];
-            let index       = region.Region_toArgIndex;
+            let region = returned[i];
 
-            // We're only filtering here, no need to run the full thing.
-            if (index < head || index > tail) {
+            if (region.Region_isStatic) {
                 keep.uni0n ~= region;
                 continue;
             }
+
+            region.Region_isArg() || fail(
+                "Not an argument region: " ~ region.index);
+
+            let index = region.Region_toArgIndex;
 
             // Full union here, otherwise we risk messing things up.
             while (offset--)

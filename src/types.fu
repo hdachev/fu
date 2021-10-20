@@ -107,7 +107,8 @@ pub fn Region_fromArgIndex(index: i32) Region_fromLocalIndex(-index);
 let Region_TEMP     = Region_fromLocalIndex(0x7fffffff.i32);
 let Region_STATIC   = Region_fromLocalIndex(0x80000000.i32);
 
-pub fn Region_isTemp(region: Region) region == Region_TEMP;
+pub fn Region_isTemp(region: Region)    region == Region_TEMP;
+pub fn Region_isStatic(region: Region)  region == Region_STATIC;
 
 pub fn Region_asIndex(using r: Region)
 {
