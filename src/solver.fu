@@ -2226,7 +2226,7 @@ pub fn solve(
     fn executeCompilerPragma(node: Node)
     {
         if (node.value == "break")
-            hacks::compilerBreak();
+            compilerBreak();
         else
             fail("Unknown compiler pragma: `" ~ node.value ~ "`.");
 
@@ -6062,6 +6062,36 @@ pub fn solve(
 
         if (USE_mcom)
             mcom_nodes(nodes);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    fn compilerBreak()
+    {
+        mut debug = "\nCompiler break:";
+
+        // Print all locals.
+        if (_current_fn.target)
+        {
+            let t  = _current_fn.target;
+            debug ~= "\n    Current fn: " ~ t.qWHAT() ~ " at (" ~ t.modid ~ ", " ~ t.index ~ "):";
+
+            let locals = t.locals;
+            for (mut i = 0; i < locals.len; i++)
+            {
+                let item = locals[i];
+                debug ~= "\n        " ~ item.qWHAT();
+            }
+        }
+
+        if (debug)
+            println(debug);
+
+        //
+        hacks::compilerBreak();
     }
 
 
