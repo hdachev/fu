@@ -1988,18 +1988,6 @@ pub fn solve(
         ///////////////////////////////////////////////////////////////
 
 
-        // cpy/move.
-        for (mut i = 0; i < h.returns.len; i++)
-        {
-            // TODO FIX nodeidx unstable because createCopy,
-            //  ref to only is in smallvec -
-            //   so createCopy invalidates the ref.
-            //
-            mut r = h.returns[i].items.only;
-            maybeCopyOrMove(r, h.ret_actual);
-            h.returns[i].MUT.items.only = r;
-        }
-
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         if (OPTI_flatten_blocks && items.len) for (;;)
@@ -2015,8 +2003,24 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
 
+        ////////////////////////////////////////////
+        // This we can already defer & get rid of //
+        ////////////////////////////////////////////
+
         // Check var usage.
         relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_all);
+
+        // cpy/move.
+        for (mut i = 0; i < h.returns.len; i++)
+        {
+            // TODO FIX nodeidx unstable because createCopy,
+            //  ref to only is in smallvec -
+            //   so createCopy invalidates the ref.
+            //
+            mut r = h.returns[i].items.only;
+            maybeCopyOrMove(r, h.ret_actual);
+            h.returns[i].MUT.items.only = r;
+        }
 
         // Control flow.
         return createBlock(:items,
