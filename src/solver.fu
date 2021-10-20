@@ -41,7 +41,7 @@ let USE_ref_to_mutref       = true;
 
 let USE_mcom                = false;
 let USE_relax_F_MUT         = false;
-let USE_relax_sandwich      = false;
+let USE_relax_sandwich      = true;
 
 let SELF_TEST               = true;
 
@@ -1898,7 +1898,11 @@ pub fn solve(
 
             // Now relax mutref & F_MUT variables.
             relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_mutrefs_only);
+
+            // TODO FIX Clear this up, there's local lifetimes in the return value.
+            h.ret_actual.lifetime = [];
         }
+
 
         // ////////
 
