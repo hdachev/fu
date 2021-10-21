@@ -2031,7 +2031,7 @@ pub fn solve(
         return createBlock(:items,
             type: h.ret_actual || fail(),
             label: h.mask & HM_LabelUsed && h.target,
-            helpers: helpers_idx);
+            helpers: h.index);
     }
 
     fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32, relax_mask!: i32)
@@ -3560,7 +3560,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_F_MOVED_FROM(lifetime: Lifetime): Lifetime
+    fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
         Lifetime_climb(:lifetime, visit: |o|
         {
