@@ -1844,6 +1844,11 @@ pub fn solve(
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
+        // Get rid of implicit arguments as they pop up randomly.
+        if (!fnbody_of)
+            TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx);
+
+        //
         mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
 
         // Block tail expressions.
@@ -1897,7 +1902,7 @@ pub fn solve(
             }
 
             // Now relax mutref & F_MUT variables.
-            relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_mutrefs_only);
+            relaxBlockVars(helpers_idx, relax_mask: RELAX_mutrefs_only);
 
             // TODO FIX Clear this up, there's local lifetimes in the return value.
             h.ret_actual.lifetime = [];
@@ -1973,6 +1978,22 @@ pub fn solve(
                 "Actual return type does not match annotation");
 
 
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+        if (OPTI_flatten_blocks && items.len) for (;;)
+        {
+            let tail = items.last;
+            if (tail.kind != "block" || tail.target)
+                break;
+
+            mut unwrap = tail.items;
+            items.pop();
+            items ~= unwrap;
+        }
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+
+
         // BORROWCK ///////////////////////////////////////////////////
         //  Running after cpy/mov because we run this once per fn,
         //   and cpy/mov is each block/inlined callsite.
@@ -1992,28 +2013,12 @@ pub fn solve(
         //
         ///////////////////////////////////////////////////////////////
 
-
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        if (OPTI_flatten_blocks && items.len) for (;;)
-        {
-            let tail = items.last;
-            if (tail.kind != "block" || tail.target)
-                break;
-
-            mut unwrap = tail.items;
-            items.pop();
-            items ~= unwrap;
-        }
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-
         ////////////////////////////////////////////
         // This we can already defer & get rid of //
         ////////////////////////////////////////////
 
         // Check var usage.
-        relaxBlockVars(helpers_idx, :fnbody_of, relax_mask: RELAX_all);
+        relaxBlockVars(helpers_idx, relax_mask: RELAX_all);
 
         // cpy/move.
         for (mut i = 0; i < h.returns.len; i++)
@@ -2034,9 +2039,9 @@ pub fn solve(
             helpers: h.index);
     }
 
-    fn relaxBlockVars(helpers_idx: i32, fnbody_of!: i32, relax_mask!: i32)
+    fn TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx: i32)
     {
-        mut vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
+        ref vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
@@ -2044,14 +2049,14 @@ pub fn solve(
 
             // TODO FIX ARGSTEAL Lift implicit arguments up -
             //  they pop up randomly during bodysolve.
-            if (var.flags & F_ARG && !fnbody_of)
+            if (var.flags & F_ARG)
             {
                 var.flags & F_IMPLICIT || fail(
                     "This shouldnt happen for regular arguments.");
 
                 for (shadow mut i = helpers_idx; i --> 0; )
                 {
-                    let parent = _helpers[i];
+                    let parent = _helpers[i]; // good luck bck-ing this
                     if (parent.isFnOrType)
                     {
                         parent.vars ~= index;
@@ -2059,8 +2064,18 @@ pub fn solve(
                     }
                 }
 
-                continue;
+                vars.splice(i, 1);
             }
+        }
+    }
+
+    fn relaxBlockVars(helpers_idx: i32, relax_mask!: i32)
+    {
+        mut vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
+        for (mut i = vars.len; i --> 0; )
+        {
+            let index = vars[i];
+            let var = GET(nested(:index));
 
             //
             mut usage: Type;
