@@ -3189,6 +3189,25 @@ pub fn runTests()
         fn main() what(RELAX_mutref_only);
     `]);
 
+    ZERO(`
+        pub fn pairs(a: Map($K, $V), fn) {
+            let k = a.keys;
+            let v = a.values;
+            for (mut i = 0; i < k.len; i++)
+                fn(k[i], v[i]);
+        }
+
+        fn main() {
+            mut map: Map(i32, i32);
+            map[1] = 2;
+            map[3] = 4;
+
+            mut sum = 0;
+            map.pairs(|k, v| sum += k + v * 100);
+            return sum - 604;
+        }
+    `);
+
 
     // Various templating fallacies.
     //
