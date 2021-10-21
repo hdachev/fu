@@ -50,12 +50,21 @@ pub fn runTests()
             file::read(TESTDIFFS_FILE));
     ////////////////////////////////////////////////
 
-    TODO(`
+    FAIL(`
         //*F
         fn main(): i32 {}
         /*/
         fn main(): i32 { return 0; }
         //*/
+    `);
+
+    FAIL(`
+        //*F
+        fn test(): i32 {}
+        /*/
+        fn test(): i32 { return 0; }
+        //*/
+        fn main() test();
     `);
 
     ZERO(`

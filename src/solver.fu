@@ -1963,9 +1963,14 @@ pub fn solve(
             if (h.ret_actual)
                 isAssignable(host: t_void, h.ret_actual) || fail(
                     "Non-void returning fn missing a final return.");
-
-            h.ret_actual = t_void;
         }
+
+        if (!h.ret_actual)
+            h.ret_actual = t_void;
+
+        if (h.ret_expect && fnbody_of)
+            checkAssignable(host: h.ret_expect, h.ret_actual,
+                "Actual return type does not match annotation");
 
 
         // BORROWCK ///////////////////////////////////////////////////
@@ -2024,7 +2029,7 @@ pub fn solve(
 
         // Control flow.
         return createBlock(:items,
-            type: h.ret_actual || t_void,
+            type: h.ret_actual || fail(),
             label: h.mask & HM_LabelUsed && h.target,
             helpers: helpers_idx);
     }
