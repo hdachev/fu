@@ -1902,7 +1902,7 @@ pub fn solve(
             }
 
             // Now relax mutref & F_MUT variables.
-            relaxBlockVars(helpers_idx, relax_mask: RELAX_mutrefs_only);
+            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
 
             // TODO FIX Clear this up, there's local lifetimes in the return value.
             h.ret_actual.lifetime = [];
@@ -2017,26 +2017,15 @@ pub fn solve(
         // This we can already defer & get rid of //
         ////////////////////////////////////////////
 
-        // Check var usage.
-        relaxBlockVars(helpers_idx, relax_mask: RELAX_all);
-
-        // cpy/move.
-        for (mut i = 0; i < h.returns.len; i++)
-        {
-            // TODO FIX nodeidx unstable because createCopy,
-            //  ref to only is in smallvec -
-            //   so createCopy invalidates the ref.
-            //
-            mut r = h.returns[i].items.only;
-            maybeCopyOrMove(r, h.ret_actual);
-            h.returns[i].MUT.items.only = r;
-        }
-
-        // Control flow.
-        return createBlock(:items,
+        let block = createBlock(:items,
             type: h.ret_actual || fail(),
             label: h.mask & HM_LabelUsed && h.target,
-            helpers: h.index);
+            :h);
+
+        if (block.kind == "block")
+            mcom_BlockReturns(block);
+
+        return block;
     }
 
     fn TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx: i32)
@@ -2069,9 +2058,9 @@ pub fn solve(
         }
     }
 
-    fn relaxBlockVars(helpers_idx: i32, relax_mask!: i32)
+    fn relaxBlockVars(h!: Helpers, relax_mask!: i32)
     {
-        mut vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
+        mut vars = h.vars; // TODO BORROWCK danglefix
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
@@ -2139,12 +2128,12 @@ pub fn solve(
         }
     }
 
-    fn createBlock(type: Type, items: SolvedNode[], label?: Target, helpers?: i32): SolvedNode
+    fn createBlock(type: Type, items: SolvedNode[], label?: Target, h?: Helpers): SolvedNode
     {
         // Compact + stress test.
-        if (!label && items.len)
+        if (items.len)
         {
-            mut ok = true;
+            mut ok = !label && !(h && h.vars);
             for (mut i = 0; i < items.len - 1; i++)
             {
                 if (items[i].kind != "empty")
@@ -2158,7 +2147,7 @@ pub fn solve(
                 return items.last;
         }
 
-        return SolvedNode(kind: "block", :type, :items, target: label, :helpers);
+        return SolvedNode(kind: "block", :type, :items, target: label, helpers: h.index);
     }
 
 
@@ -6040,6 +6029,24 @@ pub fn solve(
                 maybeCopyOrMove(init, node.type);
                 node.MUT.items[LET_INIT] = init;
             }
+        }
+    }
+
+    fn mcom_BlockReturns(node: SolvedNode)
+    {
+        let h = Helpers(node.helpers || fail("Block.helpers index got lost."));
+        relaxBlockVars(:h, relax_mask: RELAX_all);
+
+        // cpy/move.
+        for (mut i = 0; i < h.returns.len; i++)
+        {
+            // TODO FIX nodeidx unstable because createCopy,
+            //  ref to only is in smallvec -
+            //   so createCopy invalidates the ref.
+            //
+            mut r = h.returns[i].items.only;
+            maybeCopyOrMove(r, h.ret_actual);
+            h.returns[i].MUT.items.only = r;
         }
     }
 
