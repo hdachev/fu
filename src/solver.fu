@@ -39,9 +39,8 @@ let OPTI_flatten_blocks     = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
-let USE_mcom                = false;
+let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
-let USE_relax_sandwich      = true;
 
 let SELF_TEST               = true;
 
@@ -1797,10 +1796,12 @@ pub fn solve(
     {
         let items = solveNodes(node.items, t_void);
 
-        runAllPasses(items);
-
         if (!items.last.is_never)
-            return solved(node, t_void, items);
+        {
+            let root = solved(node, t_void, items);
+            runAllPasses(root);
+            return root;
+        }
 
         //
         _here = items.last.token;
@@ -1862,8 +1863,7 @@ pub fn solve(
         }
 
         // There's a conflict between vars & returns.
-        let hasReturns = h.returns.len > 0;
-        if (hasReturns && USE_relax_sandwich)
+        if (h.returns)
         {
             // First off, compute a permissive estimate of the return value,
             //  and use that to relax all locals.
@@ -1900,13 +1900,20 @@ pub fn solve(
                 shadow mut expr = h.returns[i].items.only;
                 propagateType(expr, h.ret_actual, relax_mask: RELAX_all);
             }
-
-            // Now relax mutref & F_MUT variables.
-            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
-
-            // TODO FIX Clear this up, there's local lifetimes in the return value.
-            h.ret_actual.lifetime = [];
         }
+
+
+        // This will work ideally in a reverse pass,
+        //  going through all blocks in reverse and relaxing their returns,
+        //   maybe
+
+        // Now relax mutref & F_MUT variables.
+        relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
+
+        // TODO clear this up
+
+        // TODO FIX Clear this up, there's local lifetimes in the return value.
+        h.ret_actual.lifetime = [];
 
 
         // ////////
@@ -1994,11 +2001,13 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
 
 
-        // BORROWCK ///////////////////////////////////////////////////
-        //  Running after cpy/mov because we run this once per fn,
-        //   and cpy/mov is each block/inlined callsite.
-        //    This will limit what we can do here for starters.
         //
+
+        let block = createBlock(:items,
+            type: h.ret_actual || fail(),
+            label: h.mask & HM_LabelUsed && h.target,
+            :h);
+
         if (fnbody_of)
         {
             // Don't run further passes if dirty -
@@ -2008,22 +2017,8 @@ pub fn solve(
             //
             let status = Target(:module.modid, fnbody_of).status;
             if !(status & SS_DIRTY)
-                runAllPasses(items);
+                runAllPasses(block);
         }
-        //
-        ///////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////
-        // This we can already defer & get rid of //
-        ////////////////////////////////////////////
-
-        let block = createBlock(:items,
-            type: h.ret_actual || fail(),
-            label: h.mask & HM_LabelUsed && h.target,
-            :h);
-
-        if (block.kind == "block")
-            mcom_BlockReturns(block);
 
         return block;
     }
@@ -2089,7 +2084,7 @@ pub fn solve(
                             ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
                 }
             }
-            else
+            else if (relax_mask == RELAX_all)
             {
                 var.flags & F_LAX || fail(
                     "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
@@ -2109,7 +2104,7 @@ pub fn solve(
             o.solved.propagateType(usage, :relax_mask);
 
             // Lose the F_MUT annots on values that don't need them.
-            if (!USE_mcom && USE_relax_F_MUT)
+            if (!USE_mcom_lets && USE_relax_F_MUT)
             {
                 if (o.flags & F_MUT && usage.is_mutref)
                 {
@@ -4031,7 +4026,7 @@ pub fn solve(
 
         if (init)
         {
-            if (USE_mcom || USE_relax_F_MUT)
+            if (USE_mcom_lets || USE_relax_F_MUT)
                 propagateType(init, t_let, relax_mask: RELAX_all);
             else
                 maybeCopyOrMove(init, t_let);
@@ -6017,7 +6012,7 @@ pub fn solve(
 
     fn mcom_LetInit(node: SolvedNode)
     {
-        if (node.items && !node.is_ref)
+        if (node.items && !node.is_ref && USE_mcom_lets)
         {
             let init = node.items[LET_INIT];
             if (init && init.is_ref)
@@ -6034,7 +6029,10 @@ pub fn solve(
 
     fn mcom_BlockReturns(node: SolvedNode)
     {
-        let h = Helpers(node.helpers || fail("Block.helpers index got lost."));
+        if (!node.helpers)
+            return;
+
+        let h = Helpers(node.helpers);
         relaxBlockVars(:h, relax_mask: RELAX_all);
 
         // cpy/move.
@@ -6063,13 +6061,13 @@ pub fn solve(
 
         //
         let k = node.kind;
-        //
-        // if (k == "block")
-        //     return mcom_BlockReturns(node);
-        //
+
+        if (k == "block")
+            return mcom_BlockReturns(node);
+
         if (k == "let")
             return mcom_LetInit(node);
-        //
+
         // if (k == "call")
         //     return mcom_CallArgs(node);
         //
@@ -6088,15 +6086,14 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn runAllPasses(nodes: SolvedNode[])
+    fn runAllPasses(node: SolvedNode)
     {
-        bck_nodes(nodes);
+        bck_node(node);
 
         if (SELF_TEST)
-            test_nodes(nodes);
+            test_node(node);
 
-        if (USE_mcom)
-            mcom_nodes(nodes);
+        mcom_node(node);
     }
 
 
