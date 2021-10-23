@@ -1874,7 +1874,7 @@ pub fn solve(
             for (mut i = 0; i < h.returns.len; i++)
             {
                 shadow mut expr = h.returns[i].items.only;
-                reportReturnType(:helpers_idx, expr.type);
+                reportReturnType(:h, expr.type);
             }
 
             // NOW, IMPORTANTLY:
@@ -1892,7 +1892,7 @@ pub fn solve(
                     shadow mut expr = h.returns[i].items.only;
                     if (!expr.type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start))
                     {
-                        reportReturnType(:helpers_idx, clear_mutref(expr.type));
+                        reportReturnType(:h, clear_mutref(expr.type));
                         break;
                     }
                 }
@@ -1904,21 +1904,16 @@ pub fn solve(
                 shadow mut expr = h.returns[i].items.only;
                 propagateType(expr, h.ret_actual, relax_mask: RELAX_all);
             }
-        }
-
-
-        ////////////////////////////
-        ////////////////////////////
-        ////////////////////////////
-        {
-            // This will work ideally in a reverse pass,
-            //  going through all blocks in reverse and relaxing their returns.
-
-            // Now relax mutref & F_MUT variables.
-            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
 
             // TODO FIX Clear this up, there's local lifetimes in the return value.
             h.ret_actual.lifetime = [];
+        }
+
+        // This will work ideally in a reverse pass,
+        //  going through all blocks in reverse and relaxing their returns.
+        {
+            // Now relax mutref & F_MUT variables.
+            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
 
             // TODO FIX this looks like bullshit,
             //  there's gotta be a better way to do this.
@@ -1940,10 +1935,16 @@ pub fn solve(
             if (!h.ret_actual)
                 h.ret_actual = t_void;
         }
-        ////////////////////////////
-        ////////////////////////////
-        ////////////////////////////
 
+
+
+        ////////////////////////////
+        ////////////////////////////
+        ////////////////////////////
+        //
+        //  Next up, this has to move to post-bck:
+        //   the problem though is we need to be able to change our mind re: what's a ref.
+        //    Consider naming returned lifetimes, so we can change our mind.
 
         // Previously in solveJump, the move-vs-copy decision:
         for (mut i = 0; i < h.returns.len; i++)
@@ -1983,12 +1984,17 @@ pub fn solve(
 
             // Report the unwound lifetime,
             //  but leave the original lifetime on the expr for bck & co.
-            reportReturnType(:helpers_idx, type);
+            reportReturnType(:h, type);
         }
 
         if (h.ret_expect)
             checkAssignable(host: h.ret_expect, h.ret_actual,
                 "Actual return type does not match annotation");
+
+        //
+        ////////////////////////////
+        ////////////////////////////
+        ////////////////////////////
 
 
         //
@@ -3674,7 +3680,7 @@ pub fn solve(
 
         if (!items)
         {
-            reportReturnType(:helpers_idx, t_void);
+            reportReturnType(:h, t_void);
             return createJump(:target);
         }
 
@@ -3691,10 +3697,8 @@ pub fn solve(
             items: expr && [ expr ]);
     }
 
-    fn reportReturnType(helpers_idx: i32, type: Type)
+    fn reportReturnType(h!: Helpers, type: Type)
     {
-        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
-
         // Regular block expects are best-effort type inference hints,
         //  whereas fn expects are explicit type annotations that must be enforced.
         if (h.ret_expect && h.mask & HM_Function)
