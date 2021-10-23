@@ -1,4 +1,97 @@
 
+        //*F
+        fn main(): i32 {}
+        /*/
+        fn main(): i32 { return 0; }
+        //*/
+
+-----
+_0.fu @3:9:
+
+[2m      | [0m
+[2m      |         //*F[0m
+    3 |         [31;1mfn[0m main(): i32 {}
+[2m      |         /*/[0m
+[2m      |         fn main(): i32 { return 0; }[0m
+
+	Actual return type does not match annotation: i32: copy trivial primitive arithmetic integral signed <- void
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        /*
+        fn main(): i32 {}
+        /*/
+        fn main(): i32 { return 0; }
+        //*/
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    return 0;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        //*F
+        fn test(): i32 {}
+        /*/
+        fn test(): i32 { return 0; }
+        //*/
+        fn main() test();
+
+-----
+_0.fu @3:9:
+
+[2m      | [0m
+[2m      |         //*F[0m
+    3 |         [31;1mfn[0m test(): i32 {}
+[2m      |         /*/[0m
+[2m      |         fn test(): i32 { return 0; }[0m
+
+	Actual return type does not match annotation: i32: copy trivial primitive arithmetic integral signed <- void
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        /*
+        fn test(): i32 {}
+        /*/
+        fn test(): i32 { return 0; }
+        //*/
+        fn main() test();
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test()
+{
+    return 0;
+}
+
+int fu_MAIN()
+{
+    return test();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         return 1 - 1;
 
 -----
@@ -368,14 +461,24 @@ int main() { return fu_MAIN(); }
             sum++; //ERR ++ overload
 
         return sum - 15;
+
 -----
 _0.fu @11:13:
-	`++postfix` bad args.
-Expect: ++postfix(
-	a: $)
+
+[2m      |         //*/[0m
+[2m      |         while (sum < 15)[0m
+   11 |             [31;1msum[0m++; //ERR ++ overload
+[2m      | [0m
+[2m      |         return sum - 15;[0m
+
+	`postfix++` bad args.
+Expect: `postfix++(
+	[34;1ma[0m: $)`
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         /*
@@ -432,6 +535,16 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        mut i = 5;
+        mut sum = 0;
+        while (let x = i--) sum += x - i;
+        return sum - 5;
+
+-----
+TODO: _0.fu @7:20:
+	Expected `)`, got `x`.
 -----
 
         fn named(a: i32, b: i32)
@@ -602,14 +715,24 @@ int main() { return fu_MAIN(); }
 
         r.min++; //ERR ++ overload
         return r.max - r.min;
+
 -----
 _0.fu @17:14:
-	`++postfix` bad args.
-Expect: ++postfix(
-	a: $)
+
+[2m      |         Range(1, 2);[0m
+[2m      | [0m
+   17 |         r.min[31;1m++[0m; //ERR ++ overload
+[2m      |         return r.max - r.min;[0m
+[2m      |     [0m
+
+	`postfix++` bad args.
+Expect: `postfix++(
+	[34;1ma[0m: $)`
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct Range {
@@ -843,12 +966,22 @@ int main() { return fu_MAIN(); }
             //*/
 
         fn main() test(A(1, 1), B(-1, -1));
+
 -----
 _0.fu @6:13:
-	Ambiguous callsite, matches multiple items in scope: x(
-	this: 1:$1B via `var b: 1+14$1B`) from `global scope` and x(
-	this: 1:$0A via `var a: 1+14$0A`) from `global scope`, as seen from `test`.
-	Solving fn `test`.
+
+[2m      |         fn test(using a: A, using b: B)[0m
+[2m      |             //*F[0m
+    6 |             [31;1mx[0m + z;
+[2m      |             /*/[0m
+[2m      |             y + z;[0m
+
+	Ambiguous callsite, matches multiple items in scope: `x(
+	[34;1mthis[0m: 1:$1B via `[35;1mvar[0m [34;1mb[0m: 1+14$1B`)` from global scope and `x(
+	[34;1mthis[0m: 1:$0A via `[35;1mvar[0m [34;1ma[0m: 1+14$0A`)` from global scope, as seen from `test`.
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
 -----
 
         struct A { x: i32; y: i32; };
@@ -1005,7 +1138,7 @@ int main() { return fu_MAIN(); }
 -----
 
         fn hey(a) a * a;
-        fn main() 0.hey;
+        fn main = 0.hey;
 
 -----
 
@@ -1717,6 +1850,28 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
+        struct Test { using a: i32[]; };
+        fn main() Test.a_len;
+
+-----
+TODO: _0.fu @4:19:
+
+[2m      |         fn a_len(a: [$T]) a.len; // a conversion could navigate this here[0m
+[2m      |         struct Test { using a: i32[]; };[0m
+    4 |         fn main() [31;1mTest[0m.a_len;
+[2m      | [0m
+
+	`a_len` bad args.
+Expect: `a_len(
+	[34;1ma[0m: $)`
+Actual: (
+	1:$0Test: copy).
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -2927,6 +3082,36 @@ int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
 // DEAD_code
+
+-----
+
+        pub fn ZERO(implicit ref sum: i32, mut x: i32) {
+            while (x) {
+                let y = x / 2;
+                ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,
+                ZERO(   y ); //  meaning y remains unused here on first solve.
+                sum += x;
+            }
+        }
+
+        fn main() {
+            let implicit mut sum = 0;
+            ZERO(4);
+            return sum - 12;
+        }
+
+-----
+TODO: _0.fu @3:20:
+
+[2m      | [0m
+[2m      |         pub fn ZERO(implicit ref sum: i32, mut x: i32) {[0m
+    3 |             while ([31;1mx[0m) {
+[2m      |                 let y = x / 2;[0m
+[2m      |                 ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,[0m
+
+	Unused variable: `y`: make it `lax` if this is intentional.
+
+        Solving [35;1mfn[0m [34;1mZERO[0m
 
 -----
 
@@ -4275,7 +4460,7 @@ inline int find_o2eL(fu::view<int> a, const int b)
 
 int fu_MAIN()
 {
-    return fu::lfind("hello world"_fu, "world"_fu, 0) - (2 * find_o2eL((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14));
+    return fu::lfind("hello world"_fu, "world"_fu) - (2 * find_o2eL((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14));
 }
 
 #endif
@@ -4861,14 +5046,23 @@ int main() { return fu_MAIN(); }
         fn test(a = 0) a + 1;
         //*/
         fn main() test(-1);
+
 -----
-_0.fu @7:9:
+_0.fu @7:19:
+
+[2m      |         fn test(a = 0) a + 1;[0m
+[2m      |         //*/[0m
+    7 |         fn main() [31;1mtest[0m(-1);
+[2m      |     [0m
+
 	`test` bad args.
-Expect: test(
-	a?: []+28byte: ref)
+Expect: `test(
+	[34;1ma[0m?: []+28byte: ref)`
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         /*
@@ -5199,6 +5393,111 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn test(ref sum: i32) {
+            FIRST: {
+                if (sum & 1)
+                    break:
+                        FIRST;
+                sum++;
+            }
+            SECOND: {
+                if (sum & 1)
+                    break: //*F
+                        FIRST; /*/ SECOND; //*/
+                sum++;
+
+                if (sum & 2)
+                    break:
+                        SECOND;
+                sum++;
+            }
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(sum);
+            return sum - 1;
+        }
+
+-----
+_0.fu @11:21:
+
+[2m      |             SECOND: {[0m
+[2m      |                 if (sum & 1)[0m
+   11 |                     [31;1mbreak[0m: //*F
+[2m      |                         FIRST; /*/ SECOND; //*/[0m
+[2m      |                 sum++;[0m
+
+	No label `FIRST` in scope.
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref sum: i32) {
+            FIRST: {
+                if (sum & 1)
+                    break:
+                        FIRST;
+                sum++;
+            }
+            SECOND: {
+                if (sum & 1)
+                    break: /*
+                        FIRST; /*/ SECOND; //*/
+                sum++;
+
+                if (sum & 2)
+                    break:
+                        SECOND;
+                sum++;
+            }
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(sum);
+            return sum - 1;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static void test(int& sum)
+{
+
+    { {
+        if (sum & 1)
+            goto L_FIRST;
+
+        sum++;
+      } L_FIRST:;
+    };
+    if (sum & 1)
+        return;
+
+    sum++;
+    if (sum & 2)
+        return;
+
+    sum++;
+}
+
+int fu_MAIN()
+{
+    int sum = 0;
+    test(sum);
+    return sum - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
         struct Test { x: i32; }
         fn test(t: &mut Test) t.x++;
         mut t = Test();
@@ -5209,8 +5508,9 @@ int main() { return fu_MAIN(); }
         //*/
 
         return t.x - 1;
+
 -----
-_0.fu @7:9..14:9:
+_0.fu @3:16..14:9:
 	Orphan pure-looking expression.
 -----
 
@@ -5664,6 +5964,7 @@ int main() { return fu_MAIN(); }
             }
         }
         //*/
+
 -----
 _0.fu @5:9..7:9:
 	Inconsistent indent at `{`: expected more than 9, got 9. Block starts on line 5.
@@ -5724,8 +6025,9 @@ int main() { return fu_MAIN(); }
         /*/
         }
         //*/
+
 -----
-_0.fu @6:13..13:1:
+_0.fu @5:9..13:1:
 	Inconsistent indent at closing `}`: expected 8, got 7. Block starts on line 5.
 -----
 
@@ -5760,8 +6062,9 @@ int main() { return fu_MAIN(); }
         /*/
         }
         //*/
+
 -----
-_0.fu @6:13..13:1:
+_0.fu @5:9..13:1:
 	Inconsistent indent at closing `}`: expected 8, got 9. Block starts on line 5.
 -----
 
@@ -5796,6 +6099,7 @@ int main() { return fu_MAIN(); }
         z = [ 2 ];                  ;; TODO fu::slate<1, int> { 2 }
 
         return y[0] - 1
+
 -----
 _0.fu @5:45:
 	Missing semicollon before `fu`.
@@ -5810,6 +6114,9 @@ _0.fu @5:45:
         return y[0] - 1
 
 -----
+;; TODO fu::slate<1, int> { 1 }
+;; TODO fu::slate<1, int> { 2 }
+
 #include <fu/vec.h>
 
 #ifndef FU_NO_FDEFs
@@ -5836,10 +6143,20 @@ int main() { return fu_MAIN(); }
                 a && fail(a) ? b : a;
 
         fn main() hello("", "nope").len;
+
 -----
 _0.fu @3:9:
+
+[2m      | [0m
+[2m      |         fn fail(a: string) throw("hey: " ~ a);[0m
+    3 |         [31;1mfn[0m hello(a: string,
+[2m      |             //*F[0m
+[2m      |             /*/ lax //*/ //ERR unused[0m
+
 	Unused variable: `b`: make it `lax` if this is intentional.
-	Solving fn `hello`.
+
+        Solving [35;1mfn[0m [34;1mhello[0m
+
 -----
 
         fn fail(a: string) throw("hey: " ~ a);
@@ -5884,28 +6201,1934 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
 
-    struct BINOP {
-        P: Map(string, i32);
-    };
+        fn main() {
+            mut x = 0;
+            //*F
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
 
-    fn setupOperators(): BINOP
+-----
+_0.fu @13:29:
+
+[2m      |             mut y = 0;[0m
+[2m      |             //*/[0m
+   13 |             let z = test(x, [31;1my[0m);
+[2m      |             return x+y - z;[0m
+[2m      |         }[0m
+
+	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1mx[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + (++b);
+        }
+
+        fn main() {
+            mut x = 0;
+            /*
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test(x, y);
+            return x+y - z;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test(int& a, int& b)
+{
+    return ++a + ++b;
+}
+
+int fu_MAIN()
+{
+    int x = 0;
+    int y = 0;
+    const int z = test(x, y);
+    return (x + y) - z;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) {
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                /*/
+                b++;
+                //*/
+            }
+            b++;
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+
+-----
+_0.fu @11:13:
+
+[2m      |                 //*/[0m
+[2m      |             }[0m
+   11 |             [31;1mb[0m++;
+[2m      |         }[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1mb[0m, reference invalidated by write to [31;1ma[0m at 6:17:
+
+[2m      |             if (a.len & 1) {[0m
+[2m      |                 //*F[0m
+    6 |                 [31;1ma[0m ~= 1; // Invalidates 'b'.
+[2m      |                 /*/[0m
+[2m      |                 b++;[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) {
+                /*
+                a ~= 1; // Invalidates 'b'.
+                /*/
+                b++;
+                //*/
+            }
+            b++;
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+
+-----
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test(fu_VEC<int>& a)
+{
+    int& b = a.mutref(0);
+    if (a.size() & 1)
+        b++;
+
+    b++;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    test(arr);
+    int sum = 0;
+    for (int i = 0; i < arr.size(); i++)
+        sum += arr[i];
+
+    return sum - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        nocopy struct nci32 { i: i32; };
+
+        fn test(ref a: nci32, b: nci32) a.i++ || b.i;
+        fn main() {
+            mut x = nci32(0);
+            //*F
+            ref y = x;
+            /*/
+            let y = nci32(0);
+            //*/
+            return test(x, y);
+        }
+
+-----
+_0.fu @12:28:
+
+[2m      |             let y = nci32(0);[0m
+[2m      |             //*/[0m
+   12 |             return test(x, [31;1my[0m);
+[2m      |         }[0m
+[2m      |     [0m
+
+	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1mx[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        nocopy struct nci32 { i: i32; };
+
+        fn test(ref a: nci32, b: nci32) a.i++ || b.i;
+        fn main() {
+            mut x = nci32(0);
+            /*
+            ref y = x;
+            /*/
+            let y = nci32(0);
+            //*/
+            return test(x, y);
+        }
+
+-----
+
+struct s_nci32;
+
+                                #ifndef DEF_s_nci32
+                                #define DEF_s_nci32
+struct s_nci32
+{
+    int i;
+    s_nci32(const s_nci32&) = delete;
+    s_nci32(s_nci32&&) = default;
+    s_nci32& operator=(const s_nci32&) = delete;
+    s_nci32& operator=(s_nci32&&) = default;
+    explicit operator bool() const noexcept
     {
-        mut out: BINOP;
-
-        fn binop(op: string)
-            out.P[op] = 7;
-
-        binop(",");
-
-        return out;
+        return false
+            || i
+        ;
     }
+};
+                                #endif
 
-    shadow let BINOP = setupOperators();
-    let P_COMMA = BINOP.P[","] || assert();
+#ifndef FU_NO_FDEFs
 
-    fn main() P_COMMA - 7;
+static int test(s_nci32& a, const s_nci32& b)
+{
+    int _0 {};
+    return (_0 = a.i++) ? _0 : int(b.i);
+}
 
+int fu_MAIN()
+{
+    s_nci32 x = s_nci32 { 0 };
+    const s_nci32 y = s_nci32 { 0 };
+    return test(x, y);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) { // Lets be extra sure here.
+                //*F
+                a ~= 1; // Invalidates 'b'.
+                b++;
+                /*/
+                b++;
+                a ~= 1;
+                //*/
+            }
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+
+-----
+_0.fu @7:17:
+
+[2m      |                 //*F[0m
+[2m      |                 a ~= 1; // Invalidates 'b'.[0m
+    7 |                 [31;1mb[0m++;
+[2m      |                 /*/[0m
+[2m      |                 b++;[0m
+
+	BORROWCK: Cannot access [31;1mb[0m, reference invalidated by write to [31;1ma[0m at 6:17:
+
+[2m      |             if (a.len & 1) { // Lets be extra sure here.[0m
+[2m      |                 //*F[0m
+    6 |                 [31;1ma[0m ~= 1; // Invalidates 'b'.
+[2m      |                 b++;[0m
+[2m      |                 /*/[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            if (a.len & 1) { // Lets be extra sure here.
+                /*
+                a ~= 1; // Invalidates 'b'.
+                b++;
+                /*/
+                b++;
+                a ~= 1;
+                //*/
+            }
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 3;
+        }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test(fu_VEC<int>& a)
+{
+    int& b = a.mutref(0);
+    if (a.size() & 1)
+    {
+        b++;
+        a += 1;
+    };
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    test(arr);
+    int sum = 0;
+    for (int i = 0; i < arr.size(); i++)
+        sum += arr[i];
+
+    return sum - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            for (mut i = 2; i --> 0; )
+            {
+                b++; // Same thing but reordered as a loop.
+                if (a.len & 3) {
+                    //*F
+                    a ~= 1; // Invalidates 'b' on next iter.
+                    /*/
+                    b++;
+                    //*/
+                }
+            }
+            a ~= 100; // Invalidates 'b' but that's fine!
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 105;
+        }
+
+-----
+_0.fu @9:21:
+
+[2m      |                 if (a.len & 3) {[0m
+[2m      |                     //*F[0m
+    9 |                     [31;1ma[0m ~= 1; // Invalidates 'b' on next iter.
+[2m      |                     /*/[0m
+[2m      |                     b++;[0m
+
+	BORROWCK: Write to `a` invalidates the use of `b` at 6:17:
+
+[2m      |             for (mut i = 2; i --> 0; )[0m
+[2m      |             {[0m
+    6 |                 [31;1mb[0m++; // Same thing but reordered as a loop.
+[2m      |                 if (a.len & 3) {[0m
+[2m      |                     //*F[0m
+ on next loop iteration.
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            for (mut i = 2; i --> 0; )
+            {
+                b++; // Same thing but reordered as a loop.
+                if (a.len & 3) {
+                    /*
+                    a ~= 1; // Invalidates 'b' on next iter.
+                    /*/
+                    b++;
+                    //*/
+                }
+            }
+            a ~= 100; // Invalidates 'b' but that's fine!
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 105;
+        }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test(fu_VEC<int>& a)
+{
+    int& b = a.mutref(0);
+    for (int i = 2; i-- > 0; )
+    {
+        b++;
+        if (a.size() & 3)
+            b++;
+
+    };
+    a += 100;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> arr = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    test(arr);
+    int sum = 0;
+    for (int i = 0; i < arr.size(); i++)
+        sum += arr[i];
+
+    return sum - 105;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        // both args alias, but there's no risk of inval.
+        fn incr_a_or_b(ref a: i32, ref b: i32)
+            (a || b)++;
+
+        fn main() {
+            mut Z = 0;
+            mut A = 1;
+            mut B = 0;
+
+            incr_a_or_b(Z, B); // incr B, now 1
+            incr_a_or_b(A, B); // incr A, now 2
+            incr_a_or_b(B, B); // incr _target, now 2 // alias!
+
+            return (100*A + B) - 202;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int incr_a_or_b(int& a, int& b)
+{
+    return (a ? a : b)++;
+}
+
+int fu_MAIN()
+{
+    int Z = 0;
+    int A = 1;
+    int B = 0;
+    incr_a_or_b(Z, B);
+    incr_a_or_b(A, B);
+    incr_a_or_b(B, B);
+    return ((100 * A) + B) - 202;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            ref c = a || b;
+            return ++++c - 3; // double mutation of a union
+        }
+
+-----
+
+struct s_V;
+
+                                #ifndef DEF_s_V
+                                #define DEF_s_V
+struct s_V
+{
+    int v;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    s_V A = s_V { 1 };
+    int& a = A.v;
+    int& b = A.v;
+    int& c = (a ? a : b);
+    return ++++c - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct V { v: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            ref a = A.v;
+            ref b = A.v;
+            return ++++(a || b) - 3; // same, without a helper var
+        }
+
+-----
+
+struct s_V;
+
+                                #ifndef DEF_s_V
+                                #define DEF_s_V
+struct s_V
+{
+    int v;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    s_V A = s_V { 1 };
+    int& a = A.v;
+    int& b = A.v;
+    return ++++(a ? a : b) - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+            ref ab = a || b;
+            ref cd = c || d;
+            ++++ab;
+            ++++cd;
+        }
+
+        fn main() {
+            mut ab = 0;
+            mut cd = 0;
+            //*F
+            ab_cd(ab, cd, ab, cd);
+            /*/
+            ab_cd(ab, ab, cd, cd);
+            //*/
+            return ab - cd;
+        }
+
+-----
+_0.fu @15:31:
+
+[2m      |             mut cd = 0;[0m
+[2m      |             //*F[0m
+   15 |             ab_cd(ab, cd, ab, [31;1mcd[0m);
+[2m      |             /*/[0m
+[2m      |             ab_cd(ab, ab, cd, cd);[0m
+
+	[35;1mfn[0m [34;1mab_cd[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both refer to:
+
+                [35;1mvar[0m [34;1mab[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+            ref ab = a || b;
+            ref cd = c || d;
+            ++++ab;
+            ++++cd;
+        }
+
+        fn main() {
+            mut ab = 0;
+            mut cd = 0;
+            /*
+            ab_cd(ab, cd, ab, cd);
+            /*/
+            ab_cd(ab, ab, cd, cd);
+            //*/
+            return ab - cd;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+void ab_cd(int& a, int& b, int& c, int& d)
+{
+    int& ab = (a ? a : b);
+    int& cd = (c ? c : d);
+    ++++ab;
+    ++++cd;
+}
+
+int fu_MAIN()
+{
+    int ab = 0;
+    int cd = 0;
+    ab_cd(ab, ab, cd, cd);
+    return ab - cd;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // a can alias b
+        // c can alias d
+        // e can alias f
+        // g can alias h
+        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
+                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
+        {
+            ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
+            ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
+            ++++abcd; ++++ab; ++++cd;
+            ++++efgh; ++++ef; ++++gh;
+        }
+
+        fn main() {
+            mut ab = 0; mut cd = 0;
+            mut ef = 0; mut gh = 0;
+            //*F
+            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
+            /*/
+            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+            //*/
+            return (ab + cd) - (ef + gh);
+        }
+
+-----
+_0.fu @19:51:
+
+[2m      |             mut ef = 0; mut gh = 0;[0m
+[2m      |             //*F[0m
+   19 |             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, [31;1mgh[0m);
+[2m      |             /*/[0m
+[2m      |             abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);[0m
+
+	[35;1mfn[0m [34;1mabcd_efgh[0m: Arguments [31;1mg[0m and [31;1mc[0m (args #6 and #2) both refer to:
+
+                [35;1mvar[0m [34;1mcd[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        // a can alias b
+        // c can alias d
+        // e can alias f
+        // g can alias h
+        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
+                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
+        {
+            ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
+            ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
+            ++++abcd; ++++ab; ++++cd;
+            ++++efgh; ++++ef; ++++gh;
+        }
+
+        fn main() {
+            mut ab = 0; mut cd = 0;
+            mut ef = 0; mut gh = 0;
+            /*
+            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
+            /*/
+            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+            //*/
+            return (ab + cd) - (ef + gh);
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+void abcd_efgh(int& a, int& b, int& c, int& d, int& e, int& f, int& g, int& h)
+{
+    int& ab = (a ? a : b);
+    int& cd = (c ? c : d);
+    int& abcd = (ab ? ab : cd);
+    int& ef = (e ? e : f);
+    int& gh = (g ? g : h);
+    int& efgh = (ef ? ef : gh);
+    ++++abcd;
+    ++++ab;
+    ++++cd;
+    ++++efgh;
+    ++++ef;
+    ++++gh;
+}
+
+int fu_MAIN()
+{
+    int ab = 0;
+    int cd = 0;
+    int ef = 0;
+    int gh = 0;
+    abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+    return (ab + cd) - (ef + gh);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // a cannot alias b
+        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+            ref x = a || b; ++x;
+            ref y = b || a; ++y;
+        }
+
+        fn main() {
+            mut a = 0;
+            mut b = 0;
+            //*F
+            incr_a_or_b_and_b_or_a(a, a);
+            /*/
+            incr_a_or_b_and_b_or_a(a, b);
+            //*/
+            return a + b - 2;
+        }
+
+-----
+_0.fu @12:39:
+
+[2m      |             mut b = 0;[0m
+[2m      |             //*F[0m
+   12 |             incr_a_or_b_and_b_or_a(a, [31;1ma[0m);
+[2m      |             /*/[0m
+[2m      |             incr_a_or_b_and_b_or_a(a, b);[0m
+
+	[35;1mfn[0m [34;1mincr_a_or_b_and_b_or_a[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1ma[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        // a cannot alias b
+        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+            ref x = a || b; ++x;
+            ref y = b || a; ++y;
+        }
+
+        fn main() {
+            mut a = 0;
+            mut b = 0;
+            /*
+            incr_a_or_b_and_b_or_a(a, a);
+            /*/
+            incr_a_or_b_and_b_or_a(a, b);
+            //*/
+            return a + b - 2;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+void incr_a_or_b_and_b_or_a(int& a, int& b)
+{
+    int& x = (a ? a : b);
+    ++x;
+    int& y = (b ? b : a);
+    ++y;
+}
+
+int fu_MAIN()
+{
+    int a = 0;
+    int b = 0;
+    incr_a_or_b_and_b_or_a(a, b);
+    return (a + b) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // same as below -
+        //  but using a helper variable
+        //   which provides a "name" for the outcome of a|b.
+        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            ++++x;
+        }
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2_via_x(Z, B); // incr B, now 2
+            incr_a_or_b_by2_via_x(A, B); // incr A, now 4
+            incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!
+
+            return (100*A + B) - 404;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static void incr_a_or_b_by2_via_x(int& a, int& b)
+{
+    int& x = (a ? a : b);
+    ++++x;
+}
+
+int fu_MAIN()
+{
+    int Z = 0;
+    int A = 2;
+    int B = 0;
+    incr_a_or_b_by2_via_x(Z, B);
+    incr_a_or_b_by2_via_x(A, B);
+    incr_a_or_b_by2_via_x(B, B);
+    return ((100 * A) + B) - 404;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        // same as above -
+        //  but notice we increment twice, which breaks current setup.
+        fn incr_a_or_b_by2(ref a: i32, ref b: i32)
+            ++++(a || b);
+
+        fn main() {
+            mut Z = 0;
+            mut A = 2;
+            mut B = 0;
+
+            incr_a_or_b_by2(Z, B); // incr B, now 2
+            incr_a_or_b_by2(A, B); // incr A, now 4
+            incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!
+
+            return (100*A + B) - 404;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int& incr_a_or_b_by2(int& a, int& b)
+{
+    return ++++(a ? a : b);
+}
+
+int fu_MAIN()
+{
+    int Z = 0;
+    int A = 2;
+    int B = 0;
+    incr_a_or_b_by2(Z, B);
+    incr_a_or_b_by2(A, B);
+    incr_a_or_b_by2(B, B);
+    return ((100 * A) + B) - 404;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn alias(ref arr: i32[], ref item: i32) {
+            arr ~= 1;
+            return item;
+        }
+
+        fn main() {
+            mut a = [ 0 ];
+            //*F
+            ref c = alias(a, a[0]);
+            /*/
+            mut b = [ 0 ];
+            ref c = alias(a, b[0]);
+            //*/
+            return c++;
+        }
+
+-----
+_0.fu @10:30:
+
+[2m      |             mut a = [ 0 ];[0m
+[2m      |             //*F[0m
+   10 |             ref c = alias(a, [31;1ma[0m[0]);
+[2m      |             /*/[0m
+[2m      |             mut b = [ 0 ];[0m
+
+	[35;1mfn[0m [34;1malias[0m: Arguments [31;1mitem[0m and [31;1marr[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1ma[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        fn alias(ref arr: i32[], ref item: i32) {
+            arr ~= 1;
+            return item;
+        }
+
+        fn main() {
+            mut a = [ 0 ];
+            /*
+            ref c = alias(a, a[0]);
+            /*/
+            mut b = [ 0 ];
+            ref c = alias(a, b[0]);
+            //*/
+            return c++;
+        }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static int& alias(fu_VEC<int>& arr, int& item)
+{
+    arr += 1;
+    return item;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    int& c = alias(a, b.mutref(0));
+    return c++;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            ref cc = bb || aa; // Mustn't compile.
+            return cc;
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+_0.fu @10:28:
+
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+[2m      | [0m
+   10 |             ref cc = bb || [31;1maa[0m; // Mustn't compile.
+[2m      |             return cc;[0m
+[2m      |         }[0m
+
+	BORROWCK: Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 8:28:
+
+[2m      |             fn aa()  a[0];[0m
+[2m      |             //*/[0m
+    8 |             ref bb = b[0]; [31;1ma[0m ~= 1; // Invalidates 'aa' if ref.
+[2m      | [0m
+[2m      |             ref cc = bb || aa; // Mustn't compile.[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref a: i32[], ref b: i32[]) {
+            /*
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            ref cc = bb || aa; // Mustn't compile.
+            return cc;
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static int& aa(fu_VEC<int>& a)
+{
+    return a.mutref(0);
+}
+
+static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+{
+    int& bb = b.mutref(0);
+    a += 1;
+    int& cc = (bb ? bb : aa(a));
+    return cc;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    return int(test(a, b));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return bb || aa; // Same as above, but no explicit binding.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+_0.fu @10:26:
+
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+[2m      | [0m
+   10 |             return bb || [31;1maa[0m; // Same as above, but no explicit binding.
+[2m      |         }[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 8:28:
+
+[2m      |             fn aa()  a[0];[0m
+[2m      |             //*/[0m
+    8 |             ref bb = b[0]; [31;1ma[0m ~= 1; // Invalidates 'aa' if ref.
+[2m      | [0m
+[2m      |             return bb || aa; // Same as above, but no explicit binding.[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn test(ref a: i32[], ref b: i32[]) {
+            /*
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return bb || aa; // Same as above, but no explicit binding.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static int& aa(fu_VEC<int>& a)
+{
+    return a.mutref(0);
+}
+
+static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+{
+    int& bb = b.mutref(0);
+    a += 1;
+    return bb ? bb : aa(a);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    return int(test(a, b));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn noop(x) x;
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return noop(bb || aa); // Same as above, but bound at callsite.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+_0.fu @11:31:
+
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+[2m      | [0m
+   11 |             return noop(bb || [31;1maa[0m); // Same as above, but bound at callsite.
+[2m      |         }[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 9:28:
+
+[2m      |             fn aa()  a[0];[0m
+[2m      |             //*/[0m
+    9 |             ref bb = b[0]; [31;1ma[0m ~= 1; // Invalidates 'aa' if ref.
+[2m      | [0m
+[2m      |             return noop(bb || aa); // Same as above, but bound at callsite.[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn noop(x) x;
+        fn test(ref a: i32[], ref b: i32[]) {
+            /*
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return noop(bb || aa); // Same as above, but bound at callsite.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int& noop_cBw5(int& x)
+{
+    return x;
+}
+
+static int& aa(fu_VEC<int>& a)
+{
+    return a.mutref(0);
+}
+
+static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+{
+    int& bb = b.mutref(0);
+    a += 1;
+    return noop_cBw5((bb ? bb : aa(a)));
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    return int(test(a, b));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn either(a, b) a || b;
+        fn test(ref a: i32[], ref b: i32[]) {
+            //*F
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return either(bb, aa); // For completeness.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+_0.fu @11:31:
+
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+[2m      | [0m
+   11 |             return either(bb, [31;1maa[0m); // For completeness.
+[2m      |         }[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 9:28:
+
+[2m      |             fn aa()  a[0];[0m
+[2m      |             //*/[0m
+    9 |             ref bb = b[0]; [31;1ma[0m ~= 1; // Invalidates 'aa' if ref.
+[2m      | [0m
+[2m      |             return either(bb, aa); // For completeness.[0m
+
+	At call to [34;1m
+<fu/vec/concat_one.h>
++=[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn either(a, b) a || b;
+        fn test(ref a: i32[], ref b: i32[]) {
+            /*
+            ref aa = a[0];
+            /*/
+            fn aa()  a[0];
+            //*/
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+
+            return either(bb, aa); // For completeness.
+        }
+
+        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int& either_f1jP(int& a, int& b)
+{
+    return a ? a : b;
+}
+
+static int& aa(fu_VEC<int>& a)
+{
+    return a.mutref(0);
+}
+
+static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+{
+    int& bb = b.mutref(0);
+    a += 1;
+    return either_f1jP(bb, aa(a));
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } };
+    return int(test(a, b));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn what(ref cond: i32, ref cons: i32)
+            cond && (cons += 1);
+
+        fn main() {
+            mut x = 1;
+            return what(x, x) - 2;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int& what(int& cond, int& cons)
+{
+    return !cond ? cond : (cons += 1);
+}
+
+int fu_MAIN()
+{
+    int x = 1;
+    return what(x, x) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct Target {
+            overload: i32[];
+            extended: i32[];
+        };
+
+        fn which(ref t: Target, i: i32) i & 1
+            ? t.overload
+            : t.extended;
+
+        fn test(ref target: Target)
+        {
+            ref overload = target.which(target.overload.len);
+            ref extended = target.which(target.overload.len + 1);
+
+            mut change = false;
+            if (overload)
+            {
+                for (mut i = 0; i < overload.len; i++)
+                {
+                    let a = overload[i];
+                    let b = extended[i];
+                    if (a != b)
+                    {
+                        change = true;
+                        break;
+                    }
+                }
+            }
+
+            if (change)
+            {
+                extended[0] = 3;
+
+                shadow ref overload = target.which(target.overload.len);
+                overload[0] = 5; // Said write to overload invalidates ext on next loop iter.
+            }
+        }
+
+        fn main()
+        {
+            mut target = Target([ 0 ], [ 1 ]);
+            target.test();
+            return target.overload[0] * 10 + target.extended[0] * 100 - 350;
+        }
+
+-----
+#include <fu/vec.h>
+
+struct s_Target;
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    fu_VEC<int> overload;
+    fu_VEC<int> extended;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || overload
+            || extended
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<int>& which(s_Target& t, const int i)
+{
+    return ((i & 1) ? t.overload : t.extended);
+}
+
+static void test(s_Target& target)
+{
+    const fu_VEC<int>& overload = which(target, target.overload.size());
+    fu_VEC<int>& extended = which(target, (target.overload.size() + 1));
+    bool change = false;
+    if (overload)
+    {
+        for (int i = 0; i < overload.size(); i++)
+        {
+            const int a = overload[i];
+            const int b = extended[i];
+            if (a != b)
+            {
+                change = true;
+                break;
+            };
+        };
+    };
+    if (change)
+    {
+        extended.mutref(0) = 3;
+        fu_VEC<int>& overload_1 = which(target, target.overload.size());
+        overload_1.mutref(0) = 5;
+    };
+}
+
+int fu_MAIN()
+{
+    s_Target target = s_Target { fu_VEC<int> { fu_VEC<int>::INIT<1> { 0 } }, fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } } };
+    test(target);
+    return ((target.overload[0] * 10) + (target.extended[0] * 100)) - 350;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        struct Helper { vars: i32[]; };
+
+        fn test(ref _helpers: Helper[], helpers_idx: i32) {
+            ref old = _helpers[helpers_idx - 1].vars;
+            ref new = _helpers[helpers_idx    ].vars;
+            new    ~= old[helpers_idx];
+        }
+
+        fn main() {
+            mut helpers = [ Helpers([ 1, 2 ]), Helpers([ 4, 8 ]) ];
+            test(helpers, 1);
+            return helpers[1][2] - 2;
+        }
+
+-----
+TODO: _0.fu @7:23:
+
+[2m      |             ref old = _helpers[helpers_idx - 1].vars;[0m
+[2m      |             ref new = _helpers[helpers_idx    ].vars;[0m
+    7 |             new    ~= [31;1mold[0m[helpers_idx];
+[2m      |         }[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1mold[0m, reference invalidated by write to [31;1m_helpers[0m at 6:23:
+
+[2m      |         fn test(ref _helpers: Helper[], helpers_idx: i32) {[0m
+[2m      |             ref old = _helpers[helpers_idx - 1].vars;[0m
+    6 |             ref new = [31;1m_helpers[0m[helpers_idx    ].vars;
+[2m      |             new    ~= old[helpers_idx];[0m
+[2m      |         }[0m
+
+	At call to [34;1m[][0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        fn outer() {
+            mut sum = 0;
+            mut x = 1;
+            for (;;) {      // bck complained that the write to 'x' at the end
+                let v = x;  //  invalidates use of 'v' on next loop iter here, which is not true
+                for (mut i = 0; i < 10; i++) {
+                    sum += v;
+                    if (sum > 40)
+                        return sum;
+                }
+
+                x = v * 2;
+            }
+        }
+
+        fn main() outer - 42;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int outer()
+{
+    int sum = 0;
+    int x = 1;
+    for (; ; )
+    {
+        const int v = x;
+        for (int i = 0; i < 10; i++)
+        {
+            sum += v;
+            if (sum > 40)
+                return sum;
+
+        };
+        x = (v * 2);
+    };
+}
+
+int fu_MAIN()
+{
+    return outer() - 42;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn append_self(ref a: i32[])
+        {
+            let b = a;
+            a ~= b; // b narrowed down to a slice which is non-copyable
+                    //  but it (unfortunately) wanted to copy to a temp.
+        }
+
+        fn main() {
+            mut arr = [1, 2];
+            arr.append_self();
+            return arr[2] + arr[3] - 3;
+        }
+
+-----
+TODO: _0.fu @5:18:
+
+[2m      |         {[0m
+[2m      |             let b = a;[0m
+    5 |             a ~= [31;1mb[0m; // b narrowed down to a slice which is non-copyable
+[2m      |                     //  but it (unfortunately) wanted to copy to a temp.[0m
+[2m      |         }[0m
+
+	[35;1m__native[0m [34;1m
+<fu/vec/concat.h>
++=[0m: Both operands refer to:
+
+                [35;1mvar[0m [34;1ma[0m
+
+        Solving [35;1mfn[0m [34;1mappend_self[0m
+
+-----
+
+        fn but_is_it_pure(ref x: i32) {
+            //*F
+            return x++;
+            /*/
+            return x;
+            //*/
+        }
+        pure fn pure_fn(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            return but_is_it_pure(x);
+        }
+        fn main() {
+            mut x = 0;
+            mut y = 0;
+            return pure_fn(x, y);
+        }
+
+-----
+_0.fu @11:20:
+
+[2m      |         pure fn pure_fn(ref a: i32, ref b: i32) {[0m
+[2m      |             ref x = a || b;[0m
+   11 |             return [31;1mbut_is_it_pure[0m(x);
+[2m      |         }[0m
+[2m      |         fn main() {[0m
+
+	[35;1mfn[0m [34;1mpure_fn[0m is not pure, writes to argument [34;1ma[0m:
+
+            via [35;1mfn[0m [34;1mbut_is_it_pure[0m at 11:20:
+
+[2m      |         pure fn pure_fn(ref a: i32, ref b: i32) {[0m
+[2m      |             ref x = a || b;[0m
+   11 |             return [31;1mbut_is_it_pure[0m(x);
+[2m      |         }[0m
+[2m      |         fn main() {[0m
+
+            via [35;1m__native[0m [34;1mpostfix++[0m at 4:20:
+
+[2m      |         fn but_is_it_pure(ref x: i32) {[0m
+[2m      |             //*F[0m
+    4 |             return [31;1mx[0m++;
+[2m      |             /*/[0m
+[2m      |             return x;[0m
+
+
+-----
+
+        fn but_is_it_pure(ref x: i32) {
+            /*
+            return x++;
+            /*/
+            return x;
+            //*/
+        }
+        pure fn pure_fn(ref a: i32, ref b: i32) {
+            ref x = a || b;
+            return but_is_it_pure(x);
+        }
+        fn main() {
+            mut x = 0;
+            mut y = 0;
+            return pure_fn(x, y);
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int& but_is_it_pure(int& x)
+{
+    return x;
+}
+
+static int& pure_fn(int& a, int& b)
+{
+    int& x = (a ? a : b);
+    return but_is_it_pure(x);
+}
+
+int fu_MAIN()
+{
+    int x = 0;
+    int y = 0;
+    return int(pure_fn(x, y));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn main() {
+            mut _info: string[];
+
+            pure fn fail(mut reason: string = "") {
+                for (mut i = _info.len; i --> 0; ) {
+                    ref info = _info[i]; // notice the ref, has to relax away
+                    reason ~= info ? i : [];
+                }
+
+                return reason;
+            }
+
+            return fail.len;
+        }
+
+-----
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat_str.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR fail(fu_STR&& reason, fu_VEC<fu_STR>& _info)
+{
+    for (int i = _info.size(); i-- > 0; )
+    {
+        const fu_STR& info = _info[i];
+        reason += (info ? i : 0);
+    };
+    return static_cast<fu_STR&&>(reason);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<fu_STR> _info {};
+    return fail(fu_STR{}, _info).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn main() {
+            mut _info: string[];
+
+            pure fn fail(mut reason: string = "") {
+                for (mut i = _info.len; i --> 0; ) {
+                    ref info = _info[i]; // notice the ref, has to relax away
+                    reason ~= info && i;
+                }
+
+                return reason;
+            }
+
+            return fail.len;
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat_str.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR fail(fu_STR&& reason, fu_VEC<fu_STR>& _info)
+{
+    for (int i = _info.size(); i-- > 0; )
+    {
+        const fu_STR& info = _info[i];
+        reason += (info ? i : (*(const int*)fu::NIL));
+    };
+    return static_cast<fu_STR&&>(reason);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<fu_STR> _info {};
+    return fail(fu_STR{}, _info).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn main() {
+            mut _info = [ 101 ];
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info ? ("" ~ info) : [];
+                return reason;
+            }
+
+            return fail.len - 3; // "101".len is 3.
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR fail(fu_STR&& reason, const fu_VEC<int>& _info)
+{
+    const int info = _info[0];
+    reason += (info ? ((*(const fu_STR*)fu::NIL) + info) : fu_STR{});
+    return static_cast<fu_STR&&>(reason);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> _info = fu_VEC<int> { fu_VEC<int>::INIT<1> { 101 } };
+    return fail(fu_STR{}, _info).size() - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn main() {
+            mut _info = [ 101 ];
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info && ("" ~ info);
+                return reason;
+            }
+
+            return fail.len - 3; // "101".len is 3.
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR fail(fu_STR&& reason, const fu_VEC<int>& _info)
+{
+    const int info = _info[0];
+    reason += (info ? ((*(const fu_STR*)fu::NIL) + info) : fu_STR{});
+    return static_cast<fu_STR&&>(reason);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> _info = fu_VEC<int> { fu_VEC<int>::INIT<1> { 101 } };
+    return fail(fu_STR{}, _info).size() - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        struct BINOP {
+            P: Map(string, i32);
+        };
+
+        fn setupOperators(): BINOP
+        {
+            mut out: BINOP;
+
+            fn binop(op: string)
+                out.P[op] = 7;
+
+            binop(",");
+
+            return out;
+        }
+
+        shadow let BINOP = setupOperators();
+        let P_COMMA = BINOP.P[","] || assert();
+
+        fn main() P_COMMA - 7;
 
 -----
 #include <fu/map.h>
@@ -5961,7 +8184,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-
         // -no-lambda
         // This converted to a ref-returning
         // logical chain for some reason.
@@ -5975,7 +8197,6 @@ int main() { return fu_MAIN(); }
         }
 
         return 1;
-
 
 -----
 #include <fu/str.h>
@@ -6307,7 +8528,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-
         return false /* test */
              ? 0xffffff.i32 // what is this
              : 0 // madness
@@ -6437,7 +8657,6 @@ int main() { return fu_MAIN(); }
 // RELAX_respec
 
 -----
-
 
         fn path_normalize(p: string): string {
             mut path = p.split("/");
@@ -6604,9 +8823,9 @@ int main() { return fu_MAIN(); }
             let v0 = num_verts;
             let i0 = indices.len;
 
-            alloc(num_quads * 4, num_quads * 6);
-
             mut v1 = v0;
+
+            alloc(num_quads * 4, num_quads * 6);
 
             let indices_i32: &mut [i32] =
                 indices[i0, indices.len]
@@ -6690,8 +8909,8 @@ fu::view_mut<std::byte> setup_quads(s_MeshBuilder& mb, const int num_quads)
     const int b0 = mb.verts.size();
     const int v0 = mb.num_verts;
     const int i0 = mb.indices.size();
-    alloc(mb, (num_quads * 4), (num_quads * 6));
     int v1 = v0;
+    alloc(mb, (num_quads * 4), (num_quads * 6));
     fu::view_mut<int> indices_i32 = fu::view_of_mut(fu::get_view_mut(mb.indices, i0, mb.indices.size()), int{});
     for (int i = 0; i < indices_i32.size(); i += 6)
     {
@@ -6954,7 +9173,7 @@ static int& GET_mut(int& x, int& target)
 static int& __solveStruct(int arg, int& target)
 {
     int& o = GET_mut(arg, target);
-    o += target;
+    o += int(target);
     return target;
 }
 
@@ -6978,6 +9197,7 @@ int main() { return fu_MAIN(); }
                               a = A(incr(a))    /*/         // Lint should complain here,
                              (a = A(incr(a))); //*/         //  this was an honest mistake.
         fn main() { mut v = 0; return A(v) - 1; }
+
 -----
 _0.fu @4:33..6:9:
 	Unparenthesized `or` on the left side of an `=`.
@@ -7197,7 +9417,7 @@ static int __solveStruct(int arg, const int x, int& target)
     {
         int& o = GET_mut(arg, target);
         o++;
-        checkRecursions(o, o, target);
+        checkRecursions(o, int(o), target);
     };
     return int(arg);
 }
@@ -7263,7 +9483,7 @@ static int __solveStruct(int arg, int& target)
     {
         int& o = GET_mut_cBw5(arg, target);
         o++;
-        checkRecursions(o, o, target);
+        checkRecursions(o, int(o), target);
     };
     return int(arg);
 }
@@ -7310,17 +9530,27 @@ int main() { return fu_MAIN(); }
 
             return setSpec("hey").len - 2;
         }
+
 -----
 _0.fu @21:21:
+
+[2m      |                 //  which should conflict with overload name.[0m
+[2m      |                 fn name(shadow target)[0m
+   21 |                     [31;1mGET[0m(target) //*F
+[2m      |                         .name; /*/ .id; //*/[0m
+[2m      | [0m
+
 	`GET` bad args.
-Expect: GET(
-	target: 1:$2Target: ref copy trivial)
+Expect: `GET(
+	[34;1mtarget[0m: 1:$2Target: ref copy trivial)`
 Actual: (
 	1:$3Overload: ref copy).
-	Solving fn `name_Pfmx`.
-	Solving fn `name_zs0j`.
-	Solving fn `setSpec`.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mname_Pfmx[0m
+                [35;1mfn[0m [34;1mname_zs0j[0m
+                [35;1mfn[0m [34;1msetSpec[0m
+                [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct ValueType { modid: i32; };
@@ -7575,7 +9805,7 @@ struct s_BINOP
 
 #ifndef FU_NO_FDEFs
 
-static void binop(fu::view<fu_STR> ops, int& precedence, s_BINOP& out, bool& rightToLeft)
+static void binop(fu::view<fu_STR> ops, int& precedence, s_BINOP& out, const bool rightToLeft)
 {
     precedence++;
     (out.RIGHT_TO_LEFT.upsert(precedence) = bool(rightToLeft));
@@ -7881,6 +10111,9 @@ int main() { return fu_MAIN(); }
         fn main() snippet2cpp("1").len - 1;
 
 -----
+;; TODO .unique(i)
+;; TODO return static_cast<fu_STR&&>
+
 #include <fu/str.h>
 #include <fu/vec.h>
 
@@ -7959,20 +10192,22 @@ int main() { return fu_MAIN(); }
         fn main() test("you").len - 7;
 
 -----
+#include <cstdint>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
+#include <fu/view.h>
 
-static fu_STR outer(const fu_STR&, const fu_STR&);
+static fu_STR outer(const fu_STR&, fu::view<std::byte>);
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR inner(const fu_STR& you, const fu_STR& hey)
+static fu_STR inner(const fu_STR& you, fu::view<std::byte> hey)
 {
     fu_STR _0 {};
     return you && (_0 = (hey + you)) ? static_cast<fu_STR&&>(_0) : outer("what#1"_fu, hey);
 }
 
-static fu_STR outer(const fu_STR& arg, const fu_STR& hey)
+static fu_STR outer(const fu_STR& arg, fu::view<std::byte> hey)
 {
     fu_STR _0 {};
     return (_0 = inner((arg ? (" "_fu + arg) : fu_STR{}), hey)) ? static_cast<fu_STR&&>(_0) : inner("what#2"_fu, hey);
@@ -7999,8 +10234,125 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        pub struct Target { modid!: i32; packed!: i32; };
-        pub inline fn index(a: Target) a.packed;
+        struct Arg { i: i32; };
+
+        // A mutref fail.
+        fn mutargs(args: &mut Arg[])
+        {
+            // This miscompiles to ref into args,
+            //  after which we invalidate the reference.
+            //
+            //*F
+            ref
+            /*/
+            mut
+            //*/
+                badref = args[0];
+            args = [ Arg(11) ]; // INVALIDATE badref.
+            return badref;
+        }       // oct2021: now latest issue here is that
+                //  this gets bcked AFTER jump lifetimes are unwound
+                //   and it all looks as if everything's fine (lt badref == lt args).
+
+        fn main()
+        {
+            mut args = [ Arg(7) ];
+            return mutargs(args).i - 7;
+        }
+
+-----
+_0.fu @17:20:
+
+[2m      |                 badref = args[0];[0m
+[2m      |             args = [ Arg(11) ]; // INVALIDATE badref.[0m
+   17 |             return [31;1mbadref[0m;
+[2m      |         }       // oct2021: now latest issue here is that[0m
+[2m      |                 //  this gets bcked AFTER jump lifetimes are unwound[0m
+
+	BORROWCK: Cannot access [31;1mbadref[0m, reference invalidated by write to [31;1margs[0m at 16:13:
+
+[2m      |             //*/[0m
+[2m      |                 badref = args[0];[0m
+   16 |             [31;1margs[0m = [ Arg(11) ]; // INVALIDATE badref.
+[2m      |             return badref;[0m
+[2m      |         }       // oct2021: now latest issue here is that[0m
+
+	At call to [34;1m=[0m
+
+        Solving [35;1mfn[0m [34;1mmutargs[0m
+
+-----
+
+        struct Arg { i: i32; };
+
+        // A mutref fail.
+        fn mutargs(args: &mut Arg[])
+        {
+            // This miscompiles to ref into args,
+            //  after which we invalidate the reference.
+            //
+            /*
+            ref
+            /*/
+            mut
+            //*/
+                badref = args[0];
+            args = [ Arg(11) ]; // INVALIDATE badref.
+            return badref;
+        }       // oct2021: now latest issue here is that
+                //  this gets bcked AFTER jump lifetimes are unwound
+                //   and it all looks as if everything's fine (lt badref == lt args).
+
+        fn main()
+        {
+            mut args = [ Arg(7) ];
+            return mutargs(args).i - 7;
+        }
+
+-----
+#include <fu/vec.h>
+
+struct s_Arg;
+
+                                #ifndef DEF_s_Arg
+                                #define DEF_s_Arg
+struct s_Arg
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static s_Arg mutargs(fu_VEC<s_Arg>& args)
+{
+    s_Arg badref { args[0] };
+    args = fu_VEC<s_Arg> { fu_VEC<s_Arg>::INIT<1> { s_Arg { 11 } } };
+    return badref;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<s_Arg> args = fu_VEC<s_Arg> { fu_VEC<s_Arg>::INIT<1> { s_Arg { 7 } } };
+    return mutargs(args).i - 7;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        struct Target { modid!: i32; packed!: i32; };
+        inline fn index(a: Target) a.packed;
 
 
 
@@ -8063,16 +10415,16 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        pub struct Target { modid!: i32; packed!: i32; };
-        pub inline fn index(a: Target) a.packed;
+        struct Target { modid!: i32; packed!: i32; };
+        inline fn index(a: Target) a.packed;
 
 
 -----
 
 -----
 
-        pub struct Target { modid!: i32; packed!: i32; };
-        pub inline fn index(a: Target) a.packed;
+        struct Target { modid!: i32; packed!: i32; };
+        inline fn index(a: Target) a.packed;
 
         import _0;
 
@@ -8399,7 +10751,7 @@ int main() { return fu_MAIN(); }
             for (mut i = 0; i < sources.len; i++)
             {
                 // Note: redundant "ref" here.
-                ref src = sources[i];
+                fn src() = sources[i]; // bck: using a fn instead
                 for (;;)
                 {
                     mut start0 = src.find("[split/]");
@@ -8435,6 +10787,25 @@ int main() { return fu_MAIN(); }
         }
 
 -----
+TODO: _0.fu @20:47:
+
+[2m      | [0m
+[2m      |                     let moduleA = src.slice(0, start0);[0m
+   20 |                     let moduleB = src[start0, [31;1mstart00[0m] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+[2m      |                     let without = src[0, start0] ~ src[start1, src.len];[0m
+[2m      | [0m
+
+	BORROWCK: Cannot access [31;1mstart00[0m, reference invalidated by write to [31;1mstart0[0m at 17:62:
+
+[2m      |                     let start00 = start0;[0m
+[2m      |                     let start1  = start0 + 8;[0m
+   17 |                     while (start0 && src[start0 - 1] == ' ') [31;1mstart0[0m--;
+[2m      | [0m
+[2m      |                     let moduleA = src.slice(0, start0);[0m
+
+	At call to [34;1mpostfix--[0m
+
+        Solving [35;1mfn[0m [34;1mZERO[0m
 
 -----
 
@@ -8513,6 +10884,444 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct SolvedNode       { nodeidx: i32; };
+        struct CurrentFn        { using out: SolvedNode; };
+
+        struct Target           { index: i32; };
+        struct SolvedNodeData   { target: Target; };
+        struct Overload         { nodes: SolvedNodeData[]; };
+
+        fn test(ref overloads: Overload[],
+                ref _current_fn: CurrentFn)
+        {
+            using fn GET(target: Target) {
+                let o = overloads[target.index];
+                return o;
+            }
+
+            using fn SolvedNodeData(nid: SolvedNode) {
+                let nodes = overloads[nid.nodeidx].nodes;
+                return nodes[nid.nodeidx];
+            }
+
+            let current_fn  = _current_fn.target;               // <- this is a ref into overloads
+            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads
+            return debug_2 && current_fn.index;                 // <- which invalidates this read
+        }
+
+        fn main() {
+            mut _current_fn = CurrentFn(SolvedNode(0));
+            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];
+
+            return test(overloads, _current_fn);
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/vec.h>
+#include <fu/view.h>
+
+struct s_CurrentFn;
+struct s_Overload;
+struct s_SolvedNode;
+struct s_SolvedNodeData;
+struct s_Target;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_CurrentFn
+                                #define DEF_s_CurrentFn
+struct s_CurrentFn
+{
+    s_SolvedNode out;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || out
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_VEC<s_SolvedNodeData> nodes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodes
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode& nid, fu::view<s_Overload> overloads)
+{
+    fu::view<s_SolvedNodeData> nodes = overloads[nid.nodeidx].nodes;
+    return nodes[nid.nodeidx];
+}
+
+static const s_Overload& GET(const s_Target& target, const fu_VEC<s_Overload>& overloads)
+{
+    const s_Overload& o = overloads[target.index];
+    return o;
+}
+
+static int test(const fu_VEC<s_Overload>& overloads, const s_CurrentFn& _current_fn)
+{
+    const s_Target& current_fn = SolvedNodeData(_current_fn.out, overloads).target;
+    const s_Overload& debug_2 = (current_fn ? GET(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
+    return debug_2 ? current_fn.index : (*(const int*)fu::NIL);
+}
+
+int fu_MAIN()
+{
+    s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
+    fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu_VEC<s_Overload>::INIT<1> { s_Overload { fu_VEC<s_SolvedNodeData> { fu_VEC<s_SolvedNodeData>::INIT<1> { s_SolvedNodeData { s_Target { 0 } } } } } } };
+    return int(test(overloads, _current_fn));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        struct SolvedNode       { nodeidx: i32; };
+        struct CurrentFn        { using out: SolvedNode; };
+
+        struct Target           { index: i32; };
+        struct SolvedNodeData   { target: Target; };
+        struct Overload         { nodes: SolvedNodeData[]; };
+
+        fn test(ref overloads: Overload[],
+                ref _current_fn: CurrentFn)
+        {
+            using fn GET(target: Target) {
+                if (target.index != 303) // Same as above, different setup.
+                    return overloads[target.index];
+
+                return []; // Also this fails to solve: cannot definit mutref
+            }
+
+            using fn SolvedNodeData(nid: SolvedNode) {
+                return nid.nodeidx != 303 // Same as above, rewording as a logical.
+                    && overloads[nid.nodeidx].nodes[nid.nodeidx];
+            }
+
+            let current_fn  = _current_fn.target;               // <- this is a ref into overloads
+            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads
+            return debug_2 && current_fn.index;                 // <- which invalidates this read
+        }
+
+        fn main() {
+            mut _current_fn = CurrentFn(SolvedNode(0));
+            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];
+
+            return test(overloads, _current_fn);
+        }
+
+-----
+#include <fu/default.h>
+#include <fu/vec.h>
+
+struct s_CurrentFn;
+struct s_Overload;
+struct s_SolvedNode;
+struct s_SolvedNodeData;
+struct s_Target;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_CurrentFn
+                                #define DEF_s_CurrentFn
+struct s_CurrentFn
+{
+    s_SolvedNode out;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || out
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNodeData
+                                #define DEF_s_SolvedNodeData
+struct s_SolvedNodeData
+{
+    s_Target target;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || target
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    fu_VEC<s_SolvedNodeData> nodes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodes
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode& nid, const fu_VEC<s_Overload>& overloads)
+{
+    return (nid.nodeidx != 303) ? overloads[nid.nodeidx].nodes[nid.nodeidx] : (*(const s_SolvedNodeData*)fu::NIL);
+}
+
+static const s_Overload& GET(const s_Target& target, const fu_VEC<s_Overload>& overloads)
+{
+    if (target.index != 303)
+        return overloads[target.index];
+
+    return (*(const s_Overload*)fu::NIL);
+}
+
+static int test(const fu_VEC<s_Overload>& overloads, const s_CurrentFn& _current_fn)
+{
+    const s_Target& current_fn = SolvedNodeData(_current_fn.out, overloads).target;
+    const s_Overload& debug_2 = (current_fn ? GET(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
+    return debug_2 ? current_fn.index : (*(const int*)fu::NIL);
+}
+
+int fu_MAIN()
+{
+    s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
+    fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu_VEC<s_Overload>::INIT<1> { s_Overload { fu_VEC<s_SolvedNodeData> { fu_VEC<s_SolvedNodeData>::INIT<1> { s_SolvedNodeData { s_Target { 0 } } } } } } };
+    return int(test(overloads, _current_fn));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        struct Token {
+            col: i32;
+            line: i32;
+            value: string;
+        };
+
+        fn parse(tokens: Token[]) {
+            mut _idx = 0;
+            mut _loc = 0;
+
+            fn fail(mut reason = "") {
+                let loc  = tokens[_loc];
+                let here = tokens[_idx];
+                if (!reason)
+                    reason = "Unexpected '" ~ here.value ~ "'.";
+
+                let l0 = loc.line;  let c0 = loc.col;
+                let l1 = here.line; let c1 = here.col;
+
+                let addr = l1 == l0
+                    ? "@" ~ l1 ~ ":" ~ c1
+                    : "@" ~ l0 ~ ":" ~ c0 ~ ".." ~ l1 ~ ":" ~ c1;
+
+                return throw(addr ~ ":
+	" ~ reason);
+            }
+
+            fn consume(value: [byte], err = "") {
+                let token = tokens[_idx];
+                if (token.value == value) {
+                    _idx++;
+                    return token;
+                }
+
+                return fail((err || "Expected") ~ " '" ~ value ~ "', got '" ~ token.value ~ "'.");
+            }
+
+            fn parseRoot() {
+                let ret = consume("sof");
+                _loc = _idx;
+                return ret;
+            }
+
+            return parseRoot();
+        }
+
+        fn main() {
+            return parse([ Token(1, 1, "sof") ]).value.len - 3;
+        }
+
+-----
+#include <cstdint>
+#include <fu/default.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_str.h>
+#include <fu/view.h>
+
+struct s_Token;
+
+static const s_Token& parse(fu::view<s_Token>);
+
+                                #ifndef DEF_s_Token
+                                #define DEF_s_Token
+struct s_Token
+{
+    int col;
+    int line;
+    fu_STR value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || col
+            || line
+            || value
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+[[noreturn]] static fu::never fail(fu_STR&& reason, fu::view<s_Token> tokens, const int _loc, const int _idx)
+{
+    const s_Token& loc = tokens[_loc];
+    const s_Token& here = tokens[_idx];
+    if (!reason)
+        reason = (("Unexpected '"_fu + here.value) + "'."_fu);
+
+    const int l0 = loc.line;
+    const int c0 = loc.col;
+    const int l1 = here.line;
+    const int c1 = here.col;
+    fu_STR addr = ((l1 == l0) ? ((("@"_fu + l1) + ":"_fu) + c1) : ((((((("@"_fu + l0) + ":"_fu) + c0) + ".."_fu) + l1) + ":"_fu) + c1));
+    fu::fail(((addr + ":\n\t"_fu) + reason));
+}
+
+static const s_Token& consume(fu::view<std::byte> value, const fu_STR& err, fu::view<s_Token> tokens, int& _idx, const int _loc)
+{
+    const s_Token& token = tokens[_idx];
+    if (token.value == value)
+    {
+        _idx++;
+        return token;
+    };
+    fail(((((((err ? fu_STR(err) : "Expected"_fu) + " '"_fu) + value) + "', got '"_fu) + token.value) + "'."_fu), tokens, _loc, _idx);
+}
+
+static const s_Token& parseRoot(fu::view<s_Token> tokens, int& _idx, int& _loc)
+{
+    const s_Token& ret = consume("sof"_fu, (*(const fu_STR*)fu::NIL), tokens, _idx, _loc);
+    _loc = _idx;
+    return ret;
+}
+
+static const s_Token& parse(fu::view<s_Token> tokens)
+{
+    int _idx = 0;
+    int _loc = 0;
+    return parseRoot(tokens, _idx, _loc);
+}
+
+int fu_MAIN()
+{
+    return parse((fu::slate<1, s_Token> { s_Token { 1, 1, "sof"_fu } })).value.size() - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+
+-----
+
         let a = 7;
         let b = a && 3;
         return b - 3;
@@ -8581,7 +11390,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-
         struct TrueStory { kind: string; value: string; };
 
         mut specialized = TrueStory(kind: "fn", value: "val");
@@ -8594,7 +11402,6 @@ int main() { return fu_MAIN(); }
         v ~= "ue";
 
         return specialized.value == "value" ? 0 : 1;
-
 
 -----
 #include <fu/never.h>
@@ -8709,17 +11516,27 @@ int main() { return fu_MAIN(); }
         }
 
         return hey(0);
+
 -----
 _0.fu @15:13:
+
+[2m      |         fn hey(x: i32) {[0m
+[2m      |             let scope0 = thing(x);[0m
+   15 |             [31;1m_return_scope[0m = scope0; //overload
+[2m      |             return _return_scope.raw;[0m
+[2m      |         }[0m
+
 	`=` bad args.
-Expect: =(
-	a: $,
-	b: $)
+Expect: `=(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
 Actual: (
 	1:$0ScopeIdx: mutref ref copy trivial,
 	i32: ref copy trivial primitive arithmetic integral signed).
-	Solving fn `hey`.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mhey[0m
+                [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct ScopeIdx { raw: i32; };
@@ -8783,6 +11600,267 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn maybe_empty(N: i32) {
+            mut res: string[];
+            for (mut i = 0; i < N; i++) res ~= [ "world!" ]; // same as below but wrapped
+            return res;
+        }
+        fn main() {
+            mut arr = [ "Hello" ];
+            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
+            return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+
+-----
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/join.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<fu_STR> maybe_empty(const int N)
+{
+    fu_VEC<fu_STR> res {};
+    for (int i = 0; i < N; i++)
+        res += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "world!"_fu } };
+
+    return res;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<fu_STR> arr = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "Hello"_fu } };
+    for (int i = 0; i < 2; i++)
+        arr += maybe_empty(i);
+
+    return ((fu::join(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn maybe_empty(N: i32) {
+            mut res: string[];
+            for (mut i = 0; i < N; i++) res ~= "world!"; // cpp template issue here
+            return res;
+        }
+        fn main() {
+            mut arr = [ "Hello" ];
+            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
+            return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+
+-----
+TODO: o-019ddfb37fbe4504-601.cpp:14:13: error: no viable overloaded '+='
+        res += "world!"_fu;
+        ~~~ ^  ~~~~~~~~~~~
+/Users/hdachev/fu/include/fu/vec/concat_one.h:21:19: note: candidate template ignored: deduced conflicting types for parameter 'T' ('fu_VEC<std::byte>' vs. 'fu_STRLIT')
+inline fu_VEC<T>& operator+=(fu_VEC<T>& a, T&& b) noexcept {
+                  ^
+/Users/hdachev/fu/include/fu/vec/concat_one.h:42:19: note: candidate template ignored: deduced conflicting types for parameter 'T' ('fu_VEC<std::byte>' vs. 'fu_STRLIT')
+inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const T& b) noexcept {
+                  ^
+/Users/hdachev/fu/include/fu/vec/./concat.h:42:19: note: candidate template ignored: substitution failure [with V = fu_STRLIT, T = fu_VEC<std::byte>, T2 = std::byte]: assigning to 'fu_VEC<std::byte> *' from incompatible type 'std::byte *'
+inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const V& b) noexcept {
+                  ^
+/Users/hdachev/fu/include/fu/vec/./concat.h:15:19: note: candidate template ignored: could not match 'fu_VEC<type-parameter-0-0>' against 'fu_STRLIT'
+inline fu_VEC<T>& operator+=(fu_VEC<T>& a, fu_VEC<T>&& b) noexcept {
+                  ^
+1 error generated.
+
+Failing testcase:
+
+
+        fn maybe_empty(N: i32) {
+            mut res: string[];
+            for (mut i = 0; i < N; i++) res ~= "world!"; // cpp template issue here
+            return res;
+        }
+        fn main() {
+            mut arr = [ "Hello" ];
+            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty
+            return arr.join(" ") == "Hello world!" ? 0 : 1;
+        }
+
+Sources:
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
+#include <fu/vec/join.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<fu_STR> maybe_empty(const int N)
+{
+    fu_VEC<fu_STR> res {};
+    for (int i = 0; i < N; i++)
+        res += "world!"_fu;
+
+    return res;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<fu_STR> arr = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { "Hello"_fu } };
+    for (int i = 0; i < 2; i++)
+        arr += maybe_empty(i);
+
+    return ((fu::join(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn main() {
+            mut _info = "abc";
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info && info.i32;
+                return reason;
+            }
+
+            return fail.len - 2; // 'a' is 97, "97".len is 2.
+        }
+
+-----
+TODO: o-049dc77d9d73e7ce-426.cpp:10:16: error: value of type 'const std::byte' is not contextually convertible to 'bool'
+    reason += (info ? int(info) : int{});
+               ^~~~
+1 error generated.
+
+Failing testcase:
+
+
+        fn main() {
+            mut _info = "abc";
+
+            pure fn fail(mut reason: string = "") {
+                ref info = _info[0]; // <- notice the ref, has to relax away
+                reason ~= info && info.i32;
+                return reason;
+            }
+
+            return fail.len - 2; // 'a' is 97, "97".len is 2.
+        }
+
+Sources:
+#include <cstdint>
+#include <fu/str.h>
+#include <fu/vec/concat_str.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR fail(fu_STR&& reason, const fu_STR& _info)
+{
+    const std::byte info = _info[0];
+    reason += (info ? int(info) : int{});
+    return static_cast<fu_STR&&>(reason);
+}
+
+int fu_MAIN()
+{
+    fu_STR _info = "abc"_fu;
+    return fail(fu_STR{}, _info).size() - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        let q_mutref = 1;
+        pub let RELAX_mutref_only = q_mutref;
+        pub fn what(relax_mask!: i32) relax_mask -1;
+
+        import _0;
+        fn main() what(RELAX_mutref_only);
+
+-----
+TODO: _1.fu @3:24:
+
+[2m      | [0m
+[2m      |         import _0;[0m
+    3 |         fn main() what([31;1mRELAX_mutref_only[0m);
+[2m      | [0m
+
+	`RELAX_mutref_only` is not defined in this scope: `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        pub fn pairs(a: Map($K, $V), fn) {
+            let k = a.keys;
+            let v = a.values;
+            for (mut i = 0; i < k.len; i++)
+                fn(k[i], v[i]);
+        }
+
+        fn main() {
+            mut map: Map(i32, i32);
+            map[1] = 2;
+            map[3] = 4;
+
+            mut sum = 0;
+            map.pairs(|k, v| sum += k + v * 100);
+            return sum - 604;
+        }
+
+-----
+#include <fu/map.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_pairs_ujVx
+                                #define DEFt_pairs_ujVx
+inline void pairs_ujVx(const fu_MAP<int, int>& a, int, int& sum)
+{
+    fu::view<int> k = a.m_keys;
+    fu::view<int> v = a.m_values;
+    for (int i = 0; i < k.size(); i++)
+    {
+        const int k_1 = k[i];
+        const int v_1 = v[i];
+        sum += (k_1 + (v_1 * 100));
+    };
+}
+                                #endif
+
+int fu_MAIN()
+{
+    fu_MAP<int, int> map {};
+    (map.upsert(1) = 2);
+    (map.upsert(3) = 4);
+    int sum = 0;
+    pairs_ujVx(map, 0, sum);
+    return sum - 604;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
         fn ARR_LAST(a: $T[])
             case ($a -> &mut $T[]): &mut $T a[a.len - 1];
             case ($a -> &    $T[]): &    $T a[a.len - 1];
@@ -8812,18 +11890,24 @@ inline static int ARR_LAST_I28a(fu::view<int> a)
     return a[(a.size() - 1)];
 }
 
+inline static int ARR_LAST_SBXx(fu::view<int> a)
+{
+    return a[(a.size() - 1)];
+}
+
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return ARR_LAST_mrln(b) - 3;
+    return ARR_LAST_SBXx(b) - 3;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// RELAX_respec
 
 -----
 
@@ -8853,18 +11937,24 @@ inline static int ARR_LAST_I28a(fu::view<int> a)
     return a[(a.size() - 1)];
 }
 
+inline static int ARR_LAST_SBXx(fu::view<int> a)
+{
+    return a[(a.size() - 1)];
+}
+
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return ARR_LAST_mrln(b) - 3;
+    return ARR_LAST_SBXx(b) - 3;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// RELAX_respec
 
 -----
 
@@ -8934,18 +12024,24 @@ inline static int ARR_LAST_I28a(fu::view<int> a)
     return a[(a.size() - 1)];
 }
 
+inline static int ARR_LAST_SBXx(fu::view<int> a)
+{
+    return a[(a.size() - 1)];
+}
+
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_mrln(b) += ARR_LAST_I28a(a);
-    return ARR_LAST_mrln(b) - ARR_LAST_I28a((fu::slate<1, int> { 3 }));
+    return ARR_LAST_SBXx(b) - ARR_LAST_I28a((fu::slate<1, int> { 3 }));
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// RELAX_respec
 
 -----
 
@@ -9033,16 +12129,26 @@ int main() { return fu_MAIN(); }
             ScopeSkip(start: -1, end: +1)
             //*/
                 .end - 1;
+
 -----
 _0.fu @12:13:
+
+[2m      |         pub fn main()[0m
+[2m      |             //*F[0m
+   12 |             [31;1mScopeSkip[0m(min: -1, max: +1)
+[2m      |             /*/[0m
+[2m      |             ScopeSkip(start: -1, end: +1)[0m
+
 	`ScopeSkip` bad args.
-Expect: ScopeSkip(
-	start: i32: copy trivial primitive arithmetic integral signed,
-	end: i32: copy trivial primitive arithmetic integral signed)
+Expect: `ScopeSkip(
+	[34;1mstart[0m: i32: copy trivial primitive arithmetic integral signed,
+	[34;1mend[0m: i32: copy trivial primitive arithmetic integral signed)`
 Actual: (
 	min: i32: copy trivial primitive arithmetic integral signed,
 	max: i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         pub struct ScopeSkip {
@@ -9308,6 +12414,39 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct ScopeSkip {
+            min: i32;
+            max: i32;
+        };
+
+        fn main() {
+            let a = 1;
+            mut x: ScopeSkip; x = []; x = [ -2, 0 ]; // Inference fail.
+            mut t: ScopeSkip; t = x.min && [ x.min, a ];
+            return a + t.min + t.max;
+        }
+
+-----
+TODO: _0.fu @9:39:
+
+[2m      |         fn main() {[0m
+[2m      |             let a = 1;[0m
+    9 |             mut x: ScopeSkip; x = []; [31;1mx[0m = [ -2, 0 ]; // Inference fail.
+[2m      |             mut t: ScopeSkip; t = x.min && [ x.min, a ];[0m
+[2m      |             return a + t.min + t.max;[0m
+
+	`=` bad args.
+Expect: `=(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+Actual: (
+	1:$0ScopeSkip: mutref ref copy trivial,
+	[]+252i32: copy resize).
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
         // Same as below, but avoids the $T call, which is also broken somehow.
         //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -
         //   we emit useless overloads for mutrefs when its clearly useless.
@@ -9358,7 +12497,7 @@ inline static int rec_cases_U3Pf(const int a)
 
 }
 
-inline static int rec_cases_cBw5(int& a)
+inline static int rec_cases_cBw5(const int a)
 {
     if (a)
         return rec_cases_U3Pf((a / 2));
@@ -9367,7 +12506,7 @@ inline static int rec_cases_cBw5(int& a)
 
 }
 
-inline static int rec_cases_JcCf(s_X& a)
+inline static int rec_cases_JcCf(const s_X& a)
 {
     if (a.i)
     {
@@ -9656,7 +12795,6 @@ int main() { return fu_MAIN(); }
             return myVisitor.sum - 15;
         };
 
-
 -----
 #include <fu/vec.h>
 
@@ -9774,7 +12912,6 @@ int main() { return fu_MAIN(); }
             myVisitor.visitNodes(tree);
             return myVisitor.sum - 15;
         };
-
 
 -----
 #include <fu/vec.h>
@@ -9925,6 +13062,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // DEAD_code
+// DEAD_let
 
 -----
 
@@ -9972,6 +13110,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // DEAD_code
+// DEAD_let
 
 -----
 
@@ -10026,7 +13165,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-
         fn main()
             cli_handle([ "hello", "you" ]);
 
@@ -10050,10 +13188,11 @@ int main() { return fu_MAIN(); }
 #include <fu/default.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& next(int& idx, const fu_VEC<fu_STR>& args)
+static const fu_STR& next(int& idx, fu::view<fu_STR> args)
 {
     const int i = idx++;
     if (i < args.size())
@@ -10062,7 +13201,7 @@ static const fu_STR& next(int& idx, const fu_VEC<fu_STR>& args)
     return (*(const fu_STR*)fu::NIL);
 }
 
-static int cli_handle(const fu_VEC<fu_STR>& args)
+static int cli_handle(fu::view<fu_STR> args)
 {
     int idx = 0;
     return next(idx, args).size() - 5;
@@ -10070,7 +13209,7 @@ static int cli_handle(const fu_VEC<fu_STR>& args)
 
 int fu_MAIN()
 {
-    return cli_handle(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "hello"_fu, "you"_fu } });
+    return cli_handle((fu::slate<2, fu_STR> { "hello"_fu, "you"_fu }));
 }
 
 #endif
@@ -10266,10 +13405,20 @@ int main() { return fu_MAIN(); }
             b.x++;
             return b.x - a.x * 2;
         }
+
 -----
-_0.fu @10:13:
-	Needs an explicit STEAL or CLONE.
-	Solving fn `main`.
+_0.fu @10:21:
+
+[2m      |         fn main() {[0m
+[2m      |             let a = Copied(1);[0m
+   10 |             mut b = [31;1ma[0m;
+[2m      |             b.x++;[0m
+[2m      |             return b.x - a.x * 2;[0m
+
+	Needs an explicit STEAL or CLONE: 1:$0Copied: trivial
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         /*
@@ -10696,6 +13845,131 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        struct Lifetime { woot: Lifetime[]; };
+
+        // We could codegen this as a cpp template!
+        //  We'd need to auto& all inner locals too.
+        //
+        fn Lifetime_test(x: Lifetime) {
+            x.woot.len & 1 && throw("This is very important.");
+            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);
+            return x;
+        }
+
+        fn Lifetime_fromBinding(x: i32) {
+            mut woot: Lifetime[];
+            for (mut i = 0; i < x; i++) woot[i] = Lifetime();
+
+            // Or we can just add const_casts at such callsites,
+            //  so that things end up working as if the call was inlined,
+            //   which weakens the validation we get but is way cleaner.
+            //
+            // TODO: needs to track uniqueness for that to work.
+            //
+            return Lifetime_test(Lifetime(:woot));
+        }
+
+        fn main() 0.Lifetime_fromBinding.woot.len;
+
+-----
+TODO: o-025800885d3ca5b0-1324.cpp:44:12: error: cannot cast from lvalue of type 'const s_Lifetime' to rvalue reference type 's_Lifetime &&'; types are not compatible
+    return static_cast<s_Lifetime&&>(Lifetime_test(s_Lifetime { fu_VEC<s_Lifetime>(woot) }));
+           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+
+Failing testcase:
+
+
+        struct Lifetime { woot: Lifetime[]; };
+
+        // We could codegen this as a cpp template!
+        //  We'd need to auto& all inner locals too.
+        //
+        fn Lifetime_test(x: Lifetime) {
+            x.woot.len & 1 && throw("This is very important.");
+            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);
+            return x;
+        }
+
+        fn Lifetime_fromBinding(x: i32) {
+            mut woot: Lifetime[];
+            for (mut i = 0; i < x; i++) woot[i] = Lifetime();
+
+            // Or we can just add const_casts at such callsites,
+            //  so that things end up working as if the call was inlined,
+            //   which weakens the validation we get but is way cleaner.
+            //
+            // TODO: needs to track uniqueness for that to work.
+            //
+            return Lifetime_test(Lifetime(:woot));
+        }
+
+        fn main() 0.Lifetime_fromBinding.woot.len;
+
+Sources:
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+
+struct s_Lifetime;
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu_VEC<s_Lifetime> woot;
+    s_Lifetime(const s_Lifetime&) = default;
+    s_Lifetime(s_Lifetime&&) = default;
+    s_Lifetime& operator=(s_Lifetime&&) = default;
+    s_Lifetime& operator=(const s_Lifetime& selfrec) { return *this = s_Lifetime(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || woot
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_Lifetime& Lifetime_test(const s_Lifetime& x)
+{
+    if (x.woot.size() & 1)
+        fu::fail("This is very important."_fu);
+
+    for (int i = 0; i < x.woot.size(); i++)
+        Lifetime_test(x.woot[i]);
+
+    return x;
+}
+
+static s_Lifetime Lifetime_fromBinding(const int x)
+{
+    fu_VEC<s_Lifetime> woot {};
+    for (int i = 0; i < x; i++)
+        woot.mutref(i) = s_Lifetime{};
+
+    return static_cast<s_Lifetime&&>(Lifetime_test(s_Lifetime { fu_VEC<s_Lifetime>(woot) }));
+}
+
+int fu_MAIN()
+{
+    return Lifetime_fromBinding(0).woot.size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+
+-----
+
         fn test(x: i32) {                       // none of these need vecs
             let c = [10007];                    // TODO fu::slate<1, int> { 10007 }
             let a = [7, 11];                    // TODO fu::slate<2, int> { 7, 11 }
@@ -10712,6 +13986,10 @@ int main() { return fu_MAIN(); }
         fn main() 1.test + 4;
 
 -----
+;; TODO fu::slate<1, int> { 10007 }
+;; TODO fu::slate<2, int> { 7, 11 }
+;; TODO fu::slate<1, int> { int(x) }
+
 #include <fu/vec.h>
 
 #ifndef FU_NO_FDEFs
@@ -10723,17 +14001,13 @@ static int test(const int x)
     fu_VEC<int> L_00_v {};
     fu_VEC<int> b = (__extension__ (
     { {
-        const fu_VEC<int>* _0;
-        L_00_v = (fu_VEC<int>((__extension__ (
-        {
-            if (x & 2)
-                { L_00_v = fu_VEC<int>(c); goto L_00; };
+        if (x & 2)
+            { L_00_v = fu_VEC<int>(c); goto L_00; };
 
-            if (x & 1)
-                { L_00_v = fu_VEC<int> { fu_VEC<int>::INIT<1> { int(x) } }; goto L_00; };
+        if (x & 1)
+            { L_00_v = fu_VEC<int> { fu_VEC<int>::INIT<1> { int(x) } }; goto L_00; };
 
-            _0 = &(a);
-        }), *_0)));
+        L_00_v = (a);
       } L_00:;
     }), static_cast<fu_VEC<int>&&>(L_00_v));
     return a[0] - (b[0] * a[1]);
@@ -10787,7 +14061,7 @@ struct s_Test
 
 static s_Test test(s_Test&& x)
 {
-    x.i.mutref(0) += x.i[1];
+    x.i.mutref(0) += int(x.i[1]);
     return static_cast<s_Test&&>(x);
 }
 
@@ -10841,7 +14115,7 @@ struct s_Test
 
 static s_Test test(s_Test&& x)
 {
-    x.i.mutref(0) += x.i[1];
+    x.i.mutref(0) += int(x.i[1]);
     return static_cast<s_Test&&>(x);
 }
 
@@ -11107,6 +14381,106 @@ fu_VEC<int> test(const int x)
 int fu_MAIN()
 {
     return (test(2)[2] + test(1)[1]) - (2 * test(0)[0]);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
+            //*F
+            if (is_mutref)
+            /*/
+            if (is_mutref) {
+            //*/
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 1)
+                        sum += args[i];
+            //*F
+            /*/
+            }
+            //*/
+            else
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 2)
+                        sum += args[i];
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(true , [ 1,  2,  3  ], sum);
+            test(false, [ 11, 22, 33 ], sum);
+            return sum - 1 - 3 - 11 - 22;
+        }
+
+-----
+_0.fu @9:21..16:17:
+	Inconsistent indent at `else`: expected 21, got 13. `if` starts on line 9.
+-----
+
+        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
+            /*
+            if (is_mutref)
+            /*/
+            if (is_mutref) {
+            //*/
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 1)
+                        sum += args[i];
+            /*
+            /*/
+            }
+            //*/
+            else
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 2)
+                        sum += args[i];
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(true , [ 1,  2,  3  ], sum);
+            test(false, [ 11, 22, 33 ], sum);
+            return sum - 1 - 3 - 11 - 22;
+        }
+
+-----
+#include <fu/vec.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test(const bool is_mutref, fu::view<int> args, int& sum)
+{
+    if (is_mutref)
+    {
+        for (int i = 0; i < args.size(); i++)
+        {
+            if (args[i] & 1)
+                sum += args[i];
+
+        };
+    }
+    else
+    {
+        for (int i = 0; i < args.size(); i++)
+        {
+            if (args[i] & 2)
+                sum += args[i];
+
+        };
+    };
+}
+
+int fu_MAIN()
+{
+    int sum = 0;
+    test(true, (fu::slate<3, int> { 1, 2, 3 }), sum);
+    test(false, (fu::slate<3, int> { 11, 22, 33 }), sum);
+    return (((sum - 1) - 3) - 11) - 22;
 }
 
 #endif
@@ -12308,7 +15682,7 @@ int main() { return fu_MAIN(); }
 
 static int& test(fu::view_mut<int> hey)
 {
-    return (hey.mutref(0) += hey[1]);
+    return (hey.mutref(0) += int(hey[1]));
 }
 
 int fu_MAIN()
@@ -12432,7 +15806,7 @@ int main() { return fu_MAIN(); }
 
 static int& test(fu::view_mut<int> hey)
 {
-    return (hey.mutref(0) += hey[1]);
+    return (hey.mutref(0) += int(hey[1]));
 }
 
 int fu_MAIN()
@@ -12872,13 +16246,23 @@ int main() { return fu_MAIN(); }
         };
 
         return Test(b: 1).a;
+
 -----
 _0.fu @14:16:
+
+[2m      |         };[0m
+[2m      | [0m
+   14 |         return [31;1mTest[0m(b: 1).a;
+[2m      |     [0m
+[2m      | }[0m
+
 	`Test` expects at least 2 arguments, 1 provided.
-Expect: Test(
-	a: i32: copy trivial primitive arithmetic integral signed,
-	b: i32: copy trivial primitive arithmetic integral signed)
-	Solving fn `main`.
+Expect: `Test(
+	[34;1ma[0m: i32: copy trivial primitive arithmetic integral signed,
+	[34;1mb[0m: i32: copy trivial primitive arithmetic integral signed)`
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct Test {
@@ -12936,13 +16320,23 @@ int main() { return fu_MAIN(); }
         };
 
         return Test(1).a;
+
 -----
 _0.fu @14:16:
+
+[2m      |         };[0m
+[2m      | [0m
+   14 |         return [31;1mTest[0m(1).a;
+[2m      |     [0m
+[2m      | }[0m
+
 	`Test` expects at least 2 arguments, 1 provided.
-Expect: Test(
-	b: i32: copy trivial primitive arithmetic integral signed,
-	a: i32: copy trivial primitive arithmetic integral signed)
-	Solving fn `main`.
+Expect: `Test(
+	[34;1mb[0m: i32: copy trivial primitive arithmetic integral signed,
+	[34;1ma[0m: i32: copy trivial primitive arithmetic integral signed)`
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct Test {
@@ -13087,16 +16481,26 @@ int main() { return fu_MAIN(); }
         /*/
         return test(-2, b: +2);
         //*/
+
 -----
-_0.fu @7:9:
+_0.fu @7:16:
+
+[2m      |         fn test(a: i32, b!: i32 = 1) a + b;[0m
+[2m      |         //*F[0m
+    7 |         return [31;1mtest[0m(-2, +2);
+[2m      |         /*/[0m
+[2m      |         return test(-2, b: +2);[0m
+
 	`test` bad args.
-Expect: test(
-	a: i32: ref copy trivial primitive arithmetic integral signed,
-	b!?: i32: ref copy trivial primitive arithmetic integral signed)
+Expect: `test(
+	[34;1ma[0m: i32: ref copy trivial primitive arithmetic integral signed,
+	[34;1mb[0m!?: i32: ref copy trivial primitive arithmetic integral signed)`
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn test(a: i32, b!: i32 = 1) a + b;
@@ -13134,16 +16538,26 @@ int main() { return fu_MAIN(); }
         /*/
         return Test(-2, b: +2).test;
         //*/
+
 -----
 _0.fu @8:16:
+
+[2m      |         fn test(t: Test) t.a + t.b;[0m
+[2m      |         //*F[0m
+    8 |         return [31;1mTest[0m(-2, +2).test;
+[2m      |         /*/[0m
+[2m      |         return Test(-2, b: +2).test;[0m
+
 	`Test` bad args.
-Expect: Test(
-	a: i32: copy trivial primitive arithmetic integral signed,
-	b!: i32: copy trivial primitive arithmetic integral signed)
+Expect: `Test(
+	[34;1ma[0m: i32: copy trivial primitive arithmetic integral signed,
+	[34;1mb[0m!: i32: copy trivial primitive arithmetic integral signed)`
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct Test { a: i32; b!: i32; };
@@ -13200,16 +16614,26 @@ int main() { return fu_MAIN(); }
         /*/
         return Test(b: +2).test - 2;
         //*/
+
 -----
 _0.fu @8:16:
+
+[2m      |         fn test(t: Test) t.a + t.b;[0m
+[2m      |         //*F[0m
+    8 |         return [31;1mTest[0m(-2, +2).test;
+[2m      |         /*/[0m
+[2m      |         return Test(b: +2).test - 2;[0m
+
 	`Test` bad args.
-Expect: Test(
-	a?: i32: copy trivial primitive arithmetic integral signed,
-	b!?: i32: copy trivial primitive arithmetic integral signed)
+Expect: `Test(
+	[34;1ma[0m?: i32: copy trivial primitive arithmetic integral signed,
+	[34;1mb[0m!?: i32: copy trivial primitive arithmetic integral signed)`
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         struct Test { a?: i32; b?!: i32; };
@@ -13333,16 +16757,26 @@ int main() { return fu_MAIN(); }
                 + a2o1(a : 1)        * 100000   // 100000
                                 // ----------------------
                                      - 133310;
+
 -----
 _0.fu @10:19:
+
+[2m      |                 + a2o1(a?: 1, b?: 2) *    100   //    300[0m
+[2m      |                 + a2o2(a?: 1, b?: 2) *   1000   //   3000[0m
+   10 |                 + [31;1ma2o1[0m(a : 1, //*F
+[2m      |                               c[0m
+[2m      |                               /*/[0m
+
 	`a2o1` bad args.
-Expect: a2o1(
-	a: i32: ref copy trivial primitive arithmetic integral signed,
-	b?: i32: ref copy trivial primitive arithmetic integral signed)
+Expect: `a2o1(
+	[34;1ma[0m: i32: ref copy trivial primitive arithmetic integral signed,
+	[34;1mb[0m?: i32: ref copy trivial primitive arithmetic integral signed)`
 Actual: (
 	a: i32: copy trivial primitive arithmetic integral signed,
 	c: i32: copy trivial primitive arithmetic integral signed).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn a0o0() 0;
@@ -13506,10 +16940,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 100).i32 - 27;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: i8 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m128[0m
+[2m      |             /*/[0m
+[2m      |             127[0m
+
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13553,10 +16997,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 32700).i32 - 67;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: i16 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m32768[0m
+[2m      |             /*/[0m
+[2m      |             32767[0m
+
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13599,10 +17053,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 2147483600).i32 - 47;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: i32 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m2147483648[0m
+[2m      |             /*/[0m
+[2m      |             2147483647[0m
+
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13645,10 +17109,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 9223372036854775800).i32 - 7;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: i64 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m9223372036854775808[0m
+[2m      |             /*/[0m
+[2m      |             9223372036854775807[0m
+
 	Bad int literal.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13692,10 +17166,20 @@ int main() { return fu_MAIN(); }
 
             return (ret + 100).i32 + 28;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:14:
+
+[2m      |             let ret: i8 =[0m
+[2m      |             //*F[0m
+    5 |             -[31;1m129[0m
+[2m      |             /*/[0m
+[2m      |             -128[0m
+
 	Type annotation does not match init expression `ret`: i8: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13739,10 +17223,20 @@ int main() { return fu_MAIN(); }
 
             return (ret + 32700).i32 + 68;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:14:
+
+[2m      |             let ret: i16 =[0m
+[2m      |             //*F[0m
+    5 |             -[31;1m32769[0m
+[2m      |             /*/[0m
+[2m      |             -32768[0m
+
 	Type annotation does not match init expression `ret`: i16: copy trivial primitive arithmetic integral signed=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13785,10 +17279,20 @@ int main() { return fu_MAIN(); }
 
             return (ret + 2147483600).i32 + 48;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:14:
+
+[2m      |             let ret: i32 =[0m
+[2m      |             //*F[0m
+    5 |             -[31;1m2147483649[0m
+[2m      |             /*/[0m
+[2m      |             -2147483648[0m
+
 	Type annotation does not match init expression `ret`: i32: copy trivial primitive arithmetic integral signed=i64: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13831,10 +17335,20 @@ int main() { return fu_MAIN(); }
 
             return (ret + 9223372036854775800).i32 + 8;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:14:
+
+[2m      |             let ret: i64 =[0m
+[2m      |             //*F[0m
+    5 |             -[31;1m9223372036854775809[0m
+[2m      |             /*/[0m
+[2m      |             -9223372036854775808[0m
+
 	Oversized signed int literal.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13878,10 +17392,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xff).i32;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: u8 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m256[0m
+[2m      |             /*/[0m
+[2m      |             255[0m
+
 	Type annotation does not match init expression `ret`: u8: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13925,10 +17449,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffff).i32;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: u16 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m65536[0m
+[2m      |             /*/[0m
+[2m      |             65535[0m
+
 	Type annotation does not match init expression `ret`: u16: copy trivial primitive arithmetic integral unsigned=i32: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -13972,10 +17506,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffffffff).i32;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: u32 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m4294967296[0m
+[2m      |             /*/[0m
+[2m      |             4294967295[0m
+
 	Type annotation does not match init expression `ret`: u32: copy trivial primitive arithmetic integral unsigned=i64: copy trivial primitive arithmetic integral signed
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -14018,10 +17562,20 @@ int main() { return fu_MAIN(); }
 
             return (ret - 0xffffffffffffffff).i32;
         }
+
 -----
-_0.fu @3:13:
+_0.fu @5:13:
+
+[2m      |             let ret: u64 =[0m
+[2m      |             //*F[0m
+    5 |             [31;1m18446744073709551616[0m
+[2m      |             /*/[0m
+[2m      |             18446744073709551615[0m
+
 	Integer literal overflows a u64.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn main() {
@@ -14110,12 +17664,22 @@ int main() { return fu_MAIN(); }
         pub
         //*/
         fn hello() 3;
+
         import _0;
         fn main() 6 - hello * 2;
+
 -----
 _1.fu @3:23:
+
+[2m      | [0m
+[2m      |         import _0;[0m
+    3 |         fn main() 6 - [31;1mhello[0m * 2;
+[2m      |     [0m
+
 	`hello` is not defined in this scope: `main`.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         pub fn noop() {} // AUTOPUB
@@ -15556,6 +19120,10 @@ struct s_I;
 struct s_I
 {
     fu_VEC<int> v;
+    s_I(const s_I&) = delete;
+    s_I(s_I&&) = default;
+    s_I& operator=(const s_I&) = delete;
+    s_I& operator=(s_I&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -15613,6 +19181,10 @@ struct s_I;
 struct s_I
 {
     fu_VEC<int> v;
+    s_I(const s_I&) = delete;
+    s_I(s_I&&) = default;
+    s_I& operator=(const s_I&) = delete;
+    s_I& operator=(s_I&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -15739,6 +19311,10 @@ struct s_Module
 struct s_Context
 {
     fu_VEC<s_Module> modules;
+    s_Context(const s_Context&) = delete;
+    s_Context(s_Context&&) = default;
+    s_Context& operator=(const s_Context&) = delete;
+    s_Context& operator=(s_Context&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -16125,10 +19701,19 @@ int main() { return fu_MAIN(); }
         }
 
         fn main() 0.hello;
+
 -----
-_0.fu @4:17:
+_0.fu @2:9:
+
+[2m      | [0m
+    2 |         [31;1mfn[0m hello(x: i32) {
+[2m      |             if (x & 1)[0m
+[2m      |                 return x * 2;[0m
+
 	Non-void returning fn missing a final return.
-	Solving fn `hello`.
+
+        Solving [35;1mfn[0m [34;1mhello[0m
+
 -----
 
         fn hello(x: i32) {
@@ -16164,6 +19749,28 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        fn throws()         { throw("WHAT!");   }
+        fn myfn(a = throws) { return a;         } // never in default argument position!
+        fn main() {
+            try             { return myfn();                }
+            catch (e)       { return e == "WHAT!" ? 0 : 1;  }
+        }
+
+-----
+TODO: _0.fu @4:9:
+
+[2m      |         fn throws()         { throw("WHAT!");   }[0m
+[2m      |         fn myfn(a = throws) { return a;         } // never in default argument position![0m
+    4 |         [31;1mfn[0m main() {
+[2m      |             try             { return myfn();                }[0m
+[2m      |             catch (e)       { return e == "WHAT!" ? 0 : 1;  }[0m
+
+	Expression not assignable to return annotation: i32: copy trivial primitive arithmetic integral signed <- never: ref
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -16253,6 +19860,7 @@ int main() { return fu_MAIN(); }
                 .abs;
 
         fn main() test ? 0 : 7;
+
 -----
 _0.fu @22:14..26:18:
 	Here the unary -/+ separates from the numeric literal, and wraps around the whole expression. Please parenthesize explicitly to make this obvious.
@@ -16562,19 +20170,28 @@ int main() { return fu_MAIN(); }
             $B(a);
             //*/
         fn main() i8(-1).test(+1);
+
 -----
-_0.fu @2:9:
+_0.fu @2:31:
+
+[2m      | [0m
+    2 |         fn test(a: $A, b: $B) [31;1mb[0m + //*F
+[2m      |             a;[0m
+[2m      |             /*/[0m
+
 	`+` bad args, available overloads:
-		+(
-	a: $,
-	b: $)
-		+(
-	a: $)
+		`+(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`+(
+	[34;1ma[0m: $)`
 Actual: (
 	i32: ref copy trivial primitive arithmetic integral signed,
 	i8: ref copy trivial primitive arithmetic integral signed).
-	Solving fn `test_ZHMH`.
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mtest_ZHMH[0m
+                [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn test(a: $A, b: $B) b + /*
@@ -16839,8 +20456,8 @@ int main() { return fu_MAIN(); }
 
         struct A { a: i32; };
         struct B { b: i32; };
-
         using fn bananas(a: A) B(a.a * 2);
+
 
         fn main() 1.A.b - 2;
 
@@ -16898,8 +20515,32 @@ int main() { return fu_MAIN(); }
 
         struct A { a: i32; };
         struct B { b: i32; };
+        using fn bananas(a: A) B(a.a * 2);
 
+        import _0;
+        fn main() 1.A.b - 2;
+
+-----
+TODO: _1.fu @2:22:
+
+[2m      |         import _0;[0m
+    2 |         fn main() 1.A[31;1m.[0mb - 2;
+[2m      | [0m
+
+	`b` bad args.
+Expect: `b(
+	[34;1mthis[0m: 1:$1B)`
+Actual: (
+	1:$0A: copy trivial).
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        struct A { a: i32; };
+        struct B { b: i32; };
         using fn bananas(a) B(a.a * 2); // <- template
+
 
         fn main() 1.A.b - 2;
 
@@ -16952,6 +20593,30 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        struct A { a: i32; };
+        struct B { b: i32; };
+        using fn bananas(a) B(a.a * 2); // <- template
+
+        import _0;
+        fn main() 1.A.b - 2;
+
+-----
+TODO: _1.fu @2:22:
+
+[2m      |         import _0;[0m
+    2 |         fn main() 1.A[31;1m.[0mb - 2;
+[2m      | [0m
+
+	`b` bad args.
+Expect: `b(
+	[34;1mthis[0m: 1:$1B)`
+Actual: (
+	1:$0A: copy trivial).
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -17758,7 +21423,7 @@ static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overlo
 
 }
 
-static const s_Overload& try_GET(const s_Target& target, fu_VEC<s_Overload>& overloads)
+static const s_Overload& try_GET(const s_Target& target, fu::view<s_Overload> overloads)
 {
     return target ? GET(target, overloads) : (*(const s_Overload*)fu::NIL);
 }
@@ -17776,6 +21441,59 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // TYPE_recursion
 // TYPE_resolve
+
+-----
+
+        struct CodegenOutput { using src: string; };
+
+        fn test(ref str: string, out: CodegenOutput) {
+            str ~= out && "b";
+            return str ~ out;
+        }
+
+        fn main() {
+            mut str = "a";
+            return str.test(CodegenOutput("what")).len - 6; // "abwhat".len;
+        }
+
+-----
+TODO: _0.fu @6:20:
+
+[2m      |         fn test(ref str: string, out: CodegenOutput) {[0m
+[2m      |             str ~= out && "b";[0m
+    6 |             return [31;1mstr[0m ~ out;
+[2m      |         }[0m
+[2m      | [0m
+
+	`~` bad args, available overloads:
+		`~(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`~(
+	[34;1ma[0m: []+28byte: ref copy resize,
+	[34;1mb[0m: $)`
+		`
+<fu/vec/concat_one.h>
++(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`
+<fu/vec/concat_one.h>
++(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`
+<fu/vec/concat.h>
++(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`~(
+	[34;1ma[0m: $)`
+Actual: (
+	[]+28byte: mutref ref copy resize,
+	1:$0CodegenOutput: ref copy).
+
+        Solving [35;1mfn[0m [34;1mtest[0m
 
 -----
 
@@ -18307,18 +22025,28 @@ int main() { return fu_MAIN(); }
         fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey //*F
             ; /*/ .i32; //*/
+
 -----
-_0.fu @5:9:
+_0.fu @5:28:
+
+[2m      | [0m
+[2m      |         fn fB(a: $T): sB($T) = [ a + 2 ];[0m
+    5 |         fn main() 1.fB.hey [31;1m-[0m 1.u32.fB.hey //*F
+[2m      |             ; /*/ .i32; //*/[0m
+[2m      |     [0m
+
 	`-` bad args, available overloads:
-		-(
-	a: $,
-	b: $)
-		-(
-	a: $)
+		`-(
+	[34;1ma[0m: $,
+	[34;1mb[0m: $)`
+		`-(
+	[34;1ma[0m: $)`
 Actual: (
 	i32: copy trivial primitive arithmetic integral signed,
 	u32: copy trivial primitive arithmetic integral unsigned).
-	Solving fn `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
         fn sB(_: $T) struct { hey: $T; };
@@ -18428,6 +22156,30 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        fn sB(_: $T) struct { hey: $T; };
+
+        // Pattern & partial spec, how?
+        fn test(x: sB($T)): $T =
+            x.hey - 1;
+
+        type a = sB(i32);
+        fn main() a(1).test;
+
+-----
+TODO: _0.fu @5:9:
+
+[2m      | [0m
+[2m      |         // Pattern & partial spec, how?[0m
+    5 |         [31;1mfn[0m test(x: sB($T)): $T =
+[2m      |             x.hey - 1;[0m
+[2m      | [0m
+
+	TODO trySolveTypeParams unary call
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -18624,6 +22376,61 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        pub fn test(x: i32[], y: i32[]) {
+            let z = {
+                BLOCK: {
+                    mut w: i32[] = x;
+                    if (y[0]) w ~= y;
+                    if (w[0] != 17)
+                        break :BLOCK w;
+                    x;
+                };
+            };
+
+            return z[0] + z[z.len - 1];
+        }
+
+        fn main() test([ 1 ], [ 2 ]) - 3;
+
+-----
+#include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+int test(const fu_VEC<int>& x, fu::view<int> y)
+{
+    fu_VEC<int> L_00_v {};
+    fu_VEC<int> z = (__extension__ (
+    { {
+        fu_VEC<int> w { x };
+        if (y[0])
+            w += y;
+
+        if (w[0] != 17)
+            { L_00_v = static_cast<fu_VEC<int>&&>(w); goto L_00; };
+
+        L_00_v = (x);
+      } L_00:;
+    }), static_cast<fu_VEC<int>&&>(L_00_v));
+    return z[0] + z[(z.size() - 1)];
+}
+
+int fu_MAIN()
+{
+    return test(fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } }, (fu::slate<1, int> { 2 })) - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
 
 -----
 
@@ -19062,7 +22869,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        pub fn ascii_lower(a: string): string
+        fn ascii_lower(a: string): string
         {
             let offset = 'a'.i32 - 'A'.i32;
 
@@ -19077,123 +22884,30 @@ int main() { return fu_MAIN(); }
             return res;
         }
 
-
+        <split/>
 
         fn main() "WORLD!".ascii_lower[2].i32 - 'r'.i32;
 
 -----
-#include <cstddef>
-#include <cstdint>
-#include <fu/str.h>
+TODO: _0.fu @11:35:
 
-#ifndef FU_NO_FDEFs
+[2m      |                 let c = res[i];[0m
+[2m      |                 if (c >= 'A' && c <= 'Z')[0m
+   11 |                     res[i] = byte([31;1mc[0m.i32 + offset);
+[2m      |             }[0m
+[2m      | [0m
 
-fu_STR ascii_lower(const fu_STR& a)
-{
-    const int offset = (int(std::byte('a')) - int(std::byte('A')));
-    fu_STR res { a };
-    for (int i = 0; i < res.size(); i++)
-    {
-        const std::byte c = res[i];
-        if ((c >= std::byte('A')) && (c <= std::byte('Z')))
-            res.mutref(i) = std::byte((int(c) + offset));
+	BORROWCK: Cannot access [31;1mc[0m, reference invalidated by write to [31;1mres[0m at 11:21:
 
-    };
-    return res;
-}
+[2m      |                 let c = res[i];[0m
+[2m      |                 if (c >= 'A' && c <= 'Z')[0m
+   11 |                     [31;1mres[0m[i] = byte(c.i32 + offset);
+[2m      |             }[0m
+[2m      | [0m
 
-int fu_MAIN()
-{
-    return int(ascii_lower("WORLD!"_fu)[2]) - int(std::byte('r'));
-}
+	At call to [34;1m[][0m
 
-#endif
-
-
-int main() { return fu_MAIN(); }
-// NONTRIV_autocopy
-// RELAX_respec
-
------
-
-        pub fn ascii_lower(a: string): string
-        {
-            let offset = 'a'.i32 - 'A'.i32;
-
-            mut res = a;
-            for (mut i = 0; i < res.len; i++)
-            {
-                let c = res[i];
-                if (c >= 'A' && c <= 'Z')
-                    res[i] = byte(c.i32 + offset);
-            }
-
-            return res;
-        }
-
-
------
-#include <cstddef>
-#include <cstdint>
-#include <fu/str.h>
-
-#ifndef FU_NO_FDEFs
-
-fu_STR ascii_lower(const fu_STR& a)
-{
-    const int offset = (int(std::byte('a')) - int(std::byte('A')));
-    fu_STR res { a };
-    for (int i = 0; i < res.size(); i++)
-    {
-        const std::byte c = res[i];
-        if ((c >= std::byte('A')) && (c <= std::byte('Z')))
-            res.mutref(i) = std::byte((int(c) + offset));
-
-    };
-    return res;
-}
-
-#endif
-// NONTRIV_autocopy
-// RELAX_respec
-
------
-
-        pub fn ascii_lower(a: string): string
-        {
-            let offset = 'a'.i32 - 'A'.i32;
-
-            mut res = a;
-            for (mut i = 0; i < res.len; i++)
-            {
-                let c = res[i];
-                if (c >= 'A' && c <= 'Z')
-                    res[i] = byte(c.i32 + offset);
-            }
-
-            return res;
-        }
-
-        import _0;
-
-        fn main() "WORLD!".ascii_lower[2].i32 - 'r'.i32;
-
------
-#include <fu/str.h>
-
-fu_STR ascii_lower(const fu_STR&);
-
-#ifndef FU_NO_FDEFs
-
-int fu_MAIN()
-{
-    return int(ascii_lower("WORLD!"_fu)[2]) - int(std::byte('r'));
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
+        Solving [35;1mfn[0m [34;1mascii_lower[0m
 
 -----
 
@@ -19340,62 +23054,141 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
+        struct S { hey: i32[]; };
+
+        fn m_and_c_cant_alias_001(ref m!: S, c!: S) {
+            m.hey.clear();
+            return c.hey; // noalias
+        }
+
+        fn test(ref mc: S) {
+            return m_and_c_cant_alias_001(m:mc, c:mc);  // Can't return a ref into c!
+        }                                               //  But can be made to work by creating an intermediate copyvar
+                                                        //   and move-returning from there.
+        fn main() {
+            mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
+            let hey = test(mc);
+            return hey.len - 10;
+        }
+
+-----
+TODO: _0.fu @10:51:
+
+[2m      | [0m
+[2m      |         fn test(ref mc: S) {[0m
+   10 |             return m_and_c_cant_alias_001(m:mc, c:[31;1mmc[0m);  // Can't return a ref into c!
+[2m      |         }                                               //  But can be made to work by creating an intermediate copyvar[0m
+[2m      |                                                         //   and move-returning from there.[0m
+
+	[35;1mfn[0m [34;1mm_and_c_cant_alias_001[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1mmc[0m
+
+        Solving [35;1mfn[0m [34;1mtest[0m
+
+-----
+
+        // !!!! The m_and_c_cant_alias_001 test obsoletes this,
+        // !!!!  this is just detects what we definitely don't want to see -
+        // !!!!   returning a reference into a temporary copy.
+        //
+        struct S { hey: i32[]; };
+
+        fn m_and_c_cant_alias_002(ref m: S, c: S) {
+            m.hey.clear();
+            return c.hey; // noalias
         }
 
         fn main() {
-            mut x = 0;
+            mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
             //*F
-            ref y = x;
+            let hey = m_and_c_cant_alias_002(mc, mc);
             /*/
-            mut y = 0;
+            mut bc  = mc;
+            let hey = m_and_c_cant_alias_002(mc, bc);
             //*/
-            let z = test(x, y);
-            return x+y - z;
+            return hey.len - 10;
         }
+
 -----
-_0.fu @13:13:
-	BORROWCK: Mutref arguments 0 and 1 alias, both refer to:
-	var x
-	Solving fn `main`.
+_0.fu @16:50:
+
+[2m      |             mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);[0m
+[2m      |             //*F[0m
+   16 |             let hey = m_and_c_cant_alias_002(mc, [31;1mmc[0m);
+[2m      |             /*/[0m
+[2m      |             mut bc  = mc;[0m
+
+	[35;1mfn[0m [34;1mm_and_c_cant_alias_002[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both refer to:
+
+                [35;1mvar[0m [34;1mmc[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
 -----
 
-        fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
+        // !!!! The m_and_c_cant_alias_001 test obsoletes this,
+        // !!!!  this is just detects what we definitely don't want to see -
+        // !!!!   returning a reference into a temporary copy.
+        //
+        struct S { hey: i32[]; };
+
+        fn m_and_c_cant_alias_002(ref m: S, c: S) {
+            m.hey.clear();
+            return c.hey; // noalias
         }
 
         fn main() {
-            mut x = 0;
+            mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
             /*
-            ref y = x;
+            let hey = m_and_c_cant_alias_002(mc, mc);
             /*/
-            mut y = 0;
+            mut bc  = mc;
+            let hey = m_and_c_cant_alias_002(mc, bc);
             //*/
-            let z = test(x, y);
-            return x+y - z;
+            return hey.len - 10;
         }
 
 -----
+#include <fu/vec.h>
+#include <fu/view.h>
+
+struct s_S;
+
+                                #ifndef DEF_s_S
+                                #define DEF_s_S
+struct s_S
+{
+    fu_VEC<int> hey;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || hey
+        ;
+    }
+};
+                                #endif
 
 #ifndef FU_NO_FDEFs
 
-static int test(int& a, int& b)
+static const fu_VEC<int>& m_and_c_cant_alias_002(s_S& m, const s_S& c)
 {
-    return ++a + ++b;
+    m.hey.clear();
+    return c.hey;
 }
 
 int fu_MAIN()
 {
-    int x = 0;
-    int y = 0;
-    const int z = test(x, y);
-    return (x + y) - z;
+    s_S mc = s_S { fu_VEC<int> { fu_VEC<int>::INIT<10> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } } };
+    s_S bc { mc };
+    fu::view<int> hey = m_and_c_cant_alias_002(mc, bc);
+    return hey.size() - 10;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 
 -----
