@@ -220,6 +220,12 @@ pub fn runTests()
         return other(b: 3, 6);
     `);
 
+    ZERO(`
+        fn ret_only_arg(a) a;
+        <split/>
+        fn main() 0.ret_only_arg;
+    `);
+
 
     // Structs & using.
 
