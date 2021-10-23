@@ -1903,20 +1903,42 @@ pub fn solve(
         }
 
 
-        // This will work ideally in a reverse pass,
-        //  going through all blocks in reverse and relaxing their returns,
-        //   maybe
+        ////////////////////////////
+        ////////////////////////////
+        ////////////////////////////
+        {
+            // This will work ideally in a reverse pass,
+            //  going through all blocks in reverse and relaxing their returns.
 
-        // Now relax mutref & F_MUT variables.
-        relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
+            // Now relax mutref & F_MUT variables.
+            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
 
-        // TODO clear this up
+            // TODO FIX Clear this up, there's local lifetimes in the return value.
+            h.ret_actual.lifetime = [];
 
-        // TODO FIX Clear this up, there's local lifetimes in the return value.
-        h.ret_actual.lifetime = [];
+            // TODO FIX this looks like bullshit,
+            //  there's gotta be a better way to do this.
+            if (items.if_last.type.is_never)
+            {
+                if (!h.ret_actual)
+                    h.ret_actual = t_never;
+            }
+            else if (fnbody_of)
+            {
+                // TODO FIX these apply to regular blocks as well,
+                //  decide if you want fns to be like blocks or the other way round,
+                //   but these ifs gotta go.
+                if (h.ret_actual)
+                    isAssignable(host: t_void, h.ret_actual) || fail(
+                        "Non-void returning fn missing a final return.");
+            }
 
-
-        // ////////
+            if (!h.ret_actual)
+                h.ret_actual = t_void;
+        }
+        ////////////////////////////
+        ////////////////////////////
+        ////////////////////////////
 
 
         // Previously in solveJump, the move-vs-copy decision:
@@ -1960,45 +1982,9 @@ pub fn solve(
             reportReturnType(:helpers_idx, type);
         }
 
-        // TODO FIX this looks like bullshit,
-        //  there's gotta be a better way to do this.
-        if (items.if_last.type.is_never)
-        {
-            if (!h.ret_actual)
-                h.ret_actual = t_never;
-        }
-        else if (fnbody_of)
-        {
-            // TODO FIX these apply to regular blocks as well,
-            //  decide if you want fns to be like blocks or the other way round,
-            //   but these ifs gotta go.
-            if (h.ret_actual)
-                isAssignable(host: t_void, h.ret_actual) || fail(
-                    "Non-void returning fn missing a final return.");
-        }
-
-        if (!h.ret_actual)
-            h.ret_actual = t_void;
-
         if (h.ret_expect && fnbody_of)
             checkAssignable(host: h.ret_expect, h.ret_actual,
                 "Actual return type does not match annotation");
-
-
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        if (OPTI_flatten_blocks && items.len) for (;;)
-        {
-            let tail = items.last;
-            if (tail.kind != "block" || tail.target)
-                break;
-
-            mut unwrap = tail.items;
-            items.pop();
-            items ~= unwrap;
-        }
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
 
 
         //
@@ -2123,8 +2109,25 @@ pub fn solve(
         }
     }
 
-    fn createBlock(type: Type, items: SolvedNode[], label?: Target, h?: Helpers): SolvedNode
+    fn createBlock(
+        type: Type, mut items: SolvedNode[],
+        label?: Target, h?: Helpers): SolvedNode
     {
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+        if (OPTI_flatten_blocks && items.len) for (;;)
+        {
+            let tail = items.last;
+            if (tail.kind != "block" || tail.target)
+                break;
+
+            mut unwrap = tail.items;
+            items.pop();
+            items ~= unwrap;
+        }
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+
         // Compact + stress test.
         if (items.len)
         {
