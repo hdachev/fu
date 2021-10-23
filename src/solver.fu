@@ -41,6 +41,7 @@ let USE_ref_to_mutref       = true;
 
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
+let USE_named_block_rets    = true;
 
 let SELF_TEST               = true;
 
@@ -2155,7 +2156,16 @@ pub fn solve(
                 return items.last;
         }
 
-        return SolvedNode(kind: "block", :type, :items, target: label, helpers: h.index);
+        //
+        let block = SolvedNode(
+            kind: "block", :type, :items,
+            target: label, helpers: h.index);
+
+        if (block.type.is_ref && USE_named_block_rets)
+            createNamedLifetime(
+                block, label ? label.name : "block");
+
+        return block;
     }
 
 
@@ -3116,6 +3126,11 @@ pub fn solve(
                         steal: _helpers.last.vars.len - helpers0vars);
 
                     retval = s_body.type;
+
+                    ///////////////////////////////////////////////////////
+                    if (retval.is_ref && USE_named_block_rets)
+                        retval.lifetime = Lifetime_unwind(retval.lifetime);
+                    ///////////////////////////////////////////////////////
 
                     // MUT DURING SOLVE,
                     //  implicit args splice in
@@ -5165,15 +5180,7 @@ pub fn solve(
                             //   otherwise it just looks like two unions that are not correlated.
                             if (arg.lifetime.uni0n.len > 1)
                             {
-                                // We solve the problem by "naming" the lifetime,
-                                //  as if there was a ref x = ... that we're passing in instead of this argument,
-                                //   allowing the fn to return x's lifetime, instead of the union.
-                                let left = Scope_create(_scope,
-                                    nest: true, local_of: _current_fn.target.index,
-                                    kind: "lifetime", type: arg.type, name: debug);
-
-                                trackLocalRef(:left, arg.type.lifetime);
-                                arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
+                                createNamedLifetime(arg, debug);
                             }
                         }
                     }
@@ -5256,6 +5263,19 @@ pub fn solve(
         }
 
         return callsite;
+    }
+
+    fn createNamedLifetime(arg: SolvedNode, debug: string)
+    {
+        // We solve the problem by "naming" the lifetime,
+        //  as if there was a ref x = ... that we're passing in instead of this argument,
+        //   allowing the fn to return x's lifetime, instead of the union.
+        let left = Scope_create(_scope,
+            nest: true, local_of: _current_fn.target.index,
+            kind: "lifetime", type: arg.type, name: debug);
+
+        trackLocalRef(:left, arg.type.lifetime);
+        arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
     }
 
     fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
