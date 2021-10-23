@@ -1852,6 +1852,10 @@ pub fn solve(
         //
         mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
 
+        // TODO clean this up, non-return ret-expects
+        if !(mask & HM_CanReturn)
+            h.ret_expect = [];
+
         // Block tail expressions.
         if (expr && items && !items.last.is_void)
         {
@@ -1982,7 +1986,7 @@ pub fn solve(
             reportReturnType(:helpers_idx, type);
         }
 
-        if (h.ret_expect && fnbody_of)
+        if (h.ret_expect)
             checkAssignable(host: h.ret_expect, h.ret_actual,
                 "Actual return type does not match annotation");
 
@@ -3685,14 +3689,6 @@ pub fn solve(
     {
         return SolvedNode("jump", type: t_never, :target,
             items: expr && [ expr ]);
-    }
-
-    fn resetReturns(helpers_idx: i32, ret_actual?!: Type, ret_expect?!: Type)
-    {
-        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
-
-        h.ret_actual = ret_actual;
-        h.ret_expect = ret_expect;
     }
 
     fn reportReturnType(helpers_idx: i32, type: Type)
@@ -6000,7 +5996,7 @@ pub fn solve(
 
     fn test_node(node: SolvedNode)
     {
-        test_nodes(node.items);
+        test_nodes(node.items); _here = node.token;
 
         //
         let k = node.kind;
@@ -6060,7 +6056,7 @@ pub fn solve(
 
     fn mcom_node(node: SolvedNode)
     {
-        mcom_nodes(node.items);
+        mcom_nodes(node.items); _here = node.token;
 
         //
         let k = node.kind;
