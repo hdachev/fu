@@ -41,7 +41,7 @@ let USE_ref_to_mutref       = true;
 
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
-let USE_named_block_rets    = true;
+let USE_named_block_rets    = false;
 
 let SELF_TEST               = true;
 
@@ -1937,65 +1937,8 @@ pub fn solve(
                 h.ret_actual = t_void;
         }
 
-
-
-        ////////////////////////////
-        ////////////////////////////
-        ////////////////////////////
-        //
-        //  Next up, this has to move to post-bck:
-        //   the problem though is we need to be able to change our mind re: what's a ref.
-        //    Consider naming returned lifetimes, so we can change our mind.
-
-        // Previously in solveJump, the move-vs-copy decision:
-        for (mut i = 0; i < h.returns.len; i++)
-        {
-            shadow mut expr = h.returns[i].items.only;
-            shadow mut type = expr.type;
-
-            if (expr.is_ref)
-            {
-                type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
-                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || fail());
-
-                if (ltCompare >= 0)
-                {
-                    if (ltCompare > 0)
-                    {
-                        expr = createMove(expr);
-                    }
-                    else
-                    {
-                        // Might survive, so we cant move,
-                        //  might not survive, so we can't return reference,
-                        //   so we have to copy.
-                        //
-                        // We'll try to prevent this from happening by hinting control flow
-                        //  primitives such as and/or/ifs to copy preemptively
-                        //   but this can happen after lt replace on callsite,
-                        //    when return might point to a temporary argument.
-                        //
-                        expr = createCopy(expr);
-                    }
-
-                    h.returns[i].MUT.items.only = expr;
-                    type                        = expr.type;
-                }
-            }
-
-            // Report the unwound lifetime,
-            //  but leave the original lifetime on the expr for bck & co.
-            reportReturnType(:h, type);
-        }
-
-        if (h.ret_expect)
-            checkAssignable(host: h.ret_expect, h.ret_actual,
-                "Actual return type does not match annotation");
-
-        //
-        ////////////////////////////
-        ////////////////////////////
-        ////////////////////////////
+        if (!USE_named_block_rets)
+            mcom_BlockReturns_CopyOrMoveDecision(:h);
 
 
         //
@@ -5265,17 +5208,34 @@ pub fn solve(
         return callsite;
     }
 
-    fn createNamedLifetime(arg: SolvedNode, debug: string)
+    fn createNamedLifetime(node: SolvedNode, debug: string)
     {
         // We solve the problem by "naming" the lifetime,
         //  as if there was a ref x = ... that we're passing in instead of this argument,
         //   allowing the fn to return x's lifetime, instead of the union.
         let left = Scope_create(_scope,
             nest: true, local_of: _current_fn.target.index,
-            kind: "lifetime", type: arg.type, name: debug);
+            kind: "lifetime", type: node.type, name: debug);
 
-        trackLocalRef(:left, arg.type.lifetime);
-        arg.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
+        trackLocalRef(:left, node.type.lifetime);
+        node.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
+    }
+
+    fn updateNamedLifetime(node: SolvedNode, mut type: Type)
+    {
+        ref o = GET_mut(nested(
+            node.type.lifetime.uni0n.only
+                .Region_toLocalIndex()));
+
+        o.kind == "lifetime" || fail("Not a temporary lifetime.");
+
+        if (!type.is_ref)
+            fail("updateNamedLifetime: the add_ref stuff doesn't make sense.");
+
+        // The add_ref stuff doesn't make sense.
+        o.type = type.is_ref
+            ? type
+            : add_ref(type, Lifetime_temporary);
     }
 
     fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
@@ -6056,7 +6016,10 @@ pub fn solve(
             return;
 
         let h = Helpers(node.helpers);
-        relaxBlockVars(:h, relax_mask: RELAX_all);
+
+        //
+        if (USE_named_block_rets)
+            mcom_BlockReturns_CopyOrMoveDecision(:h);
 
         // cpy/move.
         for (mut i = 0; i < h.returns.len; i++)
@@ -6069,6 +6032,61 @@ pub fn solve(
             maybeCopyOrMove(r, h.ret_actual);
             h.returns[i].MUT.items.only = r;
         }
+
+        // We need to update the named lifetime if we've set one.
+        if (node.type.is_ref && USE_named_block_rets)
+            updateNamedLifetime(node, h.ret_actual);
+
+        //
+        relaxBlockVars(:h, relax_mask: RELAX_all);
+    }
+
+    fn mcom_BlockReturns_CopyOrMoveDecision(h: Helpers)
+    {
+        // Previously in solveJump, the move-vs-copy decision:
+        for (mut i = 0; i < h.returns.len; i++)
+        {
+            mut expr = h.returns[i].items.only;
+            mut type = expr.type;
+
+            if (expr.is_ref)
+            {
+                type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
+                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || fail());
+
+                if (ltCompare >= 0)
+                {
+                    if (ltCompare > 0)
+                    {
+                        expr = createMove(expr);
+                    }
+                    else
+                    {
+                        // Might survive, so we cant move,
+                        //  might not survive, so we can't return reference,
+                        //   so we have to copy.
+                        //
+                        // We'll try to prevent this from happening by hinting control flow
+                        //  primitives such as and/or/ifs to copy preemptively
+                        //   but this can happen after lt replace on callsite,
+                        //    when return might point to a temporary argument.
+                        //
+                        expr = createCopy(expr);
+                    }
+
+                    h.returns[i].MUT.items.only = expr;
+                    type                        = expr.type;
+                }
+            }
+
+            // Report the unwound lifetime,
+            //  but leave the original lifetime on the expr for bck & co.
+            reportReturnType(:h, type);
+        }
+
+        if (h.ret_expect)
+            checkAssignable(host: h.ret_expect, h.ret_actual,
+                "Actual return type does not match annotation");
     }
 
 
