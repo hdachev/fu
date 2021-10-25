@@ -4704,14 +4704,6 @@ pub fn solve(
 
     //
 
-    fn TODO_FIX_pop(ref items: SolvedNode[])
-    {
-        // TODO FIX pop should just return the last element, this is idiotic.
-        mut last = items.last;
-        items.pop();
-        return last;
-    }
-
     fn solveIf(node: Node, mut type: Type): SolvedNode
     {
         mut cond    = solveNode(node.items[0], t_bool);
@@ -4725,9 +4717,17 @@ pub fn solve(
 
         implicitOperatorBool(cond);
 
+        fn if_A_and_NEVER_then_B_else_C()
+        {
+            // The same as if-A-then-NEVER-else-C,
+            //  which means we drop the cons immediately.
+            makeNote(N_DeadIfCons);
+            return cond.popAndOr();
+        }
+
         // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
         mut cons    = cond.kind == "and" && cond.items.last.type.is_never
-            ? { makeNote(N_DeadIfCons); cond.MUT.items.TODO_FIX_pop }
+            ? if_A_and_NEVER_then_B_else_C
             : solveBlock(node.items[1], :type);
 
         mut alt     = solveBlock(node.items[2], type: type || cons.type);
@@ -4886,6 +4886,22 @@ pub fn solve(
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
         return solved(node, type, items);
+    }
+
+    fn popAndOr(ref node: SolvedNode)
+    {
+        let N   = node.items.len;
+        let pop = node.MUT.items[N - 1];
+
+        if (N > 2) {
+            node.MUT.items.pop();
+        }
+        else {
+            let head = node.items[0];
+            node = head;
+        }
+
+        return pop;
     }
 
 
@@ -5971,6 +5987,16 @@ pub fn solve(
         }
     }
 
+    fn test_Statements(block: SolvedNode)
+    {
+        let items = block.items;
+        for (mut i = 0; i < items.len; i++)
+        {
+            let n = items[i];
+            n.kind || fail("Missing block.item.kind.");
+        }
+    }
+
 
     // AST validation router.
 
@@ -5989,6 +6015,17 @@ pub fn solve(
         let k = node.kind;
         if (k == "call")
             return test_CallSignature(node);
+
+        if (k == "block" || k == "and" || k == "or" || k == "if")
+        {
+            if (k == "and" || k == "or")
+                node.items.len > 1 || fail(k ~ ".len: " ~ node.items.len);
+
+            if (k == "if")
+                node.items.len == 3 || fail(k ~ ".len: " ~ node.items.len);
+
+            return test_Statements(node);
+        }
     }
 
 
