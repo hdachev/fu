@@ -1,4 +1,6 @@
 import helpers;
+import module;
+import fail;
 
 let q_mutref            = 1 << 0;
 let q_ref               = 1 << 1;
@@ -72,10 +74,6 @@ pub let RELAX_all           = q_RELAXABLE   |0;
 
 //
 
-pub struct Target { modid: i32; index: i32; };
-
-pub fn u64(t: Target): u64 = t.modid.u64 << 32 | t.index.u64;
-
 pub fn ==(a: Target, b: Target)
     a.modid == b.modid &&
     a.index == b.index;
@@ -88,8 +86,6 @@ pub fn ==(a: Target, b: Target)
 // fn frame    = 0
 // locals      = int pos
 // temporary   = int max
-
-pub struct Region { index!: i32; };
 
 pub fn > (a: Region, b: Region) a.index >  b.index;
 pub fn >=(a: Region, b: Region) a.index >= b.index;
@@ -118,8 +114,6 @@ pub fn Region_asIndex(using r: Region)
 
 //
 
-pub struct Lifetime { uni0n!: Region[]; };
-
 pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
     Lifetime(uni0n: set::union(a.uni0n, b.uni0n));
 
@@ -134,21 +128,6 @@ pub fn Lifetime_static(): Lifetime =
 
 pub fn Lifetime_temporary(): Lifetime =
     Lifetime(uni0n: [ Region_TEMP ]);
-
-//
-
-pub struct ValueType
-{
-    quals: i32;
-    modid: i32;
-    canon: string;
-};
-
-pub struct Type
-{
-    using vtype:    ValueType;
-    lifetime?:      Lifetime;
-};
 
 
 //

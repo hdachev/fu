@@ -2,6 +2,7 @@ import helpers;
 import context;
 import stat;
 import options;
+import module;
 
 
 //
@@ -14,7 +15,7 @@ fn compile(fname: string, via: string = "", options?: Options)
     if (!module.in)
     {
         // Invalidate outputs.
-        module.out = scope::ModuleOutputs;
+        module.out = ModuleOutputs;
 
         let src = getFile(fname) || throw (
             "import badfile: `" ~ via ~ fname ~ "`.");
@@ -27,7 +28,7 @@ fn compile(fname: string, via: string = "", options?: Options)
 
         let stat2 = ModuleStat_now();
 
-        module.in = scope::ModuleInputs(
+        module.in = ModuleInputs(
             :src, lex: lexer_result,
             parse: parser_result);
 

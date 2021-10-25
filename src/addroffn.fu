@@ -1,5 +1,5 @@
 import scope;
-import types;
+import module;
 
 
 // This is experimental, super dirty shit.

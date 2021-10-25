@@ -1,6 +1,7 @@
 import parser;
 import types;
 import helpers;
+import module;
 
 pub let SS_LAZY         = 0x1 << 0;
 pub let SS_DID_START    = 0x1 << 1;
@@ -23,196 +24,7 @@ pub let HM_Struct       = 1.i16 << 5;
 pub let HM_LabelUsed    = 1.i16 << 6;
 
 
-// Build service primitives.
-
-pub struct ModuleInputs
-{
-    src:        string;
-    lex:        lexer::LexerOutput;
-    parse:      ParserOutput;
-};
-
-pub struct ModuleOutputs
-{
-    deps:       i32[];
-    types:      Struct[];
-    solve:      SolverOutput;
-    cpp:        CodegenOutput;
-};
-
-pub struct ModuleStats
-{
-    lex:        stat::ModuleStat;
-    parse:      stat::ModuleStat;
-    solve:      stat::ModuleStat;
-    codegen:    stat::ModuleStat;
-};
-
-pub struct Module
-{
-    modid:      i32;
-    fname:      string;
-
-    in?:        ModuleInputs;
-    out?:       ModuleOutputs;
-    stats?:     ModuleStats;
-};
-
-////
-
-pub struct Struct
-{
-    name:       string;
-
-    target?:    Target;
-    items?:     ScopeItem[];
-    imports?:   i32[];
-    converts?:  Target[];
-
-    flat_cnt?:  i32;
-};
-
-////
-
-pub struct SolverOutput
-{
-    root:   SolvedNode;
-    scope:  Scope;
-
-    // Important solver events for testing.
-    notes:  i32;
-};
-
-pub struct CodegenOutput
-{
-    unity?:         i32[];
-    unity_because?: i32[];
-    using src:      string;
-};
-
-pub struct ScopeSkip
-{
-    start:  i32;
-    end:    i32;
-};
-
-pub struct ScopeMemo
-{
-    items_len:      i32;
-    imports_len:    i32;
-    usings_len:     i32;
-    converts_len:   i32;
-    helpers_len:    i32;
-};
-
-pub struct SolvedNode
-{
-    nodeown:    Target; // TODO need to clean up Argument.default, callsites & structs -
-    nodeidx:    i32;    //  We shouldn't need a target, all nodes are local to their fn.
-};
-
-pub struct SolvedNodeData
-{
-    kind:       string; // TODO enum, will save so many string copies
-
-    helpers:    i32;    // TODO not here: I had room for it, but honestly this is not the best place for this.
-    flags:      i32;    //  Ideally both should go, flags is a very leaky thing on solved AST.
-
-    value:      string;
-    items:      SolvedNode[];
-    token:      TokenIdx;
-
-    using type: Type;
-    target:     Target;
-};
-
-pub struct ScopeSkipMemos
-{
-    items:      ScopeSkip[];
-    declash:    ScopeSkip[];
-
-    imports:    ScopeSkip[];
-    usings:     ScopeSkip[];
-    converts:   ScopeSkip[];
-
-    helpers:    ScopeSkip[];
-};
-
-pub struct Template
-{
-    node:       Node;
-    imports:    i32[];
-
-    scope_memo: ScopeMemo;
-    scope_skip: ScopeSkipMemos;
-};
-
-pub struct Partial
-{
-    via:        Target;
-    target:     Target;
-};
-
-pub struct ArgWrite
-{
-    nodeidx:        i32; // Callsite nodeidx.
-    arg_position:   i32; // Argument item idx.
-};
-
-pub struct Argument
-{
-    name?:          string;
-    autocall?:      string;
-
-    using type?:    Type;
-    default?:       SolvedNode;
-    flags?:         i32;
-
-    // subset_at_risk: bitset::BitSet;
-    risk_free?:     bitset::BitSet;
-    written_via?:   ArgWrite;
-};
-
-pub struct Overload
-{
-    kind:           string;
-    name:           string;
-    type:           Type;
-    flags:          i32;
-
-    // TODO move exotic bloat over to module,
-    //  all trailers can fit in the same
-    //   [ modid / thing ] slot here.
-    solved:         SolvedNode;
-
-    // The new used_by.
-    callsites?:     SolvedNode[];
-
-    // Solver state. // maybe we need flags enums already
-    status?:        u32; // <- u32 to differentiate from flags
-
-    // For locals, if non-zero, index of enclosing fn, obviously same modid.
-    local_of?:      i32;
-};
-
-pub struct Extended
-{
-    // Arity.
-    min:            i32;
-    max:            i32;
-    args:           Argument[];
-
-    //
-    spec_of?:       Target;
-    template:       Template;
-
-    // The new nodelists.
-    nodes?:         SolvedNodeData[];
-    locals?:        Overload[];
-
-    // What about this then?
-    extra_items?:   ScopeItem[];
-};
+//
 
 pub struct RWEvent
 {
@@ -257,26 +69,6 @@ pub struct HelpersData
     on_exit?:       Events;
 };
 
-pub struct ScopeItem
-{
-    id:         string;
-    modid:      i32;
-    packed:     u32;
-};
-
-pub nocopy struct Scope
-{
-    items:      ScopeItem[];
-    overloads:  Overload[];
-    extended:   Extended[];
-
-    imports:    i32[];
-    usings:     Target[];
-    converts:   Target[];
-
-    pub_count:  i32;
-};
-
 pub fn target(si: ScopeItem)
     Target(:si.modid, index: (si.packed &~ (0x1 << 31)).i32);
 
@@ -308,17 +100,6 @@ pub fn target_TODOFIX(ref si: ScopeItem, target: Target)
 pub fn MODID(implicit module: Module): i32
     module.modid;
 
-pub fn isStruct(type: Type)
-{
-    return type.canon.starts(with: '$');
-}
-
-pub fn structIndex(canon: string): i32
-{
-    mut offset = 1;
-    return canon[0] == '$' ? helpers::parse10i32(:offset, canon) : -1;
-}
-
 pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_TEST!: bool)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
@@ -348,11 +129,6 @@ pub fn despeculateStruct(mut type: Type)
 {
     type.quals &= ~(q_rx_copy | q_trivial);
     return type;
-}
-
-pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
-{
-    return module.out.types[canon.structIndex];
 }
 
 

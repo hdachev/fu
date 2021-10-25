@@ -5,6 +5,7 @@ import scope;
 import context;
 import types;
 import effects;
+import module;
 import fail;
 
 

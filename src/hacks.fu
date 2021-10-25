@@ -1,4 +1,4 @@
-import types;
+import module;
 
 pub fn ClosureID(using target: Target)
     modid < 0

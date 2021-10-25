@@ -1,3 +1,4 @@
+import module;
 import context;
 
 let prelude_src = `
@@ -309,7 +310,7 @@ pub fn solvePrelude(): Context
     let lexed   = lexer::lex(:src, :fname);
     let parsed  = parser::parse(0, :fname, :lexed.tokens, :options );
 
-    module.in = scope::ModuleInputs(
+    module.in = ModuleInputs(
         :src, lex: lexed,
         parse: parsed);
 

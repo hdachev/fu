@@ -1,6 +1,5 @@
 import helpers;
-import context;
-import scope;
+import module;
 
 fn ensure_local_fname(fname: string, dir_src: string): string
 {
