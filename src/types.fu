@@ -352,8 +352,10 @@ pub fn add_refs(from: Type, mut to: Type)
 // Type serialization:
 //  `modid` `+quals` `canon`: a very compact repr.
 
-pub fn serializeType(type: Type)
+pub fn serializeType(type: Type, debug!: string)
 {
+    type || throw("serializeType: Falsy type in: " ~ debug);
+
     mut prefix: string;
 
     if (type.modid)
@@ -361,7 +363,7 @@ pub fn serializeType(type: Type)
     if (type.quals)
         prefix ~= "+" ~ type.quals;
 
-    return prefix ~ (type.canon || throw("serializeType: !type.canon"));
+    return prefix ~ (type.canon || throw("serializeType: No type.canon in: " ~ debug));
 }
 
 pub fn humanizeType(type: Type)
@@ -446,7 +448,7 @@ pub fn type_isArray(type: Type): bool
 
 pub fn createArray(item: Type): Type
 {
-    let canon = "[]" ~ serializeType(item);
+    let canon = "[]" ~ serializeType(item, debug: "createArray");
     let quals = (item.quals & q_rx_copy) | q_rx_resize;
     let modid = 0;
 
@@ -500,8 +502,8 @@ pub fn type_isMap(type: Type): bool
 
 pub fn createMap(key: Type, vtype: Type): Type
 {
-    let canon = "{" ~ serializeType(key) ~ "}"
-                    ~ serializeType(vtype);
+    let canon = "{" ~ serializeType(key,   debug: "createMap(key)") ~ "}"
+                    ~ serializeType(vtype, debug: "createMap(value)");
 
     let quals = key.quals & vtype.quals & q_rx_copy;
     let modid = 0;

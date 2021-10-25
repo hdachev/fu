@@ -615,7 +615,7 @@ pub fn solve(
     {
         return createDefinit(
             trySolveDefinit(:type) || fail(
-                "Cannot definit type: " ~ serializeType(type)));
+                "Cannot definit type: " ~ humanizeType(type)));
     }
 
 
@@ -1218,7 +1218,7 @@ pub fn solve(
             let o = GET(path[i]);
             res ~= o.qWHAT;
 
-            if (i < path.len) res ~= ": " ~ serializeType(o.type);
+            if (i < path.len) res ~= ": " ~ humanizeType(o.type);
         }
 
         res ~= "`";
@@ -1315,11 +1315,11 @@ pub fn solve(
 
                             if (actual)
                                 fail("Conversion ambiguity, multiple ways to convert `"
-                                    ~ serializeType(actual) ~ "` into `"
-                                    ~ serializeType(expect) ~ "`: " ~ suffix);
+                                    ~ humanizeType(actual) ~ "` into `"
+                                    ~ humanizeType(expect) ~ "`: " ~ suffix);
                             else
                                 fail("`using` ambiguity, multiple ways to obtain a `"
-                                    ~ serializeType(expect) ~ "` in this scope: " ~ suffix);
+                                    ~ humanizeType(expect) ~ "` in this scope: " ~ suffix);
                         }
 
                         match = path ~ t;
@@ -1345,7 +1345,7 @@ pub fn solve(
                                             else    err ~= " `";
 
                                             shadow let convert = GET(path[i]);
-                                            err ~= convert.qWHAT ~ ": " ~ serializeType(convertType) ~ "` ->";
+                                            err ~= convert.qWHAT ~ ": " ~ humanizeType(convertType) ~ "` ->";
                                         }
 
                                         err ~= "\n\t\t`" ~ convert.qWHAT ~ "`.";
@@ -2257,7 +2257,7 @@ pub fn solve(
             if (i)
                 mangle ~= ",";
 
-            mangle ~= serializeType(args[i]);
+            mangle ~= serializeType(args[i], debug: "mangle[$T]");
         }
 
         return mangle;
@@ -2281,11 +2281,11 @@ pub fn solve(
 
             if (conversions.len > i && conversions[i].len)
                 mangle ~= serializeType(
-                    GET(conversions[i].last).type);
+                    GET(conversions[i].last).type, debug: "mangle[Nodes].conv");
 
             else if (callsiteIndex >= 0 && callsiteIndex <= args.len)
                 mangle ~= serializeType(
-                    args[callsiteIndex].type);
+                    args[callsiteIndex].type, debug: "mangle[Nodes].no-conv");
         }
 
         if (REST_START < REST_END)
@@ -2293,7 +2293,7 @@ pub fn solve(
             if (REST_START)
                 mangle ~= ",";
 
-            mangle ~= serializeType(REST_TYPE);
+            mangle ~= serializeType(REST_TYPE, debug: "mangle[Nodes].rest");
         }
 
         return mangle;
@@ -3545,7 +3545,7 @@ pub fn solve(
             (id && "`" ~ id.human ~ "`: ")
             ~ reason
             ~ "No common supertype: `"
-            ~ serializeType(a) ~ "` | `" ~ serializeType(b) ~ "`.");
+            ~ humanizeType(a) ~ "` | `" ~ humanizeType(b) ~ "`.");
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
@@ -3554,7 +3554,7 @@ pub fn solve(
             (id && "`" ~ id.human ~ "`: ")
             ~ reason
             ~ "Cannot intersect a common subtype: `"
-            ~ serializeType(a) ~ "` & `" ~ serializeType(b) ~ "`.");
+            ~ humanizeType(a) ~ "` & `" ~ humanizeType(b) ~ "`.");
     }
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!: i32)
@@ -3811,7 +3811,7 @@ pub fn solve(
         let placeholder     = node.value;
         let body_template   = node.items[1];
         let fields_of       = evalTypeAnnot(node.items[0]).type;
-        fields_of.isStruct || fail("[for fieldname]: This is not a struct: `" ~ serializeType(fields_of) ~ "`.");
+        fields_of.isStruct || fail("[for fieldname]: This is not a struct: `" ~ humanizeType(fields_of) ~ "`.");
 
         let fields          = lookupStruct(fields_of).items;
 
@@ -5019,7 +5019,7 @@ pub fn solve(
                     {
                         host_arg.flags & F_IMPLICIT || fail(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
-                                ~ host_arg.name ~ ": " ~ serializeType(host_arg.type) ~ "`.");
+                                ~ host_arg.name ~ ": " ~ humanizeType(host_arg.type) ~ "`.");
 
                         bindImplicitArg(:host_arg.name,
                                         :host_arg.type, becauseOf: target)
