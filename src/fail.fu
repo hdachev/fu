@@ -1,0 +1,22 @@
+import parser;
+import context;
+
+pub fn FAIL(implicit _here: TokenIdx, mut reason: string): never
+{
+    let here    = _here._token;
+    let fname   = _here._fname;
+    let addr    = "@" ~ here.line ~ ":" ~ here.col;
+
+    reason ~= '\n';
+
+    // Try to present a code snippet.
+    let snippet = formatCodeSnippet(_here);
+
+    return throw(fname ~ " " ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason);
+}
+
+pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)
+{
+    if (node)
+        _here = node;
+}

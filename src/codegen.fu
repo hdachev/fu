@@ -5,6 +5,7 @@ import scope;
 import context;
 import bitset;
 import cpp;
+import fail;
 
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
@@ -52,7 +53,7 @@ pub fn cpp_codegen(
     mut _unity:         i32[];
     mut _unity_because: i32[];
 
-    mut _here:          TokenIdx;
+    let implicit mut _here: TokenIdx;
 
 
     //
@@ -123,21 +124,9 @@ pub fn cpp_codegen(
 
     //
 
-    fn HERE(node: SolvedNode)
-        if (node.token)
-            _here = node.token;
-
     fn fail(mut reason = "")
     {
-        let here    = _here._token;
-        let fname   = _here._fname;
-
-        let addr    = "@" ~ here.line ~ ":" ~ here.col;
-        let snippet = formatCodeSnippet(_here);
-
-        reason     ~= '\n';
-
-        return throw(fname ~ " " ~ addr ~ ":\n\n\tTHIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n" ~ snippet ~ "\n\t" ~ reason);
+        FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n" ~ (reason || "Assertion failed."));
     }
 
 

@@ -5,6 +5,7 @@ import scope;
 import context;
 import types;
 import effects;
+import fail;
 
 
 // Solver notes.
@@ -63,18 +64,7 @@ pub fn solve(
 {
     let parse = module.in.parse.root;
 
-    struct Info
-    {
-        here: TokenIdx;
-        text: string;
-    };
-
-    mut _info:          Info[];
-    mut _here:          TokenIdx;
-
-    fn HERE(node: Node)
-        if (node.token)
-            _here = node.token;
+    let implicit mut _here: TokenIdx;
 
 
     //
@@ -144,21 +134,8 @@ pub fn solve(
 
     fn fail(mut reason: string = ""): never
     {
-        let here = _here._token;
         if (!reason)
-            reason = "Unexpected `" ~ here.value ~ "`.";
-
-        // What's happening and where?
-        let fname = _here._fname;
-        let addr = "@" ~ here.line ~ ":" ~ here.col;
-        for (mut i = _info.len; i --> 0; )
-        {
-            let info = _info[i];
-            shadow let here = info.here._token;
-            reason ~= here
-                ? "\n\t@" ~ here.line ~ ":" ~ here.col ~ ": " ~ info.text
-                : "\n\t" ~ info.text;
-        }
+            reason = "Unexpected `" ~ _here._token.value ~ "`.";
 
         // What were we currently solving?
         mut callstack = 0;
@@ -177,12 +154,7 @@ pub fn solve(
             }
         }
 
-        reason ~= '\n';
-
-        // Try to present a code snippet.
-        let snippet = formatCodeSnippet(_here);
-
-        return throw(fname ~ " " ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason);
+        return FAIL(reason);
     }
 
     fn qWHAT(o: Overload)
