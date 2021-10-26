@@ -707,7 +707,7 @@ pub fn cpp_codegen(
         if (isOp)
             id = "operator" ~ id.valid_operator;
         else
-            id = id.valid_identifier;
+            id = ID(id.valid_identifier);
 
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
                     ~ (  overload.flags & F_TEMPLATE && "inline ")

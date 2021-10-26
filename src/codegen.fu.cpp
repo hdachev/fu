@@ -1530,7 +1530,7 @@ static fu_STR cgFnSignature(const s_SolvedNode& fn, const s_Module& module, cons
     if (isOp)
         id_2 = ("operator"_fu + valid_operator(id_2));
     else
-        id_2 = valid_identifier(fu_STR(id_2));
+        id_2 = ID(valid_identifier(fu_STR(id_2)));
 
     fu_STR linkage = (((is_never(overload.type) ? "[[noreturn]] "_fu : fu_STR{}) + ((overload.flags & F_TEMPLATE) ? "inline "_fu : fu_STR{})) + (!(overload.flags & F_PUB) ? "static "_fu : fu_STR{}));
     fu_STR src_2 = ((((linkage + annot) + " "_fu) + id_2) + "("_fu);
