@@ -990,6 +990,7 @@ pub fn runTests()
         src ~= "\n";
         src ~= "\n    {";
         src ~= "\n        mut arr2 = STEAL(orig);";
+        src ~= "\n        if (arr2.len != 5) return 38;";
         src ~= "\n        if (orig.len) return 19;";
         src ~= "\n        arr2." ~ operation ~ ";";
         src ~= "\n        if (" ~ EXPR("arr2") ~ " != 0) return 23;";
