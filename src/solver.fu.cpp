@@ -154,7 +154,7 @@ static const s_Overload& GET(const s_Target&, const s_Scope&, const s_Module&, c
 static const s_Overload& fnd(int, const s_CurrentFn&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu_VEC<s_Info>&, fu_VEC<s_Helpers>&);
 static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode&, const s_Module&, s_Scope&, const s_Context&);
 static const s_Type& Scope_lookupType(const s_Node&, const s_TokenIdx&, const s_Context&, fu_VEC<s_Info>&, fu_VEC<s_Helpers>&, const s_Scope&, const s_Module&, s_ScopeSkipMemos&);
-static const s_Type& T(int, const s_Node&, const fu_MAP<fu_STR, s_TypeParam>&, s_Module&, s_Scope&, const s_Context&, s_Target&, s_TokenIdx&, fu_VEC<s_Helpers>&, s_CurrentFn&, fu_VEC<s_Info>&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, const s_SolvedNode&, const s_Options&, int&, const s_Type&, fu_VEC<s_ScopeItem>&, fu_VEC<s_SolvedNode>&);
+static s_Type T(int, const s_Node&, const fu_MAP<fu_STR, s_TypeParam>&, s_Module&, s_Scope&, const s_Context&, s_Target&, s_TokenIdx&, fu_VEC<s_Helpers>&, s_CurrentFn&, fu_VEC<s_Info>&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, const s_SolvedNode&, const s_Options&, int&, const s_Type&, fu_VEC<s_ScopeItem>&, fu_VEC<s_SolvedNode>&);
 static fu_STR addr(const s_TokenIdx&, const s_Context&, const s_Module&);
 static fu_STR human(const fu_STR&, const s_Module&, const s_Scope&, const s_Context&, const s_TokenIdx&, fu_VEC<s_Info>&, fu_VEC<s_Helpers>&);
 static fu_STR name(int, const s_CurrentFn&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu_VEC<s_Info>&, fu_VEC<s_Helpers>&);
@@ -1925,7 +1925,7 @@ static const s_Type& evalTypeParam(const fu_STR& id_2, const fu_MAP<fu_STR, s_Ty
     return *(_0 = &(typeParams[id_2].matched)) ? *_0 : *(_0 = &(Scope_lookupType(("$"_fu + (id_2 ? id_2 : fail("Falsy type param id."_fu, _here, ctx, _info, _helpers, _scope, module))), 0, _here, ctx, _info, _helpers, _scope, module, _ss))) ? *_0 : fail((("No type param `$"_fu + id_2) + "` in scope."_fu), _here, ctx, _info, _helpers, _scope, module);
 }
 
-static const s_Type& T(const int i, const s_Node& node_1, const fu_MAP<fu_STR, s_TypeParam>& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, s_CurrentFn& _current_fn, fu_VEC<s_Info>& _info, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, fu_VEC<s_ScopeItem>& _field_items, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args)
+static s_Type T(const int i, const s_Node& node_1, const fu_MAP<fu_STR, s_TypeParam>& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, s_CurrentFn& _current_fn, fu_VEC<s_Info>& _info, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, fu_VEC<s_ScopeItem>& _field_items, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args)
 {
     return SolvedNodeData(evalTypeAnnot(node_1.items[i], typeParams, module, _scope, ctx, _current_fn_or_type, _here, _helpers, _current_fn, _info, _specs, _ss, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, _field_items, TODO_FIX_convert_args), module, _scope, ctx).type;
 }
@@ -6046,7 +6046,7 @@ static s_SolvedNode solveTypeAssert(const s_Node& node_1, s_Module& module, s_Sc
 {
     const s_Node& left = node_1.items[0];
     const s_Node& right = node_1.items[1];
-    const s_Type& expect = SolvedNodeData(evalTypeAnnot(right, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _current_fn_or_type, _here, _helpers, _current_fn, _info, _specs, _ss, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, _field_items, TODO_FIX_convert_args), module, _scope, ctx).type;
+    const s_Type expect = SolvedNodeData(evalTypeAnnot(right, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _current_fn_or_type, _here, _helpers, _current_fn, _info, _specs, _ss, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, _field_items, TODO_FIX_convert_args), module, _scope, ctx).type;
     const s_SolvedNode actual = solveNode(left, s_Type(expect), bool{}, 0, uint16_t(0u), _here, _scope, _helpers, module, _current_fn, ctx, _info, _current_fn_or_type, _specs, _ss, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, _field_items, TODO_FIX_convert_args);
     checkAssignable(expect, SolvedNodeData(actual, module, _scope, ctx).type, "Type assertion failed"_fu, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _here, ctx, _info, _helpers, _scope, module);
     return actual;

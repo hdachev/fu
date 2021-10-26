@@ -628,7 +628,7 @@ pub fn solve(
         let right  = node.items[1];
 
         // left -> right.
-        let expect = evalTypeAnnot(right).type;
+        mut expect = evalTypeAnnot(right).type; // TODO BORROWCK danglefix
         let actual = solveNode(left, expect);
 
         checkAssignable(host: expect, actual.type,
@@ -4290,7 +4290,10 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): SolvedNode
     {
-        fn T(i: i32 = 0) evalTypeAnnot(node.items[i], typeParams).type;
+        fn T(i: i32 = 0) {
+            mut danglefix = evalTypeAnnot(node.items[i], typeParams).type;
+            return danglefix;
+        }
 
         if (node.kind == "call")
         {
