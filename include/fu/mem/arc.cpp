@@ -27,6 +27,20 @@ static inline void fu_POW2MEM_FREE(char* memory, size_t bytes) noexcept
 {
     bytes = fu::next_pow2(uint32_t(bytes));
 
+    #ifndef NDEBUG
+    {
+        // Poisoning.
+        uintptr_t* POLLUTE      = (uintptr_t*) memory;
+        uintptr_t* POLLUTE_END  = (uintptr_t*)(memory + bytes);
+
+        while (POLLUTE < POLLUTE_END)
+        {
+            *POLLUTE = ~(uintptr_t) POLLUTE;
+            POLLUTE++;
+        }
+    }
+    #endif
+
     std::free((void*)memory);
 }
 
