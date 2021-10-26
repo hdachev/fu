@@ -1684,7 +1684,7 @@ pub fn solve(
 
                 // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
                 //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
-                if (node.type.is_ref)
+                if (node.type.is_ref && !(node.flags & F_ARG))
                     node.MUT.type.lifetime = init.type.lifetime;
             }
         }
@@ -5981,6 +5981,9 @@ pub fn solve(
     fn test_node(node: SolvedNode)
     {
         test_nodes(node.items); _here = node.token;
+
+        // General invariants.
+        !node.is_ref == !node.lifetime || fail("!!ref != !!lt");
 
         //
         let k = node.kind;

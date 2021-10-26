@@ -263,8 +263,24 @@ pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 
 //
 
-pub fn is_ref(   type: Type): bool = type.quals & q_ref    != 0;
-pub fn is_mutref(type: Type): bool = type.quals & q_mutref != 0;
+pub fn is_ref(type: Type): bool
+{
+    let a = type.quals & q_ref != 0;
+    let b = !!type.lifetime;
+    a && !b && throw("Ref&&!Lt");
+    b && !a && throw("Lt&&!Ref");
+
+    return a;
+}
+
+pub fn is_mutref(type: Type): bool
+{
+    let a = type.quals & q_mutref != 0;
+    let b = type.is_ref;
+    a && !b && throw("MutRef&&!Ref");
+
+    return a;
+}
 
 pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
 {
