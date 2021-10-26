@@ -127,7 +127,7 @@ pub fn cpp_codegen(
 
     fn fail(mut reason = "")
     {
-        FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n" ~ (reason || "Assertion failed."));
+        FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n\t" ~ (reason || "Assertion failed."));
     }
 
 

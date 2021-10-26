@@ -78,6 +78,11 @@ pub fn ==(a: Target, b: Target)
     a.modid == b.modid &&
     a.index == b.index;
 
+fn fail(mut reason = "")
+{
+    FAIL("THIS IS A COMPILER BUG.\n\n\tTYPE FAIL:\n\n\t" ~ (reason || "Assertion failed."));
+}
+
 
 // LIFETIMES
 //
@@ -246,8 +251,8 @@ pub fn is_ref(type: Type): bool
 {
     let a = type.quals & q_ref != 0;
     let b = !!type.lifetime;
-    a && !b && throw("Ref&&!Lt");
-    b && !a && throw("Lt&&!Ref");
+    a && !b && fail("Ref&&!Lt");
+    b && !a && fail("Lt&&!Ref");
 
     return a;
 }
@@ -256,7 +261,7 @@ pub fn is_mutref(type: Type): bool
 {
     let a = type.quals & q_mutref != 0;
     let b = type.is_ref;
-    a && !b && throw("MutRef&&!Ref");
+    a && !b && fail("MutRef&&!Ref");
 
     return a;
 }
@@ -264,21 +269,21 @@ pub fn is_mutref(type: Type): bool
 pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals   |= q_ref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || throw("add_ref: falsy lifetime");
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || fail("add_ref: falsy lifetime");
     return type;
 }
 
 pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals   |= q_mutref | q_ref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || throw("add_mutref: falsy lifetime");
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || fail("add_mutref: falsy lifetime");
     return type;
 }
 
 pub fn is_ref2temp(type: Type): bool
 {
     return type.lifetime.uni0n.if_last == Region_TEMP
-        && (type.is_ref || throw("is_ref2temp: has lts but isnt ref"));
+        && (type.is_ref || fail("is_ref2temp: has lts but isnt ref"));
 }
 
 
@@ -323,7 +328,7 @@ pub fn add_refs(from: Type, mut to: Type)
     to.quals   |= from.quals & (q_ref | q_mutref);
     to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
     to.lifetime || !(to.quals & (q_ref | q_mutref))
-                || throw("add_refs: falsy lifetime");
+                || fail("add_refs: falsy lifetime");
     return to;
 }
 
@@ -333,7 +338,7 @@ pub fn add_refs(from: Type, mut to: Type)
 
 pub fn serializeType(type: Type, debug!: string)
 {
-    type || throw("serializeType: Falsy type in: " ~ debug);
+    type || fail("serializeType: Falsy type in: " ~ debug);
 
     mut prefix: string;
 
@@ -342,7 +347,7 @@ pub fn serializeType(type: Type, debug!: string)
     if (type.quals)
         prefix ~= "+" ~ type.quals;
 
-    return prefix ~ (type.canon || throw("serializeType: No type.canon in: " ~ debug));
+    return prefix ~ (type.canon || fail("serializeType: No type.canon in: " ~ debug));
 }
 
 pub fn humanizeType(type: Type)
@@ -534,7 +539,7 @@ pub fn tryClear_map(type: Type): MapFields
 pub fn type_has(type: Type, tag: string)
 {
     let idx = TAGS.find(tag);
-    idx >= 0 || throw("Unknown type tag: `" ~ tag ~ "`.");
+    idx >= 0 || fail("Unknown type tag: `" ~ tag ~ "`.");
     let mask = 1 << idx;
     return (type.quals & mask) == mask;
 }
