@@ -37,6 +37,8 @@ fn TODO_gcc(src: string)
 
 fn TODO_borrowck(src: string) TODO(src);
 
+fn TODO_borrowck_relax(src: string) TODO_borrowck(src);
+
 
 // Run the whole battery & build self.
 
@@ -2110,17 +2112,44 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn test(ref _helpers: i32[][], mut N: i32, row: i32)
+        struct Helpers { row: i32[]; };
+
+        fn test(ref _helpers: Helpers[], mut N: i32, row: i32)
         {
-            fn solveNode(MOD: i32[]) {
-                while (N % MOD[MOD.len - 1]) {
+            fn solveNode_H(h: Helpers) {
+                while (N % h.row[h.row.len - 1]) {
                     N--;
                     _helpers.grow(_helpers.len * 2);
                 }
             }
 
             fn solveJump() {
-                solveNode(_helpers[row]);
+                solveNode_H(_helpers[row]);
+                return _helpers.len;
+            }
+
+            return solveJump() - 1 * 2*2*2*2;
+        }
+
+        fn main()
+        {
+            mut _helpers = [ Helpers([ 1, 2, 3, 4, 5 ]) ];
+            return test(_helpers, row: 0, N: 4)
+        }
+    `);
+
+    TODO_borrowck_relax(`
+        fn test(ref _helpers: i32[][], mut N: i32, row: i32)
+        {
+            fn solveNode_a(h: i32[]) {
+                while (N % h[h.len - 1]) {
+                    N--;
+                    _helpers.grow(_helpers.len * 2);
+                }
+            }
+
+            fn solveJump() {
+                solveNode_a(_helpers[row]); // We've relaxed to a view, which bck can't copy
                 return _helpers.len;
             }
 
