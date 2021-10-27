@@ -3578,10 +3578,11 @@ pub fn solve(
     {
         fn h = _helpers[helpers_idx];
 
+        mut type = h.ret_actual || h.ret_expect; // TODO BORROWCK danglefix
+
         // Deal with expression first, might noop the jump.
         mut expr = items && solveNode(
-            items.only,
-            type: h.ret_actual || h.ret_expect,
+            items.only, :type,
 
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
@@ -5673,10 +5674,10 @@ pub fn solve(
 
     fn bck_call(callsite: SolvedNode)
     {
-        let target = callsite.target;
+        mut target = callsite.target; // TODO BORROWCK danglefix
 
         //
-        let args = callsite.items;
+        fn args = callsite.items; // TODO BORROWCK danglefix
         if (args)
         {
             bck_nodes(args);
