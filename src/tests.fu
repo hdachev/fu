@@ -2108,6 +2108,31 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(ref _helpers: i32[][], mut N: i32, row: i32)
+        {
+            fn solveNode(MOD: i32[]) {
+                while (N % MOD[MOD.len - 1]) {
+                    N--;
+                    _helpers.grow(_helpers.len * 2);
+                }
+            }
+
+            fn solveJump() {
+                solveNode(_helpers[row]);
+                return _helpers.len;
+            }
+
+            return solveJump() - 1 * 2*2*2*2;
+        }
+
+        fn main()
+        {
+            mut _helpers = [[ 1, 2, 3, 4, 5 ]];
+            return test(_helpers, row: 0, N: 4)
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
