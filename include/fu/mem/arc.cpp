@@ -20,7 +20,24 @@ static inline size_t fu_POW2MEM_RoundUp(size_t bytes) noexcept
 static inline char* fu_POW2MEM_ALLOC(size_t& bytes) noexcept
 {
     bytes = fu_POW2MEM_RoundUp(bytes);
-    return (char*) std::malloc(bytes);
+
+    char* memory = (char*) std::malloc(bytes);
+
+    #ifndef NDEBUG
+    {
+        // Poisoning.
+        uintptr_t* POLLUTE      = (uintptr_t*) memory;
+        uintptr_t* POLLUTE_END  = (uintptr_t*)(memory + bytes);
+
+        while (POLLUTE < POLLUTE_END)
+        {
+            *POLLUTE = ~(uintptr_t) POLLUTE;
+            POLLUTE++;
+        }
+    }
+    #endif
+
+    return memory;
 }
 
 static inline void fu_POW2MEM_FREE(char* memory, size_t bytes) noexcept
