@@ -1642,6 +1642,25 @@ pub fn runTests()
     `);
 
     FAIL(`
+        pub fn test_inner(ref a: i32, ref b: i32)
+            (++a) + (++b);
+
+        pub fn test_outer(ref a: i32, ref b: i32)
+            test_inner(a, b);
+
+        fn main() {
+            mut x = 0;
+            //*F
+            ref y = x;
+            /*/
+            mut y = 0;
+            //*/
+            let z = test_outer(x, y);
+            return x+y - z;
+        }
+    `);
+
+    FAIL(`
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) {
@@ -1782,6 +1801,31 @@ pub fn runTests()
             ab_cd(ab, cd, ab, cd);
             /*/
             ab_cd(ab, ab, cd, cd);
+            //*/
+            return ab - cd;
+        }
+    `);
+
+    FAIL(`
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd_inner (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+            ref ab = a || b;
+            ref cd = c || d;
+            ++++ab;
+            ++++cd;
+        }
+
+        pub fn ab_cd_outer (ref a: i32, ref b: i32, ref c: i32, ref d: i32)
+            ab_cd_inner(a, b, c, d);
+
+        fn main() {
+            mut ab = 0;
+            mut cd = 0;
+            //*F
+            ab_cd_outer(ab, cd, ab, cd);
+            /*/
+            ab_cd_outer(ab, ab, cd, cd);
             //*/
             return ab - cd;
         }
@@ -2125,6 +2169,37 @@ pub fn runTests()
 
             fn solveJump() {
                 solveNode_H(_helpers[row]);
+                return _helpers.len;
+            }
+
+            return solveJump() - 1 * 2*2*2*2;
+        }
+
+        fn main()
+        {
+            mut _helpers = [ Helpers([ 1, 2, 3, 4, 5 ]) ];
+            return test(_helpers, row: 0, N: 4)
+        }
+    `);
+
+    ZERO(`
+        struct Helpers { row: i32[]; };
+
+        fn test(ref _helpers: Helpers[], mut N: i32, row: i32)
+        {
+            fn solveNode_HH_inner(h: Helpers) {
+                while (N % h.row[h.row.len - 1]) {
+                    N--;
+                    _helpers.grow(_helpers.len * 2);
+                }
+            }
+
+            fn solveNode_HH(h: Helpers) {
+                return solveNode_HH_inner(h);
+            }
+
+            fn solveJump() {
+                solveNode_HH(_helpers[row]);
                 return _helpers.len;
             }
 
