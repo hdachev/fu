@@ -5694,13 +5694,17 @@ pub fn solve(
             mut ref_first       = -1;
             mut ref_last        = -1;
 
+            //
             mut bck_unwound: Lifetime[];
+
+            mut arg_first       = -1;
+            mut arg_last        = -1;
             ////////////////////////////
 
             for (mut i0 = 0; i0 < args.len; i0++)
             {
-                let host_arg = host_args[i0];
-                let expect = host_arg.type;
+                let host_arg    = host_args[i0];
+                let expect      = host_arg.type;
 
                 // BORROWCK: multiple mutrefs error,
                 //  this is the only thing we can't workaround by copying.
@@ -5712,8 +5716,31 @@ pub fn solve(
                         if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
                         {
                             bck_unwound.resize(args.len);
-                            for (mut i = ref_first; i <= ref_last; i++)
-                                bck_unwound[i] = Lifetime_unwind(args[i].type.lifetime);
+                            for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
+                            {
+                                let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
+
+                                // Locate first and last callsite arguments
+                                //  that refer to caller arguments,
+                                //   so we can later on loop over them faster.
+                                //
+                                // TODO: args at risk: ignore closures & implicits,
+                                //  they are disjoint by definition.
+                                //   But are they? You can totally have
+                                //    an implicit ref a = implicit b.
+                                //
+                                // TODO: args at risk: ignore non-aliasable types.
+                                //
+                                for (mut i = 0; i < unwound.uni0n.len; i++)
+                                {
+                                    if (unwound.uni0n[i].Region_asIndex() > 0)
+                                    {
+                                        arg_first   = arg_first < 0 ? i0 : arg_first;
+                                        arg_last    = i0;
+                                        continue;
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -5722,14 +5749,55 @@ pub fn solve(
                     {
                         let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
 
+                        // Keep track of caller arguments.
+                        for (mut i = 0; i < unwound.uni0n.len; i++)
+                        {
+                            if (unwound.uni0n[i].Region_asIndex() > 0)
+                            {
+                                arg_first   = arg_first < 0 ? i0 : arg_first;
+                                arg_last    = i0;
+                                continue;
+                            }
+                        }
+
+                        //
                         fn validate(i: i32)
                         {
                             // Can the fn handle aliasing here?
                             if (host_arg.risk_free.has(i))
                                 return;
 
+                            // ARGUMENTS AT RISK ////////////////////////
+                            // ARGUMENTS AT RISK AT DEPTH ///////////////
+                            let unwound1 = bck_unwound[i];
+
+                            if (i0 >= arg_first && i0 <= arg_last &&
+                                i  >= arg_first && i  <= arg_last)
+                            {
+                                // TODO avoid the N*M thing here -
+                                //  both lists are sorted, we can iterate them together.
+                                for (shadow mut i = 0; i < unwound.uni0n.len; i++)
+                                {
+                                    let arg0 = Region_asArgIndex(unwound.uni0n[i]);
+                                    if (arg0 > 0)
+                                    {
+                                        for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
+                                        {
+                                            let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
+                                            if (arg1 < arg0)
+                                            {
+                                                _current_fn.flow.args_at_risk.grow_if_oob(arg0)
+                                                    .set::add(arg1);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            /////////////////////////////////////////////
+                            /////////////////////////////////////////////
+
                             // Do we see any aliasing here?
-                            let inter = Lifetime_inter(unwound, bck_unwound[i]);
+                            let inter = Lifetime_inter(unwound, unwound1);
                             if !(inter)
                                 return;
 
