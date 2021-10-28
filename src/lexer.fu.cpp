@@ -228,14 +228,14 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                         break;
                     };
                     if (dot || exp_1)
-                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                        err("real"_fu, int(idx0), (idx - 1), src, idx, end, lidx, fname, line);
 
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == std::byte('p')) || (c_1 == std::byte('P'))) : ((c_1 == std::byte('e')) || (c_1 == std::byte('E')))))
                 {
                     if (exp_1)
-                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                        err("real"_fu, int(idx0), (idx - 1), src, idx, end, lidx, fname, line);
 
                     if ((idx < end) && ((src[idx] == std::byte('-')) || (src[idx] == std::byte('+'))))
                         idx++;
@@ -250,7 +250,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             };
             const std::byte trail = src[(idx - 1)];
             if (!((trail >= std::byte('0')) && (trail <= std::byte('9'))) && !(hex && (((trail >= std::byte('a')) && (trail <= std::byte('f'))) || ((trail >= std::byte('A')) && (trail <= std::byte('F'))))))
-                err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                err("real"_fu, int(idx0), (idx - 1), src, idx, end, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
@@ -353,7 +353,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             token("op"_fu, candidate, idx0, idx, lidx, tokens, line);
         }
         else
-            err("?"_fu, idx0, idx0, src, idx, end, lidx, fname, line);
+            err("?"_fu, int(idx0), idx0, src, idx, end, lidx, fname, line);
 
     };
     line++;

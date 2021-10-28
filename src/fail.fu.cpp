@@ -1,18 +1,11 @@
-#include <algorithm>
 #include <cstdint>
-#include <fu/default.h>
-#include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
-#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/concat_str.h>
-#include <fu/vec/find.h>
-#include <fu/vec/replace.h>
-#include <fu/vec/slice.h>
-#include <fu/vec/split.h>
 #include <fu/view.h>
 
 struct s_ArgWrite;
@@ -48,12 +41,25 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-bool isStruct(const s_Type&);
-const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
-fu_STR path_dirname(const fu_STR&);
-fu_STR resolveFile(const fu_STR&, s_Context&);
-int parse10i32(int&, fu::view<std::byte>);
-static fu_STR resolveFile(const fu_STR&, const fu_STR&, s_Context&);
+const fu_STR& _fname(const s_TokenIdx&, const s_Context&);
+const s_Token& _token(const s_TokenIdx&, const s_Context&);
+fu_STR formatCodeSnippet(const s_TokenIdx&, s_TokenIdx&&, int, const s_Context&);
+
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
+        ;
+    }
+};
+                                #endif
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -74,22 +80,6 @@ struct s_Token
             || idx1
             || line
             || col
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
         ;
     }
 };
@@ -713,404 +703,26 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-const s_Token& _token(const s_TokenIdx& idx, const s_Context& ctx)
+[[noreturn]] fu::never FAIL(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+    const s_Token& here = _token(_here, ctx);
+    fu::view<std::byte> fname = _fname(_here, ctx);
+    fu_STR addr = ((("@"_fu + here.line) + ":"_fu) + here.col);
+    reason += std::byte('\n');
+    fu_STR snippet = formatCodeSnippet(_here, s_TokenIdx{}, 2, ctx);
+    fu::fail(((((((fname + " "_fu) + addr) + ":\n\n"_fu) + snippet) + "\n\t"_fu) + reason));
 }
 
-const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
+void HERE(const s_TokenIdx& node, s_TokenIdx& _here)
 {
-    return ctx.modules[idx.modid].fname;
+    if (node)
+        _here = node;
+
 }
 
-int structIndex(fu::view<std::byte> canon_1)
+[[noreturn]] fu::never BUG(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    int offset = 1;
-    return ((canon_1[0] == std::byte('$')) ? parse10i32(offset, canon_1) : -1);
-}
-
-s_Struct& lookupStruct_mut(fu::view<std::byte> canon_1, s_Module& module)
-{
-    return module.out.types.mutref(structIndex(canon_1));
-}
-
-                                #ifndef DEFt_find_qVFp
-                                #define DEFt_find_qVFp
-inline int find_qVFp(fu::view<std::byte> a, const std::byte b)
-{
-    for (int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return i;
-
-    };
-    return -1;
-}
-                                #endif
-
-                                #ifndef DEFt_has_qVFp
-                                #define DEFt_has_qVFp
-inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
-{
-    for (int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return true;
-
-    };
-    return false;
-}
-                                #endif
-
-static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
-{
-    const bool exists = (fu::file_size(path) >= 0);
-    if (exists)
-        return fu_STR(path);
-
-
-    {
-        fu_STR path_1 = ((from + "lib/"_fu) + name_3);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
-            return path_1;
-
-    };
-
-    {
-        fu_STR path_1 = ((from + "vendor/"_fu) + name_3);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
-            return path_1;
-
-    };
-
-    {
-        fu_STR path_1 = ((from + "fu/lib/"_fu) + name_3);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
-            return path_1;
-
-    };
-    fu_STR fallback = path_dirname(from);
-    if (!fallback || (fallback.size() >= from.size()))
-        return fu_STR{};
-
-    return resolveFile(fallback, name_3, ctx);
-}
-
-static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
-{
-    fu_STR path = (from + name_3);
-    const fu_STR& cached = ctx.fuzzy[path];
-    if (cached)
-        return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
-
-    fu_STR resolve = tryResolve(path, from, name_3, ctx);
-    (ctx.fuzzy.upsert(path) = (resolve ? fu_STR(resolve) : "\v"_fu));
-    return resolve;
-}
-
-fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
-{
-    const int fuzzy_1 = find_qVFp(path, std::byte('\v'));
-    if (fuzzy_1 > 0)
-    {
-        fu_STR from = fu::slice(path, 0, fuzzy_1);
-        fu_STR name_3 = fu::slice(path, (fuzzy_1 + 1));
-        if (from && name_3 && !has_qVFp(name_3, std::byte('\v')))
-        {
-            fu_STR res = resolveFile(from, name_3, ctx);
-            if (res)
-                return res;
-
-            fu_STR prepopulated = (from + name_3);
-            if (fu::has(ctx.files, prepopulated))
-                return prepopulated;
-
-        };
-    };
-    return fu_STR(path);
-}
-
-fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
-{
-    fu_STR clean = fu::replace(path, "\v"_fu, (*(const fu_STR*)fu::NIL));
-    const fu_STR& match = ctx.fuzzy[clean];
-    return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
-}
-
-fu_STR getFile(fu_STR&& path, s_Context& ctx)
-{
-    const fu_STR& cached = ctx.files[path];
-    if (cached)
-        return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
-
-    fu_STR read = fu::file_read(path);
-    (ctx.files.upsert(path) = (read ? fu_STR(read) : "\v"_fu));
-    return read;
-}
-
-s_Module& getModule(const fu_STR& fname_2, s_Context& ctx)
-{
-    for (int i = 0; i < ctx.modules.size(); i++)
-    {
-        if (ctx.modules[i].fname == fname_2)
-            return ctx.modules.mutref(i);
-
-    };
-    const int i_1 = ctx.modules.size();
-    ctx.modules.push(s_Module { int(i_1), fu_STR(fname_2), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
-    return ctx.modules.mutref(i_1);
-}
-
-                                #ifndef DEFt_clone_U3Pf
-                                #define DEFt_clone_U3Pf
-inline int clone_U3Pf(const int a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_YeU3
-                                #define DEFt_clone_YeU3
-inline const fu_STR& clone_YeU3(const fu_STR& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_HsZz
-                                #define DEFt_clone_HsZz
-inline const s_ModuleInputs& clone_HsZz(const s_ModuleInputs& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_I28a
-                                #define DEFt_clone_I28a
-inline const fu_VEC<int>& clone_I28a(const fu_VEC<int>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_xHty
-                                #define DEFt_clone_xHty
-inline const fu_VEC<s_Struct>& clone_xHty(const fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_7szj
-                                #define DEFt_clone_7szj
-inline const s_SolvedNode& clone_7szj(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_Ed9B
-                                #define DEFt_clone_Ed9B
-inline const fu_VEC<s_ScopeItem>& clone_Ed9B(const fu_VEC<s_ScopeItem>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_PD5w
-                                #define DEFt_clone_PD5w
-inline const fu_VEC<s_Overload>& clone_PD5w(const fu_VEC<s_Overload>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_POfp
-                                #define DEFt_clone_POfp
-inline const fu_VEC<s_Extended>& clone_POfp(const fu_VEC<s_Extended>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_DGU7
-                                #define DEFt_clone_DGU7
-inline const fu_VEC<s_Target>& clone_DGU7(const fu_VEC<s_Target>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_OtXd
-                                #define DEFt_clone_OtXd
-inline s_Scope clone_OtXd(const s_Scope& a)
-{
-    s_Scope res {};
-
-    {
-        res.items = clone_Ed9B(a.items);
-        res.overloads = clone_PD5w(a.overloads);
-        res.extended = clone_POfp(a.extended);
-        res.imports = clone_I28a(a.imports);
-        res.usings = clone_DGU7(a.usings);
-        res.converts = clone_DGU7(a.converts);
-        res.pub_count = clone_U3Pf(a.pub_count);
-    };
-    return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_Um4j
-                                #define DEFt_clone_Um4j
-inline s_SolverOutput clone_Um4j(const s_SolverOutput& a)
-{
-    s_SolverOutput res {};
-
-    {
-        res.root = clone_7szj(a.root);
-        res.scope = clone_OtXd(a.scope);
-        res.notes = clone_U3Pf(a.notes);
-    };
-    return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_p6xY
-                                #define DEFt_clone_p6xY
-inline const s_CodegenOutput& clone_p6xY(const s_CodegenOutput& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_zEd3
-                                #define DEFt_clone_zEd3
-inline s_ModuleOutputs clone_zEd3(const s_ModuleOutputs& a)
-{
-    s_ModuleOutputs res {};
-
-    {
-        res.deps = clone_I28a(a.deps);
-        res.types = clone_xHty(a.types);
-        res.solve = clone_Um4j(a.solve);
-        res.cpp = clone_p6xY(a.cpp);
-    };
-    return res;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_io0N
-                                #define DEFt_clone_io0N
-inline const s_ModuleStats& clone_io0N(const s_ModuleStats& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_PWBa
-                                #define DEFt_clone_PWBa
-inline s_Module clone_PWBa(const s_Module& a)
-{
-    s_Module res {};
-
-    {
-        res.modid = clone_U3Pf(a.modid);
-        res.fname = clone_YeU3(a.fname);
-        res.in = clone_HsZz(a.in);
-        res.out = clone_zEd3(a.out);
-        res.stats = clone_io0N(a.stats);
-    };
-    return res;
-}
-                                #endif
-
-void setModule(const s_Module& module, s_Context& ctx)
-{
-    s_Module& current = ctx.modules.mutref(module.modid);
-    if (!(current.fname == module.fname))
-        fu_ASSERT();
-
-    current = clone_PWBa(module);
-}
-
-const s_Struct& lookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
-{
-    if (type_3.vtype.modid == module.modid)
-    {
-        const s_Struct* _0;
-        return *(_0 = &(module.out.types[structIndex(type_3.vtype.canon)])) ? *_0 : fu_ASSERT();
-    };
-    const s_Struct* _1;
-    return *(_1 = &(ctx.modules[type_3.vtype.modid].out.types[structIndex(type_3.vtype.canon)])) ? *_1 : fu_ASSERT();
-}
-
-const s_Struct& tryLookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
-{
-    return isStruct(type_3) ? lookupStruct(type_3, module, ctx) : (*(const s_Struct*)fu::NIL);
-}
-
-const fu_VEC<int>& lookupTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
-{
-    return tryLookupStruct(type_3, module, ctx).imports;
-}
-
-const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
-{
-    return tryLookupStruct(type_3, module, ctx).converts;
-}
-
-bool isStruct(const s_Type& type_3)
-{
-    return fu::lmatch(type_3.vtype.canon, std::byte('$'));
-}
-
-extern const fu_STR DIM;
-
-extern const fu_STR RESET;
-
-extern const fu_STR BAD;
-
-fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extraLines, const s_Context& ctx)
-{
-    const fu_STR& src_2 = ctx.modules[to.modid].in.src;
-    fu_VEC<fu_STR> lines = fu::split(src_2, "\n"_fu);
-    const s_Token& start_1 = _token((from ? from : to), ctx);
-    const s_Token& end_1 = _token(to, ctx);
-    int l_start = ((start_1.line - extraLines) - 1);
-    int l_end = (end_1.line + extraLines);
-    l_start = std::max(l_start, 0);
-    l_end = std::min(l_end, lines.size());
-    fu_STR result {};
-    for (int i = l_start; i < l_end; i++)
-    {
-        if ((i < (start_1.line - 1)) || (i >= end_1.line))
-            result += (DIM + "      | "_fu);
-        else
-        {
-            fu_STR margin = ((i + 1) + " | "_fu);
-            while (margin.size() < 8)
-                margin = (" "_fu + margin);
-
-            result += margin;
-        };
-        fu_STR line_1 { lines[i] };
-        if (i == (end_1.line - 1))
-        {
-            const int c0 = std::max((end_1.col - 1), 0);
-            const int c1 = (c0 + std::min(end_1.value.size(), line_1.size()));
-            line_1.splice(c1, 0, RESET);
-            line_1.splice(c0, 0, BAD);
-        };
-        result += line_1;
-        if ((i < (start_1.line - 1)) || (i >= end_1.line))
-            result += RESET;
-
-        result += "\n"_fu;
-    };
-    return result;
+    FAIL(("COMPILER BUG:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
 }
 
 #endif

@@ -19,6 +19,7 @@
 #include <fu/view.h>
 #include <iostream>
 
+struct s_ArgWrite;
 struct s_Argument;
 struct s_BitSet;
 struct s_CodegenOutput;
@@ -354,6 +355,22 @@ struct s_BitSet
 };
                                 #endif
 
+                                #ifndef DEF_s_ArgWrite
+                                #define DEF_s_ArgWrite
+struct s_ArgWrite
+{
+    int nodeidx;
+    int arg_position;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeidx
+            || arg_position
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -364,7 +381,7 @@ struct s_Argument
     s_SolvedNode dEfault;
     int flags;
     s_BitSet risk_free;
-    s_Target written_via;
+    s_ArgWrite written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -467,18 +484,22 @@ struct s_Template
 struct s_SolvedNodeData
 {
     fu_STR kind;
+    int helpers;
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
     s_Type type;
     s_Target target;
     explicit operator bool() const noexcept
     {
         return false
             || kind
+            || helpers
             || flags
             || value
             || items
+            || token
             || type
             || target
         ;
@@ -698,9 +719,9 @@ struct s_Context
 
                                 #ifndef DEFt_if_last_jB4B
                                 #define DEFt_if_last_jB4B
-inline std::byte if_last_jB4B(fu_STR& s)
+inline std::byte if_last_jB4B(const fu_STR& s)
 {
-    return s.size() ? s.mutref((s.size() - 1)) : (*(const std::byte*)fu::NIL);
+    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
 }
                                 #endif
 
@@ -721,7 +742,7 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
     {
         for (int i = Fs.size(); i-- > 0; )
         {
-            if (Fs.mutref(i))
+            if (Fs[i])
                 cpp_1 += (("#include \""_fu + Fs[i]) + ".cpp\"\n"_fu);
 
         };
@@ -730,7 +751,7 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
     (std::cout << ("  WRITE "_fu + fname_1) << '\n');
     fu::file_write(fname_1, cpp_1);
     if (!stdout)
-        stdout = (("[ EXIT CODE "_fu + code) + " ]"_fu);
+        stdout = ("Exit code: "_fu + code);
 
     fu_STR explain {};
     if (onfail)
@@ -747,7 +768,7 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
 
         };
     };
-    fu::fail((("Smth broke:\n\n"_fu + stdout) + explain));
+    fu::fail((stdout + explain));
 }
 
                                 #ifndef DEFt_only_joGv

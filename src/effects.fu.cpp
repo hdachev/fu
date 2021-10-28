@@ -74,10 +74,6 @@ struct s_Region
 struct s_Lifetime
 {
     fu_VEC<s_Region> uni0n;
-    s_Lifetime(const s_Lifetime&) = delete;
-    s_Lifetime(s_Lifetime&&) = default;
-    s_Lifetime& operator=(const s_Lifetime&) = delete;
-    s_Lifetime& operator=(s_Lifetime&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -89,26 +85,26 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
-void Reference_trackArgument(s_Flow& flow, const int target, const int position)
+void Reference_trackArgument(s_Flow& flow, const int target_3, const int position)
 {
     if (!((flow.arg_targets.size() <= position)))
         fu_ASSERT();
 
     flow.arg_targets.grow((position + 1));
-    flow.arg_targets.mutref(position) = target;
-    if (!((flow.arg_positions.size() <= target)))
+    flow.arg_targets.mutref(position) = target_3;
+    if (!((flow.arg_positions.size() <= target_3)))
         fu_ASSERT();
 
-    flow.arg_positions.grow((target + 1));
-    flow.arg_positions.mutref(target) = (position + 1);
-    add(flow.is_arg, target);
+    flow.arg_positions.grow((target_3 + 1));
+    flow.arg_positions.mutref(target_3) = (position + 1);
+    add(flow.is_arg, target_3);
 }
 
                                 #ifndef DEFt_unless_oob_kwxC
                                 #define DEFt_unless_oob_kwxC
-inline const fu_VEC<int>& unless_oob_kwxC(fu_VEC<fu_VEC<int>>& a, const int i)
+inline const fu_VEC<int>& unless_oob_kwxC(const fu_VEC<fu_VEC<int>>& a, const int i)
 {
-    return (i < a.size()) ? a.mutref(i) : (*(const fu_VEC<int>*)fu::NIL);
+    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
@@ -292,9 +288,9 @@ inline fu_VEC<int>& grow_if_oob_xsUL(fu_VEC<fu_VEC<int>>& a, const int i)
 
                                 #ifndef DEFt_unless_oob_xsUL
                                 #define DEFt_unless_oob_xsUL
-inline const fu_VEC<int>& unless_oob_xsUL(fu_VEC<fu_VEC<int>>& a, const int i)
+inline const fu_VEC<int>& unless_oob_xsUL(const fu_VEC<fu_VEC<int>>& a, const int i)
 {
-    return (i < a.size()) ? a.mutref(i) : (*(const fu_VEC<int>*)fu::NIL);
+    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
@@ -371,25 +367,25 @@ inline const fu_VEC<int>& unless_oob_GZZU(fu::view<fu_VEC<int>> a, const int i)
 
 s_BitSet ArgsAtRisk_listRiskFree(const s_Flow& flow, const int position)
 {
-    s_BitSet risk_free {};
+    s_BitSet risk_free_1 {};
     if (position)
     {
-        add_range(risk_free, 0, position);
-        const int target = unless_oob_o2eL(flow.arg_targets, position);
-        fu::view<int> at_risk_from = unless_oob_GZZU(flow.args_at_risk, target);
+        add_range(risk_free_1, 0, position);
+        const int target_3 = unless_oob_o2eL(flow.arg_targets, position);
+        fu::view<int> at_risk_from = unless_oob_GZZU(flow.args_at_risk, target_3);
         for (int i = 0; i < at_risk_from.size(); i++)
         {
             const int other = at_risk_from[i];
-            if (other > target)
+            if (other > target_3)
                 break;
 
             const int other_position = (unless_oob_o2eL(flow.arg_positions, other) - 1);
             if ((other_position >= 0))
-                rem(risk_free, other_position);
+                rem(risk_free_1, other_position);
 
         };
     };
-    return risk_free;
+    return risk_free_1;
 }
 
 #endif

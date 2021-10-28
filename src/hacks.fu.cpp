@@ -28,21 +28,21 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
-fu_STR ClosureID(const s_Target& target)
+fu_STR ClosureID(const s_Target& target_3)
 {
-    return ((target.modid < 0) ? ((("`"_fu + target.index) + "-"_fu) + -target.modid) : ("`"_fu + target.index));
+    return ((target_3.modid < 0) ? ((("`"_fu + target_3.index) + "-"_fu) + -target_3.modid) : ("`"_fu + target_3.index));
 }
 
-s_Target tryParseClosureID(fu::view<std::byte> id, const int MODID)
+s_Target tryParseClosureID(fu::view<std::byte> id_1, const int MODID)
 {
-    if (id[0] == std::byte('`'))
+    if (id_1[0] == std::byte('`'))
     {
         int offset = 1;
-        fu_DEFER(if (!(offset == id.size()))
+        fu_DEFER(if (!(offset == id_1.size()))
             fu::fail("Bad ClosureID."_fu););
-        const int index_2 = parse10i32(offset, id);
-        const int modid_2 = ((id.size() > offset) ? -parse10i32(++offset, id) : int(MODID));
-        return s_Target { int(modid_2), int(index_2) };
+        const int index_2 = parse10i32(offset, id_1);
+        const int modid_4 = ((id_1.size() > offset) ? -parse10i32(++offset, id_1) : int(MODID));
+        return s_Target { int(modid_4), int(index_2) };
     };
     return s_Target{};
 }

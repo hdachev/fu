@@ -6,26 +6,28 @@ set(FU_MAIN cli.fu)
 
 set(FU_INPUTS
     cli.fu
-    helpers.fu
-    compiler.fu
-    context.fu
-    lexer.fu
-    parser.fu
-    options.fu
     types.fu
-    set.fu
-    scope.fu
+    helpers.fu
+    module.fu
+    parser.fu
+    lexer.fu
+    options.fu
     stat.fu
     ../lib/now.fu
     ../lib/alloc.fu
     bitset.fu
     ../lib/bit.fu
+    fail.fu
+    context.fu
     ../lib/file.fu
     ../lib/ansi.fu
+    set.fu
+    compiler.fu
     solver.fu
+    scope.fu
     effects.fu
-    intlit.fu
     hacks.fu
+    intlit.fu
     addroffn.fu
     ../lib/tea.fu
     codegen.fu
