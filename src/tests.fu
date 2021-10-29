@@ -3344,6 +3344,36 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn fail(str: string)
+            throw(str ~ "!");
+
+        fn test(x: i32)
+        {
+            // We want to override fail but
+            //  we want to call it within the override,
+            //   so we can do this i guess?
+            //
+            shadow let fail = |mut str: string| {
+                str = "x=" ~ x ~ ": " ~ str;
+                fail(str);
+            };
+
+            return x & 1 || fail("even");
+        }
+
+        fn main() {
+            try {
+                return test(2);
+            }
+            catch (e) {
+                return e == "x=2: even!"
+                     ? 0
+                     : 10;
+            }
+        }
+    `);
+
 
     // Various templating fallacies.
     //
