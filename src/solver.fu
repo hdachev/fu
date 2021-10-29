@@ -6214,12 +6214,21 @@ pub fn solve(
 
     fn runAllPasses(node: SolvedNode)
     {
+        ///////////////////////////////
+        if (SELF_TEST) test_node(node);
+        ///////////////////////////////
+
         bck_node(node);
 
-        if (SELF_TEST)
-            test_node(node);
+        ///////////////////////////////
+        if (SELF_TEST) test_node(node);
+        ///////////////////////////////
 
         mcom_node(node);
+
+        ///////////////////////////////
+        if (SELF_TEST) test_node(node);
+        ///////////////////////////////
     }
 
 
