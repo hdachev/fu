@@ -6008,11 +6008,7 @@ pub fn solve(
             return;
 
         fn err(reason: string)
-        {
-            _here = callsite.token;
-            MUT(callsite);
             fail(callsite.target.qWHAT ~ ": " ~ reason);
-        }
 
         host_args.len == args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
