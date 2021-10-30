@@ -3205,6 +3205,63 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn CallerNode(mut t?: i32, arr?: i32[])
+        {
+            for (mut i = 0; i < arr.len; i++) {
+                return CallerNode(arr[i]);
+                //     ^^^^^^^^^^
+                // fn CallerNode: Arg #1, arr not assignable to host_arg:
+                //      expect: []+252i32: ref copy resize
+                //      actual: []+252i32: ref
+            }
+
+            return t;
+        }
+
+        fn main() = CallerNode();
+    `);
+
+    ZERO(`
+        struct Target       { index: i32; };
+        struct SolvedNode   { target: Target; args: SolvedNode[]; };
+
+        fn CallerNode(
+            mut target: Target,
+            mut args: SolvedNode[] = [],
+            reorder?: i32[],
+            conversions?: Target[][]): SolvedNode
+        {
+            if (reorder) {
+                mut args_out: SolvedNode[]; args_out.resize(reorder.len);
+                for (mut i = 0; i < reorder.len; i++) {
+                    let idx = reorder[i];
+                    if (idx >= 0)
+                        args_out[i] = args[idx];
+                }
+
+                args = args_out;
+            }
+
+            for (mut argIdx = 0; argIdx < conversions.len; argIdx++) {
+                let conversion = conversions[argIdx];
+                for (mut i = 0; i < conversion.len; i++) {
+                    args[argIdx] = CallerNode(conversion[i]);
+                    //             ^^^^^^^^^^
+                    // fn CallerNode: Arg #2, reorder not assignable to host_arg:
+                    //      expect: []+252i32: ref copy resize
+                    //      actual: []+252i32: ref copy
+                }
+            }
+
+            return SolvedNode(:target, :args);
+        }
+
+        fn main() {
+            return CallerNode(Target(0)).target.index;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
