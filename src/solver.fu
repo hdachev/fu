@@ -5687,7 +5687,7 @@ pub fn solve(
 
     //
 
-    fn bck_call(callsite: SolvedNode)
+    fn bck_call(mut callsite: SolvedNode) // TODO BORROWCK danglefix
     {
         mut target = callsite.target; // TODO BORROWCK danglefix
 
