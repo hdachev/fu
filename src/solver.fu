@@ -3775,8 +3775,8 @@ pub fn solve(
         let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
 
         // Relax.
-        implicitOperatorBool(pre_cond);
-        implicitOperatorBool(post_cond);
+        if (pre_cond)  implicitOperatorBool(pre_cond);
+        if (post_cond) implicitOperatorBool(post_cond);
 
         // Control flow.
         let h           = _helpers[brk_idx];
