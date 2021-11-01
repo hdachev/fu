@@ -44,6 +44,7 @@ let USE_ref_to_mutref       = true;
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
 let USE_named_block_rets    = false;
+let USE_forbid_xfn_MUT      = false;
 
 let SELF_TEST               = true;
 
@@ -249,11 +250,19 @@ pub fn solve(
 
     fn MUT(nid: SolvedNode)
     {
-        // TODO FIX this is bad: here because of arg defaults from other modules
-        if (nid.nodeown.modid != module.modid)
+        if (!USE_forbid_xfn_MUT)
         {
-            mut t = SolvedNode(kind: "", type: Type);
-            return MUT(t) = SolvedNodeData(nid);
+            // TODO FIX this is bad: here because of arg defaults from other modules
+            if (nid.nodeown.modid != module.modid)
+            {
+                mut t = SolvedNode(kind: "", type: Type);
+                return MUT(t) = SolvedNodeData(nid);
+            }
+        }
+        else if (nid.nodeown.modid != module.modid ||
+                 nid.nodeown.index != _current_fn_or_type.index)
+        {
+            fail("MUT(nid.nodeown) not current-fn.");
         }
 
         return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
@@ -3127,24 +3136,34 @@ pub fn solve(
 
     fn __solveStruct(solve!: bool, /*TODO BORROWCK danglefix*/mut node: Node, into?!: Target): SolvedNode
     {
-        mut out     = createEmpty(target: into, type: into && GET(into).type);
-
         let origId  = node.value;
         let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
 
-        if (!out.target)
+        //
+        mut out_target  = into;
+        mut out_type: Type;
+        if (out_target)
         {
-            shadow ref out = out.MUT;
-
-            out.type && assert();
-            out.type = initStruct(:name, :node.flags, :SELF_TEST);
-            out.target = Scope_Typedef(_scope, id: origId, :name,
-                :out.type, :node.flags,
+            out_type    = out_target.type;
+        }
+        else
+        {
+            out_type    = initStruct(:name, :node.flags, :SELF_TEST);;
+            out_target  = Scope_Typedef(_scope, id: origId, :name,
+                type: out_type, :node.flags,
                 status: SS_LAZY);
 
-            out.target.EXT_mut.template = createTemplate(:node);
+            out_target.EXT_mut.template = createTemplate(:node);
         }
 
+        ///////////////////////////////////////////////
+        mut current_fn_or_type0     = _current_fn_or_type;
+        defer _current_fn_or_type   = current_fn_or_type0;
+        _current_fn_or_type         = out_target;
+        ///////////////////////////////////////////////
+
+        // Trying to push this down now.
+        mut out = createEmpty(target: out_target, type: out_type);
         if (!solve)
             return out;
 
@@ -3160,10 +3179,6 @@ pub fn solve(
 
         push(HelpersData(mask: HM_Struct, target: out.target || fail(
             "solveStruct: no out.target: `" ~ origId ~ "`.")));
-
-        mut current_fn_or_type0     = _current_fn_or_type;
-        defer _current_fn_or_type   = current_fn_or_type0;
-        _current_fn_or_type         = out.target;
         ///////////////////////////////////////////////
 
         // Struct fields only.
