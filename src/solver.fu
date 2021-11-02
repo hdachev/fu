@@ -2763,6 +2763,12 @@ pub fn solve(
                 o.nodes.clear();
             }
 
+            /////////////////////////////////////////////////////////////////////
+            mut TODO_FIX_convert_args0  = TODO_FIX_convert_args;
+            TODO_FIX_convert_args[0]    = SolvedNode(kind: "", type: Type());
+            defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
+            /////////////////////////////////////////////////////////////////////
+
             mut out = CurrentFn(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
