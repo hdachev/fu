@@ -1304,6 +1304,11 @@ pub fn runTests()
         fn main() test(-1);
     `);
 
+    TODO(`
+        fn test(a = 3, b = a * 2) a + b;
+        fn main() test + test(a: -1) * 3;
+    `);
+
 
     // Truth tests.
 
