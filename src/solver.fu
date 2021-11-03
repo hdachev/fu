@@ -282,6 +282,30 @@ pub fn solve(
     fn isFnOrType(h: Helpers): bool
         !!(h.mask & (HM_Function | HM_Struct));
 
+
+    //
+
+    fn SolvedNode_create(data: SolvedNodeData)
+    {
+        let nodeown = _current_fn_or_type;
+        ref nodes   = nodeown.EXT_mut.nodes;
+        let nodeidx = nodes.len;
+        nodes      ~= data;
+
+        // println("    SN " ~ kind ~ " " ~ value ~ "    @ " ~ nodeown.index ~ ":" ~ nodes.len - 1);
+
+        return SolvedNode(:nodeown, :nodeidx);
+    }
+
+    fn SolvedNode_deepClone(mut data: SolvedNodeData)
+    {
+        ref items = data.items;
+        for (mut i = 0; i < items.len; i++)
+            items[i] = SolvedNode_deepClone(items[i]);
+
+        return SolvedNode_create(data);
+    }
+
     fn SolvedNode(
         kind:       string,
         type:       Type,
@@ -296,15 +320,7 @@ pub fn solve(
             :items, :type, :target, token: _here,
             :helpers);
 
-        let nodeown = _current_fn_or_type;
-
-        ref nodes   = nodeown.EXT_mut.nodes;
-        let nodeidx = nodes.len;
-        nodes      ~= data;
-
-        // println("    SN " ~ kind ~ " " ~ value ~ "    @ " ~ nodeown.index ~ ":" ~ nodes.len - 1);
-
-        return SolvedNode(:nodeown, :nodeidx);
+        return SolvedNode_create(data);
     }
 
     // TODO FIX /////////////////////////////////
@@ -5041,7 +5057,7 @@ pub fn solve(
                 {
                     let host_arg = host_args[i];
 
-                    args[i] = host_arg.default ||
+                    args[i] = host_arg.default ? SolvedNode_deepClone(host_arg.default) :
                     {
                         host_arg.flags & F_IMPLICIT || fail(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
