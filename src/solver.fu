@@ -3178,18 +3178,17 @@ pub fn solve(
             out_target.EXT_mut.template = createTemplate(:node);
         }
 
+        // Trying to push this down now.
+        if (!solve)
+            return createEmpty(target: out_target, type: out_type);
+
         ///////////////////////////////////////////////
         mut current_fn_or_type0     = _current_fn_or_type;
         defer _current_fn_or_type   = current_fn_or_type0;
         _current_fn_or_type         = out_target;
         ///////////////////////////////////////////////
 
-        // Trying to push this down now.
-        mut out = createEmpty(target: out_target, type: out_type);
-        if (!solve)
-            return out;
-
-        GET_mut(out.target).status |= SS_DID_START;
+        GET_mut(out_target).status |= SS_DID_START;
 
         ///////////////////////////////////////////////
         let helpers0 = _helpers.len;
@@ -3199,8 +3198,8 @@ pub fn solve(
             _helpers_data.shrink(helpers_data0);
         }
 
-        push(HelpersData(mask: HM_Struct, target: out.target || fail(
-            "solveStruct: no out.target: `" ~ origId ~ "`.")));
+        push(HelpersData(mask: HM_Struct, target: out_target || fail(
+            "solveStruct: no out_target: `" ~ origId ~ "`.")));
         ///////////////////////////////////////////////
 
         // Struct fields only.
@@ -3226,13 +3225,13 @@ pub fn solve(
 
         // (Re)poplate fields.
         {
-            ref innerScope = lookupStruct_mut(out.type.canon).items;
+            ref innerScope = lookupStruct_mut(out_type.canon).items;
             if (!innerScope && members)
             {
                 // Dereferencing a struct does not require it
                 //  to have any particular qualities.
                 let args = [ Argument(name: "this",
-                    type: despeculateStruct(out.type)) ];
+                    type: despeculateStruct(out_type)) ];
 
                 for (mut i = 0; i < members.len; i++)
                 {
@@ -3281,22 +3280,20 @@ pub fn solve(
 
         // Add a default constructor.
         {
-            shadow ref out = out.MUT;
-
             mut CHANGE = false;
 
             mut commonQuals = -1;
             for (mut i = 0; i < members.len; i++)
                 commonQuals &= members[i].type.quals;
 
-            let quals0 = out.type.quals;
-            let quals1 = out.type.quals &= commonQuals;
+            let quals0 = out_type.quals;
+            let quals1 = out_type.quals &= commonQuals;
             CHANGE   ||= quals0 != quals1;
 
             //
             {
-                ref s       = lookupStruct_mut(out.type.canon);
-                s.target    = out.target || fail("No struct/out.target.");
+                ref s       = lookupStruct_mut(out_type.canon);
+                s.target    = out_target || fail("No struct/out_target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
 
@@ -3331,20 +3328,20 @@ pub fn solve(
 
             if (max && !min) min++;
 
-            ref overload    = GET_mut(out.target);
-            ref ext         = EXT_mut(out.target);
+            ref overload    = GET_mut(out_target);
+            ref ext         = EXT_mut(out_target);
 
             ext.min         = min;
             ext.max         = max;
             ext.args        = args;
-            overload.type   = out.type;
+            overload.type   = out_type;
 
             if (CHANGE && overload.callsites)
                 overload.status |= SS_UPDATED;
         }
 
         //
-        lazySolveEnd(out.target);
+        lazySolveEnd(out_target);
 
         // We're done here, return nothing.
         return SolvedNode();
