@@ -43,9 +43,8 @@ pub let F_UNUSED        = 1 << 10;
 pub let F_MOVED_FROM    = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;
 pub let F_PURE          = 1 << 13;
-// ... 14
-pub let F_CONVERSION    = 1 << 15;
-pub let F_OPT_ARG       = 1 << 16;
+pub let F_CONVERSION    = 1 << 14;
+pub let F_OPT_ARG       = 1 << 15;
 
 pub let F_MUT           = 1 << 16;
 pub let F_IMPLICIT      = 1 << 17;
