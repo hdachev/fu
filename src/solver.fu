@@ -44,7 +44,6 @@ let USE_ref_to_mutref       = true;
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
 let USE_named_block_rets    = false;
-let USE_forbid_xfn_MUT      = false;
 
 let SELF_TEST               = true;
 
@@ -250,22 +249,11 @@ pub fn solve(
 
     fn MUT(nid: SolvedNode)
     {
-        if (!USE_forbid_xfn_MUT)
-        {
-            // TODO FIX this is bad: here because of arg defaults from other modules
-            if (nid.nodeown.modid != module.modid)
-            {
-                mut t = SolvedNode(kind: "", type: Type);
-                return MUT(t) = SolvedNodeData(nid);
-            }
-        }
-        else if (nid.nodeown.modid != module.modid ||
-                 nid.nodeown.index != _current_fn_or_type.index)
-        {
+        let t = nid.nodeown;
+        if (t.modid != module.modid || t.index != _current_fn_or_type.index)
             fail("MUT(nid.nodeown) not current-fn.");
-        }
 
-        return nid.nodeown.EXT_mut.nodes[nid.nodeidx];
+        return t.EXT_mut.nodes[nid.nodeidx];
     }
 
     fn GET_next_local_index()
