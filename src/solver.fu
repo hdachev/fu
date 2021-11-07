@@ -6050,29 +6050,34 @@ pub fn solve(
         }
     }
 
-    fn test_Statements(block: SolvedNode)
+    fn test_Statements(block: SolvedNode, debug: string)
     {
         let items = block.items;
         for (mut i = 0; i < items.len; i++)
         {
             let n = items[i];
-            n.kind || fail("Missing block.item.kind.");
+            n.kind || fail(debug ~ ": No .kind on item[" ~ i ~ "].");
         }
     }
 
 
     // AST validation router.
 
-    fn test_nodes(nodes: SolvedNode[])
+    fn test_nodes(nodes: SolvedNode[], debug: string)
         for (mut i = 0; i < nodes.len; i++)
-            test_node(nodes[i]);
+            test_node(nodes[i], debug ~ "[" ~ i ~ "]");
 
-    fn test_node(node: SolvedNode)
+    fn test_node(node: SolvedNode, mut debug: string)
     {
-        test_nodes(node.items); _here = node.token;
+        debug ~= "/" ~ node.kind;
+        if (node.value)
+            debug ~= "[" ~ node.value ~ "]";
+
+        test_nodes(node.items, :debug); _here = node.token;
 
         // General invariants.
-        !node.is_ref == !node.lifetime || fail("!!ref != !!lt");
+        !node.is_ref == !node.lifetime || fail(
+            debug ~ ": !!ref != !!lt: " ~ humanizeType(node.type));
 
         //
         let k = node.kind;
@@ -6082,12 +6087,12 @@ pub fn solve(
         if (k == "block" || k == "and" || k == "or" || k == "if")
         {
             if (k == "and" || k == "or")
-                node.items.len > 1 || fail(k ~ ".len: " ~ node.items.len);
+                node.items.len > 1 || fail(debug ~ ".len: " ~ node.items.len);
 
             if (k == "if")
-                node.items.len == 3 || fail(k ~ ".len: " ~ node.items.len);
+                node.items.len == 3 || fail(debug ~ ".len: " ~ node.items.len);
 
-            return test_Statements(node);
+            return test_Statements(node, :debug);
         }
     }
 
@@ -6233,19 +6238,19 @@ pub fn solve(
     fn runAllPasses(node: SolvedNode)
     {
         ///////////////////////////////
-        if (SELF_TEST) test_node(node);
+        if (SELF_TEST) test_node(node, "runAllPasses[0]");
         ///////////////////////////////
 
         bck_node(node);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node);
+        if (SELF_TEST) test_node(node, "runAllPasses[1]");
         ///////////////////////////////
 
         mcom_node(node);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node);
+        if (SELF_TEST) test_node(node, "runAllPasses[2]");
         ///////////////////////////////
     }
 
