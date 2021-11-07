@@ -2100,7 +2100,7 @@ pub fn runTests()
         fn main() outer - 42;
     `);
 
-    TODO_borrowck(`
+    TODO_borrowck_relax(`
         fn append_self(ref a: i32[])
         {
             let b = a;
@@ -2898,6 +2898,29 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        struct Arg { i: i32[]; };
+
+        fn witharg(using a: Arg)
+            i[i.len - 1] * 4;
+
+        fn mutargs(args: &mut Arg[]) {
+            //*F
+            ref
+            /*/
+            let
+            //*/
+                badref = args[0];
+            args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
+            return witharg(badref);
+        }
+
+        fn main() {
+            mut args = [ Arg([ 7 ]) ];
+            return mutargs(args) - 28;
+        }
+    `);
+
     ZERO(`
         struct Target { modid!: i32; packed!: i32; };
         inline fn index(a: Target) a.packed;
@@ -3026,7 +3049,7 @@ pub fn runTests()
         fn main() lex("    hello").len - 5;
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void
         {
             // Fuzzing module splits.
@@ -6296,7 +6319,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn ascii_lower(a: string): string
         {
             let offset = 'a'.i32 - 'A'.i32;

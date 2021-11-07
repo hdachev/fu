@@ -44,6 +44,7 @@ let USE_ref_to_mutref       = true;
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
 let USE_named_block_rets    = false;
+let USE_autoval             = true;
 
 let SELF_TEST               = true;
 
@@ -1890,6 +1891,16 @@ pub fn solve(
             {
                 shadow mut expr = h.returns[i].items.only;
                 propagateType(expr, h.ret_actual, relax_mask: RELAX_all);
+
+                // We want to enable bck ASAP -
+                //  on first pass, we'll promote stuff to fmuts unless it hurts our returns,
+                //   else we emit an error. Same, we wont relax F_MUTs when we RRET.
+                //
+                // This is not the endgame, but I need this to get going,
+                //  the compiler barely works anymore.
+                //
+                if (expr.is_ref)
+                    Lifetime_F_TODO_FIX_RRET(expr.lifetime, :h.locals_start);
             }
 
             // TODO FIX Clear this up, there's local lifetimes in the return value.
@@ -3539,6 +3550,18 @@ pub fn solve(
             let init = o.Lifetime_climbType;
             if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
+        });
+    }
+
+    fn Lifetime_F_TODO_FIX_RRET(lifetime: Lifetime, locals_start!: i32)
+    {
+        Lifetime_climb(:lifetime, :locals_start, visit: |o|
+        {
+            o.flags |= F_TODO_FIX_RRET;
+
+            let init = o.Lifetime_climbType;
+            if (init.is_ref)
+                Lifetime_F_TODO_FIX_RRET(init.lifetime, :locals_start);
         });
     }
 
@@ -5550,12 +5573,33 @@ pub fn solve(
             if (events.invalidated_by.len > target)
             {
                 let u = events.invalidated_by[target];
-                if (u.target && !(options.dev & options::DEV_DisableBCK))
-                    fail("BORROWCK: Cannot access"
-                        ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
-                        ~ " " ~ u.target.bck_name.qBAD ~ " at "
-                        ~ u.callsite.token.addr_and_snippet
-                        ~ RWEvent_stack(u.nodeidx, u.target));
+                if (u.target)
+                {
+                    ref o = GET_mut(nested(target));
+                    if !(o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy || !USE_autoval)
+                    {
+                        o.kind == "var" && !(o.flags & F_REF) || fail("!var or F_REF");
+                        o.type.lifetime.uni0n.len == 1        || fail("lt.len != 1"  );
+                        if !(o.flags & F_MUT)
+                        {
+                            o.flags  |= F_MUT;
+                            let t_let = clear_refs(o.type);
+                            mut init  = o.solved.items[LET_INIT];
+
+                            maybeCopyOrMove(init, t_let);
+                            o.solved.MUT.items[LET_INIT] = init;
+                            o.solved.MUT.type = t_let;
+                        }
+                    }
+                    else if !(options.dev & options::DEV_DisableBCK)
+                    {
+                        fail("BORROWCK: Cannot access"
+                            ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
+                            ~ " " ~ u.target.bck_name.qBAD ~ " at "
+                            ~ u.callsite.token.addr_and_snippet
+                            ~ RWEvent_stack(u.nodeidx, u.target));
+                    }
+                }
             }
 
             // ARGUMENTS AT RISK ////////////////////////
