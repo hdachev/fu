@@ -3324,6 +3324,16 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        fn qSTACK(x: i32) {
+            let rec = x & 1 && "rec ";
+            let via = !rec && qSTACK(x / 2);
+            return "\n" ~ rec ~ "at #" ~ x ~ via;
+        }
+
+        fn main() qSTACK(2).len - 2 - 4 - 8 - 2;
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
