@@ -2248,6 +2248,86 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        struct Arg { i: i32; };
+
+        // A mutref fail.
+        fn mutargs(args: &mut Arg[])
+        {
+            // This miscompiles to ref into args,
+            //  after which we invalidate the reference.
+            //
+            //*F
+            ref
+            /*/
+            mut
+            //*/
+                badref = args[0];
+            args = [ Arg(11) ]; // INVALIDATE badref.
+            return badref;
+        }       // oct2021: now latest issue here is that
+                //  this gets bcked AFTER jump lifetimes are unwound
+                //   and it all looks as if everything's fine (lt badref == lt args).
+
+        fn main()
+        {
+            mut args = [ Arg(7) ];
+            return mutargs(args).i - 7;
+        }
+    `);
+
+    FAIL(`
+        struct Arg { i: i32[]; };
+
+        fn witharg(using a: Arg)
+            i[i.len - 1] * 4;
+
+        fn mutargs(args: &mut Arg[]) {
+            //*F
+            ref
+            /*/
+            let
+            //*/
+                badref = args[0];
+            args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
+            return witharg(badref);
+        }
+
+        fn main() {
+            mut args = [ Arg([ 7 ]) ];
+            return mutargs(args) - 28;
+        }
+    `);
+
+    FAIL(`
+        struct Arg { i: i32[]; };
+
+        fn witharg(using a: Arg, x: i32)
+            i[i.len - 1] * x;
+
+        fn mutargs(args: &mut Arg[]) {
+            //*F
+            ref
+            /*/
+            let
+            //*/
+                badref = args[0];
+
+            for (mut i = 0;; i++) {
+                let ret = witharg(badref, i * 4);
+                if (ret)
+                    return ret;
+
+                args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
+            }
+        }
+
+        fn main() {
+            mut args = [ Arg([ 7 ]) ];
+            return mutargs(args) - 28;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
@@ -2868,57 +2948,6 @@ pub fn runTests()
         }
 
         fn main() test("you").len - 7;
-    `);
-
-    FAIL(`
-        struct Arg { i: i32; };
-
-        // A mutref fail.
-        fn mutargs(args: &mut Arg[])
-        {
-            // This miscompiles to ref into args,
-            //  after which we invalidate the reference.
-            //
-            //*F
-            ref
-            /*/
-            mut
-            //*/
-                badref = args[0];
-            args = [ Arg(11) ]; // INVALIDATE badref.
-            return badref;
-        }       // oct2021: now latest issue here is that
-                //  this gets bcked AFTER jump lifetimes are unwound
-                //   and it all looks as if everything's fine (lt badref == lt args).
-
-        fn main()
-        {
-            mut args = [ Arg(7) ];
-            return mutargs(args).i - 7;
-        }
-    `);
-
-    FAIL(`
-        struct Arg { i: i32[]; };
-
-        fn witharg(using a: Arg)
-            i[i.len - 1] * 4;
-
-        fn mutargs(args: &mut Arg[]) {
-            //*F
-            ref
-            /*/
-            let
-            //*/
-                badref = args[0];
-            args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
-            return witharg(badref);
-        }
-
-        fn main() {
-            mut args = [ Arg([ 7 ]) ];
-            return mutargs(args) - 28;
-        }
     `);
 
     ZERO(`

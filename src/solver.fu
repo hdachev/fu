@@ -5667,7 +5667,7 @@ pub fn solve(
                     fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
                         ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
                         ~ u.callsite.token.addr_and_snippet
-                        ~ " on next loop iteration."); // TODO loop starts at x:x!
+                        ~ "\n\t\t... on next loop iteration."); // TODO loop starts at x:x!
             }
 
             // Track writes, easy.
