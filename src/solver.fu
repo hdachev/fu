@@ -4968,13 +4968,18 @@ pub fn solve(
         let callsite = written_via.callsite(nodeown || _current_fn.target);
         let target   = callsite.target;
 
-        let ret = "\n            via " ~ target.qWHAT ~ " at " ~ callsite.token.addr_and_snippet;
+        return "\n            via " ~ target.qWHAT
+             ~ " at " ~ callsite.token.addr_and_snippet
+             ~ qSTACK(target, written_via.arg_position);
+    }
 
-        let host_arg = target.args[written_via.arg_position];
+    fn qSTACK(target: Target, position: i32)
+    {
+        let host_arg = target.args[position];
         if (host_arg.written_via)
-            return ret ~ host_arg.written_via.qSTACK(target);
+            return host_arg.written_via.qSTACK(nodeown: target);
 
-        return ret;
+        return "";
     }
 
 
@@ -5673,7 +5678,8 @@ pub fn solve(
                             ~ " at call to " ~ callsite.target.qWHAT
                             ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
-                            ~ "\n\t\t... on next loop iteration."); // TODO loop starts at x:x!
+                            ~ "\n\t... on next loop iteration.\n\n\tWritten"
+                            ~ qSTACK(callsite.target, positions[i])); // TODO loop starts at x:x!
                 }
             }
 
