@@ -44,7 +44,6 @@ let USE_ref_to_mutref       = true;
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
 let USE_named_block_rets    = false;
-let USE_autoval             = true;
 
 let SELF_TEST               = true;
 
@@ -5279,7 +5278,7 @@ pub fn solve(
     fn BORROWCK_resolveByMutvar(target: i32)
     {
         ref o = GET_mut(nested(target));
-        if (o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy || !USE_autoval)
+        if (o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy)
             return false;
 
         o.kind == "var" && !(o.flags & F_REF) || fail("!var or F_REF");
@@ -5670,8 +5669,9 @@ pub fn solve(
                 if (u.target)
                 {
                     if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
-                        fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
-                            ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
+                        fail("Write to " ~ target.bck_name.qBAD
+                            ~ " at call to " ~ callsite.target.qWHAT
+                            ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
                             ~ "\n\t\t... on next loop iteration."); // TODO loop starts at x:x!
                 }
