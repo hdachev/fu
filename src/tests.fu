@@ -363,6 +363,11 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn add3(a: i32, b = 3) a + b;
+        fn main() add3(-3);
+    `);
+
+    ZERO(`
         fn add3(a: $T, b = 3) a + b;
         struct v1 { x: i32; };
         fn +(a: v1, b: i32) v1(a.x + b);
