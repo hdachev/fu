@@ -2945,7 +2945,7 @@ pub fn solve(
                 }
 
                 // Unconditionally replacing the stuff.
-                ref overload    = GET_mut(target);
+                let overload    = GET(target);
                 ref ext         = target.EXT_mut;
 
                 mut change      = false;
@@ -2971,7 +2971,9 @@ pub fn solve(
                 ext.max     = max;
                 ext.args    = args;
 
-                overload.type   = retval;
+                shadow ref overload = GET_mut(target);
+                overload.type       = retval;
+
                 if (isInline)
                     return;
 
@@ -4960,24 +4962,31 @@ pub fn solve(
         return "\n\tAt call to " ~ o.name.qID;
     }
 
-    fn qSTACK(written_via: ArgWrite, nodeown?: Target)
+    fn qSTACK(written_via: ArgWrite, nodeown?: Target, mut seen?: Target[])
     {
-        if (written_via.nodeidx < 0)
+        if (written_via.nodeidx < 0 || seen.len >= 8)
             return "";
 
         let callsite = written_via.callsite(nodeown || _current_fn.target);
         let target   = callsite.target;
 
-        return "\n            via " ~ target.qWHAT
+        // Recursion abort.
+        let rec = seen.has(target) && "recursively ";
+        seen ~= target;
+
+        let via = rec ? ""
+                : qSTACK(target, written_via.arg_position, :seen);
+
+        return "\n            " ~ rec ~ "via " ~ target.qWHAT
              ~ " at " ~ callsite.token.addr_and_snippet
-             ~ qSTACK(target, written_via.arg_position);
+             ~ via;
     }
 
-    fn qSTACK(target: Target, position: i32)
+    fn qSTACK(target: Target, position: i32, mut seen?: Target[])
     {
         let host_arg = target.args[position];
         if (host_arg.written_via)
-            return host_arg.written_via.qSTACK(nodeown: target);
+            return host_arg.written_via.qSTACK(nodeown: target, :seen);
 
         return "";
     }
