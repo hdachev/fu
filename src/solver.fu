@@ -229,7 +229,7 @@ pub fn solve(
     using fn EXT(target: Target)
     {
         if (target.modid == module.modid)
-            return _scope.extended.grow_if_oob(target.index - 1);
+            return _scope.extended.unless_oob(target.index - 1);
 
         return target.modid >= 0
             && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index - 1);
