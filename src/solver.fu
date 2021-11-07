@@ -5276,6 +5276,28 @@ pub fn solve(
             : add_ref(type, Lifetime_temporary);
     }
 
+    fn BORROWCK_resolveByMutvar(target: i32)
+    {
+        ref o = GET_mut(nested(target));
+        if (o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy || !USE_autoval)
+            return false;
+
+        o.kind == "var" && !(o.flags & F_REF) || fail("!var or F_REF");
+        o.type.lifetime.uni0n.len == 1        || fail("lt.len != 1"  );
+        if !(o.flags & F_MUT)
+        {
+            o.flags  |= F_MUT;
+            let t_let = clear_refs(o.type);
+            mut init  = o.solved.items[LET_INIT];
+
+            maybeCopyOrMove(init, t_let);
+            o.solved.MUT.items[LET_INIT] = init;
+            o.solved.MUT.type = t_let;
+        }
+
+        return true;
+    }
+
     fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
     {
         // Reconstruct a maybe-copyable value type -
@@ -5575,30 +5597,12 @@ pub fn solve(
                 let u = events.invalidated_by[target];
                 if (u.target)
                 {
-                    ref o = GET_mut(nested(target));
-                    if !(o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy || !USE_autoval)
-                    {
-                        o.kind == "var" && !(o.flags & F_REF) || fail("!var or F_REF");
-                        o.type.lifetime.uni0n.len == 1        || fail("lt.len != 1"  );
-                        if !(o.flags & F_MUT)
-                        {
-                            o.flags  |= F_MUT;
-                            let t_let = clear_refs(o.type);
-                            mut init  = o.solved.items[LET_INIT];
-
-                            maybeCopyOrMove(init, t_let);
-                            o.solved.MUT.items[LET_INIT] = init;
-                            o.solved.MUT.type = t_let;
-                        }
-                    }
-                    else if !(options.dev & options::DEV_DisableBCK)
-                    {
+                    if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
                         fail("BORROWCK: Cannot access"
                             ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
                             ~ " " ~ u.target.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
                             ~ RWEvent_stack(u.nodeidx, u.target));
-                    }
                 }
             }
 
@@ -5663,11 +5667,14 @@ pub fn solve(
             {
                 let other = invalidates[i];
                 let u = events.used_in_a_loop.unless_oob(other);
-                if (u.target && !(options.dev & options::DEV_DisableBCK))
-                    fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
-                        ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
-                        ~ u.callsite.token.addr_and_snippet
-                        ~ "\n\t\t... on next loop iteration."); // TODO loop starts at x:x!
+                if (u.target)
+                {
+                    if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
+                        fail("BORROWCK: Write to `" ~ target.bck_name ~ "`"
+                            ~ " invalidates the use of `" ~ other.bck_name ~ "` at "
+                            ~ u.callsite.token.addr_and_snippet
+                            ~ "\n\t\t... on next loop iteration."); // TODO loop starts at x:x!
+                }
             }
 
             // Track writes, easy.
