@@ -2329,6 +2329,29 @@ pub fn runTests()
     `);
 
     FAIL(`
+        fn test(ref woot: i32[], x: i32, y: i32) {
+            ref b = woot[y];
+            ref a = woot[x]; // the 'shadow ref' below ...
+            if (a == 1) {
+                //*F
+                /*/
+                shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...
+                //*/
+                a += 1;
+            }
+            else {
+                b += 1; // ... and this should ignore cond write above.
+            }
+        }
+
+        fn main() {
+            mut x = [ -1, +1 ];
+            test(x, 0, 1);
+            return x[1] - 2;
+        }
+    `);
+
+    FAIL(`
         fn test(ref a: i32[], ref b: i32[]) {
             //*F
             if (a[0] += 1)
