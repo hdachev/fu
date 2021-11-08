@@ -58,7 +58,7 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
             continue;
 
         const uint64_t ci = (uint64_t(c) - ((c < std::byte('a')) ? uint64_t(std::byte('0')) : uint64_t(std::byte('a'))));
-        const uint64_t last_1 = absval;
+        uint64_t last_1 = absval;
         absval *= base;
         absval += ci;
         fu_STR* _0;

@@ -859,7 +859,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         for (int i_1_1 = 0; i_1_1 < cpp_1.unity.size(); i_1_1++)
         {
             const int m = cpp_1.unity[i_1_1];
-            const int u = unit_mapping[m];
+            int u = unit_mapping[m];
             if (u != unit)
             {
                 for (int i_2 = u; i_2 < unit_mapping.size(); i_2++)

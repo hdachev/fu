@@ -238,12 +238,12 @@ inline constexpr int F_PURE = (1 << 13);
 
                                 #ifndef DEF_F_CONVERSION
                                 #define DEF_F_CONVERSION
-inline constexpr int F_CONVERSION = (1 << 15);
+inline constexpr int F_CONVERSION = (1 << 14);
                                 #endif
 
                                 #ifndef DEF_F_OPT_ARG
                                 #define DEF_F_OPT_ARG
-inline constexpr int F_OPT_ARG = (1 << 16);
+inline constexpr int F_OPT_ARG = (1 << 15);
                                 #endif
 
                                 #ifndef DEF_F_MUT
@@ -299,6 +299,11 @@ inline constexpr int F_SPREAD_INLINE = (1 << 25);
                                 #ifndef DEF_F_REST_ARG
                                 #define DEF_F_REST_ARG
 inline constexpr int F_REST_ARG = (1 << 26);
+                                #endif
+
+                                #ifndef DEF_F_TODO_FIX_RRET
+                                #define DEF_F_TODO_FIX_RRET
+inline constexpr int F_TODO_FIX_RRET = (1 << 27);
                                 #endif
 
                                 #ifndef DEF_F_TEMPLATE
@@ -585,7 +590,7 @@ static s_Node createPrefix(const fu_STR& op, s_Node&& expr, const int modid, con
 {
     if (((op == "+"_fu) || (op == "-"_fu)) && ((expr.kind == "int"_fu) || (expr.kind == "real"_fu)))
     {
-        const std::byte sign = expr.value[0];
+        std::byte sign = expr.value[0];
         if ((sign == std::byte('+')) || (sign == std::byte('-')))
             expr.value.mutref(0) = ((sign == only_YeU3(op)) ? std::byte('+') : std::byte('-'));
         else
@@ -1705,7 +1710,7 @@ static s_Node parseStructItem(const fu_VEC<s_Token>& tokens_1, int& _idx, int& _
 
 static fu_VEC<s_Node> parseBlockLike(fu::view<std::byte> endKind, fu::view<std::byte> endVal, const bool sTruct, int& _idx, const fu_VEC<s_Token>& tokens_1, int& _col0, fu_VEC<fu_STR>& warnings, const s_Options& options, int& _loc, const fu_STR& fname_1, int& _precedence, const int modid, int& _fnDepth, fu_VEC<fu_STR>& _dollars, int& _dollarAuto, int& _numReturns, bool& _hasPUB, fu_VEC<fu_STR>& _imports, int& _anonFns)
 {
-    const int line0 = (_idx ? tokens_1[(_idx - 1)].line : (*(const int*)fu::NIL));
+    int line0 = (_idx ? tokens_1[(_idx - 1)].line : (*(const int*)fu::NIL));
     int col00 = _col0;
     int colNN = -1;
     int lineNN = line0;

@@ -1314,7 +1314,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
 
                 TODO_split = true;
             };
-            const int start00 = start0;
+            int start00 = start0;
             while (start0 && (src_2[(start0 - 1)] == std::byte(' ')))
                 start0--;
 
