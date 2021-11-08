@@ -128,7 +128,7 @@ pub fn solve(
 
     //
 
-    using fn GET(h: Helpers): HelpersData
+    using inline fn GET(h: Helpers): HelpersData
     {
         return _helpers_data[h.index];
     }
@@ -1961,31 +1961,36 @@ pub fn solve(
 
     fn TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx: i32)
     {
-        ref vars = _helpers[helpers_idx].vars; // TODO BORROWCK danglefix
+        ref vars = _helpers[helpers_idx].vars;
+
+        mut implicits: i32[];
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
             let var = GET(nested(:index));
-
-            // TODO FIX ARGSTEAL Lift implicit arguments up -
-            //  they pop up randomly during bodysolve.
             if (var.flags & F_ARG)
             {
                 var.flags & F_IMPLICIT || fail(
-                    "This shouldnt happen for regular arguments.");
+                    "BUG: Non-implicit arg found during argSteal up.");
 
-                for (shadow mut i = helpers_idx; i --> 0; )
-                {
-                    let parent = _helpers[i]; // good luck bck-ing this
-                    if (parent.isFnOrType)
-                    {
-                        parent.vars ~= index;
-                        break;
-                    }
-                }
-
+                implicits ~= index;
                 vars.splice(i, 1);
             }
+        }
+
+        if (implicits)
+        {
+            for (shadow mut i = helpers_idx; i --> 0; )
+            {
+                let parent = _helpers[i];
+                if (parent.isFnOrType)
+                {
+                    parent.vars ~= implicits;
+                    return;
+                }
+            }
+
+            fail("BUG: Cannot find a function or type frame to argSteal implicits to.");
         }
     }
 
@@ -3328,12 +3333,14 @@ pub fn solve(
 
             if (max && !min) min++;
 
-            ref overload    = GET_mut(out_target);
+            //
             ref ext         = EXT_mut(out_target);
-
             ext.min         = min;
             ext.max         = max;
             ext.args        = args;
+
+            //
+            ref overload    = GET_mut(out_target);
             overload.type   = out_type;
 
             if (CHANGE && overload.callsites)
