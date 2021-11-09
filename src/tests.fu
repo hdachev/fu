@@ -2370,6 +2370,52 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        nocopy struct Woot {
+            x: i32[];
+            y: i32[];
+        };
+
+        fn test(ref w: Woot) {
+            ref x = w.x;
+            //*F
+            ref y = w.x;
+            /*/
+            ref y = w.y;
+            //*/
+            x ~= y;
+        }
+
+        fn main() {
+            mut w: Woot;
+            test(w);
+            return w.x.len;
+        }
+    `);
+
+    TODO(`
+        nocopy struct Woot {
+            x: i32[];
+            y: i32[];
+        };
+
+        fn test(ref w0: Woot, ref w1: Woot) {
+            ref x = w0.x;
+            //*F
+            ref y = w1.x;
+            /*/
+            ref y = w1.y;
+            //*/
+            x ~= y;
+        }
+
+        fn main() {
+            mut w: Woot;
+            test(w, w);
+            return w.x.len;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
