@@ -4996,13 +4996,27 @@ pub fn solve(
         if (node.kind != "call")
             return "\n\tVia " ~ node.kind.qKW;
 
-        // TODO this is the target we've written to,
-        //  see which mutref args aliase it at the callsite, then descend.
-        //
-        if (target) {}
+        mut stack: string;
+        if (target)
+        {
+            let uni0n = nested(target).type.lifetime.uni0n;
+            if (uni0n) for (mut i = 0; i < node.items.len; i++)
+            {
+                let arg = node.items[i];
+                if (arg.lifetime.uni0n.set::inter(uni0n))
+                {
+                    let written_via = node.target.args[i].written_via;
+                    if (written_via)
+                    {
+                        stack = qSTACK(:written_via, node.target);
+                        break;
+                    }
+                }
+            }
+        }
 
         let o = GET(node.target);
-        return "\n\tAt call to " ~ o.name.qID;
+        return "\n\tAt call to " ~ o.name.qID ~ stack;
     }
 
     fn qSTACK(written_via: ArgWrite, nodeown?: Target, mut seen?: Target[])
@@ -5654,7 +5668,7 @@ pub fn solve(
                 if (u.target)
                 {
                     if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
-                        fail("BORROWCK: Cannot access"
+                        fail("Cannot access"
                             ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
                             ~ " " ~ u.target.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
