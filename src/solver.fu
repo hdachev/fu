@@ -76,6 +76,41 @@ pub fn solve(
     mut _field_items:   ScopeItem[];
     mut _notes:         i32;
 
+    struct EventsSnap
+    {
+        // TODO Consider opti -
+        //  we could replace these with bitsets,
+        //   and keep this as details only, not restored/merged.
+        //
+        invalidated_by:     RWEvent[];
+        args_written:       i32[];
+    };
+
+    struct Events
+    {
+        using snap:         EventsSnap;
+        used_in_a_loop:     RWEvent[];
+
+        // The arguments at risk aparata.
+        args_in_a_loop:     i32[];
+        args_written_via:   ArgWrite[];
+    };
+
+    fn Events_merge(ref events: Events, snap: EventsSnap)
+    {
+        fn Events_merge(ref dest: $T[], src: $T[])
+        {
+            if (dest.len < src.len)
+                dest.grow(src.len);
+
+            for (mut i = 0; i < src.len; i++)
+                dest[i] ||= src[i];
+        }
+
+        events.invalidated_by .Events_merge(snap.invalidated_by);
+        events.args_written   .Events_merge(snap.args_written);
+    }
+
     struct CurrentFn
     {
         using out:      SolvedNode;
@@ -6046,6 +6081,31 @@ pub fn solve(
         ////////////////////////////////////////////////////////////////////////
     }
 
+    fn bck_if(node: SolvedNode)
+    {
+        let items = node.items;
+
+        // Cond.
+        bck_node(items[0]);
+
+        // Cons //////////////////////////////////////////////
+        let e_Restore_AfterCond     = _current_fn.events.snap;
+        //////////////////////////////////////////////////////
+
+        bck_node(items[1]);
+
+        // Alt ///////////////////////////////////////////////
+        let e_Merge_AfterCons       = _current_fn.events.snap;
+        _current_fn.events.snap     = e_Restore_AfterCond;
+        //////////////////////////////////////////////////////
+
+        bck_node(items[2]);
+
+        // Done //////////////////////////////////////////////
+        _current_fn.events   .Events_merge(e_Merge_AfterCons);
+        //////////////////////////////////////////////////////
+    }
+
 
     // Borrow check router.
 
@@ -6070,8 +6130,8 @@ pub fn solve(
             return bck_let(node);
 
         // Isolate cons from alt and combine effects on exit.
-        // if (k == "if")
-        //     ...
+        if (k == "if")
+            return bck_if(node);
 
         // If broken-from, hide effects and append to jumped-to.
         //

@@ -32,17 +32,6 @@ pub struct RWEvent
     nodeidx:        i32;
 };
 
-pub struct Events
-{
-    invalidated_by: RWEvent[];
-    used_in_a_loop: RWEvent[];
-
-    // The arguments at risk aparata.
-    args_written:       i32[];
-    args_in_a_loop:     i32[];
-    args_written_via:   ArgWrite[];
-};
-
 pub struct Helpers
 {
     index:          i32;
@@ -63,10 +52,6 @@ pub struct HelpersData
 
     returns?:       SolvedNode[];
     vars?:          i32[];
-
-    // Events that occured in never-branches
-    //  that end with a jump out of this block.
-    on_exit?:       Events;
 };
 
 pub fn target(si: ScopeItem)
