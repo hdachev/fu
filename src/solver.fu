@@ -1725,8 +1725,6 @@ pub fn solve(
             //
             if (t.spec_of && t.type.is_ref)
             {
-                let argLets = t.arg_lets;
-
                 mut relaxed: SolvedNode[];
                 for (mut i = 0; i < node.items.len; i++)
                 {
@@ -1747,7 +1745,7 @@ pub fn solve(
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(argLets[i].target.index)))
+                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(t.arg_lets[i].target.index)))
                     {
                         mut type = orig.type;
                         if (type.try_relax(:slot, :relax_mask))
@@ -3426,11 +3424,12 @@ pub fn solve(
             o.status &= ~SS_UPDATED;
 
             mut dedupe: Target;
+            let callsites = o.callsites;
 
             NEXT_USER:
-            for (mut i = 0; i < o.callsites.len; i++)
+            for (mut i = 0; i < callsites.len; i++)
             {
-                let callsite = o.callsites[i].nodeown;
+                let callsite = callsites[i].nodeown;
                 if (callsite == dedupe)
                     continue;
 
@@ -3481,6 +3480,8 @@ pub fn solve(
         }
 
         //
+        shadow ref o = GET_mut(t);
+
         if !(o.status & SS_DIRTY)
         {
             o.status |= SS_FINALIZED;
@@ -5713,6 +5714,8 @@ pub fn solve(
             if (!target)
                 continue;
 
+            let position = positions[i];
+
             // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
             let invalidates = flow.invalidates.unless_oob(target);
@@ -5730,7 +5733,7 @@ pub fn solve(
                             ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
                             ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                            ~ qSTACK(callsite.target, positions[i])); // TODO loop starts at x:x!
+                            ~ qSTACK(callsite.target, position)); // TODO loop starts at x:x!
                 }
             }
 
@@ -5747,7 +5750,7 @@ pub fn solve(
             {
                 events.args_written.set::add(target);
                 events.args_written_via.grow_if_oob(target) ||= ArgWrite(
-                    :callsite.nodeidx, arg_position: positions[i]);
+                    :callsite.nodeidx, arg_position: position);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
