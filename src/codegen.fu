@@ -6,6 +6,7 @@ import context;
 import bitset;
 import cpp;
 import module;
+import structs;
 import fail;
 
 let M_STMT              = 1 << 0;

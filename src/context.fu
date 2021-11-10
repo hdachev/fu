@@ -2,6 +2,7 @@ import lexer;
 import parser;
 import helpers;
 import module;
+import structs;
 
 
 //
@@ -11,12 +12,6 @@ pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
 
 pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
-
-pub fn structIndex(canon: string): i32
-{
-    mut offset = 1;
-    return canon[0] == '$' ? parse10i32(:offset, canon) : -1;
-}
 
 pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
 {
@@ -181,9 +176,6 @@ pub fn lookupTypeImports(type: Type)
 pub fn lookupTypeConverts(type: Type)
     tryLookupStruct(type).converts;
 
-pub fn isStruct(type: Type) {
-    return type.canon.starts(with: '$');
-}
 
 
 //
