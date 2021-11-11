@@ -1,10 +1,10 @@
 import helpers;
 import module;
 
-pub fn createStructCanon(index: i32, name: string): string
+pub fn createStructCanon(index: i32, lax name: string): string
 {
     // Name is redundant here, only useful for debug.
-    return "$" ~ index ~ name;
+    return "$" ~ index; // ~ name;
 }
 
 pub fn isStruct(type: Type): bool

@@ -28,11 +28,16 @@ let M_MOVABLE           = 1 << 11;
 
 type BitSet2D = bitset::BitSet[];
 
-fn add_once(ref bs: BitSet2D, target: Target): bool
+fn add_once(ref bs: BitSet2D, i: i32, j: i32): bool
 {
     return bs
-        .grow_if_oob(target.modid)
-        .add_once(target.index);
+        .grow_if_oob(i)
+        .add_once(j);
+}
+
+fn add_once(ref bs: BitSet2D, target: Target): bool
+{
+    return bs.add_once(target.modid, target.index);
 }
 
 pub fn cpp_codegen(
@@ -41,7 +46,9 @@ pub fn cpp_codegen(
     root: SolvedNode): CodegenOutput
 {
     mut _libs: Map(string, string);
-    mut _tfwd: Map(string, string);
+
+    mut _tfwd: BitSet2D;
+    mut _tfwd_src: string[];
 
     mut _ffwd: BitSet2D;
     mut _ffwd_src: string[];
@@ -270,39 +277,20 @@ pub fn cpp_codegen(
         }
 
         //
-        let tdef = lookupStruct(type) || fail("TODO: " ~ type.canon);
-        let id   = structId(type);
+        let s   = lookupStruct(type) || fail("TODO: " ~ type.canon);
+        let id  = "s_" ~ s.name;
 
-        if (!_tfwd.has(c))
+        if (_tfwd.add_once(type.modid, type.canon.structIndex))
         {
-            _tfwd[c] = "struct " ~ id ~ ";\n";
-            _tdef ~= declareStruct(type, tdef);
+            _tfwd_src ~= "struct " ~ id ~ ";\n";
+            _tdef ~= declareStruct(id, type, s);
         }
 
         return id;
     }
 
-    fn structId(t: Type): string
+    fn declareStruct(id: string, t: Type, s: Struct): string
     {
-        for (mut i = 0; i < t.canon.len; i++)
-        {
-            let x = t.canon[i];
-            if (x >= 'a' && x <= 'z' ||
-                x >= 'A' && x <= 'Z' ||
-                x == '_')
-            {
-                return "s_" ~ t.canon.slice(i);
-                break;
-            }
-        }
-
-        fail("Bad structId: `" ~ t.canon ~ "`.");
-    }
-
-    fn declareStruct(t: Type, s: Struct): string
-    {
-        let id = structId(t);
-
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id
                 ~ "\nstruct " ~ id ~ "\n{";
@@ -427,7 +415,7 @@ pub fn cpp_codegen(
         let main   = cgMain();
 
         let header = collectDedupes(_libs)
-                   ~ collectDedupes(_tfwd, leadingNewline: true)
+                   ~ collectDedupes(_tfwd_src, leadingNewline: true)
                    ~ collectDedupes(_ffwd_src, leadingNewline: true)
                    ~               (_tdef)
                    ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
