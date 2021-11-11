@@ -103,9 +103,7 @@ pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_T
     module.out.types ~= Struct(:name);
 
     // Assume everything, we resolve disappointment.
-    let specualtive_quals = flags & F_NOCOPY
-        ? q_trivial
-        : q_rx_copy | q_trivial;
+    let specualtive_quals = !(flags & F_NOCOPY) && q_rx_copy;
 
     return Type(ValueType(:canon, MODID,
         quals: specualtive_quals));
@@ -113,7 +111,7 @@ pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_T
 
 pub fn despeculateStruct(mut type: Type)
 {
-    type.quals &= ~(q_rx_copy | q_trivial);
+    type.quals &= ~q_rx_copy;
     return type;
 }
 

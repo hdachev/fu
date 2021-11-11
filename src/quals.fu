@@ -1,0 +1,26 @@
+import module;
+
+pub fn is_primitive(t: Type) {
+    let c = t.canon[0];
+    return c == 'u' || c == 'i' || c == 'f' || c == 'b';
+}
+
+pub fn is_arithmetic(t: Type) {
+    let c = t.canon[0];
+    return c == 'u' || c == 'i' || c == 'f';
+}
+
+pub fn is_integral(t: Type) {
+    let c = t.canon[0];
+    return c == 'u' || c == 'i';
+}
+
+pub fn is_unsigned(t: Type) {
+    let c = t.canon[0];
+    return c == 'u';
+}
+
+pub fn is_floating_pt(t: Type) {
+    let c = t.canon[0];
+    return c == 'f';
+}

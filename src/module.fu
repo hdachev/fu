@@ -59,6 +59,7 @@ pub struct Struct
     converts?:  Target[];
 
     flat_cnt?:  i32;
+    all_triv?:  bool;
 };
 
 

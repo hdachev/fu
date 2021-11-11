@@ -3,6 +3,7 @@ import parser;
 import helpers;
 import module;
 import structs;
+import quals;
 
 
 //
@@ -166,6 +167,9 @@ pub fn lookupStruct(
     return ctx.modules[type.modid].out.types[type.canon.structIndex]
         || assert();
 }
+
+pub fn is_trivial(type: Type)
+    type.is_primitive || type.isStruct && lookupStruct(type).all_triv;
 
 pub fn tryLookupStruct(type: Type)
     type.isStruct && lookupStruct(type);

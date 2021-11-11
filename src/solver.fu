@@ -4,6 +4,7 @@ import parser;
 import scope;
 import context;
 import types;
+import quals;
 import structs;
 import effects;
 import module;
@@ -3246,6 +3247,8 @@ pub fn solve(
         mut structImports:  i32[];
         mut flat_cnt:       i32;
 
+        mut all_triv = true;
+
         // Struct members, pass 0.
         fn solveMember(shadow node: Node)
         {
@@ -3304,6 +3307,8 @@ pub fn solve(
                 field.type = member.type;
 
                 flat_cnt += tryLookupStruct(member.type).flat_cnt || 1;
+                if (all_triv)
+                    all_triv = member.type.is_trivial;
 
                 if (member.flags & F_USING)
                 {
@@ -3337,8 +3342,12 @@ pub fn solve(
                 s.imports   = structImports;
 
                 let flat0   = s.flat_cnt;
+                let triv0   = s.all_triv;
+
                 s.flat_cnt  = flat_cnt;
-                CHANGE    ||= flat0 != flat_cnt;
+                s.all_triv  = all_triv;
+
+                CHANGE    ||= flat0 != flat_cnt || triv0 != all_triv;
 
                 GET(s.target).status & SS_DID_START || fail(
                     "Setting stuff but missing SS_DID_START.");
@@ -4555,6 +4564,32 @@ pub fn solve(
 
         return fail("TODO evalTypePattern fallthrough: "
                     ~ node.kind ~ "(" ~ node.items.len ~ ")");
+    }
+
+    fn type_has(type: Type, tag: string)
+    {
+        if (tag == "trivial")
+            return type.is_trivial;
+
+        if (tag == "copy")
+            return type.is_rx_copy;
+
+        if (tag == "arithmetic")
+            return type.is_arithmetic;
+
+        if (tag == "primitive")
+            return type.is_primitive;
+
+        if (tag == "integral")
+            return type.is_integral;
+
+        if (tag == "unsigned")
+            return type.is_unsigned;
+
+        if (tag == "floating_point")
+            return type.is_floating_pt;
+
+        return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }
 
 

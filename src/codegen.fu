@@ -1,6 +1,7 @@
 import helpers;
 import parser;
 import types;
+import quals;
 import scope;
 import context;
 import bitset;

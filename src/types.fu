@@ -1,15 +1,12 @@
 import helpers;
 import module;
 import fail;
+import quals;
 
 let q_mutref            = 1 << 0;
 let q_ref               = 1 << 1;
 pub let q_rx_copy       = 1 << 2;
 let q_rx_resize         = 1 << 3;
-
-// We want this gone ////////////
-pub let q_trivial       = 1 << 4;
-/////////////////////////////////
 
 let TAGS =
 [
@@ -134,27 +131,27 @@ pub fn ==(a: Type, b: Type)
 
 //
 
-pub let Trivial     = q_rx_copy  | q_trivial;
+pub let Primitive   = q_rx_copy;
 
-pub let t_i8        = Type(ValueType(modid: 0, canon: "i8",  quals: Trivial));
-pub let t_i16       = Type(ValueType(modid: 0, canon: "i16", quals: Trivial));
-pub let t_i32       = Type(ValueType(modid: 0, canon: "i32", quals: Trivial));
-pub let t_i64       = Type(ValueType(modid: 0, canon: "i64", quals: Trivial));
+pub let t_i8        = Type(ValueType(modid: 0, canon: "i8",  quals: Primitive));
+pub let t_i16       = Type(ValueType(modid: 0, canon: "i16", quals: Primitive));
+pub let t_i32       = Type(ValueType(modid: 0, canon: "i32", quals: Primitive));
+pub let t_i64       = Type(ValueType(modid: 0, canon: "i64", quals: Primitive));
 
-pub let t_u8        = Type(ValueType(modid: 0, canon: "u8",  quals: Trivial));
-pub let t_u16       = Type(ValueType(modid: 0, canon: "u16", quals: Trivial));
-pub let t_u32       = Type(ValueType(modid: 0, canon: "u32", quals: Trivial));
-pub let t_u64       = Type(ValueType(modid: 0, canon: "u64", quals: Trivial));
+pub let t_u8        = Type(ValueType(modid: 0, canon: "u8",  quals: Primitive));
+pub let t_u16       = Type(ValueType(modid: 0, canon: "u16", quals: Primitive));
+pub let t_u32       = Type(ValueType(modid: 0, canon: "u32", quals: Primitive));
+pub let t_u64       = Type(ValueType(modid: 0, canon: "u64", quals: Primitive));
 
-pub let t_f32       = Type(ValueType(modid: 0, canon: "f32", quals: Trivial));
-pub let t_f64       = Type(ValueType(modid: 0, canon: "f64", quals: Trivial));
+pub let t_f32       = Type(ValueType(modid: 0, canon: "f32", quals: Primitive));
+pub let t_f64       = Type(ValueType(modid: 0, canon: "f64", quals: Primitive));
 
 pub let t_void      = Type(ValueType(modid: 0, canon: "void",   quals: 0));
-pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",   quals: Trivial));
+pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",   quals: Primitive));
 pub let t_never     = Type(ValueType(modid: 0, canon: "never",  quals: 0));
 pub let t_zeroes    = Type(ValueType(modid: 0, canon: "zeroes", quals: 0));
 
-pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",   quals: Trivial));
+pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",   quals: Primitive));
 
 
 //
@@ -167,33 +164,7 @@ pub fn is_zeroes(t: Type) t.vtype == t_zeroes.vtype;
 
 //
 
-pub fn is_trivial(t: Type) !!(t.quals & q_trivial);
 pub fn is_rx_copy(t: Type) !!(t.quals & q_rx_copy);
-
-pub fn is_primitive(t: Type) {
-    let c = t.canon[0];
-    return c == 'u' || c == 'i' || c == 'f' || c == 'b';
-}
-
-pub fn is_arithmetic(t: Type) {
-    let c = t.canon[0];
-    return c == 'u' || c == 'i' || c == 'f';
-}
-
-pub fn is_integral(t: Type) {
-    let c = t.canon[0];
-    return c == 'u' || c == 'i';
-}
-
-pub fn is_unsigned(t: Type) {
-    let c = t.canon[0];
-    return c == 'u';
-}
-
-pub fn is_floating_pt(t: Type) {
-    let c = t.canon[0];
-    return c == 'f';
-}
 
 
 // TODO non zsts, non-empty structs, etc.
@@ -526,35 +497,6 @@ pub fn tryClear_map(type: Type): MapFields
     }
 
     assert();
-}
-
-
-//
-
-pub fn type_has(type: Type, tag: string)
-{
-    if (tag == "trivial")
-        return type.is_trivial;
-
-    if (tag == "copy")
-        return type.is_rx_copy;
-
-    if (tag == "arithmetic")
-        return type.is_arithmetic;
-
-    if (tag == "primitive")
-        return type.is_primitive;
-
-    if (tag == "integral")
-        return type.is_integral;
-
-    if (tag == "unsigned")
-        return type.is_unsigned;
-
-    if (tag == "floating_point")
-        return type.is_floating_pt;
-
-    return BUG("Unknown type tag: `" ~ tag ~ "`.");
 }
 
 

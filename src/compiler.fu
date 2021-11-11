@@ -44,7 +44,7 @@ fn compile(fname: string, via: string = "", options?: Options)
         // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
         module.out || throw (
-            "import circle: `" ~ via ~ fname ~ "`.");
+            "import circle: `" ~ fname ~ "\n\t<- " ~ via ~ "`.");
     }
 
     // We're good to go here.
@@ -55,7 +55,7 @@ fn compile(fname: string, via: string = "", options?: Options)
         for (mut i = 0; i < fuzimports.len; i++)
             compile(:options,
                 fname: resolveFile(fuzimports[i]),
-                  via: fname ~ " <- " ~ via);
+                  via: fname ~ (via && "\n\t<- " ~ via));
 
         //
         let stat0 = ModuleStat_now();
