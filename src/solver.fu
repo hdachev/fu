@@ -5416,11 +5416,10 @@ pub fn solve(
     {
         // Reconstruct a maybe-copyable value type -
         //  slot is a ref which may not need q_rx_copy.
-        mut temporary = clear_refs(slot);
-        temporary.quals |= node.type.quals & q_rx_copy;
+        shadow let slot = slot.clear_refs().make_copyable();
 
         //
-        return maybeCopyOrMove(:node, temporary);
+        return maybeCopyOrMove(:node, slot);
     }
 
     fn implicitOperatorBool(node: SolvedNode)
