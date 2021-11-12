@@ -1938,7 +1938,10 @@ pub fn solve(
             }
 
             // TODO FIX Clear this up, there's local lifetimes in the return value.
-            h.ret_actual.lifetime = [];
+            if (h.ret_actual.lifetime)
+                h.ret_actual.lifetime = Lifetime_placeholder();
+
+            h.ret_actual.is_ref;
         }
 
         // This will work ideally in a reverse pass,
@@ -1970,6 +1973,11 @@ pub fn solve(
 
         if (!USE_named_block_rets)
             mcom_BlockReturns_CopyOrMoveDecision(:h);
+
+
+        //
+
+        h.ret_actual.lifetime.Lifetime_placeholder_remove();
 
 
         //

@@ -112,6 +112,24 @@ pub fn Lifetime_temporary(): Lifetime =
     Lifetime(uni0n: [ Region_TEMP ]);
 
 
+// TODO FIX Need something that looks like a lifetime whilst reworking block returns.
+
+pub fn Lifetime_placeholder(): Lifetime =
+    Lifetime(uni0n: [ Region(index: 0) ]);
+
+pub fn Lifetime_placeholder_remove(ref lt: Lifetime) {
+    for (mut i = 0; i < lt.uni0n.len; i++) {
+        let r = lt.uni0n[i].index;
+        if (r >= 0) {
+            if (r == 0)
+                lt.uni0n.splice(i, 1);
+
+            break;
+        }
+    }
+}
+
+
 //
 
 fn ==(a: ValueType, b: ValueType)
