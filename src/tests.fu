@@ -6548,6 +6548,47 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn grow_if_oob(a: &mut $T[], i: i32): &mut $T {
+            if (a.len <= i)
+                a.grow(i + 1);
+
+            return a[i];
+        }
+
+        struct BitSet { _data: u8[]; }
+
+        fn add_once(using _: &mut BitSet, idx: i32): bool {
+            let no_neg = idx < 0 ? -1 : 0;
+            let bucket = idx / 8 | no_neg;
+            let bit    = idx % 8;
+            let mask   = 1 << bit.u8;
+
+            ref entry = _data.grow_if_oob(bucket);
+            if !(entry & mask) {
+                entry |= mask;
+                return true;
+            }
+
+            // Already there.
+            return false;
+        }
+
+        type BitSet2D = BitSet[];
+
+        fn add_once(ref bs: BitSet2D, i: i32, j: i32): bool {
+            return bs
+                .grow_if_oob(i)
+                .add_once(j);
+        }
+
+        fn main() {
+            mut bs: BitSet2D;
+            bs.add_once(9, 9);
+            return bs.len + 1000 * bs[9]._data.len - 2010;
+        }
+    `);
+
 
     // Enum basics.
 
