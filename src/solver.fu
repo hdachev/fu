@@ -1674,6 +1674,9 @@ pub fn solve(
     {
         let k = node.kind;
 
+        //
+        node.MUT.type.try_relax(:slot, :relax_mask);
+
         // Doing these first -
         //  the branches of ands and ors are not relaxed during solve,
         //   since they're likely going to relax further later on.
@@ -1684,21 +1687,9 @@ pub fn solve(
         }
         else if (k == "if")
         {
-            /////////////////////////////////////////////////////
-            // TODO propagate conditions for ifs & loops,      //
-            //  best done in place during solveIf & solveLoop. //
-            /////////////////////////////////////////////////////
-
             propagateType(node.items[1, node.items.len], slot, :relax_mask);
         }
-
-        // Early exit.
-        if !(node.MUT.type.try_relax(:slot, :relax_mask))
-            return;
-
-        //
-        mut t = node.target; // TODO BORROWCK danglefix
-        if (k == "let")
+        else if (k == "let")
         {
             let init = node.items && node.items[LET_INIT];
             if (init)
@@ -1711,12 +1702,9 @@ pub fn solve(
                     node.MUT.type.lifetime = init.type.lifetime;
             }
         }
-
-        // TODO FIX:
-        //  For fns
-        //
         else if (k == "call")
         {
+            mut t = node.target; // TODO BORROWCK danglefix
             if (t.kind == "field")
                 return node.items[0].propagateType(node.type, :relax_mask);
 
@@ -1796,7 +1784,7 @@ pub fn solve(
                             if (next.kind == "__relaxed")
                             {
                                 // println("RELAX `" ~ t.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
-                                orig.propagateType(next.type, relax_mask: RELAX_all);
+                                orig.propagateType(next.type, :relax_mask);
                             }
                         }
                     }
