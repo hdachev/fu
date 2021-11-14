@@ -377,7 +377,8 @@ pub fn createArray(item: Type): Type
 
 pub fn tryClear_array(type: Type): Type
 {
-    if (!type_isArray(type))
+    let q = q_rx_resize;
+    if (type.quals & q_rx_resize != q_rx_resize || !type_isArray(type))
         return Type();
 
     let vtype = parseType(type.canon.slice(2));

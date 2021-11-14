@@ -4651,7 +4651,7 @@ pub fn solve(
 
     fn solveArrlit(node: Node, type: Type): SolvedNode
     {
-        mut itemType = type && tryClear_array(type);
+        mut itemType = type && tryClear_sliceable(type);
 
         // Default constructor calls.
         if (!itemType && type.isStruct)
