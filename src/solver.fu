@@ -1791,6 +1791,32 @@ pub fn solve(
                 }
             }
         }
+        else if (k == "int" || k == "real" || k == "str" || k == "definit")
+        {
+            //////////////
+            // Nothing! //
+            //////////////
+        }
+        else if (k == "typeparam" || k == "empty")
+        {
+            /////////////////////////
+            // What do we do here? //
+            /////////////////////////
+        }
+        else if (k == "copy" || k == "move")
+        {
+            propagateType(node.items.only, :relax_mask,
+                slot: k == "copy"
+                    ? make_copyable(slot)
+                    : slot);
+
+            if (!node.items.only.is_ref)
+                fail("TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
+        }
+        else
+        {
+            // fail("TODO: propagateType(" ~ k ~ ").");
+        }
     }
 
     fn propagateType(items: [SolvedNode], type: Type, relax_mask!: i32)
