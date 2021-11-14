@@ -1791,13 +1791,13 @@ pub fn solve(
                 }
             }
         }
-        else if (k == "int" || k == "real" || k == "str" || k == "definit")
+        else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit")
         {
             //////////////
             // Nothing! //
             //////////////
         }
-        else if (k == "typeparam" || k == "empty")
+        else if (k == "typeparam" || k == "empty" || k == "fndef")
         {
             /////////////////////////
             // What do we do here? //
@@ -1810,12 +1810,40 @@ pub fn solve(
                     ? make_copyable(slot)
                     : slot);
 
-            if (!node.items.only.is_ref)
-                fail("TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
+            node.items.only.is_ref || fail(
+                "TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
+        }
+        else if (k == "jump")
+        {
+            // TODO enable:
+            //
+            // if (node.items)
+            // {
+            //     let h = Helpers(node.helpers);
+            //
+            //     h.ret_actual || fail(
+            //         "propagateType(jump): h.ret_actual not available.");
+            //
+            //     propagateType(node.items.only, :relax_mask, h.ret_actual);
+            // }
+        }
+        else if (k == "block")
+        {
+            // Propagate types in reverse?
+        }
+        else if (k == "arrlit")
+        {
+            propagateType(node.items, :relax_mask,
+                tryClear_sliceable(slot) || fail(
+                    "propagateType(arrlit): Can't clear solve item type."));
+        }
+        else if (k == "argid")
+        {
+            propagateType(node.items.only, :relax_mask, :slot);
         }
         else
         {
-            // fail("TODO: propagateType(" ~ k ~ ").");
+            fail("TODO: propagateType(" ~ k ~ ").");
         }
     }
 
@@ -1899,7 +1927,7 @@ pub fn solve(
             //  but we just go through the stuff below
             //   to make it look like a regular return.
             //
-            h.returns ~= createJump(target: Target(), items.last);
+            h.returns ~= createJump(target: Target(), items.last, :h);
         }
 
         // There's a conflict between vars & returns.
@@ -3734,20 +3762,20 @@ pub fn solve(
         if (!items)
         {
             reportReturnType(:h, t_void);
-            return createJump(:target);
+            return createJump(:target, :h);
         }
 
         //
-        let jump = createJump(:target, expr);
+        let jump = createJump(:target, expr, :h);
         h.returns ~= jump;
         return jump;
 
     }
 
-    fn createJump(target: Target, expr?: SolvedNode)
+    fn createJump(target: Target, expr?: SolvedNode, h?: Helpers)
     {
         return SolvedNode("jump", type: t_never, :target,
-            items: expr && [ expr ]);
+            items: expr && [ expr ], helpers: h.index);
     }
 
     fn reportReturnType(h!: Helpers, type: Type)
