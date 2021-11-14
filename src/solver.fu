@@ -1813,9 +1813,19 @@ pub fn solve(
             node.items.only.is_ref || fail(
                 "TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
         }
+        else if (k == "arrlit")
+        {
+            propagateType(node.items, :relax_mask,
+                tryClear_sliceable(slot) || fail(
+                    "propagateType(arrlit): Can't clear solve item type."));
+        }
+        else if (k == "argid")
+        {
+            propagateType(node.items.only, :relax_mask, :slot);
+        }
         else if (k == "jump")
         {
-            // TODO enable:
+            // TODO!
             //
             // if (node.items)
             // {
@@ -1829,17 +1839,23 @@ pub fn solve(
         }
         else if (k == "block")
         {
-            // Propagate types in reverse?
+            mut last = true;
+            for (mut i = node.items.len; i --> 0; )
+            {
+                let t = last
+                    ? { last = false; slot }
+                    : t_void;
+
+                propagateType(node.items[i], t, :relax_mask);
+            }
         }
-        else if (k == "arrlit")
+        else if (k == "loop")
         {
-            propagateType(node.items, :relax_mask,
-                tryClear_sliceable(slot) || fail(
-                    "propagateType(arrlit): Can't clear solve item type."));
+            // TODO!
         }
-        else if (k == "argid")
+        else if (k == "root")
         {
-            propagateType(node.items.only, :relax_mask, :slot);
+            propagateType(node.items, t_void, :relax_mask);
         }
         else
         {
@@ -5470,7 +5486,7 @@ pub fn solve(
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
-        isArgument = false): void
+        lax isArgument = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
@@ -6476,6 +6492,12 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "runAllPasses[0]");
         ///////////////////////////////
 
+        // propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
+
+        ///////////////////////////////
+        if (SELF_TEST) test_node(node, "runAllPasses[0.relax]");
+        ///////////////////////////////
+
         bck_node(node);
 
         ///////////////////////////////
@@ -6486,6 +6508,12 @@ pub fn solve(
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "runAllPasses[2]");
+        ///////////////////////////////
+
+        // propagateType(node, node.type, relax_mask: RELAX_all);
+
+        ///////////////////////////////
+        if (SELF_TEST) test_node(node, "runAllPasses[2.relax]");
         ///////////////////////////////
     }
 
