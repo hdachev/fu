@@ -2101,66 +2101,71 @@ pub fn solve(
         for (mut i = vars.len; i --> 0; )
         {
             let index = vars[i];
-            let var = GET(nested(:index));
+            relaxBlockVar(nested(:index), :relax_mask);
+        }
+    }
 
-            //
-            mut usage: Type;
-            if (var.callsites)
+    fn relaxBlockVar(t: Target, relax_mask!: i32)
+    {
+        let var = GET(t);
+
+        //
+        mut usage: Type;
+        if (var.callsites)
+        {
+            usage = var.callsites[0].type;
+
+            // TODO FIX SHALLOW LIFETIMES at jumps the lifetime is unwound, otherwise it aint, so that messes up the inter
+            usage.lifetime = var.type.lifetime; //
+            //////////////////////////////////////
+
+            for (shadow mut i = 1; i < var.callsites.len; i++)
             {
-                usage = var.callsites[0].type;
+                mut other = var.callsites[i].type;
 
-                // TODO FIX SHALLOW LIFETIMES at jumps the lifetime is unwound, otherwise it aint, so that messes up the inter
-                usage.lifetime = var.type.lifetime; //
-                //////////////////////////////////////
+                // TODO FIX SHALLOW LIFETIMES /////
+                other.lifetime = usage.lifetime; //
+                ///////////////////////////////////
 
-                for (shadow mut i = 1; i < var.callsites.len; i++)
+                usage = type_tryIntersect(usage, other) || fail(
+                    "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
+                        ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
+            }
+        }
+        else if (relax_mask == RELAX_all)
+        {
+            var.flags & F_LAX || fail(
+                "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
+
+            GET_mut(t).flags |= F_UNUSED;
+        }
+
+        ref o = GET_mut(t);
+
+        //////////////////////////////////////////////
+        // TODO one of these two is redundant       //
+        o.type.try_relax(slot: usage, :relax_mask); //
+        //////////////////////////////////////////////
+
+        // Either way, try to relax.
+        o.solved.type || fail("!var.solved.type, can`t propagateType");
+        o.solved.propagateType(usage, :relax_mask);
+
+        // Lose the F_MUT annots on values that don't need them.
+        if (!USE_mcom_lets && USE_relax_F_MUT)
+        {
+            if (o.flags & F_MUT && usage.is_mutref)
+            {
+                if (o.solved.items[LET_INIT].is_ref)
                 {
-                    mut other = var.callsites[i].type;
-
-                    // TODO FIX SHALLOW LIFETIMES /////
-                    other.lifetime = usage.lifetime; //
-                    ///////////////////////////////////
-
-                    usage = type_tryIntersect(usage, other) || fail(
-                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
-                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
+                    mut init = o.solved.items[LET_INIT];
+                    maybeCopyOrMove(init, o.solved.type);
+                    o.solved.MUT.items[LET_INIT] = init;
                 }
             }
-            else if (relax_mask == RELAX_all)
+            else
             {
-                var.flags & F_LAX || fail(
-                    "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
-
-                GET_mut(nested(:index)).flags |= F_UNUSED;
-            }
-
-            ref o = GET_mut(nested(:index));
-
-            //////////////////////////////////////////////
-            // TODO one of these two is redundant       //
-            o.type.try_relax(slot: usage, :relax_mask); //
-            //////////////////////////////////////////////
-
-            // Either way, try to relax.
-            o.solved.type || fail("!var.solved.type, can`t propagateType");
-            o.solved.propagateType(usage, :relax_mask);
-
-            // Lose the F_MUT annots on values that don't need them.
-            if (!USE_mcom_lets && USE_relax_F_MUT)
-            {
-                if (o.flags & F_MUT && usage.is_mutref)
-                {
-                    if (o.solved.items[LET_INIT].is_ref)
-                    {
-                        mut init = o.solved.items[LET_INIT];
-                        maybeCopyOrMove(init, o.solved.type);
-                        o.solved.MUT.items[LET_INIT] = init;
-                    }
-                }
-                else
-                {
-                    o.flags &= ~F_MUT;
-                }
+                o.flags &= ~F_MUT;
             }
         }
     }
