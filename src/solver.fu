@@ -1674,6 +1674,10 @@ pub fn solve(
     {
         let k = node.kind;
 
+        // Shortcutting lets, they source the slot from usage.
+        if (k == "let")
+            return relaxBlockVar(node.target, :relax_mask);
+
         //
         node.MUT.type.try_relax(:slot, :relax_mask);
 
@@ -1688,19 +1692,6 @@ pub fn solve(
         else if (k == "if")
         {
             propagateType(node.items[1, node.items.len], slot, :relax_mask);
-        }
-        else if (k == "let")
-        {
-            let init = node.items && node.items[LET_INIT];
-            if (init)
-            {
-                node.items[LET_INIT].propagateType(node.type, :relax_mask);
-
-                // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
-                //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
-                if (node.type.is_ref && !(node.flags & F_ARG))
-                    node.MUT.type.lifetime = init.type.lifetime;
-            }
         }
         else if (k == "call")
         {
@@ -2005,9 +1996,6 @@ pub fn solve(
         // This will work ideally in a reverse pass,
         //  going through all blocks in reverse and relaxing their returns.
         {
-            // Now relax mutref & F_MUT variables.
-            relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
-
             // TODO FIX this looks like bullshit,
             //  there's gotta be a better way to do this.
             if (items.if_last.type.is_never)
@@ -2036,6 +2024,14 @@ pub fn solve(
         //
 
         h.ret_actual.lifetime.Lifetime_placeholder_remove();
+
+
+        // See - stupidly we don't need this for the cpy/mov decision above.
+        //  We can safely move this into the passes later.
+        //   So what was the issue with propagateType again?
+
+        // Now relax mutref & F_MUT variables.
+        relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
 
 
         //
@@ -2149,7 +2145,23 @@ pub fn solve(
 
         // Either way, try to relax.
         o.solved.type || fail("!var.solved.type, can`t propagateType");
-        o.solved.propagateType(usage, :relax_mask);
+
+        {
+            let node = o.solved;
+
+            node.MUT.type.try_relax(slot: usage, :relax_mask);
+
+            let init = node.items && node.items[LET_INIT];
+            if (init)
+            {
+                node.items[LET_INIT].propagateType(node.type, :relax_mask);
+
+                // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
+                //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
+                if (node.type.is_ref && !(node.flags & F_ARG))
+                    node.MUT.type.lifetime = init.type.lifetime;
+            }
+        }
 
         // Lose the F_MUT annots on values that don't need them.
         if (!USE_mcom_lets && USE_relax_F_MUT)
