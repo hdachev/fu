@@ -826,6 +826,30 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn ref_a(ref a: i32) a;
+
+        fn main() {
+            mut a: i32;
+            ref r = ref_a(a);
+            r++;
+            return a - 1;
+        }
+    `);
+
+    ZERO(`
+        fn ref_a_or_ref_b(ref a: i32, ref b: i32)
+            a || b;
+
+        fn main() {
+            mut a: i32;
+            mut b: i32;
+            ref a_or_b = ref_a_or_ref_b(a, b);
+            a_or_b++;
+            return b - 1;
+        }
+    `);
+
+    ZERO(`
         fn impl(implicit ref _impl: i32) _impl;
         fn arg_or_impl(ref arg: i32) arg || impl;
         fn main() {
