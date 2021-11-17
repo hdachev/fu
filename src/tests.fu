@@ -2824,6 +2824,33 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+            fn each(cond, cons)                     cond && cons();
+            fn arg_incr_x(mut arg: i32)             each(arg, || arg);
+            return arg_incr_x(+7) - 7;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            fn each(cond, cons)                     cond && cons();
+            fn arg_incr_x(mut arg: i32, x = 0)      each(arg, || arg += x);
+            return arg_incr_x(+7, -11) + 4;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            fn each(cond, cons)                     cond && cons();
+            fn arg_incr_x(mut arg: i32, x = 0): i32 {
+                each(arg, || arg += x);
+                return arg;
+            }
+            return arg_incr_x(+7, -11) + 4;
+        }
+    `);
+
+    ZERO(`
         fn main()
         {
             mut target = 0;
