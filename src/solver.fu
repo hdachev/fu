@@ -1676,7 +1676,13 @@ pub fn solve(
 
         // Shortcutting lets, they source the slot from usage.
         if (k == "let")
+        {
+            // Addrofn & co.
+            if (!node.target)
+                return;
+
             return relaxBlockVar(node.target, :relax_mask);
+        }
 
         //
         node.MUT.type.try_relax(:slot, :relax_mask);
@@ -1847,7 +1853,7 @@ pub fn solve(
                 propagateType(node.items[i], t, :relax_mask);
             }
         }
-        else if (k == "loop")
+        else if (k == "loop" || k == "try" || k == "catch" || k == "defer")
         {
             // TODO!
         }
