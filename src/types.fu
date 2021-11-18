@@ -319,20 +319,13 @@ pub fn serializeType(type: Type, debug!: string)
     return prefix ~ (type.canon || BUG("serializeType: No type.canon in: " ~ debug));
 }
 
-pub fn humanizeType(type: Type)
+pub fn humanizeQuals(type: Type)
 {
-    mut result: string = type.canon;
+    mut result = ":";
 
-    if (type.modid)
-        result = type.modid ~ ":" ~ result;
-
-    if (type.quals)
-    {
-        result ~= ":";
-        for (mut i = 0; i < TAGS.len; i++)
-            if (type.quals & (1 << i))
-                result ~= " " ~ TAGS[i];
-    }
+    for (mut i = 0; i < TAGS.len; i++)
+        if (type.quals & (1 << i))
+            result ~= " " ~ TAGS[i];
 
     return result;
 }

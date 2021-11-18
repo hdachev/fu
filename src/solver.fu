@@ -669,6 +669,52 @@ pub fn solve(
                 "Cannot definit type: " ~ humanizeType(type)));
     }
 
+    fn getModule(modid!: i32)
+    {
+        if (modid == module.modid)
+            return module;
+
+        return ctx.modules[modid];
+    }
+
+    fn trimmedName(shadow module: Module)
+    {
+        let fname = module.fname;
+
+        mut start = 0;
+        mut end   = fname.len;
+
+        for (mut i = end; i --> 0; )
+        {
+            let c = fname[i];
+            if (c == '/')
+            {
+                start = i + 1;
+                break;
+            }
+
+            if (c == '.')
+                end = i;
+        }
+
+        return fname[start, end];
+    }
+
+    fn humanizeType(type: Type)
+    {
+        mut result: string = type.isStruct
+            ? lookupStruct(type).name
+            : type.canon;
+
+        if (type.modid)
+            result = getModule(:type.modid).trimmedName() ~ "::" ~ result;
+
+        if (type.quals)
+            result ~= humanizeQuals(type);
+
+        return result;
+    }
+
 
     //
 
