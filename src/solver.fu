@@ -4010,6 +4010,10 @@ pub fn solve(
             local_of:       _current_fn.target.index,
             locals_start:   GET_next_local_index()));
 
+        ////////////////////////////////////////////////////////////////////////
+        defer TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(brk_idx);
+        ////////////////////////////////////////////////////////////////////////
+
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
         let n_body      = node.items[LOOP_BODY];
