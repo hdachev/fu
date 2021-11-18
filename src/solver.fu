@@ -1768,14 +1768,21 @@ pub fn solve(
 
                         makeNote(N_RelaxRespec);
 
+                        let host_args = spec.args;
+
                         for (mut i = 0; i < node.items.len; i++)
                         {
-                            let orig = node.items[i];
                             let next = relaxed[i];
                             if (next.kind == "__relaxed")
                             {
+                                let orig        = node.items[i];
+                                let host_arg    = host_args[i];
+
+                                checkAssignable(host: host_arg, orig,
+                                    "Original argument not assigned to relaxed specialization");
+
                                 // println("RELAX `" ~ t.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
-                                orig.propagateType(next.type, :relax_mask);
+                                orig.propagateType(host_arg.type, :relax_mask);
                             }
                         }
                     }
