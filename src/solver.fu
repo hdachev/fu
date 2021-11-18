@@ -3095,6 +3095,25 @@ pub fn solve(
             // Used twice, once to enable recursion before body, and once when done.
             fn updateScope(shadow out: CurrentFn, retval: Type)
             {
+                ///////////////////////////////
+                if (target.status & SS_DIRTY)
+                {
+                    // Some pass might not have ran,
+                    //  so updating the signature might not be safe,
+                    //   or might make it unstable.
+                    //
+                    // --------------------------------------------------------
+                    // OPTIMIZABLE (about 10% slowdown from this):
+                    //  It's OK to update the sig if:
+                    //   - new retval is assignable to old retval.
+                    //   - old arguments are assignable to new arguments.
+                    // --------------------------------------------------------
+                    //
+                    GET_mut(target).status |= SS_UPDATED;
+                    return;
+                }
+                ///////////////////////////////
+
                 shadow let items = out.items;
 
                 let N = items.len + FN_ARGS_BACK;
