@@ -6581,7 +6581,7 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.0 ");
         ///////////////////////////////
 
-        // propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
+        propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.0.relax ");
@@ -6599,7 +6599,7 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.2 ");
         ///////////////////////////////
 
-        // propagateType(node, node.type, relax_mask: RELAX_all);
+        propagateType(node, node.type, relax_mask: RELAX_all);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.2.relax ");
