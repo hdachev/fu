@@ -1898,6 +1898,18 @@ pub fn solve(
 
                 propagateType(node.items[i], t, :relax_mask);
             }
+
+            // TODO FIX args need extra iteration here.
+            let h = Helpers(node.helpers);
+            if (h.isFnOrType)
+            {
+                for (mut i = h.vars.len; i --> 0; )
+                {
+                    let t = nested(h.vars[i]);
+                    if (t.flags & F_ARG)
+                        relaxBlockVar(t, :relax_mask);
+                }
+            }
         }
         else if (k == "loop" || k == "try" || k == "catch" || k == "defer")
         {
