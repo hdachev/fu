@@ -6288,7 +6288,7 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn test_CallSignature(callsite: SolvedNode)
+    fn test_CallSignature(callsite: SolvedNode, debug: string)
     {
         let host_args = callsite.target.args;
         let args      = callsite.items;
@@ -6298,7 +6298,7 @@ pub fn solve(
             return;
 
         fn err(reason: string)
-            fail(callsite.target.qWHAT ~ ": " ~ reason);
+            fail(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
 
         host_args.len == args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
@@ -6350,7 +6350,7 @@ pub fn solve(
         //
         let k = node.kind;
         if (k == "call")
-            return test_CallSignature(node);
+            return test_CallSignature(node, :debug);
 
         if (k == "block" || k == "and" || k == "or" || k == "if")
         {
@@ -6506,31 +6506,31 @@ pub fn solve(
     fn runAllPasses(node: SolvedNode)
     {
         ///////////////////////////////
-        if (SELF_TEST) test_node(node, "runAllPasses[0]");
+        if (SELF_TEST) test_node(node, "PASS.0 ");
         ///////////////////////////////
 
         // propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node, "runAllPasses[0.relax]");
+        if (SELF_TEST) test_node(node, "PASS.0.relax ");
         ///////////////////////////////
 
         bck_node(node);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node, "runAllPasses[1]");
+        if (SELF_TEST) test_node(node, "PASS.1 ");
         ///////////////////////////////
 
         mcom_node(node);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node, "runAllPasses[2]");
+        if (SELF_TEST) test_node(node, "PASS.2 ");
         ///////////////////////////////
 
         // propagateType(node, node.type, relax_mask: RELAX_all);
 
         ///////////////////////////////
-        if (SELF_TEST) test_node(node, "runAllPasses[2.relax]");
+        if (SELF_TEST) test_node(node, "PASS.2.relax ");
         ///////////////////////////////
     }
 
