@@ -1853,7 +1853,20 @@ pub fn solve(
         }
         else if (k == "root")
         {
-            propagateType(node.items, t_void, :relax_mask);
+            // Tries to relax global lets (there's nothing else to relax globally).
+            //  Three problems with that:
+            //
+            //   - F_PUBS can't be relaxed.
+            //
+            //   - callsites contain garbage from resolved fns:
+            //     - generally I think we should get rid of persistant callsites, just keep them around during fnsolve;
+            //     - which will work automatically if we injected globals as args but that's crazy;
+            //     - perhaps we should just keep a list of globals used which propagates up the solvestack.
+            //
+            //   - finally there's the problem with F_PUB templates:
+            //     - they can see private stuff from module scope, so can't relax those either.
+            //
+            // propagateType(node.items, t_void, :relax_mask);
         }
         else
         {
