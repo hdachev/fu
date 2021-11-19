@@ -4276,12 +4276,12 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn compile_snippets(x: string) x.find('a') && throw("throw#1");
-        fn ZERO(x: string) x.find('b') && throw("throw#2");
+        fn compile_snippets(x0: string) x0.find('a') && throw("throw#1");
+        fn ZERO(x1: string) x1.find('b') && throw("throw#2");
 
-        fn FAIL(x: string): string {
-            let ctx = compile_snippets(x) && "hey"
-                catch e return ZERO(x) && e;
+        fn FAIL(x2: string): string {                   ;; EXPECT fu::view<std::byte> x2
+            let ctx = compile_snippets(x2) && "hey"
+                catch e return ZERO(x2) && e;
 
             return ctx;
         }
@@ -5869,6 +5869,12 @@ pub fn runTests()
         fn sqr(x) x*x;
 
         fn main() [2].map(fn sqr)[0] - 4;
+
+        ;; EXPECT (fu::slate<1, int> { 2 })
+        //  During the propagateType rework
+        //   the 'mut result: fn(items[0])[]' type annot
+        //    was found listed as a callsite for items,
+        //     but wasn't reachable for relax.
     `);
 
     ZERO(`
@@ -6365,6 +6371,8 @@ pub fn runTests()
         }
 
         fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
+
+        ;; EXPECT (fu::slate<3, int> { 1, 2, 3 })
     `);
 
     ZERO(`
