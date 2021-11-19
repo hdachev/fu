@@ -2072,7 +2072,6 @@ pub fn solve(
             for (mut i = 0; i < h.returns.len; i++)
             {
                 shadow mut expr = h.returns[i].items.only;
-                propagateType(expr, h.ret_actual, relax_mask: RELAX_all);
 
                 // We want to enable bck ASAP -
                 //  on first pass, we'll promote stuff to fmuts unless it hurts our returns,
@@ -4243,9 +4242,7 @@ pub fn solve(
 
         if (init)
         {
-            if (USE_mcom_lets || USE_relax_F_MUT)
-                propagateType(init, t_let, relax_mask: RELAX_all);
-            else
+            if !(USE_mcom_lets || USE_relax_F_MUT)
                 maybeCopyOrMove(init, t_let);
 
             // Can change due to propagate type:
