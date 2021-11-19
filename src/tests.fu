@@ -2394,7 +2394,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_borrowck(`
         nocopy struct Woot {
             x: i32[];
             y: i32[];
@@ -2407,6 +2407,7 @@ pub fn runTests()
             /*/
             ref y = w.y;
             //*/
+            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let
             x ~= y;
         }
 
@@ -2417,7 +2418,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_borrowck(`
         nocopy struct Woot {
             x: i32[];
             y: i32[];
@@ -2430,6 +2431,7 @@ pub fn runTests()
             /*/
             ref y = w1.y;
             //*/
+            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let
             x ~= y;
         }
 
