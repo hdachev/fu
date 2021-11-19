@@ -37,8 +37,6 @@ fn TODO_gcc(src: string)
 
 fn TODO_borrowck(src: string) TODO(src);
 
-fn TODO_borrowck_relax(src: string) TODO_borrowck(src);
-
 
 // Run the whole battery & build self.
 
@@ -2124,7 +2122,7 @@ pub fn runTests()
         fn main() outer - 42;
     `);
 
-    TODO_borrowck_relax(`
+    ZERO(`
         fn append_self(ref a: i32[])
         {
             let b = a;
@@ -2247,7 +2245,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck_relax(`
+    ZERO(`
         fn test(ref _helpers: i32[][], mut N: i32, row: i32)
         {
             fn solveNode_a(h: i32[]) {

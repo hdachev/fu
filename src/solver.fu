@@ -1880,17 +1880,15 @@ pub fn solve(
         }
         else if (k == "jump")
         {
-            // TODO!
-            //
-            // if (node.items)
-            // {
-            //     let h = Helpers(node.helpers);
-            //
-            //     h.ret_actual || fail(
-            //         "propagateType(jump): h.ret_actual not available.");
-            //
-            //     propagateType(node.items.only, :relax_mask, h.ret_actual);
-            // }
+            if (node.items)
+            {
+                let h = Helpers(node.helpers);
+
+                h.ret_actual || fail(
+                    "propagateType(jump): h.ret_actual not available.");
+
+                propagateType(node.items.only, :relax_mask, h.ret_actual);
+            }
         }
         else if (k == "block")
         {
@@ -5611,9 +5609,6 @@ pub fn solve(
                 ~ humanizeType(slot) ~ " <- "
                 ~ humanizeType(node));
         }
-
-        // Clear mutrefs unless needed.
-        propagateType(:node, :slot, relax_mask: RELAX_all);
 
         // No copy needed when the slot is a reference.
         if (slot.is_ref)
