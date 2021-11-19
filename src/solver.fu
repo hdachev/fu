@@ -1832,28 +1832,17 @@ pub fn solve(
                                 tempsOK: true);
 
                         node.MUT.target = spec;
-
                         makeNote(N_RelaxRespec);
-
-                        let host_args = spec.args;
-
-                        for (mut i = 0; i < node.items.len; i++)
-                        {
-                            let next = relaxed[i];
-                            if (next.kind == "__relaxed")
-                            {
-                                let orig        = node.items[i];
-                                let host_arg    = host_args[i];
-
-                                checkAssignable(host: host_arg, orig,
-                                    "Original argument not assigned to relaxed specialization");
-
-                                // println("RELAX `" ~ t.name ~ "` arg #" ~ i ~ ", from `" ~ humanizeType(orig.type) ~ "` to `" ~ humanizeType(next.type) ~ "`.");
-                                orig.propagateType(host_arg.type, :relax_mask);
-                            }
-                        }
                     }
                 }
+            }
+
+            // Relax arguments.
+            if (node.items)
+            {
+                let host_args = node.target.args;
+                for (mut i = 0; i < node.items.len; i++)
+                    node.items[i].propagateType(host_args[i].type, :relax_mask);
             }
         }
         else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit")
@@ -1880,9 +1869,10 @@ pub fn solve(
         }
         else if (k == "arrlit")
         {
-            propagateType(node.items, :relax_mask,
-                tryClear_sliceable(slot) || fail(
-                    "propagateType(arrlit): Can't clear solve item type."));
+            for (mut i = 0; i < node.items.len; i++)
+                propagateType(node.items[i], :relax_mask,
+                    tryClear_sliceable(slot) || fail(
+                        "propagateType(arrlit): Can't clear solve item type."));
         }
         else if (k == "argid")
         {
@@ -1966,12 +1956,6 @@ pub fn solve(
         {
             fail("TODO: propagateType(" ~ k ~ ").");
         }
-    }
-
-    fn propagateType(items: [SolvedNode], type: Type, relax_mask!: i32)
-    {
-        for (mut i = 0; i < items.len; i++)
-            propagateType(items[i], type, :relax_mask);
     }
 
 
