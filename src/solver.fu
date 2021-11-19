@@ -2208,23 +2208,16 @@ pub fn solve(
         mut usage: Type;
         if (var.callsites)
         {
-            usage = var.callsites[0].type;
-
-            // TODO FIX SHALLOW LIFETIMES at jumps the lifetime is unwound, otherwise it aint, so that messes up the inter
-            usage.lifetime = var.type.lifetime; //
-            //////////////////////////////////////
-
-            for (shadow mut i = 1; i < var.callsites.len; i++)
+            for (shadow mut i = 0; i < var.callsites.len; i++)
             {
-                mut other = var.callsites[i].type;
+                let other = var.callsites[i].type;
 
-                // TODO FIX SHALLOW LIFETIMES /////
-                other.lifetime = usage.lifetime; //
-                ///////////////////////////////////
-
-                usage = type_tryIntersect(usage, other) || fail(
-                    "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
-                        ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
+                if (i == 0)
+                    usage = other;
+                else
+                    usage = type_tryIntersect(usage, other) || fail(
+                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
+                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
             }
         }
         else if (relax_mask == RELAX_all)
