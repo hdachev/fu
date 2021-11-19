@@ -1733,18 +1733,33 @@ pub fn solve(
         //
         node.MUT.type.try_relax(:slot, :relax_mask);
 
-        // Doing these first -
-        //  the branches of ands and ors are not relaxed during solve,
-        //   since they're likely going to relax further later on.
-        //
-        if (k == "and" || k == "or")
+        let LAST = node.items.len - 1;
+
+        // Logic.
+        if (k == "and")
         {
-            propagateType(node.items, slot, :relax_mask);
+            let rest    = slot.is_mutref && CANNOT_definit_mutrefs
+                        ? slot
+                        : t_bool;
+
+            for (mut i = node.items.len; i --> 0; )
+                propagateType(node.items[i], :relax_mask,
+                    i == LAST ? slot : rest);
+        }
+        else if (k == "or")
+        {
+            for (mut i = node.items.len; i --> 0; )
+                propagateType(node.items[i], :relax_mask,
+                    :slot);
         }
         else if (k == "if")
         {
-            propagateType(node.items[1, node.items.len], slot, :relax_mask);
+            for (mut i = node.items.len; i --> 0; )
+                propagateType(node.items[i], :relax_mask,
+                    i != 0 ? slot : t_bool);
         }
+
+        //
         else if (k == "call")
         {
             mut t = node.target; // TODO BORROWCK danglefix
@@ -4997,8 +5012,6 @@ pub fn solve(
             return cond;
         }
 
-        implicitOperatorBool(cond);
-
         fn if_A_and_NEVER_then_B_else_C()
         {
             // The same as if-A-then-NEVER-else-C,
@@ -5159,11 +5172,6 @@ pub fn solve(
                 type = sumType;
             }
         }
-
-        // Relax everything but the last thing to bool.
-        if (!CANNOT_definit_mutrefs || !type.is_mutref)
-            for (mut i = items.len - 1; i --> 0; )
-                implicitOperatorBool(items[i]);
 
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
@@ -5592,11 +5600,6 @@ pub fn solve(
 
         //
         return maybeCopyOrMove(:node, slot);
-    }
-
-    fn implicitOperatorBool(node: SolvedNode)
-    {
-        propagateType(:node, t_bool, relax_mask: RELAX_all);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
