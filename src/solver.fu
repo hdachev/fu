@@ -2125,14 +2125,6 @@ pub fn solve(
         h.ret_actual.lifetime.Lifetime_placeholder_remove();
 
 
-        // See - stupidly we don't need this for the cpy/mov decision above.
-        //  We can safely move this into the passes later.
-        //   So what was the issue with propagateType again?
-
-        // Now relax mutref & F_MUT variables.
-        relaxBlockVars(:h, relax_mask: RELAX_mutrefs_only);
-
-
         //
 
         let block = createBlock(:items,
@@ -2187,16 +2179,6 @@ pub fn solve(
             }
 
             fail("BUG: Cannot find a function or type frame to argSteal implicits to.");
-        }
-    }
-
-    fn relaxBlockVars(h!: Helpers, relax_mask!: i32)
-    {
-        mut vars = h.vars; // TODO BORROWCK danglefix
-        for (mut i = vars.len; i --> 0; )
-        {
-            let index = vars[i];
-            relaxBlockVar(nested(:index), :relax_mask);
         }
     }
 
@@ -6530,9 +6512,6 @@ pub fn solve(
         // We need to update the named lifetime if we've set one.
         if (node.type.is_ref && USE_named_block_rets)
             updateNamedLifetime(node, h.ret_actual);
-
-        //
-        relaxBlockVars(:h, relax_mask: RELAX_all);
     }
 
     fn mcom_BlockReturns_CopyOrMoveDecision(h: Helpers)
