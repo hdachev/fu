@@ -1929,9 +1929,31 @@ pub fn solve(
             if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
             if (init)       propagateType(init, t_void, :relax_mask);
         }
-        else if (k == "try" || k == "catch" || k == "defer")
+        else if (k == "try")
         {
-            // TODO!
+            let lax attempt = node.items[0]; // TODO FIX the laxness due to rec solve
+            let lax error   = node.items[1]; // TODO FIX the laxness due to rec solve
+            let recover     = node.items[2];
+
+            // Relax in reverse.
+            propagateType(recover, t_void, :relax_mask);
+            propagateType(error, t_string, :relax_mask);
+            propagateType(attempt, t_void, :relax_mask);
+        }
+        else if (k == "catch")
+        {
+            let lax trybind = node.items[0]; // TODO FIX the laxness due to rec solve
+            let lax error   = node.items[1]; // TODO FIX the laxness due to rec solve
+            let recover     = node.items[2];
+
+            // Relax in reverse.
+            propagateType(recover, t_void, :relax_mask);
+            propagateType(error, t_string, :relax_mask);
+            propagateType(trybind,  :slot, :relax_mask);
+        }
+        else if (k == "defer")
+        {
+            propagateType(node.items.only, t_void, :relax_mask);
         }
         else if (k == "root")
         {
