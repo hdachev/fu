@@ -6640,6 +6640,25 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(mut _precedence = 0)
+        {
+            fn parseExpression(p1?: i32): i32 {
+                if !(_precedence = p1)
+                    return parseExpressionHead();
+
+                return _precedence;
+            }
+
+            fn parseExpressionHead()
+                parseExpression(_precedence * 101 + 1);
+
+            return parseExpression();
+        }
+
+        fn main() = test() - 1;
+    `);
+
 
     // Enum basics.
 
