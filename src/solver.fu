@@ -1911,7 +1911,22 @@ pub fn solve(
                 }
             }
         }
-        else if (k == "loop" || k == "try" || k == "catch" || k == "defer")
+        else if (k == "loop")
+        {
+            let init        = node.items[LOOP_INIT];
+            let pre_cond    = node.items[LOOP_COND];
+            let body        = node.items[LOOP_BODY];
+            let post_cond   = node.items[LOOP_POST_COND];
+            let post        = node.items[LOOP_POST];
+
+            // Relax in reverse.
+            if (post)       propagateType(post, t_void, :relax_mask);
+            if (post_cond)  propagateType(post_cond, t_bool, :relax_mask);
+            if (body)       propagateType(body, t_void, :relax_mask);
+            if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
+            if (init)       propagateType(init, t_void, :relax_mask);
+        }
+        else if (k == "try" || k == "catch" || k == "defer")
         {
             // TODO!
         }
@@ -4062,10 +4077,6 @@ pub fn solve(
         let body        = n_body      && solveBlock(n_body, type: t_void);  // TODO deadcode noloop
         let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    // TODO deadcode noloop
         let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
-
-        // Relax.
-        if (pre_cond)  implicitOperatorBool(pre_cond);
-        if (post_cond) implicitOperatorBool(post_cond);
 
         // Control flow.
         let h           = _helpers[brk_idx];
