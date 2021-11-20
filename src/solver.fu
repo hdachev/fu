@@ -6617,7 +6617,7 @@ pub fn solve(
         ///////////////////////////////
 
         _current_fn.var_usage = [];
-        propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
+        propagateType(node, node.type, relax_mask: RELAX_before_bck);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.0.relax ");
