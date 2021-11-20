@@ -2278,11 +2278,9 @@ pub fn solve(
             if (o.flags & F_MUT && usage.is_mutref)
             {
                 if (o.solved.items[LET_INIT].is_ref)
-                {
-                    mut init = o.solved.items[LET_INIT];
-                    maybeCopyOrMove(init, o.solved.type);
-                    o.solved.MUT.items[LET_INIT] = init;
-                }
+                    maybeCopyOrMove(
+                        o.solved.items[LET_INIT],
+                        o.solved.type);
             }
             else
             {
@@ -5595,17 +5593,15 @@ pub fn solve(
         {
             o.flags  |= F_MUT;
             let t_let = clear_refs(o.type);
-            mut init  = o.solved.items[LET_INIT];
 
-            maybeCopyOrMove(init, t_let);
-            o.solved.MUT.items[LET_INIT] = init;
+            maybeCopyOrMove(o.solved.items[LET_INIT], t_let);
             o.solved.MUT.type = t_let;
         }
 
         return true;
     }
 
-    fn BORROWCK_resolveByCopyToTemporary(ref node: SolvedNode, slot: Type)
+    fn BORROWCK_resolveByCopyToTemporary(node: SolvedNode, slot: Type)
     {
         // Reconstruct a maybe-copyable value type -
         //  slot is a ref which may not need q_rx_copy.
@@ -5615,8 +5611,7 @@ pub fn solve(
         return maybeCopyOrMove(:node, slot);
     }
 
-    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type,
-        lax isArgument = false): void
+    fn maybeCopyOrMove(node: SolvedNode, slot: Type, lax isArgument = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
@@ -5681,7 +5676,15 @@ pub fn solve(
             makeNote(N_NonTrivAutoCopy);
         }
 
-        node = createCopy(node);
+        // This is nasty,
+        //  the copy node injection thing without refs.
+        //
+        let newNode     = createCopy(node);
+        ref newNodeData = MUT(newNode);
+        ref oldNodeData = MUT(node);
+
+        SWAP(newNodeData, oldNodeData);
+        oldNodeData.items.only = newNode;
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
@@ -6489,9 +6492,7 @@ pub fn solve(
                 // TODO FIX THIS MESS,
                 //  the get/set stuff is real stupid.
                 //
-                shadow mut init = init;
                 maybeCopyOrMove(init, node.type);
-                node.MUT.items[LET_INIT] = init;
             }
         }
     }
@@ -6509,15 +6510,7 @@ pub fn solve(
 
         // cpy/move.
         for (mut i = 0; i < h.returns.len; i++)
-        {
-            // TODO FIX nodeidx unstable because createCopy,
-            //  ref to only is in smallvec -
-            //   so createCopy invalidates the ref.
-            //
-            mut r = h.returns[i].items.only;
-            maybeCopyOrMove(r, h.ret_actual);
-            h.returns[i].MUT.items.only = r;
-        }
+            maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
 
         // We need to update the named lifetime if we've set one.
         if (node.type.is_ref && USE_named_block_rets)
