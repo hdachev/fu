@@ -220,9 +220,6 @@ pub struct Overload
     //   [ modid / thing ] slot here.
     solved:         SolvedNode;
 
-    // The new used_by.
-    callsites?:     SolvedNode[];
-
     // Solver state. // maybe we need flags enums already
     status?:        u32; // <- u32 to differentiate from flags
 
@@ -247,6 +244,9 @@ pub struct Extended
 
     // What about this then?
     extra_items?:   ScopeItem[];
+
+    // The new used_by.
+    callsites?:     SolvedNode[];
 };
 
 

@@ -3201,7 +3201,7 @@ pub fn solve(
 
                 mut change      = false;
 
-                if (overload.callsites)
+                if (ext.callsites)
                 {
                     change = args.len != ext.args.len
                         || !(overload.type == retval);
@@ -3597,7 +3597,7 @@ pub fn solve(
             ref overload    = GET_mut(out_target);
             overload.type   = out_type;
 
-            if (CHANGE && overload.callsites)
+            if (CHANGE && ext.callsites)
                 overload.status |= SS_UPDATED;
         }
 
@@ -3645,7 +3645,7 @@ pub fn solve(
             o.status &= ~SS_UPDATED;
 
             mut dedupe: Target;
-            let callsites = o.callsites;
+            let callsites = t.callsites;
 
             NEXT_USER:
             for (mut i = 0; i < callsites.len; i++)
@@ -3722,8 +3722,9 @@ pub fn solve(
         }
     }
 
-    fn detectRecursion(target: Target, overload: Overload): void
+    fn detectRecursion(target: Target): void
     {
+        let overload = GET(target);
         if (overload.status & (SS_FINALIZED | SS_LAZY) != SS_LAZY)
             return;
 
@@ -5539,13 +5540,13 @@ pub fn solve(
         // Track deps.
         if (target.modid < 0 || target.modid == module.modid)
         {
-            ref o = GET_mut(target);
+            let k = target.kind;
 
             // Tracking call graph & type annotations.
-            if (o.kind == "fn" || o.kind == "type")
+            if (k == "fn" || k == "type")
             {
-                o.callsites ~= callsite;
-                detectRecursion(target, o);
+                EXT_mut(target).callsites ~= callsite;
+                detectRecursion(target);
             }
         }
 
