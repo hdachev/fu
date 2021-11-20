@@ -17,19 +17,8 @@ let TAGS =
 
 //
 
-let q_REF_EXTENSIONS
-    = q_rx_copy
-    | q_rx_resize;
-
-let q_RELAXABLE
-    = q_REF_EXTENSIONS
-    | q_mutref;
-
-
-//
-
-pub let RELAX_mutrefs_only  = q_mutref      |0;
-pub let RELAX_all           = q_RELAXABLE   |0;
+pub let RELAX_mutrefs_only  = q_mutref | 0;
+pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
 
 
 //
@@ -170,10 +159,10 @@ pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",   quals: Primitive
 
 //
 
-pub fn is_void  (t: Type) t.vtype == t_void  .vtype;
-pub fn is_bool  (t: Type) t.vtype == t_bool  .vtype;
-pub fn is_never (t: Type) t.vtype == t_never .vtype;
-pub fn is_zeroes(t: Type) t.vtype == t_zeroes.vtype;
+pub fn is_void  (t: Type) t.canon == t_void  .canon;
+pub fn is_bool  (t: Type) t.canon == t_bool  .canon;
+pub fn is_never (t: Type) t.canon == t_never .canon;
+pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
 
 
 //
@@ -510,25 +499,11 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
 pub fn will_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
 {
-    ///////////////////////////////////////////////////////
-    // TODO FIX THIS IS BULLSHIT //////////////////////////
-    if !(type.quals & q_REF_EXTENSIONS == q_REF_EXTENSIONS)
-        relax_mask = RELAX_mutrefs_only;
-    // TODO FIX THIS IS BULLSHIT //////////////////////////
-    ///////////////////////////////////////////////////////
-
     return (type.quals &~ slot.quals) & relax_mask != 0;
 }
 
 pub fn try_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
 {
-    ///////////////////////////////////////////////////////
-    // TODO FIX THIS IS BULLSHIT //////////////////////////
-    if !(type.quals & q_REF_EXTENSIONS == q_REF_EXTENSIONS)
-        relax_mask = RELAX_mutrefs_only;
-    // TODO FIX THIS IS BULLSHIT //////////////////////////
-    ///////////////////////////////////////////////////////
-
     if (!will_relax(type, :slot, :relax_mask))
         return false;
 
