@@ -120,6 +120,9 @@ pub fn solve(
 
         events?:        Events;
         loop_start?:    i32;
+
+        // The replacement for the callsites stuff.
+        var_usage?:     Type[];
     };
 
     mut _current_fn:                CurrentFn;
@@ -302,6 +305,11 @@ pub fn solve(
     fn nested(index: i32)
     {
         return Target(modid: -_current_fn.target.index || module.modid, :index);
+    }
+
+    fn isNested(target: Target)
+    {
+        return target.modid == -_current_fn.target.index;
     }
 
     fn isFnOrType(h: Helpers): bool
@@ -1732,7 +1740,9 @@ pub fn solve(
 
         //
         node.MUT.type.try_relax(:slot, :relax_mask);
+        shadow let slot = node.type;
 
+        //
         let LAST = node.items.len - 1;
 
         // Logic.
@@ -1764,15 +1774,36 @@ pub fn solve(
         {
             mut t = node.target; // TODO BORROWCK danglefix
             if (t.kind == "field")
-                return node.items[0].propagateType(node.type, :relax_mask);
+                return node.items[0].propagateType(slot, :relax_mask);
 
-            // Template spec relaxer, this is nasty.
-            //  Not sure what the ideal method to deal with this here would be,
-            //   we're basically just going back and redoing things,
-            //    and we don't have the original shit to work with.
-            //
+            if (t.kind == "var")
+            {
+                // This is the old relaxBlockVars callsite loop -
+                //  Now we just collect usage while propagating types,
+                //   this means we're automatically ignoring type annotations etc.
+                //
+                if (t.isNested)
+                {
+                    ref usage = _current_fn.var_usage.grow_if_oob(t.index);
+
+                    if (!usage)
+                        usage = slot;
+                    else
+                        usage = type_tryIntersect(usage, slot) || fail(
+                            t.qWHAT ~ ": Usage intersection failure: `"
+                                    ~ humanizeType(usage) ~ "` & `" ~ humanizeType(slot) ~ "`.");
+                }
+
+                return;
+            }
+
             if (t.spec_of && t.type.is_ref)
             {
+                // Template spec relaxer, this is nasty.
+                //  Not sure what the ideal method to deal with this here would be,
+                //   we're basically just going back and redoing things,
+                //    and we don't have the original shit to work with.
+                //
                 mut relaxed: SolvedNode[];
                 for (mut i = 0; i < node.items.len; i++)
                 {
@@ -2205,22 +2236,8 @@ pub fn solve(
         let var = GET(t);
 
         //
-        mut usage: Type;
-        if (var.callsites)
-        {
-            for (shadow mut i = 0; i < var.callsites.len; i++)
-            {
-                let other = var.callsites[i].type;
-
-                if (i == 0)
-                    usage = other;
-                else
-                    usage = type_tryIntersect(usage, other) || fail(
-                        "Type intersection fail at usage #" ~ i ~ " of variable `" ~ var.name
-                            ~ "`: `" ~ humanizeType(usage) ~ "` <- `" ~ humanizeType(other) ~ "`.");
-            }
-        }
-        else if (relax_mask == RELAX_all)
+        let usage = _current_fn.var_usage.unless_oob(t.index);
+        if (!usage && relax_mask == RELAX_all)
         {
             var.flags & F_LAX || fail(
                 "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
@@ -5525,9 +5542,7 @@ pub fn solve(
             ref o = GET_mut(target);
 
             // Tracking call graph & type annotations.
-            if (o.kind == "fn"   ||
-                o.kind == "type" ||
-                o.kind == "var")
+            if (o.kind == "fn" || o.kind == "type")
             {
                 o.callsites ~= callsite;
                 detectRecursion(target, o);
@@ -6600,6 +6615,7 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.0 ");
         ///////////////////////////////
 
+        _current_fn.var_usage = [];
         propagateType(node, node.type, relax_mask: RELAX_mutrefs_only);
 
         ///////////////////////////////
@@ -6618,6 +6634,7 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.2 ");
         ///////////////////////////////
 
+        _current_fn.var_usage = [];
         propagateType(node, node.type, relax_mask: RELAX_all);
 
         ///////////////////////////////
