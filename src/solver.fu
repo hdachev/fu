@@ -3775,7 +3775,8 @@ pub fn solve(
     fn Lifetime_climbType(o: Overload)
     {
         if (o.kind == "var")
-            return o.solved.items[LET_INIT].type;
+            return o.solved.is_ref
+                && o.solved.items[LET_INIT].type;
 
         o.kind == "lifetime" || fail(
             "Lifetime_climbType: not a `var` nor `lifetime`: " ~ o.qWHAT);
@@ -6466,21 +6467,6 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn mcom_LetInit(node: SolvedNode)
-    {
-        if (node.items && !node.is_ref && USE_mcom_lets)
-        {
-            let init = node.items[LET_INIT];
-            if (init && init.is_ref)
-            {
-                // TODO FIX THIS MESS,
-                //  the get/set stuff is real stupid.
-                //
-                maybeCopyOrMove(init, node.type);
-            }
-        }
-    }
-
     fn mcom_BlockReturns(node: SolvedNode)
     {
         if (!node.helpers)
@@ -6581,7 +6567,12 @@ pub fn solve(
         }
         else if (k == "let")
         {
-            mcom_LetInit(node);
+            if (node.items && !node.is_ref)
+            {
+                let init = node.items[LET_INIT];
+                if (init && init.is_ref)
+                    maybeCopyOrMove(init, node.type);
+            }
         }
         else if (k == "if")
         {
