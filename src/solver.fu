@@ -1738,6 +1738,12 @@ pub fn solve(
             return relaxBlockVar(node.target, :relax_mask);
         }
 
+        ////////////////////////////
+        let here0   = _here;
+        _here       = node.token;
+        defer _here = here0;
+        ////////////////////////////
+
         //
         node.MUT.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
@@ -6538,18 +6544,18 @@ pub fn solve(
 
     // Maybe-copy-or-move router.
 
-    fn mcom_nodes(nodes: SolvedNode[])
-        for (mut i = 0; i < nodes.len; i++)
-            mcom_node(nodes[i]);
-
     fn mcom_node(node: SolvedNode)
     {
-        mcom_nodes(node.items); _here = node.token;
+        let items = node.items;
+        for (mut i = 0; i < items.len; i++)
+            mcom_node(items[i]);
 
-        //
+        ///////////////////
+        _here = node.token;
+        ///////////////////
+
         let k = node.kind;
         let t = node.type;
-        let items = node.items;
 
         if (k == "call")
         {
