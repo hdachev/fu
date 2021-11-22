@@ -1923,6 +1923,11 @@ pub fn solve(
         }
         else if (k == "block")
         {
+            let h = Helpers(node.helpers);
+
+            h.ret_actual.try_relax(:slot, :relax_mask);
+
+            //
             mut last = true;
             for (mut i = node.items.len; i --> 0; )
             {
@@ -1934,7 +1939,6 @@ pub fn solve(
             }
 
             // TODO FIX args need extra iteration here.
-            let h = Helpers(node.helpers);
             if (h.isFnOrType)
             {
                 for (mut i = h.vars.len; i --> 0; )
