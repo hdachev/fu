@@ -4922,9 +4922,6 @@ pub fn solve(
     {
         shadow let itemType = solveArrlit_itemType(items, itemType);
 
-        for (mut i = 0; i < items.len; i++)
-            maybeCopyOrMove(items[i], itemType);
-
         return SolvedNode("arrlit", :items, type: solveArrlit_done(:itemType));
     }
 
@@ -5045,13 +5042,7 @@ pub fn solve(
         mut alt     = solveBlock(node.items[2], type: type || cons.type);
 
         if (!type.is_void)
-        {
             type = superType("if/else: ", cons.type, alt.type);
-
-            type.is_ref || !type.lifetime || fail("[if] stray lifetime");
-            maybeCopyOrMove(cons, type);
-            maybeCopyOrMove(alt,  type);
-        }
 
         // Control flow.
         if (cons.type.is_never && alt.type.is_never)
@@ -5114,15 +5105,9 @@ pub fn solve(
             }
 
             if (!sumType)
-            {
                 type = t_bool;
-            }
             else
-            {
                 type = sumType;
-                for (mut i = 0; i < items.len; i++)
-                    maybeCopyOrMove(items[i], sumType);
-            }
         }
 
         return solved(node, type, items);
@@ -5453,11 +5438,6 @@ pub fn solve(
                     }
                     //        /LITFIX
                     /////////////////
-
-                    //
-                    maybeCopyOrMove(
-                        arg || fail(), host_arg.type,
-                        isArgument: true);
 
                     if (arg.is_ref)
                     {
@@ -6582,24 +6562,48 @@ pub fn solve(
 
         //
         let k = node.kind;
+        let t = node.type;
+        let items = node.items;
 
-        if (k == "block")
-            return mcom_BlockReturns(node);
+        if (k == "call")
+        {
+            let target = node.target;
+            if (target.kind != "field")
+            {
+                let host_args = target.args;
+                for (mut i = 0; i < items.len; i++)
+                    maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
+            }
+        }
+        else if (k == "block")
+        {
+            mcom_BlockReturns(node);
+        }
+        else if (k == "let")
+        {
+            mcom_LetInit(node);
+        }
+        else if (k == "if")
+        {
+            if (!t.is_void && !t.is_ref)
+            {
+                maybeCopyOrMove(items[1], t);
+                maybeCopyOrMove(items[2], t);
+            }
+        }
+        else if (k == "or")
+        {
+            if (!t.is_bool && !t.is_ref)
+                for (mut i = 0; i < items.len; i++)
+                    maybeCopyOrMove(items[i], t);
+        }
+        else if (k == "arrlit")
+        {
+            shadow let t = clear_sliceable(t);
 
-        if (k == "let")
-            return mcom_LetInit(node);
-
-        // if (k == "call")
-        //     return mcom_CallArgs(node);
-        //
-        // if (k == "arrlit")
-        //     return mcom_Arrlit(node);
-        //
-        // if (k == "if")
-        //     return mcom_IfConsAlt(node);
-        //
-        // if (k == "or")
-        //     return mcom_OrAlts(node);
+            for (mut i = 0; i < items.len; i++)
+                maybeCopyOrMove(items[i], t);
+        }
     }
 
 

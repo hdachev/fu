@@ -393,6 +393,12 @@ pub fn tryClear_sliceable(type: Type): Type
     return Type(:vtype/*, :type.lifetime*/);
 }
 
+pub fn clear_sliceable(type: Type): Type
+{
+    return tryClear_sliceable(type)
+        || BUG("Not sliceable: " ~ type.canon);
+}
+
 
 //
 
