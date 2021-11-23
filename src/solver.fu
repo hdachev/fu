@@ -4285,9 +4285,6 @@ pub fn solve(
 
         if (init)
         {
-            if !(USE_mcom_lets || USE_relax_F_MUT)
-                maybeCopyOrMove(init, t_let);
-
             // Can change due to propagate type:
             //  let a = b[i]: mutref -> ref unions-in a static lt.
             if (t_let.lifetime && !(flags & F_ARG))
@@ -4368,12 +4365,16 @@ pub fn solve(
             GET_mut(target).solved = out;
 
             ///////////////////////////////////////////////////////////////
+            //
             // Track references.
-            if !(isArg)
+            //  WHAT IS THIS DOING HERE !!!
+            //   This needs to happen during bck.
+            //
+            if (!isArg && out.is_ref)
             {
                 let init = out.items[LET_INIT];
-                if (init.type.is_ref)
-                    trackLocalRef(left: target, right: init.type.lifetime);
+                init.type.is_ref || fail("What!");
+                trackLocalRef(left: target, right: init.type.lifetime);
             }
             ///////////////////////////////////////////////////////////////
 
