@@ -873,9 +873,9 @@ pub fn cpp_codegen(
         let isArg = overload.flags & F_ARG;
 
         let annot = typeAnnot(
-            node.type, (overload.flags & F_MUT == 0 && !forceMut && M_CONST)
+            node.type, (!forceMut && !overload.type.is_mutref && M_CONST)
                      | (isArg && M_ARGUMENT)
-                     | (overload.flags & F_MUT && M_MUTVAR)
+                     | (overload.type.is_mutref && M_MUTVAR)
                      | (overload.flags & F_MOVED_FROM && M_MOVABLE));
 
         if (!node.target)
