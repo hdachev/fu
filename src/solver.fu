@@ -45,7 +45,6 @@ let USE_ref_to_mutref       = true;
 
 let USE_mcom_lets           = false;
 let USE_relax_F_MUT         = false;
-let USE_named_block_rets    = false;
 
 let SELF_TEST               = true;
 
@@ -2175,8 +2174,10 @@ pub fn solve(
                 h.ret_actual = t_void;
         }
 
-        if (!USE_named_block_rets)
-            mcom_BlockReturns_CopyOrMoveDecision(:h);
+
+        //
+
+        mcom_BlockReturns_CopyOrMoveDecision(:h);
 
 
         //
@@ -2339,10 +2340,6 @@ pub fn solve(
         let block = SolvedNode(
             kind: "block", :type, :items,
             target: label, helpers: h.index);
-
-        if (block.type.is_ref && USE_named_block_rets)
-            createNamedLifetime(
-                block, label ? label.name : "block");
 
         return block;
     }
@@ -3332,11 +3329,6 @@ pub fn solve(
                         steal: _helpers.last.vars.len - helpers0vars);
 
                     retval = s_body.type;
-
-                    ///////////////////////////////////////////////////////
-                    if (retval.is_ref && USE_named_block_rets)
-                        retval.lifetime = Lifetime_unwind(retval.lifetime);
-                    ///////////////////////////////////////////////////////
 
                     // MUT DURING SOLVE,
                     //  implicit args splice in
@@ -6478,26 +6470,6 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn mcom_BlockReturns(node: SolvedNode)
-    {
-        if (!node.helpers)
-            return;
-
-        let h = Helpers(node.helpers);
-
-        //
-        if (USE_named_block_rets)
-            mcom_BlockReturns_CopyOrMoveDecision(:h);
-
-        // cpy/move.
-        for (mut i = 0; i < h.returns.len; i++)
-            maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
-
-        // We need to update the named lifetime if we've set one.
-        if (node.type.is_ref && USE_named_block_rets)
-            updateNamedLifetime(node, h.ret_actual);
-    }
-
     fn mcom_BlockReturns_CopyOrMoveDecision(h: Helpers)
     {
         // Previously in solveJump, the move-vs-copy decision:
@@ -6574,7 +6546,13 @@ pub fn solve(
         }
         else if (k == "block")
         {
-            mcom_BlockReturns(node);
+            if (node.helpers)
+            {
+                // cpy/move.
+                let h = Helpers(node.helpers);
+                for (mut i = 0; i < h.returns.len; i++)
+                    maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
+            }
         }
         else if (k == "let")
         {
