@@ -41,7 +41,6 @@ let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 
 let USE_nontriv_autocopy    = true;
-let USE_ref_to_mutref       = true;
 
 let SELF_TEST               = true;
 
@@ -4255,7 +4254,7 @@ pub fn solve(
                         : t_init.is_mutref || flags & F_MUT || killref
                             ? flags & F_REF                                     && (!killref || fail("redundant, see above, refs cant bind to temps"))
                                 ? t_init
-                                : USE_ref_to_mutref && !(flags & F_MUT) && !killref
+                                : !(flags & F_MUT) && !killref
                                     ? clear_mutref(t_init)
                                     : clear_refs(t_init)
                             : flags & F_ARG && !(flags & F_MUT)
