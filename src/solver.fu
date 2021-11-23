@@ -3762,7 +3762,7 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_climb(lifetime, visit, locals_start?!: i32)
+    fn Lifetime_each(lifetime, visit, locals_start?!: i32)
     {
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
@@ -3792,7 +3792,7 @@ pub fn solve(
 
     fn Lifetime_unwind(mut lifetime: Lifetime, locals_start?!: i32): Lifetime
     {
-        Lifetime_climb(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
+        Lifetime_each(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
         {
             let init = o.Lifetime_climbType;
             if !(init.is_ref)
@@ -3813,7 +3813,7 @@ pub fn solve(
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
-        Lifetime_climb(:lifetime, visit: |o|
+        Lifetime_each(:lifetime, visit: |o|
         {
             if (o.flags & F_MOVED_FROM)
                 continue;
@@ -3830,7 +3830,7 @@ pub fn solve(
 
     fn Lifetime_F_TODO_FIX_RRET(lifetime: Lifetime, locals_start!: i32)
     {
-        Lifetime_climb(:lifetime, :locals_start, visit: |o|
+        Lifetime_each(:lifetime, :locals_start, visit: |o|
         {
             o.flags |= F_TODO_FIX_RRET;
 
@@ -3842,12 +3842,16 @@ pub fn solve(
 
     fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start?!: i32): bool
     {
-        Lifetime_climb(:lifetime, :locals_start, visit: |o|
+        Lifetime_each(:lifetime, :locals_start, visit: |o|
         {
             o.type.is_mutref || fail(
                 "Checking for mutref-return-ok found non-mutref: " ~ o.qWHAT);
 
             if (o.kind == "var" && !(o.flags & F_REF))
+                return false;
+
+            let init = o.Lifetime_climbType;
+            if (!Lifetime_allowsMutrefReturn(init.lifetime, :locals_start))
                 return false;
         });
 
