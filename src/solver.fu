@@ -5577,7 +5577,6 @@ pub fn solve(
             o.flags  |= F_MUT;
             let t_let = clear_refs(o.type);
 
-            maybeCopyOrMove(o.solved.items[LET_INIT], t_let);
             o.solved.MUT.type = t_let;
         }
 
@@ -5590,7 +5589,8 @@ pub fn solve(
         //  slot is a ref which may not need q_rx_copy.
         shadow let slot = slot.clear_refs().make_copyable();
 
-        //
+        // TODO FIX How do we defer this copy?
+        //  MCOM needs to pick up something.
         return maybeCopyOrMove(:node, slot);
     }
 
