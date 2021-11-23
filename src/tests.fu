@@ -6674,6 +6674,63 @@ pub fn runTests()
         fn main() = test() - 1;
     `);
 
+    TODO(`
+        struct Overload {
+            is_var?: bool;
+            lifetime?: i32[];
+        }
+
+        fn GET(implicit overloads: Overload[], idx: i32) {
+            return overloads[idx];
+        }
+
+        // Uncommenting the inline passes this,
+        //  this is shit, we can't leave this like this.
+        //
+        // inline
+        fn Lifetime_each(mut lifetime: i32[], visit) {
+            for (mut i = 0; i < lifetime.len; i++) {
+                let r = lifetime[i];
+                let o = GET(r);
+                visit(:o, i?: i, lifetime?: lifetime);
+            }
+        }
+
+        fn Lifetime_ascend(mut lifetime: i32[], visit) {
+            Lifetime_each(:lifetime, visit: |o, shadow lifetime| {
+                visit(o);
+                lifetime ~= o.lifetime; // set::add
+            });
+        }
+
+        fn Lifetime_allowsMutrefReturn(lifetime: i32[]): bool {
+            Lifetime_ascend(:lifetime, visit: |o| {
+                if (o.is_var)
+                    return false; // ERR: propagateType(jump): h.ret_actual not available.
+            });
+
+            return true;
+        }
+
+        fn main() {
+            let implicit overloads = [
+                Overload,
+                Overload(lifetime: [ 0 ]),
+                Overload(lifetime: [ 1 ], is_var: true),
+                Overload(lifetime: [ 1 ]),
+                Overload(lifetime: [ 2 ]), /* the isvar */
+                Overload(lifetime: [ 3 ]), /* the non-isvar */
+            ];
+
+            let expect_false = Lifetime_allowsMutrefReturn([ 4 ]);
+            let expect_true  = Lifetime_allowsMutrefReturn([ 5 ]);
+
+            if (expect_false) return 20;
+            if (!expect_true) return 10;
+            return 0;
+        }
+    `);
+
 
     // Enum basics.
 
