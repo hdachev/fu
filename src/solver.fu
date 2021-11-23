@@ -4269,14 +4269,6 @@ pub fn solve(
         if (t_let.is_mutref)
             flags |= F_REF;
 
-        if (init)
-        {
-            // Can change due to propagate type:
-            //  let a = b[i]: mutref -> ref unions-in a static lt.
-            if (t_let.lifetime && !(flags & F_ARG))
-                t_let.lifetime = init.lifetime || fail();
-        }
-
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
         //   So we can edit out of order maybe?
