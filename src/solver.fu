@@ -43,9 +43,6 @@ let OPTI_flatten_blocks     = true;
 let USE_nontriv_autocopy    = true;
 let USE_ref_to_mutref       = true;
 
-let USE_mcom_lets           = false;
-let USE_relax_F_MUT         = false;
-
 let SELF_TEST               = true;
 
 
@@ -2284,14 +2281,12 @@ pub fn solve(
         }
 
         // Lose the F_MUT annots on values that don't need them.
-        if (!USE_mcom_lets && USE_relax_F_MUT)
+        if (o.flags & F_MUT)
         {
-            if (o.flags & F_MUT && usage.is_mutref)
+            if (usage.is_mutref || o.flags & F_TODO_FIX_RRET)
             {
-                if (o.solved.items[LET_INIT].is_ref)
-                    maybeCopyOrMove(
-                        o.solved.items[LET_INIT],
-                        o.solved.type);
+                // usage.is_mutref || fail("THIS IS NOT A BUG, REMOVE THIS ASSERT.\n\n\tFound a case where we can\'t lift a F_MUT because the variable is returned from: " ~ o.qWHAT);
+                o.solved.MUT.type = clear_refs(o.solved.type);
             }
             else
             {
