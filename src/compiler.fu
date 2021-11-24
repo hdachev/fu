@@ -115,9 +115,9 @@ pub fn build(
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
 
-    // TEMP ///////////////////////////////////
-    let options = Options(dev: DEV_DisableBCK);
-    ///////////////////////////////////////////
+    // TEMP ////////////////////////////////////////
+    let options = Options; // (dev: DEV_DisableBCK);
+    ////////////////////////////////////////////////
 
     {
         println("COMPILE ", fname);
