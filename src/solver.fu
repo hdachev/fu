@@ -1333,7 +1333,6 @@ pub fn solve(
         mut path:   Target[];
 
         let has_converts    = scope.converts.len;
-        let ss_converts     = local_scope && _ss.converts;
 
         ////////////////////////////////////
         mut arg0 = TODO_FIX_convert_args[0];
@@ -1488,7 +1487,7 @@ pub fn solve(
 
                 // Conversions.
                 if (has_converts)
-                    scope.converts.each(ss_converts, fn foreach);
+                    scope.converts.each(local_scope && _ss.converts, fn foreach);
             }
         }
 
@@ -5179,7 +5178,7 @@ pub fn solve(
     fn popAndOr(ref node: SolvedNode)
     {
         let N   = node.items.len;
-        let pop = node.MUT.items[N - 1];
+        mut pop = node.MUT.items[N - 1]; // TODO BORROWCK RRETfix
 
         if (N > 2) {
             node.MUT.items.pop();
@@ -5657,7 +5656,7 @@ pub fn solve(
         }
 
 
-        //* This doesn't pass bck.
+        /* This doesn't pass bck.
 
         let newNode     = createCopy(node);
         ref newNodeData = MUT(newNode);
@@ -5878,6 +5877,9 @@ pub fn solve(
 
     // Reads.
 
+    fn flow         = _current_fn.flow;
+    fn events       = _current_fn.events;
+
     fn bck_trackRead(callsite: SolvedNode)
     {
         if (!callsite.type.is_ref || !_current_fn.target.index)
@@ -5886,8 +5888,6 @@ pub fn solve(
         _here           = callsite.token;
 
         let regions     = callsite.type.lifetime.uni0n;
-        ref flow        = _current_fn.flow;
-        ref events      = _current_fn.events;
         let loop_start  = _current_fn.loop_start;
 
         // Writes invalidate subsequent reads.
@@ -5954,18 +5954,16 @@ pub fn solve(
     {
         _here           = callsite.token;
 
-        ref flow        = _current_fn.flow;
-        ref events      = _current_fn.events;
         let loop_start  = _current_fn.loop_start;
 
         //
         for (mut i = 0; i < regions.len; i++)
         {
-            let target = Region_asIndex(regions[i]);
+            let target      = Region_asIndex(regions[i]);
             if (!target)
                 continue;
 
-            let position = positions[i];
+            let position    = positions[i];
 
             // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
@@ -6020,8 +6018,6 @@ pub fn solve(
         //  this is stupid, no need for such garbage to stay in the ast.
         if (!index)
             return;
-
-        ref events  = _current_fn.events;
 
         // println("bck_trackInit " ~ target.index ~ " " ~ target.name);
 
