@@ -836,18 +836,30 @@ pub fn solve(
     }
 
     fn tryMatch__mutargs(
-        scope: Scope, local_scope: bool,
         mut id: string,
         ref reorder: i32[],
         ref conversions: Target[][],
+        local_scope!?: bool,
+        misc_scope!?: Scope,
         args?: [SolvedNode],
         flags?!: i32, target?!: Target): Target
     {
         mut matchIdx: Target;
         mut DEBUG_assertMatch: Target;
 
+        fn countUsings()
+        {
+            shadow let scope = local_scope ? _scope : misc_scope;
+
+            mut count = 0;
+            if (scope.usings)
+                scope.usings.each(local_scope && _ss.usings, |u| u ? count++ : fail());
+
+            return count;
+        }
+
         mut minArity        = args.len;
-        let numUsings       = scope.usings && countUsings(:scope, :local_scope);
+        let numUsings       = countUsings();
         let explicitArity   = minArity;
         let maxArity        = explicitArity + numUsings;
 
@@ -905,7 +917,7 @@ pub fn solve(
                     {
                         seen.add(0);
                         seen.add(module.modid);
-                        scope.imports.each(
+                        _scope.imports.each(
                             local_scope && _ss.imports,
                                 |shadow modid| seen.add(modid));
                     }
@@ -923,7 +935,7 @@ pub fn solve(
 
             // Usings.
             if (numUsings)
-                scope.usings.each(
+                (local_scope ? _scope : misc_scope).usings.each(
                     local_scope && _ss.usings,
                         |u| visitTypeImports(GET(u).type));
 
@@ -952,7 +964,7 @@ pub fn solve(
             //
             mut shadows: bool;
             NEXT: while (overloadIdx =
-                scope.items.search(id, scope_iterator,
+                (local_scope ? _scope : misc_scope).items.search(id, scope_iterator,
                     scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
                     dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
@@ -1097,7 +1109,7 @@ pub fn solve(
                                     shadow let expect = expect || host_arg.default.type;
                                     if (expect)
                                     {
-                                        let conversion = tryConvert(:scope, :local_scope, :expect);
+                                        let conversion = tryConvert(:misc_scope, :local_scope, :expect);
                                         if (conversion)
                                         {
                                             conversions.grow_if_oob(i) = conversion;
@@ -1126,7 +1138,7 @@ pub fn solve(
                                 autocall_args.resize(1);
                                 autocall_args[0] = args[callsiteIndex];
 
-                                let t = tryMatch__mutargs(:scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions);
+                                let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions);
                                 if (!t)
                                     continue :NEXT;
 
@@ -1168,7 +1180,7 @@ pub fn solve(
                             // Go through conversions here.
                             if !(flags & F_CONVERSION)
                             {
-                                let conversion = tryConvert(:scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
+                                let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
                                 if (conversion)
                                 {
                                     conversions.grow_if_oob(i) ~= conversion;
@@ -1300,14 +1312,6 @@ pub fn solve(
 
     //
 
-    fn countUsings(scope: Scope, local_scope: bool): i32
-    {
-        let scope_skip = local_scope && _ss.usings;
-        mut count = 0;
-        scope.usings.each(scope_skip, |u| u ? count++ : fail());
-        return count;
-    }
-
     fn explainConversion(shadow path: [Target])
     {
         mut res = "`";
@@ -1326,13 +1330,13 @@ pub fn solve(
     }
 
     fn tryConvert(
-        scope: Scope, local_scope: bool,
+        misc_scope: Scope, local_scope!: bool,
         expect: Type, actual?: Type, retype?: SolvedNode): Target[]
     {
         mut match:  Target[];
         mut path:   Target[];
 
-        let has_converts    = scope.converts.len;
+        let has_converts    = (local_scope ? _scope : misc_scope).converts.len;
 
         ////////////////////////////////////
         mut arg0 = TODO_FIX_convert_args[0];
@@ -1377,7 +1381,7 @@ pub fn solve(
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
                     target: t,
-                    scope: Scope, local_scope: false, id: "",
+                    id: "",
                     args: TODO_FIX_convert_args,
                     reorder: TODO_FIX_reorder,
                     conversions: TODO_FIX_conversions,
@@ -1425,7 +1429,7 @@ pub fn solve(
                     }
                     else
                     {
-                        let mightHaveConversion = isStruct || scope.converts;
+                        let mightHaveConversion = isStruct || (local_scope ? _scope : misc_scope).converts;
                         if (mightHaveConversion)
                         {
                             // Forbid cyclic conversions.
@@ -1466,8 +1470,9 @@ pub fn solve(
             // Usings.
             if (nullary)
             {
-                scope.usings.each(local_scope && _ss.usings,
-                    |u| foreach(u));
+                (local_scope ? _scope : misc_scope)
+                    .usings.each(local_scope && _ss.usings,
+                        |u| foreach(u));
             }
 
             // On-struct stuff.
@@ -1487,7 +1492,9 @@ pub fn solve(
 
                 // Conversions.
                 if (has_converts)
-                    scope.converts.each(local_scope && _ss.converts, fn foreach);
+                    (local_scope ? _scope : misc_scope)
+                        .converts.each(local_scope && _ss.converts,
+                            fn foreach);
             }
         }
 
@@ -1502,21 +1509,21 @@ pub fn solve(
     //
 
     fn match__mutargs(
-        scope: Scope, local_scope: bool,
+        misc_scope: Scope, local_scope: bool,
         id: string, ref args: SolvedNode[],
         ref reorder: i32[],
         ref conversions: Target[][],
         flags: i32, target: Target): Target
     {
-        let ret = tryMatch__mutargs(:scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
+        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
         if (ret)
             return ret;
 
-        let debug = tryMatch__mutargs(:scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
+        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
         if (debug)
             return debug;
 
-        return NICERR_mismatch(:scope, :local_scope, :id, :args);
+        return NICERR_mismatch(:misc_scope, :local_scope, :id, :args);
     }
 
     fn explainWhichFn(overload: Target, conversions?: Target[][])
@@ -1552,7 +1559,7 @@ pub fn solve(
     }
 
     fn NICERR_mismatch(
-        scope: Scope, local_scope: bool,
+        misc_scope: Scope, local_scope: bool,
         id: string, args: SolvedNode[]): never
     {
         // TODO instead of this -
@@ -1569,7 +1576,7 @@ pub fn solve(
         mut scope_iterator: i32;
         mut target: Target;
         mut shadows: bool;
-        while (target = scope.items.search(:id, :scope_iterator,
+        while (target = (local_scope ? _scope : misc_scope).items.search(:id, :scope_iterator,
             scope_skip:  local_scope && _ss.items,
             field_items: local_scope && _field_items, :shadows))
         {
@@ -4822,7 +4829,7 @@ pub fn solve(
         if (other.modid != module.modid)
             return other.out.solve.scope;
 
-        return _scope;
+        fail("Qualified " ~ id.qBAD ~ ":: access current module.");
     }
 
     fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
@@ -4841,15 +4848,13 @@ pub fn solve(
 
         // Qualified?
         let qualified = node.flags & F_COMPOUND_ID;
-        let scope = qualified
-            ? dequalify_andGetScope(id)
-            : _scope;
+        let misc_scope = qualified && dequalify_andGetScope(id);
 
         //
         mut reorder: i32[];
         mut conversions: Target[][];
         let callTargIdx = match__mutargs(
-            :scope, local_scope: !qualified,
+            :misc_scope, local_scope: !qualified,
             :id, :args, :reorder, :conversions, :node.flags, :target);
 
         //
@@ -4994,7 +4999,7 @@ pub fn solve(
 
         mut reorder: i32[];
         mut conversions: Target[][];
-        let target = tryMatch__mutargs(_scope, local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT)
+        let target = tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
