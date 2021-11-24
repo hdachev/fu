@@ -234,7 +234,7 @@ pub struct Extended
     max:            i32;
     args:           Argument[];
 
-    //
+    // The scopeskips here aren't needed in global scope (e.g. anything imported).
     spec_of?:       Target;
     template:       Template;
 
@@ -242,10 +242,8 @@ pub struct Extended
     nodes?:         SolvedNodeData[];
     locals?:        Overload[];
 
-    // What about this then?
+    // These are single-module-solve-only, no need to keep them here.
     extra_items?:   ScopeItem[];
-
-    // The new used_by.
     callsites?:     SolvedNode[];
 };
 

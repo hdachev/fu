@@ -2279,13 +2279,17 @@ pub fn solve(
             }
         }
 
+        shadow ref o = GET_mut(t);
+
         // Lose the F_MUT annots on values that don't need them.
         if (o.flags & F_MUT)
         {
             if (usage.is_mutref || o.flags & F_TODO_FIX_RRET)
             {
                 // usage.is_mutref || fail("THIS IS NOT A BUG, REMOVE THIS ASSERT.\n\n\tFound a case where we can\'t lift a F_MUT because the variable is returned from: " ~ o.qWHAT);
-                o.solved.MUT.type = clear_refs(o.solved.type);
+
+                let type = clear_refs(o.solved.type);
+                o.solved.MUT.type = type;
             }
             else
             {
@@ -3587,11 +3591,13 @@ pub fn solve(
             ext.max         = max;
             ext.args        = args;
 
+            let mustUpdate  = CHANGE && ext.callsites;
+
             //
             ref overload    = GET_mut(out_target);
             overload.type   = out_type;
 
-            if (CHANGE && ext.callsites)
+            if (mustUpdate)
                 overload.status |= SS_UPDATED;
         }
 
@@ -5650,15 +5656,41 @@ pub fn solve(
             makeNote(N_NonTrivAutoCopy);
         }
 
-        // This is nasty,
-        //  the copy node injection thing without refs.
-        //
+
+        //* This doesn't pass bck.
+
         let newNode     = createCopy(node);
         ref newNodeData = MUT(newNode);
         ref oldNodeData = MUT(node);
 
         SWAP(newNodeData, oldNodeData);
         oldNodeData.items.only = newNode;
+
+        /*/
+
+        // This does but is extra nasty.
+        //  For stuff like this not to be necessary
+        //   we need both:  a] uniqueness - (also notice, this is uniquness at depth)
+        //                  b] disjoint vector access ... which is beyond non-trivial here.
+        //
+        //  Perhaps we can just go for a custom array swap here?
+
+        let newNode     = createCopy(node);
+
+        mut temp: SolvedNodeData;
+
+        ref newNodeData = MUT(newNode);
+        SWAP(temp, newNodeData);
+
+        ref oldNodeData = MUT(node);
+        SWAP(temp, oldNodeData);
+
+        oldNodeData.items.only = newNode;
+
+        shadow ref newNodeData = MUT(newNode);
+        SWAP(temp, newNodeData);
+
+        //*/
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
