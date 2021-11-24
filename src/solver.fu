@@ -727,7 +727,7 @@ pub fn solve(
         let right  = node.items[1];
 
         // left -> right.
-        mut expect = evalTypeAnnot(right).type; // TODO BORROWCK danglefix
+        let expect = evalTypeAnnot(right).type;
         let actual = solveNode(left, expect);
 
         checkAssignable(host: expect, actual.type,
@@ -1725,7 +1725,7 @@ pub fn solve(
 
     //
 
-    fn propagateType(mut node: SolvedNode, slot: Type, relax_mask!: i32) // TODO BORROWCK danglefix
+    fn propagateType(node: SolvedNode, slot: Type, relax_mask!: i32)
     {
         let k = node.kind;
 
@@ -1779,7 +1779,7 @@ pub fn solve(
         //
         else if (k == "call")
         {
-            mut t = node.target; // TODO BORROWCK danglefix
+            let t = node.target;
             if (t.kind == "field")
                 return node.items[0].propagateType(slot, :relax_mask);
 
@@ -2081,7 +2081,7 @@ pub fn solve(
             TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx);
 
         //
-        mut h = _helpers[helpers_idx]; // TODO BORROWCK danglefix
+        let h = _helpers[helpers_idx];
 
         // TODO clean this up, non-return ret-expects
         if !(mask & HM_CanReturn)
@@ -2316,7 +2316,7 @@ pub fn solve(
             if (tail.kind != "block" || tail.target)
                 break;
 
-            mut unwrap = tail.items;
+            let unwrap = tail.items;
             items.pop();
             items ~= unwrap;
         }
@@ -2683,7 +2683,7 @@ pub fn solve(
             args[REST_START] = REST_TYPE;
 
         //
-        mut mangle00 = mangle; //REF2MUTREF
+        let mangle00 = mangle;
         let SPECFAIL = Target(modid: 2147483647, index: 0);
 
         //
@@ -2691,7 +2691,7 @@ pub fn solve(
         mut template = original.template;
 
         ////////////////////
-        mut here0   = _here; // TODO BORROWCK danglefix
+        let here0   = _here;
         defer _here = here0;
         _here       = original.template.node.token;
         ////////////////////
@@ -2758,7 +2758,7 @@ pub fn solve(
 
         {
             let scope0 = Scope_snap(_scope);
-            mut ss0 = _ss; //REF2MUTREF
+            let ss0 = _ss;
             let helpers0vars = _helpers.last.vars.len;
             let helpers_data0 = _helpers_data.len;
 
@@ -2992,7 +2992,7 @@ pub fn solve(
             }
 
             // Populate scope.
-            mut mangle0 = mangle; //REF2MUTREF
+            let mangle0 = mangle;
 
             // Prep reject.
             target = into || Scope_create(_scope, local_of: parent_idx,
@@ -3002,7 +3002,7 @@ pub fn solve(
                 ? original.extra_items
                 : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
 
-            mut current_fn_or_type0     = _current_fn_or_type;
+            let current_fn_or_type0     = _current_fn_or_type;
             defer _current_fn_or_type   = current_fn_or_type0;
             _current_fn_or_type         = target;
 
@@ -3019,7 +3019,7 @@ pub fn solve(
             }
 
             /////////////////////////////////////////////////////////////////////
-            mut TODO_FIX_convert_args0  = TODO_FIX_convert_args;
+            let TODO_FIX_convert_args0  = TODO_FIX_convert_args;
             TODO_FIX_convert_args[0]    = SolvedNode(kind: "", type: Type());
             defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
             /////////////////////////////////////////////////////////////////////
@@ -3028,7 +3028,7 @@ pub fn solve(
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
-            mut root_scope0 = _root_scope; //REF2MUTREF
+            let root_scope0 = _root_scope;
             if (!root_scope0)
                 _root_scope = scope0;
 
@@ -3058,7 +3058,7 @@ pub fn solve(
             {
                 fn tryGetArgSpecType(id: string): Type
                 {
-                    mut param = "$" ~ id;
+                    let param = "$" ~ id;
                     for (shadow mut i = 0; i < extra_items.len; i++)
                     {
                         let m = extra_items[i];
@@ -3411,7 +3411,7 @@ pub fn solve(
         return __solveStruct(solve: false, :node);
     }
 
-    fn __solveStruct(solve!: bool, /*TODO BORROWCK danglefix*/mut node: Node, into?!: Target): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, into?!: Target): SolvedNode
     {
         let origId  = node.value;
         let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
@@ -3438,7 +3438,7 @@ pub fn solve(
             return createEmpty(target: out_target, type: out_type);
 
         ///////////////////////////////////////////////
-        mut current_fn_or_type0     = _current_fn_or_type;
+        let current_fn_or_type0     = _current_fn_or_type;
         defer _current_fn_or_type   = current_fn_or_type0;
         _current_fn_or_type         = out_target;
         ///////////////////////////////////////////////
@@ -3900,7 +3900,7 @@ pub fn solve(
     {
         fn h = _helpers[helpers_idx];
 
-        mut type = h.ret_actual || h.ret_expect; // TODO BORROWCK danglefix
+        let type = h.ret_actual || h.ret_expect;
 
         // Deal with expression first, might noop the jump.
         mut expr = items && solveNode(
@@ -4604,10 +4604,8 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): SolvedNode
     {
-        fn T(i: i32 = 0) {
-            mut danglefix = evalTypeAnnot(node.items[i], typeParams).type;
-            return danglefix;
-        }
+        fn T(i: i32 = 0)
+            evalTypeAnnot(node.items[i], typeParams).type;
 
         if (node.kind == "call")
         {
@@ -5469,7 +5467,7 @@ pub fn solve(
             if (target.kind == "inline")
             {
                 let scope0 = Scope_snap(_scope);
-                mut ss0 = _ss; //REF2MUTREF
+                let ss0 = _ss;
                 let helpers0vars = _helpers.last.vars.len;
 
                 defer {
@@ -5731,7 +5729,7 @@ pub fn solve(
         mut result: SolvedNode[];
 
         ////////////////////
-        mut here0   = _here; // TODO BORROWCK danglefix
+        let here0   = _here;
         defer _here = here0;
         ////////////////////
 
@@ -5742,7 +5740,7 @@ pub fn solve(
                 continue;
 
             // Regular solve.
-            mut unorderedClass = unorderedClassify(node.kind);
+            let unorderedClass = unorderedClassify(node.kind);
             if (!unorderedClass)
             {
                 HERE(node);
@@ -5821,7 +5819,7 @@ pub fn solve(
                     HERE(node);
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
-                    mut into = result[i + offset].target; // TODO FIX not mut, just want a val here
+                    let into = result[i + offset].target;
                     if (lazySolveStart(into, GET(into)))
                         repeat = true;
                 }
@@ -6057,12 +6055,12 @@ pub fn solve(
 
     //
 
-    fn bck_call(mut callsite: SolvedNode) // TODO BORROWCK danglefix
+    fn bck_call(callsite: SolvedNode)
     {
-        mut target = callsite.target; // TODO BORROWCK danglefix
+        let target = callsite.target;
 
         //
-        fn args = callsite.items; // TODO BORROWCK danglefix
+        let args = callsite.items;
         if (args)
         {
             bck_nodes(args);
@@ -6320,9 +6318,9 @@ pub fn solve(
         bck_node(items[0]);
 
         // BORROWCK ////////////////////////////////////////////////////////////
-        mut loop_start0                     = _current_fn.loop_start;
+        let loop_start0                     = _current_fn.loop_start;
         let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
-        mut events0                         = _current_fn.events.used_in_a_loop;
+        let events0                         = _current_fn.events.used_in_a_loop;
 
         _current_fn.loop_start              = loop_start;
         defer _current_fn.loop_start        = loop_start0;
