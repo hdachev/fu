@@ -465,7 +465,8 @@ pub fn cpp_codegen(
 
         if (o.local_of)
         {
-            ref _ids_dedupe = _current_fn._ids_dedupe;
+            fn _ids_dedupe  = _current_fn._ids_dedupe;
+            fn _ids_used    = _current_fn._ids_used;
 
             // Dedupe #1.
             if (dedupe)
@@ -479,7 +480,6 @@ pub fn cpp_codegen(
                         ? id ~ '_' ~ dupes
                         : id;
 
-                    ref _ids_used = _current_fn._ids_used;
                     for (mut i = 0; i < _ids_used.len; i++)
                     {
                         if (_ids_used[i] == candidate)
