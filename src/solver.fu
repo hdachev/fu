@@ -6361,6 +6361,26 @@ pub fn solve(
         //////////////////////////////////////////////////////
     }
 
+    fn bck_block(node: SolvedNode)
+    {
+        mut defers: SolvedNode[];
+
+        // Regular items forward.
+        let items = node.items;
+        for (mut i = 0; i < items.len; i++)
+        {
+            shadow let node = items[i];
+            if (node.kind == "defer")
+                defers ~= node.items.only;
+            else
+                bck_node(node);
+        }
+
+        // Defers in reverse.
+        for (mut i = defers.len; i --> 0; )
+            bck_node(defers[i]);
+    }
+
 
     // Borrow check router.
 
@@ -6398,6 +6418,12 @@ pub fn solve(
         //   in which case we lose them all after first expr.
         // if (k == "and" || k == "or")
         //     ...
+
+        // Support for defers here.
+        if (k == "block")
+            return bck_block(node);
+
+        // TODO: be exhaustive here
 
         // The default - descend recursively.
         bck_nodes(node.items);
