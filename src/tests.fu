@@ -5826,6 +5826,26 @@ pub fn runTests()
             + 100 * (test_defer_if_errok(false) - 10*3 - 0*5 - 9*7);
     `);
 
+    ZERO(`
+        fn sum_amulb(a: i32[], b: i32[], ref sum: i32)
+            for (mut i = 0; i < a.len; i++)
+                sum += a[i] * b[i];
+
+        fn test(ref a: i32[], ref sum: i32) {
+            let b = a;
+            defer sum_amulb(:a, :b, :sum);
+            for (mut i = 0; i < a.len; i++)
+                a[i] += 1;
+        }
+
+        fn main() {
+            mut a = [ 1 ];
+            mut sum = 0;
+            test(:a, :sum);
+            return sum - 2;
+        }
+    `);
+
 
     // Conversions / ctors.
 
