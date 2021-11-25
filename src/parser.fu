@@ -392,7 +392,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         struct! = false): Node[]
     {
         let line0   = _idx && tokens[_idx - 1].line;
-        mut col00   = _col0; /*bck fix*/
+        let col00   = _col0;
 
         mut colNN   = -1;
         mut lineNN  = line0;
@@ -494,7 +494,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseStatement(): Node
     {
         ///////////////////////////////////////////////
-        mut loc0 = _loc; /*bck fix*/
+        let loc0 = _loc;
         defer _loc = loc0;
         let token = tokens[_loc = _idx++] || fail();
         ///////////////////////////////////////////////
@@ -626,7 +626,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     fn parseExpressionStatement(): Node
     {
-        mut expr = parseExpression(P_RESET);
+        let expr = parseExpression(P_RESET);
+
         let peek = tokens[_idx];
         if (peek.kind == "op" && peek.value == ";")
             _idx++;
@@ -768,7 +769,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         let retIdx = items.len;
         items.push(type);
 
-        mut numReturns0 = _numReturns; /*bck fix*/
+        let numReturns0 = _numReturns;
 
         // Body or pattern (case/case).
         flags |= parseFnBodyOrPattern(items, :expr);
@@ -1016,8 +1017,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseExpression(p1: i32, mode?!: i32): Node
     {
         //////////////////////////////
-        mut p0 = _precedence; /*bck fix*/
-        mut loc0 = _loc; /*bck fix*/
+        let p0 = _precedence;
+        let loc0 = _loc;
         _precedence = p1;
         _loc = _idx;
         //////////////////////////////

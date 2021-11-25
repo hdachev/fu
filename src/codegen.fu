@@ -591,7 +591,7 @@ pub fn cpp_codegen(
             return true;
         }
 
-        mut expr = !(mode & M_STMT);
+        let expr = !(mode & M_STMT);
         if (expr && !label && items.exprOK)
             return cgComma(items, debug: debug ~ ".cgBlock");
 
@@ -608,7 +608,7 @@ pub fn cpp_codegen(
         ///////////////////////////////////////////////
 
         //////////////////////
-        mut indent0 = _indent; //REF2MUTREF
+        let indent0 = _indent;
         defer _indent = indent0;
         //////////////////////
         _indent ~= "    ";
@@ -802,7 +802,7 @@ pub fn cpp_codegen(
     fn cgFn(fn: SolvedNode, mode: i32): string
     {
         //////////////////////
-        mut indent0 = _indent; //REF2MUTREF
+        let indent0 = _indent;
         defer _indent = indent0;
         //////////////////////
 
@@ -1753,8 +1753,8 @@ pub fn cpp_codegen(
 
     fn cgLoop(node: SolvedNode): string
     {
-        mut can_cont0 = _current_fn.can_cont;
-        mut can_break0 = _current_fn.can_break;
+        let can_cont0 = _current_fn.can_cont;
+        let can_break0 = _current_fn.can_break;
 
         defer {
             _current_fn.can_cont = can_cont0;

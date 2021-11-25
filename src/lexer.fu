@@ -246,7 +246,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             else
             {
                 let idx1 = idx;
-                mut str = src.slice(idx0, idx1);
+                let str = src.slice(idx0, idx1);
 
                 if (hex && dot && !exp)
                 {
