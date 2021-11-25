@@ -3254,12 +3254,13 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @2:13:
+TODO: _0.fu @3:20:
 
 [2m      | [0m
-    2 |         pub [31;1mfn[0m ZERO(implicit ref sum: i32, mut x: i32) {
-[2m      |             while (x) {[0m
+[2m      |         pub fn ZERO(implicit ref sum: i32, mut x: i32) {[0m
+    3 |             while ([31;1mx[0m) {
 [2m      |                 let y = x / 2;[0m
+[2m      |                 ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,[0m
 
 	Unused variable: `y`: make it `lax` if this is intentional.
 
@@ -8872,7 +8873,7 @@ struct s_Arg
 
 static s_Arg mutargs(fu_VEC<s_Arg>& args)
 {
-    s_Arg badref { args[0] };
+    const s_Arg badref { args[0] };
     args = fu_VEC<s_Arg> { fu_VEC<s_Arg>::INIT<1> { s_Arg { 11 } } };
     return badref;
 }
@@ -9758,7 +9759,7 @@ static int Scope_add(const s_Scope& scope, fu::view<std::byte> kind, fu::view<st
 
 int fu_MAIN()
 {
-    s_Scope _scope {};
+    const s_Scope _scope {};
     fu_STR id {};
     const s_Type t_template {};
     const int min_1 {};
@@ -11204,7 +11205,7 @@ inline static s_BINOP setupOperators_6Kad(const int P_PREFIX_UNARY)
 {
     s_BINOP out {};
     int precedence = P_PREFIX_UNARY;
-    bool rightToLeft = false;
+    const bool rightToLeft = false;
     binop((fu::slate<1, fu_STR> { "|>"_fu }), precedence, out, rightToLeft);
     return out;
 }
@@ -12275,7 +12276,7 @@ static int test(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
 
 int fu_MAIN()
 {
-    s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
+    const s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
     fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu_VEC<s_Overload>::INIT<1> { s_Overload { fu_VEC<s_SolvedNodeData> { fu_VEC<s_SolvedNodeData>::INIT<1> { s_SolvedNodeData { s_Target { 0 } } } } } } };
     return int(test(overloads, _current_fn));
 }
@@ -12427,7 +12428,7 @@ static int test(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
 
 int fu_MAIN()
 {
-    s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
+    const s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
     fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu_VEC<s_Overload>::INIT<1> { s_Overload { fu_VEC<s_SolvedNodeData> { fu_VEC<s_SolvedNodeData>::INIT<1> { s_SolvedNodeData { s_Target { 0 } } } } } } };
     return int(test(overloads, _current_fn));
 }
@@ -12599,7 +12600,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int CallerNode(int t, fu::view<int> arr)
+static int CallerNode(const int t, fu::view<int> arr)
 {
     for (int i = 0; i < arr.size(); i++)
         return CallerNode(int(arr[i]), fu::view<int>{});
@@ -13141,7 +13142,7 @@ inline fu_VEC<T>& operator+=(fu_VEC<T>& a, T&& b) noexcept {
 /Users/hdachev/fu/include/fu/vec/concat_one.h:42:19: note: candidate template ignored: deduced conflicting types for parameter 'T' ('fu_VEC<std::byte>' vs. 'fu_STRLIT')
 inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const T& b) noexcept {
                   ^
-/Users/hdachev/fu/include/fu/vec/./concat.h:42:19: note: candidate template ignored: substitution failure [with V = fu_STRLIT, T = fu_VEC<std::byte>, T2 = std::byte]: assigning to 'fu_VEC<std::byte> *' from incompatible type 'std::byte *'
+/Users/hdachev/fu/include/fu/vec/./concat.h:42:19: note: candidate template ignored: substitution failure [with V = fu_STRLIT, T = fu_VEC<std::byte>, T2 = std::byte]: incompatible pointer types assigning to 'fu_VEC<std::byte> *' from 'std::byte *'
 inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const V& b) noexcept {
                   ^
 /Users/hdachev/fu/include/fu/vec/./concat.h:15:19: note: candidate template ignored: could not match 'fu_VEC<type-parameter-0-0>' against 'fu_STRLIT'
@@ -13484,7 +13485,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_xQkU(b) - 3;
+    return ARR_LAST_dkLb(b) - 3;
 }
 
 #endif
@@ -13526,7 +13527,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_xQkU(b) - 3;
+    return ARR_LAST_dkLb(b) - 3;
 }
 
 #endif
@@ -13608,7 +13609,7 @@ int fu_MAIN()
     fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu_VEC<int>::INIT<1> { 2 } };
     ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_xQkU(b) - ARR_LAST_xQkU((fu::slate<1, int> { 3 }));
+    return ARR_LAST_dkLb(b) - ARR_LAST_xQkU((fu::slate<1, int> { 3 }));
 }
 
 #endif
@@ -13970,7 +13971,7 @@ int fu_MAIN()
 
     {
         unsigned sum {};
-        unsigned delta = 0x9e3779b9u;
+        const unsigned delta = 0x9e3779b9u;
         for (int i = 0; i < 4; i++)
         {
             sum += delta;
@@ -14810,7 +14811,7 @@ int main() { return fu_MAIN(); }
 
 static int test()
 {
-    int x = 5;
+    const int x = 5;
     return x;
 }
 
@@ -14858,7 +14859,7 @@ struct s_Test
 
 static s_Test test()
 {
-    s_Test x = s_Test { 5 };
+    const s_Test x = s_Test { 5 };
     return x;
 }
 
@@ -14908,7 +14909,7 @@ struct s_Test
 
 static s_Test test()
 {
-    s_Test x = s_Test { 5, -5 };
+    const s_Test x = s_Test { 5, -5 };
     return x;
 }
 
@@ -21788,6 +21789,64 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn sum_amulb(a: i32[], b: i32[], ref sum: i32)
+            for (mut i = 0; i < a.len; i++)
+                sum += a[i] * b[i];
+
+        fn test(ref a: i32[], ref sum: i32) {
+            let b = a;
+            defer sum_amulb(:a, :b, :sum);
+            for (mut i = 0; i < a.len; i++)
+                a[i] += 1;
+        }
+
+        fn main() {
+            mut a = [ 1 ];
+            mut sum = 0;
+            test(:a, :sum);
+            return sum - 2;
+        }
+
+-----
+#include <fu/defer.h>
+#include <fu/vec.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static void sum_amulb(fu::view<int> a, fu::view<int> b, int& sum)
+{
+    for (int i = 0; i < a.size(); i++)
+        sum += (a[i] * b[i]);
+
+}
+
+static void test(fu_VEC<int>& a, int& sum)
+{
+    fu_VEC<int> b { a };
+    fu_DEFER(sum_amulb(a, b, sum));
+    for (int i = 0; i < a.size(); i++)
+        a.mutref(i) += 1;
+
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> a = fu_VEC<int> { fu_VEC<int>::INIT<1> { 1 } };
+    int sum = 0;
+    test(a, sum);
+    return sum - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
         type Test = i8;
         fn main() 256.Test.i32;
 
@@ -24101,6 +24160,8 @@ int main() { return fu_MAIN(); }
 
         fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
 
+        // EXPECT (fu::slate<3, int> { 1, 2, 3 })
+
 -----
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -24459,7 +24520,7 @@ inline static int hello_Xn88(const int a)
 
 int fu_MAIN()
 {
-    int a = 3;
+    const int a = 3;
     const int b = hello_Xn88(a);
     return b - 9;
 }
@@ -24513,7 +24574,7 @@ static int outer(const s_AB& ab)
 
 int fu_MAIN()
 {
-    s_AB ab = s_AB { 3, 5 };
+    const s_AB ab = s_AB { 3, 5 };
     return outer(ab) - 34;
 }
 
@@ -24556,7 +24617,7 @@ static fu_STR ascii_lower(const fu_STR& a)
     fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
-        std::byte c = res[i];
+        const std::byte c = res[i];
         if ((c >= std::byte('A')) && (c <= std::byte('Z')))
             res.mutref(i) = std::byte((int(c) + offset));
 
@@ -24607,7 +24668,7 @@ fu_STR ascii_lower(const fu_STR& a)
     fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
-        std::byte c = res[i];
+        const std::byte c = res[i];
         if ((c >= std::byte('A')) && (c <= std::byte('Z')))
             res.mutref(i) = std::byte((int(c) + offset));
 
@@ -25108,5 +25169,76 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_reopen
+
+-----
+
+        struct Overload {
+            is_var?: bool;
+            lifetime?: i32[];
+        }
+
+        fn GET(implicit overloads: Overload[], idx: i32) {
+            return overloads[idx];
+        }
+
+        // Uncommenting the inline passes this,
+        //  this is shit, we can't leave this like this.
+        //
+        // inline
+        fn Lifetime_each(mut lifetime: i32[], visit) {
+            for (mut i = 0; i < lifetime.len; i++) {
+                let r = lifetime[i];
+                let o = GET(r);
+                visit(:o, i?: i, lifetime?: lifetime);
+            }
+        }
+
+        fn Lifetime_ascend(mut lifetime: i32[], visit) {
+            Lifetime_each(:lifetime, visit: |o, shadow lifetime| {
+                visit(o);
+                lifetime ~= o.lifetime; // set::add
+            });
+        }
+
+        fn Lifetime_allowsMutrefReturn(lifetime: i32[]): bool {
+            Lifetime_ascend(:lifetime, visit: |o| {
+                if (o.is_var)
+                    return false; // ERR: propagateType(jump): h.ret_actual not available.
+            });
+
+            return true;
+        }
+
+        fn main() {
+            let implicit overloads = [
+                Overload,
+                Overload(lifetime: [ 0 ]),
+                Overload(lifetime: [ 1 ], is_var: true),
+                Overload(lifetime: [ 1 ]),
+                Overload(lifetime: [ 2 ]), /* the isvar */
+                Overload(lifetime: [ 3 ]), /* the non-isvar */
+            ];
+
+            let expect_false = Lifetime_allowsMutrefReturn([ 4 ]);
+            let expect_true  = Lifetime_allowsMutrefReturn([ 5 ]);
+
+            if (expect_false) return 20;
+            if (!expect_true) return 10;
+            return 0;
+        }
+
+-----
+TODO: _0.fu @33:28:
+
+[2m      |             Lifetime_ascend(:lifetime, visit: |o| {[0m
+[2m      |                 if (o.is_var)[0m
+   33 |                     return [31;1mfalse[0m; // ERR: propagateType(jump): h.ret_actual not available.
+[2m      |             });[0m
+[2m      | [0m
+
+	propagateType(jump): h.ret_actual not available.
+
+        Solving [35;1mfn[0m [34;1mLifetime_each_DU5D[0m
+                [35;1mfn[0m [34;1mLifetime_allowsMutrefReturn[0m
 
 -----
