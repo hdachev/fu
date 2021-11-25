@@ -446,7 +446,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             //
             let expr = struct
                 ? parseStructItem()
-                : parseStatement();
+                : parseStatementOrDefer();
 
             // Maybe we should get rid of this.
             expr.kind != "call"
@@ -522,7 +522,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (v == "break")       return parseJump("break");
                 if (v == "continue")    return parseJump("continue");
 
-                if (v == "defer")       return parseDefer();
                 if (v == "try")         return parseTryCatch();
             }
 
@@ -575,6 +574,20 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         // Expression statement, followed by a semi.
         return parseExpressionStatement();
+    }
+
+    fn parseStatementOrDefer()
+    {
+        let peek = tokens[_idx];
+
+        if (peek.kind == "id")
+        {
+            let v = peek.value;
+            if (v == "defer")
+                return { _idx++; parseDefer() };
+        }
+
+        return parseStatement();
     }
 
     fn parseImport(): Node
