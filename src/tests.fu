@@ -5831,18 +5831,34 @@ pub fn runTests()
             for (mut i = 0; i < a.len; i++)
                 sum += a[i] * b[i];
 
+        fn incrarr_by1(ref a: i32[])
+            for (mut i = 0; i < a.len; i++)
+                a[i] += 1;
+
         fn test(ref a: i32[], ref sum: i32) {
             let b = a;
             defer sum_amulb(:a, :b, :sum);
-            for (mut i = 0; i < a.len; i++)
-                a[i] += 1;
+
+            <alt>
+            for (mut i = 0; i < a.len; i++) a[i] += 1;
+            return a[0] - 2;
+            <alt/>
+            defer for (mut i = 0; i < a.len; i++) a[i] += 1;
+            return a[0] - 1;
+            <alt/>
+            incrarr_by1(:a);
+            return a[0] - 2;
+            <alt/>
+            defer incrarr_by1(:a);
+            return a[0] - 1;
+            </alt>
         }
 
         fn main() {
             mut a = [ 1 ];
             mut sum = 0;
-            test(:a, :sum);
-            return sum - 2;
+            let ret = 100 * test(:a, :sum);
+            return sum - 2 + ret;
         }
     `);
 
