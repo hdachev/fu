@@ -74,6 +74,10 @@ struct s_Region
 struct s_Lifetime
 {
     fu_VEC<s_Region> uni0n;
+    s_Lifetime(const s_Lifetime&) = delete;
+    s_Lifetime(s_Lifetime&&) = default;
+    s_Lifetime& operator=(const s_Lifetime&) = delete;
+    s_Lifetime& operator=(s_Lifetime&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -100,17 +104,17 @@ void Reference_trackArgument(s_Flow& flow, const int target_3, const int positio
     add(flow.is_arg, target_3);
 }
 
-                                #ifndef DEFt_unless_oob_kwxC
-                                #define DEFt_unless_oob_kwxC
-inline const fu_VEC<int>& unless_oob_kwxC(const fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_unless_oob_kedP
+                                #define DEFt_unless_oob_kedP
+inline const fu_VEC<int>& unless_oob_kedP(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_rem_7gVc
-                                #define DEFt_rem_7gVc
-inline bool rem_7gVc(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_rem_xJq8
+                                #define DEFt_rem_xJq8
+inline bool rem_xJq8(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -128,9 +132,9 @@ inline bool rem_7gVc(fu_VEC<int>& dest, const int item)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_kwxC
-                                #define DEFt_grow_if_oob_kwxC
-inline fu_VEC<int>& grow_if_oob_kwxC(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_aIXs
+                                #define DEFt_grow_if_oob_aIXs
+inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -139,9 +143,9 @@ inline fu_VEC<int>& grow_if_oob_kwxC(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_add_7gVc
-                                #define DEFt_add_7gVc
-inline bool add_7gVc(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_add_xJq8
+                                #define DEFt_add_xJq8
+inline bool add_xJq8(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -171,29 +175,29 @@ void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& rig
         if (!right_1)
             continue;
 
-        fu_VEC<int> invals { unless_oob_kwxC(flow.invalidates, right_1) };
-        if (!(!rem_7gVc(invals, left) || (i > 0)))
+        fu_VEC<int> invals { unless_oob_kedP(flow.invalidates, right_1) };
+        if (!(!rem_xJq8(invals, left) || (i > 0)))
             fu_ASSERT();
 
         if (invals)
         {
-            grow_if_oob_kwxC(flow.invalidates, left) = invals;
+            grow_if_oob_aIXs(flow.invalidates, left) = invals;
             for (int i_1 = 0; i_1 < invals.size(); i_1++)
-                add_7gVc(flow.invalidates.mutref(invals[i_1]), left);
+                add_xJq8(flow.invalidates.mutref(invals[i_1]), left);
 
         };
-        add_7gVc(grow_if_oob_kwxC(flow.invalidates, right_1), left);
+        add_xJq8(grow_if_oob_aIXs(flow.invalidates, right_1), left);
         if (has(flow.is_arg, right_1))
         {
             add(flow.is_arg, left);
-            add_7gVc(grow_if_oob_kwxC(flow.arg_aliases, left), right_1);
+            add_xJq8(grow_if_oob_aIXs(flow.arg_aliases, left), right_1);
         };
     };
 }
 
-                                #ifndef DEFt_try_steal_kwxC
-                                #define DEFt_try_steal_kwxC
-inline fu_VEC<int> try_steal_kwxC(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_try_steal_aIXs
+                                #define DEFt_try_steal_aIXs
+inline fu_VEC<int> try_steal_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if (i < a.size())
     {
@@ -205,9 +209,9 @@ inline fu_VEC<int> try_steal_kwxC(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_find_o2eL
-                                #define DEFt_find_o2eL
-inline int find_o2eL(fu::view<int> a, const int b)
+                                #ifndef DEFt_find_C47D
+                                #define DEFt_find_C47D
+inline int find_C47D(fu::view<int> a, const int b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -219,9 +223,9 @@ inline int find_o2eL(fu::view<int> a, const int b)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_qZja
-                                #define DEFt_unless_oob_qZja
-inline const fu_VEC<int>& unless_oob_qZja(fu::view<fu_VEC<int>> a, const int i)
+                                #ifndef DEFt_unless_oob_HoLq
+                                #define DEFt_unless_oob_HoLq
+inline const fu_VEC<int>& unless_oob_HoLq(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
@@ -235,14 +239,14 @@ void Reference_untrackLocalRef(s_Flow& flow, const int left, const s_Lifetime& r
         if (!right_1)
             continue;
 
-        if (!(rem_7gVc(flow.invalidates.mutref(right_1), left)))
+        if (!(rem_xJq8(flow.invalidates.mutref(right_1), left)))
             fu_ASSERT();
 
     };
-    fu_VEC<int> invals = try_steal_kwxC(flow.invalidates, left);
+    fu_VEC<int> invals = try_steal_aIXs(flow.invalidates, left);
     for (int i_1 = 0; i_1 < invals.size(); i_1++)
     {
-        const int idx = find_o2eL(unless_oob_qZja(flow.invalidates, invals[i_1]), left);
+        const int idx = find_C47D(unless_oob_HoLq(flow.invalidates, invals[i_1]), left);
         if ((idx >= 0))
             flow.invalidates.mutref(invals[i_1]).splice(idx, 1);
 
@@ -254,9 +258,9 @@ static fu_VEC<int>& at_risk_from(s_Flow& flow, const int use)
     return flow.args_at_risk.mutref(use);
 }
 
-                                #ifndef DEFt_add_2vji
-                                #define DEFt_add_2vji
-inline bool add_2vji(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_add_zs1w
+                                #define DEFt_add_zs1w
+inline bool add_zs1w(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -275,9 +279,9 @@ inline bool add_2vji(fu_VEC<int>& dest, const int item)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_xsUL
-                                #define DEFt_grow_if_oob_xsUL
-inline fu_VEC<int>& grow_if_oob_xsUL(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_xvHU
+                                #define DEFt_grow_if_oob_xvHU
+inline fu_VEC<int>& grow_if_oob_xvHU(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -286,9 +290,9 @@ inline fu_VEC<int>& grow_if_oob_xsUL(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_xsUL
-                                #define DEFt_unless_oob_xsUL
-inline const fu_VEC<int>& unless_oob_xsUL(const fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_unless_oob_luLQ
+                                #define DEFt_unless_oob_luLQ
+inline const fu_VEC<int>& unless_oob_luLQ(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
@@ -304,12 +308,12 @@ static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
         if (high < low)
             std::swap(high, low);
 
-        add_2vji(grow_if_oob_xsUL(flow.args_at_risk, high), low);
+        add_zs1w(grow_if_oob_xvHU(flow.args_at_risk, high), low);
 
         {
 
             {
-                fu_VEC<int> highs { unless_oob_xsUL(flow.arg_aliases, high) };
+                fu_VEC<int> highs { unless_oob_luLQ(flow.arg_aliases, high) };
                 if (highs)
                 {
                     const int last_1 = (highs.size() - 1);
@@ -320,7 +324,7 @@ static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
                     continue;
                 };
             };
-            fu_VEC<int> lows { unless_oob_xsUL(flow.arg_aliases, low) };
+            fu_VEC<int> lows { unless_oob_luLQ(flow.arg_aliases, low) };
             if (lows)
             {
                 const int last_1 = (lows.size() - 1);
@@ -342,26 +346,18 @@ void ArgsAtRisk_shake(s_Flow& flow)
         const int use = i;
         for (int i_1 = at_risk_from(flow, use).size(); i_1-- > 0; )
         {
-            int write = at_risk_from(flow, use)[i_1];
+            const int write = at_risk_from(flow, use)[i_1];
             at_risk_from(flow, use).splice(i_1, 1);
             ArgsAtRisk_shake(flow, int(use), int(write));
         };
     };
 }
 
-                                #ifndef DEFt_unless_oob_o2eL
-                                #define DEFt_unless_oob_o2eL
-inline int unless_oob_o2eL(fu::view<int> a, const int i)
+                                #ifndef DEFt_unless_oob_dhMB
+                                #define DEFt_unless_oob_dhMB
+inline int unless_oob_dhMB(fu::view<int> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const int*)fu::NIL);
-}
-                                #endif
-
-                                #ifndef DEFt_unless_oob_GZZU
-                                #define DEFt_unless_oob_GZZU
-inline const fu_VEC<int>& unless_oob_GZZU(fu::view<fu_VEC<int>> a, const int i)
-{
-    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
@@ -371,15 +367,15 @@ s_BitSet ArgsAtRisk_listRiskFree(const s_Flow& flow, const int position)
     if (position)
     {
         add_range(risk_free_1, 0, position);
-        const int target_3 = unless_oob_o2eL(flow.arg_targets, position);
-        fu::view<int> at_risk_from = unless_oob_GZZU(flow.args_at_risk, target_3);
+        const int target_3 = unless_oob_dhMB(flow.arg_targets, position);
+        fu::view<int> at_risk_from = unless_oob_HoLq(flow.args_at_risk, target_3);
         for (int i = 0; i < at_risk_from.size(); i++)
         {
             const int other = at_risk_from[i];
             if (other > target_3)
                 break;
 
-            const int other_position = (unless_oob_o2eL(flow.arg_positions, other) - 1);
+            const int other_position = (unless_oob_dhMB(flow.arg_positions, other) - 1);
             if ((other_position >= 0))
                 rem(risk_free_1, other_position);
 

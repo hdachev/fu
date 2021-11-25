@@ -19,6 +19,8 @@ set(FU_INPUTS
     ../lib/bit.fu
     fail.fu
     context.fu
+    structs.fu
+    quals.fu
     ../lib/file.fu
     ../lib/ansi.fu
     set.fu

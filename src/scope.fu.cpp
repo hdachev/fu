@@ -6,7 +6,6 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/concat_str.h>
 #include <fu/view.h>
 
 struct s_ArgWrite;
@@ -45,8 +44,9 @@ struct s_ValueType;
 bool operator<(const s_ScopeMemo&, const s_ScopeMemo&);
 bool operator==(const s_ScopeMemo&, const s_ScopeMemo&);
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
+fu_STR createStructCanon(int, fu::view<std::byte>);
 s_ScopeItem ScopeItem(const fu_STR&, const s_Target&, bool);
-s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, const fu_VEC<s_ScopeSkip>&, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
+s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, fu::view<s_ScopeSkip>, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_Target
@@ -211,6 +211,7 @@ struct s_Struct
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
     int flat_cnt;
+    bool all_triv;
     explicit operator bool() const noexcept
     {
         return false
@@ -220,6 +221,7 @@ struct s_Struct
             || imports
             || converts
             || flat_cnt
+            || all_triv
         ;
     }
 };
@@ -312,7 +314,6 @@ struct s_Overload
     s_Type type;
     int flags;
     s_SolvedNode solved;
-    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     explicit operator bool() const noexcept
@@ -323,7 +324,6 @@ struct s_Overload
             || type
             || flags
             || solved
-            || callsites
             || status
             || local_of
         ;
@@ -509,6 +509,7 @@ struct s_Extended
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
+    fu_VEC<s_SolvedNode> callsites;
     explicit operator bool() const noexcept
     {
         return false
@@ -520,6 +521,7 @@ struct s_Extended
             || nodes
             || locals
             || extra_items
+            || callsites
         ;
     }
 };
@@ -801,14 +803,9 @@ int MODID(const s_Module& module)
 inline constexpr int F_NOCOPY = (1 << 12);
                                 #endif
 
-                                #ifndef DEF_q_trivial
-                                #define DEF_q_trivial
-inline constexpr int q_trivial = (1 << 3);
-                                #endif
-
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy
-inline constexpr int q_rx_copy = (1 << 2);
+inline constexpr int q_rx_copy = (1 << 1);
                                 #endif
 
 s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST, s_Module& module)
@@ -817,7 +814,7 @@ s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST,
         fu::fail((("Bad struct name, leading digit: `"_fu + name_3) + "`."_fu));
 
     const int index_2 = module.out.types.size();
-    fu_STR canon_1 = (("$"_fu + index_2) + name_3);
+    fu_STR canon_1 = createStructCanon(index_2, name_3);
     if (SELF_TEST)
     {
         for (int i = 0; i < module.out.types.size(); i++)
@@ -827,14 +824,14 @@ s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST,
 
         };
     };
-    module.out.types += s_Struct { fu_STR(name_3), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, 0 };
-    const int specualtive_quals = ((flags_4 & F_NOCOPY) ? int(q_trivial) : (q_rx_copy | q_trivial));
+    module.out.types += s_Struct { fu_STR(name_3), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, 0, bool{} };
+    const int specualtive_quals = (!(flags_4 & F_NOCOPY) ? q_rx_copy : (*(const int*)fu::NIL));
     return s_Type { s_ValueType { int(specualtive_quals), int(MODID(module)), fu_STR(canon_1) }, s_Lifetime{} };
 }
 
 s_Type despeculateStruct(s_Type&& type_3)
 {
-    type_3.vtype.quals &= ~(q_rx_copy | q_trivial);
+    type_3.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type_3);
 }
 
@@ -863,7 +860,7 @@ s_Scope Scope_exports(const s_Scope& scope_1, const int modid_5, const fu_VEC<s_
     return s_Scope { fu_VEC<s_ScopeItem>(result), fu_VEC<s_Overload>(scope_1.overloads), fu_VEC<s_Extended>(scope_1.extended), fu_VEC<int>(no_imports), fu_VEC<s_Target>(no_usings), fu_VEC<s_Target>(scope_1.converts), int(pub_count_1) };
 }
 
-static void nextSkip(const fu_VEC<s_ScopeSkip>& scope_skip_1, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items_5)
+static void nextSkip(fu::view<s_ScopeSkip> scope_skip_1, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items_5)
 {
     for (int i = scope_skip_1.size(); i-- > 0; )
     {
@@ -884,7 +881,7 @@ static void nextSkip(const fu_VEC<s_ScopeSkip>& scope_skip_1, int& scope_iterato
 
 }
 
-s_Target search(fu::view<s_ScopeItem> items_5, const fu_STR& id_1, int& scope_iterator, const fu_VEC<s_ScopeSkip>& scope_skip_1, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items_1, fu::view<s_ScopeItem> field_items)
+s_Target search(fu::view<s_ScopeItem> items_5, const fu_STR& id_1, int& scope_iterator, fu::view<s_ScopeSkip> scope_skip_1, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items_1, fu::view<s_ScopeItem> field_items)
 {
     if (dont_search_just_return)
     {
@@ -961,9 +958,9 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return cmp(a, b) == 0;
 }
 
-                                #ifndef DEFt_grow_if_oob_obzm
-                                #define DEFt_grow_if_oob_obzm
-inline s_Extended& grow_if_oob_obzm(fu_VEC<s_Extended>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_ZXR1
+                                #define DEFt_grow_if_oob_ZXR1
+inline s_Extended& grow_if_oob_ZXR1(fu_VEC<s_Extended>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -974,7 +971,7 @@ inline s_Extended& grow_if_oob_obzm(fu_VEC<s_Extended>& a, const int i)
 
 s_Target Scope_create(s_Scope& scope_1, const fu_STR& kind_3, const fu_STR& name_3, const s_Type& type_3, const int flags_4, const s_SolvedNode& solved_1, const int local_of_1, const unsigned status_1, const bool nest, const s_Module& module)
 {
-    fu_VEC<s_Overload>& overloads_1 = ((nest && local_of_1) ? grow_if_oob_obzm(scope_1.extended, (local_of_1 - 1)).locals : scope_1.overloads);
+    fu_VEC<s_Overload>& overloads_1 = ((nest && local_of_1) ? grow_if_oob_ZXR1(scope_1.extended, (local_of_1 - 1)).locals : scope_1.overloads);
     int _0 {};
     const s_Target target_4 = s_Target { (nest && (_0 = -local_of_1) ? _0 : int(MODID(module))), (overloads_1.size() + 1) };
     s_Overload item {};

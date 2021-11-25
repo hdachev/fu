@@ -207,6 +207,7 @@ struct s_Struct
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
     int flat_cnt;
+    bool all_triv;
     explicit operator bool() const noexcept
     {
         return false
@@ -216,6 +217,7 @@ struct s_Struct
             || imports
             || converts
             || flat_cnt
+            || all_triv
         ;
     }
 };
@@ -308,7 +310,6 @@ struct s_Overload
     s_Type type;
     int flags;
     s_SolvedNode solved;
-    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     explicit operator bool() const noexcept
@@ -319,7 +320,6 @@ struct s_Overload
             || type
             || flags
             || solved
-            || callsites
             || status
             || local_of
         ;
@@ -505,6 +505,7 @@ struct s_Extended
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
+    fu_VEC<s_SolvedNode> callsites;
     explicit operator bool() const noexcept
     {
         return false
@@ -516,6 +517,7 @@ struct s_Extended
             || nodes
             || locals
             || extra_items
+            || callsites
         ;
     }
 };

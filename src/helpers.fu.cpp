@@ -132,7 +132,7 @@ fu_STR ascii_lower(const fu_STR& a)
     fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
-        std::byte c = res[i];
+        const std::byte c = res[i];
         if ((c >= std::byte('A')) && (c <= std::byte('Z')))
             res.mutref(i) = std::byte((int(c) + offset));
 

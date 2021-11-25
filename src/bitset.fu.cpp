@@ -22,9 +22,9 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_grow_if_oob_oHEp
-                                #define DEFt_grow_if_oob_oHEp
-inline uint8_t& grow_if_oob_oHEp(fu_VEC<uint8_t>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_DlDj
+                                #define DEFt_grow_if_oob_DlDj
+inline uint8_t& grow_if_oob_DlDj(fu_VEC<uint8_t>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -39,7 +39,7 @@ bool add_once(s_BitSet& _, const int idx)
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
     const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
-    uint8_t& entry = grow_if_oob_oHEp(_._data, bucket);
+    uint8_t& entry = grow_if_oob_DlDj(_._data, bucket);
     if (!(entry & mask))
     {
         entry |= mask;
@@ -54,7 +54,7 @@ void add(s_BitSet& _, const int idx)
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
     const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
-    grow_if_oob_oHEp(_._data, bucket) |= mask;
+    grow_if_oob_DlDj(_._data, bucket) |= mask;
 }
 
 bool has(const s_BitSet& _, const int idx)

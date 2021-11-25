@@ -14,6 +14,8 @@
 #include "bitset.fu.cpp"
 #include "fail.fu.cpp"
 #include "context.fu.cpp"
+#include "structs.fu.cpp"
+#include "quals.fu.cpp"
 #include "../lib/ansi.fu.cpp"
 #include "compiler.fu.cpp"
 #include "scope.fu.cpp"

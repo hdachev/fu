@@ -58,7 +58,7 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
             continue;
 
         const uint64_t ci = (uint64_t(c) - ((c < std::byte('a')) ? uint64_t(std::byte('0')) : uint64_t(std::byte('a'))));
-        uint64_t last_1 = absval;
+        const uint64_t last_1 = absval;
         absval *= base;
         absval += ci;
         fu_STR* _0;
@@ -66,7 +66,7 @@ s_Intlit Intlit(fu::view<std::byte> sign_prefix_value_suffix)
     };
     const bool uNsigned = ((suffix == std::byte('u')) || (base != 10ull));
     const bool negative = (sign == std::byte('-'));
-    const bool sIgned = (bool(negative) || (suffix == std::byte('i')));
+    const bool sIgned = (negative || (suffix == std::byte('i')));
     fu_STR* _1;
     (*(_1 = &(error)) ? *_1 : *_1 = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{}));
     const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));

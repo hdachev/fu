@@ -112,9 +112,9 @@ static fu_STR unescapeStr(fu::view<std::byte> esc, const int idx0, const int idx
     return out;
 }
 
-                                #ifndef DEFt_has_qVFp
-                                #define DEFt_has_qVFp
-inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
+                                #ifndef DEFt_has_05eu
+                                #define DEFt_has_05eu
+inline bool has_05eu(fu::view<std::byte> a, const std::byte b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -126,9 +126,9 @@ inline bool has_qVFp(fu::view<std::byte> a, const std::byte b)
 }
                                 #endif
 
-                                #ifndef DEFt_has_ByEn
-                                #define DEFt_has_ByEn
-inline bool has_ByEn(fu::view<fu_STR> a, fu::view<std::byte> b)
+                                #ifndef DEFt_has_VtCz
+                                #define DEFt_has_VtCz
+inline bool has_VtCz(fu::view<fu_STR> a, fu::view<std::byte> b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -150,7 +150,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
     token("sof"_fu, "sof"_fu, idx, idx, lidx, tokens, line);
     while (idx < end)
     {
-        int idx0 = idx;
+        const int idx0 = idx;
         const std::byte c = src[idx++];
         if ((c <= std::byte(' ')))
         {
@@ -253,7 +253,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
             else
             {
-                int idx1 = idx;
+                const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
                 if (hex && dot && !exp_1)
                     err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
@@ -289,7 +289,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 err_str("str"_fu, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
             else
             {
-                int idx1 = idx;
+                const int idx1 = idx;
                 fu_STR str = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == std::byte('\''));
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
@@ -332,16 +332,16 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
         }
-        else if (has_qVFp(OPTOKENS, c))
+        else if (has_05eu(OPTOKENS, c))
         {
             fu_STR candidate = fu_STR { fu_STR::INIT<1> { std::byte(c) } };
             while (idx < end)
             {
                 const std::byte c_1 = src[idx++];
-                if (has_qVFp(OPTOKENS, c_1))
+                if (has_05eu(OPTOKENS, c_1))
                 {
                     fu_STR c1 = (candidate + c_1);
-                    if (has_ByEn(MBOPS, c1))
+                    if (has_VtCz(MBOPS, c1))
                     {
                         candidate = c1;
                         continue;

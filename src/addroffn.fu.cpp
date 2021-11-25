@@ -69,6 +69,10 @@ struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
+    s_Type(const s_Type&) = delete;
+    s_Type(s_Type&&) = default;
+    s_Type& operator=(const s_Type&) = delete;
+    s_Type& operator=(s_Type&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -141,9 +145,9 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_SgXb
-                                #define DEFt_unpackAddrOfFn_SgXb
-inline void unpackAddrOfFn_SgXb(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_ZIWZ
+                                #define DEFt_unpackAddrOfFn_ZIWZ
+inline void unpackAddrOfFn_ZIWZ(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -167,7 +171,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_SgXb(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_ZIWZ(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 

@@ -221,6 +221,7 @@ struct s_Struct
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
     int flat_cnt;
+    bool all_triv;
     explicit operator bool() const noexcept
     {
         return false
@@ -230,6 +231,7 @@ struct s_Struct
             || imports
             || converts
             || flat_cnt
+            || all_triv
         ;
     }
 };
@@ -322,7 +324,6 @@ struct s_Overload
     s_Type type;
     int flags;
     s_SolvedNode solved;
-    fu_VEC<s_SolvedNode> callsites;
     unsigned status;
     int local_of;
     explicit operator bool() const noexcept
@@ -333,7 +334,6 @@ struct s_Overload
             || type
             || flags
             || solved
-            || callsites
             || status
             || local_of
         ;
@@ -519,6 +519,7 @@ struct s_Extended
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
+    fu_VEC<s_SolvedNode> callsites;
     explicit operator bool() const noexcept
     {
         return false
@@ -530,6 +531,7 @@ struct s_Extended
             || nodes
             || locals
             || extra_items
+            || callsites
         ;
     }
 };
@@ -717,17 +719,17 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_jB4B
-                                #define DEFt_if_last_jB4B
-inline std::byte if_last_jB4B(const fu_STR& s)
+                                #ifndef DEFt_if_last_SzE9
+                                #define DEFt_if_last_SzE9
+inline std::byte if_last_SzE9(fu::view<std::byte> s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_kK0z
-                                #define DEFt_grow_if_oob_kK0z
-inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_snLz
+                                #define DEFt_grow_if_oob_snLz
+inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -736,7 +738,7 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu_VEC<fu_STR>& Fs, fu::view<std::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
+[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<std::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
     {
@@ -771,9 +773,9 @@ inline fu_STR& grow_if_oob_kK0z(fu_VEC<fu_STR>& a, const int i)
     fu::fail((stdout + explain));
 }
 
-                                #ifndef DEFt_only_joGv
-                                #define DEFt_only_joGv
-inline int only_joGv(fu::view<int> s)
+                                #ifndef DEFt_only_VAhQ
+                                #define DEFt_only_VAhQ
+inline int only_VAhQ(fu::view<int> s)
 {
     return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
 }
@@ -810,20 +812,20 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<std::byte> data, fu::v
 
 void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<std::byte> scheme, const fu_STR& onfail, const s_Context& ctx)
 {
-    if (if_last_jB4B(dir_wrk) != std::byte('/'))
+    if (if_last_SzE9(dir_wrk) != std::byte('/'))
     {
         if (!(dir_wrk))
             fu::fail("No workspace directory provided."_fu);
 
         dir_wrk += std::byte('/');
     };
-    if (dir_obj && (if_last_jB4B(dir_obj) != std::byte('/')))
+    if (dir_obj && (if_last_SzE9(dir_obj) != std::byte('/')))
         dir_obj += std::byte('/');
 
-    if (dir_src && (if_last_jB4B(dir_src) != std::byte('/')))
+    if (dir_src && (if_last_SzE9(dir_src) != std::byte('/')))
         dir_src += std::byte('/');
 
-    if (dir_cpp && (if_last_jB4B(dir_cpp) != std::byte('/')))
+    if (dir_cpp && (if_last_SzE9(dir_cpp) != std::byte('/')))
         dir_cpp += std::byte('/');
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
@@ -859,7 +861,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         for (int i_1_1 = 0; i_1_1 < cpp_1.unity.size(); i_1_1++)
         {
             const int m = cpp_1.unity[i_1_1];
-            int u = unit_mapping[m];
+            const int u = unit_mapping[m];
             if (u != unit)
             {
                 for (int i_2 = u; i_2 < unit_mapping.size(); i_2++)
@@ -871,7 +873,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             };
         };
         unit_mapping += unit;
-        grow_if_oob_kK0z(unit_fnames, unit) = (i ? fu_STR(module.fname) : "fulib runtime"_fu);
+        grow_if_oob_snLz(unit_fnames, unit) = (i ? fu_STR(module.fname) : "fulib runtime"_fu);
     };
     fu_VEC<fu_STR> units {};
     for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
@@ -879,7 +881,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         const s_Module& module = ctx.modules[i_1];
         const s_CodegenOutput& cpp_1 = (i_1 ? module.out.cpp : fulib_cpp);
         if (cpp_1.src)
-            grow_if_oob_kK0z(units, unit_mapping[i_1]) += cpp_1.src;
+            grow_if_oob_snLz(units, unit_mapping[i_1]) += cpp_1.src;
 
     };
     fu_VEC<fu_STR> Fs {};
@@ -891,7 +893,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             continue;
 
         fu_STR F = ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp_1), 16)) + "-"_fu) + cpp_1.size());
-        grow_if_oob_kK0z(Fs, i_2) = F;
+        grow_if_oob_snLz(Fs, i_2) = F;
         len_all += cpp_1.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
@@ -957,7 +959,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     if (run)
     {
         if (exe_size == 4)
-            code = only_joGv(fu::view_of(fu::file_read(F_exe), int{}));
+            code = only_VAhQ(fu::view_of(fu::file_read(F_exe), int{}));
         else
         {
             code = fu::shell_exec(fu_STR(F_exe), stdout);

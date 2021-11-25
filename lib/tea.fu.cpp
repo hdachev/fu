@@ -35,7 +35,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
         unsigned sum {};
-        unsigned delta = 0x9e3779b9u;
+        const unsigned delta = 0x9e3779b9u;
         for (int i_1 = 0; i_1 < 16; i_1++)
         {
             sum += delta;
@@ -59,7 +59,7 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
             res.v1 ^= last;
         };
         unsigned sum {};
-        unsigned delta = 0x9e3779b9u;
+        const unsigned delta = 0x9e3779b9u;
         for (int i_1 = 0; i_1 < 16; i_1++)
         {
             sum += delta;
