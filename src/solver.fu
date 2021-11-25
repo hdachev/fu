@@ -1935,14 +1935,18 @@ pub fn solve(
             h.ret_actual.try_relax(:slot, :relax_mask);
 
             //
-            mut last = true;
             for (mut i = node.items.len; i --> 0; )
             {
-                let t = last
-                    ? { last = false; slot }
-                    : t_void;
+                shadow let node = node.items[i];
 
-                propagateType(node.items[i], t, :relax_mask);
+                // Removing propagateType(defer) and handling here:
+                //  this validates we don't get stray defers outside of blocks.
+                shadow let node = node.kind == "defer"
+                    ? node.items.only
+                    : node;
+
+                propagateType(node, :relax_mask,
+                    i != 0 ? slot : t_void);
             }
 
             // TODO FIX args need extra iteration here.
@@ -1992,10 +1996,6 @@ pub fn solve(
             propagateType(recover, t_void, :relax_mask);
             propagateType(error, t_string, :relax_mask);
             propagateType(trybind,  :slot, :relax_mask);
-        }
-        else if (k == "defer")
-        {
-            propagateType(node.items.only, t_void, :relax_mask);
         }
         else if (k == "root")
         {
