@@ -1913,19 +1913,58 @@ pub fn cpp_codegen(
     {
         let expr = node.items.only;
 
-        // NRVO now here, solver doesn't care.
-        if (mode & M_RETURN && node.kind == "move")
+        if (node.kind == "move")
         {
-            fn supportsNRVO(o: Overload)
-                o.kind == "var" && !(o.flags & F_ARG)
-                    && o.local_of == _current_fn.target.index;
+            // NRVO now here, solver doesn't care.
+            if (mode & M_RETURN)
+            {
+                fn supportsNRVO(o: Overload)
+                    o.kind == "var" && !(o.flags & F_ARG)
+                        && o.local_of == _current_fn.target.index;
 
-            let nrvo = expr.kind == "call"
-                    && expr.items.len == 0
-                    && expr.target.GET.supportsNRVO;
+                let nrvo = expr.kind == "call"
+                        && expr.items.len == 0
+                        && expr.target.GET.supportsNRVO;
 
-            if (nrvo)
-                return cgNode(expr, debug: "NRVO");
+                if (nrvo)
+                    return cgNode(expr, debug: "NRVO");
+            }
+
+            if (!node.type.is_trivial)
+            {
+                // Moving from a constref return,
+                //  it's an expressiveness problem in cpp,
+                //   easiest way to work around it is with a const_cast:
+                //
+                //   struct X;
+                //
+                //   const X& func(const X& val) {
+                //       return val;
+                //   }
+                //
+                //   X&& func(X&& val) {            // Alternatively:
+                //       return (X&&)func(val);     //  return static_cast<X&&>(const_cast<X&>(func(val)))
+                //   }
+                //
+                if (expr.kind == "call")
+                {
+                    fn Lifetime_hasArguments(lifetime: Lifetime)
+                    {
+                        for (mut i = 0; i < lifetime.uni0n.len; i++)
+                            if (lifetime.uni0n[i].Region_isArg)
+                                return true;
+
+                        return false;
+                    }
+
+                    let o = GET(expr.target);
+                    if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArguments)
+                    {
+                        // Emit the helper here -
+                        fail("MOVE HELPER NEEDED FOR " ~ o.name);
+                    }
+                }
+            }
         }
 
         return cgMoveOrClone(node.kind, node.type, cgNode(expr, debug: "cgMoveOrClone"));
