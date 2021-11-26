@@ -68,7 +68,7 @@ fu_STR hash_tea(const fu_STR& str)
     fu_STR res;
 
     res += hash.v0;
-    res += std::byte('-');
+    res += fu::byte('-');
     res += hash.v1;
 
     return res;

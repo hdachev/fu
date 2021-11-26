@@ -224,7 +224,7 @@ pub fn cpp_codegen(
             if (c == "f64")     return "double";
 
             // Narrow charascter types. TODO: byte!
-            if (c == "i8" || c == "u8")
+            if (c == "i8" || c == "u8" || c == "byte")
             {
                 include("<fu/int.h>");
                 return "fu::" ~ c;
@@ -238,8 +238,6 @@ pub fn cpp_codegen(
             if (c == "u16")     return "uint16_t";
             if (c == "u32")     return "uint32_t";
             if (c == "u64")     return "uint64_t";
-
-            if (c == "byte")    return "std::byte";
 
             fail("Unknown primitive.");
         }
@@ -1194,7 +1192,10 @@ pub fn cpp_codegen(
             else                esc ~= c;
         }
 
-        return "std::byte('" ~ esc ~ "')";
+        // TODO FIX, when this is char this isn't needed
+        include("<fu/int.h>");
+
+        return "fu::byte('" ~ esc ~ "')";
     }
 
 

@@ -12,14 +12,14 @@ inline fu_STR fu_TO_STR(long long num) noexcept
     // TODO FIX this doesnt work on min-int + its slow
     int at = 0;
     if (num < 0) {
-        vec.push(std::byte('-'));
+        vec.push(fu::byte('-'));
         num = -num;
         at = 1;
     }
 
     do {
         int d = num % 10; num /= 10;
-        vec.insert(at, std::byte(d + '0'));
+        vec.insert(at, fu::byte(d + '0'));
     }
     while (num);
 

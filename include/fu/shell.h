@@ -14,7 +14,7 @@ int shell_exec(fu_STR&& cmd, fu_STR& stdout)
     fu::defer _pclose { [&]() { if (pipe) pclose(pipe); } };
 
     if (pipe) {
-        std::byte buffer[FREAD_BUFFER_SIZE];
+        fu::byte buffer[FREAD_BUFFER_SIZE];
         size_t count;
         while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, pipe)))
             stdout.append_copy(

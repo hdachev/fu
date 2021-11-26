@@ -3,6 +3,7 @@
 #include "./std.h"
 #include "./cfg.h"
 #include "./inl.h"
+#include "./int.h"
 
 /////////////////////////////////////////////
 //

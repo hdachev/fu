@@ -31,7 +31,7 @@ struct never
 
 [[noreturn]] inline never fail(fu_STR&& what)
 {
-    what.push(std::byte(0));
+    what.push(fu::byte(0));
     fail((const char*)what.data());
 }
 

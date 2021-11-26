@@ -5,12 +5,12 @@
 
 // Strings.
 
-typedef fu_VEC<std::byte> fu_STR;
+typedef fu_VEC<fu::byte> fu_STR;
 
 inline fu_STR fu_TO_STR(const char* cstr) noexcept
 {
     fu_STR vec;
-    vec.UNSAFE__init_copy((const std::byte*)cstr, i32(strlen(cstr)));
+    vec.UNSAFE__init_copy((const fu::byte*)cstr, i32(strlen(cstr)));
     return vec;
 }
 
@@ -19,21 +19,21 @@ inline fu_STR fu_TO_STR(const char* cstr) noexcept
 
 struct fu_STRLIT
 {
-    typedef std::byte value_type;
-    typedef std::byte fu_VIEW_value_type;
-    typedef std::byte fu_ANY_value_type;
+    typedef fu::byte value_type;
+    typedef fu::byte fu_VIEW_value_type;
+    typedef fu::byte fu_ANY_value_type;
 
     const char* m_data;
     int m_size;
 
     operator fu_STR() const noexcept {
         fu_STR vec;
-        vec.UNSAFE__init_copy((const std::byte*)m_data, m_size);
+        vec.UNSAFE__init_copy((const fu::byte*)m_data, m_size);
         return vec;
     }
 
-    fu_INL const std::byte* data() const noexcept {
-        return (const std::byte*)m_data;
+    fu_INL const fu::byte* data() const noexcept {
+        return (const fu::byte*)m_data;
     }
 
     fu_INL int size() const noexcept {
@@ -44,12 +44,12 @@ struct fu_STRLIT
         return m_size;
     }
 
-    fu_INL const std::byte& operator[](i32 idx) const noexcept
+    fu_INL const fu::byte& operator[](i32 idx) const noexcept
     {
-        auto* ok = (std::byte*)m_data + idx;
+        auto* ok = (fu::byte*)m_data + idx;
         return (u32) idx < (u32) m_size
              ? *ok
-             : *((std::byte*)1);
+             : *((fu::byte*)1);
     }
 };
 

@@ -15,7 +15,7 @@
 namespace fu {
 
 inline int file_write(
-    const fu_STR& path, fu::view<std::byte> body)
+    const fu_STR& path, fu::view<fu::byte> body)
 {
     errno = 0;
     FILE* file = fopen(FU_TEMP_CSTR(path), "w");
@@ -41,7 +41,7 @@ inline bool file_read(
     fu::defer _fclose { [&]() { if (file) fclose(file); } };
 
     if (file) {
-        std::byte buffer[FREAD_BUFFER_SIZE];
+        fu::byte buffer[FREAD_BUFFER_SIZE];
         size_t count;
         while ((count = fread(buffer, 1, FREAD_BUFFER_SIZE, file)))
             output.append_copy(
@@ -96,10 +96,10 @@ inline int fs_mkdir_p(
     if (!path.size())
         return fu_ERR_FS_BadPath;
 
-    if (path       [path.size() - 1] == std::byte('/'))
-        path.mutref(path.size() - 1) =  std::byte('\0');
+    if (path       [path.size() - 1] == fu::byte('/'))
+        path.mutref(path.size() - 1) =  fu::byte('\0');
     else
-        path += std::byte('\0');
+        path += fu::byte('\0');
 
     auto cpath = (const char*)path.data();
 
@@ -120,7 +120,7 @@ inline int fs_mkdir_p(
     // Create parent?
     // TODO no realloc and no recursion.
     for (auto i = path.size() - 2; i --> 0; )
-        if (path[i] == std::byte('/'))
+        if (path[i] == fu::byte('/'))
         {
             err = fs_mkdir_p( slice(path, 0, i), mode );
 
