@@ -53,6 +53,8 @@ pub fn cpp_codegen(
     mut _ffwd: BitSet2D;
     mut _ffwd_src: string[];
 
+    mut _moveFromConstRefHelpers: BitSet2D;
+
     mut _idef: bitset::BitSet;
     mut _tdef: string;
     mut _fdef: string;
@@ -724,6 +726,16 @@ pub fn cpp_codegen(
         return src;
     }
 
+    fn fnID(target: Target)
+    {
+        let overload    = GET(target);
+        let isOp        = overload.flags & F_OPERATOR && target.args.len <= 2;
+        let id          = overload.name || fail();
+
+        return isOp     ? "operator" ~ id.valid_operator
+                        : id.valid_identifier;
+    }
+
     fn ensureFwdDecl(target: Target)
     {
         let overload = GET(target);
@@ -740,20 +752,17 @@ pub fn cpp_codegen(
         SWAP(_current_fn, current_fn0);
         ////////////////////////////////////////////
 
-        let id      = overload.name || fail();
         let ret     = overload.type || fail();
         let annot   = typeAnnot(ret, M_RETVAL);
 
-        let args    = target.EXT.args;
-        let isOp    = overload.flags & F_OPERATOR && args.len <= 2;
-
-        let name    = isOp ? "operator" ~ id.valid_operator : id.valid_identifier;
+        let name    = fnID(target);
         let linkage = (overload.type.is_never  && "[[noreturn]] ")
                     ~ (overload.flags & F_TEMPLATE && "inline ")
                   ~ (!(overload.flags & F_PUB)     && "static ");
 
         mut src = linkage ~ annot ~ " " ~ name ~ "(";
 
+        let args    = target.args;
         for (mut i = 0; i < args.len; i++)
         {
             if (i)
@@ -783,6 +792,65 @@ pub fn cpp_codegen(
         let node = overload.solved;
         node.kind == "fn" || fail("ensureFnDef non-fn");
         cgFn(node, M_STMT);
+    }
+
+    fn ensureMoveFromConstRefHelper(target: Target)
+    {
+        if (!_moveFromConstRefHelpers.add_once(target))
+            return;
+
+        let name    = fnID(target);
+        let args    = target.args;
+
+        let annot   = typeAnnot(clear_refs(target.type));
+        mut src     = "inline " ~ annot ~ " " ~ name ~ "(";
+
+        let items   = target.solved.items;
+        let retargs = target.type.lifetime.uni0n;
+
+        mut body    = "return static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>(" ~ name ~ "(";
+
+        for (mut i = 0; i < args.len; i++)
+        {
+            let argNode     = items[i] || fail();
+            let argTarget   = argNode.target;
+
+            //
+            let forceValue  = retargs.has(Region_fromArgIndex(argTarget.index));
+            let binding     = binding(argNode, :forceValue);
+
+            // Split annot from id.
+            mut space = -1;
+            for (shadow mut i = binding.len; i --> 0; )
+            {
+                if (binding[i] == ' ')
+                {
+                    space = i;
+                    break;
+                }
+            }
+
+            space > 0 || fail("ensureMoveFromConstRefHelper: cant split annot/id.");
+
+            mut pass = binding.slice(space + 1);
+            if (!argNode.type.is_ref)
+                pass = "static_cast<" ~ binding.slice(0, space) ~ "&&>(" ~ pass ~ ")";
+
+            // Append to signature and forwarder.
+            if (i)
+            {
+                src  ~= ", ";
+                body ~= ", ";
+            }
+
+            src     ~= binding;
+            body    ~= pass;
+        }
+
+        // Done!
+        src ~= ")\n{\n    " ~ body ~ ")));\n}\n";
+
+        _fdef ~= "\n" ~ src ~ "\n";
     }
 
 
@@ -858,7 +926,7 @@ pub fn cpp_codegen(
         return mode & M_STMT ? "" : "0";
     }
 
-    fn binding(node: SolvedNode, doInit = false, forceMut = false): string
+    fn binding(node: SolvedNode, doInit?!: bool, forceMut?!: bool, forceValue?!: bool): string
     {
         //////////////////////////////////////////////////////////
         mut _tv0: string[];
@@ -872,8 +940,12 @@ pub fn cpp_codegen(
 
         let isArg = overload.flags & F_ARG;
 
+        let node_type = forceValue
+            ? clear_refs(node.type)
+            : node.type;
+
         let annot = typeAnnot(
-            node.type, (!forceMut && !overload.type.is_mutref && M_CONST)
+            node_type, (!forceMut && !overload.type.is_mutref && M_CONST)
                      | (isArg && M_ARGUMENT)
                      | (overload.type.is_mutref && M_MUTVAR)
                      | (overload.flags & F_MOVED_FROM && M_MOVABLE));
@@ -1960,8 +2032,8 @@ pub fn cpp_codegen(
                     let o = GET(expr.target);
                     if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArguments)
                     {
-                        // Emit the helper here -
-                        fail("MOVE HELPER NEEDED FOR " ~ o.name);
+                        ensureMoveFromConstRefHelper(expr.target);
+                        return cgNode(expr, debug: "cgMoveFromConstRefHelper");
                     }
                 }
             }

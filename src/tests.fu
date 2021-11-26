@@ -4199,7 +4199,7 @@ pub fn runTests()
         fn main() 2.as_blocks_after;
     `);
 
-    TODO(`
+    ZERO(`
         struct Lifetime { woot: Lifetime[]; };
 
         // We could codegen this as a cpp template!
