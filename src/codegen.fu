@@ -223,13 +223,18 @@ pub fn cpp_codegen(
             if (c == "f32")     return "float";
             if (c == "f64")     return "double";
 
+            // Narrow charascter types. TODO: byte!
+            if (c == "i8" || c == "u8")
+            {
+                include("<fu/int.h>");
+                return "fu::" ~ c;
+            }
+
             // Tough luck.
             include("<cstdint>");
 
-            if (c ==  "i8")     return "int8_t";
             if (c == "i64")     return "int64_t";
 
-            if (c ==  "u8")     return "uint8_t";
             if (c == "u16")     return "uint16_t";
             if (c == "u32")     return "uint32_t";
             if (c == "u64")     return "uint64_t";
