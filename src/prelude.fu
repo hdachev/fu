@@ -257,10 +257,6 @@ fn ~(a:  $T , b: [$T]): $T[] __native("<fu/vec/concat_one.h>", "+");
 fn ~=(a: &mut $T[], b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
 fn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
-fn ~ (a: string, b: $T)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
-fn ~ (a: $T, b: string)      case ($T -> @arithmetic):      string __native("<fu/vec/concat_str.h>", "+");
-fn ~=(a: &mut string, b: $T) case ($T -> @arithmetic): &mut string __native("<fu/vec/concat_str.h>", "+=");
-
 
 // Maps.
 
@@ -289,6 +285,17 @@ fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "f
 fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
 fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
 fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
+
+
+// Stringifiables.
+
+inline fn ~ (    a: string, b.str: string) a ~ b;
+inline fn ~ (    a.str: string, b: string) a ~ b;
+inline fn ~=(ref a: string, b.str: string) a ~= b;
+
+fn str(n: $T)
+    case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
+    case ($T -> @integral): string __native("<fu/decstr.h>", "fu::i64dec");
 
 `;
 

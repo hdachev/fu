@@ -1,0 +1,32 @@
+
+// TODO FIX these are sloooow.
+//  Use the c runtime or write something better here.
+//   Perhaps lookup tables for 000-999 and a 0-255 trailer.
+
+pub fn u64dec(num: u64)
+{
+    mut res: decing;
+
+    do {
+        let d = num % 10; num /= 10;
+        res = (d + '0'.u64).byte ~ res;
+    }
+    while (num);
+
+    return res;
+}
+
+pub fn i64dec(num: i64)
+{
+    if (num < 0)
+    {
+        // TODO impl & use i64.MIN:
+        //           ....----....----
+        if (num == 0x8000000000000000.i164)
+            return "-9223372036854775808";
+
+        return '-' ~ u64dec((-num).u64);
+    }
+
+    return u64dec(num.u64);
+}
