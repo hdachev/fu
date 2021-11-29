@@ -4312,14 +4312,20 @@ pub fn solve(
         !out.type.is_ref || out.type.lifetime || fail(
             "solveLet: ref without lifetime: `" ~ id ~ "`.");
 
-        mut shadows = !!(out.flags & F_SHADOW);
+        mut shadows     = !!(out.flags & F_SHADOW);
+        let isArg       = out.flags & F_ARG;
 
-        // TODO FIX: AUTOCALL ////////
-        let cleanID = out.flags & F_COMPOUND_ID && id.slice(0, id.find('.'));
-        shadow let id = cleanID || id;
-        //////////////////////////////
+        // TODO FIX: AUTOCALL //////////////////////////////////////////
+        isArg || !(out.flags & F_COMPOUND_ID) || fail(
+            "`let`: F_COMPOUND_ID on a non-F_ARG.");
 
-        let isArg = out.flags & F_ARG;
+        let autocall    = out.flags & F_COMPOUND_ID && id.find('.');
+        autocall >= 0 || fail(
+            "`let`: F_COMPOUND_ID but no `.` in id.");
+
+        let cleanID     = autocall && id.slice(0, id.find('.'));
+        shadow let id   = cleanID || id;
+        ////////////////////////////////////////////////////////////////
 
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
@@ -5498,7 +5504,7 @@ pub fn solve(
                 {
                     let slot = host_args[i];
                     result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
-                        :slot.flags &~ F_ARG); // As if not an arg.
+                        :slot.flags &~ (F_ARG | F_COMPOUND_ID)); // As if not an arg + no autocall.
                 }
 
                 let s_body = solveBlock(
