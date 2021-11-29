@@ -6049,6 +6049,9 @@ pub fn runTests()
         fn to_debug_str(a: i32) a     * 2;
         fn to_debug_str(b: u32) b.i32 * 3;
 
+        <alt>
+        inline
+        </alt>
         fn inspect(items.to_debug_str[]) // <- varargs!
         {
             mut a = 0;
