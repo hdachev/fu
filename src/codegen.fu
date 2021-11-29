@@ -642,7 +642,7 @@ pub fn cpp_codegen(
             ////////////////////////////////////////////////////////////
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
-            close       = "}), " ~ out ~ ")";
+            close       = "(void)0;}), " ~ out ~ ")";
 
             trail       = id ~ " = ";
             if (ptrflip)
