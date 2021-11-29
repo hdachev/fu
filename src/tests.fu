@@ -3568,7 +3568,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         fn main() {
             mut _info = "abc";
 
