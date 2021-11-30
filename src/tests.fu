@@ -1012,7 +1012,7 @@ pub fn runTests()
         src ~= "\n    mut orig = [" ~ literal ~ "];";
         src ~= "\n";
         src ~= "\n    {";
-        src ~= "\n        mut arr1 = CLONE(orig);";
+        src ~= "\n        mut arr1 = orig;";
         src ~= "\n        arr1." ~ operation ~ ";";
         src ~= "\n        if (" ~ EXPR("arr1") ~ " != 0) return 17;";
         src ~= "\n    }";

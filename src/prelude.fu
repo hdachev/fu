@@ -6,9 +6,8 @@ let prelude_src = `
 
 // Some lolcode.
 
-fn STEAL (a: &mut $T): $T __native;
-fn CLONE (a: &    $T) case ($T -> @copy): $T __native;
-fn SWAP  (a: &mut $T, b: &mut $T): void __native("<utility>", "std::swap");
+fn STEAL (ref a: $T): $T __native;
+fn SWAP  (ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
 fn println(): void __native;
 fn println(a: $A): void __native;
@@ -284,7 +283,6 @@ fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "f
 
 fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
 fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
-fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
 
 
 // Stringifiables.

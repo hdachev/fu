@@ -41,6 +41,5 @@ struct never
 #define fu_ASSERT_cstr_detail(x) #x
 #define fu_ASSERT_cstr(x) fu_ASSERT_cstr_detail(x)
 #define fu_ASSERT() fu::fail("Assertion failed: " __FILE__ ":" fu_ASSERT_cstr(__LINE__))
-#define fu_TODO() fu::fail("TODO: " __FILE__ ":" fu_ASSERT_cstr(__LINE__))
 
 } // namespace

@@ -1480,9 +1480,6 @@ pub fn cpp_codegen(
             }
         }
 
-        if (id == "CLONE" && items.len == 1)
-            return cgClone(node.type, ARG(0));
-
         if (id == "STEAL" && items.len == 1)
             return cgMove(node.type, ARG(0));
 
