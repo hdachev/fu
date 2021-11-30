@@ -6783,6 +6783,15 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct Overload { items: string[]; };
+
+        fn last(a: $T[])                    a[a.len - 1];
+        fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];
+        fn test(overload: Overload)         overload.arg_lets.last.len;
+        fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;
+    `);
+
 
     // Enum basics.
 
