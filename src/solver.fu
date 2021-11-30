@@ -514,6 +514,7 @@ pub fn solve(
 
         mut offset = items.len;
 
+        NEXT_REGION:
         for (mut i = 0; i < returned.len; i++)
         {
             let region = returned[i];
@@ -523,16 +524,18 @@ pub fn solve(
                 continue;
             }
 
-            region.Region_isArg() || fail(
-                "Not an argument region: " ~ region.index);
+            region.Region_isArg() || fail("Not an argument region: " ~ region.index);
 
             let index = region.Region_toArgIndex;
+
+            // TODO UNCOMMENT .last doesn't relax correctly, there's a test for that already
+            // items.last.target.index >= index || fail("Arg region > last.index: " ~ index);
 
             // Full union here, otherwise we risk messing things up.
             while (offset--)
             {
-                let here = items[offset].target.index;
-                if (here == index)
+                let here = items[offset].target;
+                if (here.index == index)
                 {
                     let argNode = argNodes[offset];
 
@@ -541,11 +544,13 @@ pub fn solve(
                         : Lifetime_temporary();
 
                     replace = Lifetime_union(replace, argLt);
-                    break;
+                    continue :NEXT_REGION;
                 }
 
-                !here || here > index || fail("nope, going backwards");
+                !here.index || here.index > index || fail("Nope, going backwards: " ~ here.qWHAT);
             }
+
+            fail("Could not find argument region: " ~ index);
         }
 
         return Lifetime_union(keep, replace);
@@ -4610,11 +4615,19 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): SolvedNode
     {
+//*
         fn T(i: i32 = 0) {
             mut danglefix = evalTypeAnnot(node.items[i], typeParams).type;
             return danglefix;
         }
-
+/*/
+        // Each T() call should invalidate the results from previous T() calls -
+        //  for some reason that's not what's happening here,
+        //   and we're happily using the refs.
+        //
+        fn T(i: i32 = 0)
+            evalTypeAnnot(node.items[i], typeParams).type;
+//*/
         if (node.kind == "call")
         {
             let items = node.items;
