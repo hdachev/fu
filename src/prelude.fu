@@ -289,9 +289,9 @@ fn TODO(): never __native("<fu/never.h>", "fu_TODO()");
 
 // Stringifiables.
 
-inline fn ~ (    a: string, b.str: string) a ~ b;
-inline fn ~ (    a.str: string, b: string) a ~ b;
-inline fn ~=(ref a: string, b.str: string) a ~= b;
+fn ~ (    a: string, b.str) a ~ b;
+fn ~ (    a.str, b: string) a ~ b;
+fn ~=(ref a: string, b.str) a ~= b;
 
 fn str(n: $T)
     case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
