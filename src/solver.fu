@@ -4330,7 +4330,7 @@ pub fn solve(
         if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type, :shadows))
         {
             ////////////////////////////////////////////////////////////////
-            if (OPTI_dedupe_vars && !isArg)
+            if (OPTI_dedupe_vars && !isArg && !(out.flags & F_PUB))
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)

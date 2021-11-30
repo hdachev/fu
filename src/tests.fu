@@ -3582,11 +3582,11 @@ pub fn runTests()
         }
     `);
 
-    TODO([
+    ZERO([
     `
         let q_mutref = 1;
         pub let RELAX_mutref_only = q_mutref;
-        pub fn what(relax_mask!: i32) relax_mask -1;
+        pub fn what(relax_mask: i32) relax_mask -1;
     `,
     `
         import _0;
