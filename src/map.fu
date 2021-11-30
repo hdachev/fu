@@ -1,0 +1,49 @@
+/*
+struct Map(K, V)
+{
+    keys: K[];
+    vals: V[];
+
+    fn size()
+        keys.len;
+
+    fn find(key)
+        set::find(keys, key);
+
+    fn has(key)
+        find(key) >= 0;
+
+    fn update(key, value)
+        set::update(keys, key, vals, value);
+
+    fn get(key) {
+        let idx = find(key);
+        if (idx >= 0)
+            return vals[idx];
+
+        return [];
+    }
+};
+*/
+
+struct Map_ss
+{
+    keys: string[];
+    vals: string[];
+};
+
+fn has(using _: Map_ss, key: string)
+    set::find(keys, key) >= 0;
+
+fn set(using ref _: Map_ss, key: string, value: string)
+    set::update(
+        || keys, key,
+        || vals, value);
+
+fn get(using _: Map_ss, key: string) {
+    let idx = set::find(keys, key);
+    if (idx >= 0)
+        return vals[idx];
+
+    return [];
+}

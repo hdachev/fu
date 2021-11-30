@@ -1,4 +1,29 @@
 
+pub fn find(keys: $T[], item: $T)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < keys.len; i++) {
+        if (keys[i] >= item) {
+            if (keys[i] != item)
+                return -1;
+
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+pub fn has(keys: $T[], item: $T)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < keys.len; i++)
+        if (keys[i] >= item)
+            return keys[i] == item;
+
+    return false;
+}
+
 pub fn add(ref dest: $T[], item: $T)
 {
     // TODO bsearch instead
@@ -37,6 +62,42 @@ pub fn add_once(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
     return true;
 }
 
+pub fn update(dest, item: $T, extras, extra: $U)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] != item) {
+                dest.insert(i, item);
+                extras.insert(i, extra);
+                return true;
+            }
+
+            extras[i] = extra;
+            return false;
+        }
+    }
+
+    dest.push(item);
+    extras.push(extra);
+    return true;
+}
+
+pub fn get(dest: $T[], item: $T, extras: $U[])
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] != item)
+                return [];
+
+            return extras[i];
+        }
+    }
+
+    return [];
+}
+
 pub fn rem(ref dest: $T[], item: $T)
 {
     // TODO bsearch instead
@@ -53,7 +114,6 @@ pub fn rem(ref dest: $T[], item: $T)
 
     return false;
 }
-
 
 
 // TODO these should actually work better if they're push-back style
