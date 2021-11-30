@@ -4809,6 +4809,9 @@ pub fn solve(
         if (tag == "floating_point")
             return type.is_floating_pt;
 
+        if (tag == "mutref")
+            return type.is_mutref;
+
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }
 
