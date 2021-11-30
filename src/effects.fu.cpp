@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <fu/default.h>
+#include <fu/int.h>
 #include <fu/never.h>
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -21,7 +21,7 @@ void rem(s_BitSet&, int);
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false

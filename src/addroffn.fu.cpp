@@ -1,9 +1,9 @@
-#include <cstdint>
+#include <fu/decstr.h>
+#include <fu/int.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/view.h>
 
@@ -14,7 +14,7 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32(int&, fu::view<std::byte>);
+int parse10i32(int&, fu::view<fu::byte>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_ValueType
@@ -134,29 +134,37 @@ bool type_isCTC(const s_Type& type_3)
     return type_isZST(type_3);
 }
 
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
 fu_STR packAddrOfFn(fu::view<s_Target> targets)
 {
     fu_STR res {};
     for (int i = 0; i < targets.size(); i++)
     {
         const s_Target& target_6 = targets[i];
-        res += ((("@"_fu + target_6.modid) + ":"_fu) + target_6.index);
+        res += x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(target_6.modid)) + ":"_fu), fu::i64dec(target_6.index));
     };
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_ZIWZ
-                                #define DEFt_unpackAddrOfFn_ZIWZ
-inline void unpackAddrOfFn_ZIWZ(fu::view<std::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_Jf3x
+                                #define DEFt_unpackAddrOfFn_Jf3x
+inline void unpackAddrOfFn_Jf3x(fu::view<fu::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
     {
-        if (!(canon_1[i++] == std::byte('@')))
+        if (!(canon_1[i++] == fu::byte('@')))
             fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon_1) + "`."_fu));
 
         const int modid_4 = parse10i32(i, canon_1);
-        if (!(canon_1[i++] == std::byte(':')))
+        if (!(canon_1[i++] == fu::byte(':')))
             fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon_1) + "`."_fu));
 
         const int index_3 = parse10i32(i, canon_1);
@@ -171,7 +179,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_ZIWZ(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_Jf3x(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 

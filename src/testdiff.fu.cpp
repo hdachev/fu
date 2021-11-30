@@ -26,9 +26,9 @@ struct s_TestDiffs
 
 #ifndef FU_NO_FDEFs
 
-s_TestDiffs parse(const fu_STR& str)
+s_TestDiffs parse(const fu_STR& str_1)
 {
-    fu_VEC<fu_STR> arr = fu::split(str, "\n-----\n"_fu);
+    fu_VEC<fu_STR> arr = fu::split(str_1, "\n-----\n"_fu);
     s_TestDiffs res {};
     for (int i = 1; i < arr.size(); i += 2)
         (res._current.upsert(arr[(i - 1)]) = fu_STR(arr[i]));

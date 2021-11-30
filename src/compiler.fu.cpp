@@ -1,6 +1,7 @@
-#include <cstdint>
+#include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/env.h>
+#include <fu/int.h>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -10,7 +11,6 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
 #include <fu/vec/replace.h>
@@ -69,12 +69,12 @@ s_ParserOutput parse(int, const fu_STR&, fu::view<s_Token>, const s_Options&);
 s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
 static fu_STR indent(const fu_STR&);
 static void compile(const fu_STR&, const fu_STR&, const s_Options&, s_Context&);
-void ModuleStat_print(const s_ModuleStat&, const fu_STR&, fu::view<std::byte>);
+void ModuleStat_print(const s_ModuleStat&, const fu_STR&, fu::view<fu::byte>);
 void TODO(const fu_STR&, s_TestDiffs&);
 void TODO(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void ZERO_SAME(fu::view<fu_STR>, s_TestDiffs&);
-void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<std::byte>, const fu_STR&, const s_Context&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
+void build(bool, fu_STR&&, const fu_STR&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<fu::byte>, const fu_STR&, const s_Context&);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<fu::byte>);
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void setModule(const s_Module&, s_Context&);
 void set_next(s_TestDiffs&, const fu_STR&, const fu_STR&);
@@ -365,7 +365,7 @@ struct s_Overload
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -789,18 +789,26 @@ struct s_TestDiffs
 
                                 #ifndef DEFt_if_last_AwjY
                                 #define DEFt_if_last_AwjY
-inline std::byte if_last_AwjY(fu::view<std::byte> s)
+inline fu::byte if_last_AwjY(fu::view<fu::byte> s)
 {
-    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
+    return s.size() ? s[(s.size() - 1)] : (*(const fu::byte*)fu::NIL);
 }
                                 #endif
 
 static fu_STR absdir(const fu_STR& a)
 {
-    return ((if_last_AwjY(a) == std::byte('/')) ? fu_STR(a) : (a + std::byte('/')));
+    return ((if_last_AwjY(a) == fu::byte('/')) ? fu_STR(a) : (a + fu::byte('/')));
 }
 
 static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
+
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
 
 fu_STR locate_PRJDIR()
 {
@@ -808,7 +816,7 @@ fu_STR locate_PRJDIR()
     fu_STR fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fn);
     if (!(fs > 1000))
-        fu::fail(((("Bad compiler.fu: "_fu + fn) + ": "_fu) + fs));
+        fu::fail(x7E_OZkl((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
 
     (std::cout << ("PRJDIR: "_fu + dir) << '\n');
     return dir;
@@ -1137,7 +1145,7 @@ static void compile(const fu_STR& fname_1, const fu_STR& via_1, const s_Options&
     };
 }
 
-void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<std::byte> scheme)
+void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<fu::byte> scheme)
 {
     s_Context ctx = clone_5Wg9(CTX_PRELUDE);
     const s_Options options = s_Options{};
@@ -1162,9 +1170,9 @@ void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const f
                 solve_2 += m[i].stats.solve;
                 codegen_1 += m[i].stats.codegen;
             };
-            ModuleStat_print(lex_2, "\n    lex "_fu, fu::view<std::byte>{});
-            ModuleStat_print(parse_2, "  parse "_fu, fu::view<std::byte>{});
-            ModuleStat_print(solve_2, "  solve "_fu, fu::view<std::byte>{});
+            ModuleStat_print(lex_2, "\n    lex "_fu, fu::view<fu::byte>{});
+            ModuleStat_print(parse_2, "  parse "_fu, fu::view<fu::byte>{});
+            ModuleStat_print(solve_2, "  solve "_fu, fu::view<fu::byte>{});
             ModuleStat_print(codegen_1, "codegen "_fu, "\n"_fu);
         };
         (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
@@ -1186,7 +1194,7 @@ s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu
     {
         const fu_STR& snippet = sources[i];
         fu_STR src_2 = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
-        fu_STR fname_1 = ((fnames.size() > i) ? fu_STR(fnames[i]) : (((PRJDIR + "__tests__/_"_fu) + i) + ".fu"_fu));
+        fu_STR fname_1 = ((fnames.size() > i) ? fu_STR(fnames[i]) : (x7E_OZkl((PRJDIR + "__tests__/_"_fu), fu::i64dec(i)) + ".fu"_fu));
         (ctx.files.upsert(fname_1) = fu_STR(src_2));
         compile(fname_1, (*(const fu_STR*)fu::NIL), ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)), ctx);
     };
@@ -1221,15 +1229,15 @@ fu_STR snippet2cpp(const fu_STR& src_2)
     return fu_STR{};
 }
 
-static int unindent_left(fu::view<std::byte> src_2, const int i0)
+static int unindent_left(fu::view<fu::byte> src_2, const int i0)
 {
     int i1 = i0;
     while (i1--)
     {
-        const std::byte c = src_2[i1];
-        if (c != std::byte(' '))
+        const fu::byte c = src_2[i1];
+        if (c != fu::byte(' '))
         {
-            if (c == std::byte('\n'))
+            if (c == fu::byte('\n'))
                 return i1 + 1;
 
             break;
@@ -1240,7 +1248,7 @@ static int unindent_left(fu::view<std::byte> src_2, const int i0)
 
                                 #ifndef DEFt_find_ZPaI
                                 #define DEFt_find_ZPaI
-inline int find_ZPaI(fu::view<std::byte> a, const std::byte b, int start_1)
+inline int find_ZPaI(fu::view<fu::byte> a, const fu::byte b, int start_1)
 {
     start_1 = ((start_1 > 0) ? int(start_1) : 0);
     for (int i = start_1; i < a.size(); i++)
@@ -1255,7 +1263,7 @@ inline int find_ZPaI(fu::view<std::byte> a, const std::byte b, int start_1)
 
                                 #ifndef DEFt_find_VtCz
                                 #define DEFt_find_VtCz
-inline int find_VtCz(fu::view<fu_STR> a, fu::view<std::byte> b)
+inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -1280,7 +1288,7 @@ inline fu_VEC<fu_STR>& grow_if_oob_EmEP(fu_VEC<fu_VEC<fu_STR>>& a, const int i)
 
                                 #ifndef DEFt_find_05eu
                                 #define DEFt_find_05eu
-inline int find_05eu(fu::view<std::byte> a, const std::byte b)
+inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -1312,11 +1320,11 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
                 TODO_split = true;
             };
             const int start00 = start0;
-            while (start0 && (src_2[(start0 - 1)] == std::byte(' ')))
+            while (start0 && (src_2[(start0 - 1)] == fu::byte(' ')))
                 start0--;
 
             fu_STR moduleA = fu::slice(src_2, 0, start0);
-            fu_STR moduleB = ((((fu::get_view(src_2, start0, start00) + "import _"_fu) + i) + ";"_fu) + fu::get_view(src_2, start1, src_2.size()));
+            fu_STR moduleB = ((x7E_OZkl((fu::get_view(src_2, start0, start00) + "import _"_fu), fu::i64dec(i)) + ";"_fu) + fu::get_view(src_2, start1, src_2.size()));
             fu_STR without = (fu::get_view(src_2, 0, start0) + fu::get_view(src_2, start1, src_2.size()));
             sources.mutref(i) = without;
             ZERO(fu_VEC<fu_STR>(sources), testdiffs);
@@ -1346,15 +1354,15 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             const int end1 = (end0 + 6);
             start0 = unindent_left(src_2, start0);
             end0 = unindent_left(src_2, end0);
-            fu::view<std::byte> prefix = fu::get_view(src_2, 0, start0);
-            fu::view<std::byte> suffix = fu::get_view(src_2, end1, src_2.size());
+            fu::view<fu::byte> prefix = fu::get_view(src_2, 0, start0);
+            fu::view<fu::byte> suffix = fu::get_view(src_2, end1, src_2.size());
             fu_VEC<fu_STR> split_1 = fu::split(fu::slice(src_2, start1, end0), "<alt/>"_fu);
             if (split_1.size() < 2)
                 split_1 += (*(const fu_STR*)fu::NIL);
 
             for (int j = split_1.size(); j-- > 0; )
             {
-                fu::view<std::byte> part = split_1[j];
+                fu::view<fu::byte> part = split_1[j];
                 const int end_1 = unindent_left(part, part.size());
                 sources.mutref(i_1) = ((prefix + fu::get_view(part, 0, end_1)) + suffix);
                 if (j)
@@ -1371,7 +1379,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
 
         {
             int end_1 = src_2.size();
-            for (int r = src_2.size(); (r-- > 0) && (src_2[r] == std::byte(' ')); )
+            for (int r = src_2.size(); (r-- > 0) && (src_2[r] == fu::byte(' ')); )
                 end_1 = r;
 
             src_2.shrink(end_1);
@@ -1380,12 +1388,12 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
         int start_1 = 0;
         while (((start_1 = fu::lfind(src_2, " ;; "_fu, start_1)) >= 0))
         {
-            int end_1 = find_ZPaI(src_2, std::byte('\n'), (start_1 + 4));
+            int end_1 = find_ZPaI(src_2, fu::byte('\n'), (start_1 + 4));
             if (end_1 < 0)
                 end_1 = src_2.size();
 
             fu_STR annot = fu::slice(src_2, (start_1 + 4), end_1);
-            if (annot[0] == std::byte('!'))
+            if (annot[0] == fu::byte('!'))
             {
                 const int idx = find_VtCz(NOTES, fu::slice(annot, 1, annot.size()));
                 if (!((idx >= 0)))
@@ -1396,8 +1404,8 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             else
                 grow_if_oob_EmEP(expectations, i_2) += annot;
 
-            src_2.mutref((start_1 + 1)) = std::byte('/');
-            src_2.mutref((start_1 + 2)) = std::byte('/');
+            src_2.mutref((start_1 + 1)) = fu::byte('/');
+            src_2.mutref((start_1 + 2)) = fu::byte('/');
             start_1 = end_1;
         };
         options += s_Options { s_Lint{}, int(break_notes_1), 0u };
@@ -1407,12 +1415,12 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
     for (int i_3 = 0; i_3 < expectations.size(); i_3++)
     {
         fu::view<fu_STR> arr = expectations[i_3];
-        fu::view<std::byte> src_2 = sources[i_3];
+        fu::view<fu::byte> src_2 = sources[i_3];
         const s_CodegenOutput& cpp_1 = ctx.modules[(i_3 + 1)].out.cpp;
         for (int i_1_1 = 0; i_1_1 < arr.size(); i_1_1++)
         {
             const fu_STR& x = arr[i_1_1];
-            const int idx = find_05eu(x, std::byte(' '));
+            const int idx = find_05eu(x, fu::byte(' '));
             fu_STR cmd = fu::slice(x, 0, idx);
             fu_STR rest = fu::slice(x, (idx + 1));
             const bool found = fu::has(cpp_1.src, rest);
@@ -1433,7 +1441,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
     };
     const bool run = true;
     build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), "debug"_fu, "print-src"_fu, ctx);
-    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), fu::view<std::byte>{}, "print-src"_fu, ctx);
+    build(run, fu_STR(DEFAULT_WORKSPACE), FULIB, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), fu::view<fu::byte>{}, "print-src"_fu, ctx);
 
     {
         if (testdiff_prepend)
@@ -1443,7 +1451,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
         for (int i_4 = 0; i_4 < sources.size(); i_4++)
         {
             key += sources[i_4];
-            fu::view<std::byte> actual = ctx.modules[((i_4 + ctx.modules.size()) - sources.size())].out.cpp.src;
+            fu::view<fu::byte> actual = ctx.modules[((i_4 + ctx.modules.size()) - sources.size())].out.cpp.src;
             set_next(testdiffs, key, (testdiff_prepend + actual));
         };
     };
@@ -1455,7 +1463,7 @@ static fu_STR ERR_KEY(fu::view<fu_STR> sources)
     fu_STR key {};
     for (int i = 0; i < sources.size(); i++)
     {
-        fu::view<std::byte> src_2 = sources[i];
+        fu::view<fu::byte> src_2 = sources[i];
         const int end_1 = unindent_left(src_2, src_2.size());
         key += fu::get_view(src_2, 0, end_1);
     };
@@ -1468,12 +1476,12 @@ static fu_STR ERR_TRIM(const fu_STR& e)
     bool startOK = false;
     for (int i = 0; i < e.size(); i++)
     {
-        const std::byte c = e[i];
-        if (c == std::byte('/'))
+        const fu::byte c = e[i];
+        if (c == fu::byte('/'))
             start_1 = (i + 1);
-        else if (c == std::byte(':'))
+        else if (c == fu::byte(':'))
             startOK = true;
-        else if (c == std::byte('\n'))
+        else if (c == fu::byte('\n'))
             break;
 
     };
@@ -1517,8 +1525,8 @@ s_Context FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
     for (int i = 1; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
-        bad += (((("\n#"_fu + i) + ": "_fu) + module.fname) + "\n"_fu);
-        bad += (((((((("\nfu  ["_fu + i) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu) + i) + "]:\n\t"_fu) + indent(module.out.cpp.src)) + "\n"_fu);
+        bad += (((x7E_OZkl("\n#"_fu, fu::i64dec(i)) + ": "_fu) + module.fname) + "\n"_fu);
+        bad += (((x7E_OZkl((((x7E_OZkl("\nfu  ["_fu, fu::i64dec(i)) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu), fu::i64dec(i)) + "]:\n\t"_fu) + indent(module.out.cpp.src)) + "\n"_fu);
     };
     fu::fail(bad);
 }
@@ -1537,7 +1545,7 @@ void ZERO_SAME(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
             const fu_STR& x = expect[m].out.cpp.src;
             const fu_STR& a = actual[m].out.cpp.src;
             if (x != a)
-                fu::fail(((((((((((("ZERO_SAME: alts["_fu + i) + "] mismatch at:\n"_fu) + "\nexpect["_fu) + m) + "]:\n\t"_fu) + indent(x)) + "\nactual["_fu) + m) + "]:\n\t"_fu) + indent(a)) + "\n"_fu));
+                fu::fail((((x7E_OZkl((((x7E_OZkl(((x7E_OZkl("ZERO_SAME: alts["_fu, fu::i64dec(i)) + "] mismatch at:\n"_fu) + "\nexpect["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent(x)) + "\nactual["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent(a)) + "\n"_fu));
 
         };
     };

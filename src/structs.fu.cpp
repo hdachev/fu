@@ -1,7 +1,8 @@
-#include <cstdint>
+#include <fu/decstr.h>
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
-#include <fu/vec/concat_str.h>
+#include <fu/vec/concat.h>
 #include <fu/vec/find.h>
 #include <fu/view.h>
 
@@ -10,7 +11,7 @@ struct s_Region;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32(int&, fu::view<std::byte>);
+int parse10i32(int&, fu::view<fu::byte>);
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -80,20 +81,28 @@ struct s_Type
 
 #ifndef FU_NO_FDEFs
 
-fu_STR createStructCanon(const int index_2, fu::view<std::byte>)
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 {
-    return "$"_fu + index_2;
+    return a + b;
+}
+                                #endif
+
+fu_STR createStructCanon(const int index_2, fu::view<fu::byte>)
+{
+    return x7E_OZkl("$"_fu, fu::i64dec(index_2));
 }
 
 bool isStruct(const s_Type& type_3)
 {
-    return fu::lmatch(type_3.vtype.canon, std::byte('$'));
+    return fu::lmatch(type_3.vtype.canon, fu::byte('$'));
 }
 
-int structIndex(fu::view<std::byte> canon_1)
+int structIndex(fu::view<fu::byte> canon_1)
 {
     int offset = 1;
-    return ((canon_1[0] == std::byte('$')) ? parse10i32(offset, canon_1) : -1);
+    return ((canon_1[0] == fu::byte('$')) ? parse10i32(offset, canon_1) : -1);
 }
 
 #endif

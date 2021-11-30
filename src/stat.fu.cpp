@@ -1,9 +1,9 @@
-#include <cstdint>
+#include <fu/decstr.h>
+#include <fu/int.h>
 #include <fu/mem/arc.h>
 #include <fu/now.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/concat_str.h>
 #include <fu/view.h>
 #include <iostream>
 
@@ -51,9 +51,25 @@ s_ModuleStat ModuleStat_now()
     return s_ModuleStat { fu::now_hr(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<std::byte> suffix)
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 {
-    (std::cout << prefix << a.time << " s\t"_fu << (a.alloc_count ? ((((a.alloc_count + " allocs\t"_fu) + a.alloc_bytes) + " bytes"_fu) + suffix) : fu_STR{}) << '\n');
+    return a + b;
+}
+                                #endif
+
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
+void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<fu::byte> suffix)
+{
+    (std::cout << prefix << a.time << " s\t"_fu << (a.alloc_count ? ((x7E_OZkl(x7E_OZkl(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{}) << '\n');
 }
 
 #endif

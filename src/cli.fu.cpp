@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <fu/default.h>
+#include <fu/int.h>
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -12,10 +12,10 @@
 #include <fu/view.h>
 #include <iostream>
 
-fu_STR path_join(fu::view<std::byte>, const fu_STR&);
+fu_STR path_join(fu::view<fu::byte>, const fu_STR&);
 int self_test();
 static int cli_handle(fu::view<fu_STR>, const fu_STR&);
-void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<std::byte>);
+void build(const fu_STR&, bool, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, const fu_STR&, fu::view<fu::byte>);
 void runTests();
 
 #ifndef FU_NO_FDEFs
@@ -37,12 +37,12 @@ static void runTestsAndBuildCompiler()
     cli_handle((fu::slate<5, fu_STR> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu }), PRJDIR);
 }
 
-static fu_STR abs(const fu_STR& path, fu::view<std::byte> cwd)
+static fu_STR abs(const fu_STR& path, fu::view<fu::byte> cwd)
 {
-    return path && (path[0] != std::byte('-')) ? path_join(cwd, path) : fu_STR{};
+    return path && (path[0] != fu::byte('-')) ? path_join(cwd, path) : fu_STR{};
 }
 
-static void option(fu::view<std::byte> sHort, fu::view<std::byte> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, fu::view<std::byte> cwd, int& idx, fu::view<fu_STR> argv)
+static void option(fu::view<fu::byte> sHort, fu::view<fu::byte> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, fu::view<fu::byte> cwd, int& idx, fu::view<fu_STR> argv)
 {
     if ((opt == sHort) || (opt == lOng))
     {
@@ -93,13 +93,13 @@ static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
     fu_STR scheme {};
     bool run {};
     fu_STR val { next(idx, argv) };
-    while ((val.size() > 1) && (val[0] == std::byte('-')))
+    while ((val.size() > 1) && (val[0] == fu::byte('-')))
     {
         fu_STR opt { val };
-        if (opt[1] != std::byte('-'))
+        if (opt[1] != fu::byte('-'))
         {
-            opt = fu_STR { fu_STR::INIT<1> { std::byte(opt[1]) } };
-            val = (std::byte('-') + fu::slice(val, 2));
+            opt = fu_STR { fu_STR::INIT<1> { fu::byte(opt[1]) } };
+            val = (fu::byte('-') + fu::slice(val, 2));
             if (val == "-"_fu)
                 val = next(idx, argv);
 

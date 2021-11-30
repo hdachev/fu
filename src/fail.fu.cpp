@@ -1,11 +1,11 @@
-#include <cstdint>
+#include <fu/decstr.h>
+#include <fu/int.h>
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/concat_str.h>
 #include <fu/view.h>
 
 struct s_ArgWrite;
@@ -331,7 +331,7 @@ struct s_Overload
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -705,12 +705,20 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
 [[noreturn]] fu::never FAIL(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
     const s_Token& here = _token(_here, ctx);
-    fu::view<std::byte> fname = _fname(_here, ctx);
-    fu_STR addr = ((("@"_fu + here.line) + ":"_fu) + here.col);
-    reason += std::byte('\n');
+    fu::view<fu::byte> fname = _fname(_here, ctx);
+    fu_STR addr = x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(here.line)) + ":"_fu), fu::i64dec(here.col));
+    reason += fu::byte('\n');
     fu_STR snippet = formatCodeSnippet(_here, s_TokenIdx{}, 2, ctx);
     fu::fail(((((((fname + " "_fu) + addr) + ":\n\n"_fu) + snippet) + "\n\t"_fu) + reason));
 }

@@ -1,12 +1,13 @@
 #include <cstddef>
 #include <cstdint>
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec/concat_one.h>
 #include <fu/view.h>
 
 struct s_TEA;
 
-s_TEA hash(fu::view<std::byte>);
+s_TEA hash(fu::view<fu::byte>);
 
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
@@ -26,7 +27,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
+s_TEA hash(s_TEA&& res, fu::view<fu::byte> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -70,54 +71,54 @@ s_TEA hash(s_TEA&& res, fu::view<std::byte> u8view)
     return s_TEA(res);
 }
 
-s_TEA hash(fu::view<std::byte> u8view)
+s_TEA hash(fu::view<fu::byte> u8view)
 {
     s_TEA res {};
     res = hash(s_TEA(res), u8view);
     return res;
 }
 
-fu_STR hash62(fu::view<std::byte> str, const int chars)
+fu_STR hash62(fu::view<fu::byte> str_1, const int chars)
 {
     fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash(str);
+        const s_TEA tea = hash(str_1);
         _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    }), uint64_t(_0));
+    (void)0;}), uint64_t(_0));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 62ull);
         v = (v / 62ull);
         if (c < 10ull)
-            res += std::byte(((c - 0ull) + uint64_t(std::byte('0'))));
+            res += fu::byte(((c - 0ull) + uint64_t(fu::byte('0'))));
         else if (c < 36ull)
-            res += std::byte(((c - 10ull) + uint64_t(std::byte('a'))));
+            res += fu::byte(((c - 10ull) + uint64_t(fu::byte('a'))));
         else
-            res += std::byte(((c - 36ull) + uint64_t(std::byte('A'))));
+            res += fu::byte(((c - 36ull) + uint64_t(fu::byte('A'))));
 
     };
     return res;
 }
 
-fu_STR hash16(fu::view<std::byte> str, const int chars)
+fu_STR hash16(fu::view<fu::byte> str_1, const int chars)
 {
     fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash(str);
+        const s_TEA tea = hash(str_1);
         _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    }), uint64_t(_0));
+    (void)0;}), uint64_t(_0));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 16ull);
         v = (v / 16ull);
         if (c < 10ull)
-            res += std::byte(((c - 0ull) + uint64_t(std::byte('0'))));
+            res += fu::byte(((c - 0ull) + uint64_t(fu::byte('0'))));
         else
-            res += std::byte(((c - 10ull) + uint64_t(std::byte('a'))));
+            res += fu::byte(((c - 10ull) + uint64_t(fu::byte('a'))));
 
     };
     return res;

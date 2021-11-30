@@ -1,14 +1,14 @@
-#include <cstdint>
+#include <fu/decstr.h>
 #include <fu/defer.h>
+#include <fu/int.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/concat_str.h>
 #include <fu/view.h>
 
 struct s_Target;
 
-int parse10i32(int&, fu::view<std::byte>);
+int parse10i32(int&, fu::view<fu::byte>);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -28,14 +28,22 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
 fu_STR ClosureID(const s_Target& target_3)
 {
-    return ((target_3.modid < 0) ? ((("`"_fu + target_3.index) + "-"_fu) + -target_3.modid) : ("`"_fu + target_3.index));
+    return ((target_3.modid < 0) ? x7E_OZkl((x7E_OZkl("`"_fu, fu::i64dec(target_3.index)) + "-"_fu), fu::i64dec(-target_3.modid)) : x7E_OZkl("`"_fu, fu::i64dec(target_3.index)));
 }
 
-s_Target tryParseClosureID(fu::view<std::byte> id_1, const int MODID)
+s_Target tryParseClosureID(fu::view<fu::byte> id_1, const int MODID)
 {
-    if (id_1[0] == std::byte('`'))
+    if (id_1[0] == fu::byte('`'))
     {
         int offset = 1;
         fu_DEFER(if (!(offset == id_1.size()))

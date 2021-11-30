@@ -1,6 +1,7 @@
 #include <algorithm>
-#include <cstdint>
+#include <fu/decstr.h>
 #include <fu/default.h>
+#include <fu/int.h>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -8,7 +9,6 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
@@ -53,7 +53,7 @@ bool is_primitive(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
-int structIndex(fu::view<std::byte>);
+int structIndex(fu::view<fu::byte>);
 static fu_STR resolveFile(const fu_STR&, const fu_STR&, s_Context&);
 
                                 #ifndef DEF_s_Token
@@ -342,7 +342,7 @@ struct s_Overload
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -726,14 +726,14 @@ const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
-s_Struct& lookupStruct_mut(fu::view<std::byte> canon_1, s_Module& module)
+s_Struct& lookupStruct_mut(fu::view<fu::byte> canon_1, s_Module& module)
 {
     return module.out.types.mutref(structIndex(canon_1));
 }
 
                                 #ifndef DEFt_find_05eu
                                 #define DEFt_find_05eu
-inline int find_05eu(fu::view<std::byte> a, const std::byte b)
+inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -747,7 +747,7 @@ inline int find_05eu(fu::view<std::byte> a, const std::byte b)
 
                                 #ifndef DEFt_has_05eu
                                 #define DEFt_has_05eu
-inline bool has_05eu(fu::view<std::byte> a, const std::byte b)
+inline bool has_05eu(fu::view<fu::byte> a, const fu::byte b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -810,12 +810,12 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& c
 
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
-    const int fuzzy_1 = find_05eu(path, std::byte('\v'));
+    const int fuzzy_1 = find_05eu(path, fu::byte('\v'));
     if (fuzzy_1 > 0)
     {
         fu_STR from = fu::slice(path, 0, fuzzy_1);
         fu_STR name_3 = fu::slice(path, (fuzzy_1 + 1));
-        if (from && name_3 && !has_05eu(name_3, std::byte('\v')))
+        if (from && name_3 && !has_05eu(name_3, fu::byte('\v')))
         {
             fu_STR res = resolveFile(from, name_3, ctx);
             if (res)
@@ -1066,6 +1066,14 @@ const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module&
 
 extern const fu_STR DIM;
 
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
 extern const fu_STR RESET;
 
 extern const fu_STR BAD;
@@ -1087,7 +1095,7 @@ fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extr
             result += (DIM + "      | "_fu);
         else
         {
-            fu_STR margin = ((i + 1) + " | "_fu);
+            fu_STR margin = x7E_OZkl(fu::i64dec((i + 1)), " | "_fu);
             while (margin.size() < 8)
                 margin = (" "_fu + margin);
 

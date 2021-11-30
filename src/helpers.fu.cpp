@@ -1,5 +1,5 @@
 #include <cstddef>
-#include <cstdint>
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
@@ -12,12 +12,12 @@
 
 #ifndef FU_NO_FDEFs
 
-bool hasIdentifierChars(fu::view<std::byte> id)
+bool hasIdentifierChars(fu::view<fu::byte> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
-        const std::byte c = id[i];
-        if ((c == std::byte('_')) || ((c >= std::byte('a')) && (c <= std::byte('z'))) || ((c >= std::byte('A')) && (c <= std::byte('Z'))) || ((c >= std::byte('0')) && (c <= std::byte('9'))))
+        const fu::byte c = id[i];
+        if ((c == fu::byte('_')) || ((c >= fu::byte('a')) && (c <= fu::byte('z'))) || ((c >= fu::byte('A')) && (c <= fu::byte('Z'))) || ((c >= fu::byte('0')) && (c <= fu::byte('9'))))
             return true;
 
     };
@@ -28,11 +28,11 @@ fu_STR path_ext(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        const std::byte c = path[i];
-        if (c == std::byte('.'))
+        const fu::byte c = path[i];
+        if (c == fu::byte('.'))
             return fu::slice(path, i);
 
-        if (c == std::byte('/'))
+        if (c == fu::byte('/'))
             break;
 
     };
@@ -43,11 +43,11 @@ fu_STR path_noext(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        const std::byte c = path[i];
-        if (c == std::byte('.'))
+        const fu::byte c = path[i];
+        if (c == fu::byte('.'))
             return fu::slice(path, 0, i);
 
-        if (c == std::byte('/'))
+        if (c == fu::byte('/'))
             break;
 
     };
@@ -58,7 +58,7 @@ fu_STR path_dirname(const fu_STR& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
-        if (path[i] == std::byte('/'))
+        if (path[i] == fu::byte('/'))
             return fu::slice(path, 0, (i + 1));
 
     };
@@ -69,7 +69,7 @@ fu_STR path_filename(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        if (path[i] == std::byte('/'))
+        if (path[i] == fu::byte('/'))
             return fu::slice(path, (i + 1));
 
     };
@@ -95,25 +95,25 @@ fu_STR path_normalize(const fu_STR& p)
     return fu::join(path, "/"_fu);
 }
 
-fu_STR path_relative(fu::view<std::byte> from, const fu_STR& to)
+fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)
 {
     const int min_1 = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
     for (int i = 0; i < min_1; i++)
     {
-        const std::byte a = from[i];
-        const std::byte b = to[i];
+        const fu::byte a = from[i];
+        const fu::byte b = to[i];
         if (b != a)
             break;
 
-        if (b == std::byte('/'))
+        if (b == fu::byte('/'))
             same = (i + 1);
 
     };
     fu_STR res {};
     for (int i_1 = same; i_1 < from.size(); i_1++)
     {
-        if (from[i_1] == std::byte('/'))
+        if (from[i_1] == fu::byte('/'))
             res += "../"_fu;
 
     };
@@ -121,41 +121,41 @@ fu_STR path_relative(fu::view<std::byte> from, const fu_STR& to)
     return res;
 }
 
-fu_STR path_join(fu::view<std::byte> a, const fu_STR& b)
+fu_STR path_join(fu::view<fu::byte> a, const fu_STR& b)
 {
-    return ((b && (b[0] == std::byte('/'))) ? path_normalize(b) : path_normalize(((a + std::byte('/')) + b)));
+    return ((b && (b[0] == fu::byte('/'))) ? path_normalize(b) : path_normalize(((a + fu::byte('/')) + b)));
 }
 
 fu_STR ascii_lower(const fu_STR& a)
 {
-    const int offset = (int(std::byte('a')) - int(std::byte('A')));
+    const int offset = (int(fu::byte('a')) - int(fu::byte('A')));
     fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
-        const std::byte c = res[i];
-        if ((c >= std::byte('A')) && (c <= std::byte('Z')))
-            res.mutref(i) = std::byte((int(c) + offset));
+        const fu::byte c = res[i];
+        if ((c >= fu::byte('A')) && (c <= fu::byte('Z')))
+            res.mutref(i) = fu::byte((int(c) + offset));
 
     };
     return res;
 }
 
-std::byte ascii_upper(const std::byte c)
+fu::byte ascii_upper(const fu::byte c)
 {
-    return (((c >= std::byte('a')) && (c <= std::byte('z'))) ? std::byte((int(c) + (int(std::byte('A')) - int(std::byte('a'))))) : std::byte(c));
+    return (((c >= fu::byte('a')) && (c <= fu::byte('z'))) ? fu::byte((int(c) + (int(fu::byte('A')) - int(fu::byte('a'))))) : fu::byte(c));
 }
 
-int parse10i32(int& offset, fu::view<std::byte> str)
+int parse10i32(int& offset, fu::view<fu::byte> str_1)
 {
     int result {};
-    while (offset < str.size())
+    while (offset < str_1.size())
     {
-        const std::byte c = str[offset];
-        if ((c < std::byte('0')) || (c > std::byte('9')))
+        const fu::byte c = str_1[offset];
+        if ((c < fu::byte('0')) || (c > fu::byte('9')))
             break;
 
         offset++;
-        result = ((result * 10) + (int(c) - int(std::byte('0'))));
+        result = ((result * 10) + (int(c) - int(fu::byte('0'))));
     };
     return result;
 }

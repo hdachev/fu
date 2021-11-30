@@ -1,10 +1,12 @@
-#include <cstdint>
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
+#include <fu/vec/find.h>
 #include <fu/view.h>
 
-std::byte ascii_upper(std::byte);
+bool hasPostfix(fu::view<fu::byte>);
+fu::byte ascii_upper(fu::byte);
 
 #ifndef FU_NO_FDEFs
 
@@ -12,7 +14,7 @@ static const fu_VEC<fu_VEC<fu_STR>> KEYWORDS = fu_VEC<fu_VEC<fu_STR>> { fu_VEC<f
 
                                 #ifndef DEFt_find_VtCz
                                 #define DEFt_find_VtCz
-inline int find_VtCz(fu::view<fu_STR> a, fu::view<std::byte> b)
+inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -37,6 +39,28 @@ fu_STR ID(const fu_STR& id)
         };
     };
     return fu_STR(id);
+}
+
+static const fu_STR UNARY = "++--!*&~"_fu;
+
+static const fu_STR BINARY = "+=-=*=/=%=&=|=^=<<=>>==!=<=>=&&||"_fu;
+
+bool hasBinary(fu::view<fu::byte> op)
+{
+    return fu::has(BINARY, op);
+}
+
+bool hasUnary(fu::view<fu::byte> op)
+{
+    if (op.size() > 2)
+        return hasPostfix(op);
+
+    return fu::has(UNARY, op);
+}
+
+bool hasPostfix(fu::view<fu::byte> op)
+{
+    return (op == "postfix++"_fu) || (op == "postfix--"_fu);
 }
 
 #endif

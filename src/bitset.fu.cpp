@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <fu/int.h>
 #include <fu/vec.h>
 #include <fu/view.h>
 
@@ -10,7 +11,7 @@ void add(s_BitSet&, int);
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -24,7 +25,7 @@ struct s_BitSet
 
                                 #ifndef DEFt_grow_if_oob_DlDj
                                 #define DEFt_grow_if_oob_DlDj
-inline uint8_t& grow_if_oob_DlDj(fu_VEC<uint8_t>& a, const int i)
+inline fu::u8& grow_if_oob_DlDj(fu_VEC<fu::u8>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -38,8 +39,8 @@ bool add_once(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
-    uint8_t& entry = grow_if_oob_DlDj(_._data, bucket);
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+    fu::u8& entry = grow_if_oob_DlDj(_._data, bucket);
     if (!(entry & mask))
     {
         entry |= mask;
@@ -53,7 +54,7 @@ void add(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
     grow_if_oob_DlDj(_._data, bucket) |= mask;
 }
 
@@ -62,8 +63,8 @@ bool has(const s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
-    return (_._data.size() > bucket) && ((_._data[bucket] & mask) != uint8_t(0u));
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+    return (_._data.size() > bucket) && ((_._data[bucket] & mask) != fu::u8(0u));
 }
 
 void rem(s_BitSet& _, const int idx)
@@ -73,7 +74,7 @@ void rem(s_BitSet& _, const int idx)
     if (_._data.size() > bucket)
     {
         const int bit = (idx % 8);
-        const uint8_t mask = (uint8_t(1u) << uint8_t(bit));
+        const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
         _._data.mutref(bucket) &= ~mask;
     };
 }

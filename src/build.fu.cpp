@@ -1,5 +1,6 @@
-#include <cstdint>
+#include <fu/decstr.h>
 #include <fu/default.h>
+#include <fu/int.h>
 #include <fu/io.h>
 #include <fu/map.h>
 #include <fu/never.h>
@@ -11,7 +12,6 @@
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/concat_str.h>
 #include <fu/vec/find.h>
 #include <fu/vec/join.h>
 #include <fu/vec/replace.h>
@@ -52,12 +52,12 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-fu_STR hash16(fu::view<std::byte>, int);
+fu_STR hash16(fu::view<fu::byte>, int);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
-fu_STR path_join(fu::view<std::byte>, const fu_STR&);
+fu_STR path_join(fu::view<fu::byte>, const fu_STR&);
 fu_STR path_noext(const fu_STR&);
-fu_STR path_relative(fu::view<std::byte>, const fu_STR&);
+fu_STR path_relative(fu::view<fu::byte>, const fu_STR&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -345,7 +345,7 @@ struct s_Overload
                                 #define DEF_s_BitSet
 struct s_BitSet
 {
-    fu_VEC<uint8_t> _data;
+    fu_VEC<fu::u8> _data;
     explicit operator bool() const noexcept
     {
         return false
@@ -721,9 +721,9 @@ struct s_Context
 
                                 #ifndef DEFt_if_last_SzE9
                                 #define DEFt_if_last_SzE9
-inline std::byte if_last_SzE9(fu::view<std::byte> s)
+inline fu::byte if_last_SzE9(fu::view<fu::byte> s)
 {
-    return s.size() ? s[(s.size() - 1)] : (*(const std::byte*)fu::NIL);
+    return s.size() ? s[(s.size() - 1)] : (*(const fu::byte*)fu::NIL);
 }
                                 #endif
 
@@ -738,7 +738,15 @@ inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<std::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
+                                #ifndef DEFt_x7E_OZkl
+                                #define DEFt_x7E_OZkl
+inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+{
+    return a + b;
+}
+                                #endif
+
+[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<fu::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
     {
@@ -753,7 +761,7 @@ inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
     (std::cout << ("  WRITE "_fu + fname_1) << '\n');
     fu::file_write(fname_1, cpp_1);
     if (!stdout)
-        stdout = ("Exit code: "_fu + code);
+        stdout = x7E_OZkl("Exit code: "_fu, fu::i64dec(code));
 
     fu_STR explain {};
     if (onfail)
@@ -777,11 +785,11 @@ inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
                                 #define DEFt_only_VAhQ
 inline int only_VAhQ(fu::view<int> s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(("len != 1: "_fu + s.size())));
+    return ((s.size() == 1) ? s[0] : fu::fail(x7E_OZkl("len != 1: "_fu, fu::i64dec(s.size()))));
 }
                                 #endif
 
-static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<std::byte> dir_src)
+static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<fu::byte> dir_src)
 {
     if (fu::lmatch(fname_1, dir_src))
         return fu_STR(fname_1);
@@ -792,7 +800,7 @@ static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<std::byte> dir_
     return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname_1, fu::view<std::byte> data, fu::view<std::byte> dir_src, fu::view<std::byte> dir_out)
+static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::view<fu::byte> dir_src, fu::view<fu::byte> dir_out)
 {
     fu_STR fname_2 = ensure_local_fname(fname_1, dir_src);
     if (!(fu::lmatch(fname_2, dir_src)))
@@ -803,30 +811,30 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<std::byte> data, fu::v
     {
         const int err = fu::file_write(fname_3, data);
         if (err)
-            fu::fail(((("Failed to write `"_fu + fname_3) + "`, error: #"_fu) + err));
+            fu::fail(x7E_OZkl((("Failed to write `"_fu + fname_3) + "`, error: #"_fu), fu::i64dec(err)));
 
         (std::cout << ("  WROTE "_fu + fname_3) << '\n');
     };
     return fname_3;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<std::byte> scheme, const fu_STR& onfail, const s_Context& ctx)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<fu::byte> scheme, const fu_STR& onfail, const s_Context& ctx)
 {
-    if (if_last_SzE9(dir_wrk) != std::byte('/'))
+    if (if_last_SzE9(dir_wrk) != fu::byte('/'))
     {
         if (!(dir_wrk))
             fu::fail("No workspace directory provided."_fu);
 
-        dir_wrk += std::byte('/');
+        dir_wrk += fu::byte('/');
     };
-    if (dir_obj && (if_last_SzE9(dir_obj) != std::byte('/')))
-        dir_obj += std::byte('/');
+    if (dir_obj && (if_last_SzE9(dir_obj) != fu::byte('/')))
+        dir_obj += fu::byte('/');
 
-    if (dir_src && (if_last_SzE9(dir_src) != std::byte('/')))
-        dir_src += std::byte('/');
+    if (dir_src && (if_last_SzE9(dir_src) != fu::byte('/')))
+        dir_src += fu::byte('/');
 
-    if (dir_cpp && (if_last_SzE9(dir_cpp) != std::byte('/')))
-        dir_cpp += std::byte('/');
+    if (dir_cpp && (if_last_SzE9(dir_cpp) != fu::byte('/')))
+        dir_cpp += fu::byte('/');
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
     if ((scheme == "debug"_fu) || (scheme == "reldeb"_fu))
@@ -892,12 +900,12 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         if (!cpp_1)
             continue;
 
-        fu_STR F = ((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp_1), 16)) + "-"_fu) + cpp_1.size());
+        fu_STR F = x7E_OZkl((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp_1), 16)) + "-"_fu), fu::i64dec(cpp_1.size()));
         grow_if_oob_snLz(Fs, i_2) = F;
         len_all += cpp_1.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
-    fu_STR F_exe = ((((((dir_wrk + "b-"_fu) + hash16(fu::join(Fs, "/"_fu), 16)) + "-"_fu) + len_all) + "-"_fu) + Fs.size());
+    fu_STR F_exe = x7E_OZkl((x7E_OZkl((((dir_wrk + "b-"_fu) + hash16(fu::join(Fs, "/"_fu), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
     int code {};
     fu_STR stdout {};
     const int exe_size = fu::file_size(F_exe);
@@ -965,7 +973,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             code = fu::shell_exec(fu_STR(F_exe), stdout);
             const bool pure = true;
             if (pure)
-                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), std::byte{}));
+                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), fu::byte{}));
 
         };
     };

@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 
@@ -77,32 +77,32 @@ struct s_Type
 
 bool is_primitive(const s_Type& t)
 {
-    const std::byte c = t.vtype.canon[0];
-    return (c == std::byte('u')) || (c == std::byte('i')) || (c == std::byte('f')) || (c == std::byte('b'));
+    const fu::byte c = t.vtype.canon[0];
+    return (c == fu::byte('u')) || (c == fu::byte('i')) || (c == fu::byte('f')) || (c == fu::byte('b'));
 }
 
 bool is_arithmetic(const s_Type& t)
 {
-    const std::byte c = t.vtype.canon[0];
-    return (c == std::byte('u')) || (c == std::byte('i')) || (c == std::byte('f'));
+    const fu::byte c = t.vtype.canon[0];
+    return (c == fu::byte('u')) || (c == fu::byte('i')) || (c == fu::byte('f'));
 }
 
 bool is_integral(const s_Type& t)
 {
-    const std::byte c = t.vtype.canon[0];
-    return (c == std::byte('u')) || (c == std::byte('i'));
+    const fu::byte c = t.vtype.canon[0];
+    return (c == fu::byte('u')) || (c == fu::byte('i'));
 }
 
 bool is_unsigned(const s_Type& t)
 {
-    const std::byte c = t.vtype.canon[0];
-    return c == std::byte('u');
+    const fu::byte c = t.vtype.canon[0];
+    return c == fu::byte('u');
 }
 
 bool is_floating_pt(const s_Type& t)
 {
-    const std::byte c = t.vtype.canon[0];
-    return c == std::byte('f');
+    const fu::byte c = t.vtype.canon[0];
+    return c == fu::byte('f');
 }
 
 #endif
