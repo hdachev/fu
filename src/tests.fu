@@ -3555,7 +3555,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         fn maybe_empty(N: i32) {
             mut res: string[];
             for (mut i = 0; i < N; i++) res ~= "world!"; // cpp template issue here

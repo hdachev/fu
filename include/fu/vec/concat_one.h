@@ -38,8 +38,8 @@ inline fu_VEC<T> operator+(const T& a, fu_VEC<T>&& b) noexcept {
     return static_cast<fu_VEC<T>&&>(b);
 }
 
-template <typename T>
-inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const T& b) noexcept {
+template <typename T, typename X, typename = decltype((*(T*)1)=(*(X*)1))>
+inline fu_VEC<T>& operator+=(fu_VEC<T>& a, const X& b) noexcept {
     a.push(b);
     return a;
 }
