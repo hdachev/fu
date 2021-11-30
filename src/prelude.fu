@@ -82,7 +82,7 @@ fn u64(v: $T) case ($T -> @primitive): u64 __native("<cstdint>", "uint64_t");
 fn f32(v: $T) case ($T -> @primitive): f32 __native("float");
 fn f64(v: $T) case ($T -> @primitive): f64 __native("double");
 
-fn byte(v: $T) case ($T -> @primitive): byte __native("<cstddef>", "fu::byte");
+fn byte(v: $T) case ($T -> @primitive): byte __native("<fu/int.h>", "fu::byte");
 
 
 // Math.

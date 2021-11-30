@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./vec.h"
+#include "./int.h"
 
 
 // Strings.
