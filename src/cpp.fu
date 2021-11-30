@@ -39,3 +39,25 @@ pub fn ID(id: string)
 
     return id;
 }
+
+let UNARY   = "++--!*&~";
+let BINARY  = "+=-=*=/=%=&=|=^=<<=>>==!=<=>=&&||";
+
+pub fn hasBinary(op: string)
+{
+    return BINARY.has(op);
+}
+
+pub fn hasUnary(op: string)
+{
+    if (op.len > 2)
+        return hasPostfix(op);
+
+    return UNARY.has(op);
+}
+
+pub fn hasPostfix(op: string)
+{
+    return op == "postfix++"
+        || op == "postfix--";
+}

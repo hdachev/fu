@@ -6064,7 +6064,7 @@ pub fn runTests()
         fn main() inspect(5.i32, 7.u32) - 31;
     `);
 
-    TODO(`
+    ZERO(`
         struct X { str: string; };
         fn ~(a: X, b: X) X(a.str ~ b.str);          // currently: invalid operator~ cg
         inline fn ~(a: X, b.to_debug_str) a ~ b;    // currently: pointless blocks

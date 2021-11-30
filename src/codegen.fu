@@ -398,15 +398,15 @@ pub fn cpp_codegen(
                 c == '_') continue;
 
             shadow let c = c.u32;
-            let b0 = (c >> 0) & 0xf;
-            let b1 = (c >> 4) & 0xf;
+            let b0 = (c >> 4) & 0xf;
+            let b1 = (c >> 0) & 0xf;
 
             fn hex(x: u32)
-                x < 10 ? ('0'.u32 + x).byte
-                       : ('A'.u32 + x).byte;
+                x < 10 ? ('0'.u32 +  x      ).byte
+                       : ('A'.u32 + (x - 10)).byte;
 
             str = str[0, i]
-                ~ 'b' ~ b0.hex ~ b1.hex
+                ~ 'x' ~ b0.hex ~ b1.hex
                 ~ str[i + 1, str.len];
         }
 
@@ -685,14 +685,36 @@ pub fn cpp_codegen(
 
     //
 
+    fn isOp(target: Target)
+    {
+        let flags = target.flags;
+        if !(flags & F_OPERATOR)
+            return false;
+
+        let args = target.args;
+        if (args.len > 2)
+            return false;
+
+        if (target.kind == "__native")
+            return true;
+
+        let name = target.name;
+        if (args.len > 1)
+            return cpp::hasBinary(name);
+
+        if (flags & F_POSTFIX)
+            return cpp::hasPostfix(name);
+
+        return cpp::hasUnary(name);
+    }
+
     fn fnID(target: Target)
     {
         let overload    = GET(target);
-        let isOp        = overload.flags & F_OPERATOR && target.args.len <= 2;
         let id          = overload.name || fail();
 
-        return isOp     ? "operator" ~ id.valid_operator
-                        : id.valid_identifier;
+        return target.isOp  ? "operator" ~ id.valid_operator
+                            :              id.valid_identifier;
     }
 
     fn fnLinkage(overload: Overload)
@@ -1377,8 +1399,7 @@ pub fn cpp_codegen(
                 ensureFwdDecl(node.target);
         }
 
-        let isOp = target.flags & F_OPERATOR && items.len <= 2;
-        if (isOp)
+        if (node.target.isOp)
         {
             let head = items[0] || fail();
 
