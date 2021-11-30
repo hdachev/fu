@@ -410,7 +410,7 @@ pub fn cpp_codegen(
                 ~ str[i + 1, str.len];
         }
 
-        return str;
+        return ID(str);
     }
 
     fn cgRoot(shadow root: SolvedNode): string
@@ -685,30 +685,45 @@ pub fn cpp_codegen(
 
     //
 
+    fn fnID(target: Target)
+    {
+        let overload    = GET(target);
+        let isOp        = overload.flags & F_OPERATOR && target.args.len <= 2;
+        let id          = overload.name || fail();
+
+        return isOp     ? "operator" ~ id.valid_operator
+                        : id.valid_identifier;
+    }
+
+    fn fnLinkage(overload: Overload)
+    {
+        return    (  overload.type.is_never      && "[[noreturn]] ")
+                ~ (  overload.flags & F_TEMPLATE && "inline "      )
+                ~ (!(overload.flags & F_PUB)     && "static "      );
+    }
+
     fn cgFnSignature(fn: SolvedNode): string
     {
-        let overload = GET(fn.target);
+        let target      = fn.target;
+        let overload    = GET(target);
 
-        let items = fn.items;
-        let annot = typeAnnot(overload.type || fail(), M_RETVAL);
+        let items       = fn.items;
+        let annot       = typeAnnot(overload.type || fail(), M_RETVAL);
 
-        mut id = overload.name;
-        if (id == "main"){
-            _hasMain = fn.items.len + FN_ARGS_BACK ? 2 : 1;
-            id = "fu_MAIN";
+        //
+        mut id          = overload.name;
+        if (id == "main")
+        {
+            _hasMain    = fn.items.len + FN_ARGS_BACK ? 2 : 1;
+            id          = "fu_MAIN";
+        }
+        else
+        {
+            id          = fnID(fn.target);
         }
 
-        let isOp = overload.flags & F_OPERATOR && items.len + FN_ARGS_BACK <= 2;
-        if (isOp)
-            id = "operator" ~ id.valid_operator;
-        else
-            id = ID(id.valid_identifier);
-
-        let linkage = (overload.type.is_never  && "[[noreturn]] ")
-                    ~ (  overload.flags & F_TEMPLATE && "inline ")
-                    ~ (!(overload.flags & F_PUB)     && "static ");
-
-        mut src = linkage ~ annot ~ " " ~ id ~ "(";
+        //
+        mut src         = overload.fnLinkage ~ annot ~ " " ~ id ~ "(";
 
         for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
         {
@@ -727,16 +742,6 @@ pub fn cpp_codegen(
         src ~= ")";
 
         return src;
-    }
-
-    fn fnID(target: Target)
-    {
-        let overload    = GET(target);
-        let isOp        = overload.flags & F_OPERATOR && target.args.len <= 2;
-        let id          = overload.name || fail();
-
-        return isOp     ? "operator" ~ id.valid_operator
-                        : id.valid_identifier;
     }
 
     fn ensureFwdDecl(target: Target)
@@ -759,11 +764,7 @@ pub fn cpp_codegen(
         let annot   = typeAnnot(ret, M_RETVAL);
 
         let name    = fnID(target);
-        let linkage = (overload.type.is_never  && "[[noreturn]] ")
-                    ~ (overload.flags & F_TEMPLATE && "inline ")
-                  ~ (!(overload.flags & F_PUB)     && "static ");
-
-        mut src = linkage ~ annot ~ " " ~ name ~ "(";
+        mut src     = overload.fnLinkage ~ annot ~ " " ~ name ~ "(";
 
         let args    = target.args;
         for (mut i = 0; i < args.len; i++)
@@ -1469,7 +1470,7 @@ pub fn cpp_codegen(
 
         id != "__native" || assert();
 
-        return ID(id.valid_identifier) ~ "(" ~ REST ~ ")";
+        return id.valid_identifier ~ "(" ~ REST ~ ")";
     }
 
     fn cgAppend(node: SolvedNode, into: string): string
