@@ -2440,6 +2440,63 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        fn indexIntoImplicit(j: i32, implicit strings: string[]) strings[j];
+
+        fn selfRecurBeforeImplicitDep(x: i32)
+        {
+            // On second solve we're talking about a region, but the argnode is gone.
+            fn T(i: i32) selfRecurBeforeImplicitDep(i / 2);
+            if (x > 1) return T(x);
+            return indexIntoImplicit(x);
+        }
+
+        fn main() {
+            let strings = [ "a", "b" ];
+            return selfRecurBeforeImplicitDep(2) == "b" ? 0 : 1;
+        }
+    `);
+
+    TODO(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct Type       { canon: string; };
+        struct SolvedNode {  type: Type;   };
+
+        fn solved(type: Type, implicit ref out: SolvedNode[]) {
+            out.grow(out.len * 100 + 1);
+
+            ref tail = out[out.len - 1];
+            tail.type.canon = type.canon;
+            return tail;
+        }
+
+        fn createMap(a: Type, b: Type): Type {
+            return Type(a.canon ~ b.canon);
+        }
+
+        fn evalTypeAnnot(nodes: string[]): SolvedNode
+        {
+            // Each T() call should invalidate the results from previous T() calls -
+            //  so this shouldn't compile if Type is nocopy.
+            fn T(i: i32)
+                evalTypeAnnot([ nodes[i] ]).type;
+
+            if (nodes.len > 1)
+                return solved(createMap(T(0), T(1)));
+
+            return solved(Type(nodes[0]));
+        }
+
+        fn main() {
+            let implicit mut out: SolvedNode[];
+            let annot = evalTypeAnnot([ "a", "b" ]);
+            return annot.type.canon.len * 1000 + out.len - 2101;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
