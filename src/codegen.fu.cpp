@@ -1,4 +1,3 @@
-#include <cstddef>
 #include <cstdint>
 #include <fu/decstr.h>
 #include <fu/default.h>
@@ -12,7 +11,6 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
-#include <fu/vec/join.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/sort.h>
 #include <fu/view.h>
@@ -1363,6 +1361,34 @@ static fu_STR cgClone(const s_Type& type_3, fu::view<fu::byte> src_2, fu_MAP<fu_
     return ((typeAnnotBase(type_3, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn) + "("_fu) + src_2) + ")"_fu;
 }
 
+                                #ifndef DEFt_join_9sek
+                                #define DEFt_join_9sek
+inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+{
+    if (a.size() < 2)
+        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+
+    int size = a[0].size();
+    for (int i = 1; i < a.size(); i++)
+        size += (sep.size() + a[i].size());
+
+    fu_STR res {};
+    res.grow<false>(size);
+    fu::view<fu::byte> head = a[0];
+    size = head.size();
+    fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+    for (int i_1 = 1; i_1 < a.size(); i_1++)
+    {
+        fu::view<fu::byte> range = a[i_1];
+        fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
+        size += sep.size();
+        fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
+        size += range.size();
+    };
+    return res;
+}
+                                #endif
+
 static fu_STR binding(const s_SolvedNode& node_1, const bool doInit, const bool forceMut, const bool forceValue, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_MAP<fu_STR, fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, fu_VEC<s_BitSet>& _ffwd, fu_STR& _fdef, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
 {
     fu_VEC<fu_STR> _tv0 {};
@@ -1403,7 +1429,7 @@ static fu_STR binding(const s_SolvedNode& node_1, const bool doInit, const bool 
         {
             fu_STR annot_1 = (fu::lmatch(annot, "const "_fu) ? fu::slice(annot, 6) : fu_STR(annot));
             fu_STR expr_1 = (isCopy ? cgClone(SolvedNodeData(init, module, ctx).type, expr, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn) : fu_STR(expr));
-            fu_STR iife = ((((((" { []() -> "_fu + annot_1) + " {\n    "_fu) + fu::join(_current_fn.TEMPVARs, ";\n    "_fu)) + ";\n    return "_fu) + expr_1) + ";\n}() }"_fu);
+            fu_STR iife = ((((((" { []() -> "_fu + annot_1) + " {\n    "_fu) + join_9sek(_current_fn.TEMPVARs, ";\n    "_fu)) + ";\n    return "_fu) + expr_1) + ";\n}() }"_fu);
             _current_fn.TEMPVARs.clear();
             return head + iife;
         };
@@ -1498,10 +1524,7 @@ inline constexpr int FN_BODY_BACK = -1;
 inline constexpr unsigned SS_FINALIZED = (0x1u << 3u);
                                 #endif
 
-                                #ifndef DEF_FN_RET_BACK
-                                #define DEF_FN_RET_BACK
-inline constexpr int FN_RET_BACK = -2;
-                                #endif
+extern const int FN_ARGS_BACK;
 
                                 #ifndef DEF_F_POSTFIX
                                 #define DEF_F_POSTFIX
@@ -1595,14 +1618,14 @@ static fu_STR cgFnSignature(const s_SolvedNode& fn, const s_Module& module, cons
     fu_STR id_2 { overload.name };
     if (id_2 == "main"_fu)
     {
-        _hasMain = ((SolvedNodeData(fn, module, ctx).items.size() + FN_RET_BACK) ? 2 : 1);
+        _hasMain = ((SolvedNodeData(fn, module, ctx).items.size() + FN_ARGS_BACK) ? 2 : 1);
         id_2 = "fu_MAIN"_fu;
     }
     else
         id_2 = fnID(SolvedNodeData(fn, module, ctx).target, module, ctx, _here);
 
     fu_STR src_2 = ((((fnLinkage(overload) + annot) + " "_fu) + id_2) + "("_fu);
-    for (int i = 0; i < (items_5.size() + FN_RET_BACK); i++)
+    for (int i = 0; i < (items_5.size() + FN_ARGS_BACK); i++)
     {
         if (i)
             src_2 += ", "_fu;
@@ -2081,9 +2104,6 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
 
         };
     };
-    if ((id_2 == "CLONE"_fu) && (items_5.size() == 1))
-        return cgClone(SolvedNodeData(node_1, module, ctx).type, ARG(0, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers), _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
-
     if ((id_2 == "STEAL"_fu) && (items_5.size() == 1))
         return cgMove(SolvedNodeData(node_1, module, ctx).type, ARG(0, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers), module, ctx, _libs, _here, _tfwd, _tfwd_src, _tdef, _current_fn);
 
@@ -2210,6 +2230,34 @@ static fu_STR cgStringLiteral(const s_SolvedNode& node_1, fu_MAP<fu_STR, fu_STR>
     return ("\""_fu + esc) + "\"_fu"_fu;
 }
 
+                                #ifndef DEFt_join_VtCz
+                                #define DEFt_join_VtCz
+inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+{
+    if (a.size() < 2)
+        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+
+    int size = a[0].size();
+    for (int i = 1; i < a.size(); i++)
+        size += (sep.size() + a[i].size());
+
+    fu_STR res {};
+    res.grow<false>(size);
+    fu::view<fu::byte> head = a[0];
+    size = head.size();
+    fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+    for (int i_1 = 1; i_1 < a.size(); i_1++)
+    {
+        fu::view<fu::byte> range = a[i_1];
+        fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
+        size += sep.size();
+        fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
+        size += range.size();
+    };
+    return res;
+}
+                                #endif
+
 static fu_STR cgArrayLiteral(const s_SolvedNode& node_1, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_MAP<fu_STR, fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, fu_VEC<s_BitSet>& _ffwd, fu_STR& _fdef, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
 {
     if (SolvedNodeData(node_1, module, ctx).target)
@@ -2219,7 +2267,7 @@ static fu_STR cgArrayLiteral(const s_SolvedNode& node_1, const int mode, const s
     if (!items_5.size())
         return cgDefault(SolvedNodeData(node_1, module, ctx).type, _here, ctx, _libs, module, _tfwd, _tfwd_src, _tdef, _current_fn);
 
-    fu_STR list = (("{ "_fu + fu::join(items_5, ", "_fu)) + " }"_fu);
+    fu_STR list = (("{ "_fu + join_VtCz(items_5, ", "_fu)) + " }"_fu);
     fu_STR annot = typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
     if (is_ref(callarg) && !type_isArray(callarg))
     {

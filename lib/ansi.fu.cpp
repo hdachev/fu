@@ -1,4 +1,3 @@
-#include <cstddef>
 #include <fu/decstr.h>
 #include <fu/int.h>
 #include <fu/str.h>

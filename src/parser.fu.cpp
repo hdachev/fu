@@ -393,6 +393,8 @@ inline constexpr int FN_RET_BACK = -2;
 inline constexpr int FN_BODY_BACK = -1;
                                 #endif
 
+extern const int FN_ARGS_BACK = FN_RET_BACK;
+
                                 #ifndef DEF_TYPECTOR_BACK
                                 #define DEF_TYPECTOR_BACK
 inline constexpr int TYPECTOR_BACK = -1;

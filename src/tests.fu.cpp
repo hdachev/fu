@@ -6,7 +6,7 @@
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
-#include <fu/vec/replace.h>
+#include <fu/vec/slice.h>
 #include <fu/view.h>
 
 struct s_ArgWrite;
@@ -51,7 +51,6 @@ s_Context ZERO(const fu_STR&, s_TestDiffs&);
 s_Context ZERO(fu_VEC<fu_STR>&&, s_TestDiffs&);
 s_TestDiffs parse(const fu_STR&);
 void TODO(const fu_STR&, s_TestDiffs&);
-void TODO(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void ZERO_SAME(fu::view<fu_STR>, s_TestDiffs&);
 
                                 #ifndef DEF_s_TestDiffs
@@ -740,9 +739,66 @@ int self_test()
 
 extern const fu_STR PRJDIR;
 
-static fu_STR EXPR(const fu_STR& varname, const fu_STR& assertion)
+                                #ifndef DEFt_replace_ZeXZ
+                                #define DEFt_replace_ZeXZ
+inline fu_STR replace_ZeXZ(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
 {
-    return fu::replace(assertion, "@"_fu, varname);
+    fu_STR result {};
+
+    {
+        int last = 0;
+        int next = 0;
+        const int N = all.size();
+        if (N)
+        {
+            while (((next = fu::lfind(str_1, all, last)) >= 0))
+            {
+
+                {
+                    fu_STR substr_1 = fu::slice(str_1, last, next);
+                    const bool first = !last;
+                    const bool last_1 = false;
+                    if (!first)
+                        result += with;
+                    else if (last_1)
+                        return fu_STR(str_1);
+
+                    result += substr_1;
+                };
+                last = (next + N);
+            };
+        };
+        if (last)
+        {
+            fu_STR substr_1 = fu::slice(str_1, last);
+            const bool first = false;
+            const bool last_1 = true;
+            if (!first)
+                result += with;
+            else if (last_1)
+                return fu_STR(str_1);
+
+            result += substr_1;
+        }
+        else
+        {
+            const bool first = true;
+            const bool last_1 = true;
+            if (!first)
+                result += with;
+            else if (last_1)
+                return fu_STR(str_1);
+
+            result += str_1;
+        };
+    };
+    return result;
+}
+                                #endif
+
+static fu_STR EXPR(fu::view<fu::byte> varname, const fu_STR& assertion)
+{
+    return replace_ZeXZ(assertion, "@"_fu, varname);
 }
 
 static void ARROPS(fu::view<fu::byte> literal, fu::view<fu::byte> operation, fu_STR&& assertion, s_TestDiffs& testdiffs)
@@ -759,7 +815,7 @@ static void ARROPS(fu::view<fu::byte> literal, fu::view<fu::byte> operation, fu_
     src += (("\n    mut orig = ["_fu + literal) + "];"_fu);
     src += "\n"_fu;
     src += "\n    {"_fu;
-    src += "\n        mut arr1 = CLONE(orig);"_fu;
+    src += "\n        mut arr1 = orig;"_fu;
     src += (("\n        arr1."_fu + operation) + ";"_fu);
     src += (("\n        if ("_fu + EXPR("arr1"_fu, assertion)) + " != 0) return 17;"_fu);
     src += "\n    }"_fu;
@@ -995,6 +1051,8 @@ void runTests()
     FAIL("\n        fn test(ref a: i32[], ref b: i32[]) {\n            //*F\n            if (a[0] += 1)\n            /*/\n            if (a[0] == 1)\n            //*/\n                a ~= 1;\n            else\n                b ~= 1;\n        }\n\n        fn main() {\n            mut x = [ 1 ];\n            test(x, x);\n            return x.len - 2;\n        }\n    "_fu, testdiffs);
     TODO_borrowck("\n        nocopy struct Woot {\n            x: i32[];\n            y: i32[];\n        };\n\n        fn test(ref w: Woot) {\n            ref x = w.x;\n            //*F\n            ref y = w.x;\n            /*/\n            ref y = w.y;\n            //*/\n            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let\n            x ~= y;\n        }\n\n        fn main() {\n            mut w: Woot;\n            test(w);\n            return w.x.len;\n        }\n    "_fu, testdiffs);
     TODO_borrowck("\n        nocopy struct Woot {\n            x: i32[];\n            y: i32[];\n        };\n\n        fn test(ref w0: Woot, ref w1: Woot) {\n            ref x = w0.x;\n            //*F\n            ref y = w1.x;\n            /*/\n            ref y = w1.y;\n            //*/\n            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let\n            x ~= y;\n        }\n\n        fn main() {\n            mut w: Woot;\n            test(w, w);\n            return w.x.len;\n        }\n    "_fu, testdiffs);
+    TODO("\n        fn indexIntoImplicit(j: i32, implicit strings: string[]) strings[j];\n\n        fn selfRecurBeforeImplicitDep(x: i32)\n        {\n            // On second solve we're talking about a region, but the argnode is gone.\n            fn T(i: i32) selfRecurBeforeImplicitDep(i / 2);\n            if (x > 1) return T(x);\n            return indexIntoImplicit(x);\n        }\n\n        fn main() {\n            let strings = [ \"a\", \"b\" ];\n            return selfRecurBeforeImplicitDep(2) == \"b\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
+    TODO("\n        //*F\n        nocopy\n        /*/\n        //*/\n        struct Type       { canon: string; };\n        struct SolvedNode {  type: Type;   };\n\n        fn solved(type: Type, implicit ref out: SolvedNode[]) {\n            out.grow(out.len * 100 + 1);\n\n            ref tail = out[out.len - 1];\n            tail.type.canon = type.canon;\n            return tail;\n        }\n\n        fn createMap(a: Type, b: Type): Type {\n            return Type(a.canon ~ b.canon);\n        }\n\n        fn evalTypeAnnot(nodes: string[]): SolvedNode\n        {\n            // Each T() call should invalidate the results from previous T() calls -\n            //  so this shouldn't compile if Type is nocopy.\n            fn T(i: i32)\n                evalTypeAnnot([ nodes[i] ]).type;\n\n            if (nodes.len > 1)\n                return solved(createMap(T(0), T(1)));\n\n            return solved(Type(nodes[0]));\n        }\n\n        fn main() {\n            let implicit mut out: SolvedNode[];\n            let annot = evalTypeAnnot([ \"a\", \"b\" ]);\n            return annot.type.canon.len * 1000 + out.len - 2101;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct BINOP {\n            P: Map(string, i32);\n        };\n\n        fn setupOperators(): BINOP\n        {\n            mut out: BINOP;\n\n            fn binop(op: string)\n                out.P[op] = 7;\n\n            binop(\",\");\n\n            return out;\n        }\n\n        shadow let BINOP = setupOperators();\n        let P_COMMA = BINOP.P[\",\"] || assert();\n\n        fn main() P_COMMA - 7;\n    "_fu, testdiffs);
     ZERO("\n        // -no-lambda\n        // This converted to a ref-returning\n        // logical chain for some reason.\n        let hex = true;\n        let trail = \"x\";\n        if (!(trail >= \"0\" && trail <= \"9\") &&\n            !(hex && (trail >= \"a\" && trail <= \"f\"\n                   || trail >= \"A\" && trail <= \"F\")))\n        {\n            return 0;\n        }\n\n        return 1;\n    "_fu, testdiffs);
     ZERO("\n        struct Type     { i: i32; };\n        struct Token    { i: i32; };\n        struct ScopeIdx { i: i32; };\n\n        struct SolvedNode\n        {\n            kind:       string;\n            flags?:     i32;\n            value?:     string;\n            items?:     SolvedNode[];\n            token:      Token;\n\n            type:       Type;\n            target?:    ScopeIdx;\n        };\n\n        let _here: Token;\n\n        fn createDefaultInit(type: Type): SolvedNode\n        {\n            // Broken arg re-arrange.\n            return SolvedNode(\n                kind: \"definit\",\n                token: _here,\n                :type);\n        }\n\n        return createDefaultInit(Type()).target.i;\n    "_fu, testdiffs);
@@ -1037,7 +1095,7 @@ void runTests()
     ZERO("\n        struct Context\n        {\n            fuzzy: Map(string, string);\n            files: string[];\n        }\n\n        fn resolveFile(\n            implicit ctx: &mut Context,\n            from: string, name: string): string\n        {\n            let path    = from ~ name;\n            let cached  = ctx.fuzzy[path];\n            if (cached)\n                return cached == \"\v\" ? \"\" : cached;\n\n            fn tryResolve(): string\n            {\n                let exists = file::size(path) >= 0;\n                if (exists)\n                    return path;\n\n                return \"\";\n            };\n\n            let resolve = tryResolve();\n            ctx.fuzzy[path] = resolve || \"\v\";\n            return resolve;\n        }\n\n        pub fn resolveFile(\n            implicit ctx: &mut Context,\n            path: string): string\n        {\n            let fuzzy = path.find('\v');\n            if (fuzzy > 0)\n            {\n                let from = path.slice(0, fuzzy);\n                let name = path.slice(fuzzy + 1);\n                if (from && name && !name.has('\v'))\n                {\n                    let res = resolveFile(:from, :name);\n                    if (res)\n                        return res;\n\n                    // Tests have the files prepopulated,\n                    //  we only pay the cost of lookup when about to fail compile.\n                    let prepopulated = from ~ name;\n                    if (ctx.files.has(prepopulated))\n                        return prepopulated;\n                }\n            }\n\n            return path;\n        }\n\n        fn main() {\n            let implicit mut ctx: Context;\n            return resolveFile(\"a\").len - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct S { i: i32; };\n\n        fn hello(ref s: S, w: i32) {\n            infix fn |=(ref s: S, v: i32)\n                s.i |= v << w;\n\n            s |= 2;\n        }\n\n        fn main() {\n            mut s = 1.S;\n            s.hello(3);\n            return s.i - 17;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn lex(src: string) {\n            let end = src.len;\n            mut idx = 0;\n\n            fn err_str(idx1: i32) {\n                while (idx < end && src[idx] == ' ') idx++;\n                return src.slice(idx, idx1);\n            }\n\n            fn err(idx1_x2: i32) err_str(idx1_x2 /2);\n            return err(end *2);\n        }\n\n        fn main() lex(\"    hello\").len - 5;\n    "_fu, testdiffs);
-    ZERO("\n        pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void\n        {\n            // Fuzzing module splits.\n            for (mut i = 0; i < sources.len; i++)\n            {\n                // Note: redundant \"ref\" here.\n                fn src() = sources[i]; // bck: using a fn instead\n                for (;;)\n                {\n                    mut start0 = src.find(\"[split/]\");\n                    if (start0 < 0)\n                        break;\n\n                    let start00 = start0;\n                    let start1  = start0 + 8;\n                    while (start0 && src[start0 - 1] == ' ') start0--;\n\n                    let moduleA = src.slice(0, start0);\n                    let moduleB = src[start0, start00] ~ \"import _\" ~ i ~ \";\" ~ src[start1, src.len];\n                    let without = src[0, start0] ~ src[start1, src.len];\n\n                    sources[i]  = without;\n                    ZERO(:sources);\n\n                    sources[i]  = moduleA;\n                    sources.insert(i + 1, moduleB);\n                }\n\n                sum += src.len;\n            }\n        }\n\n        fn main() {\n            let implicit mut sum: i32;\n\n            ZERO( \"AAAA|BB[split/]CC\".::split(\"|\") );\n            let expect = 4+2+2 + 4+2+2 + 10; // 10 = \"import _0;\"\n\n            return sum - expect;\n        }\n    "_fu, testdiffs);
+    ZERO("\n        pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void\n        {\n            // Fuzzing module splits.\n            for (mut i = 0; i < sources.len; i++)\n            {\n                // Note: redundant \"ref\" here.\n                fn src() = sources[i]; // bck: using a fn instead\n                for (;;)\n                {\n                    mut start0 = src.find(\"[split/]\");\n                    if (start0 < 0)\n                        break;\n\n                    let start00 = start0;\n                    let start1  = start0 + 8;\n                    while (start0 && src[start0 - 1] == ' ') start0--;\n\n                    let moduleA = src.slice(0, start0);\n                    let moduleB = src[start0, start00] ~ \"import _\" ~ i ~ \";\" ~ src[start1, src.len];\n                    let without = src[0, start0] ~ src[start1, src.len];\n\n                    sources[i]  = without;\n                    ZERO(:sources);\n\n                    sources[i]  = moduleA;\n                    sources.insert(i + 1, moduleB);\n                }\n\n                sum += src.len;\n            }\n        }\n\n        fn main() {\n            let implicit mut sum: i32;\n\n            ZERO( \"AAAA|BB[split/]CC\".split(\"|\") );\n            let expect = 4+2+2 + 4+2+2 + 10; // 10 = \"import _0;\"\n\n            return sum - expect;\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct SolvedNode {\n            bli: i32;\n        };\n\n        // --> [2] ... triggered the solve of this fn, ...\n        fn SolvedNode(blah: string) {\n            return SolvedNode(blah.len.NOT_PREPPED_YET);\n        }\n\n        // [1] During prep, this type annotation ...\n        fn ARG_ANNOT_TRIGGERS_SOLVE(node: SolvedNode) {\n            return node.bli + 2;\n        }\n\n        // --> --> [3] ... which couldnt yet see this fn (prep didnt reach here).\n        fn NOT_PREPPED_YET(x: i32) {\n            return x * 2;\n        }\n\n        fn main() {\n            return ARG_ANNOT_TRIGGERS_SOLVE(SolvedNode(\"hello\")) - (2*5+2);\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct SolvedNode       { nodeidx: i32; };\n        struct CurrentFn        { using out: SolvedNode; };\n\n        struct Target           { index: i32; };\n        struct SolvedNodeData   { target: Target; };\n        struct Overload         { nodes: SolvedNodeData[]; };\n\n        fn test(ref overloads: Overload[],\n                ref _current_fn: CurrentFn)\n        {\n            using fn GET(target: Target) {\n                let o = overloads[target.index];\n                return o;\n            }\n\n            using fn SolvedNodeData(nid: SolvedNode) {\n                let nodes = overloads[nid.nodeidx].nodes;\n                return nodes[nid.nodeidx];\n            }\n\n            let current_fn  = _current_fn.target;               // <- this is a ref into overloads\n            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads\n            return debug_2 && current_fn.index;                 // <- which invalidates this read\n        }\n\n        fn main() {\n            mut _current_fn = CurrentFn(SolvedNode(0));\n            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];\n\n            return test(overloads, _current_fn);\n        }\n    "_fu, testdiffs);
     ZERO("\n        struct SolvedNode       { nodeidx: i32; };\n        struct CurrentFn        { using out: SolvedNode; };\n\n        struct Target           { index: i32; };\n        struct SolvedNodeData   { target: Target; };\n        struct Overload         { nodes: SolvedNodeData[]; };\n\n        fn test(ref overloads: Overload[],\n                ref _current_fn: CurrentFn)\n        {\n            using fn GET(target: Target) {\n                if (target.index != 303) // Same as above, different setup.\n                    return overloads[target.index];\n\n                return []; // Also this fails to solve: cannot definit mutref\n            }\n\n            using fn SolvedNodeData(nid: SolvedNode) {\n                return nid.nodeidx != 303 // Same as above, rewording as a logical.\n                    && overloads[nid.nodeidx].nodes[nid.nodeidx];\n            }\n\n            let current_fn  = _current_fn.target;               // <- this is a ref into overloads\n            let debug_2     = current_fn && GET(current_fn);    // <- this is the perceived write to overloads\n            return debug_2 && current_fn.index;                 // <- which invalidates this read\n        }\n\n        fn main() {\n            mut _current_fn = CurrentFn(SolvedNode(0));\n            mut overloads   = [ Overload([ SolvedNodeData(Target(0)) ]) ];\n\n            return test(overloads, _current_fn);\n        }\n    "_fu, testdiffs);
@@ -1053,7 +1111,7 @@ void runTests()
     ZERO("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= [ \"world!\" ]; // same as below but wrapped\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= \"world!\"; // cpp template issue here\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn main() {\n            mut _info = \"abc\";\n\n            pure fn fail(mut reason: string = \"\") {\n                ref info = _info[0]; // <- notice the ref, has to relax away\n                reason ~= info && info.i32;\n                return reason;\n            }\n\n            return fail.len - 2; // 'a' is 97, \"97\".len is 2.\n        }\n    "_fu, testdiffs);
-    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        let q_mutref = 1;\n        pub let RELAX_mutref_only = q_mutref;\n        pub fn what(relax_mask!: i32) relax_mask -1;\n    "_fu, "\n        import _0;\n        fn main() what(RELAX_mutref_only);\n    "_fu } }, testdiffs);
+    ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        let q_mutref = 1;\n        pub let RELAX_mutref_only = q_mutref;\n        pub fn what(relax_mask: i32) relax_mask -1;\n    "_fu, "\n        import _0;\n        fn main() what(RELAX_mutref_only);\n    "_fu } }, testdiffs);
     ZERO("\n        pub fn pairs(a: Map($K, $V), fn) {\n            let k = a.keys;\n            let v = a.values;\n            for (mut i = 0; i < k.len; i++)\n                fn(k[i], v[i]);\n        }\n\n        fn main() {\n            mut map: Map(i32, i32);\n            map[1] = 2;\n            map[3] = 4;\n\n            mut sum = 0;\n            map.pairs(|k, v| sum += k + v * 100);\n            return sum - 604;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn main() {\n            try         { return 0; }\n            catch (e)   { return e == \"x=2: even!\" ? 11 : 22; }\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn fail(str: string)\n            throw(str ~ \"!\");\n\n        fn test(x: i32)\n        {\n            // We want to override fail but\n            //  we want to call it within the override,\n            //   so we can do this i guess?\n            //\n            shadow let fail = |mut str: string| {\n                str = \"x=\" ~ x ~ \": \" ~ str;\n                fail(str);\n            };\n\n            return x & 1 || fail(\"even\");\n        }\n\n        fn main() {\n            try {\n                return test(2);\n            }\n            catch (e) {\n                return e == \"x=2: even!\"\n                     ? 0\n                     : 10;\n            }\n        }\n    "_fu, testdiffs);
@@ -1266,6 +1324,7 @@ void runTests()
     ZERO("\n        fn grow_if_oob(a: &mut $T[], i: i32): &mut $T {\n            if (a.len <= i)\n                a.grow(i + 1);\n\n            return a[i];\n        }\n\n        struct BitSet { _data: u8[]; }\n\n        fn add_once(using _: &mut BitSet, idx: i32): bool {\n            let no_neg = idx < 0 ? -1 : 0;\n            let bucket = idx / 8 | no_neg;\n            let bit    = idx % 8;\n            let mask   = 1 << bit.u8;\n\n            ref entry = _data.grow_if_oob(bucket);\n            if !(entry & mask) {\n                entry |= mask;\n                return true;\n            }\n\n            // Already there.\n            return false;\n        }\n\n        type BitSet2D = BitSet[];\n\n        fn add_once(ref bs: BitSet2D, i: i32, j: i32): bool {\n            return bs\n                .grow_if_oob(i)\n                .add_once(j);\n        }\n\n        fn main() {\n            mut bs: BitSet2D;\n            bs.add_once(9, 9);\n            return bs.len + 1000 * bs[9]._data.len - 2010;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn test(mut _precedence = 0)\n        {\n            fn parseExpression(p1?: i32): i32 {\n                if !(_precedence = p1)\n                    return parseExpressionHead();\n\n                return _precedence;\n            }\n\n            fn parseExpressionHead()\n                parseExpression(_precedence * 101 + 1);\n\n            return parseExpression();\n        }\n\n        fn main() = test() - 1;\n    "_fu, testdiffs);
     TODO("\n        struct Overload {\n            is_var?: bool;\n            lifetime?: i32[];\n        }\n\n        fn GET(implicit overloads: Overload[], idx: i32) {\n            return overloads[idx];\n        }\n\n        // Uncommenting the inline passes this,\n        //  this is shit, we can't leave this like this.\n        //\n        // inline\n        fn Lifetime_each(mut lifetime: i32[], visit) {\n            for (mut i = 0; i < lifetime.len; i++) {\n                let r = lifetime[i];\n                let o = GET(r);\n                visit(:o, i?: i, lifetime?: lifetime);\n            }\n        }\n\n        fn Lifetime_ascend(mut lifetime: i32[], visit) {\n            Lifetime_each(:lifetime, visit: |o, shadow lifetime| {\n                visit(o);\n                lifetime ~= o.lifetime; // set::add\n            });\n        }\n\n        fn Lifetime_allowsMutrefReturn(lifetime: i32[]): bool {\n            Lifetime_ascend(:lifetime, visit: |o| {\n                if (o.is_var)\n                    return false; // ERR: propagateType(jump): h.ret_actual not available.\n            });\n\n            return true;\n        }\n\n        fn main() {\n            let implicit overloads = [\n                Overload,\n                Overload(lifetime: [ 0 ]),\n                Overload(lifetime: [ 1 ], is_var: true),\n                Overload(lifetime: [ 1 ]),\n                Overload(lifetime: [ 2 ]), /* the isvar */\n                Overload(lifetime: [ 3 ]), /* the non-isvar */\n            ];\n\n            let expect_false = Lifetime_allowsMutrefReturn([ 4 ]);\n            let expect_true  = Lifetime_allowsMutrefReturn([ 5 ]);\n\n            if (expect_false) return 20;\n            if (!expect_true) return 10;\n            return 0;\n        }\n    "_fu, testdiffs);
+    TODO("\n        struct Overload { items: string[]; };\n\n        fn last(a: $T[])                    a[a.len - 1];\n        fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];\n        fn test(overload: Overload)         overload.arg_lets.last.len;\n        fn main()                           Overload([ \"hello\", \"cruel\", \"world!\" ]).test - 5;\n    "_fu, testdiffs);
     fu::file_write(TESTDIFFS_FILE, serialize(testdiffs));
 }
 

@@ -12,10 +12,7 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
-#include <fu/vec/join.h>
-#include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
-#include <fu/vec/split.h>
 #include <fu/view.h>
 #include <iostream>
 
@@ -1246,6 +1243,46 @@ static int unindent_left(fu::view<fu::byte> src_2, const int i0)
     return int(i0);
 }
 
+                                #ifndef DEFt_split_I7ui
+                                #define DEFt_split_I7ui
+inline void split_I7ui(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+{
+    int last_1 = 0;
+    int next = 0;
+    const int N = sep.size();
+    if (N)
+    {
+        while (((next = fu::lfind(str_1, sep, last_1)) >= 0))
+        {
+
+            {
+                fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                result += substr_1;
+            };
+            last_1 = (next + N);
+        };
+    };
+    if (last_1)
+    {
+        fu_STR substr_1 = fu::slice(str_1, last_1);
+        result += substr_1;
+    }
+    else
+        result += str_1;
+
+}
+                                #endif
+
+                                #ifndef DEFt_split_OZkl
+                                #define DEFt_split_OZkl
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
+{
+    fu_VEC<fu_STR> result {};
+    split_I7ui(str_1, sep, 0, result);
+    return result;
+}
+                                #endif
+
                                 #ifndef DEFt_find_ZPaI
                                 #define DEFt_find_ZPaI
 inline int find_ZPaI(fu::view<fu::byte> a, const fu::byte b, int start_1)
@@ -1356,13 +1393,13 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             end0 = unindent_left(src_2, end0);
             fu::view<fu::byte> prefix = fu::get_view(src_2, 0, start0);
             fu::view<fu::byte> suffix = fu::get_view(src_2, end1, src_2.size());
-            fu_VEC<fu_STR> split_1 = fu::split(fu::slice(src_2, start1, end0), "<alt/>"_fu);
-            if (split_1.size() < 2)
-                split_1 += (*(const fu_STR*)fu::NIL);
+            fu_VEC<fu_STR> split_4 = split_OZkl(fu::slice(src_2, start1, end0), "<alt/>"_fu);
+            if (split_4.size() < 2)
+                split_4 += (*(const fu_STR*)fu::NIL);
 
-            for (int j = split_1.size(); j-- > 0; )
+            for (int j = split_4.size(); j-- > 0; )
             {
-                fu::view<fu::byte> part = split_1[j];
+                fu::view<fu::byte> part = split_4[j];
                 const int end_1 = unindent_left(part, part.size());
                 sources.mutref(i_1) = ((prefix + fu::get_view(part, 0, end_1)) + suffix);
                 if (j)
@@ -1491,17 +1528,131 @@ static fu_STR ERR_TRIM(const fu_STR& e)
     return fu::slice(e, start_1);
 }
 
+                                #ifndef DEFt_replace_ZeXZ
+                                #define DEFt_replace_ZeXZ
+inline fu_STR replace_ZeXZ(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+{
+    fu_STR result {};
+
+    {
+        int last_1 = 0;
+        int next = 0;
+        const int N = all.size();
+        if (N)
+        {
+            while (((next = fu::lfind(str_1, all, last_1)) >= 0))
+            {
+
+                {
+                    fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                    const bool first_1 = !last_1;
+                    const bool last_2 = false;
+                    if (!first_1)
+                        result += with;
+                    else if (last_2)
+                        return fu_STR(str_1);
+
+                    result += substr_1;
+                };
+                last_1 = (next + N);
+            };
+        };
+        if (last_1)
+        {
+            fu_STR substr_1 = fu::slice(str_1, last_1);
+            const bool first_1 = false;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += substr_1;
+        }
+        else
+        {
+            const bool first_1 = true;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += str_1;
+        };
+    };
+    return result;
+}
+                                #endif
+
 static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
 {
     for (int i = 0; i < sources.size(); i++)
-        sources.mutref(i) = fu::replace(sources[i], "//*F"_fu, "/*"_fu);
+        sources.mutref(i) = replace_ZeXZ(sources[i], "//*F"_fu, "/*"_fu);
 
     return static_cast<fu_VEC<fu_STR>&&>(sources);
 }
 
+                                #ifndef DEFt_replace_Q0b6
+                                #define DEFt_replace_Q0b6
+inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+{
+    fu_STR result {};
+
+    {
+        int last_1 = 0;
+        int next = 0;
+        const int N = all.size();
+        if (N)
+        {
+            while (((next = fu::lfind(str_1, all, last_1)) >= 0))
+            {
+
+                {
+                    fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                    const bool first_1 = !last_1;
+                    const bool last_2 = false;
+                    if (!first_1)
+                        result += with;
+                    else if (last_2)
+                        return fu_STR(str_1);
+
+                    result += substr_1;
+                };
+                last_1 = (next + N);
+            };
+        };
+        if (last_1)
+        {
+            fu_STR substr_1 = fu::slice(str_1, last_1);
+            const bool first_1 = false;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += substr_1;
+        }
+        else
+        {
+            const bool first_1 = true;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += str_1;
+        };
+    };
+    return result;
+}
+                                #endif
+
 static fu_STR indent(const fu_STR& src_2)
 {
-    return fu::replace(src_2, "\n"_fu, "\n\t"_fu);
+    return replace_Q0b6(src_2, "\n"_fu, "\n\t"_fu);
 }
 
 s_Context FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
@@ -1551,6 +1702,34 @@ void ZERO_SAME(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
     };
 }
 
+                                #ifndef DEFt_join_VtCz
+                                #define DEFt_join_VtCz
+inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+{
+    if (a.size() < 2)
+        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+
+    int size = a[0].size();
+    for (int i = 1; i < a.size(); i++)
+        size += (sep.size() + a[i].size());
+
+    fu_STR res {};
+    res.grow<false>(size);
+    fu::view<fu::byte> head = a[0];
+    size = head.size();
+    fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+    for (int i_1 = 1; i_1 < a.size(); i_1++)
+    {
+        fu::view<fu::byte> range = a[i_1];
+        fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
+        size += sep.size();
+        fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
+        size += range.size();
+    };
+    return res;
+}
+                                #endif
+
 void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 {
 
@@ -1568,7 +1747,7 @@ void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
     }
     }
 ;
-    fu::fail(("TODO test is actually passing: "_fu + fu::join(sources, "\n\n"_fu)));
+    fu::fail(("TODO test is actually passing: "_fu + join_VtCz(sources, "\n\n"_fu)));
 }
 
 s_Context ZERO(const fu_STR& src_2, s_TestDiffs& testdiffs)

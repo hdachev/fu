@@ -1,13 +1,12 @@
-#include <cstddef>
+#include <fu/default.h>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/join.h>
+#include <fu/vec/find.h>
 #include <fu/vec/slice.h>
-#include <fu/vec/split.h>
 #include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
@@ -76,9 +75,77 @@ fu_STR path_filename(const fu_STR& path)
     return fu_STR(path);
 }
 
+                                #ifndef DEFt_split_mKuv
+                                #define DEFt_split_mKuv
+inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+{
+    int last_1 = 0;
+    int next = 0;
+    const int N = sep.size();
+    if (N)
+    {
+        while (((next = fu::lfind(str_1, sep, last_1)) >= 0))
+        {
+
+            {
+                fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                result += substr_1;
+            };
+            last_1 = (next + N);
+        };
+    };
+    if (last_1)
+    {
+        fu_STR substr_1 = fu::slice(str_1, last_1);
+        result += substr_1;
+    }
+    else
+        result += str_1;
+
+}
+                                #endif
+
+                                #ifndef DEFt_split_OZkl
+                                #define DEFt_split_OZkl
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
+{
+    fu_VEC<fu_STR> result {};
+    split_mKuv(str_1, sep, 0, result);
+    return result;
+}
+                                #endif
+
+                                #ifndef DEFt_join_9sek
+                                #define DEFt_join_9sek
+inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+{
+    if (a.size() < 2)
+        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+
+    int size = a[0].size();
+    for (int i = 1; i < a.size(); i++)
+        size += (sep.size() + a[i].size());
+
+    fu_STR res {};
+    res.grow<false>(size);
+    fu::view<fu::byte> head = a[0];
+    size = head.size();
+    fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+    for (int i_1 = 1; i_1 < a.size(); i_1++)
+    {
+        fu::view<fu::byte> range = a[i_1];
+        fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
+        size += sep.size();
+        fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
+        size += range.size();
+    };
+    return res;
+}
+                                #endif
+
 fu_STR path_normalize(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = fu::split(p, "/"_fu);
+    fu_VEC<fu_STR> path = split_OZkl(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -92,7 +159,7 @@ fu_STR path_normalize(const fu_STR& p)
             path.splice(--i_1, 2);
 
     };
-    return fu::join(path, "/"_fu);
+    return join_9sek(path, "/"_fu);
 }
 
 fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)

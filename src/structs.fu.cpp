@@ -3,7 +3,6 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/find.h>
 #include <fu/view.h>
 
 struct s_Lifetime;
@@ -94,9 +93,17 @@ fu_STR createStructCanon(const int index_2, fu::view<fu::byte>)
     return x7E_OZkl("$"_fu, fu::i64dec(index_2));
 }
 
+                                #ifndef DEFt_starts_05eu
+                                #define DEFt_starts_05eu
+inline bool starts_05eu(fu::view<fu::byte> a, const fu::byte with)
+{
+    return a.size() && (a[0] == with);
+}
+                                #endif
+
 bool isStruct(const s_Type& type_3)
 {
-    return fu::lmatch(type_3.vtype.canon, fu::byte('$'));
+    return starts_05eu(type_3.vtype.canon, fu::byte('$'));
 }
 
 int structIndex(fu::view<fu::byte> canon_1)

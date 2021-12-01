@@ -9,10 +9,9 @@
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
+#include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
-#include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
-#include <fu/vec/split.h>
 #include <fu/view.h>
 
 struct s_ArgWrite;
@@ -830,9 +829,66 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
     return fu_STR(path);
 }
 
+                                #ifndef DEFt_replace_Q0b6
+                                #define DEFt_replace_Q0b6
+inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+{
+    fu_STR result {};
+
+    {
+        int last_1 = 0;
+        int next = 0;
+        const int N = all.size();
+        if (N)
+        {
+            while (((next = fu::lfind(str_1, all, last_1)) >= 0))
+            {
+
+                {
+                    fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                    const bool first_1 = !last_1;
+                    const bool last_2 = false;
+                    if (!first_1)
+                        result += with;
+                    else if (last_2)
+                        return fu_STR(str_1);
+
+                    result += substr_1;
+                };
+                last_1 = (next + N);
+            };
+        };
+        if (last_1)
+        {
+            fu_STR substr_1 = fu::slice(str_1, last_1);
+            const bool first_1 = false;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += substr_1;
+        }
+        else
+        {
+            const bool first_1 = true;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += str_1;
+        };
+    };
+    return result;
+}
+                                #endif
+
 fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 {
-    fu_STR clean = fu::replace(path, "\v"_fu, (*(const fu_STR*)fu::NIL));
+    fu_STR clean = replace_Q0b6(path, "\v"_fu, fu::view<fu::byte>{});
     const fu_STR& match = ctx.fuzzy[clean];
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
@@ -1064,6 +1120,46 @@ const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module&
     return tryLookupStruct(type_3, module, ctx).converts;
 }
 
+                                #ifndef DEFt_split_gtHi
+                                #define DEFt_split_gtHi
+inline void split_gtHi(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+{
+    int last_1 = 0;
+    int next = 0;
+    const int N = sep.size();
+    if (N)
+    {
+        while (((next = fu::lfind(str_1, sep, last_1)) >= 0))
+        {
+
+            {
+                fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                result += substr_1;
+            };
+            last_1 = (next + N);
+        };
+    };
+    if (last_1)
+    {
+        fu_STR substr_1 = fu::slice(str_1, last_1);
+        result += substr_1;
+    }
+    else
+        result += str_1;
+
+}
+                                #endif
+
+                                #ifndef DEFt_split_OZkl
+                                #define DEFt_split_OZkl
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
+{
+    fu_VEC<fu_STR> result {};
+    split_gtHi(str_1, sep, 0, result);
+    return result;
+}
+                                #endif
+
 extern const fu_STR DIM;
 
                                 #ifndef DEFt_x7E_OZkl
@@ -1081,7 +1177,7 @@ extern const fu_STR BAD;
 fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extraLines, const s_Context& ctx)
 {
     const fu_STR& src_2 = ctx.modules[to.modid].in.src;
-    fu_VEC<fu_STR> lines = fu::split(src_2, "\n"_fu);
+    fu_VEC<fu_STR> lines = split_OZkl(src_2, "\n"_fu);
     const s_Token& start_1 = _token((from ? from : to), ctx);
     const s_Token& end_1 = _token(to, ctx);
     int l_start = ((start_1.line - extraLines) - 1);

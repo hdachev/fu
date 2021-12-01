@@ -13,8 +13,6 @@
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/find.h>
-#include <fu/vec/join.h>
-#include <fu/vec/replace.h>
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 #include <iostream>
@@ -746,6 +744,34 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 }
                                 #endif
 
+                                #ifndef DEFt_join_9sek
+                                #define DEFt_join_9sek
+inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+{
+    if (a.size() < 2)
+        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+
+    int size = a[0].size();
+    for (int i = 1; i < a.size(); i++)
+        size += (sep.size() + a[i].size());
+
+    fu_STR res {};
+    res.grow<false>(size);
+    fu::view<fu::byte> head = a[0];
+    size = head.size();
+    fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+    for (int i_1 = 1; i_1 < a.size(); i_1++)
+    {
+        fu::view<fu::byte> range = a[i_1];
+        fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
+        size += sep.size();
+        fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
+        size += range.size();
+    };
+    return res;
+}
+                                #endif
+
 [[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<fu::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
@@ -789,6 +815,63 @@ inline int only_VAhQ(fu::view<int> s)
 }
                                 #endif
 
+                                #ifndef DEFt_replace_Q0b6
+                                #define DEFt_replace_Q0b6
+inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+{
+    fu_STR result {};
+
+    {
+        int last_1 = 0;
+        int next = 0;
+        const int N = all.size();
+        if (N)
+        {
+            while (((next = fu::lfind(str_1, all, last_1)) >= 0))
+            {
+
+                {
+                    fu_STR substr_1 = fu::slice(str_1, last_1, next);
+                    const bool first_1 = !last_1;
+                    const bool last_2 = false;
+                    if (!first_1)
+                        result += with;
+                    else if (last_2)
+                        return fu_STR(str_1);
+
+                    result += substr_1;
+                };
+                last_1 = (next + N);
+            };
+        };
+        if (last_1)
+        {
+            fu_STR substr_1 = fu::slice(str_1, last_1);
+            const bool first_1 = false;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += substr_1;
+        }
+        else
+        {
+            const bool first_1 = true;
+            const bool last_2 = true;
+            if (!first_1)
+                result += with;
+            else if (last_2)
+                return fu_STR(str_1);
+
+            result += str_1;
+        };
+    };
+    return result;
+}
+                                #endif
+
 static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<fu::byte> dir_src)
 {
     if (fu::lmatch(fname_1, dir_src))
@@ -796,7 +879,7 @@ static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<fu::byte> dir_s
 
     fu_STR foreign = (dir_src + ".foreign/"_fu);
     fu::fs_mkdir_p(fu_STR(foreign));
-    fu_STR rel = fu::replace(fu::replace(path_relative(dir_src, fname_1), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
+    fu_STR rel = replace_Q0b6(replace_Q0b6(path_relative(dir_src, fname_1), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
     return foreign + rel;
 }
 
@@ -905,7 +988,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         len_all += cpp_1.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
-    fu_STR F_exe = x7E_OZkl((x7E_OZkl((((dir_wrk + "b-"_fu) + hash16(fu::join(Fs, "/"_fu), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
+    fu_STR F_exe = x7E_OZkl((x7E_OZkl((((dir_wrk + "b-"_fu) + hash16(join_9sek(Fs, "/"_fu), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
     int code {};
     fu_STR stdout {};
     const int exe_size = fu::file_size(F_exe);
@@ -954,7 +1037,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             code = ((_1 = fu::shell_exec(((cmd + LIBS) + " 2>&1"_fu), stdout)) ? _1 : (_1 = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout)) ? _1 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
             if (code)
             {
-                (std::cout << ("   FAIL "_fu + fu::join(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
+                (std::cout << ("   FAIL "_fu + join_9sek(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
                 ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
             };
             const double t1 = fu::now_hr();
@@ -1037,11 +1120,11 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 fu_STR libname = path_noext(path_filename(main));
                 data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu);
                 data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu);
-                data += (("set(FU_INPUTS\n    "_fu + fu::join(inputs, "\n    "_fu)) + ")\n\n"_fu);
+                data += (("set(FU_INPUTS\n    "_fu + join_9sek(inputs, "\n    "_fu)) + ")\n\n"_fu);
                 if (unity_1)
                     data += ((("set(FU_OUTPUTS\n    "_fu + "${CMAKE_CURRENT_SOURCE_DIR}/"_fu) + path_relative(CMakeLists, unity_1)) + ".unity.cpp)\n\n"_fu);
                 else
-                    data += (("set(FU_OUTPUTS\n    "_fu + fu::join(outputs, "\n    "_fu)) + ")\n\n"_fu);
+                    data += (("set(FU_OUTPUTS\n    "_fu + join_9sek(outputs, "\n    "_fu)) + ")\n\n"_fu);
 
                 data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu);
                 data += "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"_fu;
