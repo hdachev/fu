@@ -196,7 +196,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
 
         let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
 
-        ctx.files[fname] = src;
+        ctx.files.set(fname, src);
         compile(:fname, options:
             options.len > i && options[i]);
     }
