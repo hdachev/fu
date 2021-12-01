@@ -66,40 +66,6 @@ S lfind(const H& haystack, const N& needle, S start, S end) noexcept
         needle.data(), needle.size(), start);
 }
 
-// lfind character
-template <  typename V,
-            typename T = typename V::value_type,
-            typename S = decltype(((V*)1)->size())
-                >
-S lfind(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
-{
-    auto* data = vec.data();
-    auto size  = vec.size();
-
-    start = start >= S(0) ? start : S(0);
-    start = start <= size ? start : size;
-
-    auto* i0 = data + start;
-    auto* i1 = data + size;
-
-    // memchr for byte sized scalars
-    if constexpr (sizeof(T) == 1 && std::is_scalar<T>::value)
-    {
-        auto* i = (const T*)memchr(
-            data ? i0 : (void*)&item, int(item), i1 - i0);
-
-        return i ? S(i - data) : S(-1);
-    }
-    else
-    {
-        for (auto* i = i0; i < i1; i++)
-            if (*i == item)
-                return S(i - data);
-
-        return S(-1);
-    }
-}
-
 // starts with substr
 template <  typename H, typename N,
             typename S = decltype(((H*)1)->size() + ((N*)1)->size()),
@@ -125,20 +91,6 @@ bool lmatch(const H& haystack, const N& needle, S start = S(0)) noexcept
             return false;
 
     return true;
-}
-
-// starts with char
-template <  typename V,
-            typename S = decltype(((V*)1)->size())
-                >
-bool lmatch(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
-{
-    auto* data = vec.data();
-    auto size  = vec.size();
-    start = start >= S(0) ? start : S(0);
-    start = start <= size ? start : size;
-
-    return size > start && data[start] == item;
 }
 
 // custom lfind
@@ -180,20 +132,6 @@ bool rmatch(const H& haystack, const N& needle, S start = S(0)) noexcept
             return false;
 
     return true;
-}
-
-// starts with char
-template <  typename V,
-            typename S = decltype(((V*)1)->size())
-                >
-bool rmatch(const V& vec, const typename V::value_type& item, S start = S(0)) noexcept
-{
-    auto* data = vec.data();
-    auto size  = vec.size();
-    start = start >= S(0) ? start : S(0);
-    start = start <= size ? start : size;
-
-    return size > start && data[size - 1 - start] == item;
 }
 
 }
