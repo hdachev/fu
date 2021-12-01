@@ -75,7 +75,7 @@ pub let F_SINGLE_STMT   = 1 << 31;
 // Operator precedence table.
 
 let P_RESET           = 1000;
-let P_PREFIX_UNARY    = 3   ;
+let P_PREFIX_UNARY    = 1   ;
 
 let PREFIX:  string[] = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
 let POSTFIX: string[] = [ "++", "--", "[]" ];
@@ -84,7 +84,7 @@ fn setupOperators()
 {
     struct BINOP {
         PRECEDENCE:     Map(string, i32);
-        RIGHT_TO_LEFT:  Map(i32,   bool);
+        RIGHT_TO_LEFT:  bool[];
     };
 
     mut out: BINOP;
@@ -95,7 +95,12 @@ fn setupOperators()
     fn binop(ops: string[])
     {
         precedence++;
-        out.RIGHT_TO_LEFT[precedence] = rightToLeft;
+
+        precedence < 64 || throw(
+            "Assertion failed: precedence < 64");
+
+        out .RIGHT_TO_LEFT
+            .grow_if_oob(precedence) = rightToLeft;
 
         for (mut i = 0; i < ops.len; i++)
             out.PRECEDENCE[ops[i]] = precedence;
