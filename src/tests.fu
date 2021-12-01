@@ -45,9 +45,7 @@ pub fn runTests()
     ////////////////////////////////////////////////
     let TESTDIFFS_FILE = PRJDIR ~ "testdiff/now.td";
 
-    let implicit mut testdiffs =
-        testdiff::parse(
-            file::read(TESTDIFFS_FILE));
+    let implicit mut testdiffs = testdiff::TestDiffs;
     ////////////////////////////////////////////////
 
     FAIL(`
