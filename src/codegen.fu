@@ -45,7 +45,7 @@ pub fn cpp_codegen(
     implicit ctx: Context,
     root: SolvedNode): CodegenOutput
 {
-    mut _libs: Map(string, string);
+    mut _libs: string[];
 
     mut _tfwd: BitSet2D;
     mut _tfwd_src: string[];
@@ -146,8 +146,7 @@ pub fn cpp_codegen(
 
     fn include(lib: string)
     {
-        if (!_libs.has(lib))
-            _libs[lib] = "#include " ~ lib ~ "\n";
+        _libs.set::add(lib);
     }
 
 
@@ -341,17 +340,26 @@ pub fn cpp_codegen(
 
     //
 
-    fn collectDedupes(dedupes: Map(string, string), leadingNewline?: bool): string
-    {
-        return collectDedupes(:dedupes.values, :leadingNewline);
-    }
-
-    fn collectDedupes(mut values: string[], leadingNewline?: bool): string
+    fn collectDedupes(mut values: string[], prefix: string, suffix = "\n"): string
     {
         if (!values.len)
             return "";
 
-        mut out = leadingNewline ? "\n" : "";
+        mut out = "\n";
+
+        values.sort();
+        for (mut i = 0; i < values.len; i++)
+            out ~= prefix ~ values[i] ~ suffix;
+
+        return out;
+    }
+
+    fn collectDedupes(mut values: string[]): string
+    {
+        if (!values.len)
+            return "";
+
+        mut out = "\n";
 
         values.sort();
         for (mut i = 0; i < values.len; i++)
@@ -419,9 +427,9 @@ pub fn cpp_codegen(
         let src    = cgStatements(root.items, :count);
         let main   = cgMain();
 
-        let header = collectDedupes(_libs)
-                   ~ collectDedupes(_tfwd_src, leadingNewline: true)
-                   ~ collectDedupes(_ffwd_src, leadingNewline: true)
+        let header = collectDedupes(_libs, prefix: "#include ")
+                   ~ collectDedupes(_tfwd_src)
+                   ~ collectDedupes(_ffwd_src)
                    ~               (_tdef)
                    ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
                    ;
