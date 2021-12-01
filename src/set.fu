@@ -17,7 +17,7 @@ pub fn add(ref dest: $T[], item: $T)
     return true;
 }
 
-pub fn add(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
+pub fn add_once(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
 {
     // TODO bsearch instead
     for (mut i = 0; i < dest.len; i++) {

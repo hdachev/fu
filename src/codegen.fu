@@ -1090,7 +1090,7 @@ pub fn cpp_codegen(
 
             // But we can unity-build ourselves with them.
             else
-                _unity.set::add(node.target.modid || fail(),
+                _unity.set::add_once(node.target.modid || fail(),
                     _unity_because, node.target.index);
         }
         else if (!intconst)
