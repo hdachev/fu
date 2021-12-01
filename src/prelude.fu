@@ -227,7 +227,6 @@ fn has(a: [$T], b: $T): bool
 }
 
 
-
 // Strings.
 
 type string = byte[];
@@ -236,13 +235,6 @@ fn  >(a: string, b: string): bool __native("<fu/vec/cmp.h>",  ">");
 fn  <(a: string, b: string): bool __native("<fu/vec/cmp.h>",  "<");
 fn >=(a: string, b: string): bool __native("<fu/vec/cmp.h>", ">=");
 fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
-
-// TODO: .replace() is a faster impl of .split().join().
-//  How do we express this so that .split.joins are automatically promoted?
-//   This would be generally useful, e.g.
-//    .map.maps and .map.filters could use this to skip allocs.
-
-fn replace(in: string, all: string, with: string): string __native("<fu/vec/replace.h>", "fu::replace");
 
 
 // D-style concats.
@@ -373,44 +365,77 @@ fn join(a: $T[][], sep: $T[])
     return res;
 }
 
-fn split(str: $T[], sep: [$T])
+fn split(str: $T[], sep: [$T], each)
 {
-    mut result: $T[][];
-    mut last:   i32;
-    mut next:   i32;
+    mut last = 0;
+    mut next = 0;
 
     let N = sep.len;
     if (N) while ((next = str.find(sep, start: last)) >= 0)
     {
-        result  ~= str.slice(last, next);
-        last     = next + N;
+        each(str.slice(last, next), first?: !last, last?: false);
+        last = next + N;
     }
 
-    if (!result)
-        return [ str ];
+    if (last)
+        each(str.slice(last), first?: false, last?: true);
+    else
+        each(str, first?: true, last?: true);
+}
 
-    result ~= str.slice(last);
+fn split(str: $T[], sep: $T)
+{
+    mut last = 0;
+    mut next = 0;
+
+    while ((next = str.find(sep, start: last)) >= 0)
+    {
+        each(str.slice(last, next), first?: !last, last?: false);
+        last = next + 1;
+    }
+
+    if (last)
+        each(str.slice(last), first?: false, last?: true);
+    else
+        each(str, first?: true, last?: true);
+}
+
+fn split(str: $T[], sep: [$T])
+{
+    mut result: $T[][];
+    split(str, sep, |substr| result ~= substr);
     return result;
 }
 
 fn split(str: $T[], sep: $T)
 {
     mut result: $T[][];
-    mut last:   i32;
-    mut next:   i32;
-
-    while ((next = str.find(sep, start: last)) >= 0)
-    {
-        result  ~= str.slice(last, next);
-        last     = next + 1;
-    }
-
-    if (!result)
-        return [ str ];
-
-    result ~= str.slice(last);
+    split(str, sep, |substr| result ~= substr);
     return result;
 }
+
+
+// TODO: .replace() is a faster impl of .split().join().
+//  How do we express this so that .split.joins are automatically promoted?
+//   This would be generally useful, e.g.
+//    .map.maps and .map.filters could use this to skip allocs.
+
+fn replace(str: $T[], all: [$T], with: [$T])
+{
+    mut result: $T[];
+    split(str, sep: all, |substr, first, last|
+    {
+        if (!first)
+            result ~= with;
+        else if (last)
+            return str;
+
+        result ~= substr;
+    });
+
+    return result;
+}
+
 
 `;
 
