@@ -1,8 +1,8 @@
 #include <fu/int.h>
 #include <fu/io.h>
 #include <fu/map.h>
+#include <fu/process.h>
 #include <fu/str.h>
-#include <fu/util.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/find.h>
@@ -840,7 +840,7 @@ static void TODO_borrowck(const fu_STR& src, s_TestDiffs& testdiffs)
 
 static void TODO_gcc(const fu_STR& src, s_TestDiffs& testdiffs)
 {
-    if (fu_LINUX)
+    if (fu::LINUX)
         TODO(src, testdiffs);
     else
         ZERO(src, testdiffs);

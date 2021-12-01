@@ -1,7 +1,7 @@
 
 pub fn exit(code: i32): never __native("<cstdlib>", "std::exit");
-pub fn DEBUG(): bool __native("<fu/util.h>", "fu_DEBUG");
+pub fn DEBUG(): bool __native("<fu/process.h>", "fu::DEBUG");
 
-pub fn LINUX(): bool __native("<fu/util.h>", "fu_LINUX");
-pub fn WINDOWS(): bool __native("<fu/util.h>", "fu_WINDOWS");
-pub fn APPLE(): bool __native("<fu/util.h>", "fu_APPLE");
+pub fn LINUX(): bool __native("<fu/process.h>", "fu::LINUX");
+pub fn WINDOWS(): bool __native("<fu/process.h>", "fu::WINDOWS");
+pub fn APPLE(): bool __native("<fu/process.h>", "fu::APPLE");

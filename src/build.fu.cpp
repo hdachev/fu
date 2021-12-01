@@ -5,9 +5,9 @@
 #include <fu/map.h>
 #include <fu/never.h>
 #include <fu/now.h>
+#include <fu/process.h>
 #include <fu/shell.h>
 #include <fu/str.h>
-#include <fu/util.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
@@ -1028,7 +1028,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 cmd += (F + ".o "_fu);
 
         };
-        fu_STR LIBS = (fu_LINUX ? " -ldl -pthread"_fu : fu_STR{});
+        fu_STR LIBS = (fu::LINUX ? " -ldl -pthread"_fu : fu_STR{});
 
         {
             (std::cout << "   LINK "_fu << F_exe << '\n');

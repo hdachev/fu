@@ -1,38 +1,27 @@
 #pragma once
 
 #include "./std.h"
-#include "./cfg.h"
 #include "./inl.h"
 
 /////////////////////////////////////////////
 //
-// TODO remove all of these, not good style.
+// TODO remove all of these wtf
 
 typedef  int32_t i32;
 typedef uint32_t u32;
 
-/////////////////////////////////////////////
+namespace fu {
+
+constexpr int FS_MAX_PATH       =  4 * 1024;
+constexpr int FREAD_BUFFER_SIZE = 16 * 1024;
+constexpr int ARC_MIN_ALLOC     = 128;
+
+} // namespace
 
 const uint8_t fu_EXIT_BadAlloc      =  101;
 
 const int     fu_ERR_UnknownError   = -101;
 const int     fu_ERR_FS_BadPath     = -102;
-
-/////////////////////////////////////////////
-
-#ifdef _MSC_VER
-    #define fu_INL __forceinline
-#else
-    #define fu_INL inline __attribute__((__always_inline__))
-#endif
-
-/////////////////////////////////////////////
-
-#ifdef _MSC_VER
-    #define fu_NEVER_INLINE __declspec(noinline)
-#else
-    #define fu_NEVER_INLINE __attribute__((noinline))
-#endif
 
 /////////////////////////////////////////////
 
@@ -68,20 +57,6 @@ struct fu_ONE
     }
 };
 
-struct fu_INT01
-{
-    bool val = true;
-
-    fu_INL void operator=(int x) noexcept {
-        assert(x == 0 || x == 1);
-        val = x > 0;
-    }
-
-    fu_INL constexpr operator int() const noexcept {
-        return val ? 1 : 0;
-    }
-};
-
 template <typename T>
 struct fu_MAYBE_POS {
     static constexpr bool value = true;
@@ -101,31 +76,3 @@ struct fu_MAYBE_POS<fu_ZERO> {
 #else
     #define fu_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #endif
-
-/////////////////////////////////////////////
-
-#ifndef NDEBUG
-const bool fu_DEBUG = true;
-#else
-const bool fu_DEBUG = false;
-#endif
-
-#ifdef __linux__
-const bool fu_LINUX = true;
-#else
-const bool fu_LINUX = false;
-#endif
-
-#ifdef _WIN32
-const bool fu_WINDOWS = true;
-#else
-const bool fu_WINDOWS = false;
-#endif
-
-#ifdef __APPLE__
-const bool fu_APPLE = true;
-#else
-const bool fu_APPLE = false;
-#endif
-
-/////////////////////////////////////////////
