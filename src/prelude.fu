@@ -243,7 +243,6 @@ fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 //    .map.maps and .map.filters could use this to skip allocs.
 
 fn   split(str: string, sep: string): string[] __native("<fu/vec/split.h>", "fu::split");
-fn    join(a: string[], sep: string): string __native("<fu/vec/join.h>", "fu::join");
 fn replace(in: string, all: string, with: string): string __native("<fu/vec/replace.h>", "fu::replace");
 
 
@@ -294,6 +293,87 @@ fn ~=(ref a: string, b.str) a ~= b;
 fn str(n: $T)
     case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
     case ($T -> @integral): string __native("<fu/decstr.h>", "fu::i64dec");
+
+
+// String commons.
+
+fn join(a: $T[][])
+{
+    if (a.len < 2)
+        return a.len && a[0];
+
+    mut size = 0;
+    for (mut i = 0; i < a.len; i++)
+        size += a[i].len;
+
+    mut res: $T[];
+    res.grow_junk(size);
+
+    size = 0;
+    for (mut i = 0; i < a.len; i++)
+    {
+        let range = a[i];
+        res[size, size + range.len] .= range;
+        size += range.len;
+    }
+
+    return res;
+}
+
+fn join(a: $T[][], sep: $T)
+{
+    if (a.len < 2)
+        return a.len && a[0];
+
+    mut size = a[0].len;
+    for (mut i = 1; i < a.len; i++)
+        size += 1 + a[i].len;
+
+    mut res: $T[];
+    res.grow_junk(size);
+
+    let head = a[0];
+    size = head.len;
+    res[0, head.len] .= head;
+    for (mut i = 1; i < a.len; i++)
+    {
+        let range = a[i];
+        res[size] = sep;
+        size += 1;
+        res[size, size + range.len] .= range;
+        size += range.len;
+    }
+
+    return res;
+}
+
+fn join(a: $T[][], sep: $T[])
+{
+    if (a.len < 2)
+        return a.len && a[0];
+
+    mut size = a[0].len;
+    for (mut i = 1; i < a.len; i++)
+        size += sep.len + a[i].len;
+
+    mut res: $T[];
+    res.grow_junk(size);
+
+    let head = a[0];
+    size = head.len;
+    res[0, head.len] .= head;
+    for (mut i = 1; i < a.len; i++)
+    {
+        let range = a[i];
+        res[size, size + sep.len] .= sep;
+        size += sep.len;
+        res[size, size + range.len] .= range;
+        size += range.len;
+    }
+
+    return res;
+}
+
 
 `;
 
