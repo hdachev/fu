@@ -5481,6 +5481,33 @@ pub fn runTests()
         pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;
     `]);
 
+    TODO([`
+        struct List {
+            vals: string[];
+        };
+
+        fn add(using ref _: List, val: string)
+            vals ~= val;
+
+        fn [](using _: List, val: string) {
+            mut count = 0;
+            for (mut i = 0; i < vals.len; i++)
+                if (vals[i] == val)
+                    count++;
+
+            return count;
+        }
+    `,
+    `
+        fn main() {
+            mut list: _0::List;
+            for (mut i = 0; i < 3; i++)
+                list.add(i & 1 ? "a" : "b");
+
+            return list["b"] - 2;
+        }
+    `]);
+
 
     // Explicit shadowing.
 
