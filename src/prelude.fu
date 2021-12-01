@@ -242,7 +242,6 @@ fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn   split(str: string, sep: string): string[] __native("<fu/vec/split.h>", "fu::split");
 fn replace(in: string, all: string, with: string): string __native("<fu/vec/replace.h>", "fu::replace");
 
 
@@ -374,6 +373,44 @@ fn join(a: $T[][], sep: $T[])
     return res;
 }
 
+fn split(str: $T[], sep: [$T])
+{
+    mut result: $T[][];
+    mut last:   i32;
+    mut next:   i32;
+
+    let N = sep.len;
+    if (N) while ((next = str.find(sep, start: last)) >= 0)
+    {
+        result  ~= str.slice(last, next);
+        last     = next + N;
+    }
+
+    if (!result)
+        return [ str ];
+
+    result ~= str.slice(last);
+    return result;
+}
+
+fn split(str: $T[], sep: $T)
+{
+    mut result: $T[][];
+    mut last:   i32;
+    mut next:   i32;
+
+    while ((next = str.find(sep, start: last)) >= 0)
+    {
+        result  ~= str.slice(last, next);
+        last     = next + 1;
+    }
+
+    if (!result)
+        return [ str ];
+
+    result ~= str.slice(last);
+    return result;
+}
 
 `;
 
