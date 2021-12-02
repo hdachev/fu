@@ -6414,6 +6414,48 @@ pub fn runTests()
         fn main() a(1).test;
     `);
 
+    TODO([`
+        fn find(keys: $T[], item: $T) {
+            for (mut i = 0; i < keys.len; i++) {
+                if (keys[i] >= item) {
+                    if (keys[i] != item)
+                        return -1;
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+    `,
+    `
+        fn Set(_: $K) struct { keys: $K[]; };
+
+        fn has(using _, key)
+            _0::find(keys, key) >= 0;
+    `,
+    `
+        fn use_Set(a: string) {
+            mut set: _1::Set(string);
+            set.keys ~= a;
+            return set._1::has(a);
+        }
+
+        fn dont_use_Set(a: string, b: string) {
+            mut keys: string[];
+            keys ~= b;
+            keys ~= a;
+            return keys.find(a);
+        }
+
+        fn main() {
+            if (!use_Set("a"))
+                return -1;
+
+            return dont_use_Set("a", "b") - 1;
+        }
+    `]);
+
 
     // Macros & loops.
 
