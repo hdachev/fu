@@ -26,24 +26,42 @@ struct Map(K, V)
 };
 */
 
-struct Map_ss
+fn Map(lax k: $K, lax v: $V) struct
 {
-    keys: string[];
-    vals: string[];
+    keys: $K[];
+    vals: $V[];
 };
 
-fn has(using _: Map_ss, key: string)
-    set::find(keys, key) >= 0;
+fn has(using _, key)
+    set::bfind(keys, key) >= 0;
 
-fn set(using ref _: Map_ss, key: string, value: string)
+fn set(using ref _, key, value)
     set::update(
         || keys, key,
         || vals, value);
 
-fn get(using _: Map_ss, key: string) {
-    let idx = set::find(keys, key);
+fn get(using _, key) {
+    let idx = set::bfind(keys, key);
     if (idx >= 0)
         return vals[idx];
 
     return [];
 }
+
+fn each(using _, fn)
+    for (mut i = 0; i < vals.len; i++)
+        fn(vals[i]);
+
+fn pairs(using _, fn)
+    for (mut i = 0; i < keys.len; i++)
+        fn(keys[i], vals[i]);
+
+fn ref(using ref _, key)
+    set::ref(
+        || keys, key,
+        || vals);
+
+fn if_ref(using ref _, key, visit)
+    set::if_ref(
+        || keys, key,
+        || vals, fn visit);

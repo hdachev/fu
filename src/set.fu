@@ -1,5 +1,5 @@
 
-pub fn find(keys: $T[], item: $T)
+pub fn bfind(keys: $T[], item: $T)
 {
     // TODO bsearch instead
     for (mut i = 0; i < keys.len; i++) {
@@ -70,17 +70,48 @@ pub fn update(dest, item: $T, extras, extra: $U)
             if (dest[i] != item) {
                 dest.insert(i, item);
                 extras.insert(i, extra);
-                return true;
+                return;
             }
 
             extras[i] = extra;
-            return false;
+            return;
         }
     }
 
     dest.push(item);
     extras.push(extra);
-    return true;
+}
+
+pub fn ref(dest, item: $T, extras)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] != item) {
+                dest.insert(i, item);
+                extras.insert(i, []);
+            }
+
+            return extras[i];
+        }
+    }
+
+    dest.push(item);
+    extras.push([]);
+    return extras[extras.len - 1];
+}
+
+pub fn if_ref(dest, item: $T, extras, visit)
+{
+    // TODO bsearch instead
+    for (mut i = 0; i < dest.len; i++) {
+        if (dest[i] >= item) {
+            if (dest[i] == item)
+                visit(extras[i]);
+
+            return;
+        }
+    }
 }
 
 pub fn get(dest: $T[], item: $T, extras: $U[])

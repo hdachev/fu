@@ -83,7 +83,7 @@ let POSTFIX: string[] = [ "++", "--", "[]" ];
 fn setupOperators()
 {
     struct BINOP {
-        PRECEDENCE:     Map(string, i32);
+        PRECEDENCE:     map::Map(string, i32);
         RIGHT_TO_LEFT:  bool[];
     };
 
@@ -103,7 +103,7 @@ fn setupOperators()
             .grow_if_oob(precedence) = rightToLeft;
 
         for (mut i = 0; i < ops.len; i++)
-            out.PRECEDENCE[ops[i]] = precedence;
+            out.PRECEDENCE.map::set(ops[i], precedence);
     }
 
     // TODO not so simple,
@@ -719,7 +719,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             }
             else if (flags & F_INFIX)
             {
-                BINOP.PRECEDENCE.has(name) || fail("No such infix operator: `" ~ name ~ "`.");
+                BINOP.PRECEDENCE.map::has(name) || fail("No such infix operator: `" ~ name ~ "`.");
             }
             else if (flags & F_PREFIX)
             {
@@ -1143,7 +1143,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             if (v == "(") return { lint(); parseCallExpression(head) };
             if (v == "[") return { lint(); parseIndexExpression(head) };
 
-            let p1 = BINOP.PRECEDENCE[v];
+            let p1 = BINOP.PRECEDENCE.map::get(v);
             if (p1)
                 return { _idx--; tryParseBinary(head, v, p1) };
 

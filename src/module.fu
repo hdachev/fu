@@ -9,8 +9,8 @@ pub nocopy struct Context
     modules: Module[];
 
     // FS facts.
-    files: map::Map_ss;
-    fuzzy: map::Map_ss;
+    files: map::Map(string, string);
+    fuzzy: map::Map(string, string);
 };
 
 pub struct Module

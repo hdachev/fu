@@ -27,7 +27,7 @@ fn resolveFile(
     from: string, name: string): string
 {
     let path    = from ~ name;
-    let cached  = ctx.fuzzy.get(path);
+    let cached  = ctx.fuzzy.map::get(path);
     if (cached)
         return cached == "\v" ? "" : cached;
 
@@ -71,7 +71,7 @@ fn resolveFile(
     };
 
     let resolve = tryResolve();
-    ctx.fuzzy.set(path, resolve || "\v");
+    ctx.fuzzy.map::set(path, resolve || "\v");
     return resolve;
 }
 
@@ -93,7 +93,7 @@ pub fn resolveFile(
             // Tests have the files prepopulated,
             //  we only pay the cost of lookup when about to fail compile.
             let prepopulated = from ~ name;
-            if (ctx.files.has(prepopulated))
+            if (ctx.files.map::has(prepopulated))
                 return prepopulated;
         }
     }
@@ -107,7 +107,7 @@ pub fn resolveFile_x(
 {
     // TODO FIX
     let clean = path.replace(all: "\v", "");
-    let match = ctx.fuzzy.get(clean);
+    let match = ctx.fuzzy.map::get(clean);
 
     return match && match != "\v"
          ? match
@@ -121,12 +121,12 @@ pub fn getFile(
     implicit ctx: &mut Context,
     mut path: string): string
 {
-    let cached = ctx.files.get(path);
+    let cached = ctx.files.map::get(path);
     if (cached)
         return cached == "\v" ? "" : cached;
 
     let read = file::read(path);
-    ctx.files.set(path, read || "\v");
+    ctx.files.map::set(path, read || "\v");
     return read;
 }
 
