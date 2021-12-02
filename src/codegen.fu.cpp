@@ -25,7 +25,6 @@ struct s_Extended;
 struct s_Intlit;
 struct s_LexerOutput;
 struct s_Lifetime;
-struct s_MapFields;
 struct s_Map_OZkl;
 struct s_Module;
 struct s_ModuleInputs;
@@ -79,14 +78,12 @@ bool operator==(const s_Region&, const s_Region&);
 bool operator==(const s_Target&, const s_Target&);
 bool operator==(const s_Type&, const s_Type&);
 bool type_isArray(const s_Type&);
-bool type_isMap(const s_Type&);
 bool type_isZST(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 fu_STR ID(const fu_STR&);
 int MODID(const s_Module&);
 int structIndex(fu::view<fu::byte>);
 s_Intlit Intlit(fu::view<fu::byte>);
-s_MapFields tryClear_map(const s_Type&);
 s_Region Region_fromArgIndex(int);
 s_Target target(const s_ScopeItem&);
 s_Target tryParseClosureID(fu::view<fu::byte>, int);
@@ -828,22 +825,6 @@ struct s_cg_CurrentFn
 };
                                 #endif
 
-                                #ifndef DEF_s_MapFields
-                                #define DEF_s_MapFields
-struct s_MapFields
-{
-    s_Type key;
-    s_Type value;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || key
-            || value
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_TEMPVAR
                                 #define DEF_s_TEMPVAR
 struct s_TEMPVAR
@@ -1198,14 +1179,6 @@ static fu_STR typeAnnotBase(const s_Type& type_3, const int mode, fu_VEC<fu_STR>
         else
             return ("fu::view<"_fu + itemAnnot) + ">"_fu;
 
-    };
-    s_MapFields mapPair = tryClear_map(type_3);
-    if (mapPair)
-    {
-        fu_STR k = typeAnnot(mapPair.key, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
-        fu_STR v = typeAnnot(mapPair.value, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
-        include("<fu/map.h>"_fu, _libs);
-        return ((("fu_MAP<"_fu + k) + ", "_fu) + v) + ">"_fu;
     };
     const s_Struct* _0;
     const s_Struct& s = (*(_0 = &(lookupStruct(type_3, module, ctx))) ? *_0 : fail(("TODO: "_fu + type_3.vtype.canon), _here, ctx));
@@ -2091,34 +2064,9 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
 
                 return ((ARG(0, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers) + "["_fu) + ARG(1, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers)) + "]"_fu;
             };
-            if (id_2 == "="_fu)
-            {
-                if ((SolvedNodeData(head, module, ctx).kind == "call"_fu) && (SolvedNodeData(head, module, ctx).value == "[]"_fu) && (SolvedNodeData(head, module, ctx).items.size() == 2))
-                {
-                    const s_SolvedNode* _2;
-                    if (type_isMap(SolvedNodeData((*(_2 = &(SolvedNodeData(head, module, ctx).items[0])) ? *_2 : fail(fu_STR{}, _here, ctx)), module, ctx).type))
-                    {
-                        const s_SolvedNode* _3;
-                        const s_SolvedNode* _4;
-                        return ((((("("_fu + cgNode((*(_3 = &(SolvedNodeData(head, module, ctx).items[0])) ? *_3 : fail(fu_STR{}, _here, ctx)), "cgCall(Map= #0)"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers)) + ".upsert("_fu) + cgNode((*(_4 = &(SolvedNodeData(head, module, ctx).items[1])) ? *_4 : fail(fu_STR{}, _here, ctx)), "cgCall(Map= #1)"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers)) + ") = "_fu) + ARG(1, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers)) + ")"_fu;
-                    };
-                };
-            };
             if (id_2 == "||="_fu)
             {
-                fu_STR arg0 {};
-                if ((SolvedNodeData(head, module, ctx).kind == "call"_fu) && (SolvedNodeData(head, module, ctx).value == "[]"_fu) && (SolvedNodeData(head, module, ctx).items.size() == 2))
-                {
-                    const s_SolvedNode* _5;
-                    if (type_isMap(SolvedNodeData((*(_5 = &(SolvedNodeData(head, module, ctx).items[0])) ? *_5 : fail(fu_STR{}, _here, ctx)), module, ctx).type))
-                    {
-                        const s_SolvedNode* _6;
-                        const s_SolvedNode* _7;
-                        arg0 = (((cgNode((*(_6 = &(SolvedNodeData(head, module, ctx).items[0])) ? *_6 : fail(fu_STR{}, _here, ctx)), "cgCall(Map||= #0)"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers) + ".upsert("_fu) + cgNode((*(_7 = &(SolvedNodeData(head, module, ctx).items[1])) ? *_7 : fail(fu_STR{}, _here, ctx)), "cgCall(Map||= #1)"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers)) + ")"_fu);
-                    };
-                };
-                fu_STR* _8;
-                (*(_8 = &(arg0)) ? *_8 : *_8 = ARG(0, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers));
+                fu_STR arg0 = ARG(0, items_5, node_1, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers);
                 s_TEMPVAR tv {};
                 fu_STR condcons = via(tv, SolvedNodeData(head, module, ctx).type, arg0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
                 fu_STR alt = (tv.ptrflip ? ("*"_fu + tv.id) : fu_STR((tv.id ? tv.id : arg0)));
@@ -2605,28 +2553,28 @@ static fu_STR cgMain(const int _hasMain, fu_VEC<fu_STR>& _libs)
     return (((((((("\n\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"_fu) + "\n}\n"_fu;
 }
 
-static fu_STR collectDedupes(fu_VEC<fu_STR>&& values_1, fu::view<fu::byte> prefix, fu::view<fu::byte> suffix)
+static fu_STR collectDedupes(fu_VEC<fu_STR>&& values, fu::view<fu::byte> prefix, fu::view<fu::byte> suffix)
 {
-    if (!values_1.size())
+    if (!values.size())
         return fu_STR{};
 
     fu_STR out_1 = "\n"_fu;
-    fu::sort(values_1);
-    for (int i = 0; i < values_1.size(); i++)
-        out_1 += ((prefix + values_1[i]) + suffix);
+    fu::sort(values);
+    for (int i = 0; i < values.size(); i++)
+        out_1 += ((prefix + values[i]) + suffix);
 
     return out_1;
 }
 
-static fu_STR collectDedupes(fu_VEC<fu_STR>&& values_1)
+static fu_STR collectDedupes(fu_VEC<fu_STR>&& values)
 {
-    if (!values_1.size())
+    if (!values.size())
         return fu_STR{};
 
     fu_STR out_1 = "\n"_fu;
-    fu::sort(values_1);
-    for (int i = 0; i < values_1.size(); i++)
-        out_1 += values_1[i];
+    fu::sort(values);
+    for (int i = 0; i < values.size(); i++)
+        out_1 += values[i];
 
     return out_1;
 }
@@ -2681,11 +2629,11 @@ static fu_STR cgJump(const s_SolvedNode& node_1, const s_Module& module, const s
                 };
             };
             fu_STR assign = (hasval ? (("L_"_fu + dest.name) + "_v = "_fu) : fu_STR{});
-            fu_STR value_3 = cgNode(head, "cgJump[val.break]"_fu, (!assign ? M_STMT : (*(const int*)fu::NIL)), (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers);
+            fu_STR value_2 = cgNode(head, "cgJump[val.break]"_fu, (!assign ? M_STMT : (*(const int*)fu::NIL)), (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _fdef, _unity, _unity_because, _idef, _indent, _hasMain, _ffwd_src, _moveFromConstRefHelpers);
             if (ptrflip)
-                value_3 = (("&("_fu + value_3) + ")"_fu);
+                value_2 = (("&("_fu + value_2) + ")"_fu);
 
-            return (((("{ "_fu + assign) + value_3) + "; goto L_"_fu) + dest.name) + "; }"_fu;
+            return (((("{ "_fu + assign) + value_2) + "; goto L_"_fu) + dest.name) + "; }"_fu;
         };
         if (is_never(SolvedNodeData(head, module, ctx).type))
         {

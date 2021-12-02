@@ -32,10 +32,10 @@ struct s_TestDiffs
 fu_STR serialize(const s_TestDiffs& diffs)
 {
     fu_STR res {};
-    fu::view<fu_STR> keys_1 = diffs.keys;
+    fu::view<fu_STR> keys = diffs.keys;
     fu::view<fu_STR> vals = diffs.vals;
-    for (int i = 0; i < keys_1.size(); i++)
-        res += (((keys_1[i] + "\n-----\n"_fu) + vals[i]) + "\n-----\n"_fu);
+    for (int i = 0; i < keys.size(); i++)
+        res += (((keys[i] + "\n-----\n"_fu) + vals[i]) + "\n-----\n"_fu);
 
     return res;
 }

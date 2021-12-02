@@ -559,13 +559,13 @@ static s_Node createLeaf(const fu_STR& kind_1, const fu_STR& value_1, const int 
 
                                 #ifndef DEFt_bfind_Bd7d
                                 #define DEFt_bfind_Bd7d
-inline int bfind_Bd7d(fu::view<fu_STR> keys_1, const fu_STR& item)
+inline int bfind_Bd7d(fu::view<fu_STR> keys, const fu_STR& item)
 {
-    for (int i = 0; i < keys_1.size(); i++)
+    for (int i = 0; i < keys.size(); i++)
     {
-        if ((keys_1[i] >= item))
+        if ((keys[i] >= item))
         {
-            if (keys_1[i] != item)
+            if (keys[i] != item)
                 return -1;
 
             return i;
@@ -1561,13 +1561,13 @@ static s_Node parseIndexExpression(const s_Node& expr, fu::view<s_Token> tokens_
 
                                 #ifndef DEFt_bfind_VtCz
                                 #define DEFt_bfind_VtCz
-inline int bfind_VtCz(fu::view<fu_STR> keys_1, const fu_STR& item)
+inline int bfind_VtCz(fu::view<fu_STR> keys, const fu_STR& item)
 {
-    for (int i = 0; i < keys_1.size(); i++)
+    for (int i = 0; i < keys.size(); i++)
     {
-        if ((keys_1[i] >= item))
+        if ((keys[i] >= item))
         {
-            if (keys_1[i] != item)
+            if (keys[i] != item)
                 return -1;
 
             return i;

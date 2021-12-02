@@ -76,9 +76,9 @@ fu_STR path_filename(const fu_STR& path)
     return fu_STR(path);
 }
 
-                                #ifndef DEFt_split_mKuv
-                                #define DEFt_split_mKuv
-inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_HbCu
+                                #define DEFt_split_HbCu
+inline void split_HbCu(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -111,7 +111,7 @@ inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
     fu_VEC<fu_STR> result {};
-    split_mKuv(str_1, sep, 0, result);
+    split_HbCu(str_1, sep, 0, result);
     return result;
 }
                                 #endif

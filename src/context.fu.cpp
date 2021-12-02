@@ -777,13 +777,13 @@ inline bool has_05eu(fu::view<fu::byte> a, const fu::byte b)
 
                                 #ifndef DEFt_bfind_VtCz
                                 #define DEFt_bfind_VtCz
-inline int bfind_VtCz(fu::view<fu_STR> keys_3, const fu_STR& item)
+inline int bfind_VtCz(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_3.size(); i++)
+    for (int i = 0; i < keys_2.size(); i++)
     {
-        if ((keys_3[i] >= item))
+        if ((keys_2[i] >= item))
         {
-            if (keys_3[i] != item)
+            if (keys_2[i] != item)
                 return -1;
 
             return i;
@@ -887,13 +887,13 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& c
 
                                 #ifndef DEFt_bfind_9sek
                                 #define DEFt_bfind_9sek
-inline int bfind_9sek(fu::view<fu_STR> keys_3, const fu_STR& item)
+inline int bfind_9sek(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_3.size(); i++)
+    for (int i = 0; i < keys_2.size(); i++)
     {
-        if ((keys_3[i] >= item))
+        if ((keys_2[i] >= item))
         {
-            if (keys_3[i] != item)
+            if (keys_2[i] != item)
                 return -1;
 
             return i;
@@ -999,13 +999,13 @@ fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 
                                 #ifndef DEFt_bfind_Bd7d
                                 #define DEFt_bfind_Bd7d
-inline int bfind_Bd7d(fu::view<fu_STR> keys_3, const fu_STR& item)
+inline int bfind_Bd7d(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_3.size(); i++)
+    for (int i = 0; i < keys_2.size(); i++)
     {
-        if ((keys_3[i] >= item))
+        if ((keys_2[i] >= item))
         {
-            if (keys_3[i] != item)
+            if (keys_2[i] != item)
                 return -1;
 
             return i;
