@@ -1,5 +1,9 @@
 #pragma once
 
+#include <new>
+#include <atomic>
+#include <cassert>
+
 #include "../util.h"
 
 

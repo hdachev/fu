@@ -4,6 +4,13 @@
 
 #include "./util.h"
 #include "./mem/arc.h"
+#include "./mem/endian.h"
+#include "./vec/maybe_pos.h"
+
+// TODO remove these, perhaps switch them to intv and uintv.
+
+typedef  int32_t i32;
+typedef uint32_t u32;
 
 template <typename T>
 struct fu_CONFIG

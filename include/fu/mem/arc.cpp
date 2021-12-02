@@ -1,6 +1,9 @@
 #include "./arc.h"
 #include "../util.h"
 #include "../int/next_pow2.h"
+#include "../export.h"
+
+constexpr uint8_t fu_EXIT_BadAlloc = 101;
 
 static inline size_t fu_POW2MEM_RoundUp(size_t bytes) noexcept
 {

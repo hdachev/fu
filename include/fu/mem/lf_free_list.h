@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../std.h"
-
 namespace fu {
 
 struct LF_FreeList

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <type_traits>
 
 #include "./util.h"
@@ -114,7 +115,7 @@ struct view_mut
         #endif
     }
 
-    fu_INL T& mutref(i32 idx) noexcept
+    fu_INL T& mutref(int32_t idx) noexcept
     {
         T* ok = m_data + idx;
 
@@ -176,7 +177,7 @@ struct slate
         #endif
     }
 
-    fu_INL T& mutref(i32 idx) noexcept
+    fu_INL T& mutref(int32_t idx) noexcept
     {
         T* ok = m_data + idx;
 

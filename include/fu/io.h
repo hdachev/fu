@@ -14,13 +14,16 @@
 
 namespace fu {
 
+constexpr int ERR_UnknownError  = -101;
+constexpr int ERR_FS_BadPath    = -102;
+
 inline int file_write(
     const fu_STR& path, fu::view<fu::byte> body)
 {
     errno = 0;
     FILE* file = fopen(FU_TEMP_CSTR(path), "w");
     int err = errno;
-    err = err ? err : fu_ERR_UnknownError;
+    err = err ? err : ERR_UnknownError;
 
     if (file) {
         size_t expect = (size_t) body.size();
@@ -94,7 +97,7 @@ inline int fs_mkdir_p(
 {
     // Cstr.
     if (!path.size())
-        return fu_ERR_FS_BadPath;
+        return ERR_FS_BadPath;
 
     if (path       [path.size() - 1] == fu::byte('/'))
         path.mutref(path.size() - 1) =  fu::byte('\0');
@@ -115,7 +118,7 @@ inline int fs_mkdir_p(
         return 0;
 
     int err = errno;
-    err = err ? err : fu_ERR_UnknownError;
+    err = err ? err : ERR_UnknownError;
 
     // Create parent?
     // TODO no realloc and no recursion.
@@ -132,7 +135,7 @@ inline int fs_mkdir_p(
                 return 0;
 
             err = errno;
-            err = err ? err : fu_ERR_UnknownError;
+            err = err ? err : ERR_UnknownError;
 
             // Raced with other?
             if (err == EEXIST && !stat(cpath, &st) && S_ISDIR(st.st_mode))
