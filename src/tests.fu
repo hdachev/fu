@@ -37,6 +37,8 @@ fn TODO_gcc(src: string)
 
 fn TODO_borrowck(src: string) TODO(src);
 
+fn TODO_Map(src: string) ZERO(src);
+
 
 // Run the whole battery & build self.
 
@@ -1228,7 +1230,7 @@ pub fn runTests()
 
     // Maps.
 
-    ZERO(`
+    TODO_Map(`
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -1237,7 +1239,7 @@ pub fn runTests()
         return x["hello"] - x["world"] + 1;
     `);
 
-    ZERO(`
+    TODO_Map(`
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -1551,7 +1553,7 @@ pub fn runTests()
         return i - 11;
     `);
 
-    ZERO(`
+    TODO_Map(`
         mut m: Map(string, string);
         mut g = 0;
 
@@ -1565,7 +1567,7 @@ pub fn runTests()
         return g;
     `);
 
-    ZERO(`
+    TODO_Map(`
         mut m: Map(string, string);
         mut g = 0;
 
@@ -2500,7 +2502,7 @@ pub fn runTests()
     //  Keep those around, there's no principle to these tests,
     //   they just stressed our stuff in weird ways.
 
-    ZERO(`
+    TODO_Map(`
         struct BINOP {
             P: Map(string, i32);
         };
@@ -3014,7 +3016,7 @@ pub fn runTests()
         pub fn main() test();
     `);
 
-    ZERO(`
+    TODO_Map(`
         fn setupOperators(P_PREFIX_UNARY) // <- template
         {
             struct BINOP {
@@ -3176,7 +3178,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_Map(`
         struct Context
         {
             fuzzy: Map(string, string);
@@ -3648,7 +3650,7 @@ pub fn runTests()
         fn main() what(RELAX_mutref_only);
     `]);
 
-    ZERO(`
+    TODO_Map(`
         pub fn pairs(a: Map($K, $V), fn) {
             let k = a.keys;
             let v = a.values;
