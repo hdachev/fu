@@ -402,63 +402,6 @@ pub fn clear_sliceable(type: Type): Type
 
 //
 
-pub fn type_isMap(type: Type): bool
-{
-    return type.canon.starts(with: '{');
-}
-
-pub fn createMap(key: Type, vtype: Type): Type
-{
-    let canon = "{" ~ serializeType(key,   debug: "createMap(key)") ~ "}"
-                    ~ serializeType(vtype, debug: "createMap(value)");
-
-    let quals = key.quals & vtype.quals & q_rx_copy;
-    let modid = 0;
-
-    return Type(
-        ValueType(:canon, :quals, :modid),
-            lifetime: Lifetime_union(key.lifetime, vtype.lifetime));
-}
-
-pub struct MapFields
-{
-    key:   Type;
-    value: Type;
-}
-
-pub fn tryClear_map(type: Type): MapFields
-{
-    if (!type_isMap(type))
-        return MapFields();
-
-    mut depth = 0;
-    for (mut i = 1; i < type.canon.len; i++)
-    {
-        let c = type.canon[i];
-        if (c == '{')
-        {
-            depth++;
-        }
-        else if (c == '}')
-        {
-            if (depth--)
-                continue;
-
-            let ckey = type.canon.slice(1,  i);
-            let cval = type.canon.slice(i + 1);
-
-            return MapFields(
-                key:   Type(vtype: parseType(ckey)/*, :type.lifetime*/),
-                value: Type(vtype: parseType(cval)/*, :type.lifetime*/));
-        }
-    }
-
-    assert();
-}
-
-
-//
-
 pub fn type_trySuper(a: Type, b: Type)
 {
     if (a.canon != b.canon || a.modid != b.modid)

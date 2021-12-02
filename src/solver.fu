@@ -4639,11 +4639,6 @@ pub fn solve(
                 if (node.value == "[]")
                     return solved(node, createArray(T));
             }
-            else if (items.len == 2)
-            {
-                if (node.value == "Map")
-                    return solved(node, createMap(T(0), T(1)));
-            }
 
             return solveCall(node);
         }
@@ -4680,18 +4675,6 @@ pub fn solve(
 
                     return trySolveTypeParams(
                         items[0] || fail(), t, typeParams);
-                }
-                else if (items.len == 2)
-                {
-                    if (node.value == "Map")
-                    {
-                        let kv = tryClear_map(type);
-                        if (!kv)
-                            return false;
-
-                        return trySolveTypeParams(items[0] || fail(), kv.key  , typeParams)
-                            && trySolveTypeParams(items[1] || fail(), kv.value, typeParams);
-                    }
                 }
             }
             else

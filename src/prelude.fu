@@ -258,17 +258,6 @@ fn ~=(a: &mut $T[], b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
 fn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
-// Maps.
-
-fn [](a: &Map($K, $V), b: $K)
-    case ($a -> &mut Map($K, $V)): &mut $V __native;
-    default                      : &    $V __native;
-
-fn keys  (a: &Map($K, $V)): &$K[] __native(".m_keys");
-fn values(a: &Map($K, $V)): &$V[] __native(".m_values");
-fn has   (a: Map($K, $V), b: $K): bool __native("<fu/vec/find.h>", "fu::has");
-
-
 // Fun with views.
 
 fn view(a: [$T], t: $U)

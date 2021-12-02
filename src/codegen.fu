@@ -270,16 +270,6 @@ pub fn cpp_codegen(
                 return "fu::view<" ~ itemAnnot ~ ">";
         }
 
-        let mapPair = tryClear_map(type);
-        if (mapPair)
-        {
-            let k = typeAnnot(mapPair.key);
-            let v = typeAnnot(mapPair.value);
-
-            include("<fu/map.h>");
-            return "fu_MAP<" ~ k ~ ", " ~ v ~ ">";
-        }
-
         //
         let s   = lookupStruct(type) || fail("TODO: " ~ type.canon);
         let id  = "s_" ~ s.name;
@@ -1429,33 +1419,10 @@ pub fn cpp_codegen(
                     return ARG(0) ~ "[" ~ ARG(1) ~ "]";
                 }
 
-                // This is hellish but should cover our asses for a little while -
-                //  this is the `a[b]=c` instead of `a.at(b)=c` pattern.
-                if (id == "=")
-                {
-                    if (head.kind == "call" && head.value == "[]" && head.items.len == 2)
-                    {
-                        if (type_isMap((head.items[0] || fail()).type))
-                        {
-                            return "(" ~ cgNode(head.items[0] || fail(), debug: "cgCall(Map= #0)")
-                                 ~ ".upsert(" ~ cgNode(head.items[1] || fail(), debug: "cgCall(Map= #1)") ~ ") = "
-                                 ~ ARG(1) ~ ")";
-                        }
-                    }
-                }
-
-                // Conditional lazy assignment,
-                //  notice again the special casing for std::maps.
+                // Conditional lazy assignment.
                 if (id == "||=")
                 {
-                    mut arg0: string;
-                    if (head.kind == "call" && head.value == "[]" && head.items.len == 2)
-                    {
-                        if (type_isMap((head.items[0] || fail()).type))
-                            arg0 = cgNode(head.items[0] || fail(), debug: "cgCall(Map||= #0)")
-                                ~ ".upsert(" ~ cgNode(head.items[1] || fail(), debug: "cgCall(Map||= #1)") ~ ")";
-                    }
-                    arg0 ||= ARG(0);
+                    let arg0 = ARG(0);
 
                     mut tv: TEMPVAR;
                     let condcons = via(:tv, :head.type, expr: arg0);

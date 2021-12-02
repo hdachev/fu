@@ -231,20 +231,6 @@ pub fn remove(ref a: $T[], predicate)
 
 //
 
-pub fn each(a: Map($K, $V), fn)
-    a.values.each(fn fn);
-
-pub fn pairs(a: Map($K, $V), fn)
-{
-    let k = a.keys;
-    let v = a.values;
-    for (mut i = 0; i < k.len; i++)
-        fn(k[i], v[i]);
-}
-
-
-//
-
 pub fn parse10i32(offset: &mut i32, str: string): i32
 {
     mut result: i32;

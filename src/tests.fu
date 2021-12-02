@@ -37,7 +37,7 @@ fn TODO_gcc(src: string)
 
 fn TODO_borrowck(src: string) TODO(src);
 
-fn TODO_Map(src: string) ZERO(src);
+fn TODO_Map(src: string) TODO(src);
 
 
 // Run the whole battery & build self.
@@ -2956,7 +2956,7 @@ pub fn runTests()
         }
     `);
 
-    FAIL(`
+    TODO_Map/*FAIL*/(`
         struct ValueType { modid: i32; };
         struct Type { using vtype: ValueType; };
         struct Target { modid: i32; index: i32; };
