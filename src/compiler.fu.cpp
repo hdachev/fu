@@ -1,9 +1,9 @@
+
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/env.h>
 #include <fu/int.h>
 #include <fu/io.h>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/now.h>
 #include <fu/str.h>
@@ -25,6 +25,7 @@ struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Lint;
+struct s_Map_OZkl;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -712,13 +713,29 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_OZkl
+                                #define DEF_s_Map_OZkl
+struct s_Map_OZkl
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Context
                                 #define DEF_s_Context
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Map_OZkl files;
+    s_Map_OZkl fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -770,13 +787,13 @@ struct s_Options
                                 #define DEF_s_TestDiffs
 struct s_TestDiffs
 {
-    fu_MAP<fu_STR, fu_STR> _current;
-    fu_MAP<fu_STR, fu_STR> _next;
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
     explicit operator bool() const noexcept
     {
         return false
-            || _current
-            || _next
+            || keys
+            || vals
         ;
     }
 };
@@ -1009,9 +1026,9 @@ inline fu_VEC<s_Module> clone_teA7(fu::view<s_Module> a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_4PeS
-                                #define DEFt_clone_4PeS
-inline const fu_MAP<fu_STR, fu_STR>& clone_4PeS(const fu_MAP<fu_STR, fu_STR>& a)
+                                #ifndef DEFt_clone_DNSB
+                                #define DEFt_clone_DNSB
+inline const s_Map_OZkl& clone_DNSB(const s_Map_OZkl& a)
 {
     return a;
 }
@@ -1025,8 +1042,8 @@ inline s_Context clone_5Wg9(const s_Context& a)
 
     {
         res.modules = clone_teA7(a.modules);
-        res.files = clone_4PeS(a.files);
-        res.fuzzy = clone_4PeS(a.fuzzy);
+        res.files = clone_DNSB(a.files);
+        res.fuzzy = clone_DNSB(a.fuzzy);
     };
     return res;
 }
@@ -1184,6 +1201,37 @@ static fu_STR ensure_main(const fu_STR& src_2)
     return (fu::has(src_2, "fn main"_fu) ? fu_STR(src_2) : (("\n\nfn main(): i32 {\n"_fu + src_2) + "\n}\n"_fu));
 }
 
+                                #ifndef DEFt_update_RLBR
+                                #define DEFt_update_RLBR
+inline void update_RLBR(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, extra);
+                return;
+            };
+            _.vals.mutref(i) = extra;
+            return;
+        };
+    };
+    _.keys.push(item);
+    _.vals.push(extra);
+}
+                                #endif
+
+                                #ifndef DEFt_set_ZTZj
+                                #define DEFt_set_ZTZj
+inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_1)
+{
+    update_RLBR(0, key, 0, value_1, _);
+}
+                                #endif
+
 s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
 {
     s_Context ctx = clone_5Wg9(CTX_PRELUDE);
@@ -1192,7 +1240,7 @@ s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu
         const fu_STR& snippet = sources[i];
         fu_STR src_2 = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
         fu_STR fname_1 = ((fnames.size() > i) ? fu_STR(fnames[i]) : (x7E_OZkl((PRJDIR + "__tests__/_"_fu), fu::i64dec(i)) + ".fu"_fu));
-        (ctx.files.upsert(fname_1) = fu_STR(src_2));
+        set_ZTZj(ctx.files, fname_1, src_2);
         compile(fname_1, (*(const fu_STR*)fu::NIL), ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)), ctx);
     };
     for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
@@ -1243,9 +1291,9 @@ static int unindent_left(fu::view<fu::byte> src_2, const int i0)
     return int(i0);
 }
 
-                                #ifndef DEFt_split_I7ui
-                                #define DEFt_split_I7ui
-inline void split_I7ui(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_CKcG
+                                #define DEFt_split_CKcG
+inline void split_CKcG(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -1278,7 +1326,7 @@ inline void split_I7ui(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
     fu_VEC<fu_STR> result {};
-    split_I7ui(str_1, sep, 0, result);
+    split_CKcG(str_1, sep, 0, result);
     return result;
 }
                                 #endif

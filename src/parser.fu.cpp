@@ -1,8 +1,8 @@
+
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/defer.h>
 #include <fu/int.h>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -14,6 +14,7 @@
 
 struct s_BINOP;
 struct s_Lint;
+struct s_Map_cb0o;
 struct s_Node;
 struct s_Options;
 struct s_ParserOutput;
@@ -36,12 +37,28 @@ static s_Node parseUnaryExpression(int, int&, int&, int&, fu::view<s_Token>, int
 static s_Node tryPopTypeAnnot(fu::view<s_Token>, int&, int&, int&, int, const fu_STR&, int&, fu_VEC<fu_STR>&, int&, int&, fu_VEC<fu_STR>&, const s_Options&, bool&, fu_VEC<fu_STR>&, int&, int&);
 static void lint(int, fu_VEC<fu_STR>&, const s_Options&, fu::view<s_Token>, int, int, fu::view<fu::byte>);
 
+                                #ifndef DEF_s_Map_cb0o
+                                #define DEF_s_Map_cb0o
+struct s_Map_cb0o
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<int> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_BINOP
                                 #define DEF_s_BINOP
 struct s_BINOP
 {
-    fu_MAP<fu_STR, int> PRECEDENCE;
-    fu_MAP<int, bool> RIGHT_TO_LEFT;
+    s_Map_cb0o PRECEDENCE;
+    fu_VEC<bool> RIGHT_TO_LEFT;
     explicit operator bool() const noexcept
     {
         return false
@@ -328,18 +345,63 @@ inline constexpr int F_SINGLE_STMT = (1 << 31);
 
 static const int P_RESET = 1000;
 
-static const int P_PREFIX_UNARY = 3;
+static const int P_PREFIX_UNARY = 1;
 
 static const fu_VEC<fu_STR> PREFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<10> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
 
 static const fu_VEC<fu_STR> POSTFIX = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "++"_fu, "--"_fu, "[]"_fu } };
 
+                                #ifndef DEFt_grow_if_oob_ch6q
+                                #define DEFt_grow_if_oob_ch6q
+inline bool& grow_if_oob_ch6q(fu_VEC<bool>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
+                                #ifndef DEFt_update_AMGb
+                                #define DEFt_update_AMGb
+inline void update_AMGb(int, const fu_STR& item, int, const int extra, s_Map_cb0o& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, extra);
+                return;
+            };
+            _.vals.mutref(i) = extra;
+            return;
+        };
+    };
+    _.keys.push(item);
+    _.vals.push(extra);
+}
+                                #endif
+
+                                #ifndef DEFt_set_mYRb
+                                #define DEFt_set_mYRb
+inline void set_mYRb(s_Map_cb0o& _, const fu_STR& key, const int value_1)
+{
+    update_AMGb(0, key, 0, value_1, _);
+}
+                                #endif
+
 static void binop(fu::view<fu_STR> ops, int& precedence, s_BINOP& out, const bool rightToLeft)
 {
     precedence++;
-    (out.RIGHT_TO_LEFT.upsert(precedence) = bool(rightToLeft));
+    if (!(precedence < 64))
+        fu::fail("Assertion failed: precedence < 64"_fu);
+
+    grow_if_oob_ch6q(out.RIGHT_TO_LEFT, precedence) = rightToLeft;
     for (int i = 0; i < ops.size(); i++)
-        (out.PRECEDENCE.upsert(ops[i]) = int(precedence));
+        set_mYRb(out.PRECEDENCE, ops[i], precedence);
 
 }
 
@@ -494,6 +556,32 @@ static s_Node createLeaf(const fu_STR& kind_1, const fu_STR& value_1, const int 
 {
     return make(kind_1, (*(const fu_VEC<s_Node>*)fu::NIL), 0, value_1, modid, _loc);
 }
+
+                                #ifndef DEFt_bfind_Bd7d
+                                #define DEFt_bfind_Bd7d
+inline int bfind_Bd7d(fu::view<fu_STR> keys_1, const fu_STR& item)
+{
+    for (int i = 0; i < keys_1.size(); i++)
+    {
+        if ((keys_1[i] >= item))
+        {
+            if (keys_1[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_has_Mcln
+                                #define DEFt_has_Mcln
+inline bool has_Mcln(const s_Map_cb0o& _, const fu_STR& key)
+{
+    return (bfind_Bd7d(_.keys, key) >= 0);
+}
+                                #endif
 
                                 #ifndef DEFt_has_Bd7d
                                 #define DEFt_has_Bd7d
@@ -1162,7 +1250,7 @@ static s_Node parseFnDecl(int flags, const bool expr, fu::view<s_Token> tokens_1
         }
         else if (flags & F_INFIX)
         {
-            if (!(fu::has(BINOP.PRECEDENCE, name)))
+            if (!(has_Mcln(BINOP.PRECEDENCE, name)))
                 fail((("No such infix operator: `"_fu + name) + "`."_fu), tokens_1, _loc, _idx, fname_1);
 
         }
@@ -1471,6 +1559,36 @@ static s_Node parseIndexExpression(const s_Node& expr, fu::view<s_Token> tokens_
     return createCall("[]"_fu, argFlags, args, modid, _loc);
 }
 
+                                #ifndef DEFt_bfind_VtCz
+                                #define DEFt_bfind_VtCz
+inline int bfind_VtCz(fu::view<fu_STR> keys_1, const fu_STR& item)
+{
+    for (int i = 0; i < keys_1.size(); i++)
+    {
+        if ((keys_1[i] >= item))
+        {
+            if (keys_1[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_get_3SNF
+                                #define DEFt_get_3SNF
+inline int get_3SNF(const s_Map_cb0o& _, const fu_STR& key)
+{
+    const int idx = bfind_VtCz(_.keys, key);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const int*)fu::NIL);
+}
+                                #endif
+
 static s_Node createOr(const s_Node& left, const s_Node& right, const int modid, const int _loc)
 {
     return flattenIfSame("or"_fu, left, right, modid, _loc);
@@ -1597,7 +1715,7 @@ static s_Node tryParseExpressionTail(const s_Node& head, const int mode, fu::vie
         if (v == "["_fu)
             return ((void)lint(mode, warnings, options, tokens_1, _loc, _idx, fname_1), parseIndexExpression(head, tokens_1, _idx, _loc, fname_1, _precedence, modid, _fnDepth, _dollars, _dollarAuto, _numReturns, warnings, options, _hasPUB, _imports, _anonFns, _col0));
 
-        const int p1 = BINOP.PRECEDENCE[v];
+        const int p1 = get_3SNF(BINOP.PRECEDENCE, v);
         if (p1)
             return ((void)_idx--, tryParseBinary(head, v, p1, _precedence, _idx, _loc, tokens_1, modid, fname_1, _fnDepth, _dollars, _dollarAuto, _numReturns, warnings, options, _hasPUB, _imports, _anonFns, _col0));
 

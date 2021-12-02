@@ -1,6 +1,6 @@
+
 #include <fu/int.h>
 #include <fu/io.h>
-#include <fu/map.h>
 #include <fu/process.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -17,6 +17,7 @@ struct s_Context;
 struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
+struct s_Map_OZkl;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -49,21 +50,21 @@ s_Context FAIL(const fu_STR&, s_TestDiffs&);
 s_Context FAIL(const fu_VEC<fu_STR>&, s_TestDiffs&);
 s_Context ZERO(const fu_STR&, s_TestDiffs&);
 s_Context ZERO(fu_VEC<fu_STR>&&, s_TestDiffs&);
-s_TestDiffs parse(const fu_STR&);
 void TODO(const fu_STR&, s_TestDiffs&);
+void TODO(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void ZERO_SAME(fu::view<fu_STR>, s_TestDiffs&);
 
                                 #ifndef DEF_s_TestDiffs
                                 #define DEF_s_TestDiffs
 struct s_TestDiffs
 {
-    fu_MAP<fu_STR, fu_STR> _current;
-    fu_MAP<fu_STR, fu_STR> _next;
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
     explicit operator bool() const noexcept
     {
         return false
-            || _current
-            || _next
+            || keys
+            || vals
         ;
     }
 };
@@ -705,13 +706,29 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_OZkl
+                                #define DEF_s_Map_OZkl
+struct s_Map_OZkl
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Context
                                 #define DEF_s_Context
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Map_OZkl files;
+    s_Map_OZkl fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -850,7 +867,7 @@ static void TODO_gcc(const fu_STR& src, s_TestDiffs& testdiffs)
 void runTests()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
-    s_TestDiffs testdiffs = parse(fu::file_read(TESTDIFFS_FILE));
+    s_TestDiffs testdiffs = s_TestDiffs{};
     FAIL("\n        //*F\n        fn main(): i32 {}\n        /*/\n        fn main(): i32 { return 0; }\n        //*/\n    "_fu, testdiffs);
     FAIL("\n        //*F\n        fn test(): i32 {}\n        /*/\n        fn test(): i32 { return 0; }\n        //*/\n        fn main() test();\n    "_fu, testdiffs);
     ZERO("\n        return 1 - 1;\n    "_fu, testdiffs);
@@ -1240,6 +1257,7 @@ void runTests()
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;\n        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;\n\n        pub let A = \"hello\";\n        pub let B = \"world\";\n    "_fu, "\n        import _0;\n        fn test(i: i32) {\n            let v = i & 1 ? A : B;\n            return v.len;\n        }\n\n        fn main() 0.test - 1.test;\n    "_fu } }, testdiffs);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        pub fn clone(a: $T)\n        case ($T -> @copy) a;\n        case ($T -> $T) {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n    "_fu, "\n        pub nocopy struct Scope { x: i32; };\n\n        pub struct ModuleOutputs {\n            deps: i32[];\n            scope: Scope;\n        };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a._0::clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu } }, testdiffs);
     ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        // a private fn\n        fn createShader(src: string) = src;\n\n        // inits a public let\n        pub let GEOMETRY_PASS_TEST = createShader(\"source code\");\n    "_fu, "\n        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;\n    "_fu } }, testdiffs);
+    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<2> { "\n        struct List {\n            vals: string[];\n        };\n\n        fn add(using ref _: List, val: string)\n            vals ~= val;\n\n        fn [](using _: List, val: string) {\n            mut count = 0;\n            for (mut i = 0; i < vals.len; i++)\n                if (vals[i] == val)\n                    count++;\n\n            return count;\n        }\n    "_fu, "\n        fn main() {\n            mut list: _0::List;\n            for (mut i = 0; i < 3; i++)\n                list.add(i & 1 ? \"a\" : \"b\");\n\n            return list[\"b\"] - 2;\n        }\n    "_fu } }, testdiffs);
     ZERO("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu, testdiffs);
     ZERO("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        pub struct Target { modid: i32; packed: u32; };\n\n        pub fn index(t: Target) i32(t.packed & 0x7fffffff);\n\n        pub fn local_eq(t: Target, index: i32, implicit modid: i32)\n            modid - t.modid || index - t.index;\n\n        fn main() {\n            let implicit modid = 1;\n            return local_eq(Target(1, 0x80000002), 7) - 5;\n        }\n    "_fu, testdiffs);
@@ -1302,6 +1320,7 @@ void runTests()
     FAIL("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey //*F\n            ; /*/ .i32; //*/\n    "_fu, testdiffs);
     ZERO("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     TODO("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T =\n            x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
+    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<3> { "\n        fn find(keys: $T[], item: $T) {\n            for (mut i = 0; i < keys.len; i++) {\n                if (keys[i] >= item) {\n                    if (keys[i] != item)\n                        return -1;\n\n                    return i;\n                }\n            }\n\n            return -1;\n        }\n    "_fu, "\n        fn Set(_: $K) struct { keys: $K[]; };\n\n        fn has(using _, key)\n            _0::find(keys, key) >= 0;\n    "_fu, "\n        fn use_Set(a: string) {\n            mut set: _1::Set(string);\n            set.keys ~= a;\n            return set._1::has(a);\n        }\n\n        fn dont_use_Set(a: string, b: string) {\n            mut keys: string[];\n            keys ~= b;\n            keys ~= a;\n            return keys.find(a);\n        }\n\n        fn main() {\n            if (!use_Set(\"a\"))\n                return -1;\n\n            return dont_use_Set(\"a\", \"b\") - 1;\n        }\n    "_fu } }, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            outer: {\n                inner: {\n                    if (x > 1) break: outer;\n                    if (x > 0) break: inner;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu, testdiffs);
     ZERO("\n        fn test(x: i32) {\n            return {\n                BLOCK: {\n                    if (x & 1) break :BLOCK 1;\n                    if (x & 2) return 2;\n                    3\n                }\n            };\n        }\n\n        fn main() 4.test - 5.test - 6.test; // 3-1-2\n    "_fu, testdiffs);
     ZERO("\n        fn test(a: i32) {\n            mut w = 3;\n            OUTER: w += {\n                INNER: {\n                    if (a & 1)  break: INNER;\n                    else        break: OUTER;\n                };\n                5\n            };\n            return w;\n        }\n        fn main() 0.test + 1.test - 11;\n    "_fu, testdiffs);

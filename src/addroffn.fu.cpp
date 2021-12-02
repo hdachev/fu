@@ -1,3 +1,4 @@
+
 #include <fu/decstr.h>
 #include <fu/int.h>
 #include <fu/never.h>
@@ -153,9 +154,9 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
     return res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_Jf3x
-                                #define DEFt_unpackAddrOfFn_Jf3x
-inline void unpackAddrOfFn_Jf3x(fu::view<fu::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_ykV9
+                                #define DEFt_unpackAddrOfFn_ykV9
+inline void unpackAddrOfFn_ykV9(fu::view<fu::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -179,7 +180,7 @@ bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, con
     if (!type_isAddrOfFn(type_3))
         return false;
 
-    unpackAddrOfFn_Jf3x(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_ykV9(type_3.vtype.canon, 0, out_1, id_2, shadows);
     return true;
 }
 

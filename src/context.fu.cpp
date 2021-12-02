@@ -1,9 +1,9 @@
+
 #include <algorithm>
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/int.h>
 #include <fu/io.h>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -22,6 +22,7 @@ struct s_Context;
 struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
+struct s_Map_OZkl;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -691,13 +692,29 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_OZkl
+                                #define DEF_s_Map_OZkl
+struct s_Map_OZkl
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Context
                                 #define DEF_s_Context
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Map_OZkl files;
+    s_Map_OZkl fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -758,6 +775,36 @@ inline bool has_05eu(fu::view<fu::byte> a, const fu::byte b)
 }
                                 #endif
 
+                                #ifndef DEFt_bfind_VtCz
+                                #define DEFt_bfind_VtCz
+inline int bfind_VtCz(fu::view<fu_STR> keys_3, const fu_STR& item)
+{
+    for (int i = 0; i < keys_3.size(); i++)
+    {
+        if ((keys_3[i] >= item))
+        {
+            if (keys_3[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_get_bmnP
+                                #define DEFt_get_bmnP
+inline const fu_STR& get_bmnP(const s_Map_OZkl& _, const fu_STR& key)
+{
+    const int idx = bfind_VtCz(_.keys, key);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const fu_STR*)fu::NIL);
+}
+                                #endif
+
 static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
     const bool exists = (fu::file_size(path) >= 0);
@@ -795,17 +842,74 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
     return resolveFile(fallback, name_3, ctx);
 }
 
+                                #ifndef DEFt_update_fvG9
+                                #define DEFt_update_fvG9
+inline void update_fvG9(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, extra);
+                return;
+            };
+            _.vals.mutref(i) = extra;
+            return;
+        };
+    };
+    _.keys.push(item);
+    _.vals.push(extra);
+}
+                                #endif
+
+                                #ifndef DEFt_set_ZTZj
+                                #define DEFt_set_ZTZj
+inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_3)
+{
+    update_fvG9(0, key, 0, value_3, _);
+}
+                                #endif
+
 static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
 {
     fu_STR path = (from + name_3);
-    const fu_STR& cached = ctx.fuzzy[path];
+    const fu_STR& cached = get_bmnP(ctx.fuzzy, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     fu_STR resolve = tryResolve(path, from, name_3, ctx);
-    (ctx.fuzzy.upsert(path) = (resolve ? fu_STR(resolve) : "\v"_fu));
+    set_ZTZj(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
     return resolve;
 }
+
+                                #ifndef DEFt_bfind_9sek
+                                #define DEFt_bfind_9sek
+inline int bfind_9sek(fu::view<fu_STR> keys_3, const fu_STR& item)
+{
+    for (int i = 0; i < keys_3.size(); i++)
+    {
+        if ((keys_3[i] >= item))
+        {
+            if (keys_3[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_has_zJcj
+                                #define DEFt_has_zJcj
+inline bool has_zJcj(const s_Map_OZkl& _, const fu_STR& key)
+{
+    return (bfind_9sek(_.keys, key) >= 0);
+}
+                                #endif
 
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
@@ -821,7 +925,7 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
                 return res;
 
             fu_STR prepopulated = (from + name_3);
-            if (fu::has(ctx.files, prepopulated))
+            if (has_zJcj(ctx.files, prepopulated))
                 return prepopulated;
 
         };
@@ -889,18 +993,79 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
 fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 {
     fu_STR clean = replace_Q0b6(path, "\v"_fu, fu::view<fu::byte>{});
-    const fu_STR& match = ctx.fuzzy[clean];
+    const fu_STR& match = get_bmnP(ctx.fuzzy, clean);
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
 
+                                #ifndef DEFt_bfind_Bd7d
+                                #define DEFt_bfind_Bd7d
+inline int bfind_Bd7d(fu::view<fu_STR> keys_3, const fu_STR& item)
+{
+    for (int i = 0; i < keys_3.size(); i++)
+    {
+        if ((keys_3[i] >= item))
+        {
+            if (keys_3[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_get_fKR5
+                                #define DEFt_get_fKR5
+inline const fu_STR& get_fKR5(const s_Map_OZkl& _, const fu_STR& key)
+{
+    const int idx = bfind_Bd7d(_.keys, key);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const fu_STR*)fu::NIL);
+}
+                                #endif
+
+                                #ifndef DEFt_update_awUK
+                                #define DEFt_update_awUK
+inline void update_awUK(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, extra);
+                return;
+            };
+            _.vals.mutref(i) = extra;
+            return;
+        };
+    };
+    _.keys.push(item);
+    _.vals.push(extra);
+}
+                                #endif
+
+                                #ifndef DEFt_set_pi1h
+                                #define DEFt_set_pi1h
+inline void set_pi1h(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_3)
+{
+    update_awUK(0, key, 0, value_3, _);
+}
+                                #endif
+
 fu_STR getFile(fu_STR&& path, s_Context& ctx)
 {
-    const fu_STR& cached = ctx.files[path];
+    const fu_STR& cached = get_fKR5(ctx.files, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     fu_STR read = fu::file_read(path);
-    (ctx.files.upsert(path) = (read ? fu_STR(read) : "\v"_fu));
+    set_pi1h(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
     return read;
 }
 
@@ -1120,9 +1285,9 @@ const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module&
     return tryLookupStruct(type_3, module, ctx).converts;
 }
 
-                                #ifndef DEFt_split_gtHi
-                                #define DEFt_split_gtHi
-inline void split_gtHi(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_Iwpk
+                                #define DEFt_split_Iwpk
+inline void split_Iwpk(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -1155,7 +1320,7 @@ inline void split_gtHi(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
     fu_VEC<fu_STR> result {};
-    split_gtHi(str_1, sep, 0, result);
+    split_Iwpk(str_1, sep, 0, result);
     return result;
 }
                                 #endif

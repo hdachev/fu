@@ -1,7 +1,7 @@
+
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/int.h>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -20,6 +20,7 @@ struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_MapFields;
+struct s_Map_OZkl;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -691,13 +692,29 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_OZkl
+                                #define DEF_s_Map_OZkl
+struct s_Map_OZkl
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Context
                                 #define DEF_s_Context
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Map_OZkl files;
+    s_Map_OZkl fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -1339,20 +1356,19 @@ s_Type relax_typeParam(s_Type&& type_3)
 }
 
 #endif
+
 #include <algorithm>
 #include <cstdint>
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/defer.h>
 #include <fu/int.h>
-#include <fu/map.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 #include <iostream>
@@ -1375,6 +1391,9 @@ struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Lint;
 struct s_MapFields;
+struct s_Map_Lvtq;
+struct s_Map_OZkl;
+struct s_Map_n2DH;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -1452,6 +1471,7 @@ fu_STR qID(const fu_STR&);
 fu_STR qKW(const fu_STR&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
 fu_STR serializeType(const s_Type&, fu::view<fu::byte>, const s_TokenIdx&, const s_Context&);
+inline int find_VtCz(fu::view<fu_STR>, fu::view<fu::byte>);
 inline s_ScopeSkip& last_usdD(fu_VEC<s_ScopeSkip>&);
 inline s_SolvedNode& last_B9fx(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
@@ -1503,7 +1523,7 @@ s_Type tryClear_ref(const s_Type&, const s_TokenIdx&, const s_Context&);
 s_Type tryClear_sliceable(const s_Type&);
 s_Type type_tryIntersect(const s_Type&, const s_Type&);
 s_Type type_trySuper(const s_Type&, const s_Type&);
-static bool lazySolveStart(const s_Target&, const s_Overload&, s_Scope&, s_Module&, s_TokenIdx&, const s_Context&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static bool lazySolveStart(const s_Target&, const s_Overload&, s_Scope&, s_Module&, s_TokenIdx&, const s_Context&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static bool want(const s_Type&, const s_Type&);
 static const s_Extended& EXT(const s_Target&, const s_Module&, const s_Scope&, const s_Context&);
 static const s_Overload& GET(const s_Target&, const s_Scope&, const s_Module&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
@@ -1513,38 +1533,38 @@ static const s_Type& Scope_lookupType(const s_Node&, const s_TokenIdx&, const s_
 static fu_STR addr(const s_TokenIdx&, const s_Context&, const s_Module&);
 static fu_STR mangleArguments(fu::view<s_SolvedNode>, fu::view<int>, bool, fu::view<fu_VEC<s_Target>>, int, const s_Type&, const s_Scope&, const s_Module&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
 static fu_STR qSTACK(const s_ArgWrite&, const s_Target&, fu_VEC<s_Target>&&, const s_CurrentFn&, const s_Module&, const s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
-static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node>, const s_Type&, const s_Type&, bool, int, s_TokenIdx&, s_Module&, s_Scope&, const s_Context&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node>, const s_Type&, const s_Type&, bool, int, s_TokenIdx&, s_Module&, s_Scope&, const s_Context&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_Events& events(s_CurrentFn&);
 static s_Flow& flow(s_CurrentFn&);
 static s_Helpers& h(fu_VEC<s_Helpers>&, int);
-static s_SolvedNode CallerNode(const fu_STR&, s_Target&&, fu_VEC<s_SolvedNode>&&, int, const fu_VEC<int>&, fu::view<fu_VEC<s_Target>>, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Target&, s_CurrentFn&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, fu_MAP<fu_STR, s_Target>&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, const s_Type&);
+static s_SolvedNode CallerNode(const fu_STR&, s_Target&&, fu_VEC<s_SolvedNode>&&, int, const fu_VEC<int>&, fu::view<fu_VEC<s_Target>>, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Target&, s_CurrentFn&, s_ScopeSkipMemos&, fu_VEC<s_ScopeItem>&, s_Map_n2DH&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, const s_Type&);
 static s_SolvedNode SolvedNode(const fu_STR&, const s_Type&, int, const fu_STR&, const fu_VEC<s_SolvedNode>&, const s_Target&, int, const s_TokenIdx&, const s_Target&, const s_Module&, s_Scope&);
-static s_SolvedNode __solveStruct(bool, const s_Node&, const s_Target&, s_CurrentFn&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_ScopeSkipMemos&, s_Target&, fu_MAP<fu_STR, s_Target>&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode __solveStruct(bool, const s_Node&, const s_Target&, s_CurrentFn&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_ScopeSkipMemos&, s_Target&, s_Map_n2DH&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_SolvedNode callsite(const s_RWEvent&, const s_CurrentFn&, const s_Module&, const s_Scope&, const s_Context&);
 static s_SolvedNode createLet(const fu_STR&, int, const s_SolvedNode&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, const s_Options&, int&, const s_Target&, s_CurrentFn&, const s_ScopeMemo&, const s_ScopeSkipMemos&);
-static s_SolvedNode evalTypeAnnot(const s_Node&, const fu_MAP<fu_STR, s_TypeParam>&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
-static s_SolvedNode solveArrlit(const s_Node&, const s_Type&, s_Module&, const s_Context&, s_TokenIdx&, s_Scope&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode evalTypeAnnot(const s_Node&, const s_Map_Lvtq&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode solveArrlit(const s_Node&, const s_Type&, s_Module&, const s_Context&, s_TokenIdx&, s_Scope&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_SolvedNode solveInt(const s_Node&, const s_Type&, const s_TokenIdx&, const s_Context&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, s_Scope&, const s_Module&, const s_Target&);
-static s_SolvedNode solveJump(const s_Node&, int, fu_VEC<s_Helpers>&, s_ScopeSkipMemos&, fu_VEC<s_HelpersData>&, s_TokenIdx&, const s_Context&, s_Scope&, s_Module&, s_Target&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
-static s_SolvedNode solveLet(const s_Node&, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode solveJump(const s_Node&, int, fu_VEC<s_Helpers>&, s_ScopeSkipMemos&, fu_VEC<s_HelpersData>&, s_TokenIdx&, const s_Context&, s_Scope&, s_Module&, s_Target&, s_CurrentFn&, s_Map_n2DH&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode solveLet(const s_Node&, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_SolvedNode solveLetLike_dontTouchScope(const fu_STR&, int, s_SolvedNode&&, s_Type&&, const s_Type&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, const s_Options&, int&, const s_Target&);
-static s_SolvedNode solveLetLike_dontTouchScope(const s_Node&, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
-static s_SolvedNode solveNode(const s_Node&, const s_Type&, int, s_TokenIdx&, s_Module&, s_Scope&, const s_Context&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode solveLetLike_dontTouchScope(const s_Node&, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_SolvedNode solveNode(const s_Node&, const s_Type&, int, s_TokenIdx&, s_Module&, s_Scope&, const s_Context&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_SolvedNode solveNum(const s_Node&, const s_Type&, const s_TokenIdx&, const s_Target&, const s_Module&, s_Scope&);
 static s_SolvedNode solveStr(const s_Node&, const s_Type&, const s_TokenIdx&, const s_Context&, const s_Target&, const s_Module&, s_Scope&);
 static s_SolvedNodeData& MUT(const s_SolvedNode&, const s_Module&, const s_Target&, const s_TokenIdx&, const s_Context&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, s_Scope&);
 static s_Target Binding(const fu_STR&, s_Type&&, int, bool&, const s_CurrentFn&, const s_Module&, s_Scope&, const s_Context&, const s_ScopeMemo&, const s_ScopeSkipMemos&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, const s_TokenIdx&);
-static s_Target doTrySpecialize(const s_Target&, const s_Target&, fu::view<s_SolvedNode>, fu_STR&&, fu::view<int>, bool, fu::view<fu_VEC<s_Target>>, int, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
-static s_Target tryMatch__mutargs(fu_STR&&, fu_VEC<int>&, fu_VEC<fu_VEC<s_Target>>&, bool, const s_Scope&, fu::view<s_SolvedNode>, int, const s_Target&, s_Scope&, s_ScopeSkipMemos&, s_TokenIdx&, const s_Context&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Module&, fu_VEC<s_ScopeItem>&, fu_MAP<fu_STR, s_Target>&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, const s_Type&);
-static s_Type T(int, const s_Node&, const fu_MAP<fu_STR, s_TypeParam>&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_Target doTrySpecialize(const s_Target&, const s_Target&, fu::view<s_SolvedNode>, fu_STR&&, fu::view<int>, bool, fu::view<fu_VEC<s_Target>>, int, const s_Type&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static s_Target tryMatch__mutargs(fu_STR&&, fu_VEC<int>&, fu_VEC<fu_VEC<s_Target>>&, bool, const s_Scope&, fu::view<s_SolvedNode>, int, const s_Target&, s_Scope&, s_ScopeSkipMemos&, s_TokenIdx&, const s_Context&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_Module&, fu_VEC<s_ScopeItem>&, s_Map_n2DH&, s_ScopeMemo&, s_Target&, s_CurrentFn&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, const s_Type&);
+static s_Type T(int, const s_Node&, const s_Map_Lvtq&, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_Target&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static s_Type solveArrlit_itemType(fu::view<s_SolvedNode>, s_Type&&, int, const s_TokenIdx&, const s_Context&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, const s_Scope&, const s_Module&);
 static void Events_merge(s_Events&, const s_EventsSnap&);
 static void Lifetime_F_MOVED_FROM(const s_Lifetime&, const s_CurrentFn&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
 static void Lifetime_F_TODO_FIX_RRET(const s_Lifetime&, int, const s_CurrentFn&, const s_Module&, s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
 static void Scope_import(int, bool, s_Scope&, const s_ScopeSkipMemos&, const s_TokenIdx&, const s_Context&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, const s_Module&);
 static void bck_node(const s_SolvedNode&, const s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, s_CurrentFn&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&, const s_Target&, const s_Options&, int&);
-static void descend(const s_Type&, bool, bool, bool, bool, s_Scope&, const s_Scope&, s_ScopeSkipMemos&, fu_VEC<s_SolvedNode>&, s_Module&, const s_Context&, s_CurrentFn&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, const s_SolvedNode&, s_Target&, const s_SolvedNode&, fu_VEC<int>&, fu_VEC<fu_VEC<s_Target>>&, fu_VEC<s_ScopeItem>&, fu_MAP<fu_STR, s_Target>&, s_ScopeMemo&, int&, const s_SolvedNode&, const s_Options&, int&, const s_Type&, const s_Type&, fu_VEC<s_Target>&, fu_VEC<s_Target>&, const s_Type&, int);
-static void propagateType(const s_SolvedNode&, const s_Type&, int, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Target&, fu_MAP<fu_STR, s_Target>&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
+static void descend(const s_Type&, bool, bool, bool, bool, s_Scope&, const s_Scope&, s_ScopeSkipMemos&, fu_VEC<s_SolvedNode>&, s_Module&, const s_Context&, s_CurrentFn&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, const s_SolvedNode&, s_Target&, const s_SolvedNode&, fu_VEC<int>&, fu_VEC<fu_VEC<s_Target>>&, fu_VEC<s_ScopeItem>&, s_Map_n2DH&, s_ScopeMemo&, int&, const s_SolvedNode&, const s_Options&, int&, const s_Type&, const s_Type&, fu_VEC<s_Target>&, fu_VEC<s_Target>&, const s_Type&, int);
+static void propagateType(const s_SolvedNode&, const s_Type&, int, s_Module&, s_Scope&, const s_Context&, s_TokenIdx&, fu_VEC<s_Helpers>&, fu_VEC<s_HelpersData>&, s_CurrentFn&, s_Target&, s_Map_n2DH&, s_ScopeSkipMemos&, s_ScopeMemo&, int&, fu_VEC<s_SolvedNode>&, const s_SolvedNode&, const s_Options&, int&, fu_VEC<s_ScopeItem>&, const s_Type&);
 static void test_node(const s_SolvedNode&, fu_STR&&, const s_Module&, const s_Scope&, const s_Context&, s_TokenIdx&, fu::view<s_Helpers>, fu_VEC<s_HelpersData>&);
 void ArgsAtRisk_shake(s_Flow&);
 void HERE(const s_TokenIdx&, s_TokenIdx&);
@@ -2225,13 +2245,29 @@ struct s_Module
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_OZkl
+                                #define DEF_s_Map_OZkl
+struct s_Map_OZkl
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<fu_STR> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Context
                                 #define DEF_s_Context
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    fu_MAP<fu_STR, fu_STR> files;
-    fu_MAP<fu_STR, fu_STR> fuzzy;
+    s_Map_OZkl files;
+    s_Map_OZkl fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -2391,6 +2427,22 @@ struct s_HelpersData
 };
                                 #endif
 
+                                #ifndef DEF_s_Map_n2DH
+                                #define DEF_s_Map_n2DH
+struct s_Map_n2DH
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<s_Target> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_TypeParam
                                 #define DEF_s_TypeParam
 struct s_TypeParam
@@ -2402,6 +2454,22 @@ struct s_TypeParam
         return false
             || matched
             || consumed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Map_Lvtq
+                                #define DEF_s_Map_Lvtq
+struct s_Map_Lvtq
+{
+    fu_VEC<fu_STR> keys;
+    fu_VEC<s_TypeParam> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
         ;
     }
 };
@@ -2781,7 +2849,7 @@ static s_SolvedNode solved(const s_Node& node_1, const s_Type& type_3, const fu_
     return SolvedNode(node_1.kind, type_3, node_1.flags, node_1.value, items_5, target_6, 0, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_Type T(const int i, const s_Node& node_1, const fu_MAP<fu_STR, s_TypeParam>& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_Type T(const int i, const s_Node& node_1, const s_Map_Lvtq& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     s_Type danglefix { SolvedNodeData(evalTypeAnnot(node_1.items[i], typeParams, module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type };
     return danglefix;
@@ -2887,9 +2955,9 @@ static const s_Scope& dequalify_andGetScope(fu_STR& id_2, const s_TokenIdx& _her
     fail((("Qualified "_fu + qBAD(id_2)) + ":: access current module."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-                                #ifndef DEFt_each_1ziD
-                                #define DEFt_each_1ziD
-inline void each_1ziD(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, int& count, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module)
+                                #ifndef DEFt_each_4zYZ
+                                #define DEFt_each_4zYZ
+inline void each_4zYZ(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, int& count, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -2919,7 +2987,7 @@ static int countUsings(const bool local_scope, const s_Scope& _scope, const s_Sc
     const s_Scope& scope_1 = (local_scope ? _scope : misc_scope);
     int count = 0;
     if (scope_1.usings)
-        each_1ziD(scope_1.usings, (local_scope ? _ss.usings : fu::view<s_ScopeSkip>{}), 0, 0, count, _here, ctx, _helpers, _helpers_data, _scope, module);
+        each_4zYZ(scope_1.usings, (local_scope ? _ss.usings : fu::view<s_ScopeSkip>{}), 0, 0, count, _here, ctx, _helpers, _helpers_data, _scope, module);
 
     return count;
 }
@@ -2934,9 +3002,9 @@ inline constexpr int F_NAMED_ARGS = (1 << 24);
 inline constexpr int F_OPT_ARG = (1 << 15);
                                 #endif
 
-                                #ifndef DEFt_each_Fbl6
-                                #define DEFt_each_Fbl6
-inline void each_Fbl6(fu::view<int> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, s_BitSet& seen)
+                                #ifndef DEFt_each_2zq3
+                                #define DEFt_each_2zq3
+inline void each_2zq3(fu::view<int> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, s_BitSet& seen)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -2970,7 +3038,7 @@ static void visitTypeImports(const s_Type& type_3, const s_Module& module, const
         {
             add(seen, 0);
             add(seen, module.modid);
-            each_Fbl6(_scope.imports, (local_scope ? _ss.imports : fu::view<s_ScopeSkip>{}), 0, 0, seen);
+            each_2zq3(_scope.imports, (local_scope ? _ss.imports : fu::view<s_ScopeSkip>{}), 0, 0, seen);
         };
         if (!add_once(seen, modid_5))
             continue;
@@ -2985,9 +3053,9 @@ static void visitTypeImports(const s_Type& type_3, const s_Module& module, const
     };
 }
 
-                                #ifndef DEFt_each_0eZx
-                                #define DEFt_each_0eZx
-inline void each_0eZx(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_BitSet& seen, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<fu::byte> id_2, fu_VEC<s_Target>& extra_items_1)
+                                #ifndef DEFt_each_gAkb
+                                #define DEFt_each_gAkb
+inline void each_gAkb(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_BitSet& seen, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<fu::byte> id_2, fu_VEC<s_Target>& extra_items_1)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -3066,9 +3134,9 @@ inline constexpr int F_SPREAD_INLINE = (1 << 25);
 inline constexpr int F_INLINE = (1 << 29);
                                 #endif
 
-                                #ifndef DEFt_unpackAddrOfFn_VRgX
-                                #define DEFt_unpackAddrOfFn_VRgX
-inline void unpackAddrOfFn_VRgX(fu::view<fu::byte> canon_1, int, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Template& template_1, int& parent_idx)
+                                #ifndef DEFt_unpackAddrOfFn_Uob6
+                                #define DEFt_unpackAddrOfFn_Uob6
+inline void unpackAddrOfFn_Uob6(fu::view<fu::byte> canon_1, int, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Template& template_1, int& parent_idx)
 {
     int i = 0;
     while (i < canon_1.size())
@@ -3097,6 +3165,36 @@ inline void unpackAddrOfFn_VRgX(fu::view<fu::byte> canon_1, int, const s_Module&
 }
                                 #endif
 
+                                #ifndef DEFt_ref_nabG
+                                #define DEFt_ref_nabG
+inline s_Target& ref_nabG(int, const fu_STR& item, int, s_Map_n2DH& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, s_Target{});
+            };
+            return _.vals.mutref(i);
+        };
+    };
+    _.keys.push(item);
+    _.vals.push(s_Target{});
+    return _.vals.mutref((_.vals.size() - 1));
+}
+                                #endif
+
+                                #ifndef DEFt_ref_u1Xz
+                                #define DEFt_ref_u1Xz
+inline s_Target& ref_u1Xz(s_Map_n2DH& _, const fu_STR& key_1)
+{
+    return ref_nabG(0, key_1, 0, _);
+}
+                                #endif
+
 static bool is_SPECFAIL(const s_Target& target_6)
 {
     return target_6.modid == 2147483647;
@@ -3112,22 +3210,21 @@ inline static fu_STR id_a4BR(const s_Target& target_7, const s_Scope& _scope, co
     return (is_SPECFAIL(target_7) ? "SPEC_FAIL"_fu : (("`"_fu + GET(target_7, _scope, module, ctx, _here, _helpers, _helpers_data).name) + "`"_fu));
 }
 
-static void setSpec(const fu_STR& mangle_1, const s_Target& target_6, const bool nx, const bool isInline, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, fu_MAP<fu_STR, s_Target>& _specs)
+static void setSpec(const fu_STR& mangle_1, const s_Target& target_6, const bool nx, const bool isInline, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, s_Map_n2DH& _specs)
 {
     if (isInline)
         fail("inline.setSpec"_fu, _here, ctx, _helpers, _helpers_data, _scope, module);
 
-    s_Target* _0;
-    s_Target& t = (*(_0 = &(_specs.upsert(mangle_1))) ? *_0 : *_0 = s_Target{});
+    s_Target& t = ref_u1Xz(_specs, mangle_1);
     if (!((!t && nx) || (is_SPECFAIL(t) && !nx)))
         fail(((((((x7E_OZkl((x7E_OZkl("About to screw up royally, replacing spec: "_fu, fu::i64dec(t.index)) + " with "_fu), fu::i64dec(target_6.index)) + ", mangle: "_fu) + mangle_1) + ", that's: "_fu) + id_jaUg(t, _scope, module, ctx, _here, _helpers, _helpers_data)) + " becoming "_fu) + id_a4BR(target_6, _scope, module, ctx, _here, _helpers, _helpers_data)), _here, ctx, _helpers, _helpers_data, _scope, module);
 
     t = target_6;
 }
 
-                                #ifndef DEFt_last_IKya
-                                #define DEFt_last_IKya
-inline s_Helpers& last_IKya(fu_VEC<s_Helpers>& s)
+                                #ifndef DEFt_last_CUmR
+                                #define DEFt_last_CUmR
+inline s_Helpers& last_CUmR(fu_VEC<s_Helpers>& s)
 {
     return (s.size() ? s.mutref((s.size() - 1)) : fu::fail("len == 0"_fu));
 }
@@ -3243,6 +3340,36 @@ static bool couldRetype(const s_SolvedNode& node_1, const s_Module& module, cons
 {
     return (SolvedNodeData(node_1, module, _scope, ctx).kind == "int"_fu) || (SolvedNodeData(node_1, module, _scope, ctx).kind == "real"_fu) || (SolvedNodeData(node_1, module, _scope, ctx).kind == "definit"_fu);
 }
+
+                                #ifndef DEFt_ref_py9a
+                                #define DEFt_ref_py9a
+inline s_TypeParam& ref_py9a(int, const fu_STR& item, int, s_Map_Lvtq& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] != item)
+            {
+                _.keys.insert(i, item);
+                _.vals.insert(i, (*(const s_TypeParam*)fu::NIL));
+            };
+            return _.vals.mutref(i);
+        };
+    };
+    _.keys.push(item);
+    _.vals.push((*(const s_TypeParam*)fu::NIL));
+    return _.vals.mutref((_.vals.size() - 1));
+}
+                                #endif
+
+                                #ifndef DEFt_ref_Qfo1
+                                #define DEFt_ref_Qfo1
+inline s_TypeParam& ref_Qfo1(s_Map_Lvtq& _, const fu_STR& key_1)
+{
+    return ref_py9a(0, key_1, 0, _);
+}
+                                #endif
 
 static const s_Type& Scope_lookupType(fu_STR&& id_2, const int flags_4, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss)
 {
@@ -3400,7 +3527,7 @@ static s_Type tryRetyping(const s_SolvedNode& node_1, const s_Type& expect, cons
 inline constexpr int F_MUT = (1 << 16);
                                 #endif
 
-static bool trySolveTypeParams(const s_Node& node_1, s_Type&& type_3, fu_MAP<fu_STR, s_TypeParam>& typeParams, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss)
+static bool trySolveTypeParams(const s_Node& node_1, s_Type&& type_3, s_Map_Lvtq& typeParams, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss)
 {
     if (node_1.kind == "call"_fu)
     {
@@ -3437,8 +3564,7 @@ static bool trySolveTypeParams(const s_Node& node_1, s_Type&& type_3, fu_MAP<fu_
     else if (node_1.kind == "typeparam"_fu)
     {
         const fu_STR& id_2 = (node_1.value ? node_1.value : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
-        s_TypeParam* _3;
-        s_TypeParam& _param = (*(_3 = &(typeParams.upsert(id_2))) ? *_3 : *_3 = s_TypeParam{});
+        s_TypeParam& _param = ref_Qfo1(typeParams, id_2);
         if (_param)
         {
             s_Type uNion = type_trySuper(_param.matched, type_3);
@@ -3453,8 +3579,8 @@ static bool trySolveTypeParams(const s_Node& node_1, s_Type&& type_3, fu_MAP<fu_
     else if ((node_1.kind == "arrlit"_fu) && (node_1.items.size() == 1))
     {
         s_Type t = tryClear_sliceable(type_3);
-        const s_Node* _4;
-        return t && trySolveTypeParams((*(_4 = &(node_1.items[0])) ? *_4 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module)), s_Type(t), typeParams, _here, ctx, _helpers, _helpers_data, _scope, module, _ss);
+        const s_Node* _3;
+        return t && trySolveTypeParams((*(_3 = &(node_1.items[0])) ? *_3 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module)), s_Type(t), typeParams, _here, ctx, _helpers, _helpers_data, _scope, module, _ss);
     };
     fail("TODO trySolveTypeParams fallthrough"_fu, _here, ctx, _helpers, _helpers_data, _scope, module);
 }
@@ -3471,6 +3597,36 @@ inline static fu_STR mangleArguments_gHql(fu::view<s_Type> args_1, const s_Token
     };
     return mangle;
 }
+
+                                #ifndef DEFt_bfind_Bd7d
+                                #define DEFt_bfind_Bd7d
+inline int bfind_Bd7d(fu::view<fu_STR> keys_3, const fu_STR& item)
+{
+    for (int i = 0; i < keys_3.size(); i++)
+    {
+        if ((keys_3[i] >= item))
+        {
+            if (keys_3[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_get_1XRG
+                                #define DEFt_get_1XRG
+inline const s_Target& get_1XRG(const s_Map_n2DH& _, const fu_STR& key_1)
+{
+    const int idx = bfind_Bd7d(_.keys, key_1);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const s_Target*)fu::NIL);
+}
+                                #endif
 
                                 #ifndef DEF_FN_BODY_BACK
                                 #define DEF_FN_BODY_BACK
@@ -3506,13 +3662,43 @@ static bool type_has(const s_Type& type_3, fu::view<fu::byte> tag, const s_Modul
     BUG((("Unknown type tag: `"_fu + tag) + "`."_fu), _here, ctx);
 }
 
-static const s_Type& evalTypeParam(const fu_STR& id_2, const fu_MAP<fu_STR, s_TypeParam>& typeParams, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss)
+                                #ifndef DEFt_bfind_VtCz
+                                #define DEFt_bfind_VtCz
+inline int bfind_VtCz(fu::view<fu_STR> keys_3, const fu_STR& item)
+{
+    for (int i = 0; i < keys_3.size(); i++)
+    {
+        if ((keys_3[i] >= item))
+        {
+            if (keys_3[i] != item)
+                return -1;
+
+            return i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_get_dzEU
+                                #define DEFt_get_dzEU
+inline const s_TypeParam& get_dzEU(const s_Map_Lvtq& _, const fu_STR& key_1)
+{
+    const int idx = bfind_VtCz(_.keys, key_1);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const s_TypeParam*)fu::NIL);
+}
+                                #endif
+
+static const s_Type& evalTypeParam(const fu_STR& id_2, const s_Map_Lvtq& typeParams, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss)
 {
     const s_Type* _0;
-    return *(_0 = &(typeParams[id_2].matched)) ? *_0 : *(_0 = &(Scope_lookupType(("$"_fu + (id_2 ? id_2 : fail("Falsy type param id."_fu, _here, ctx, _helpers, _helpers_data, _scope, module))), 0, _here, ctx, _helpers, _helpers_data, _scope, module, _ss))) ? *_0 : fail((("No type param `$"_fu + id_2) + "` in scope."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
+    return *(_0 = &(get_dzEU(typeParams, id_2).matched)) ? *_0 : *(_0 = &(Scope_lookupType(("$"_fu + (id_2 ? id_2 : fail("Falsy type param id."_fu, _here, ctx, _helpers, _helpers_data, _scope, module))), 0, _here, ctx, _helpers, _helpers_data, _scope, module, _ss))) ? *_0 : fail((("No type param `$"_fu + id_2) + "` in scope."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-static bool evalTypePattern(const s_Node& node_1, fu_MAP<fu_STR, s_TypeParam>& typeParams, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static bool evalTypePattern(const s_Node& node_1, s_Map_Lvtq& typeParams, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (node_1.kind == "and"_fu)
     {
@@ -3549,7 +3735,7 @@ static bool evalTypePattern(const s_Node& node_1, fu_MAP<fu_STR, s_TypeParam>& t
             if (ok && (left.kind == "typeparam"_fu))
             {
                 const fu_STR& id_2 = left.value;
-                s_TypeParam& tp = typeParams.mutref(id_2);
+                s_TypeParam& tp = ref_Qfo1(typeParams, id_2);
                 s_Type _2 {};
                 tp.consumed = (tp.consumed ? ((_2 = type_tryIntersect(tp.consumed, actual)) ? static_cast<s_Type&&>(_2) : fail("typeassert intersect fail."_fu, _here, ctx, _helpers, _helpers_data, _scope, module)) : s_Type(actual));
             };
@@ -3569,22 +3755,47 @@ static bool isNativeBody(const s_Node& n_body)
     return (n_body.kind == "call"_fu) && (n_body.value == "__native"_fu);
 }
 
+                                #ifndef DEFt_if_ref_PHoD
+                                #define DEFt_if_ref_PHoD
+inline void if_ref_PHoD(int, const fu_STR& item, int, int, s_Map_Lvtq& _)
+{
+    for (int i = 0; i < _.keys.size(); i++)
+    {
+        if ((_.keys[i] >= item))
+        {
+            if (_.keys[i] == item)
+            {
+                s_TypeParam& tp = _.vals.mutref(i);
+                tp.matched = tp.consumed;
+            };
+            return;
+        };
+    };
+}
+                                #endif
+
+                                #ifndef DEFt_if_ref_6p5w
+                                #define DEFt_if_ref_6p5w
+inline void if_ref_6p5w(s_Map_Lvtq& _, const fu_STR& key_1, int)
+{
+    if_ref_PHoD(0, key_1, 0, 0, _);
+}
+                                #endif
+
 static const s_Target& checkStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx, const s_Scope& _scope, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
     const s_Target& t = lookupStruct(type_3, module, ctx).target;
     return (GET(t, _scope, module, ctx, _here, _helpers, _helpers_data).type == type_3) ? t : (*(const s_Target*)fu::NIL);
 }
 
-                                #ifndef DEFt_pairs_pLZx
-                                #define DEFt_pairs_pLZx
-inline void pairs_pLZx(const fu_MAP<fu_STR, s_TypeParam>& a, int, const s_Module& module, const s_Context& ctx, s_Scope& _scope, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, fu_VEC<s_ScopeItem>& res)
+                                #ifndef DEFt_pairs_XuEi
+                                #define DEFt_pairs_XuEi
+inline void pairs_XuEi(const s_Map_Lvtq& _, int, const s_Module& module, const s_Context& ctx, s_Scope& _scope, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, fu_VEC<s_ScopeItem>& res)
 {
-    fu::view<fu_STR> k = a.m_keys;
-    fu::view<s_TypeParam> v = a.m_values;
-    for (int i = 0; i < k.size(); i++)
+    for (int i = 0; i < _.keys.size(); i++)
     {
-        fu::view<fu::byte> id_2 = k[i];
-        const s_TypeParam& tp = v[i];
+        fu::view<fu::byte> id_2 = _.keys[i];
+        const s_TypeParam& tp = _.vals[i];
         fu_STR name_3 = ("$"_fu + id_2);
         const s_Type& type_3 = tp.matched;
         s_Target _0 {};
@@ -3594,10 +3805,10 @@ inline void pairs_pLZx(const fu_MAP<fu_STR, s_TypeParam>& a, int, const s_Module
 }
                                 #endif
 
-static fu_VEC<s_ScopeItem> intoScopeItems(const fu_MAP<fu_STR, s_TypeParam>& typeParams, const s_Module& module, const s_Context& ctx, s_Scope& _scope, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
+static fu_VEC<s_ScopeItem> intoScopeItems(const s_Map_Lvtq& typeParams, const s_Module& module, const s_Context& ctx, s_Scope& _scope, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
     fu_VEC<s_ScopeItem> res {};
-    pairs_pLZx(typeParams, 0, module, ctx, _scope, _here, _helpers, _helpers_data, res);
+    pairs_XuEi(typeParams, 0, module, ctx, _scope, _here, _helpers, _helpers_data, res);
     return res;
 }
 
@@ -3674,9 +3885,9 @@ inline constexpr int F_USING = (1 << 18);
 
 extern const s_Type t_void;
 
-                                #ifndef DEFt_each_eWD3
-                                #define DEFt_each_eWD3
-inline void each_eWD3(fu::view<s_ScopeItem> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_ScopeMemo& _root_scope, fu::view<fu::byte> id_2, int& autoshadow, int& id_clashes)
+                                #ifndef DEFt_each_uuWD
+                                #define DEFt_each_uuWD
+inline void each_uuWD(fu::view<s_ScopeItem> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_ScopeMemo& _root_scope, fu::view<fu::byte> id_2, int& autoshadow, int& id_clashes)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -3793,7 +4004,7 @@ static s_Target Binding(const fu_STR& id_2, s_Type&& type_3, const int flags_4, 
     {
         int autoshadow = 0;
         int id_clashes = 0;
-        each_eWD3(_scope.items, _ss.declash, 0, 0, _root_scope, id_2, autoshadow, id_clashes);
+        each_uuWD(_scope.items, _ss.declash, 0, 0, _root_scope, id_2, autoshadow, id_clashes);
         if (id_clashes)
             name_3 += x7E_OZkl("_"_fu, fu::i64dec(id_clashes));
 
@@ -3805,7 +4016,7 @@ static s_Target Binding(const fu_STR& id_2, s_Type&& type_3, const int flags_4, 
     s_HelpersData* _0;
     (__extension__ (
     {
-        const s_Helpers& h = last_IKya(_helpers);
+        const s_Helpers& h = last_CUmR(_helpers);
         _0 = &(_helpers_data.mutref(h.index));
     (void)0;}), *_0).vars += target_6.index;
     s_Overload& overload = GET_mut(target_6, _scope, module);
@@ -3889,7 +4100,7 @@ static void solveLet(s_SolvedNode& out_1, const fu_STR& id_2, const s_Module& mo
     };
 }
 
-static s_SolvedNode solveLet(const s_Node& node_1, const s_Type& specType, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveLet(const s_Node& node_1, const s_Type& specType, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     s_SolvedNode out_1 = solveLetLike_dontTouchScope(node_1, specType, module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     const fu_STR& id_2 = SolvedNodeData(out_1, module, _scope, ctx).value;
@@ -4352,7 +4563,7 @@ static bool Lifetime_allowsMutrefReturn(const s_Lifetime& lifetime_1, const int 
 inline constexpr int F_TODO_FIX_RRET = (1 << 27);
                                 #endif
 
-inline static void Lifetime_each_5IXg(const s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const int locals_start_1_1)
+inline static void Lifetime_each_zp07(const s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const int locals_start_1_1)
 {
     for (int i = lifetime_1.uni0n.size(); i-- > 0; )
     {
@@ -4374,10 +4585,10 @@ inline static void Lifetime_each_5IXg(const s_Lifetime& lifetime_1, int, const i
 
 static void Lifetime_F_TODO_FIX_RRET(const s_Lifetime& lifetime_1, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
-    Lifetime_each_5IXg(lifetime_1, 0, locals_start_1, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data, locals_start_1);
+    Lifetime_each_zp07(lifetime_1, 0, locals_start_1, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data, locals_start_1);
 }
 
-inline static void Lifetime_each_apkH(s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
+inline static void Lifetime_each_i2IY(s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
     for (int i = lifetime_1.uni0n.size(); i-- > 0; )
     {
@@ -4406,7 +4617,7 @@ inline static void Lifetime_each_apkH(s_Lifetime& lifetime_1, int, const int loc
 
 static s_Lifetime Lifetime_unwind(s_Lifetime&& lifetime_1, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
-    Lifetime_each_apkH(lifetime_1, 0, locals_start_1, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data);
+    Lifetime_each_i2IY(lifetime_1, 0, locals_start_1, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data);
     return static_cast<s_Lifetime&&>(lifetime_1);
 }
 
@@ -4436,7 +4647,7 @@ static int Lifetime_vs(const s_Lifetime& lifetime_1, const int locals_start_1)
 inline constexpr int F_MOVED_FROM = (1 << 11);
                                 #endif
 
-inline static void Lifetime_each_3Pfp(const s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
+inline static void Lifetime_each_yWzm(const s_Lifetime& lifetime_1, int, const int locals_start_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
     for (int i = lifetime_1.uni0n.size(); i-- > 0; )
     {
@@ -4461,7 +4672,7 @@ inline static void Lifetime_each_3Pfp(const s_Lifetime& lifetime_1, int, const i
 
 static void Lifetime_F_MOVED_FROM(const s_Lifetime& lifetime_1, const s_CurrentFn& _current_fn, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data)
 {
-    Lifetime_each_3Pfp(lifetime_1, 0, 0, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data);
+    Lifetime_each_yWzm(lifetime_1, 0, 0, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data);
 }
 
 static s_SolvedNode createMove(const s_SolvedNode& node_1, const s_Module& module, s_Scope& _scope, const s_Context& ctx, const s_CurrentFn& _current_fn, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Target& _current_fn_or_type)
@@ -4682,7 +4893,7 @@ inline constexpr int F_LAX = (1 << 8);
 inline constexpr int F_UNUSED = (1 << 10);
                                 #endif
 
-static void relaxBlockVar(const s_Target& t, const int relax_mask, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static void relaxBlockVar(const s_Target& t, const int relax_mask, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_Overload& var = GET(t, _scope, module, ctx, _here, _helpers, _helpers_data);
     s_Type usage { unless_oob_f8UD(_current_fn.var_usage, t.index) };
@@ -4786,13 +4997,25 @@ static fu_STR mangleArguments(fu::view<s_SolvedNode> args_1, fu::view<int> reord
     return mangle;
 }
 
-static s_Target trySpecialize(const s_Target& overloadIdx, fu::view<s_SolvedNode> args_1, fu_STR& args_mangled, const int REST_START, const s_Type& REST_TYPE, fu::view<int> reorder, const bool use_reorder, fu::view<fu_VEC<s_Target>> conversions, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+                                #ifndef DEFt_get_JZBq
+                                #define DEFt_get_JZBq
+inline const s_Target& get_JZBq(const s_Map_n2DH& _, const fu_STR& key_1)
+{
+    const int idx = bfind_VtCz(_.keys, key_1);
+    if ((idx >= 0))
+        return _.vals[idx];
+
+    return (*(const s_Target*)fu::NIL);
+}
+                                #endif
+
+static s_Target trySpecialize(const s_Target& overloadIdx, fu::view<s_SolvedNode> args_1, fu_STR& args_mangled, const int REST_START, const s_Type& REST_TYPE, fu::view<int> reorder, const bool use_reorder, fu::view<fu_VEC<s_Target>> conversions, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_STR* _0;
     (*(_0 = &(args_mangled)) ? *_0 : *_0 = mangleArguments(args_1, reorder, use_reorder, conversions, REST_START, REST_TYPE, _scope, module, ctx, _here, _helpers, _helpers_data));
     fu_STR mangle = ((x7E_OZkl(x7E_OZkl(fu::i64dec(overloadIdx.modid), "#"_fu), fu::i64dec(overloadIdx.index)) + " "_fu) + args_mangled);
     s_Target _1 {};
-    const s_Target spec = ((_1 = s_Target(_specs[mangle])) ? _1 : doTrySpecialize(s_Target{}, overloadIdx, args_1, fu_STR(mangle), reorder, use_reorder, conversions, REST_START, REST_TYPE, module, _scope, ctx, _here, _helpers, _helpers_data, _specs, _ss, _root_scope, _current_fn_or_type, _current_fn, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string));
+    const s_Target spec = ((_1 = s_Target(get_JZBq(_specs, mangle))) ? _1 : doTrySpecialize(s_Target{}, overloadIdx, args_1, fu_STR(mangle), reorder, use_reorder, conversions, REST_START, REST_TYPE, module, _scope, ctx, _here, _helpers, _helpers_data, _specs, _ss, _root_scope, _current_fn_or_type, _current_fn, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string));
     return s_Target((!is_SPECFAIL(spec) ? spec : (*(const s_Target*)fu::NIL)));
 }
 
@@ -4864,7 +5087,7 @@ inline constexpr int LOOP_POST_COND = 3;
 inline constexpr int LOOP_POST = 4;
                                 #endif
 
-static void propagateType(const s_SolvedNode& node_1, const s_Type& slot, const int relax_mask, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static void propagateType(const s_SolvedNode& node_1, const s_Type& slot, const int relax_mask, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_STR k { SolvedNodeData(node_1, module, _scope, ctx).kind };
     if (k == "let"_fu)
@@ -5310,9 +5533,9 @@ static s_Flow& flow(s_CurrentFn& _current_fn)
     return _current_fn.flow;
 }
 
-                                #ifndef DEFt_unless_oob_5SXL
-                                #define DEFt_unless_oob_5SXL
-inline const s_RWEvent& unless_oob_5SXL(fu::view<s_RWEvent> a, const int i)
+                                #ifndef DEFt_unless_oob_YNdz
+                                #define DEFt_unless_oob_YNdz
+inline const s_RWEvent& unless_oob_YNdz(fu::view<s_RWEvent> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const s_RWEvent*)fu::NIL);
 }
@@ -5369,9 +5592,9 @@ static s_SolvedNode callsite(const s_RWEvent& rw, const s_CurrentFn& _current_fn
     return s_SolvedNode { s_Target(SolvedNodeData(_current_fn.out, module, _scope, ctx).target), int(rw.nodeidx) };
 }
 
-                                #ifndef DEFt_grow_if_oob_cSWu
-                                #define DEFt_grow_if_oob_cSWu
-inline s_RWEvent& grow_if_oob_cSWu(fu_VEC<s_RWEvent>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_umWd
+                                #define DEFt_grow_if_oob_umWd
+inline s_RWEvent& grow_if_oob_umWd(fu_VEC<s_RWEvent>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -5417,7 +5640,7 @@ static void bck_trackWrites(const s_SolvedNode& callsite_2, fu::view<s_Region> r
         for (int i_1 = 0; i_1 < invalidates_1.size(); i_1++)
         {
             const int other = invalidates_1[i_1];
-            const s_RWEvent& u = unless_oob_5SXL(events(_current_fn).used_in_a_loop, other);
+            const s_RWEvent& u = unless_oob_YNdz(events(_current_fn).used_in_a_loop, other);
             if (u.target)
             {
                 if (!(BORROWCK_resolveByMutvar(other, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data, _current_fn_or_type) || (options.dev & DEV_DisableBCK)))
@@ -5427,7 +5650,7 @@ static void bck_trackWrites(const s_SolvedNode& callsite_2, fu::view<s_Region> r
         };
         for (int i_1_1 = 0; i_1_1 < invalidates_1.size(); i_1_1++)
         {
-            s_RWEvent& u = grow_if_oob_cSWu(events(_current_fn).snap.invalidated_by, int(invalidates_1[i_1_1]));
+            s_RWEvent& u = grow_if_oob_umWd(events(_current_fn).snap.invalidated_by, int(invalidates_1[i_1_1]));
             if (!u.target)
                 u = s_RWEvent { int(target_6), int(callsite_2.nodeidx) };
 
@@ -5588,7 +5811,7 @@ static void bck_trackRead(const s_SolvedNode& callsite_2, const s_Module& module
 
             if (target_6 < loop_start)
             {
-                s_RWEvent& u = grow_if_oob_cSWu(events(_current_fn).used_in_a_loop, target_6);
+                s_RWEvent& u = grow_if_oob_umWd(events(_current_fn).used_in_a_loop, target_6);
                 if (!u.target)
                     u = s_RWEvent { int(loop_start), int(callsite_2.nodeidx) };
 
@@ -5735,7 +5958,7 @@ static void bck_trackInit(const s_Target& target_6, s_CurrentFn& _current_fn)
     if (!index_3)
         return;
 
-    if (unless_oob_5SXL(events(_current_fn).snap.invalidated_by, index_3))
+    if (unless_oob_YNdz(events(_current_fn).snap.invalidated_by, index_3))
         events(_current_fn).snap.invalidated_by.mutref(index_3) = s_RWEvent{};
 
     if (_current_fn.loop_start > index_3)
@@ -5749,7 +5972,7 @@ static void bck_let(const s_SolvedNode& node_1, const s_Module& module, s_Scope&
     bck_trackInit(SolvedNodeData(node_1, module, _scope, ctx).target, _current_fn);
 }
 
-inline static void Events_merge_mdX5(fu_VEC<s_RWEvent>& dest, fu::view<s_RWEvent> src_2)
+inline static void Events_merge_CAZ7(fu_VEC<s_RWEvent>& dest, fu::view<s_RWEvent> src_2)
 {
     if (dest.size() < src_2.size())
         dest.grow(src_2.size());
@@ -5775,7 +5998,7 @@ inline static void Events_merge_p8Tz(fu_VEC<int>& dest, fu::view<int> src_2)
 
 static void Events_merge(s_Events& events, const s_EventsSnap& snap)
 {
-    Events_merge_mdX5(events.snap.invalidated_by, snap.invalidated_by);
+    Events_merge_CAZ7(events.snap.invalidated_by, snap.invalidated_by);
     Events_merge_p8Tz(events.snap.args_written, snap.args_written);
 }
 
@@ -5896,7 +6119,7 @@ static void mcom_node(const s_SolvedNode& node_1, const s_Module& module, s_Scop
     };
 }
 
-static void runAllPasses(const s_SolvedNode& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static void runAllPasses(const s_SolvedNode& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (SELF_TEST)
         test_node(node_1, "PASS.0 "_fu, module, _scope, ctx, _here, _helpers, _helpers_data);
@@ -5921,7 +6144,7 @@ static void runAllPasses(const s_SolvedNode& node_1, s_Module& module, s_Scope& 
 
 }
 
-static s_SolvedNode solveBlock(const s_Node& node_1, const s_Type& type_3, const int fnbody_of, const short mask_1, const int kills_1, const fu_STR& id_2, const int steal_1, s_Scope& _scope, fu_VEC<s_Helpers>& _helpers, s_Module& module, s_CurrentFn& _current_fn, const s_Context& ctx, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveBlock(const s_Node& node_1, const s_Type& type_3, const int fnbody_of, const short mask_1, const int kills_1, const fu_STR& id_2, const int steal_1, s_Scope& _scope, fu_VEC<s_Helpers>& _helpers, s_Module& module, s_CurrentFn& _current_fn, const s_Context& ctx, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_Node> nodes_1 = ((node_1.kind == "block"_fu) ? fu_VEC<s_Node>(node_1.items) : fu_VEC<s_Node> { fu_VEC<s_Node>::INIT<1> { s_Node(node_1) } });
     const fu_STR& id_3 = (id_2 ? id_2 : ((node_1.kind == "block"_fu) ? node_1.value : (*(const fu_STR*)fu::NIL)));
@@ -6034,9 +6257,9 @@ inline constexpr int F_LAMBDA = (1 << 30);
 inline constexpr short HM_Lambda = (short(1) << short(4));
                                 #endif
 
-                                #ifndef DEFt_ArgsWritten_shake_QbHM
-                                #define DEFt_ArgsWritten_shake_QbHM
-inline void ArgsWritten_shake_QbHM(const s_Flow& flow, fu_VEC<s_ArgWrite>& args_1)
+                                #ifndef DEFt_ArgsWritten_shake_N8hJ
+                                #define DEFt_ArgsWritten_shake_N8hJ
+inline void ArgsWritten_shake_N8hJ(const s_Flow& flow, fu_VEC<s_ArgWrite>& args_1)
 {
     for (int i = std::min(args_1.size(), flow.arg_aliases.size()); i-- > 0; )
     {
@@ -6056,7 +6279,7 @@ inline void ArgsWritten_shake_QbHM(const s_Flow& flow, fu_VEC<s_ArgWrite>& args_
 }
                                 #endif
 
-static void lazySolveEnd(const s_Target& t, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Options& options, int& _notes, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static void lazySolveEnd(const s_Target& t, s_Scope& _scope, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_Options& options, int& _notes, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     s_Overload& o = GET_mut(t, _scope, module);
     fu_VEC<int> reopen {};
@@ -6120,7 +6343,7 @@ static void lazySolveEnd(const s_Target& t, s_Scope& _scope, s_Module& module, c
     };
 }
 
-static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadIdx, fu::view<s_SolvedNode> args_in, fu_STR&& mangle, fu::view<int> reorder, const bool use_reorder, fu::view<fu_VEC<s_Target>> conversions, const int REST_START, const s_Type& REST_TYPE, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadIdx, fu::view<s_SolvedNode> args_in, fu_STR&& mangle, fu::view<int> reorder, const bool use_reorder, fu::view<fu_VEC<s_Target>> conversions, const int REST_START, const s_Type& REST_TYPE, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_Type> args_1 {};
     if (use_reorder)
@@ -6159,7 +6382,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
     {
         const s_Type& arg_t = args_1[i_1];
         if (type_isAddrOfFn(arg_t))
-            unpackAddrOfFn_VRgX(arg_t.vtype.canon, 0, module, _scope, ctx, _here, _helpers, _helpers_data, template_1, parent_idx);
+            unpackAddrOfFn_Uob6(arg_t.vtype.canon, 0, module, _scope, ctx, _here, _helpers, _helpers_data, template_1, parent_idx);
 
     };
     const bool isInline = !!(template_1.node.flags & F_INLINE);
@@ -6174,7 +6397,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
         const s_HelpersData* _0;
         const int helpers0vars = (__extension__ (
         {
-            const s_Helpers& h = last_IKya(_helpers);
+            const s_Helpers& h = last_CUmR(_helpers);
             _0 = &(_helpers_data[h.index]);
         (void)0;}), *_0).vars.size();
         const int helpers_data0 = _helpers_data.size();
@@ -6187,7 +6410,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
                 s_HelpersData* _1;
                 (__extension__ (
                 {
-                    const s_Helpers& h = last_IKya(_helpers);
+                    const s_Helpers& h = last_CUmR(_helpers);
                     _1 = &(_helpers_data.mutref(h.index));
                 (void)0;}), *_1).vars.shrink(helpers0vars);
             };
@@ -6201,7 +6424,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
 
         bool ok = true;
         bool remangle = false;
-        fu_MAP<fu_STR, s_TypeParam> typeParams {};
+        s_Map_Lvtq typeParams {};
         if (!into)
         {
             fu::view<fu::byte> kind_3 = template_1.node.kind;
@@ -6227,8 +6450,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
 
                     if (couldRetype(inValue, module, _scope, ctx))
                     {
-                        s_TypeParam* _3;
-                        const s_Type& paramType = ((annot.kind == "typeparam"_fu) ? (*(_3 = &(typeParams.upsert(annot.value))) ? *_3 : *_3 = s_TypeParam{}).matched : ((annot.kind == "call"_fu) && !annot.items ? Scope_lookupType(annot, _here, ctx, _helpers, _helpers_data, _scope, module, _ss) : (*(const s_Type*)fu::NIL)));
+                        const s_Type& paramType = ((annot.kind == "typeparam"_fu) ? ref_Qfo1(typeParams, annot.value).matched : ((annot.kind == "call"_fu) && !annot.items ? Scope_lookupType(annot, _here, ctx, _helpers, _helpers_data, _scope, module, _ss) : (*(const s_Type*)fu::NIL)));
                         if (paramType)
                         {
                             s_Type retype = tryRetyping(inValue, paramType, module, _scope, ctx, _here, _helpers, _helpers_data);
@@ -6256,8 +6478,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
                             continue;
                         };
                         const fu_STR& argName = (argNode.value ? argNode.value : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
-                        s_TypeParam* _4;
-                        s_TypeParam& argName_typeParam = (*(_4 = &(typeParams.upsert(argName))) ? *_4 : *_4 = s_TypeParam{});
+                        s_TypeParam& argName_typeParam = ref_Qfo1(typeParams, argName);
                         if (argNode.flags & F_MUT)
                             inType = clear_refs(s_Type(inType));
                         else
@@ -6277,13 +6498,12 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             };
             if (remangle && !isInline)
             {
-                int _5 {};
-                const int start_1 = ((_5 = (find_WqUX(mangle, fu::byte(' ')) + 1)) ? _5 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                int _3 {};
+                const int start_1 = ((_3 = (find_WqUX(mangle, fu::byte(' ')) + 1)) ? _3 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                 mangle = (fu::slice(mangle, 0, start_1) + mangleArguments_gHql(args_1, _here, ctx));
                 if (mangle00 != mangle)
                 {
-                    s_Target _6 {};
-                    const s_Target preexisting = ((_6 = s_Target(_specs[mangle])) ? _6 : s_Target{});
+                    const s_Target preexisting { get_1XRG(_specs, mangle) };
                     if (preexisting)
                     {
                         setSpec(mangle00, preexisting, bool{}, isInline, _here, ctx, _helpers, _helpers_data, _scope, module, _specs);
@@ -6297,11 +6517,11 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             if (!ok)
                 return SPECFAIL;
 
-            const s_Node* _7;
-            const s_Node& body = (*(_7 = &(items_5[(items_5.size() + FN_BODY_BACK)])) ? *_7 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+            const s_Node* _4;
+            const s_Node& body = (*(_4 = &(items_5[(items_5.size() + FN_BODY_BACK)])) ? *_4 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
             if (body.kind == "pattern"_fu)
             {
-                fu_MAP<fu_STR, s_TypeParam> undo { typeParams };
+                s_Map_Lvtq undo { typeParams };
                 fu_VEC<s_Node> branches { body.items };
                 bool did_match = false;
                 for (int i_2 = 0; i_2 < branches.size(); i_2++)
@@ -6335,14 +6555,10 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             {
                 for (int i_2 = 0; i_2 < numArgs; i_2++)
                 {
-                    const s_Node* _8;
-                    const s_Node& argNode = (*(_8 = &(items_5[i_2])) ? *_8 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                    const s_Node* _5;
+                    const s_Node& argNode = (*(_5 = &(items_5[i_2])) ? *_5 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                     const fu_STR& id_2 = argNode.value;
-                    if (fu::has(typeParams, id_2))
-                    {
-                        s_TypeParam& tp = typeParams.mutref(id_2);
-                        tp.matched = tp.consumed;
-                    };
+                    if_ref_6p5w(typeParams, id_2, 0);
                 };
             };
         };
@@ -6410,7 +6626,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
                 fail((("solveFn: Body not a block: `"_fu + n_body.kind) + "`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 
         };
-        s_Type ret_expect_1 { (n_ret ? SolvedNodeData(evalTypeAnnot(n_ret, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type : (*(const s_Type*)fu::NIL)) };
+        s_Type ret_expect_1 { (n_ret ? SolvedNodeData(evalTypeAnnot(n_ret, (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type : (*(const s_Type*)fu::NIL)) };
         s_Type ret_seed { (n_ret ? (ret_expect_1 ? ret_expect_1 : fail(("falsy ret_expect: "_fu + n_fn.value), _here, ctx, _helpers, _helpers_data, _scope, module)) : t_never) };
         if (ret_seed.lifetime)
             ret_seed.lifetime = (isNative ? Lifetime_fromNative(inItems, fu::get_view(SolvedNodeData(_current_fn.out, module, _scope, ctx).items, 0, (SolvedNodeData(_current_fn.out, module, _scope, ctx).items.size() + FN_ARGS_BACK)), ret_seed, _here, ctx, _helpers, _helpers_data, _scope, module) : Lifetime_static());
@@ -6427,14 +6643,14 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
                     fu_STR sig = mangleArguments_msdo(fu::get_view(outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope), 0, (outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope).size() + FN_ARGS_BACK)), module, _scope, ctx, _here);
                     if (sig)
                     {
-                        fu_STR _9 {};
-                        fu_STR hash = ((_9 = hash62(sig, 4)) ? static_cast<fu_STR&&>(_9) : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                        fu_STR _6 {};
+                        fu_STR hash = ((_6 = hash62(sig, 4)) ? static_cast<fu_STR&&>(_6) : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                         name_3 += ("_"_fu + hash);
                     };
                 };
                 s_Overload& overload = GET_mut(target_6, _scope, module);
-                fu_STR _10 {};
-                overload.name = ((_10 = HACK_nativeNameParts(isNative, n_body)) ? static_cast<fu_STR&&>(_10) : name_3 ? fu_STR(name_3) : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                fu_STR _7 {};
+                overload.name = ((_7 = HACK_nativeNameParts(isNative, n_body)) ? static_cast<fu_STR&&>(_7) : name_3 ? fu_STR(name_3) : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                 overload.kind = (isUnspec ? "template"_fu : (isNative ? "__native"_fu : (isInline ? "inline"_fu : "fn"_fu)));
                 s_Extended& ext = EXT_mut(target_6, module, _scope);
                 ext.tEmplate = template_1;
@@ -6443,15 +6659,14 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             updateScope(_current_fn, (isInline ? ret_expect_1 : ret_seed), target_6, _scope, module, ctx, _here, _helpers, _helpers_data, isNative, isUnspec, isPure, _current_fn, isInline);
             if (!into && !isInline)
             {
-                int _11 {};
-                const int start_1 = ((_11 = (find_05eu(mangle0, fu::byte(' ')) + 1)) ? _11 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                int _8 {};
+                const int start_1 = ((_8 = (find_05eu(mangle0, fu::byte(' ')) + 1)) ? _8 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                 mangle = (fu::slice(mangle0, 0, start_1) + mangleArguments_YOPn(EXT(target_6, module, _scope, ctx).args, _here, ctx));
                 s_Target preexisting {};
                 const bool nx0 = (mangle0 != mangle);
                 if (nx0)
                 {
-                    s_Target _12 {};
-                    preexisting = ((_12 = s_Target(_specs[mangle])) ? _12 : s_Target{});
+                    preexisting = get_1XRG(_specs, mangle);
                     setSpec(mangle0, (preexisting ? preexisting : target_6), bool{}, isInline, _here, ctx, _helpers, _helpers_data, _scope, module, _specs);
                 };
                 const bool nx00 = (mangle00 != mangle);
@@ -6470,17 +6685,17 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             s_Type retval { ret_seed };
             if (!isNative)
             {
-                const s_HelpersData* _13;
+                const s_HelpersData* _9;
                 const s_SolvedNode s_body = solveBlock(n_body, ret_expect_1, target_6.index, short((((HM_Function | HM_CanReturn) | HM_LabelUsed) | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : (*(const short*)fu::NIL)))), 0, n_fn.value, ((__extension__ (
                 {
-                    const s_Helpers& h = last_IKya(_helpers);
-                    _13 = &(_helpers_data[h.index]);
-                (void)0;}), *_13).vars.size() - helpers0vars), _scope, _helpers, module, _current_fn, ctx, _helpers_data, _here, _current_fn_or_type, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
+                    const s_Helpers& h = last_CUmR(_helpers);
+                    _9 = &(_helpers_data[h.index]);
+                (void)0;}), *_9).vars.size() - helpers0vars), _scope, _helpers, module, _current_fn, ctx, _helpers_data, _here, _current_fn_or_type, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
                 retval = SolvedNodeData(s_body, module, _scope, ctx).type;
                 outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope).mutref((outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope).size() + FN_BODY_BACK)) = (s_body ? s_body : fail("falsy body"_fu, _here, ctx, _helpers, _helpers_data, _scope, module));
                 didSetBody = true;
                 ArgsAtRisk_shake(_current_fn.flow);
-                ArgsWritten_shake_QbHM(s_Flow(_current_fn.flow), _current_fn.events.args_written_via);
+                ArgsWritten_shake_N8hJ(s_Flow(_current_fn.flow), _current_fn.events.args_written_via);
             };
             outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope).mutref((outItems(_current_fn, module, _current_fn_or_type, _here, ctx, _helpers, _helpers_data, _scope).size() + FN_RET_BACK)) = createEmpty("empty"_fu, retval, s_Target{}, _here, _current_fn_or_type, module, _scope);
             updateScope(_current_fn, retval, target_6, _scope, module, ctx, _here, _helpers, _helpers_data, isNative, isUnspec, isPure, _current_fn, isInline);
@@ -6497,7 +6712,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
     return target_6;
 }
 
-static bool lazySolveStart(const s_Target& target_6, const s_Overload& overload, s_Scope& _scope, s_Module& module, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static bool lazySolveStart(const s_Target& target_6, const s_Overload& overload, s_Scope& _scope, s_Module& module, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if ((overload.status & (SS_DID_START | SS_LAZY)) != SS_LAZY)
         return false;
@@ -6620,7 +6835,7 @@ static int findRestStart(const s_Extended& ext)
     return ext.args.size();
 }
 
-static void foreach(const s_Target& t, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
+static void foreach(const s_Target& t, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
 {
     s_Type arg0type0 { SolvedNodeData(TODO_FIX_convert_args[0], module, _scope, ctx).type };
     if (!nullary)
@@ -6704,9 +6919,9 @@ static void foreach(const s_Target& t, fu_VEC<s_SolvedNode>& TODO_FIX_convert_ar
     };
 }
 
-                                #ifndef DEFt_each_BcGV
-                                #define DEFt_each_BcGV
-inline void each_BcGV(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
+                                #ifndef DEFt_each_Ywc0
+                                #define DEFt_each_Ywc0
+inline void each_Ywc0(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -6727,9 +6942,9 @@ inline void each_BcGV(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_sk
 }
                                 #endif
 
-                                #ifndef DEFt_each_CSeQ
-                                #define DEFt_each_CSeQ
-inline void each_CSeQ(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
+                                #ifndef DEFt_each_jzMT
+                                #define DEFt_each_jzMT
+inline void each_jzMT(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, s_Scope& _scope, const s_Context& ctx, const bool nullary, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const bool root_2, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_Type& from, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const bool local_scope, const s_Scope& misc_scope, const int has_converts)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -6748,10 +6963,10 @@ inline void each_CSeQ(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_sk
 }
                                 #endif
 
-static void descend(const s_Type& from, const bool nullary, const bool isStruct_1, const bool root_2, const bool local_scope, s_Scope& _scope, const s_Scope& misc_scope, s_ScopeSkipMemos& _ss, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, const s_Context& ctx, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const int has_converts)
+static void descend(const s_Type& from, const bool nullary, const bool isStruct_1, const bool root_2, const bool local_scope, s_Scope& _scope, const s_Scope& misc_scope, s_ScopeSkipMemos& _ss, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_Module& module, const s_Context& ctx, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, const s_SolvedNode& retype, s_Target& _current_fn_or_type, const s_SolvedNode& arg0, fu_VEC<int>& TODO_FIX_reorder, fu_VEC<fu_VEC<s_Target>>& TODO_FIX_conversions, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string, const s_Type& expect, fu_VEC<s_Target>& match, fu_VEC<s_Target>& path, const s_Type& actual, const int has_converts)
 {
     if (nullary)
-        each_BcGV(fu_VEC<s_Target>((local_scope ? _scope : misc_scope).usings), fu_VEC<s_ScopeSkip>((local_scope ? _ss.usings : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL))), 0, 0, TODO_FIX_convert_args, module, _scope, ctx, nullary, _current_fn, _here, _helpers, _helpers_data, root_2, retype, _current_fn_or_type, from, arg0, TODO_FIX_reorder, TODO_FIX_conversions, _ss, _field_items, _specs, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, expect, match, path, actual, local_scope, misc_scope, has_converts);
+        each_Ywc0(fu_VEC<s_Target>((local_scope ? _scope : misc_scope).usings), fu_VEC<s_ScopeSkip>((local_scope ? _ss.usings : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL))), 0, 0, TODO_FIX_convert_args, module, _scope, ctx, nullary, _current_fn, _here, _helpers, _helpers_data, root_2, retype, _current_fn_or_type, from, arg0, TODO_FIX_reorder, TODO_FIX_conversions, _ss, _field_items, _specs, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, expect, match, path, actual, local_scope, misc_scope, has_converts);
     else
     {
         if (isStruct_1)
@@ -6762,12 +6977,12 @@ static void descend(const s_Type& from, const bool nullary, const bool isStruct_
 
         };
         if (has_converts)
-            each_CSeQ(fu_VEC<s_Target>((local_scope ? _scope : misc_scope).converts), fu_VEC<s_ScopeSkip>((local_scope ? _ss.converts : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL))), 0, 0, TODO_FIX_convert_args, module, _scope, ctx, nullary, _current_fn, _here, _helpers, _helpers_data, root_2, retype, _current_fn_or_type, from, arg0, TODO_FIX_reorder, TODO_FIX_conversions, _ss, _field_items, _specs, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, expect, match, path, actual, local_scope, misc_scope, has_converts);
+            each_jzMT(fu_VEC<s_Target>((local_scope ? _scope : misc_scope).converts), fu_VEC<s_ScopeSkip>((local_scope ? _ss.converts : (*(const fu_VEC<s_ScopeSkip>*)fu::NIL))), 0, 0, TODO_FIX_convert_args, module, _scope, ctx, nullary, _current_fn, _here, _helpers, _helpers_data, root_2, retype, _current_fn_or_type, from, arg0, TODO_FIX_reorder, TODO_FIX_conversions, _ss, _field_items, _specs, _root_scope, _anons, TODO_FIX_template_defarg, options, _notes, t_string, expect, match, path, actual, local_scope, misc_scope, has_converts);
 
     };
 }
 
-static fu_VEC<s_Target> tryConvert(const s_Scope& misc_scope, const bool local_scope, const s_Type& expect, const s_Type& actual, const s_SolvedNode& retype, s_Scope& _scope, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_ScopeSkipMemos& _ss, s_Module& module, const s_Context& ctx, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Target& _current_fn_or_type, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
+static fu_VEC<s_Target> tryConvert(const s_Scope& misc_scope, const bool local_scope, const s_Type& expect, const s_Type& actual, const s_SolvedNode& retype, s_Scope& _scope, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, s_ScopeSkipMemos& _ss, s_Module& module, const s_Context& ctx, s_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Target& _current_fn_or_type, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
 {
     fu_VEC<s_Target> match {};
     fu_VEC<s_Target> path {};
@@ -6865,7 +7080,7 @@ inline const fu_STR& last_b8iG(fu::view<fu_STR> s)
 }
                                 #endif
 
-static s_Target tryMatch__mutargs(fu_STR&& id_2, fu_VEC<int>& reorder, fu_VEC<fu_VEC<s_Target>>& conversions, const bool local_scope, const s_Scope& misc_scope, fu::view<s_SolvedNode> args_1, const int flags_4, const s_Target& target_6, s_Scope& _scope, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
+static s_Target tryMatch__mutargs(fu_STR&& id_2, fu_VEC<int>& reorder, fu_VEC<fu_VEC<s_Target>>& conversions, const bool local_scope, const s_Scope& misc_scope, fu::view<s_SolvedNode> args_1, const int flags_4, const s_Target& target_6, s_Scope& _scope, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
 {
     s_Target matchIdx {};
     s_Target DEBUG_assertMatch {};
@@ -6899,7 +7114,7 @@ static s_Target tryMatch__mutargs(fu_STR&& id_2, fu_VEC<int>& reorder, fu_VEC<fu
     {
         s_BitSet seen {};
         if (numUsings)
-            each_0eZx((local_scope ? _scope : misc_scope).usings, (local_scope ? _ss.usings : fu::view<s_ScopeSkip>{}), 0, 0, _scope, module, ctx, _here, _helpers, _helpers_data, seen, local_scope, _ss, id_2, extra_items_1);
+            each_gAkb((local_scope ? _scope : misc_scope).usings, (local_scope ? _ss.usings : fu::view<s_ScopeSkip>{}), 0, 0, _scope, module, ctx, _here, _helpers, _helpers_data, seen, local_scope, _ss, id_2, extra_items_1);
 
         if (flags_4 & ((((F_ACCESS | F_METHOD) | F_INFIX) | F_PREFIX) | F_POSTFIX))
         {
@@ -7170,7 +7385,7 @@ static fu_STR actualArgs(fu::view<s_SolvedNode> args_2, const s_Module& module, 
     };
 }
 
-static s_Target match__mutargs(const s_Scope& misc_scope, const bool local_scope, const fu_STR& id_2, fu::view<s_SolvedNode> args_1, fu_VEC<int>& reorder, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags_4, const s_Target& target_6, s_Scope& _scope, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
+static s_Target match__mutargs(const s_Scope& misc_scope, const bool local_scope, const fu_STR& id_2, fu::view<s_SolvedNode> args_1, fu_VEC<int>& reorder, fu_VEC<fu_VEC<s_Target>>& conversions, const int flags_4, const s_Target& target_6, s_Scope& _scope, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
 {
     const s_Target ret = tryMatch__mutargs(fu_STR(id_2), reorder, conversions, local_scope, misc_scope, args_1, flags_4, target_6, _scope, _ss, _here, ctx, _helpers, _helpers_data, module, _field_items, _specs, _root_scope, _current_fn_or_type, _current_fn, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, t_string);
     if (ret)
@@ -7256,7 +7471,7 @@ static const s_Target& injectImplicitArg(const fu_STR& id_2, const s_Type& type_
     return SolvedNodeData(newArgNode, module, _scope, ctx).target;
 }
 
-static s_SolvedNode bindImplicitArg(const fu_STR& name_3, const s_Type& type_3, const s_Target& becauseOf, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
+static s_SolvedNode bindImplicitArg(const fu_STR& name_3, const s_Type& type_3, const s_Target& becauseOf, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Target& _current_fn_or_type, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
 {
 
     {
@@ -7389,7 +7604,7 @@ static void detectRecursion(const s_Target& target_6, s_Scope& _scope, const s_M
     fail((x7E_OZkl((("detectRecursion: no _helpers entry for `"_fu + overload.name) + " ("_fu), fu::u64dec(overload.status)) + ")`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<s_SolvedNode>&& args_1, const int kills_1, const fu_VEC<int>& reorder, fu::view<fu_VEC<s_Target>> conversions, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
+static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<s_SolvedNode>&& args_1, const int kills_1, const fu_VEC<int>& reorder, fu::view<fu_VEC<s_Target>> conversions, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_ScopeSkipMemos& _ss, fu_VEC<s_ScopeItem>& _field_items, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, const s_Type& t_string)
 {
     if (reorder)
     {
@@ -7517,7 +7732,7 @@ static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<
             const s_HelpersData* _4;
             const int helpers0vars = (__extension__ (
             {
-                const s_Helpers& h = last_IKya(_helpers);
+                const s_Helpers& h = last_CUmR(_helpers);
                 _4 = &(_helpers_data[h.index]);
             (void)0;}), *_4).vars.size();
             fu_DEFER(
@@ -7529,7 +7744,7 @@ static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<
                     s_HelpersData* _5;
                     (__extension__ (
                     {
-                        const s_Helpers& h = last_IKya(_helpers);
+                        const s_Helpers& h = last_CUmR(_helpers);
                         _5 = &(_helpers_data.mutref(h.index));
                     (void)0;}), *_5).vars.shrink(helpers0vars);
                 };
@@ -7554,7 +7769,7 @@ static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<
             const s_HelpersData* _6;
             const s_SolvedNode s_body = solveBlock(n_body, ret_expect_1, 0, short((HM_CanReturn | ((n_fn.flags & F_LAMBDA) ? HM_Lambda : (*(const short*)fu::NIL)))), kills_1, n_fn.value, ((__extension__ (
             {
-                const s_Helpers& h = last_IKya(_helpers);
+                const s_Helpers& h = last_CUmR(_helpers);
                 _6 = &(_helpers_data[h.index]);
             (void)0;}), *_6).vars.size() - helpers0vars), _scope, _helpers, module, _current_fn, ctx, _helpers_data, _here, _current_fn_or_type, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
             last_B9fx(result) = s_body;
@@ -7574,7 +7789,7 @@ static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<
     return callsite_2;
 }
 
-static s_SolvedNode solveCall(const s_Node& node_1, const s_Target& target_6, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveCall(const s_Node& node_1, const s_Target& target_6, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> args_1 = solveNodes(node_1.items, (*(const s_Type*)fu::NIL), (*(const s_Type*)fu::NIL), bool{}, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (is_never(SolvedNodeData(if_last_B9fx(args_1), module, _scope, ctx).type))
@@ -7597,7 +7812,7 @@ static s_SolvedNode solveCall(const s_Node& node_1, const s_Target& target_6, co
     return CallerNode(node_1.value, s_Target(callTargIdx), fu_VEC<s_SolvedNode>(args_1), kills_1, reorder, conversions, module, _scope, ctx, _here, _helpers, _helpers_data, _current_fn_or_type, _current_fn, _ss, _field_items, _specs, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, t_string);
 }
 
-static s_SolvedNode evalTypeAnnot(const s_Node& node_1, const fu_MAP<fu_STR, s_TypeParam>& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode evalTypeAnnot(const s_Node& node_1, const s_Map_Lvtq& typeParams, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (node_1.kind == "call"_fu)
     {
@@ -7630,10 +7845,10 @@ static s_SolvedNode evalTypeAnnot(const s_Node& node_1, const fu_MAP<fu_STR, s_T
     fail((x7E_OZkl((("TODO evalTypeAnnot: "_fu + node_1.kind) + "["_fu), fu::i64dec(node_1.items.size())) + "]"_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-static s_SolvedNode solveLetLike_dontTouchScope(const s_Node& node_1, const s_Type& specType, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveLetLike_dontTouchScope(const s_Node& node_1, const s_Type& specType, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_Node& n_annot = node_1.items[LET_TYPE];
-    s_Type annot { (specType ? specType : (n_annot ? SolvedNodeData(evalTypeAnnot(n_annot, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type : (*(const s_Type*)fu::NIL))) };
+    s_Type annot { (specType ? specType : (n_annot ? SolvedNodeData(evalTypeAnnot(n_annot, (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type : (*(const s_Type*)fu::NIL))) };
     if (annot && (node_1.flags & F_REF))
         annot = add_mutref(s_Type(annot), Lifetime_temporary(), _here, ctx);
 
@@ -7642,7 +7857,7 @@ static s_SolvedNode solveLetLike_dontTouchScope(const s_Node& node_1, const s_Ty
     return solveLetLike_dontTouchScope(node_1.value, int(node_1.flags), s_SolvedNode(init), s_Type(annot), specType, module, _scope, ctx, _here, _helpers, _helpers_data, options, _notes, _current_fn_or_type);
 }
 
-static s_SolvedNode solveMember(const s_Node& node_2, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveMember(const s_Node& node_2, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (!(node_2.kind == "let"_fu))
         fail(("solveStructMembers_1: "_fu + node_2.kind), _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -7653,9 +7868,9 @@ static s_SolvedNode solveMember(const s_Node& node_2, s_TokenIdx& _here, const s
     return solveLetLike_dontTouchScope(node_2, (*(const s_Type*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
 }
 
-                                #ifndef DEFt_map_eytZ
-                                #define DEFt_map_eytZ
-inline fu_VEC<s_SolvedNode> map_eytZ(fu::view<s_Node> a, int, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+                                #ifndef DEFt_map_jYO0
+                                #define DEFt_map_jYO0
+inline fu_VEC<s_SolvedNode> map_jYO0(fu::view<s_Node> a, int, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> res {};
     res.grow<false>(a.size());
@@ -7716,7 +7931,7 @@ inline void add_p8Tz(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-static s_SolvedNode __solveStruct(const bool solve_3, const s_Node& node_1, const s_Target& into, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode __solveStruct(const bool solve_3, const s_Node& node_1, const s_Target& into, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const fu_STR& origId = node_1.value;
     fu_STR _0 {};
@@ -7750,7 +7965,7 @@ static s_SolvedNode __solveStruct(const bool solve_3, const s_Node& node_1, cons
     fu_VEC<int> structImports {};
     int flat_cnt_1 {};
     bool all_triv_1 = true;
-    fu_VEC<s_SolvedNode> members = map_eytZ(node_1.items, 0, _here, ctx, _helpers, _helpers_data, _scope, module, _current_fn_or_type, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
+    fu_VEC<s_SolvedNode> members = map_jYO0(node_1.items, 0, _here, ctx, _helpers, _helpers_data, _scope, module, _current_fn_or_type, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
 
     {
         fu_VEC<s_ScopeItem>& innerScope = lookupStruct_mut(out_type.vtype.canon, module).items;
@@ -7855,12 +8070,12 @@ static s_SolvedNode __solveStruct(const bool solve_3, const s_Node& node_1, cons
     return s_SolvedNode{};
 }
 
-static s_SolvedNode uPrepStruct(const s_Node& node_1, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode uPrepStruct(const s_Node& node_1, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_ScopeSkipMemos& _ss, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     return __solveStruct(false, node_1, s_Target{}, _current_fn, module, _scope, ctx, _here, _helpers, _helpers_data, _ss, _current_fn_or_type, _specs, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
 }
 
-static s_SolvedNode unorderedPrep_A(const s_Node& node_1, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_HelpersData>& _helpers_data, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode unorderedPrep_A(const s_Node& node_1, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_HelpersData>& _helpers_data, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu::view<fu::byte> k = node_1.kind;
     if (k == "fn"_fu)
@@ -7888,7 +8103,7 @@ static void unorderedPrep_B(const s_Node& node_1, const s_Target& into, const s_
 
 }
 
-static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node> nodes_1, const s_Type& type_all, const s_Type& type_last, const bool use_type_last, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node> nodes_1, const s_Type& type_all, const s_Type& type_last, const bool use_type_last, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> result {};
     const s_TokenIdx here0 { _here };
@@ -7970,7 +8185,7 @@ inline const s_SolvedNode& last_0oqA(fu::view<s_SolvedNode> s)
 }
                                 #endif
 
-static s_SolvedNode solveRoot(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveRoot(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> items_5 = solveNodes(node_1.items, t_void, (*(const s_Type*)fu::NIL), bool{}, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (!is_never(SolvedNodeData(last_0oqA(items_5), module, _scope, ctx).type))
@@ -7996,13 +8211,13 @@ inline const s_Node& only_gZi1(fu::view<s_Node> s)
 }
                                 #endif
 
-static s_SolvedNode solveArgID(const s_Node& node_1, const s_Type& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveArgID(const s_Node& node_1, const s_Type& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_SolvedNode expr = solveNode(only_gZi1(node_1.items), type_3, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     return solved(node_1, SolvedNodeData(expr, module, _scope, ctx).type, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(expr) } }, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveArrlit(const s_Node& node_1, const s_Type& type_3, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Scope& _scope, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveArrlit(const s_Node& node_1, const s_Type& type_3, s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Scope& _scope, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     s_Type itemType = (type_3 ? tryClear_sliceable(type_3) : s_Type{});
     if (!itemType && isStruct(type_3))
@@ -8037,7 +8252,7 @@ static s_SolvedNode if_A_and_NEVER_then_B_else_C(const s_Options& options, const
     return popAndOr(cond, module, _scope, ctx, _current_fn_or_type, _here, _helpers, _helpers_data);
 }
 
-static s_SolvedNode solveIf(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveIf(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     s_SolvedNode cond = solveNode(node_1.items[0], t_bool, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (is_never(SolvedNodeData(cond, module, _scope, ctx).type))
@@ -8056,7 +8271,7 @@ static s_SolvedNode solveIf(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _
     return solved(node_1, (type_3 ? type_3 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module)), fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { s_SolvedNode(cond), s_SolvedNode(cons), s_SolvedNode(alt) } }, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveOr(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveOr(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> items_5 = solveNodes(node_1.items, (is_void(type_3) ? t_bool : type_3), type_3, true, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (items_5.size() < 2)
@@ -8099,7 +8314,7 @@ static s_SolvedNode solveOr(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _
     return solved(node_1, type_3, items_5, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveAnd(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveAnd(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     fu_VEC<s_SolvedNode> items_5 = solveNodes(node_1.items, (is_void(type_3) ? t_bool : type_3), type_3, true, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (items_5.size() < 2)
@@ -8152,7 +8367,7 @@ static s_SolvedNode solveAnd(const s_Node& node_1, s_Type&& type_3, s_TokenIdx& 
 inline constexpr short HM_Anon = (short(1) << short(2));
                                 #endif
 
-static s_SolvedNode solveLetStatement(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveLetStatement(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (!(node_1.kind == "let"_fu))
         fail((("Expected a `let` statement, got: `"_fu + node_1.kind) + "`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -8160,7 +8375,7 @@ static s_SolvedNode solveLetStatement(const s_Node& node_1, s_TokenIdx& _here, c
     return solveNode(node_1, t_void, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
 }
 
-static s_SolvedNode solveLoop(const s_Node& node_1, s_Scope& _scope, fu_VEC<s_Helpers>& _helpers, s_CurrentFn& _current_fn, s_Module& module, const s_Context& ctx, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveLoop(const s_Node& node_1, s_Scope& _scope, fu_VEC<s_Helpers>& _helpers, s_CurrentFn& _current_fn, s_Module& module, const s_Context& ctx, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Target& _current_fn_or_type, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_ScopeMemo scope0 = Scope_snap(_scope, _helpers);
     fu_DEFER(Scope_pop(_scope, scope0, _helpers));
@@ -8336,7 +8551,7 @@ static s_Target Scope_addLabel(const fu_STR& id_2, const int local_of_2, s_Scope
     return Scope_create(_scope, "label"_fu, (id_2 ? fu_STR(id_2) : ANON(_anons)), s_Type{}, F_SHADOW, s_SolvedNode{}, local_of_2, 0u, true, module);
 }
 
-static s_SolvedNode solveJump(int helpers_idx, fu::view<s_Node> items_5, const int kills_1, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveJump(int helpers_idx, fu::view<s_Node> items_5, const int kills_1, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_HelpersData* _0;
     const s_Type* _1;
@@ -8418,7 +8633,7 @@ static s_SolvedNode solveJump(int helpers_idx, fu::view<s_Node> items_5, const i
     return jump;
 }
 
-static s_SolvedNode solveJump(const s_Node& node_1, const int kills_1, fu_VEC<s_Helpers>& _helpers, s_ScopeSkipMemos& _ss, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, const s_Context& ctx, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveJump(const s_Node& node_1, const int kills_1, fu_VEC<s_Helpers>& _helpers, s_ScopeSkipMemos& _ss, fu_VEC<s_HelpersData>& _helpers_data, s_TokenIdx& _here, const s_Context& ctx, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const int helpers_idx = ((node_1.kind == "return"_fu) ? Scope_lookupReturn(node_1.value, !!(node_1.flags & F_SINGLE_STMT), _helpers, _ss, _helpers_data, _here, ctx, _scope, module) : Scope_lookupLabel(node_1.value, (node_1.kind == "continue"_fu), _helpers, _ss, _helpers_data, _here, ctx, _scope, module));
     return solveJump(int(helpers_idx), node_1.items, kills_1, _helpers, _helpers_data, _here, module, _scope, ctx, _current_fn_or_type, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
@@ -8467,7 +8682,7 @@ static s_SolvedNode solveDefinit(const s_Type& type_3, const s_Module& module, c
     return createDefinit(((_0 = trySolveDefinit(type_3)) ? static_cast<s_Type&&>(_0) : fail(("Cannot definit type: "_fu + humanizeType(type_3, module, ctx)), _here, ctx, _helpers, _helpers_data, _scope, module)), _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveCatch(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveCatch(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (!(node_1.items.size() == 3))
         fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -8494,13 +8709,13 @@ static s_SolvedNode solveImport(const s_Node& node_1, const s_Context& ctx, cons
     return createEmpty("empty"_fu, t_void, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveDefer(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveDefer(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_SolvedNode item = solveNode(only_gZi1(node_1.items), t_void, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     return solved(node_1, t_void, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(item) } }, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveTryCatch(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveTryCatch(const s_Node& node_1, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, s_Module& module, s_Target& _current_fn_or_type, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     if (!(node_1.items.size() == 3))
         fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -8519,9 +8734,9 @@ static s_SolvedNode solveTryCatch(const s_Node& node_1, s_TokenIdx& _here, const
     return solved(node_1, type_3, fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<3> { s_SolvedNode(tRy), s_SolvedNode(err), s_SolvedNode(cAtch) } }, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveTypedef(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveTypedef(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
-    const s_SolvedNode annot = evalTypeAnnot(only_gZi1(node_1.items), (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
+    const s_SolvedNode annot = evalTypeAnnot(only_gZi1(node_1.items), (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     if (isStruct(SolvedNodeData(annot, module, _scope, ctx).type))
         Scope_set(_scope, node_1.value, lookupStruct(SolvedNodeData(annot, module, _scope, ctx).type, module, ctx).target, false);
     else
@@ -8530,11 +8745,11 @@ static s_SolvedNode solveTypedef(const s_Node& node_1, s_Module& module, s_Scope
     return createEmpty("empty"_fu, t_void, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveTypeAssert(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveTypeAssert(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const s_Node& left = node_1.items[0];
     const s_Node& right = node_1.items[1];
-    s_Type expect { SolvedNodeData(evalTypeAnnot(right, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type };
+    s_Type expect { SolvedNodeData(evalTypeAnnot(right, (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type };
     const s_SolvedNode actual = solveNode(left, s_Type(expect), 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
     checkAssignable(expect, SolvedNodeData(actual, module, _scope, ctx).type, "Type assertion failed"_fu, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _here, ctx, _helpers, _helpers_data, _scope, module);
     return actual;
@@ -8542,7 +8757,7 @@ static s_SolvedNode solveTypeAssert(const s_Node& node_1, s_Module& module, s_Sc
 
 static s_SolvedNode solveTypeParam(const s_Node& node_1, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Scope& _scope, const s_Module& module, const s_ScopeSkipMemos& _ss, const s_Target& _current_fn_or_type)
 {
-    return solved(node_1, evalTypeParam(node_1.value, (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), _here, ctx, _helpers, _helpers_data, _scope, module, _ss), (*(const fu_VEC<s_SolvedNode>*)fu::NIL), s_Target{}, _here, _current_fn_or_type, module, _scope);
+    return solved(node_1, evalTypeParam(node_1.value, (*(const s_Map_Lvtq*)fu::NIL), _here, ctx, _helpers, _helpers_data, _scope, module, _ss), (*(const fu_VEC<s_SolvedNode>*)fu::NIL), s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
 static void visitScope(fu::view<s_ScopeItem> items_5, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
@@ -8555,9 +8770,9 @@ static void visitScope(fu::view<s_ScopeItem> items_5, const bool shadow, const f
 
 }
 
-                                #ifndef DEFt_each_Wq1h
-                                #define DEFt_each_Wq1h
-inline void each_Wq1h(fu::view<s_Struct> a, int, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
+                                #ifndef DEFt_each_45Xb
+                                #define DEFt_each_45Xb
+inline void each_45Xb(fu::view<s_Struct> a, int, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -8569,12 +8784,12 @@ inline void each_Wq1h(fu::view<s_Struct> a, int, const bool shadow, const fu_STR
 
 static void visitTypes(const s_Module& module_1, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
 {
-    each_Wq1h(module_1.out.types, 0, shadow, id_2, _ss, result);
+    each_45Xb(module_1.out.types, 0, shadow, id_2, _ss, result);
 }
 
-                                #ifndef DEFt_each_TBVS
-                                #define DEFt_each_TBVS
-inline void each_TBVS(fu::view<int> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Context& ctx, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
+                                #ifndef DEFt_each_43Rr
+                                #define DEFt_each_43Rr
+inline void each_43Rr(fu::view<int> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Context& ctx, const bool shadow, const fu_STR& id_2, const s_ScopeSkipMemos& _ss, fu_VEC<s_Target>& result)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -8604,7 +8819,7 @@ static s_SolvedNode solveAddrOfFn(const s_Node& node_1, s_Scope& _scope, const s
     if (node_1.flags & F_ACCESS)
     {
         visitTypes(module, shadow, id_2, _ss, result);
-        each_TBVS(_scope.imports, _ss.imports, 0, 0, ctx, shadow, id_2, _ss, result);
+        each_43Rr(_scope.imports, _ss.imports, 0, 0, ctx, shadow, id_2, _ss, result);
     };
     if (!(result))
         fail((("No `fn "_fu + id_2) + "` in scope."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -8613,7 +8828,7 @@ static s_SolvedNode solveAddrOfFn(const s_Node& node_1, s_Scope& _scope, const s
     return createEmpty("empty"_fu, type_3, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveDeclExpr(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveDeclExpr(const s_Node& node_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     return s_SolvedNode(only_Mzjf(solveNodes((fu::slate<1, s_Node> { s_Node(node_1) }), (*(const s_Type*)fu::NIL), (*(const s_Type*)fu::NIL), bool{}, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string)));
 }
@@ -8633,18 +8848,18 @@ static void walk(s_Node& node_3, const fu_STR& placeholder, const s_ScopeItem& f
     };
 }
 
-inline static s_Node astReplace_KosV(const s_Node& node_2, int, const fu_STR& placeholder, const s_ScopeItem& field)
+inline static s_Node astReplace_Gnhc(const s_Node& node_2, int, const fu_STR& placeholder, const s_ScopeItem& field)
 {
     s_Node node_3 { node_2 };
     walk(node_3, placeholder, field);
     return node_3;
 }
 
-static s_SolvedNode solveForFieldsOf(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveForFieldsOf(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     const fu_STR& placeholder = node_1.value;
     const s_Node& body_template = node_1.items[1];
-    const s_Type& fields_of = SolvedNodeData(evalTypeAnnot(node_1.items[0], (*(const fu_MAP<fu_STR, s_TypeParam>*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type;
+    const s_Type& fields_of = SolvedNodeData(evalTypeAnnot(node_1.items[0], (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), module, _scope, ctx).type;
     if (!(isStruct(fields_of)))
         fail((("[for fieldname]: This is not a struct: `"_fu + humanizeType(fields_of, module, ctx)) + "`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 
@@ -8654,7 +8869,7 @@ static s_SolvedNode solveForFieldsOf(const s_Node& node_1, s_Module& module, s_S
     {
         const s_ScopeItem& field = fields[i];
         if (GET(target(field), _scope, module, ctx, _here, _helpers, _helpers_data).kind == "field"_fu)
-            items_ast += astReplace_KosV(body_template, 0, placeholder, field);
+            items_ast += astReplace_Gnhc(body_template, 0, placeholder, field);
 
     };
     fu_VEC<s_SolvedNode> items_5 = solveNodes(items_ast, (*(const s_Type*)fu::NIL), (*(const s_Type*)fu::NIL), bool{}, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
@@ -8692,7 +8907,7 @@ static s_SolvedNode executeCompilerPragma(const s_Node& node_1, const s_CurrentF
     return createEmpty("empty"_fu, t_void, s_Target{}, _here, _current_fn_or_type, module, _scope);
 }
 
-static s_SolvedNode solveNode(const s_Node& node_1, const s_Type& type_3, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, fu_MAP<fu_STR, s_Target>& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
+static s_SolvedNode solveNode(const s_Node& node_1, const s_Type& type_3, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     HERE(node_1.token, _here);
     fu::view<fu::byte> k = node_1.kind;
@@ -8805,7 +9020,7 @@ s_SolverOutput solve(const s_Options& options, const s_Context& ctx, s_Module& m
     const s_Target MODULE_TOP = Scope_create(_scope, "_module_top_"_fu, (*(const fu_STR*)fu::NIL), (*(const s_Type*)fu::NIL), 0, s_SolvedNode{}, 0, 0u, bool{}, module);
     push(s_HelpersData { s_Target(MODULE_TOP), "_module_top_"_fu, short(0), 0, 0, 0, s_Type{}, s_Type{}, fu_VEC<s_SolvedNode>{}, fu_VEC<int>{} }, _helpers, _helpers_data);
     s_Target _current_fn_or_type { MODULE_TOP };
-    fu_MAP<fu_STR, s_Target> _specs {};
+    s_Map_n2DH _specs {};
     s_Type t_string = createArray(t_byte, _here, ctx);
     fu_VEC<s_SolvedNode> TODO_FIX_convert_args = fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { SolvedNode((*(const fu_STR*)fu::NIL), s_Type{}, 0, (*(const fu_STR*)fu::NIL), (*(const fu_VEC<s_SolvedNode>*)fu::NIL), s_Target{}, 0, _here, _current_fn_or_type, module, _scope) } };
     const s_SolvedNode TODO_FIX_template_defarg = SolvedNode("__defarg"_fu, s_Type{}, 0, (*(const fu_STR*)fu::NIL), (*(const fu_VEC<s_SolvedNode>*)fu::NIL), s_Target{}, 0, _here, _current_fn_or_type, module, _scope);

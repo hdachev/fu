@@ -11,6 +11,8 @@ set(FU_INPUTS
     module.fu
     parser.fu
     lexer.fu
+    map.fu
+    set.fu
     options.fu
     stat.fu
     ../lib/now.fu
@@ -23,7 +25,6 @@ set(FU_INPUTS
     quals.fu
     ../lib/file.fu
     ../lib/ansi.fu
-    set.fu
     compiler.fu
     solver.fu
     scope.fu
