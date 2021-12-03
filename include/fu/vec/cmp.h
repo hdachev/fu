@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring> // memcmp
+
 #include "../int.h"
 #include "../util.h"
 
