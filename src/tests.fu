@@ -5510,6 +5510,25 @@ pub fn runTests()
         }
     `]);
 
+    TODO([`
+        fn each(y<alt>: i32</alt>)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+    `,
+    `
+        fn each(y<alt>: i32</alt>)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+    `,
+    `
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+    `]);
+
 
     // Explicit shadowing.
 
@@ -6271,6 +6290,32 @@ pub fn runTests()
             return fn_v(.x, v) + fn_v(.y, v) - 24;
         }
     `);
+
+    TODO([`
+        fn sum_each(a, b, each)     a.each + b.each;
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(y) y    ? y * each(y - 1)
+                                : 100;
+
+                return sum_each(x, x, fn each);
+            }
+            else {
+                fn each(y) y    ? y * each(y - 1)
+                                : 10000;
+
+                return sum_each(x, x, fn each);
+            }
+        }
+    `,
+    `
+        fn each(y) y & 1    ? y
+                            : y / 2 + each(y / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+    `]);
 
 
     // Let's try to break scope-skips.
