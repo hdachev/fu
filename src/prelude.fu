@@ -264,7 +264,7 @@ fn view(a: [$T], t: $U)
     case ($a -> &mut [$T] && $T -> @trivial && $U -> @trivial): &mut [$U] __native("<fu/view.h>", "fu::view_of_mut");
     case (                   $T -> @trivial && $U -> @trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
 
-fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/view.h>", "fu::view_assign");
+fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
 
 // Assertions, bugs & fails.
