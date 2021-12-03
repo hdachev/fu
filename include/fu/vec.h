@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+#include "./view.h"
 #include "./util.h"
 #include "./mem/arc.h"
 #include "./mem/endian.h"
@@ -1136,6 +1137,14 @@ struct fu_VEC
         static_assert(new_size > 0);
 
         UNSAFE__init_move(init.data, new_size);
+    }
+
+    template <i32 new_size>
+    inline fu_VEC(fu::slate<new_size, T>&& init) noexcept
+    {
+        static_assert(new_size > 0);
+
+        UNSAFE__init_move(init.m_data, new_size);
     }
 
 

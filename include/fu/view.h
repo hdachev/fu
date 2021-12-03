@@ -150,6 +150,11 @@ struct slate
 
     T m_data[m_size];
 
+    slate(const slate&)             = delete;
+    slate(slate&&)                  = delete;
+    slate& operator=(const slate&)  = delete;
+    slate& operator=(slate&&)       = delete;
+
     fu_INL const T* data() const noexcept {
         return m_data;
     }

@@ -1231,10 +1231,9 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        let list = "{ " ~ items.join(", ") ~ " }";
-
-        // TODO FIX this also includes vec.h for fu::slate literals.
-        let annot = typeAnnotBase(node.type);
+        let curly = "{ " ~ items.join(", ") ~ " }";
+        let itemT = typeAnnotBase(clear_sliceable(node.type));
+        let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
 
         // fu::slate literals
         if (callarg.is_ref && !callarg.type_isArray)
@@ -1243,10 +1242,10 @@ pub fn cpp_codegen(
 
             // Putting a comma around,
             //  because the `,` misparses in places like argument lists.
-            return "(fu::slate<" ~ items.len ~ ", " ~ annot.slice(7) ~ " " ~ list ~ ")";
+            return "(" ~ slate ~ ")";
         }
 
-        return annot ~ " { " ~ annot ~ "::INIT<" ~ items.len ~ "> " ~ list ~ " }";
+        return typeAnnotBase(node.type) ~ " { " ~ slate ~ " }";
     }
 
     fn cgDefinit(node: SolvedNode, mode: i32, callarg: Type): string
