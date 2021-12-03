@@ -1113,31 +1113,7 @@ struct fu_VEC
     }
 
 
-    // Literal expressions:
-    //  TODO use fu_ARR instead.
-    //   TODO allow the compiler to optimize case TRIVIAL.
-
-    template <i32 new_size>
-    struct INIT
-    {
-        static_assert(new_size > 0);
-
-        T data[new_size];
-
-        INIT(const INIT&) = delete;
-        INIT(INIT&&) /* -MOV-CTOR- */ = default;
-
-        INIT& operator=(const INIT&) = delete;
-        INIT& operator=(INIT&&) = delete;
-    };
-
-    template <i32 new_size>
-    inline fu_VEC(INIT<new_size>&& init) noexcept
-    {
-        static_assert(new_size > 0);
-
-        UNSAFE__init_move(init.data, new_size);
-    }
+    // Literal expressions.
 
     template <i32 new_size>
     inline fu_VEC(fu::slate<new_size, T>&& init) noexcept
