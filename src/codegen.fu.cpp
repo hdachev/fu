@@ -88,6 +88,7 @@ s_Region Region_fromArgIndex(int);
 s_Target target(const s_ScopeItem&);
 s_Target tryParseClosureID(fu::view<fu::byte>, int);
 s_Type clear_refs(s_Type&&);
+s_Type clear_sliceable(const s_Type&, const s_TokenIdx&, const s_Context&);
 s_Type tryClear_sliceable(const s_Type&);
 static bool add_once(fu_VEC<s_BitSet>&, const s_Target&);
 static fu_STR ARG(int, fu::view<s_SolvedNode>, const s_SolvedNode&, const s_Module&, const s_Context&, s_TokenIdx&, fu_VEC<fu_STR>&, fu_VEC<s_BitSet>&, fu_VEC<fu_STR>&, fu_STR&, s_cg_CurrentFn&, fu_VEC<s_BitSet>&, fu_STR&, fu_VEC<int>&, fu_VEC<int>&, s_BitSet&, fu_STR&, int&, fu_VEC<fu_STR>&, fu_VEC<s_BitSet>&);
@@ -1816,7 +1817,7 @@ static fu_STR cgBlock(fu::view<s_SolvedNode> nodes_1, const bool skipCurlies, co
 
 static fu_STR cgBlock(const s_SolvedNode& node_1, const int mode, fu::view<fu::byte> debug, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, fu_VEC<s_BitSet>& _ffwd, fu_STR& _fdef, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
 {
-    fu_VEC<s_SolvedNode> items_5 = ((SolvedNodeData(node_1, module, ctx).kind == "block"_fu) ? fu_VEC<s_SolvedNode>(SolvedNodeData(node_1, module, ctx).items) : fu_VEC<s_SolvedNode> { fu_VEC<s_SolvedNode>::INIT<1> { s_SolvedNode(node_1) } });
+    fu_VEC<s_SolvedNode> items_5 = ((SolvedNodeData(node_1, module, ctx).kind == "block"_fu) ? fu_VEC<s_SolvedNode>(SolvedNodeData(node_1, module, ctx).items) : fu_VEC<s_SolvedNode> { fu::slate<1, s_SolvedNode> { s_SolvedNode(node_1) } });
     const s_Target& label = ((SolvedNodeData(node_1, module, ctx).kind == "block"_fu) ? SolvedNodeData(node_1, module, ctx).target : (*(const s_Target*)fu::NIL));
     if (mode & M_LOOP_BODY)
         _current_fn.can_cont = label;
@@ -2251,14 +2252,15 @@ static fu_STR cgArrayLiteral(const s_SolvedNode& node_1, const int mode, const s
     if (!items_5.size())
         return cgDefault(SolvedNodeData(node_1, module, ctx).type, _here, ctx, _libs, module, _tfwd, _tfwd_src, _tdef, _current_fn);
 
-    fu_STR list = (("{ "_fu + join_VtCz(items_5, ", "_fu)) + " }"_fu);
-    fu_STR annot = typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+    fu_STR curly = (("{ "_fu + join_VtCz(items_5, ", "_fu)) + " }"_fu);
+    fu_STR itemT = typeAnnotBase(clear_sliceable(SolvedNodeData(node_1, module, ctx).type, _here, ctx), 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+    fu_STR slate = ((((x7E_OZkl("fu::slate<"_fu, fu::i64dec(items_5.size())) + ", "_fu) + itemT) + "> "_fu) + curly);
     if (is_ref(callarg) && !type_isArray(callarg))
     {
         include("<fu/view.h>"_fu, _libs);
-        return ((((x7E_OZkl("(fu::slate<"_fu, fu::i64dec(items_5.size())) + ", "_fu) + fu::slice(annot, 7)) + " "_fu) + list) + ")"_fu;
+        return ("("_fu + slate) + ")"_fu;
     };
-    return ((x7E_OZkl((((annot + " { "_fu) + annot) + "::INIT<"_fu), fu::i64dec(items_5.size())) + "> "_fu) + list) + " }"_fu;
+    return ((typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn) + " { "_fu) + slate) + " }"_fu;
 }
 
 static fu_STR cgDefinit(const s_SolvedNode& node_1, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, fu_VEC<s_BitSet>& _ffwd, fu_STR& _fdef, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)

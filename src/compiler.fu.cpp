@@ -1194,7 +1194,7 @@ void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const f
     build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname_1, scheme, (*(const fu_STR*)fu::NIL), ctx);
 }
 
-static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<15> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if_cond"_fu, "DEAD_if_cons"_fu, "DEAD_arrlit"_fu, "DEAD_loop_init"_fu, "NONTRIV_autocopy"_fu, "RELAX_respec"_fu } };
+static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu::slate<15, fu_STR> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if_cond"_fu, "DEAD_if_cons"_fu, "DEAD_arrlit"_fu, "DEAD_loop_init"_fu, "NONTRIV_autocopy"_fu, "RELAX_respec"_fu } };
 
 static fu_STR ensure_main(const fu_STR& src_2)
 {
@@ -1800,24 +1800,24 @@ void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 
 s_Context ZERO(const fu_STR& src_2, s_TestDiffs& testdiffs)
 {
-    return ZERO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src_2) } }, testdiffs);
+    return ZERO(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src_2) } }, testdiffs);
 }
 
 s_Context FAIL(const fu_STR& src_2, s_TestDiffs& testdiffs)
 {
-    return FAIL(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src_2) } }, testdiffs);
+    return FAIL(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src_2) } }, testdiffs);
 }
 
 void TODO(const fu_STR& src_2, s_TestDiffs& testdiffs)
 {
-    TODO(fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(src_2) } }, testdiffs);
+    TODO(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src_2) } }, testdiffs);
 }
 
 void ZERO_SAME(fu::view<fu_STR> alts, s_TestDiffs& testdiffs)
 {
     fu_VEC<fu_VEC<fu_STR>> wrap {};
     for (int i = 0; i < alts.size(); i++)
-        wrap += fu_VEC<fu_STR> { fu_VEC<fu_STR>::INIT<1> { fu_STR(alts[i]) } };
+        wrap += fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(alts[i]) } };
 
     ZERO_SAME(wrap, testdiffs);
 }

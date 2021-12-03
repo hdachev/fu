@@ -4,7 +4,6 @@
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/str.h>
-#include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
@@ -99,7 +98,7 @@ static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
         fu_STR opt { val };
         if (opt[1] != fu::byte('-'))
         {
-            opt = fu_STR { fu_STR::INIT<1> { fu::byte(opt[1]) } };
+            opt = fu_STR { fu::slate<1, fu::byte> { fu::byte(opt[1]) } };
             val = (fu::byte('-') + fu::slice(val, 2));
             if (val == "-"_fu)
                 val = next(idx, argv);
