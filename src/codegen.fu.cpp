@@ -13,6 +13,7 @@
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/sort.h>
+#include <fu/vec/view_assign.h>
 #include <fu/view.h>
 #include <utility>
 
