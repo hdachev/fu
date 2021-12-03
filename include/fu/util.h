@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include "./inl.h"
 
 namespace fu {

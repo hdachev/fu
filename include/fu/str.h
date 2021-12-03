@@ -11,7 +11,7 @@ typedef fu_VEC<fu::byte> fu_STR;
 inline fu_STR fu_TO_STR(const char* cstr) noexcept
 {
     fu_STR vec;
-    vec.UNSAFE__init_copy((const fu::byte*)cstr, i32(strlen(cstr)));
+    vec.UNSAFE__init_copy((const fu::byte*)cstr, fu::i(strlen(cstr)));
     return vec;
 }
 
@@ -45,10 +45,10 @@ struct fu_STRLIT
         return m_size;
     }
 
-    fu_INL const fu::byte& operator[](i32 idx) const noexcept
+    fu_INL const fu::byte& operator[](fu::i idx) const noexcept
     {
         auto* ok = (fu::byte*)m_data + idx;
-        return (u32) idx < (u32) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((fu::byte*)1);
     }

@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "./inl.h"
+#include "./int.h"
 
 namespace fu {
 
@@ -15,14 +16,14 @@ struct view
     typedef T fu_ANY_value_type;
 
     const T*    m_data;
-    int32_t     m_size;
+    fu::i       m_size;
 
     fu_INL view() noexcept
         : m_data { nullptr }
         , m_size { 0 }
     {}
 
-    fu_INL view(const T* data, int32_t size) noexcept
+    fu_INL view(const T* data, fu::i size) noexcept
         : m_data { data }
         , m_size { size }
     {}
@@ -37,11 +38,11 @@ struct view
         return m_data;
     }
 
-    fu_INL int32_t size() const noexcept {
+    fu_INL fu::i size() const noexcept {
         return m_size;
     }
 
-    fu_INL const T& operator[](int32_t idx) const noexcept
+    fu_INL const T& operator[](fu::i idx) const noexcept
     {
         const T* ok = m_data + idx;
 
@@ -49,7 +50,7 @@ struct view
         return *ok;
 
         #else
-        return (uint32_t) idx < (uint32_t) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((T*)1);
 
@@ -70,14 +71,14 @@ struct view_mut
     typedef T fu_ANY_value_type;
 
     T*          m_data;
-    int32_t     m_size;
+    fu::i       m_size;
 
     fu_INL view_mut() noexcept
         : m_data { nullptr }
         , m_size { 0 }
     {}
 
-    fu_INL view_mut(T* data, int32_t size) noexcept
+    fu_INL view_mut(T* data, fu::i size) noexcept
         : m_data { data }
         , m_size { size }
     {}
@@ -96,11 +97,11 @@ struct view_mut
         return m_data;
     }
 
-    fu_INL int32_t size() const noexcept {
+    fu_INL fu::i size() const noexcept {
         return m_size;
     }
 
-    fu_INL const T& operator[](int32_t idx) const noexcept
+    fu_INL const T& operator[](fu::i idx) const noexcept
     {
         const T* ok = m_data + idx;
 
@@ -108,14 +109,14 @@ struct view_mut
         return *ok;
 
         #else
-        return (uint32_t) idx < (uint32_t) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((T*)1);
 
         #endif
     }
 
-    fu_INL T& mutref(int32_t idx) noexcept
+    fu_INL T& mutref(fu::i idx) noexcept
     {
         T* ok = m_data + idx;
 
@@ -123,7 +124,7 @@ struct view_mut
         return *ok;
 
         #else
-        return (uint32_t) idx < (uint32_t) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((T*)1);
 
@@ -139,7 +140,7 @@ struct view_mut
 
 // Slice literals -
 
-template <int32_t m_size, typename T>
+template <fu::i m_size, typename T>
 struct slate
 {
     typedef T value_type;
@@ -163,11 +164,11 @@ struct slate
         return m_data;
     }
 
-    fu_INL int32_t size() const noexcept {
+    fu_INL fu::i size() const noexcept {
         return m_size;
     }
 
-    fu_INL const T& operator[](int32_t idx) const noexcept
+    fu_INL const T& operator[](fu::i idx) const noexcept
     {
         const T* ok = m_data + idx;
 
@@ -175,14 +176,14 @@ struct slate
         return *ok;
 
         #else
-        return (uint32_t) idx < (uint32_t) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((T*)1);
 
         #endif
     }
 
-    fu_INL T& mutref(int32_t idx) noexcept
+    fu_INL T& mutref(fu::i idx) noexcept
     {
         T* ok = m_data + idx;
 
@@ -190,7 +191,7 @@ struct slate
         return *ok;
 
         #else
-        return (uint32_t) idx < (uint32_t) m_size
+        return (fu::u) idx < (fu::u) m_size
              ? *ok
              : *((T*)1);
 
@@ -206,7 +207,7 @@ struct slate
 // Slice api -
 
 template <typename V, typename T = typename V::value_type>
-view<T> get_view(const V& v, int32_t start, int32_t end) noexcept
+view<T> get_view(const V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
     assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
@@ -214,7 +215,7 @@ view<T> get_view(const V& v, int32_t start, int32_t end) noexcept
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;
 
-    end     = (uint32_t)end <= (uint32_t)size ? end : size;
+    end     = (fu::u)end <= (fu::u)size ? end : size;
     start   = start < end ? start : end;
 
     return view<T>(
@@ -223,7 +224,7 @@ view<T> get_view(const V& v, int32_t start, int32_t end) noexcept
 }
 
 template <typename V, typename T = typename V::value_type>
-view_mut<T> get_view_mut(V& v, int32_t start, int32_t end) noexcept
+view_mut<T> get_view_mut(V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
     assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
@@ -231,7 +232,7 @@ view_mut<T> get_view_mut(V& v, int32_t start, int32_t end) noexcept
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;
 
-    end     = (uint32_t)end <= (uint32_t)size ? end : size;
+    end     = (fu::u)end <= (fu::u)size ? end : size;
     start   = start < end ? start : end;
 
     return view_mut<T>(
@@ -240,7 +241,7 @@ view_mut<T> get_view_mut(V& v, int32_t start, int32_t end) noexcept
 }
 
 template <typename T>
-fu_INL view_mut<T> get_view_mut(view_mut<T>&& v, int32_t start, int32_t end) noexcept
+fu_INL view_mut<T> get_view_mut(view_mut<T>&& v, fu::i start, fu::i end) noexcept
 {
     return get_view_mut(v, start, end);
 }

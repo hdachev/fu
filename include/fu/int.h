@@ -10,4 +10,7 @@ typedef          char byte;
 typedef   signed char i8;
 typedef unsigned char u8;
 
+typedef           int i;
+typedef  unsigned int u;
+
 }
