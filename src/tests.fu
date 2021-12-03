@@ -2457,7 +2457,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_borrowck(`
         //*F
         nocopy
         /*/
@@ -2494,6 +2494,25 @@ pub fn runTests()
             let implicit mut out: SolvedNode[];
             let annot = evalTypeAnnot([ "a", "b" ]);
             return annot.type.canon.len * 1000 + out.len - 2101;
+        }
+    `);
+
+    TODO_borrowck(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct X { x: i32; }
+        fn sum(a: X, b: X) a.x + b.x;
+
+        fn incr(ref x: X) {
+            x.x++;
+            return x;
+        }
+
+        fn main() {
+            mut x: X;
+            return sum(x.incr, x.incr) - 3; // Not 4! one arg must invalidate
         }
     `);
 
