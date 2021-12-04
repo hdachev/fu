@@ -1839,6 +1839,33 @@ pub fn runTests()
     `);
 
     FAIL(`
+        struct X { i: i32; j: i32; };
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd_defer(ref a: X, ref b: X, ref c: X, ref d: X, j?: bool) {
+            defer {
+                ref ab = a || b;
+                ref abi = j ? ab.j : ab.i;
+                ++++abi;
+            }
+            ref cd = c || d;
+            ref cdi = j ? cd.j : cd.i;
+            ++++cdi;
+        }
+
+        fn main() {
+            mut ab = X(0, 0);
+            mut cd = X(0, 0);
+            //*F
+            ab_cd_defer(ab, cd, ab, cd);
+            /*/
+            ab_cd_defer(ab, ab, cd, cd);
+            //*/
+            return ab.i - cd.i;
+        }
+    `);
+
+    FAIL(`
         // a can alias b
         // c can alias d
         pub fn ab_cd_inner (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
