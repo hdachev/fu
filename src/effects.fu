@@ -33,7 +33,11 @@ pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
 
 pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 {
-    flow.invalidates.len <= left || assert();
+    // trackLocalRef during bck:
+    //  defers lead to out-of-order bck,
+    //   so this doesn't hold.
+    //
+    // flow.invalidates.len <= left || assert();
 
     for (mut i = 0; i < right.uni0n.len; i++)
     {

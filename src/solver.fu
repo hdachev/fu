@@ -4362,20 +4362,6 @@ pub fn solve(
             let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
             GET_mut(target).solved = out;
 
-            ///////////////////////////////////////////////////////////////
-            //
-            // Track references.
-            //  WHAT IS THIS DOING HERE !!!
-            //   This needs to happen during bck.
-            //
-            if (!isArg && out.is_ref)
-            {
-                let init = out.items[LET_INIT];
-                init.type.is_ref || fail("What!");
-                trackLocalRef(left: target, right: init.type.lifetime);
-            }
-            ///////////////////////////////////////////////////////////////
-
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)
                 _scope.usings.push(target);
@@ -5440,24 +5426,6 @@ pub fn solve(
                     }
                     //        /LITFIX
                     /////////////////
-
-                    if (arg.is_ref)
-                    {
-                        // The mutref pseudovar trick, helps passing unions into fns,
-                        //  which can then return them for further modification -
-                        //   without this, a write to `a|b` invalidates both `a` and `b`,
-                        //    whilst a write to `c=a|b` allows further writes to `c`.
-                        if (host_arg.written_via)
-                        {
-                            // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
-                            //  We need to have a single lifetime to describe what we're writing to,
-                            //   otherwise it just looks like two unions that are not correlated.
-                            if (arg.lifetime.uni0n.len > 1)
-                            {
-                                createNamedLifetime(arg, debug);
-                            }
-                        }
-                    }
                 }
                 /////////////////////////////////////////////////////////////////////////////////
 
@@ -6049,6 +6017,16 @@ pub fn solve(
         // Solve init expr.
         bck_nodes(node.items);
 
+        // Track references.
+        if (node.is_ref)
+        {
+            node.flags & F_ARG && fail("bck_let: Found an argument!");
+
+            let init = node.items[LET_INIT];
+            init.type.is_ref || fail("What!");
+            trackLocalRef(left: node.target, right: init.type.lifetime);
+        }
+
         // De-invalidate after init expr,
         //  could be invalidated by the init expr, for example:
         //   let c = a = b;
@@ -6087,6 +6065,31 @@ pub fn solve(
             mut arg_first       = -1;
             mut arg_last        = -1;
             ////////////////////////////
+
+            //
+            for (mut i0 = 0; i0 < args.len; i0++)
+            {
+                let arg         = args[i0];
+                let host_arg    = host_args[i0];
+
+                if (arg.is_ref)
+                {
+                    // The mutref pseudovar trick, helps passing unions into fns,
+                    //  which can then return them for further modification -
+                    //   without this, a write to `a|b` invalidates both `a` and `b`,
+                    //    whilst a write to `c=a|b` allows further writes to `c`.
+                    if (host_arg.written_via)
+                    {
+                        // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
+                        //  We need to have a single lifetime to describe what we're writing to,
+                        //   otherwise it just looks like two unions that are not correlated.
+                        if (arg.lifetime.uni0n.len > 1)
+                        {
+                            createNamedLifetime(arg, host_arg.name);
+                        }
+                    }
+                }
+            }
 
             for (mut i0 = 0; i0 < args.len; i0++)
             {
