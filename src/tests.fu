@@ -2498,6 +2498,14 @@ pub fn runTests()
     `);
 
     TODO_borrowck(`
+        fn main() {
+            mut x = 0;
+            let s = ++x + ++x;
+            return s - 3; // Not 4! one arg must invalidate
+        }
+    `);
+
+    TODO_borrowck(`
         //*F
         nocopy
         /*/
