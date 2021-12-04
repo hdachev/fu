@@ -3780,14 +3780,11 @@ pub fn solve(
 
     fn Lifetime_climbType(o: Overload)
     {
-        if (o.kind == "var")
-            return o.solved.is_ref
-                && o.solved.items[LET_INIT].type;
+        o.kind == "var" || fail(
+            "Lifetime_climbType: not a `var`: " ~ o.qWHAT);
 
-        o.kind == "lifetime" || fail(
-            "Lifetime_climbType: not a `var` nor `lifetime`: " ~ o.qWHAT);
-
-        return o.type;
+        return o.solved.is_ref
+            && o.solved.items[LET_INIT].type;
     }
 
     fn Lifetime_unwind(mut lifetime: Lifetime, locals_start?!: i32): Lifetime
@@ -5505,36 +5502,6 @@ pub fn solve(
         return callsite;
     }
 
-    fn createNamedLifetime(node: SolvedNode, debug: string)
-    {
-        // We solve the problem by "naming" the lifetime,
-        //  as if there was a ref x = ... that we're passing in instead of this argument,
-        //   allowing the fn to return x's lifetime, instead of the union.
-        let left = Scope_create(_scope,
-            nest: true, local_of: _current_fn.target.index,
-            kind: "lifetime", type: node.type, name: debug);
-
-        trackLocalRef(:left, node.type.lifetime);
-        node.MUT.lifetime.uni0n = [ Region_fromLocalIndex(left.index) ];
-    }
-
-    fn updateNamedLifetime(node: SolvedNode, mut type: Type)
-    {
-        ref o = GET_mut(nested(
-            node.type.lifetime.uni0n.only
-                .Region_toLocalIndex()));
-
-        o.kind == "lifetime" || fail("Not a temporary lifetime.");
-
-        if (!type.is_ref)
-            fail("updateNamedLifetime: the add_ref stuff doesn't make sense.");
-
-        // The add_ref stuff doesn't make sense.
-        o.type = type.is_ref
-            ? type
-            : add_ref(type, Lifetime_temporary);
-    }
-
     fn BORROWCK_resolveByMutvar(target: i32)
     {
         ref o = GET_mut(nested(target));
@@ -5810,32 +5777,8 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
-    fn trackLocalRef(left: Target, right: Lifetime)
-    {
-        return Reference_trackLocalRef(_current_fn.flow, left.index, :right);
-    }
-
     fn bck_name(shadow target: i32)
     {
-        let o = GET(nested(target));
-
-        // a|b|c instead of the useless [mutref union] thing.
-        if (o.kind == "lifetime")
-        {
-            mut str = o.name ~ "(";
-            for (mut i = 0; i < o.type.lifetime.uni0n.len; i++)
-            {
-                if (i)
-                    str ~= "|";
-
-                let t = Region_asIndex(o.type.lifetime.uni0n[i]);
-                let n = t.bck_name;
-                str  ~= n;
-            }
-
-            return str ~ ")";
-        }
-
         return GET(nested(target)).name.human;
     }
 
@@ -6024,7 +5967,10 @@ pub fn solve(
 
             let init = node.items[LET_INIT];
             init.type.is_ref || fail("What!");
-            trackLocalRef(left: node.target, right: init.type.lifetime);
+
+            Reference_trackLocalRef(_current_fn.flow,
+                left:  node.target.index,
+                right: init.type.lifetime);
         }
 
         // De-invalidate after init expr,
@@ -6066,30 +6012,6 @@ pub fn solve(
             mut arg_last        = -1;
             ////////////////////////////
 
-            //
-            for (mut i0 = 0; i0 < args.len; i0++)
-            {
-                let arg         = args[i0];
-                let host_arg    = host_args[i0];
-
-                if (arg.is_ref)
-                {
-                    // The mutref pseudovar trick, helps passing unions into fns,
-                    //  which can then return them for further modification -
-                    //   without this, a write to `a|b` invalidates both `a` and `b`,
-                    //    whilst a write to `c=a|b` allows further writes to `c`.
-                    if (host_arg.written_via)
-                    {
-                        // Again, this solves the `ref a = c; ref b = c; ++++(a || b)` problem:
-                        //  We need to have a single lifetime to describe what we're writing to,
-                        //   otherwise it just looks like two unions that are not correlated.
-                        if (arg.lifetime.uni0n.len > 1)
-                        {
-                            createNamedLifetime(arg, host_arg.name);
-                        }
-                    }
-                }
-            }
 
             for (mut i0 = 0; i0 < args.len; i0++)
             {

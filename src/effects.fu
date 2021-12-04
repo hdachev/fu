@@ -37,6 +37,10 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
     //  defers lead to out-of-order bck,
     //   so this doesn't hold.
     //
+    // If defers solved in the right order
+    //  it'd be nice to run this back on,
+    //   now we're running with scissors.
+    //
     // flow.invalidates.len <= left || assert();
 
     for (mut i = 0; i < right.uni0n.len; i++)
