@@ -91,6 +91,13 @@ pub fn solve(
         // The arguments at risk aparata.
         args_in_a_loop:     i32[];
         args_written_via:   ArgWrite[];
+
+        // The read/write journal, for checking order of eval.
+        //  I think unordered access should be super strict,
+        //   everything that's not disjoint must error out.
+        //
+        reads:              RWEvent[];
+        writes:             RWEvent[];
     };
 
     fn Events_merge(ref events: Events, snap: EventsSnap)
@@ -5831,6 +5838,9 @@ pub fn solve(
                 flow.args_at_risk.grow_if_oob(target)
                     .set::add(events.args_written);
             /////////////////////////////////////////////
+
+            // Order of eval.
+            events.reads ~= RWEvent(:target, :callsite.nodeidx);
         }
 
         // Track reads in a loop.
@@ -5920,6 +5930,9 @@ pub fn solve(
                             .set::add(target);
             }
             /////////////////////////////////////////////
+
+            // Order of eval.
+            events.writes ~= RWEvent(:target, :callsite.items[position].nodeidx);
         }
     }
 
@@ -5986,10 +5999,87 @@ pub fn solve(
         let args = callsite.items;
         if (args)
         {
-            bck_nodes(args);
-
-            //
             let host_args = target.args;
+
+            // BCK args and keep track of reads & writes
+            //  so we can detect c++ order of eval issues.
+            //
+            // We'll start off by forbidding unsequenced args.
+            //
+            {
+                let lax r0 = _current_fn.events.reads.len;
+                let lax w0 = _current_fn.events.writes.len;
+
+                lax mut ooe_read_lens:  i32[];
+                lax mut ooe_write_lens: i32[];
+
+                {
+                    shadow lax mut r0 = r0;
+                    shadow lax mut w0 = w0;
+
+                    for (mut i = 0; i < args.len; i++)
+                    {
+                        bck_node(args[i]);
+
+                        let r1 = _current_fn.events.reads.len;
+                        let w1 = _current_fn.events.writes.len;
+
+                        if (r1 > r0) ooe_read_lens.grow_oob(i, fill: r0) = r1;
+                        if (w1 > w0) ooe_write_lens.grow_oob(i, fill: w0) = w1;
+
+                        r0 = r1;
+                        w0 = w1;
+                    }
+                }
+
+                {
+                    shadow mut w0 = w0;
+
+                    for (mut iw = 0; iw < ooe_write_lens.len; iw++)
+                    {
+                        let w1 = ooe_write_lens[iw];
+                        if (w1 == w0)
+                            continue;
+
+                        //
+                        for (mut w = w0; w < w1; w++)
+                        {
+                            let write   = _current_fn.events.writes[w];
+                            let written = write.target.nested.type.lifetime.uni0n;
+
+                            // Check remaining arguments.
+                            shadow mut r0 = r0;
+                            for (mut ir = 0; ir < ooe_read_lens.len; ir++)
+                            {
+                                let r1 = ooe_read_lens[ir];
+
+                                if (ir != iw)
+                                {
+                                    for (mut r = r0; r < r1; r++)
+                                    {
+                                        let read    = _current_fn.events.reads[r];
+                                        let regions = read.target.nested.type.lifetime.uni0n;
+
+                                        //
+                                        let inter   = regions.set::inter(written);
+                                        if (inter)
+                                            fail(target.qWHAT ~ ": "
+                                                ~ "Unsequenced read/write: " ~ inter.first.qWHAT
+                                                ~ "\n\n\tWritten at " ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
+                                                ~ write.callsite.token.addr_and_snippet
+                                                ~ "\n\tRead at " ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
+                                                ~ read.callsite.token.addr_and_snippet);
+                                    }
+                                }
+
+                                r0 = r1;
+                            }
+                        }
+
+                        w0 = w1;
+                    }
+                }
+            }
 
             // BORROWCK ////////////////
             mut bck_writes: Region[];

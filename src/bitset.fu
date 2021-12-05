@@ -32,6 +32,23 @@ pub fn add(using _: &mut BitSet, idx: i32)
     _data.helpers::grow_if_oob(bucket) |= mask;
 }
 
+pub fn add(using _: &mut BitSet, other: BitSet)
+{
+    for (mut i1 = other._data.len; i1 --> 0; )
+    {
+        if (other._data[i1])
+        {
+            _data.helpers::grow_if_oob(i1);
+
+            // TODO zip over in u64s first.
+            for (mut i = 0; i <= i1; i++)
+                _data[i] |= other._data[i];
+
+            break;
+        }
+    }
+}
+
 pub fn has(using _: BitSet, idx: i32)
 {
     let no_neg = idx < 0 ? -1 : 0;

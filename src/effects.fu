@@ -13,6 +13,9 @@ pub struct Flow
 
     arg_aliases:    i32[][];        // is_arg targets each target refers to.
     args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
+
+    // Order of eval.
+    ooe_aliases:    bitset::BitSet[]; // non-disjoint writeables by ref.
 };
 
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
@@ -42,6 +45,8 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
     //   now we're running with scissors.
     //
     // flow.invalidates.len <= left || assert();
+
+    flow.ooe_aliases.grow_if_oob(left);
 
     for (mut i = 0; i < right.uni0n.len; i++)
     {
@@ -81,6 +86,11 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
             flow.is_arg.add(left);
             flow.arg_aliases.grow_if_oob(left).set::add(right);
         }
+
+        // Order of eval.
+        flow.ooe_aliases[left].add(right);
+        flow.ooe_aliases[left].add(flow.ooe_aliases[right]);
+        flow.ooe_aliases[right].add(left);
     }
 }
 
