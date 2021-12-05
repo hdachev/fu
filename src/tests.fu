@@ -1817,6 +1817,32 @@ pub fn runTests()
     `);
 
     FAIL(`
+        struct V { v: i32; w?: i32; ww?: i32; };
+
+        fn main() {
+            mut A: V = [ 1 ];
+            mut B: V = [ 1 ];
+
+            //*F
+            ref aa = A.v || A.w;
+            /*/
+            fn aa  = A.v || A.w;
+            //*/
+
+            ref bb = B.v || B.w;
+            ++++bb;
+
+            ref a = A.v || A.ww;
+            ref b = B.v || B.ww;
+
+            ref c = a || b;
+            ++++c;
+
+            return aa - 3; // same, without a helper var
+        }
+    `);
+
+    FAIL(`
         // a can alias b
         // c can alias d
         pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
