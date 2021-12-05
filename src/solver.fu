@@ -5505,11 +5505,11 @@ pub fn solve(
     fn BORROWCK_resolveByMutvar(target: i32)
     {
         ref o = GET_mut(nested(target));
-        if (o.flags & F_TODO_FIX_RRET || o.type.is_mutref || !o.type.is_rx_copy)
+        if (o.flags & (F_TODO_FIX_RRET | F_REF) || o.type.is_mutref || !o.type.is_rx_copy)
             return false;
 
-        o.kind == "var" && !(o.flags & F_REF) || fail("!var or F_REF");
-        o.type.lifetime.uni0n.len == 1        || fail("lt.len != 1"  );
+        o.kind == "var"                 || fail("BUG: Not a variable.");
+        o.type.lifetime.uni0n.len == 1  || fail("BUG: lt.len != 1"  );
         if !(o.flags & F_MUT)
         {
             o.flags  |= F_MUT;
