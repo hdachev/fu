@@ -63,7 +63,7 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         {
             // Grand parents and siblings:
             //  LEFT invalidates everything RIGHT invalidates.
-            flow.invalidates.grow_if_oob(left) = invals;
+            flow.invalidates.grow_if_oob(left).set::add(invals);
 
             // Same thing backward:
             //  Everything that RIGHT invalidates potentially invalidates LEFT.
