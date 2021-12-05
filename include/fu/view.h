@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstdint>
 
 #include "./inl.h"
 #include "./int.h"
