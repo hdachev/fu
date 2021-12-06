@@ -5563,7 +5563,7 @@ pub fn runTests()
         pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;
     `]);
 
-    TODO([`
+    ZERO([`
         struct List {
             vals: string[];
         };

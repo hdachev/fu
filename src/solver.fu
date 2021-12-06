@@ -947,7 +947,7 @@ pub fn solve(
             // Field access, method calls & operator calls.
             //  TODO no way to opt-out of this for operators currently,
             //   consider regular id-names for all ops, so we can freefn call them.
-            if (flags & (F_ACCESS | F_METHOD | F_INFIX | F_PREFIX | F_POSTFIX))
+            if (flags & (F_ACCESS | F_METHOD | F_OPERATOR))
                 for (mut i = 0; i < args.len; i++)
                     visitTypeImports(args[i].type);
         }
