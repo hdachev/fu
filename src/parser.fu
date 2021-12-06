@@ -957,10 +957,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         // Catch here.
         if (tryConsume("id", "catch"))
         {
-            let err = createLet(
-                consume("id").value, 0,
-                createRead("string"), Node);
-
+            let err = parseCatchErrvar();
             let catch = parseStatement();
 
             return make("catch", [ ret, err, catch ]);
@@ -1570,15 +1567,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         consume("id", "catch");
         consume("op", "(");
 
-        let err = createLet(
-                consume("id").value, 0,
-                createRead("string"), Node);
+        let err = parseCatchErrvar();
 
         consume("op", ")");
 
         let catch = parseStatement();
 
         return make("try", [ try, err, catch ]);
+    }
+
+    fn parseCatchErrvar(): Node
+    {
+        let id = consume("id").value;
+        return createLet(:id, 0, createRead("string"), Node);
     }
 
 
