@@ -6007,11 +6007,15 @@ pub fn solve(
             // We'll start off by forbidding unsequenced args.
             //
             {
-                let lax r0 = _current_fn.events.reads.len;
-                let lax w0 = _current_fn.events.writes.len;
+                // Simple arg reads are defered till after
+                //  all order of eval checks run.
+                mut read_after_ooe_check: SolvedNode[];
 
-                lax mut ooe_read_lens:  i32[];
-                lax mut ooe_write_lens: i32[];
+                let r0 = _current_fn.events.reads.len;
+                let w0 = _current_fn.events.writes.len;
+
+                mut ooe_read_lens:  i32[];
+                mut ooe_write_lens: i32[];
 
                 {
                     shadow lax mut r0 = r0;
@@ -6019,8 +6023,16 @@ pub fn solve(
 
                     for (mut i = 0; i < args.len; i++)
                     {
-                        bck_node(args[i]);
+                        let arg = args[i];
+                        if (arg.kind == "call" && arg.target.kind == "var")
+                        {
+                            read_after_ooe_check ~= arg;
+                            continue;
+                        }
 
+                        bck_node(arg);
+
+                        //
                         let r1 = _current_fn.events.reads.len;
                         let w1 = _current_fn.events.writes.len;
 
@@ -6079,6 +6091,10 @@ pub fn solve(
                         w0 = w1;
                     }
                 }
+
+                // Here we go!
+                for (mut i = 0; i < read_after_ooe_check.len; i++)
+                    bck_node(read_after_ooe_check[i]);
             }
 
             // BORROWCK ////////////////
