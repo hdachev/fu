@@ -795,6 +795,12 @@ pub fn cpp_codegen(
             src ~= typeAnnot(args[i].type, M_ARGUMENT | M_FWDECL);
         }
 
+        if (overload.flags & F_POSTFIX)
+        {
+            overload.flags & F_OPERATOR || assert();
+            src ~= ", /*postfix*/int ";
+        }
+
         src ~= ");\n";
 
         _ffwd_src ~= src;

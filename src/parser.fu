@@ -1091,7 +1091,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         //
         return createCall(
-            op, F_INFIX, [ left, right ]);
+            op, F_INFIX | F_OPERATOR, [ left, right ]);
     }
 
     fn typeAssert(actual: Node, expect: Node): Node
@@ -1147,7 +1147,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             if (POSTFIX.has(v))
                 return createCall(
                     v == "++" || v == "--" ? "postfix" ~ v : v,
-                        F_POSTFIX, [ head ]);
+                        F_POSTFIX | F_OPERATOR, [ head ]);
 
             if (v == "::")
                 return parseQualifierChain(head);
@@ -1298,7 +1298,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             return expr;
         }
 
-        return createCall(op, F_PREFIX, [ expr ]);
+        return createCall(op, F_PREFIX | F_OPERATOR, [ expr ]);
     }
 
     fn parseAccessExpression(expr: Node): Node
