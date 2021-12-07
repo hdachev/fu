@@ -5590,6 +5590,22 @@ pub fn runTests()
         }
     `]);
 
+    ZERO([`
+        struct Int { i: i32; };
+        fn -(a: Int) Int(-a.i);
+        fn +(a: Int, b: Int) Int(a.i + b.i);
+        fn +=(ref a: Int, b: Int) { a.i += b.i; return a; };
+        postfix fn ++(ref a: Int) { a.i++; };
+    `,
+    `
+        fn main() {
+            mut x: _0::Int = [ 1 ];
+            x += -(x + x);
+            x++;
+            return x.i;
+        }
+    `]);
+
     TODO([`
         fn each(y<alt>: i32</alt>)
             y & 1   ? y
