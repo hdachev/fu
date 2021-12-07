@@ -6024,6 +6024,16 @@ pub fn solve(
         {
             let host_args = target.args;
 
+            // Unless c++ guarantees some order of eval,
+            //  we'll keep track of reads and writes,
+            //   we add sequencing tags last thing here.
+            //
+            let ltr_read0  = _current_fn.events.reads.len;
+            let ltr_write0 = _current_fn.events.writes.len;
+
+            mut ltr_reads:  i32[];
+            mut ltr_writes: i32[];
+
             if (target.flags & F_OOE_RTL)
             {
                 // Guaranteed right-to-left order of evaluation:
@@ -6033,101 +6043,23 @@ pub fn solve(
                     bck_node(args[i]);
             }
             else
-
-            // BCK args and keep track of reads & writes
-            //  so we can detect c++ order of eval issues.
-            //
-            // We'll start off by forbidding unsequenced args.
-            //
             {
-                // Simple arg reads are defered till after
-                //  all order of eval checks run.
-                mut read_after_ooe_check: SolvedNode[];
+                shadow lax mut ltr_read0  = ltr_read0;
+                shadow lax mut ltr_write0 = ltr_write0;
 
-                let r0 = _current_fn.events.reads.len;
-                let w0 = _current_fn.events.writes.len;
-
-                mut ooe_read_lens:  i32[];
-                mut ooe_write_lens: i32[];
-
+                for (mut i = 0; i < args.len; i++)
                 {
-                    shadow lax mut r0 = r0;
-                    shadow lax mut w0 = w0;
+                    bck_node(args[i]);
 
-                    for (mut i = 0; i < args.len; i++)
-                    {
-                        let arg = args[i];
-                        if (arg.kind == "call" && arg.target.kind == "var")
-                        {
-                            read_after_ooe_check ~= arg;
-                            continue;
-                        }
+                    let r1 = _current_fn.events.reads.len;
+                    let w1 = _current_fn.events.writes.len;
 
-                        bck_node(arg);
+                    if (r1 > ltr_read0)  ltr_reads.grow_oob(i, fill: ltr_read0) = r1;
+                    if (w1 > ltr_write0) ltr_writes.grow_oob(i, fill: ltr_write0) = w1;
 
-                        //
-                        let r1 = _current_fn.events.reads.len;
-                        let w1 = _current_fn.events.writes.len;
-
-                        if (r1 > r0) ooe_read_lens.grow_oob(i, fill: r0) = r1;
-                        if (w1 > w0) ooe_write_lens.grow_oob(i, fill: w0) = w1;
-
-                        r0 = r1;
-                        w0 = w1;
-                    }
+                    ltr_read0 = r1;
+                    ltr_write0 = w1;
                 }
-
-                {
-                    shadow mut w0 = w0;
-
-                    for (mut iw = 0; iw < ooe_write_lens.len; iw++)
-                    {
-                        let w1 = ooe_write_lens[iw];
-                        if (w1 == w0)
-                            continue;
-
-                        //
-                        for (mut w = w0; w < w1; w++)
-                        {
-                            let write   = _current_fn.events.writes[w];
-                            let written = write.target.nested.type.lifetime.uni0n;
-
-                            // Check remaining arguments.
-                            shadow mut r0 = r0;
-                            for (mut ir = 0; ir < ooe_read_lens.len; ir++)
-                            {
-                                let r1 = ooe_read_lens[ir];
-
-                                if (ir != iw)
-                                {
-                                    for (mut r = r0; r < r1; r++)
-                                    {
-                                        let read    = _current_fn.events.reads[r];
-                                        let regions = read.target.nested.type.lifetime.uni0n;
-
-                                        //
-                                        let inter   = regions.set::inter(written);
-                                        if (inter)
-                                            fail(target.qWHAT ~ ": "
-                                                ~ "Unsequenced read/write: " ~ inter.first.qWHAT
-                                                ~ "\n\n\tWritten at " ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
-                                                ~ write.callsite.token.addr_and_snippet
-                                                ~ "\n\tRead at " ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
-                                                ~ read.callsite.token.addr_and_snippet);
-                                    }
-                                }
-
-                                r0 = r1;
-                            }
-                        }
-
-                        w0 = w1;
-                    }
-                }
-
-                // Here we go!
-                for (mut i = 0; i < read_after_ooe_check.len; i++)
-                    bck_node(read_after_ooe_check[i]);
             }
 
             // BORROWCK ////////////////
@@ -6362,6 +6294,66 @@ pub fn solve(
                 bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
             }
             /////////////////////////////////////////////////////////////////
+
+            // We've injected copies and such,
+            //  so now all that's left is to add some explicit sequencing.
+            {
+                shadow mut ltr_write0 = ltr_write0;
+
+                for (mut iw = 0; iw < ltr_writes.len; iw++)
+                {
+                    let ltr_write1 = ltr_writes[iw];
+                    if (ltr_write1 == ltr_write0)
+                        continue;
+
+                    //
+                    for (mut w = ltr_write0; w < ltr_write1; w++)
+                    {
+                        let write   = _current_fn.events.writes[w];
+                        let written = write.target.nested.type.lifetime.uni0n;
+
+                        // Check remaining arguments.
+                        shadow mut ltr_read0 = ltr_read0;
+
+                        NEXT_ARG:
+                        for (mut ir = 0; ir < ltr_reads.len; ir++)
+                        {
+                            let ltr_read1 = ltr_reads[ir];
+
+                            if (ir != iw)
+                            {
+                                for (mut r = ltr_read0; r < ltr_read1; r++)
+                                {
+                                    let read    = _current_fn.events.reads[r];
+                                    let regions = read.target.nested.type.lifetime.uni0n;
+                                    let inter   = regions.set::inter(written);
+                                    if !(inter)
+                                        continue;
+
+                                    /*
+                                    fail(target.qWHAT ~ ": "
+                                        ~ "Unsequenced read/write: " ~ inter.first.qWHAT
+                                        ~ "\n\n\tWritten at " ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
+                                        ~ write.callsite.token.addr_and_snippet
+                                        ~ "\n\tRead at " ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
+                                        ~ read.callsite.token.addr_and_snippet);
+                                    //*/
+
+                                    // Flag both arguments for explicit LTR sequencing.
+                                    args[iw].MUT.flags |= F_MUSTSEQ_LTR;
+                                    args[ir].MUT.flags |= F_MUSTSEQ_LTR;
+
+                                    continue :NEXT_ARG;
+                                }
+                            }
+
+                            ltr_read0 = ltr_read1;
+                        }
+                    }
+
+                    ltr_write0 = ltr_write1;
+                }
+            }
         }
 
         //
