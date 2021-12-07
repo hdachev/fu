@@ -3,6 +3,7 @@
 #include <fu/int.h>
 #include <fu/never.h>
 #include <fu/vec.h>
+#include <fu/vec/concat.h>
 #include <fu/view.h>
 #include <utility>
 
@@ -133,6 +134,35 @@ inline bool rem_xJq8(fu_VEC<int>& dest, const int item)
 }
                                 #endif
 
+                                #ifndef DEFt_add_9KMC
+                                #define DEFt_add_9KMC
+inline void add_9KMC(fu_VEC<int>& a, fu::view<int> b)
+{
+    int x = 0;
+    int y = 0;
+    while ((x < a.size()) && (y < b.size()))
+    {
+        const int X = a[x];
+        const int Y = b[y];
+        if ((X >= Y))
+        {
+            if (X != Y)
+            {
+                a.insert(x, Y);
+                y++;
+            }
+            else
+                y++;
+
+        };
+        x++;
+    };
+    if (y < b.size())
+        a += fu::get_view(b, y, b.size());
+
+}
+                                #endif
+
                                 #ifndef DEFt_grow_if_oob_aIXs
                                 #define DEFt_grow_if_oob_aIXs
 inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
@@ -167,9 +197,6 @@ inline bool add_xJq8(fu_VEC<int>& dest, const int item)
 
 void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& right)
 {
-    if (!((flow.invalidates.size() <= left)))
-        fu_ASSERT();
-
     for (int i = 0; i < right.uni0n.size(); i++)
     {
         const int right_1 = Region_asIndex(right.uni0n[i]);
@@ -182,7 +209,7 @@ void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& rig
 
         if (invals)
         {
-            grow_if_oob_aIXs(flow.invalidates, left) = invals;
+            add_9KMC(grow_if_oob_aIXs(flow.invalidates, left), invals);
             for (int i_1 = 0; i_1 < invals.size(); i_1++)
                 add_xJq8(flow.invalidates.mutref(invals[i_1]), left);
 

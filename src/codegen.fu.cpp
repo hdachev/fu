@@ -1854,6 +1854,13 @@ static void ensureFwdDecl(const s_Target& target_6, const s_Module& module, cons
 
         src_2 += typeAnnot(args_1[i].type, (M_ARGUMENT | M_FWDECL), _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
     };
+    if (overload.flags & F_POSTFIX)
+    {
+        if (!(overload.flags & F_OPERATOR))
+            fu_ASSERT();
+
+        src_2 += ", /*postfix*/int "_fu;
+    };
     src_2 += ");\n"_fu;
     _ffwd_src += src_2;
     return;
