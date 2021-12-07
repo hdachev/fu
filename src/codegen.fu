@@ -686,6 +686,15 @@ pub fn cpp_codegen(
     fn isOp(target: Target)
     {
         let flags = target.flags;
+
+        // Deal with it!
+        //  We don't want to have subtle mismatches between the two,
+        //   only assignment operators in c++ have guaranteed ooe,
+        //    so it HAS to be an operator for this to hold.
+        //
+        if (flags & F_OOE_RTL)
+            return true;
+
         if !(flags & F_OPERATOR)
             return false;
 

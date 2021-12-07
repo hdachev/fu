@@ -41,7 +41,16 @@ pub fn ID(id: string)
 }
 
 let UNARY   = "++--!*&~";
-let BINARY  = "+=-=*=/=%=&=|=^=<<=>>==!=<=>=&&||";
+let BINARY  = "+=-=*=/=%=&=|=^=<<=>>==!=&&||";
+let ASSIGN2 = "+=-=*=/=%=&=|=^=";
+let ASSIGN3 = "<<=>>=";
+
+pub fn hasAssignment(op: string)
+{
+    return op == "="
+        || op.len == 2 && ASSIGN2.has(op)
+        || op.len == 3 && ASSIGN3.has(op);
+}
 
 pub fn hasBinary(op: string)
 {

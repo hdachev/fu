@@ -3253,6 +3253,29 @@ pub fn solve(
                 overload.flags  = out.flags;
                 overload.solved = !isUnspec && out.out;
 
+                // Not amazing but it is what it is,
+                //  these are the only calls c++ guarantees order of eval for,
+                //   and generally js, rust & co behave in the same manner, so why not.
+                //
+                // 16) Every overloaded operator obeys the sequencing rules of
+                //      the built-in operator it overloads when called using operator notation.
+                //
+                // 20) In every simple assignment expression E1=E2\
+                //      and every compound assignment expression E1@=E2,
+                //       every value computation and side-effect of E2 is
+                //        sequenced before every value computation and side effect of E1.
+                {
+                    let rtl = args.len == 2
+                        && overload.flags & F_OPERATOR
+                        && cpp::hasAssignment(overload.name);
+
+                    if (rtl)
+                        overload.flags |= F_OOE_RTL;
+                    else
+                        overload.flags &= ~F_OOE_RTL;
+                }
+
+                //
                 if (change)
                     overload.status |= SS_UPDATED;
             }
@@ -6000,6 +6023,16 @@ pub fn solve(
         if (args)
         {
             let host_args = target.args;
+
+            if (target.flags & F_OOE_RTL)
+            {
+                // Guaranteed right-to-left order of evaluation:
+                //  just borrow check in reverse and we're good.
+                //
+                for (mut i = args.len; i --> 0; )
+                    bck_node(args[i]);
+            }
+            else
 
             // BCK args and keep track of reads & writes
             //  so we can detect c++ order of eval issues.
