@@ -3347,11 +3347,6 @@ pub fn solve(
                     ////////////////////////////////////////////////////////////////////////
                 }
 
-                // TODO THIS APPEARS TO BE USELESS, sighash not computed in update.
-                //  Sighashes include return value.
-                outItems[outItems.len + FN_RET_BACK] =
-                    createEmpty(type: retval);
-
                 //
                 updateScope(_current_fn, :retval);
             }
