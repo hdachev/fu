@@ -2550,7 +2550,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn main() {
             mut x = 0;
             let s = ++x + ++x;
@@ -2558,7 +2558,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    FAIL(`
         //*F
         nocopy
         /*/

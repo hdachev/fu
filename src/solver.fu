@@ -5559,7 +5559,7 @@ pub fn solve(
         return true;
     }
 
-    fn BORROWCK_resolveByCopyToTemporary(node: SolvedNode, slot: Type)
+    fn BORROWCK_resolveByTempCopy(node: SolvedNode, slot: Type)
     {
         // Reconstruct a maybe-copyable value type -
         //  slot is a ref which may not need q_rx_copy.
@@ -5568,6 +5568,15 @@ pub fn solve(
         // TODO FIX How do we defer this copy?
         //  MCOM needs to pick up something.
         return maybeCopyOrMove(:node, slot);
+    }
+
+    fn BORROWCK_resolveByTempCopy(callsite: SolvedNode, idx: i32)
+    {
+        let host_args = callsite.target.args;
+
+        return BORROWCK_resolveByTempCopy(
+            node: callsite.items[idx],
+            slot:      host_args[idx].type);
     }
 
     fn maybeCopyOrMove(node: SolvedNode, slot: Type, lax isArgument = false): void
@@ -5876,6 +5885,9 @@ pub fn solve(
             /////////////////////////////////////////////
 
             // Order of eval.
+            //  OPTIMIZABLE we don't need the read nodeidx here,
+            //   we only need the target int.
+            //
             events.reads ~= RWEvent(:target, :callsite.nodeidx);
         }
 
@@ -5945,12 +5957,14 @@ pub fn solve(
                 }
             }
 
+            let write = RWEvent(:target, :callsite.nodeidx);
+
             // Track writes, easy.
             for (shadow mut i = 0; i < invalidates.len; i++)
             {
                 ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
                 if (!u.target)
-                    u = RWEvent(:target, :callsite.nodeidx);
+                    u = write;
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -5968,7 +5982,7 @@ pub fn solve(
             /////////////////////////////////////////////
 
             // Order of eval.
-            events.writes ~= RWEvent(:target, :callsite.items[position].nodeidx);
+            events.writes ~= write;
         }
     }
 
@@ -6047,7 +6061,8 @@ pub fn solve(
             mut ltr_reads:  i32[];
             mut ltr_writes: i32[];
 
-            if (target.flags & F_OOE_RTL)
+            let ooe_isRTL  = !!(target.flags & F_OOE_RTL);
+            if (ooe_isRTL)
             {
                 // Guaranteed right-to-left order of evaluation:
                 //  just borrow check in reverse and we're good.
@@ -6222,9 +6237,7 @@ pub fn solve(
                                         let isReturned = target.type.lifetime.uni0n.has(argLt);
                                         if (!isReturned)
                                         {
-                                            return BORROWCK_resolveByCopyToTemporary(
-                                                node: callsite.MUT.items[which],
-                                                slot:          host_args[which].type);
+                                            return BORROWCK_resolveByTempCopy(:callsite, which);
                                         }
                                     }
                                 }
@@ -6308,6 +6321,8 @@ pub fn solve(
             }
             /////////////////////////////////////////////////////////////////
 
+            mut MUSTSEQ_mask = 0;
+
             // We've injected copies and such,
             //  so now all that's left is to add some explicit sequencing.
             {
@@ -6325,38 +6340,86 @@ pub fn solve(
                         let write   = _current_fn.events.writes[w];
                         let written = write.target.nested.type.lifetime.uni0n;
 
+                        ////////////////////////////////////////////////////
+                        // TODO we need written to be the full set        //
+                        //  of written which is a superset of invalidated //
+                        ////////////////////////////////////////////////////
+
                         // Check remaining arguments.
                         shadow mut ooe_read0 = ooe_read0;
 
-                        NEXT_ARG:
                         for (mut ir = 0; ir < ltr_reads.len; ir++)
                         {
                             let ltr_read1 = ltr_reads[ir];
 
                             if (ir != iw)
                             {
+                                let ooe_ir_evalsBefore_iw =
+                                    ooe_isRTL   ? ir > iw
+                                                : ir < iw;
+
                                 for (mut r = ooe_read0; r < ltr_read1; r++)
                                 {
                                     let read    = _current_fn.events.reads[r];
                                     let regions = read.target.nested.type.lifetime.uni0n;
-                                    let inter   = regions.set::inter(written);
-                                    if !(inter)
+                                    if !(regions.set::inter(written))
                                         continue;
 
-                                    /*
-                                    fail(target.qWHAT ~ ": "
-                                        ~ "Unsequenced read/write: " ~ inter.first.qWHAT
-                                        ~ "\n\n\tWritten at " ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
-                                        ~ write.callsite.token.addr_and_snippet
-                                        ~ "\n\tRead at " ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
-                                        ~ read.callsite.token.addr_and_snippet);
-                                    //*/
+                                    // At this point, we've detected an order-of-eval issue.
+                                    //  It's either just that, in which case F_MUSTSEQ is fine,
+                                    //   or it might be that an arg invalidates a previously evaluated arg
+                                    //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
+                                    //     in which case we'll have to resolve-by-copy.
 
-                                    // Flag both arguments for explicit LTR sequencing.
-                                    args[iw].MUT.flags |= F_MUSTSEQ_LTR;
-                                    args[ir].MUT.flags |= F_MUSTSEQ_LTR;
+                                    // Now this is important:
+                                    //  If this argument ooe-precedes the writes,
+                                    //   we need to check the writes don't garble it's value.
+                                    //
+                                    // This is not about invalidation -
+                                    //  in ++x + ++x nothing gets invalidated,
+                                    //   yet you want the first ++x arg to bind to the value of its init,
+                                    //    just like any other var, and not get thrashed by the other arg.
+                                    //
+                                    // If needed, we'll inject a write,
+                                    //  if not possible, we'll error out.
+                                    //
+                                    if (ooe_ir_evalsBefore_iw)
+                                    {
+                                        let arg     = args[ir];
+                                        let bound   = arg.type.lifetime.uni0n;
+                                        let inter   = bound.set::inter(written);
+                                        if (inter)
+                                        {
+                                            if (host_args[ir].is_mutref || !arg.is_rx_copy)
+                                            {
+                                                _here = callsite.token;
 
-                                    continue :NEXT_ARG;
+                                                fail("At call to " ~ target.qWHAT ~ ", argument binding "
+                                                    ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
+                                                    ~ arg.token.addr_and_snippet
+                                                    ~ "\n\t... invalidated by subsequent write to "
+                                                    ~ inter.first.qWHAT ~ " upon evaluation of argument "
+                                                    ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
+                                                    ~ write.callsite.token.addr_and_snippet
+                                                    ~ RWEvent_stack(write.nodeidx, write.target));
+                                            }
+
+                                            // We'll have to inject a copy here.
+                                            BORROWCK_resolveByTempCopy(:callsite, ir);
+                                        }
+                                    }
+
+                                    // Flag the arg that needs to eval first for explicit sequencing.
+                                    //  This mask thing is kinda stupid, calls with more than 32 args
+                                    //   could needlessly sequence some of their args,
+                                    //    but it's safe.
+                                    //
+                                    let mustSeq =
+                                        ooe_isRTL == ir > iw
+                                            ? ir : iw;
+
+                                    MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                    break;
                                 }
                             }
 
@@ -6367,6 +6430,9 @@ pub fn solve(
                     ooe_write0 = ltr_write1;
                 }
             }
+
+            // The sequencing fingerprint, just in case.
+            (callsite.MUT.helpers && fail("helpers already contain something")) = MUSTSEQ_mask;
         }
 
         //

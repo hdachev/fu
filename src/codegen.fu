@@ -1321,19 +1321,68 @@ pub fn cpp_codegen(
         let isNative        = target.kind == "__native";
         let isCpyMovAssign  = args.len == 2 && isNative && target.name == "=";
 
+
+        //
+
+        let MUSTSEQ_mask    = node.helpers;
+        mut ooe_crosscheck  = 0;
+        mut ooe_header      = "";
+
         mut item_src: string[];
         for (mut i = 0; i < args.len; i++)
         {
-            let item = args[i];
+            let arg = args[i];
 
             // Skip explicit copies on assignment, pointless.
-            shadow let item = isCpyMovAssign && i == 1 && item.kind == "copy"
-                ? item.items.only
-                : item;
+            shadow let arg = isCpyMovAssign && i == 1 && arg.kind == "copy"
+                ? arg.items.only
+                : arg;
 
-            item_src ~= cgNode(
-                item, callarg: ext.args[i].type,
+            mut src = cgNode(
+                arg, callarg: ext.args[i].type,
                 debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")");
+
+            // Explicit sequencing.
+            let MUSTSEQ_bit = 1 << (i & 31);
+            if (MUSTSEQ_mask & MUSTSEQ_bit)
+            {
+                ooe_crosscheck |= MUSTSEQ_bit;
+
+                if !(arg.isFieldChain)
+                {
+                    if (ooe_header)
+                        ooe_header ~= ", ";
+                    else
+                        ooe_header = "(";
+
+                    //
+                    mut ptrflip = false;
+                    let annot   = typeAnnot(arg);
+                    let id      = emitTEMPVAR(:annot, :ptrflip);
+
+                    ooe_header ~= id;
+                    ooe_header ~= " = ";
+                    ooe_header ~= ptrflip   ? "&(" ~ src ~ ")"
+                                            : src;
+
+                    src         = ptrflip   ? "*" ~ id
+                                            : cgMove(arg.type, id);
+                }
+            }
+
+            item_src ~= src;
+        }
+
+        ooe_crosscheck == node.helpers || fail(
+            "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
+                                ~ ", but solver wants " ~ node.helpers ~ ": "
+                                ~ args.map(|i| i.kind).join("|"));
+
+        fn ooeWrap(src: string)
+        {
+            return ooe_header
+                 ? ooe_header ~ ", " ~ src ~ ")"
+                 : src;
         }
 
 
@@ -1372,20 +1421,20 @@ pub fn cpp_codegen(
         {
             args.len == 2 || fail("args.len != 2");
 
-            if (binSkipParens(op, mode))
+            if (binSkipParens(op, mode) && !ooe_header)
                 return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
 
-            return "(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")";
+            return ooeWrap("(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")");
         }
 
         fn emitMethodCall(id: string)
         {
-            return ARG(0) ~ id ~ "(" ~ REST(1) ~ ")";
+            return ooeWrap(ARG(0) ~ id ~ "(" ~ REST(1) ~ ")");
         }
 
         fn emitFunctionCall(id: string, open = "(", close = ")")
         {
-            return id ~ open ~ REST ~ close;
+            return ooeWrap(id ~ open ~ REST ~ close);
         }
 
 
@@ -1490,7 +1539,7 @@ pub fn cpp_codegen(
                         mut tv: TEMPVAR;
                         let condcons = via(:tv, :head.type, expr: arg0);
                         let alt = tv.ptrflip ? "*" ~ tv.id : tv.id || arg0;
-                        return "(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")";
+                        return ooeWrap("(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")");
                     }
 
                     // Skip some of the ridiculous parens.
