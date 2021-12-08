@@ -6032,8 +6032,8 @@ pub fn solve(
             //  we'll keep track of reads and writes,
             //   we add sequencing tags last thing here.
             //
-            let ltr_read0  = _current_fn.events.reads.len;
-            let ltr_write0 = _current_fn.events.writes.len;
+            let ooe_read0  = _current_fn.events.reads.len;
+            let ooe_write0 = _current_fn.events.writes.len;
 
             mut ltr_reads:  i32[];
             mut ltr_writes: i32[];
@@ -6048,8 +6048,8 @@ pub fn solve(
             }
             else
             {
-                shadow lax mut ltr_read0  = ltr_read0;
-                shadow lax mut ltr_write0 = ltr_write0;
+                shadow lax mut ooe_read0  = ooe_read0;
+                shadow lax mut ooe_write0 = ooe_write0;
 
                 for (mut i = 0; i < args.len; i++)
                 {
@@ -6058,11 +6058,11 @@ pub fn solve(
                     let r1 = _current_fn.events.reads.len;
                     let w1 = _current_fn.events.writes.len;
 
-                    if (r1 > ltr_read0)  ltr_reads.grow_oob(i, fill: ltr_read0) = r1;
-                    if (w1 > ltr_write0) ltr_writes.grow_oob(i, fill: ltr_write0) = w1;
+                    if (r1 > ooe_read0)  ltr_reads.grow_oob(i, fill: ooe_read0) = r1;
+                    if (w1 > ooe_write0) ltr_writes.grow_oob(i, fill: ooe_write0) = w1;
 
-                    ltr_read0 = r1;
-                    ltr_write0 = w1;
+                    ooe_read0 = r1;
+                    ooe_write0 = w1;
                 }
             }
 
@@ -6302,22 +6302,22 @@ pub fn solve(
             // We've injected copies and such,
             //  so now all that's left is to add some explicit sequencing.
             {
-                shadow mut ltr_write0 = ltr_write0;
+                shadow mut ooe_write0 = ooe_write0;
 
                 for (mut iw = 0; iw < ltr_writes.len; iw++)
                 {
                     let ltr_write1 = ltr_writes[iw];
-                    if (ltr_write1 == ltr_write0)
+                    if (ltr_write1 == ooe_write0)
                         continue;
 
                     //
-                    for (mut w = ltr_write0; w < ltr_write1; w++)
+                    for (mut w = ooe_write0; w < ltr_write1; w++)
                     {
                         let write   = _current_fn.events.writes[w];
                         let written = write.target.nested.type.lifetime.uni0n;
 
                         // Check remaining arguments.
-                        shadow mut ltr_read0 = ltr_read0;
+                        shadow mut ooe_read0 = ooe_read0;
 
                         NEXT_ARG:
                         for (mut ir = 0; ir < ltr_reads.len; ir++)
@@ -6326,7 +6326,7 @@ pub fn solve(
 
                             if (ir != iw)
                             {
-                                for (mut r = ltr_read0; r < ltr_read1; r++)
+                                for (mut r = ooe_read0; r < ltr_read1; r++)
                                 {
                                     let read    = _current_fn.events.reads[r];
                                     let regions = read.target.nested.type.lifetime.uni0n;
@@ -6351,11 +6351,11 @@ pub fn solve(
                                 }
                             }
 
-                            ltr_read0 = ltr_read1;
+                            ooe_read0 = ltr_read1;
                         }
                     }
 
-                    ltr_write0 = ltr_write1;
+                    ooe_write0 = ltr_write1;
                 }
             }
         }
