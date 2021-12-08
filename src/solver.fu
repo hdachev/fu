@@ -33,6 +33,10 @@ pub let N_NonTrivAutoCopy   = 1 << 13;
 
 pub let N_RelaxRespec       = 1 << 14;
 
+pub let N_BckVarCopy        = 1 << 15;
+pub let N_BckArgCopy        = 1 << 16;
+pub let N_BckExplicitLTR    = 1 << 17;
+
 
 //
 
