@@ -35,9 +35,9 @@ fn TODO_gcc(src: string)
     else                    ZERO(src);
 }
 
-fn TODO_borrowck(src: string) TODO(src);
-
-fn TODO_Map(src: string) TODO(src);
+let TODO_borrowck   = fn TODO;
+let TODO_disjoint   = fn TODO;
+let TODO_Map        = fn TODO;
 
 
 // Run the whole battery & build self.
@@ -2445,7 +2445,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    TODO_disjoint(`
         nocopy struct Woot {
             x: i32[];
             y: i32[];
@@ -2469,7 +2469,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    TODO_disjoint(`
         nocopy struct Woot {
             x: i32[];
             y: i32[];
