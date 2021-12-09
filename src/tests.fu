@@ -3354,17 +3354,28 @@ pub fn runTests()
         fn main() lex("    hello").len - 5;
     `);
 
+    TODO_borrowck(`
+        fn test(ref sources: string[]) {
+            fn src = sources[sources.len / 2];
+            return src[1, src.len] ~ src[0, 1];
+        }
+        fn main() {
+            mut sources = [ "ab" ];
+            return test(sources) == "ba" ? 0 : 1;
+        }
+    `);
+
     ZERO(`
         pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void
         {
             // Fuzzing module splits.
             for (mut i = 0; i < sources.len; i++)
             {
-                // Note: redundant "ref" here.
-                fn src() = sources[i]; // bck: using a fn instead
                 for (;;)
                 {
-                    mut start0 = src.find("[split/]");
+                    ref src     = sources[i];
+
+                    mut start0  = src.find("[split/]");
                     if (start0 < 0)
                         break;
 
@@ -3383,7 +3394,7 @@ pub fn runTests()
                     sources.insert(i + 1, moduleB);
                 }
 
-                sum += src.len;
+                sum += sources[i].len;
             }
         }
 
