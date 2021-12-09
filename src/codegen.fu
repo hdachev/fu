@@ -1316,44 +1316,81 @@ pub fn cpp_codegen(
     {
         let ext             = node.target.EXT;
         let target          = GET(node.target) || fail();
+        let args            = node.items;
 
-        let items           = node.items;
         let isNative        = target.kind == "__native";
-        let isAssignment    = items.len == 2 && isNative && target.name == "=";
+        let isCpyMovAssign  = args.len == 2 && isNative && target.name == "=";
 
-        mut _items: string[];
-        for (mut i = 0; i < items.len; i++)
+        mut item_src: string[];
+        for (mut i = 0; i < args.len; i++)
         {
-            let item = items[i];
+            let item = args[i];
 
             // Skip explicit copies on assignment, pointless.
-            shadow let item = isAssignment && i == 1 && item.kind == "copy"
+            shadow let item = isCpyMovAssign && i == 1 && item.kind == "copy"
                 ? item.items.only
                 : item;
 
-            _items ~= cgNode(
+            item_src ~= cgNode(
                 item, callarg: ext.args[i].type,
                 debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")");
         }
 
+
         //
+
         fn REST(start: i32 = 0)
         {
             mut src = "";
-            for (mut i = start; i < _items.len; i++)
+            for (mut i = start; i < item_src.len; i++)
             {
                 if (i > start)
                     src ~= ", ";
 
-                src ~= _items[i];
+                src ~= item_src[i];
             }
 
             return src;
         }
 
-        fn ARG(i: i32) _items[i];
+        fn ARG(i: i32) item_src[i];
+
+
+        //
+
+        fn emitPostfixOp(op: string)
+        {
+            return ARG(0) ~ op;
+        }
+
+        fn emitPrefixOp(op: string)
+        {
+            return op ~ ARG(0);
+        }
+
+        fn emitBinaryOp(op: string)
+        {
+            args.len == 2 || fail("args.len != 2");
+
+            if (binSkipParens(op, mode))
+                return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
+
+            return "(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")";
+        }
+
+        fn emitMethodCall(id: string)
+        {
+            return ARG(0) ~ id ~ "(" ~ REST(1) ~ ")";
+        }
+
+        fn emitFunctionCall(id: string, open = "(", close = ")")
+        {
+            return id ~ open ~ REST ~ close;
+        }
+
 
         // Builtin specs.
+
         if (isNative && target.name[0] == '\n')
         {
             mut id = target.name.slice(1);
@@ -1367,21 +1404,18 @@ pub fn cpp_codegen(
 
             if (id[0] == '.')
             {
-                if (items.len > 1)
-                    return ARG(0) ~ id ~ "(" ~ REST(1) ~ ")";
+                if (args.len > 1)
+                    return emitMethodCall(id);  // X`.id`(a, b)
 
-                return ARG(0) ~ id;
+                return emitPostfixOp(id);       // X`.a`
             }
 
-            if (items)
+            if (args)
             {
                 if (id.hasIdentifierChars)
-                    return id ~ "(" ~ REST ~ ")";
+                    return emitFunctionCall(id);
 
-                if (binSkipParens(id, mode))
-                    return ARG(0) ~ " " ~ id ~ " " ~ ARG(1);
-
-                return "(" ~ ARG(0) ~ " " ~ id ~ " " ~ ARG(1) ~ ")";
+                return emitBinaryOp(id);
             }
 
             return id;
@@ -1390,36 +1424,16 @@ pub fn cpp_codegen(
         //
         if (target.kind == "type")
         {
-            if (!items)
+            if (!args)
                 return cgDefault(target.type);
 
             target.type.isStruct || fail(
                 "cgCall: defctor/type not a struct.");
 
-            // Watch the order of eval here, can break your testdiffs.
-            //  We'll probably want to define it at some point,
-            //   hunting down drama can be tricky.
-            let args = REST;
-            return typeAnnotBase(target.type) ~ " { " ~ args ~ " }";
+            //
+            return emitFunctionCall(
+                typeAnnotBase(target.type), " { ", " }");
         }
-
-        let id = target.name || fail();
-
-        if (target.kind == "var")
-        {
-            if (!target.local_of)
-            {
-                if (node.target.modid != module.modid)
-                    cgForeignGlobal(node.target);
-
-                return ID(id); // TODO ensure const emit.
-            }
-
-            return localID(:node.target);
-        }
-
-        if (target.kind == "field")
-            return ARG(0) ~ "." ~ ID(id);
 
         if (node.target.modid && target.kind == "fn")
         {
@@ -1429,57 +1443,71 @@ pub fn cpp_codegen(
                 ensureFwdDecl(node.target);
         }
 
-        if (node.target.isOp)
+        let id = target.name || fail();
+
+        if (args.len <= 2)
         {
-            let head = items[0] || fail();
-
-            if (items.len == 1)
+            if (target.kind == "var")
             {
-                return target.flags & F_POSTFIX
-                     ? ARG(0) ~ id.valid_operator
-                     : id.valid_operator ~ ARG(0);
-            }
-
-            if (items.len == 2)
-            {
-                if (id == "[]")
+                if (!target.local_of)
                 {
-                    // The new cow_vec is here.
-                    if (node.type.is_mutref)
-                        return ARG(0) ~ ".mutref(" ~ ARG(1) ~ ")";
+                    if (node.target.modid != module.modid)
+                        cgForeignGlobal(node.target);
 
-                    return ARG(0) ~ "[" ~ ARG(1) ~ "]";
+                    return ID(id); // TODO ensure const emit.
                 }
 
-                // Conditional lazy assignment.
-                if (id == "||=")
-                {
-                    let arg0 = ARG(0);
-
-                    mut tv: TEMPVAR;
-                    let condcons = via(:tv, :head.type, expr: arg0);
-                    let alt = tv.ptrflip ? "*" ~ tv.id : tv.id || arg0;
-                    return "(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")";
-                }
-
-                // Skip some of the ridiculous parens.
-                mut op = id.valid_operator;
-                if (binSkipParens(op, mode))
-                    return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
-                else
-                    return "(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")";
+                return localID(:node.target);
             }
+
+            if (target.kind == "field")
+                return ARG(0) ~ "." ~ ID(id);
+
+            if (node.target.isOp)
+            {
+                let head = args[0] || fail();
+
+                if (args.len == 1)
+                    return target.flags & F_POSTFIX ? emitPostfixOp(id.valid_operator)
+                                                    : emitPrefixOp (id.valid_operator);
+
+                if (args.len == 2)
+                {
+                    if (id == "[]")
+                    {
+                        // The new cow_vec is here.
+                        if (node.type.is_mutref)
+                            return ARG(0) ~ ".mutref(" ~ ARG(1) ~ ")";
+
+                        return ARG(0) ~ "[" ~ ARG(1) ~ "]";
+                    }
+
+                    // Conditional lazy assignment.
+                    if (id == "||=")
+                    {
+                        let arg0 = ARG(0);
+
+                        mut tv: TEMPVAR;
+                        let condcons = via(:tv, :head.type, expr: arg0);
+                        let alt = tv.ptrflip ? "*" ~ tv.id : tv.id || arg0;
+                        return "(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")";
+                    }
+
+                    // Skip some of the ridiculous parens.
+                    return emitBinaryOp(id.valid_operator);
+                }
+            }
+
+            if (id == "STEAL" && args.len == 1)
+                return cgMove(node.type, ARG(0));
         }
 
-        if (id == "STEAL" && items.len == 1)
-            return cgMove(node.type, ARG(0));
-
         if (id == "println")
-            return cgPrint(_items);
+            return cgPrint(item_src);
 
-        id != "__native" || assert();
+        isNative && fail("Unknown __native: `" ~ id ~ "`.");
 
-        return id.valid_identifier ~ "(" ~ REST ~ ")";
+        return emitFunctionCall(id.valid_identifier);
     }
 
     fn cgPrint(items: string[]): string
