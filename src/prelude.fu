@@ -138,7 +138,6 @@ fn false(): bool __native("false");
 
 fn   =(a: &mut $T, mut b: $T): &mut $T __native;
 fn ||=(a: &mut $T, mut b: $T): &mut $T __native;
-fn &&=(a: &mut $T, mut b: $T): void __native;
 
 
 // Arrays.

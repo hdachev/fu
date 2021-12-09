@@ -1314,29 +1314,47 @@ pub fn cpp_codegen(
 
     fn cgCall(node: SolvedNode, mode: i32): string
     {
-        let ext = node.target.EXT;
-        let target = GET(node.target) || fail();
+        let ext             = node.target.EXT;
+        let target          = GET(node.target) || fail();
+
+        let items           = node.items;
+        let isNative        = target.kind == "__native";
+        let isAssignment    = items.len == 2 && isNative && target.name == "=";
 
         mut _items: string[];
-        let items = node.items;
+        for (mut i = 0; i < items.len; i++)
+        {
+            let item = items[i];
+
+            // Skip explicit copies on assignment, pointless.
+            shadow let item = isAssignment && i == 1 && item.kind == "copy"
+                ? item.items.only
+                : item;
+
+            _items ~= cgNode(
+                item, callarg: ext.args[i].type,
+                debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")");
+        }
+
+        //
         fn REST(start: i32 = 0)
         {
             mut src = "";
-            for (mut i = start; i < items.len; i++)
+            for (mut i = start; i < _items.len; i++)
             {
                 if (i > start)
                     src ~= ", ";
 
-                src ~= cgNode(items[i], callarg: ext.args[i].type, debug: "cgCall(" ~ node.value ~ ").REST(" ~ i ~ ")");
+                src ~= _items[i];
             }
 
             return src;
         }
 
-        fn ARG(i: i32) cgNode(items[i], debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")");
+        fn ARG(i: i32) _items[i];
 
         // Builtin specs.
-        if (target.kind == "__native" && target.name[0] == '\n')
+        if (isNative && target.name[0] == '\n')
         {
             mut id = target.name.slice(1);
 
@@ -1444,28 +1462,12 @@ pub fn cpp_codegen(
                     return "(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")";
                 }
 
-                // Collapse (a ~= b + c) into (a ~= b, a ~= c),
-                //  totally surprised at how little if any impact this has.
-                if (id == "~=")
-                    if (type_isArray(head.type) && isFieldChain(node.items[0]))
-                        if (node.items[1].value == "~" && node.items[1].type.canon == head.type.canon)
-                            return cgAppend(node, ARG(0));
-
-                // Skip explicit copy on assignment, it's just overly verbose.
-                {
-                    let arg0 = ARG(0);
-                    mut arg1: string;
-                    if (id == "=" || id == "||=" || id == "&&=") // This is off, see ||= returns above
-                        if (items[1].kind == "copy")
-                            arg1 = cgNode(items[1].items.only, debug: "cgCall(" ~ id ~ " skipcopy)");
-
-                    // Skip some of the ridiculous parens.
-                    mut op = id.valid_operator;
-                    if (binSkipParens(op, mode))
-                        return arg0 ~ " " ~ op ~ " " ~ (arg1 || ARG(1));
-                    else
-                        return "(" ~ arg0 ~ " " ~ op ~ " " ~ (arg1 || ARG(1)) ~ ")";
-                }
+                // Skip some of the ridiculous parens.
+                mut op = id.valid_operator;
+                if (binSkipParens(op, mode))
+                    return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
+                else
+                    return "(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")";
             }
         }
 
@@ -1473,39 +1475,11 @@ pub fn cpp_codegen(
             return cgMove(node.type, ARG(0));
 
         if (id == "println")
-            return cgPrint(cgNodes(items, debug: "prinln"));
+            return cgPrint(_items);
 
         id != "__native" || assert();
 
         return id.valid_identifier ~ "(" ~ REST ~ ")";
-    }
-
-    fn cgAppend(node: SolvedNode, into: string): string
-    {
-        mut src = "(";
-        cgAppend_visit(node.type.canon, into, node.items[1], src);
-        src ~= ")";
-
-        return src;
-    }
-
-    fn cgAppend_visit(
-        canon: string, into: string,
-        stuff: SolvedNode, src: &mut string)
-    {
-        if (stuff.kind != "call" || stuff.value != "~" || stuff.type.canon != canon || stuff.items.len != 2)
-        {
-            let val = cgNode(stuff, debug: "cgAppend_visit");
-            if (src.len > 1)
-                src ~= ", ";
-
-            src ~= into ~ " += " ~ val;
-        }
-        else
-        {
-            cgAppend_visit(canon, into, stuff.items[0], src);
-            cgAppend_visit(canon, into, stuff.items[1], src);
-        }
     }
 
     fn cgPrint(items: string[]): string
