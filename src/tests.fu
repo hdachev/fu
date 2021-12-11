@@ -2971,7 +2971,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_gcc(`
+    ZERO(`
         fn main()
         {
             mut target = 0;

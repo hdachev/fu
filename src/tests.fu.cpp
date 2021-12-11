@@ -1,7 +1,6 @@
 
 #include <fu/int.h>
 #include <fu/io.h>
-#include <fu/process.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
@@ -850,15 +849,6 @@ static void ARROPS(fu::view<fu::byte> literal, fu::view<fu::byte> operation, fu_
     ZERO(src, testdiffs);
 }
 
-static void TODO_gcc(const fu_STR& src, s_TestDiffs& testdiffs)
-{
-    if (fu::LINUX)
-        TODO(src, testdiffs);
-    else
-        ZERO(src, testdiffs);
-
-}
-
 void runTests()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
@@ -1089,7 +1079,7 @@ void runTests()
     ZERO("\n        fn target(implicit ref _itarg: i32) _itarg;\n\n        fn main()\n        {\n            let implicit mut _itarg = 0;\n            fn GET_mut(ref x: i32) x || GET_mut(target += 1);\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn target(implicit ref _itarg: i32) _itarg;\n        fn GET_mut(ref x: i32) x || GET_mut(target += 1);\n\n        fn main()\n        {\n            let implicit mut _itarg = 0;\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
     ZERO("\n        fn main()\n        {\n            mut target = 0;\n            fn GET_mut(ref x: i32) x || GET_mut(++target);\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
-    TODO_gcc("\n        fn main()\n        {\n            mut target = 0;\n            fn __solveStruct(mut arg: i32): i32 {\n                ref o = GET_mut(arg); o += target;\n                return target;\n            }\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));\n            return __solveStruct(0) - 2;\n        }\n    "_fu, testdiffs);
+    ZERO("\n        fn main()\n        {\n            mut target = 0;\n            fn __solveStruct(mut arg: i32): i32 {\n                ref o = GET_mut(arg); o += target;\n                return target;\n            }\n\n            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));\n            return __solveStruct(0) - 2;\n        }\n    "_fu, testdiffs);
     FAIL("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) a || //*F\n                              a = A(incr(a))    /*/         // Lint should complain here,\n                             (a = A(incr(a))); //*/         //  this was an honest mistake.\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
     ZERO("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) a || (a = B(incr(a)));\n        fn B(ref b: i32) b || (b = A(incr(b)));\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
     ZERO("\n        fn incr(ref a: i32) ++a;\n        fn A(ref a: i32) { ref aa = a || (a = B(incr(a))); return aa; }\n        fn B(ref b: i32) { ref bb = b || (b = A(incr(b))); return bb; }\n        fn main() { mut v = 0; return A(v) - 1; }\n    "_fu, testdiffs);
