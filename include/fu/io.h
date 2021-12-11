@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "./util.h"
 #include "./defer.h"
 #include "./str.h"
 #include "./view.h"

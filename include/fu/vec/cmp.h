@@ -3,7 +3,7 @@
 #include <cstring> // memcmp
 
 #include "../int.h"
-#include "../util.h"
+#include "../inl.h"
 
 
 // Eq.

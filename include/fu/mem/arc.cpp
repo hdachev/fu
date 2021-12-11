@@ -1,5 +1,7 @@
+#include <new>
+#include <cstdlib>
+
 #include "./arc.h"
-#include "../util.h"
 #include "../int/next_pow2.h"
 #include "../export.h"
 
@@ -14,8 +16,8 @@ static inline size_t fu_POW2MEM_RoundUp(size_t bytes) noexcept
     if (rnd < bytes || rnd > 0x80000000u)
         std::exit(fu_EXIT_BadAlloc);
 
-    rnd = rnd > fu::ARC_MIN_ALLOC
-        ? rnd : fu::ARC_MIN_ALLOC;
+    rnd = rnd > fu_ARC::MIN_ALLOC
+        ? rnd : fu_ARC::MIN_ALLOC;
 
     return rnd;
 }

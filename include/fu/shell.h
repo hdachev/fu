@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "./util.h"
 #include "./str.h"
 #include "./vec/c_str.h"
 #include "./defer.h"

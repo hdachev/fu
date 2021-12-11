@@ -1,10 +1,9 @@
 #pragma once
 
-#include <new>
 #include <atomic>
 #include <cassert>
 
-#include "../util.h"
+#include "../inl.h"
 
 
 //
@@ -29,6 +28,8 @@
 
 struct alignas(16) fu_ARC
 {
+    static constexpr int MIN_ALLOC = 128;
+
     std::atomic_int m_arc;
 
     #if fu_ARC__DETECT_MEMORY_LEAKS
@@ -63,7 +64,7 @@ struct alignas(16) fu_ARC
 
 static_assert(sizeof(int)    == 4);
 static_assert(sizeof(fu_ARC) == 16);
-static_assert(sizeof(fu_ARC) < fu::ARC_MIN_ALLOC);
+static_assert(sizeof(fu_ARC) < fu_ARC::MIN_ALLOC);
 
 
 //

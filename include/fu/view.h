@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef> // size_t
 #include <cassert>
 
 #include "./inl.h"

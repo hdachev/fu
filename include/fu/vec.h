@@ -1,10 +1,11 @@
 #pragma once
 
+#include <new>
 #include <cstring>
 #include <type_traits>
 
+#include "./inl.h"
 #include "./view.h"
-#include "./util.h"
 #include "./mem/arc.h"
 #include "./mem/endian.h"
 #include "./vec/maybe_pos.h"
