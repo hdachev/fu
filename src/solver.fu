@@ -6342,6 +6342,29 @@ pub fn solve(
                         let write   = _current_fn.events.writes[w];
                         let written = write.target.nested.type.lifetime.uni0n;
 
+                        let iw_evalsFirst =
+                            ooe_isRTL   ? iw == args.len - 1
+                                        : iw == 0;
+
+                        mut written_and_invalidated: Region[];
+                        if (!iw_evalsFirst)
+                        {
+                            written_and_invalidated = written;
+
+                            // Deep expansion only useful on non-first arg,
+                            //  we only use it for preceding args in OOE.
+                            //
+                            for (mut i = 0; i < written.len; i++)
+                            {
+                                let index = Region_asIndex(written[i]);
+                                if (!index)
+                                    continue;
+
+                                let invalidates = flow.invalidates.unless_oob(index);
+                                written_and_invalidated.set::add(invalidates.view(Region));
+                            }
+                        }
+
                         ////////////////////////////////////////////////////
                         // TODO we need written to be the full set        //
                         //  of written which is a superset of invalidated //
@@ -6359,6 +6382,12 @@ pub fn solve(
                                 let ooe_ir_evalsBefore_iw =
                                     ooe_isRTL   ? ir > iw
                                                 : ir < iw;
+
+                                shadow let written = ooe_ir_evalsBefore_iw
+                                    ? written_and_invalidated
+                                    : written;
+
+                                written || fail();
 
                                 for (mut r = ooe_read0; r < ltr_read1; r++)
                                 {

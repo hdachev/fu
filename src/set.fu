@@ -183,7 +183,7 @@ pub fn diff(a: $T[], b: $T[]): $T[]
 // TODO instead of this,
 //  make sure each item is moved exactly once.
 
-pub fn add(ref a: $T[], b: $T[])
+pub fn add(ref a: $T[], b: [$T])
 {
     mut x = 0;
     mut y = 0;
