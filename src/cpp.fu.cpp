@@ -44,7 +44,16 @@ fu_STR ID(const fu_STR& id)
 
 static const fu_STR UNARY = "++--!*&~"_fu;
 
-static const fu_STR BINARY = "+=-=*=/=%=&=|=^=<<=>>==!=<=>=&&||"_fu;
+static const fu_STR BINARY = "+=-=*=/=%=&=|=^=<<=>>==!=&&||"_fu;
+
+static const fu_STR ASSIGN2 = "+=-=*=/=%=&=|=^="_fu;
+
+static const fu_STR ASSIGN3 = "<<=>>="_fu;
+
+bool hasAssignment(fu::view<fu::byte> op)
+{
+    return (op == "="_fu) || ((op.size() == 2) && fu::has(ASSIGN2, op)) || ((op.size() == 3) && fu::has(ASSIGN3, op));
+}
 
 bool hasBinary(fu::view<fu::byte> op)
 {

@@ -843,6 +843,8 @@ extern const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
 
 extern const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
 
+extern const s_Context CTX_PRELUDE;
+
                                 #ifndef DEFt_clone_6Kad
                                 #define DEFt_clone_6Kad
 inline int clone_6Kad(const int a)
@@ -1006,9 +1008,9 @@ inline s_Module clone_P1L6(const s_Module& a)
 }
                                 #endif
 
-                                #ifndef DEFt_map_Fsmy
-                                #define DEFt_map_Fsmy
-inline fu_VEC<s_Module> map_Fsmy(fu::view<s_Module> a, int)
+                                #ifndef DEFt_map_Pq4T
+                                #define DEFt_map_Pq4T
+inline fu_VEC<s_Module> map_Pq4T(fu::view<s_Module> a, int)
 {
     fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
@@ -1023,7 +1025,7 @@ inline fu_VEC<s_Module> map_Fsmy(fu::view<s_Module> a, int)
                                 #define DEFt_clone_teA7
 inline fu_VEC<s_Module> clone_teA7(fu::view<s_Module> a)
 {
-    return map_Fsmy(a, 0);
+    return map_Pq4T(a, 0);
 }
                                 #endif
 
@@ -1049,8 +1051,6 @@ inline s_Context clone_5Wg9(const s_Context& a)
     return res;
 }
                                 #endif
-
-extern const s_Context CTX_PRELUDE;
 
                                 #ifndef DEFt_clone_0uIe
                                 #define DEFt_clone_0uIe

@@ -6,6 +6,7 @@
 
 struct s_BitSet;
 
+void add(s_BitSet&, const s_BitSet&);
 void add(s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
@@ -57,6 +58,32 @@ void add(s_BitSet& _, const int idx)
     const int bit = (idx % 8);
     const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
     grow_if_oob_DlDj(_._data, bucket) |= mask;
+}
+
+                                #ifndef DEFt_grow_if_oob_AiRG
+                                #define DEFt_grow_if_oob_AiRG
+inline fu::u8& grow_if_oob_AiRG(fu_VEC<fu::u8>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
+void add(s_BitSet& _, const s_BitSet& other)
+{
+    for (int i1 = other._data.size(); i1-- > 0; )
+    {
+        if (other._data[i1])
+        {
+            grow_if_oob_AiRG(_._data, i1);
+            for (int i = 0; (i <= i1); i++)
+                _._data.mutref(i) |= other._data[i];
+
+            break;
+        };
+    };
 }
 
 bool has(const s_BitSet& _, const int idx)

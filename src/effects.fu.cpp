@@ -15,6 +15,7 @@ struct s_Region;
 bool has(const s_BitSet&, int);
 int Region_asIndex(const s_Region&);
 void ArgsAtRisk_shake(s_Flow&);
+void add(s_BitSet&, const s_BitSet&);
 void add(s_BitSet&, int);
 void add_range(s_BitSet&, int, int);
 void rem(s_BitSet&, int);
@@ -43,6 +44,7 @@ struct s_Flow
     fu_VEC<int> arg_positions;
     fu_VEC<fu_VEC<int>> arg_aliases;
     fu_VEC<fu_VEC<int>> args_at_risk;
+    fu_VEC<s_BitSet> ooe_aliases;
     explicit operator bool() const noexcept
     {
         return false
@@ -52,6 +54,7 @@ struct s_Flow
             || arg_positions
             || arg_aliases
             || args_at_risk
+            || ooe_aliases
         ;
     }
 };
@@ -106,6 +109,17 @@ void Reference_trackArgument(s_Flow& flow, const int target_3, const int positio
     add(flow.is_arg, target_3);
 }
 
+                                #ifndef DEFt_grow_if_oob_yL2h
+                                #define DEFt_grow_if_oob_yL2h
+inline s_BitSet& grow_if_oob_yL2h(fu_VEC<s_BitSet>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
                                 #ifndef DEFt_unless_oob_kedP
                                 #define DEFt_unless_oob_kedP
 inline const fu_VEC<int>& unless_oob_kedP(fu::view<fu_VEC<int>> a, const int i)
@@ -131,6 +145,17 @@ inline bool rem_xJq8(fu_VEC<int>& dest, const int item)
         };
     };
     return false;
+}
+                                #endif
+
+                                #ifndef DEFt_grow_if_oob_aIXs
+                                #define DEFt_grow_if_oob_aIXs
+inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
 }
                                 #endif
 
@@ -163,17 +188,6 @@ inline void add_9KMC(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_aIXs
-                                #define DEFt_grow_if_oob_aIXs
-inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
-}
-                                #endif
-
                                 #ifndef DEFt_add_xJq8
                                 #define DEFt_add_xJq8
 inline bool add_xJq8(fu_VEC<int>& dest, const int item)
@@ -197,6 +211,7 @@ inline bool add_xJq8(fu_VEC<int>& dest, const int item)
 
 void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& right)
 {
+    grow_if_oob_yL2h(flow.ooe_aliases, left);
     for (int i = 0; i < right.uni0n.size(); i++)
     {
         const int right_1 = Region_asIndex(right.uni0n[i]);
@@ -220,6 +235,10 @@ void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& rig
             add(flow.is_arg, left);
             add_xJq8(grow_if_oob_aIXs(flow.arg_aliases, left), right_1);
         };
+        add(flow.ooe_aliases.mutref(left), right_1);
+        s_BitSet* _0;
+        (_0 = &(flow.ooe_aliases.mutref(left)), add(*_0, s_BitSet(flow.ooe_aliases[right_1])));
+        add(flow.ooe_aliases.mutref(right_1), left);
     };
 }
 
@@ -237,6 +256,14 @@ inline fu_VEC<int> try_steal_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
+                                #ifndef DEFt_unless_oob_HoLq
+                                #define DEFt_unless_oob_HoLq
+inline const fu_VEC<int>& unless_oob_HoLq(fu::view<fu_VEC<int>> a, const int i)
+{
+    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
+}
+                                #endif
+
                                 #ifndef DEFt_find_C47D
                                 #define DEFt_find_C47D
 inline int find_C47D(fu::view<int> a, const int b)
@@ -248,14 +275,6 @@ inline int find_C47D(fu::view<int> a, const int b)
 
     };
     return -1;
-}
-                                #endif
-
-                                #ifndef DEFt_unless_oob_HoLq
-                                #define DEFt_unless_oob_HoLq
-inline const fu_VEC<int>& unless_oob_HoLq(fu::view<fu_VEC<int>> a, const int i)
-{
-    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
@@ -286,6 +305,17 @@ static fu_VEC<int>& at_risk_from(s_Flow& flow, const int use)
     return flow.args_at_risk.mutref(use);
 }
 
+                                #ifndef DEFt_grow_if_oob_xvHU
+                                #define DEFt_grow_if_oob_xvHU
+inline fu_VEC<int>& grow_if_oob_xvHU(fu_VEC<fu_VEC<int>>& a, const int i)
+{
+    if ((a.size() <= i))
+        a.grow((i + 1));
+
+    return a.mutref(i);
+}
+                                #endif
+
                                 #ifndef DEFt_add_zs1w
                                 #define DEFt_add_zs1w
 inline bool add_zs1w(fu_VEC<int>& dest, const int item)
@@ -304,17 +334,6 @@ inline bool add_zs1w(fu_VEC<int>& dest, const int item)
     };
     dest.push(item);
     return true;
-}
-                                #endif
-
-                                #ifndef DEFt_grow_if_oob_xvHU
-                                #define DEFt_grow_if_oob_xvHU
-inline fu_VEC<int>& grow_if_oob_xvHU(fu_VEC<fu_VEC<int>>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
 }
                                 #endif
 

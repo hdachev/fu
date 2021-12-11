@@ -32,9 +32,9 @@ set(FU_INPUTS
     hacks.fu
     intlit.fu
     addroffn.fu
+    cpp.fu
     ../lib/tea.fu
     codegen.fu
-    cpp.fu
     ../lib/env.fu
     prelude.fu
     build.fu
