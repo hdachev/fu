@@ -2605,6 +2605,36 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct X { x: i32; };
+
+        fn incr(ref x: X) {
+            x.x++;
+            return x;
+        }
+
+        fn +=(a: X, b: X) {
+            // Notice, this is not a real +=,
+            //  just checking the order of eval here.
+            return a.x + b.x;
+        }
+
+        fn test(ref x: X, ref y: X) {
+            ref xy = y || x;
+            return x.incr += xy.incr; // <- xy invalidated by x.incr
+        }
+
+        fn main() {
+            mut x: X;
+            mut y: X;
+            return test(x, y) - 3;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
