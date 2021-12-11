@@ -6057,40 +6057,35 @@ pub fn solve(
             //  we'll keep track of reads and writes,
             //   we add sequencing tags last thing here.
             //
-            let ooe_read0  = _current_fn.events.reads.len;
-            let ooe_write0 = _current_fn.events.writes.len;
+            let ooe_read0   = _current_fn.events.reads.len;
+            let ooe_write0  = _current_fn.events.writes.len;
 
-            mut ltr_reads:  i32[];
-            mut ltr_writes: i32[];
+            mut ooe_reads:  i32[];
+            mut ooe_writes: i32[];
 
-            let ooe_isRTL  = !!(target.flags & F_OOE_RTL);
-            if (ooe_isRTL)
-            {
-                // Guaranteed right-to-left order of evaluation:
-                //  just borrow check in reverse and we're good.
-                //
-                for (mut i = args.len; i --> 0; )
-                    bck_node(args[i]);
-            }
-            else
+            let ooe_isRTL   = !!(target.flags & F_OOE_RTL);
+
+            ///////////////////////////////////////////////
+            let ooe_START   = ooe_isRTL ? args.len -1 : 0;
             {
                 shadow lax mut ooe_read0  = ooe_read0;
                 shadow lax mut ooe_write0 = ooe_write0;
 
-                for (mut i = 0; i < args.len; i++)
+                for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
                 {
-                    bck_node(args[i]);
+                    bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
 
                     let r1 = _current_fn.events.reads.len;
                     let w1 = _current_fn.events.writes.len;
 
-                    if (r1 > ooe_read0)  ltr_reads.grow_oob(i, fill: ooe_read0) = r1;
-                    if (w1 > ooe_write0) ltr_writes.grow_oob(i, fill: ooe_write0) = w1;
+                    if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
+                    if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
 
                     ooe_read0 = r1;
                     ooe_write0 = w1;
                 }
             }
+            ///////////////////////////////////////////////
 
             // BORROWCK ////////////////
             mut bck_writes: Region[];
@@ -6330,21 +6325,20 @@ pub fn solve(
             {
                 shadow mut ooe_write0 = ooe_write0;
 
-                for (mut iw = 0; iw < ltr_writes.len; iw++)
+                for (mut ooe_iw = 0; ooe_iw < ooe_writes.len; ooe_iw++)
                 {
-                    let ltr_write1 = ltr_writes[iw];
-                    if (ltr_write1 == ooe_write0)
+                    let ooe_write1 = ooe_writes[ooe_iw];
+                    if (ooe_write1 == ooe_write0)
                         continue;
 
                     //
-                    for (mut w = ooe_write0; w < ltr_write1; w++)
+                    for (mut w = ooe_write0; w < ooe_write1; w++)
                     {
                         let write   = _current_fn.events.writes[w];
                         let written = write.target.nested.type.lifetime.uni0n;
 
-                        let iw_evalsFirst =
-                            ooe_isRTL   ? iw == args.len - 1
-                                        : iw == 0;
+                        // RTL indexing is reversed, so 0 always means first.
+                        let iw_evalsFirst = ooe_iw == 0;
 
                         mut written_and_invalidated: Region[];
                         if (!iw_evalsFirst)
@@ -6373,15 +6367,13 @@ pub fn solve(
                         // Check remaining arguments.
                         shadow mut ooe_read0 = ooe_read0;
 
-                        for (mut ir = 0; ir < ltr_reads.len; ir++)
+                        for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
                         {
-                            let ltr_read1 = ltr_reads[ir];
+                            let ooe_read1 = ooe_reads[ooe_ir];
 
-                            if (ir != iw)
+                            if (ooe_ir != ooe_iw)
                             {
-                                let ooe_ir_evalsBefore_iw =
-                                    ooe_isRTL   ? ir > iw
-                                                : ir < iw;
+                                let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
 
                                 shadow let written = ooe_ir_evalsBefore_iw
                                     ? written_and_invalidated
@@ -6389,10 +6381,14 @@ pub fn solve(
 
                                 written || fail();
 
-                                for (mut r = ooe_read0; r < ltr_read1; r++)
+                                for (mut r = ooe_read0; r < ooe_read1; r++)
                                 {
                                     let read    = _current_fn.events.reads[r];
                                     let regions = read.target.nested.type.lifetime.uni0n;
+
+                                    // TODO: set::has_inter,
+                                    //  how can this optimization work automatically?
+                                    //   !!set::inter -> set::has_inter?
                                     if !(regions.set::inter(written))
                                         continue;
 
@@ -6413,52 +6409,67 @@ pub fn solve(
                                     //
                                     // If needed, we'll inject a write,
                                     //  if not possible, we'll error out.
+
+                                    // DANGER ZONE:
                                     //
+                                    //  RTL methods have these indices flipped,
+                                    //   here we index in ORDER OF EVALUATION, not order in AST.
+                                    //
+                                    //  Wonder if we shouldn't just order things correctly
+                                    //   in the AST and avoid this altogether?
+                                    //
+                                    shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
+                                    shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
+
                                     if (ooe_ir_evalsBefore_iw)
                                     {
-                                        let arg     = args[ir];
+                                        let arg     = args[r];
                                         let bound   = arg.type.lifetime.uni0n;
                                         let inter   = bound.set::inter(written);
                                         if (inter)
                                         {
-                                            if (host_args[ir].is_mutref || !arg.is_rx_copy)
+                                            if (host_args[r].is_mutref || !arg.is_rx_copy)
                                             {
                                                 _here = callsite.token;
 
                                                 fail("At call to " ~ target.qWHAT ~ ", argument binding "
-                                                    ~ host_args[ir].name.human.qBAD ~ " (arg #" ~ ir ~ ") at "
+                                                    ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
                                                     ~ arg.token.addr_and_snippet
                                                     ~ "\n\t... invalidated by subsequent write to "
                                                     ~ inter.first.qWHAT ~ " upon evaluation of argument "
-                                                    ~ host_args[iw].name.human.qBAD ~ " (arg #" ~ iw ~ ") at "
+                                                    ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                     ~ write.callsite.token.addr_and_snippet
                                                     ~ RWEvent_stack(write.nodeidx, write.target));
                                             }
 
                                             // We'll have to inject a copy here.
-                                            BORROWCK_resolveByTempCopy(:callsite, ir);
+                                            BORROWCK_resolveByTempCopy(:callsite, r);
                                         }
                                     }
 
-                                    // Flag the arg that needs to eval first for explicit sequencing.
-                                    //  This mask thing is kinda stupid, calls with more than 32 args
-                                    //   could needlessly sequence some of their args,
-                                    //    but it's safe.
+                                    // TODO FIX: have codegen disregard the mask
+                                    //  when cpp guarantees the order - it's call-syntax related.
                                     //
-                                    let mustSeq =
-                                        ooe_isRTL == ir > iw
-                                            ? ir : iw;
+                                    if !(ooe_isRTL)
+                                    {
+                                        // Flag the arg that needs to eval first for explicit sequencing.
+                                        //  This mask thing is kinda stupid, calls with more than 32 args
+                                        //   could needlessly sequence some of their args,
+                                        //    but it's safe.
+                                        //
+                                        let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
+                                        MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                    }
 
-                                    MUSTSEQ_mask |= 1 << (mustSeq & 31);
                                     break;
                                 }
                             }
 
-                            ooe_read0 = ltr_read1;
+                            ooe_read0 = ooe_read1;
                         }
                     }
 
-                    ooe_write0 = ltr_write1;
+                    ooe_write0 = ooe_write1;
                 }
             }
 
