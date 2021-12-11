@@ -2577,6 +2577,34 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct X { x: i32; }
+        struct Y { y: X;   }
+
+        fn x(y: Y) y.y.x;
+        fn sum(a, b) a.x + b.x;
+
+        fn incr(ref x: X) {
+            x.x++;
+            return x;
+        }
+
+        fn incr(ref y: Y) {
+            y.y.x++;
+            return y;
+        }
+
+        fn main() {
+            mut x: Y;
+            ref y = x.y;
+            return sum(y.incr, x.incr) - 3; // Not 4! one arg must invalidate
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
