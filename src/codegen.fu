@@ -277,7 +277,8 @@ pub fn cpp_codegen(
         if (_tfwd.add_once(type.modid, type.canon.structIndex))
         {
             _tfwd_src ~= "struct " ~ id ~ ";\n";
-            _tdef ~= declareStruct(id, type, s);
+            let decl = declareStruct(id, type, s);
+            _tdef ~= decl;
         }
 
         return id;

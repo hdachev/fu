@@ -3302,7 +3302,8 @@ pub fn solve(
                     mut name = n_fn.value || fail("TODO anonymous fns");
                     if (isSpec && !isNative && !isInline)
                     {
-                        let sig = mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
+                        let idx_end = outItems.len + FN_ARGS_BACK;
+                        let sig = mangleArguments(outItems[0, idx_end]);
                         if (sig)
                         {
                             let hash = tea::hash62(sig, chars: 4) || fail();
@@ -3381,7 +3382,8 @@ pub fn solve(
 
                     // MUT DURING SOLVE,
                     //  implicit args splice in
-                    outItems[outItems.len + FN_BODY_BACK] = s_body || fail("falsy body");
+                    let idx_body = outItems.len + FN_BODY_BACK;
+                    outItems[idx_body] = s_body || fail("falsy body");
                     didSetBody = true;
 
                     // ARGUMENTS AT RISK ///////////////////////////////////////////////////
