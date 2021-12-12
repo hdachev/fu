@@ -1097,8 +1097,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         {
             if (unity_1)
             {
-                fu_STR data = "#pragma once\n\n"_fu;
-                data += (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
+                fu_STR data = (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
                 for (int i_4 = 0; i_4 < cpp_files.size(); i_4++)
                 {
                     const fu_STR& incl = cpp_files[i_4];

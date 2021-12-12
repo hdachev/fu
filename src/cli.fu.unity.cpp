@@ -1,5 +1,3 @@
-#pragma once
-
 #ifdef fu_UNITY_FULIB
 #include <fu/_fulib.cpp>
 #endif
